@@ -9,11 +9,9 @@ const UserSchema = new mongoose.Schema({
   accountName: { type: String, required: true }
 });
 
-// Use an async function without 'next'
 UserSchema.pre('save', async function() {
   if (!this.isModified('password')) return;
   
-  // Mongoose will wait for this promise to resolve
   this.password = await bcrypt.hash(this.password, 10);
 });
 

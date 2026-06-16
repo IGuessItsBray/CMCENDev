@@ -1,6 +1,5 @@
 async function runAuthTest() {
     const BASE_URL = 'http://localhost:3000/api';
-    // 1. Create a variable to hold the random username
     const randomUsername = "testuser_" + Date.now();
 
     try {
@@ -10,7 +9,7 @@ async function runAuthTest() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                username: randomUsername, // Use the variable here
+                username: randomUsername, 
                 email: `test_${Date.now()}@example.com`,
                 password: "password123",
                 accountName: "Demo Account"
@@ -29,7 +28,7 @@ async function runAuthTest() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                username: randomUsername, // Use the same variable here
+                username: randomUsername, 
                 password: "password123"
             })
         });

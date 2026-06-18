@@ -1,7 +1,13 @@
 :root {
   --primary-color: #2c2f55;
   --secondary-color: #757d89;
-  --background-color: 
+  --background-color: #666666;
+  --background-color-20: rgba(255, 255, 255, 0.2);
+  --link-color: #2EA3F2;
+  --gold: #D59B27;
+  --museum-color: #ACF812;
+  --white: #FFF;
+  --shadow: rgba(0, 0, 0, 0.15);
 }
 
 * {
@@ -18,7 +24,7 @@ body {
 
 main {
   flex: 1;
-  background-color: white;
+  background-color: var(--white);
 }
  
 footer {
@@ -29,7 +35,7 @@ footer {
   justify-content: center;
 
   p {
-    color: wheat;
+    color: var(--gold);
     padding: 10px;
   }
 }
@@ -58,7 +64,7 @@ nav {
   height: 40px;
   padding: 0 16px;
   background: transparent;
-  color: white;
+  color: var(--white);
   align-content: center;
   cursor: pointer;
   font-size: 14px;
@@ -66,7 +72,7 @@ nav {
 }
 
 .dropdown-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--background-color-20);
 }
 
 .dropdown-menu {
@@ -75,11 +81,11 @@ nav {
   top: 100%;
   left: 0;
   min-width: 160px;
-  background-color: white;
+  background-color: var(--white);
   border-radius: 3px;
   list-style: none;
   margin-top: 0px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 10px var(--shadow);
 }
 
 .dropdown:hover .dropdown-menu {
@@ -89,7 +95,7 @@ nav {
 .dropdown-menu li a {
   display: block;
   padding: 10px 16px;
-  color: #333;
+  color: var(--background-color);
   text-decoration: none;
   font-size: 14px;
   border-radius: 2px;
@@ -97,7 +103,7 @@ nav {
 
 .dropdown-menu li a:hover {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--white);
 }
 
 .logo-link {
@@ -118,8 +124,8 @@ nav {
   height: 34px;
   padding: 0 14px;
   background: transparent;
-  color: white;
-  border: 1px solid white;
+  color: var(--white);
+  border: 1px solid var(--white);
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
@@ -127,5 +133,5 @@ nav {
 }
  
 .lang-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--background-color-20);
 }

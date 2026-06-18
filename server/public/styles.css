@@ -24,7 +24,7 @@ body {
 
 main {
   flex: 1;
-  background-color: var(--white);
+  background-color: var(--secondary-color);
 }
  
 footer {
@@ -54,6 +54,7 @@ header {
 nav {
   display: flex;
   gap: 10px;
+  margin-right: auto;
 }
 
 .dropdown {
@@ -134,4 +135,116 @@ nav {
  
 .lang-toggle:hover {
   background-color: var(--background-color-20);
+}
+.auth-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  margin-right: 12px;
+}
+ 
+.auth-link {
+  height: 34px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  border: 1px solid white;
+  border-radius: 4px;
+  color: white;
+  text-decoration: none;
+  font-size: 13px;
+}
+ 
+.auth-link:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+ 
+.auth-link--primary {
+  background-color: white;
+  color: var(--gold);
+}
+ 
+.auth-link--primary:hover {
+  background-color: rgba(255, 255, 255, 0.85);
+}
+ 
+/* ── Auth pages ── */
+.auth-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+ 
+.auth-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 40px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+ 
+.auth-card h2 {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+ 
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+ 
+.auth-field label {
+  font-size: 13px;
+  font-weight: bold;
+  color: #444;
+}
+ 
+.auth-field input {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+}
+ 
+.auth-field input:focus {
+  border-color: var(--gold);
+}
+ 
+.auth-btn {
+  padding: 10px;
+  background-color: var(--gold);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+ 
+.auth-btn:hover {
+  background-color: var(--link-color);
+}
+ 
+.auth-error {
+  color: red;
+  font-size: 13px;
+  min-height: 18px;
+}
+ 
+.auth-switch {
+  font-size: 13px;
+  text-align: center;
+  color: #666;
+}
+ 
+.auth-switch a {
+  color: var(--link-color);
 }

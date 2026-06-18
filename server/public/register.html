@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main class="auth-main">
+      <div class="auth-card">
+        <h2 data-i18n="register_title">Register</h2>
+        <p class="auth-error" id="registerError"></p>
+
+        <div class="auth-field">
+          <label data-i18n="username">Username</label>
+          <input type="text" id="regUsername" placeholder="Enter username" />
+        </div>
+        <div class="auth-field">
+          <label data-i18n="email">Email</label>
+          <input type="email" id="regEmail" placeholder="Enter email" />
+        </div>
+        <div class="auth-field">
+          <label data-i18n="account_name">Account Name</label>
+          <input type="text" id="regAccountName" placeholder="Enter account name" />
+        </div>
+        <div class="auth-field">
+          <label data-i18n="password">Password</label>
+          <input type="password" id="regPassword" placeholder="Enter password" />
+        </div>
+
+        <button class="auth-btn" id="registerBtn" data-i18n="register_btn">Register</button>
+        <p class="auth-switch" data-i18n="have_account">Already have an account? <a href="login.html">Login</a></p>
+      </div>
+    </main>
+    <footer id="footer"></footer>
+    <script src="index.js"></script>
+    <script>
+      document.getElementById('registerBtn').addEventListener('click', async () => {
+        const username    = document.getElementById('regUsername').value;
+        const email       = document.getElementById('regEmail').value;
+        const accountName = document.getElementById('regAccountName').value;
+        const password    = document.getElementById('regPassword').value;
+        const errorEl     = document.getElementById('registerError');
+        errorEl.textContent = '';
+
+        try {
+          const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, accountName, password })
+          });
+          const data = await res.json();
+
+          if (!res.ok) throw new Error(data.error || 'Registration failed');
+
+          window.location.href = '/login.html';
+        } catch (err) {
+          errorEl.textContent = err.message;
+        }
+      });
+    </script>
+    <script src="translations.js"></script>
+  </body>
+</html>

@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 
 const app = express();
 app.use(express.json());
+app.use(express.static('public'));
 
 // Connect to MongoDB using the URI from your .env file
 mongoose.connect(process.env.MONGO_URI)
@@ -42,7 +43,7 @@ app.post('/api/login', async (req, res) => {
   const user = await User.findOne({ username });
   
   if (user && (await bcrypt.compare(password, user.password))) {
-    const token = jwt.sign({ userId: user._id }, 'YOUR_SECRET_KEY', { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.json({ token });
   } else {
     res.status(401).json({ error: "Invalid credentials" });

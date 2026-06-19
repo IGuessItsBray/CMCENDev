@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Account Dashboard</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+
+    <main class="protected-main">
+      <h1 class="protected-title" data-i18n="dashboard_title">Account Dashboard</h1>
+
+      <div class="dashboard-card" id="dashboardCard">
+        <p data-i18n="loading_text">Loading...</p>
+      </div>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/index.js"></script>
+    <script>
+      // Redirect if not authed
+      if (!localStorage.getItem('token')) {
+        window.location.href = '/login.html';
+      }
+
+      // ── Field config — add new fields here as the User model grows ──
+      const dashboardFields = [
+        { key: 'username',    labelKey: 'field_username',     editable: false },
+        { key: 'email',       labelKey: 'field_email',        editable: true  },
+        { key: 'accountName', labelKey: 'field_account_name', editable: true  },
+      ];
+
+      function renderDashboard(user) {
+        const card = document.getElementById('dashboardCard');
+
+        card.innerHTML = dashboardFields.map(field => {
+          const value = user[field.key] ?? '';
+          return `
+            <div class="dashboard-row">
+              <span class="dashboard-label" data-i18n="${field.labelKey}"></span>
+              <span class="dashboard-value">${value}</span>
+              ${field.editable ? '<span class="dashboard-editable-tag" data-i18n="editable_tag"></span>' : ''}
+            </div>
+          `;
+        }).join('');
+
+        // Re-apply translations to the newly injected labels
+        applyLanguage(currentLang);
+      }
+
+      async function loadUserData() {
+        try {
+          const res = await fetch('/api/me', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+
+          if (res.status === 401) {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+            return;
+          }
+
+          const user = await res.json();
+          renderDashboard(user);
+        } catch (err) {
+          document.getElementById('dashboardCard').innerHTML =
+            '<p class="auth-error">Could not load account data.</p>';
+        }
+      }
+
+      loadUserData();
+    </script>
+    <script src="/translations.js"></script>
+  </body>
+</html>

@@ -356,3 +356,47 @@ a.dropdown-toggle {
 .event-form textarea:focus {
   border-color: var(--gold);
 }
+
+.dashboard-card {
+  width: 500px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 32px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+ 
+.dashboard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+ 
+.dashboard-row:last-child {
+  border-bottom: none;
+}
+ 
+.dashboard-label {
+  flex: 0 0 140px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+ 
+.dashboard-value {
+  flex: 1;
+  font-size: 15px;
+  color: #222;
+}
+ 
+.dashboard-editable-tag {
+  font-size: 11px;
+  color: red;
+  border: 1px solid red;
+  border-radius: 10px;
+  padding: 2px 8px;
+}

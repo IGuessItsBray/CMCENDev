@@ -45,7 +45,13 @@ const translations = {
     menu_connections: "Connections",
     about_family_heading: "About the C&E Family",
     about_family_para_1: "Introduce the C&E Family as a unified whole and describe the relationships between its four constituent entities (Branch, Association, Foundation, Museum) and their relationship to the Services they support (RCCS, RCAF, RCN, CAFCYBERCOM). Acts as the orientation page for visitors who do not yet know how the entities relate.",
-    footer_copyright: "This website is owned and operated by the C&E Association, a not-for-profit organization. It is not operated by the Government of Canada or the Department of National Defence. © 2026 All Rights Reserved."
+    footer_copyright: "This website is owned and operated by the C&E Association, a not-for-profit organization. It is not operated by the Government of Canada or the Department of National Defence. © 2026 All Rights Reserved.",
+    field_username: "Username",
+    field_email: "Email",
+    field_account_name: "Account name",
+    dashboard_title: "Dashboard",
+    loading_text: "Loading...",
+    editable_tag: "Editable"
   },
   fr: {
     title: "RCMCE",
@@ -92,7 +98,13 @@ const translations = {
     menu_connections: "Connections",
     about_family_heading: "À propos de la famille C&E",
     about_family_para_1: "Présenter la famille C&E comme un tout unifié et décrire les liens entre ses quatre entités constituantes (la Branche, l'Association, la Fondation, le Musée) ainsi que leur relation avec les Services qu'elles soutiennent (CTRC, ARC, MRC, COMCYBERFAC). Sert de page d'orientation pour les visiteurs qui ne connaissent pas encore les liens entre ces entités.",
-    footer_copyright: "Ce site Web est la propriété de l'Association C&E, un organisme sans but lucratif, et est exploité par celle-ci. Il n'est pas exploité par le gouvernement du Canada ni par le ministère de la Défense nationale. © 2026 Tous droits réservés."
+    footer_copyright: "Ce site Web est la propriété de l'Association C&E, un organisme sans but lucratif, et est exploité par celle-ci. Il n'est pas exploité par le gouvernement du Canada ni par le ministère de la Défense nationale. © 2026 Tous droits réservés.",
+    field_username: "Username",
+    field_email: "Email",
+    field_account_name: "Account name",
+    dashboard_title: "Dashboard",
+    loading_text: "Loading...",
+    editable_tag: "Editable"
   }
 };
  

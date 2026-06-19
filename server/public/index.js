@@ -3,52 +3,60 @@ const navLinks = {
   about: {
     titleKey: "menu_about_title",
     items: [
-      { route: "/about_family.html",      i18n: "menu_about_option_1" },
-      { route: "/about_branch.html",      i18n: "menu_about_option_2" },
+      { route: "/about_family.html", i18n: "menu_about_option_1" },
+      { route: "/about_branch.html", i18n: "menu_about_option_2" },
       { route: "/about_association.html", i18n: "menu_about_option_3" },
-      { route: "/about_foundation.html",  i18n: "menu_about_option_4" },
-      { route: "/about_museum.html",      i18n: "menu_about_option_5" },
-      { route: "/ownership.html",         i18n: "menu_about_option_6" },
+      { route: "/about_foundation.html", i18n: "menu_about_option_4" },
+      { route: "/about_museum.html", i18n: "menu_about_option_5" },
+      { route: "/ownership.html", i18n: "menu_about_option_6" },
     ]
   },
   doctrine: {
     titleKey: "menu_doctrine_title",
     items: [
       { route: "/doctrine_hub.html", i18n: "menu_doctrine_option_1" },
-      { route: "/awards.html",       i18n: "menu_doctrine_option_2" },
+      { route: "/awards.html", i18n: "menu_doctrine_option_2" },
     ]
   },
   news: {
     titleKey: "menu_news_title",
     items: [
-      { route: "/calendar.html",      i18n: "menu_news_option_1" },
-      { route: "/protected.html",     i18n: "menu_news_option_2", protected: true },
-      { route: "/news_stories.html",  i18n: "menu_news_option_3" },
-      { route: "/last_post.html",     i18n: "menu_news_option_4" },
-      { route: "/retirement.html",    i18n: "menu_news_option_5" },
-      { route: "/certificates.html",  i18n: "menu_news_option_6" },
-      { route: "/promotions.html",    i18n: "menu_news_option_7" },
-      { route: "/history.html",       i18n: "menu_news_option_8" },
-      { route: "/gallery.html",       i18n: "menu_news_option_9" },
+      { route: "/calendar.html", i18n: "menu_news_option_1" },
+      { route: "/protected.html", i18n: "menu_news_option_2", protected: true },
+      { route: "/news_stories.html", i18n: "menu_news_option_3" },
+      { route: "/last_post.html", i18n: "menu_news_option_4" },
+      { route: "/retirement.html", i18n: "menu_news_option_5" },
+      { route: "/certificates.html", i18n: "menu_news_option_6" },
+      { route: "/promotions.html", i18n: "menu_news_option_7" },
+      { route: "/history.html", i18n: "menu_news_option_8" },
+      { route: "/gallery.html", i18n: "menu_news_option_9" },
     ]
   },
   benefits: {
     titleKey: "menu_benefits_title",
     items: [
       { route: "/veteran_services.html", i18n: "menu_benefits_option_1" },
-      { route: "/cfmws.html",            i18n: "menu_benefits_option_2" },
-      { route: "/bursaries.html",        i18n: "menu_benefits_option_3" },
+      { route: "/cfmws.html", i18n: "menu_benefits_option_2" },
+      { route: "/bursaries.html", i18n: "menu_benefits_option_3" },
       { route: "/affiliate_offers.html", i18n: "menu_benefits_option_4" },
-      { route: "/support_troops.html",   i18n: "menu_benefits_option_5" },
+      { route: "/support_troops.html", i18n: "menu_benefits_option_5" },
     ]
   }
 };
 
 // header links that aren't dropdowns
 const standaloneLinks = [
-  { route: "/contact.html", i18n: "menu_connections", protected: true }
+  { route: "/contact.html", i18n: "menu_connections", protected: true },
+  { route: "/dashboard.html", i18n: "dashboard_title", protected: true}
 ];
 
+// list of only protected pages
+const protectedPages = [
+    ...Object.values(navLinks).flatMap(dropdown => dropdown.items),
+    ...standaloneLinks
+  ].filter(item => item.protected).map(item => item.route);
+
+  console.log(protectedPages)
 
 function renderDropdown(dropdown) {
   const itemsHtml = dropdown.items.map(item => `
@@ -107,13 +115,13 @@ function updateAuthButtons() {
     document.getElementById('signOutBtn').addEventListener('click', () => {
       localStorage.removeItem('token');
       updateAuthRestrictedItems();
-      if (window.location.pathname === '/protected.html') {
+      if (protectedPages.includes(window.location.pathname)) {
         window.location.href = '/index.html';
       } else {
         updateAuthButtons();
       }
     });
-    
+
   } else {
     authButtons.innerHTML = `
       <a href="login.html" class="auth-link" data-i18n="login_btn">Login</a>

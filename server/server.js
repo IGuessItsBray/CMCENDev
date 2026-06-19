@@ -14,6 +14,25 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Could not connect', err));
 
+// Auth middleware
+function authMiddleware(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// Protected route
+app.get('/api/protected_data', authMiddleware, async (req, res) => {
+  res.json({ message: 'This is protected data' });
+});
+
 // Example API Route
 app.get('/api/data', async (req, res) => {
     // Perform database queries here

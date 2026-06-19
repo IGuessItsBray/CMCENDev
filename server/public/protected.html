@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Submit Event</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+
+    <main class="protected-main">
+      <h1 class="protected-title" data-i18n="submit_event_title">Submit an Event</h1>
+
+      <form class="event-form" id="eventForm">
+        <div class="auth-field">
+          <label data-i18n="event_name_label">Event Name</label>
+          <input type="text" id="eventName" data-i18n-placeholder="event_name_placeholder" placeholder="Enter event name" />
+        </div>
+
+        <div class="auth-field">
+          <label data-i18n="event_date_label">Date</label>
+          <input type="date" id="eventDate" />
+        </div>
+
+        <div class="auth-field">
+          <label data-i18n="event_location_label">Location</label>
+          <input type="text" id="eventLocation" data-i18n-placeholder="event_location_placeholder" placeholder="Enter location" />
+        </div>
+
+        <div class="auth-field">
+          <label data-i18n="event_description_label">Description</label>
+          <textarea id="eventDescription" rows="5" data-i18n-placeholder="event_description_placeholder" placeholder="Enter event description"></textarea>
+        </div>
+
+        <button type="submit" class="auth-btn" data-i18n="submit_btn">Submit</button>
+        <p class="auth-error" id="eventFormMessage"></p>
+      </form>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/index.js"></script>
+    <script>
+      // Redirect if not authed
+      if (!localStorage.getItem('token')) {
+        window.location.href = '/login.html';
+      }
+
+      document.getElementById('eventForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const eventData = {
+          name: document.getElementById('eventName').value,
+          date: document.getElementById('eventDate').value,
+          location: document.getElementById('eventLocation').value,
+          description: document.getElementById('eventDescription').value,
+        };
+
+        // Placeholder — wire up to a real endpoint, e.g. POST /api/events
+        console.log('Event submitted:', eventData);
+
+        const messageEl = document.getElementById('eventFormMessage');
+        messageEl.style.color = 'green';
+        messageEl.textContent = 'Event submitted successfully.';
+        document.getElementById('eventForm').reset();
+      });
+    </script>
+    <script src="translations.js"></script>
+  </body>
+</html>

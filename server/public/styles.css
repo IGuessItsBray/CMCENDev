@@ -84,6 +84,7 @@ nav {
   min-width: 160px;
   background-color: var(--white);
   border-radius: 3px;
+  border-top: 4px solid var(--gold);
   list-style: none;
   margin-top: 0px;
   box-shadow: 0 4px 10px var(--shadow);
@@ -120,8 +121,19 @@ nav {
   display: block;
 }
 
+.hero {
+  display: flex;
+  img {
+    height: 70vh;
+    margin-top: 48px;
+    width: auto;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 .lang-toggle {
-  margin-left: auto;
+  margin-left: 48px;
   height: 34px;
   padding: 0 14px;
   background: transparent;
@@ -247,4 +259,100 @@ nav {
  
 .auth-switch a {
   color: var(--link-color);
+}
+
+.protected-main {
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+ 
+.protected-title {
+  font-size: 24px;
+  margin-bottom: 24px;
+  color: var(--white);
+}
+
+.content-main {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+ 
+.content-column {
+  max-width: 700px;
+  width: 100%;
+  color: #222;
+  line-height: 1.7;
+}
+ 
+.content-column h1 {
+  font-size: 28px;
+  margin-bottom: 24px;
+  color: var(--gold);
+}
+ 
+.content-column p {
+  margin-bottom: 20px;
+  font-size: 15px;
+  color: var(--white);
+}
+ 
+.content-figure {
+  margin: 28px 0;
+}
+ 
+.content-figure img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  display: block;
+}
+ 
+.content-figure figcaption {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--background-color);
+  text-align: center;
+}
+
+a.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.inline-float-img {
+  float: left;
+  width: 240px;
+  height: auto;
+  margin: 4px 20px 12px 0;
+  border-radius: 4px;
+}
+
+.event-form {
+  width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.event-form textarea {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+}
+
+.event-form textarea:focus {
+  border-color: var(--gold);
 }

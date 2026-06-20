@@ -14,6 +14,17 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Could not connect', err));
 
+// waiting for MongoDB before listening
+async function startServer() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    app.listen(process.env.PORT || 3000);
+  } catch (err) {
+    console.error('Startup failed:', err);
+    process.exit(1);
+  }
+}
+
 // Auth middleware
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
@@ -35,7 +46,7 @@ app.get('/api/protected_data', authMiddleware, async (req, res) => {
 
 app.get('/api/me', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
+    const user = await User.findById(req.user.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (err) {
@@ -52,7 +63,17 @@ app.get('/api/data', async (req, res) => {
 // REGISTER
 app.post('/api/register', async (req, res) => {
   try {
-    const user = new User(req.body);
+    const { username, email, accountName, password } = req.body;
+
+    // only explicitly accept permitted registration fields
+    const user = new User({
+      username,
+      email,
+      accountName,
+      password,
+      role: 'subscriber'
+    });
+
     await user.save();
     res.status(201).json({ message: "User created" });
   } catch (err) {
@@ -62,14 +83,15 @@ app.post('/api/register', async (req, res) => {
     console.error("Message:", err.message);
     console.error("Stack:", err.stack); // This reveals the exact file/line of the failure
     
-    res.status(400).json({ error: err.message, details: err.errors });
+    res.status(400).json({ error: 'Could not create account' });
+    //res.status(400).json({ error: err.message, details: err.errors });
   }
 });
 
 // LOGIN
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  const user = await User.findOne({ username });
+  const user = await User.findOne({ username }).select('+password');
   
   if (user && (await bcrypt.compare(password, user.password))) {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -79,4 +101,4 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+startServer();

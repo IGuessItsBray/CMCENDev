@@ -1,17 +1,59 @@
-// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const USER_ROLES = [
+  'subscriber',
+  'contributor',
+  'author',
+  'editor',
+  'administrator'
+];
+
 const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  accountName: { type: String, required: true }
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true
+  },
+
+  password: {
+    type: String,
+    required: true,
+    select: false
+  },
+
+  accountName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+
+  role: {
+    type: String,
+    enum: USER_ROLES,
+    default: 'subscriber'
+  },
+
+  contentAreas: {
+    type: [String],
+    default: []
+  }
+}, {
+  timestamps: true
 });
 
-UserSchema.pre('save', async function() {
+UserSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
-  
+
   this.password = await bcrypt.hash(this.password, 10);
 });
 

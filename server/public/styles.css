@@ -400,3 +400,7 @@ a.dropdown-toggle {
   border-radius: 10px;
   padding: 2px 8px;
 }
+
+[hidden] {
+  display: none !important;
+}

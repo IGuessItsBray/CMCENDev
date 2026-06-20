@@ -22,7 +22,11 @@ const navLinks = {
     titleKey: "menu_news_title",
     items: [
       { route: "/calendar.html", i18n: "menu_news_option_1" },
-      { route: "/protected.html", i18n: "menu_news_option_2", protected: true },
+      {
+  route: "/protected.html",
+  i18n: "menu_news_option_2",
+  permission: "canCreateDrafts"
+},
       { route: "/news_stories.html", i18n: "menu_news_option_3" },
       { route: "/last_post.html", i18n: "menu_news_option_4" },
       { route: "/retirement.html", i18n: "menu_news_option_5" },
@@ -52,11 +56,25 @@ const standaloneLinks = [
 
 // list of only protected pages
 const protectedPages = [
-    ...Object.values(navLinks).flatMap(dropdown => dropdown.items),
-    ...standaloneLinks
-  ].filter(item => item.protected).map(item => item.route);
+  ...Object.values(navLinks).flatMap(
+    dropdown => dropdown.items
+  ),
+  ...standaloneLinks
+]
+  .filter(item => item.protected || item.permission)
+  .map(item => item.route);
 
-  console.log(protectedPages)
+  function getAccessAttributes(item) {
+  if (item.permission) {
+    return `data-permission="${item.permission}" hidden`;
+  }
+
+  if (item.protected) {
+    return 'data-auth-required hidden';
+  }
+
+  return '';
+}
 
 function renderDropdown(dropdown) {
   const itemsHtml = dropdown.items.map(item => `
@@ -73,8 +91,39 @@ function renderDropdown(dropdown) {
   `;
 }
 
+function renderDropdown(dropdown) {
+  const itemsHtml = dropdown.items.map(item => `
+    <li ${getAccessAttributes(item)}>
+      <a
+        href="${item.route}"
+        data-i18n="${item.i18n}"
+      ></a>
+    </li>
+  `).join('');
+
+  return `
+    <div class="dropdown">
+      <div
+        class="dropdown-toggle"
+        data-i18n="${dropdown.titleKey}"
+      ></div>
+
+      <ul class="dropdown-menu">
+        ${itemsHtml}
+      </ul>
+    </div>
+  `;
+}
+
 function renderStandaloneLink(link) {
-  return `<a ${link.protected ? 'data-auth-required' : ''} href="${link.route}" class="dropdown-toggle" data-i18n="${link.i18n}"></a>`;
+  return `
+    <a
+      ${getAccessAttributes(link)}
+      href="${link.route}"
+      class="dropdown-toggle"
+      data-i18n="${link.i18n}"
+    ></a>
+  `;
 }
 
 function loadHeader() {
@@ -130,11 +179,64 @@ function updateAuthButtons() {
   }
 }
 
-function updateAuthRestrictedItems() {
-  const isAuthed = !!localStorage.getItem('token');
-  document.querySelectorAll('[data-auth-required]').forEach(el => {
-    el.style.display = isAuthed ? '' : 'none';
+async function updateAuthRestrictedItems() {
+  const token = localStorage.getItem('token');
+
+  const authRequiredItems =
+    document.querySelectorAll('[data-auth-required]');
+
+  const permissionRequiredItems =
+    document.querySelectorAll('[data-permission]');
+
+  // Hide restricted links until the server verifies the account.
+  authRequiredItems.forEach(element => {
+    element.hidden = true;
   });
+
+  permissionRequiredItems.forEach(element => {
+    element.hidden = true;
+  });
+
+  if (!token) return;
+
+  try {
+    const response = await fetch('/api/me', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      updateAuthButtons();
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        'Could not verify navigation permissions'
+      );
+    }
+
+    const user = await response.json();
+
+    authRequiredItems.forEach(element => {
+      element.hidden = false;
+    });
+
+    permissionRequiredItems.forEach(element => {
+      const permissionName =
+        element.dataset.permission;
+
+      element.hidden =
+        user.permissions?.[permissionName] !== true;
+    });
+  } catch (error) {
+    console.error(
+      'Navigation permission check failed:',
+      error
+    );
+  }
 }
 
 updateAuthButtons();

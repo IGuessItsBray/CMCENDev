@@ -1,13 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-
-const USER_ROLES = [
-  'subscriber',
-  'contributor',
-  'author',
-  'editor',
-  'administrator'
-];
+const { USER_ROLES } = require('../config/roles');
 
 const UserSchema = new mongoose.Schema({
   username: {

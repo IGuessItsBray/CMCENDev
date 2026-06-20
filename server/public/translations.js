@@ -51,7 +51,8 @@ const translations = {
     field_account_name: "Account name",
     dashboard_title: "Dashboard",
     loading_text: "Loading...",
-    editable_tag: "Editable"
+    editable_tag: "Editable",
+    field_role: 'Role',
   },
   fr: {
     title: "RCMCE",
@@ -104,7 +105,8 @@ const translations = {
     field_account_name: "Account name",
     dashboard_title: "Dashboard",
     loading_text: "Loading...",
-    editable_tag: "Editable"
+    editable_tag: "Editable",
+    field_role: 'Rôle',
   }
 };
  

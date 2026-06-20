@@ -1,71 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Submit Event</title>
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <header id="header"></header>
 
-    <main class="protected-main">
-      <h1 class="protected-title" data-i18n="submit_event_title">Submit an Event</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submit Event</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
 
-      <form class="event-form" id="eventForm">
-        <div class="auth-field">
-          <label data-i18n="event_name_label">Event Name</label>
-          <input type="text" id="eventName" data-i18n-placeholder="event_name_placeholder" placeholder="Enter event name" />
-        </div>
+<body>
+  <header id="header"></header>
 
-        <div class="auth-field">
-          <label data-i18n="event_date_label">Date</label>
-          <input type="date" id="eventDate" />
-        </div>
+  <main class="protected-main">
+    <h1 class="protected-title" data-i18n="submit_event_title">Submit an Event</h1>
+    <p class="auth-error" id="eventPageMessage"></p>
+    <form class="event-form" id="eventForm" hidden>
+      <div class="auth-field">
+        <label data-i18n="event_name_label">Event Name</label>
+        <input type="text" id="eventName" data-i18n-placeholder="event_name_placeholder"
+          placeholder="Enter event name" />
+      </div>
 
-        <div class="auth-field">
-          <label data-i18n="event_location_label">Location</label>
-          <input type="text" id="eventLocation" data-i18n-placeholder="event_location_placeholder" placeholder="Enter location" />
-        </div>
+      <div class="auth-field">
+        <label data-i18n="event_date_label">Date</label>
+        <input type="date" id="eventDate" />
+      </div>
 
-        <div class="auth-field">
-          <label data-i18n="event_description_label">Description</label>
-          <textarea id="eventDescription" rows="5" data-i18n-placeholder="event_description_placeholder" placeholder="Enter event description"></textarea>
-        </div>
+      <div class="auth-field">
+        <label data-i18n="event_location_label">Location</label>
+        <input type="text" id="eventLocation" data-i18n-placeholder="event_location_placeholder"
+          placeholder="Enter location" />
+      </div>
 
-        <button type="submit" class="auth-btn" data-i18n="submit_btn">Submit</button>
-        <p class="auth-error" id="eventFormMessage"></p>
-      </form>
-    </main>
+      <div class="auth-field">
+        <label data-i18n="event_description_label">Description</label>
+        <textarea id="eventDescription" rows="5" data-i18n-placeholder="event_description_placeholder"
+          placeholder="Enter event description"></textarea>
+      </div>
 
-    <footer id="footer"></footer>
+      <button type="submit" class="auth-btn" data-i18n="submit_btn">Submit</button>
+      <p class="auth-error" id="eventFormMessage"></p>
+    </form>
 
-    <script src="/index.js"></script>
-    <script>
-      // Redirect if not authed
-      if (!localStorage.getItem('token')) {
+  </main>
+
+  <footer id="footer"></footer>
+
+  <script src="/index.js"></script>
+  <script>
+
+
+    const eventForm = document.getElementById('eventForm');
+    const pageMessageEl = document.getElementById('eventPageMessage');
+    const formMessageEl = document.getElementById('eventFormMessage');
+
+    async function initializeEventPage() {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
         window.location.href = '/login.html';
+        return;
       }
 
-      document.getElementById('eventForm').addEventListener('submit', (e) => {
-        e.preventDefault();
+      try {
+        const res = await fetch('/api/me', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
 
-        const eventData = {
-          name: document.getElementById('eventName').value,
-          date: document.getElementById('eventDate').value,
-          location: document.getElementById('eventLocation').value,
-          description: document.getElementById('eventDescription').value,
-        };
+        if (res.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login.html';
+          return;
+        }
 
-        // Placeholder — wire up to a real endpoint, e.g. POST /api/events
-        console.log('Event submitted:', eventData);
+        if (!res.ok) {
+          throw new Error(
+            'Could not verify account permissions'
+          );
+        }
 
-        const messageEl = document.getElementById('eventFormMessage');
-        messageEl.style.color = 'green';
-        messageEl.textContent = 'Event submitted successfully.';
-        document.getElementById('eventForm').reset();
-      });
-    </script>
-    <script src="translations.js"></script>
-  </body>
+        const user = await res.json();
+        if (!user.permissions?.canCreateDrafts) {
+          document.querySelector(
+            '.protected-title'
+          ).textContent = 'Access denied';
+
+          eventForm.hidden = true;
+          pageMessageEl.textContent = 'Your account does not have permission to submit events.';
+
+          return;
+        }
+
+        eventForm.hidden = false;
+      } catch (error) {
+        eventForm.hidden = true;
+        formMessageEl.textContent = error.message;
+      }
+    }
+
+    eventForm.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const eventData = {
+        name: document.getElementById('eventName').value.trim(),
+        date: document.getElementById('eventDate').value,
+        location: document
+          .getElementById('eventLocation')
+          .value
+          .trim(),
+        description: document
+          .getElementById('eventDescription')
+          .value
+          .trim()
+      };
+
+      console.log('Event submitted:', eventData);
+
+      formMessageEl.style.color = 'green';
+      formMessageEl.textContent =
+        'Event submitted successfully.';
+
+      eventForm.reset();
+    });
+
+    initializeEventPage();
+  </script>
+  <script src="translations.js"></script>
+</body>
+
 </html>

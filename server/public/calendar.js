@@ -116,7 +116,7 @@ function formatDayLabel(event) {
         sameYear &&
         endDay !== startDay
     ) {
-        return `${startDay}–${endDay}`;
+        return `${startDay}-${endDay}`;
     }
 
     return String(startDay);
@@ -157,7 +157,7 @@ function formatEventTime(
             new Date(event.endDate)
         );
 
-    return `${startTime}–${endTime}`;
+    return `${startTime}-${endTime}`;
 }
 
 function createEventCard(event, language, locale) {

@@ -55,7 +55,7 @@ const navLinks = {
 
 // header links that aren't dropdowns
 const standaloneLinks = [
-  { route: "/contact.html", i18n: "menu_connections", protected: true },
+  //{ route: "/contact.html", i18n: "menu_connections", protected: true },
 ];
 
 // list of only protected pages
@@ -486,25 +486,25 @@ function updateAuthButtons() {
       </button>
     `;
 
-document
-  .getElementById("signOutBtn")
-  .addEventListener("click", () => {
-    const currentPath = window.location.pathname;
+    document
+      .getElementById("signOutBtn")
+      .addEventListener("click", () => {
+        const currentPath = window.location.pathname;
 
-    localStorage.removeItem("token");
+        localStorage.removeItem("token");
 
-    if (protectedPages.has(currentPath)) {
-      window.location.replace("/login.html");
-      return;
-    }
+        if (protectedPages.has(currentPath)) {
+          window.location.replace("/login.html");
+          return;
+        }
 
-    updateAuthRestrictedItems();
-    updateAuthButtons();
+        updateAuthRestrictedItems();
+        updateAuthButtons();
 
-    if (typeof applyLanguage === "function") {
-      applyLanguage(currentLang);
-    }
-  });
+        if (typeof applyLanguage === "function") {
+          applyLanguage(currentLang);
+        }
+      });
   } else {
     authButtons.innerHTML = `
       <a

@@ -104,7 +104,7 @@ function formatEventSchedule(event) {
     }
 
     return (
-      `${startLabel} – ` +
+      `${startLabel} - ` +
       `${dateFormatter.format(end)} · ` +
       reviewTranslate("all_day")
     );
@@ -142,13 +142,13 @@ function formatEventSchedule(event) {
   if (sameDay) {
     return (
       `${startDateLabel} · ` +
-      `${startTimeLabel}–` +
+      `${startTimeLabel}-` +
       timeFormatter.format(end)
     );
   }
 
   return (
-    `${startDateLabel}, ${startTimeLabel} – ` +
+    `${startDateLabel}, ${startTimeLabel} - ` +
     `${dateFormatter.format(end)}, ` +
     timeFormatter.format(end)
   );
@@ -718,11 +718,11 @@ async function submitReview(
   const activeButton =
     action === "publish"
       ? card.querySelector(
-          ".review-publish-button"
-        )
+        ".review-publish-button"
+      )
       : card.querySelector(
-          ".review-reject-button"
-        );
+        ".review-reject-button"
+      );
 
   activeButton.textContent =
     reviewTranslate(

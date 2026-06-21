@@ -53,6 +53,11 @@ const translations = {
     loading_text: "Loading...",
     editable_tag: "Editable",
     field_role: 'Role',
+    calendar_title: "Events Calendar",
+calendar_intro: "Upcoming events in chronological order.",
+loading_events: "Loading events...",
+no_upcoming_events: "There are no upcoming events.",
+events_load_error: "Events could not be loaded.",
   },
   fr: {
     title: "RCMCE",
@@ -107,6 +112,11 @@ const translations = {
     loading_text: "Loading...",
     editable_tag: "Editable",
     field_role: 'Rôle',
+    calendar_title: "Calendrier des événements",
+calendar_intro: "Événements à venir en ordre chronologique.",
+loading_events: "Chargement des événements...",
+no_upcoming_events: "Il n'y a aucun événement à venir.",
+events_load_error: "Impossible de charger les événements.",
   }
 };
  
@@ -133,6 +143,12 @@ function applyLanguage(lang) {
   langToggle.textContent = lang === "en" ? "FR" : "EN";
   localStorage.setItem("lang", lang);
   currentLang = lang;
+
+  document.dispatchEvent(
+  new CustomEvent('languagechange', {
+    detail: { language: lang }
+  })
+);
 }
  
 langToggle.addEventListener("click", () => {

@@ -23,7 +23,7 @@ const navLinks = {
     items: [
       { route: "/calendar.html", i18n: "menu_news_option_1" },
       {
-  route: "/protected.html",
+  route: "/submit_event.html",
   i18n: "menu_news_option_2",
   permission: "canCreateDrafts"
 },

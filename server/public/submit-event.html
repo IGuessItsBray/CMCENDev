@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title data-i18n="submit_event_page_title">
+      Submit an Event | CMCEN / RCMCE
+    </title>
+
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="event-submit-main">
+      <section
+        class="event-submit-shell"
+        aria-labelledby="submitEventTitle"
+      >
+        <header class="event-submit-heading">
+          <div
+            class="event-submit-standard"
+            aria-hidden="true"
+          >
+            <span class="event-submit-standard-grey"></span>
+            <span class="event-submit-standard-navy"></span>
+          </div>
+
+          <div class="event-submit-heading-copy">
+            <p
+              class="event-submit-eyebrow"
+              data-i18n="event_submission_eyebrow"
+            >
+              Event submission
+            </p>
+
+            <h1
+              id="submitEventTitle"
+              data-i18n="submit_event_title"
+            >
+              Submit an Event
+            </h1>
+
+            <p data-i18n="submit_event_intro">
+              Enter the English and French details side by side,
+              then set the schedule.
+            </p>
+          </div>
+        </header>
+
+        <p
+          class="event-page-message"
+          id="eventPageMessage"
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></p>
+
+        <form
+          class="event-submit-form"
+          id="eventForm"
+          hidden
+        >
+          <div class="event-language-grid">
+            <section
+              class="event-language-panel"
+              lang="en"
+              aria-labelledby="englishEventDetails"
+            >
+              <header class="event-language-heading">
+                <div>
+                  <span class="event-language-code">
+                    EN
+                  </span>
+
+                  <h2 id="englishEventDetails">
+                    English
+                  </h2>
+                </div>
+              </header>
+
+              <div class="event-field">
+                <label for="eventTitleEn">
+                  Event title
+                </label>
+
+                <input
+                  type="text"
+                  id="eventTitleEn"
+                  name="titleEn"
+                  maxlength="500"
+                  autocomplete="off"
+                />
+              </div>
+
+              <div class="event-field">
+                <label for="eventLocationEn">
+                  Location
+                </label>
+
+                <input
+                  type="text"
+                  id="eventLocationEn"
+                  name="locationEn"
+                  maxlength="500"
+                  autocomplete="off"
+                />
+              </div>
+
+              <div class="event-field">
+                <label for="eventDescriptionEn">
+                  Description
+                </label>
+
+                <textarea
+                  id="eventDescriptionEn"
+                  name="descriptionEn"
+                  rows="6"
+                  maxlength="10000"
+                ></textarea>
+              </div>
+            </section>
+
+            <section
+              class="event-language-panel"
+              lang="fr"
+              aria-labelledby="frenchEventDetails"
+            >
+              <header class="event-language-heading">
+                <div>
+                  <span class="event-language-code">
+                    FR
+                  </span>
+
+                  <h2 id="frenchEventDetails">
+                    Français
+                  </h2>
+                </div>
+              </header>
+
+              <div class="event-field">
+                <label for="eventTitleFr">
+                  Titre de l’événement
+                </label>
+
+                <input
+                  type="text"
+                  id="eventTitleFr"
+                  name="titleFr"
+                  maxlength="500"
+                  autocomplete="off"
+                />
+              </div>
+
+              <div class="event-field">
+                <label for="eventLocationFr">
+                  Lieu
+                </label>
+
+                <input
+                  type="text"
+                  id="eventLocationFr"
+                  name="locationFr"
+                  maxlength="500"
+                  autocomplete="off"
+                />
+              </div>
+
+              <div class="event-field">
+                <label for="eventDescriptionFr">
+                  Description
+                </label>
+
+                <textarea
+                  id="eventDescriptionFr"
+                  name="descriptionFr"
+                  rows="6"
+                  maxlength="10000"
+                ></textarea>
+              </div>
+            </section>
+          </div>
+
+          <p
+            class="event-language-note"
+            data-i18n="event_language_note"
+          >
+            At least one event title is required. Add both
+            language versions whenever possible.
+          </p>
+
+          <section
+            class="event-schedule-section"
+            aria-labelledby="eventScheduleHeading"
+          >
+            <header class="event-section-heading">
+              <div>
+                <p
+                  class="event-section-eyebrow"
+                  data-i18n="event_shared_details"
+                >
+                  Shared details
+                </p>
+
+                <h2
+                  id="eventScheduleHeading"
+                  data-i18n="event_schedule_heading"
+                >
+                  Schedule
+                </h2>
+              </div>
+
+              <label
+                class="event-toggle"
+                for="eventAllDay"
+              >
+                <input
+                  type="checkbox"
+                  id="eventAllDay"
+                  checked
+                />
+
+                <span data-i18n="event_all_day">
+                  All-day event
+                </span>
+              </label>
+            </header>
+
+            <div class="event-schedule-grid">
+              <div class="event-field">
+                <label
+                  for="eventStartDate"
+                  data-i18n="event_start_date"
+                >
+                  Start date
+                </label>
+
+                <input
+                  type="date"
+                  id="eventStartDate"
+                  name="startDate"
+                  required
+                />
+              </div>
+
+              <div
+                class="event-field"
+                id="eventStartTimeField"
+                hidden
+              >
+                <label
+                  for="eventStartTime"
+                  data-i18n="event_start_time"
+                >
+                  Start time
+                </label>
+
+                <input
+                  type="time"
+                  id="eventStartTime"
+                  name="startTime"
+                  step="300"
+                />
+              </div>
+
+              <div class="event-field">
+                <label
+                  for="eventEndDate"
+                  data-i18n="event_end_date"
+                >
+                  End date
+                </label>
+
+                <input
+                  type="date"
+                  id="eventEndDate"
+                  name="endDate"
+                />
+
+                <small data-i18n="event_end_date_hint">
+                  Optional for an all-day event.
+                </small>
+              </div>
+
+              <div
+                class="event-field"
+                id="eventEndTimeField"
+                hidden
+              >
+                <label
+                  for="eventEndTime"
+                  data-i18n="event_end_time"
+                >
+                  End time
+                </label>
+
+                <input
+                  type="time"
+                  id="eventEndTime"
+                  name="endTime"
+                  step="300"
+                />
+              </div>
+            </div>
+
+            <p
+              class="event-time-zone-note"
+              id="eventTimeZoneNote"
+              data-i18n="event_local_time_note"
+              hidden
+            >
+              Times use the local time on your device.
+            </p>
+          </section>
+
+          <section class="event-submit-options">
+            <div class="event-publication-copy">
+              <label
+                class="event-toggle event-publish-toggle"
+                id="publishNowContainer"
+                for="eventPublishNow"
+                hidden
+              >
+                <input
+                  type="checkbox"
+                  id="eventPublishNow"
+                />
+
+                <span>
+                  <strong data-i18n="event_publish_now">
+                    Publish immediately
+                  </strong>
+
+                  <small
+                    data-i18n="event_publish_now_hint"
+                  >
+                    Skip the review queue and publish this
+                    event now.
+                  </small>
+                </span>
+              </label>
+
+              <p
+                class="event-review-note"
+                id="eventReviewNote"
+                data-i18n="event_review_note"
+              >
+                Your event will be sent to an editor for
+                review.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              class="event-submit-button"
+              id="eventSubmitButton"
+              data-i18n="event_submit_button"
+            >
+              Submit event
+            </button>
+          </section>
+
+          <p
+            class="event-form-message"
+            id="eventFormMessage"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></p>
+        </form>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/submit-event.js"></script>
+  </body>
+</html>

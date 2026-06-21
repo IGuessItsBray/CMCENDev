@@ -151,12 +151,28 @@ router.post(
             }
 
             if (
-                parsedEndDate &&
-                parsedEndDate < parsedStartDate
+                !Boolean(allDay) &&
+                !parsedEndDate
             ) {
                 return res.status(400).json({
                     error:
-                        'End date cannot be earlier than start date'
+                        "A timed event requires an end date and time"
+                });
+            }
+
+            if (
+                parsedEndDate &&
+                (
+                    Boolean(allDay)
+                        ? parsedEndDate < parsedStartDate
+                        : parsedEndDate <= parsedStartDate
+                )
+            ) {
+                return res.status(400).json({
+                    error:
+                        Boolean(allDay)
+                            ? "End date cannot be earlier than start date"
+                            : "A timed event must end after it starts"
                 });
             }
 
@@ -249,169 +265,169 @@ router.post(
 
 // list the events awaiting review
 router.get(
-  '/review',
-  authMiddleware,
-  requirePermission('canReviewAndPublish'),
-  async (req, res) => {
-    try {
-      const allowedStatuses = [
-        'pending',
-        'rejected',
-        'published'
-      ];
+    '/review',
+    authMiddleware,
+    requirePermission('canReviewAndPublish'),
+    async (req, res) => {
+        try {
+            const allowedStatuses = [
+                'pending',
+                'rejected',
+                'published'
+            ];
 
-      const requestedStatus =
-        typeof req.query.status === 'string'
-          ? req.query.status
-          : 'pending';
+            const requestedStatus =
+                typeof req.query.status === 'string'
+                    ? req.query.status
+                    : 'pending';
 
-      if (!allowedStatuses.includes(requestedStatus)) {
-        return res.status(400).json({
-          error: 'Invalid review status'
-        });
-      }
+            if (!allowedStatuses.includes(requestedStatus)) {
+                return res.status(400).json({
+                    error: 'Invalid review status'
+                });
+            }
 
-      const events = await Event.find({
-        status: requestedStatus
-      })
-        .populate(
-          'createdBy',
-          'username accountName email role'
-        )
-        .populate(
-          'publishedBy',
-          'username accountName role'
-        )
-        .sort({
-          createdAt: 1
-        })
-        .lean();
+            const events = await Event.find({
+                status: requestedStatus
+            })
+                .populate(
+                    'createdBy',
+                    'username accountName email role'
+                )
+                .populate(
+                    'publishedBy',
+                    'username accountName role'
+                )
+                .sort({
+                    createdAt: 1
+                })
+                .lean();
 
-      res.json({
-        status: requestedStatus,
-        events
-      });
-    } catch (error) {
-      console.error(
-        'Could not load review queue:',
-        error
-      );
+            res.json({
+                status: requestedStatus,
+                events
+            });
+        } catch (error) {
+            console.error(
+                'Could not load review queue:',
+                error
+            );
 
-      res.status(500).json({
-        error: 'Could not load review queue'
-      });
+            res.status(500).json({
+                error: 'Could not load review queue'
+            });
+        }
     }
-  }
 );
 
 // publish or reject an event
 router.patch(
-  '/:eventId/review',
-  authMiddleware,
-  requirePermission('canReviewAndPublish'),
-  async (req, res) => {
-    try {
-      const {
-        action,
-        rejectionReason
-      } = req.body;
+    '/:eventId/review',
+    authMiddleware,
+    requirePermission('canReviewAndPublish'),
+    async (req, res) => {
+        try {
+            const {
+                action,
+                rejectionReason
+            } = req.body;
 
-      if (!['publish', 'reject'].includes(action)) {
-        return res.status(400).json({
-          error: 'Review action must be publish or reject'
-        });
-      }
+            if (!['publish', 'reject'].includes(action)) {
+                return res.status(400).json({
+                    error: 'Review action must be publish or reject'
+                });
+            }
 
-      const event = await Event.findById(
-        req.params.eventId
-      );
+            const event = await Event.findById(
+                req.params.eventId
+            );
 
-      if (!event) {
-        return res.status(404).json({
-          error: 'Event not found'
-        });
-      }
+            if (!event) {
+                return res.status(404).json({
+                    error: 'Event not found'
+                });
+            }
 
-      if (event.status !== 'pending') {
-        return res.status(409).json({
-          error:
-            'Only pending events can be reviewed'
-        });
-      }
+            if (event.status !== 'pending') {
+                return res.status(409).json({
+                    error:
+                        'Only pending events can be reviewed'
+                });
+            }
 
-      if (action === 'reject') {
-        const cleanReason =
-          typeof rejectionReason === 'string'
-            ? rejectionReason.trim()
-            : '';
+            if (action === 'reject') {
+                const cleanReason =
+                    typeof rejectionReason === 'string'
+                        ? rejectionReason.trim()
+                        : '';
 
-        if (!cleanReason) {
-          return res.status(400).json({
-            error:
-              'A rejection reason is required'
-          });
+                if (!cleanReason) {
+                    return res.status(400).json({
+                        error:
+                            'A rejection reason is required'
+                    });
+                }
+
+                event.status = 'rejected';
+                event.rejectionReason = cleanReason;
+                event.publishedBy = null;
+                event.publishedAt = null;
+            }
+
+            if (action === 'publish') {
+                event.status = 'published';
+                event.rejectionReason = null;
+                event.publishedBy = req.user._id;
+                event.publishedAt = new Date();
+            }
+
+            event.updatedBy = req.user._id;
+
+            await event.save();
+
+            await event.populate(
+                'createdBy',
+                'username accountName email role'
+            );
+
+            await event.populate(
+                'publishedBy',
+                'username accountName role'
+            );
+
+            res.json({
+                message:
+                    action === 'publish'
+                        ? 'Event published successfully'
+                        : 'Event rejected',
+
+                event
+            });
+        } catch (error) {
+            console.error(
+                'Could not review event:',
+                error
+            );
+
+            if (error.name === 'CastError') {
+                return res.status(400).json({
+                    error: 'Invalid event ID'
+                });
+            }
+
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({
+                    error: Object.values(error.errors)
+                        .map(item => item.message)
+                        .join(', ')
+                });
+            }
+
+            res.status(500).json({
+                error: 'Could not review event'
+            });
         }
-
-        event.status = 'rejected';
-        event.rejectionReason = cleanReason;
-        event.publishedBy = null;
-        event.publishedAt = null;
-      }
-
-      if (action === 'publish') {
-        event.status = 'published';
-        event.rejectionReason = null;
-        event.publishedBy = req.user._id;
-        event.publishedAt = new Date();
-      }
-
-      event.updatedBy = req.user._id;
-
-      await event.save();
-
-      await event.populate(
-        'createdBy',
-        'username accountName email role'
-      );
-
-      await event.populate(
-        'publishedBy',
-        'username accountName role'
-      );
-
-      res.json({
-        message:
-          action === 'publish'
-            ? 'Event published successfully'
-            : 'Event rejected',
-
-        event
-      });
-    } catch (error) {
-      console.error(
-        'Could not review event:',
-        error
-      );
-
-      if (error.name === 'CastError') {
-        return res.status(400).json({
-          error: 'Invalid event ID'
-        });
-      }
-
-      if (error.name === 'ValidationError') {
-        return res.status(400).json({
-          error: Object.values(error.errors)
-            .map(item => item.message)
-            .join(', ')
-        });
-      }
-
-      res.status(500).json({
-        error: 'Could not review event'
-      });
     }
-  }
 );
 
 module.exports = router;

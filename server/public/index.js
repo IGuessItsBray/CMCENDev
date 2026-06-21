@@ -23,7 +23,7 @@ const navLinks = {
     items: [
       { route: "/calendar.html", i18n: "menu_news_option_1" },
       {
-        route: "/submit_event.html",
+        route: "/submit-event.html",
         i18n: "menu_news_option_2",
         permission: "canCreateDrafts"
       },
@@ -56,18 +56,23 @@ const navLinks = {
 // header links that aren't dropdowns
 const standaloneLinks = [
   { route: "/contact.html", i18n: "menu_connections", protected: true },
-  { route: "/dashboard.html", i18n: "dashboard_title", protected: true }
 ];
 
 // list of only protected pages
-const protectedPages = [
-  ...Object.values(navLinks).flatMap(
-    dropdown => dropdown.items
-  ),
+const protectedPages = new Set([
+  "/dashboard.html",
+  "/submit-event.html",
+  "/review-events.html",
+
+  ...Object.values(navLinks)
+    .flatMap(dropdown => dropdown.items)
+    .filter(item => item.protected || item.permission)
+    .map(item => item.route),
+
   ...standaloneLinks
-]
-  .filter(item => item.protected || item.permission)
-  .map(item => item.route);
+    .filter(item => item.protected || item.permission)
+    .map(item => item.route)
+]);
 
 function getAccessAttributes(item) {
   if (item.permission) {
@@ -79,21 +84,6 @@ function getAccessAttributes(item) {
   }
 
   return '';
-}
-
-function renderDropdown(dropdown) {
-  const itemsHtml = dropdown.items.map(item => `
-    <li ${item.protected ? 'data-auth-required' : ''}>
-      <a href="${item.route}" data-i18n="${item.i18n}"></a>
-    </li>
-  `).join('');
-
-  return `
-    <div class="dropdown">
-      <div class="dropdown-toggle" data-i18n="${dropdown.titleKey}"></div>
-      <ul class="dropdown-menu">${itemsHtml}</ul>
-    </div>
-  `;
 }
 
 function renderDropdown(dropdown) {
@@ -132,55 +122,403 @@ function renderStandaloneLink(link) {
 }
 
 function loadHeader() {
-  const dropdownsHtml = Object.values(navLinks).map(renderDropdown).join('');
-  const standaloneHtml = standaloneLinks.map(renderStandaloneLink).join('');
+  const dropdownsHtml = Object.values(navLinks)
+    .map(renderDropdown)
+    .join('');
 
-  document.getElementById('header').innerHTML = `
-    <a href="/index.html" class="logo-link">
-      <img src="images/logo.png" alt="Logo" class="logo" />
-    </a>
-    <nav class="nav-bar">
-      ${dropdownsHtml}
-      ${standaloneHtml}
-    </nav>
-    <div class="auth-buttons">
-      <a href="login.html" class="auth-link" data-i18n="login_btn">Login</a>
-      <a href="register.html" class="auth-link auth-link--primary" data-i18n="register_btn">Register</a>
+  const standaloneHtml = standaloneLinks
+    .map(renderStandaloneLink)
+    .join('');
+
+  const header = document.getElementById('header');
+
+  header.className = 'site-header';
+
+  header.innerHTML = `
+    <div class="header-identity-row">
+      <div class="header-inner">
+        <a
+          href="/index.html"
+          class="site-identity"
+          aria-label="CMCEN / RCMCE home"
+        >
+          <img
+            src="/images/logo.png"
+            alt=""
+            class="site-logo"
+          />
+
+          <span class="identity-copy">
+            <span class="identity-acronym">
+              CMCEN <span aria-hidden="true">/</span> RCMCE
+            </span>
+
+            <span
+              class="identity-name"
+              data-i18n="site_name_full"
+            ></span>
+          </span>
+        </a>
+
+        <div class="header-utilities">
+          <div class="auth-buttons"></div>
+
+          <button
+            type="button"
+            class="lang-toggle"
+            id="langToggle"
+            aria-label="Change language"
+          >
+            FR
+          </button>
+
+          <a
+            href="/donate.html"
+            class="donate-link"
+            data-i18n="donate_now"
+          >
+            Donate
+          </a>
+        </div>
+      </div>
     </div>
-    <button class="lang-toggle" id="langToggle">FR</button>
+
+    <div class="header-navigation-row">
+      <div class="header-inner header-navigation-inner">
+        <nav
+          class="nav-bar"
+          aria-label="Primary navigation"
+        >
+          ${dropdownsHtml}
+          ${standaloneHtml}
+        </nav>
+
+        <form
+          class="header-search"
+          action="/search.html"
+          method="get"
+          role="search"
+        >
+          <label
+            for="headerSearchInput"
+            class="visually-hidden"
+            data-i18n="search_site"
+          >
+            Search the site
+          </label>
+
+          <input
+            type="search"
+            id="headerSearchInput"
+            name="q"
+            data-i18n-placeholder="search_placeholder"
+            placeholder="Search"
+          />
+
+          <button
+            type="submit"
+            class="header-search-button"
+            aria-label="Search"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="6.5"></circle>
+              <path d="M16 16l4 4"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
   `;
 }
 
+const footerSocialLinks = [
+  {
+    label: 'Facebook',
+    url: 'https://www.facebook.com/'
+  },
+  {
+    label: 'Instagram',
+    url: 'https://www.instagram.com/'
+  }
+];
+
 function loadFooter() {
-  document.getElementById('footer').innerHTML = `
-      <p data-i18n="footer_copyright"></p>
+  const footer = document.getElementById('footer');
+
+  if (!footer) return;
+
+  const socialLinksHtml = footerSocialLinks
+    .map(link => `
+      <a
+        href="${link.url}"
+        class="footer-social-link"
+        target="_blank"
+        rel="noopener"
+      >
+        ${link.label}
+      </a>
+    `)
+    .join('');
+
+  footer.className = 'site-footer';
+
+  footer.innerHTML = `
+    <section class="ownership-band">
+      <div class="footer-inner ownership-inner">
+        <span
+          class="ownership-label"
+          data-i18n="site_ownership_label"
+        >
+          Site ownership
+        </span>
+
+        <p data-i18n="site_ownership_statement">
+          This website is owned and operated by the C&E Association,
+          a not-for-profit organization. It is not operated by the
+          Government of Canada or the Department of National Defence.
+        </p>
+      </div>
+    </section>
+
+    <div class="footer-main">
+      <div class="footer-inner footer-grid">
+        <section class="footer-brand">
+          <a
+            href="/index.html"
+            class="footer-identity"
+            aria-label="CMCEN / RCMCE home"
+          >
+            <img
+              src="/images/logo.png"
+              alt=""
+              class="footer-logo"
+            />
+
+            <span>
+              <strong>CMCEN / RCMCE</strong>
+
+              <span
+                class="footer-full-name"
+                data-i18n="site_name_full"
+              ></span>
+            </span>
+          </a>
+
+          <p
+            class="footer-mission"
+            data-i18n="footer_mission"
+          >
+            Connecting members, supporting veterans,
+            and preserving the history of the Branch.
+          </p>
+        </section>
+
+        <nav
+          class="footer-column"
+          aria-labelledby="footerQuickLinks"
+        >
+          <h2
+            id="footerQuickLinks"
+            data-i18n="footer_quick_links"
+          >
+            Quick links
+          </h2>
+
+          <ul>
+            <li>
+              <a href="/about.html" data-i18n="menu_about">
+                About
+              </a>
+            </li>
+
+            <li>
+              <a href="/donate.html" data-i18n="donate_now">
+                Donate
+              </a>
+            </li>
+
+            <li>
+              <a href="/calendar.html" data-i18n="calendar_title">
+                Events Calendar
+              </a>
+            </li>
+
+            <li>
+              <a href="/subscribe.html" data-i18n="subscribe">
+                Subscribe
+              </a>
+            </li>
+
+            <li>
+              <a href="/contact.html" data-i18n="menu_contact">
+                Contact
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <section class="footer-column">
+          <h2 data-i18n="footer_contact">
+            Contact
+          </h2>
+
+          <address class="footer-contact">
+            <p>
+              <span data-i18n="footer_address_label">Address</span><br />
+              <span>Association address to be confirmed</span>
+            </p>
+
+            <p>
+              <a href="mailto:contact@example.ca">
+                contact@example.ca
+              </a>
+            </p>
+
+            <p>
+              <a href="/contact.html" data-i18n="contact_form_link">
+                Contact form
+              </a>
+            </p>
+          </address>
+        </section>
+
+        <section class="footer-column footer-legal">
+          <h2 data-i18n="footer_information">
+            Information
+          </h2>
+
+          <ul>
+            <li>
+              <a href="/privacy.html" data-i18n="privacy_policy">
+                Privacy Policy
+              </a>
+            </li>
+
+            <li>
+              <a href="/casl.html" data-i18n="casl_disclosure">
+                CASL Disclosure
+              </a>
+            </li>
+
+            <li>
+              <a href="/accessibility.html" data-i18n="accessibility">
+                Accessibility
+              </a>
+            </li>
+          </ul>
+
+          <div
+            class="footer-social"
+            aria-label="Social media"
+          >
+            ${socialLinksHtml}
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-inner footer-bottom-inner">
+        <p>
+          &copy;
+          <span id="copyrightYear"></span>
+          <span data-i18n="footer_copyright">
+            C&E Association. All rights reserved.
+          </span>
+        </p>
+
+        <p class="footer-language-mark">
+          CMCEN <span aria-hidden="true">/</span> RCMCE
+        </p>
+      </div>
+    </div>
   `;
+
+  const yearElement =
+    document.getElementById('copyrightYear');
+
+  if (yearElement) {
+    yearElement.textContent =
+      new Date().getFullYear();
+  }
 }
 
 loadHeader();
 loadFooter();
 
 const authButtons = document.querySelector('.auth-buttons');
+function getAccountIcon() {
+  return `
+    <svg
+      class="utility-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="4"></circle>
+      <path d="M4.5 21c.7-4.2 3.1-6.3 7.5-6.3s6.8 2.1 7.5 6.3"></path>
+    </svg>
+  `;
+}
 
 function updateAuthButtons() {
   const token = localStorage.getItem('token');
-  if (token) {
-    authButtons.innerHTML = `<button class="auth-link auth-link--primary" id="signOutBtn" data-i18n="signout_btn">Sign Out</button>`;
-    document.getElementById('signOutBtn').addEventListener('click', () => {
-      localStorage.removeItem('token');
-      updateAuthRestrictedItems();
-      if (protectedPages.includes(window.location.pathname)) {
-        window.location.href = '/index.html';
-      } else {
-        updateAuthButtons();
-      }
-    });
 
+  if (token) {
+    authButtons.innerHTML = `
+      <a
+        href="/dashboard.html"
+        class="utility-link account-link"
+      >
+        ${getAccountIcon()}
+        <span data-i18n="account">Account</span>
+      </a>
+
+      <button
+        type="button"
+        class="utility-link signout-link"
+        id="signOutBtn"
+        data-i18n="signout_btn"
+      >
+        Sign out
+      </button>
+    `;
+
+document
+  .getElementById("signOutBtn")
+  .addEventListener("click", () => {
+    const currentPath = window.location.pathname;
+
+    localStorage.removeItem("token");
+
+    if (protectedPages.has(currentPath)) {
+      window.location.replace("/login.html");
+      return;
+    }
+
+    updateAuthRestrictedItems();
+    updateAuthButtons();
+
+    if (typeof applyLanguage === "function") {
+      applyLanguage(currentLang);
+    }
+  });
   } else {
     authButtons.innerHTML = `
-      <a href="login.html" class="auth-link" data-i18n="login_btn">Login</a>
-      <a href="register.html" class="auth-link auth-link--primary" data-i18n="register_btn">Register</a>
+      <a
+        href="/login.html"
+        class="utility-link account-link"
+      >
+        ${getAccountIcon()}
+        <span data-i18n="login_btn">Login</span>
+      </a>
     `;
+  }
+
+  if (typeof applyLanguage === 'function') {
+    applyLanguage(currentLang);
   }
 }
 

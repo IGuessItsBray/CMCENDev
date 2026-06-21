@@ -518,3 +518,126 @@ a.dropdown-toggle {
   line-height: 1.6;
   white-space: pre-line;
 }
+
+.review-main {
+  padding: 48px 20px;
+}
+
+.review-container {
+  width: 100%;
+  max-width: 1050px;
+  margin: 0 auto;
+}
+
+.review-heading {
+  margin-bottom: 32px;
+  color: var(--white);
+}
+
+.review-heading h1 {
+  margin-bottom: 8px;
+}
+
+.review-card {
+  margin-bottom: 28px;
+  padding: 26px;
+  background: var(--white);
+  border-radius: 7px;
+  box-shadow: 0 3px 12px var(--shadow);
+}
+
+.review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ddd;
+  color: #555;
+  font-size: 13px;
+}
+
+.review-languages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-bottom: 22px;
+}
+
+.review-language-section {
+  padding: 18px;
+  background: #f6f6f6;
+  border-radius: 5px;
+}
+
+.review-language-section h3 {
+  margin-bottom: 12px;
+  color: var(--gold);
+}
+
+.review-language-section h4 {
+  margin-bottom: 10px;
+  color: var(--primary-color);
+  font-size: 19px;
+}
+
+.review-event-location {
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.review-event-description {
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.review-rejection-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.review-rejection-reason {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.review-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.review-publish-button {
+  margin-top: 0;
+}
+
+.review-reject-button {
+  padding: 10px 18px;
+  background: transparent;
+  color: #b42318;
+  border: 1px solid #b42318;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.review-reject-button:hover {
+  background: #b42318;
+  color: white;
+}
+
+.review-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .review-languages {
+    grid-template-columns: 1fr;
+  }
+}

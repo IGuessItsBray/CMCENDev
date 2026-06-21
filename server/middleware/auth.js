@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { ROLE_LEVELS } = require('../config/roles');
+const {
+  getUserPermissions
+} = require('../config/permissions');
 
 async function authMiddleware(req, res, next) {
     const authHeader = req.headers.authorization;
@@ -88,8 +91,24 @@ function requireExactRole(...allowedRoles) {
     };
 }
 
+function requirePermission(permissionName) {
+  return (req, res, next) => {
+    const permissions = getUserPermissions(req.user);
+
+    if (permissions[permissionName] !== true) {
+      return res.status(403).json({
+        error: 'Insufficient permissions'
+      });
+    }
+
+    req.permissions = permissions;
+    next();
+  };
+}
+
 module.exports = {
     authMiddleware,
     requireMinimumRole,
-    requireExactRole
+    requireExactRole,
+    requirePermission
 };

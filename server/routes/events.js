@@ -759,6 +759,10 @@ router.get(
                     'publishedBy',
                     'username accountName role'
                 )
+                .populate(
+                    'publicationPermission.confirmedBy',
+                    'username accountName email role'
+                )
                 .sort({
                     createdAt: 1
                 })

@@ -544,6 +544,29 @@ const translations = {
       "This confirmation is required before the event can be submitted for review or publication.",
     event_permission_required:
       "You must confirm chain-of-command permission before submitting the event.",
+    review_event_information:
+      "Event information",
+
+    review_submitter_record:
+      "Submitter record",
+
+    review_authorization_record:
+      "Publication authorization",
+
+    review_permission_status:
+      "Permission status",
+
+    review_permission_confirmed:
+      "Confirmed",
+
+    review_permission_not_recorded:
+      "Not recorded",
+
+    review_confirmed_by:
+      "Confirmed by",
+
+    review_confirmed_on:
+      "Confirmed on",
   },
 
   fr: {
@@ -1131,6 +1154,29 @@ const translations = {
       "Cette confirmation est requise avant que l'événement puisse être soumis aux fins de révision ou de publication.",
     event_permission_required:
       "Vous devez confirmer l'autorisation de la chaîne de commandement avant de soumettre l'événement.",
+    review_event_information:
+      "Renseignements sur l'événement",
+
+    review_submitter_record:
+      "Dossier du demandeur",
+
+    review_authorization_record:
+      "Autorisation de publication",
+
+    review_permission_status:
+      "État de l'autorisation",
+
+    review_permission_confirmed:
+      "Confirmée",
+
+    review_permission_not_recorded:
+      "Non consignée",
+
+    review_confirmed_by:
+      "Confirmée par",
+
+    review_confirmed_on:
+      "Confirmée le",
   },
 };
 

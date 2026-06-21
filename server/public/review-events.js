@@ -104,21 +104,35 @@ function formatEventSchedule(event) {
     }
 
     return (
-      `${startLabel} - ` +
+      `${startLabel} – ` +
       `${dateFormatter.format(end)} · ` +
       reviewTranslate("all_day")
     );
   }
 
+  const timeZone =
+    event.timezone || undefined;
+
   const dateFormatter =
     new Intl.DateTimeFormat(locale, {
-      dateStyle: "medium"
+      dateStyle: "medium",
+      timeZone
     });
 
   const timeFormatter =
     new Intl.DateTimeFormat(locale, {
-      hour: "numeric",
-      minute: "2-digit"
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+      timeZone
+    });
+
+  const dayFormatter =
+    new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone
     });
 
   const startDateLabel =
@@ -135,20 +149,19 @@ function formatEventSchedule(event) {
   }
 
   const sameDay =
-    start.getFullYear() === end.getFullYear() &&
-    start.getMonth() === end.getMonth() &&
-    start.getDate() === end.getDate();
+    dayFormatter.format(start) ===
+    dayFormatter.format(end);
 
   if (sameDay) {
     return (
       `${startDateLabel} · ` +
-      `${startTimeLabel}-` +
+      `${startTimeLabel}–` +
       timeFormatter.format(end)
     );
   }
 
   return (
-    `${startDateLabel}, ${startTimeLabel} - ` +
+    `${startDateLabel}, ${startTimeLabel} – ` +
     `${dateFormatter.format(end)}, ` +
     timeFormatter.format(end)
   );
@@ -165,6 +178,159 @@ function formatContentArea(value) {
       /\b\w/g,
       character => character.toUpperCase()
     );
+}
+
+const timezoneTranslationKeys = {
+  "America/St_Johns":
+    "timezone_newfoundland",
+
+  "America/Halifax":
+    "timezone_atlantic",
+
+  "America/Toronto":
+    "timezone_eastern",
+
+  "America/Winnipeg":
+    "timezone_central",
+
+  "America/Edmonton":
+    "timezone_mountain",
+
+  "America/Vancouver":
+    "timezone_pacific",
+
+  "America/Regina":
+    "timezone_central",
+
+  "America/Whitehorse":
+    "timezone_mountain"
+};
+
+function formatTranslatedOption(
+  prefix,
+  value
+) {
+  if (!value) {
+    return "—";
+  }
+
+  const normalizedValue = String(value)
+    .toLowerCase()
+    .replace(/-/g, "_");
+
+  const key =
+    `${prefix}_${normalizedValue}`;
+
+  const translated =
+    reviewTranslate(key);
+
+  if (translated === key) {
+    return formatContentArea(value);
+  }
+
+  return translated;
+}
+
+function formatEventTimezone(value) {
+  if (!value) {
+    return "—";
+  }
+
+  const translationKey =
+    timezoneTranslationKeys[value];
+
+  if (!translationKey) {
+    return value;
+  }
+
+  return (
+    `${reviewTranslate(translationKey)} ` +
+    `(${value})`
+  );
+}
+
+function formatReviewUser(user) {
+  if (
+    !user ||
+    typeof user !== "object"
+  ) {
+    return "—";
+  }
+
+  return (
+    user.accountName ||
+    user.username ||
+    user.email ||
+    "—"
+  );
+}
+
+function createReviewRecordSection(
+  titleKey,
+  items,
+  additionalClass = ""
+) {
+  const section =
+    document.createElement("section");
+
+  section.className =
+    `review-record-section ${additionalClass}`
+      .trim();
+
+  const heading =
+    document.createElement("h3");
+
+  heading.textContent =
+    reviewTranslate(titleKey);
+
+  const grid =
+    document.createElement("div");
+
+  grid.className =
+    "review-record-data";
+
+  items.forEach(item => {
+    const record =
+      document.createElement("div");
+
+    record.className =
+      "review-record-item";
+
+    if (item.wide) {
+      record.classList.add("is-wide");
+    }
+
+    const label =
+      document.createElement("span");
+
+    label.className =
+      "review-record-label";
+
+    label.textContent =
+      reviewTranslate(item.labelKey);
+
+    const value =
+      document.createElement("span");
+
+    value.className =
+      "review-record-value";
+
+    if (item.valueClass) {
+      value.classList.add(
+        item.valueClass
+      );
+    }
+
+    value.textContent =
+      item.value || "—";
+
+    record.append(label, value);
+    grid.appendChild(record);
+  });
+
+  section.append(heading, grid);
+
+  return section;
 }
 
 function createMetaItem(labelKey, value) {
@@ -310,13 +476,38 @@ function createContentSection(
     )
   );
 
+  const registrationLabel =
+    document.createElement("span");
+
+  registrationLabel.className =
+    "review-content-label";
+
+  registrationLabel.textContent =
+    reviewTranslate(
+      "event_registration_label"
+    );
+
+  const registration =
+    document.createElement("p");
+
+  registration.className =
+    "review-event-registration";
+
+  registration.textContent =
+    getContentValue(
+      event.registration,
+      language
+    ) || "—";
+
   body.append(
     titleLabel,
     title,
     locationLabel,
     location,
     descriptionLabel,
-    description
+    description,
+    registrationLabel,
+    registration
   );
 
   section.append(header, body);
@@ -413,6 +604,61 @@ function createReviewCard(event) {
     )
   );
 
+  const eventInformation =
+    createReviewRecordSection(
+      "review_event_information",
+      [
+        {
+          labelKey: "event_city",
+          value: event.city
+        },
+
+        {
+          labelKey:
+            "event_province_region",
+
+          value:
+            formatTranslatedOption(
+              "region",
+              event.provinceRegion
+            )
+        },
+
+        {
+          labelKey:
+            "event_organizing_entity",
+
+          value:
+            formatTranslatedOption(
+              "entity",
+              event.organizingEntity
+            )
+        },
+
+        {
+          labelKey: "event_type",
+
+          value:
+            formatTranslatedOption(
+              "event_type",
+              event.eventType
+            )
+        },
+
+        {
+          labelKey: "event_timezone",
+
+          value:
+            formatEventTimezone(
+              event.timezone
+            ),
+
+          wide: true
+        }
+      ],
+      "review-event-information"
+    );
+
   const languages =
     document.createElement("div");
 
@@ -425,12 +671,137 @@ function createReviewCard(event) {
       "en",
       "English"
     ),
-
     createContentSection(
       event,
       "fr",
       "Français"
     )
+  );
+
+  const submitterInformation =
+    createReviewRecordSection(
+      "review_submitter_record",
+      [
+        {
+          labelKey:
+            "event_submitter_rank",
+
+          value:
+            event.submitter?.rank
+        },
+
+        {
+          labelKey:
+            "event_submitter_first_name",
+
+          value:
+            event.submitter?.firstName
+        },
+
+        {
+          labelKey:
+            "event_submitter_last_name",
+
+          value:
+            event.submitter?.lastName
+        },
+
+        {
+          labelKey:
+            "event_submitter_unit_role",
+
+          value:
+            event.submitter?.unitRole,
+
+          wide: true
+        },
+
+        {
+          labelKey:
+            "event_submitter_email",
+
+          value:
+            event.submitter?.email,
+
+          wide: true
+        },
+
+        {
+          labelKey:
+            "event_submitter_phone",
+
+          value:
+            event.submitter?.phone || "—",
+
+          wide: true
+        }
+      ]
+    );
+
+  const permissionConfirmed =
+    event.publicationPermission
+      ?.confirmed === true;
+
+  const authorizationInformation =
+    createReviewRecordSection(
+      "review_authorization_record",
+      [
+        {
+          labelKey:
+            "review_permission_status",
+
+          value: reviewTranslate(
+            permissionConfirmed
+              ? "review_permission_confirmed"
+              : "review_permission_not_recorded"
+          ),
+
+          valueClass:
+            permissionConfirmed
+              ? "is-confirmed"
+              : "is-unconfirmed"
+        },
+
+        {
+          labelKey:
+            "review_confirmed_by",
+
+          value:
+            formatReviewUser(
+              event.publicationPermission
+                ?.confirmedBy
+            ),
+
+          wide: true
+        },
+
+        {
+          labelKey:
+            "review_confirmed_on",
+
+          value:
+            event.publicationPermission
+              ?.confirmedAt
+              ? formatSubmittedDate(
+                event.publicationPermission
+                  .confirmedAt
+              )
+              : "—",
+
+          wide: true
+        }
+      ]
+    );
+
+  const submissionRecord =
+    document.createElement("div");
+
+  submissionRecord.className =
+    "review-submission-record";
+
+  submissionRecord.append(
+    submitterInformation,
+    authorizationInformation
   );
 
   const decision =
@@ -580,7 +951,9 @@ function createReviewCard(event) {
   article.append(
     cardHeader,
     meta,
+    eventInformation,
     languages,
+    submissionRecord,
     decision
   );
 

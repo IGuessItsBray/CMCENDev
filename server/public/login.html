@@ -2,56 +2,239 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login</title>
-    <link rel="stylesheet" href="styles.css" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title data-i18n="login_page_title">
+      Member Login | CMCEN / RCMCE
+    </title>
+
+    <link rel="stylesheet" href="/styles.css" />
   </head>
+
   <body>
     <header id="header"></header>
-    <main class="auth-main">
-      <div class="auth-card">
-        <h2 data-i18n="login_title">Login</h2>
-        <p class="auth-error" id="loginError"></p>
 
-        <div class="auth-field">
-          <label data-i18n="username">Username</label>
-          <input type="text" id="loginUsername" data-i18n-placeholder="username_placeholder"/>
-        </div>
-        <div class="auth-field">
-          <label data-i18n="password">Password</label>
-          <input type="password" id="loginPassword" data-i18n-placeholder="password_placeholder" />
+    <main class="login-main">
+      <section
+        class="login-shell"
+        aria-labelledby="loginTitle"
+      >
+        <div class="login-introduction">
+          <div class="login-introduction-content">
+          
+
+<p class="login-eyebrow">
+  CMCEN / RCMCE
+</p>
+
+<h1 data-i18n="member_login_heading">
+  Member Access
+</h1>
+
+<p
+  class="login-intro-copy"
+  data-i18n="member_login_intro"
+>
+  For Association members, contributors and staff.
+</p>
+
+    
+          </div>
         </div>
 
-        <button class="auth-btn" id="loginBtn" data-i18n="login_btn">Login</button>
-        <p class="auth-switch"><span data-i18n="no_account">Don't have an account?</span> <a href="register.html" data-i18n="register_title">Register</a></p>
-      </div>
+        <div class="login-panel">
+          <div class="login-panel-heading">
+            
+
+            <h2
+              id="loginTitle"
+              data-i18n="login_title"
+            >
+              Sign in
+            </h2>
+
+            <p data-i18n="login_instruction">
+              Enter your registered username and password.
+            </p>
+          </div>
+
+          <form
+            class="login-form"
+            id="loginForm"
+          >
+            <p
+              class="login-error"
+              id="loginError"
+              role="alert"
+              aria-live="polite"
+              hidden
+            ></p>
+
+            <div class="login-field">
+              <label
+                for="loginUsername"
+                data-i18n="username"
+              >
+                Username
+              </label>
+
+              <input
+                type="text"
+                id="loginUsername"
+                name="username"
+                autocomplete="username"
+                data-i18n-placeholder="username_placeholder"
+                placeholder="Enter your username"
+                required
+              />
+            </div>
+
+            <div class="login-field">
+              <label
+                for="loginPassword"
+                data-i18n="password"
+              >
+                Password
+              </label>
+
+              <input
+                type="password"
+                id="loginPassword"
+                name="password"
+                autocomplete="current-password"
+                data-i18n-placeholder="password_placeholder"
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="login-submit"
+              id="loginBtn"
+              data-i18n="login_btn"
+            >
+              Sign in
+            </button>
+
+            <div class="login-assistance">
+              <span data-i18n="account_help">
+                Need help accessing your account?
+              </span>
+
+              <a
+                href="/contact.html"
+                data-i18n="menu_contact"
+              >
+                Contact us
+              </a>
+            </div>
+
+            <div
+              class="login-divider"
+              aria-hidden="true"
+            ></div>
+
+            <p class="login-register">
+              <span data-i18n="no_account">
+                Don't have an account?
+              </span>
+
+              <a
+                href="/register.html"
+                data-i18n="register_title"
+              >
+                Register
+              </a>
+            </p>
+          </form>
+        </div>
+      </section>
     </main>
+
     <footer id="footer"></footer>
-    <script src="index.js"></script>
+
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+
     <script>
-      document.getElementById('loginBtn').addEventListener('click', async () => {
-        const username = document.getElementById('loginUsername').value;
-        const password = document.getElementById('loginPassword').value;
-        const errorEl = document.getElementById('loginError');
-        errorEl.textContent = '';
+      const loginForm =
+        document.getElementById('loginForm');
 
-        try {
-          const res = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-          });
-          const data = await res.json();
+      const loginButton =
+        document.getElementById('loginBtn');
 
-          if (!res.ok) throw new Error(data.error || 'Login failed');
+      const errorElement =
+        document.getElementById('loginError');
 
-          localStorage.setItem('token', data.token);
-          window.location.href = '/index.html';
-        } catch (err) {
-          errorEl.textContent = err.message;
+      loginForm.addEventListener(
+        'submit',
+        async event => {
+          event.preventDefault();
+
+          const username = document
+            .getElementById('loginUsername')
+            .value
+            .trim();
+
+          const password =
+            document.getElementById('loginPassword').value;
+
+          errorElement.textContent = '';
+          errorElement.hidden = true;
+
+          loginButton.disabled = true;
+          loginButton.setAttribute('aria-busy', 'true');
+
+          try {
+            const response = await fetch('/api/login', {
+              method: 'POST',
+
+              headers: {
+                'Content-Type': 'application/json'
+              },
+
+              body: JSON.stringify({
+                username,
+                password
+              })
+            });
+
+            const data = await response
+              .json()
+              .catch(() => ({}));
+
+            if (!response.ok) {
+              throw new Error(
+                data.error || 'Login failed'
+              );
+            }
+
+            localStorage.setItem(
+              'token',
+              data.token
+            );
+
+            window.location.href =
+              '/dashboard.html';
+          } catch (error) {
+            errorElement.textContent =
+              error.message;
+
+            errorElement.hidden = false;
+          } finally {
+            loginButton.disabled = false;
+
+            loginButton.removeAttribute(
+              'aria-busy'
+            );
+          }
         }
-      });
+      );
     </script>
-    <script src="translations.js"></script>
   </body>
 </html>

@@ -1,88 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Account Dashboard</title>
-  <link rel="stylesheet" href="/styles.css" />
-</head>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
 
-<body>
-  <header id="header"></header>
+    <title data-i18n="dashboard_page_title">
+      Account Dashboard | CMCEN / RCMCE
+    </title>
 
-  <main class="protected-main">
-    <h1 class="protected-title" data-i18n="dashboard_title">Account Dashboard</h1>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
 
-    <div class="dashboard-card" id="dashboardCard">
-      <p data-i18n="loading_text">Loading...</p>
-    </div>
-  </main>
+  <body>
+    <header id="header"></header>
 
-  <footer id="footer"></footer>
+    <main class="dashboard-main">
+      <section
+        class="dashboard-shell"
+        aria-labelledby="dashboardTitle"
+      >
+        <header class="dashboard-heading">
+          <div class="dashboard-heading-copy">
+            <p
+              class="dashboard-eyebrow"
+              data-i18n="dashboard_member_account"
+            >
+              Member account
+            </p>
 
-  <script src="/index.js"></script>
-  <script>
-    // Redirect if not authed
-    if (!localStorage.getItem('token')) {
-      window.location.href = '/login.html';
-    }
+            <h1
+              id="dashboardTitle"
+              data-i18n="dashboard_title"
+            >
+              Account Dashboard
+            </h1>
 
-    // ── Field config — add new fields here as the User model grows ──
-    const dashboardFields = [
-      { key: 'username', labelKey: 'field_username', editable: false },
-      { key: 'email', labelKey: 'field_email', editable: true },
-      { key: 'accountName', labelKey: 'field_account_name', editable: true },
-      {
-        key: 'role',
-        labelKey: 'field_role',
-        editable: false
-      }
-    ];
+            <p
+              class="dashboard-member-name"
+              id="dashboardMemberName"
+            >
+              Loading...
+            </p>
+          </div>
 
-    function renderDashboard(user) {
-      const card = document.getElementById('dashboardCard');
+          <span
+            class="dashboard-role-badge"
+            id="dashboardRoleBadge"
+            hidden
+          ></span>
+        </header>
 
-      card.innerHTML = dashboardFields.map(field => {
-        const value = user[field.key] ?? '';
-        return `
-            <div class="dashboard-row">
-              <span class="dashboard-label" data-i18n="${field.labelKey}"></span>
-              <span class="dashboard-value">${value}</span>
-              ${field.editable ? '<span class="dashboard-editable-tag" data-i18n="editable_tag"></span>' : ''}
-            </div>
-          `;
-      }).join('');
+        <div
+          class="dashboard-status"
+          id="dashboardStatus"
+          aria-live="polite"
+        >
+          <p data-i18n="loading_text">
+            Loading...
+          </p>
+        </div>
 
-      // Re-apply translations to the newly injected labels
-      applyLanguage(currentLang);
-    }
+        <div
+          class="dashboard-content"
+          id="dashboardContent"
+          hidden
+        >
+          <section
+            class="dashboard-section"
+            aria-labelledby="accountDetailsTitle"
+          >
+            <header class="dashboard-section-heading">
+              <h2
+                id="accountDetailsTitle"
+                data-i18n="dashboard_account_details"
+              >
+                Account details
+              </h2>
+            </header>
 
-    async function loadUserData() {
-      try {
-        const res = await fetch('/api/me', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+            <div
+              class="dashboard-details"
+              id="dashboardDetails"
+            ></div>
+          </section>
 
-        if (res.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/login.html';
-          return;
-        }
+          <aside
+            class="dashboard-section dashboard-actions-section"
+            aria-labelledby="availableActionsTitle"
+          >
+            <header class="dashboard-section-heading">
+              <h2
+                id="availableActionsTitle"
+                data-i18n="dashboard_available_actions"
+              >
+                Available actions
+              </h2>
+            </header>
 
-        const user = await res.json();
-        renderDashboard(user);
-      } catch (err) {
-        document.getElementById('dashboardCard').innerHTML =
-          '<p class="auth-error">Could not load account data.</p>';
-      }
-    }
+            <nav
+              class="dashboard-actions"
+              id="dashboardActions"
+              aria-label="Account actions"
+            ></nav>
+          </aside>
+        </div>
 
-    loadUserData();
-  </script>
-  <script src="/translations.js"></script>
-</body>
+        <footer
+          class="dashboard-access"
+          id="dashboardAccess"
+          hidden
+        >
+          <span
+            class="dashboard-access-label"
+            data-i18n="access_level"
+          >
+            Access level
+          </span>
 
+          <div class="dashboard-access-copy">
+            <strong id="dashboardAccessTitle"></strong>
+
+            <p id="dashboardAccessDescription"></p>
+          </div>
+        </footer>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/dashboard.js"></script>
+  </body>
 </html>

@@ -2567,6 +2567,138 @@ a.dropdown-toggle {
   margin: 0;
 }
 
+.review-event-information {
+  margin: 18px 18px 0;
+}
+
+.review-record-section {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid
+    var(--branch-grey-200);
+  border-radius: 2px;
+  background: var(--white);
+}
+
+.review-record-section > h3 {
+  margin: 0;
+  padding: 12px 15px;
+  border-bottom: 1px solid
+    var(--branch-grey-200);
+  background:
+    linear-gradient(
+      180deg,
+      var(--branch-grey-100),
+      #e4e7ea
+    );
+  color: var(--navy-900);
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: 18px;
+  font-weight: normal;
+}
+
+.review-record-data {
+  padding: 14px 15px;
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 15px 20px;
+}
+
+.review-event-information
+  .review-record-data {
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(145px, 1fr)
+    );
+}
+
+.review-record-item {
+  min-width: 0;
+}
+
+.review-record-item.is-wide {
+  grid-column: 1 / -1;
+}
+
+.review-record-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--branch-grey-800);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.review-record-value {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.review-record-value.is-confirmed {
+  color: #36523d;
+  font-weight: 800;
+}
+
+.review-record-value.is-unconfirmed {
+  color: #842d27;
+  font-weight: 800;
+}
+
+.review-event-registration {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.review-submission-record {
+  padding: 0 18px 18px;
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 760px) {
+  .review-submission-record {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .review-event-information {
+    margin:
+      12px 12px 0;
+  }
+
+  .review-submission-record {
+    padding:
+      0 12px 12px;
+  }
+
+  .review-record-data,
+  .review-event-information
+    .review-record-data {
+    grid-template-columns: 1fr;
+  }
+
+  .review-record-item.is-wide {
+    grid-column: span 1;
+  }
+}
+
 .event-submit-button {
   position: relative;
   min-width: 190px;

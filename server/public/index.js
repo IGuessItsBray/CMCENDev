@@ -23,10 +23,15 @@ const navLinks = {
     items: [
       { route: "/calendar.html", i18n: "menu_news_option_1" },
       {
-  route: "/submit_event.html",
-  i18n: "menu_news_option_2",
-  permission: "canCreateDrafts"
-},
+        route: "/submit_event.html",
+        i18n: "menu_news_option_2",
+        permission: "canCreateDrafts"
+      },
+      {
+        route: '/review-events.html',
+        i18n: 'menu_review_events',
+        permission: 'canReviewAndPublish'
+      },
       { route: "/news_stories.html", i18n: "menu_news_option_3" },
       { route: "/last_post.html", i18n: "menu_news_option_4" },
       { route: "/retirement.html", i18n: "menu_news_option_5" },
@@ -51,7 +56,7 @@ const navLinks = {
 // header links that aren't dropdowns
 const standaloneLinks = [
   { route: "/contact.html", i18n: "menu_connections", protected: true },
-  { route: "/dashboard.html", i18n: "dashboard_title", protected: true}
+  { route: "/dashboard.html", i18n: "dashboard_title", protected: true }
 ];
 
 // list of only protected pages
@@ -64,7 +69,7 @@ const protectedPages = [
   .filter(item => item.protected || item.permission)
   .map(item => item.route);
 
-  function getAccessAttributes(item) {
+function getAccessAttributes(item) {
   if (item.permission) {
     return `data-permission="${item.permission}" hidden`;
   }

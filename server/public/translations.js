@@ -26,7 +26,7 @@ const translations = {
     menu_doctrine_title: "Doctrine & Professional Development",
     menu_doctrine_option_1: "CAF Doctrine Hub",
     menu_doctrine_option_2: "Professional Awards",
-    menu_news_title: "News & Events", 
+    menu_news_title: "News & Events",
     menu_news_option_1: "Calendar",
     menu_news_option_2: "Submit / Edit an Event [Form] [Auth]",
     menu_news_option_3: "News & Stories",
@@ -54,10 +54,27 @@ const translations = {
     editable_tag: "Editable",
     field_role: 'Role',
     calendar_title: "Events Calendar",
-calendar_intro: "Upcoming events in chronological order.",
-loading_events: "Loading events...",
-no_upcoming_events: "There are no upcoming events.",
-events_load_error: "Events could not be loaded.",
+    calendar_intro: "Upcoming events in chronological order.",
+    loading_events: "Loading events...",
+    no_upcoming_events: "There are no upcoming events.",
+    events_load_error: "Events could not be loaded.",
+    menu_review_events: "Review Events",
+    review_events_title: "Review Events",
+    review_events_intro: "Review pending event submissions.",
+    submitted_by: "Submitted by",
+    submitted_on: "Submitted on",
+    event_location_label: "Location",
+    unknown_user: "Unknown user",
+    translation_missing: "Translation not provided",
+    rejection_reason_label: "Reason for rejection",
+    rejection_reason_placeholder: "Explain what needs to be corrected...",
+    rejection_reason_required: "Enter a reason before rejecting this event.",
+    publish_event: "Publish",
+    reject_event: "Reject",
+    no_pending_events: "There are no events awaiting review.",
+    review_access_denied: "You do not have permission to review events.",
+    review_failed: "The event could not be reviewed.",
+    review_load_error: "The review queue could not be loaded.",
   },
   fr: {
     title: "RCMCE",
@@ -113,16 +130,33 @@ events_load_error: "Events could not be loaded.",
     editable_tag: "Editable",
     field_role: 'Rôle',
     calendar_title: "Calendrier des événements",
-calendar_intro: "Événements à venir en ordre chronologique.",
-loading_events: "Chargement des événements...",
-no_upcoming_events: "Il n'y a aucun événement à venir.",
-events_load_error: "Impossible de charger les événements.",
+    calendar_intro: "Événements à venir en ordre chronologique.",
+    loading_events: "Chargement des événements...",
+    no_upcoming_events: "Il n'y a aucun événement à venir.",
+    events_load_error: "Impossible de charger les événements.",
+    menu_review_events: "Réviser les événements",
+    review_events_title: "Réviser les événements",
+    review_events_intro: "Révisez les événements soumis en attente.",
+    submitted_by: "Soumis par",
+    submitted_on: "Soumis le",
+    event_location_label: "Lieu",
+    unknown_user: "Utilisateur inconnu",
+    translation_missing: "Traduction non fournie",
+    rejection_reason_label: "Motif du refus",
+    rejection_reason_placeholder: "Expliquez les corrections nécessaires...",
+    rejection_reason_required: "Indiquez un motif avant de refuser cet événement.",
+    publish_event: "Publier",
+    reject_event: "Refuser",
+    no_pending_events: "Aucun événement n'est en attente de révision.",
+    review_access_denied: "Vous n'avez pas l'autorisation de réviser les événements.",
+    review_failed: "Impossible de réviser l'événement.",
+    review_load_error: "Impossible de charger la file de révision.",
   }
 };
- 
+
 const langToggle = document.getElementById("langToggle");
 let currentLang = localStorage.getItem("lang") || "en";
- 
+
 function applyLanguage(lang) {
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.getAttribute("data-i18n");
@@ -145,15 +179,15 @@ function applyLanguage(lang) {
   currentLang = lang;
 
   document.dispatchEvent(
-  new CustomEvent('languagechange', {
-    detail: { language: lang }
-  })
-);
+    new CustomEvent('languagechange', {
+      detail: { language: lang }
+    })
+  );
 }
- 
+
 langToggle.addEventListener("click", () => {
   applyLanguage(currentLang === "en" ? "fr" : "en");
 });
- 
+
 // Apply on load
 applyLanguage(currentLang);

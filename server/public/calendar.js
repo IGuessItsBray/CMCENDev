@@ -68,73 +68,158 @@ function formatMonthHeading(event, locale) {
     }).format(date);
 }
 
-function formatEventDate(event, locale) {
-    const startDate = new Date(event.startDate);
+function getDayNumber(dateValue, allDay) {
+    const date = new Date(dateValue);
 
-    const dateOptions = {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric'
-    };
+    return allDay
+        ? date.getUTCDate()
+        : date.getDate();
+}
 
-    if (event.allDay) {
-        dateOptions.timeZone = 'UTC';
-    } else {
-        dateOptions.hour = 'numeric';
-        dateOptions.minute = '2-digit';
-    }
+function getMonthNumber(dateValue, allDay) {
+    const date = new Date(dateValue);
 
-    const formattedStart =
-        new Intl.DateTimeFormat(
-            locale,
-            dateOptions
-        ).format(startDate);
+    return allDay
+        ? date.getUTCMonth()
+        : date.getMonth();
+}
+
+function getYearNumber(dateValue, allDay) {
+    const date = new Date(dateValue);
+
+    return allDay
+        ? date.getUTCFullYear()
+        : date.getFullYear();
+}
+
+function formatDayLabel(event) {
+    const startDay =
+        getDayNumber(event.startDate, event.allDay);
 
     if (!event.endDate) {
-        return formattedStart;
+        return String(startDay);
     }
 
-    const endDate = new Date(event.endDate);
+    const sameMonth =
+        getMonthNumber(event.startDate, event.allDay) ===
+        getMonthNumber(event.endDate, event.allDay);
 
-    const endOptions = {
-        month: 'long',
-        day: 'numeric'
-    };
+    const sameYear =
+        getYearNumber(event.startDate, event.allDay) ===
+        getYearNumber(event.endDate, event.allDay);
 
+    const endDay =
+        getDayNumber(event.endDate, event.allDay);
+
+    if (
+        sameMonth &&
+        sameYear &&
+        endDay !== startDay
+    ) {
+        return `${startDay}–${endDay}`;
+    }
+
+    return String(startDay);
+}
+
+function formatEventTime(
+    event,
+    locale
+) {
     if (event.allDay) {
-        endOptions.timeZone = 'UTC';
-    } else {
-        endOptions.hour = 'numeric';
-        endOptions.minute = '2-digit';
+        return (
+            translations[currentLang]
+                ?.all_day ||
+            "All day"
+        );
     }
 
-    const formattedEnd =
+    const formatter =
         new Intl.DateTimeFormat(
             locale,
-            endOptions
-        ).format(endDate);
+            {
+                hour: "numeric",
+                minute: "2-digit"
+            }
+        );
 
-    return `${formattedStart} – ${formattedEnd}`;
+    const startTime =
+        formatter.format(
+            new Date(event.startDate)
+        );
+
+    if (!event.endDate) {
+        return startTime;
+    }
+
+    const endTime =
+        formatter.format(
+            new Date(event.endDate)
+        );
+
+    return `${startTime}–${endTime}`;
 }
 
 function createEventCard(event, language, locale) {
-    const article = document.createElement('article');
+    const article =
+        document.createElement('article');
+
     article.className = 'calendar-event';
 
-    const dateElement = document.createElement('p');
-    dateElement.className = 'calendar-event-date';
-    dateElement.textContent =
-        formatEventDate(event, locale);
+    const dayColumn =
+        document.createElement('div');
 
-    const titleElement = document.createElement('h3');
-    titleElement.className = 'calendar-event-title';
+    dayColumn.className =
+        'calendar-event-day';
+
+    const dayNumber =
+        document.createElement('span');
+
+    dayNumber.className =
+        'calendar-event-day-number';
+
+    dayNumber.textContent =
+        formatDayLabel(event);
+
+    const eventTime =
+        document.createElement('span');
+
+    eventTime.className =
+        'calendar-event-time';
+
+    eventTime.textContent =
+        formatEventTime(event, locale);
+
+    dayColumn.append(
+        dayNumber,
+        eventTime
+    );
+
+    const content =
+        document.createElement('div');
+
+    content.className =
+        'calendar-event-content';
+
+    const titleElement =
+        document.createElement('h3');
+
+    titleElement.className =
+        'calendar-event-title';
+
     titleElement.textContent =
-        getLocalizedText(event.title, language);
+        getLocalizedText(
+            event.title,
+            language
+        );
 
-    article.append(dateElement, titleElement);
+    content.appendChild(titleElement);
 
     const location =
-        getLocalizedText(event.location, language);
+        getLocalizedText(
+            event.location,
+            language
+        );
 
     if (location) {
         const locationElement =
@@ -143,13 +228,19 @@ function createEventCard(event, language, locale) {
         locationElement.className =
             'calendar-event-location';
 
-        locationElement.textContent = location;
+        locationElement.textContent =
+            location;
 
-        article.appendChild(locationElement);
+        content.appendChild(
+            locationElement
+        );
     }
 
     const description =
-        getLocalizedText(event.description, language);
+        getLocalizedText(
+            event.description,
+            language
+        );
 
     if (description) {
         const descriptionElement =
@@ -161,8 +252,15 @@ function createEventCard(event, language, locale) {
         descriptionElement.textContent =
             description;
 
-        article.appendChild(descriptionElement);
+        content.appendChild(
+            descriptionElement
+        );
     }
+
+    article.append(
+        dayColumn,
+        content
+    );
 
     return article;
 }
@@ -235,7 +333,13 @@ async function loadEvents() {
             );
         }
 
-        publicEvents = data.events || [];
+        publicEvents = (data.events || [])
+            .sort((firstEvent, secondEvent) => {
+                return (
+                    new Date(firstEvent.startDate) -
+                    new Date(secondEvent.startDate)
+                );
+            });
         renderEvents();
     } catch (error) {
         console.error(error);

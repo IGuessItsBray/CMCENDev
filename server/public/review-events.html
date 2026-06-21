@@ -1,38 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title data-i18n="review_events_title">
-        Review Events
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title data-i18n="review_events_page_title">
+      Review Events | CMCEN / RCMCE
     </title>
 
     <link rel="stylesheet" href="/styles.css" />
-</head>
+  </head>
 
-<body>
+  <body>
     <header id="header"></header>
 
-    <main class="review-main">
-        <section class="review-container">
-            <div class="review-heading">
-                <h1 data-i18n="review_events_title">
-                    Review Events
-                </h1>
-
-                <p data-i18n="review_events_intro">
-                    Review pending event submissions.
-                </p>
+    <main class="event-review-main">
+      <section
+        class="event-review-shell"
+        aria-labelledby="reviewEventsTitle"
+      >
+        <header class="event-review-heading">
+          <div class="event-review-heading-main">
+            <div
+              class="event-review-standard"
+              aria-hidden="true"
+            >
+              <span class="event-review-standard-grey"></span>
+              <span class="event-review-standard-navy"></span>
             </div>
 
-            <p id="reviewPageMessage" class="calendar-message" data-i18n="loading_events">
-                Loading events...
-            </p>
+            <div class="event-review-heading-copy">
+              <p
+                class="event-review-eyebrow"
+                data-i18n="review_workflow_eyebrow"
+              >
+                Editorial workflow
+              </p>
 
-            <div id="reviewQueue" hidden></div>
-        </section>
+              <h1
+                id="reviewEventsTitle"
+                data-i18n="review_events_title"
+              >
+                Review Events
+              </h1>
+
+              <p data-i18n="review_events_intro">
+                Review pending event submissions.
+              </p>
+            </div>
+          </div>
+
+          <span
+            class="review-queue-count"
+            id="reviewQueueCount"
+            hidden
+          >
+            0 pending
+          </span>
+        </header>
+
+        <p
+          class="review-notice"
+          id="reviewNotice"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></p>
+
+        <p
+          class="review-page-message is-neutral"
+          id="reviewPageMessage"
+          role="status"
+          aria-live="polite"
+          data-i18n="loading_events"
+        >
+          Loading events...
+        </p>
+
+        <div
+          class="review-queue"
+          id="reviewQueue"
+          hidden
+        ></div>
+      </section>
     </main>
 
     <footer id="footer"></footer>
@@ -40,6 +94,5 @@
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
     <script src="/review-events.js"></script>
-</body>
-
+  </body>
 </html>

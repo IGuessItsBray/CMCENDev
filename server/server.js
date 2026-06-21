@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const User = require('./models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const eventRoutes = require('./routes/events');
 const {
   authMiddleware,
   requireMinimumRole,
@@ -16,6 +17,7 @@ const {
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
+app.use('/api/events', eventRoutes);
 
 // wait for MongoDB before listening
 async function startServer() {

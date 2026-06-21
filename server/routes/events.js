@@ -1,5 +1,12 @@
 const express = require('express');
 const Event = require('../models/Event');
+const {
+    EVENT_ORGANIZING_ENTITIES,
+    EVENT_TYPES,
+    CANADIAN_REGIONS,
+    CANADIAN_TIMEZONES
+} = require('../config/content');
+
 
 const {
     authMiddleware,
@@ -25,25 +32,234 @@ function cleanLocalizedText(value) {
     };
 }
 
-function parseEventDate(value, allDay) {
-    if (typeof value !== 'string' || !value.trim()) {
+function cleanString(
+    value,
+    fallback = ''
+) {
+    return typeof value === 'string'
+        ? value.trim()
+        : fallback;
+}
+
+function cleanSubmitter(
+    value,
+    authenticatedUser
+) {
+    return {
+        rank: cleanString(value?.rank),
+        firstName: cleanString(value?.firstName),
+        lastName: cleanString(value?.lastName),
+        unitRole: cleanString(value?.unitRole),
+
+
+        email: cleanString(
+            value?.email,
+            authenticatedUser.email || ''
+        ).toLowerCase(),
+
+        phone: cleanString(value?.phone)
+    };
+
+
+}
+
+function isAllowedOption(
+    value,
+    allowedValues
+) {
+    return (
+        value === '' ||
+        allowedValues.includes(value)
+    );
+}
+
+function parseBoolean(
+    value,
+    fallback = false
+) {
+    if (typeof value === 'boolean') {
+        return value;
+    }
+
+
+    if (value === 'true') {
+        return true;
+    }
+
+    if (value === 'false') {
+        return false;
+    }
+
+    return fallback;
+
+
+}
+
+
+function getDatePartsInTimezone(
+    date,
+    timezone
+) {
+    const formatter =
+        new Intl.DateTimeFormat(
+            'en-CA-u-ca-gregory',
+            {
+                timeZone: timezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hourCycle: 'h23'
+            }
+        );
+
+    const parts = {};
+
+    formatter
+        .formatToParts(date)
+        .forEach(part => {
+            if (part.type !== 'literal') {
+                parts[part.type] =
+                    part.value;
+            }
+        });
+
+    return {
+        year: Number(parts.year),
+        month: Number(parts.month),
+        day: Number(parts.day),
+        hour: Number(parts.hour),
+        minute: Number(parts.minute),
+        second: Number(parts.second)
+    };
+}
+
+function zonedDateTimeToUtc(value, timezone) {
+    const match = value.match(
+        /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/
+    );
+
+    if (!match) {
         return null;
     }
 
-    /*
-     * HTML date inputs return YYYY-MM-DD.
-     * Parsing that directly creates midnight UTC, which can display as the
-     * previous day in Canadian time zones. Noon UTC avoids that for an
-     * all-day Canadian event.
-     */
-    if (
-        allDay &&
-        /^\d{4}-\d{2}-\d{2}$/.test(value)
+    const desiredParts = {
+        year: Number(match[1]),
+        month: Number(match[2]),
+        day: Number(match[3]),
+        hour: Number(match[4]),
+        minute: Number(match[5]),
+        second: Number(match[6] || 0)
+    };
+
+    const desiredTimestamp = Date.UTC(
+        desiredParts.year,
+        desiredParts.month - 1,
+        desiredParts.day,
+        desiredParts.hour,
+        desiredParts.minute,
+        desiredParts.second
+    );
+
+    let candidate =
+        new Date(desiredTimestamp);
+
+    for (
+        let attempt = 0;
+        attempt < 4;
+        attempt += 1
     ) {
-        return new Date(`${value}T12:00:00.000Z`);
+        const actualParts =
+            getDatePartsInTimezone(
+                candidate,
+                timezone
+            );
+
+        const actualTimestamp = Date.UTC(
+            actualParts.year,
+            actualParts.month - 1,
+            actualParts.day,
+            actualParts.hour,
+            actualParts.minute,
+            actualParts.second
+        );
+
+        const difference =
+            desiredTimestamp -
+            actualTimestamp;
+
+        if (difference === 0) {
+            break;
+        }
+
+        candidate = new Date(
+            candidate.getTime() +
+            difference
+        );
     }
 
-    return new Date(value);
+    const finalParts =
+        getDatePartsInTimezone(
+            candidate,
+            timezone
+        );
+
+    const matchesRequestedTime =
+        finalParts.year ===
+        desiredParts.year &&
+        finalParts.month ===
+        desiredParts.month &&
+        finalParts.day ===
+        desiredParts.day &&
+        finalParts.hour ===
+        desiredParts.hour &&
+        finalParts.minute ===
+        desiredParts.minute &&
+        finalParts.second ===
+        desiredParts.second;
+
+    if (!matchesRequestedTime) {
+        return null;
+    }
+
+    return candidate;
+}
+
+function parseEventDate(
+    value,
+    allDay,
+    timezone
+) {
+    if (
+        typeof value !== 'string' ||
+        !value.trim()
+    ) {
+        return null;
+    }
+
+    const cleanValue = value.trim();
+
+    if (
+        allDay &&
+        /^\d{4}-\d{2}-\d{2}$/.test(
+            cleanValue
+        )
+    ) {
+        return new Date(
+            `${cleanValue}T12:00:00.000Z`
+        );
+    }
+
+    if (!timezone) {
+        return null;
+    }
+
+    return zonedDateTimeToUtc(
+        cleanValue,
+        timezone
+    );
 }
 
 // only published events are returned publically
@@ -71,6 +287,12 @@ router.get('/', async (req, res) => {
                     'title',
                     'description',
                     'location',
+                    'registration',
+                    'city',
+                    'provinceRegion',
+                    'organizingEntity',
+                    'eventType',
+                    'timezone',
                     'startDate',
                     'endDate',
                     'allDay',
@@ -105,121 +327,348 @@ router.post(
                 title,
                 description,
                 location,
+                registration,
+                city,
+                provinceRegion,
+                organizingEntity,
+                eventType,
+                timezone,
                 startDate,
                 endDate,
                 allDay = true,
+                submitter,
+                publicationPermissionConfirmed = false,
                 contentArea = 'general',
                 publishNow = false
             } = req.body;
 
-            const cleanTitle = cleanLocalizedText(title);
+            const cleanTitle =
+                cleanLocalizedText(title);
+
             const cleanDescription =
                 cleanLocalizedText(description);
+
             const cleanLocation =
                 cleanLocalizedText(location);
 
-            if (!cleanTitle.en && !cleanTitle.fr) {
+            const cleanRegistration =
+                cleanLocalizedText(registration);
+
+            const cleanCity =
+                cleanString(city);
+
+            const cleanProvinceRegion =
+                cleanString(provinceRegion);
+
+            const cleanOrganizingEntity =
+                cleanString(organizingEntity);
+
+            const cleanEventType =
+                cleanString(eventType);
+
+            const cleanTimezone =
+                cleanString(timezone);
+
+            const cleanSubmitterData =
+                cleanSubmitter(
+                    submitter,
+                    req.user
+                );
+
+            const requiredSubmitterFields = [
+                ['rank', 'Submitter rank'],
+                ['firstName', 'Submitter first name'],
+                ['lastName', 'Submitter last name'],
+                ['unitRole', 'Submitter unit or role'],
+                ['email', 'Submitter email']
+            ];
+
+            for (
+                const [
+                    field,
+                    label
+                ] of requiredSubmitterFields
+            ) {
+                if (!cleanSubmitterData[field]) {
+                    return res.status(400).json({
+                        error:
+                            `${label} is required`
+                    });
+                }
+            }
+
+            const isAllDay =
+                parseBoolean(allDay, true);
+
+            const wantsImmediatePublication =
+                parseBoolean(
+                    publishNow,
+                    false
+                );
+
+            const permissionConfirmed =
+                parseBoolean(
+                    publicationPermissionConfirmed,
+                    false
+                );
+
+            if (!permissionConfirmed) {
+                return res.status(400).json({
+                    error:
+                        'Chain-of-command permission confirmation is required'
+                });
+            }
+
+            if (
+                !cleanTitle.en &&
+                !cleanTitle.fr
+            ) {
                 return res.status(400).json({
                     error:
                         'An English or French event title is required'
                 });
             }
 
-            const parsedStartDate =
-                parseEventDate(startDate, allDay);
+            if (
+                !isAllowedOption(
+                    cleanProvinceRegion,
+                    CANADIAN_REGIONS
+                )
+            ) {
+                return res.status(400).json({
+                    error:
+                        'The selected province or region is invalid'
+                });
+            }
 
-            const parsedEndDate = endDate
-                ? parseEventDate(endDate, allDay)
-                : null;
+            if (
+                !isAllowedOption(
+                    cleanOrganizingEntity,
+                    EVENT_ORGANIZING_ENTITIES
+                )
+            ) {
+                return res.status(400).json({
+                    error:
+                        'The selected organizing entity is invalid'
+                });
+            }
+
+            if (
+                !isAllowedOption(
+                    cleanEventType,
+                    EVENT_TYPES
+                )
+            ) {
+                return res.status(400).json({
+                    error:
+                        'The selected event type is invalid'
+                });
+            }
+
+            if (
+                !isAllowedOption(
+                    cleanTimezone,
+                    CANADIAN_TIMEZONES
+                )
+            ) {
+                return res.status(400).json({
+                    error:
+                        'The selected event timezone is invalid'
+                });
+            }
+
+            if (
+                !isAllDay &&
+                !cleanTimezone
+            ) {
+                return res.status(400).json({
+                    error:
+                        'A timezone is required for a timed event'
+                });
+            }
+
+            const parsedStartDate =
+                parseEventDate(
+                    startDate,
+                    isAllDay,
+                    cleanTimezone
+                );
+
+            const parsedEndDate =
+                endDate
+                    ? parseEventDate(
+                        endDate,
+                        isAllDay,
+                        cleanTimezone
+                    )
+                    : null;
 
             if (
                 !parsedStartDate ||
-                Number.isNaN(parsedStartDate.getTime())
+                Number.isNaN(
+                    parsedStartDate.getTime()
+                )
             ) {
                 return res.status(400).json({
-                    error: 'A valid event start date is required'
+                    error:
+                        'A valid event start date is required'
                 });
             }
 
             if (
                 parsedEndDate &&
-                Number.isNaN(parsedEndDate.getTime())
+                Number.isNaN(
+                    parsedEndDate.getTime()
+                )
             ) {
                 return res.status(400).json({
-                    error: 'The event end date is invalid'
+                    error:
+                        'The event end date is invalid'
                 });
             }
 
             if (
-                !Boolean(allDay) &&
+                !isAllDay &&
                 !parsedEndDate
             ) {
                 return res.status(400).json({
                     error:
-                        "A timed event requires an end date and time"
+                        'A timed event requires an end date and time'
                 });
             }
 
             if (
                 parsedEndDate &&
                 (
-                    Boolean(allDay)
-                        ? parsedEndDate < parsedStartDate
-                        : parsedEndDate <= parsedStartDate
+                    isAllDay
+                        ? parsedEndDate <
+                        parsedStartDate
+                        : parsedEndDate <=
+                        parsedStartDate
                 )
             ) {
                 return res.status(400).json({
                     error:
-                        Boolean(allDay)
-                            ? "End date cannot be earlier than start date"
-                            : "A timed event must end after it starts"
+                        isAllDay
+                            ? 'End date cannot be earlier than start date'
+                            : 'A timed event must end after it starts'
                 });
             }
 
             const cleanContentArea =
-                typeof contentArea === 'string' &&
-                    contentArea.trim()
-                    ? contentArea.trim()
-                    : 'general';
+                cleanString(
+                    contentArea,
+                    'general'
+                ) || 'general';
 
             const permissions =
                 getUserPermissions(req.user);
 
             const mayPublishAnything =
-                permissions.canReviewAndPublish === true;
+                permissions
+                    .canReviewAndPublish === true;
+
+            const userContentAreas =
+                Array.isArray(
+                    req.user.contentAreas
+                )
+                    ? req.user.contentAreas
+                    : [];
 
             const mayPublishOwnArea =
-                permissions.canPublishOwnContent === true &&
-                req.user.contentAreas.includes(cleanContentArea);
+                permissions
+                    .canPublishOwnContent === true &&
+                userContentAreas.includes(
+                    cleanContentArea
+                );
 
             const mayPublish =
-                mayPublishAnything || mayPublishOwnArea;
+                mayPublishAnything ||
+                mayPublishOwnArea;
 
-            if (publishNow && !mayPublish) {
+            if (
+                wantsImmediatePublication &&
+                !mayPublish
+            ) {
                 return res.status(403).json({
                     error:
                         'You do not have permission to publish in this content area'
                 });
             }
 
-            const status = publishNow
-                ? 'published'
-                : 'pending';
+            const status =
+                wantsImmediatePublication
+                    ? 'published'
+                    : 'pending';
+
+            const now = new Date();
 
             const event = new Event({
                 title: cleanTitle,
-                description: cleanDescription,
-                location: cleanLocation,
+                description:
+                    cleanDescription,
+                location:
+                    cleanLocation,
+                registration:
+                    cleanRegistration,
 
-                startDate: parsedStartDate,
-                endDate: parsedEndDate,
-                allDay: Boolean(allDay),
+                city:
+                    cleanCity,
+                provinceRegion:
+                    cleanProvinceRegion,
+                organizingEntity:
+                    cleanOrganizingEntity,
+                eventType:
+                    cleanEventType,
+                timezone:
+                    cleanTimezone,
 
-                contentArea: cleanContentArea,
+                startDate:
+                    parsedStartDate,
+                endDate:
+                    parsedEndDate,
+                allDay:
+                    isAllDay,
+
+                submitter:
+                    cleanSubmitterData,
+
+                publicationPermission: {
+                    confirmed:
+                        permissionConfirmed,
+
+                    confirmedAt:
+                        permissionConfirmed
+                            ? now
+                            : null,
+
+                    confirmedBy:
+                        permissionConfirmed
+                            ? req.user._id
+                            : null
+                },
+
+                contentArea:
+                    cleanContentArea,
                 status,
 
-                createdBy: req.user._id,
-                updatedBy: req.user._id,
+                createdBy:
+                    req.user._id,
+                updatedBy:
+                    req.user._id,
+
+                lastSubmittedAt:
+                    now,
+
+                reviewedBy:
+                    status === 'published'
+                        ? req.user._id
+                        : null,
+
+                reviewedAt:
+                    status === 'published'
+                        ? now
+                        : null,
 
                 publishedBy:
                     status === 'published'
@@ -228,7 +677,7 @@ router.post(
 
                 publishedAt:
                     status === 'published'
-                        ? new Date()
+                        ? now
                         : null
             });
 
@@ -248,20 +697,32 @@ router.post(
                 error
             );
 
-            if (error.name === 'ValidationError') {
+            if (
+                error.name ===
+                'ValidationError'
+            ) {
                 return res.status(400).json({
-                    error: Object.values(error.errors)
-                        .map(item => item.message)
-                        .join(', ')
+                    error:
+                        Object.values(
+                            error.errors
+                        )
+                            .map(
+                                item =>
+                                    item.message
+                            )
+                            .join(', ')
                 });
             }
 
             return res.status(500).json({
-                error: 'Could not create event'
+                error:
+                    'Could not create event'
             });
         }
     }
+
 );
+
 
 // list the events awaiting review
 router.get(

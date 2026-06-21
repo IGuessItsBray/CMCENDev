@@ -1,11 +1,7 @@
-const eventForm =
-  document.getElementById("eventForm");
+const eventForm = document.getElementById("eventForm");
 
-const eventPageMessage =
-  document.getElementById("eventPageMessage");
-
-const eventFormMessage =
-  document.getElementById("eventFormMessage");
+const eventPageMessage = document.getElementById("eventPageMessage");
+const eventFormMessage = document.getElementById("eventFormMessage");
 
 const eventSubmitButton =
   document.getElementById("eventSubmitButton");
@@ -16,14 +12,20 @@ const eventAllDay =
 const eventStartDate =
   document.getElementById("eventStartDate");
 
-const eventStartTime =
-  document.getElementById("eventStartTime");
+const eventStartHour =
+  document.getElementById("eventStartHour");
+
+const eventStartMinute =
+  document.getElementById("eventStartMinute");
+
+const eventEndHour =
+  document.getElementById("eventEndHour");
+
+const eventEndMinute =
+  document.getElementById("eventEndMinute");
 
 const eventEndDate =
   document.getElementById("eventEndDate");
-
-const eventEndTime =
-  document.getElementById("eventEndTime");
 
 const startTimeField =
   document.getElementById("eventStartTimeField");
@@ -57,6 +59,60 @@ function translate(key) {
     key
   );
 }
+
+function populateTimeSelect(select, values) {
+  const placeholder = document.createElement("option");
+
+  placeholder.value = "";
+  placeholder.textContent = "--";
+  placeholder.selected = true;
+
+  select.appendChild(placeholder);
+
+  values.forEach(value => {
+    const option = document.createElement("option");
+
+    option.value = value;
+    option.textContent = value;
+
+    select.appendChild(option);
+  });
+}
+
+function initializeTimeControls() {
+  const hours = Array.from(
+    { length: 24 },
+    (_, index) =>
+      String(index).padStart(2, "0")
+  );
+
+  const minutes = Array.from(
+    { length: 12 },
+    (_, index) =>
+      String(index * 5).padStart(2, "0")
+  );
+
+  populateTimeSelect(
+    eventStartHour,
+    hours
+  );
+
+  populateTimeSelect(
+    eventStartMinute,
+    minutes
+  );
+
+  populateTimeSelect(
+    eventEndHour,
+    hours
+  );
+
+  populateTimeSelect(
+    eventEndMinute,
+    minutes
+  );
+}
+
 
 function redirectToLogin() {
   localStorage.removeItem("token");
@@ -124,12 +180,19 @@ function syncScheduleFields() {
   endTimeField.hidden = isAllDay;
   timeZoneNote.hidden = isAllDay;
 
-  eventStartTime.disabled = isAllDay;
-  eventEndTime.disabled = isAllDay;
+  const timeControls = [
+    eventStartHour,
+    eventStartMinute,
+    eventEndHour,
+    eventEndMinute
+  ];
 
-  eventStartTime.required = !isAllDay;
+  timeControls.forEach(control => {
+    control.disabled = isAllDay;
+    control.required = !isAllDay;
+  });
+
   eventEndDate.required = !isAllDay;
-  eventEndTime.required = !isAllDay;
 
   if (
     !isAllDay &&
@@ -174,7 +237,7 @@ function getEventDateValues() {
     if (
       eventEndDate.value &&
       eventEndDate.value <
-        eventStartDate.value
+      eventStartDate.value
     ) {
       throw new Error(
         translate("event_end_after_start")
@@ -182,18 +245,18 @@ function getEventDateValues() {
     }
 
     return {
-      startDate:
-        eventStartDate.value,
-
+      startDate: eventStartDate.value,
       endDate:
         eventEndDate.value || null
     };
   }
 
   if (
-    !eventStartTime.value ||
+    !eventStartHour.value ||
+    !eventStartMinute.value ||
     !eventEndDate.value ||
-    !eventEndTime.value
+    !eventEndHour.value ||
+    !eventEndMinute.value
   ) {
     throw new Error(
       translate(
@@ -202,36 +265,25 @@ function getEventDateValues() {
     );
   }
 
-  const start = new Date(
+  const startDateTime =
     `${eventStartDate.value}T` +
-    `${eventStartTime.value}:00`
-  );
+    `${eventStartHour.value}:` +
+    `${eventStartMinute.value}:00`;
 
-  const end = new Date(
+  const endDateTime =
     `${eventEndDate.value}T` +
-    `${eventEndTime.value}:00`
-  );
+    `${eventEndHour.value}:` +
+    `${eventEndMinute.value}:00`;
 
-  if (
-    Number.isNaN(start.getTime()) ||
-    Number.isNaN(end.getTime())
-  ) {
-    throw new Error(
-      translate(
-        "event_timed_fields_required"
-      )
-    );
-  }
-
-  if (end <= start) {
+  if (endDateTime <= startDateTime) {
     throw new Error(
       translate("event_end_after_start")
     );
   }
 
   return {
-    startDate: start.toISOString(),
-    endDate: end.toISOString()
+    startDate: startDateTime,
+    endDate: endDateTime
   };
 }
 
@@ -256,6 +308,19 @@ function buildEventData() {
 
   const dateValues =
     getEventDateValues();
+
+  const permissionConfirmed =
+    document
+      .getElementById("eventPublicationPermission")
+      .checked;
+
+  if (!permissionConfirmed) {
+    throw new Error(
+      translate(
+        "event_permission_required"
+      )
+    );
+  }
 
   return {
     title,
@@ -288,17 +353,86 @@ function buildEventData() {
         .trim()
     },
 
+    registration: {
+      en: document
+        .getElementById("eventRegistrationEn")
+        .value
+        .trim(),
+
+      fr: document
+        .getElementById("eventRegistrationFr")
+        .value
+        .trim()
+    },
+
+    timezone: document
+      .getElementById("eventTimezone")
+      .value,
+
     ...dateValues,
 
     allDay:
       eventAllDay.checked,
+
+    submitter: {
+      rank: document
+        .getElementById("eventSubmitterRank")
+        .value
+        .trim(),
+
+      firstName: document
+        .getElementById("eventSubmitterFirstName")
+        .value
+        .trim(),
+
+      lastName: document
+        .getElementById("eventSubmitterLastName")
+        .value
+        .trim(),
+
+      unitRole: document
+        .getElementById("eventSubmitterUnitRole")
+        .value
+        .trim(),
+
+      email: document
+        .getElementById("eventSubmitterEmail")
+        .value
+        .trim(),
+
+      phone: document
+        .getElementById("eventSubmitterPhone")
+        .value
+        .trim()
+    },
+
+    publicationPermissionConfirmed: permissionConfirmed,
 
     contentArea:
       "general",
 
     publishNow:
       !publishNowContainer.hidden &&
-      eventPublishNow.checked
+      eventPublishNow.checked,
+
+    city: document
+      .getElementById("eventCity")
+      .value
+      .trim(),
+
+    provinceRegion: document
+      .getElementById("eventProvinceRegion")
+      .value,
+
+    organizingEntity: document
+      .getElementById("eventOrganizingEntity")
+      .value,
+
+    eventType: document
+      .getElementById("eventType")
+      .value,
+
+
   };
 }
 
@@ -344,6 +478,17 @@ async function initializeEventPage() {
 
     currentUser =
       await response.json();
+
+    const submitterEmail =
+      document.getElementById("eventSubmitterEmail");
+
+    if (
+      submitterEmail &&
+      !submitterEmail.value
+    ) {
+      submitterEmail.value =
+        currentUser.email || "";
+    }
 
     if (
       !currentUser.permissions
@@ -514,5 +659,6 @@ window.addEventListener(
   }
 );
 
+initializeTimeControls();
 syncScheduleFields();
 initializeEventPage();

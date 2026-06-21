@@ -308,7 +308,7 @@ const translations = {
       "Optional for an all-day event.",
 
     event_local_time_note:
-      "Times use the local time on your device.",
+      "Times are the local time of the event.",
 
     event_publish_now:
       "Publish immediately",
@@ -354,6 +354,196 @@ const translations = {
 
     event_submit_success_published:
       "Event published successfully.",
+    event_hour:
+      "Hour",
+
+    event_minute:
+      "Minute",
+    event_details_eyebrow:
+      "Event information",
+
+    event_details_heading:
+      "Event details",
+
+    event_city:
+      "City",
+
+    event_city_placeholder:
+      "Kingston",
+
+    event_province_region:
+      "Province or region",
+
+    event_organizing_entity:
+      "Organizing entity",
+
+    event_type:
+      "Event type",
+
+    event_select_option:
+      "Select an option",
+
+    region_ab:
+      "Alberta",
+
+    region_bc:
+      "British Columbia",
+
+    region_mb:
+      "Manitoba",
+
+    region_nb:
+      "New Brunswick",
+
+    region_nl:
+      "Newfoundland and Labrador",
+
+    region_ns:
+      "Nova Scotia",
+
+    region_nt:
+      "Northwest Territories",
+
+    region_nu:
+      "Nunavut",
+
+    region_on:
+      "Ontario",
+
+    region_pe:
+      "Prince Edward Island",
+
+    region_qc:
+      "Quebec",
+
+    region_sk:
+      "Saskatchewan",
+
+    region_yt:
+      "Yukon",
+
+    region_international:
+      "International",
+
+    entity_branch:
+      "C&E Branch",
+
+    entity_association:
+      "C&E Association",
+
+    entity_foundation:
+      "C&E Foundation",
+
+    entity_museum:
+      "C&E Museum",
+
+    event_type_conference:
+      "Conference",
+
+    event_type_mess_function:
+      "Mess function",
+
+    event_type_ceremony:
+      "Ceremony",
+
+    event_type_training:
+      "Training",
+
+    event_type_social:
+      "Social",
+
+    event_type_other:
+      "Other",
+    event_registration_label:
+      "Registration link or instructions",
+
+    event_registration_placeholder_en:
+      "Enter a registration link or instructions",
+
+    event_registration_placeholder_fr:
+      "Enter a registration link or instructions in French",
+
+    event_registration_optional:
+      "Optional",
+
+    event_timezone:
+      "Event timezone",
+
+    event_select_timezone:
+      "Select a timezone",
+
+    event_timezone_hint:
+      "Choose the timezone where the event takes place.",
+
+    timezone_newfoundland:
+      "Newfoundland Time",
+
+    timezone_atlantic:
+      "Atlantic Time",
+
+    timezone_eastern:
+      "Eastern Time",
+
+    timezone_central:
+      "Central Time",
+
+    timezone_mountain:
+      "Mountain Time",
+
+    timezone_pacific:
+      "Pacific Time",
+    event_submitter_eyebrow:
+      "Submission contact",
+
+    event_submitter_heading:
+      "Submitter information",
+
+    event_submitter_intro:
+      "Enter the contact information for the person responsible for this event submission.",
+
+    event_submitter_rank:
+      "Rank",
+
+    event_submitter_rank_placeholder:
+      "Capt",
+
+    event_submitter_first_name:
+      "First name",
+
+    event_submitter_last_name:
+      "Last name",
+
+    event_submitter_unit_role:
+      "Unit or role",
+
+    event_submitter_unit_role_placeholder:
+      "2 CMBG HQ & Sig Sqn",
+
+    event_submitter_email:
+      "Contact email",
+
+    event_submitter_email_hint:
+      "Submission and status confirmations will be sent here.",
+
+    event_submitter_phone:
+      "Phone number",
+
+    event_optional:
+      "Optional",
+
+    event_authorization_eyebrow:
+      "Publication authorization",
+
+    event_authorization_heading:
+      "Chain-of-command confirmation",
+
+    event_permission_confirmation:
+      "I confirm I have permission from the chain of command to publish this event.",
+
+    event_permission_confirmation_hint:
+      "This confirmation is required before the event can be submitted for review or publication.",
+    event_permission_required:
+      "You must confirm chain-of-command permission before submitting the event.",
   },
 
   fr: {
@@ -627,7 +817,7 @@ const translations = {
       "Décision de révision",
 
     rejection_reason_help:
-      "Un motif est requis uniquement lorsque l’événement est refusé.",
+      "Un motif est requis uniquement lorsque l'événement est refusé.",
 
     review_publishing:
       "Publication en cours…",
@@ -751,7 +941,197 @@ const translations = {
 
     event_submit_success_published:
       "Événement publié avec succès.",
-  }
+    event_hour:
+      "Heure",
+
+    event_minute:
+      "Minute",
+    event_details_eyebrow:
+      "Renseignements sur l'événement",
+
+    event_details_heading:
+      "Détails de l'événement",
+
+    event_city:
+      "Ville",
+
+    event_city_placeholder:
+      "Kingston",
+
+    event_province_region:
+      "Province ou région",
+
+    event_organizing_entity:
+      "Entité organisatrice",
+
+    event_type:
+      "Type d'événement",
+
+    event_select_option:
+      "Sélectionnez une option",
+
+    region_ab:
+      "Alberta",
+
+    region_bc:
+      "Colombie-Britannique",
+
+    region_mb:
+      "Manitoba",
+
+    region_nb:
+      "Nouveau-Brunswick",
+
+    region_nl:
+      "Terre-Neuve-et-Labrador",
+
+    region_ns:
+      "Nouvelle-Écosse",
+
+    region_nt:
+      "Territoires du Nord-Ouest",
+
+    region_nu:
+      "Nunavut",
+
+    region_on:
+      "Ontario",
+
+    region_pe:
+      "Île-du-Prince-Édouard",
+
+    region_qc:
+      "Québec",
+
+    region_sk:
+      "Saskatchewan",
+
+    region_yt:
+      "Yukon",
+
+    region_international:
+      "International",
+
+    entity_branch:
+      "Branche des C et E",
+
+    entity_association:
+      "Association des C et E",
+
+    entity_foundation:
+      "Fondation des C et E",
+
+    entity_museum:
+      "Musée des C et E",
+
+    event_type_conference:
+      "Conférence",
+
+    event_type_mess_function:
+      "Activité de mess",
+
+    event_type_ceremony:
+      "Cérémonie",
+
+    event_type_training:
+      "Instruction",
+
+    event_type_social:
+      "Activité sociale",
+
+    event_type_other:
+      "Autre",
+    event_registration_label:
+      "Lien ou instructions d'inscription",
+
+    event_registration_placeholder_en:
+      "Entrez un lien ou des instructions d'inscription en anglais",
+
+    event_registration_placeholder_fr:
+      "Entrez un lien ou des instructions d'inscription",
+
+    event_registration_optional:
+      "Facultatif",
+
+    event_timezone:
+      "Fuseau horaire de l'événement",
+
+    event_select_timezone:
+      "Sélectionnez un fuseau horaire",
+
+    event_timezone_hint:
+      "Choisissez le fuseau horaire où l'événement aura lieu.",
+
+    timezone_newfoundland:
+      "Heure de Terre-Neuve",
+
+    timezone_atlantic:
+      "Heure de l'Atlantique",
+
+    timezone_eastern:
+      "Heure de l'Est",
+
+    timezone_central:
+      "Heure du Centre",
+
+    timezone_mountain:
+      "Heure des Rocheuses",
+
+    timezone_pacific:
+      "Heure du Pacifique",
+    event_submitter_eyebrow:
+      "Personne-ressource",
+
+    event_submitter_heading:
+      "Renseignements sur le demandeur",
+
+    event_submitter_intro:
+      "Entrez les coordonnées de la personne responsable de cette soumission d'événement.",
+
+    event_submitter_rank:
+      "Grade",
+
+    event_submitter_rank_placeholder:
+      "Capt",
+
+    event_submitter_first_name:
+      "Prénom",
+
+    event_submitter_last_name:
+      "Nom de famille",
+
+    event_submitter_unit_role:
+      "Unité ou rôle",
+
+    event_submitter_unit_role_placeholder:
+      "QG et Esc Trans 2 GBMC",
+
+    event_submitter_email:
+      "Courriel de la personne-ressource",
+
+    event_submitter_email_hint:
+      "Les confirmations de soumission et de statut seront envoyées à cette adresse.",
+
+    event_submitter_phone:
+      "Numéro de téléphone",
+
+    event_optional:
+      "Facultatif",
+
+    event_authorization_eyebrow:
+      "Autorisation de publication",
+
+    event_authorization_heading:
+      "Confirmation de la chaîne de commandement",
+
+    event_permission_confirmation:
+      "Je confirme avoir l'autorisation de la chaîne de commandement pour publier cet événement.",
+
+    event_permission_confirmation_hint:
+      "Cette confirmation est requise avant que l'événement puisse être soumis aux fins de révision ou de publication.",
+    event_permission_required:
+      "Vous devez confirmer l'autorisation de la chaîne de commandement avant de soumettre l'événement.",
+  },
 };
 
 const langToggle = document.getElementById("langToggle");

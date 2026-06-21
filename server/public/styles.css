@@ -404,3 +404,117 @@ a.dropdown-toggle {
 [hidden] {
   display: none !important;
 }
+
+.event-language-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.event-language-section legend {
+  padding: 0 8px;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.event-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.auth-success {
+  color: green;
+  font-size: 13px;
+  min-height: 18px;
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.calendar-main {
+  padding: 48px 20px;
+}
+
+.calendar-container {
+  width: 100%;
+  max-width: 850px;
+  margin: 0 auto;
+}
+
+.calendar-heading {
+  margin-bottom: 36px;
+  color: var(--white);
+}
+
+.calendar-heading h1 {
+  margin-bottom: 8px;
+  font-size: 32px;
+}
+
+.calendar-heading p {
+  font-size: 16px;
+}
+
+.calendar-message {
+  padding: 24px;
+  background: var(--white);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.calendar-month {
+  margin-bottom: 42px;
+}
+
+.calendar-month-title {
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  color: var(--white);
+  font-size: 24px;
+  text-transform: capitalize;
+  border-bottom: 3px solid var(--gold);
+}
+
+.calendar-event {
+  margin-bottom: 14px;
+  padding: 22px 24px;
+  background: var(--white);
+  border-left: 5px solid var(--gold);
+  border-radius: 5px;
+  box-shadow: 0 3px 10px var(--shadow);
+}
+
+.calendar-event-date {
+  margin-bottom: 5px;
+  color: var(--gold);
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.calendar-event-title {
+  margin-bottom: 8px;
+  color: var(--primary-color);
+  font-size: 21px;
+}
+
+.calendar-event-location {
+  margin-bottom: 8px;
+  color: #555;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.calendar-event-description {
+  color: #333;
+  line-height: 1.6;
+  white-space: pre-line;
+}

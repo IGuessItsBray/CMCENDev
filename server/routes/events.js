@@ -7,7 +7,6 @@ const {
     CANADIAN_TIMEZONES
 } = require('../config/content');
 
-
 const {
     authMiddleware,
     requireMinimumRole,
@@ -93,7 +92,6 @@ function parseBoolean(
 
 
 }
-
 
 function getDatePartsInTimezone(
     date,
@@ -721,7 +719,6 @@ router.post(
     }
 
 );
-
 
 // list the events awaiting review
 router.get(

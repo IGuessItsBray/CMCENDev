@@ -637,6 +637,76 @@ const translations = {
 
     submit_event_button:
       "Submit Event",
+    event_edit_loading:
+      "Loading event details...",
+    home_hero_eyebrow:
+      "Canadian Military Communications and Electronics Network",
+
+    home_hero_title:
+      "Connecting the C&E Family",
+
+    home_hero_intro:
+      "A shared home for serving members, veterans, families, associations, and organizations connected to Canada's Communications and Electronics community.",
+
+    home_explore_family:
+      "Explore the C&E Family",
+
+    home_view_calendar:
+      "View the Calendar",
+
+    home_family_title:
+      "The C&E Family",
+
+    home_branch_title:
+      "The Branch",
+
+    home_branch_text:
+      "Learn about the military branch, its identity, leadership, and role.",
+
+    home_association_title:
+      "The Association",
+
+    home_association_text:
+      "Connect with the national community of serving and former members.",
+
+    home_foundation_title:
+      "The Foundation",
+
+    home_foundation_text:
+      "See how the Foundation supports education, remembrance, and community initiatives.",
+
+    home_museum_title:
+      "The Museum",
+
+    home_museum_text:
+      "Explore the people, equipment, and stories that shaped Canada's military communications history.",
+
+    home_learn_more:
+      "Learn more",
+
+    home_events_eyebrow:
+      "Coming together",
+
+    home_events_title:
+      "Upcoming Events",
+
+    home_events_intro:
+      "Find reunions, ceremonies, conferences, training, and community events across the C&E Family.",
+
+    home_browse_events:
+      "Browse all events",
+
+    home_stories_eyebrow:
+      "News and remembrance",
+
+    home_stories_title:
+      "Stories From the Community",
+
+    home_stories_intro:
+      "Read the latest news, personal stories, historical features, promotions, and memorial notices.",
+
+    home_read_stories:
+      "Read news and stories",
   },
 
   fr: {
@@ -1317,6 +1387,76 @@ const translations = {
 
     submit_event_button:
       "Soumettre l'événement",
+    event_edit_loading:
+      "Chargement des renseignements sur l'événement...",
+    home_hero_eyebrow:
+      "Réseau canadien des communications et de l'électronique militaires",
+
+    home_hero_title:
+      "Relier la famille des C\u00A0et\u00A0E",
+
+    home_hero_intro:
+      "Un lieu commun pour les militaires en service, les vétérans, les familles, les associations et les organisations liés à la communauté canadienne des communications et de l'électronique.",
+
+    home_explore_family:
+      "Découvrir la famille des C et E",
+
+    home_view_calendar:
+      "Voir le calendrier",
+
+    home_family_title:
+      "La famille des C et E",
+
+    home_branch_title:
+      "La Branche",
+
+    home_branch_text:
+      "Découvrez la Branche militaire, son identité, sa direction et son rôle.",
+
+    home_association_title:
+      "L'Association",
+
+    home_association_text:
+      "Joignez-vous à la communauté nationale des membres en service et des anciens membres.",
+
+    home_foundation_title:
+      "La Fondation",
+
+    home_foundation_text:
+      "Découvrez comment la Fondation soutient l'éducation, la commémoration et les initiatives communautaires.",
+
+    home_museum_title:
+      "Le Musée",
+
+    home_museum_text:
+      "Découvrez les personnes, l'équipement et les récits qui ont façonné l'histoire des communications militaires canadiennes.",
+
+    home_learn_more:
+      "En savoir plus",
+
+    home_events_eyebrow:
+      "Se rassembler",
+
+    home_events_title:
+      "Événements à venir",
+
+    home_events_intro:
+      "Trouvez des retrouvailles, des cérémonies, des conférences, des activités de formation et des événements communautaires partout dans la famille des C et E.",
+
+    home_browse_events:
+      "Voir tous les événements",
+
+    home_stories_eyebrow:
+      "Actualités et commémoration",
+
+    home_stories_title:
+      "Récits de la communauté",
+
+    home_stories_intro:
+      "Consultez les dernières nouvelles, les témoignages personnels, les articles historiques, les promotions et les avis commémoratifs.",
+
+    home_read_stories:
+      "Lire les nouvelles et les récits",
   },
 };
 

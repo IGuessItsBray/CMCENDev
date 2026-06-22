@@ -278,7 +278,7 @@ const translations = {
       "Event submission",
 
     submit_event_intro:
-      "Enter the English and French details side by side, then set the schedule.",
+      "Propose an event for publication in the C&E Calendar.",
 
     event_language_note:
       "At least one event title is required. Add both language versions whenever possible.",
@@ -567,6 +567,76 @@ const translations = {
 
     review_confirmed_on:
       "Confirmed on",
+    my_events_eyebrow:
+      "Event management",
+
+    my_events_heading:
+      "My Events",
+
+    my_events_intro:
+      "View and update events you have previously submitted.",
+    my_events_untitled:
+      "Untitled event",
+
+    my_events_empty:
+      "You have not submitted any events yet.",
+
+    my_events_load_error:
+      "Could not load your events.",
+
+    my_events_count_singular:
+      "1 event",
+
+    my_events_count_plural:
+      "{count} events",
+
+    my_events_last_updated:
+      "Last updated",
+
+    my_events_rejection_reason:
+      "Rejection reason",
+
+    my_events_edit:
+      "Edit event",
+
+    my_events_edit_resubmit:
+      "Edit and resubmit",
+
+    my_events_status_draft:
+      "Draft",
+
+    my_events_status_pending:
+      "Pending review",
+
+    my_events_status_published:
+      "Published",
+
+    my_events_status_rejected:
+      "Rejected",
+    submit_new_event_tab:
+      "Submit New Event",
+    event_update_success:
+      "The event was updated and submitted successfully.",
+    edit_event_tab:
+      "Edit Event",
+
+    edit_event_heading:
+      "Edit Event",
+
+    edit_event_intro:
+      "Update this event and submit the changes for review.",
+
+    save_event_changes:
+      "Save Changes",
+
+    submit_event_heading:
+      "Submit an Event",
+
+    submit_event_intro:
+      "Submit an event for publication in the C&E Calendar.",
+
+    submit_event_button:
+      "Submit Event",
   },
 
   fr: {
@@ -1177,6 +1247,76 @@ const translations = {
 
     review_confirmed_on:
       "Confirmée le",
+    my_events_eyebrow:
+      "Gestion des événements",
+
+    my_events_heading:
+      "Mes événements",
+
+    my_events_intro:
+      "Consultez et mettez à jour les événements que vous avez soumis.",
+    my_events_untitled:
+      "Événement sans titre",
+
+    my_events_empty:
+      "Vous n'avez encore soumis aucun événement.",
+
+    my_events_load_error:
+      "Impossible de charger vos événements.",
+
+    my_events_count_singular:
+      "1 événement",
+
+    my_events_count_plural:
+      "{count} événements",
+
+    my_events_last_updated:
+      "Dernière mise à jour",
+
+    my_events_rejection_reason:
+      "Motif du refus",
+
+    my_events_edit:
+      "Modifier l'événement",
+
+    my_events_edit_resubmit:
+      "Modifier et soumettre de nouveau",
+
+    my_events_status_draft:
+      "Brouillon",
+
+    my_events_status_pending:
+      "En attente de révision",
+
+    my_events_status_published:
+      "Publié",
+
+    my_events_status_rejected:
+      "Refusé",
+    submit_new_event_tab:
+      "Soumettre un nouvel événement",
+    event_update_success:
+      "L'événement a été mis à jour et soumis avec succès.",
+    edit_event_tab:
+      "Modifier l'événement",
+
+    edit_event_heading:
+      "Modifier l'événement",
+
+    edit_event_intro:
+      "Mettez à jour cet événement et soumettez les modifications pour révision.",
+
+    save_event_changes:
+      "Enregistrer les modifications",
+
+    submit_event_heading:
+      "Soumettre un événement",
+
+    submit_event_intro:
+      "Soumettez un événement pour publication dans le calendrier C et E.",
+
+    submit_event_button:
+      "Soumettre l'événement",
   },
 };
 

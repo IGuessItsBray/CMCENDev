@@ -41,26 +41,25 @@ function cleanString(
         : fallback;
 }
 
-function cleanSubmitter(
-    value,
-    authenticatedUser
-) {
+function cleanSubmitter(submitter = {}) {
     return {
-        rank: cleanString(value?.rank),
-        firstName: cleanString(value?.firstName),
-        lastName: cleanString(value?.lastName),
-        unitRole: cleanString(value?.unitRole),
-
-
+        rank: cleanString(submitter.rank),
+        firstName: cleanString(
+            submitter.firstName
+        ),
+        lastName: cleanString(
+            submitter.lastName
+        ),
+        unitRole: cleanString(
+            submitter.unitRole
+        ),
         email: cleanString(
-            value?.email,
-            authenticatedUser.email || ''
+            submitter.email
         ).toLowerCase(),
-
-        phone: cleanString(value?.phone)
+        phone: cleanString(
+            submitter.phone
+        )
     };
-
-
 }
 
 function isAllowedOption(
@@ -780,6 +779,378 @@ router.get(
 
             res.status(500).json({
                 error: 'Could not load review queue'
+            });
+        }
+    }
+);
+
+router.get(
+    '/mine',
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const permissions =
+                getUserPermissions(req.user);
+
+            if (
+                permissions.canCreateDrafts !== true
+            ) {
+                return res.status(403).json({
+                    error:
+                        'You do not have permission to submit or manage events'
+                });
+            }
+
+            const events = await Event.find({
+                createdBy: req.user._id
+            })
+                .select([
+                    'title',
+                    'city',
+                    'provinceRegion',
+                    'organizingEntity',
+                    'eventType',
+                    'timezone',
+                    'startDate',
+                    'endDate',
+                    'allDay',
+                    'status',
+                    'rejectionReason',
+                    'deleteRequested',
+                    'createdAt',
+                    'updatedAt',
+                    'lastSubmittedAt',
+                    'createdBy'
+                ].join(' '))
+                .sort({
+                    updatedAt: -1
+                })
+                .lean();
+
+            return res.json({
+                events
+            });
+        } catch (error) {
+            console.error(
+                'Could not load user events:',
+                error
+            );
+
+            return res.status(500).json({
+                error:
+                    'Could not load your events'
+            });
+        }
+    }
+);
+
+router.get(
+    "/:id/edit",
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const event = await Event.findById(
+                req.params.id
+            ).lean();
+
+            if (!event) {
+                return res.status(404).json({
+                    error: "Event not found"
+                });
+            }
+
+            const permissions =
+                getUserPermissions(req.user);
+
+            const isOwner =
+                event.createdBy &&
+                String(event.createdBy) ===
+                String(req.user._id);
+
+            const canReview =
+                permissions.canReviewAndPublish === true;
+
+            if (!isOwner && !canReview) {
+                return res.status(403).json({
+                    error:
+                        "You do not have permission to edit this event"
+                });
+            }
+
+            return res.json({
+                event
+            });
+        } catch (error) {
+            if (error.name === "CastError") {
+                return res.status(404).json({
+                    error: "Event not found"
+                });
+            }
+
+            console.error(
+                "Could not load event for editing:",
+                error
+            );
+
+            return res.status(500).json({
+                error:
+                    "Could not load event for editing"
+            });
+        }
+    }
+);
+
+router.patch(
+    "/:id",
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const event = await Event.findById(
+                req.params.id
+            );
+
+            if (!event) {
+                return res.status(404).json({
+                    error: "Event not found"
+                });
+            }
+
+            const permissions =
+                getUserPermissions(req.user);
+
+            const isOwner =
+                event.createdBy &&
+                String(event.createdBy) ===
+                String(req.user._id);
+
+            const canReview =
+                permissions.canReviewAndPublish === true;
+
+            if (!isOwner && !canReview) {
+                return res.status(403).json({
+                    error:
+                        "You do not have permission to edit this event"
+                });
+            }
+
+            const {
+                title,
+                description,
+                location,
+                registration,
+                city,
+                provinceRegion,
+                organizingEntity,
+                eventType,
+                timezone,
+                startDate,
+                endDate,
+                allDay,
+                submitter,
+                publicationPermissionConfirmed
+            } = req.body;
+
+            const isAllDay =
+                parseBoolean(allDay);
+
+            if (
+                !isAllowedOption(
+                    provinceRegion,
+                    CANADIAN_REGIONS
+                ) ||
+                !isAllowedOption(
+                    organizingEntity,
+                    EVENT_ORGANIZING_ENTITIES
+                ) ||
+                !isAllowedOption(
+                    eventType,
+                    EVENT_TYPES
+                ) ||
+                (
+                    !isAllDay &&
+                    !isAllowedOption(
+                        timezone,
+                        CANADIAN_TIMEZONES
+                    )
+                )
+            ) {
+                return res.status(400).json({
+                    error:
+                        "One or more event options are invalid"
+                });
+            }
+
+            const parsedStartDate =
+                parseEventDate(
+                    startDate,
+                    isAllDay,
+                    timezone
+                );
+
+            const parsedEndDate =
+                endDate
+                    ? parseEventDate(
+                        endDate,
+                        isAllDay,
+                        timezone
+                    )
+                    : null;
+
+            if (
+                !parsedStartDate ||
+                Number.isNaN(
+                    parsedStartDate.getTime()
+                ) ||
+                (
+                    parsedEndDate &&
+                    Number.isNaN(
+                        parsedEndDate.getTime()
+                    )
+                )
+            ) {
+                return res.status(400).json({
+                    error:
+                        "The event dates are invalid"
+                });
+            }
+
+            if (
+                parsedEndDate &&
+                parsedEndDate < parsedStartDate
+            ) {
+                return res.status(400).json({
+                    error:
+                        "The end date cannot be before the start date"
+                });
+            }
+
+            if (
+                !isAllDay &&
+                parsedEndDate &&
+                parsedEndDate <= parsedStartDate
+            ) {
+                return res.status(400).json({
+                    error:
+                        "A timed event must end after it starts"
+                });
+            }
+
+            const cleanedSubmitter =
+                cleanSubmitter(submitter);
+
+            if (
+                !cleanedSubmitter.rank ||
+                !cleanedSubmitter.firstName ||
+                !cleanedSubmitter.lastName ||
+                !cleanedSubmitter.unitRole ||
+                !cleanedSubmitter.email
+            ) {
+                return res.status(400).json({
+                    error:
+                        "Required submitter information is missing"
+                });
+            }
+
+            if (
+                parseBoolean(
+                    publicationPermissionConfirmed
+                ) !== true
+            ) {
+                return res.status(400).json({
+                    error:
+                        "Publication permission must be confirmed"
+                });
+            }
+
+            event.title = {
+                en: cleanString(title?.en),
+                fr: cleanString(title?.fr)
+            };
+
+            event.description = {
+                en: cleanString(description?.en),
+                fr: cleanString(description?.fr)
+            };
+
+            event.location = {
+                en: cleanString(location?.en),
+                fr: cleanString(location?.fr)
+            };
+
+            event.registration = {
+                en: cleanString(registration?.en),
+                fr: cleanString(registration?.fr)
+            };
+
+            event.city = cleanString(city);
+            event.provinceRegion = provinceRegion;
+            event.organizingEntity =
+                organizingEntity;
+            event.eventType = eventType;
+            event.timezone =
+                isAllDay ? "" : timezone;
+
+            event.startDate = parsedStartDate;
+            event.endDate = parsedEndDate;
+            event.allDay = isAllDay;
+
+            event.submitter = cleanedSubmitter;
+
+            event.publicationPermission = {
+                confirmed: true,
+                confirmedAt: new Date(),
+                confirmedBy: req.user._id
+            };
+
+            event.updatedBy = req.user._id;
+            event.lastSubmittedAt = new Date();
+
+            if (canReview) {
+                event.status =
+                    parseBoolean(req.body.publishNow)
+                        ? "published"
+                        : "pending";
+
+                if (event.status === "published") {
+                    event.publishedBy =
+                        req.user._id;
+                    event.publishedAt =
+                        new Date();
+                }
+            } else {
+                event.status = "pending";
+                event.reviewedBy = undefined;
+                event.reviewedAt = undefined;
+                event.publishedBy = undefined;
+                event.publishedAt = undefined;
+            }
+
+            event.rejectionReason = "";
+
+            await event.save();
+
+            return res.json({
+                message:
+                    event.status === "published"
+                        ? "Event updated and published"
+                        : "Event updated and submitted for review",
+                event
+            });
+        } catch (error) {
+            if (error.name === "CastError") {
+                return res.status(404).json({
+                    error: "Event not found"
+                });
+            }
+
+            console.error(
+                "Could not update event:",
+                error
+            );
+
+            return res.status(500).json({
+                error:
+                    "Could not update event"
             });
         }
     }

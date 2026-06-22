@@ -17,8 +17,6 @@ function formatDate(value) {
     }
 
     return date.toISOString();
-
-
 }
 
 function getUsername(user) {

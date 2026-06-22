@@ -488,6 +488,7 @@ main > * {
   transition:
     background-color 150ms ease,
     border-color 150ms ease;
+  width: 148px;
 }
 
 .donate-link:hover,
@@ -4036,7 +4037,6 @@ line-height: 1;
 }
 .event-management-tabs {
   display: flex;
-  border: 1px solid var(--branch-grey-200);
   border-bottom: 3px solid var(--navy-900);
   border-radius: 2px 2px 0 0;
   background: var(--branch-grey-100);
@@ -4694,4 +4694,93 @@ line-height: 1;
 .home-family-card:last-child {
   padding-right: 10px;
   border-right: 0;
+}
+
+.event-edit-loading {
+  min-height: 360px;
+  padding: 70px 24px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid var(--branch-grey-200);
+  border-top: 0;
+  background: var(--white);
+  color: var(--branch-grey-800);
+  text-align: center;
+}
+
+.event-edit-loading[hidden] {
+  display: none !important;
+}
+
+.event-edit-loading-spinner {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 18px;
+  border: 3px solid var(--branch-grey-200);
+  border-top-color: var(--gold-600);
+  border-radius: 50%;
+  animation:
+    event-edit-loading-spin
+    750ms linear infinite;
+}
+
+.event-edit-loading p {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+@keyframes event-edit-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+.event-loading {
+  min-height: 360px;
+  padding: 70px 24px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid var(--branch-grey-200);
+  border-top: 0;
+  background: var(--white);
+  color: var(--branch-grey-800);
+  text-align: center;
+}
+
+.event-loading[hidden] {
+  display: none !important;
+}
+
+.event-loading-spinner {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 18px;
+  border: 3px solid var(--branch-grey-200);
+  border-top-color: var(--gold-600);
+  border-radius: 50%;
+  animation:
+    event-edit-loading-spin
+    750ms linear infinite;
+}
+
+.event-loading p {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+@keyframes event-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

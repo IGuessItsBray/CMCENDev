@@ -1,18 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title data-i18n="title">CMCEN</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <header id="header"></header>
-    <main>
-      <div class="hero"><img src="images/logo.png" alt="hero"/></div>
-    </main>
-    <footer id="footer"></footer>
-    <script src="index.js"></script>
-    <script src="translations.js"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="title">CMCEN</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <header id="header"></header>
+  <main class="home-main">
+    <section class="home-hero">
+      <div class="home-hero-inner">
+        <div class="home-hero-copy">
+          <p class="home-eyebrow" data-i18n="home_hero_eyebrow">
+            Canadian Military Communications and Electronics Network
+          </p>
+
+          <h1 data-i18n="home_hero_title">
+            Connecting the C&amp;E Family
+          </h1>
+
+          <p class="home-hero-intro" data-i18n="home_hero_intro">
+            A shared home for serving members, veterans, families,
+            associations, and organizations connected to Canada’s
+            Communications and Electronics community.
+          </p>
+
+          <div class="home-hero-actions">
+            <a href="/about_family.html" class="home-button home-button-primary" data-i18n="home_explore_family">
+              Explore the C&amp;E Family
+            </a>
+
+            <a href="/calendar.html" class="home-button home-button-secondary" data-i18n="home_view_calendar">
+              View the Calendar
+            </a>
+          </div>
+        </div>
+
+        <div class="home-hero-identity" aria-hidden="true">
+          <img src="/images/logo.png" alt="" />
+
+          <span>CMCEN</span>
+          <span>RCMCE</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-family" aria-labelledby="homeFamilyTitle">
+      <header class="home-family-heading">
+        <span aria-hidden="true"></span>
+
+        <h2 id="homeFamilyTitle" data-i18n="home_family_title">
+          The C&amp;E Family
+        </h2>
+
+        <span aria-hidden="true"></span>
+      </header>
+
+      <div class="home-family-grid">
+        <a href="/about_branch.html" class="home-family-card">
+          <div class="home-family-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M15 9h34v23c0 11-7 18-17 24C22 50 15 43 15 32V9Z" />
+              <path d="m23 31 9-9 9 9" />
+              <path d="m23 41 9-9 9 9" />
+            </svg>
+          </div>
+
+          <span class="home-family-number">
+            01
+          </span>
+
+          <h3 data-i18n="home_branch_title">
+            The Branch
+          </h3>
+
+          <p data-i18n="home_branch_text">
+            Learn about the military branch, its identity,
+            leadership, and role.
+          </p>
+
+          <span class="home-family-link" data-i18n="home_learn_more">
+            Learn more
+          </span>
+        </a>
+
+        <a href="/about_association.html" class="home-family-card">
+          <div class="home-family-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="32" cy="23" r="10" />
+              <circle cx="16" cy="26" r="8" />
+              <circle cx="48" cy="26" r="8" />
+              <path d="M17 52v-8c0-8 6-13 15-13s15 5 15 13v8H17Z" />
+              <path d="M4 52v-6c0-7 5-11 12-11" />
+              <path d="M60 52v-6c0-7-5-11-12-11" />
+            </svg>
+          </div>
+
+          <span class="home-family-number">
+            02
+          </span>
+
+          <h3 data-i18n="home_association_title">
+            The Association
+          </h3>
+
+          <p data-i18n="home_association_text">
+            Connect with the national community of serving
+            and former members.
+          </p>
+
+          <span class="home-family-link" data-i18n="home_learn_more">
+            Learn more
+          </span>
+        </a>
+
+        <a href="/about_foundation.html" class="home-family-card">
+          <div class="home-family-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="
+      M32 6
+      27 17
+      20 13
+      22 23
+      11 21
+      17 31
+      10 35
+      27 38
+      25 51
+      32 47
+      39 51
+      37 38
+      54 35
+      47 31
+      53 21
+      42 23
+      44 13
+      37 17
+      32 6
+      Z
+    " />
+              <path d="M32 47v11" />
+            </svg>
+          </div>
+
+          <span class="home-family-number">
+            03
+          </span>
+
+          <h3 data-i18n="home_foundation_title">
+            The Foundation
+          </h3>
+
+          <p data-i18n="home_foundation_text">
+            See how the Foundation supports education,
+            remembrance, and community initiatives.
+          </p>
+
+          <span class="home-family-link" data-i18n="home_learn_more">
+            Learn more
+          </span>
+        </a>
+
+        <a href="/about_museum.html" class="home-family-card">
+          <div class="home-family-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="m8 20 24-12 24 12H8Z" />
+              <path d="M12 25h40" />
+              <path d="M15 25v25" />
+              <path d="M26 25v25" />
+              <path d="M38 25v25" />
+              <path d="M49 25v25" />
+              <path d="M9 50h46" />
+              <path d="M6 56h52" />
+            </svg>
+          </div>
+
+          <span class="home-family-number">
+            04
+          </span>
+
+          <h3 data-i18n="home_museum_title">
+            The Museum
+          </h3>
+
+          <p data-i18n="home_museum_text">
+            Explore the people, equipment, and stories that
+            shaped Canada’s military communications history.
+          </p>
+
+          <span class="home-family-link" data-i18n="home_learn_more">
+            Learn more
+          </span>
+        </a>
+      </div>
+    </section>
+
+    <section class="home-information">
+      <article class="home-feature-panel">
+        <p class="home-section-eyebrow" data-i18n="home_events_eyebrow">
+          Coming together
+        </p>
+
+        <h2 data-i18n="home_events_title">
+          Upcoming Events
+        </h2>
+
+        <p data-i18n="home_events_intro">
+          Find reunions, ceremonies, conferences, training,
+          and community events across the C&amp;E Family.
+        </p>
+
+        <a href="/calendar.html" class="home-text-link" data-i18n="home_browse_events">
+          Browse all events
+        </a>
+      </article>
+
+      <article class="home-feature-panel">
+        <p class="home-section-eyebrow" data-i18n="home_stories_eyebrow">
+          News and remembrance
+        </p>
+
+        <h2 data-i18n="home_stories_title">
+          Stories From the Community
+        </h2>
+
+        <p data-i18n="home_stories_intro">
+          Read the latest news, personal stories, historical
+          features, promotions, and memorial notices.
+        </p>
+
+        <a href="/news_stories.html" class="home-text-link" data-i18n="home_read_stories">
+          Read news and stories
+        </a>
+      </article>
+    </section>
+  </main>
+  <footer id="footer"></footer>
+  <script src="index.js"></script>
+  <script src="translations.js"></script>
+</body>
+
 </html>

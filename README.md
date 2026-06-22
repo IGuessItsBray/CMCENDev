@@ -113,13 +113,20 @@ node scripts/set-user-role.js <username> <role> [contentAreas]
 
 ```bash
 # Promote a user to admin
-node scripts/set-user-role.js johndoe admin
+node scripts/set-user-role.js johndoe administrator
 
 # Set a user as an author with specific content areas
 node scripts/set-user-role.js janedoe author "news,events"
 ```
 
 Valid roles are defined in `server/config/roles.js`.
+
+Available Roles:
+ - subscriber
+ - contributor
+ - author
+ - editor
+ - administrator
 
 ---
 

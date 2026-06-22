@@ -1,23 +1,24 @@
-# Use an official Node runtime
 FROM node:20-slim
 
-# Set the working directory to the server folder
+# Install curl for the HEALTHCHECK
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -r nodeuser && useradd -r -g nodeuser nodeuser
+
 WORKDIR /usr/src/app/server
 
-# Copy package files from the server directory
-COPY server/package*.json ./
-
-# Install dependencies
+# Copy package files and change ownership so the non-root user can run npm install
+COPY --chown=nodeuser:nodeuser server/package*.json ./
 RUN npm install
 
-# Copy the .env file explicitly
-COPY server/.env .
+# Copy the rest of the application
+COPY --chown=nodeuser:nodeuser server/ .
 
-# Copy the rest of the server code
-COPY server/ .
+USER nodeuser
 
-# Expose the port (adjust if your server.js uses a different one)
 EXPOSE 3000
 
-# Run the server from within the server directory
+HEALTHCHECK --interval=30s --timeout=5s \
+  CMD curl -f http://localhost:3000/api/data || exit 1
+
 CMD ["node", "server.js"]

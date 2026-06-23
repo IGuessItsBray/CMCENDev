@@ -5,6 +5,13 @@ const User = require('./models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const eventRoutes = require('./routes/events');
+const multer = require('multer');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
+const s3Client = require('./storage');
+const { v4: uuidv4 } = require('uuid');
+
+const upload = multer({ storage: multer.memoryStorage() });
+
 const {
   authMiddleware,
   requireMinimumRole,
@@ -120,6 +127,59 @@ app.post('/api/login', async (req, res) => {
   } else {
     res.status(401).json({ error: "Invalid credentials" });
   }
+});
+
+// Add this route near your other POST handlers
+app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // Generate a unique key/filename
+        const fileExtension = req.file.originalname.split('.').pop();
+        const fileKey = `${uuidv4()}.${fileExtension}`;
+
+        const uploadParams = {
+            Bucket: process.env.MINIO_BUCKET_NAME,
+            Key: fileKey,
+            Body: req.file.buffer,
+            ContentType: req.file.mimetype,
+        };
+
+        // Upload to MinIO
+        await s3Client.send(new PutObjectCommand(uploadParams));
+
+        // Return the object path/URL
+        // Note: You may need to prepend your public URL/Domain here
+        res.status(201).json({ 
+            message: "Upload successful", 
+            key: fileKey,
+            url: `/uploads/${fileKey}` // Or full external URL
+        });
+    } catch (err) {
+        console.error("Upload Error:", err);
+        res.status(500).json({ error: 'Could not upload file' });
+    }
+});
+
+const { GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+
+app.get('/api/image/:key', authMiddleware, async (req, res) => {
+    try {
+        const command = new GetObjectCommand({
+            Bucket: process.env.MINIO_BUCKET_NAME,
+            Key: req.params.key
+        });
+
+        // Generate a URL that expires in 15 minutes
+        const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
+        
+        res.json({ url: signedUrl });
+    } catch (err) {
+        res.status(500).json({ error: 'Could not generate secure link' });
+    }
 });
 
 startServer();

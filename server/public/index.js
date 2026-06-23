@@ -131,9 +131,7 @@ function loadHeader() {
     .join('');
 
   const header = document.getElementById('header');
-
   header.className = 'site-header';
-
   header.innerHTML = `
     <div class="header-identity-row">
       <div class="header-inner">
@@ -437,8 +435,7 @@ function loadFooter() {
     </div>
   `;
 
-  const yearElement =
-    document.getElementById('copyrightYear');
+  const yearElement = document.getElementById('copyrightYear');
 
   if (yearElement) {
     yearElement.textContent =
@@ -525,13 +522,10 @@ function updateAuthButtons() {
 async function updateAuthRestrictedItems() {
   const token = localStorage.getItem('token');
 
-  const authRequiredItems =
-    document.querySelectorAll('[data-auth-required]');
+  const authRequiredItems = document.querySelectorAll('[data-auth-required]');
 
-  const permissionRequiredItems =
-    document.querySelectorAll('[data-permission]');
+  const permissionRequiredItems = document.querySelectorAll('[data-permission]');
 
-  // Hide restricted links until the server verifies the account.
   authRequiredItems.forEach(element => {
     element.hidden = true;
   });

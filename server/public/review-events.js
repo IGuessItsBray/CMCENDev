@@ -1,13 +1,7 @@
 const reviewQueue = document.getElementById("reviewQueue");
-
-const reviewPageMessage =
-  document.getElementById("reviewPageMessage");
-
-const reviewNotice =
-  document.getElementById("reviewNotice");
-
-const reviewQueueCount =
-  document.getElementById("reviewQueueCount");
+const reviewPageMessage = document.getElementById("reviewPageMessage");
+const reviewNotice = document.getElementById("reviewNotice");
+const reviewQueueCount = document.getElementById("reviewQueueCount");
 
 let pendingEvents = [];
 let accessDenied = false;
@@ -20,16 +14,6 @@ function getReviewLanguage() {
   }
 
   return localStorage.getItem("lang") || "en";
-}
-
-function reviewTranslate(key) {
-  const language = getReviewLanguage();
-
-  return (
-    translations[language]?.[key] ??
-    translations.en?.[key] ??
-    key
-  );
 }
 
 function getReviewLocale() {
@@ -60,7 +44,7 @@ function getDisplayTitle(event) {
   return (
     getContentValue(event.title, language) ||
     getContentValue(event.title, fallbackLanguage) ||
-    reviewTranslate("translation_missing")
+    translate("translation_missing")
   );
 }
 
@@ -99,14 +83,14 @@ function formatEventSchedule(event) {
     ) {
       return (
         `${startLabel} · ` +
-        reviewTranslate("all_day")
+        translate("all_day")
       );
     }
 
     return (
-      `${startLabel} – ` +
+      `${startLabel} - ` +
       `${dateFormatter.format(end)} · ` +
-      reviewTranslate("all_day")
+      translate("all_day")
     );
   }
 
@@ -155,7 +139,7 @@ function formatEventSchedule(event) {
   if (sameDay) {
     return (
       `${startDateLabel} · ` +
-      `${startTimeLabel}–` +
+      `${startTimeLabel}-` +
       timeFormatter.format(end)
     );
   }
@@ -206,10 +190,7 @@ const timezoneTranslationKeys = {
     "timezone_mountain"
 };
 
-function formatTranslatedOption(
-  prefix,
-  value
-) {
+function formatTranslatedOption(prefix, value) {
   if (!value) {
     return "—";
   }
@@ -222,7 +203,7 @@ function formatTranslatedOption(
     `${prefix}_${normalizedValue}`;
 
   const translated =
-    reviewTranslate(key);
+    translate(key);
 
   if (translated === key) {
     return formatContentArea(value);
@@ -244,7 +225,7 @@ function formatEventTimezone(value) {
   }
 
   return (
-    `${reviewTranslate(translationKey)} ` +
+    `${translate(translationKey)} ` +
     `(${value})`
   );
 }
@@ -265,23 +246,16 @@ function formatReviewUser(user) {
   );
 }
 
-function createReviewRecordSection(
-  titleKey,
-  items,
-  additionalClass = ""
-) {
-  const section =
-    document.createElement("section");
+function createReviewRecordSection(titleKey, items, additionalClass = "") {
+  const section = document.createElement("section");
 
-  section.className =
-    `review-record-section ${additionalClass}`
-      .trim();
+  section.className = `review-record-section ${additionalClass}`.trim();
 
   const heading =
     document.createElement("h3");
 
   heading.textContent =
-    reviewTranslate(titleKey);
+    translate(titleKey);
 
   const grid =
     document.createElement("div");
@@ -307,7 +281,7 @@ function createReviewRecordSection(
       "review-record-label";
 
     label.textContent =
-      reviewTranslate(item.labelKey);
+      translate(item.labelKey);
 
     const value =
       document.createElement("span");
@@ -347,7 +321,7 @@ function createMetaItem(labelKey, value) {
     "review-event-meta-label";
 
   label.textContent =
-    reviewTranslate(labelKey);
+    translate(labelKey);
 
   const content =
     document.createElement("span");
@@ -362,12 +336,8 @@ function createMetaItem(labelKey, value) {
   return item;
 }
 
-function createContentValue(
-  className,
-  value
-) {
-  const element =
-    document.createElement("p");
+function createContentValue(className, value) {
+  const element = document.createElement("p");
 
   element.className = className;
 
@@ -375,7 +345,7 @@ function createContentValue(
     element.textContent = value;
   } else {
     element.textContent =
-      reviewTranslate("translation_missing");
+      translate("translation_missing");
 
     element.classList.add("is-missing");
   }
@@ -383,90 +353,41 @@ function createContentValue(
   return element;
 }
 
-function createContentSection(
-  event,
-  language,
-  heading
-) {
-  const section =
-    document.createElement("section");
-
-  section.className =
-    "review-language-panel";
-
+function createContentSection(event, language, heading) {
+  const section = document.createElement("section");
+  section.className = "review-language-panel";
   section.lang = language;
 
-  const header =
-    document.createElement("header");
+  const header = document.createElement("header");
+  header.className = "review-language-heading";
 
-  header.className =
-    "review-language-heading";
+  const code = document.createElement("span");
+  code.className = "review-language-code";
+  code.textContent = language.toUpperCase();
 
-  const code =
-    document.createElement("span");
-
-  code.className =
-    "review-language-code";
-
-  code.textContent =
-    language.toUpperCase();
-
-  const sectionHeading =
-    document.createElement("h3");
-
+  const sectionHeading = document.createElement("h3");
   sectionHeading.textContent = heading;
 
   header.append(code, sectionHeading);
 
-  const body =
-    document.createElement("div");
+  const body = document.createElement("div");
+  body.className = "review-language-body";
 
-  body.className =
-    "review-language-body";
+  const titleLabel = document.createElement("span");
+  titleLabel.className = "review-content-label";
+  titleLabel.textContent = translate("review_title_label");
 
-  const titleLabel =
-    document.createElement("span");
+  const title = createContentValue("review-event-title-value", getContentValue(event.title, language));
 
-  titleLabel.className =
-    "review-content-label";
+  const locationLabel = document.createElement("span");
+  locationLabel.className = "review-content-label";
+  locationLabel.textContent = translate("event_location_label");
 
-  titleLabel.textContent =
-    reviewTranslate("review_title_label");
+  const location = createContentValue("review-event-location", getContentValue(event.location, language));
 
-  const title = createContentValue(
-    "review-event-title-value",
-    getContentValue(event.title, language)
-  );
-
-  const locationLabel =
-    document.createElement("span");
-
-  locationLabel.className =
-    "review-content-label";
-
-  locationLabel.textContent =
-    reviewTranslate(
-      "event_location_label"
-    );
-
-  const location = createContentValue(
-    "review-event-location",
-    getContentValue(
-      event.location,
-      language
-    )
-  );
-
-  const descriptionLabel =
-    document.createElement("span");
-
-  descriptionLabel.className =
-    "review-content-label";
-
-  descriptionLabel.textContent =
-    reviewTranslate(
-      "review_description_label"
-    );
+  const descriptionLabel = document.createElement("span");
+  descriptionLabel.className = "review-content-label";
+  descriptionLabel.textContent = translate("review_description_label");
 
   const description = createContentValue(
     "review-event-description",
@@ -476,28 +397,13 @@ function createContentSection(
     )
   );
 
-  const registrationLabel =
-    document.createElement("span");
+  const registrationLabel = document.createElement("span");
+  registrationLabel.className = "review-content-label";
+  registrationLabel.textContent = translate("event_registration_label");
 
-  registrationLabel.className =
-    "review-content-label";
-
-  registrationLabel.textContent =
-    reviewTranslate(
-      "event_registration_label"
-    );
-
-  const registration =
-    document.createElement("p");
-
-  registration.className =
-    "review-event-registration";
-
-  registration.textContent =
-    getContentValue(
-      event.registration,
-      language
-    ) || "—";
+  const registration = document.createElement("p");
+  registration.className = "review-event-registration";
+  registration.textContent = getContentValue(event.registration, language) || "—";
 
   body.append(
     titleLabel,
@@ -516,65 +422,37 @@ function createContentSection(
 }
 
 function createReviewCard(event) {
-  const article =
-    document.createElement("article");
-
-  article.className =
-    "review-event-card";
-
+  const article = document.createElement("article");
+  article.className = "review-event-card";
   article.dataset.eventId = event._id;
 
-  const cardHeader =
-    document.createElement("header");
+  const cardHeader = document.createElement("header");
+  cardHeader.className = "review-event-card-header";
 
-  cardHeader.className =
-    "review-event-card-header";
+  const headingCopy = document.createElement("div");
+  headingCopy.className = "review-event-card-heading";
 
-  const headingCopy =
-    document.createElement("div");
+  const eyebrow = document.createElement("p");
+  eyebrow.textContent = translate("review_pending_submission");
 
-  headingCopy.className =
-    "review-event-card-heading";
+  const title = document.createElement("h2");
 
-  const eyebrow =
-    document.createElement("p");
-
-  eyebrow.textContent =
-    reviewTranslate(
-      "review_pending_submission"
-    );
-
-  const title =
-    document.createElement("h2");
-
-  title.textContent =
-    getDisplayTitle(event);
+  title.textContent = getDisplayTitle(event);
 
   headingCopy.append(eyebrow, title);
 
-  const status =
-    document.createElement("span");
-
-  status.className =
-    "review-status-badge";
-
-  status.textContent =
-    reviewTranslate(
-      "review_status_pending"
-    );
+  const status = document.createElement("span");
+  status.className = "review-status-badge";
+  status.textContent = translate("review_status_pending");
 
   cardHeader.append(
     headingCopy,
     status
   );
 
-  const submittedBy =
-    event.createdBy?.accountName ||
-    event.createdBy?.username ||
-    reviewTranslate("unknown_user");
+  const submittedBy = event.createdBy?.accountName || event.createdBy?.username || translate("unknown_user");
 
-  const meta =
-    document.createElement("div");
+  const meta = document.createElement("div");
 
   meta.className = "review-event-meta";
 
@@ -659,12 +537,8 @@ function createReviewCard(event) {
       "review-event-information"
     );
 
-  const languages =
-    document.createElement("div");
-
-  languages.className =
-    "review-language-grid";
-
+  const languages = document.createElement("div");
+  languages.className = "review-language-grid";
   languages.append(
     createContentSection(
       event,
@@ -750,7 +624,7 @@ function createReviewCard(event) {
           labelKey:
             "review_permission_status",
 
-          value: reviewTranslate(
+          value: translate(
             permissionConfirmed
               ? "review_permission_confirmed"
               : "review_permission_not_recorded"
@@ -793,42 +667,24 @@ function createReviewCard(event) {
       ]
     );
 
-  const submissionRecord =
-    document.createElement("div");
-
-  submissionRecord.className =
-    "review-submission-record";
-
+  const submissionRecord = document.createElement("div");
+  submissionRecord.className = "review-submission-record";
   submissionRecord.append(
     submitterInformation,
     authorizationInformation
   );
 
-  const decision =
-    document.createElement("section");
+  const decision = document.createElement("section");
+  decision.className = "review-decision";
 
-  decision.className =
-    "review-decision";
+  const decisionCopy = document.createElement("div");
+  decisionCopy.className = "review-decision-copy";
 
-  const decisionCopy =
-    document.createElement("div");
+  const decisionHeading = document.createElement("h3");
+  decisionHeading.textContent = translate("review_decision");
 
-  decisionCopy.className =
-    "review-decision-copy";
-
-  const decisionHeading =
-    document.createElement("h3");
-
-  decisionHeading.textContent =
-    reviewTranslate("review_decision");
-
-  const decisionHelp =
-    document.createElement("p");
-
-  decisionHelp.textContent =
-    reviewTranslate(
-      "rejection_reason_help"
-    );
+  const decisionHelp = document.createElement("p");
+  decisionHelp.textContent = translate("rejection_reason_help");
 
   decisionCopy.append(
     decisionHeading,
@@ -845,7 +701,7 @@ function createReviewCard(event) {
     document.createElement("label");
 
   rejectionLabel.textContent =
-    reviewTranslate(
+    translate(
       "rejection_reason_label"
     );
 
@@ -859,7 +715,7 @@ function createReviewCard(event) {
   rejectionReason.maxLength = 2000;
 
   rejectionReason.placeholder =
-    reviewTranslate(
+    translate(
       "rejection_reason_placeholder"
     );
 
@@ -901,7 +757,7 @@ function createReviewCard(event) {
     "review-publish-button";
 
   publishButton.textContent =
-    reviewTranslate("publish_event");
+    translate("publish_event");
 
   const rejectButton =
     document.createElement("button");
@@ -912,7 +768,7 @@ function createReviewCard(event) {
     "review-reject-button";
 
   rejectButton.textContent =
-    reviewTranslate("reject_event");
+    translate("reject_event");
 
   publishButton.addEventListener(
     "click",
@@ -969,7 +825,7 @@ function updateQueueCount() {
       : "review_pending_events_plural";
 
   reviewQueueCount.textContent =
-    `${count} ${reviewTranslate(labelKey)}`;
+    `${count} ${translate(labelKey)}`;
 
   reviewQueueCount.hidden = false;
 }
@@ -1017,7 +873,7 @@ function renderReviewQueue() {
     reviewQueue.hidden = true;
 
     showPageMessage(
-      reviewTranslate(
+      translate(
         "no_pending_events"
       ),
       "empty"
@@ -1036,11 +892,7 @@ function renderReviewQueue() {
   });
 }
 
-async function submitReview(
-  eventId,
-  action,
-  card
-) {
+async function submitReview(eventId, action, card) {
   const token =
     localStorage.getItem("token");
 
@@ -1049,33 +901,19 @@ async function submitReview(
     return;
   }
 
-  const reasonInput =
-    card.querySelector(
-      ".review-rejection-reason"
-    );
+  const reasonInput = card.querySelector(".review-rejection-reason");
 
-  const messageElement =
-    card.querySelector(
-      ".review-action-message"
-    );
+  const messageElement = card.querySelector(".review-action-message");
 
-  const buttons =
-    card.querySelectorAll("button");
+  const buttons = card.querySelectorAll("button");
 
-  const rejectionReason =
-    reasonInput.value.trim();
+  const rejectionReason = reasonInput.value.trim();
 
   messageElement.textContent = "";
   messageElement.hidden = true;
 
-  if (
-    action === "reject" &&
-    !rejectionReason
-  ) {
-    messageElement.textContent =
-      reviewTranslate(
-        "rejection_reason_required"
-      );
+  if (action === "reject" && !rejectionReason) {
+    messageElement.textContent = translate("rejection_reason_required");
 
     messageElement.hidden = false;
 
@@ -1098,7 +936,7 @@ async function submitReview(
       );
 
   activeButton.textContent =
-    reviewTranslate(
+    translate(
       action === "publish"
         ? "review_publishing"
         : "review_rejecting"
@@ -1140,7 +978,7 @@ async function submitReview(
 
     if (response.status === 403) {
       throw new Error(
-        reviewTranslate(
+        translate(
           "review_access_denied"
         )
       );
@@ -1149,7 +987,7 @@ async function submitReview(
     if (!response.ok) {
       throw new Error(
         data.error ||
-        reviewTranslate(
+        translate(
           "review_failed"
         )
       );
@@ -1168,7 +1006,7 @@ async function submitReview(
     }, 160);
 
     showNotice(
-      reviewTranslate(
+      translate(
         action === "publish"
           ? "review_publish_success"
           : "review_reject_success"
@@ -1187,18 +1025,17 @@ async function submitReview(
     card.querySelector(
       ".review-publish-button"
     ).textContent =
-      reviewTranslate("publish_event");
+      translate("publish_event");
 
     card.querySelector(
       ".review-reject-button"
     ).textContent =
-      reviewTranslate("reject_event");
+      translate("reject_event");
   }
 }
 
 async function loadReviewQueue() {
-  const token =
-    localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
   if (!token) {
     redirectToLogin();
@@ -1209,29 +1046,22 @@ async function loadReviewQueue() {
   loadFailed = false;
   reviewQueueCount.hidden = true;
 
-  showPageMessage(
-    reviewTranslate("loading_events"),
-    "neutral"
-  );
+  showPageMessage(translate("loading_events"), "neutral");
 
   try {
-    const userResponse =
-      await fetch("/api/me", {
-        headers: {
-          Authorization:
-            `Bearer ${token}`
-        }
-      });
+    const userResponse = await fetch("/api/me", {
+      headers: {
+        Authorization:
+          `Bearer ${token}`
+      }
+    });
 
     if (userResponse.status === 401) {
       redirectToLogin();
       return;
     }
 
-    const user =
-      await userResponse
-        .json()
-        .catch(() => ({}));
+    const user = await userResponse.json().catch(() => ({}));
 
     if (
       !userResponse.ok ||
@@ -1240,12 +1070,7 @@ async function loadReviewQueue() {
     ) {
       accessDenied = true;
 
-      showPageMessage(
-        reviewTranslate(
-          "review_access_denied"
-        ),
-        "error"
-      );
+      showPageMessage(translate("review_access_denied"), "error");
 
       return;
     }
@@ -1273,37 +1098,23 @@ async function loadReviewQueue() {
       accessDenied = true;
 
       throw new Error(
-        reviewTranslate(
+        translate(
           "review_access_denied"
         )
       );
     }
 
     if (!response.ok) {
-      throw new Error(
-        data.error ||
-        reviewTranslate(
-          "review_load_error"
-        )
-      );
+      throw new Error(data.error || translate("review_load_error"));
     }
 
-    pendingEvents =
-      Array.isArray(data.events)
-        ? data.events
-        : [];
-
+    pendingEvents = Array.isArray(data.events) ? data.events : [];
     renderReviewQueue();
+
   } catch (error) {
     loadFailed = !accessDenied;
 
-    showPageMessage(
-      error.message ||
-      reviewTranslate(
-        "review_load_error"
-      ),
-      "error"
-    );
+    showPageMessage(error.message || translate("review_load_error"), "error");
   }
 }
 
@@ -1311,24 +1122,12 @@ document.addEventListener(
   "languagechange",
   () => {
     if (accessDenied) {
-      showPageMessage(
-        reviewTranslate(
-          "review_access_denied"
-        ),
-        "error"
-      );
-
+      showPageMessage(translate("review_access_denied"), "error");
       return;
     }
 
     if (loadFailed) {
-      showPageMessage(
-        reviewTranslate(
-          "review_load_error"
-        ),
-        "error"
-      );
-
+      showPageMessage(translate("review_load_error"), "error");
       return;
     }
 
@@ -1339,9 +1138,7 @@ document.addEventListener(
 window.addEventListener(
   "pageshow",
   () => {
-    if (
-      !localStorage.getItem("token")
-    ) {
+    if (!localStorage.getItem("token")) {
       redirectToLogin();
     }
   }

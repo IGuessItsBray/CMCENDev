@@ -1,106 +1,38 @@
 const eventForm = document.getElementById("eventForm");
-
 const eventPageMessage = document.getElementById("eventPageMessage");
 const eventFormMessage = document.getElementById("eventFormMessage");
-const myEventsSection =
-  document.getElementById("myEventsSection");
 
-const myEventsList =
-  document.getElementById("myEventsList");
+const myEventsSection = document.getElementById("myEventsSection");
+const myEventsList = document.getElementById("myEventsList");
+const myEventsCount = document.getElementById("myEventsCount");
+const eventTabs = document.querySelectorAll("[data-event-tab]");
+const eventPanels = document.querySelectorAll("[data-event-panel]");
+const eventFormTabLabel = document.getElementById("eventFormTabLabel");
 
-const myEventsCount =
-  document.getElementById("myEventsCount");
+const submitEventTitle = document.getElementById("submitEventTitle");
+const submitEventIntro = document.getElementById("submitEventIntro");
+const eventSubmitButtonLabel = document.getElementById("eventSubmitButtonLabel");
+const eventSubmitButton = document.getElementById("eventSubmitButton");
 
-let myEvents = [];
-
-const eventTabs =
-  document.querySelectorAll(
-    "[data-event-tab]"
-  );
-
-const eventPanels =
-  document.querySelectorAll(
-    "[data-event-panel]"
-  );
-
-const eventFormTabLabel =
-  document.getElementById(
-    "eventFormTabLabel"
-  );
-
-const submitEventTitle =
-  document.getElementById(
-    "submitEventTitle"
-  );
-
-const submitEventIntro =
-  document.getElementById(
-    "submitEventIntro"
-  );
-
-const eventSubmitButtonLabel =
-  document.getElementById(
-    "eventSubmitButtonLabel"
-  );
-
-const eventSubmitButton =
-  document.getElementById("eventSubmitButton");
-
-const eventAllDay =
-  document.getElementById("eventAllDay");
-
-const eventStartDate =
-  document.getElementById("eventStartDate");
-
-const eventStartHour =
-  document.getElementById("eventStartHour");
-
-const eventStartMinute =
-  document.getElementById("eventStartMinute");
-
-const eventEndHour =
-  document.getElementById("eventEndHour");
-
-const eventEndMinute =
-  document.getElementById("eventEndMinute");
-
-const eventEndDate =
-  document.getElementById("eventEndDate");
-
-const startTimeField =
-  document.getElementById("eventStartTimeField");
-
-const endTimeField =
-  document.getElementById("eventEndTimeField");
-
-const timeZoneNote =
-  document.getElementById("eventTimeZoneNote");
-
-const publishNowContainer =
-  document.getElementById("publishNowContainer");
-
-const eventPublishNow =
-  document.getElementById("eventPublishNow");
-
-const reviewNote =
-  document.getElementById("eventReviewNote");
-
-const pageTitle =
-  document.getElementById("submitEventTitle");
+const eventAllDay = document.getElementById("eventAllDay");
+const eventStartDate = document.getElementById("eventStartDate");
+const eventStartHour = document.getElementById("eventStartHour");
+const eventStartMinute = document.getElementById("eventStartMinute");
+const eventEndHour = document.getElementById("eventEndHour");
+const eventEndMinute = document.getElementById("eventEndMinute");
+const eventEndDate = document.getElementById("eventEndDate");
+const startTimeField = document.getElementById("eventStartTimeField");
+const endTimeField = document.getElementById("eventEndTimeField");
+const timeZoneNote = document.getElementById("eventTimeZoneNote");
+const publishNowContainer = document.getElementById("publishNowContainer");
+const eventPublishNow = document.getElementById("eventPublishNow");
+const reviewNote = document.getElementById("eventReviewNote");
+const pageTitle = document.getElementById("submitEventTitle");
 
 let currentUser = null;
 let isSubmitting = false;
 let accessDenied = false;
-
-function translate(key) {
-  return (
-    translations[currentLang]?.[key] ??
-    translations.en?.[key] ??
-    key
-  );
-}
-
-
+let myEvents = [];
 
 function getLocalizedEventTitle(event) {
   const language =
@@ -180,8 +112,7 @@ function createMyEventCard(event) {
   const title =
     document.createElement("h3");
 
-  title.textContent =
-    getLocalizedEventTitle(event);
+  title.textContent = getLocalizedEventTitle(event);
 
   const status =
     document.createElement("span");
@@ -290,30 +221,21 @@ function renderMyEvents() {
 
   const count = myEvents.length;
 
-  myEventsCount.textContent =
-    count === 1
-      ? translate(
-        "my_events_count_singular"
-      )
-      : translate(
-        "my_events_count_plural"
-      ).replace(
-        "{count}",
-        String(count)
-      );
+  myEventsCount.textContent = count === 1 ?
+    translate("my_events_count_singular") :
+    translate(
+      "my_events_count_plural",
+      { count }
+    );
 
   myEventsCount.hidden = false;
   myEventsSection.hidden = false;
 
   if (!count) {
-    const message =
-      document.createElement("p");
+    const message = document.createElement("p");
 
-    message.className =
-      "my-events-message";
-
-    message.textContent =
-      translate("my_events_empty");
+    message.className = "my-events-message";
+    message.textContent = translate("my_events_empty");
 
     myEventsList.appendChild(message);
     return;
@@ -426,7 +348,6 @@ function initializeTimeControls() {
   );
 }
 
-
 function redirectToLogin() {
   localStorage.removeItem("token");
   window.location.replace("/login.html");
@@ -446,23 +367,14 @@ function showPageMessage(
 
 function clearFormMessage() {
   eventFormMessage.textContent = "";
-  eventFormMessage.className =
-    "event-form-message";
-
+  eventFormMessage.className = "event-form-message";
   eventFormMessage.hidden = true;
 }
 
-function showFormMessage(
-  message,
-  type = "error"
-) {
+function showFormMessage(message, type = "error") {
   eventFormMessage.textContent = message;
-
-  eventFormMessage.className =
-    `event-form-message is-${type}`;
-
+  eventFormMessage.className = `event-form-message is-${type}`;
   eventFormMessage.hidden = false;
-
   eventFormMessage.scrollIntoView({
     block: "nearest"
   });
@@ -472,12 +384,7 @@ function setSubmitting(submitting) {
   isSubmitting = submitting;
 
   eventSubmitButton.disabled = submitting;
-
-  eventSubmitButton.setAttribute(
-    "aria-busy",
-    String(submitting)
-  );
-
+  eventSubmitButton.setAttribute("aria-busy", String(submitting));
   eventSubmitButton.textContent =
     translate(
       submitting
@@ -1256,10 +1163,7 @@ function populateEventForm(event) {
   );
 }
 
-async function loadEventForEditing(
-  token,
-  eventId
-) {
+async function loadEventForEditing(token, eventId) {
   const response = await fetch(
     `/api/events/${encodeURIComponent(eventId)}/edit`,
     {

@@ -11,44 +11,17 @@ function requireDashboardAuth() {
 
 const token = requireDashboardAuth();
 
-const dashboardStatus =
-  document.getElementById("dashboardStatus");
-
-const dashboardContent =
-  document.getElementById("dashboardContent");
-
-const dashboardDetails =
-  document.getElementById("dashboardDetails");
-
-const dashboardActions =
-  document.getElementById("dashboardActions");
-
-const dashboardMemberName =
-  document.getElementById("dashboardMemberName");
-
-const dashboardRoleBadge =
-  document.getElementById("dashboardRoleBadge");
-
-const dashboardAccess =
-  document.getElementById("dashboardAccess");
-
-const dashboardAccessTitle =
-  document.getElementById("dashboardAccessTitle");
-
-const dashboardAccessDescription =
-  document.getElementById(
-    "dashboardAccessDescription"
-  );
+const dashboardStatus = document.getElementById("dashboardStatus");
+const dashboardContent = document.getElementById("dashboardContent");
+const dashboardDetails = document.getElementById("dashboardDetails");
+const dashboardActions = document.getElementById("dashboardActions");
+const dashboardMemberName = document.getElementById("dashboardMemberName");
+const dashboardRoleBadge = document.getElementById("dashboardRoleBadge");
+const dashboardAccess = document.getElementById("dashboardAccess");
+const dashboardAccessTitle = document.getElementById("dashboardAccessTitle");
+const dashboardAccessDescription = document.getElementById("dashboardAccessDescription");
 
 let currentDashboardUser = null;
-
-function translate(key) {
-  return (
-    translations[currentLang]?.[key] ??
-    translations.en?.[key] ??
-    key
-  );
-}
 
 function getRoleKey(role) {
   const knownRoles = [
@@ -94,25 +67,16 @@ function createDetailRow(labelKey, value) {
   label.className = "dashboard-detail-label";
   label.textContent = translate(labelKey);
 
-  const valueElement =
-    document.createElement("span");
-
-  valueElement.className =
-    "dashboard-detail-value";
-
-  valueElement.textContent =
-    value || "—";
+  const valueElement = document.createElement("span");
+  valueElement.className = "dashboard-detail-value";
+  valueElement.textContent = value || "—";
 
   row.append(label, valueElement);
 
   return row;
 }
 
-function createActionLink({
-  href,
-  titleKey,
-  descriptionKey
-}) {
+function createActionLink({ href, titleKey, descriptionKey }) {
   const link = document.createElement("a");
   link.className = "dashboard-action";
   link.href = href;
@@ -123,11 +87,8 @@ function createActionLink({
   const title = document.createElement("strong");
   title.textContent = translate(titleKey);
 
-  const description =
-    document.createElement("span");
-
-  description.textContent =
-    translate(descriptionKey);
+  const description = document.createElement("span");
+  description.textContent = translate(descriptionKey);
 
   const arrow = document.createElement("span");
   arrow.className = "dashboard-action-arrow";
@@ -144,8 +105,7 @@ function renderDashboard(user) {
   currentDashboardUser = user;
 
   const role = getRoleKey(user.role);
-  const roleTitle =
-    translate(`role_${role}`);
+  const roleTitle = translate(`role_${role}`);
 
   dashboardMemberName.textContent =
     user.accountName ||
@@ -191,9 +151,7 @@ function renderDashboard(user) {
     }
   ];
 
-  if (
-    user.permissions?.canCreateDrafts === true
-  ) {
+  if (user.permissions?.canCreateDrafts === true) {
     actions.push({
       href: "/submit-event.html",
       titleKey:
@@ -203,10 +161,7 @@ function renderDashboard(user) {
     });
   }
 
-  if (
-    user.permissions
-      ?.canReviewAndPublish === true
-  ) {
+  if (user.permissions?.canReviewAndPublish === true) {
     actions.push({
       href: "/review-events.html",
       titleKey:
@@ -220,14 +175,8 @@ function renderDashboard(user) {
     ...actions.map(createActionLink)
   );
 
-  dashboardAccessTitle.textContent =
-    roleTitle;
-
-  dashboardAccessDescription.textContent =
-    translate(
-      `role_description_${role}`
-    );
-
+  dashboardAccessTitle.textContent = roleTitle;
+  dashboardAccessDescription.textContent = translate(`role_description_${role}`);
   dashboardStatus.hidden = true;
   dashboardContent.hidden = false;
   dashboardAccess.hidden = false;
@@ -276,9 +225,7 @@ async function loadDashboard() {
       error
     );
 
-    showDashboardError(
-      translate("dashboard_load_error")
-    );
+    showDashboardError(translate("dashboard_load_error"));
   }
 }
 
@@ -299,8 +246,7 @@ document.addEventListener(
       );
 
     if (error) {
-      error.textContent =
-        translate("dashboard_load_error");
+      error.textContent = translate("dashboard_load_error");
     }
   }
 );

@@ -1,5 +1,4 @@
 // central source for statuses, entities, types, regions and timezones
-
 const CONTENT_STATUSES = Object.freeze([
   'draft',
   'pending',

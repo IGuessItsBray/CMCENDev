@@ -1,8 +1,5 @@
-const eventListElement =
-    document.getElementById('eventList');
-
-const calendarMessageElement =
-    document.getElementById('calendarMessage');
+const eventListElement = document.getElementById('eventList');
+const calendarMessageElement = document.getElementById('calendarMessage');
 
 let publicEvents = [];
 
@@ -19,19 +16,13 @@ function getLocale(language) {
 function getLocalizedText(value, language) {
     if (!value) return '';
 
-    const preferred =
-        typeof value[language] === 'string'
-            ? value[language].trim()
-            : '';
+    const preferred = typeof value[language] === 'string' ? value[language].trim() : '';
 
     if (preferred) return preferred;
 
-    const fallbackLanguage =
-        language === 'en' ? 'fr' : 'en';
+    const fallbackLanguage = language === 'en' ? 'fr' : 'en';
 
-    return typeof value[fallbackLanguage] === 'string'
-        ? value[fallbackLanguage].trim()
-        : '';
+    return typeof value[fallbackLanguage] === 'string' ? value[fallbackLanguage].trim() : '';
 }
 
 function getDateParts(event) {
@@ -122,10 +113,7 @@ function formatDayLabel(event) {
     return String(startDay);
 }
 
-function formatEventTime(
-    event,
-    locale
-) {
+function formatEventTime(event, locale) {
     if (event.allDay) {
         return (
             translations[currentLang]
@@ -143,10 +131,7 @@ function formatEventTime(
             }
         );
 
-    const startTime =
-        formatter.format(
-            new Date(event.startDate)
-        );
+    const startTime = formatter.format(new Date(event.startDate));
 
     if (!event.endDate) {
         return startTime;
@@ -161,106 +146,52 @@ function formatEventTime(
 }
 
 function createEventCard(event, language, locale) {
-    const article =
-        document.createElement('article');
-
+    const article = document.createElement('article');
     article.className = 'calendar-event';
 
-    const dayColumn =
-        document.createElement('div');
+    const dayColumn = document.createElement('div');
+    dayColumn.className = 'calendar-event-day';
 
-    dayColumn.className =
-        'calendar-event-day';
+    const dayNumber = document.createElement('span');
+    dayNumber.className = 'calendar-event-day-number';
+    dayNumber.textContent = formatDayLabel(event);
 
-    const dayNumber =
-        document.createElement('span');
+    const eventTime = document.createElement('span');
+    eventTime.className = 'calendar-event-time';
+    eventTime.textContent = formatEventTime(event, locale);
 
-    dayNumber.className =
-        'calendar-event-day-number';
+    dayColumn.append(dayNumber, eventTime);
 
-    dayNumber.textContent =
-        formatDayLabel(event);
+    const content = document.createElement('div');
+    content.className = 'calendar-event-content';
 
-    const eventTime =
-        document.createElement('span');
-
-    eventTime.className =
-        'calendar-event-time';
-
-    eventTime.textContent =
-        formatEventTime(event, locale);
-
-    dayColumn.append(
-        dayNumber,
-        eventTime
-    );
-
-    const content =
-        document.createElement('div');
-
-    content.className =
-        'calendar-event-content';
-
-    const titleElement =
-        document.createElement('h3');
-
-    titleElement.className =
-        'calendar-event-title';
-
-    titleElement.textContent =
-        getLocalizedText(
-            event.title,
-            language
-        );
+    const titleElement = document.createElement('h3');
+    titleElement.className = 'calendar-event-title';
+    titleElement.textContent = getLocalizedText(event.title, language);
 
     content.appendChild(titleElement);
 
-    const location =
-        getLocalizedText(
-            event.location,
-            language
-        );
+    const location = getLocalizedText(event.location, language);
 
     if (location) {
-        const locationElement =
-            document.createElement('p');
+        const locationElement = document.createElement('p');
+        locationElement.className = 'calendar-event-location';
+        locationElement.textContent = location;
 
-        locationElement.className =
-            'calendar-event-location';
-
-        locationElement.textContent =
-            location;
-
-        content.appendChild(
-            locationElement
-        );
+        content.appendChild(locationElement);
     }
 
-    const description =
-        getLocalizedText(
-            event.description,
-            language
-        );
+    const description = getLocalizedText(event.description, language);
 
     if (description) {
-        const descriptionElement =
-            document.createElement('p');
+        const descriptionElement = document.createElement('p');
+        descriptionElement.className = 'calendar-event-description';
+        descriptionElement.textContent = description;
 
-        descriptionElement.className =
-            'calendar-event-description';
-
-        descriptionElement.textContent =
-            description;
-
-        content.appendChild(
-            descriptionElement
-        );
+        content.appendChild(descriptionElement);
     }
 
-    article.append(
-        dayColumn,
-        content
-    );
+    article.append(dayColumn, content);
 
     return article;
 }
@@ -273,8 +204,7 @@ function renderEvents() {
 
     if (!publicEvents.length) {
         calendarMessageElement.hidden = false;
-        calendarMessageElement.textContent =
-            translations[language].no_upcoming_events;
+        calendarMessageElement.textContent = translations[language].no_upcoming_events;
 
         return;
     }
@@ -289,29 +219,19 @@ function renderEvents() {
 
         if (monthKey !== currentMonthKey) {
             currentMonthKey = monthKey;
+            currentMonthGroup = document.createElement('section');
 
-            currentMonthGroup =
-                document.createElement('section');
+            currentMonthGroup.className = 'calendar-month';
 
-            currentMonthGroup.className =
-                'calendar-month';
-
-            const heading =
-                document.createElement('h2');
-
-            heading.className =
-                'calendar-month-title';
-
-            heading.textContent =
-                formatMonthHeading(event, locale);
+            const heading = document.createElement('h2');
+            heading.className = 'calendar-month-title';
+            heading.textContent = formatMonthHeading(event, locale);
 
             currentMonthGroup.appendChild(heading);
             eventListElement.appendChild(currentMonthGroup);
         }
 
-        currentMonthGroup.appendChild(
-            createEventCard(event, language, locale)
-        );
+        currentMonthGroup.appendChild(createEventCard(event, language, locale));
     });
 }
 
@@ -319,34 +239,28 @@ async function loadEvents() {
     const language = getCurrentLanguage();
 
     calendarMessageElement.hidden = false;
-    calendarMessageElement.textContent =
-        translations[language].loading_events;
+    calendarMessageElement.textContent = translations[language].loading_events;
 
     try {
         const response = await fetch('/api/events');
-
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(
-                data.error || 'Could not load events'
-            );
+            throw new Error(data.error || 'Could not load events');
         }
 
-        publicEvents = (data.events || [])
-            .sort((firstEvent, secondEvent) => {
-                return (
-                    new Date(firstEvent.startDate) -
-                    new Date(secondEvent.startDate)
-                );
-            });
+        publicEvents = (data.events || []).sort((firstEvent, secondEvent) => {
+            return (
+                new Date(firstEvent.startDate) -
+                new Date(secondEvent.startDate)
+            );
+        });
         renderEvents();
     } catch (error) {
         console.error(error);
 
         calendarMessageElement.hidden = false;
-        calendarMessageElement.textContent =
-            translations[language].events_load_error;
+        calendarMessageElement.textContent = translations[language].events_load_error;
     }
 }
 

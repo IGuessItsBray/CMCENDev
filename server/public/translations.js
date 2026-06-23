@@ -907,12 +907,9 @@ const translations = {
       "Soumettre un événement",
 
     // Calendrier public
-    calendar_title:
-      "Calendrier des événements",
-    calendar_intro:
-      "Événements à venir en ordre chronologique.",
-    loading_events:
-      "Chargement des événements...",
+    calendar_title: "Calendrier des événements",
+    calendar_intro: "Événements à venir en ordre chronologique.",
+    loading_events: "Chargement des événements...",
     no_upcoming_events:
       "Il n'y a aucun événement à venir.",
     events_load_error:
@@ -1463,20 +1460,38 @@ const translations = {
 const langToggle = document.getElementById("langToggle");
 let currentLang = localStorage.getItem("lang") || "en";
 
+function translate(
+  key,
+  replacements = {},
+  lang = currentLang
+) {
+  let text =
+    translations[lang]?.[key] ??
+    translations.en?.[key] ??
+    key;
+
+  Object.entries(replacements).forEach(
+    ([name, value]) => {
+      text = text.replaceAll(
+        `{${name}}`,
+        String(value)
+      );
+    }
+  );
+
+  return text;
+}
+
 function applyLanguage(lang) {
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.getAttribute("data-i18n");
-    if (translations[lang][key]) {
-      el.textContent = translations[lang][key];
-    }
+    el.textContent = translate(key, {}, lang);
   });
 
   // For input placeholders
   document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
     const key = el.getAttribute("data-i18n-placeholder");
-    if (translations[lang][key]) {
-      el.placeholder = translations[lang][key];
-    }
+    el.placeholder = translate(key, {}, lang);
   });
 
   document.documentElement.setAttribute("lang", lang);

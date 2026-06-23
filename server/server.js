@@ -182,4 +182,66 @@ app.get('/api/image/:key', authMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/admin/users?query=name
+app.get(
+  '/api/admin/users',
+  authMiddleware,
+  requireExactRole('administrator'),
+  async (req, res) => {
+    try {
+      const { query } = req.query;
+      
+      // If query exists, search by username or accountName; otherwise return all
+      const filter = query 
+        ? { 
+            $or: [
+              { username: { $regex: query, $options: 'i' } },
+              { accountName: { $regex: query, $options: 'i' } }
+            ] 
+          } 
+        : {};
+
+      const users = await User.find(filter).select('-password');
+      res.json(users);
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  }
+);
+
+const { USER_ROLES, ROLE_LEVELS } = require('./config/roles');
+
+// PATCH /api/admin/users/:userId/role
+app.patch(
+  '/api/admin/users/:userId/role',
+  authMiddleware,
+  requireExactRole('administrator'),
+  async (req, res) => {
+    try {
+      const { role } = req.body;
+      const { userId } = req.params;
+
+      // 1. Validate the role exists in your shared config
+      if (!USER_ROLES.includes(role)) {
+        return res.status(400).json({ error: 'Invalid role provided' });
+      }
+
+      // 2. Update the user
+      const user = await User.findByIdAndUpdate(
+        userId, 
+        { role }, 
+        { new: true }
+      ).select('-password');
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json({ message: `User promoted to ${role}`, user });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to update user role' });
+    }
+  }
+);
+
 startServer();

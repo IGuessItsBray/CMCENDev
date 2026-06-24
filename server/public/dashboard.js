@@ -15,11 +15,11 @@ const dashboardStatus = document.getElementById("dashboardStatus");
 const dashboardContent = document.getElementById("dashboardContent");
 const dashboardDetails = document.getElementById("dashboardDetails");
 const dashboardActions = document.getElementById("dashboardActions");
+const dashboardTitle = document.getElementById("dashboardTitle");
 const dashboardMemberName = document.getElementById("dashboardMemberName");
+const dashboardRoleSummary = document.getElementById("dashboardRoleSummary");
 const dashboardRoleBadge = document.getElementById("dashboardRoleBadge");
-const dashboardAccess = document.getElementById("dashboardAccess");
-const dashboardAccessTitle = document.getElementById("dashboardAccessTitle");
-const dashboardAccessDescription = document.getElementById("dashboardAccessDescription");
+const dashboardRoleDescription = document.getElementById("dashboardRoleDescription");
 
 let currentDashboardUser = null;
 
@@ -57,6 +57,23 @@ function formatContentAreas(contentAreas) {
   return contentAreas
     .map(formatContentArea)
     .join(", ");
+}
+
+function formatUserAddress(address = {}) {
+  return [
+    address.line1,
+    address.line2,
+    address.city,
+    address.stateProvince,
+    address.postalCode,
+    address.country
+  ].filter(Boolean).join(", ");
+}
+
+function formatTranslatedOption(prefix, value) {
+  return value
+    ? translate(`${prefix}_${value}`)
+    : "—";
 }
 
 function createDetailRow(labelKey, value) {
@@ -106,20 +123,35 @@ function renderDashboard(user) {
 
   const role = getRoleKey(user.role);
   const roleTitle = translate(`role_${role}`);
-
-  dashboardMemberName.textContent =
+  const displayName =
     user.accountName ||
+    [user.firstName, user.lastName]
+      .filter(Boolean)
+      .join(" ") ||
     user.username ||
     "";
 
+  dashboardTitle.textContent =
+    translate("dashboard_welcome", {
+      name: displayName
+    });
+
+  dashboardMemberName.textContent = displayName;
+
   dashboardRoleBadge.textContent = roleTitle;
   dashboardRoleBadge.className = `dashboard-role-badge role-${role}`;
-  dashboardRoleBadge.hidden = false;
+  dashboardRoleDescription.textContent = translate(`role_description_${role}`);
+  dashboardRoleSummary.hidden = false;
 
   dashboardDetails.replaceChildren(
     createDetailRow(
-      "field_username",
-      user.username
+      "first_name",
+      user.firstName
+    ),
+
+    createDetailRow(
+      "last_name",
+      user.lastName
     ),
 
     createDetailRow(
@@ -128,8 +160,48 @@ function renderDashboard(user) {
     ),
 
     createDetailRow(
-      "field_account_name",
-      user.accountName
+      "field_address",
+      formatUserAddress(user.address)
+    ),
+
+    createDetailRow(
+      "rank",
+      user.rank
+    ),
+
+    createDetailRow(
+      "post_nominals",
+      user.postNominals
+    ),
+
+    createDetailRow(
+      "company",
+      user.company
+    ),
+
+    createDetailRow(
+      "status",
+      formatTranslatedOption("status", user.status)
+    ),
+
+    createDetailRow(
+      "affiliation_element",
+      formatTranslatedOption("element", user.affiliationElement)
+    ),
+
+    createDetailRow(
+      "trade",
+      user.trade
+    ),
+
+    createDetailRow(
+      "trade_other",
+      user.tradeOther
+    ),
+
+    createDetailRow(
+      "current_unit",
+      user.currentUnit
     ),
 
     createDetailRow(
@@ -168,11 +240,8 @@ function renderDashboard(user) {
     ...actions.map(createActionLink)
   );
 
-  dashboardAccessTitle.textContent = roleTitle;
-  dashboardAccessDescription.textContent = translate(`role_description_${role}`);
   dashboardStatus.hidden = true;
   dashboardContent.hidden = false;
-  dashboardAccess.hidden = false;
 }
 
 function showDashboardError(message) {

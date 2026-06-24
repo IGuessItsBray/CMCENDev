@@ -1,6 +1,6 @@
 async function runAuthTest() {
     const BASE_URL = 'http://localhost:3000/api';
-    const randomUsername = "testuser_" + Date.now();
+    const testEmail = `test_${Date.now()}@example.com`;
 
     try {
         // 1. Register User
@@ -9,10 +9,25 @@ async function runAuthTest() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                username: randomUsername, 
-                email: `test_${Date.now()}@example.com`,
+                firstName: "Demo",
+                lastName: "Account",
+                addressLine1: "1 Test Way",
+                addressLine2: "",
+                city: "Ottawa",
+                country: "Canada",
+                stateProvince: "Ontario",
+                postalCode: "K1A 0K2",
+                rank: "",
+                postNominals: "",
+                company: "CMCEN",
+                status: "civilian",
+                affiliationElement: "other",
+                trade: "",
+                tradeOther: "",
+                currentUnit: "",
+                email: testEmail,
                 password: "password123",
-                accountName: "Demo Account"
+                passwordConfirmation: "password123"
             })
         });
 
@@ -28,7 +43,7 @@ async function runAuthTest() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                username: randomUsername, 
+                username: testEmail,
                 password: "password123"
             })
         });

@@ -1299,7 +1299,14 @@ a.dropdown-toggle {
   letter-spacing: 0.025em;
 }
 
-.register-field input {
+.register-field label:has(+ input[required])::after,
+.register-field label:has(+ select[required])::after {
+  content: " *";
+  color: #a63c35;
+}
+
+.register-field input,
+.register-field select {
   width: 100%;
   height: 47px;
   padding: 0 14px;
@@ -1315,18 +1322,91 @@ a.dropdown-toggle {
     box-shadow 150ms ease;
 }
 
+.register-field select {
+  padding-right: 38px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg,
+      transparent 50%,
+      var(--branch-grey-800) 50%),
+    linear-gradient(135deg,
+      var(--branch-grey-800) 50%,
+      transparent 50%);
+  background-position:
+    calc(100% - 17px) 20px,
+    calc(100% - 12px) 20px;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.register-field select:invalid {
+  color: var(--text-muted);
+}
+
+.register-field select option {
+  color: var(--ink);
+}
+
+.register-field-wide {
+  grid-column: 1 / -1;
+}
+
 .register-field input::placeholder {
   color: var(--branch-grey-500);
 }
 
-.register-field input:hover {
+.register-field input:hover,
+.register-field select:hover {
   border-color: var(--branch-grey-500);
 }
 
-.register-field input:focus {
+.register-field input:focus,
+.register-field select:focus {
   border-color: var(--gold-600);
   box-shadow:
     0 0 0 3px rgba(197, 141, 35, 0.14);
+}
+
+.password-strength {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--branch-grey-200);
+}
+
+.password-strength span {
+  width: 0;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: #a63c35;
+  transition:
+    width 150ms ease,
+    background-color 150ms ease;
+}
+
+.password-strength.is-weak span {
+  width: 28%;
+  background: #a63c35;
+}
+
+.password-strength.is-fair span {
+  width: 52%;
+  background: #c58d23;
+}
+
+.password-strength.is-good span {
+  width: 76%;
+  background: #4f7358;
+}
+
+.password-strength.is-strong span {
+  width: 100%;
+  background: #2f6f55;
 }
 
 .register-error {
@@ -1494,8 +1574,20 @@ a.dropdown-toggle {
   line-height: 1.4;
 }
 
-.dashboard-role-badge {
+.dashboard-role-summary {
   flex: 0 0 auto;
+  max-width: 340px;
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
+  text-align: right;
+}
+
+.dashboard-role-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 7px 12px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 2px;
@@ -1505,6 +1597,13 @@ a.dropdown-toggle {
   line-height: 1;
   letter-spacing: 0.095em;
   text-transform: uppercase;
+}
+
+.dashboard-role-summary p {
+  margin: 0;
+  color: var(--branch-grey-200);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .dashboard-role-badge.role-subscriber {
@@ -1669,42 +1768,6 @@ a.dropdown-toggle {
   color: var(--gold-700);
   font-size: 20px;
   line-height: 1;
-}
-
-.dashboard-access {
-  padding: 18px 30px;
-  display: grid;
-  grid-template-columns:
-    125px minmax(0, 1fr);
-  align-items: start;
-  gap: 20px;
-  border-top: 1px solid var(--branch-grey-200);
-  border-left: 4px solid var(--gold-500);
-  background: var(--branch-grey-100);
-}
-
-.dashboard-access-label {
-  padding-top: 3px;
-  color: var(--branch-grey-800);
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1.3;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.dashboard-access-copy strong {
-  display: block;
-  color: var(--navy-900);
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.dashboard-access-copy p {
-  margin: 4px 0 0;
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.5;
 }
 
 .dashboard-error {
@@ -4295,6 +4358,12 @@ a.dropdown-toggle {
     font-size: 27px;
   }
 
+  .dashboard-role-summary {
+    max-width: none;
+    align-items: flex-start;
+    text-align: left;
+  }
+
   .dashboard-content {
     grid-template-columns: 1fr;
   }
@@ -4308,11 +4377,6 @@ a.dropdown-toggle {
     border-left: 0;
   }
 
-  .dashboard-access {
-    padding: 17px 22px;
-    grid-template-columns: 1fr;
-    gap: 7px;
-  }
 }
 
 @media (max-width: 480px) {

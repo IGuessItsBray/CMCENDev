@@ -11,7 +11,7 @@ const BASE_URL = 'http://localhost:3000/api';
 
 // Commands that require a live DB connection
 const DB_COMMANDS = new Set([
-  'token', 'list-users', 'list-events', 'set-role', 'search', 'promote', 'test-db'
+  'token', 'list-users', 'list-events', 'list-retirement-messages', 'set-role', 'search', 'promote', 'test-db'
 ]);
 
 // Commands that require an admin JWT (implies DB_COMMANDS too)
@@ -29,6 +29,24 @@ function formatDate(value) {
 
 function getUsername(user) {
   return user?.accountName || user?.username || '';
+}
+
+function formatUser(user) {
+  if (!user) return '—';
+  if (typeof user === 'string') return user;
+  return user.accountName || user.username || user.email || String(user._id || '—');
+}
+
+function truncate(value, maxLength = 70) {
+  const text = typeof value === 'string'
+    ? value.replace(/\s+/g, ' ').trim()
+    : '';
+
+  if (text.length <= maxLength) {
+    return text || '—';
+  }
+
+  return `${text.slice(0, maxLength - 1)}…`;
 }
 
 async function buildAdminToken() {
@@ -157,6 +175,103 @@ async function cmdListEvents(full) {
   }
 
   console.log(`Total events: ${events.length}`);
+}
+
+function printFullRetirementMessage(message, index) {
+  console.log(`\n${'='.repeat(72)}`);
+  console.log(`RETIREMENT MESSAGE ${index + 1}`);
+  console.log(`${'='.repeat(72)}`);
+
+  console.dir(
+    {
+      id: String(message._id),
+      retiree: {
+        rank:           message.retiree?.rank || '—',
+        firstName:      message.retiree?.firstName || '—',
+        lastName:       message.retiree?.lastName || '—',
+        tradeRole:      message.retiree?.tradeRole || '—',
+        yearsOfService: message.retiree?.yearsOfService || '—',
+        retirementDate: formatDate(message.retiree?.retirementDate)
+      },
+      message:         message.message,
+      messageLanguage: message.messageLanguage,
+      photoUrl:        message.photoUrl,
+      submitter: {
+        firstName:    message.submitter?.firstName || '—',
+        lastName:     message.submitter?.lastName || '—',
+        relationship: message.submitter?.relationship || '—',
+        email:        message.submitter?.email || '—',
+        unit:         message.submitter?.unit || '—'
+      },
+      publicationConsent: {
+        confirmed:   message.publicationConsent?.confirmed === true,
+        confirmedAt: formatDate(message.publicationConsent?.confirmedAt)
+      },
+      status: message.status,
+      review: {
+        reviewedBy:      formatUser(message.reviewedBy),
+        reviewedAt:      formatDate(message.reviewedAt),
+        rejectionReason: message.rejectionReason || '—'
+      },
+      publication: {
+        publishedBy: formatUser(message.publishedBy),
+        publishedAt: formatDate(message.publishedAt)
+      },
+      createdAt: formatDate(message.createdAt),
+      updatedAt: formatDate(message.updatedAt)
+    },
+    { depth: null, colors: true }
+  );
+}
+
+/** List all retirement messages. Pass --full for expanded output. */
+async function cmdListRetirementMessages(full) {
+  const RetirementMessage = require('../models/RetirementMessage');
+  require('../models/User'); // ensure User is registered for populate
+
+  const messages = await RetirementMessage.find()
+    .populate('reviewedBy', 'username accountName email role')
+    .populate('publishedBy', 'username accountName email role')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (!messages.length) {
+    console.log('No retirement messages found.');
+    return;
+  }
+
+  console.table(
+    messages.map(message => ({
+      id:         String(message._id).slice(-8),
+      retiree:    [
+        message.retiree?.rank,
+        message.retiree?.firstName,
+        message.retiree?.lastName
+      ].filter(Boolean).join(' '),
+      service:    message.retiree?.yearsOfService || '—',
+      retirement: message.retiree?.retirementDate
+        ? new Date(message.retiree.retirementDate).toISOString().slice(0, 10)
+        : '—',
+      language:   message.messageLanguage,
+      status:     message.status,
+      submitter:  [
+        message.submitter?.firstName,
+        message.submitter?.lastName
+      ].filter(Boolean).join(' '),
+      message:    truncate(message.message),
+      submitted:  message.createdAt
+        ? new Date(message.createdAt).toISOString().slice(0, 10)
+        : '—'
+    }))
+  );
+
+  console.log(`\nTotal: ${messages.length}`);
+
+  if (full) {
+    messages.forEach(printFullRetirementMessage);
+  } else {
+    console.log('\nRun with --full to view complete records.');
+  }
 }
 
 /** Set a user's role (and optionally content areas) directly via DB */
@@ -352,6 +467,7 @@ User management
 
 Events
   list-events [--full]                    List all events; --full shows every field
+  list-retirement-messages [--full]       List retirement messages; --full shows every field
 
 Auth / tokens
   token                                   Generate and print a 24 h admin JWT
@@ -400,6 +516,10 @@ async function run() {
 
       case 'list-events':
         await cmdListEvents(flags.has('--full'));
+        break;
+
+      case 'list-retirement-messages':
+        await cmdListRetirementMessages(flags.has('--full'));
         break;
 
       case 'set-role':

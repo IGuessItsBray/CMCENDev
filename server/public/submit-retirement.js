@@ -2,6 +2,15 @@ const retirementSubmitForm = document.getElementById("retirementSubmitForm");
 const retirementFormMessage = document.getElementById("retirementFormMessage");
 const retirementSubmitButton = document.getElementById("retirementSubmitButton");
 const retirementMessageLanguage = document.getElementById("retirementMessageLanguage");
+const retirementPhotoInput = document.getElementById("retirementPhoto");
+
+const retirementAuthToken = localStorage.getItem("token");
+const RETIREMENT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
+
+function redirectToLogin() {
+    localStorage.removeItem("token");
+    window.location.replace("/login.html");
+}
 
 function showRetirementFormMessage(message, type = "error") {
     retirementFormMessage.textContent = message;
@@ -36,7 +45,67 @@ function getFieldValue(id) {
     return (document.getElementById(id)?.value.trim() || "");
 }
 
-function buildRetirementMessageData() {
+function getSelectedRetirementPhoto() {
+    return retirementPhotoInput?.files?.[0] || null;
+}
+
+function validateRetirementPhoto(file) {
+    if (!file) {
+        return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+        throw new Error(translate("retirement_photo_invalid"));
+    }
+
+    if (file.size > RETIREMENT_PHOTO_MAX_BYTES) {
+        throw new Error(translate("retirement_photo_too_large"));
+    }
+}
+
+async function uploadRetirementPhoto() {
+    const file = getSelectedRetirementPhoto();
+
+    validateRetirementPhoto(file);
+
+    if (!file) {
+        return "";
+    }
+
+    const uploadData = new FormData();
+
+    uploadData.append("image", file);
+
+    const response = await fetch(
+        "/api/upload",
+        {
+            method: "POST",
+
+            headers: {
+                Authorization:
+                    `Bearer ${retirementAuthToken}`
+            },
+
+            body:
+                uploadData
+        }
+    );
+
+    if (response.status === 401) {
+        redirectToLogin();
+        throw new Error(translate("retirement_permission_error"));
+    }
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || !data.url) {
+        throw new Error(data.error || translate("retirement_photo_upload_error"));
+    }
+
+    return data.url;
+}
+
+function buildRetirementMessageData(photoUrl = "") {
     const message = getFieldValue("retirementMessageText");
     const consentConfirmed = document.getElementById("retirementPublicationConsent").checked;
 
@@ -60,6 +129,7 @@ function buildRetirementMessageData() {
 
         message,
         messageLanguage: retirementMessageLanguage.value,
+        photoUrl,
         submitter: {
             firstName: getFieldValue("retirementSubmitterFirstName"),
             lastName: getFieldValue("retirementSubmitterLastName"),
@@ -71,6 +141,51 @@ function buildRetirementMessageData() {
         publicationConsentConfirmed: consentConfirmed,
         website: getFieldValue("retirementWebsite")
     };
+}
+
+async function verifyRetirementAccess() {
+    if (!retirementAuthToken) {
+        redirectToLogin();
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/me",
+            {
+                headers: {
+                    Authorization:
+                        `Bearer ${retirementAuthToken}`
+                }
+            }
+        );
+
+        if (response.status === 401) {
+            redirectToLogin();
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(translate("retirement_permission_error"));
+        }
+
+        const user = await response.json();
+
+        if (user.permissions?.canSubmitRetirementMessages !== true) {
+            showRetirementFormMessage(translate("retirement_access_denied"));
+            return;
+        }
+
+        const submitterEmail = document.getElementById("retirementSubmitterEmail");
+
+        if (submitterEmail && !submitterEmail.value) {
+            submitterEmail.value = user.email || "";
+        }
+
+        retirementSubmitForm.hidden = false;
+    } catch (error) {
+        showRetirementFormMessage(error.message || translate("retirement_permission_error"));
+    }
 }
 
 retirementSubmitForm.addEventListener(
@@ -98,6 +213,9 @@ retirementSubmitForm.addEventListener(
         setRetirementSubmitting(true);
 
         try {
+            formData.photoUrl =
+                await uploadRetirementPhoto();
+
             const response = await fetch(
                 "/api/retirement-messages",
                 {
@@ -105,7 +223,10 @@ retirementSubmitForm.addEventListener(
 
                     headers: {
                         "Content-Type":
-                            "application/json"
+                            "application/json",
+
+                        Authorization:
+                            `Bearer ${retirementAuthToken}`
                     },
 
                     body:
@@ -132,5 +253,6 @@ retirementSubmitForm.addEventListener(
 );
 
 setDefaultMessageLanguage();
+verifyRetirementAccess();
 
 window.addEventListener("languagechange", setDefaultMessageLanguage);

@@ -150,6 +150,12 @@ const translations = {
     dashboard_action_calendar_description:
       "View published upcoming events.",
 
+    dashboard_action_submit_retirement:
+      "Submit a retirement message",
+
+    dashboard_action_submit_retirement_description:
+      "Recognize a retiring member with a message for review.",
+
     dashboard_action_submit_event:
       "Submit an event",
 
@@ -759,6 +765,21 @@ const translations = {
     retirement_message_minimum:
       "Minimum 100 characters.",
 
+    retirement_photo:
+      "Photo",
+
+    retirement_photo_hint:
+      "Optional. Upload a photo to include with the retirement message.",
+
+    retirement_photo_invalid:
+      "Upload an image file.",
+
+    retirement_photo_too_large:
+      "The photo must be 10 MB or smaller.",
+
+    retirement_photo_upload_error:
+      "Could not upload the photo. Please try again.",
+
     retirement_submitter_heading:
       "Submitter Information",
 
@@ -806,6 +827,12 @@ const translations = {
 
     retirement_consent_required:
       "You must confirm the retiree has consented to publication.",
+
+    retirement_access_denied:
+      "Your account does not have permission to submit retirement messages.",
+
+    retirement_permission_error:
+      "Could not verify your retirement-message submission permissions.",
 
     retirement_submit_success:
       "Your retirement message has been submitted and is awaiting review.",
@@ -1005,6 +1032,12 @@ const translations = {
 
     dashboard_action_calendar_description:
       "Consultez les événements à venir publiés.",
+
+    dashboard_action_submit_retirement:
+      "Soumettre un message de retraite",
+
+    dashboard_action_submit_retirement_description:
+      "Reconnaissez un membre prenant sa retraite avec un message aux fins de révision.",
 
     dashboard_action_submit_event:
       "Soumettre un événement",
@@ -1618,6 +1651,21 @@ const translations = {
     retirement_message_minimum:
       "Minimum de 100 caractères.",
 
+    retirement_photo:
+      "Photo",
+
+    retirement_photo_hint:
+      "Facultatif. Téléversez une photo à inclure avec le message de retraite.",
+
+    retirement_photo_invalid:
+      "Téléversez un fichier image.",
+
+    retirement_photo_too_large:
+      "La photo doit faire 10 Mo ou moins.",
+
+    retirement_photo_upload_error:
+      "Impossible de téléverser la photo. Veuillez réessayer.",
+
     retirement_submitter_heading:
       "Renseignements sur la personne qui soumet le message",
 
@@ -1658,6 +1706,10 @@ const translations = {
       "Le message de retraite doit contenir au moins 100 caractères.",
     retirement_consent_required:
       "Vous devez confirmer que la personne retraitée a consenti à la publication.",
+    retirement_access_denied:
+      "Votre compte ne vous permet pas de soumettre des messages de retraite.",
+    retirement_permission_error:
+      "Impossible de vérifier vos autorisations de soumission de messages de retraite.",
     retirement_submit_success:
       "Votre message de retraite a été soumis et est en attente de révision.",
     retirement_submit_error:

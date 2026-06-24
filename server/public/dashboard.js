@@ -138,13 +138,15 @@ function renderDashboard(user) {
     )
   );
 
-  const actions = [
-    {
-      href: "/calendar.html",
-      titleKey: "dashboard_action_calendar",
-      descriptionKey: "dashboard_action_calendar_description"
-    }
-  ];
+  const actions = [];
+
+  if (user.permissions?.canSubmitRetirementMessages === true) {
+    actions.push({
+      href: "/submit-retirement.html",
+      titleKey: "dashboard_action_submit_retirement",
+      descriptionKey: "dashboard_action_submit_retirement_description"
+    });
+  }
 
   if (user.permissions?.canCreateDrafts === true) {
     actions.push({

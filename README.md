@@ -52,7 +52,7 @@ docker run -p 3000:3000 -d CMCEN
 
 ## Admin Scripts
 
-Utility scripts live in `server/scripts/` and are run from inside the `server/` directory. They all require a valid `MONGO_URI` in your `server/.env`.
+The `server/scripts/admin.js` script provides utilities for user management, event inspection, authentication, and diagnostics. Run all commands from the `server/` directory:
 
 ```bash
 cd server
@@ -60,73 +60,104 @@ cd server
 
 ---
 
-### `test-db.js` — Test database connection
+### User Management
 
-Verifies that your MongoDB connection string is correct and lists all collections in the database.
-
+#### List all users
 ```bash
-node scripts/test-db.js
+node admin.js list-users
+```
+Displays a table of all registered users with details.
+
+#### Search users
+```bash
+node admin.js search <query>
+```
+Searches by username, email, or name. **Requires server running on `localhost:3000`.**
+
+**Example:**
+```bash
+node admin.js search johndoe
 ```
 
----
-
-### `test-auth.js` — Test register & login flow
-
-Registers a randomly-named test user and immediately logs in, printing the JWT token on success. Requires the server to be running on `localhost:3000`.
-
+#### Set user role (direct database)
 ```bash
-node scripts/test-auth.js
+node admin.js set-role <username> <role> [contentAreas]
 ```
+Updates a user's role directly in the database. **No server needed.**
 
----
-
-### `list-users.js` — List all users
-
-Prints a table of all registered users with their username, email, account name, role, content areas, and creation date.
-
-```bash
-node scripts/list-users.js
-```
-
----
-
-### `list-events.js` — List all events
-
-Prints a summary table of all events. Pass `--full` to also dump the complete record for each event.
-
-```bash
-node scripts/list-events.js
-node scripts/list-events.js --full
-```
-
----
-
-### `set-user-role.js` — Update a user's role
-
-Sets a user's role by username. For the `author` role, you can optionally provide a comma-separated list of content areas.
-
-```bash
-node scripts/set-user-role.js <username> <role> [contentAreas]
-```
+**Arguments:**
+- `<username>` — Username to update
+- `<role>` — One of: `subscriber`, `contributor`, `author`, `editor`, `admin`
+- `[contentAreas]` — *Optional* comma-separated content areas (authors only)
 
 **Examples:**
-
 ```bash
-# Promote a user to admin
-node scripts/set-user-role.js johndoe administrator
+# Set as author with specific content areas
+node admin.js set-role johndoe author science,health
 
-# Set a user as an author with specific content areas
-node scripts/set-user-role.js janedoe author "news,events"
+# Promote to admin (clears content areas automatically)
+node admin.js set-role johndoe admin
 ```
 
-Valid roles are defined in `server/config/roles.js`.
+#### Promote user (via API)
+```bash
+node admin.js promote <userId> <role>
+```
+Updates a user's role through the API. **Requires server running on `localhost:3000`.**
 
-Available Roles:
- - subscriber
- - contributor
- - author
- - editor
- - administrator
+**Arguments:**
+- `<userId>` — MongoDB user ID
+- `<role>` — New role to assign
+
+**Example:**
+```bash
+node admin.js promote 64a1b2c3d4e5f6g7h8i9j0k1 author
+```
+
+---
+
+### Events
+
+#### List all events
+```bash
+# Summary table
+node admin.js list-events
+
+# Full details for every event
+node admin.js list-events --full
+```
+
+---
+
+### Auth & Tokens
+
+#### Generate admin JWT token
+```bash
+node admin.js token
+```
+Generates a 24-hour admin JWT token. Useful for testing API calls in Postman or curl.
+
+---
+
+### Diagnostics
+
+#### Test database connection
+```bash
+node admin.js test-db
+```
+Confirms MongoDB connection and lists all collections. **No server needed.**
+
+#### Test auth flow
+```bash
+node admin.js test-auth
+```
+Registers a throwaway test user and logs in. **Requires server running on `localhost:3000`.**
+
+#### Test full upload flow
+```bash
+node admin.js test-upload
+```
+Complete smoke test: register → login → upload image. **Requires server running on `localhost:3000`.**
 
 ---
 

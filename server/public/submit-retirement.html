@@ -38,7 +38,7 @@
             <p class="event-page-message" id="retirementFormMessage" role="status"
                 aria-live="polite" hidden></p>
 
-            <form class="event-submit-form" id="retirementSubmitForm" novalidate>
+            <form class="event-submit-form" id="retirementSubmitForm" novalidate hidden>
                 <section class="event-form-section">
                     <header class="event-section-heading">
                         <span class="event-section-index">01</span>
@@ -122,6 +122,18 @@
                                     Français
                                 </option>
                             </select>
+                        </div>
+
+                        <div class="event-field event-field-wide">
+                            <label for="retirementPhoto" data-i18n="retirement_photo">
+                                Photo
+                            </label>
+
+                            <input id="retirementPhoto" name="retirementPhoto" type="file" accept="image/*" />
+
+                            <small data-i18n="retirement_photo_hint">
+                                Optional. Upload a photo to include with the retirement message.
+                            </small>
                         </div>
 
                         <div class="event-field event-field-wide">

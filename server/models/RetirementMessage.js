@@ -59,6 +59,13 @@ const retirementMessageSchema =
                 required: true
             },
 
+            photoUrl: {
+                type: String,
+                trim: true,
+                maxlength: 2000,
+                default: ""
+            },
+
             submitter: {
                 firstName: {
                     type: String,

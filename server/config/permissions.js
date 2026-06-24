@@ -19,6 +19,9 @@ function getUserPermissions(user) {
     canCreateDrafts:
       hasMinimumRole(user.role, 'contributor'),
 
+    canSubmitRetirementMessages:
+      hasMinimumRole(user.role, 'contributor'),
+
     canPublishOwnContent:
       hasMinimumRole(user.role, 'author'),
 

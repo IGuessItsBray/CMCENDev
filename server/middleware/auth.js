@@ -30,7 +30,7 @@ async function authMiddleware(req, res, next) {
     try {
         const user = await User.findById(decoded.userId)
             .select(
-                'username email accountName role contentAreas createdAt updatedAt'
+                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit role contentAreas createdAt updatedAt'
             );
 
         if (!user) {

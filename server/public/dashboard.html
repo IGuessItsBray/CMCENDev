@@ -34,24 +34,31 @@
 
             <h1
               id="dashboardTitle"
-              data-i18n="dashboard_title"
             >
-              Account Dashboard
+              Loading...
             </h1>
 
             <p
               class="dashboard-member-name"
               id="dashboardMemberName"
+              hidden
             >
               Loading...
             </p>
           </div>
 
-          <span
-            class="dashboard-role-badge"
-            id="dashboardRoleBadge"
+          <div
+            class="dashboard-role-summary"
+            id="dashboardRoleSummary"
             hidden
-          ></span>
+          >
+            <span
+              class="dashboard-role-badge"
+              id="dashboardRoleBadge"
+            ></span>
+
+            <p id="dashboardRoleDescription"></p>
+          </div>
         </header>
 
         <div
@@ -108,25 +115,6 @@
             ></nav>
           </aside>
         </div>
-
-        <footer
-          class="dashboard-access"
-          id="dashboardAccess"
-          hidden
-        >
-          <span
-            class="dashboard-access-label"
-            data-i18n="access_level"
-          >
-            Access level
-          </span>
-
-          <div class="dashboard-access-copy">
-            <strong id="dashboardAccessTitle"></strong>
-
-            <p id="dashboardAccessDescription"></p>
-          </div>
-        </footer>
       </section>
     </main>
 

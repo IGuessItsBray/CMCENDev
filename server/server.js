@@ -93,13 +93,83 @@ app.get('/api/data', async (req, res) => {
 // REGISTER
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, email, accountName, password } = req.body;
+    const {
+      firstName,
+      lastName,
+      addressLine1,
+      addressLine2,
+      city,
+      country,
+      stateProvince,
+      postalCode,
+      rank,
+      postNominals,
+      company,
+      status,
+      affiliationElement,
+      trade,
+      tradeOther,
+      currentUnit,
+      email,
+      password,
+      passwordConfirmation
+    } = req.body;
+
+    if (password !== passwordConfirmation) {
+      return res.status(400).json({
+        error: 'Passwords do not match'
+      });
+    }
+
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    const cleanFirstName = String(firstName || '').trim();
+    const cleanLastName = String(lastName || '').trim();
+    const requiredFields = [
+      cleanFirstName,
+      cleanLastName,
+      String(addressLine1 || '').trim(),
+      String(city || '').trim(),
+      String(country || '').trim(),
+      String(stateProvince || '').trim(),
+      String(postalCode || '').trim(),
+      String(status || '').trim(),
+      String(affiliationElement || '').trim(),
+      cleanEmail,
+      String(password || ''),
+      String(passwordConfirmation || '')
+    ];
+
+    if (requiredFields.some(value => !value)) {
+      return res.status(400).json({
+        error: 'Required registration fields are missing'
+      });
+    }
 
     // only explicitly accept permitted registration fields
     const user = new User({
-      username,
-      email,
-      accountName,
+      username: cleanEmail,
+      email: cleanEmail,
+      accountName: [cleanFirstName, cleanLastName]
+        .filter(Boolean)
+        .join(' '),
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+      address: {
+        line1: String(addressLine1 || '').trim(),
+        line2: String(addressLine2 || '').trim(),
+        city: String(city || '').trim(),
+        country: String(country || '').trim(),
+        stateProvince: String(stateProvince || '').trim(),
+        postalCode: String(postalCode || '').trim()
+      },
+      rank: String(rank || '').trim(),
+      postNominals: String(postNominals || '').trim(),
+      company: String(company || '').trim(),
+      status: String(status || '').trim(),
+      affiliationElement: String(affiliationElement || '').trim(),
+      trade: String(trade || '').trim(),
+      tradeOther: String(tradeOther || '').trim(),
+      currentUnit: String(currentUnit || '').trim(),
       password,
       role: 'subscriber'
     });
@@ -157,7 +227,8 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
     res.status(201).json({
       message: "Upload successful",
       key: fileKey,
-      url: `/uploads/${fileKey}` // Or full external URL
+      //  url: `/uploads/${fileKey}` // Or full external URL
+      url: `https://cdn.corebot.ca/cmcen-demo/${fileKey}`
     });
   } catch (err) {
     console.error("Upload Error:", err);
@@ -192,15 +263,15 @@ app.get(
   async (req, res) => {
     try {
       const { query } = req.query;
-      
+
       // If query exists, search by username or accountName; otherwise return all
-      const filter = query 
-        ? { 
-            $or: [
-              { username: { $regex: query, $options: 'i' } },
-              { accountName: { $regex: query, $options: 'i' } }
-            ] 
-          } 
+      const filter = query
+        ? {
+          $or: [
+            { username: { $regex: query, $options: 'i' } },
+            { accountName: { $regex: query, $options: 'i' } }
+          ]
+        }
         : {};
 
       const users = await User.find(filter).select('-password');
@@ -230,8 +301,8 @@ app.patch(
 
       // 2. Update the user
       const user = await User.findByIdAndUpdate(
-        userId, 
-        { role }, 
+        userId,
+        { role },
         { new: true }
       ).select('-password');
 

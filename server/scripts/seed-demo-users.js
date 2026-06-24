@@ -82,6 +82,53 @@ const DEMO_USERS = [
     }
 ];
 
+function getDemoProfile(seed) {
+    const rankPrefixes =
+        new Set([
+            "MCpl",
+            "Sgt",
+            "Capt",
+            "CWO",
+            "Maj",
+            "LCol"
+        ]);
+
+    const nameParts = seed.accountName
+        .replace(/\s*\(Demo\)$/u, "")
+        .split(/\s+/u)
+        .filter(Boolean);
+
+    const rank =
+        rankPrefixes.has(nameParts[0])
+            ? nameParts[0]
+            : "";
+
+    if (rank) {
+        nameParts.shift();
+    }
+
+    return {
+        firstName: nameParts[0] || "Demo",
+        lastName: nameParts.slice(1).join(" ") || "User",
+        address: {
+            line1: "1 Demo Way",
+            line2: "",
+            city: "Ottawa",
+            country: "Canada",
+            stateProvince: "Ontario",
+            postalCode: "K1A 0K2"
+        },
+        rank,
+        postNominals: "",
+        company: "CMCEN Demo",
+        status: "regular",
+        affiliationElement: "army",
+        trade: "Signals",
+        tradeOther: "",
+        currentUnit: "CMCEN Demo Unit"
+    };
+}
+
 function assertSeedAllowed() {
     if (
         process.env.ALLOW_DEMO_SEED !== "true"
@@ -123,6 +170,7 @@ async function seedDemoUsers() {
             user.username = seed.username;
             user.email = seed.email;
             user.accountName = seed.accountName;
+            Object.assign(user, getDemoProfile(seed));
             user.role = seed.role;
             user.contentAreas =
                 seed.contentAreas;

@@ -57,24 +57,314 @@
             <div class="register-fields">
               <div class="register-field">
                 <label
-                  for="regUsername"
-                  data-i18n="username"
+                  for="regFirstName"
+                  data-i18n="first_name"
                 >
-                  Username
+                  First name
                 </label>
 
                 <input
                   type="text"
-                  id="regUsername"
-                  name="username"
-                  autocomplete="username"
-                  data-i18n-placeholder="username_placeholder"
-                  placeholder="Enter your username"
+                  id="regFirstName"
+                  name="firstName"
+                  autocomplete="given-name"
                   required
                 />
               </div>
 
               <div class="register-field">
+                <label
+                  for="regLastName"
+                  data-i18n="last_name"
+                >
+                  Last name
+                </label>
+
+                <input
+                  type="text"
+                  id="regLastName"
+                  name="lastName"
+                  autocomplete="family-name"
+                  required
+                />
+              </div>
+
+              <div class="register-field register-field-wide">
+                <label
+                  for="regAddressLine1"
+                  data-i18n="address_line_1"
+                >
+                  Address line 1
+                </label>
+
+                <input
+                  type="text"
+                  id="regAddressLine1"
+                  name="addressLine1"
+                  autocomplete="address-line1"
+                  required
+                />
+              </div>
+
+              <div class="register-field register-field-wide">
+                <label
+                  for="regAddressLine2"
+                  data-i18n="address_line_2"
+                >
+                  Address line 2
+                </label>
+
+                <input
+                  type="text"
+                  id="regAddressLine2"
+                  name="addressLine2"
+                  autocomplete="address-line2"
+                />
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regCity"
+                  data-i18n="city"
+                >
+                  City
+                </label>
+
+                <input
+                  type="text"
+                  id="regCity"
+                  name="city"
+                  autocomplete="address-level2"
+                  required
+                />
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regCountry"
+                  data-i18n="country"
+                >
+                  Country
+                </label>
+
+                <input
+                  type="text"
+                  id="regCountry"
+                  name="country"
+                  autocomplete="country-name"
+                  required
+                />
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regStateProvince"
+                  data-i18n="state_province"
+                >
+                  State/province
+                </label>
+
+                <input
+                  type="text"
+                  id="regStateProvince"
+                  name="stateProvince"
+                  autocomplete="address-level1"
+                  required
+                />
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regPostalCode"
+                  data-i18n="postal_code"
+                >
+                  Zip/postal code
+                </label>
+
+                <input
+                  type="text"
+                  id="regPostalCode"
+                  name="postalCode"
+                  autocomplete="postal-code"
+                  required
+                />
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regRank"
+                  data-i18n="rank"
+                >
+                  Rank
+                </label>
+
+                <input
+                  type="text"
+                  id="regRank"
+                  name="rank"
+                />
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regPostNominals"
+                  data-i18n="post_nominals"
+                >
+                  Post nominals
+                </label>
+
+                <input
+                  type="text"
+                  id="regPostNominals"
+                  name="postNominals"
+                />
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regCompany"
+                  data-i18n="company"
+                >
+                  Company
+                </label>
+
+                <input
+                  type="text"
+                  id="regCompany"
+                  name="company"
+                  autocomplete="organization"
+                />
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regStatus"
+                  data-i18n="status"
+                >
+                  Status
+                </label>
+
+                <select
+                  id="regStatus"
+                  name="status"
+                  required
+                >
+                  <option value="" selected disabled data-i18n="select_option">
+                    Select an option
+                  </option>
+
+                  <option value="regular" data-i18n="status_regular">
+                    Regular
+                  </option>
+
+                  <option value="reserve" data-i18n="status_reserve">
+                    Reserve
+                  </option>
+
+                  <option value="honourary" data-i18n="status_honourary">
+                    Honourary
+                  </option>
+
+                  <option value="civilian" data-i18n="status_civilian">
+                    Civilian
+                  </option>
+
+                  <option value="retired" data-i18n="status_retired">
+                    Retired
+                  </option>
+
+                  <option value="released" data-i18n="status_released">
+                    Released
+                  </option>
+
+                  <option value="other" data-i18n="status_other">
+                    Other
+                  </option>
+                </select>
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regAffiliationElement"
+                  data-i18n="affiliation_element"
+                >
+                  Affiliation/element
+                </label>
+
+                <select
+                  id="regAffiliationElement"
+                  name="affiliationElement"
+                  required
+                >
+                  <option value="" selected disabled data-i18n="select_option">
+                    Select an option
+                  </option>
+
+                  <option value="army" data-i18n="element_army">
+                    Army
+                  </option>
+
+                  <option value="navy" data-i18n="element_navy">
+                    Navy
+                  </option>
+
+                  <option value="air_force" data-i18n="element_air_force">
+                    Air Force
+                  </option>
+
+                  <option value="other" data-i18n="element_other">
+                    Other
+                  </option>
+                </select>
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regTrade"
+                  data-i18n="trade"
+                >
+                  MOSID/MOC/Trade
+                </label>
+
+                <input
+                  type="text"
+                  id="regTrade"
+                  name="trade"
+                />
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regTradeOther"
+                  data-i18n="trade_other"
+                >
+                  MOSID/MOC/Trade (Other)
+                </label>
+
+                <input
+                  type="text"
+                  id="regTradeOther"
+                  name="tradeOther"
+                />
+              </div>
+
+              <div class="register-field register-field-wide">
+                <label
+                  for="regCurrentUnit"
+                  data-i18n="current_unit"
+                >
+                  Current unit
+                </label>
+
+                <input
+                  type="text"
+                  id="regCurrentUnit"
+                  name="currentUnit"
+                  autocomplete="organization"
+                />
+              </div>
+
+              <div class="register-field register-field-wide">
                 <label
                   for="regEmail"
                   data-i18n="email"
@@ -89,25 +379,6 @@
                   autocomplete="email"
                   data-i18n-placeholder="email_placeholder"
                   placeholder="Enter your email"
-                  required
-                />
-              </div>
-
-              <div class="register-field">
-                <label
-                  for="regAccountName"
-                  data-i18n="account_name"
-                >
-                  Account name
-                </label>
-
-                <input
-                  type="text"
-                  id="regAccountName"
-                  name="accountName"
-                  autocomplete="name"
-                  data-i18n-placeholder="account_name_placeholder"
-                  placeholder="Enter your name"
                   required
                 />
               </div>
@@ -129,6 +400,33 @@
                   placeholder="Create a password"
                   required
                 />
+              </div>
+
+              <div class="register-field">
+                <label
+                  for="regPasswordConfirmation"
+                  data-i18n="password_confirmation"
+                >
+                  Password confirmation
+                </label>
+
+                <input
+                  type="password"
+                  id="regPasswordConfirmation"
+                  name="passwordConfirmation"
+                  autocomplete="new-password"
+                  data-i18n-placeholder="password_confirm_placeholder"
+                  placeholder="Confirm your password"
+                  required
+                />
+
+                <div
+                  class="password-strength"
+                  id="passwordStrength"
+                  aria-hidden="true"
+                >
+                  <span></span>
+                </div>
               </div>
             </div>
 

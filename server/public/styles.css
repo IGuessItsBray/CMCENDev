@@ -1933,6 +1933,37 @@ a.dropdown-toggle {
   padding: 0 12px;
 }
 
+.event-field input[type="file"] {
+  height: auto;
+  min-height: 45px;
+  padding: 9px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.event-field input[type="file"]::file-selector-button {
+  min-height: 28px;
+  margin-right: 12px;
+  padding: 0 12px;
+  border: 1px solid var(--navy-900);
+  border-radius: 2px;
+  background: var(--navy-900);
+  color: var(--white);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.event-field input[type="file"]:hover::file-selector-button,
+.event-field input[type="file"]:focus::file-selector-button {
+  border-color: var(--gold-600);
+  background: var(--navy-800);
+  color: var(--gold-200);
+}
+
 .event-field textarea {
   min-height: 138px;
   padding: 11px 12px;

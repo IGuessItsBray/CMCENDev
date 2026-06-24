@@ -1,5 +1,9 @@
 const express = require('express');
 const RetirementMessage = require('../models/RetirementMessage');
+const {
+    authMiddleware,
+    requirePermission
+} = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -52,12 +56,17 @@ function isValidEmail(value) {
     );
 }
 
-router.post('/', async (req, res) => {
+router.post(
+    '/',
+    authMiddleware,
+    requirePermission('canSubmitRetirementMessages'),
+    async (req, res) => {
     try {
         const {
             retiree = {},
             message,
             messageLanguage,
+            photoUrl,
             submitter = {},
             publicationConsentConfirmed,
 
@@ -100,6 +109,9 @@ router.post('/', async (req, res) => {
 
         const cleanMessage =
             cleanString(message);
+
+        const cleanPhotoUrl =
+            cleanString(photoUrl);
 
         const cleanSubmitter = {
             firstName:
@@ -158,6 +170,13 @@ router.post('/', async (req, res) => {
             });
         }
 
+        if (cleanPhotoUrl.length > 2000) {
+            return res.status(400).json({
+                error:
+                    'The photo URL is too long'
+            });
+        }
+
         if (
             !cleanSubmitter.firstName ||
             !cleanSubmitter.lastName ||
@@ -207,6 +226,9 @@ router.post('/', async (req, res) => {
                     cleanMessage,
 
                 messageLanguage,
+
+                photoUrl:
+                    cleanPhotoUrl,
 
                 submitter:
                     cleanSubmitter,

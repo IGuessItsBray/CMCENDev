@@ -707,7 +707,123 @@ const translations = {
 
     home_read_stories:
       "Read news and stories",
+
+
+
+
+    retirement_submit_eyebrow:
+      "Retirement Messages",
+
+    retirement_submit_title:
+      "Submit a Retirement Message",
+
+    retirement_submit_intro:
+      "Recognize the career and service of a retiring member. All submissions are reviewed before publication.",
+
+    retirement_retiree_heading:
+      "Retiree Information",
+
+    retirement_retiree_intro:
+      "Enter the member's information as it should appear in the published message.",
+
+    retirement_rank:
+      "Rank at retirement",
+
+    retirement_first_name:
+      "First name",
+
+    retirement_last_name:
+      "Last name",
+
+    retirement_trade_role:
+      "Trade or role",
+
+    retirement_years_service:
+      "Years of service",
+
+    retirement_date:
+      "Retirement date",
+
+    retirement_message_heading:
+      "Retirement Message",
+
+    retirement_message_intro:
+      "Share a message recognizing the member's career, service, and contributions.",
+
+    retirement_message_language:
+      "Message language",
+
+    retirement_message_text:
+      "Message",
+
+    retirement_message_minimum:
+      "Minimum 100 characters.",
+
+    retirement_submitter_heading:
+      "Submitter Information",
+
+    retirement_submitter_intro:
+      "This information is used for confirmation and review. It will not be published.",
+
+    retirement_submitter_first_name:
+      "First name",
+
+    retirement_submitter_last_name:
+      "Last name",
+
+    retirement_submitter_relationship:
+      "Relationship to retiree",
+
+    retirement_submitter_email:
+      "Email",
+
+    retirement_submitter_unit:
+      "Unit or organization",
+
+    select_option:
+      "Select an option",
+
+    relationship_self:
+      "Self",
+
+    relationship_colleague:
+      "Colleague",
+
+    relationship_family:
+      "Family",
+
+    relationship_other:
+      "Other",
+
+    retirement_consent:
+      "I confirm the retiree has consented to this publication.",
+
+    retirement_submit_button:
+      "Submit for Review",
+
+    retirement_message_too_short:
+      "The retirement message must contain at least 100 characters.",
+
+    retirement_consent_required:
+      "You must confirm the retiree has consented to publication.",
+
+    retirement_submit_success:
+      "Your retirement message has been submitted and is awaiting review.",
+
+    retirement_submit_error:
+      "Could not submit the retirement message. Please try again.",
   },
+
+
+
+
+
+
+  /* 
+  
+  FRENCH ---------------------------------
+  
+  */
 
   fr: {
     // Identité du site
@@ -1454,30 +1570,110 @@ const translations = {
 
     home_read_stories:
       "Lire les nouvelles et les récits",
+    retirement_submit_eyebrow:
+      "Messages de retraite",
+
+    retirement_submit_title:
+      "Soumettre un message de retraite",
+
+    retirement_submit_intro:
+      "Soulignez la carrière et le service d’un membre qui prend sa retraite. Toutes les soumissions sont révisées avant leur publication.",
+
+    retirement_retiree_heading:
+      "Renseignements sur la personne retraitée",
+
+    retirement_retiree_intro:
+      "Saisissez les renseignements du membre tels qu’ils doivent apparaître dans le message publié.",
+
+    retirement_rank:
+      "Grade au moment de la retraite",
+
+    retirement_first_name:
+      "Prénom",
+
+    retirement_last_name:
+      "Nom de famille",
+
+    retirement_trade_role:
+      "Métier ou rôle",
+
+    retirement_years_service:
+      "Années de service",
+
+    retirement_date:
+      "Date de retraite",
+
+    retirement_message_heading:
+      "Message de retraite",
+
+    retirement_message_intro:
+      "Rédigez un message soulignant la carrière, le service et les contributions du membre.",
+
+    retirement_message_language:
+      "Langue du message",
+
+    retirement_message_text:
+      "Message",
+
+    retirement_message_minimum:
+      "Minimum de 100 caractères.",
+
+    retirement_submitter_heading:
+      "Renseignements sur la personne qui soumet le message",
+
+    retirement_submitter_intro:
+      "Ces renseignements servent à la confirmation et à la révision. Ils ne seront pas publiés.",
+
+    retirement_submitter_first_name:
+      "Prénom",
+
+    retirement_submitter_last_name:
+      "Nom de famille",
+
+    retirement_submitter_relationship:
+      "Lien avec la personne retraitée",
+
+    retirement_submitter_email:
+      "Courriel",
+
+    retirement_submitter_unit:
+      "Unité ou organisation",
+
+    select_option:
+      "Sélectionnez une option",
+
+    relationship_self:
+      "Moi-même",
+    relationship_colleague:
+      "Collègue",
+    relationship_family:
+      "Membre de la famille",
+    relationship_other:
+      "Autre",
+    retirement_consent:
+      "Je confirme que la personne retraitée a consenti à cette publication.",
+    retirement_submit_button:
+      "Soumettre pour révision",
+    retirement_message_too_short:
+      "Le message de retraite doit contenir au moins 100 caractères.",
+    retirement_consent_required:
+      "Vous devez confirmer que la personne retraitée a consenti à la publication.",
+    retirement_submit_success:
+      "Votre message de retraite a été soumis et est en attente de révision.",
+    retirement_submit_error:
+      "Impossible de soumettre le message de retraite. Veuillez réessayer.",
   },
 };
 
 const langToggle = document.getElementById("langToggle");
 let currentLang = localStorage.getItem("lang") || "en";
 
-function translate(
-  key,
-  replacements = {},
-  lang = currentLang
-) {
-  let text =
-    translations[lang]?.[key] ??
-    translations.en?.[key] ??
-    key;
+function translate(key, replacements = {}, lang = currentLang) {
+  let text = translations[lang]?.[key] ?? translations.en?.[key] ?? key;
 
-  Object.entries(replacements).forEach(
-    ([name, value]) => {
-      text = text.replaceAll(
-        `{${name}}`,
-        String(value)
-      );
-    }
-  );
+  Object.entries(replacements).forEach(([name, value]) => {
+    text = text.replaceAll(`{${name}}`, String(value));
+  });
 
   return text;
 }

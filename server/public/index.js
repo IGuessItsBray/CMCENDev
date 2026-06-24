@@ -177,6 +177,19 @@ function loadHeader() {
           >
             Donate
           </a>
+
+          <button
+            type="button"
+            class="mobile-menu-toggle"
+            id="mobileMenuToggle"
+            aria-controls="primaryNavigation"
+            aria-expanded="false"
+            aria-label="Open menu"
+          >
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+          </button>
         </div>
       </div>
     </div>
@@ -185,6 +198,7 @@ function loadHeader() {
       <div class="header-inner header-navigation-inner">
         <nav
           class="nav-bar"
+          id="primaryNavigation"
           aria-label="Primary navigation"
         >
           ${dropdownsHtml}
@@ -227,9 +241,60 @@ function loadHeader() {
             </svg>
           </button>
         </form>
+
+        <div
+          class="mobile-menu-account"
+          id="mobileMenuAccount"
+        ></div>
       </div>
     </div>
   `;
+
+  const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+
+  function updateMobileMenuOffset() {
+    const identityRow = header.querySelector('.header-identity-row');
+
+    header.style.setProperty(
+      '--mobile-header-height',
+      `${identityRow?.offsetHeight || header.offsetHeight}px`
+    );
+  }
+
+  function setMobileMenuOpen(isOpen) {
+    if (isOpen) {
+      updateMobileMenuOffset();
+    }
+
+    header.classList.toggle('is-mobile-menu-open', isOpen);
+    document.body.classList.toggle('mobile-menu-lock', isOpen);
+
+    mobileMenuToggle?.setAttribute('aria-expanded', String(isOpen));
+    mobileMenuToggle?.setAttribute(
+      'aria-label',
+      isOpen ? 'Close menu' : 'Open menu'
+    );
+  }
+
+  mobileMenuToggle?.addEventListener('click', () => {
+    setMobileMenuOpen(!header.classList.contains('is-mobile-menu-open'));
+  });
+
+  document.getElementById('primaryNavigation')?.addEventListener('click', event => {
+    if (event.target.closest('a')) {
+      setMobileMenuOpen(false);
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (header.classList.contains('is-mobile-menu-open')) {
+      updateMobileMenuOffset();
+    }
+
+    if (window.innerWidth > 700) {
+      setMobileMenuOpen(false);
+    }
+  });
 }
 
 const footerSocialLinks = [
@@ -447,6 +512,8 @@ loadHeader();
 loadFooter();
 
 const authButtons = document.querySelector('.auth-buttons');
+const mobileMenuAccount = document.getElementById('mobileMenuAccount');
+
 function getAccountIcon() {
   return `
     <svg
@@ -458,6 +525,29 @@ function getAccountIcon() {
       <path d="M4.5 21c.7-4.2 3.1-6.3 7.5-6.3s6.8 2.1 7.5 6.3"></path>
     </svg>
   `;
+}
+
+function handleSignOut() {
+  const currentPath = window.location.pathname;
+
+  localStorage.removeItem("token");
+
+  document.getElementById('header')?.classList.remove('is-mobile-menu-open');
+  document.body.classList.remove('mobile-menu-lock');
+  document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded', 'false');
+  document.getElementById('mobileMenuToggle')?.setAttribute('aria-label', 'Open menu');
+
+  if (protectedPages.has(currentPath)) {
+    window.location.replace("/login.html");
+    return;
+  }
+
+  updateAuthRestrictedItems();
+  updateAuthButtons();
+
+  if (typeof applyLanguage === "function") {
+    applyLanguage(currentLang);
+  }
 }
 
 function updateAuthButtons() {
@@ -483,28 +573,42 @@ function updateAuthButtons() {
       </button>
     `;
 
-    document.getElementById("signOutBtn").addEventListener("click", () => {
-      const currentPath = window.location.pathname;
+    mobileMenuAccount.innerHTML = `
+      <a
+        href="/dashboard.html"
+        class="mobile-menu-account-link"
+      >
+        ${getAccountIcon()}
+        <span data-i18n="account">Account</span>
+      </a>
 
-      localStorage.removeItem("token");
+      <button
+        type="button"
+        class="mobile-signout-link"
+        id="mobileSignOutBtn"
+        data-i18n="signout_btn"
+      >
+        Sign out
+      </button>
+    `;
 
-      if (protectedPages.has(currentPath)) {
-        window.location.replace("/login.html");
-        return;
-      }
-
-      updateAuthRestrictedItems();
-      updateAuthButtons();
-
-      if (typeof applyLanguage === "function") {
-        applyLanguage(currentLang);
-      }
-    });
+    document.getElementById("signOutBtn").addEventListener("click", handleSignOut);
+    document.getElementById("mobileSignOutBtn").addEventListener("click", handleSignOut);
   } else {
     authButtons.innerHTML = `
       <a
         href="/login.html"
         class="utility-link account-link"
+      >
+        ${getAccountIcon()}
+        <span data-i18n="login_btn">Login</span>
+      </a>
+    `;
+
+    mobileMenuAccount.innerHTML = `
+      <a
+        href="/login.html"
+        class="mobile-menu-account-link"
       >
         ${getAccountIcon()}
         <span data-i18n="login_btn">Login</span>
@@ -543,6 +647,8 @@ async function updateAuthRestrictedItems() {
 
     if (response.status === 401) {
       localStorage.removeItem('token');
+      document.getElementById('header')?.classList.remove('is-mobile-menu-open');
+      document.body.classList.remove('mobile-menu-lock');
       updateAuthButtons();
       return;
     }

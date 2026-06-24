@@ -1,0 +1,320 @@
+const express = require('express');
+const fs = require('fs/promises');
+const path = require('path');
+const Event = require('../models/Event');
+const RetirementMessage = require('../models/RetirementMessage');
+
+const router = express.Router();
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const MAX_QUERY_LENGTH = 120;
+const MAX_RESULTS = 30;
+const MAX_RESULTS_PER_SOURCE = 10;
+
+const STATIC_PAGES = [
+  {
+    path: '/index.html',
+    file: 'index.html',
+    type: 'page',
+    title: 'CMCEN / RCMCE'
+  },
+  {
+    path: '/about_family.html',
+    file: 'about_family.html',
+    type: 'page',
+    title: 'About the C&E Family'
+  },
+  {
+    path: '/calendar.html',
+    file: 'calendar.html',
+    type: 'page',
+    title: 'Events Calendar'
+  },
+  {
+    path: '/submit-retirement.html',
+    file: 'submit-retirement.html',
+    type: 'page',
+    title: 'Submit a Retirement Message'
+  }
+];
+
+function cleanQuery(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, MAX_QUERY_LENGTH);
+}
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getQueryTerms(query) {
+  return query
+    .toLowerCase()
+    .split(' ')
+    .map(term => term.trim())
+    .filter(Boolean);
+}
+
+function getLocalizedText(value, language) {
+  if (!value) return '';
+
+  const preferred =
+    typeof value[language] === 'string'
+      ? value[language].trim()
+      : '';
+
+  if (preferred) return preferred;
+
+  const fallbackLanguage = language === 'fr' ? 'en' : 'fr';
+
+  return typeof value[fallbackLanguage] === 'string'
+    ? value[fallbackLanguage].trim()
+    : '';
+}
+
+function normalizeText(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function truncate(value, maxLength = 220) {
+  const text = normalizeText(value);
+
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text.slice(0, maxLength - 1).trim()}…`;
+}
+
+function stripHtml(value) {
+  return String(value || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function scoreText(queryTerms, fields) {
+  const haystack = fields
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (!haystack) return 0;
+
+  return queryTerms.reduce((score, term) => {
+    if (!haystack.includes(term)) {
+      return score;
+    }
+
+    const exactWord = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
+    return score + (exactWord.test(haystack) ? 2 : 1);
+  }, 0);
+}
+
+function sortResults(results) {
+  return results
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+
+      const rightDate = right.date ? new Date(right.date).getTime() : 0;
+      const leftDate = left.date ? new Date(left.date).getTime() : 0;
+
+      return rightDate - leftDate;
+    })
+    .slice(0, MAX_RESULTS)
+    .map(({ score, ...result }) => result);
+}
+
+async function searchEvents(query, queryTerms, language) {
+  const regex = new RegExp(escapeRegex(query), 'i');
+
+  const events = await Event.find({
+    status: 'published',
+    $or: [
+      { 'title.en': regex },
+      { 'title.fr': regex },
+      { 'description.en': regex },
+      { 'description.fr': regex },
+      { 'location.en': regex },
+      { 'location.fr': regex },
+      { city: regex },
+      { provinceRegion: regex },
+      { organizingEntity: regex },
+      { eventType: regex }
+    ]
+  })
+    .select('title description location city provinceRegion organizingEntity eventType startDate createdAt')
+    .sort({ startDate: 1 })
+    .limit(MAX_RESULTS_PER_SOURCE)
+    .lean();
+
+  return events.map(event => {
+    const title = getLocalizedText(event.title, language) || 'Event';
+    const description = getLocalizedText(event.description, language);
+    const location = getLocalizedText(event.location, language);
+    const summary = truncate(
+      [
+        description,
+        location,
+        event.city,
+        event.provinceRegion,
+        event.organizingEntity,
+        event.eventType
+      ].filter(Boolean).join(' ')
+    );
+
+    return {
+      type: 'event',
+      sourceId: String(event._id),
+      title,
+      summary,
+      url: '/calendar.html',
+      date: event.startDate || event.createdAt || null,
+      score: scoreText(queryTerms, [
+        title,
+        summary,
+        event.city,
+        event.provinceRegion,
+        event.organizingEntity,
+        event.eventType
+      ])
+    };
+  });
+}
+
+async function searchRetirementMessages(query, queryTerms) {
+  const regex = new RegExp(escapeRegex(query), 'i');
+
+  const messages = await RetirementMessage.find({
+    status: 'published',
+    $or: [
+      { 'retiree.rank': regex },
+      { 'retiree.firstName': regex },
+      { 'retiree.lastName': regex },
+      { 'retiree.tradeRole': regex },
+      { 'retiree.yearsOfService': regex },
+      { message: regex },
+      { 'submitter.unit': regex }
+    ]
+  })
+    .select('retiree message messageLanguage publishedAt createdAt')
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .limit(MAX_RESULTS_PER_SOURCE)
+    .lean();
+
+  return messages.map(message => {
+    const retireeName = [
+      message.retiree?.rank,
+      message.retiree?.firstName,
+      message.retiree?.lastName
+    ].filter(Boolean).join(' ');
+
+    const title = retireeName
+      ? `Retirement message for ${retireeName}`
+      : 'Retirement message';
+
+    const summary = truncate(message.message);
+
+    return {
+      type: 'retirement-message',
+      sourceId: String(message._id),
+      title,
+      summary,
+      url: null,
+      date: message.publishedAt || message.createdAt || null,
+      score: scoreText(queryTerms, [
+        title,
+        summary,
+        message.retiree?.tradeRole,
+        message.retiree?.yearsOfService
+      ])
+    };
+  });
+}
+
+async function searchStaticPages(queryTerms) {
+  const pages = await Promise.all(
+    STATIC_PAGES.map(async page => {
+      try {
+        const html = await fs.readFile(
+          path.join(PUBLIC_DIR, page.file),
+          'utf8'
+        );
+        const text = normalizeText(stripHtml(html));
+        const score = scoreText(queryTerms, [page.title, text]);
+
+        if (score === 0) {
+          return null;
+        }
+
+        return {
+          type: page.type,
+          sourceId: page.path,
+          title: page.title,
+          summary: truncate(text),
+          url: page.path,
+          date: null,
+          score
+        };
+      } catch (error) {
+        console.error(`Could not search static page ${page.file}:`, error);
+        return null;
+      }
+    })
+  );
+
+  return pages.filter(Boolean).slice(0, MAX_RESULTS_PER_SOURCE);
+}
+
+// GET /api/search?q=query&lang=en
+// Search public site content using a shared result protocol.
+router.get('/', async (req, res) => {
+  try {
+    const query = cleanQuery(req.query.q);
+    const language = req.query.lang === 'fr' ? 'fr' : 'en';
+
+    if (query.length < 2) {
+      return res.json({
+        query,
+        total: 0,
+        results: []
+      });
+    }
+
+    const queryTerms = getQueryTerms(query);
+    const [events, retirementMessages, pages] = await Promise.all([
+      searchEvents(query, queryTerms, language),
+      searchRetirementMessages(query, queryTerms),
+      searchStaticPages(queryTerms)
+    ]);
+
+    const results = sortResults([
+      ...events,
+      ...retirementMessages,
+      ...pages
+    ]);
+
+    res.json({
+      query,
+      total: results.length,
+      results
+    });
+  } catch (error) {
+    console.error('Search failed:', error);
+
+    res.status(500).json({
+      error: 'Could not complete search'
+    });
+  }
+});
+
+module.exports = router;

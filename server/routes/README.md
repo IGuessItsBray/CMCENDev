@@ -49,6 +49,35 @@ Defined in `uploads.js`.
 
 `POST /api/upload` expects `multipart/form-data` with an `image` file field. It returns the generated object key and CDN URL.
 
+## Search Routes
+
+Defined in `search.js`.
+
+| Method | Path | Auth | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/api/search` | Public | Search public site content across published events, published retirement messages, and public static pages. |
+
+`GET /api/search` accepts `q` for the search query and optional `lang` as `en` or `fr`. Responses use the shared search protocol:
+
+```json
+{
+  "query": "ceremony",
+  "total": 2,
+  "results": [
+    {
+      "type": "event",
+      "sourceId": "mongo-id-or-page-path",
+      "title": "Result title",
+      "summary": "Short result summary",
+      "url": "/calendar.html",
+      "date": "2026-06-24T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+Future content types, such as articles, should return the same result fields so the frontend does not need a new rendering path.
+
 ## Event Routes
 
 Defined in `events.js`.
@@ -87,3 +116,4 @@ Defined in `retirement-messages.js`.
 | `admin.js` | `/api/admin` |
 | `events.js` | `/api/events` |
 | `retirement-messages.js` | `/api/retirement-messages` |
+| `search.js` | `/api/search` |

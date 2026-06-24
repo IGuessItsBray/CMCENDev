@@ -33,6 +33,9 @@ let currentUser = null;
 let isSubmitting = false;
 let accessDenied = false;
 let myEvents = [];
+let editingEvent = null;
+
+const editingEventId = new URLSearchParams(window.location.search).get("id");
 
 function getLocalizedEventTitle(event) {
   const language =
@@ -53,33 +56,22 @@ function getLocalizedEventTitle(event) {
 }
 
 function formatMyEventDate(event) {
-  const locale =
-    currentLang === "fr"
-      ? "fr-CA"
-      : "en-CA";
-
+  const locale = currentLang === "fr" ? "fr-CA" : "en-CA";
   const date = new Date(event.startDate);
 
   if (event.allDay) {
-    return new Intl.DateTimeFormat(
-      locale,
-      {
-        dateStyle: "medium",
-        timeZone: "UTC"
-      }
-    ).format(date);
+    return new Intl.DateTimeFormat(locale, {
+      dateStyle: "medium",
+      timeZone: "UTC"
+    }).format(date);
   }
 
-  return new Intl.DateTimeFormat(
-    locale,
-    {
-      dateStyle: "medium",
-      timeStyle: "short",
-      hourCycle: "h23",
-      timeZone:
-        event.timezone || undefined
-    }
-  ).format(date);
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    hourCycle: "h23",
+    timeZone: event.timezone || undefined
+  }).format(date);
 }
 
 function formatMyEventUpdatedDate(value) {
@@ -87,76 +79,43 @@ function formatMyEventUpdatedDate(value) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat(
-    currentLang === "fr"
-      ? "fr-CA"
-      : "en-CA",
-    {
-      dateStyle: "medium"
-    }
-  ).format(new Date(value));
+  return new Intl.DateTimeFormat(currentLang === "fr" ? "fr-CA" : "en-CA", {
+    dateStyle: "medium"
+  }).format(new Date(value));
 }
 
 function createMyEventCard(event) {
-  const article =
-    document.createElement("article");
-
+  const article = document.createElement("article");
   article.className = "my-event-card";
 
-  const header =
-    document.createElement("div");
+  const header = document.createElement("div");
+  header.className = "my-event-card-header";
 
-  header.className =
-    "my-event-card-header";
-
-  const title =
-    document.createElement("h3");
-
+  const title = document.createElement("h3");
   title.textContent = getLocalizedEventTitle(event);
 
-  const status =
-    document.createElement("span");
-
-  status.className =
-    `my-event-status status-${event.status}`;
-
-  status.textContent =
-    translate(
-      `my_events_status_${event.status}`
-    );
+  const status = document.createElement("span");
+  status.className = `my-event-status status-${event.status}`;
+  status.textContent = translate(`my_events_status_${event.status}`);
 
   header.append(title, status);
 
-  const details =
-    document.createElement("div");
+  const details = document.createElement("div");
+  details.className = "my-event-card-details";
 
-  details.className =
-    "my-event-card-details";
+  const date = document.createElement("span");
+  date.textContent = formatMyEventDate(event);
 
-  const date =
-    document.createElement("span");
-
-  date.textContent =
-    formatMyEventDate(event);
-
-  const location =
-    document.createElement("span");
+  const location = document.createElement("span");
 
   location.textContent = [
     event.city,
     event.provinceRegion
-  ]
-    .filter(Boolean)
-    .join(", ");
+  ].filter(Boolean).join(", ");
 
-  const updated =
-    document.createElement("span");
+  const updated = document.createElement("span");
 
-  updated.textContent =
-    `${translate("my_events_last_updated")}: ` +
-    formatMyEventUpdatedDate(
-      event.updatedAt
-    );
+  updated.textContent = `${translate("my_events_last_updated")}: ` + formatMyEventUpdatedDate(event.updatedAt);
 
   details.append(
     date,
@@ -164,46 +123,23 @@ function createMyEventCard(event) {
     updated
   );
 
-  const footer =
-    document.createElement("div");
+  const footer = document.createElement("div");
+  footer.className = "my-event-card-footer";
 
-  footer.className =
-    "my-event-card-footer";
+  if (event.status === "rejected" && event.rejectionReason) {
+    const rejection = document.createElement("p");
 
-  if (
-    event.status === "rejected" &&
-    event.rejectionReason
-  ) {
-    const rejection =
-      document.createElement("p");
+    rejection.className = "my-event-rejection";
 
-    rejection.className =
-      "my-event-rejection";
-
-    rejection.textContent =
-      `${translate("my_events_rejection_reason")}: ` +
-      event.rejectionReason;
+    rejection.textContent = `${translate("my_events_rejection_reason")}: ` + event.rejectionReason;
 
     footer.appendChild(rejection);
   }
 
-  const editLink =
-    document.createElement("a");
-
-  editLink.className =
-    "my-event-edit-link";
-
-  editLink.href =
-    `/submit-event.html?id=${encodeURIComponent(
-      event._id
-    )}`;
-
-  editLink.textContent =
-    event.status === "rejected"
-      ? translate(
-        "my_events_edit_resubmit"
-      )
-      : translate("my_events_edit");
+  const editLink = document.createElement("a");
+  editLink.className = "my-event-edit-link";
+  editLink.href = `/submit-event.html?id=${encodeURIComponent(event._id)}`;
+  editLink.textContent = event.status === "rejected" ? translate("my_events_edit_resubmit") : translate("my_events_edit");
 
   footer.appendChild(editLink);
 
@@ -563,20 +499,12 @@ function buildEventData() {
     );
   }
 
-  const dateValues =
-    getEventDateValues();
+  const dateValues = getEventDateValues();
 
-  const permissionConfirmed =
-    document
-      .getElementById("eventPublicationPermission")
-      .checked;
+  const permissionConfirmed = document.getElementById("eventPublicationPermission").checked;
 
   if (!permissionConfirmed) {
-    throw new Error(
-      translate(
-        "event_permission_required"
-      )
-    );
+    throw new Error(translate("event_permission_required"));
   }
 
   return {
@@ -703,8 +631,7 @@ function resetEventForm() {
 }
 
 async function initializeEventPage() {
-  const token =
-    localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
   if (!token) {
     redirectToLogin();
@@ -712,13 +639,12 @@ async function initializeEventPage() {
   }
 
   try {
-    const response =
-      await fetch("/api/me", {
-        headers: {
-          Authorization:
-            `Bearer ${token}`
-        }
-      });
+    const response = await fetch("/api/me", {
+      headers: {
+        Authorization:
+          `Bearer ${token}`
+      }
+    });
 
     if (response.status === 401) {
       redirectToLogin();
@@ -733,34 +659,20 @@ async function initializeEventPage() {
       );
     }
 
-    currentUser =
-      await response.json();
+    currentUser = await response.json();
 
-    const submitterEmail =
-      document.getElementById("eventSubmitterEmail");
+    const submitterEmail = document.getElementById("eventSubmitterEmail");
 
-    if (
-      submitterEmail &&
-      !submitterEmail.value
-    ) {
-      submitterEmail.value =
-        currentUser.email || "";
+    if (submitterEmail && !submitterEmail.value) {
+      submitterEmail.value = currentUser.email || "";
     }
 
-    if (
-      !currentUser.permissions
-        ?.canCreateDrafts
-    ) {
+    if (!currentUser.permissions?.canCreateDrafts) {
       accessDenied = true;
 
-      pageTitle.textContent =
-        translate(
-          "event_access_denied_title"
-        );
+      pageTitle.textContent = translate("event_access_denied_title");
 
-      showPageMessage(
-        translate("event_access_denied")
-      );
+      showPageMessage(translate("event_access_denied"));
 
       return;
     }
@@ -799,16 +711,8 @@ async function initializeEventPage() {
   }
 }
 
-eventAllDay.addEventListener(
-  "change",
-  syncScheduleFields
-);
-
-eventStartDate.addEventListener(
-  "change",
-  keepEndDateInRange
-);
-
+eventAllDay.addEventListener("change", syncScheduleFields);
+eventStartDate.addEventListener("change", keepEndDateInRange);
 eventForm.addEventListener(
   "submit",
   async event => {
@@ -928,21 +832,12 @@ document.addEventListener(
 );
 
 window.addEventListener(
-  "pageshow",
-  () => {
-    if (
-      !localStorage.getItem("token")
-    ) {
+  "pageshow", () => {
+    if (!localStorage.getItem("token")) {
       redirectToLogin();
     }
   }
 );
-const editingEventId =
-  new URLSearchParams(
-    window.location.search
-  ).get("id");
-
-let editingEvent = null;
 
 function setEventField(id, value = "") {
   const field = document.getElementById(id);
@@ -1006,161 +901,49 @@ function getEventFormDateParts(
 }
 
 function populateEventForm(event) {
-  setEventField(
-    "eventTitleEn",
-    event.title?.en
-  );
+  setEventField("eventTitleEn", event.title?.en);
+  setEventField("eventTitleFr", event.title?.fr);
+  setEventField("eventLocationEn", event.location?.en);
+  setEventField("eventLocationFr", event.location?.fr);
+  setEventField("eventDescriptionEn", event.description?.en);
+  setEventField("eventDescriptionFr", event.description?.fr);
+  setEventField("eventRegistrationEn", event.registration?.en);
+  setEventField("eventRegistrationFr", event.registration?.fr);
+  setEventField("eventCity", event.city);
+  setEventField("eventProvinceRegion", event.provinceRegion);
+  setEventField("eventOrganizingEntity", event.organizingEntity);
+  setEventField("eventType", event.eventType);
+  setEventField("eventTimezone", event.timezone);
+  setEventCheckbox("eventAllDay", event.allDay);
 
-  setEventField(
-    "eventTitleFr",
-    event.title?.fr
-  );
+  const allDayCheckbox = document.getElementById("eventAllDay");
+  allDayCheckbox?.dispatchEvent(new Event("change"));
 
-  setEventField(
-    "eventLocationEn",
-    event.location?.en
-  );
-
-  setEventField(
-    "eventLocationFr",
-    event.location?.fr
-  );
-
-  setEventField(
-    "eventDescriptionEn",
-    event.description?.en
-  );
-
-  setEventField(
-    "eventDescriptionFr",
-    event.description?.fr
-  );
-
-  setEventField(
-    "eventRegistrationEn",
-    event.registration?.en
-  );
-
-  setEventField(
-    "eventRegistrationFr",
-    event.registration?.fr
-  );
-
-  setEventField(
-    "eventCity",
-    event.city
-  );
-
-  setEventField(
-    "eventProvinceRegion",
-    event.provinceRegion
-  );
-
-  setEventField(
-    "eventOrganizingEntity",
-    event.organizingEntity
-  );
-
-  setEventField(
-    "eventType",
-    event.eventType
-  );
-
-  setEventField(
-    "eventTimezone",
-    event.timezone
-  );
-
-  setEventCheckbox(
-    "eventAllDay",
+  const start = getEventFormDateParts(
+    event.startDate,
+    event.timezone,
     event.allDay
   );
 
-  const allDayCheckbox =
-    document.getElementById("eventAllDay");
-
-  allDayCheckbox?.dispatchEvent(
-    new Event("change")
+  const end = getEventFormDateParts(
+    event.endDate,
+    event.timezone,
+    event.allDay
   );
 
-  const start =
-    getEventFormDateParts(
-      event.startDate,
-      event.timezone,
-      event.allDay
-    );
-
-  const end =
-    getEventFormDateParts(
-      event.endDate,
-      event.timezone,
-      event.allDay
-    );
-
-  setEventField(
-    "eventStartDate",
-    start.date
-  );
-
-  setEventField(
-    "eventStartHour",
-    start.hour
-  );
-
-  setEventField(
-    "eventStartMinute",
-    start.minute
-  );
-
-  setEventField(
-    "eventEndDate",
-    end.date
-  );
-
-  setEventField(
-    "eventEndHour",
-    end.hour
-  );
-
-  setEventField(
-    "eventEndMinute",
-    end.minute
-  );
-
-  setEventField(
-    "eventSubmitterRank",
-    event.submitter?.rank
-  );
-
-  setEventField(
-    "eventSubmitterFirstName",
-    event.submitter?.firstName
-  );
-
-  setEventField(
-    "eventSubmitterLastName",
-    event.submitter?.lastName
-  );
-
-  setEventField(
-    "eventSubmitterUnitRole",
-    event.submitter?.unitRole
-  );
-
-  setEventField(
-    "eventSubmitterEmail",
-    event.submitter?.email
-  );
-
-  setEventField(
-    "eventSubmitterPhone",
-    event.submitter?.phone
-  );
-
-  setEventCheckbox(
-    "eventPublicationPermission",
-    event.publicationPermission?.confirmed
-  );
+  setEventField("eventStartDate", start.date);
+  setEventField("eventStartHour", start.hour);
+  setEventField("eventStartMinute", start.minute);
+  setEventField("eventEndDate", end.date);
+  setEventField("eventEndHour", end.hour);
+  setEventField("eventEndMinute", end.minute);
+  setEventField("eventSubmitterRank", event.submitter?.rank);
+  setEventField("eventSubmitterFirstName", event.submitter?.firstName);
+  setEventField("eventSubmitterLastName", event.submitter?.lastName);
+  setEventField("eventSubmitterUnitRole", event.submitter?.unitRole);
+  setEventField("eventSubmitterEmail", event.submitter?.email);
+  setEventField("eventSubmitterPhone", event.submitter?.phone);
+  setEventCheckbox("eventPublicationPermission", event.publicationPermission?.confirmed);
 }
 
 async function loadEventForEditing(token, eventId) {
@@ -1196,44 +979,15 @@ async function loadEventForEditing(token, eventId) {
 }
 
 function updateEventFormModeText() {
-  const isEditing =
-    Boolean(editingEventId);
+  const isEditing = Boolean(editingEventId);
 
-  eventFormTabLabel.textContent =
-    translate(
-      isEditing
-        ? "edit_event_tab"
-        : "submit_new_event_tab"
-    );
-
-  submitEventTitle.textContent =
-    translate(
-      isEditing
-        ? "edit_event_heading"
-        : "submit_event_heading"
-    );
-
-  submitEventIntro.textContent =
-    translate(
-      isEditing
-        ? "edit_event_intro"
-        : "submit_event_intro"
-    );
-
-  eventSubmitButtonLabel.textContent =
-    translate(
-      isEditing
-        ? "save_event_changes"
-        : "submit_event_button"
-    );
+  eventFormTabLabel.textContent = translate(isEditing ? "edit_event_tab" : "submit_new_event_tab");
+  submitEventTitle.textContent = translate(isEditing ? "edit_event_heading" : "submit_event_heading");
+  submitEventIntro.textContent = translate(isEditing ? "edit_event_intro" : "submit_event_intro");
+  eventSubmitButtonLabel.textContent = translate(isEditing ? "save_event_changes" : "submit_event_button");
 }
 
-activateEventTab(
-  editingEventId
-    ? "form"
-    : "events"
-);
-
+activateEventTab(editingEventId ? "form" : "events");
 updateEventFormModeText();
 initializeTimeControls();
 syncScheduleFields();

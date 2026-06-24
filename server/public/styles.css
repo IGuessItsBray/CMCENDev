@@ -1966,6 +1966,20 @@ a.dropdown-toggle {
   line-height: 1.45;
 }
 
+.event-form-section,
+.event-details-section,
+.event-submitter-section {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid var(--branch-grey-200);
+  border-left: 4px solid var(--navy-800);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg,
+      var(--branch-grey-100),
+      var(--white));
+}
+
 .event-schedule-section {
   margin-top: 22px;
   padding: 20px;
@@ -1976,6 +1990,10 @@ a.dropdown-toggle {
     linear-gradient(180deg,
       var(--branch-grey-100),
       var(--white));
+}
+
+.event-submit-form>.event-form-section:first-child {
+  margin-top: 0;
 }
 
 .event-section-heading {
@@ -1992,6 +2010,21 @@ a.dropdown-toggle {
   color: var(--gold-700);
 }
 
+.event-section-index {
+  min-width: 32px;
+  padding-top: 3px;
+  color: var(--gold-700);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+}
+
+.event-section-index+div {
+  min-width: 0;
+  flex: 1;
+}
+
 .event-section-heading h2 {
   margin: 0;
   color: var(--navy-900);
@@ -2002,6 +2035,13 @@ a.dropdown-toggle {
   font-size: 22px;
   font-weight: normal;
   line-height: 1.2;
+}
+
+.event-section-heading p:not(.event-section-eyebrow) {
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .event-toggle {
@@ -2171,6 +2211,12 @@ a.dropdown-toggle {
   gap: 16px;
 }
 
+.event-form-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .event-submit-button {
   position: relative;
   min-width: 190px;
@@ -2205,9 +2251,7 @@ a.dropdown-toggle {
   opacity: 0.7;
 }
 
-.event-submit-button[ aria-busy="true"
-
-]::after {
+.event-submit-button[aria-busy="true"]::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -2532,23 +2576,16 @@ a.dropdown-toggle {
   line-height: 1;
 }
 
-.event-details-section {
-  margin-top: 22px;
-  padding: 20px;
-  border: 1px solid var(--branch-grey-200);
-  border-left: 4px solid var(--navy-800);
-  border-radius: 2px;
-  background:
-    linear-gradient(180deg,
-      var(--branch-grey-100),
-      var(--white));
-}
-
+.event-form-grid,
 .event-details-grid {
   display: grid;
   grid-template-columns:
     repeat(2, minmax(0, 1fr));
   gap: 17px 20px;
+}
+
+.event-field-wide {
+  grid-column: 1 / -1;
 }
 
 .event-field select {
@@ -3128,18 +3165,6 @@ a.dropdown-toggle {
 .review-actions button:disabled {
   cursor: progress;
   opacity: 0.6;
-}
-
-.event-submitter-section {
-  margin-top: 22px;
-  padding: 20px;
-  border: 1px solid var(--branch-grey-200);
-  border-left: 4px solid var(--navy-800);
-  border-radius: 2px;
-  background:
-    linear-gradient(180deg,
-      var(--branch-grey-100),
-      var(--white));
 }
 
 .event-section-intro {
@@ -3920,6 +3945,40 @@ a.dropdown-toggle {
   }
 }
 
+.retirement-consent-section {
+  background: #faf9f5;
+}
+
+.retirement-consent-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.retirement-consent-field input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  flex: 0 0 auto;
+  accent-color: var(--gold-600);
+}
+
+.retirement-consent-field span {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.retirement-honeypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 @media (max-width: 650px) {
   .calendar-main {
     padding: 18px 12px 28px;
@@ -4341,12 +4400,21 @@ a.dropdown-toggle {
     flex-direction: column;
   }
 
+  .event-form-grid,
   .event-details-grid {
     grid-template-columns: 1fr;
   }
 
+  .event-field-wide {
+    grid-column: span 1;
+  }
+
   .event-schedule-grid {
     grid-template-columns: 1fr;
+  }
+
+  .event-form-actions {
+    justify-content: stretch;
   }
 
   .event-submit-button {

@@ -112,12 +112,8 @@ function renderDashboard(user) {
     user.username ||
     "";
 
-  dashboardRoleBadge.textContent =
-    roleTitle;
-
-  dashboardRoleBadge.className =
-    `dashboard-role-badge role-${role}`;
-
+  dashboardRoleBadge.textContent = roleTitle;
+  dashboardRoleBadge.className = `dashboard-role-badge role-${role}`;
   dashboardRoleBadge.hidden = false;
 
   dashboardDetails.replaceChildren(
@@ -146,28 +142,23 @@ function renderDashboard(user) {
     {
       href: "/calendar.html",
       titleKey: "dashboard_action_calendar",
-      descriptionKey:
-        "dashboard_action_calendar_description"
+      descriptionKey: "dashboard_action_calendar_description"
     }
   ];
 
   if (user.permissions?.canCreateDrafts === true) {
     actions.push({
       href: "/submit-event.html",
-      titleKey:
-        "dashboard_action_submit_event",
-      descriptionKey:
-        "dashboard_action_submit_event_description"
+      titleKey: "dashboard_action_submit_event",
+      descriptionKey: "dashboard_action_submit_event_description"
     });
   }
 
   if (user.permissions?.canReviewAndPublish === true) {
     actions.push({
       href: "/review-events.html",
-      titleKey:
-        "dashboard_action_review_events",
-      descriptionKey:
-        "dashboard_action_review_events_description"
+      titleKey: "dashboard_action_review_events",
+      descriptionKey: "dashboard_action_review_events_description"
     });
   }
 
@@ -204,8 +195,7 @@ async function loadDashboard() {
     if (response.status === 401) {
       localStorage.removeItem("token");
 
-      window.location.href =
-        "/login.html";
+      window.location.href = "/login.html";
 
       return;
     }
@@ -233,17 +223,11 @@ document.addEventListener(
   "languagechange",
   () => {
     if (currentDashboardUser) {
-      renderDashboard(
-        currentDashboardUser
-      );
-
+      renderDashboard(currentDashboardUser);
       return;
     }
 
-    const error =
-      dashboardStatus.querySelector(
-        ".dashboard-error"
-      );
+    const error = dashboardStatus.querySelector(".dashboard-error");
 
     if (error) {
       error.textContent = translate("dashboard_load_error");

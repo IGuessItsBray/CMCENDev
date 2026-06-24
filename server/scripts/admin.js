@@ -226,17 +226,32 @@ async function cmdTestDb() {
 
 /** Exercise the register + login flow against the running server */
 async function cmdTestAuth() {
-  const randomUsername = `testuser_${Date.now()}`;
+  const testEmail = `test_${Date.now()}@example.com`;
 
   console.log('--- Registering User ---');
   const regRes = await fetch(`${BASE_URL}/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      username:    randomUsername,
-      email:       `test_${Date.now()}@example.com`,
-      password:    'password123',
-      accountName: 'Demo Account'
+      firstName: 'Demo',
+      lastName: 'Account',
+      addressLine1: '1 Test Way',
+      addressLine2: '',
+      city: 'Ottawa',
+      country: 'Canada',
+      stateProvince: 'Ontario',
+      postalCode: 'K1A 0K2',
+      rank: '',
+      postNominals: '',
+      company: 'CMCEN',
+      status: 'civilian',
+      affiliationElement: 'other',
+      trade: '',
+      tradeOther: '',
+      currentUnit: '',
+      email: testEmail,
+      password: 'password123',
+      passwordConfirmation: 'password123'
     })
   });
 
@@ -250,7 +265,7 @@ async function cmdTestAuth() {
   const loginRes = await fetch(`${BASE_URL}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: randomUsername, password: 'password123' })
+    body: JSON.stringify({ username: testEmail, password: 'password123' })
   });
   const loginData = await loginRes.json();
 
@@ -263,22 +278,37 @@ async function cmdTestAuth() {
 
 /** Exercise the full register → login → upload image flow */
 async function cmdTestUpload() {
-  const randomUsername = `testuser_${Date.now()}`;
+  const testEmail = `test_${Date.now()}@example.com`;
   const TEST_IMAGE_PATH = path.join(__dirname, '..', '..', 'canada.png');
 
   console.log('--- 1. Registering User ---');
   const regRes = await axios.post(`${BASE_URL}/register`, {
-    username:    randomUsername,
-    email:       `test_${Date.now()}@example.com`,
-    password:    'password123',
-    accountName: 'Demo Account'
+    firstName: 'Demo',
+    lastName: 'Account',
+    addressLine1: '1 Test Way',
+    addressLine2: '',
+    city: 'Ottawa',
+    country: 'Canada',
+    stateProvince: 'Ontario',
+    postalCode: 'K1A 0K2',
+    rank: '',
+    postNominals: '',
+    company: 'CMCEN',
+    status: 'civilian',
+    affiliationElement: 'other',
+    trade: '',
+    tradeOther: '',
+    currentUnit: '',
+    email: testEmail,
+    password: 'password123',
+    passwordConfirmation: 'password123'
   });
   if (regRes.status !== 201) throw new Error('Registration failed');
   console.log('Registration Success!');
 
   console.log('\n--- 2. Logging In ---');
   const loginRes = await axios.post(`${BASE_URL}/login`, {
-    username: randomUsername,
+    username: testEmail,
     password: 'password123'
   });
   const token = loginRes.data.token;

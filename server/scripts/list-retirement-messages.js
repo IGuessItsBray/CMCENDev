@@ -95,6 +95,8 @@ function printFullRecord(message, index) {
         messageLanguage:
             message.messageLanguage,
 
+        photoUrl: message.photoUrl,
+
         submitter: {
             firstName:
                 message.submitter?.firstName || "—",

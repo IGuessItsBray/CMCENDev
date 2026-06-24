@@ -483,25 +483,23 @@ function updateAuthButtons() {
       </button>
     `;
 
-    document
-      .getElementById("signOutBtn")
-      .addEventListener("click", () => {
-        const currentPath = window.location.pathname;
+    document.getElementById("signOutBtn").addEventListener("click", () => {
+      const currentPath = window.location.pathname;
 
-        localStorage.removeItem("token");
+      localStorage.removeItem("token");
 
-        if (protectedPages.has(currentPath)) {
-          window.location.replace("/login.html");
-          return;
-        }
+      if (protectedPages.has(currentPath)) {
+        window.location.replace("/login.html");
+        return;
+      }
 
-        updateAuthRestrictedItems();
-        updateAuthButtons();
+      updateAuthRestrictedItems();
+      updateAuthButtons();
 
-        if (typeof applyLanguage === "function") {
-          applyLanguage(currentLang);
-        }
-      });
+      if (typeof applyLanguage === "function") {
+        applyLanguage(currentLang);
+      }
+    });
   } else {
     authButtons.innerHTML = `
       <a
@@ -562,11 +560,8 @@ async function updateAuthRestrictedItems() {
     });
 
     permissionRequiredItems.forEach(element => {
-      const permissionName =
-        element.dataset.permission;
-
-      element.hidden =
-        user.permissions?.[permissionName] !== true;
+      const permissionName = element.dataset.permission;
+      element.hidden = user.permissions?.[permissionName] !== true;
     });
   } catch (error) {
     console.error(

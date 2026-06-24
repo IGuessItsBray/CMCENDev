@@ -3,19 +3,15 @@
 
 <head>
   <meta charset="UTF-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title data-i18n="submit_event_page_title">
     Submit an Event | CMCEN / RCMCE
   </title>
-
   <link rel="stylesheet" href="/styles.css" />
 </head>
 
 <body>
   <header id="header"></header>
-
   <main class="event-submit-main">
     <div class="event-submit-layout">
       <div class="event-management-tabs" role="tablist" aria-label="Event management">
@@ -25,7 +21,6 @@
             My Events
           </span>
         </button>
-
         <button class="event-management-tab" id="eventFormTab" type="button" role="tab" aria-selected="false"
           aria-controls="eventFormPanel" data-event-tab="form">
           <span id="eventFormTabLabel" data-i18n="submit_new_event_tab">
@@ -41,19 +36,15 @@
               <p class="event-section-eyebrow" data-i18n="my_events_eyebrow">
                 Event management
               </p>
-
               <h2 id="myEventsHeading" data-i18n="my_events_heading">
                 My Events
               </h2>
             </div>
-
             <span class="my-events-count" id="myEventsCount" hidden></span>
           </header>
-
           <p class="my-events-intro" data-i18n="my_events_intro">
             View and update events you have previously submitted.
           </p>
-
           <div class="my-events-list" id="myEventsList"></div>
         </section>
       </div>
@@ -61,8 +52,6 @@
         data-event-panel="form" hidden>
         <section class="event-submit-shell" aria-labelledby="submitEventTitle">
           <header class="event-submit-heading">
-
-
             <div class="event-submit-heading-copy">
               <p class="event-submit-eyebrow" data-i18n="event_submission_eyebrow">
                 Event submission
@@ -636,14 +625,11 @@
                 </span>
               </button>
             </section>
-
             <p class="event-form-message" id="eventFormMessage" role="status" aria-live="polite" hidden></p>
           </form>
         </section>
       </div>
-
     </div>
-
   </main>
 
   <footer id="footer"></footer>

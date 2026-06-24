@@ -115,11 +115,7 @@ function formatDayLabel(event) {
 
 function formatEventTime(event, locale) {
     if (event.allDay) {
-        return (
-            translations[currentLang]
-                ?.all_day ||
-            "All day"
-        );
+        return translate("all_day");
     }
 
     const formatter =
@@ -204,7 +200,7 @@ function renderEvents() {
 
     if (!publicEvents.length) {
         calendarMessageElement.hidden = false;
-        calendarMessageElement.textContent = translations[language].no_upcoming_events;
+        calendarMessageElement.textContent = translate("no_upcoming_events");
 
         return;
     }
@@ -236,10 +232,8 @@ function renderEvents() {
 }
 
 async function loadEvents() {
-    const language = getCurrentLanguage();
-
     calendarMessageElement.hidden = false;
-    calendarMessageElement.textContent = translations[language].loading_events;
+    calendarMessageElement.textContent = translate("loading_events");
 
     try {
         const response = await fetch('/api/events');
@@ -260,13 +254,10 @@ async function loadEvents() {
         console.error(error);
 
         calendarMessageElement.hidden = false;
-        calendarMessageElement.textContent = translations[language].events_load_error;
+        calendarMessageElement.textContent = translate("events_load_error");
     }
 }
 
-document.addEventListener(
-    'languagechange',
-    renderEvents
-);
+document.addEventListener('languagechange', renderEvents);
 
 loadEvents();

@@ -7,7 +7,6 @@ registerForm.addEventListener("submit", async (event) => {
 
   registerError.textContent = "";
   registerError.hidden = true;
-
   registerButton.disabled = true;
   registerButton.setAttribute("aria-busy", "true");
 
@@ -16,16 +15,13 @@ registerForm.addEventListener("submit", async (event) => {
   const registration = {
     username: String(formData.get("username") || "").trim(),
     email: String(formData.get("email") || "").trim(),
-    accountName: String(
-      formData.get("accountName") || ""
-    ).trim(),
+    accountName: String(formData.get("accountName") || "").trim(),
     password: String(formData.get("password") || "")
   };
 
   try {
     const response = await fetch("/api/register", {
       method: "POST",
-
       headers: {
         "Content-Type": "application/json"
       },
@@ -33,21 +29,17 @@ registerForm.addEventListener("submit", async (event) => {
       body: JSON.stringify(registration)
     });
 
-    const data = await response
-      .json()
-      .catch(() => ({}));
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(
-        data.error || "Could not create account"
-      );
+      throw new Error(data.error || "Could not create account");
     }
 
     window.location.href = "/login.html";
+
   } catch (error) {
     registerError.textContent = error.message;
     registerError.hidden = false;
-
     registerError.focus?.();
   } finally {
     registerButton.disabled = false;

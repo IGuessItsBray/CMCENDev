@@ -37,9 +37,7 @@ function getContentValue(value, language) {
 
 function getDisplayTitle(event) {
   const language = getReviewLanguage();
-
-  const fallbackLanguage =
-    language === "fr" ? "en" : "fr";
+  const fallbackLanguage = language === "fr" ? "en" : "fr";
 
   return (
     getContentValue(event.title, language) ||
@@ -63,92 +61,58 @@ function formatEventSchedule(event) {
 
   const start = new Date(event.startDate);
 
-  const end = event.endDate
-    ? new Date(event.endDate)
-    : null;
+  const end = event.endDate ? new Date(event.endDate) : null;
 
   if (event.allDay) {
-    const dateFormatter =
-      new Intl.DateTimeFormat(locale, {
-        dateStyle: "long",
-        timeZone: "UTC"
-      });
+    const dateFormatter = new Intl.DateTimeFormat(locale, {
+      dateStyle: "long",
+      timeZone: "UTC"
+    });
 
-    const startLabel =
-      dateFormatter.format(start);
+    const startLabel = dateFormatter.format(start);
 
-    if (
-      !end ||
-      start.getTime() === end.getTime()
-    ) {
-      return (
-        `${startLabel} · ` +
-        translate("all_day")
-      );
+    if (!end || start.getTime() === end.getTime()) {
+      return (`${startLabel} · ` + translate("all_day"));
     }
 
-    return (
-      `${startLabel} - ` +
-      `${dateFormatter.format(end)} · ` +
-      translate("all_day")
-    );
+    return (`${startLabel} - ` + `${dateFormatter.format(end)} · ` + translate("all_day"));
   }
 
-  const timeZone =
-    event.timezone || undefined;
+  const timeZone = event.timezone || undefined;
 
-  const dateFormatter =
-    new Intl.DateTimeFormat(locale, {
-      dateStyle: "medium",
-      timeZone
-    });
+  const dateFormatter = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeZone
+  });
 
-  const timeFormatter =
-    new Intl.DateTimeFormat(locale, {
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-      timeZone
-    });
+  const timeFormatter = new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone
+  });
 
-  const dayFormatter =
-    new Intl.DateTimeFormat("en-CA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      timeZone
-    });
+  const dayFormatter = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone
+  });
 
-  const startDateLabel =
-    dateFormatter.format(start);
-
-  const startTimeLabel =
-    timeFormatter.format(start);
+  const startDateLabel = dateFormatter.format(start);
+  const startTimeLabel = timeFormatter.format(start);
 
   if (!end) {
-    return (
-      `${startDateLabel} · ` +
-      startTimeLabel
-    );
+    return (`${startDateLabel} · ` + startTimeLabel);
   }
 
-  const sameDay =
-    dayFormatter.format(start) ===
-    dayFormatter.format(end);
+  const sameDay = dayFormatter.format(start) === dayFormatter.format(end);
 
   if (sameDay) {
-    return (
-      `${startDateLabel} · ` +
-      `${startTimeLabel}-` +
-      timeFormatter.format(end)
-    );
+    return (`${startDateLabel} · ` + `${startTimeLabel}-` + timeFormatter.format(end));
   }
 
-  return (
-    `${startDateLabel}, ${startTimeLabel} – ` +
-    `${dateFormatter.format(end)}, ` +
-    timeFormatter.format(end)
-  );
+  return (`${startDateLabel}, ${startTimeLabel} - ` + `${dateFormatter.format(end)}, ` + timeFormatter.format(end));
 }
 
 function formatContentArea(value) {
@@ -199,11 +163,9 @@ function formatTranslatedOption(prefix, value) {
     .toLowerCase()
     .replace(/-/g, "_");
 
-  const key =
-    `${prefix}_${normalizedValue}`;
+  const key = `${prefix}_${normalizedValue}`;
 
-  const translated =
-    translate(key);
+  const translated = translate(key);
 
   if (translated === key) {
     return formatContentArea(value);
@@ -217,24 +179,18 @@ function formatEventTimezone(value) {
     return "—";
   }
 
-  const translationKey =
-    timezoneTranslationKeys[value];
+  const translationKey = timezoneTranslationKeys[value];
 
   if (!translationKey) {
     return value;
   }
 
-  return (
-    `${translate(translationKey)} ` +
-    `(${value})`
+  return (`${translate(translationKey)} ` + `(${value})`
   );
 }
 
 function formatReviewUser(user) {
-  if (
-    !user ||
-    typeof user !== "object"
-  ) {
+  if (!user || typeof user !== "object") {
     return "—";
   }
 
@@ -248,46 +204,32 @@ function formatReviewUser(user) {
 
 function createReviewRecordSection(titleKey, items, additionalClass = "") {
   const section = document.createElement("section");
-
   section.className = `review-record-section ${additionalClass}`.trim();
 
-  const heading =
-    document.createElement("h3");
+  const heading = document.createElement("h3");
+  heading.textContent = translate(titleKey);
 
-  heading.textContent =
-    translate(titleKey);
-
-  const grid =
-    document.createElement("div");
-
-  grid.className =
-    "review-record-data";
+  const grid = document.createElement("div");
+  grid.className = "review-record-data";
 
   items.forEach(item => {
-    const record =
-      document.createElement("div");
+    const record = document.createElement("div");
 
-    record.className =
-      "review-record-item";
+    record.className = "review-record-item";
 
     if (item.wide) {
       record.classList.add("is-wide");
     }
 
-    const label =
-      document.createElement("span");
+    const label = document.createElement("span");
 
-    label.className =
-      "review-record-label";
+    label.className = "review-record-label";
 
-    label.textContent =
-      translate(item.labelKey);
+    label.textContent = translate(item.labelKey);
 
-    const value =
-      document.createElement("span");
+    const value = document.createElement("span");
 
-    value.className =
-      "review-record-value";
+    value.className = "review-record-value";
 
     if (item.valueClass) {
       value.classList.add(
@@ -295,8 +237,7 @@ function createReviewRecordSection(titleKey, items, additionalClass = "") {
       );
     }
 
-    value.textContent =
-      item.value || "—";
+    value.textContent = item.value || "—";
 
     record.append(label, value);
     grid.appendChild(record);
@@ -308,27 +249,15 @@ function createReviewRecordSection(titleKey, items, additionalClass = "") {
 }
 
 function createMetaItem(labelKey, value) {
-  const item =
-    document.createElement("div");
+  const item = document.createElement("div");
+  item.className = "review-event-meta-item";
 
-  item.className =
-    "review-event-meta-item";
+  const label = document.createElement("span");
+  label.className = "review-event-meta-label";
+  label.textContent = translate(labelKey);
 
-  const label =
-    document.createElement("span");
-
-  label.className =
-    "review-event-meta-label";
-
-  label.textContent =
-    translate(labelKey);
-
-  const content =
-    document.createElement("span");
-
-  content.className =
-    "review-event-meta-value";
-
+  const content = document.createElement("span");
+  content.className = "review-event-meta-value";
   content.textContent = value || "—";
 
   item.append(label, content);
@@ -843,25 +772,16 @@ function showPageMessage(
   reviewPageMessage.hidden = false;
 }
 
-function showNotice(
-  message,
-  type = "success"
-) {
+function showNotice(message, type = "success") {
   clearTimeout(noticeTimer);
 
   reviewNotice.textContent = message;
-
-  reviewNotice.className =
-    `review-notice is-${type}`;
-
+  reviewNotice.className = `review-notice is-${type}`;
   reviewNotice.hidden = false;
 
-  noticeTimer = window.setTimeout(
-    () => {
-      reviewNotice.hidden = true;
-    },
-    3500
-  );
+  noticeTimer = window.setTimeout(() => {
+    reviewNotice.hidden = true;
+  }, 3500);
 }
 
 function renderReviewQueue() {
@@ -871,13 +791,7 @@ function renderReviewQueue() {
 
   if (!pendingEvents.length) {
     reviewQueue.hidden = true;
-
-    showPageMessage(
-      translate(
-        "no_pending_events"
-      ),
-      "empty"
-    );
+    showPageMessage(translate("no_pending_events"), "empty");
 
     return;
   }
@@ -893,8 +807,7 @@ function renderReviewQueue() {
 }
 
 async function submitReview(eventId, action, card) {
-  const token =
-    localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
   if (!token) {
     redirectToLogin();
@@ -902,11 +815,8 @@ async function submitReview(eventId, action, card) {
   }
 
   const reasonInput = card.querySelector(".review-rejection-reason");
-
   const messageElement = card.querySelector(".review-action-message");
-
   const buttons = card.querySelectorAll("button");
-
   const rejectionReason = reasonInput.value.trim();
 
   messageElement.textContent = "";
@@ -914,7 +824,6 @@ async function submitReview(eventId, action, card) {
 
   if (action === "reject" && !rejectionReason) {
     messageElement.textContent = translate("rejection_reason_required");
-
     messageElement.hidden = false;
 
     reasonInput.focus();
@@ -926,21 +835,11 @@ async function submitReview(eventId, action, card) {
     button.disabled = true;
   });
 
-  const activeButton =
-    action === "publish"
-      ? card.querySelector(
-        ".review-publish-button"
-      )
-      : card.querySelector(
-        ".review-reject-button"
-      );
+  const activeButton = action === "publish" ?
+    card.querySelector(".review-publish-button")
+    : card.querySelector(".review-reject-button");
 
-  activeButton.textContent =
-    translate(
-      action === "publish"
-        ? "review_publishing"
-        : "review_rejecting"
-    );
+  activeButton.textContent = translate(action === "publish" ? "review_publishing" : "review_rejecting");
 
   try {
     const response = await fetch(
@@ -1136,8 +1035,7 @@ document.addEventListener(
 );
 
 window.addEventListener(
-  "pageshow",
-  () => {
+  "pageshow", () => {
     if (!localStorage.getItem("token")) {
       redirectToLogin();
     }

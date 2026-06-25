@@ -1381,6 +1381,12 @@ a.dropdown-toggle {
   line-height: 1.45;
 }
 
+.login-error.is-info {
+  border-left-color: var(--gold-600);
+  background: #fbf6eb;
+  color: var(--navy-900);
+}
+
 .login-assistance {
   display: flex;
   flex-wrap: wrap;
@@ -5251,7 +5257,7 @@ a.dropdown-toggle {
 
 @media (max-width: 650px) {
   .retirements-main {
-    padding: 22px 14px 42px;
+    padding: 0px 0px 0px;
   }
 
   .retirements-heading {
@@ -5268,7 +5274,7 @@ a.dropdown-toggle {
   }
 
   .retirements-grid {
-    padding: 16px;
+    padding: 8px;
     grid-template-columns: 1fr;
     gap: 18px;
   }

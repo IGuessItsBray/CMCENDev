@@ -114,6 +114,82 @@
               aria-label="Account actions"
             ></nav>
           </aside>
+
+          <section
+            class="dashboard-section dashboard-mfa-section"
+            aria-labelledby="mfaTitle"
+          >
+            <header class="dashboard-section-heading">
+              <h2 id="mfaTitle">Multi-factor authentication</h2>
+            </header>
+
+            <div
+              class="dashboard-mfa-grid"
+              id="mfa-config"
+            >
+              <div class="mfa-panel">
+                <h3>TOTP</h3>
+
+                <div class="mfa-actions">
+                  <button
+                    class="mfa-button mfa-button-primary"
+                    id="totp-setup"
+                    type="button"
+                  >
+                    Setup TOTP
+                  </button>
+                </div>
+
+                <div
+                  class="mfa-output"
+                  id="totp-otpauth"
+                  aria-live="polite"
+                ></div>
+
+                <div class="mfa-verification-row">
+                  <label class="mfa-field">
+                    <span>Authenticator code</span>
+                    <input
+                      id="totp-code"
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      placeholder="000000"
+                    />
+                  </label>
+
+                  <button
+                    class="mfa-button"
+                    id="totp-verify"
+                    type="button"
+                  >
+                    Verify
+                  </button>
+                </div>
+              </div>
+
+              <div class="mfa-panel">
+                <h3>Passkey</h3>
+
+                <div class="mfa-actions">
+                  <button
+                    class="mfa-button mfa-button-primary"
+                    id="webauthn-register"
+                    type="button"
+                  >
+                    Register Passkey
+                  </button>
+
+                  <button
+                    class="mfa-button"
+                    id="webauthn-authenticate"
+                    type="button"
+                  >
+                    Authenticate
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </section>
     </main>
@@ -123,5 +199,6 @@
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
     <script src="/dashboard.js"></script>
+    <script src="/dashboard-mfa.js"></script>
   </body>
 </html>

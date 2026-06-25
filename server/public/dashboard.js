@@ -1,10 +1,17 @@
 function requireDashboardAuth() {
-  const token = localStorage.getItem("token");
+  const token = String(
+    localStorage.getItem("token") ||
+    localStorage.getItem("api_token") ||
+    ""
+  ).trim().replace(/^Bearer\s+/i, "");
 
   if (!token) {
     window.location.replace("/login.html");
     return null;
   }
+
+  localStorage.setItem("token", token);
+  localStorage.setItem("api_token", token);
 
   return token;
 }
@@ -307,7 +314,7 @@ document.addEventListener(
 );
 
 window.addEventListener("pageshow", () => {
-  if (!localStorage.getItem("token")) {
+  if (!requireDashboardAuth()) {
     window.location.replace("/login.html");
   }
 });

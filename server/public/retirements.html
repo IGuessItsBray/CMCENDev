@@ -8,7 +8,9 @@
       content="width=device-width, initial-scale=1.0"
     />
 
-    <title>Retirement Messages | CMCEN / RCMCE</title>
+    <title data-i18n="retirements_page_title">
+      Retirement Messages | CMCEN / RCMCE
+    </title>
 
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -22,11 +24,17 @@
         aria-labelledby="retirementsTitle"
       >
         <header class="retirements-heading">
-          <p class="retirements-eyebrow">
+          <p
+            class="retirements-eyebrow"
+            data-i18n="retirements_heading"
+          >
             Retirement Messages
           </p>
 
-          <h1 id="retirementsTitle">
+          <h1
+            id="retirementsTitle"
+            data-i18n="retirements_heading"
+          >
             Retirement Messages
           </h1>
         </header>
@@ -36,6 +44,7 @@
           id="retirementsMessage"
           role="status"
           aria-live="polite"
+          data-i18n="retirements_loading"
         >
           Loading retirement messages...
         </p>

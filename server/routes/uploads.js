@@ -5,7 +5,7 @@ const {
   PutObjectCommand
 } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const { authMiddleware } = require('../middleware/auth');
 const s3Client = require('../storage');
 
@@ -21,7 +21,7 @@ router.post('/upload', authMiddleware, upload.single('image'), async (req, res) 
     }
 
     const fileExtension = req.file.originalname.split('.').pop();
-    const fileKey = `${uuidv4()}.${fileExtension}`;
+    const fileKey = `${randomUUID()}.${fileExtension}`;
 
     await s3Client.send(new PutObjectCommand({
       Bucket: process.env.MINIO_BUCKET_NAME,

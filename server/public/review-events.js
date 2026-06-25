@@ -4,14 +4,19 @@ const reviewNotice = document.getElementById("reviewNotice");
 const retirementReviewQueue = document.getElementById("retirementReviewQueue");
 const retirementReviewPageMessage =
   document.getElementById("retirementReviewPageMessage");
+const commentReviewQueue = document.getElementById("commentReviewQueue");
+const commentReviewPageMessage =
+  document.getElementById("commentReviewPageMessage");
 const reviewTabs = document.querySelectorAll("[data-review-tab]");
 const reviewPanels = document.querySelectorAll("[data-review-panel]");
 
 let pendingEvents = [];
 let pendingRetirementMessages = [];
+let pendingComments = [];
 let accessDenied = false;
 let loadFailed = false;
 let retirementLoadFailed = false;
+let commentLoadFailed = false;
 let noticeTimer = null;
 
 function getReviewLanguage() {
@@ -219,6 +224,20 @@ function formatRetireeName(retirementMessage) {
     .filter(Boolean)
     .join(" ") ||
     translate("retirement_review_untitled");
+}
+
+function formatCommentAuthor(comment) {
+  const author = comment.author || {};
+
+  return (
+    [author.firstName, author.lastName]
+      .filter(Boolean)
+      .join(" ") ||
+    author.accountName ||
+    author.username ||
+    author.email ||
+    translate("unknown_user")
+  );
 }
 
 function formatDateOnly(dateValue) {
@@ -1157,6 +1176,220 @@ function createRetirementReviewCard(retirementMessage) {
   return article;
 }
 
+function createCommentReviewCard(comment) {
+  const article = document.createElement("article");
+  article.className = "review-event-card";
+  article.dataset.commentId = comment._id;
+
+  const cardHeader = document.createElement("header");
+  cardHeader.className = "review-event-card-header";
+
+  const headingCopy = document.createElement("div");
+  headingCopy.className = "review-event-card-heading";
+
+  const eyebrow = document.createElement("p");
+  eyebrow.textContent =
+    translate("comment_review_pending_submission");
+
+  const title = document.createElement("h2");
+  title.textContent =
+    formatRetireeName(comment.retirementMessage);
+
+  headingCopy.append(eyebrow, title);
+
+  const status = document.createElement("span");
+  status.className = "review-status-badge";
+  status.textContent = translate("review_status_pending");
+
+  cardHeader.append(
+    headingCopy,
+    status
+  );
+
+  const meta = document.createElement("div");
+  meta.className = "review-event-meta is-two-column";
+
+  meta.append(
+    createMetaItem(
+      "submitted_by",
+      formatCommentAuthor(comment)
+    ),
+
+    createMetaItem(
+      "submitted_on",
+      formatSubmittedDate(comment.createdAt)
+    )
+  );
+
+  const commentSection = document.createElement("section");
+  commentSection.className =
+    "review-record-section comment-review-comment-section";
+
+  const commentHeading = document.createElement("h3");
+  commentHeading.textContent =
+    translate("comment_review_comment_record");
+
+  const commentBody = document.createElement("p");
+  commentBody.className =
+    "review-event-description comment-review-body";
+  commentBody.textContent = comment.body || "—";
+
+  commentSection.append(
+    commentHeading,
+    commentBody
+  );
+
+  const relatedSection = document.createElement("section");
+  relatedSection.className =
+    "review-record-section comment-review-related-section";
+
+  const relatedHeading = document.createElement("h3");
+  relatedHeading.textContent =
+    translate("comment_review_related_record");
+
+  const relatedData = document.createElement("div");
+  relatedData.className = "review-record-data";
+
+  const relatedItem = document.createElement("div");
+  relatedItem.className = "review-record-item is-wide";
+
+  const relatedLabel = document.createElement("span");
+  relatedLabel.className = "review-record-label";
+  relatedLabel.textContent =
+    translate("comment_review_retiree_label");
+
+  const relatedLink = document.createElement("a");
+  relatedLink.className =
+    "review-record-value comment-review-related-link";
+
+  if (comment.retirementMessage?._id) {
+    relatedLink.href =
+      `/retirement-message.html?id=${encodeURIComponent(
+        comment.retirementMessage._id
+      )}`;
+  }
+
+  relatedLink.textContent =
+    formatRetireeName(comment.retirementMessage);
+
+  relatedItem.append(
+    relatedLabel,
+    relatedLink
+  );
+
+  relatedData.appendChild(relatedItem);
+  relatedSection.append(
+    relatedHeading,
+    relatedData
+  );
+
+  const decision = document.createElement("section");
+  decision.className = "review-decision";
+
+  const decisionCopy = document.createElement("div");
+  decisionCopy.className = "review-decision-copy";
+
+  const decisionHeading = document.createElement("h3");
+  decisionHeading.textContent = translate("review_decision");
+
+  const decisionHelp = document.createElement("p");
+  decisionHelp.textContent =
+    translate("comment_rejection_reason_help");
+
+  decisionCopy.append(
+    decisionHeading,
+    decisionHelp
+  );
+
+  const rejectionField = document.createElement("div");
+  rejectionField.className = "review-rejection-field";
+
+  const rejectionLabel = document.createElement("label");
+  rejectionLabel.textContent =
+    translate("rejection_reason_label");
+
+  const rejectionReason = document.createElement("textarea");
+  rejectionReason.className = "review-rejection-reason";
+  rejectionReason.rows = 3;
+  rejectionReason.maxLength = 2000;
+  rejectionReason.placeholder =
+    translate("rejection_reason_placeholder");
+
+  rejectionLabel.htmlFor =
+    `comment-rejection-${comment._id}`;
+  rejectionReason.id =
+    `comment-rejection-${comment._id}`;
+
+  rejectionField.append(
+    rejectionLabel,
+    rejectionReason
+  );
+
+  const actionMessage = document.createElement("p");
+  actionMessage.className = "review-action-message";
+  actionMessage.setAttribute("role", "alert");
+  actionMessage.hidden = true;
+
+  const actions = document.createElement("div");
+  actions.className = "review-actions";
+
+  const publishButton = document.createElement("button");
+  publishButton.type = "button";
+  publishButton.className = "review-publish-button";
+  publishButton.textContent =
+    translate("publish_comment");
+
+  const rejectButton = document.createElement("button");
+  rejectButton.type = "button";
+  rejectButton.className = "review-reject-button";
+  rejectButton.textContent =
+    translate("reject_comment");
+
+  publishButton.addEventListener(
+    "click",
+    () => {
+      submitCommentReview(
+        comment._id,
+        "publish",
+        article
+      );
+    }
+  );
+
+  rejectButton.addEventListener(
+    "click",
+    () => {
+      submitCommentReview(
+        comment._id,
+        "reject",
+        article
+      );
+    }
+  );
+
+  actions.append(
+    rejectButton,
+    publishButton
+  );
+
+  decision.append(
+    decisionCopy,
+    rejectionField,
+    actionMessage,
+    actions
+  );
+
+  article.append(
+    cardHeader,
+    meta,
+    commentSection,
+    relatedSection,
+    decision
+  );
+
+  return article;
+}
+
 function showPageMessage(
   message,
   type = "neutral",
@@ -1223,6 +1456,30 @@ function renderRetirementReviewQueue() {
   pendingRetirementMessages.forEach(retirementMessage => {
     retirementReviewQueue.appendChild(
       createRetirementReviewCard(retirementMessage)
+    );
+  });
+}
+
+function renderCommentReviewQueue() {
+  commentReviewQueue.replaceChildren();
+
+  if (!pendingComments.length) {
+    commentReviewQueue.hidden = true;
+    showPageMessage(
+      translate("no_pending_retirement_comments"),
+      "empty",
+      commentReviewPageMessage
+    );
+
+    return;
+  }
+
+  commentReviewPageMessage.hidden = true;
+  commentReviewQueue.hidden = false;
+
+  pendingComments.forEach(comment => {
+    commentReviewQueue.appendChild(
+      createCommentReviewCard(comment)
     );
   });
 }
@@ -1484,6 +1741,135 @@ async function submitRetirementReview(messageId, action, card) {
   }
 }
 
+async function submitCommentReview(commentId, action, card) {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    redirectToLogin();
+    return;
+  }
+
+  const reasonInput = card.querySelector(".review-rejection-reason");
+  const messageElement = card.querySelector(".review-action-message");
+  const buttons = card.querySelectorAll("button");
+  const rejectionReason = reasonInput.value.trim();
+
+  messageElement.textContent = "";
+  messageElement.hidden = true;
+
+  if (action === "reject" && !rejectionReason) {
+    messageElement.textContent =
+      translate("comment_rejection_reason_required");
+    messageElement.hidden = false;
+
+    reasonInput.focus();
+
+    return;
+  }
+
+  buttons.forEach(button => {
+    button.disabled = true;
+  });
+
+  const activeButton = action === "publish" ?
+    card.querySelector(".review-publish-button")
+    : card.querySelector(".review-reject-button");
+
+  activeButton.textContent =
+    translate(
+      action === "publish"
+        ? "review_publishing"
+        : "review_rejecting"
+    );
+
+  try {
+    const response = await fetch(
+      `/api/retirement-messages/comments/${commentId}/review`,
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${token}`
+        },
+
+        body: JSON.stringify({
+          action,
+
+          rejectionReason:
+            action === "reject"
+              ? rejectionReason
+              : undefined
+        })
+      }
+    );
+
+    const data = await response
+      .json()
+      .catch(() => ({}));
+
+    if (response.status === 401) {
+      redirectToLogin();
+      return;
+    }
+
+    if (response.status === 403) {
+      throw new Error(
+        translate("review_access_denied")
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        translate("comment_review_failed")
+      );
+    }
+
+    pendingComments =
+      pendingComments.filter(
+        comment => comment._id !== commentId
+      );
+
+    card.classList.add("is-resolved");
+
+    window.setTimeout(() => {
+      card.remove();
+      renderCommentReviewQueue();
+    }, 160);
+
+    showNotice(
+      translate(
+        action === "publish"
+          ? "comment_review_publish_success"
+          : "comment_review_reject_success"
+      )
+    );
+  } catch (error) {
+    messageElement.textContent =
+      error.message;
+
+    messageElement.hidden = false;
+
+    buttons.forEach(button => {
+      button.disabled = false;
+    });
+
+    card.querySelector(
+      ".review-publish-button"
+    ).textContent =
+      translate("publish_comment");
+
+    card.querySelector(
+      ".review-reject-button"
+    ).textContent =
+      translate("reject_comment");
+  }
+}
+
 async function loadReviewQueue() {
   const token = localStorage.getItem("token");
 
@@ -1495,12 +1881,18 @@ async function loadReviewQueue() {
   accessDenied = false;
   loadFailed = false;
   retirementLoadFailed = false;
+  commentLoadFailed = false;
 
   showPageMessage(translate("loading_events"), "neutral");
   showPageMessage(
     translate("loading_retirement_messages"),
     "neutral",
     retirementReviewPageMessage
+  );
+  showPageMessage(
+    translate("loading_retirement_comments"),
+    "neutral",
+    commentReviewPageMessage
   );
 
   try {
@@ -1531,13 +1923,19 @@ async function loadReviewQueue() {
         "error",
         retirementReviewPageMessage
       );
+      showPageMessage(
+        translate("review_access_denied"),
+        "error",
+        commentReviewPageMessage
+      );
 
       return;
     }
 
     const [
       eventResponse,
-      retirementResponse
+      retirementResponse,
+      commentResponse
     ] = await Promise.all([
       fetch(
         "/api/events/review",
@@ -1556,12 +1954,22 @@ async function loadReviewQueue() {
               `Bearer ${token}`
           }
         }
+      ),
+      fetch(
+        "/api/retirement-messages/comments/review",
+        {
+          headers: {
+            Authorization:
+              `Bearer ${token}`
+          }
+        }
       )
     ]);
 
     if (
       eventResponse.status === 401 ||
-      retirementResponse.status === 401
+      retirementResponse.status === 401 ||
+      commentResponse.status === 401
     ) {
       redirectToLogin();
       return;
@@ -1569,7 +1977,8 @@ async function loadReviewQueue() {
 
     if (
       eventResponse.status === 403 ||
-      retirementResponse.status === 403
+      retirementResponse.status === 403 ||
+      commentResponse.status === 403
     ) {
       accessDenied = true;
 
@@ -1583,6 +1992,10 @@ async function loadReviewQueue() {
       .catch(() => ({}));
 
     const retirementData = await retirementResponse
+      .json()
+      .catch(() => ({}));
+
+    const commentData = await commentResponse
       .json()
       .catch(() => ({}));
 
@@ -1622,9 +2035,28 @@ async function loadReviewQueue() {
       renderRetirementReviewQueue();
     }
 
+    if (!commentResponse.ok) {
+      commentLoadFailed = true;
+
+      showPageMessage(
+        commentData.error ||
+        translate("comment_review_load_error"),
+        "error",
+        commentReviewPageMessage
+      );
+    } else {
+      pendingComments =
+        Array.isArray(commentData.comments)
+          ? commentData.comments
+          : [];
+
+      renderCommentReviewQueue();
+    }
+
   } catch (error) {
     loadFailed = !accessDenied;
     retirementLoadFailed = !accessDenied;
+    commentLoadFailed = !accessDenied;
 
     showPageMessage(error.message || translate("review_load_error"), "error");
     showPageMessage(
@@ -1632,6 +2064,12 @@ async function loadReviewQueue() {
       translate("retirement_review_load_error"),
       "error",
       retirementReviewPageMessage
+    );
+    showPageMessage(
+      error.message ||
+      translate("comment_review_load_error"),
+      "error",
+      commentReviewPageMessage
     );
   }
 }
@@ -1645,6 +2083,11 @@ document.addEventListener(
         translate("review_access_denied"),
         "error",
         retirementReviewPageMessage
+      );
+      showPageMessage(
+        translate("review_access_denied"),
+        "error",
+        commentReviewPageMessage
       );
       return;
     }
@@ -1663,6 +2106,16 @@ document.addEventListener(
       );
     } else {
       renderRetirementReviewQueue();
+    }
+
+    if (commentLoadFailed) {
+      showPageMessage(
+        translate("comment_review_load_error"),
+        "error",
+        commentReviewPageMessage
+      );
+    } else {
+      renderCommentReviewQueue();
     }
   }
 );

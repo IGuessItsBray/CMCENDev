@@ -50,6 +50,61 @@ docker run -p 3000:3000 -d CMCEN
 
 ---
 
+## API Routes
+
+All API routes are mounted from `server/server.js` and use the `/api` prefix. Route module details also live in `server/routes/README.md`.
+
+### Authentication & Accounts
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/register` | Public | Create a new subscriber account from registration form fields. |
+| `POST` | `/api/login` | Public | Authenticate with username and password, returning a JWT. |
+| `GET` | `/api/me` | Bearer token | Return the authenticated user's profile and computed permissions. |
+| `GET` | `/api/contributor-check` | Contributor or higher | Confirm the current user has contributor-level access. |
+| `GET` | `/api/admin-check` | Administrator | Confirm administrator-only access. |
+
+### Admin
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/admin/users` | Administrator | List users. Optional `query` parameter filters by username or account name. |
+| `PATCH` | `/api/admin/users/:userId/role` | Administrator | Update a user's role using the shared role configuration. |
+
+### Diagnostics
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/data` | Public | Public API smoke-test response. |
+| `GET` | `/api/protected_data` | Bearer token | Authenticated API smoke-test response. |
+
+### Uploads
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/upload` | Bearer token | Upload one `image` multipart file to object storage and return its generated key and CDN URL. |
+| `GET` | `/api/image/:key` | Bearer token | Generate a 15-minute signed URL for an object-storage image key. |
+
+### Events
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/events` | Public | List published current or future events. |
+| `POST` | `/api/events` | Contributor or higher | Create an event submission. |
+| `GET` | `/api/events/review` | Review/publish permission | List reviewable events. Optional `status` query accepts `pending`, `rejected`, or `published`. |
+| `GET` | `/api/events/mine` | Bearer token with draft permission | List events created by the authenticated user. |
+| `GET` | `/api/events/:id/edit` | Owner or reviewer | Load a full event record for editing. |
+| `PATCH` | `/api/events/:id` | Owner or reviewer | Update an event and resubmit or republish based on permissions. |
+| `PATCH` | `/api/events/:eventId/review` | Review/publish permission | Publish or reject a pending event. Body `action` must be `publish` or `reject`. |
+
+### Retirement Messages
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/retirement-messages` | Retirement-message submit permission | Submit a retirement message for review. Validates retiree details, submitter details, message language, length, and consent. |
+
+---
+
 ## Admin Scripts
 
 The `server/scripts/admin.js` script provides utilities for user management, event inspection, authentication, and diagnostics. Run all commands from the `server/` directory:

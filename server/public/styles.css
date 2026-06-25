@@ -939,6 +939,183 @@ a.dropdown-toggle {
 }
 
 /* ─────────────────────────────────────────────
+   Site search
+   ───────────────────────────────────────────── */
+.search-main {
+  padding: 28px 20px 46px;
+}
+
+.search-shell {
+  width: min(100%, 980px);
+  margin: 0 auto;
+}
+
+.search-heading {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  border-bottom: 2px solid var(--gold-500);
+  color: var(--white);
+}
+
+.search-eyebrow {
+  margin: 0 0 7px;
+  color: var(--gold-200);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.search-heading h1 {
+  margin: 0;
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: clamp(29px, 4vw, 38px);
+  font-weight: normal;
+  line-height: 1.1;
+}
+
+.search-heading>p {
+  max-width: 420px;
+  margin: 0 0 2px;
+  color: var(--branch-grey-100);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.search-page-form {
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 128px;
+  overflow: hidden;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 2px;
+  background: var(--white);
+  box-shadow:
+    0 9px 24px rgba(15, 18, 31, 0.16),
+    0 2px 5px rgba(15, 18, 31, 0.10);
+}
+
+.search-page-form:focus-within {
+  border-color: var(--gold-500);
+}
+
+.search-page-form input {
+  min-width: 0;
+  padding: 0 18px;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+
+.search-page-form button {
+  min-width: 128px;
+  border: 0;
+  border-left: 1px solid var(--branch-grey-200);
+  background: var(--navy-900);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.search-page-form button:hover,
+.search-page-form button:focus-visible {
+  background: var(--navy-800);
+}
+
+.search-status {
+  margin: 18px 0 14px;
+  padding: 13px 16px;
+  border-left: 4px solid var(--gold-500);
+  background: var(--white);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 3px 10px var(--shadow);
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search-result {
+  padding: 19px 20px 20px;
+  border-top: 4px solid var(--gold-500);
+  border-radius: 2px;
+  background: var(--white);
+  box-shadow:
+    0 9px 24px rgba(15, 18, 31, 0.16),
+    0 2px 5px rgba(15, 18, 31, 0.10);
+}
+
+.search-result-meta {
+  min-height: 23px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.search-result-type {
+  padding: 4px 7px;
+  border-radius: 2px;
+  background: var(--branch-grey-100);
+  color: var(--navy-900);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.search-result-title {
+  margin: 0 0 8px;
+  color: var(--navy-900);
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: 22px;
+  font-weight: normal;
+  line-height: 1.2;
+}
+
+.search-result-title a {
+  color: inherit;
+  text-decoration-color: var(--gold-500);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.search-result-title a:hover,
+.search-result-title a:focus-visible {
+  color: var(--gold-700);
+}
+
+.search-result-summary {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.58;
+}
+
+/* ─────────────────────────────────────────────
    Member login
    ───────────────────────────────────────────── */
 
@@ -4467,6 +4644,31 @@ a.dropdown-toggle {
   .header-search:focus-within input {
     width: auto;
     padding-left: 12px;
+  }
+
+  .search-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-heading>p {
+    max-width: none;
+    text-align: left;
+  }
+
+  .search-page-form {
+    grid-template-columns: 1fr;
+  }
+
+  .search-page-form input {
+    min-height: 52px;
+  }
+
+  .search-page-form button {
+    min-height: 48px;
+    border-top: 1px solid var(--branch-grey-200);
+    border-left: 0;
   }
 
   .auth-buttons .signout-link {

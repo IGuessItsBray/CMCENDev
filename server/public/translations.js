@@ -9,6 +9,25 @@ const translations = {
     donate_now: "Donate",
     search_site: "Search the site",
     search_placeholder: "Search the site",
+    search_submit: "Search",
+    search_page_title: "Search | CMCEN / RCMCE",
+    search_page_eyebrow: "Site search",
+    search_page_heading: "Search CMCEN",
+    search_page_intro:
+      "Find events, retirement messages, and public site pages.",
+    search_enter_query:
+      "Enter at least two characters to search the site.",
+    search_loading: "Searching...",
+    search_results_count:
+      "{count} results for \"{query}\"",
+    search_no_results:
+      "No results found for \"{query}\".",
+    search_error:
+      "Search is unavailable right now. Please try again.",
+    search_type_event: "Event",
+    search_type_retirement_message:
+      "Retirement message",
+    search_type_page: "Page",
     account: "Account",
     signout_btn: "Sign out",
     menu_about: "About",
@@ -956,6 +975,28 @@ const translations = {
     search_site: "Rechercher sur le site",
     search_placeholder:
       "Rechercher sur le site",
+    search_submit: "Rechercher",
+    search_page_title:
+      "Recherche | CMCEN / RCMCE",
+    search_page_eyebrow:
+      "Recherche sur le site",
+    search_page_heading:
+      "Rechercher dans le RCMCE",
+    search_page_intro:
+      "Trouvez des événements, des messages de retraite et des pages publiques du site.",
+    search_enter_query:
+      "Entrez au moins deux caractères pour rechercher sur le site.",
+    search_loading: "Recherche en cours...",
+    search_results_count:
+      "{count} résultats pour « {query} »",
+    search_no_results:
+      "Aucun résultat trouvé pour « {query} ».",
+    search_error:
+      "La recherche n'est pas disponible pour le moment. Veuillez réessayer.",
+    search_type_event: "Événement",
+    search_type_retirement_message:
+      "Message de retraite",
+    search_type_page: "Page",
     account: "Compte",
     signout_btn: "Se déconnecter",
     menu_about: "À propos",

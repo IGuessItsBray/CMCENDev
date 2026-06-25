@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title data-i18n="search_page_title">
+      Search | CMCEN / RCMCE
+    </title>
+
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="search-main">
+      <section
+        class="search-shell"
+        aria-labelledby="searchTitle"
+      >
+        <header class="search-heading">
+          <div>
+            <p
+              class="search-eyebrow"
+              data-i18n="search_page_eyebrow"
+            >
+              Site search
+            </p>
+
+            <h1
+              id="searchTitle"
+              data-i18n="search_page_heading"
+            >
+              Search CMCEN
+            </h1>
+          </div>
+
+          <p data-i18n="search_page_intro">
+            Find events, retirement messages, and public site pages.
+          </p>
+        </header>
+
+        <form
+          class="search-page-form"
+          id="searchPageForm"
+          role="search"
+        >
+          <label
+            for="searchPageInput"
+            class="visually-hidden"
+            data-i18n="search_site"
+          >
+            Search the site
+          </label>
+
+          <input
+            type="search"
+            id="searchPageInput"
+            name="q"
+            data-i18n-placeholder="search_placeholder"
+            placeholder="Search the site"
+            autocomplete="off"
+          />
+
+          <button
+            type="submit"
+            data-i18n="search_submit"
+          >
+            Search
+          </button>
+        </form>
+
+        <p
+          class="search-status"
+          id="searchStatus"
+          aria-live="polite"
+        ></p>
+
+        <div
+          class="search-results"
+          id="searchResults"
+        ></div>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/search.js"></script>
+  </body>
+</html>

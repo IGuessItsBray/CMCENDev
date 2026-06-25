@@ -130,13 +130,14 @@ function renderDashboard(user) {
 
   const role = getRoleKey(user.role);
   const roleTitle = translate(`role_${role}`);
-  const displayName =
-    user.accountName ||
-    [user.firstName, user.lastName]
-      .filter(Boolean)
-      .join(" ") ||
-    user.username ||
-    "";
+  // const displayName =
+  //   user.accountName ||
+  //   [user.firstName, user.lastName]
+  //     .filter(Boolean)
+  //     .join(" ") ||
+  //   user.username ||
+  //   "";
+  const displayName = user.firstName;
 
   dashboardTitle.textContent =
     translate("dashboard_welcome", {

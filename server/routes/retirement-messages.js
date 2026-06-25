@@ -261,4 +261,180 @@ router.post(
     }
 });
 
+router.get(
+    '/review',
+    authMiddleware,
+    requirePermission('canReviewAndPublish'),
+    async (req, res) => {
+        try {
+            const allowedStatuses = [
+                'pending',
+                'rejected',
+                'published'
+            ];
+
+            const requestedStatus =
+                typeof req.query.status === 'string'
+                    ? req.query.status
+                    : 'pending';
+
+            if (!allowedStatuses.includes(requestedStatus)) {
+                return res.status(400).json({
+                    error: 'Invalid review status'
+                });
+            }
+
+            const retirementMessages =
+                await RetirementMessage.find({
+                    status: requestedStatus
+                })
+                    .populate(
+                        'reviewedBy',
+                        'username accountName email role'
+                    )
+                    .populate(
+                        'publishedBy',
+                        'username accountName role'
+                    )
+                    .sort({
+                        createdAt: 1
+                    })
+                    .lean();
+
+            res.json({
+                status: requestedStatus,
+                retirementMessages
+            });
+        } catch (error) {
+            console.error(
+                'Could not load retirement message review queue:',
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    'Could not load retirement message review queue'
+            });
+        }
+    }
+);
+
+router.patch(
+    '/:messageId/review',
+    authMiddleware,
+    requirePermission('canReviewAndPublish'),
+    async (req, res) => {
+        try {
+            const {
+                action,
+                rejectionReason
+            } = req.body;
+
+            if (!['publish', 'reject'].includes(action)) {
+                return res.status(400).json({
+                    error:
+                        'Review action must be publish or reject'
+                });
+            }
+
+            const retirementMessage =
+                await RetirementMessage.findById(
+                    req.params.messageId
+                );
+
+            if (!retirementMessage) {
+                return res.status(404).json({
+                    error:
+                        'Retirement message not found'
+                });
+            }
+
+            if (retirementMessage.status !== 'pending') {
+                return res.status(409).json({
+                    error:
+                        'Only pending retirement messages can be reviewed'
+                });
+            }
+
+            const reviewDate = new Date();
+
+            if (action === 'reject') {
+                const cleanReason =
+                    typeof rejectionReason === 'string'
+                        ? rejectionReason.trim()
+                        : '';
+
+                if (!cleanReason) {
+                    return res.status(400).json({
+                        error:
+                            'A rejection reason is required'
+                    });
+                }
+
+                retirementMessage.status = 'rejected';
+                retirementMessage.rejectionReason =
+                    cleanReason;
+                retirementMessage.publishedBy = null;
+                retirementMessage.publishedAt = null;
+            }
+
+            if (action === 'publish') {
+                retirementMessage.status = 'published';
+                retirementMessage.rejectionReason = null;
+                retirementMessage.publishedBy = req.user._id;
+                retirementMessage.publishedAt = reviewDate;
+            }
+
+            retirementMessage.reviewedBy = req.user._id;
+            retirementMessage.reviewedAt = reviewDate;
+
+            await retirementMessage.save();
+
+            await retirementMessage.populate(
+                'reviewedBy',
+                'username accountName email role'
+            );
+
+            await retirementMessage.populate(
+                'publishedBy',
+                'username accountName role'
+            );
+
+            res.json({
+                message:
+                    action === 'publish'
+                        ? 'Retirement message published successfully'
+                        : 'Retirement message rejected',
+
+                retirementMessage
+            });
+        } catch (error) {
+            console.error(
+                'Could not review retirement message:',
+                error
+            );
+
+            if (error.name === 'CastError') {
+                return res.status(400).json({
+                    error:
+                        'Invalid retirement message ID'
+                });
+            }
+
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({
+                    error: Object.values(error.errors)
+                        .map(item => item.message)
+                        .join(', ')
+                });
+            }
+
+            res.status(500).json({
+                error:
+                    'Could not review retirement message'
+            });
+        }
+    }
+);
+
 module.exports = router;

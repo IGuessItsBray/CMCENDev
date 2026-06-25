@@ -3063,20 +3063,6 @@ a.dropdown-toggle {
   line-height: 1.5;
 }
 
-.review-queue-count {
-  flex: 0 0 auto;
-  padding: 8px 12px;
-  border: 1px solid var(--gold-500);
-  border-radius: 2px;
-  background: rgba(213, 155, 39, 0.1);
-  color: var(--gold-200);
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .review-page-message,
 .review-notice {
   margin: 24px 26px;
@@ -3196,6 +3182,11 @@ a.dropdown-toggle {
     repeat(4, minmax(0, 1fr));
   border-bottom: 1px solid var(--branch-grey-200);
   background: var(--branch-grey-100);
+}
+
+.review-event-meta.is-two-column {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
 }
 
 .review-event-meta-item {
@@ -3318,6 +3309,47 @@ a.dropdown-toggle {
   min-height: 66px;
   font-size: 13px;
   white-space: pre-line;
+}
+
+.retirement-review-message-section,
+.retirement-review-photo-section {
+  margin: 0 18px 18px;
+}
+
+.retirement-review-message-section .review-language-code {
+  display: inline-block;
+  margin: 14px 15px 8px;
+}
+
+.retirement-review-message {
+  margin: 0;
+  padding: 0 15px 15px;
+  min-height: 0;
+}
+
+.retirement-review-photo-link {
+  padding: 14px 15px 15px;
+  display: grid;
+  gap: 10px;
+  color: var(--navy-900);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.retirement-review-photo-link:hover,
+.retirement-review-photo-link:focus-visible {
+  color: var(--gold-700);
+}
+
+.retirement-review-photo-link img {
+  width: min(100%, 320px);
+  aspect-ratio: 4 / 3;
+  display: block;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 2px;
+  object-fit: cover;
+  background: var(--branch-grey-100);
 }
 
 .review-language-body .is-missing {
@@ -5005,6 +5037,10 @@ a.dropdown-toggle {
     border-bottom: 1px solid var(--branch-grey-200);
   }
 
+  .review-event-meta.is-two-column .review-event-meta-item {
+    border-bottom: 0;
+  }
+
   .review-language-grid {
     grid-template-columns: 1fr;
   }
@@ -5040,6 +5076,10 @@ a.dropdown-toggle {
 
   .review-event-meta-item:last-child {
     border-bottom: 0;
+  }
+
+  .review-event-meta.is-two-column .review-event-meta-item:not(:last-child) {
+    border-bottom: 1px solid var(--branch-grey-200);
   }
 
   .review-language-grid {

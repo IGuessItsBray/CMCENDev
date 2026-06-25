@@ -157,7 +157,8 @@ router.post('/webauthn/authenticate/options', authMiddleware, async (req, res) =
   try {
     const user = await User.findById(req.user._id);
 
-    const allowCredentials = (user.webauthn || []).filter(c => c.credentialID).map(c => ({ id: base64url.toBuffer(c.credentialID), type: 'public-key', transports: c.transports || [] }));
+    // pass credential IDs as base64url strings (simplewebauthn expects strings here)
+    const allowCredentials = (user.webauthn || []).filter(c => c.credentialID).map(c => ({ id: c.credentialID, type: 'public-key', transports: c.transports || [] }));
 
     const challenge = crypto.randomBytes(32);
 

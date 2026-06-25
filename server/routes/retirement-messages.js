@@ -262,6 +262,42 @@ router.post(
 });
 
 router.get(
+    '/',
+    async (req, res) => {
+        try {
+            const retirementMessages =
+                await RetirementMessage.find({
+                    status: 'published'
+                })
+                    .select({
+                        retiree: 1,
+                        photoUrl: 1,
+                        publishedAt: 1
+                    })
+                    .sort({
+                        publishedAt: -1,
+                        createdAt: -1
+                    })
+                    .lean();
+
+            res.json({
+                retirementMessages
+            });
+        } catch (error) {
+            console.error(
+                'Could not load retirement messages:',
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    'Could not load retirement messages'
+            });
+        }
+    }
+);
+
+router.get(
     '/review',
     authMiddleware,
     requirePermission('canReviewAndPublish'),
@@ -314,6 +350,55 @@ router.get(
             res.status(500).json({
                 error:
                     'Could not load retirement message review queue'
+            });
+        }
+    }
+);
+
+router.get(
+    '/:messageId',
+    async (req, res) => {
+        try {
+            const retirementMessage =
+                await RetirementMessage.findOne({
+                    _id: req.params.messageId,
+                    status: 'published'
+                })
+                    .select({
+                        retiree: 1,
+                        message: 1,
+                        messageLanguage: 1,
+                        photoUrl: 1,
+                        publishedAt: 1
+                    })
+                    .lean();
+
+            if (!retirementMessage) {
+                return res.status(404).json({
+                    error:
+                        'Retirement message not found'
+                });
+            }
+
+            res.json({
+                retirementMessage
+            });
+        } catch (error) {
+            console.error(
+                'Could not load retirement message:',
+                error
+            );
+
+            if (error.name === 'CastError') {
+                return res.status(400).json({
+                    error:
+                        'Invalid retirement message ID'
+                });
+            }
+
+            res.status(500).json({
+                error:
+                    'Could not load retirement message'
             });
         }
     }

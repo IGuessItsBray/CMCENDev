@@ -34,7 +34,7 @@ const navLinks = {
       },
       { route: "/news_stories.html", i18n: "menu_news_option_3" },
       { route: "/last_post.html", i18n: "menu_news_option_4" },
-      { route: "/retirement.html", i18n: "menu_news_option_5" },
+      { route: "/retirements.html", i18n: "menu_news_option_5" },
       { route: "/certificates.html", i18n: "menu_news_option_6" },
       { route: "/promotions.html", i18n: "menu_news_option_7" },
       { route: "/history.html", i18n: "menu_news_option_8" },

@@ -195,6 +195,8 @@ const UserSchema = new mongoose.Schema({
         publicKey: { type: String },
         counter: { type: Number, default: 0 },
         transports: { type: [String], default: [] },
+        credentialDeviceType: { type: String, default: '' },
+        credentialBackedUp: { type: Boolean, default: false },
         nickname: { type: String, default: '' }
       }
     ],

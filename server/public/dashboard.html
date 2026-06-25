@@ -115,36 +115,78 @@
             ></nav>
           </aside>
 
-          <section class="dashboard-section" aria-labelledby="mfaTitle">
+          <section
+            class="dashboard-section dashboard-mfa-section"
+            aria-labelledby="mfaTitle"
+          >
             <header class="dashboard-section-heading">
               <h2 id="mfaTitle">Multi-factor authentication</h2>
             </header>
 
-            <div id="mfaArea">
-              <form id="login-form">
-                <h3>Login</h3>
-                <label>
-                  <input id="login-username" placeholder="Email" required />
-                </label>
-                <label>
-                  <input id="login-password" type="password" placeholder="Password" required />
-                </label>
-                <div>
-                  <button type="submit">Login</button>
-                  <button type="button" id="logout-button">Logout</button>
-                </div>
-              </form>
-
-              <div id="mfa-config" hidden>
+            <div
+              class="dashboard-mfa-grid"
+              id="mfa-config"
+            >
+              <div class="mfa-panel">
                 <h3>TOTP</h3>
-                <button id="totp-setup">Setup TOTP</button>
-                <div id="totp-otpauth" style="word-break:break-all;margin-top:8px"></div>
-                <input id="totp-code" placeholder="Enter TOTP code" />
-                <button id="totp-verify">Verify TOTP</button>
 
-                <h3 style="margin-top:16px">Passkey</h3>
-                <button id="webauthn-register">Register Passkey</button>
-                <button id="webauthn-authenticate">Authenticate with Passkey</button>
+                <div class="mfa-actions">
+                  <button
+                    class="mfa-button mfa-button-primary"
+                    id="totp-setup"
+                    type="button"
+                  >
+                    Setup TOTP
+                  </button>
+                </div>
+
+                <div
+                  class="mfa-output"
+                  id="totp-otpauth"
+                  aria-live="polite"
+                ></div>
+
+                <div class="mfa-verification-row">
+                  <label class="mfa-field">
+                    <span>Authenticator code</span>
+                    <input
+                      id="totp-code"
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      placeholder="000000"
+                    />
+                  </label>
+
+                  <button
+                    class="mfa-button"
+                    id="totp-verify"
+                    type="button"
+                  >
+                    Verify
+                  </button>
+                </div>
+              </div>
+
+              <div class="mfa-panel">
+                <h3>Passkey</h3>
+
+                <div class="mfa-actions">
+                  <button
+                    class="mfa-button mfa-button-primary"
+                    id="webauthn-register"
+                    type="button"
+                  >
+                    Register Passkey
+                  </button>
+
+                  <button
+                    class="mfa-button"
+                    id="webauthn-authenticate"
+                    type="button"
+                  >
+                    Authenticate
+                  </button>
+                </div>
               </div>
             </div>
           </section>

@@ -10,8 +10,28 @@ const { authMiddleware } = require('../middleware/auth');
 const router = express.Router();
 
 const rpName = process.env.RP_NAME || 'CMCEN';
-const rpID = process.env.RP_ID || process.env.HOSTNAME || 'localhost';
-const origin = process.env.RP_ORIGIN || `http://localhost:${process.env.PORT || 3000}`;
+const configuredRPID = process.env.RP_ID || '';
+const configuredOrigin = process.env.RP_ORIGIN || '';
+
+function getRpID(req) {
+  if (configuredRPID) return configuredRPID;
+
+  const hostname = req.hostname || 'localhost';
+  if (hostname === '127.0.0.1' || hostname === '::1') return 'localhost';
+
+  return hostname;
+}
+
+function getExpectedOrigin(req) {
+  if (configuredOrigin) {
+    return configuredOrigin
+      .split(',')
+      .map(value => value.trim())
+      .filter(Boolean);
+  }
+
+  return `${req.protocol}://${req.get('host')}`;
+}
 
 function bufferToBase64url(input) {
   if (!input) return input;
@@ -48,58 +68,40 @@ function normalizeAuthenticationOptions(opts) {
 router.post('/webauthn/register/options', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    const rpID = getRpID(req);
 
-    const existingCreds = (user.webauthn || []).filter(c => c.credentialID).map(c => ({ id: base64url.toBuffer(c.credentialID), type: 'public-key', transports: c.transports || [] }));
+    const existingCreds = (user.webauthn || [])
+      .filter(c => c.credentialID)
+      .map(c => ({
+        id: c.credentialID,
+        transports: c.transports || []
+      }));
 
     const challenge = crypto.randomBytes(32);
 
-    const options = generateRegistrationOptions({
+    const options = await generateRegistrationOptions({
       rpName,
       rpID,
-      user: {
-        id: Buffer.from(String(user._id)),
-        name: user.username,
-        displayName: user.accountName || `${user.firstName} ${user.lastName}`
-      },
+      userID: Buffer.from(String(user._id)),
+      userName: user.username,
+      userDisplayName: user.accountName || `${user.firstName} ${user.lastName}`,
       challenge,
       attestationType: 'none',
-      excludeCredentials: existingCreds
+      excludeCredentials: existingCreds,
+      authenticatorSelection: {
+        residentKey: 'preferred',
+        userVerification: 'preferred'
+      },
+      supportedAlgorithmIDs: [-7, -257]
     });
 
     // store base64url challenge in DB
-    const challengeB64 = base64url.encode(challenge);
-    await User.findByIdAndUpdate(user._id, { $set: { webauthnRegistrationChallenge: challengeB64 } });
+    await User.findByIdAndUpdate(user._id, {
+      $set: { webauthnRegistrationChallenge: options.challenge }
+    });
 
-    // Log what generateRegistrationOptions returned
-    console.log('options.pubKeyCredParams:', options.pubKeyCredParams);
-
-    // Build a plain JSON-safe options object (avoid spreading library instance)
-    const sendOptions = {
-      challenge: bufferToBase64url(challenge),
-      rp: options.rp,
-      user: {
-        id: bufferToBase64url(Buffer.from(String(user._id))),
-        name: user.username,
-        displayName: user.accountName || `${user.firstName} ${user.lastName}`
-      },
-      pubKeyCredParams: Array.isArray(options.pubKeyCredParams) && options.pubKeyCredParams.length ? options.pubKeyCredParams : [
-        { type: 'public-key', alg: -7 }, // ES256
-        { type: 'public-key', alg: -257 } // RS256
-      ],
-      timeout: options.timeout,
-      attestation: options.attestation || 'none',
-      excludeCredentials: (options.excludeCredentials || []).map(c => ({ id: bufferToBase64url(c.id), type: c.type, transports: c.transports })),
-      authenticatorSelection: options.authenticatorSelection,
-      extensions: options.extensions
-    };
-
-    console.log('webauthn/register/options -> challenge length:', sendOptions.challenge?.length, 'user.id:', sendOptions.user?.id?.length, 'exclude:', (sendOptions.excludeCredentials||[]).length);
-    try {
-      console.log('webauthn/register/options payload:', JSON.stringify(sendOptions));
-    } catch (e) {
-      console.warn('Could not stringify sendOptions', e);
-    }
-    res.json(sendOptions);
+    console.log('webauthn/register/options -> challenge length:', options.challenge?.length, 'user.id:', options.user?.id?.length, 'exclude:', (options.excludeCredentials || []).length);
+    res.json(normalizeRegistrationOptions(options));
   } catch (err) {
     console.error('webauthn/options error', err);
     res.status(500).json({ error: 'Could not create registration options' });
@@ -116,8 +118,9 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
     const verification = await verifyRegistrationResponse({
       response: body,
       expectedChallenge,
-      expectedOrigin: origin,
-      expectedRPID: rpID
+      expectedOrigin: getExpectedOrigin(req),
+      expectedRPID: getRpID(req),
+      requireUserVerification: false
     });
 
     if (!verification.verified) {
@@ -125,25 +128,38 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
     }
 
     const { registrationInfo } = verification;
+    const verifiedCredential = registrationInfo.credential || {};
 
     // robustly determine credential ID (try several places)
-    let idB64url = bufferToBase64url(registrationInfo.rawId) || bufferToBase64url(registrationInfo.credentialID) || bufferToBase64url(body.rawId) || bufferToBase64url(body.id) || null;
-    const publicKeyB64 = registrationInfo.credentialPublicKey ? bufferToBase64(registrationInfo.credentialPublicKey) : (registrationInfo.credentialPublicKey ? bufferToBase64(registrationInfo.credentialPublicKey) : undefined);
+    let idB64url = verifiedCredential.id || bufferToBase64url(registrationInfo.rawId) || bufferToBase64url(registrationInfo.credentialID) || bufferToBase64url(body.rawId) || bufferToBase64url(body.id) || null;
+    const publicKeyB64 = verifiedCredential.publicKey
+      ? bufferToBase64(verifiedCredential.publicKey)
+      : bufferToBase64(registrationInfo.credentialPublicKey);
 
     if (!idB64url) {
       console.error('webauthn/register/verify -> could not determine credential id from registrationInfo or body', { registrationInfo, body });
       return res.status(400).json({ error: 'Could not determine credential id' });
     }
+    if (!publicKeyB64) {
+      console.error('webauthn/register/verify -> could not determine credential public key', { registrationInfo });
+      return res.status(400).json({ error: 'Could not determine credential public key' });
+    }
 
     const credential = {
       credentialID: idB64url,
       publicKey: publicKeyB64,
-      counter: registrationInfo.counter || 0,
-      transports: body.transports || []
+      counter: verifiedCredential.counter || registrationInfo.counter || 0,
+      transports: verifiedCredential.transports || body.transports || [],
+      credentialDeviceType: registrationInfo.credentialDeviceType || '',
+      credentialBackedUp: Boolean(registrationInfo.credentialBackedUp)
     };
 
     console.log('webauthn/register/verify -> storing credential id length:', idB64url?.length);
-    await User.findByIdAndUpdate(user._id, { $push: { webauthn: credential }, $set: { webauthnRegistrationChallenge: '' } });
+    await User.findByIdAndUpdate(user._id, {
+      $pull: { webauthn: { credentialID: idB64url } },
+      $set: { webauthnRegistrationChallenge: '' }
+    });
+    await User.findByIdAndUpdate(user._id, { $push: { webauthn: credential } });
 
     res.json({ verified: true });
   } catch (err) {
@@ -156,37 +172,28 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
 router.post('/webauthn/authenticate/options', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    const rpID = getRpID(req);
 
     // pass credential IDs as base64url strings (simplewebauthn expects strings here)
-    const allowCredentials = (user.webauthn || []).filter(c => c.credentialID).map(c => ({ id: c.credentialID, type: 'public-key', transports: c.transports || [] }));
+    const allowCredentials = (user.webauthn || [])
+      .filter(c => c.credentialID && c.publicKey)
+      .map(c => ({ id: c.credentialID, transports: c.transports || [] }));
 
     const challenge = crypto.randomBytes(32);
 
-    const options = generateAuthenticationOptions({
+    const options = await generateAuthenticationOptions({
+      rpID,
       allowCredentials,
-      challenge
+      challenge,
+      userVerification: 'preferred'
     });
 
-    const challengeB64 = base64url.encode(challenge);
-    await User.findByIdAndUpdate(user._id, { $set: { webauthnAuthenticationChallenge: challengeB64 } });
+    await User.findByIdAndUpdate(user._id, {
+      $set: { webauthnAuthenticationChallenge: options.challenge }
+    });
 
-    // Build plain JSON-safe authentication options
-    const sendOptions = {
-      challenge: bufferToBase64url(challenge),
-      timeout: options.timeout,
-      rpId: options.rpId,
-      allowCredentials: (options.allowCredentials || []).map(c => ({ id: bufferToBase64url(c.id), type: c.type, transports: c.transports })),
-      userVerification: options.userVerification,
-      extensions: options.extensions
-    };
-
-    console.log('webauthn/auth/options -> challenge length:', sendOptions.challenge?.length, 'allow:', (sendOptions.allowCredentials||[]).length);
-    try {
-      console.log('webauthn/auth/options payload:', JSON.stringify(sendOptions));
-    } catch (e) {
-      console.warn('Could not stringify auth sendOptions', e);
-    }
-    res.json(sendOptions);
+    console.log('webauthn/auth/options -> challenge length:', options.challenge?.length, 'allow:', (options.allowCredentials || []).length);
+    res.json(normalizeAuthenticationOptions(options));
   } catch (err) {
     console.error('webauthn/auth/options error', err);
     res.status(500).json({ error: 'Could not create authentication options' });
@@ -220,13 +227,14 @@ router.post('/webauthn/authenticate/verify', authMiddleware, async (req, res) =>
     const verification = await verifyAuthenticationResponse({
       response: body,
       expectedChallenge,
-      expectedOrigin: origin,
-      expectedRPID: rpID,
-      authenticator: {
-        credentialPublicKey: Buffer.from(dbCred.publicKey, 'base64'),
-        credentialID: base64url.toBuffer(dbCred.credentialID),
+      expectedOrigin: getExpectedOrigin(req),
+      expectedRPID: getRpID(req),
+      credential: {
+        id: dbCred.credentialID,
+        publicKey: Buffer.from(dbCred.publicKey, 'base64'),
         counter: dbCred.counter || 0
-      }
+      },
+      requireUserVerification: false
     });
 
     if (!verification.verified) return res.status(400).json({ error: 'Authentication failed' });
@@ -267,6 +275,27 @@ router.post('/totp/setup', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('totp/setup error', err);
     res.status(500).json({ error: 'Could not generate TOTP secret' });
+  }
+});
+
+// TOTP QR refresh
+router.get('/totp/qrcode', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user.totp?.secret) return res.status(400).json({ error: 'No TOTP secret set' });
+
+    const otpauth = speakeasy.otpauthURL({
+      secret: user.totp.secret,
+      label: `${rpName} (${user.email})`,
+      encoding: 'base32'
+    });
+    const dataUrl = await qrcode.toDataURL(otpauth);
+
+    res.json({ otpauth_url: otpauth, qrcode: dataUrl });
+  } catch (err) {
+    console.error('totp/qrcode error', err);
+    res.status(500).json({ error: 'Could not generate TOTP QR code' });
   }
 });
 

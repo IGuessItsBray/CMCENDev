@@ -11,7 +11,16 @@ const BASE_URL = 'http://localhost:3000/api';
 
 // Commands that require a live DB connection
 const DB_COMMANDS = new Set([
-  'token', 'list-users', 'list-events', 'list-retirement-messages', 'set-role', 'search', 'promote', 'test-db'
+  'token',
+  'list-users',
+  'list-events',
+  'list-retirement-messages',
+  'set-role',
+  'update-user',
+  'fill-empty-users',
+  'search',
+  'promote',
+  'test-db'
 ]);
 
 // Commands that require an admin JWT (implies DB_COMMANDS too)
@@ -56,6 +65,148 @@ async function buildAdminToken() {
   return jwt.sign({ userId: adminUser._id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 }
 
+/// for updating user
+const USER_FIELD_ALIASES = {
+  addressLine1: 'address.line1',
+  addressLine2: 'address.line2',
+  city: 'address.city',
+  country: 'address.country',
+  stateProvince: 'address.stateProvince',
+  postalCode: 'address.postalCode'
+};
+
+const BLOCKED_USER_FIELDS = [
+  '_id',
+  '__v',
+  'password',
+  'role',
+  'contentAreas',
+  'webauthn',
+  'webauthnRegistrationChallenge',
+  'webauthnAuthenticationChallenge',
+  'totp',
+  'createdAt',
+  'updatedAt'
+];
+
+function isPlainObject(value) {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    !Array.isArray(value)
+  );
+}
+
+function flattenObject(value, prefix = '', result = {}) {
+  for (const [key, childValue] of Object.entries(value)) {
+    const pathName = prefix ? `${prefix}.${key}` : key;
+
+    if (isPlainObject(childValue)) {
+      flattenObject(childValue, pathName, result);
+    } else {
+      result[pathName] = childValue;
+    }
+  }
+
+  return result;
+}
+
+function normalizeUserUpdates(value) {
+  const flattened = flattenObject(value);
+  const normalized = {};
+
+  for (const [field, fieldValue] of Object.entries(flattened)) {
+    const normalizedField = USER_FIELD_ALIASES[field] || field;
+    normalized[normalizedField] = fieldValue;
+  }
+
+  return normalized;
+}
+
+function parseJsonArgument(value, commandName) {
+  let parsed;
+
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error(
+      `${commandName} requires valid JSON. Remember to wrap it in single quotes.`
+    );
+  }
+
+  if (!isPlainObject(parsed)) {
+    throw new Error(`${commandName} JSON must contain an object`);
+  }
+
+  return parsed;
+}
+
+function isBlockedUserField(field) {
+  return BLOCKED_USER_FIELDS.some(blockedField => (
+    field === blockedField ||
+    field.startsWith(`${blockedField}.`)
+  ));
+}
+
+function validateUserUpdateFields(User, updates) {
+  const fields = Object.keys(updates);
+
+  if (!fields.length) {
+    throw new Error('No fields were supplied');
+  }
+
+  for (const field of fields) {
+    if (isBlockedUserField(field)) {
+      throw new Error(
+        `Field "${field}" cannot be changed with this command`
+      );
+    }
+
+    if (!User.schema.path(field)) {
+      throw new Error(
+        `Unknown user field "${field}"`
+      );
+    }
+  }
+}
+
+function buildUserIdentifierQuery(identifier) {
+  const conditions = [
+    { username: identifier },
+    { email: identifier.toLowerCase() }
+  ];
+
+  if (mongoose.Types.ObjectId.isValid(identifier)) {
+    conditions.push({ _id: identifier });
+  }
+
+  return { $or: conditions };
+}
+
+function isEmptyUserField(value) {
+  if (value === undefined || value === null) {
+    return true;
+  }
+
+  if (typeof value === 'string') {
+    return value.trim() === '';
+  }
+
+  if (Array.isArray(value)) {
+    return value.length === 0;
+  }
+
+  return false;
+}
+
+function formatUpdateValue(value) {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return JSON.stringify(value);
+}
+
 // ─────────────────────────────────────────────
 // Commands
 // ─────────────────────────────────────────────
@@ -78,12 +229,12 @@ async function cmdListUsers() {
 
   console.table(
     users.map(user => ({
-      username:     user.username,
-      email:        user.email,
-      accountName:  user.accountName,
-      role:         user.role,
+      username: user.username,
+      email: user.email,
+      accountName: user.accountName,
+      role: user.role,
       contentAreas: user.contentAreas?.join(', ') || '',
-      createdAt:    user.createdAt ? user.createdAt.toISOString() : 'unknown'
+      createdAt: user.createdAt ? user.createdAt.toISOString() : 'unknown'
     }))
   );
   console.log(`\nTotal users: ${users.length}`);
@@ -98,9 +249,9 @@ async function cmdListEvents(full) {
     Event.populate.bind(Event)(field, 'username accountName role');
 
   const events = await Event.find()
-    .populate('createdBy',   'username accountName role')
-    .populate('updatedBy',   'username accountName role')
-    .populate('reviewedBy',  'username accountName role')
+    .populate('createdBy', 'username accountName role')
+    .populate('updatedBy', 'username accountName role')
+    .populate('reviewedBy', 'username accountName role')
     .populate('publishedBy', 'username accountName role')
     .populate('publicationPermission.confirmedBy', 'username accountName role')
     .sort({ createdAt: -1 })
@@ -108,22 +259,22 @@ async function cmdListEvents(full) {
 
   console.table(
     events.map(event => ({
-      id:             event._id.toString(),
-      titleEn:        event.title?.en || '',
-      titleFr:        event.title?.fr || '',
-      city:           event.city || '',
-      region:         event.provinceRegion || '',
-      entity:         event.organizingEntity || '',
-      eventType:      event.eventType || '',
-      timezone:       event.timezone || '',
-      start:          formatDate(event.startDate),
-      end:            formatDate(event.endDate),
-      allDay:         event.allDay === true,
+      id: event._id.toString(),
+      titleEn: event.title?.en || '',
+      titleFr: event.title?.fr || '',
+      city: event.city || '',
+      region: event.provinceRegion || '',
+      entity: event.organizingEntity || '',
+      eventType: event.eventType || '',
+      timezone: event.timezone || '',
+      start: formatDate(event.startDate),
+      end: formatDate(event.endDate),
+      allDay: event.allDay === true,
       submitterEmail: event.submitter?.email || '',
-      permission:     event.publicationPermission?.confirmed === true,
-      status:         event.status || '',
-      createdBy:      getUsername(event.createdBy),
-      lastSubmitted:  formatDate(event.lastSubmittedAt)
+      permission: event.publicationPermission?.confirmed === true,
+      status: event.status || '',
+      createdBy: getUsername(event.createdBy),
+      lastSubmitted: formatDate(event.lastSubmittedAt)
     }))
   );
 
@@ -133,40 +284,40 @@ async function cmdListEvents(full) {
       console.log(`Event ${index + 1}`);
       console.dir(
         {
-          id:                  event._id.toString(),
-          title:               event.title,
-          description:         event.description,
-          location:            event.location,
-          registration:        event.registration,
-          city:                event.city,
-          provinceRegion:      event.provinceRegion,
-          organizingEntity:    event.organizingEntity,
-          eventType:           event.eventType,
-          timezone:            event.timezone,
-          startDate:           formatDate(event.startDate),
-          endDate:             formatDate(event.endDate),
-          allDay:              event.allDay,
-          imagePath:           event.imagePath,
-          contentArea:         event.contentArea,
-          submitter:           event.submitter,
+          id: event._id.toString(),
+          title: event.title,
+          description: event.description,
+          location: event.location,
+          registration: event.registration,
+          city: event.city,
+          provinceRegion: event.provinceRegion,
+          organizingEntity: event.organizingEntity,
+          eventType: event.eventType,
+          timezone: event.timezone,
+          startDate: formatDate(event.startDate),
+          endDate: formatDate(event.endDate),
+          allDay: event.allDay,
+          imagePath: event.imagePath,
+          contentArea: event.contentArea,
+          submitter: event.submitter,
           publicationPermission: {
-            confirmed:   event.publicationPermission?.confirmed,
+            confirmed: event.publicationPermission?.confirmed,
             confirmedAt: formatDate(event.publicationPermission?.confirmedAt),
             confirmedBy: getUsername(event.publicationPermission?.confirmedBy)
           },
-          status:              event.status,
-          rejectionReason:     event.rejectionReason,
-          createdBy:           getUsername(event.createdBy),
-          updatedBy:           getUsername(event.updatedBy),
-          reviewedBy:          getUsername(event.reviewedBy),
-          publishedBy:         getUsername(event.publishedBy),
-          reviewedAt:          formatDate(event.reviewedAt),
-          publishedAt:         formatDate(event.publishedAt),
-          lastSubmittedAt:     formatDate(event.lastSubmittedAt),
-          deleteRequested:     event.deleteRequested,
+          status: event.status,
+          rejectionReason: event.rejectionReason,
+          createdBy: getUsername(event.createdBy),
+          updatedBy: getUsername(event.updatedBy),
+          reviewedBy: getUsername(event.reviewedBy),
+          publishedBy: getUsername(event.publishedBy),
+          reviewedAt: formatDate(event.reviewedAt),
+          publishedAt: formatDate(event.publishedAt),
+          lastSubmittedAt: formatDate(event.lastSubmittedAt),
+          deleteRequested: event.deleteRequested,
           deleteRequestReason: event.deleteRequestReason,
-          createdAt:           formatDate(event.createdAt),
-          updatedAt:           formatDate(event.updatedAt)
+          createdAt: formatDate(event.createdAt),
+          updatedAt: formatDate(event.updatedAt)
         },
         { depth: null, colors: true }
       );
@@ -186,31 +337,31 @@ function printFullRetirementMessage(message, index) {
     {
       id: String(message._id),
       retiree: {
-        rank:           message.retiree?.rank || '—',
-        firstName:      message.retiree?.firstName || '—',
-        lastName:       message.retiree?.lastName || '—',
-        tradeRole:      message.retiree?.tradeRole || '—',
+        rank: message.retiree?.rank || '—',
+        firstName: message.retiree?.firstName || '—',
+        lastName: message.retiree?.lastName || '—',
+        tradeRole: message.retiree?.tradeRole || '—',
         yearsOfService: message.retiree?.yearsOfService || '—',
         retirementDate: formatDate(message.retiree?.retirementDate)
       },
-      message:         message.message,
+      message: message.message,
       messageLanguage: message.messageLanguage,
-      photoUrl:        message.photoUrl,
+      photoUrl: message.photoUrl,
       submitter: {
-        firstName:    message.submitter?.firstName || '—',
-        lastName:     message.submitter?.lastName || '—',
+        firstName: message.submitter?.firstName || '—',
+        lastName: message.submitter?.lastName || '—',
         relationship: message.submitter?.relationship || '—',
-        email:        message.submitter?.email || '—',
-        unit:         message.submitter?.unit || '—'
+        email: message.submitter?.email || '—',
+        unit: message.submitter?.unit || '—'
       },
       publicationConsent: {
-        confirmed:   message.publicationConsent?.confirmed === true,
+        confirmed: message.publicationConsent?.confirmed === true,
         confirmedAt: formatDate(message.publicationConsent?.confirmedAt)
       },
       status: message.status,
       review: {
-        reviewedBy:      formatUser(message.reviewedBy),
-        reviewedAt:      formatDate(message.reviewedAt),
+        reviewedBy: formatUser(message.reviewedBy),
+        reviewedAt: formatDate(message.reviewedAt),
         rejectionReason: message.rejectionReason || '—'
       },
       publication: {
@@ -242,24 +393,24 @@ async function cmdListRetirementMessages(full) {
 
   console.table(
     messages.map(message => ({
-      id:         String(message._id).slice(-8),
-      retiree:    [
+      id: String(message._id).slice(-8),
+      retiree: [
         message.retiree?.rank,
         message.retiree?.firstName,
         message.retiree?.lastName
       ].filter(Boolean).join(' '),
-      service:    message.retiree?.yearsOfService || '—',
+      service: message.retiree?.yearsOfService || '—',
       retirement: message.retiree?.retirementDate
         ? new Date(message.retiree.retirementDate).toISOString().slice(0, 10)
         : '—',
-      language:   message.messageLanguage,
-      status:     message.status,
-      submitter:  [
+      language: message.messageLanguage,
+      status: message.status,
+      submitter: [
         message.submitter?.firstName,
         message.submitter?.lastName
       ].filter(Boolean).join(' '),
-      message:    truncate(message.message),
-      submitted:  message.createdAt
+      message: truncate(message.message),
+      submitted: message.createdAt
         ? new Date(message.createdAt).toISOString().slice(0, 10)
         : '—'
     }))
@@ -271,6 +422,172 @@ async function cmdListRetirementMessages(full) {
     messages.forEach(printFullRetirementMessage);
   } else {
     console.log('\nRun with --full to view complete records.');
+  }
+}
+
+/**
+ * Update fields on one user.
+ *
+ * Example:
+ * node scripts/admin.js update-user someone@example.com \
+ *   '{"rank":"Cpl","address":{"city":"Québec City"}}'
+ */
+async function cmdUpdateUser(identifier, updateJson) {
+  const User = require('../models/User');
+
+  const suppliedUpdates = parseJsonArgument(
+    updateJson,
+    'update-user'
+  );
+
+  const updates = normalizeUserUpdates(suppliedUpdates);
+
+  validateUserUpdateFields(User, updates);
+
+  const existingUser = await User.findOne(
+    buildUserIdentifierQuery(identifier)
+  );
+
+  if (!existingUser) {
+    throw new Error(`User "${identifier}" was not found`);
+  }
+
+  const previousValues = {};
+
+  for (const field of Object.keys(updates)) {
+    previousValues[field] = existingUser.get(field);
+  }
+
+  const updatedUser = await User.findOneAndUpdate(
+    { _id: existingUser._id },
+    { $set: updates },
+    {
+      new: true,
+      runValidators: true,
+      context: 'query'
+    }
+  );
+
+  console.log(`Updated user: ${updatedUser.username}\n`);
+
+  console.table(
+    Object.entries(updates).map(([field, newValue]) => ({
+      field,
+      previous: formatUpdateValue(previousValues[field]),
+      updated: formatUpdateValue(newValue)
+    }))
+  );
+}
+
+/**
+ * Fill blank or missing fields across all users.
+ *
+ * Dry run:
+ * node scripts/admin.js fill-empty-users \
+ *   '{"country":"Canada","stateProvince":"Quebec"}'
+ *
+ * Apply:
+ * node scripts/admin.js fill-empty-users \
+ *   '{"country":"Canada","stateProvince":"Quebec"}' --apply
+ */
+async function cmdFillEmptyUsers(updateJson, applyChanges) {
+  const User = require('../models/User');
+
+  const suppliedUpdates = parseJsonArgument(
+    updateJson,
+    'fill-empty-users'
+  );
+
+  const defaults = normalizeUserUpdates(suppliedUpdates);
+
+  validateUserUpdateFields(User, defaults);
+
+  for (const [field, value] of Object.entries(defaults)) {
+    if (isEmptyUserField(value)) {
+      throw new Error(
+        `The backfill value for "${field}" cannot itself be empty`
+      );
+    }
+  }
+
+  const users = await User.find().sort({ createdAt: 1 });
+  const pendingUpdates = [];
+
+  for (const user of users) {
+    const updates = {};
+
+    for (const [field, defaultValue] of Object.entries(defaults)) {
+      const currentValue = user.get(field);
+
+      if (isEmptyUserField(currentValue)) {
+        updates[field] = defaultValue;
+      }
+    }
+
+    if (Object.keys(updates).length) {
+      pendingUpdates.push({
+        user,
+        updates
+      });
+    }
+  }
+
+  if (!pendingUpdates.length) {
+    console.log('No blank fields matched. Nothing to update.');
+    return;
+  }
+
+  console.table(
+    pendingUpdates.map(({ user, updates }) => ({
+      username: user.username,
+      email: user.email,
+      fields: Object.keys(updates).join(', '),
+      values: Object.entries(updates)
+        .map(([field, value]) => `${field}=${formatUpdateValue(value)}`)
+        .join(', ')
+    }))
+  );
+
+  console.log(
+    `\nUsers requiring updates: ${pendingUpdates.length}`
+  );
+
+  if (!applyChanges) {
+    console.log(
+      '\nDry run only. Run the command again with --apply to save these changes.'
+    );
+    return;
+  }
+
+  let updatedCount = 0;
+  const failures = [];
+
+  for (const { user, updates } of pendingUpdates) {
+    try {
+      await User.updateOne(
+        { _id: user._id },
+        { $set: updates },
+        {
+          runValidators: true,
+          context: 'query'
+        }
+      );
+
+      updatedCount += 1;
+    } catch (error) {
+      failures.push({
+        username: user.username,
+        error: error.message
+      });
+    }
+  }
+
+  console.log(`\nUpdated users: ${updatedCount}`);
+
+  if (failures.length) {
+    console.log(`Failed updates: ${failures.length}`);
+    console.table(failures);
+    process.exitCode = 1;
   }
 }
 
@@ -296,10 +613,10 @@ async function cmdSetRole(username, role, contentAreasArg) {
   if (!user) throw new Error(`User "${username}" was not found`);
 
   console.table([{
-    username:     user.username,
-    email:        user.email,
-    accountName:  user.accountName,
-    role:         user.role,
+    username: user.username,
+    email: user.email,
+    accountName: user.accountName,
+    role: user.role,
     contentAreas: user.contentAreas.join(', ')
   }]);
 }
@@ -462,7 +779,10 @@ User management
   list-users                              List all users
   search <query>                          Search users via admin API
   set-role <username> <role> [areas]      Set role directly in DB
-                                            areas: comma-separated content areas (author only)
+  update-user <user> '<json>'             Update one user by username,
+                                            email, or MongoDB ID
+  fill-empty-users '<json>'               Preview filling blank fields
+  fill-empty-users '<json>' --apply       Apply blank-field updates
   promote <userId> <role>                 Change a user's role via admin API
 
 Events
@@ -486,7 +806,7 @@ Diagnostics
 async function run() {
   // Separate flags from positional args
   const raw = process.argv.slice(2);
-  const flags    = new Set(raw.filter(a => a.startsWith('--')));
+  const flags = new Set(raw.filter(a => a.startsWith('--')));
   const positional = raw.filter(a => !a.startsWith('--'));
   const [command, arg1, arg2, arg3] = positional;
 
@@ -495,7 +815,7 @@ async function run() {
     return;
   }
 
-  const needsDb    = DB_COMMANDS.has(command);
+  const needsDb = DB_COMMANDS.has(command);
   const needsToken = API_COMMANDS.has(command);
 
   try {
@@ -525,6 +845,29 @@ async function run() {
       case 'set-role':
         if (!arg1 || !arg2) throw new Error('Usage: node admin.js set-role <username> <role> [contentAreas]');
         await cmdSetRole(arg1, arg2, arg3);
+        break;
+
+      case 'update-user':
+        if (!arg1 || !arg2) {
+          throw new Error(
+            'Usage: node admin.js update-user <username-or-email> \'<json>\''
+          );
+        }
+
+        await cmdUpdateUser(arg1, arg2);
+        break;
+
+      case 'fill-empty-users':
+        if (!arg1) {
+          throw new Error(
+            'Usage: node admin.js fill-empty-users \'<json>\' [--apply]'
+          );
+        }
+
+        await cmdFillEmptyUsers(
+          arg1,
+          flags.has('--apply')
+        );
         break;
 
       case 'search':

@@ -412,10 +412,10 @@ const translations = {
 
     // Retirement messages
     retirements_page_title:
-      "Retirement Messages | CMCEN / RCMCE",
+      "Retirements | CMCEN / RCMCE",
 
     retirements_heading:
-      "Retirement Messages",
+      "Retirements",
 
     retirements_loading:
       "Loading retirement messages...",
@@ -971,7 +971,7 @@ const translations = {
       "Recognition",
 
     home_retirements_title:
-      "Retirement Messages",
+      "Retirements",
 
     home_retirements_intro:
       "Celebrate retiring members and read messages shared by the C&E community.",
@@ -986,7 +986,7 @@ const translations = {
 
 
     retirement_submit_eyebrow:
-      "Retirement Messages",
+      "Retirements",
 
     retirement_submit_title:
       "Submit a Retirement Message",

@@ -8,7 +8,9 @@
       content="width=device-width, initial-scale=1.0"
     />
 
-    <title>Retirement Message | CMCEN / RCMCE</title>
+    <title data-i18n="retirement_detail_page_title">
+      Retirement Message | CMCEN / RCMCE
+    </title>
 
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -26,6 +28,7 @@
           id="retirementDetailMessage"
           role="status"
           aria-live="polite"
+          data-i18n="retirement_detail_loading"
         >
           Loading retirement message...
         </p>
@@ -37,7 +40,9 @@
               href="/retirements.html"
             >
               <span aria-hidden="true">←</span>
-              Back to retirement messages
+              <span data-i18n="retirement_detail_back">
+                Back to retirement messages
+              </span>
             </a>
 
             <h1 id="retirementDetailTitle"></h1>
@@ -61,6 +66,7 @@
             <section
               class="retirement-detail-message-section"
               aria-label="Retirement message"
+              data-i18n-aria-label="retirement_detail_message_label"
             >
               <p id="retirementDetailText"></p>
             </section>
@@ -69,12 +75,75 @@
               class="retirement-detail-comments"
               aria-labelledby="retirementCommentsHeading"
             >
-              <h2 id="retirementCommentsHeading">
+              <h2
+                id="retirementCommentsHeading"
+                data-i18n="retirement_comments_heading"
+              >
                 Comments
               </h2>
 
-              <p>
-                Comment section coming soon.
+              <p
+                class="retirement-comment-message"
+                id="retirementCommentMessage"
+                role="status"
+                aria-live="polite"
+                hidden
+              ></p>
+
+              <div
+                class="retirement-comment-list"
+                id="retirementCommentList"
+              ></div>
+
+              <form
+                class="retirement-comment-form"
+                id="retirementCommentForm"
+                novalidate
+                hidden
+              >
+                <label
+                  for="retirementCommentText"
+                  data-i18n="retirement_comment_add"
+                >
+                  Add a comment
+                </label>
+
+                <textarea
+                  id="retirementCommentText"
+                  name="body"
+                  rows="4"
+                  minlength="2"
+                  maxlength="2000"
+                  required
+                ></textarea>
+
+                <div class="retirement-comment-form-footer">
+                  <small data-i18n="retirement_comment_review_note">
+                    Comments may be reviewed before publication.
+                  </small>
+
+                  <button
+                    id="retirementCommentSubmit"
+                    type="submit"
+                    data-i18n="retirement_comment_post"
+                  >
+                    Post comment
+                  </button>
+                </div>
+              </form>
+
+              <p
+                class="retirement-comment-login"
+                id="retirementCommentLogin"
+                hidden
+              >
+                <a
+                  href="/login.html"
+                  data-i18n="retirement_comment_login_prefix"
+                >Sign in</a>
+                <span data-i18n="retirement_comment_login_suffix">
+                  to add a comment.
+                </span>
               </p>
             </section>
           </div>

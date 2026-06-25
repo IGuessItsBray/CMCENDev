@@ -238,11 +238,15 @@ const translations = {
     // Event review
     review_events_title: "Review Submissions",
     review_events_intro:
-      "Review pending event and retirement message submissions.",
+      "Review pending event, retirement message, and comment submissions.",
     review_events_tab:
       "Events",
     review_retirements_tab:
       "Retirement Messages",
+    review_comments_tab:
+      "Comments",
+    review_queues_label:
+      "Review queues",
     submitted_by: "Submitted by",
     submitted_on: "Submitted on",
     event_date_label: "Event date",
@@ -264,6 +268,10 @@ const translations = {
       "Loading retirement messages...",
     no_pending_retirement_messages:
       "There are no retirement messages awaiting review.",
+    loading_retirement_comments:
+      "Loading comments...",
+    no_pending_retirement_comments:
+      "There are no comments awaiting review.",
     review_access_denied:
       "You do not have permission to review submissions.",
     review_failed:
@@ -365,6 +373,142 @@ const translations = {
 
     retirement_review_reject_success:
       "Retirement message rejected successfully.",
+
+    comment_review_pending_submission:
+      "Pending comment",
+
+    comment_review_comment_record:
+      "Comment",
+
+    comment_review_related_record:
+      "Related retirement message",
+
+    comment_review_retiree_label:
+      "Retiree",
+
+    comment_rejection_reason_help:
+      "A reason is required only when rejecting the comment.",
+
+    comment_rejection_reason_required:
+      "Enter a reason before rejecting this comment.",
+
+    publish_comment:
+      "Publish",
+
+    reject_comment:
+      "Reject",
+
+    comment_review_failed:
+      "The comment could not be reviewed.",
+
+    comment_review_load_error:
+      "The comment review queue could not be loaded.",
+
+    comment_review_publish_success:
+      "Comment published successfully.",
+
+    comment_review_reject_success:
+      "Comment rejected successfully.",
+
+    // Retirement messages
+    retirements_page_title:
+      "Retirement Messages | CMCEN / RCMCE",
+
+    retirements_heading:
+      "Retirement Messages",
+
+    retirements_loading:
+      "Loading retirement messages...",
+
+    retirements_empty:
+      "No retirement messages have been published yet.",
+
+    retirements_load_error:
+      "Could not load retirement messages.",
+
+    retirement_card_default_name:
+      "Retiring member",
+
+    retirement_mosid_pending:
+      "MOSID pending",
+
+    retirement_card_aria:
+      "Read retirement message for {name}",
+
+    retirement_photo_alt:
+      "{name} retirement photo",
+
+    retirement_comment_singular:
+      "{count} comment",
+
+    retirement_comment_plural:
+      "{count} comments",
+
+    retirement_detail_page_title:
+      "Retirement Message | CMCEN / RCMCE",
+
+    retirement_detail_title:
+      "Retirement: {name}",
+
+    retirement_detail_back:
+      "Back to retirement messages",
+
+    retirement_detail_message_label:
+      "Retirement message",
+
+    retirement_detail_loading:
+      "Loading retirement message...",
+
+    retirement_detail_no_selection:
+      "No retirement message was selected.",
+
+    retirement_detail_load_error:
+      "Could not load retirement message.",
+
+    retirement_date_pending:
+      "Retirement date pending",
+
+    retirement_date_label:
+      "Retirement date: {date}",
+
+    retirement_comments_heading:
+      "Comments",
+
+    retirement_comment_add:
+      "Add a comment",
+
+    retirement_comment_review_note:
+      "Comments may be reviewed before publication.",
+
+    retirement_comment_post:
+      "Post comment",
+
+    retirement_comment_posting:
+      "Posting...",
+
+    retirement_comment_login_prefix:
+      "Sign in",
+
+    retirement_comment_login_suffix:
+      "to add a comment.",
+
+    retirement_comment_empty:
+      "No comments yet.",
+
+    retirement_comments_load_error:
+      "Could not load comments.",
+
+    retirement_comment_sign_in_again:
+      "Sign in again to add a comment.",
+
+    retirement_comment_submit_error:
+      "Could not submit comment.",
+
+    retirement_comment_published:
+      "Comment published.",
+
+    retirement_comment_submitted:
+      "Comment submitted for review.",
 
     // About page
     about_family_heading:
@@ -1238,11 +1382,15 @@ const translations = {
     review_events_title:
       "Réviser les soumissions",
     review_events_intro:
-      "Révisez les événements et les messages de retraite soumis en attente.",
+      "Révisez les événements, les messages de retraite et les commentaires soumis en attente.",
     review_events_tab:
       "Événements",
     review_retirements_tab:
       "Messages de retraite",
+    review_comments_tab:
+      "Commentaires",
+    review_queues_label:
+      "Files de révision",
     submitted_by: "Soumis par",
     submitted_on: "Soumis le",
     event_date_label:
@@ -1266,6 +1414,10 @@ const translations = {
       "Chargement des messages de retraite...",
     no_pending_retirement_messages:
       "Aucun message de retraite n'est en attente de révision.",
+    loading_retirement_comments:
+      "Chargement des commentaires...",
+    no_pending_retirement_comments:
+      "Aucun commentaire n'est en attente de révision.",
     review_access_denied:
       "Vous n'avez pas l'autorisation de réviser les soumissions.",
     review_failed:
@@ -1367,6 +1519,142 @@ const translations = {
 
     retirement_review_reject_success:
       "Message de retraite refusé avec succès.",
+
+    comment_review_pending_submission:
+      "Commentaire en attente de révision",
+
+    comment_review_comment_record:
+      "Commentaire",
+
+    comment_review_related_record:
+      "Message de retraite associé",
+
+    comment_review_retiree_label:
+      "Personne retraitée",
+
+    comment_rejection_reason_help:
+      "Un motif est requis uniquement lorsque le commentaire est refusé.",
+
+    comment_rejection_reason_required:
+      "Indiquez un motif avant de refuser ce commentaire.",
+
+    publish_comment:
+      "Publier",
+
+    reject_comment:
+      "Refuser",
+
+    comment_review_failed:
+      "Impossible de réviser le commentaire.",
+
+    comment_review_load_error:
+      "Impossible de charger la file de révision des commentaires.",
+
+    comment_review_publish_success:
+      "Commentaire publié avec succès.",
+
+    comment_review_reject_success:
+      "Commentaire refusé avec succès.",
+
+    // Messages de retraite
+    retirements_page_title:
+      "Messages de retraite | CMCEN / RCMCE",
+
+    retirements_heading:
+      "Messages de retraite",
+
+    retirements_loading:
+      "Chargement des messages de retraite...",
+
+    retirements_empty:
+      "Aucun message de retraite n'a encore été publié.",
+
+    retirements_load_error:
+      "Impossible de charger les messages de retraite.",
+
+    retirement_card_default_name:
+      "Membre prenant sa retraite",
+
+    retirement_mosid_pending:
+      "ID SGPM en attente",
+
+    retirement_card_aria:
+      "Lire le message de retraite de {name}",
+
+    retirement_photo_alt:
+      "Photo de retraite de {name}",
+
+    retirement_comment_singular:
+      "{count} commentaire",
+
+    retirement_comment_plural:
+      "{count} commentaires",
+
+    retirement_detail_page_title:
+      "Message de retraite | CMCEN / RCMCE",
+
+    retirement_detail_title:
+      "Retraite : {name}",
+
+    retirement_detail_back:
+      "Retour aux messages de retraite",
+
+    retirement_detail_message_label:
+      "Message de retraite",
+
+    retirement_detail_loading:
+      "Chargement du message de retraite...",
+
+    retirement_detail_no_selection:
+      "Aucun message de retraite n'a été sélectionné.",
+
+    retirement_detail_load_error:
+      "Impossible de charger le message de retraite.",
+
+    retirement_date_pending:
+      "Date de retraite en attente",
+
+    retirement_date_label:
+      "Date de retraite : {date}",
+
+    retirement_comments_heading:
+      "Commentaires",
+
+    retirement_comment_add:
+      "Ajouter un commentaire",
+
+    retirement_comment_review_note:
+      "Les commentaires peuvent être révisés avant publication.",
+
+    retirement_comment_post:
+      "Publier le commentaire",
+
+    retirement_comment_posting:
+      "Publication en cours...",
+
+    retirement_comment_login_prefix:
+      "Ouvrir une session",
+
+    retirement_comment_login_suffix:
+      "pour ajouter un commentaire.",
+
+    retirement_comment_empty:
+      "Aucun commentaire pour l'instant.",
+
+    retirement_comments_load_error:
+      "Impossible de charger les commentaires.",
+
+    retirement_comment_sign_in_again:
+      "Ouvrez une nouvelle session pour ajouter un commentaire.",
+
+    retirement_comment_submit_error:
+      "Impossible de soumettre le commentaire.",
+
+    retirement_comment_published:
+      "Commentaire publié.",
+
+    retirement_comment_submitted:
+      "Commentaire soumis pour révision.",
 
     // Page À propos
     about_family_heading:
@@ -1968,6 +2256,11 @@ function applyLanguage(lang) {
   document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
     const key = el.getAttribute("data-i18n-placeholder");
     el.placeholder = translate(key, {}, lang);
+  });
+
+  document.querySelectorAll("[data-i18n-aria-label]").forEach(el => {
+    const key = el.getAttribute("data-i18n-aria-label");
+    el.setAttribute("aria-label", translate(key, {}, lang));
   });
 
   document.documentElement.setAttribute("lang", lang);

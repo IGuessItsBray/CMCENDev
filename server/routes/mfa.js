@@ -65,6 +65,33 @@ function normalizeAuthenticationOptions(opts) {
   };
 }
 
+function serializeCredential(credential, index) {
+  return {
+    id: credential.credentialID,
+    nickname: credential.nickname || `Passkey ${index + 1}`,
+    transports: credential.transports || [],
+    counter: credential.counter || 0,
+    credentialDeviceType: credential.credentialDeviceType || '',
+    credentialBackedUp: Boolean(credential.credentialBackedUp)
+  };
+}
+
+function isValidWebAuthnCredential(credential) {
+  return Boolean(credential?.credentialID && credential?.publicKey);
+}
+
+function hasActiveTotp(user) {
+  return user.totp?.enabled === true && Boolean(user.totp?.secret);
+}
+
+function countActiveMfaMethods(user) {
+  const passkeyCount = Array.isArray(user.webauthn)
+    ? user.webauthn.filter(isValidWebAuthnCredential).length
+    : 0;
+
+  return passkeyCount + (hasActiveTotp(user) ? 1 : 0);
+}
+
 // WebAuthn registration options
 router.post('/webauthn/register/options', authMiddleware, async (req, res) => {
   try {
@@ -152,7 +179,8 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
       counter: verifiedCredential.counter || registrationInfo.counter || 0,
       transports: verifiedCredential.transports || body.transports || [],
       credentialDeviceType: registrationInfo.credentialDeviceType || '',
-      credentialBackedUp: Boolean(registrationInfo.credentialBackedUp)
+      credentialBackedUp: Boolean(registrationInfo.credentialBackedUp),
+      nickname: String(body.nickname || '').trim()
     };
 
     console.log('webauthn/register/verify -> storing credential id length:', idB64url?.length);
@@ -287,6 +315,20 @@ router.post('/totp/setup', authMiddleware, async (req, res) => {
   }
 });
 
+router.get('/totp/status', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    res.json({
+      enabled: user.totp?.enabled === true,
+      pending: Boolean(user.totp?.secret) && user.totp?.enabled !== true
+    });
+  } catch (err) {
+    console.error('totp/status error', err);
+    res.status(500).json({ error: 'Could not fetch TOTP status' });
+  }
+});
+
 // TOTP QR refresh
 router.get('/totp/qrcode', authMiddleware, async (req, res) => {
   try {
@@ -341,16 +383,99 @@ router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
   }
 });
 
+router.delete('/totp', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const remainingMethods = countActiveMfaMethods({
+      ...user.toObject(),
+      totp: {
+        secret: '',
+        enabled: false
+      }
+    });
+
+    if (hasActiveTotp(user) && remainingMethods < 1) {
+      return res.status(400).json({
+        error: 'Add a passkey before disabling your only authenticator app method'
+      });
+    }
+
+    await User.findByIdAndUpdate(user._id, {
+      $set: {
+        'totp.secret': '',
+        'totp.enabled': false
+      }
+    });
+
+    res.json({ enabled: false, pending: false });
+  } catch (err) {
+    console.error('totp/disable error', err);
+    res.status(500).json({ error: 'Could not disable TOTP' });
+  }
+});
+
 // Return user's WebAuthn credentials array
 router.get('/webauthn/credentials', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const creds = user.webauthn || [];
     console.log('webauthn/credentials -> user:', String(user._id), 'count:', creds.length);
-    res.json(creds);
+    res.json(creds.map(serializeCredential));
   } catch (err) {
     console.error('webauthn/credentials error', err);
     res.status(500).json({ error: 'Could not fetch credentials' });
+  }
+});
+
+router.patch('/webauthn/credentials/:credentialID', authMiddleware, async (req, res) => {
+  try {
+    const nickname = String(req.body?.nickname || '').trim().slice(0, 80);
+
+    const updated = await User.findOneAndUpdate(
+      { _id: req.user._id, 'webauthn.credentialID': req.params.credentialID },
+      { $set: { 'webauthn.$.nickname': nickname } },
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ error: 'Passkey not found' });
+
+    res.json((updated.webauthn || []).map(serializeCredential));
+  } catch (err) {
+    console.error('webauthn/credentials rename error', err);
+    res.status(500).json({ error: 'Could not rename passkey' });
+  }
+});
+
+router.delete('/webauthn/credentials/:credentialID', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const creds = Array.isArray(user.webauthn) ? user.webauthn : [];
+    const credentialExists = creds.some(c => c.credentialID === req.params.credentialID);
+
+    if (!credentialExists) return res.status(404).json({ error: 'Passkey not found' });
+
+    const remainingCredentials = creds.filter(c => c.credentialID !== req.params.credentialID);
+    const remainingMethods = countActiveMfaMethods({
+      ...user.toObject(),
+      webauthn: remainingCredentials
+    });
+
+    if (isValidWebAuthnCredential(creds.find(c => c.credentialID === req.params.credentialID)) && remainingMethods < 1) {
+      return res.status(400).json({
+        error: 'Add another passkey or enable TOTP before deleting your last passkey'
+      });
+    }
+
+    const updated = await User.findByIdAndUpdate(
+      user._id,
+      { $pull: { webauthn: { credentialID: req.params.credentialID } } },
+      { new: true }
+    );
+
+    res.json((updated.webauthn || []).map(serializeCredential));
+  } catch (err) {
+    console.error('webauthn/credentials delete error', err);
+    res.status(500).json({ error: 'Could not delete passkey' });
   }
 });
 

@@ -71,9 +71,203 @@ document.addEventListener('DOMContentLoaded', () => {
       return res.json();
     }
 
+    function credentialLabel(credential, index) {
+      return credential.nickname || `Passkey ${index + 1}`;
+    }
+
+    function describeCredential(credential) {
+      const parts = [];
+
+      if (credential.credentialDeviceType) {
+        parts.push(credential.credentialDeviceType === 'multiDevice'
+          ? 'Synced passkey'
+          : 'Device-bound passkey');
+      }
+
+      if (Array.isArray(credential.transports) && credential.transports.length) {
+        parts.push(credential.transports.join(', '));
+      }
+
+      if (credential.credentialBackedUp) {
+        parts.push('backed up');
+      }
+
+      return parts.join(' · ') || 'Passkey';
+    }
+
+    async function loadPasskeys() {
+      const list = document.getElementById('passkey-list');
+      if (!list) return;
+
+      list.textContent = 'Loading passkeys...';
+
+      try {
+        const credentials = await api('/api/mfa/webauthn/credentials');
+
+        if (!Array.isArray(credentials) || credentials.length === 0) {
+          list.innerHTML = '<p class="passkey-empty">No passkeys registered yet.</p>';
+          return;
+        }
+
+        list.replaceChildren(
+          ...credentials.map((credential, index) => {
+            const item = document.createElement('div');
+            item.className = 'passkey-item';
+
+            const details = document.createElement('div');
+            details.className = 'passkey-details';
+
+            const title = document.createElement('strong');
+            title.textContent = credentialLabel(credential, index);
+
+            const meta = document.createElement('span');
+            meta.textContent = describeCredential(credential);
+
+            details.append(title, meta);
+
+            const actions = document.createElement('div');
+            actions.className = 'passkey-actions';
+
+            const rename = document.createElement('button');
+            rename.className = 'mfa-link-button';
+            rename.type = 'button';
+            rename.textContent = 'Rename';
+            rename.dataset.action = 'rename-passkey';
+            rename.dataset.credentialId = credential.id;
+            rename.dataset.currentName = credentialLabel(credential, index);
+
+            const remove = document.createElement('button');
+            remove.className = 'mfa-link-button mfa-link-button-danger';
+            remove.type = 'button';
+            remove.textContent = 'Delete';
+            remove.dataset.action = 'delete-passkey';
+            remove.dataset.credentialId = credential.id;
+            remove.dataset.currentName = credentialLabel(credential, index);
+
+            actions.append(rename, remove);
+            item.append(details, actions);
+
+            return item;
+          })
+        );
+      } catch (error) {
+        list.innerHTML = `<p class="passkey-empty">${error.message}</p>`;
+      }
+    }
+
+    async function renamePasskey(credentialID, currentName) {
+      const nickname = prompt('Passkey name', currentName || '');
+
+      if (nickname === null) return;
+
+      await api(`/api/mfa/webauthn/credentials/${encodeURIComponent(credentialID)}`, {
+        method: 'PATCH',
+        json: true,
+        body: JSON.stringify({ nickname })
+      });
+
+      await loadPasskeys();
+    }
+
+    async function deletePasskey(credentialID, currentName) {
+      const label = currentName || 'this passkey';
+
+      if (!confirm(`Delete ${label}?`)) return;
+
+      await api(`/api/mfa/webauthn/credentials/${encodeURIComponent(credentialID)}`, {
+        method: 'DELETE',
+        json: true,
+        body: JSON.stringify({})
+      });
+
+      await loadPasskeys();
+    }
+
+    function renderTotpStatus(status) {
+      const container = document.getElementById('totp-status');
+      if (!container) return;
+
+      const enabled = status?.enabled === true;
+      const pending = status?.pending === true;
+      const title = enabled
+        ? 'Enabled'
+        : pending
+          ? 'Setup pending'
+          : 'Not enabled';
+      const detail = enabled
+        ? 'Authenticator app codes are active for this account.'
+        : pending
+          ? 'A secret has been generated. Verify a six-digit code to activate it.'
+          : 'Set up an authenticator app to use six-digit login codes.';
+
+      container.replaceChildren();
+
+      const item = document.createElement('div');
+      item.className = 'totp-status-card';
+
+      const copy = document.createElement('div');
+      copy.className = 'passkey-details';
+
+      const strong = document.createElement('strong');
+      strong.textContent = title;
+
+      const span = document.createElement('span');
+      span.textContent = detail;
+
+      copy.append(strong, span);
+
+      const actions = document.createElement('div');
+      actions.className = 'passkey-actions';
+
+      if (enabled || pending) {
+        const disable = document.createElement('button');
+        disable.className = 'mfa-link-button mfa-link-button-danger';
+        disable.type = 'button';
+        disable.textContent = enabled ? 'Disable' : 'Cancel setup';
+        disable.dataset.action = 'disable-totp';
+        actions.appendChild(disable);
+      }
+
+      item.append(copy, actions);
+      container.appendChild(item);
+    }
+
+    async function loadTotpStatus() {
+      const container = document.getElementById('totp-status');
+      if (!container) return;
+
+      container.textContent = 'Loading authenticator app status...';
+
+      try {
+        renderTotpStatus(await api('/api/mfa/totp/status'));
+      } catch (error) {
+        container.innerHTML = `<p class="passkey-empty">${error.message}</p>`;
+      }
+    }
+
+    async function disableTotp() {
+      if (!confirm('Disable authenticator app MFA?')) return;
+
+      const status = await api('/api/mfa/totp', {
+        method: 'DELETE',
+        json: true,
+        body: JSON.stringify({})
+      });
+
+      const container = document.getElementById('totp-otpauth');
+      if (container) container.replaceChildren();
+
+      const code = document.getElementById('totp-code');
+      if (code) code.value = '';
+
+      renderTotpStatus(status);
+    }
+
     // Wire TOTP buttons
     const totpSetupBtn = document.getElementById('totp-setup');
     const totpVerifyBtn = document.getElementById('totp-verify');
+    const totpRefreshBtn = document.getElementById('totp-refresh');
+    const totpStatus = document.getElementById('totp-status');
 
     if (totpSetupBtn) totpSetupBtn.addEventListener('click', async () => {
       try {
@@ -116,6 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
           container.appendChild(secret);
         }
         alert('TOTP secret created. Scan the QR or otpauth URL with your authenticator.');
+        await loadTotpStatus();
       } catch (e) { alert('Error: '+e.message); }
       finally { totpSetupBtn.disabled = false; }
     });
@@ -134,7 +329,12 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         const j = await res.json();
-        if (res.ok) alert('TOTP verified'); else alert('Verify failed: '+(j.error||JSON.stringify(j)));
+        if (res.ok) {
+          alert('TOTP verified');
+          await loadTotpStatus();
+        } else {
+          alert('Verify failed: '+(j.error||JSON.stringify(j)));
+        }
       } catch (e) { alert('Error: '+e.message); }
       finally { totpVerifyBtn.disabled = false; }
     });
@@ -142,6 +342,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // WebAuthn handlers
     const waRegisterBtn = document.getElementById('webauthn-register');
     const waAuthBtn = document.getElementById('webauthn-authenticate');
+    const passkeyRefreshBtn = document.getElementById('passkey-refresh');
+    const passkeyList = document.getElementById('passkey-list');
 
     if (waRegisterBtn) waRegisterBtn.addEventListener('click', async () => {
       try {
@@ -175,7 +377,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const j = await verifyRes.json();
-        if (verifyRes.ok) alert('Passkey registered'); else alert('Register failed: '+(j.error||JSON.stringify(j)));
+        if (verifyRes.ok) {
+          alert('Passkey registered');
+          await loadPasskeys();
+        } else {
+          alert('Register failed: '+(j.error||JSON.stringify(j)));
+        }
       } catch (e) { alert('Error: '+e.message); }
       finally { waRegisterBtn.disabled = false; }
     });
@@ -216,6 +423,59 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) { alert('Error: '+e.message); }
       finally { waAuthBtn.disabled = false; }
     });
+
+    if (passkeyRefreshBtn) {
+      passkeyRefreshBtn.addEventListener('click', loadPasskeys);
+    }
+
+    if (totpRefreshBtn) {
+      totpRefreshBtn.addEventListener('click', loadTotpStatus);
+    }
+
+    if (totpStatus) {
+      totpStatus.addEventListener('click', async event => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+
+        try {
+          button.disabled = true;
+
+          if (button.dataset.action === 'disable-totp') {
+            await disableTotp();
+          }
+        } catch (error) {
+          alert('Error: ' + error.message);
+        } finally {
+          button.disabled = false;
+        }
+      });
+    }
+
+    if (passkeyList) {
+      passkeyList.addEventListener('click', async event => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+
+        try {
+          button.disabled = true;
+
+          if (button.dataset.action === 'rename-passkey') {
+            await renamePasskey(button.dataset.credentialId, button.dataset.currentName);
+          }
+
+          if (button.dataset.action === 'delete-passkey') {
+            await deletePasskey(button.dataset.credentialId, button.dataset.currentName);
+          }
+        } catch (error) {
+          alert('Error: ' + error.message);
+        } finally {
+          button.disabled = false;
+        }
+      });
+    }
+
+    await loadTotpStatus();
+    await loadPasskeys();
 
   })();
 });

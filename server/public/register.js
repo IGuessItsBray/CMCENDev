@@ -4,6 +4,239 @@ const registerError = document.getElementById("registerError");
 const passwordInput = document.getElementById("regPassword");
 const passwordConfirmationInput = document.getElementById("regPasswordConfirmation");
 const passwordStrength = document.getElementById("passwordStrength");
+const registerMfa = document.getElementById("registerMfa");
+const registerMfaError = document.getElementById("registerMfaError");
+const registerMfaOptions = document.getElementById("registerMfaOptions");
+const registerPasskeyOption = document.getElementById("registerPasskeyOption");
+const registerTotpOption = document.getElementById("registerTotpOption");
+const registerTotpSetup = document.getElementById("registerTotpSetup");
+const registerTotpOutput = document.getElementById("registerTotpOutput");
+const registerTotpCode = document.getElementById("registerTotpCode");
+const registerTotpVerify = document.getElementById("registerTotpVerify");
+
+let registrationToken = "";
+
+function normalizeToken(value) {
+  return String(value || "").trim().replace(/^Bearer\s+/i, "");
+}
+
+function setStoredToken(token) {
+  registrationToken = normalizeToken(token);
+
+  if (!registrationToken) return;
+
+  localStorage.setItem("token", registrationToken);
+  localStorage.setItem("api_token", registrationToken);
+
+  if (typeof window.refreshAuthUI === "function") {
+    window.refreshAuthUI();
+  }
+}
+
+function setRegisterError(message) {
+  registerError.textContent = message;
+  registerError.hidden = !message;
+}
+
+function setMfaError(message, type = "error") {
+  registerMfaError.textContent = message;
+  registerMfaError.hidden = !message;
+  registerMfaError.classList.toggle("is-info", type === "info");
+}
+
+function getAuthHeaders() {
+  const token = registrationToken || normalizeToken(localStorage.getItem("token"));
+
+  if (!token) {
+    throw new Error("Your account was created, but the setup session was not available. Please sign in to finish MFA setup.");
+  }
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`
+  };
+}
+
+function ensureWebAuthnAvailable() {
+  if (!window.PublicKeyCredential || !navigator.credentials) {
+    throw new Error("Passkeys are not available in this browser context. Choose authenticator app instead.");
+  }
+}
+
+function b64ToArrayBuffer(b64url) {
+  const base64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes.buffer;
+}
+
+function arrayBufferToBase64url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+
+  for (let index = 0; index < bytes.byteLength; index += 1) {
+    binary += String.fromCharCode(bytes[index]);
+  }
+
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+async function mfaApi(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      ...getAuthHeaders(),
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "Could not complete MFA setup");
+  }
+
+  return data;
+}
+
+function showMfaSetup() {
+  registerForm.hidden = true;
+  registerMfa.hidden = false;
+  document
+    .querySelector(".register-shell")
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  registerPasskeyOption.focus();
+}
+
+function finishRegistration() {
+  window.location.href = "/dashboard.html";
+}
+
+async function setupPasskey() {
+  registerPasskeyOption.disabled = true;
+  registerTotpOption.disabled = true;
+
+  try {
+    ensureWebAuthnAvailable();
+    setMfaError("Use your passkey to secure this account.", "info");
+
+    const options = await mfaApi("/api/mfa/webauthn/register/options", {
+      method: "POST",
+      body: JSON.stringify({})
+    });
+
+    options.challenge = b64ToArrayBuffer(options.challenge);
+
+    if (options.user?.id) {
+      options.user.id = b64ToArrayBuffer(options.user.id);
+    }
+
+    if (options.excludeCredentials) {
+      options.excludeCredentials = options.excludeCredentials.map(credential => ({
+        ...credential,
+        id: b64ToArrayBuffer(credential.id)
+      }));
+    }
+
+    const credential = await navigator.credentials.create({
+      publicKey: options
+    });
+
+    const payload = {
+      id: credential.id,
+      rawId: arrayBufferToBase64url(credential.rawId),
+      type: credential.type,
+      response: {
+        clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
+        attestationObject: arrayBufferToBase64url(credential.response.attestationObject)
+      },
+      transports: credential.response.getTransports
+        ? credential.response.getTransports()
+        : []
+    };
+
+    await mfaApi("/api/mfa/webauthn/register/verify", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+
+    finishRegistration();
+  } catch (error) {
+    setMfaError(error.message);
+    registerPasskeyOption.disabled = false;
+    registerTotpOption.disabled = false;
+  }
+}
+
+async function setupTotp() {
+  setMfaError("");
+  registerTotpOption.disabled = true;
+  registerPasskeyOption.disabled = true;
+
+  try {
+    const setup = await mfaApi("/api/mfa/totp/setup", {
+      method: "POST",
+      body: JSON.stringify({})
+    });
+
+    registerMfaOptions.hidden = true;
+    registerTotpSetup.hidden = false;
+    registerTotpOutput.replaceChildren();
+
+    if (setup.qrcode) {
+      const img = document.createElement("img");
+      img.className = "mfa-qr";
+      img.src = setup.qrcode;
+      img.alt = "TOTP QR code";
+      registerTotpOutput.appendChild(img);
+    }
+
+    const secret = document.createElement("code");
+    secret.className = "mfa-secret";
+    secret.textContent = setup.otpauth_url || JSON.stringify(setup);
+    registerTotpOutput.appendChild(secret);
+    registerTotpCode.focus();
+  } catch (error) {
+    setMfaError(error.message);
+    registerTotpOption.disabled = false;
+    registerPasskeyOption.disabled = false;
+  }
+}
+
+async function verifyTotp() {
+  const code = registerTotpCode.value.trim();
+
+  if (!code) {
+    setMfaError("Enter the six-digit code from your authenticator app.");
+    registerTotpCode.focus();
+    return;
+  }
+
+  registerTotpVerify.disabled = true;
+
+  try {
+    await mfaApi("/api/mfa/totp/verify", {
+      method: "POST",
+      body: JSON.stringify({ token: code })
+    });
+
+    finishRegistration();
+  } catch (error) {
+    setMfaError(error.message);
+    registerTotpCode.focus();
+  } finally {
+    registerTotpVerify.disabled = false;
+  }
+}
 
 function getPasswordStrength(password) {
   let score = 0;
@@ -38,8 +271,7 @@ passwordConfirmationInput.addEventListener("input", updatePasswordStrength);
 registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  registerError.textContent = "";
-  registerError.hidden = true;
+  setRegisterError("");
   registerButton.disabled = true;
   registerButton.setAttribute("aria-busy", "true");
 
@@ -49,8 +281,7 @@ registerForm.addEventListener("submit", async (event) => {
   const passwordConfirmation = String(formData.get("passwordConfirmation") || "");
 
   if (password !== passwordConfirmation) {
-    registerError.textContent = translate("passwords_do_not_match");
-    registerError.hidden = false;
+    setRegisterError(translate("passwords_do_not_match"));
     registerButton.disabled = false;
     registerButton.removeAttribute("aria-busy");
     return;
@@ -94,14 +325,24 @@ registerForm.addEventListener("submit", async (event) => {
       throw new Error(data.error || "Could not create account");
     }
 
-    window.location.href = "/login.html";
+    setStoredToken(data.token);
+    showMfaSetup();
 
   } catch (error) {
-    registerError.textContent = error.message;
-    registerError.hidden = false;
+    setRegisterError(error.message);
     registerError.focus?.();
   } finally {
     registerButton.disabled = false;
     registerButton.removeAttribute("aria-busy");
+  }
+});
+
+registerPasskeyOption.addEventListener("click", setupPasskey);
+registerTotpOption.addEventListener("click", setupTotp);
+registerTotpVerify.addEventListener("click", verifyTotp);
+registerTotpCode.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    verifyTotp();
   }
 });

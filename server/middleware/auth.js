@@ -104,8 +104,57 @@ function requirePermission(permissionName) {
     };
 }
 
+async function authOrTempMiddleware(req, res, next) {
+    const authHeader = req.headers.authorization;
+    const incomingTemp = req.headers['x-temp-token'] || req.body?.tempToken || req.query?.tempToken;
+    console.log('authOrTempMiddleware -> authHeader present:', !!authHeader, 'tempToken present:', !!incomingTemp);
+
+    // Try regular JWT first
+    if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.slice(7);
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await User.findById(decoded.userId)
+                .select(
+                    'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit role contentAreas createdAt updatedAt'
+                );
+
+            if (!user) return res.status(401).json({ error: 'User no longer exists' });
+
+            req.user = user;
+            return next();
+        } catch (e) {
+            console.log('authOrTempMiddleware -> JWT verify failed:', e && e.name);
+            // fall through to temp-token check
+        }
+    }
+
+    const tempToken = incomingTemp;
+    if (!tempToken) {
+        console.log('authOrTempMiddleware -> no temp token provided');
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+        const user = await User.findOne({ 'twoFactor.tempToken': tempToken, 'twoFactor.tempExpires': { $gt: new Date() } })
+            .select(
+                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit role contentAreas createdAt updatedAt webauthn totp'
+            );
+
+        if (!user) return res.status(401).json({ error: 'Invalid or expired temp token' });
+
+        req.user = user;
+        req.isTemp = true;
+        return next();
+    } catch (error) {
+        console.error('Temp token lookup failed:', error);
+        return res.status(500).json({ error: 'Could not authenticate' });
+    }
+}
+
 module.exports = {
     authMiddleware,
+    authOrTempMiddleware,
     requireMinimumRole,
     requireExactRole,
     requirePermission

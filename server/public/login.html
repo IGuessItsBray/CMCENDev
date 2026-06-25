@@ -214,13 +214,15 @@
               );
             }
 
-            localStorage.setItem(
-              'token',
-              data.token
-            );
-
-            window.location.href =
-              '/dashboard.html';
+            if (data.twoFactorRequired) {
+              // Store short-lived temp token and available methods, then redirect to MFA page
+              sessionStorage.setItem('tempToken', data.tempToken);
+              sessionStorage.setItem('twoFactorMethods', JSON.stringify(data.methods || []));
+              window.location.href = '/mfa.html';
+            } else {
+              localStorage.setItem('token', data.token);
+              window.location.href = '/dashboard.html';
+            }
           } catch (error) {
             errorElement.textContent =
               error.message;

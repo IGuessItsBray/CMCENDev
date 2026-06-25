@@ -10,12 +10,15 @@
     }
   }
 
+  // prefer JWT in localStorage, but allow short-lived tempToken stored in sessionStorage
   let token = normalizeToken(localStorage.getItem('api_token'));
-  if (!token) {
+  const tempToken = String(sessionStorage.getItem('tempToken') || '').trim();
+
+  if (!token && !tempToken) {
     token = prompt('Paste JWT token from /api/login (Bearer)');
     token = normalizeToken(token);
     if (token) localStorage.setItem('api_token', token);
-  } else {
+  } else if (token) {
     localStorage.setItem('api_token', token);
   }
 
@@ -41,6 +44,8 @@
 
   async function api(path, opts = {}){
     const headers = opts.headers || {};
+    const tempToken = String(sessionStorage.getItem('tempToken') || '').trim();
+    if (tempToken) headers['x-temp-token'] = tempToken;
     if (token) headers['Authorization'] = 'Bearer ' + token;
     headers['Content-Type'] = opts.json ? 'application/json' : (headers['Content-Type'] || 'application/json');
     const res = await fetch(path, { ...opts, headers });
@@ -92,13 +97,12 @@
   document.getElementById('totp-verify').addEventListener('click', async () => {
     const code = document.getElementById('totp-code').value.trim();
     try {
-      const res = await fetch('/api/mfa/totp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ token: code })
-      });
-      const j = await res.json();
-      if (res.ok) alert('TOTP verified'); else alert('Verify failed: '+(j.error||JSON.stringify(j)));
+        const j = await api('/api/mfa/totp/verify', { method: 'POST', json: true, body: JSON.stringify({ token: code }) });
+      if (j.token) {
+        localStorage.setItem('api_token', j.token);
+        sessionStorage.removeItem('tempToken');
+      }
+      window.location.href = '/dashboard.html';
     } catch (e) { alert('Error: '+e.message); }
   });
 
@@ -126,14 +130,8 @@
       const attestationObject = arrayBufferToBase64url(cred.response.attestationObject);
       const rawId = arrayBufferToBase64url(cred.rawId);
 
-      const verifyRes = await fetch('/api/mfa/webauthn/register/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ id: cred.id, rawId, type: cred.type, response: { clientDataJSON, attestationObject }, transports: cred.response.getTransports ? cred.response.getTransports() : [] })
-      });
-
-      const j = await verifyRes.json();
-      if (verifyRes.ok) alert('Passkey registered'); else alert('Register failed: '+(j.error||JSON.stringify(j)));
+      const j = await api('/api/mfa/webauthn/register/verify', { method: 'POST', json: true, body: JSON.stringify({ id: cred.id, rawId, type: cred.type, response: { clientDataJSON, attestationObject }, transports: cred.response.getTransports ? cred.response.getTransports() : [] }) });
+      alert('Passkey registered');
     } catch (e) { alert('Error: '+e.message); }
   });
 
@@ -158,14 +156,12 @@
       const userHandle = assertion.response.userHandle ? arrayBufferToBase64url(assertion.response.userHandle) : null;
       const rawId = arrayBufferToBase64url(assertion.rawId);
 
-      const verifyRes = await fetch('/api/mfa/webauthn/authenticate/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ id: assertion.id, rawId, type: assertion.type, response: { authenticatorData: authData, clientDataJSON, signature, userHandle } })
-      });
-
-      const j = await verifyRes.json();
-      if (verifyRes.ok) alert('Passkey authentication succeeded'); else alert('Auth failed: '+(j.error||JSON.stringify(j)));
+      const j = await api('/api/mfa/webauthn/authenticate/verify', { method: 'POST', json: true, body: JSON.stringify({ id: assertion.id, rawId, type: assertion.type, response: { authenticatorData: authData, clientDataJSON, signature, userHandle } }) });
+      if (j.token) {
+        localStorage.setItem('api_token', j.token);
+        sessionStorage.removeItem('tempToken');
+      }
+      window.location.href = '/dashboard.html';
     } catch (e) { alert('Error: '+e.message); }
   });
 })();

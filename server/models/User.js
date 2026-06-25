@@ -186,6 +186,27 @@ const UserSchema = new mongoose.Schema({
   contentAreas: {
     type: [String],
     default: []
+  },
+
+  webauthn: {
+    type: [
+      {
+        credentialID: { type: String },
+        publicKey: { type: String },
+        counter: { type: Number, default: 0 },
+        transports: { type: [String], default: [] },
+        nickname: { type: String, default: '' }
+      }
+    ],
+    default: []
+  },
+
+  webauthnRegistrationChallenge: { type: String, default: '' },
+  webauthnAuthenticationChallenge: { type: String, default: '' },
+
+  totp: {
+    secret: { type: String, default: '' },
+    enabled: { type: Boolean, default: false }
   }
 }, {
   timestamps: true,

@@ -114,6 +114,40 @@
               aria-label="Account actions"
             ></nav>
           </aside>
+
+          <section class="dashboard-section" aria-labelledby="mfaTitle">
+            <header class="dashboard-section-heading">
+              <h2 id="mfaTitle">Multi-factor authentication</h2>
+            </header>
+
+            <div id="mfaArea">
+              <form id="login-form">
+                <h3>Login</h3>
+                <label>
+                  <input id="login-username" placeholder="Email" required />
+                </label>
+                <label>
+                  <input id="login-password" type="password" placeholder="Password" required />
+                </label>
+                <div>
+                  <button type="submit">Login</button>
+                  <button type="button" id="logout-button">Logout</button>
+                </div>
+              </form>
+
+              <div id="mfa-config" hidden>
+                <h3>TOTP</h3>
+                <button id="totp-setup">Setup TOTP</button>
+                <div id="totp-otpauth" style="word-break:break-all;margin-top:8px"></div>
+                <input id="totp-code" placeholder="Enter TOTP code" />
+                <button id="totp-verify">Verify TOTP</button>
+
+                <h3 style="margin-top:16px">Passkey</h3>
+                <button id="webauthn-register">Register Passkey</button>
+                <button id="webauthn-authenticate">Authenticate with Passkey</button>
+              </div>
+            </div>
+          </section>
         </div>
       </section>
     </main>
@@ -123,5 +157,6 @@
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
     <script src="/dashboard.js"></script>
+    <script src="/dashboard-mfa.js"></script>
   </body>
 </html>

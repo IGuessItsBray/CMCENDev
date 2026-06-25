@@ -209,6 +209,11 @@ const UserSchema = new mongoose.Schema({
   totp: {
     secret: { type: String, default: '' },
     enabled: { type: Boolean, default: false }
+  },
+
+  twoFactor: {
+    tempToken: { type: String, default: '' },
+    tempExpires: { type: Date, default: null }
   }
 }, {
   timestamps: true,

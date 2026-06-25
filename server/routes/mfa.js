@@ -1,11 +1,12 @@
 const express = require('express');
 const { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } = require('@simplewebauthn/server');
 const base64url = require('base64url');
+const jwt = require('jsonwebtoken');
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const crypto = require('crypto');
 const User = require('../models/User');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, authOrTempMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -169,7 +170,7 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
 });
 
 // WebAuthn authentication options
-router.post('/webauthn/authenticate/options', authMiddleware, async (req, res) => {
+router.post('/webauthn/authenticate/options', authOrTempMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const rpID = getRpID(req);
@@ -201,7 +202,7 @@ router.post('/webauthn/authenticate/options', authMiddleware, async (req, res) =
 });
 
 // WebAuthn authenticate verify
-router.post('/webauthn/authenticate/verify', authMiddleware, async (req, res) => {
+router.post('/webauthn/authenticate/verify', authOrTempMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const body = req.body;
@@ -245,7 +246,15 @@ router.post('/webauthn/authenticate/verify', authMiddleware, async (req, res) =>
       { $set: { 'webauthn.$.counter': verification.authenticationInfo.newCounter, webauthnAuthenticationChallenge: '' } }
     );
 
-    res.json({ verified: true });
+    const responsePayload = { verified: true };
+    if (req.isTemp) {
+      // issue full JWT and clear temp token
+      const fullToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      await User.findByIdAndUpdate(user._id, { $set: { 'twoFactor.tempToken': '', 'twoFactor.tempExpires': null } });
+      responsePayload.token = fullToken;
+    }
+
+    res.json(responsePayload);
   } catch (err) {
     console.error('webauthn/auth/verify error', err);
     res.status(400).json({ error: 'Could not verify authentication' });
@@ -300,7 +309,7 @@ router.get('/totp/qrcode', authMiddleware, async (req, res) => {
 });
 
 // TOTP verify
-router.post('/totp/verify', authMiddleware, async (req, res) => {
+router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const { token } = req.body;
@@ -318,7 +327,14 @@ router.post('/totp/verify', authMiddleware, async (req, res) => {
 
     await User.findByIdAndUpdate(user._id, { $set: { 'totp.enabled': true } });
 
-    res.json({ verified: true });
+    const responsePayload = { verified: true };
+    if (req.isTemp) {
+      const fullToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      await User.findByIdAndUpdate(user._id, { $set: { 'twoFactor.tempToken': '', 'twoFactor.tempExpires': null } });
+      responsePayload.token = fullToken;
+    }
+
+    res.json(responsePayload);
   } catch (err) {
     console.error('totp/verify error', err);
     res.status(500).json({ error: 'Could not verify TOTP token' });

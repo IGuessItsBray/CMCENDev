@@ -2,6 +2,22 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { USER_ROLES } = require('../config/roles');
 
+function capitalizeFirstLetter(value) {
+  const cleanValue = String(value || '').trim();
+
+  if (!cleanValue) return cleanValue;
+
+  return cleanValue.charAt(0).toUpperCase() + cleanValue.slice(1);
+}
+
+function formatAccountName(value) {
+  return String(value || '')
+    .trim()
+    .split(/\s+/)
+    .map(capitalizeFirstLetter)
+    .join(' ');
+}
+
 const UserSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -27,13 +43,17 @@ const UserSchema = new mongoose.Schema({
   accountName: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    set: formatAccountName,
+    get: formatAccountName
   },
 
   firstName: {
     type: String,
     required: true,
     trim: true,
+    set: capitalizeFirstLetter,
+    get: capitalizeFirstLetter,
     maxlength: 80
   },
 
@@ -41,6 +61,8 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
+    set: capitalizeFirstLetter,
+    get: capitalizeFirstLetter,
     maxlength: 80
   },
 
@@ -166,7 +188,9 @@ const UserSchema = new mongoose.Schema({
     default: []
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { getters: true },
+  toObject: { getters: true }
 });
 
 UserSchema.pre('save', async function () {

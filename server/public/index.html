@@ -201,18 +201,27 @@
 
     <section class="home-information">
       <article class="home-feature-panel">
-        <p class="home-section-eyebrow" data-i18n="home_events_eyebrow">
-          Coming together
+        <header class="home-feature-heading">
+          <p class="home-section-eyebrow" data-i18n="home_events_eyebrow">
+            Coming together
+          </p>
+
+          <h2 data-i18n="home_events_title">
+            Upcoming Events
+          </h2>
+
+          <p data-i18n="home_events_intro">
+            Find reunions, ceremonies, conferences, training,
+            and community events across the C&amp;E Family.
+          </p>
+        </header>
+
+        <p class="home-feed-message" id="homeEventsMessage" role="status" aria-live="polite"
+          data-i18n="home_events_loading">
+          Loading upcoming events...
         </p>
 
-        <h2 data-i18n="home_events_title">
-          Upcoming Events
-        </h2>
-
-        <p data-i18n="home_events_intro">
-          Find reunions, ceremonies, conferences, training,
-          and community events across the C&amp;E Family.
-        </p>
+        <div class="home-feed-list" id="homeEventsList"></div>
 
         <a href="/calendar.html" class="home-text-link" data-i18n="home_browse_events">
           Browse all events
@@ -220,21 +229,30 @@
       </article>
 
       <article class="home-feature-panel">
-        <p class="home-section-eyebrow" data-i18n="home_stories_eyebrow">
-          News and remembrance
+        <header class="home-feature-heading">
+          <p class="home-section-eyebrow" data-i18n="home_retirements_eyebrow">
+            Recognition
+          </p>
+
+          <h2 data-i18n="home_retirements_title">
+            Retirement Messages
+          </h2>
+
+          <p data-i18n="home_retirements_intro">
+            Celebrate retiring members and read messages shared by
+            the C&amp;E community.
+          </p>
+        </header>
+
+        <p class="home-feed-message" id="homeRetirementsMessage" role="status" aria-live="polite"
+          data-i18n="home_retirements_loading">
+          Loading retirement messages...
         </p>
 
-        <h2 data-i18n="home_stories_title">
-          Stories From the Community
-        </h2>
+        <div class="home-feed-list" id="homeRetirementsList"></div>
 
-        <p data-i18n="home_stories_intro">
-          Read the latest news, personal stories, historical
-          features, promotions, and memorial notices.
-        </p>
-
-        <a href="/news_stories.html" class="home-text-link" data-i18n="home_read_stories">
-          Read news and stories
+        <a href="/retirements.html" class="home-text-link" data-i18n="home_browse_retirements">
+          Browse retirement messages
         </a>
       </article>
     </section>
@@ -242,6 +260,7 @@
   <footer id="footer"></footer>
   <script src="index.js"></script>
   <script src="translations.js"></script>
+  <script src="home.js"></script>
 </body>
 
 </html>

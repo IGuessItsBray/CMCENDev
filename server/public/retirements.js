@@ -4,6 +4,8 @@ const retirementsGrid =
 const retirementsMessage =
     document.getElementById("retirementsMessage");
 
+let loadedRetirementMessages = [];
+
 function showRetirementsMessage(message, type = "neutral") {
     retirementsMessage.textContent = message;
     retirementsMessage.className =
@@ -21,11 +23,13 @@ function formatRetireeName(retirementMessage) {
         retiree.lastName
     ]
         .filter(Boolean)
-        .join(" ") || "Retiring member";
+        .join(" ") ||
+        translate("retirement_card_default_name");
 }
 
 function getMosid(retirementMessage) {
-    return retirementMessage.retiree?.tradeRole || "MOSID pending";
+    return retirementMessage.retiree?.tradeRole ||
+        translate("retirement_mosid_pending");
 }
 
 function getCommentCount(retirementMessage) {
@@ -41,7 +45,12 @@ function getCommentCount(retirementMessage) {
 }
 
 function formatCommentCount(count) {
-    return `${count} ${count === 1 ? "comment" : "comments"}`;
+    return translate(
+        count === 1
+            ? "retirement_comment_singular"
+            : "retirement_comment_plural",
+        { count }
+    );
 }
 
 function createPhotoElement(retirementMessage, name) {
@@ -49,7 +58,10 @@ function createPhotoElement(retirementMessage, name) {
         const image = document.createElement("img");
 
         image.src = retirementMessage.photoUrl;
-        image.alt = `${name} retirement photo`;
+        image.alt = translate(
+            "retirement_photo_alt",
+            { name }
+        );
         image.loading = "lazy";
 
         return image;
@@ -82,7 +94,10 @@ function createRetirementCard(retirementMessage) {
         )}`;
     card.setAttribute(
         "aria-label",
-        `Read retirement message for ${name}`
+        translate(
+            "retirement_card_aria",
+            { name }
+        )
     );
 
     const header = document.createElement("header");
@@ -116,7 +131,7 @@ function renderRetirements(retirementMessages) {
 
     if (!retirementMessages.length) {
         showRetirementsMessage(
-            "No retirement messages have been published yet.",
+            translate("retirements_empty"),
             "empty"
         );
         return;
@@ -133,7 +148,7 @@ function renderRetirements(retirementMessages) {
 }
 
 async function loadRetirements() {
-    showRetirementsMessage("Loading retirement messages...");
+    showRetirementsMessage(translate("retirements_loading"));
 
     try {
         const response =
@@ -145,22 +160,57 @@ async function loadRetirements() {
         if (!response.ok) {
             throw new Error(
                 data.error ||
-                    "Could not load retirement messages."
+                    translate("retirements_load_error")
             );
         }
 
-        renderRetirements(
+        loadedRetirementMessages =
             Array.isArray(data.retirementMessages)
                 ? data.retirementMessages
-                : []
+                : [];
+
+        renderRetirements(
+            loadedRetirementMessages
         );
     } catch (error) {
         showRetirementsMessage(
             error.message ||
-                "Could not load retirement messages.",
+                translate("retirements_load_error"),
             "error"
         );
     }
 }
+
+document.addEventListener(
+    "languagechange",
+    () => {
+        if (loadedRetirementMessages.length) {
+            renderRetirements(loadedRetirementMessages);
+            return;
+        }
+
+        if (!retirementsMessage.hidden) {
+            const isError =
+                retirementsMessage.classList.contains("is-error");
+            const isEmpty =
+                retirementsMessage.classList.contains("is-empty");
+
+            showRetirementsMessage(
+                translate(
+                    isError
+                        ? "retirements_load_error"
+                        : isEmpty
+                            ? "retirements_empty"
+                            : "retirements_loading"
+                ),
+                isError
+                    ? "error"
+                    : isEmpty
+                        ? "empty"
+                        : "neutral"
+            );
+        }
+    }
+);
 
 loadRetirements();

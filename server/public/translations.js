@@ -955,20 +955,32 @@ const translations = {
     home_events_intro:
       "Find reunions, ceremonies, conferences, training, and community events across the C&E Family.",
 
+    home_events_loading:
+      "Loading upcoming events...",
+
+    home_event_untitled:
+      "Untitled event",
+
+    home_event_location_pending:
+      "Location to be confirmed",
+
     home_browse_events:
       "Browse all events",
 
-    home_stories_eyebrow:
-      "News and remembrance",
+    home_retirements_eyebrow:
+      "Recognition",
 
-    home_stories_title:
-      "Stories From the Community",
+    home_retirements_title:
+      "Retirement Messages",
 
-    home_stories_intro:
-      "Read the latest news, personal stories, historical features, promotions, and memorial notices.",
+    home_retirements_intro:
+      "Celebrate retiring members and read messages shared by the C&E community.",
 
-    home_read_stories:
-      "Read news and stories",
+    home_retirements_loading:
+      "Loading retirement messages...",
+
+    home_browse_retirements:
+      "Browse retirement messages",
 
 
 
@@ -2105,20 +2117,32 @@ const translations = {
     home_events_intro:
       "Trouvez des retrouvailles, des cérémonies, des conférences, des activités de formation et des événements communautaires partout dans la famille des C et E.",
 
+    home_events_loading:
+      "Chargement des événements à venir...",
+
+    home_event_untitled:
+      "Événement sans titre",
+
+    home_event_location_pending:
+      "Lieu à confirmer",
+
     home_browse_events:
       "Voir tous les événements",
 
-    home_stories_eyebrow:
-      "Actualités et commémoration",
+    home_retirements_eyebrow:
+      "Reconnaissance",
 
-    home_stories_title:
-      "Récits de la communauté",
+    home_retirements_title:
+      "Messages de retraite",
 
-    home_stories_intro:
-      "Consultez les dernières nouvelles, les témoignages personnels, les articles historiques, les promotions et les avis commémoratifs.",
+    home_retirements_intro:
+      "Célébrez les membres qui prennent leur retraite et lisez les messages partagés par la communauté des C et E.",
 
-    home_read_stories:
-      "Lire les nouvelles et les récits",
+    home_retirements_loading:
+      "Chargement des messages de retraite...",
+
+    home_browse_retirements:
+      "Voir les messages de retraite",
     retirement_submit_eyebrow:
       "Messages de retraite",
 

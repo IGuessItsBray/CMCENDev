@@ -1,4 +1,10 @@
 require('dotenv').config();
+const nodeCrypto = require('crypto');
+
+if (!globalThis.crypto) {
+  globalThis.crypto = nodeCrypto.webcrypto;
+}
+
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');

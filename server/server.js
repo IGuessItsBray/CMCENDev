@@ -15,11 +15,13 @@ const eventRoutes = require('./routes/events');
 const retirementMessageRoutes = require('./routes/retirement-messages');
 const searchRoutes = require('./routes/search');
 const uploadRoutes = require('./routes/uploads');
+const mfaRoutes = require('./routes/mfa');
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api', authRoutes);
+app.use('/api/mfa', mfaRoutes);
 app.use('/api', diagnosticsRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/admin', adminRoutes);

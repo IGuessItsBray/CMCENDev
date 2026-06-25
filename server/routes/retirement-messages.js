@@ -1,9 +1,13 @@
 const express = require('express');
 const RetirementMessage = require('../models/RetirementMessage');
+const RetirementComment = require('../models/RetirementComment');
 const {
     authMiddleware,
     requirePermission
 } = require('../middleware/auth');
+const {
+    getUserPermissions
+} = require('../config/permissions');
 
 const router = express.Router();
 
@@ -280,8 +284,48 @@ router.get(
                     })
                     .lean();
 
+            const commentCounts =
+                await RetirementComment.aggregate([
+                    {
+                        $match: {
+                            status: 'published',
+                            retirementMessage: {
+                                $in: retirementMessages.map(
+                                    retirementMessage =>
+                                        retirementMessage._id
+                                )
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$retirementMessage',
+                            count: { $sum: 1 }
+                        }
+                    }
+                ]);
+
+            const commentCountByMessage =
+                new Map(
+                    commentCounts.map(item => [
+                        String(item._id),
+                        item.count
+                    ])
+                );
+
             res.json({
-                retirementMessages
+                retirementMessages:
+                    retirementMessages.map(
+                        retirementMessage => ({
+                            ...retirementMessage,
+                            commentCount:
+                                commentCountByMessage.get(
+                                    String(
+                                        retirementMessage._id
+                                    )
+                                ) || 0
+                        })
+                    )
             });
         } catch (error) {
             console.error(
@@ -350,6 +394,371 @@ router.get(
             res.status(500).json({
                 error:
                     'Could not load retirement message review queue'
+            });
+        }
+    }
+);
+
+router.get(
+    '/comments/review',
+    authMiddleware,
+    requirePermission('canReviewAndPublish'),
+    async (req, res) => {
+        try {
+            const allowedStatuses = [
+                'pending',
+                'rejected',
+                'published'
+            ];
+
+            const requestedStatus =
+                typeof req.query.status === 'string'
+                    ? req.query.status
+                    : 'pending';
+
+            if (!allowedStatuses.includes(requestedStatus)) {
+                return res.status(400).json({
+                    error: 'Invalid review status'
+                });
+            }
+
+            const comments =
+                await RetirementComment.find({
+                    status: requestedStatus
+                })
+                    .populate(
+                        'author',
+                        'username accountName firstName lastName email role'
+                    )
+                    .populate(
+                        'reviewedBy',
+                        'username accountName email role'
+                    )
+                    .populate(
+                        'retirementMessage',
+                        'retiree status'
+                    )
+                    .sort({
+                        createdAt: 1
+                    })
+                    .lean();
+
+            res.json({
+                status: requestedStatus,
+                comments
+            });
+        } catch (error) {
+            console.error(
+                'Could not load retirement comment review queue:',
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    'Could not load retirement comment review queue'
+            });
+        }
+    }
+);
+
+router.patch(
+    '/comments/:commentId/review',
+    authMiddleware,
+    requirePermission('canReviewAndPublish'),
+    async (req, res) => {
+        try {
+            const {
+                action,
+                rejectionReason
+            } = req.body;
+
+            if (!['publish', 'reject'].includes(action)) {
+                return res.status(400).json({
+                    error:
+                        'Review action must be publish or reject'
+                });
+            }
+
+            const comment =
+                await RetirementComment.findById(
+                    req.params.commentId
+                );
+
+            if (!comment) {
+                return res.status(404).json({
+                    error:
+                        'Retirement comment not found'
+                });
+            }
+
+            if (comment.status !== 'pending') {
+                return res.status(409).json({
+                    error:
+                        'Only pending retirement comments can be reviewed'
+                });
+            }
+
+            const reviewDate = new Date();
+
+            if (action === 'reject') {
+                const cleanReason =
+                    cleanString(rejectionReason);
+
+                if (!cleanReason) {
+                    return res.status(400).json({
+                        error:
+                            'A rejection reason is required'
+                    });
+                }
+
+                comment.status = 'rejected';
+                comment.rejectionReason = cleanReason;
+                comment.publishedAt = null;
+            }
+
+            if (action === 'publish') {
+                comment.status = 'published';
+                comment.rejectionReason = '';
+                comment.publishedAt = reviewDate;
+            }
+
+            comment.reviewedBy = req.user._id;
+            comment.reviewedAt = reviewDate;
+
+            await comment.save();
+
+            await comment.populate(
+                'author',
+                'username accountName firstName lastName email role'
+            );
+
+            await comment.populate(
+                'reviewedBy',
+                'username accountName email role'
+            );
+
+            await comment.populate(
+                'retirementMessage',
+                'retiree status'
+            );
+
+            res.json({
+                message:
+                    action === 'publish'
+                        ? 'Comment published successfully'
+                        : 'Comment rejected',
+
+                comment
+            });
+        } catch (error) {
+            console.error(
+                'Could not review retirement comment:',
+                error
+            );
+
+            if (error.name === 'CastError') {
+                return res.status(400).json({
+                    error:
+                        'Invalid retirement comment ID'
+                });
+            }
+
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({
+                    error: Object.values(error.errors)
+                        .map(item => item.message)
+                        .join(', ')
+                });
+            }
+
+            res.status(500).json({
+                error:
+                    'Could not review retirement comment'
+            });
+        }
+    }
+);
+
+router.get(
+    '/:messageId/comments',
+    async (req, res) => {
+        try {
+            const retirementMessage =
+                await RetirementMessage.findOne({
+                    _id: req.params.messageId,
+                    status: 'published'
+                })
+                    .select({ _id: 1 })
+                    .lean();
+
+            if (!retirementMessage) {
+                return res.status(404).json({
+                    error:
+                        'Retirement message not found'
+                });
+            }
+
+            const comments =
+                await RetirementComment.find({
+                    retirementMessage: req.params.messageId,
+                    status: 'published'
+                })
+                    .populate(
+                        'author',
+                        'username accountName firstName lastName role'
+                    )
+                    .sort({
+                        publishedAt: 1,
+                        createdAt: 1
+                    })
+                    .lean();
+
+            res.json({
+                comments
+            });
+        } catch (error) {
+            console.error(
+                'Could not load retirement comments:',
+                error
+            );
+
+            if (error.name === 'CastError') {
+                return res.status(400).json({
+                    error:
+                        'Invalid retirement message ID'
+                });
+            }
+
+            res.status(500).json({
+                error:
+                    'Could not load retirement comments'
+            });
+        }
+    }
+);
+
+router.post(
+    '/:messageId/comments',
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const cleanBody =
+                cleanString(req.body?.body);
+
+            if (cleanBody.length < 2) {
+                return res.status(400).json({
+                    error:
+                        'Comment must contain at least 2 characters'
+                });
+            }
+
+            if (cleanBody.length > 2000) {
+                return res.status(400).json({
+                    error:
+                        'Comment must be 2000 characters or fewer'
+                });
+            }
+
+            const retirementMessage =
+                await RetirementMessage.findOne({
+                    _id: req.params.messageId,
+                    status: 'published'
+                })
+                    .select({ _id: 1 })
+                    .lean();
+
+            if (!retirementMessage) {
+                return res.status(404).json({
+                    error:
+                        'Retirement message not found'
+                });
+            }
+
+            const permissions =
+                getUserPermissions(req.user);
+
+            const publishImmediately =
+                permissions.canPublishOwnContent === true;
+
+            const now = new Date();
+
+            const comment =
+                new RetirementComment({
+                    retirementMessage:
+                        retirementMessage._id,
+
+                    author:
+                        req.user._id,
+
+                    body:
+                        cleanBody,
+
+                    status:
+                        publishImmediately
+                            ? 'published'
+                            : 'pending',
+
+                    reviewedBy:
+                        publishImmediately
+                            ? req.user._id
+                            : null,
+
+                    reviewedAt:
+                        publishImmediately
+                            ? now
+                            : null,
+
+                    publishedAt:
+                        publishImmediately
+                            ? now
+                            : null
+                });
+
+            await comment.save();
+
+            await comment.populate(
+                'author',
+                'username accountName firstName lastName role'
+            );
+
+            res.status(201).json({
+                message:
+                    publishImmediately
+                        ? 'Comment published successfully'
+                        : 'Comment submitted for review',
+
+                status:
+                    comment.status,
+
+                comment:
+                    comment.status === 'published'
+                        ? comment
+                        : null
+            });
+        } catch (error) {
+            console.error(
+                'Could not submit retirement comment:',
+                error
+            );
+
+            if (error.name === 'CastError') {
+                return res.status(400).json({
+                    error:
+                        'Invalid retirement message ID'
+                });
+            }
+
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({
+                    error: Object.values(error.errors)
+                        .map(item => item.message)
+                        .join(', ')
+                });
+            }
+
+            res.status(500).json({
+                error:
+                    'Could not submit retirement comment'
             });
         }
     }

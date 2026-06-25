@@ -1670,6 +1670,12 @@ a.dropdown-toggle {
   line-height: 1.45;
 }
 
+.register-error.is-info {
+  border-left-color: var(--gold-600);
+  background: #fbf6eb;
+  color: var(--navy-900);
+}
+
 .register-actions {
   padding-top: 20px;
   border-top: 1px solid var(--branch-grey-200);
@@ -1747,6 +1753,112 @@ a.dropdown-toggle {
 .register-switch a:hover,
 .register-switch a:focus-visible {
   color: var(--gold-700);
+}
+
+.register-mfa {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.register-mfa-heading {
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--gold-500);
+}
+
+.register-mfa-heading h2 {
+  margin: 0;
+  color: var(--navy-900);
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: 27px;
+  font-weight: normal;
+  line-height: 1.15;
+}
+
+.register-mfa-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.register-mfa-option {
+  position: relative;
+  min-height: 160px;
+  padding: 18px;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--branch-grey-200);
+  border-left: 3px solid var(--navy-800);
+  border-radius: 2px;
+  background: var(--white);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    transform 150ms ease;
+}
+
+.register-mfa-option:hover,
+.register-mfa-option:focus-visible {
+  border-color: var(--gold-600);
+  border-left-color: var(--gold-600);
+  background: #fbf6eb;
+  transform: translateY(-2px);
+}
+
+.register-mfa-option:disabled {
+  cursor: progress;
+  opacity: 0.68;
+  transform: none;
+}
+
+.register-mfa-option.is-recommended {
+  border-left-color: var(--gold-600);
+}
+
+.register-mfa-option-label {
+  color: var(--navy-900);
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: 20px;
+  font-weight: normal;
+  line-height: 1.2;
+}
+
+.register-mfa-recommended {
+  padding: 5px 8px;
+  border-radius: 2px;
+  background: var(--gold-500);
+  color: var(--navy-950);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.register-mfa-option-copy {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.register-totp-setup {
+  padding: 18px;
+  border: 1px solid var(--branch-grey-200);
+  border-left: 3px solid var(--navy-800);
+  border-radius: 2px;
+  background: var(--white);
 }
 
 /* ─────────────────────────────────────────────
@@ -2099,6 +2211,35 @@ a.dropdown-toggle {
   opacity: 0.68;
 }
 
+.mfa-link-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--navy-800);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: underline;
+  text-decoration-color: var(--gold-500);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.mfa-link-button:hover,
+.mfa-link-button:focus-visible {
+  color: var(--gold-700);
+}
+
+.mfa-link-button:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+.mfa-link-button-danger {
+  color: var(--danger);
+}
+
 .mfa-field {
   min-width: 180px;
   flex: 1 1 180px;
@@ -2150,7 +2291,8 @@ a.dropdown-toggle {
   display: none;
 }
 
-#totp-qr {
+#totp-qr,
+.mfa-qr {
   width: 128px;
   max-width: 100%;
   border: 1px solid var(--branch-grey-200);
@@ -2168,6 +2310,90 @@ a.dropdown-toggle {
   font-size: 11px;
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.passkey-manager,
+.totp-manager {
+  margin-top: 18px;
+  padding-top: 15px;
+  border-top: 1px solid var(--branch-grey-200);
+}
+
+.passkey-manager-heading {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.passkey-manager-heading h4 {
+  margin: 0;
+  color: var(--branch-grey-800);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.passkey-list,
+.totp-status {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.passkey-item,
+.totp-status-card {
+  min-height: 58px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 2px;
+  background: var(--branch-grey-100);
+}
+
+.passkey-details {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.passkey-details strong {
+  overflow: hidden;
+  color: var(--navy-900);
+  font-size: 14px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.passkey-details span {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.passkey-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.passkey-empty {
+  margin: 0;
+  padding: 11px 12px;
+  border: 1px dashed var(--branch-grey-200);
+  color: var(--text-muted);
 }
 
 
@@ -5786,6 +6012,10 @@ a.dropdown-toggle {
     gap: 17px;
   }
 
+  .register-mfa-options {
+    grid-template-columns: 1fr;
+  }
+
   .register-actions {
     padding-top: 18px;
   }
@@ -5861,6 +6091,16 @@ a.dropdown-toggle {
 
   .mfa-button {
     width: 100%;
+  }
+
+  .passkey-item,
+  .totp-status-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .passkey-actions {
+    justify-content: flex-start;
   }
 }
 

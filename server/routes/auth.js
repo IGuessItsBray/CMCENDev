@@ -97,7 +97,14 @@ router.post('/register', async (req, res) => {
     });
 
     await user.save();
-    res.status(201).json({ message: 'User created' });
+
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.status(201).json({ message: 'User created', token });
   } catch (err) {
     console.error('--- FULL ERROR DETAILS ---');
     console.error('Name:', err.name);
@@ -116,7 +123,7 @@ router.post('/login', async (req, res) => {
 
   if (user && (await bcrypt.compare(password, user.password))) {
     const hasWebAuthn = Array.isArray(user.webauthn) && user.webauthn.length > 0;
-    const hasTOTP = !!user.totp?.secret;
+    const hasTOTP = user.totp?.enabled === true && Boolean(user.totp?.secret);
 
     if (hasWebAuthn || hasTOTP) {
       // create a short-lived temp token for completing 2FA

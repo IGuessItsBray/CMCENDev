@@ -15,6 +15,8 @@ const DB_COMMANDS = new Set([
   'list-users',
   'list-events',
   'list-retirement-messages',
+  'mfa-status',
+  'reset-mfa',
   'set-role',
   'update-user',
   'fill-empty-users',
@@ -205,6 +207,37 @@ function formatUpdateValue(value) {
   }
 
   return JSON.stringify(value);
+}
+
+function summarizeMfa(user) {
+  const passkeys = Array.isArray(user.webauthn)
+    ? user.webauthn.filter(credential => credential?.credentialID && credential?.publicKey)
+    : [];
+
+  return {
+    username: user.username,
+    email: user.email,
+    accountName: user.accountName,
+    passkeys: passkeys.length,
+    passkeyNames: passkeys
+      .map((credential, index) => credential.nickname || `Passkey ${index + 1}`)
+      .join(', '),
+    totpEnabled: user.totp?.enabled === true,
+    totpSecretPresent: Boolean(user.totp?.secret),
+    totpPending: Boolean(user.totp?.secret) && user.totp?.enabled !== true,
+    tempTokenPresent: Boolean(user.twoFactor?.tempToken),
+    tempExpires: formatDate(user.twoFactor?.tempExpires)
+  };
+}
+
+async function findUserByIdentifier(User, identifier) {
+  const user = await User.findOne(buildUserIdentifierQuery(identifier));
+
+  if (!user) {
+    throw new Error(`User "${identifier}" was not found`);
+  }
+
+  return user;
 }
 
 // ─────────────────────────────────────────────
@@ -477,6 +510,50 @@ async function cmdUpdateUser(identifier, updateJson) {
       updated: formatUpdateValue(newValue)
     }))
   );
+}
+
+async function cmdMfaStatus(identifier) {
+  const User = require('../models/User');
+  const user = await findUserByIdentifier(User, identifier);
+
+  console.table([summarizeMfa(user)]);
+}
+
+async function cmdResetMfa(identifier, flags) {
+  const User = require('../models/User');
+  const user = await findUserByIdentifier(User, identifier);
+
+  const resetPasskeys = flags.has('--passkeys') || (!flags.has('--passkeys') && !flags.has('--totp'));
+  const resetTotp = flags.has('--totp') || (!flags.has('--passkeys') && !flags.has('--totp'));
+
+  const updates = {
+    'webauthnRegistrationChallenge': '',
+    'webauthnAuthenticationChallenge': '',
+    'twoFactor.tempToken': '',
+    'twoFactor.tempExpires': null
+  };
+
+  if (resetPasskeys) {
+    updates.webauthn = [];
+  }
+
+  if (resetTotp) {
+    updates['totp.secret'] = '';
+    updates['totp.enabled'] = false;
+  }
+
+  console.log('Before reset:');
+  console.table([summarizeMfa(user)]);
+
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id,
+    { $set: updates },
+    { new: true }
+  );
+
+  console.log('\nAfter reset:');
+  console.table([summarizeMfa(updatedUser)]);
+  console.log('\nMFA reset complete. The user can sign in with their password and set MFA up again.');
 }
 
 /**
@@ -778,6 +855,11 @@ Usage: node admin.js <command> [args] [flags]
 User management
   list-users                              List all users
   search <query>                          Search users via admin API
+  mfa-status <user>                       Show passkey/TOTP status by username,
+                                            email, or MongoDB ID
+  reset-mfa <user>                        Clear all MFA for a locked-out user
+  reset-mfa <user> --passkeys             Clear passkeys only
+  reset-mfa <user> --totp                 Clear TOTP only
   set-role <username> <role> [areas]      Set role directly in DB
   update-user <user> '<json>'             Update one user by username,
                                             email, or MongoDB ID
@@ -840,6 +922,16 @@ async function run() {
 
       case 'list-retirement-messages':
         await cmdListRetirementMessages(flags.has('--full'));
+        break;
+
+      case 'mfa-status':
+        if (!arg1) throw new Error('Usage: node admin.js mfa-status <username-or-email-or-id>');
+        await cmdMfaStatus(arg1);
+        break;
+
+      case 'reset-mfa':
+        if (!arg1) throw new Error('Usage: node admin.js reset-mfa <username-or-email-or-id> [--passkeys|--totp]');
+        await cmdResetMfa(arg1, flags);
         break;
 
       case 'set-role':

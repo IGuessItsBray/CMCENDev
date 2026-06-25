@@ -165,6 +165,31 @@
                     Verify
                   </button>
                 </div>
+
+                <div
+                  class="totp-manager"
+                  aria-labelledby="totpStatusTitle"
+                >
+                  <div class="passkey-manager-heading">
+                    <h4 id="totpStatusTitle">
+                      Authenticator app status
+                    </h4>
+
+                    <button
+                      class="mfa-link-button"
+                      id="totp-refresh"
+                      type="button"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  <div
+                    class="totp-status"
+                    id="totp-status"
+                    aria-live="polite"
+                  ></div>
+                </div>
               </div>
 
               <div class="mfa-panel">
@@ -186,6 +211,31 @@
                   >
                     Authenticate
                   </button>
+                </div>
+
+                <div
+                  class="passkey-manager"
+                  aria-labelledby="passkeyListTitle"
+                >
+                  <div class="passkey-manager-heading">
+                    <h4 id="passkeyListTitle">
+                      Registered passkeys
+                    </h4>
+
+                    <button
+                      class="mfa-link-button"
+                      id="passkey-refresh"
+                      type="button"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  <div
+                    class="passkey-list"
+                    id="passkey-list"
+                    aria-live="polite"
+                  ></div>
                 </div>
               </div>
             </div>

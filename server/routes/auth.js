@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const {
   authMiddleware,
@@ -114,6 +115,20 @@ router.post('/login', async (req, res) => {
   const user = await User.findOne({ username }).select('+password');
 
   if (user && (await bcrypt.compare(password, user.password))) {
+    const hasWebAuthn = Array.isArray(user.webauthn) && user.webauthn.length > 0;
+    const hasTOTP = !!user.totp?.secret;
+
+    if (hasWebAuthn || hasTOTP) {
+      // create a short-lived temp token for completing 2FA
+      const tempToken = crypto.randomBytes(32).toString('hex');
+      const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+      await User.findByIdAndUpdate(user._id, { $set: { 'twoFactor.tempToken': tempToken, 'twoFactor.tempExpires': expires } });
+      const methods = [];
+      if (hasWebAuthn) methods.push('webauthn');
+      if (hasTOTP) methods.push('totp');
+      return res.json({ twoFactorRequired: true, methods, tempToken, expiresAt: expires.toISOString() });
+    }
+
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET,

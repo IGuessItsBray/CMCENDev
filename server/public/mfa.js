@@ -97,13 +97,12 @@
   document.getElementById('totp-verify').addEventListener('click', async () => {
     const code = document.getElementById('totp-code').value.trim();
     try {
-        // use api() helper so temp-token header is included
-      const j = await api('/api/mfa/totp/verify', { method: 'POST', json: true, body: JSON.stringify({ token: code }) });
+        const j = await api('/api/mfa/totp/verify', { method: 'POST', json: true, body: JSON.stringify({ token: code }) });
       if (j.token) {
         localStorage.setItem('api_token', j.token);
         sessionStorage.removeItem('tempToken');
       }
-      alert('TOTP verified');
+      window.location.href = '/dashboard.html';
     } catch (e) { alert('Error: '+e.message); }
   });
 
@@ -162,7 +161,7 @@
         localStorage.setItem('api_token', j.token);
         sessionStorage.removeItem('tempToken');
       }
-      alert('Passkey authentication succeeded');
+      window.location.href = '/dashboard.html';
     } catch (e) { alert('Error: '+e.message); }
   });
 })();

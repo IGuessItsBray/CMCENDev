@@ -171,6 +171,155 @@
       const errorElement =
         document.getElementById('loginError');
 
+      function setLoginMessage(message, type = 'error') {
+        errorElement.textContent = message;
+        errorElement.hidden = !message;
+        errorElement.classList.toggle('is-info', type === 'info');
+      }
+
+      function normalizeToken(value) {
+        return String(value || '').trim().replace(/^Bearer\s+/i, '');
+      }
+
+      function ensureWebAuthnAvailable() {
+        if (!window.PublicKeyCredential || !navigator.credentials) {
+          throw new Error(
+            'Passkeys are not available in this browser context. Use HTTPS or localhost in a supported browser.'
+          );
+        }
+      }
+
+      function b64ToArrayBuffer(b64url) {
+        const base64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
+        const binary = atob(padded);
+        const bytes = new Uint8Array(binary.length);
+
+        for (let index = 0; index < binary.length; index += 1) {
+          bytes[index] = binary.charCodeAt(index);
+        }
+
+        return bytes.buffer;
+      }
+
+      function arrayBufferToBase64url(buffer) {
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+
+        for (let index = 0; index < bytes.byteLength; index += 1) {
+          binary += String.fromCharCode(bytes[index]);
+        }
+
+        return btoa(binary)
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
+      }
+
+      async function passkeyMfaLogin(tempToken) {
+        ensureWebAuthnAvailable();
+        setLoginMessage(
+          'Use your passkey to finish signing in.',
+          'info'
+        );
+
+        const optionsResponse = await fetch(
+          '/api/mfa/webauthn/authenticate/options',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-temp-token': tempToken
+            }
+          }
+        );
+
+        const options = await optionsResponse
+          .json()
+          .catch(() => ({}));
+
+        if (!optionsResponse.ok) {
+          throw new Error(
+            options.error || 'Could not start passkey authentication'
+          );
+        }
+
+        if (
+          !options.allowCredentials ||
+          options.allowCredentials.length === 0
+        ) {
+          throw new Error('No passkeys are registered for this account.');
+        }
+
+        options.challenge = b64ToArrayBuffer(options.challenge);
+        options.allowCredentials = options.allowCredentials.map(
+          credential => ({
+            ...credential,
+            id: b64ToArrayBuffer(credential.id)
+          })
+        );
+
+        const assertion = await navigator.credentials.get({
+          publicKey: options
+        });
+
+        const payload = {
+          id: assertion.id,
+          rawId: arrayBufferToBase64url(assertion.rawId),
+          type: assertion.type,
+          response: {
+            authenticatorData: arrayBufferToBase64url(
+              assertion.response.authenticatorData
+            ),
+            clientDataJSON: arrayBufferToBase64url(
+              assertion.response.clientDataJSON
+            ),
+            signature: arrayBufferToBase64url(
+              assertion.response.signature
+            ),
+            userHandle: assertion.response.userHandle
+              ? arrayBufferToBase64url(assertion.response.userHandle)
+              : null
+          }
+        };
+
+        const verifyResponse = await fetch(
+          '/api/mfa/webauthn/authenticate/verify',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-temp-token': tempToken
+            },
+            body: JSON.stringify(payload)
+          }
+        );
+
+        const result = await verifyResponse
+          .json()
+          .catch(() => ({}));
+
+        if (!verifyResponse.ok) {
+          throw new Error(
+            result.error || 'Passkey authentication failed'
+          );
+        }
+
+        if (!result.token) {
+          throw new Error('Login completed but no session token was returned');
+        }
+
+        const fullToken = normalizeToken(result.token);
+        localStorage.setItem('token', fullToken);
+        localStorage.setItem('api_token', fullToken);
+        sessionStorage.removeItem('tempToken');
+        sessionStorage.removeItem('twoFactorMethods');
+
+        if (typeof window.refreshAuthUI === 'function') {
+          window.refreshAuthUI();
+        }
+      }
+
       loginForm.addEventListener(
         'submit',
         async event => {
@@ -184,8 +333,7 @@
           const password =
             document.getElementById('loginPassword').value;
 
-          errorElement.textContent = '';
-          errorElement.hidden = true;
+          setLoginMessage('');
 
           loginButton.disabled = true;
           loginButton.setAttribute('aria-busy', 'true');
@@ -215,19 +363,40 @@
             }
 
             if (data.twoFactorRequired) {
-              // Store short-lived temp token and available methods, then redirect to MFA page
-              sessionStorage.setItem('tempToken', data.tempToken);
-              sessionStorage.setItem('twoFactorMethods', JSON.stringify(data.methods || []));
+              const methods = Array.isArray(data.methods)
+                ? data.methods
+                : [];
+
+              sessionStorage.setItem(
+                'tempToken',
+                data.tempToken
+              );
+
+              sessionStorage.setItem(
+                'twoFactorMethods',
+                JSON.stringify(methods)
+              );
+
+              if (methods.includes('webauthn')) {
+                await passkeyMfaLogin(data.tempToken);
+                window.location.href = '/dashboard.html';
+                return;
+              }
+
               window.location.href = '/mfa.html';
             } else {
-              localStorage.setItem('token', data.token);
+              const fullToken = normalizeToken(data.token);
+              localStorage.setItem('token', fullToken);
+              localStorage.setItem('api_token', fullToken);
+
+              if (typeof window.refreshAuthUI === 'function') {
+                window.refreshAuthUI();
+              }
+
               window.location.href = '/dashboard.html';
             }
           } catch (error) {
-            errorElement.textContent =
-              error.message;
-
-            errorElement.hidden = false;
+            setLoginMessage(error.message);
           } finally {
             loginButton.disabled = false;
 

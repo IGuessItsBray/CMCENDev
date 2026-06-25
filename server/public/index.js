@@ -514,6 +514,21 @@ loadFooter();
 const authButtons = document.querySelector('.auth-buttons');
 const mobileMenuAccount = document.getElementById('mobileMenuAccount');
 
+function getStoredAuthToken() {
+  const token = String(
+    localStorage.getItem('token') ||
+    localStorage.getItem('api_token') ||
+    ''
+  ).trim().replace(/^Bearer\s+/i, '');
+
+  if (token) {
+    localStorage.setItem('token', token);
+    localStorage.setItem('api_token', token);
+  }
+
+  return token;
+}
+
 function getAccountIcon() {
   return `
     <svg
@@ -531,6 +546,9 @@ function handleSignOut() {
   const currentPath = window.location.pathname;
 
   localStorage.removeItem("token");
+  localStorage.removeItem("api_token");
+  sessionStorage.removeItem("tempToken");
+  sessionStorage.removeItem("twoFactorMethods");
 
   document.getElementById('header')?.classList.remove('is-mobile-menu-open');
   document.body.classList.remove('mobile-menu-lock');
@@ -551,7 +569,7 @@ function handleSignOut() {
 }
 
 function updateAuthButtons() {
-  const token = localStorage.getItem('token');
+  const token = getStoredAuthToken();
 
   if (token) {
     authButtons.innerHTML = `
@@ -622,7 +640,7 @@ function updateAuthButtons() {
 }
 
 async function updateAuthRestrictedItems() {
-  const token = localStorage.getItem('token');
+  const token = getStoredAuthToken();
 
   const authRequiredItems = document.querySelectorAll('[data-auth-required]');
 
@@ -647,6 +665,7 @@ async function updateAuthRestrictedItems() {
 
     if (response.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('api_token');
       document.getElementById('header')?.classList.remove('is-mobile-menu-open');
       document.body.classList.remove('mobile-menu-lock');
       updateAuthButtons();
@@ -676,6 +695,11 @@ async function updateAuthRestrictedItems() {
     );
   }
 }
+
+window.refreshAuthUI = function refreshAuthUI() {
+  updateAuthButtons();
+  updateAuthRestrictedItems();
+};
 
 updateAuthButtons();
 updateAuthRestrictedItems();

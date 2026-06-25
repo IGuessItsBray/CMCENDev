@@ -1,55 +1,42 @@
-// Dashboard MFA helper: automatic login + TOTP & WebAuthn handlers
+// Dashboard MFA helper: TOTP & WebAuthn handlers
 document.addEventListener('DOMContentLoaded', () => {
   (async () => {
-    let token = localStorage.getItem('api_token') || '';
-
-    const loginForm = document.getElementById('login-form');
-    const mfaConfig = document.getElementById('mfa-config');
-    const logoutBtn = document.getElementById('logout-button');
-
-    function showMfaConfig(show) {
-      if (mfaConfig) mfaConfig.hidden = !show;
-      if (loginForm) loginForm.hidden = show;
+    function normalizeToken(value) {
+      return String(value || '').trim().replace(/^Bearer\s+/i, '');
     }
 
-    showMfaConfig(Boolean(token));
-
-    if (loginForm) {
-      loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('login-username').value.trim();
-        const password = document.getElementById('login-password').value;
-
-        try {
-          const res = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-          });
-
-          if (!res.ok) {
-            const j = await res.json().catch(() => ({}));
-            alert('Login failed: ' + (j.error || res.status));
-            return;
-          }
-
-          const j = await res.json();
-          token = j.token;
-          localStorage.setItem('api_token', token);
-          showMfaConfig(true);
-          alert('Logged in');
-        } catch (err) {
-          alert('Login error: ' + err.message);
-        }
-      });
+    function ensureWebAuthnAvailable() {
+      if (!window.PublicKeyCredential || !navigator.credentials) {
+        throw new Error('Passkeys are not available in this browser context. Use HTTPS or localhost in a supported browser.');
+      }
     }
 
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
-        token = '';
-        localStorage.removeItem('api_token');
-        showMfaConfig(false);
-      });
+    function getDashboardToken() {
+      return normalizeToken(localStorage.getItem('token') || localStorage.getItem('api_token'));
+    }
+
+    let token = getDashboardToken();
+
+    if (token) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('api_token', token);
+    }
+
+    function requireToken() {
+      token = getDashboardToken();
+
+      if (!token) {
+        window.location.replace('/login.html');
+        throw new Error('Authentication required');
+      }
+
+      return token;
+    }
+
+    function handleUnauthorized() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('api_token');
+      window.location.replace('/login.html');
     }
 
     function b64ToUint8Array(b64url) {
@@ -73,9 +60,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function api(path, opts = {}){
       const headers = opts.headers || {};
-      if (token) headers['Authorization'] = 'Bearer ' + token;
+      headers['Authorization'] = 'Bearer ' + requireToken();
       headers['Content-Type'] = opts.json ? 'application/json' : (headers['Content-Type'] || 'application/json');
       const res = await fetch(path, { ...opts, headers });
+      if (res.status === 401) {
+        handleUnauthorized();
+        throw new Error('Authentication required');
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}: ${await res.text()}`);
       return res.json();
     }
@@ -86,57 +77,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (totpSetupBtn) totpSetupBtn.addEventListener('click', async () => {
       try {
+        totpSetupBtn.disabled = true;
         const res = await api('/api/mfa/totp/setup', { method: 'POST', json: true });
         const container = document.getElementById('totp-otpauth');
         if (container) {
-          container.innerText = res.otpauth_url || JSON.stringify(res);
+          container.replaceChildren();
           // show QR returned directly
           if (res.qrcode) {
             let img = document.getElementById('totp-qr');
             if (!img) {
               img = document.createElement('img');
               img.id = 'totp-qr';
-              img.style.maxWidth = '200px';
-              img.style.display = 'block';
-              img.style.marginTop = '8px';
-              container.appendChild(img);
             }
             img.src = res.qrcode;
+            img.alt = 'TOTP QR code';
+            container.appendChild(img);
           } else {
             // fallback: fetch QR endpoint
             try {
-              const q = await fetch('/api/mfa/totp/qrcode', { headers: { 'Authorization': 'Bearer ' + token } });
+              const q = await fetch('/api/mfa/totp/qrcode', { headers: { 'Authorization': 'Bearer ' + requireToken() } });
               if (q.ok) {
                 const j = await q.json();
                 let img = document.getElementById('totp-qr');
                 if (!img) {
                   img = document.createElement('img');
                   img.id = 'totp-qr';
-                  img.style.maxWidth = '200px';
-                  img.style.display = 'block';
-                  img.style.marginTop = '8px';
-                  container.appendChild(img);
                 }
                 img.src = j.qrcode;
+                img.alt = 'TOTP QR code';
+                container.appendChild(img);
               }
             } catch (e) { console.warn('Could not fetch QR', e); }
           }
+
+          const secret = document.createElement('code');
+          secret.className = 'mfa-secret';
+          secret.textContent = res.otpauth_url || JSON.stringify(res);
+          container.appendChild(secret);
         }
         alert('TOTP secret created. Scan the QR or otpauth URL with your authenticator.');
       } catch (e) { alert('Error: '+e.message); }
+      finally { totpSetupBtn.disabled = false; }
     });
 
     if (totpVerifyBtn) totpVerifyBtn.addEventListener('click', async () => {
       try {
+        totpVerifyBtn.disabled = true;
         const code = document.getElementById('totp-code').value.trim();
         const res = await fetch('/api/mfa/totp/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + requireToken() },
           body: JSON.stringify({ token: code })
         });
+        if (res.status === 401) {
+          handleUnauthorized();
+          return;
+        }
         const j = await res.json();
         if (res.ok) alert('TOTP verified'); else alert('Verify failed: '+(j.error||JSON.stringify(j)));
       } catch (e) { alert('Error: '+e.message); }
+      finally { totpVerifyBtn.disabled = false; }
     });
 
     // WebAuthn handlers
@@ -145,6 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (waRegisterBtn) waRegisterBtn.addEventListener('click', async () => {
       try {
+        waRegisterBtn.disabled = true;
+        ensureWebAuthnAvailable();
         const options = await api('/api/mfa/webauthn/register/options', { method: 'POST', json: true });
         if (!options || !options.challenge) { alert('No registration options returned'); return; }
 
@@ -164,19 +166,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const verifyRes = await fetch('/api/mfa/webauthn/register/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + requireToken() },
           body: JSON.stringify({ id: cred.id, rawId, type: cred.type, response: { clientDataJSON, attestationObject }, transports: cred.response.getTransports ? cred.response.getTransports() : [] })
         });
+        if (verifyRes.status === 401) {
+          handleUnauthorized();
+          return;
+        }
 
         const j = await verifyRes.json();
         if (verifyRes.ok) alert('Passkey registered'); else alert('Register failed: '+(j.error||JSON.stringify(j)));
       } catch (e) { alert('Error: '+e.message); }
+      finally { waRegisterBtn.disabled = false; }
     });
 
     if (waAuthBtn) waAuthBtn.addEventListener('click', async () => {
       try {
+        waAuthBtn.disabled = true;
+        ensureWebAuthnAvailable();
         const options = await api('/api/mfa/webauthn/authenticate/options', { method: 'POST', json: true });
         if (!options || Object.keys(options).length === 0) { alert('No authentication options returned'); return; }
+        if (!options.allowCredentials || options.allowCredentials.length === 0) {
+          alert('No passkeys are registered for this account yet.');
+          return;
+        }
 
         options.challenge = b64ToUint8Array(options.challenge);
         if (options.allowCredentials) options.allowCredentials = options.allowCredentials.map(c => ({ ...c, id: b64ToUint8Array(c.id) }));
@@ -190,13 +203,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const verifyRes = await fetch('/api/mfa/webauthn/authenticate/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + requireToken() },
           body: JSON.stringify({ id: assertion.id, rawId, type: assertion.type, response: { authenticatorData: authData, clientDataJSON, signature, userHandle } })
         });
+        if (verifyRes.status === 401) {
+          handleUnauthorized();
+          return;
+        }
 
         const j = await verifyRes.json();
         if (verifyRes.ok) alert('Passkey authentication succeeded'); else alert('Auth failed: '+(j.error||JSON.stringify(j)));
       } catch (e) { alert('Error: '+e.message); }
+      finally { waAuthBtn.disabled = false; }
     });
 
   })();

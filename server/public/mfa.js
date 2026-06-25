@@ -1,9 +1,22 @@
 // Minimal client for MFA (TOTP) and WebAuthn flows
 (async () => {
-  let token = localStorage.getItem('api_token');
+  function normalizeToken(value) {
+    return String(value || '').trim().replace(/^Bearer\s+/i, '');
+  }
+
+  function ensureWebAuthnAvailable() {
+    if (!window.PublicKeyCredential || !navigator.credentials) {
+      throw new Error('Passkeys are not available in this browser context. Use HTTPS or localhost in a supported browser.');
+    }
+  }
+
+  let token = normalizeToken(localStorage.getItem('api_token'));
   if (!token) {
     token = prompt('Paste JWT token from /api/login (Bearer)');
+    token = normalizeToken(token);
     if (token) localStorage.setItem('api_token', token);
+  } else {
+    localStorage.setItem('api_token', token);
   }
 
   function b64ToUint8Array(b64url) {
@@ -92,6 +105,7 @@
   // WebAuthn register
   document.getElementById('webauthn-register').addEventListener('click', async () => {
     try {
+      ensureWebAuthnAvailable();
       const options = await api('/api/mfa/webauthn/register/options', { method: 'POST', json: true });
       if (!options || !options.challenge) { alert('No registration options returned'); return; }
 
@@ -126,7 +140,12 @@
   // WebAuthn authenticate
   document.getElementById('webauthn-authenticate').addEventListener('click', async () => {
     try {
+      ensureWebAuthnAvailable();
       const options = await api('/api/mfa/webauthn/authenticate/options', { method: 'POST', json: true });
+      if (!options.allowCredentials || options.allowCredentials.length === 0) {
+        alert('No passkeys are registered for this account yet.');
+        return;
+      }
       options.challenge = b64ToUint8Array(options.challenge);
       if (options.allowCredentials) {
         options.allowCredentials = options.allowCredentials.map(c => ({ ...c, id: b64ToUint8Array(c.id) }));

@@ -42,7 +42,7 @@
               </h1>
 
               <p data-i18n="review_events_intro">
-                Review pending event and retirement message submissions.
+                Review pending event, retirement message, and comment submissions.
               </p>
             </div>
           </div>
@@ -60,6 +60,7 @@
           class="event-management-tabs"
           role="tablist"
           aria-label="Review queues"
+          data-i18n-aria-label="review_queues_label"
         >
           <button
             class="event-management-tab is-active"
@@ -86,6 +87,20 @@
           >
             <span data-i18n="review_retirements_tab">
               Retirement Messages
+            </span>
+          </button>
+
+          <button
+            class="event-management-tab"
+            id="reviewCommentsTab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="reviewCommentsPanel"
+            data-review-tab="comments"
+          >
+            <span data-i18n="review_comments_tab">
+              Comments
             </span>
           </button>
         </div>
@@ -135,6 +150,31 @@
           <div
             class="review-queue"
             id="retirementReviewQueue"
+            hidden
+          ></div>
+        </div>
+
+        <div
+          class="event-management-panel"
+          id="reviewCommentsPanel"
+          role="tabpanel"
+          aria-labelledby="reviewCommentsTab"
+          data-review-panel="comments"
+          hidden
+        >
+          <p
+            class="review-page-message is-neutral"
+            id="commentReviewPageMessage"
+            role="status"
+            aria-live="polite"
+            data-i18n="loading_retirement_comments"
+          >
+            Loading comments...
+          </p>
+
+          <div
+            class="review-queue"
+            id="commentReviewQueue"
             hidden
           ></div>
         </div>

@@ -38,22 +38,14 @@
                 id="reviewEventsTitle"
                 data-i18n="review_events_title"
               >
-                Review Events
+                Review Submissions
               </h1>
 
               <p data-i18n="review_events_intro">
-                Review pending event submissions.
+                Review pending event and retirement message submissions.
               </p>
             </div>
           </div>
-
-          <span
-            class="review-queue-count"
-            id="reviewQueueCount"
-            hidden
-          >
-            0 pending
-          </span>
         </header>
 
         <p
@@ -64,21 +56,88 @@
           hidden
         ></p>
 
-        <p
-          class="review-page-message is-neutral"
-          id="reviewPageMessage"
-          role="status"
-          aria-live="polite"
-          data-i18n="loading_events"
+        <div
+          class="event-management-tabs"
+          role="tablist"
+          aria-label="Review queues"
         >
-          Loading events...
-        </p>
+          <button
+            class="event-management-tab is-active"
+            id="reviewEventsTab"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="reviewEventsPanel"
+            data-review-tab="events"
+          >
+            <span data-i18n="review_events_tab">
+              Events
+            </span>
+          </button>
+
+          <button
+            class="event-management-tab"
+            id="reviewRetirementsTab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="reviewRetirementsPanel"
+            data-review-tab="retirements"
+          >
+            <span data-i18n="review_retirements_tab">
+              Retirement Messages
+            </span>
+          </button>
+        </div>
 
         <div
-          class="review-queue"
-          id="reviewQueue"
+          class="event-management-panel is-active"
+          id="reviewEventsPanel"
+          role="tabpanel"
+          aria-labelledby="reviewEventsTab"
+          data-review-panel="events"
+        >
+          <p
+            class="review-page-message is-neutral"
+            id="reviewPageMessage"
+            role="status"
+            aria-live="polite"
+            data-i18n="loading_events"
+          >
+            Loading events...
+          </p>
+
+          <div
+            class="review-queue"
+            id="reviewQueue"
+            hidden
+          ></div>
+        </div>
+
+        <div
+          class="event-management-panel"
+          id="reviewRetirementsPanel"
+          role="tabpanel"
+          aria-labelledby="reviewRetirementsTab"
+          data-review-panel="retirements"
           hidden
-        ></div>
+        >
+          <p
+            class="review-page-message is-neutral"
+            id="retirementReviewPageMessage"
+            role="status"
+            aria-live="polite"
+            data-i18n="loading_retirement_messages"
+          >
+            Loading retirement messages...
+          </p>
+
+          <div
+            class="review-queue"
+            id="retirementReviewQueue"
+            hidden
+          ></div>
+        </div>
       </section>
     </main>
 

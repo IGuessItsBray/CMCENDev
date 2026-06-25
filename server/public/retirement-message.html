@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>Retirement Message | CMCEN / RCMCE</title>
+
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="retirement-detail-main">
+      <article
+        class="retirement-detail-shell"
+        aria-labelledby="retirementDetailTitle"
+      >
+        <p
+          class="retirements-message"
+          id="retirementDetailMessage"
+          role="status"
+          aria-live="polite"
+        >
+          Loading retirement message...
+        </p>
+
+        <div id="retirementDetailContent" hidden>
+          <header class="retirement-detail-heading">
+            <a
+              class="retirement-detail-back"
+              href="/retirements.html"
+            >
+              <span aria-hidden="true">←</span>
+              Back to retirement messages
+            </a>
+
+            <h1 id="retirementDetailTitle"></h1>
+
+            <p
+              class="retirement-detail-mosid"
+              id="retirementDetailMosid"
+            ></p>
+
+            <p
+              class="retirement-detail-date"
+              id="retirementDetailDate"
+            ></p>
+          </header>
+
+          <div class="retirement-detail-body">
+            <figure class="retirement-detail-photo">
+              <div id="retirementDetailPhoto"></div>
+            </figure>
+
+            <section
+              class="retirement-detail-message-section"
+              aria-label="Retirement message"
+            >
+              <p id="retirementDetailText"></p>
+            </section>
+
+            <section
+              class="retirement-detail-comments"
+              aria-labelledby="retirementCommentsHeading"
+            >
+              <h2 id="retirementCommentsHeading">
+                Comments
+              </h2>
+
+              <p>
+                Comment section coming soon.
+              </p>
+            </section>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/retirement-message.js"></script>
+  </body>
+</html>

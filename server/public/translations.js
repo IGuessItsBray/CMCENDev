@@ -217,9 +217,13 @@ const translations = {
     all_day: "All day",
 
     // Event review
-    review_events_title: "Review Events",
+    review_events_title: "Review Submissions",
     review_events_intro:
-      "Review pending event submissions.",
+      "Review pending event and retirement message submissions.",
+    review_events_tab:
+      "Events",
+    review_retirements_tab:
+      "Retirement Messages",
     submitted_by: "Submitted by",
     submitted_on: "Submitted on",
     event_date_label: "Event date",
@@ -237,14 +241,18 @@ const translations = {
     reject_event: "Reject",
     no_pending_events:
       "There are no events awaiting review.",
+    loading_retirement_messages:
+      "Loading retirement messages...",
+    no_pending_retirement_messages:
+      "There are no retirement messages awaiting review.",
     review_access_denied:
-      "You do not have permission to review events.",
+      "You do not have permission to review submissions.",
     review_failed:
       "The event could not be reviewed.",
     review_load_error:
       "The review queue could not be loaded.",
     review_events_page_title:
-      "Review Events | CMCEN / RCMCE",
+      "Review Submissions | CMCEN / RCMCE",
 
     review_workflow_eyebrow:
       "Editorial workflow",
@@ -260,6 +268,12 @@ const translations = {
 
     review_pending_events_plural:
       "events pending",
+
+    review_pending_retirement_singular:
+      "retirement message pending",
+
+    review_pending_retirements_plural:
+      "retirement messages pending",
 
     review_content_area:
       "Content area",
@@ -287,6 +301,51 @@ const translations = {
 
     review_reject_success:
       "Event rejected successfully.",
+
+    retirement_review_pending_submission:
+      "Pending retirement message",
+
+    retirement_review_untitled:
+      "Retirement message",
+
+    retirement_review_retiree_record:
+      "Retiree information",
+
+    retirement_review_message_record:
+      "Message",
+
+    retirement_review_photo_record:
+      "Photo",
+
+    retirement_review_photo_alt:
+      "Photo for {name}",
+
+    retirement_review_open_photo:
+      "Open full-size photo",
+
+    retirement_rejection_reason_help:
+      "A reason is required only when rejecting the retirement message.",
+
+    retirement_rejection_reason_required:
+      "Enter a reason before rejecting this retirement message.",
+
+    publish_retirement_message:
+      "Publish",
+
+    reject_retirement_message:
+      "Reject",
+
+    retirement_review_failed:
+      "The retirement message could not be reviewed.",
+
+    retirement_review_load_error:
+      "The retirement message review queue could not be loaded.",
+
+    retirement_review_publish_success:
+      "Retirement message published successfully.",
+
+    retirement_review_reject_success:
+      "Retirement message rejected successfully.",
 
     // About page
     about_family_heading:
@@ -1136,9 +1195,13 @@ const translations = {
 
     // Révision des événements
     review_events_title:
-      "Réviser les événements",
+      "Réviser les soumissions",
     review_events_intro:
-      "Révisez les événements soumis en attente.",
+      "Révisez les événements et les messages de retraite soumis en attente.",
+    review_events_tab:
+      "Événements",
+    review_retirements_tab:
+      "Messages de retraite",
     submitted_by: "Soumis par",
     submitted_on: "Soumis le",
     event_date_label:
@@ -1158,14 +1221,18 @@ const translations = {
     reject_event: "Refuser",
     no_pending_events:
       "Aucun événement n'est en attente de révision.",
+    loading_retirement_messages:
+      "Chargement des messages de retraite...",
+    no_pending_retirement_messages:
+      "Aucun message de retraite n'est en attente de révision.",
     review_access_denied:
-      "Vous n'avez pas l'autorisation de réviser les événements.",
+      "Vous n'avez pas l'autorisation de réviser les soumissions.",
     review_failed:
       "Impossible de réviser l'événement.",
     review_load_error:
       "Impossible de charger la file de révision.",
     review_events_page_title:
-      "Réviser les événements | CMCEN / RCMCE",
+      "Réviser les soumissions | CMCEN / RCMCE",
 
     review_workflow_eyebrow:
       "Processus éditorial",
@@ -1181,6 +1248,12 @@ const translations = {
 
     review_pending_events_plural:
       "événements en attente",
+
+    review_pending_retirement_singular:
+      "message de retraite en attente",
+
+    review_pending_retirements_plural:
+      "messages de retraite en attente",
 
     review_content_area:
       "Secteur de contenu",
@@ -1208,6 +1281,51 @@ const translations = {
 
     review_reject_success:
       "Événement refusé avec succès.",
+
+    retirement_review_pending_submission:
+      "Message de retraite en attente de révision",
+
+    retirement_review_untitled:
+      "Message de retraite",
+
+    retirement_review_retiree_record:
+      "Renseignements sur la personne retraitée",
+
+    retirement_review_message_record:
+      "Message",
+
+    retirement_review_photo_record:
+      "Photo",
+
+    retirement_review_photo_alt:
+      "Photo de {name}",
+
+    retirement_review_open_photo:
+      "Ouvrir la photo pleine grandeur",
+
+    retirement_rejection_reason_help:
+      "Un motif est requis uniquement lorsque le message de retraite est refusé.",
+
+    retirement_rejection_reason_required:
+      "Indiquez un motif avant de refuser ce message de retraite.",
+
+    publish_retirement_message:
+      "Publier",
+
+    reject_retirement_message:
+      "Refuser",
+
+    retirement_review_failed:
+      "Impossible de réviser le message de retraite.",
+
+    retirement_review_load_error:
+      "Impossible de charger la file de révision des messages de retraite.",
+
+    retirement_review_publish_success:
+      "Message de retraite publié avec succès.",
+
+    retirement_review_reject_success:
+      "Message de retraite refusé avec succès.",
 
     // Page À propos
     about_family_heading:

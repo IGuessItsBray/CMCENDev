@@ -1,11 +1,17 @@
 const reviewQueue = document.getElementById("reviewQueue");
 const reviewPageMessage = document.getElementById("reviewPageMessage");
 const reviewNotice = document.getElementById("reviewNotice");
-const reviewQueueCount = document.getElementById("reviewQueueCount");
+const retirementReviewQueue = document.getElementById("retirementReviewQueue");
+const retirementReviewPageMessage =
+  document.getElementById("retirementReviewPageMessage");
+const reviewTabs = document.querySelectorAll("[data-review-tab]");
+const reviewPanels = document.querySelectorAll("[data-review-panel]");
 
 let pendingEvents = [];
+let pendingRetirementMessages = [];
 let accessDenied = false;
 let loadFailed = false;
+let retirementLoadFailed = false;
 let noticeTimer = null;
 
 function getReviewLanguage() {
@@ -200,6 +206,33 @@ function formatReviewUser(user) {
     user.email ||
     "—"
   );
+}
+
+function formatRetireeName(retirementMessage) {
+  const retiree = retirementMessage.retiree || {};
+
+  return [
+    retiree.rank,
+    retiree.firstName,
+    retiree.lastName
+  ]
+    .filter(Boolean)
+    .join(" ") ||
+    translate("retirement_review_untitled");
+}
+
+function formatDateOnly(dateValue) {
+  if (!dateValue) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat(
+    getReviewLocale(),
+    {
+      dateStyle: "long",
+      timeZone: "UTC"
+    }
+  ).format(new Date(dateValue));
 }
 
 function createReviewRecordSection(titleKey, items, additionalClass = "") {
@@ -745,31 +778,397 @@ function createReviewCard(event) {
   return article;
 }
 
-function updateQueueCount() {
-  const count = pendingEvents.length;
+function createRetirementMessageSection(retirementMessage) {
+  const section = document.createElement("section");
+  section.className =
+    "review-record-section retirement-review-message-section";
 
-  const labelKey =
-    count === 1
-      ? "review_pending_event_singular"
-      : "review_pending_events_plural";
+  const heading = document.createElement("h3");
+  heading.textContent =
+    translate("retirement_review_message_record");
 
-  reviewQueueCount.textContent =
-    `${count} ${translate(labelKey)}`;
+  const language = document.createElement("span");
+  language.className = "review-language-code";
+  language.textContent =
+    (retirementMessage.messageLanguage || "en").toUpperCase();
 
-  reviewQueueCount.hidden = false;
+  const message = document.createElement("p");
+  message.className = "review-event-description retirement-review-message";
+  message.textContent = retirementMessage.message || "—";
+
+  section.append(heading, language, message);
+
+  return section;
+}
+
+function createRetirementPhotoSection(retirementMessage) {
+  if (!retirementMessage.photoUrl) {
+    return null;
+  }
+
+  const section = document.createElement("section");
+  section.className =
+    "review-record-section retirement-review-photo-section";
+
+  const heading = document.createElement("h3");
+  heading.textContent =
+    translate("retirement_review_photo_record");
+
+  const link = document.createElement("a");
+  link.className = "retirement-review-photo-link";
+  link.href = retirementMessage.photoUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+
+  const image = document.createElement("img");
+  image.src = retirementMessage.photoUrl;
+  image.alt = translate("retirement_review_photo_alt", {
+    name: formatRetireeName(retirementMessage)
+  });
+  image.loading = "lazy";
+
+  const label = document.createElement("span");
+  label.textContent = translate("retirement_review_open_photo");
+
+  link.append(image, label);
+  section.append(heading, link);
+
+  return section;
+}
+
+function createRetirementReviewCard(retirementMessage) {
+  const article = document.createElement("article");
+  article.className = "review-event-card";
+  article.dataset.retirementMessageId =
+    retirementMessage._id;
+
+  const cardHeader = document.createElement("header");
+  cardHeader.className = "review-event-card-header";
+
+  const headingCopy = document.createElement("div");
+  headingCopy.className = "review-event-card-heading";
+
+  const eyebrow = document.createElement("p");
+  eyebrow.textContent =
+    translate("retirement_review_pending_submission");
+
+  const title = document.createElement("h2");
+  title.textContent =
+    formatRetireeName(retirementMessage);
+
+  headingCopy.append(eyebrow, title);
+
+  const status = document.createElement("span");
+  status.className = "review-status-badge";
+  status.textContent = translate("review_status_pending");
+
+  cardHeader.append(
+    headingCopy,
+    status
+  );
+
+  const meta = document.createElement("div");
+  meta.className = "review-event-meta is-two-column";
+
+  meta.append(
+    createMetaItem(
+      "submitted_by",
+      [
+        retirementMessage.submitter?.firstName,
+        retirementMessage.submitter?.lastName
+      ]
+        .filter(Boolean)
+        .join(" ") ||
+        translate("unknown_user")
+    ),
+
+    createMetaItem(
+      "submitted_on",
+      formatSubmittedDate(
+        retirementMessage.createdAt
+      )
+    )
+  );
+
+  const retireeInformation =
+    createReviewRecordSection(
+      "retirement_review_retiree_record",
+      [
+        {
+          labelKey: "retirement_rank",
+          value: retirementMessage.retiree?.rank
+        },
+
+        {
+          labelKey: "retirement_first_name",
+          value: retirementMessage.retiree?.firstName
+        },
+
+        {
+          labelKey: "retirement_last_name",
+          value: retirementMessage.retiree?.lastName
+        },
+
+        {
+          labelKey: "retirement_date",
+          value: formatDateOnly(
+            retirementMessage.retiree?.retirementDate
+          )
+        },
+
+        {
+          labelKey: "retirement_years_service",
+          value: retirementMessage.retiree?.yearsOfService
+        },
+
+        {
+          labelKey: "retirement_trade_role",
+          value: retirementMessage.retiree?.tradeRole,
+          wide: true
+        }
+      ],
+      "review-event-information"
+    );
+
+  const submitterInformation =
+    createReviewRecordSection(
+      "review_submitter_record",
+      [
+        {
+          labelKey: "retirement_submitter_first_name",
+          value: retirementMessage.submitter?.firstName
+        },
+
+        {
+          labelKey: "retirement_submitter_last_name",
+          value: retirementMessage.submitter?.lastName
+        },
+
+        {
+          labelKey: "retirement_submitter_relationship",
+          value:
+            formatTranslatedOption(
+              "relationship",
+              retirementMessage.submitter?.relationship
+            )
+        },
+
+        {
+          labelKey: "retirement_submitter_email",
+          value: retirementMessage.submitter?.email,
+          wide: true
+        },
+
+        {
+          labelKey: "retirement_submitter_unit",
+          value: retirementMessage.submitter?.unit,
+          wide: true
+        }
+      ]
+    );
+
+  const consentConfirmed =
+    retirementMessage.publicationConsent
+      ?.confirmed === true;
+
+  const authorizationInformation =
+    createReviewRecordSection(
+      "review_authorization_record",
+      [
+        {
+          labelKey: "review_permission_status",
+          value: translate(
+            consentConfirmed
+              ? "review_permission_confirmed"
+              : "review_permission_not_recorded"
+          ),
+          valueClass:
+            consentConfirmed
+              ? "is-confirmed"
+              : "is-unconfirmed"
+        },
+
+        {
+          labelKey: "review_confirmed_on",
+          value:
+            retirementMessage.publicationConsent
+              ?.confirmedAt
+              ? formatSubmittedDate(
+                retirementMessage
+                  .publicationConsent
+                  .confirmedAt
+              )
+              : "—",
+          wide: true
+        }
+      ]
+    );
+
+  const submissionRecord = document.createElement("div");
+  submissionRecord.className = "review-submission-record";
+  submissionRecord.append(
+    submitterInformation,
+    authorizationInformation
+  );
+
+  const photoSection =
+    createRetirementPhotoSection(retirementMessage);
+
+  const decision = document.createElement("section");
+  decision.className = "review-decision";
+
+  const decisionCopy = document.createElement("div");
+  decisionCopy.className = "review-decision-copy";
+
+  const decisionHeading = document.createElement("h3");
+  decisionHeading.textContent = translate("review_decision");
+
+  const decisionHelp = document.createElement("p");
+  decisionHelp.textContent =
+    translate("retirement_rejection_reason_help");
+
+  decisionCopy.append(
+    decisionHeading,
+    decisionHelp
+  );
+
+  const rejectionField =
+    document.createElement("div");
+
+  rejectionField.className =
+    "review-rejection-field";
+
+  const rejectionLabel =
+    document.createElement("label");
+
+  rejectionLabel.textContent =
+    translate("rejection_reason_label");
+
+  const rejectionReason =
+    document.createElement("textarea");
+
+  rejectionReason.className =
+    "review-rejection-reason";
+
+  rejectionReason.rows = 3;
+  rejectionReason.maxLength = 2000;
+  rejectionReason.placeholder =
+    translate("rejection_reason_placeholder");
+
+  rejectionLabel.htmlFor =
+    `retirement-rejection-${retirementMessage._id}`;
+
+  rejectionReason.id =
+    `retirement-rejection-${retirementMessage._id}`;
+
+  rejectionField.append(
+    rejectionLabel,
+    rejectionReason
+  );
+
+  const actionMessage =
+    document.createElement("p");
+
+  actionMessage.className =
+    "review-action-message";
+
+  actionMessage.setAttribute(
+    "role",
+    "alert"
+  );
+
+  actionMessage.hidden = true;
+
+  const actions =
+    document.createElement("div");
+
+  actions.className = "review-actions";
+
+  const publishButton =
+    document.createElement("button");
+
+  publishButton.type = "button";
+  publishButton.className =
+    "review-publish-button";
+  publishButton.textContent =
+    translate("publish_retirement_message");
+
+  const rejectButton =
+    document.createElement("button");
+
+  rejectButton.type = "button";
+  rejectButton.className =
+    "review-reject-button";
+  rejectButton.textContent =
+    translate("reject_retirement_message");
+
+  publishButton.addEventListener(
+    "click",
+    () => {
+      submitRetirementReview(
+        retirementMessage._id,
+        "publish",
+        article
+      );
+    }
+  );
+
+  rejectButton.addEventListener(
+    "click",
+    () => {
+      submitRetirementReview(
+        retirementMessage._id,
+        "reject",
+        article
+      );
+    }
+  );
+
+  actions.append(
+    rejectButton,
+    publishButton
+  );
+
+  decision.append(
+    decisionCopy,
+    rejectionField,
+    actionMessage,
+    actions
+  );
+
+  article.append(
+    cardHeader,
+    meta,
+    retireeInformation,
+    createRetirementMessageSection(
+      retirementMessage
+    )
+  );
+
+  if (photoSection) {
+    article.append(photoSection);
+  }
+
+  article.append(
+    submissionRecord,
+    decision
+  );
+
+  return article;
 }
 
 function showPageMessage(
   message,
-  type = "neutral"
+  type = "neutral",
+  messageElement = reviewPageMessage
 ) {
-  reviewPageMessage.textContent =
+  messageElement.textContent =
     message;
 
-  reviewPageMessage.className =
+  messageElement.className =
     `review-page-message is-${type}`;
 
-  reviewPageMessage.hidden = false;
+  messageElement.hidden = false;
 }
 
 function showNotice(message, type = "success") {
@@ -787,8 +1186,6 @@ function showNotice(message, type = "success") {
 function renderReviewQueue() {
   reviewQueue.replaceChildren();
 
-  updateQueueCount();
-
   if (!pendingEvents.length) {
     reviewQueue.hidden = true;
     showPageMessage(translate("no_pending_events"), "empty");
@@ -802,6 +1199,30 @@ function renderReviewQueue() {
   pendingEvents.forEach(event => {
     reviewQueue.appendChild(
       createReviewCard(event)
+    );
+  });
+}
+
+function renderRetirementReviewQueue() {
+  retirementReviewQueue.replaceChildren();
+
+  if (!pendingRetirementMessages.length) {
+    retirementReviewQueue.hidden = true;
+    showPageMessage(
+      translate("no_pending_retirement_messages"),
+      "empty",
+      retirementReviewPageMessage
+    );
+
+    return;
+  }
+
+  retirementReviewPageMessage.hidden = true;
+  retirementReviewQueue.hidden = false;
+
+  pendingRetirementMessages.forEach(retirementMessage => {
+    retirementReviewQueue.appendChild(
+      createRetirementReviewCard(retirementMessage)
     );
   });
 }
@@ -933,6 +1354,136 @@ async function submitReview(eventId, action, card) {
   }
 }
 
+async function submitRetirementReview(messageId, action, card) {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    redirectToLogin();
+    return;
+  }
+
+  const reasonInput = card.querySelector(".review-rejection-reason");
+  const messageElement = card.querySelector(".review-action-message");
+  const buttons = card.querySelectorAll("button");
+  const rejectionReason = reasonInput.value.trim();
+
+  messageElement.textContent = "";
+  messageElement.hidden = true;
+
+  if (action === "reject" && !rejectionReason) {
+    messageElement.textContent =
+      translate("retirement_rejection_reason_required");
+    messageElement.hidden = false;
+
+    reasonInput.focus();
+
+    return;
+  }
+
+  buttons.forEach(button => {
+    button.disabled = true;
+  });
+
+  const activeButton = action === "publish" ?
+    card.querySelector(".review-publish-button")
+    : card.querySelector(".review-reject-button");
+
+  activeButton.textContent =
+    translate(
+      action === "publish"
+        ? "review_publishing"
+        : "review_rejecting"
+    );
+
+  try {
+    const response = await fetch(
+      `/api/retirement-messages/${messageId}/review`,
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${token}`
+        },
+
+        body: JSON.stringify({
+          action,
+
+          rejectionReason:
+            action === "reject"
+              ? rejectionReason
+              : undefined
+        })
+      }
+    );
+
+    const data = await response
+      .json()
+      .catch(() => ({}));
+
+    if (response.status === 401) {
+      redirectToLogin();
+      return;
+    }
+
+    if (response.status === 403) {
+      throw new Error(
+        translate("review_access_denied")
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        translate("retirement_review_failed")
+      );
+    }
+
+    pendingRetirementMessages =
+      pendingRetirementMessages.filter(
+        retirementMessage =>
+          retirementMessage._id !== messageId
+      );
+
+    card.classList.add("is-resolved");
+
+    window.setTimeout(() => {
+      card.remove();
+      renderRetirementReviewQueue();
+    }, 160);
+
+    showNotice(
+      translate(
+        action === "publish"
+          ? "retirement_review_publish_success"
+          : "retirement_review_reject_success"
+      )
+    );
+  } catch (error) {
+    messageElement.textContent =
+      error.message;
+
+    messageElement.hidden = false;
+
+    buttons.forEach(button => {
+      button.disabled = false;
+    });
+
+    card.querySelector(
+      ".review-publish-button"
+    ).textContent =
+      translate("publish_retirement_message");
+
+    card.querySelector(
+      ".review-reject-button"
+    ).textContent =
+      translate("reject_retirement_message");
+  }
+}
+
 async function loadReviewQueue() {
   const token = localStorage.getItem("token");
 
@@ -943,9 +1494,14 @@ async function loadReviewQueue() {
 
   accessDenied = false;
   loadFailed = false;
-  reviewQueueCount.hidden = true;
+  retirementLoadFailed = false;
 
   showPageMessage(translate("loading_events"), "neutral");
+  showPageMessage(
+    translate("loading_retirement_messages"),
+    "neutral",
+    retirementReviewPageMessage
+  );
 
   try {
     const userResponse = await fetch("/api/me", {
@@ -970,50 +1526,113 @@ async function loadReviewQueue() {
       accessDenied = true;
 
       showPageMessage(translate("review_access_denied"), "error");
+      showPageMessage(
+        translate("review_access_denied"),
+        "error",
+        retirementReviewPageMessage
+      );
 
       return;
     }
 
-    const response = await fetch(
-      "/api/events/review",
-      {
-        headers: {
-          Authorization:
-            `Bearer ${token}`
+    const [
+      eventResponse,
+      retirementResponse
+    ] = await Promise.all([
+      fetch(
+        "/api/events/review",
+        {
+          headers: {
+            Authorization:
+              `Bearer ${token}`
+          }
         }
-      }
-    );
+      ),
+      fetch(
+        "/api/retirement-messages/review",
+        {
+          headers: {
+            Authorization:
+              `Bearer ${token}`
+          }
+        }
+      )
+    ]);
 
-    const data = await response
-      .json()
-      .catch(() => ({}));
-
-    if (response.status === 401) {
+    if (
+      eventResponse.status === 401 ||
+      retirementResponse.status === 401
+    ) {
       redirectToLogin();
       return;
     }
 
-    if (response.status === 403) {
+    if (
+      eventResponse.status === 403 ||
+      retirementResponse.status === 403
+    ) {
       accessDenied = true;
 
       throw new Error(
-        translate(
-          "review_access_denied"
-        )
+        translate("review_access_denied")
       );
     }
 
-    if (!response.ok) {
-      throw new Error(data.error || translate("review_load_error"));
+    const eventData = await eventResponse
+      .json()
+      .catch(() => ({}));
+
+    const retirementData = await retirementResponse
+      .json()
+      .catch(() => ({}));
+
+    if (!eventResponse.ok) {
+      loadFailed = true;
+
+      showPageMessage(
+        eventData.error ||
+        translate("review_load_error"),
+        "error"
+      );
+    } else {
+      pendingEvents = Array.isArray(eventData.events)
+        ? eventData.events
+        : [];
+
+      renderReviewQueue();
     }
 
-    pendingEvents = Array.isArray(data.events) ? data.events : [];
-    renderReviewQueue();
+    if (!retirementResponse.ok) {
+      retirementLoadFailed = true;
+
+      showPageMessage(
+        retirementData.error ||
+        translate("retirement_review_load_error"),
+        "error",
+        retirementReviewPageMessage
+      );
+    } else {
+      pendingRetirementMessages =
+        Array.isArray(
+          retirementData.retirementMessages
+        )
+          ? retirementData.retirementMessages
+          : [];
+
+      renderRetirementReviewQueue();
+    }
 
   } catch (error) {
     loadFailed = !accessDenied;
+    retirementLoadFailed = !accessDenied;
 
     showPageMessage(error.message || translate("review_load_error"), "error");
+    showPageMessage(
+      error.message ||
+      translate("retirement_review_load_error"),
+      "error",
+      retirementReviewPageMessage
+    );
   }
 }
 
@@ -1022,17 +1641,68 @@ document.addEventListener(
   () => {
     if (accessDenied) {
       showPageMessage(translate("review_access_denied"), "error");
+      showPageMessage(
+        translate("review_access_denied"),
+        "error",
+        retirementReviewPageMessage
+      );
       return;
     }
 
     if (loadFailed) {
       showPageMessage(translate("review_load_error"), "error");
-      return;
+    } else {
+      renderReviewQueue();
     }
 
-    renderReviewQueue();
+    if (retirementLoadFailed) {
+      showPageMessage(
+        translate("retirement_review_load_error"),
+        "error",
+        retirementReviewPageMessage
+      );
+    } else {
+      renderRetirementReviewQueue();
+    }
   }
 );
+
+function activateReviewTab(tabName) {
+  reviewTabs.forEach(tab => {
+    const isActive =
+      tab.dataset.reviewTab === tabName;
+
+    tab.classList.toggle(
+      "is-active",
+      isActive
+    );
+
+    tab.setAttribute(
+      "aria-selected",
+      String(isActive)
+    );
+  });
+
+  reviewPanels.forEach(panel => {
+    const isActive =
+      panel.dataset.reviewPanel === tabName;
+
+    panel.classList.toggle(
+      "is-active",
+      isActive
+    );
+
+    panel.hidden = !isActive;
+  });
+}
+
+reviewTabs.forEach(tab => {
+  tab.addEventListener("click", () => {
+    activateReviewTab(
+      tab.dataset.reviewTab
+    );
+  });
+});
 
 window.addEventListener(
   "pageshow", () => {

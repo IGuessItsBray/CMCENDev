@@ -79,11 +79,11 @@ function printFullRecord(message, index) {
             lastName:
                 message.retiree?.lastName || "—",
 
+            postNominals:
+                message.retiree?.postNominals || "—",
+
             tradeRole:
                 message.retiree?.tradeRole || "—",
-
-            yearsOfService:
-                message.retiree?.yearsOfService || "—",
 
             retirementDate:
                 formatDate(
@@ -122,6 +122,18 @@ function printFullRecord(message, index) {
             confirmedAt:
                 formatDate(
                     message.publicationConsent
+                        ?.confirmedAt
+                )
+        },
+
+        memberReviewConfirmation: {
+            confirmed:
+                message.memberReviewConfirmation
+                    ?.confirmed === true,
+
+            confirmedAt:
+                formatDate(
+                    message.memberReviewConfirmation
                         ?.confirmedAt
                 )
         },
@@ -200,11 +212,16 @@ async function listRetirementMessages() {
                     message.retiree?.lastName
                 ]
                     .filter(Boolean)
-                    .join(" "),
+                    .join(" ") +
+                    (
+                        message.retiree?.postNominals
+                            ? `, ${message.retiree.postNominals}`
+                            : ""
+                    ),
 
-                service:
+                postNominals:
                     message.retiree
-                        ?.yearsOfService || "—",
+                        ?.postNominals || "—",
 
                 retirement:
                     message.retiree

@@ -25,18 +25,18 @@ const retirementMessageSchema =
                     maxlength: 80
                 },
 
-                tradeRole: {
+                postNominals: {
                     type: String,
                     trim: true,
                     maxlength: 120,
                     default: ""
                 },
 
-                yearsOfService: {
+                tradeRole: {
                     type: String,
-                    required: true,
                     trim: true,
-                    maxlength: 60
+                    maxlength: 120,
+                    default: ""
                 },
 
                 retirementDate: {
@@ -57,6 +57,22 @@ const retirementMessageSchema =
                 type: String,
                 enum: ["en", "fr"],
                 required: true
+            },
+
+            messages: {
+                en: {
+                    type: String,
+                    trim: true,
+                    maxlength: 10000,
+                    default: ""
+                },
+
+                fr: {
+                    type: String,
+                    trim: true,
+                    maxlength: 10000,
+                    default: ""
+                }
             },
 
             photoUrl: {
@@ -124,6 +140,18 @@ const retirementMessageSchema =
                 confirmedAt: {
                     type: Date,
                     required: true
+                }
+            },
+
+            memberReviewConfirmation: {
+                confirmed: {
+                    type: Boolean,
+                    default: false
+                },
+
+                confirmedAt: {
+                    type: Date,
+                    default: null
                 }
             },
 

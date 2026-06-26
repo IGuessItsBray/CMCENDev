@@ -1502,8 +1502,32 @@ function showPageMessage(
 
   messageElement.className =
     `review-page-message is-${type}`;
+  messageElement.removeAttribute("aria-label");
 
   messageElement.hidden = false;
+}
+
+function showQueueLoading(
+  messageKey,
+  messageElement = reviewPageMessage,
+  queueElement = reviewQueue
+) {
+  const message = translate(messageKey);
+  const spinner = document.createElement("span");
+  const label = document.createElement("span");
+
+  spinner.className = "loading-state-spinner";
+  spinner.setAttribute("aria-hidden", "true");
+
+  label.className = "visually-hidden";
+  label.textContent = message;
+
+  messageElement.replaceChildren(spinner, label);
+  messageElement.className =
+    "review-page-message is-loading";
+  messageElement.setAttribute("aria-label", message);
+  messageElement.hidden = false;
+  queueElement.hidden = true;
 }
 
 function showNotice(message, type = "success") {
@@ -2013,16 +2037,16 @@ async function loadReviewQueue() {
   retirementLoadFailed = false;
   commentLoadFailed = false;
 
-  showPageMessage(translate("loading_events"), "neutral");
-  showPageMessage(
-    translate("loading_retirement_messages"),
-    "neutral",
-    retirementReviewPageMessage
+  showQueueLoading("loading_events");
+  showQueueLoading(
+    "loading_retirement_messages",
+    retirementReviewPageMessage,
+    retirementReviewQueue
   );
-  showPageMessage(
-    translate("loading_retirement_comments"),
-    "neutral",
-    commentReviewPageMessage
+  showQueueLoading(
+    "loading_retirement_comments",
+    commentReviewPageMessage,
+    commentReviewQueue
   );
 
   try {
@@ -2207,6 +2231,34 @@ async function loadReviewQueue() {
 document.addEventListener(
   "languagechange",
   () => {
+    if (
+      reviewPageMessage.classList.contains("is-loading") ||
+      retirementReviewPageMessage.classList.contains("is-loading") ||
+      commentReviewPageMessage.classList.contains("is-loading")
+    ) {
+      if (reviewPageMessage.classList.contains("is-loading")) {
+        showQueueLoading("loading_events");
+      }
+
+      if (retirementReviewPageMessage.classList.contains("is-loading")) {
+        showQueueLoading(
+          "loading_retirement_messages",
+          retirementReviewPageMessage,
+          retirementReviewQueue
+        );
+      }
+
+      if (commentReviewPageMessage.classList.contains("is-loading")) {
+        showQueueLoading(
+          "loading_retirement_comments",
+          commentReviewPageMessage,
+          commentReviewQueue
+        );
+      }
+
+      return;
+    }
+
     if (accessDenied) {
       showPageMessage(translate("review_access_denied"), "error");
       showPageMessage(

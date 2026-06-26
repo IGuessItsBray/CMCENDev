@@ -45,10 +45,26 @@ let visibleDetailMessageType = "neutral";
 let visibleCommentMessageKey = "";
 let visibleCommentMessageType = "neutral";
 
+function createRetirementLoadingContent(message) {
+    const spinner = document.createElement("span");
+    spinner.className = "loading-state-spinner";
+    spinner.setAttribute("aria-hidden", "true");
+
+    const label = document.createElement("span");
+    label.className = "visually-hidden";
+    label.textContent = message;
+
+    return [
+        spinner,
+        label
+    ];
+}
+
 function showRetirementDetailMessage(message, type = "neutral") {
     retirementDetailMessage.textContent = message;
     retirementDetailMessage.className =
         `retirements-message is-${type}`;
+    retirementDetailMessage.removeAttribute("aria-label");
     retirementDetailMessage.hidden = false;
     retirementDetailContent.hidden = true;
 }
@@ -56,6 +72,21 @@ function showRetirementDetailMessage(message, type = "neutral") {
 function showRetirementDetailMessageKey(key, type = "neutral") {
     visibleDetailMessageKey = key;
     visibleDetailMessageType = type;
+
+    if (key === "retirement_detail_loading") {
+        const message = translate(key);
+
+        retirementDetailMessage.replaceChildren(
+            ...createRetirementLoadingContent(message)
+        );
+        retirementDetailMessage.className =
+            "retirements-message is-loading";
+        retirementDetailMessage.setAttribute("aria-label", message);
+        retirementDetailMessage.hidden = false;
+        retirementDetailContent.hidden = true;
+        return;
+    }
+
     showRetirementDetailMessage(
         translate(key),
         type

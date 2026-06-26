@@ -6,10 +6,39 @@ const retirementsMessage =
 
 let loadedRetirementMessages = [];
 
+function createRetirementLoadingContent(message) {
+    const spinner = document.createElement("span");
+    spinner.className = "loading-state-spinner";
+    spinner.setAttribute("aria-hidden", "true");
+
+    const label = document.createElement("span");
+    label.className = "visually-hidden";
+    label.textContent = message;
+
+    return [
+        spinner,
+        label
+    ];
+}
+
 function showRetirementsMessage(message, type = "neutral") {
     retirementsMessage.textContent = message;
     retirementsMessage.className =
         `retirements-message is-${type}`;
+    retirementsMessage.removeAttribute("aria-label");
+    retirementsMessage.hidden = false;
+    retirementsGrid.hidden = true;
+}
+
+function showRetirementsLoading() {
+    const message = translate("retirements_loading");
+
+    retirementsMessage.replaceChildren(
+        ...createRetirementLoadingContent(message)
+    );
+    retirementsMessage.className =
+        "retirements-message is-loading";
+    retirementsMessage.setAttribute("aria-label", message);
     retirementsMessage.hidden = false;
     retirementsGrid.hidden = true;
 }
@@ -155,7 +184,7 @@ function renderRetirements(retirementMessages) {
 }
 
 async function loadRetirements() {
-    showRetirementsMessage(translate("retirements_loading"));
+    showRetirementsLoading();
 
     try {
         const response =
@@ -201,6 +230,11 @@ document.addEventListener(
                 retirementsMessage.classList.contains("is-error");
             const isEmpty =
                 retirementsMessage.classList.contains("is-empty");
+
+            if (!isError && !isEmpty) {
+                showRetirementsLoading();
+                return;
+            }
 
             showRetirementsMessage(
                 translate(

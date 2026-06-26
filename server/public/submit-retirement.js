@@ -35,6 +35,14 @@ function clearRetirementFormMessage() {
 function setRetirementSubmitting(isSubmitting) {
     retirementSubmitButton.disabled = isSubmitting;
     retirementSubmitButton.setAttribute("aria-busy", String(isSubmitting));
+    retirementSubmitButton.setAttribute(
+        "aria-label",
+        translate(
+            isSubmitting
+                ? "retirement_submitting"
+                : "retirement_submit_button"
+        )
+    );
 }
 
 function getRetirementLanguage() {

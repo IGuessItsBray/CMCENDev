@@ -24,13 +24,16 @@
         aria-labelledby="retirementDetailTitle"
       >
         <p
-          class="retirements-message"
+          class="retirements-message is-loading"
           id="retirementDetailMessage"
           role="status"
           aria-live="polite"
-          data-i18n="retirement_detail_loading"
+          aria-label="Loading retirement message..."
         >
-          Loading retirement message...
+          <span class="loading-state-spinner" aria-hidden="true"></span>
+          <span class="visually-hidden">
+            Loading retirement message...
+          </span>
         </p>
 
         <div id="retirementDetailContent" hidden>

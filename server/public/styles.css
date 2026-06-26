@@ -692,6 +692,29 @@ svg {
   white-space: nowrap !important;
 }
 
+.loading-state {
+  min-height: 140px;
+  display: grid;
+  place-items: center;
+}
+
+.loading-state-spinner {
+  width: 34px;
+  height: 34px;
+  display: block;
+  border: 3px solid var(--branch-grey-200);
+  border-top-color: var(--gold-600);
+  border-radius: 50%;
+  animation:
+    loading-state-spin 750ms linear infinite;
+}
+
+@keyframes loading-state-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .hero {
   display: flex;
 
@@ -1980,6 +2003,12 @@ a.dropdown-toggle {
   font-size: 14px;
 }
 
+.dashboard-status.is-loading {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+}
+
 .dashboard-status p {
   margin: 0;
 }
@@ -2950,15 +2979,19 @@ a.dropdown-toggle {
   content: "";
   position: absolute;
   top: 50%;
-  right: 14px;
-  width: 13px;
-  height: 13px;
-  margin-top: -7px;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-top-color: var(--white);
   border-radius: 50%;
   animation:
     event-submit-spinner 700ms linear infinite;
+}
+
+.event-submit-button[aria-busy="true"]>span {
+  visibility: hidden;
 }
 
 .my-events-section {
@@ -3018,6 +3051,7 @@ a.dropdown-toggle {
 }
 
 .my-events-list {
+  min-height: 184px;
   padding: 16px 18px 18px;
   display: flex;
   flex-direction: column;
@@ -3026,6 +3060,10 @@ a.dropdown-toggle {
     linear-gradient(180deg,
       var(--branch-grey-100),
       var(--white));
+}
+
+.my-events-list .loading-state {
+  min-height: 148px;
 }
 
 .my-events-message {
@@ -3541,6 +3579,13 @@ a.dropdown-toggle {
 
 .review-page-message.is-empty {
   border-left-color: var(--branch-grey-500);
+}
+
+.review-page-message.is-loading {
+  min-height: 220px;
+  padding: 42px 15px;
+  display: grid;
+  place-items: center;
 }
 
 .review-notice.is-success {
@@ -5148,6 +5193,13 @@ a.dropdown-toggle {
 
 .retirements-message.is-empty {
   border-left-color: var(--branch-grey-500);
+}
+
+.retirements-message.is-loading {
+  min-height: 220px;
+  padding: 42px 14px;
+  display: grid;
+  place-items: center;
 }
 
 .retirements-grid {

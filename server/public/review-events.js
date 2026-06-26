@@ -216,13 +216,20 @@ function formatReviewUser(user) {
 function formatRetireeName(retirementMessage) {
   const retiree = retirementMessage.retiree || {};
 
-  return [
+  const name = [
     retiree.rank,
     retiree.firstName,
     retiree.lastName
   ]
     .filter(Boolean)
-    .join(" ") ||
+    .join(" ");
+
+  return [
+    name,
+    retiree.postNominals
+  ]
+    .filter(Boolean)
+    .join(", ") ||
     translate("retirement_review_untitled");
 }
 
@@ -806,16 +813,81 @@ function createRetirementMessageSection(retirementMessage) {
   heading.textContent =
     translate("retirement_review_message_record");
 
-  const language = document.createElement("span");
-  language.className = "review-language-code";
-  language.textContent =
-    (retirementMessage.messageLanguage || "en").toUpperCase();
+  const grid = document.createElement("div");
+  grid.className =
+    "review-language-grid retirement-review-language-grid";
 
-  const message = document.createElement("p");
-  message.className = "review-event-description retirement-review-message";
-  message.textContent = retirementMessage.message || "—";
+  ["en", "fr"].forEach(languageCode => {
+    const panel = document.createElement("section");
+    panel.className = "review-language-panel";
 
-  section.append(heading, language, message);
+    const panelHeading = document.createElement("header");
+    panelHeading.className = "review-language-heading";
+
+    const code = document.createElement("span");
+    code.className = "review-language-code";
+    code.textContent = languageCode.toUpperCase();
+
+    const title = document.createElement("h3");
+    title.textContent = translate(
+      languageCode === "en"
+        ? "retirement_review_english_message"
+        : "retirement_review_french_message"
+    );
+
+    panelHeading.append(code, title);
+
+    const body = document.createElement("div");
+    body.className = "review-language-body";
+
+    const label = document.createElement("label");
+    label.className = "review-content-label";
+    label.htmlFor =
+      `retirementMessage${retirementMessage._id}${languageCode}`;
+    label.textContent = translate("retirement_message_text");
+
+    const textarea = document.createElement("textarea");
+    textarea.id =
+      `retirementMessage${retirementMessage._id}${languageCode}`;
+    textarea.className =
+      "retirement-review-message-input";
+    textarea.dataset.retirementMessageLanguage =
+      languageCode;
+    textarea.rows = 9;
+    textarea.minLength = 100;
+    textarea.maxLength = 10000;
+    textarea.required = true;
+    textarea.value =
+      retirementMessage.messages?.[languageCode] ||
+      (
+        retirementMessage.messageLanguage === languageCode
+          ? retirementMessage.message
+          : ""
+      ) ||
+      "";
+
+    const hint = document.createElement("small");
+    hint.className = "retirement-review-message-hint";
+    hint.textContent = translate(
+      textarea.value.trim().length >= 100
+        ? "retirement_review_translation_ready"
+        : "retirement_review_translation_missing"
+    );
+
+    textarea.addEventListener("input", () => {
+      hint.textContent = translate(
+        textarea.value.trim().length >= 100
+          ? "retirement_review_translation_ready"
+          : "retirement_review_translation_missing"
+      );
+    });
+
+    body.append(label, textarea, hint);
+    panel.append(panelHeading, body);
+    grid.appendChild(panel);
+  });
+
+  section.append(heading, grid);
 
   return section;
 }
@@ -929,15 +1001,15 @@ function createRetirementReviewCard(retirementMessage) {
         },
 
         {
+          labelKey: "retirement_post_nominals",
+          value: retirementMessage.retiree?.postNominals
+        },
+
+        {
           labelKey: "retirement_date",
           value: formatDateOnly(
             retirementMessage.retiree?.retirementDate
           )
-        },
-
-        {
-          labelKey: "retirement_years_service",
-          value: retirementMessage.retiree?.yearsOfService
         },
 
         {
@@ -990,12 +1062,42 @@ function createRetirementReviewCard(retirementMessage) {
     retirementMessage.publicationConsent
       ?.confirmed === true;
 
+  const memberReviewConfirmed =
+    retirementMessage.memberReviewConfirmation
+      ?.confirmed === true;
+
   const authorizationInformation =
     createReviewRecordSection(
       "review_authorization_record",
       [
         {
-          labelKey: "review_permission_status",
+          labelKey: "retirement_member_review_status",
+          value: translate(
+            memberReviewConfirmed
+              ? "review_permission_confirmed"
+              : "review_permission_not_recorded"
+          ),
+          valueClass:
+            memberReviewConfirmed
+              ? "is-confirmed"
+              : "is-unconfirmed"
+        },
+
+        {
+          labelKey: "review_confirmed_on",
+          value:
+            retirementMessage.memberReviewConfirmation
+              ?.confirmedAt
+              ? formatSubmittedDate(
+                retirementMessage
+                  .memberReviewConfirmation
+                  .confirmedAt
+              )
+              : "—"
+        },
+
+        {
+          labelKey: "retirement_publication_ack_status",
           value: translate(
             consentConfirmed
               ? "review_permission_confirmed"
@@ -1623,6 +1725,11 @@ async function submitRetirementReview(messageId, action, card) {
   const messageElement = card.querySelector(".review-action-message");
   const buttons = card.querySelectorAll("button");
   const rejectionReason = reasonInput.value.trim();
+  const messageInputs =
+    card.querySelectorAll(
+      ".retirement-review-message-input"
+    );
+  const messages = {};
 
   messageElement.textContent = "";
   messageElement.hidden = true;
@@ -1635,6 +1742,24 @@ async function submitRetirementReview(messageId, action, card) {
     reasonInput.focus();
 
     return;
+  }
+
+  if (action === "publish") {
+    for (const input of messageInputs) {
+      const language =
+        input.dataset.retirementMessageLanguage;
+
+      messages[language] = input.value.trim();
+
+      if (messages[language].length < 100) {
+        messageElement.textContent =
+          translate("retirement_review_translation_required");
+        messageElement.hidden = false;
+        input.focus();
+
+        return;
+      }
+    }
   }
 
   buttons.forEach(button => {
@@ -1672,6 +1797,11 @@ async function submitRetirementReview(messageId, action, card) {
           rejectionReason:
             action === "reject"
               ? rejectionReason
+              : undefined,
+
+          messages:
+            action === "publish"
+              ? messages
               : undefined
         })
       }

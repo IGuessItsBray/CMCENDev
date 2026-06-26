@@ -23,6 +23,22 @@ const ALLOWED_LANGUAGES = [
     'fr'
 ];
 
+const ALLOWED_RETIREMENT_TRADE_ROLES = [
+    '00172-07 - GENERAL OFFICER LIST (BGEN+)',
+    '00340 - CELE',
+    '00341 - SIGS',
+    '00109 - ATIS TECH',
+    '00120 - SIGINT SPEC',
+    '00299 - NAV COMM',
+    '00378 - CYBER OP',
+    '00381 - CWO',
+    '00383 - SIG OP',
+    '00384 - LINE TECH',
+    '00385 - SIG TECH',
+    '00394 - IS TECH',
+    'Civilian'
+];
+
 function cleanString(value) {
     return typeof value === 'string'
         ? value.trim()
@@ -60,6 +76,49 @@ function isValidEmail(value) {
     );
 }
 
+function cleanLocalizedMessages(messages = {}) {
+    return {
+        en: cleanString(messages.en),
+        fr: cleanString(messages.fr)
+    };
+}
+
+function getLocalizedMessages(retirementMessage) {
+    const storedMessages =
+        retirementMessage.messages?.toObject?.() ||
+        retirementMessage.messages ||
+        {};
+
+    const cleanMessages =
+        cleanLocalizedMessages(storedMessages);
+
+    const originalLanguage =
+        retirementMessage.messageLanguage;
+
+    if (
+        ALLOWED_LANGUAGES.includes(originalLanguage) &&
+        !cleanMessages[originalLanguage] &&
+        cleanString(retirementMessage.message)
+    ) {
+        cleanMessages[originalLanguage] =
+            cleanString(retirementMessage.message);
+    }
+
+    return cleanMessages;
+}
+
+function getRetirementMessageText(retirementMessage, language = 'en') {
+    const messages =
+        getLocalizedMessages(retirementMessage);
+
+    return (
+        cleanString(messages[language]) ||
+        cleanString(messages.en) ||
+        cleanString(messages.fr) ||
+        cleanString(retirementMessage.message)
+    );
+}
+
 router.post(
     '/',
     authMiddleware,
@@ -73,6 +132,7 @@ router.post(
             photoUrl,
             submitter = {},
             publicationConsentConfirmed,
+            memberReviewConfirmed,
 
             // Hidden honeypot field.
             website
@@ -99,11 +159,11 @@ router.post(
             lastName:
                 cleanString(retiree.lastName),
 
+            postNominals:
+                cleanString(retiree.postNominals),
+
             tradeRole:
                 cleanString(retiree.tradeRole),
-
-            yearsOfService:
-                cleanString(retiree.yearsOfService),
 
             retirementDate:
                 parseDateOnly(
@@ -113,6 +173,11 @@ router.post(
 
         const cleanMessage =
             cleanString(message);
+
+        const cleanMessages =
+            cleanLocalizedMessages({
+                [messageLanguage]: cleanMessage
+            });
 
         const cleanPhotoUrl =
             cleanString(photoUrl);
@@ -143,16 +208,32 @@ router.post(
                 publicationConsentConfirmed
             );
 
+        const memberReviewWasConfirmed =
+            parseBoolean(
+                memberReviewConfirmed
+            );
+
         if (
             !cleanRetiree.rank ||
             !cleanRetiree.firstName ||
             !cleanRetiree.lastName ||
-            !cleanRetiree.yearsOfService ||
+            !cleanRetiree.tradeRole ||
             !cleanRetiree.retirementDate
         ) {
             return res.status(400).json({
                 error:
                     'Required retiree information is missing'
+            });
+        }
+
+        if (
+            !ALLOWED_RETIREMENT_TRADE_ROLES.includes(
+                cleanRetiree.tradeRole
+            )
+        ) {
+            return res.status(400).json({
+                error:
+                    'The retiree MOSID or role is invalid'
             });
         }
 
@@ -215,12 +296,22 @@ router.post(
             });
         }
 
+        if (!memberReviewWasConfirmed) {
+            return res.status(400).json({
+                error:
+                    'The releasing member review must be confirmed'
+            });
+        }
+
         if (!consentConfirmed) {
             return res.status(400).json({
                 error:
-                    'The retiree’s consent must be confirmed'
+                    'The releasing member publication acknowledgement must be confirmed'
             });
         }
+
+        const confirmationDate =
+            new Date();
 
         const retirementMessage =
             new RetirementMessage({
@@ -231,6 +322,9 @@ router.post(
 
                 messageLanguage,
 
+                messages:
+                    cleanMessages,
+
                 photoUrl:
                     cleanPhotoUrl,
 
@@ -240,7 +334,13 @@ router.post(
                 publicationConsent: {
                     confirmed: true,
                     confirmedAt:
-                        new Date()
+                        confirmationDate
+                },
+
+                memberReviewConfirmation: {
+                    confirmed: true,
+                    confirmedAt:
+                        confirmationDate
                 },
 
                 status: 'pending'
@@ -777,6 +877,7 @@ router.get(
                         retiree: 1,
                         message: 1,
                         messageLanguage: 1,
+                        messages: 1,
                         photoUrl: 1,
                         publishedAt: 1
                     })
@@ -790,7 +891,13 @@ router.get(
             }
 
             res.json({
-                retirementMessage
+                retirementMessage: {
+                    ...retirementMessage,
+                    messages:
+                        getLocalizedMessages(
+                            retirementMessage
+                        )
+                }
             });
         } catch (error) {
             console.error(
@@ -821,7 +928,8 @@ router.patch(
         try {
             const {
                 action,
-                rejectionReason
+                rejectionReason,
+                messages
             } = req.body;
 
             if (!['publish', 'reject'].includes(action)) {
@@ -873,6 +981,58 @@ router.patch(
             }
 
             if (action === 'publish') {
+                const cleanMessages =
+                    cleanLocalizedMessages({
+                        ...getLocalizedMessages(
+                            retirementMessage
+                        ),
+                        ...messages
+                    });
+
+                const originalLanguage =
+                    retirementMessage.messageLanguage;
+
+                if (
+                    !cleanMessages[originalLanguage] &&
+                    cleanString(retirementMessage.message)
+                ) {
+                    cleanMessages[originalLanguage] =
+                        cleanString(retirementMessage.message);
+                }
+
+                if (
+                    cleanMessages.en.length < 100 ||
+                    cleanMessages.fr.length < 100
+                ) {
+                    return res.status(400).json({
+                        error:
+                            'English and French retirement messages must each contain at least 100 characters before publication'
+                    });
+                }
+
+                retirementMessage.set(
+                    'messages.en',
+                    cleanMessages.en
+                );
+                retirementMessage.set(
+                    'messages.fr',
+                    cleanMessages.fr
+                );
+                retirementMessage.markModified(
+                    'messages'
+                );
+
+                retirementMessage.message =
+                    getRetirementMessageText(
+                        {
+                            message:
+                                retirementMessage.message,
+                            messages:
+                                cleanMessages
+                        },
+                        originalLanguage
+                    );
+
                 retirementMessage.status = 'published';
                 retirementMessage.rejectionReason = null;
                 retirementMessage.publishedBy = req.user._id;

@@ -3,6 +3,10 @@ const retirementFormMessage = document.getElementById("retirementFormMessage");
 const retirementSubmitButton = document.getElementById("retirementSubmitButton");
 const retirementMessageLanguage = document.getElementById("retirementMessageLanguage");
 const retirementPhotoInput = document.getElementById("retirementPhoto");
+const retireeTradeCategory = document.getElementById("retireeTradeCategory");
+const retireeTradeRole = document.getElementById("retireeTradeRole");
+const retireeOfficerTradePanel = document.getElementById("retireeOfficerTradePanel");
+const retireeNcmTradePanel = document.getElementById("retireeNcmTradePanel");
 
 const retirementAuthToken = localStorage.getItem("token");
 const RETIREMENT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
@@ -47,6 +51,51 @@ function getFieldValue(id) {
 
 function getSelectedRetirementPhoto() {
     return retirementPhotoInput?.files?.[0] || null;
+}
+
+function getSelectedTradeRoleOption() {
+    return document.querySelector(
+        'input[name="retireeTradeRoleOption"]:checked'
+    );
+}
+
+function clearTradeRoleOptions() {
+    document
+        .querySelectorAll('input[name="retireeTradeRoleOption"]')
+        .forEach(option => {
+            option.checked = false;
+        });
+}
+
+function updateRetirementTradePicker({ clearSelection = true } = {}) {
+    const category = retireeTradeCategory?.value || "";
+    const isOfficer = category === "officer";
+    const isNcm = category === "ncm";
+
+    retireeOfficerTradePanel.hidden = !isOfficer;
+    retireeNcmTradePanel.hidden = !isNcm;
+
+    if (clearSelection) {
+        clearTradeRoleOptions();
+    }
+
+    if (category === "civilian") {
+        retireeTradeRole.value = "Civilian";
+        retireeTradeCategory.setCustomValidity("");
+        return;
+    }
+
+    const selectedOption = getSelectedTradeRoleOption();
+    retireeTradeRole.value = selectedOption?.value || "";
+
+    if ((isOfficer || isNcm) && !retireeTradeRole.value) {
+        retireeTradeCategory.setCustomValidity(
+            translate("retirement_trade_role_required")
+        );
+        return;
+    }
+
+    retireeTradeCategory.setCustomValidity("");
 }
 
 function validateRetirementPhoto(file) {
@@ -107,10 +156,24 @@ async function uploadRetirementPhoto() {
 
 function buildRetirementMessageData(photoUrl = "") {
     const message = getFieldValue("retirementMessageText");
+    const memberReviewConfirmed =
+        document.getElementById("retirementMemberReviewConfirmed").checked;
     const consentConfirmed = document.getElementById("retirementPublicationConsent").checked;
+
+    updateRetirementTradePicker({
+        clearSelection: false
+    });
 
     if (message.length < 100) {
         throw new Error(translate("retirement_message_too_short"));
+    }
+
+    if (!retireeTradeRole.value) {
+        throw new Error(translate("retirement_trade_role_required"));
+    }
+
+    if (!memberReviewConfirmed) {
+        throw new Error(translate("retirement_member_review_confirmed_required"));
     }
 
     if (!consentConfirmed) {
@@ -122,8 +185,8 @@ function buildRetirementMessageData(photoUrl = "") {
             rank: getFieldValue("retireeRank"),
             firstName: getFieldValue("retireeFirstName"),
             lastName: getFieldValue("retireeLastName"),
+            postNominals: getFieldValue("retireePostNominals"),
             tradeRole: getFieldValue("retireeTradeRole"),
-            yearsOfService: getFieldValue("retireeYearsOfService"),
             retirementDate: getFieldValue("retireeRetirementDate")
         },
 
@@ -139,6 +202,7 @@ function buildRetirementMessageData(photoUrl = "") {
         },
 
         publicationConsentConfirmed: consentConfirmed,
+        memberReviewConfirmed,
         website: getFieldValue("retirementWebsite")
     };
 }
@@ -242,6 +306,7 @@ retirementSubmitForm.addEventListener(
 
             retirementSubmitForm.reset();
             setDefaultMessageLanguage();
+            updateRetirementTradePicker();
 
             showRetirementFormMessage(translate("retirement_submit_success"), "success");
         } catch (error) {
@@ -252,7 +317,21 @@ retirementSubmitForm.addEventListener(
     }
 );
 
+retireeTradeCategory.addEventListener("change", updateRetirementTradePicker);
+
+document
+    .querySelectorAll('input[name="retireeTradeRoleOption"]')
+    .forEach(option => {
+        option.addEventListener(
+            "change",
+            () => updateRetirementTradePicker({
+                clearSelection: false
+            })
+        );
+    });
+
 setDefaultMessageLanguage();
+updateRetirementTradePicker();
 verifyRetirementAccess();
 
 window.addEventListener("languagechange", setDefaultMessageLanguage);

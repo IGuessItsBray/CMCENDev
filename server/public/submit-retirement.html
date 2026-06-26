@@ -72,14 +72,109 @@
                         </div>
 
                         <div class="event-field">
-                            <label for="retireeTradeRole" data-i18n="retirement_trade_role"></label>
-                            <input id="retireeTradeRole" name="retireeTradeRole" type="text" maxlength="120" required />
+                            <label for="retireePostNominals" data-i18n="retirement_post_nominals"></label>
+                            <input id="retireePostNominals" name="retireePostNominals" type="text" maxlength="120" />
                         </div>
 
-                        <div class="event-field">
-                            <label for="retireeYearsOfService" data-i18n="retirement_years_service"></label>
-                            <input id="retireeYearsOfService" name="retireeYearsOfService" type="text" maxlength="60"
-                                required />
+                        <div class="event-field event-field-wide retirement-trade-field">
+                            <label for="retireeTradeCategory" data-i18n="retirement_trade_role"></label>
+
+                            <select id="retireeTradeCategory" name="retireeTradeCategory" required>
+                                <option value="" data-i18n="select_option">
+                                    Select an option
+                                </option>
+
+                                <option value="officer" data-i18n="retirement_trade_category_officer">
+                                    Officer
+                                </option>
+
+                                <option value="ncm" data-i18n="retirement_trade_category_ncm">
+                                    NCM
+                                </option>
+
+                                <option value="civilian" data-i18n="retirement_trade_category_civilian">
+                                    Civilian
+                                </option>
+                            </select>
+
+                            <div class="retirement-trade-panel" id="retireeOfficerTradePanel" hidden>
+                                <p data-i18n="retirement_trade_officer_heading">
+                                    Select the officer MOSID:
+                                </p>
+
+                                <div class="retirement-trade-options">
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption"
+                                            value="00172-07 - GENERAL OFFICER LIST (BGEN+)" />
+                                        <span>00172-07 - GENERAL OFFICER LIST (BGEN+)</span>
+                                    </label>
+
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00340 - CELE" />
+                                        <span>00340 - CELE</span>
+                                    </label>
+
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00341 - SIGS" />
+                                        <span>00341 - SIGS</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="retirement-trade-panel" id="retireeNcmTradePanel" hidden>
+                                <p data-i18n="retirement_trade_ncm_heading">
+                                    Select the NCM MOSID:
+                                </p>
+
+                                <div class="retirement-trade-options">
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00109 - ATIS TECH" />
+                                        <span>00109 - ATIS TECH</span>
+                                    </label>
+
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00120 - SIGINT SPEC" />
+                                        <span>00120 - SIGINT SPEC</span>
+                                    </label>
+
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00299 - NAV COMM" />
+                                        <span>00299 - NAV COMM</span>
+                                    </label>
+
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00378 - CYBER OP" />
+                                        <span>00378 - CYBER OP</span>
+                                    </label>
+
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00381 - CWO" />
+                                        <span>00381 - CWO</span>
+                                    </label>
+
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00383 - SIG OP" />
+                                        <span>00383 - SIG OP</span>
+                                    </label>
+
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00384 - LINE TECH" />
+                                        <span>00384 - LINE TECH</span>
+                                    </label>
+
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00385 - SIG TECH" />
+                                        <span>00385 - SIG TECH</span>
+                                    </label>
+
+                                    <label class="retirement-radio-option">
+                                        <input type="radio" name="retireeTradeRoleOption" value="00394 - IS TECH" />
+                                        <span>00394 - IS TECH</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <input id="retireeTradeRole" name="retireeTradeRole" type="hidden" />
                         </div>
 
                         <div class="event-field">
@@ -240,11 +335,39 @@
 
                 <section class="event-form-section retirement-consent-section">
                     <label class="retirement-consent-field">
+                        <input id="retirementMemberReviewConfirmed" name="retirementMemberReviewConfirmed"
+                            type="checkbox" required />
+
+                        <span>
+                            <strong data-i18n="retirement_member_review_confirmed">
+                                I acknowledge the submitted information was reviewed by the releasing member.
+                            </strong>
+
+                            <small data-i18n="retirement_member_review_confirmed_hint">
+                                The releasing member must review the information being submitted to us to ensure it is
+                                accurate. This will eliminate the delays of reprints and mailing costs to fix mistakes.
+                            </small>
+                        </span>
+                    </label>
+
+                    <label class="retirement-consent-field">
                         <input id="retirementPublicationConsent" name="retirementPublicationConsent" type="checkbox"
                             required />
 
-                        <span data-i18n="retirement_consent">
-                            I confirm the retiree has consented to this publication.
+                        <span>
+                            <strong data-i18n="retirement_consent">
+                                The releasing member understands the submitted information will be posted to a
+                                public-facing, civilian website as well as posts to social media platforms like
+                                Facebook, Twitter and Instagram.
+                            </strong>
+
+                            <small data-i18n="retirement_consent_hint">
+                                To protect the privacy of the member and their families it is important the member is
+                                aware of where the information is being posted. The retirement messages are posted while
+                                the member is still serving so to preserve OPSEC, details about their current job and
+                                deployments/assignments should be kept to a minimum. Lastly, we will only post the
+                                member's rank, initial, and last name.
+                            </small>
                         </span>
                     </label>
 

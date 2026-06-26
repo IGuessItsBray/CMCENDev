@@ -102,9 +102,11 @@ Defined in `retirement-messages.js`.
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| `POST` | `/api/retirement-messages` | Retirement-message submit permission | Submit a retirement message for review. Validates retiree details, submitter details, message length, language, and publication consent. |
+| `POST` | `/api/retirement-messages` | Retirement-message submit permission | Submit a retirement message for review. Validates retiree details, MOSID/role, submitter details, message length, language, member review confirmation, and publication acknowledgement. |
 
-`POST /api/retirement-messages` expects `retiree`, `message`, `messageLanguage`, optional `photoUrl`, `submitter`, and `publicationConsentConfirmed`. `messageLanguage` must be `en` or `fr`; the message must be at least 100 characters.
+`POST /api/retirement-messages` expects `retiree`, `message`, `messageLanguage`, optional `photoUrl`, `submitter`, `memberReviewConfirmed`, and `publicationConsentConfirmed`. `messageLanguage` must be `en` or `fr`; the message must be at least 100 characters.
+
+`PATCH /api/retirement-messages/:messageId/review` expects `{ "action": "publish", "messages": { "en": "...", "fr": "..." } }` or `{ "action": "reject", "rejectionReason": "..." }`. Publishing requires both English and French messages to be at least 100 characters.
 
 ## Route Module Mounts
 

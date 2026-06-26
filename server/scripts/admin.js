@@ -373,8 +373,8 @@ function printFullRetirementMessage(message, index) {
         rank: message.retiree?.rank || '—',
         firstName: message.retiree?.firstName || '—',
         lastName: message.retiree?.lastName || '—',
+        postNominals: message.retiree?.postNominals || '—',
         tradeRole: message.retiree?.tradeRole || '—',
-        yearsOfService: message.retiree?.yearsOfService || '—',
         retirementDate: formatDate(message.retiree?.retirementDate)
       },
       message: message.message,
@@ -390,6 +390,10 @@ function printFullRetirementMessage(message, index) {
       publicationConsent: {
         confirmed: message.publicationConsent?.confirmed === true,
         confirmedAt: formatDate(message.publicationConsent?.confirmedAt)
+      },
+      memberReviewConfirmation: {
+        confirmed: message.memberReviewConfirmation?.confirmed === true,
+        confirmedAt: formatDate(message.memberReviewConfirmation?.confirmedAt)
       },
       status: message.status,
       review: {
@@ -431,8 +435,11 @@ async function cmdListRetirementMessages(full) {
         message.retiree?.rank,
         message.retiree?.firstName,
         message.retiree?.lastName
-      ].filter(Boolean).join(' '),
-      service: message.retiree?.yearsOfService || '—',
+      ].filter(Boolean).join(' ') +
+        (message.retiree?.postNominals
+          ? `, ${message.retiree.postNominals}`
+          : ''),
+      postNominals: message.retiree?.postNominals || '—',
       retirement: message.retiree?.retirementDate
         ? new Date(message.retiree.retirementDate).toISOString().slice(0, 10)
         : '—',

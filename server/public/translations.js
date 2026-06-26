@@ -341,6 +341,21 @@ const translations = {
     retirement_review_message_record:
       "Message",
 
+    retirement_review_english_message:
+      "English message",
+
+    retirement_review_french_message:
+      "French message",
+
+    retirement_review_translation_missing:
+      "Required before publication. Minimum 100 characters.",
+
+    retirement_review_translation_ready:
+      "Ready for publication.",
+
+    retirement_review_translation_required:
+      "English and French retirement messages must each contain at least 100 characters before publication.",
+
     retirement_review_photo_record:
       "Photo",
 
@@ -349,6 +364,12 @@ const translations = {
 
     retirement_review_open_photo:
       "Open full-size photo",
+
+    retirement_member_review_status:
+      "Member review confirmation",
+
+    retirement_publication_ack_status:
+      "Publication acknowledgement",
 
     retirement_rejection_reason_help:
       "A reason is required only when rejecting the retirement message.",
@@ -1009,11 +1030,26 @@ const translations = {
     retirement_last_name:
       "Last name",
 
-    retirement_trade_role:
-      "Trade or role",
+    retirement_post_nominals:
+      "Post nominals",
 
-    retirement_years_service:
-      "Years of service",
+    retirement_trade_role:
+      "MOSID / role",
+
+    retirement_trade_category_officer:
+      "Officer",
+
+    retirement_trade_category_ncm:
+      "NCM",
+
+    retirement_trade_category_civilian:
+      "Civilian",
+
+    retirement_trade_officer_heading:
+      "Select the officer MOSID:",
+
+    retirement_trade_ncm_heading:
+      "Select the NCM MOSID:",
 
     retirement_date:
       "Retirement date",
@@ -1085,7 +1121,16 @@ const translations = {
       "Other",
 
     retirement_consent:
-      "I confirm the retiree has consented to this publication.",
+      "The releasing member understands the submitted information will be posted to a public-facing, civilian website as well as posts to social media platforms like Facebook, Twitter and Instagram.",
+
+    retirement_consent_hint:
+      "To protect the privacy of the member and their families it is important the member is aware of where the information is being posted. The retirement messages are posted while the member is still serving so to preserve OPSEC, details about their current job and deployments/assignments should be kept to a minimum. Lastly, we will only post the member's rank, initial, and last name.",
+
+    retirement_member_review_confirmed:
+      "I acknowledge the submitted information was reviewed by the releasing member.",
+
+    retirement_member_review_confirmed_hint:
+      "The releasing member must review the information being submitted to us to ensure it is accurate. This will eliminate the delays of reprints and mailing costs to fix mistakes.",
 
     retirement_submit_button:
       "Submit for Review",
@@ -1094,7 +1139,13 @@ const translations = {
       "The retirement message must contain at least 100 characters.",
 
     retirement_consent_required:
-      "You must confirm the retiree has consented to publication.",
+      "You must confirm the releasing member understands where the information will be posted.",
+
+    retirement_member_review_confirmed_required:
+      "You must confirm the submitted information was reviewed by the releasing member.",
+
+    retirement_trade_role_required:
+      "Select the retiree's MOSID or role.",
 
     retirement_access_denied:
       "Your account does not have permission to submit retirement messages.",
@@ -1499,6 +1550,21 @@ const translations = {
     retirement_review_message_record:
       "Message",
 
+    retirement_review_english_message:
+      "Message en anglais",
+
+    retirement_review_french_message:
+      "Message en français",
+
+    retirement_review_translation_missing:
+      "Requis avant la publication. Minimum de 100 caractères.",
+
+    retirement_review_translation_ready:
+      "Prêt pour la publication.",
+
+    retirement_review_translation_required:
+      "Les messages de retraite en anglais et en français doivent contenir chacun au moins 100 caractères avant la publication.",
+
     retirement_review_photo_record:
       "Photo",
 
@@ -1507,6 +1573,12 @@ const translations = {
 
     retirement_review_open_photo:
       "Ouvrir la photo pleine grandeur",
+
+    retirement_member_review_status:
+      "Confirmation de l’examen par le membre",
+
+    retirement_publication_ack_status:
+      "Reconnaissance de publication",
 
     retirement_rejection_reason_help:
       "Un motif est requis uniquement lorsque le message de retraite est refusé.",
@@ -2167,11 +2239,26 @@ const translations = {
     retirement_last_name:
       "Nom de famille",
 
-    retirement_trade_role:
-      "Métier ou rôle",
+    retirement_post_nominals:
+      "Lettres honorifiques",
 
-    retirement_years_service:
-      "Années de service",
+    retirement_trade_role:
+      "ID SGPM / rôle",
+
+    retirement_trade_category_officer:
+      "Officier",
+
+    retirement_trade_category_ncm:
+      "MR",
+
+    retirement_trade_category_civilian:
+      "Civil",
+
+    retirement_trade_officer_heading:
+      "Sélectionnez l’ID SGPM d’officier :",
+
+    retirement_trade_ncm_heading:
+      "Sélectionnez l’ID SGPM de MR :",
 
     retirement_date:
       "Date de retraite",
@@ -2239,13 +2326,23 @@ const translations = {
     relationship_other:
       "Autre",
     retirement_consent:
-      "Je confirme que la personne retraitée a consenti à cette publication.",
+      "Le membre libéré comprend que les renseignements soumis seront publiés sur un site Web civil accessible au public ainsi que sur des plateformes de médias sociaux comme Facebook, Twitter et Instagram.",
+    retirement_consent_hint:
+      "Afin de protéger la vie privée du membre et de sa famille, il est important que le membre sache où les renseignements seront publiés. Les messages de retraite sont publiés pendant que le membre est encore en service; pour préserver la SECOM, les détails sur son emploi actuel et ses déploiements/affectations doivent donc être limités au minimum. Enfin, nous publierons seulement le grade, l’initiale et le nom de famille du membre.",
+    retirement_member_review_confirmed:
+      "Je reconnais que les renseignements soumis ont été examinés par le membre libéré.",
+    retirement_member_review_confirmed_hint:
+      "Le membre libéré doit examiner les renseignements qui nous sont soumis afin d’en assurer l’exactitude. Cela éliminera les retards liés aux réimpressions et aux frais d’envoi pour corriger les erreurs.",
     retirement_submit_button:
       "Soumettre pour révision",
     retirement_message_too_short:
       "Le message de retraite doit contenir au moins 100 caractères.",
     retirement_consent_required:
-      "Vous devez confirmer que la personne retraitée a consenti à la publication.",
+      "Vous devez confirmer que le membre libéré comprend où les renseignements seront publiés.",
+    retirement_member_review_confirmed_required:
+      "Vous devez confirmer que les renseignements soumis ont été examinés par le membre libéré.",
+    retirement_trade_role_required:
+      "Sélectionnez l’ID SGPM ou le rôle de la personne retraitée.",
     retirement_access_denied:
       "Votre compte ne vous permet pas de soumettre des messages de retraite.",
     retirement_permission_error:
@@ -2294,6 +2391,7 @@ function applyLanguage(lang) {
 
   document.dispatchEvent(
     new CustomEvent('languagechange', {
+      bubbles: true,
       detail: { language: lang }
     })
   );

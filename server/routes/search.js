@@ -200,29 +200,41 @@ async function searchRetirementMessages(query, queryTerms) {
       { 'retiree.rank': regex },
       { 'retiree.firstName': regex },
       { 'retiree.lastName': regex },
+      { 'retiree.postNominals': regex },
       { 'retiree.tradeRole': regex },
-      { 'retiree.yearsOfService': regex },
+      { 'messages.en': regex },
+      { 'messages.fr': regex },
       { message: regex },
       { 'submitter.unit': regex }
     ]
   })
-    .select('retiree message messageLanguage publishedAt createdAt')
+    .select('retiree message messageLanguage messages publishedAt createdAt')
     .sort({ publishedAt: -1, createdAt: -1 })
     .limit(MAX_RESULTS_PER_SOURCE)
     .lean();
 
   return messages.map(message => {
-    const retireeName = [
+    const retireeNameBase = [
       message.retiree?.rank,
       message.retiree?.firstName,
       message.retiree?.lastName
     ].filter(Boolean).join(' ');
 
+    const retireeName = [
+      retireeNameBase,
+      message.retiree?.postNominals
+    ].filter(Boolean).join(', ');
+
     const title = retireeName
       ? `Retirement message for ${retireeName}`
       : 'Retirement message';
 
-    const summary = truncate(message.message);
+    const messageText =
+      message.messages?.en ||
+      message.messages?.fr ||
+      message.message;
+
+    const summary = truncate(messageText);
 
     return {
       type: 'retirement-message',
@@ -234,8 +246,10 @@ async function searchRetirementMessages(query, queryTerms) {
       score: scoreText(queryTerms, [
         title,
         summary,
+        message.messages?.en,
+        message.messages?.fr,
         message.retiree?.tradeRole,
-        message.retiree?.yearsOfService
+        message.retiree?.postNominals
       ])
     };
   });

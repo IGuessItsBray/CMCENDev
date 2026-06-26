@@ -65,19 +65,52 @@ function showRetirementDetailMessageKey(key, type = "neutral") {
 function formatRetireeName(retirementMessage) {
     const retiree = retirementMessage.retiree || {};
 
-    return [
+    const name = [
         retiree.rank,
         retiree.firstName,
         retiree.lastName
     ]
         .filter(Boolean)
-        .join(" ") ||
+        .join(" ");
+
+    return [
+        name,
+        retiree.postNominals
+    ]
+        .filter(Boolean)
+        .join(", ") ||
         translate("retirement_card_default_name");
 }
 
 function getMosid(retirementMessage) {
     return retirementMessage.retiree?.tradeRole ||
         translate("retirement_mosid_pending");
+}
+
+function getRetirementMessageText(retirementMessage) {
+    const language =
+        document.documentElement.lang === "fr" ? "fr" : "en";
+
+    return (
+        retirementMessage.messages?.[language] ||
+        retirementMessage.messages?.en ||
+        retirementMessage.messages?.fr ||
+        retirementMessage.message ||
+        ""
+    );
+}
+
+function updateRetirementMessageLanguage() {
+    if (!currentRetirementMessage) {
+        return;
+    }
+
+    retirementDetailText.textContent =
+        getRetirementMessageText(currentRetirementMessage);
+    retirementDetailDate.textContent =
+        formatRetirementDate(
+            currentRetirementMessage.retiree?.retirementDate
+        );
 }
 
 function formatCommentAuthor(author) {
@@ -199,7 +232,7 @@ function renderRetirementMessage(retirementMessage) {
             retirementMessage.retiree?.retirementDate
         );
     retirementDetailText.textContent =
-        retirementMessage.message || "";
+        getRetirementMessageText(retirementMessage);
 
     renderPhoto(retirementMessage, name);
 
@@ -478,7 +511,22 @@ document.addEventListener(
     "languagechange",
     () => {
         if (currentRetirementMessage) {
-            renderRetirementMessage(currentRetirementMessage);
+            const name =
+                formatRetireeName(
+                    currentRetirementMessage
+                );
+
+            updateRetirementMessageLanguage();
+            document.title =
+                `${translate(
+                    "retirement_detail_title",
+                    { name }
+                )} | CMCEN / RCMCE`;
+            retirementDetailTitle.textContent =
+                translate(
+                    "retirement_detail_title",
+                    { name }
+                );
         } else if (visibleDetailMessageKey) {
             showRetirementDetailMessageKey(
                 visibleDetailMessageKey,

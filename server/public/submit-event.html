@@ -69,7 +69,14 @@
 
           <p class="event-page-message" id="eventPageMessage" role="alert" aria-live="polite" hidden></p>
 
-          <form class="event-submit-form" id="eventForm">
+          <div class="event-edit-loading" id="eventEditLoading" role="status" aria-live="polite" hidden>
+            <span class="event-edit-loading-spinner" aria-hidden="true"></span>
+            <p class="visually-hidden" data-i18n="event_edit_loading">
+              Loading event details...
+            </p>
+          </div>
+
+          <form class="event-submit-form" id="eventForm" hidden>
             <div class="event-language-grid">
               <section class="event-language-panel" lang="en" aria-labelledby="englishEventDetails">
                 <header class="event-language-heading">

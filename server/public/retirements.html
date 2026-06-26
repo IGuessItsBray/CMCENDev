@@ -40,13 +40,16 @@
         </header>
 
         <p
-          class="retirements-message"
+          class="retirements-message is-loading"
           id="retirementsMessage"
           role="status"
           aria-live="polite"
-          data-i18n="retirements_loading"
+          aria-label="Loading retirement messages..."
         >
-          Loading retirement messages...
+          <span class="loading-state-spinner" aria-hidden="true"></span>
+          <span class="visually-hidden">
+            Loading retirement messages...
+          </span>
         </p>
 
         <div

@@ -30,6 +30,24 @@ const dashboardRoleDescription = document.getElementById("dashboardRoleDescripti
 
 let currentDashboardUser = null;
 
+function showDashboardLoading() {
+  const spinner = document.createElement("span");
+  const label = document.createElement("span");
+  const message = translate("loading_text");
+
+  spinner.className = "loading-state-spinner";
+  spinner.setAttribute("aria-hidden", "true");
+
+  label.className = "visually-hidden";
+  label.textContent = message;
+
+  dashboardStatus.replaceChildren(spinner, label);
+  dashboardStatus.className = "dashboard-status is-loading";
+  dashboardStatus.setAttribute("aria-label", message);
+  dashboardStatus.hidden = false;
+  dashboardContent.hidden = true;
+}
+
 function getRoleKey(role) {
   const knownRoles = [
     "subscriber",
@@ -249,11 +267,14 @@ function renderDashboard(user) {
   );
 
   dashboardStatus.hidden = true;
+  dashboardStatus.removeAttribute("aria-label");
   dashboardContent.hidden = false;
 }
 
 function showDashboardError(message) {
   dashboardStatus.replaceChildren();
+  dashboardStatus.className = "dashboard-status";
+  dashboardStatus.removeAttribute("aria-label");
   dashboardStatus.hidden = false;
 
   const error = document.createElement("p");
@@ -264,6 +285,8 @@ function showDashboardError(message) {
 }
 
 async function loadDashboard() {
+  showDashboardLoading();
+
   try {
     const response = await fetch("/api/me", {
       headers: {
@@ -303,6 +326,12 @@ document.addEventListener(
   () => {
     if (currentDashboardUser) {
       renderDashboard(currentDashboardUser);
+      return;
+    }
+
+    if (dashboardStatus.classList.contains("is-loading")) {
+      showDashboardLoading();
+      dashboardTitle.textContent = translate("dashboard_title");
       return;
     }
 

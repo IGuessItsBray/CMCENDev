@@ -17,13 +17,20 @@ function showRetirementsMessage(message, type = "neutral") {
 function formatRetireeName(retirementMessage) {
     const retiree = retirementMessage.retiree || {};
 
-    return [
+    const name = [
         retiree.rank,
         retiree.firstName,
         retiree.lastName
     ]
         .filter(Boolean)
-        .join(" ") ||
+        .join(" ");
+
+    return [
+        name,
+        retiree.postNominals
+    ]
+        .filter(Boolean)
+        .join(", ") ||
         translate("retirement_card_default_name");
 }
 

@@ -34,17 +34,16 @@
 
             <h1
               id="dashboardTitle"
+              data-i18n="dashboard_title"
             >
-              Loading...
+              Account Dashboard
             </h1>
 
             <p
               class="dashboard-member-name"
               id="dashboardMemberName"
               hidden
-            >
-              Loading...
-            </p>
+            ></p>
           </div>
 
           <div
@@ -62,13 +61,16 @@
         </header>
 
         <div
-          class="dashboard-status"
+          class="dashboard-status is-loading"
           id="dashboardStatus"
+          role="status"
           aria-live="polite"
+          aria-label="Loading..."
         >
-          <p data-i18n="loading_text">
+          <span class="loading-state-spinner" aria-hidden="true"></span>
+          <span class="visually-hidden" data-i18n="loading_text">
             Loading...
-          </p>
+          </span>
         </div>
 
         <div

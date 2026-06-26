@@ -858,6 +858,10 @@ const translations = {
 
     my_events_intro:
       "View and update events you have previously submitted.",
+
+    my_events_loading:
+      "Loading your events...",
+
     my_events_untitled:
       "Untitled event",
 
@@ -1134,6 +1138,9 @@ const translations = {
 
     retirement_submit_button:
       "Submit for Review",
+
+    retirement_submitting:
+      "Submitting...",
 
     retirement_message_too_short:
       "The retirement message must contain at least 100 characters.",
@@ -2071,6 +2078,10 @@ const translations = {
 
     my_events_intro:
       "Consultez et mettez à jour les événements que vous avez soumis.",
+
+    my_events_loading:
+      "Chargement de vos événements...",
+
     my_events_untitled:
       "Événement sans titre",
 
@@ -2335,6 +2346,10 @@ const translations = {
       "Le membre libéré doit examiner les renseignements qui nous sont soumis afin d’en assurer l’exactitude. Cela éliminera les retards liés aux réimpressions et aux frais d’envoi pour corriger les erreurs.",
     retirement_submit_button:
       "Soumettre pour révision",
+
+    retirement_submitting:
+      "Soumission en cours...",
+
     retirement_message_too_short:
       "Le message de retraite doit contenir au moins 100 caractères.",
     retirement_consent_required:

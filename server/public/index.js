@@ -32,6 +32,11 @@ const navLinks = {
         i18n: 'menu_review_events',
         permission: 'canReviewAndPublish'
       },
+      {
+        route: '/translations-admin.html',
+        i18n: 'menu_manage_translations',
+        permission: 'canManageTranslations'
+      },
       { route: "/news_stories.html", i18n: "menu_news_option_3" },
       { route: "/last_post.html", i18n: "menu_news_option_4" },
       { route: "/retirements.html", i18n: "menu_news_option_5" },
@@ -63,6 +68,7 @@ const protectedPages = new Set([
   "/dashboard.html",
   "/submit-event.html",
   "/review-events.html",
+  "/translations-admin.html",
 
   ...Object.values(navLinks)
     .flatMap(dropdown => dropdown.items)

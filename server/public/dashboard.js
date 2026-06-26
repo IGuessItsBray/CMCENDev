@@ -262,6 +262,14 @@ function renderDashboard(user) {
     });
   }
 
+  if (user.permissions?.canManageTranslations === true) {
+    actions.push({
+      href: "/translations-admin.html",
+      titleKey: "dashboard_action_manage_translations",
+      descriptionKey: "dashboard_action_manage_translations_description"
+    });
+  }
+
   dashboardActions.replaceChildren(
     ...actions.map(createActionLink)
   );

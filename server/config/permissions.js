@@ -28,6 +28,9 @@ function getUserPermissions(user) {
     canReviewAndPublish:
       hasMinimumRole(user.role, 'editor'),
 
+    canManageTranslations:
+      hasMinimumRole(user.role, 'editor'),
+
     canManageUsers:
       user.role === 'administrator'
   };

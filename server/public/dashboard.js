@@ -256,7 +256,7 @@ function renderDashboard(user) {
 
   if (user.permissions?.canReviewAndPublish === true) {
     actions.push({
-      href: "/review-events.html",
+      href: "/review-submissions.html",
       titleKey: "dashboard_action_review_events",
       descriptionKey: "dashboard_action_review_events_description"
     });

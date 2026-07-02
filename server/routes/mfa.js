@@ -13,6 +13,7 @@ const router = express.Router();
 const rpName = process.env.RP_NAME || 'CMCEN';
 const configuredRPID = process.env.RP_ID || '';
 const configuredOrigin = process.env.RP_ORIGIN || '';
+const defaultTotpWindow = 2;
 
 function getRpID(req) {
   if (configuredRPID) return configuredRPID;
@@ -65,14 +66,44 @@ function normalizeAuthenticationOptions(opts) {
   };
 }
 
+function inferPasskeyProvider(credential) {
+  const explicit = String(credential.providerName || '').trim();
+  if (explicit) return explicit;
+
+  const transports = Array.isArray(credential.transports)
+    ? credential.transports.map(value => String(value).toLowerCase())
+    : [];
+
+  if (credential.authenticatorAttachment === 'platform') {
+    if (transports.includes('internal')) return 'Built-in device passkey';
+    return 'Platform passkey';
+  }
+
+  if (credential.credentialDeviceType === 'multiDevice') {
+    return 'Synced passkey';
+  }
+
+  if (transports.includes('hybrid')) return 'Phone or cross-device passkey';
+  if (transports.includes('usb') || transports.includes('nfc') || transports.includes('ble')) {
+    return 'Security key';
+  }
+
+  return '';
+}
+
 function serializeCredential(credential, index) {
+  const providerName = inferPasskeyProvider(credential);
+
   return {
     id: credential.credentialID,
-    nickname: credential.nickname || `Passkey ${index + 1}`,
+    nickname: credential.nickname || providerName || `Passkey ${index + 1}`,
+    providerName,
     transports: credential.transports || [],
     counter: credential.counter || 0,
     credentialDeviceType: credential.credentialDeviceType || '',
-    credentialBackedUp: Boolean(credential.credentialBackedUp)
+    credentialBackedUp: Boolean(credential.credentialBackedUp),
+    authenticatorAttachment: credential.authenticatorAttachment || '',
+    aaguid: credential.aaguid || ''
   };
 }
 
@@ -82,6 +113,17 @@ function isValidWebAuthnCredential(credential) {
 
 function hasActiveTotp(user) {
   return user.totp?.enabled === true && Boolean(user.totp?.secret);
+}
+
+function getTotpWindow() {
+  const parsed = Number.parseInt(process.env.TOTP_WINDOW || '', 10);
+  if (!Number.isFinite(parsed)) return defaultTotpWindow;
+
+  return Math.min(Math.max(parsed, 1), 10);
+}
+
+function normalizeTotpToken(token) {
+  return String(token || '').replace(/\D/g, '');
 }
 
 function countActiveMfaMethods(user) {
@@ -180,6 +222,9 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
       transports: verifiedCredential.transports || body.transports || [],
       credentialDeviceType: registrationInfo.credentialDeviceType || '',
       credentialBackedUp: Boolean(registrationInfo.credentialBackedUp),
+      authenticatorAttachment: body.authenticatorAttachment || '',
+      aaguid: registrationInfo.aaguid || '',
+      providerName: String(body.providerName || '').trim(),
       nickname: String(body.nickname || '').trim()
     };
 
@@ -293,9 +338,23 @@ router.post('/webauthn/authenticate/verify', authOrTempMiddleware, async (req, r
 router.post('/totp/setup', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    const secret = speakeasy.generateSecret({ name: `${rpName} (${user.email})` });
 
-    await User.findByIdAndUpdate(user._id, { $set: { 'totp.secret': secret.base32, 'totp.enabled': false } });
+    if (hasActiveTotp(user)) {
+      return res.status(409).json({
+        error: 'Authenticator app MFA is already enabled for this account'
+      });
+    }
+
+    const secret = speakeasy.generateSecret({ name: `${rpName} (${user.email})` });
+    const appName = String(req.body?.appName || '').trim().slice(0, 80);
+
+    await User.findByIdAndUpdate(user._id, {
+      $set: {
+        'totp.secret': secret.base32,
+        'totp.enabled': false,
+        'totp.appName': appName
+      }
+    });
 
     // Generate QR data URL and return both
     const otpauth = secret.otpauth_url;
@@ -321,7 +380,9 @@ router.get('/totp/status', authMiddleware, async (req, res) => {
 
     res.json({
       enabled: user.totp?.enabled === true,
-      pending: Boolean(user.totp?.secret) && user.totp?.enabled !== true
+      pending: Boolean(user.totp?.secret) && user.totp?.enabled !== true,
+      appName: user.totp?.appName || '',
+      canRename: true
     });
   } catch (err) {
     console.error('totp/status error', err);
@@ -354,20 +415,30 @@ router.get('/totp/qrcode', authMiddleware, async (req, res) => {
 router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    const { token } = req.body;
+    const { appName } = req.body;
+    const token = normalizeTotpToken(req.body?.token);
 
     if (!user.totp?.secret) return res.status(400).json({ error: 'No TOTP secret set' });
+    if (!/^\d{6,8}$/.test(token)) return res.status(400).json({ error: 'Enter the six-digit authenticator code' });
 
-    const verified = speakeasy.totp.verify({
+    const verification = speakeasy.totp.verifyDelta({
       secret: user.totp.secret,
       encoding: 'base32',
       token,
-      window: 1
+      window: getTotpWindow()
     });
 
-    if (!verified) return res.status(400).json({ error: 'Invalid token' });
+    if (!verification) return res.status(400).json({ error: 'Invalid token' });
 
-    await User.findByIdAndUpdate(user._id, { $set: { 'totp.enabled': true } });
+    if (verification.delta !== 0) {
+      console.warn('totp/verify -> accepted token with time-step delta:', verification.delta, 'user:', String(user._id));
+    }
+
+    const updates = { 'totp.enabled': true };
+    const cleanAppName = String(appName || '').trim().slice(0, 80);
+    if (cleanAppName) updates['totp.appName'] = cleanAppName;
+
+    await User.findByIdAndUpdate(user._id, { $set: updates });
 
     const responsePayload = { verified: true };
     if (req.isTemp) {
@@ -403,7 +474,8 @@ router.delete('/totp', authMiddleware, async (req, res) => {
     await User.findByIdAndUpdate(user._id, {
       $set: {
         'totp.secret': '',
-        'totp.enabled': false
+        'totp.enabled': false,
+        'totp.appName': ''
       }
     });
 
@@ -413,6 +485,31 @@ router.delete('/totp', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Could not disable TOTP' });
   }
 });
+
+async function renameTotpApp(req, res) {
+  try {
+    const appName = String(req.body?.appName || '').trim().slice(0, 80);
+
+    const updated = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { 'totp.appName': appName } },
+      { new: true }
+    );
+
+    res.json({
+      enabled: updated.totp?.enabled === true,
+      pending: Boolean(updated.totp?.secret) && updated.totp?.enabled !== true,
+      appName: updated.totp?.appName || '',
+      canRename: true
+    });
+  } catch (err) {
+    console.error('totp/rename error', err);
+    res.status(500).json({ error: 'Could not rename authenticator app' });
+  }
+}
+
+router.patch('/totp', authMiddleware, renameTotpApp);
+router.post('/totp/rename', authMiddleware, renameTotpApp);
 
 // Return user's WebAuthn credentials array
 router.get('/webauthn/credentials', authMiddleware, async (req, res) => {

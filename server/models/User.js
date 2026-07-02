@@ -197,6 +197,9 @@ const UserSchema = new mongoose.Schema({
         transports: { type: [String], default: [] },
         credentialDeviceType: { type: String, default: '' },
         credentialBackedUp: { type: Boolean, default: false },
+        authenticatorAttachment: { type: String, default: '' },
+        aaguid: { type: String, default: '' },
+        providerName: { type: String, default: '' },
         nickname: { type: String, default: '' }
       }
     ],
@@ -208,7 +211,8 @@ const UserSchema = new mongoose.Schema({
 
   totp: {
     secret: { type: String, default: '' },
-    enabled: { type: Boolean, default: false }
+    enabled: { type: Boolean, default: false },
+    appName: { type: String, default: '' }
   },
 
   twoFactor: {

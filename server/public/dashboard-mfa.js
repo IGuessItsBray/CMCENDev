@@ -67,7 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
         handleUnauthorized();
         throw new Error('Authentication required');
       }
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}: ${await res.text()}`);
+      if (!res.ok) {
+        const contentType = res.headers.get('Content-Type') || '';
+        const detail = contentType.includes('application/json')
+          ? (await res.json().catch(() => ({}))).error
+          : '';
+
+        throw new Error(detail || `HTTP ${res.status} ${res.statusText}`);
+      }
       return res.json();
     }
 
@@ -77,6 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function describeCredential(credential) {
       const parts = [];
+
+      if (credential.providerName && credential.providerName !== credential.nickname) {
+        parts.push(credential.providerName);
+      }
 
       if (credential.credentialDeviceType) {
         parts.push(credential.credentialDeviceType === 'multiDevice'
@@ -156,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function renamePasskey(credentialID, currentName) {
-      const nickname = prompt('Passkey name', currentName || '');
+      const nickname = prompt('Passkey or provider name', currentName || '');
 
       if (nickname === null) return;
 
@@ -189,13 +200,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const enabled = status?.enabled === true;
       const pending = status?.pending === true;
+      const appName = status?.appName || 'Authenticator app';
+
+      const setupButton = document.getElementById('totp-setup');
+      if (setupButton) {
+        setupButton.disabled = enabled;
+        setupButton.textContent = enabled
+          ? 'TOTP Enabled'
+          : pending
+            ? 'Restart TOTP Setup'
+            : 'Setup TOTP';
+      }
+
       const title = enabled
-        ? 'Enabled'
+        ? appName
         : pending
-          ? 'Setup pending'
+          ? `${appName} setup pending`
           : 'Not enabled';
       const detail = enabled
-        ? 'Authenticator app codes are active for this account.'
+        ? 'TOTP login codes are active for this account.'
         : pending
           ? 'A secret has been generated. Verify a six-digit code to activate it.'
           : 'Set up an authenticator app to use six-digit login codes.';
@@ -218,6 +241,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const actions = document.createElement('div');
       actions.className = 'passkey-actions';
+
+      if ((enabled || pending) && status?.canRename === true) {
+        const rename = document.createElement('button');
+        rename.className = 'mfa-link-button';
+        rename.type = 'button';
+        rename.textContent = 'Rename';
+        rename.dataset.action = 'rename-totp';
+        rename.dataset.currentName = appName;
+        actions.appendChild(rename);
+      }
 
       if (enabled || pending) {
         const disable = document.createElement('button');
@@ -243,6 +276,20 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         container.innerHTML = `<p class="passkey-empty">${error.message}</p>`;
       }
+    }
+
+    async function renameTotp(currentName) {
+      const appName = prompt('Authenticator app name', currentName || 'Authenticator app');
+
+      if (appName === null) return;
+
+      const status = await api('/api/mfa/totp/rename', {
+        method: 'POST',
+        json: true,
+        body: JSON.stringify({ appName })
+      });
+
+      renderTotpStatus(status);
     }
 
     async function disableTotp() {
@@ -272,7 +319,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (totpSetupBtn) totpSetupBtn.addEventListener('click', async () => {
       try {
         totpSetupBtn.disabled = true;
-        const res = await api('/api/mfa/totp/setup', { method: 'POST', json: true });
+        const appName = prompt('Authenticator app name', 'Authenticator app');
+        if (appName === null) return;
+
+        const res = await api('/api/mfa/totp/setup', {
+          method: 'POST',
+          json: true,
+          body: JSON.stringify({ appName })
+        });
         const container = document.getElementById('totp-otpauth');
         if (container) {
           container.replaceChildren();
@@ -319,10 +373,11 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         totpVerifyBtn.disabled = true;
         const code = document.getElementById('totp-code').value.trim();
+        const status = await api('/api/mfa/totp/status');
         const res = await fetch('/api/mfa/totp/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + requireToken() },
-          body: JSON.stringify({ token: code })
+          body: JSON.stringify({ token: code, appName: status.appName || 'Authenticator app' })
         });
         if (res.status === 401) {
           handleUnauthorized();
@@ -369,7 +424,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const verifyRes = await fetch('/api/mfa/webauthn/register/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + requireToken() },
-          body: JSON.stringify({ id: cred.id, rawId, type: cred.type, response: { clientDataJSON, attestationObject }, transports: cred.response.getTransports ? cred.response.getTransports() : [] })
+          body: JSON.stringify({
+            id: cred.id,
+            rawId,
+            type: cred.type,
+            authenticatorAttachment: cred.authenticatorAttachment || '',
+            response: { clientDataJSON, attestationObject },
+            transports: cred.response.getTransports ? cred.response.getTransports() : []
+          })
         });
         if (verifyRes.status === 401) {
           handleUnauthorized();
@@ -442,6 +504,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (button.dataset.action === 'disable-totp') {
             await disableTotp();
+          }
+
+          if (button.dataset.action === 'rename-totp') {
+            await renameTotp(button.dataset.currentName);
           }
         } catch (error) {
           alert('Error: ' + error.message);

@@ -156,6 +156,69 @@
       </section>
     </main>
 
+    <div
+      class="login-mfa-overlay"
+      id="mfaOverlay"
+      hidden
+    >
+      <section
+        class="login-mfa-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mfaDialogTitle"
+      >
+        <div class="login-mfa-heading">
+          <p>Multi-factor authentication</p>
+          <h2 id="mfaDialogTitle">Finish signing in</h2>
+        </div>
+
+        <p class="login-mfa-copy">
+          Choose how you would like to verify this sign-in.
+        </p>
+
+        <div
+          class="login-mfa-options"
+          id="mfaOptions"
+        ></div>
+
+        <form
+          class="login-mfa-totp"
+          id="mfaTotpForm"
+          hidden
+        >
+          <label for="mfaTotpCode">Authenticator code</label>
+
+          <div class="login-mfa-code-row">
+            <input
+              id="mfaTotpCode"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              placeholder="000000"
+              maxlength="8"
+            />
+
+            <button type="submit">Verify</button>
+          </div>
+        </form>
+
+        <p
+          class="login-error"
+          id="mfaError"
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></p>
+
+        <button
+          class="login-mfa-cancel"
+          id="mfaCancel"
+          type="button"
+        >
+          Cancel
+        </button>
+      </section>
+    </div>
+
     <footer id="footer"></footer>
 
     <script src="/index.js"></script>
@@ -171,6 +234,26 @@
       const errorElement =
         document.getElementById('loginError');
 
+      const mfaOverlay =
+        document.getElementById('mfaOverlay');
+
+      const mfaOptions =
+        document.getElementById('mfaOptions');
+
+      const mfaTotpForm =
+        document.getElementById('mfaTotpForm');
+
+      const mfaTotpCode =
+        document.getElementById('mfaTotpCode');
+
+      const mfaError =
+        document.getElementById('mfaError');
+
+      const mfaCancel =
+        document.getElementById('mfaCancel');
+
+      let pendingMfa = null;
+
       function setLoginMessage(message, type = 'error') {
         errorElement.textContent = message;
         errorElement.hidden = !message;
@@ -179,6 +262,26 @@
 
       function normalizeToken(value) {
         return String(value || '').trim().replace(/^Bearer\s+/i, '');
+      }
+
+      function setMfaMessage(message, type = 'error') {
+        mfaError.textContent = message;
+        mfaError.hidden = !message;
+        mfaError.classList.toggle('is-info', type === 'info');
+      }
+
+      function completeLogin(token) {
+        const fullToken = normalizeToken(token);
+        localStorage.setItem('token', fullToken);
+        localStorage.setItem('api_token', fullToken);
+        sessionStorage.removeItem('tempToken');
+        sessionStorage.removeItem('twoFactorMethods');
+
+        if (typeof window.refreshAuthUI === 'function') {
+          window.refreshAuthUI();
+        }
+
+        window.location.href = '/dashboard.html';
       }
 
       function ensureWebAuthnAvailable() {
@@ -216,9 +319,49 @@
           .replace(/=+$/, '');
       }
 
+      function openMfaDialog(methods, tempToken) {
+        mfaOptions.replaceChildren();
+        mfaTotpForm.hidden = true;
+        mfaTotpCode.value = '';
+        setMfaMessage('');
+        mfaOverlay.hidden = false;
+
+        return new Promise((resolve, reject) => {
+          pendingMfa = { resolve, reject, tempToken };
+
+          if (methods.includes('webauthn')) {
+            const passkey = document.createElement('button');
+            passkey.type = 'button';
+            passkey.className = 'login-mfa-option';
+            passkey.dataset.method = 'webauthn';
+            passkey.innerHTML = '<strong>Use passkey</strong><span>Verify with a registered device passkey.</span>';
+            mfaOptions.appendChild(passkey);
+          }
+
+          if (methods.includes('totp')) {
+            const totp = document.createElement('button');
+            totp.type = 'button';
+            totp.className = 'login-mfa-option';
+            totp.dataset.method = 'totp';
+            totp.innerHTML = '<strong>Use authenticator app</strong><span>Enter a six-digit code from your app.</span>';
+            mfaOptions.appendChild(totp);
+          }
+
+          const firstButton = mfaOptions.querySelector('button');
+          if (firstButton) firstButton.focus();
+        });
+      }
+
+      function closeMfaDialog() {
+        mfaOverlay.hidden = true;
+        mfaTotpForm.hidden = true;
+        mfaTotpCode.value = '';
+        pendingMfa = null;
+      }
+
       async function passkeyMfaLogin(tempToken) {
         ensureWebAuthnAvailable();
-        setLoginMessage(
+        setMfaMessage(
           'Use your passkey to finish signing in.',
           'info'
         );
@@ -309,16 +452,83 @@
           throw new Error('Login completed but no session token was returned');
         }
 
-        const fullToken = normalizeToken(result.token);
-        localStorage.setItem('token', fullToken);
-        localStorage.setItem('api_token', fullToken);
-        sessionStorage.removeItem('tempToken');
-        sessionStorage.removeItem('twoFactorMethods');
-
-        if (typeof window.refreshAuthUI === 'function') {
-          window.refreshAuthUI();
-        }
+        return result.token;
       }
+
+      async function totpMfaLogin(tempToken, code) {
+        const response = await fetch('/api/mfa/totp/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-temp-token': tempToken
+          },
+          body: JSON.stringify({ token: code })
+        });
+
+        const result = await response
+          .json()
+          .catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Authenticator code was not accepted');
+        }
+
+        if (!result.token) {
+          throw new Error('Login completed but no session token was returned');
+        }
+
+        return result.token;
+      }
+
+      mfaOptions.addEventListener('click', async event => {
+        const button = event.target.closest('button[data-method]');
+        if (!button || !pendingMfa) return;
+
+        setMfaMessage('');
+
+        if (button.dataset.method === 'totp') {
+          mfaTotpForm.hidden = false;
+          mfaTotpCode.focus();
+          return;
+        }
+
+        try {
+          button.disabled = true;
+          const token = await passkeyMfaLogin(pendingMfa.tempToken);
+          pendingMfa.resolve(token);
+        } catch (error) {
+          setMfaMessage(error.message);
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      mfaTotpForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!pendingMfa) return;
+
+        const code = mfaTotpCode.value.trim();
+        if (!code) {
+          setMfaMessage('Enter the code from your authenticator app.');
+          return;
+        }
+
+        try {
+          setMfaMessage('Checking authenticator code...', 'info');
+          const token = await totpMfaLogin(pendingMfa.tempToken, code);
+          pendingMfa.resolve(token);
+        } catch (error) {
+          setMfaMessage(error.message);
+        }
+      });
+
+      mfaCancel.addEventListener('click', () => {
+        if (pendingMfa) {
+          pendingMfa.reject(new Error('Sign-in cancelled'));
+        }
+
+        closeMfaDialog();
+      });
 
       loginForm.addEventListener(
         'submit',
@@ -377,23 +587,11 @@
                 JSON.stringify(methods)
               );
 
-              if (methods.includes('webauthn')) {
-                await passkeyMfaLogin(data.tempToken);
-                window.location.href = '/dashboard.html';
-                return;
-              }
-
-              window.location.href = '/mfa.html';
+              const token = await openMfaDialog(methods, data.tempToken);
+              closeMfaDialog();
+              completeLogin(token);
             } else {
-              const fullToken = normalizeToken(data.token);
-              localStorage.setItem('token', fullToken);
-              localStorage.setItem('api_token', fullToken);
-
-              if (typeof window.refreshAuthUI === 'function') {
-                window.refreshAuthUI();
-              }
-
-              window.location.href = '/dashboard.html';
+              completeLogin(data.token);
             }
           } catch (error) {
             setLoginMessage(error.message);

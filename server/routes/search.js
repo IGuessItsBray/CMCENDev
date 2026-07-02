@@ -135,22 +135,29 @@ function sortResults(results) {
 }
 
 async function searchEvents(query, queryTerms, language) {
-  const regex = new RegExp(escapeRegex(query), 'i');
+  // Build per-term regex checks so multi-word queries can match across fields
+  const fields = [
+    'title.en',
+    'title.fr',
+    'description.en',
+    'description.fr',
+    'location.en',
+    'location.fr',
+    'city',
+    'provinceRegion',
+    'organizingEntity',
+    'eventType'
+  ];
+
+  const andClauses = queryTerms.map(term => {
+    const regex = new RegExp(escapeRegex(term), 'i');
+    return { $or: fields.map(f => ({ [f]: regex })) };
+  });
 
   const events = await Event.find({
     status: 'published',
-    $or: [
-      { 'title.en': regex },
-      { 'title.fr': regex },
-      { 'description.en': regex },
-      { 'description.fr': regex },
-      { 'location.en': regex },
-      { 'location.fr': regex },
-      { city: regex },
-      { provinceRegion: regex },
-      { organizingEntity: regex },
-      { eventType: regex }
-    ]
+    // require each search term to match at least one of the fields
+    $and: andClauses
   })
     .select('title description location city provinceRegion organizingEntity eventType startDate createdAt')
     .sort({ startDate: 1 })
@@ -192,21 +199,28 @@ async function searchEvents(query, queryTerms, language) {
 }
 
 async function searchRetirementMessages(query, queryTerms) {
-  const regex = new RegExp(escapeRegex(query), 'i');
+  // Build per-term regex checks so multi-word queries can match across retiree fields
+  const fields = [
+    'retiree.rank',
+    'retiree.firstName',
+    'retiree.lastName',
+    'retiree.postNominals',
+    'retiree.tradeRole',
+    'messages.en',
+    'messages.fr',
+    'message',
+    'submitter.unit'
+  ];
+
+  const andClauses = queryTerms.map(term => {
+    const regex = new RegExp(escapeRegex(term), 'i');
+    return { $or: fields.map(f => ({ [f]: regex })) };
+  });
 
   const messages = await RetirementMessage.find({
     status: 'published',
-    $or: [
-      { 'retiree.rank': regex },
-      { 'retiree.firstName': regex },
-      { 'retiree.lastName': regex },
-      { 'retiree.postNominals': regex },
-      { 'retiree.tradeRole': regex },
-      { 'messages.en': regex },
-      { 'messages.fr': regex },
-      { message: regex },
-      { 'submitter.unit': regex }
-    ]
+    // require each search term to match at least one of the fields
+    $and: andClauses
   })
     .select('retiree message messageLanguage messages publishedAt createdAt')
     .sort({ publishedAt: -1, createdAt: -1 })

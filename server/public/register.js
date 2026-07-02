@@ -15,6 +15,7 @@ const registerTotpCode = document.getElementById("registerTotpCode");
 const registerTotpVerify = document.getElementById("registerTotpVerify");
 
 let registrationToken = "";
+let pendingTotpAppName = "Authenticator app";
 
 function normalizeToken(value) {
   return String(value || "").trim().replace(/^Bearer\s+/i, "");
@@ -155,6 +156,7 @@ async function setupPasskey() {
       id: credential.id,
       rawId: arrayBufferToBase64url(credential.rawId),
       type: credential.type,
+      authenticatorAttachment: credential.authenticatorAttachment || "",
       response: {
         clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
         attestationObject: arrayBufferToBase64url(credential.response.attestationObject)
@@ -183,9 +185,18 @@ async function setupTotp() {
   registerPasskeyOption.disabled = true;
 
   try {
+    const appName = prompt("Authenticator app name", pendingTotpAppName);
+    if (appName === null) {
+      registerTotpOption.disabled = false;
+      registerPasskeyOption.disabled = false;
+      return;
+    }
+
+    pendingTotpAppName = appName.trim() || "Authenticator app";
+
     const setup = await mfaApi("/api/mfa/totp/setup", {
       method: "POST",
-      body: JSON.stringify({})
+      body: JSON.stringify({ appName: pendingTotpAppName })
     });
 
     registerMfaOptions.hidden = true;
@@ -226,7 +237,7 @@ async function verifyTotp() {
   try {
     await mfaApi("/api/mfa/totp/verify", {
       method: "POST",
-      body: JSON.stringify({ token: code })
+      body: JSON.stringify({ token: code, appName: pendingTotpAppName })
     });
 
     finishRegistration();

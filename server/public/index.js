@@ -28,7 +28,7 @@ const navLinks = {
         permission: "canCreateDrafts"
       },
       {
-        route: '/review-events.html',
+        route: '/review-submissions.html',
         i18n: 'menu_review_events',
         permission: 'canReviewAndPublish'
       },
@@ -67,7 +67,7 @@ const standaloneLinks = [
 const protectedPages = new Set([
   "/dashboard.html",
   "/submit-event.html",
-  "/review-events.html",
+  "/review-submissions.html",
   "/translations-admin.html",
 
   ...Object.values(navLinks)

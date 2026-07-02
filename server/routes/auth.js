@@ -122,7 +122,9 @@ router.post('/login', async (req, res) => {
   const user = await User.findOne({ username }).select('+password');
 
   if (user && (await bcrypt.compare(password, user.password))) {
-    const hasWebAuthn = Array.isArray(user.webauthn) && user.webauthn.length > 0;
+    const hasWebAuthn = Array.isArray(user.webauthn) && user.webauthn.some(
+      credential => credential?.credentialID && credential?.publicKey
+    );
     const hasTOTP = user.totp?.enabled === true && Boolean(user.totp?.secret);
 
     if (hasWebAuthn || hasTOTP) {

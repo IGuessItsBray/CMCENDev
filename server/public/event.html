@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title data-i18n="event_detail_page_title">
+      Event | CMCEN / RCMCE
+    </title>
+
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="event-detail-main">
+      <article
+        class="event-detail-shell"
+        aria-labelledby="eventDetailTitle"
+      >
+        <p
+          class="calendar-message is-loading"
+          id="eventDetailMessage"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading event..."
+        >
+          <span class="loading-state-spinner" aria-hidden="true"></span>
+          <span class="visually-hidden">
+            Loading event...
+          </span>
+        </p>
+
+        <div id="eventDetailContent" hidden>
+          <header class="event-detail-hero">
+            <a
+              class="event-detail-back"
+              href="/calendar.html"
+            >
+              <span aria-hidden="true">&larr;</span>
+              <span data-i18n="event_detail_back">
+                Back to events calendar
+              </span>
+            </a>
+
+            <div class="event-detail-hero-grid">
+              <div class="event-detail-date-card">
+                <span
+                  class="event-detail-month"
+                  id="eventDetailMonth"
+                ></span>
+
+                <span
+                  class="event-detail-day"
+                  id="eventDetailDay"
+                ></span>
+
+                <span
+                  class="event-detail-year"
+                  id="eventDetailYear"
+                ></span>
+              </div>
+
+              <div class="event-detail-heading">
+                <p
+                  class="event-detail-eyebrow"
+                  id="eventDetailEyebrow"
+                ></p>
+
+                <h1 id="eventDetailTitle"></h1>
+
+                <p
+                  class="event-detail-summary"
+                  id="eventDetailSummary"
+                ></p>
+              </div>
+            </div>
+          </header>
+
+          <div class="event-detail-body">
+            <section
+              class="event-detail-section event-detail-description"
+              id="eventDetailDescriptionSection"
+              aria-labelledby="eventDescriptionHeading"
+              hidden
+            >
+              <h2
+                id="eventDescriptionHeading"
+                data-i18n="event_detail_about_heading"
+              >
+                About this event
+              </h2>
+
+              <p id="eventDetailDescription"></p>
+            </section>
+
+            <aside
+              class="event-detail-brief"
+              aria-labelledby="eventBriefHeading"
+            >
+              <h2
+                id="eventBriefHeading"
+                data-i18n="event_detail_brief_heading"
+              >
+                Event brief
+              </h2>
+
+              <dl
+                class="event-detail-list"
+                id="eventDetailBrief"
+              ></dl>
+
+              <div
+                class="event-detail-registration"
+                id="eventRegistrationSection"
+                hidden
+              >
+                <h3 data-i18n="event_registration_label">
+                  Registration link or instructions
+                </h3>
+
+                <p id="eventDetailRegistration"></p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/event.js"></script>
+  </body>
+</html>

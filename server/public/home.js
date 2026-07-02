@@ -185,7 +185,8 @@ function createHomeRetirementMedia(retirementMessage, name) {
 function createHomeEventItem(event, language) {
   const item = document.createElement("a");
   item.className = "home-feed-item home-event-item";
-  item.href = "/calendar.html";
+  item.href =
+    `/event.html?id=${encodeURIComponent(event._id)}`;
 
   const date = document.createElement("span");
   date.className = "home-feed-date";

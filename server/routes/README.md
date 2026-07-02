@@ -49,6 +49,19 @@ Defined in `uploads.js`.
 
 `POST /api/upload` expects `multipart/form-data` with an `image` file field. It returns the generated object key and CDN URL.
 
+## Translation Routes
+
+Defined in `translations.js`.
+
+| Method | Path | Access | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/translations.json` | Public | Return the public English/French translation dictionary. |
+| `GET` | `/translations.js` | Public | Return the browser translation runtime generated from the JSON dictionary. |
+| `GET` | `/api/translations` | Editor or higher | Return translation rows for the management page. |
+| `PATCH` | `/api/translations/:key` | Editor or higher | Update an existing translation key's English and/or French value. |
+
+`PATCH /api/translations/:key` expects one or both string fields: `{ "en": "...", "fr": "..." }`. Version one only edits existing keys.
+
 ## Search Routes
 
 Defined in `search.js`.
@@ -115,6 +128,7 @@ Defined in `retirement-messages.js`.
 | `auth.js` | `/api` |
 | `diagnostics.js` | `/api` |
 | `uploads.js` | `/api` |
+| `translations.js` | `/`, `/api/translations` |
 | `admin.js` | `/api/admin` |
 | `events.js` | `/api/events` |
 | `retirement-messages.js` | `/api/retirement-messages` |

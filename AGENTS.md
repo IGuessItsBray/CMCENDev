@@ -90,7 +90,7 @@ Forgejo instance:
 - Codex remote URL: `ssh://git@git-corebot-codex/Eric/CMCENDev.git`
 - `tea` login name: `corebot`
 - Target branch for PRs: `main`
-- PR reviewers for major changes: `Bray` and `Eric`.
+- PR assignees for major changes: `Bray` and `Eric`.
 - Commit signing: GPG/signoff not required yet.
 
 TODO: teach Codex:
@@ -131,9 +131,11 @@ For major changes, use this flow:
 2. Commit the change.
 3. Push the branch to the `codex` remote.
 4. Open a PR to `main`.
-5. Request reviewers `Bray` and `Eric`.
+5. Assign the PR to `Bray` and `Eric` with `tea --add-assignees`.
 
-Open PRs to `main`; do not push directly to `main` unless explicitly asked.
+After committing, push the commit to the appropriate remote branch before
+reporting completion. Open PRs to `main`; do not push directly to `main` unless
+explicitly asked.
 
 Expected safe pattern:
 
@@ -144,6 +146,7 @@ git add <changed-files>
 git commit -m "<concise message>"
 git push codex <branch>
 tea pulls create --login corebot --repo Eric/CMCENDev --head <branch> --base main --title "<title>" --description "<body>"
+tea pulls edit <pr-number> --login corebot --repo Eric/CMCENDev --add-assignees Bray,Eric
 ```
 
 Do not place Forgejo tokens or passwords here. Store them in the local Git

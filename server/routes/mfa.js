@@ -15,10 +15,29 @@ const configuredRPID = process.env.RP_ID || '';
 const configuredOrigin = process.env.RP_ORIGIN || '';
 const defaultTotpWindow = 2;
 
+function firstHeaderValue(value) {
+  return String(value || '')
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean)[0] || '';
+}
+
+function getExternalHost(req) {
+  return firstHeaderValue(req.get('x-forwarded-host')) || req.get('host') || 'localhost';
+}
+
+function getExternalHostname(req) {
+  return getExternalHost(req).replace(/:\d+$/, '');
+}
+
+function getExternalProtocol(req) {
+  return firstHeaderValue(req.get('x-forwarded-proto')) || req.protocol || 'http';
+}
+
 function getRpID(req) {
   if (configuredRPID) return configuredRPID;
 
-  const hostname = req.hostname || 'localhost';
+  const hostname = getExternalHostname(req);
   if (hostname === '127.0.0.1' || hostname === '::1') return 'localhost';
 
   return hostname;
@@ -32,7 +51,7 @@ function getExpectedOrigin(req) {
       .filter(Boolean);
   }
 
-  return `${req.protocol}://${req.get('host')}`;
+  return `${getExternalProtocol(req)}://${getExternalHost(req)}`;
 }
 
 function bufferToBase64url(input) {
@@ -185,11 +204,13 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
     const body = req.body;
 
     const expectedChallenge = user.webauthnRegistrationChallenge;
+    const expectedOrigin = getExpectedOrigin(req);
+    const expectedRPID = getRpID(req);
     const verification = await verifyRegistrationResponse({
       response: body,
       expectedChallenge,
-      expectedOrigin: getExpectedOrigin(req),
-      expectedRPID: getRpID(req),
+      expectedOrigin,
+      expectedRPID,
       requireUserVerification: false
     });
 
@@ -237,7 +258,15 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
 
     res.json({ verified: true });
   } catch (err) {
-    console.error('webauthn/verify error', err);
+    console.error('webauthn/register/verify error', {
+      message: err?.message,
+      name: err?.name,
+      expectedOrigin: getExpectedOrigin(req),
+      expectedRPID: getRpID(req),
+      forwardedProto: req.get('x-forwarded-proto') || '',
+      forwardedHost: req.get('x-forwarded-host') || '',
+      host: req.get('host') || ''
+    });
     res.status(400).json({ error: 'Could not verify registration' });
   }
 });

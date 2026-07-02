@@ -1455,6 +1455,189 @@ a.dropdown-toggle {
   text-align: center;
 }
 
+.login-mfa-overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  padding: 20px;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 24, 42, 0.52);
+}
+
+.login-mfa-overlay[hidden] {
+  display: none;
+}
+
+.login-mfa-dialog {
+  width: min(100%, 430px);
+  padding: 28px;
+  border: 1px solid var(--branch-grey-200);
+  border-top: 4px solid var(--gold-500);
+  border-radius: 2px;
+  background: var(--white);
+  box-shadow:
+    0 24px 70px rgba(15, 18, 31, 0.28),
+    0 8px 20px rgba(15, 18, 31, 0.18);
+}
+
+.login-mfa-heading {
+  margin-bottom: 12px;
+}
+
+.login-mfa-heading p {
+  margin: 0 0 8px;
+  color: var(--gold-700);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-mfa-heading h2 {
+  margin: 0;
+  color: var(--navy-900);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: normal;
+  line-height: 1.16;
+}
+
+.login-mfa-copy {
+  margin: 0 0 18px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.login-mfa-options {
+  display: grid;
+  gap: 10px;
+}
+
+.login-mfa-option {
+  width: 100%;
+  min-height: 72px;
+  padding: 14px 15px;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 2px;
+  background: var(--branch-grey-100);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.login-mfa-option:hover,
+.login-mfa-option:focus-visible {
+  border-color: var(--gold-600);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(197, 141, 35, 0.14);
+}
+
+.login-mfa-option strong,
+.login-mfa-option span {
+  display: block;
+}
+
+.login-mfa-option strong {
+  color: var(--navy-900);
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.login-mfa-option span {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.login-mfa-totp {
+  margin-top: 16px;
+}
+
+.login-mfa-totp label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--navy-900);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+}
+
+.login-mfa-code-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.login-mfa-code-row input {
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 2px;
+  font: inherit;
+}
+
+.login-mfa-code-row input:focus {
+  border-color: var(--gold-600);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(197, 141, 35, 0.14);
+}
+
+.login-mfa-code-row button,
+.login-mfa-cancel {
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--navy-900);
+  border-radius: 2px;
+  background: var(--navy-900);
+  color: var(--white);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.login-mfa-cancel {
+  width: 100%;
+  margin-top: 16px;
+  border-color: var(--branch-grey-200);
+  background: var(--white);
+  color: var(--navy-900);
+}
+
+.login-mfa-code-row button:hover,
+.login-mfa-code-row button:focus-visible,
+.login-mfa-cancel:hover,
+.login-mfa-cancel:focus-visible {
+  border-color: var(--gold-600);
+  outline: 0;
+  color: var(--gold-700);
+}
+
+.login-mfa-dialog .login-error {
+  margin: 14px 0 0;
+}
+
+@media (max-width: 420px) {
+  .login-mfa-dialog {
+    padding: 22px;
+  }
+
+  .login-mfa-code-row {
+    grid-template-columns: 1fr;
+  }
+
+  .login-mfa-code-row button {
+    width: 100%;
+  }
+}
+
 
 /* ─────────────────────────────────────────────
    Member registration

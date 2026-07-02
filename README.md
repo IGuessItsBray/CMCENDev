@@ -6,7 +6,7 @@ This guide explains how to build and run your application using Docker.
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) installed on your machine
+- [Docker](https://docs.docker.com/get-docker/) installed on your machine!
 
 ---
 

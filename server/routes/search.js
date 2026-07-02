@@ -177,7 +177,7 @@ async function searchEvents(query, queryTerms, language) {
       sourceId: String(event._id),
       title,
       summary,
-      url: '/calendar.html',
+      url: `/event.html?id=${encodeURIComponent(String(event._id))}`,
       date: event.startDate || event.createdAt || null,
       score: scoreText(queryTerms, [
         title,

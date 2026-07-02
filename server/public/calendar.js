@@ -142,8 +142,10 @@ function formatEventTime(event, locale) {
 }
 
 function createEventCard(event, language, locale) {
-    const article = document.createElement('article');
+    const article = document.createElement('a');
     article.className = 'calendar-event';
+    article.href =
+        `/event.html?id=${encodeURIComponent(event._id)}`;
 
     const dayColumn = document.createElement('div');
     dayColumn.className = 'calendar-event-day';
@@ -164,6 +166,10 @@ function createEventCard(event, language, locale) {
     const titleElement = document.createElement('h3');
     titleElement.className = 'calendar-event-title';
     titleElement.textContent = getLocalizedText(event.title, language);
+    article.setAttribute(
+        'aria-label',
+        titleElement.textContent
+    );
 
     content.appendChild(titleElement);
 

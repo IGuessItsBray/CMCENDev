@@ -259,6 +259,23 @@ function parseEventDate(
     );
 }
 
+const PUBLIC_EVENT_FIELDS = [
+    'title',
+    'description',
+    'location',
+    'registration',
+    'city',
+    'provinceRegion',
+    'organizingEntity',
+    'eventType',
+    'timezone',
+    'startDate',
+    'endDate',
+    'allDay',
+    'imagePath',
+    'contentArea'
+].join(' ');
+
 // only published events are returned publically
 router.get('/', async (req, res) => {
     try {
@@ -279,24 +296,7 @@ router.get('/', async (req, res) => {
                 }
             ]
         })
-            .select(
-                [
-                    'title',
-                    'description',
-                    'location',
-                    'registration',
-                    'city',
-                    'provinceRegion',
-                    'organizingEntity',
-                    'eventType',
-                    'timezone',
-                    'startDate',
-                    'endDate',
-                    'allDay',
-                    'imagePath',
-                    'contentArea'
-                ].join(' ')
-            )
+            .select(PUBLIC_EVENT_FIELDS)
             .sort({
                 startDate: 1,
                 createdAt: 1
@@ -840,6 +840,37 @@ router.get(
         }
     }
 );
+
+router.get('/:id', async (req, res) => {
+    try {
+        const event = await Event.findOne({
+            _id: req.params.id,
+            status: 'published'
+        })
+            .select(PUBLIC_EVENT_FIELDS)
+            .lean();
+
+        if (!event) {
+            return res.status(404).json({
+                error: 'Event not found'
+            });
+        }
+
+        return res.json({ event });
+    } catch (error) {
+        if (error?.name === 'CastError') {
+            return res.status(404).json({
+                error: 'Event not found'
+            });
+        }
+
+        console.error('Could not load public event:', error);
+
+        return res.status(500).json({
+            error: 'Could not load event'
+        });
+    }
+});
 
 router.get(
     "/:id/edit",

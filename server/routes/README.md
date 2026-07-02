@@ -98,6 +98,7 @@ Defined in `events.js`.
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
 | `GET` | `/api/events` | Public | List up to 100 published current or future events. |
+| `GET` | `/api/events/:id` | Public | Load one published event for the public detail page. Submitter and review fields are not returned. |
 | `POST` | `/api/events` | Contributor or higher | Create an event submission. Depending on permissions and payload, it may be saved as pending or published. |
 | `GET` | `/api/events/review` | Review/publish permission | List reviewable events. Optional `status` query accepts `pending`, `rejected`, or `published`. |
 | `GET` | `/api/events/mine` | Bearer token with draft permission | List events created by the authenticated user. |

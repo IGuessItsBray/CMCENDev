@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title data-i18n="translations_page_title">
+      Manage Translations | CMCEN / RCMCE
+    </title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="translations-admin-main">
+      <section
+        class="translations-admin-shell"
+        aria-labelledby="translationsAdminTitle"
+      >
+        <header class="event-review-heading translations-admin-heading">
+          <div class="event-review-heading-main">
+            <div class="event-review-heading-copy">
+              <p
+                class="event-review-eyebrow"
+                data-i18n="translations_eyebrow"
+              >
+                Site administration
+              </p>
+
+              <h1
+                id="translationsAdminTitle"
+                data-i18n="translations_heading"
+              >
+                Manage Translations
+              </h1>
+
+              <p data-i18n="translations_intro">
+                Review English and French interface text side by side and update existing translation keys.
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <p
+          class="review-notice"
+          id="translationsNotice"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></p>
+
+        <div class="translations-toolbar">
+          <div class="event-field translations-search-field">
+            <label
+              for="translationsSearch"
+              data-i18n="translations_search_label"
+            >
+              Search translations
+            </label>
+            <input
+              id="translationsSearch"
+              type="search"
+              autocomplete="off"
+              data-i18n-placeholder="translations_search_placeholder"
+              placeholder="Search by key, English, or French text"
+            />
+          </div>
+
+          <p
+            class="translations-count"
+            id="translationsCount"
+          ></p>
+        </div>
+
+        <p
+          class="review-page-message is-loading"
+          id="translationsMessage"
+          role="status"
+          aria-live="polite"
+          data-i18n="translations_loading"
+        >
+          Loading translations...
+        </p>
+
+        <div
+          class="translations-list"
+          id="translationsList"
+          hidden
+        ></div>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/translations-admin.js"></script>
+  </body>
+</html>

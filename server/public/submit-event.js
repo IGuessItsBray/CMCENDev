@@ -36,7 +36,12 @@ let accessDenied = false;
 let myEvents = [];
 let editingEvent = null;
 
-let editingEventId = new URLSearchParams(window.location.search).get("id");
+const eventPageParams = new URLSearchParams(window.location.search);
+let editingEventId = eventPageParams.get("id");
+const initialEventPanel =
+  eventPageParams.get("panel") === "form"
+    ? "form"
+    : "events";
 
 function createLoadingSpinner(label) {
   const loading = document.createElement("div");
@@ -1091,7 +1096,7 @@ function updateEventFormModeText() {
   );
 }
 
-activateEventTab(editingEventId ? "form" : "events");
+activateEventTab(editingEventId ? "form" : initialEventPanel);
 updateEventFormModeText();
 showMyEventsLoading();
 

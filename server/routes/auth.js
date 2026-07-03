@@ -12,6 +12,150 @@ const { getUserPermissions } = require('../config/permissions');
 
 const router = express.Router();
 
+const PROFILE_SELECT =
+  'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit role contentAreas createdAt updatedAt';
+
+const EDITABLE_PROFILE_FIELDS = [
+  'firstName',
+  'lastName',
+  'rank',
+  'postNominals',
+  'company',
+  'status',
+  'affiliationElement',
+  'trade',
+  'tradeOther',
+  'currentUnit'
+];
+
+const EDITABLE_ADDRESS_FIELDS = [
+  'line1',
+  'line2',
+  'city',
+  'country',
+  'stateProvince',
+  'postalCode'
+];
+
+const REQUIRED_PROFILE_FIELDS = [
+  'firstName',
+  'lastName',
+  'status',
+  'affiliationElement'
+];
+
+const REQUIRED_ADDRESS_FIELDS = [
+  'line1',
+  'city',
+  'country',
+  'stateProvince',
+  'postalCode'
+];
+
+const VALID_STATUSES = new Set([
+  'regular',
+  'reserve',
+  'honourary',
+  'civilian',
+  'retired',
+  'released',
+  'other'
+]);
+
+const VALID_AFFILIATION_ELEMENTS = new Set([
+  'army',
+  'navy',
+  'air_force',
+  'other'
+]);
+
+function hasOwnValue(source, key) {
+  return Object.prototype.hasOwnProperty.call(source, key);
+}
+
+function cleanProfileString(value) {
+  return String(value || '').trim();
+}
+
+function getProfileResponse(user) {
+  const profile = user.toObject ? user.toObject() : user;
+
+  return {
+    ...profile,
+    permissions: getUserPermissions(profile)
+  };
+}
+
+function getProfileUpdate(body, currentUser) {
+  const updates = {};
+  const source = body || {};
+
+  EDITABLE_PROFILE_FIELDS.forEach(field => {
+    if (hasOwnValue(source, field)) {
+      updates[field] = cleanProfileString(source[field]);
+    }
+  });
+
+  const addressSource =
+    source.address &&
+    typeof source.address === 'object' &&
+    !Array.isArray(source.address)
+      ? source.address
+      : {};
+
+  EDITABLE_ADDRESS_FIELDS.forEach(field => {
+    if (hasOwnValue(addressSource, field)) {
+      updates[`address.${field}`] = cleanProfileString(addressSource[field]);
+    }
+  });
+
+  REQUIRED_PROFILE_FIELDS.forEach(field => {
+    if (hasOwnValue(updates, field) && !updates[field]) {
+      throw new Error('Required profile fields are missing');
+    }
+  });
+
+  REQUIRED_ADDRESS_FIELDS.forEach(field => {
+    const updateKey = `address.${field}`;
+
+    if (hasOwnValue(updates, updateKey) && !updates[updateKey]) {
+      throw new Error('Required address fields are missing');
+    }
+  });
+
+  if (
+    hasOwnValue(updates, 'status') &&
+    !VALID_STATUSES.has(updates.status)
+  ) {
+    throw new Error('Invalid status');
+  }
+
+  if (
+    hasOwnValue(updates, 'affiliationElement') &&
+    !VALID_AFFILIATION_ELEMENTS.has(updates.affiliationElement)
+  ) {
+    throw new Error('Invalid affiliation element');
+  }
+
+  if (
+    hasOwnValue(updates, 'firstName') ||
+    hasOwnValue(updates, 'lastName')
+  ) {
+    const firstName = hasOwnValue(updates, 'firstName')
+      ? updates.firstName
+      : currentUser.firstName;
+    const lastName = hasOwnValue(updates, 'lastName')
+      ? updates.lastName
+      : currentUser.lastName;
+
+    updates.accountName = [firstName, lastName]
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  return updates;
+}
+
 // POST /api/register
 // Create a subscriber account from the public registration form.
 router.post('/register', async (req, res) => {
@@ -153,12 +297,63 @@ router.post('/login', async (req, res) => {
 // GET /api/me
 // Return the authenticated user's profile and computed permissions.
 router.get('/me', authMiddleware, (req, res) => {
-  const user = req.user.toObject();
+  res.json(getProfileResponse(req.user));
+});
 
-  res.json({
-    ...user,
-    permissions: getUserPermissions(user)
-  });
+// PATCH /api/profile
+// Update safe, user-owned profile fields for the authenticated account.
+router.patch('/profile', authMiddleware, async (req, res) => {
+  try {
+    const updates = getProfileUpdate(req.body, req.user);
+
+    if (!Object.keys(updates).length) {
+      return res.status(400).json({
+        error: 'No editable profile fields were provided'
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updates },
+      {
+        new: true,
+        runValidators: true
+      }
+    ).select(PROFILE_SELECT);
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found'
+      });
+    }
+
+    res.json(getProfileResponse(user));
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: 'Profile information is invalid'
+      });
+    }
+
+    if (
+      [
+        'Required profile fields are missing',
+        'Required address fields are missing',
+        'Invalid status',
+        'Invalid affiliation element'
+      ].includes(error.message)
+    ) {
+      return res.status(400).json({
+        error: error.message
+      });
+    }
+
+    console.error('Profile update failed:', error);
+
+    res.status(500).json({
+      error: 'Could not update profile'
+    });
+  }
 });
 
 // GET /api/contributor-check

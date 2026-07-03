@@ -13,8 +13,14 @@
     <main class="calendar-main">
         <section class="calendar-container">
             <header class="calendar-heading">
-                <h1 data-i18n="calendar_title"></h1>
-                <p data-i18n="calendar_intro"></p>
+                <div class="calendar-heading-copy">
+                    <p class="calendar-kicker" data-i18n="calendar_kicker"></p>
+                    <h1 data-i18n="calendar_title"></h1>
+                </div>
+                <div class="calendar-submit-callout">
+                    <p data-i18n="calendar_submit_prompt"></p>
+                    <a href="/submit-event.html?panel=form" data-i18n="calendar_submit_button"></a>
+                </div>
             </header>
 
             <p id="calendarMessage" class="calendar-message" data-i18n="loading_events">

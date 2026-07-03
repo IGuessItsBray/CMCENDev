@@ -1,11 +1,11 @@
 const translationsSearch = document.getElementById("translationsSearch");
 const translationsCount = document.getElementById("translationsCount");
 const translationsMessage = document.getElementById("translationsMessage");
-const translationsNotice = document.getElementById("translationsNotice");
 const translationsList = document.getElementById("translationsList");
 
 let translationRows = [];
 let activeTranslationsMessageKey = "";
+const translationSaveSuccessDisplayMs = 2200;
 
 function getTranslationAdminToken() {
   const token = String(
@@ -38,15 +38,65 @@ function setTranslationsMessage(message, state = "", messageKey = "") {
   translationsList.hidden = true;
 }
 
-function showTranslationsNotice(message, state = "success") {
-  translationsNotice.textContent = message;
-  translationsNotice.className = `review-notice is-${state}`;
-  translationsNotice.hidden = false;
+function resetTranslationSaveButton(saveButton) {
+  window.clearTimeout(saveButton.translationSaveResetTimeout);
+  saveButton.translationSaveResetTimeout = 0;
+  saveButton.disabled = false;
+  saveButton.classList.remove("is-loading", "is-saved");
+  saveButton.removeAttribute("aria-label");
+  saveButton.textContent = translate("translations_save");
+}
 
-  window.clearTimeout(showTranslationsNotice.timeoutId);
-  showTranslationsNotice.timeoutId = window.setTimeout(() => {
-    translationsNotice.hidden = true;
-  }, 3000);
+function setTranslationSaveButtonLoading(saveButton, isLoading) {
+  if (!isLoading) {
+    resetTranslationSaveButton(saveButton);
+    return;
+  }
+
+  window.clearTimeout(saveButton.translationSaveResetTimeout);
+  saveButton.translationSaveResetTimeout = 0;
+  saveButton.disabled = true;
+  saveButton.classList.remove("is-saved");
+  saveButton.classList.add("is-loading");
+
+  const spinner = document.createElement("span");
+  spinner.className = "loading-state-spinner";
+  spinner.setAttribute("aria-hidden", "true");
+
+  saveButton.setAttribute("aria-label", translate("translations_saving"));
+  saveButton.replaceChildren(spinner);
+}
+
+function setTranslationSaveButtonSaved(saveButton) {
+  window.clearTimeout(saveButton.translationSaveResetTimeout);
+  saveButton.translationSaveResetTimeout = 0;
+  saveButton.disabled = true;
+  saveButton.classList.remove("is-loading");
+  saveButton.classList.add("is-saved");
+
+  const check = document.createElement("span");
+  check.className = "translation-save-check";
+  check.setAttribute("aria-hidden", "true");
+  check.textContent = "\u2713";
+
+  saveButton.setAttribute("aria-label", translate("translations_saved"));
+  saveButton.replaceChildren(check);
+
+  saveButton.translationSaveResetTimeout = window.setTimeout(() => {
+    resetTranslationSaveButton(saveButton);
+  }, translationSaveSuccessDisplayMs);
+}
+
+function setTranslationRowStatus(status, missing) {
+  status.className = "translation-row-status";
+  status.textContent = "";
+
+  if (!missing.length) {
+    return;
+  }
+
+  status.classList.add("is-warning");
+  status.textContent = `${translate("translations_missing_label")}: ${missing.join(", ")}`;
 }
 
 function getFilteredRows() {
@@ -129,11 +179,7 @@ function createTranslationRow(row) {
   const status = document.createElement("p");
   status.className = "translation-row-status";
   status.setAttribute("aria-live", "polite");
-
-  if (row.missing.length) {
-    status.classList.add("is-warning");
-    status.textContent = `${translate("translations_missing_label")}: ${row.missing.join(", ")}`;
-  }
+  setTranslationRowStatus(status, row.missing);
 
   header.append(keyGroup, status);
 
@@ -199,13 +245,13 @@ async function saveTranslationRow(article, key) {
   const saveButton = article.querySelector(".translation-save-button");
   const status = article.querySelector(".translation-row-status");
   const values = {};
+  let didSave = false;
 
   article.querySelectorAll("textarea[data-language]").forEach(textarea => {
     values[textarea.dataset.language] = textarea.value;
   });
 
-  saveButton.disabled = true;
-  saveButton.textContent = translate("translations_saving");
+  setTranslationSaveButtonLoading(saveButton, true);
   status.className = "translation-row-status";
   status.textContent = "";
 
@@ -251,17 +297,18 @@ async function saveTranslationRow(article, key) {
       window.translations.fr[key] = data.values.fr || "";
     }
 
-    status.classList.add("is-success");
-    status.textContent = translate("translations_saved");
-    showTranslationsNotice(translate("translations_saved"));
+    setTranslationRowStatus(status, row ? row.missing : []);
+    setTranslationSaveButtonSaved(saveButton);
+    didSave = true;
   } catch (error) {
     console.error("Translation save failed:", error);
     status.classList.add("is-error");
     status.textContent =
       error.message || translate("translations_save_error");
   } finally {
-    saveButton.disabled = false;
-    saveButton.textContent = translate("translations_save");
+    if (!didSave) {
+      setTranslationSaveButtonLoading(saveButton, false);
+    }
   }
 }
 

@@ -25,6 +25,38 @@ function getLocalizedText(value, language) {
     return typeof value[fallbackLanguage] === 'string' ? value[fallbackLanguage].trim() : '';
 }
 
+function getCalendarTranslation(key, replacements = {}) {
+    if (typeof translate === "function") {
+        return translate(key, replacements);
+    }
+
+    return key;
+}
+
+function getRegionLabel(value) {
+    if (!value) return "";
+
+    const key = value === "International"
+        ? "region_international"
+        : `region_${value.toLowerCase()}`;
+
+    return getCalendarTranslation(key);
+}
+
+function getEntityLabel(value) {
+    return value
+        ? getCalendarTranslation(`entity_${value}`)
+        : "";
+}
+
+function getEventTypeLabel(value) {
+    return value
+        ? getCalendarTranslation(
+            `event_type_${value.replace(/-/g, "_")}`
+        )
+        : "";
+}
+
 function getDateParts(event) {
     const date = new Date(event.startDate);
 
@@ -53,6 +85,17 @@ function formatMonthHeading(event, locale) {
     return new Intl.DateTimeFormat(locale, {
         month: 'long',
         year: 'numeric',
+        ...(event.allDay
+            ? { timeZone: 'UTC' }
+            : {})
+    }).format(date);
+}
+
+function formatMonthAbbreviation(event, locale) {
+    const date = new Date(event.startDate);
+
+    return new Intl.DateTimeFormat(locale, {
+        month: 'short',
         ...(event.allDay
             ? { timeZone: 'UTC' }
             : {})
@@ -115,7 +158,7 @@ function formatDayLabel(event) {
 
 function formatEventTime(event, locale) {
     if (event.allDay) {
-        return translate("all_day");
+        return getCalendarTranslation("all_day");
     }
 
     const formatter =
@@ -141,6 +184,47 @@ function formatEventTime(event, locale) {
     return `${startTime}-${endTime}`;
 }
 
+function formatEventDateRange(event, locale) {
+    const formatter = new Intl.DateTimeFormat(locale, {
+        month: "short",
+        day: "numeric",
+        ...(event.allDay
+            ? { timeZone: "UTC" }
+            : {})
+    });
+
+    const startLabel = formatter.format(new Date(event.startDate));
+
+    if (!event.endDate) {
+        return startLabel;
+    }
+
+    const endLabel = formatter.format(new Date(event.endDate));
+
+    return endLabel === startLabel
+        ? startLabel
+        : `${startLabel}-${endLabel}`;
+}
+
+function createCalendarMeta(label, value) {
+    if (!value) return null;
+
+    const item = document.createElement('span');
+    item.className = 'calendar-event-meta-item';
+
+    const labelElement = document.createElement('span');
+    labelElement.className = 'calendar-event-meta-label';
+    labelElement.textContent = label;
+
+    const valueElement = document.createElement('span');
+    valueElement.className = 'calendar-event-meta-value';
+    valueElement.textContent = value;
+
+    item.append(labelElement, valueElement);
+
+    return item;
+}
+
 function createEventCard(event, language, locale) {
     const article = document.createElement('a');
     article.className = 'calendar-event';
@@ -154,14 +238,25 @@ function createEventCard(event, language, locale) {
     dayNumber.className = 'calendar-event-day-number';
     dayNumber.textContent = formatDayLabel(event);
 
+    const monthLabel = document.createElement('span');
+    monthLabel.className = 'calendar-event-month';
+    monthLabel.textContent = formatMonthAbbreviation(event, locale);
+
     const eventTime = document.createElement('span');
     eventTime.className = 'calendar-event-time';
     eventTime.textContent = formatEventTime(event, locale);
 
-    dayColumn.append(dayNumber, eventTime);
+    dayColumn.append(monthLabel, dayNumber, eventTime);
 
     const content = document.createElement('div');
     content.className = 'calendar-event-content';
+
+    const body = document.createElement('div');
+    body.className = 'calendar-event-body';
+
+    const dateLine = document.createElement('p');
+    dateLine.className = 'calendar-event-date-line';
+    dateLine.textContent = formatEventDateRange(event, locale);
 
     const titleElement = document.createElement('h3');
     titleElement.className = 'calendar-event-title';
@@ -171,7 +266,7 @@ function createEventCard(event, language, locale) {
         titleElement.textContent
     );
 
-    content.appendChild(titleElement);
+    body.append(dateLine, titleElement);
 
     const location = getLocalizedText(event.location, language);
 
@@ -180,7 +275,7 @@ function createEventCard(event, language, locale) {
         locationElement.className = 'calendar-event-location';
         locationElement.textContent = location;
 
-        content.appendChild(locationElement);
+        body.appendChild(locationElement);
     }
 
     const description = getLocalizedText(event.description, language);
@@ -190,7 +285,40 @@ function createEventCard(event, language, locale) {
         descriptionElement.className = 'calendar-event-description';
         descriptionElement.textContent = description;
 
-        content.appendChild(descriptionElement);
+        body.appendChild(descriptionElement);
+    }
+
+    const metaRail = document.createElement('div');
+    metaRail.className = 'calendar-event-meta';
+
+    const cityRegion = [
+        event.city,
+        getRegionLabel(event.provinceRegion)
+    ].filter(Boolean).join(', ');
+
+    [
+        createCalendarMeta(
+            getCalendarTranslation("calendar_meta_type"),
+            getEventTypeLabel(event.eventType)
+        ),
+        createCalendarMeta(
+            getCalendarTranslation("calendar_meta_area"),
+            cityRegion
+        ),
+        createCalendarMeta(
+            getCalendarTranslation("calendar_meta_host"),
+            getEntityLabel(event.organizingEntity)
+        )
+    ].forEach(item => {
+        if (item) {
+            metaRail.appendChild(item);
+        }
+    });
+
+    content.appendChild(body);
+
+    if (metaRail.childElementCount) {
+        content.appendChild(metaRail);
     }
 
     article.append(dayColumn, content);
@@ -206,7 +334,7 @@ function renderEvents() {
 
     if (!publicEvents.length) {
         calendarMessageElement.hidden = false;
-        calendarMessageElement.textContent = translate("no_upcoming_events");
+        calendarMessageElement.textContent = getCalendarTranslation("no_upcoming_events");
 
         return;
     }
@@ -239,7 +367,7 @@ function renderEvents() {
 
 async function loadEvents() {
     calendarMessageElement.hidden = false;
-    calendarMessageElement.textContent = translate("loading_events");
+    calendarMessageElement.textContent = getCalendarTranslation("loading_events");
 
     try {
         const response = await fetch('/api/events');
@@ -260,7 +388,7 @@ async function loadEvents() {
         console.error(error);
 
         calendarMessageElement.hidden = false;
-        calendarMessageElement.textContent = translate("events_load_error");
+        calendarMessageElement.textContent = getCalendarTranslation("events_load_error");
     }
 }
 

@@ -4131,7 +4131,8 @@ a.dropdown-toggle {
   line-height: 1.45;
 }
 
-.my-event-edit-link {
+.my-event-edit-link,
+.my-event-delete-button {
   flex: 0 0 auto;
   min-width: 122px;
   min-height: 38px;
@@ -4139,19 +4140,23 @@ a.dropdown-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--navy-900);
   border-radius: 2px;
-  background: var(--navy-900);
-  color: var(--white);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-decoration: none;
   text-transform: uppercase;
+  cursor: pointer;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
     color 150ms ease;
+}
+
+.my-event-edit-link {
+  border: 1px solid var(--navy-900);
+  background: var(--navy-900);
+  color: var(--white);
 }
 
 .my-event-edit-link:hover,
@@ -4159,6 +4164,23 @@ a.dropdown-toggle {
   border-color: var(--gold-600);
   background: var(--navy-800);
   color: var(--gold-200);
+}
+
+.my-event-delete-button {
+  border: 1px solid #9c3d36;
+  background: transparent;
+  color: #8a332d;
+}
+
+.my-event-delete-button:hover,
+.my-event-delete-button:focus-visible {
+  background: #9c3d36;
+  color: var(--white);
+}
+
+.my-event-delete-button:disabled {
+  cursor: progress;
+  opacity: 0.6;
 }
 
 .event-field-title {
@@ -4956,7 +4978,8 @@ a.dropdown-toggle {
 }
 
 .review-publish-button,
-.review-reject-button {
+.review-reject-button,
+.review-delete-button {
   min-width: 145px;
   height: 44px;
   padding: 0 18px;
@@ -4996,6 +5019,18 @@ a.dropdown-toggle {
 .review-reject-button:focus-visible {
   background: #9c3d36;
   color: var(--white);
+}
+
+.review-delete-button {
+  border: 1px solid #9c3d36;
+  background: #9c3d36;
+  color: var(--white);
+}
+
+.review-delete-button:hover,
+.review-delete-button:focus-visible {
+  border-color: #7d2d27;
+  background: #7d2d27;
 }
 
 .review-actions button:disabled {
@@ -7857,7 +7892,8 @@ a.dropdown-toggle {
   }
 
   .review-publish-button,
-  .review-reject-button {
+  .review-reject-button,
+  .review-delete-button {
     width: 100%;
   }
 }

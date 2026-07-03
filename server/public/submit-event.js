@@ -194,6 +194,18 @@ function createMyEventCard(submittedEvent) {
 
   footer.appendChild(editLink);
 
+  if (submittedEvent.status !== "published") {
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "my-event-delete-button";
+    deleteButton.textContent = translate("my_events_delete");
+    deleteButton.addEventListener("click", () => {
+      deleteMyEvent(submittedEvent._id, article);
+    });
+
+    footer.appendChild(deleteButton);
+  }
+
   article.append(
     header,
     details,
@@ -201,6 +213,89 @@ function createMyEventCard(submittedEvent) {
   );
 
   return article;
+}
+
+async function deleteMyEvent(eventId, card) {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    redirectToLogin();
+    return;
+  }
+
+  if (!window.confirm(translate("my_events_delete_confirm"))) {
+    return;
+  }
+
+  const buttons = card.querySelectorAll("button, a");
+  const deleteButton = card.querySelector(".my-event-delete-button");
+
+  buttons.forEach(button => {
+    button.setAttribute("aria-disabled", "true");
+
+    if ("disabled" in button) {
+      button.disabled = true;
+    }
+  });
+
+  if (deleteButton) {
+    deleteButton.textContent = translate("my_events_deleting");
+  }
+
+  try {
+    const response = await fetch(
+      `/api/events/${encodeURIComponent(eventId)}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization:
+            `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await response
+      .json()
+      .catch(() => ({}));
+
+    if (response.status === 401) {
+      redirectToLogin();
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        translate("my_events_delete_error")
+      );
+    }
+
+    myEvents =
+      myEvents.filter(event => event._id !== eventId);
+
+    renderMyEvents();
+    showPageMessage(
+      translate("my_events_delete_success"),
+      "success"
+    );
+  } catch (error) {
+    buttons.forEach(button => {
+      button.removeAttribute("aria-disabled");
+
+      if ("disabled" in button) {
+        button.disabled = false;
+      }
+    });
+
+    if (deleteButton) {
+      deleteButton.textContent = translate("my_events_delete");
+    }
+
+    showPageMessage(
+      error.message ||
+      translate("my_events_delete_error")
+    );
+  }
 }
 
 function renderMyEvents() {

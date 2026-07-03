@@ -166,6 +166,14 @@ const retirementMessageSchema =
                 index: true
             },
 
+            createdBy: {
+                type:
+                    mongoose.Schema.Types.ObjectId,
+                ref: "User",
+                default: null,
+                index: true
+            },
+
             reviewedBy: {
                 type:
                     mongoose.Schema.Types.ObjectId,

@@ -18,6 +18,7 @@ let loadFailed = false;
 let retirementLoadFailed = false;
 let commentLoadFailed = false;
 let noticeTimer = null;
+let currentUser = null;
 
 function getReviewLanguage() {
   if (typeof currentLang === "string") {
@@ -211,6 +212,22 @@ function formatReviewUser(user) {
     user.email ||
     "—"
   );
+}
+
+function canReviewDeleteSubmissions() {
+  return Boolean(
+    currentUser?.permissions?.canReviewAndPublish
+  );
+}
+
+function createDeleteSubmissionButton(onClick) {
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "review-delete-button";
+  deleteButton.textContent = translate("delete_submission");
+  deleteButton.addEventListener("click", onClick);
+
+  return deleteButton;
 }
 
 function formatRetireeName(retirementMessage) {
@@ -780,6 +797,20 @@ function createReviewCard(event) {
     }
   );
 
+  if (canReviewDeleteSubmissions()) {
+    actions.appendChild(
+      createDeleteSubmissionButton(
+        () => {
+          deleteReviewSubmission(
+            "event",
+            event._id,
+            article
+          );
+        }
+      )
+    );
+  }
+
   actions.append(
     rejectButton,
     publishButton
@@ -1245,6 +1276,20 @@ function createRetirementReviewCard(retirementMessage) {
     }
   );
 
+  if (canReviewDeleteSubmissions()) {
+    actions.appendChild(
+      createDeleteSubmissionButton(
+        () => {
+          deleteReviewSubmission(
+            "retirementMessage",
+            retirementMessage._id,
+            article
+          );
+        }
+      )
+    );
+  }
+
   actions.append(
     rejectButton,
     publishButton
@@ -1469,6 +1514,20 @@ function createCommentReviewCard(comment) {
     }
   );
 
+  if (canReviewDeleteSubmissions()) {
+    actions.appendChild(
+      createDeleteSubmissionButton(
+        () => {
+          deleteReviewSubmission(
+            "comment",
+            comment._id,
+            article
+          );
+        }
+      )
+    );
+  }
+
   actions.append(
     rejectButton,
     publishButton
@@ -1490,6 +1549,132 @@ function createCommentReviewCard(comment) {
   );
 
   return article;
+}
+
+async function deleteReviewSubmission(type, id, card) {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    redirectToLogin();
+    return;
+  }
+
+  if (!window.confirm(translate("delete_submission_confirm"))) {
+    return;
+  }
+
+  const messageElement = card.querySelector(".review-action-message");
+  const buttons = card.querySelectorAll("button");
+  const deleteButton = card.querySelector(".review-delete-button");
+
+  messageElement.textContent = "";
+  messageElement.hidden = true;
+
+  buttons.forEach(button => {
+    button.disabled = true;
+  });
+
+  if (deleteButton) {
+    deleteButton.textContent = translate("deleting_submission");
+  }
+
+  const endpointByType = {
+    event:
+      `/api/events/${encodeURIComponent(id)}`,
+    retirementMessage:
+      `/api/retirement-messages/${encodeURIComponent(id)}`,
+    comment:
+      `/api/retirement-messages/comments/${encodeURIComponent(id)}`
+  };
+
+  try {
+    const response = await fetch(
+      endpointByType[type],
+      {
+        method: "DELETE",
+        headers: {
+          Authorization:
+            `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await response
+      .json()
+      .catch(() => ({}));
+
+    if (response.status === 401) {
+      redirectToLogin();
+      return;
+    }
+
+    if (response.status === 403) {
+      throw new Error(
+        translate("review_access_denied")
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        translate("delete_submission_failed")
+      );
+    }
+
+    if (type === "event") {
+      pendingEvents =
+        pendingEvents.filter(event => event._id !== id);
+    }
+
+    if (type === "retirementMessage") {
+      pendingRetirementMessages =
+        pendingRetirementMessages.filter(
+          retirementMessage =>
+            retirementMessage._id !== id
+        );
+    }
+
+    if (type === "comment") {
+      pendingComments =
+        pendingComments.filter(comment => comment._id !== id);
+    }
+
+    card.classList.add("is-resolved");
+
+    window.setTimeout(() => {
+      card.remove();
+
+      if (type === "event") {
+        renderReviewQueue();
+      }
+
+      if (type === "retirementMessage") {
+        renderRetirementReviewQueue();
+      }
+
+      if (type === "comment") {
+        renderCommentReviewQueue();
+      }
+    }, 160);
+
+    showNotice(
+      translate("delete_submission_success")
+    );
+  } catch (error) {
+    messageElement.textContent =
+      error.message;
+
+    messageElement.hidden = false;
+
+    buttons.forEach(button => {
+      button.disabled = false;
+    });
+
+    if (deleteButton) {
+      deleteButton.textContent =
+        translate("delete_submission");
+    }
+  }
 }
 
 function showPageMessage(
@@ -2063,6 +2248,7 @@ async function loadReviewQueue() {
     }
 
     const user = await userResponse.json().catch(() => ({}));
+    currentUser = user;
 
     if (
       !userResponse.ok ||

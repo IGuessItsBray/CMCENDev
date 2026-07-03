@@ -343,6 +343,8 @@ router.post(
                         confirmationDate
                 },
 
+                createdBy: req.user._id,
+
                 status: 'pending'
             });
 
@@ -468,6 +470,10 @@ router.get(
                 await RetirementMessage.find({
                     status: requestedStatus
                 })
+                    .populate(
+                        'createdBy',
+                        'username accountName email role'
+                    )
                     .populate(
                         'reviewedBy',
                         'username accountName email role'
@@ -679,6 +685,85 @@ router.patch(
     }
 );
 
+router.delete(
+    '/comments/:commentId',
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const comment =
+                await RetirementComment.findById(
+                    req.params.commentId
+                );
+
+            if (!comment) {
+                return res.status(404).json({
+                    error:
+                        'Retirement comment not found'
+                });
+            }
+
+            const permissions =
+                getUserPermissions(req.user);
+
+            const isOwner =
+                comment.author &&
+                String(comment.author) ===
+                String(req.user._id);
+
+            const canReview =
+                permissions.canReviewAndPublish === true;
+
+            const isAdministrator =
+                req.user.role === 'administrator';
+
+            const isPublished =
+                comment.status === 'published';
+
+            const canDelete =
+                isAdministrator ||
+                (
+                    canReview &&
+                    !isPublished
+                ) ||
+                (
+                    isOwner &&
+                    !isPublished
+                );
+
+            if (!canDelete) {
+                return res.status(403).json({
+                    error:
+                        'You do not have permission to delete this comment'
+                });
+            }
+
+            await comment.deleteOne();
+
+            return res.json({
+                message:
+                    'Comment deleted successfully'
+            });
+        } catch (error) {
+            console.error(
+                'Could not delete retirement comment:',
+                error
+            );
+
+            if (error.name === 'CastError') {
+                return res.status(400).json({
+                    error:
+                        'Invalid retirement comment ID'
+                });
+            }
+
+            return res.status(500).json({
+                error:
+                    'Could not delete retirement comment'
+            });
+        }
+    }
+);
+
 router.get(
     '/:messageId/comments',
     async (req, res) => {
@@ -859,6 +944,90 @@ router.post(
             res.status(500).json({
                 error:
                     'Could not submit retirement comment'
+            });
+        }
+    }
+);
+
+router.delete(
+    '/:messageId',
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const retirementMessage =
+                await RetirementMessage.findById(
+                    req.params.messageId
+                );
+
+            if (!retirementMessage) {
+                return res.status(404).json({
+                    error:
+                        'Retirement message not found'
+                });
+            }
+
+            const permissions =
+                getUserPermissions(req.user);
+
+            const isOwner =
+                retirementMessage.createdBy &&
+                String(retirementMessage.createdBy) ===
+                String(req.user._id);
+
+            const canReview =
+                permissions.canReviewAndPublish === true;
+
+            const isAdministrator =
+                req.user.role === 'administrator';
+
+            const isPublished =
+                retirementMessage.status === 'published';
+
+            const canDelete =
+                isAdministrator ||
+                (
+                    canReview &&
+                    !isPublished
+                ) ||
+                (
+                    isOwner &&
+                    !isPublished
+                );
+
+            if (!canDelete) {
+                return res.status(403).json({
+                    error:
+                        'You do not have permission to delete this retirement message'
+                });
+            }
+
+            await RetirementComment.deleteMany({
+                retirementMessage:
+                    retirementMessage._id
+            });
+
+            await retirementMessage.deleteOne();
+
+            return res.json({
+                message:
+                    'Retirement message deleted successfully'
+            });
+        } catch (error) {
+            console.error(
+                'Could not delete retirement message:',
+                error
+            );
+
+            if (error.name === 'CastError') {
+                return res.status(400).json({
+                    error:
+                        'Invalid retirement message ID'
+                });
+            }
+
+            return res.status(500).json({
+                error:
+                    'Could not delete retirement message'
             });
         }
     }

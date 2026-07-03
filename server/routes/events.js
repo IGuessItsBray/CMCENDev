@@ -1184,6 +1184,82 @@ router.patch(
     }
 );
 
+router.delete(
+    "/:id",
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const event = await Event.findById(
+                req.params.id
+            );
+
+            if (!event) {
+                return res.status(404).json({
+                    error: "Event not found"
+                });
+            }
+
+            const permissions =
+                getUserPermissions(req.user);
+
+            const isOwner =
+                event.createdBy &&
+                String(event.createdBy) ===
+                String(req.user._id);
+
+            const canReview =
+                permissions.canReviewAndPublish === true;
+
+            const isAdministrator =
+                req.user.role === "administrator";
+
+            const isPublished =
+                event.status === "published";
+
+            const canDelete =
+                isAdministrator ||
+                (
+                    canReview &&
+                    !isPublished
+                ) ||
+                (
+                    isOwner &&
+                    !isPublished
+                );
+
+            if (!canDelete) {
+                return res.status(403).json({
+                    error:
+                        "You do not have permission to delete this event"
+                });
+            }
+
+            await event.deleteOne();
+
+            return res.json({
+                message:
+                    "Event deleted successfully"
+            });
+        } catch (error) {
+            if (error.name === "CastError") {
+                return res.status(404).json({
+                    error: "Event not found"
+                });
+            }
+
+            console.error(
+                "Could not delete event:",
+                error
+            );
+
+            return res.status(500).json({
+                error:
+                    "Could not delete event"
+            });
+        }
+    }
+);
+
 // publish or reject an event
 router.patch(
     '/:eventId/review',

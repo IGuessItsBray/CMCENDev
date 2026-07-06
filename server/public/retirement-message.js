@@ -40,6 +40,7 @@ const retirementCommentLogin =
 let currentRetirementMessageId = "";
 let currentRetirementMessage = null;
 let loadedComments = [];
+let canManageRetirementComments = false;
 let visibleDetailMessageKey = "";
 let visibleDetailMessageType = "neutral";
 let visibleCommentMessageKey = "";
@@ -288,6 +289,85 @@ function showRetirementCommentMessageKey(key, type = "neutral") {
     );
 }
 
+function getStoredToken() {
+    return String(
+        localStorage.getItem("token") ||
+        localStorage.getItem("api_token") ||
+        ""
+    ).trim().replace(/^Bearer\s+/i, "");
+}
+
+async function deleteRetirementComment(comment) {
+    const token = getStoredToken();
+
+    if (!token) {
+        setupCommentAccess();
+        return;
+    }
+
+    if (
+        !window.confirm(
+            "Delete this comment? This will be recorded in the audit log."
+        )
+    ) {
+        return;
+    }
+
+    try {
+        const response =
+            await fetch(
+                `/api/admin/retirement-comments/${encodeURIComponent(comment._id)}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+        const data =
+            await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("api_token");
+            await setupCommentAccess();
+            throw new Error("Sign in again to delete comments.");
+        }
+
+        if (response.status === 403) {
+            canManageRetirementComments = false;
+            renderComments(loadedComments);
+            throw new Error("You do not have permission to delete comments.");
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                    "Could not delete comment"
+            );
+        }
+
+        loadedComments =
+            loadedComments.filter(
+                item => String(item._id) !== String(comment._id)
+            );
+
+        renderComments(loadedComments);
+        showRetirementCommentMessage(
+            "Comment deleted and recorded in the audit log.",
+            "success"
+        );
+    } catch (error) {
+        showRetirementCommentMessage(
+            error.message ||
+                "Could not delete comment",
+            "error"
+        );
+    }
+}
+
 function createCommentElement(comment) {
     const article = document.createElement("article");
     article.className = "retirement-comment";
@@ -310,6 +390,21 @@ function createCommentElement(comment) {
     }
 
     header.append(author, date);
+
+    if (canManageRetirementComments) {
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "retirement-comment-delete";
+        deleteButton.textContent = "Delete";
+        deleteButton.setAttribute(
+            "aria-label",
+            `Delete comment by ${formatCommentAuthor(comment.author)}`
+        );
+        deleteButton.addEventListener("click", () => {
+            deleteRetirementComment(comment);
+        });
+        header.append(deleteButton);
+    }
 
     const body = document.createElement("p");
     body.textContent = comment.body || "";
@@ -371,15 +466,50 @@ async function loadComments(messageId) {
     }
 }
 
-function setupCommentAccess() {
-    const token = localStorage.getItem("token");
+async function setupCommentAccess() {
+    const token = getStoredToken();
 
     if (token) {
+        localStorage.setItem("token", token);
+        localStorage.setItem("api_token", token);
         retirementCommentForm.hidden = false;
         retirementCommentLogin.hidden = true;
+
+        try {
+            const response = await fetch("/api/me", {
+                headers: {
+                    Authorization:
+                        `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("api_token");
+                canManageRetirementComments = false;
+                retirementCommentForm.hidden = true;
+                retirementCommentLogin.hidden = false;
+                return;
+            }
+
+            if (!response.ok) {
+                canManageRetirementComments = false;
+                return;
+            }
+
+            const user =
+                await response.json().catch(() => ({}));
+
+            canManageRetirementComments =
+                user.permissions?.canManageUsers === true;
+        } catch (error) {
+            canManageRetirementComments = false;
+        }
+
         return;
     }
 
+    canManageRetirementComments = false;
     retirementCommentForm.hidden = true;
     retirementCommentLogin.hidden = false;
 }
@@ -421,7 +551,7 @@ async function loadRetirementMessage() {
         }
 
         renderRetirementMessage(data.retirementMessage);
-        setupCommentAccess();
+        await setupCommentAccess();
         await loadComments(messageId);
     } catch (error) {
         showRetirementDetailMessage(
@@ -437,7 +567,7 @@ retirementCommentForm.addEventListener(
     async event => {
         event.preventDefault();
 
-        const token = localStorage.getItem("token");
+        const token = getStoredToken();
 
         if (!token) {
             setupCommentAccess();
@@ -484,6 +614,7 @@ retirementCommentForm.addEventListener(
 
             if (response.status === 401) {
                 localStorage.removeItem("token");
+                localStorage.removeItem("api_token");
                 setupCommentAccess();
                 throw new Error(
                     translate(

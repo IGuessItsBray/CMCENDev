@@ -8,6 +8,7 @@ const {
 const {
     getUserPermissions
 } = require('../config/permissions');
+const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
 
@@ -117,6 +118,40 @@ function getRetirementMessageText(retirementMessage, language = 'en') {
         cleanString(messages.fr) ||
         cleanString(retirementMessage.message)
     );
+}
+
+function getRetirementMessageTitle(retirementMessage) {
+    const retiree = retirementMessage.retiree || {};
+    const name = [
+        retiree.rank,
+        retiree.firstName,
+        retiree.lastName
+    ].filter(Boolean).join(' ');
+
+    return name
+        ? `Retirement message for ${name}`
+        : 'Retirement message';
+}
+
+function getRetirementMessageSnapshot(retirementMessage) {
+    return {
+        title: getRetirementMessageTitle(retirementMessage),
+        status: retirementMessage.status,
+        createdBy: retirementMessage.createdBy,
+        publishedBy: retirementMessage.publishedBy,
+        retiree: retirementMessage.retiree
+    };
+}
+
+function getRetirementCommentSnapshot(comment) {
+    return {
+        title: 'Retirement comment',
+        status: comment.status,
+        author: comment.author,
+        retirementMessage: comment.retirementMessage,
+        publishedBy: comment.publishedBy,
+        excerpt: String(comment.body || '').slice(0, 240)
+    };
 }
 
 router.post(
@@ -382,6 +417,28 @@ router.post(
             });
 
         await retirementMessage.save();
+
+        await writeAuditLog({
+            req,
+            action: 'content.created',
+            actor: req.user,
+            targetType: 'retirementMessage',
+            target: retirementMessage._id,
+            targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+            metadata: { status: retirementMessage.status }
+        });
+
+        if (retirementMessage.status === 'published') {
+            await writeAuditLog({
+                req,
+                action: 'content.published',
+                actor: req.user,
+                targetType: 'retirementMessage',
+                target: retirementMessage._id,
+                targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+                metadata: { source: 'create' }
+            });
+        }
 
         return res.status(201).json({
             message:
@@ -669,6 +726,18 @@ router.patch(
 
             await comment.save();
 
+            if (action === 'publish') {
+                await writeAuditLog({
+                    req,
+                    action: 'content.published',
+                    actor: req.user,
+                    targetType: 'retirementComment',
+                    target: comment._id,
+                    targetSnapshot: getRetirementCommentSnapshot(comment),
+                    metadata: { source: 'review' }
+                });
+            }
+
             await comment.populate(
                 'author',
                 'username accountName firstName lastName email role'
@@ -867,6 +936,28 @@ router.post(
                 });
 
             await comment.save();
+
+            await writeAuditLog({
+                req,
+                action: 'content.created',
+                actor: req.user,
+                targetType: 'retirementComment',
+                target: comment._id,
+                targetSnapshot: getRetirementCommentSnapshot(comment),
+                metadata: { status: comment.status }
+            });
+
+            if (comment.status === 'published') {
+                await writeAuditLog({
+                    req,
+                    action: 'content.published',
+                    actor: req.user,
+                    targetType: 'retirementComment',
+                    target: comment._id,
+                    targetSnapshot: getRetirementCommentSnapshot(comment),
+                    metadata: { source: 'create' }
+                });
+            }
 
             await comment.populate(
                 'author',
@@ -1096,6 +1187,18 @@ router.patch(
             retirementMessage.updatedBy = req.user._id;
 
             await retirementMessage.save();
+
+            if (action === 'publish') {
+                await writeAuditLog({
+                    req,
+                    action: 'content.published',
+                    actor: req.user,
+                    targetType: 'retirementMessage',
+                    target: retirementMessage._id,
+                    targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+                    metadata: { source: 'review' }
+                });
+            }
 
             await retirementMessage.populate(
                 'reviewedBy',

@@ -1,4 +1,87 @@
 // the header'z dropdown menus are built from this
+const themeStorageKey = "cmcen-theme";
+const darkModeQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
+
+function getPreferredTheme() {
+  const storedTheme = localStorage.getItem(themeStorageKey);
+
+  if (storedTheme === "dark" || storedTheme === "light") {
+    return storedTheme;
+  }
+
+  return darkModeQuery?.matches ? "dark" : "light";
+}
+
+function applyTheme(theme, { persist = true } = {}) {
+  const nextTheme = theme === "dark" ? "dark" : "light";
+
+  document.documentElement.dataset.theme = nextTheme;
+  document.documentElement.style.colorScheme = nextTheme;
+
+  const themeToggle = document.getElementById("themeToggle");
+
+  if (themeToggle) {
+    const isDark = nextTheme === "dark";
+    const translateText =
+      typeof window.translate === "function"
+        ? window.translate
+        : (key, replacements, lang) => {
+          const fallbacks = {
+            theme_switch_to_light_label: "Switch to light mode",
+            theme_switch_to_dark_label: "Switch to dark mode",
+            theme_light_short: "LIGHT",
+            theme_dark_short: "DARK"
+          };
+
+          return fallbacks[key] || key;
+        };
+
+    themeToggle.textContent = isDark
+      ? translateText("theme_light_short")
+      : translateText("theme_dark_short");
+    themeToggle.setAttribute("aria-pressed", String(isDark));
+    themeToggle.setAttribute(
+      "aria-label",
+      isDark
+        ? translateText("theme_switch_to_light_label")
+        : translateText("theme_switch_to_dark_label")
+    );
+  }
+
+  if (persist) {
+    localStorage.setItem(themeStorageKey, nextTheme);
+  }
+
+  document.dispatchEvent(
+    new CustomEvent("themechange", {
+      bubbles: true,
+      detail: { theme: nextTheme }
+    })
+  );
+}
+
+function toggleTheme() {
+  applyTheme(
+    document.documentElement.dataset.theme === "dark"
+      ? "light"
+      : "dark"
+  );
+}
+
+applyTheme(getPreferredTheme(), { persist: false });
+
+darkModeQuery?.addEventListener?.("change", event => {
+  if (!localStorage.getItem(themeStorageKey)) {
+    applyTheme(event.matches ? "dark" : "light", { persist: false });
+  }
+});
+
+document.addEventListener("languagechange", () => {
+  applyTheme(document.documentElement.dataset.theme || getPreferredTheme(), {
+    persist: false
+  });
+});
+
 const navLinks = {
   about: {
     titleKey: "menu_about_title",
@@ -184,6 +267,16 @@ function loadHeader() {
             FR
           </button>
 
+          <button
+            type="button"
+            class="theme-toggle"
+            id="themeToggle"
+            aria-label="Switch to dark mode"
+            aria-pressed="false"
+          >
+            DARK
+          </button>
+
           <a
             href="/donate.html"
             class="donate-link"
@@ -321,6 +414,11 @@ function loadHeader() {
 
   mobileMenuToggle?.addEventListener('click', () => {
     setMobileMenuOpen(!header.classList.contains('is-mobile-menu-open'));
+  });
+
+  document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
+  applyTheme(document.documentElement.dataset.theme || getPreferredTheme(), {
+    persist: false
   });
 
   primaryNavigation?.addEventListener('click', event => {

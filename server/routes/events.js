@@ -16,6 +16,7 @@ const {
 const {
     getUserPermissions
 } = require('../config/permissions');
+const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
 
@@ -58,6 +59,25 @@ function cleanSubmitter(submitter = {}) {
         phone: cleanString(
             submitter.phone
         )
+    };
+}
+
+function getEventTitle(event) {
+    return (
+        event.title?.en ||
+        event.title?.fr ||
+        'Untitled event'
+    );
+}
+
+function getEventSnapshot(event) {
+    return {
+        title: getEventTitle(event),
+        status: event.status,
+        contentArea: event.contentArea || 'general',
+        createdBy: event.createdBy,
+        publishedBy: event.publishedBy,
+        startDate: event.startDate
     };
 }
 
@@ -724,6 +744,28 @@ router.post(
 
             await event.save();
 
+            await writeAuditLog({
+                req,
+                action: 'content.created',
+                actor: req.user,
+                targetType: 'event',
+                target: event._id,
+                targetSnapshot: getEventSnapshot(event),
+                metadata: { status: event.status }
+            });
+
+            if (event.status === 'published') {
+                await writeAuditLog({
+                    req,
+                    action: 'content.published',
+                    actor: req.user,
+                    targetType: 'event',
+                    target: event._id,
+                    targetSnapshot: getEventSnapshot(event),
+                    metadata: { source: 'create' }
+                });
+            }
+
             return res.status(201).json({
                 message:
                     status === 'published'
@@ -933,6 +975,7 @@ router.get(
 
             const permissions =
                 getUserPermissions(req.user);
+            const previousStatus = event.status;
 
             const isOwner =
                 event.createdBy &&
@@ -1223,6 +1266,21 @@ router.patch(
 
             await event.save();
 
+            if (
+                event.status === "published" &&
+                previousStatus !== "published"
+            ) {
+                await writeAuditLog({
+                    req,
+                    action: 'content.published',
+                    actor: req.user,
+                    targetType: 'event',
+                    target: event._id,
+                    targetSnapshot: getEventSnapshot(event),
+                    metadata: { source: 'update' }
+                });
+            }
+
             return res.json({
                 message:
                     event.status === "published"
@@ -1312,8 +1370,22 @@ router.patch(
             }
 
             event.updatedBy = req.user._id;
+            event.reviewedBy = req.user._id;
+            event.reviewedAt = new Date();
 
             await event.save();
+
+            if (action === 'publish') {
+                await writeAuditLog({
+                    req,
+                    action: 'content.published',
+                    actor: req.user,
+                    targetType: 'event',
+                    target: event._id,
+                    targetSnapshot: getEventSnapshot(event),
+                    metadata: { source: 'review' }
+                });
+            }
 
             await event.populate(
                 'createdBy',

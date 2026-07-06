@@ -365,6 +365,16 @@ function createAdminPostItem(post) {
     item.append(excerpt);
   }
 
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "admin-work-zone-button is-danger";
+  deleteButton.textContent = "Delete";
+  deleteButton.addEventListener("click", () => {
+    deleteAdminPost(post);
+  });
+
+  item.append(deleteButton);
+
   return item;
 }
 
@@ -773,6 +783,77 @@ async function promoteAdminUserToDeveloper(user) {
   } catch (error) {
     setAdminWorkZoneState({
       message: error.message || "Could not promote user to developer"
+    });
+  }
+}
+
+function getAdminDeleteEndpoint(post) {
+  const encodedId = encodeURIComponent(post._id);
+
+  if (post.type === "event") {
+    return `/api/admin/events/${encodedId}`;
+  }
+
+  if (post.type === "retirementMessage") {
+    return `/api/admin/retirement-messages/${encodedId}`;
+  }
+
+  if (post.type === "retirementComment") {
+    return `/api/admin/retirement-comments/${encodedId}`;
+  }
+
+  return "";
+}
+
+async function deleteAdminPost(post) {
+  const endpoint = getAdminDeleteEndpoint(post);
+
+  if (!endpoint) {
+    setAdminWorkZoneState({
+      message: "This content type cannot be deleted here."
+    });
+    return;
+  }
+
+  if (
+    !window.confirm(
+      `Delete "${post.title || "this item"}"? This will be recorded in the audit log.`
+    )
+  ) {
+    return;
+  }
+
+  setAdminWorkZoneState({
+    message: ""
+  });
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${adminToken}`
+      }
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not delete content");
+    }
+
+    setAdminWorkZoneState({
+      posts: adminWorkZoneState.posts.filter(
+        item => String(item._id) !== String(post._id)
+      ),
+      message: data.message || "Content deleted."
+    });
+
+    await loadAdminUsers({
+      preserveSelection: true
+    });
+  } catch (error) {
+    setAdminWorkZoneState({
+      message: error.message || "Could not delete content"
     });
   }
 }

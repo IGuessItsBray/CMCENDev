@@ -32,7 +32,10 @@ function getUserPermissions(user) {
       hasMinimumRole(user.role, 'editor'),
 
     canManageUsers:
-      hasMinimumRole(user.role, 'administrator')
+      hasMinimumRole(user.role, 'administrator'),
+
+    canBypassReviewStages:
+      user.role === 'developer'
   };
 }
 

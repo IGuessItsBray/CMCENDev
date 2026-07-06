@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const {
   authMiddleware,
-  requireExactRole,
+  requirePermission,
   requireMinimumRole
 } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
@@ -371,11 +371,11 @@ router.get(
 );
 
 // GET /api/admin-check
-// Confirm the current user has the administrator role.
+// Confirm the current user has user-management access.
 router.get(
   '/admin-check',
   authMiddleware,
-  requireExactRole('administrator'),
+  requirePermission('canManageUsers'),
   (req, res) => {
     res.json({
       message: 'Administrator access confirmed'

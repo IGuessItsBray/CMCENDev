@@ -12,7 +12,7 @@ Defined in `auth.js`.
 | `POST` | `/api/login` | Public | Authenticate with username and password, returning a JWT. |
 | `GET` | `/api/me` | Bearer token | Return the authenticated user's profile plus computed permissions. |
 | `GET` | `/api/contributor-check` | Contributor or higher | Confirm the current user can submit contributor-level content. |
-| `GET` | `/api/admin-check` | Administrator | Confirm administrator-only access. |
+| `GET` | `/api/admin-check` | User management | Confirm administrator/developer user-management access. |
 
 `POST /api/register` expects identity, address, affiliation, email, `password`, and `passwordConfirmation` fields. It normalizes the email to lowercase and creates the user with the `subscriber` role.
 
@@ -24,10 +24,15 @@ Defined in `admin.js`.
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| `GET` | `/api/admin/users` | Administrator | List users. Optional `query` parameter filters by username or account name. |
-| `PATCH` | `/api/admin/users/:userId/role` | Administrator | Update a user's role after validating it against the shared role config. |
+| `GET` | `/api/admin/users` | User management | List users with role, content areas, and post-count summaries. Optional `query` parameter filters by username or account name. |
+| `GET` | `/api/admin/users/:userId` | User management | Return one user's editable admin profile plus submitted event/comment summaries. |
+| `PATCH` | `/api/admin/users/:userId` | User management | Update a user's standard role and content-area assignments. |
+| `PATCH` | `/api/admin/users/:userId/role` | User management | Update a user's standard role after validating it against the shared role config. |
+| `PATCH` | `/api/admin/users/:userId/developer` | User management | Promote a user to the developer role after explicit confirmation. |
 
-`PATCH /api/admin/users/:userId/role` expects a JSON body with `role`. Valid roles are defined in `server/config/roles.js`.
+`PATCH /api/admin/users/:userId` expects a JSON body with `role` and/or `contentAreas`. Valid roles are defined in `server/config/roles.js`; valid content areas are defined in `server/routes/admin.js`. The `developer` role cannot be assigned or removed through standard role endpoints.
+
+`PATCH /api/admin/users/:userId/role` remains available for role-only admin scripts and expects a JSON body with `role`.
 
 ## Diagnostic Routes
 

@@ -32,7 +32,7 @@ function getUserPermissions(user) {
       hasMinimumRole(user.role, 'editor'),
 
     canManageUsers:
-      user.role === 'administrator'
+      hasMinimumRole(user.role, 'administrator')
   };
 }
 

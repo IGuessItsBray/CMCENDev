@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>
+      Admin Work Zone | CMCEN / RCMCE
+    </title>
+
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="dashboard-main">
+      <section
+        class="dashboard-shell"
+        aria-labelledby="adminWorkZoneTitle"
+      >
+        <header class="dashboard-heading">
+          <div class="dashboard-heading-copy">
+            <p class="dashboard-eyebrow">
+              Administrator
+            </p>
+
+            <h1 id="adminWorkZoneTitle">
+              Admin work zone
+            </h1>
+
+            <p class="dashboard-member-name">
+              Manage user roles, content areas, and account-linked posts.
+            </p>
+          </div>
+        </header>
+
+        <div
+          class="dashboard-status is-loading"
+          id="adminWorkZoneStatus"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading..."
+        >
+          <span class="loading-state-spinner" aria-hidden="true"></span>
+          <span class="visually-hidden">Loading...</span>
+        </div>
+
+        <section
+          class="dashboard-section admin-work-zone-page"
+          id="adminWorkZone"
+          hidden
+        >
+          <div
+            class="admin-work-zone-shell"
+            id="adminWorkZoneContent"
+          ></div>
+        </section>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/admin-users.js"></script>
+  </body>
+</html>

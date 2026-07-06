@@ -343,6 +343,12 @@ router.post(
                         confirmationDate
                 },
 
+                createdBy:
+                    req.user._id,
+
+                updatedBy:
+                    req.user._id,
+
                 status: 'pending'
             });
 
@@ -613,12 +619,14 @@ router.patch(
 
                 comment.status = 'rejected';
                 comment.rejectionReason = cleanReason;
+                comment.publishedBy = null;
                 comment.publishedAt = null;
             }
 
             if (action === 'publish') {
                 comment.status = 'published';
                 comment.rejectionReason = '';
+                comment.publishedBy = req.user._id;
                 comment.publishedAt = reviewDate;
             }
 
@@ -634,6 +642,11 @@ router.patch(
 
             await comment.populate(
                 'reviewedBy',
+                'username accountName email role'
+            );
+
+            await comment.populate(
+                'publishedBy',
                 'username accountName email role'
             );
 
@@ -806,6 +819,11 @@ router.post(
                     reviewedAt:
                         publishImmediately
                             ? now
+                            : null,
+
+                    publishedBy:
+                        publishImmediately
+                            ? req.user._id
                             : null,
 
                     publishedAt:
@@ -1041,6 +1059,7 @@ router.patch(
 
             retirementMessage.reviewedBy = req.user._id;
             retirementMessage.reviewedAt = reviewDate;
+            retirementMessage.updatedBy = req.user._id;
 
             await retirementMessage.save();
 

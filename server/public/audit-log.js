@@ -35,6 +35,7 @@ const auditActions = [
   ["content.created", "New content"],
   ["content.published", "Published"],
   ["content.deleted", "Deleted"],
+  ["translation.updated", "Translation updated"],
   ["user.role_changed", "Role changed"],
   ["user.content_areas_changed", "Content areas changed"]
 ];
@@ -43,6 +44,7 @@ const auditTargetTypes = [
   ["", "All targets"],
   ["user", "Users"],
   ["event", "Events"],
+  ["translation", "Translations"],
   ["retirementMessage", "Retirement posts"],
   ["retirementComment", "Comments"]
 ];
@@ -109,6 +111,7 @@ function getAuditTarget(log) {
 
   return (
     target.title ||
+    target.key ||
     target.accountName ||
     target.username ||
     target.email ||
@@ -180,7 +183,10 @@ function formatMetadataLabel(key) {
     source: "Source",
     method: "Method",
     methods: "Methods",
-    deletedComments: "Deleted Comments"
+    deletedComments: "Deleted Comments",
+    changedLanguages: "Changed Languages",
+    previousValues: "Previous Values",
+    newValues: "New Values"
   };
 
   if (knownLabels[key]) {
@@ -196,6 +202,15 @@ function formatMetadataLabel(key) {
 function formatMetadataValue(value) {
   if (Array.isArray(value)) {
     return value.length ? value.join(", ") : "None";
+  }
+
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value)
+      .filter(([, item]) => item !== undefined && item !== null);
+
+    return entries.length
+      ? entries.map(([key, item]) => `${key}: ${item}`).join("; ")
+      : "None";
   }
 
   return String(value);

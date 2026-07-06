@@ -37,7 +37,12 @@ const eventRegistrationSection =
 const eventDetailRegistration =
     document.getElementById("eventDetailRegistration");
 
+const eventDetailHero =
+    document.querySelector(".event-detail-hero");
+
 let currentEvent = null;
+let currentEventId = "";
+let canManageEvents = false;
 let visibleEventMessageKey = "";
 let visibleEventMessageType = "neutral";
 
@@ -59,6 +64,158 @@ function getEventTranslation(key, replacements = {}) {
     }
 
     return key;
+}
+
+function getStoredToken() {
+    return String(
+        localStorage.getItem("token") ||
+        localStorage.getItem("api_token") ||
+        ""
+    ).trim().replace(/^Bearer\s+/i, "");
+}
+
+function removeEventAdminActions() {
+    eventDetailHero
+        ?.querySelector(".event-detail-admin-actions")
+        ?.remove();
+}
+
+async function deletePublishedEvent() {
+    const token = getStoredToken();
+
+    if (!token) {
+        await setupEventAdminAccess();
+        return;
+    }
+
+    if (
+        !window.confirm(
+            "Delete this event? This will be recorded in the audit log."
+        )
+    ) {
+        return;
+    }
+
+    const button = eventDetailHero
+        ?.querySelector("[data-action='delete-event']");
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Deleting...";
+    }
+
+    try {
+        const response = await fetch(
+            `/api/admin/events/${encodeURIComponent(currentEventId)}`,
+            {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("api_token");
+            await setupEventAdminAccess();
+            throw new Error("Sign in again to delete events.");
+        }
+
+        if (response.status === 403) {
+            canManageEvents = false;
+            removeEventAdminActions();
+            throw new Error("You do not have permission to delete events.");
+        }
+
+        if (!response.ok) {
+            throw new Error(data.error || "Could not delete event");
+        }
+
+        showEventDetailMessage(
+            "Event deleted and recorded in the audit log.",
+            "success"
+        );
+
+        setTimeout(() => {
+            window.location.href = "/calendar.html";
+        }, 900);
+    } catch (error) {
+        window.alert(error.message || "Could not delete event");
+
+        if (button) {
+            button.disabled = false;
+            button.textContent = "Delete event";
+        }
+    }
+}
+
+function renderEventAdminActions() {
+    removeEventAdminActions();
+
+    if (!canManageEvents || !currentEventId) {
+        return;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "event-detail-admin-actions";
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className =
+        "published-content-delete event-delete";
+    deleteButton.dataset.action = "delete-event";
+    deleteButton.textContent = "Delete event";
+    deleteButton.addEventListener("click", deletePublishedEvent);
+
+    actions.append(deleteButton);
+    eventDetailHero?.append(actions);
+}
+
+async function setupEventAdminAccess() {
+    const token = getStoredToken();
+
+    if (!token) {
+        canManageEvents = false;
+        removeEventAdminActions();
+        return;
+    }
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("api_token", token);
+
+    try {
+        const response = await fetch("/api/me", {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        if (response.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("api_token");
+            canManageEvents = false;
+            removeEventAdminActions();
+            return;
+        }
+
+        if (!response.ok) {
+            canManageEvents = false;
+            removeEventAdminActions();
+            return;
+        }
+
+        const user = await response.json().catch(() => ({}));
+
+        canManageEvents =
+            user.permissions?.canManageUsers === true;
+        renderEventAdminActions();
+    } catch (error) {
+        canManageEvents = false;
+        removeEventAdminActions();
+    }
 }
 
 function getLocalizedEventText(value) {
@@ -470,6 +627,8 @@ async function loadEvent() {
         return;
     }
 
+    currentEventId = eventId;
+
     showEventDetailMessageKey("event_detail_loading");
 
     try {
@@ -489,6 +648,7 @@ async function loadEvent() {
         }
 
         renderEvent(data.event);
+        await setupEventAdminAccess();
     } catch (error) {
         showEventDetailMessage(
             error.message ||

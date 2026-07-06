@@ -1591,6 +1591,46 @@ a.dropdown-toggle {
   line-height: 1.5;
 }
 
+.event-detail-admin-actions,
+.retirement-detail-admin-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.published-content-delete {
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid #b42318;
+  border-radius: 2px;
+  background: #b42318;
+  color: var(--white);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.published-content-delete:hover,
+.published-content-delete:focus-visible {
+  border-color: #8f1d14;
+  background: #8f1d14;
+  transform: translateY(-1px);
+}
+
+.published-content-delete:disabled {
+  cursor: progress;
+  opacity: 0.68;
+  transform: none;
+}
+
 .event-detail-body {
   padding: 24px;
   display: grid;
@@ -9913,5 +9953,44 @@ html[data-theme="dark"] .retirement-comment-form textarea {
 html[data-theme="dark"] .retirement-comment-form-note,
 html[data-theme="dark"] .retirement-comment p,
 html[data-theme="dark"] .retirement-detail-message-section p {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .about-family-main {
+  background:
+    radial-gradient(circle at top left, rgba(213, 155, 39, 0.07), transparent 32rem),
+    linear-gradient(180deg, var(--dark-bg), #0b1220 62%, var(--dark-bg));
+}
+
+html[data-theme="dark"] .about-family-body {
+  border-color: var(--dark-border);
+  background:
+    linear-gradient(180deg,
+      var(--dark-surface-2),
+      var(--dark-surface));
+  color: var(--dark-text);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .about-family-section {
+  border-top-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .about-family-section h2 {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .about-family-section p {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .about-family-pillar-list li {
+  border-left-color: var(--gold-500);
+  background:
+    linear-gradient(90deg,
+      rgba(213, 155, 39, 0.16),
+      rgba(34, 45, 64, 0.88));
   color: var(--dark-text-soft);
 }

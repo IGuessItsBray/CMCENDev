@@ -19,6 +19,9 @@ const retirementDetailPhoto =
 const retirementDetailText =
     document.getElementById("retirementDetailText");
 
+const retirementDetailHeading =
+    document.querySelector(".retirement-detail-heading");
+
 const retirementCommentMessage =
     document.getElementById("retirementCommentMessage");
 
@@ -41,6 +44,7 @@ let currentRetirementMessageId = "";
 let currentRetirementMessage = null;
 let loadedComments = [];
 let canManageRetirementComments = false;
+let canManageRetirementMessages = false;
 let visibleDetailMessageKey = "";
 let visibleDetailMessageType = "neutral";
 let visibleCommentMessageKey = "";
@@ -297,6 +301,113 @@ function getStoredToken() {
     ).trim().replace(/^Bearer\s+/i, "");
 }
 
+function removeRetirementAdminActions() {
+    retirementDetailHeading
+        ?.querySelector(".retirement-detail-admin-actions")
+        ?.remove();
+}
+
+async function deleteRetirementMessage() {
+    const token = getStoredToken();
+
+    if (!token) {
+        await setupCommentAccess();
+        return;
+    }
+
+    if (
+        !window.confirm(
+            "Delete this retirement message and its comments? This will be recorded in the audit log."
+        )
+    ) {
+        return;
+    }
+
+    const button = retirementDetailHeading
+        ?.querySelector("[data-action='delete-retirement-message']");
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Deleting...";
+    }
+
+    try {
+        const response = await fetch(
+            `/api/admin/retirement-messages/${encodeURIComponent(currentRetirementMessageId)}`,
+            {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("api_token");
+            await setupCommentAccess();
+            throw new Error("Sign in again to delete retirement messages.");
+        }
+
+        if (response.status === 403) {
+            canManageRetirementMessages = false;
+            removeRetirementAdminActions();
+            throw new Error("You do not have permission to delete retirement messages.");
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                    "Could not delete retirement message"
+            );
+        }
+
+        showRetirementDetailMessage(
+            "Retirement message deleted and recorded in the audit log.",
+            "success"
+        );
+
+        setTimeout(() => {
+            window.location.href = "/retirements.html";
+        }, 900);
+    } catch (error) {
+        showRetirementCommentMessage(
+            error.message ||
+                "Could not delete retirement message",
+            "error"
+        );
+
+        if (button) {
+            button.disabled = false;
+            button.textContent = "Delete retirement message";
+        }
+    }
+}
+
+function renderRetirementAdminActions() {
+    removeRetirementAdminActions();
+
+    if (!canManageRetirementMessages || !currentRetirementMessageId) {
+        return;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "retirement-detail-admin-actions";
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className =
+        "published-content-delete retirement-message-delete";
+    deleteButton.dataset.action = "delete-retirement-message";
+    deleteButton.textContent = "Delete retirement message";
+    deleteButton.addEventListener("click", deleteRetirementMessage);
+
+    actions.append(deleteButton);
+    retirementDetailHeading?.append(actions);
+}
+
 async function deleteRetirementComment(comment) {
     const token = getStoredToken();
 
@@ -502,14 +613,21 @@ async function setupCommentAccess() {
 
             canManageRetirementComments =
                 user.permissions?.canManageUsers === true;
+            canManageRetirementMessages =
+                user.permissions?.canManageUsers === true;
+            renderRetirementAdminActions();
         } catch (error) {
             canManageRetirementComments = false;
+            canManageRetirementMessages = false;
+            removeRetirementAdminActions();
         }
 
         return;
     }
 
     canManageRetirementComments = false;
+    canManageRetirementMessages = false;
+    removeRetirementAdminActions();
     retirementCommentForm.hidden = true;
     retirementCommentLogin.hidden = false;
 }

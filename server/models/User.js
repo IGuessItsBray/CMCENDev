@@ -199,6 +199,7 @@ const UserSchema = new mongoose.Schema({
         credentialBackedUp: { type: Boolean, default: false },
         authenticatorAttachment: { type: String, default: '' },
         aaguid: { type: String, default: '' },
+        rpID: { type: String, default: '' },
         providerName: { type: String, default: '' },
         nickname: { type: String, default: '' }
       }

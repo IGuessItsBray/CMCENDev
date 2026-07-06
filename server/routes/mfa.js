@@ -104,7 +104,8 @@ function serializeCredential(credential, index) {
     credentialDeviceType: credential.credentialDeviceType || '',
     credentialBackedUp: Boolean(credential.credentialBackedUp),
     authenticatorAttachment: credential.authenticatorAttachment || '',
-    aaguid: credential.aaguid || ''
+    aaguid: credential.aaguid || '',
+    rpID: credential.rpID || ''
   };
 }
 
@@ -225,6 +226,7 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
       credentialBackedUp: Boolean(registrationInfo.credentialBackedUp),
       authenticatorAttachment: body.authenticatorAttachment || '',
       aaguid: registrationInfo.aaguid || '',
+      rpID: getRpID(req),
       providerName: String(body.providerName || '').trim(),
       nickname: String(body.nickname || '').trim()
     };
@@ -252,7 +254,14 @@ router.post('/webauthn/authenticate/options', authOrTempMiddleware, async (req, 
     // pass credential IDs as base64url strings (simplewebauthn expects strings here)
     const allowCredentials = (user.webauthn || [])
       .filter(c => c.credentialID && c.publicKey)
+      .filter(c => !c.rpID || c.rpID === rpID)
       .map(c => ({ id: c.credentialID, transports: c.transports || [] }));
+
+    if (!allowCredentials.length) {
+      return res.status(409).json({
+        error: `No passkeys are registered for ${rpID}. Register a passkey on this site, or use another MFA method.`
+      });
+    }
 
     const challenge = crypto.randomBytes(32);
 

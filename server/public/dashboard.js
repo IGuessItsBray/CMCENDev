@@ -691,6 +691,12 @@ function renderDashboard(user) {
       titleKey: "dashboard_action_admin_work_zone",
       descriptionKey: "dashboard_action_admin_work_zone_description"
     });
+
+    actions.push({
+      href: "/audit-log.html",
+      titleKey: "dashboard_action_audit_log",
+      descriptionKey: "dashboard_action_audit_log_description"
+    });
   }
 
   dashboardActions.replaceChildren(

@@ -9,6 +9,7 @@ const {
   requireMinimumRole
 } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
+const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
 
@@ -279,6 +280,20 @@ router.post('/login', async (req, res) => {
       const methods = [];
       if (hasWebAuthn) methods.push('webauthn');
       if (hasTOTP) methods.push('totp');
+      await writeAuditLog({
+        req,
+        action: 'user.login_mfa_required',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: {
+          username: user.username,
+          email: user.email,
+          accountName: user.accountName,
+          role: user.role
+        },
+        metadata: { methods }
+      });
       return res.json({ twoFactorRequired: true, methods, tempToken, expiresAt: expires.toISOString() });
     }
 
@@ -287,6 +302,20 @@ router.post('/login', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
+
+    await writeAuditLog({
+      req,
+      action: 'user.login',
+      actor: user,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: {
+        username: user.username,
+        email: user.email,
+        accountName: user.accountName,
+        role: user.role
+      }
+    });
 
     res.json({ token });
   } else {

@@ -7,6 +7,7 @@ const qrcode = require('qrcode');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { authMiddleware, authOrTempMiddleware } = require('../middleware/auth');
+const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
 
@@ -324,6 +325,20 @@ router.post('/webauthn/authenticate/verify', authOrTempMiddleware, async (req, r
       // issue full JWT and clear temp token
       const fullToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
       await User.findByIdAndUpdate(user._id, { $set: { 'twoFactor.tempToken': '', 'twoFactor.tempExpires': null } });
+      await writeAuditLog({
+        req,
+        action: 'user.login',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: {
+          username: user.username,
+          email: user.email,
+          accountName: user.accountName,
+          role: user.role
+        },
+        metadata: { method: 'webauthn' }
+      });
       responsePayload.token = fullToken;
     }
 
@@ -444,6 +459,20 @@ router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
     if (req.isTemp) {
       const fullToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
       await User.findByIdAndUpdate(user._id, { $set: { 'twoFactor.tempToken': '', 'twoFactor.tempExpires': null } });
+      await writeAuditLog({
+        req,
+        action: 'user.login',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: {
+          username: user.username,
+          email: user.email,
+          accountName: user.accountName,
+          role: user.role
+        },
+        metadata: { method: 'totp' }
+      });
       responsePayload.token = fullToken;
     }
 

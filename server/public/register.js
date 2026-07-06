@@ -13,6 +13,9 @@ const registerTotpSetup = document.getElementById("registerTotpSetup");
 const registerTotpOutput = document.getElementById("registerTotpOutput");
 const registerTotpCode = document.getElementById("registerTotpCode");
 const registerTotpVerify = document.getElementById("registerTotpVerify");
+const registerTrade = document.getElementById("regTrade");
+const registerTradeOtherField = document.getElementById("regTradeOtherField");
+const registerTradeOther = document.getElementById("regTradeOther");
 
 let registrationToken = "";
 let pendingTotpAppName = "Authenticator app";
@@ -276,8 +279,28 @@ function updatePasswordStrength() {
   passwordStrength.className = `password-strength ${password ? levels[score] : "is-empty"}`;
 }
 
+function updateRegisterTradeOtherVisibility() {
+  const showOther = registerTrade?.value === "other";
+
+  if (registerTradeOtherField) {
+    registerTradeOtherField.hidden = !showOther;
+  }
+
+  if (registerTradeOther) {
+    registerTradeOther.disabled = !showOther;
+    registerTradeOther.required = showOther;
+
+    if (!showOther) {
+      registerTradeOther.value = "";
+    }
+  }
+}
+
 passwordInput.addEventListener("input", updatePasswordStrength);
 passwordConfirmationInput.addEventListener("input", updatePasswordStrength);
+window.populateCmcenTradeSelect?.(registerTrade);
+updateRegisterTradeOtherVisibility();
+registerTrade?.addEventListener("change", updateRegisterTradeOtherVisibility);
 
 registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();

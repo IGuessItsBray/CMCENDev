@@ -326,14 +326,21 @@
                   MOSID/MOC/Trade
                 </label>
 
-                <input
-                  type="text"
+                <select
                   id="regTrade"
                   name="trade"
-                />
+                >
+                  <option value="" selected data-i18n="select_option">
+                    Select an option
+                  </option>
+                </select>
               </div>
 
-              <div class="register-field">
+              <div
+                class="register-field"
+                id="regTradeOtherField"
+                hidden
+              >
                 <label
                   for="regTradeOther"
                   data-i18n="trade_other"
@@ -345,6 +352,7 @@
                   type="text"
                   id="regTradeOther"
                   name="tradeOther"
+                  disabled
                 />
               </div>
 
@@ -557,6 +565,7 @@
 
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
+    <script src="/trade-options.js"></script>
     <script src="/register.js"></script>
   </body>
 </html>

@@ -73,7 +73,8 @@ function getRoleKey(role) {
     "contributor",
     "author",
     "editor",
-    "administrator"
+    "administrator",
+    "developer"
   ];
 
   return knownRoles.includes(role)
@@ -148,7 +149,8 @@ function createProfileField({
   autocomplete = "",
   required = false,
   wide = false,
-  addressField = ""
+  addressField = "",
+  fieldDataset = {}
 }) {
   const field = document.createElement("div");
   field.className = wide
@@ -182,6 +184,10 @@ function createProfileField({
     input.dataset.profileField = name;
   }
 
+  Object.entries(fieldDataset).forEach(([key, fieldValue]) => {
+    field.dataset[key] = fieldValue;
+  });
+
   field.append(label, input);
 
   return field;
@@ -193,7 +199,8 @@ function createProfileSelect({
   value = "",
   options,
   optionPrefix,
-  required = false
+  required = false,
+  preserveUnknownValue = false
 }) {
   const field = document.createElement("div");
   field.className = "dashboard-profile-field";
@@ -224,9 +231,22 @@ function createProfileSelect({
   options.forEach(optionValue => {
     const option = document.createElement("option");
     option.value = optionValue;
-    option.textContent = translate(`${optionPrefix}_${optionValue}`);
+    option.textContent = optionPrefix
+      ? translate(`${optionPrefix}_${optionValue}`)
+      : window.getCmcenTradeOptionLabel?.(optionValue) || optionValue;
     select.appendChild(option);
   });
+
+  if (
+    preserveUnknownValue &&
+    value &&
+    !options.includes(value)
+  ) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  }
 
   select.value = value || "";
 
@@ -316,6 +336,26 @@ function getProfilePayload(form) {
   });
 
   return payload;
+}
+
+function syncProfileTradeOtherVisibility(form) {
+  const trade = form.querySelector("[data-profile-field='trade']");
+  const tradeOther = form.querySelector("[data-profile-field='tradeOther']");
+  const tradeOtherField = form.querySelector("[data-profile-extra='tradeOther']");
+  const showOther = trade?.value === "other";
+
+  if (tradeOtherField) {
+    tradeOtherField.hidden = !showOther;
+  }
+
+  if (tradeOther) {
+    tradeOther.disabled = !showOther;
+    tradeOther.required = showOther;
+
+    if (!showOther) {
+      tradeOther.value = "";
+    }
+  }
 }
 
 function createProfileForm(user) {
@@ -424,15 +464,20 @@ function createProfileForm(user) {
       optionPrefix: "element",
       required: true
     }),
-    createProfileField({
+    createProfileSelect({
       name: "trade",
       labelKey: "trade",
-      value: user.trade
+      value: user.trade,
+      options: window.cmcenTradeOptions || [],
+      preserveUnknownValue: true
     }),
     createProfileField({
       name: "tradeOther",
       labelKey: "trade_other",
-      value: user.tradeOther
+      value: user.tradeOther,
+      fieldDataset: {
+        profileExtra: "tradeOther"
+      }
     }),
     createProfileField({
       name: "currentUnit",
@@ -479,9 +524,14 @@ function createProfileForm(user) {
   controls.append(editButton, saveButton, cancelButton);
   form.append(message, grid, readonlyDetails, controls);
 
+  form
+    .querySelector("[data-profile-field='trade']")
+    ?.addEventListener("change", () => syncProfileTradeOtherVisibility(form));
+
   editButton.addEventListener("click", () => {
     message.hidden = true;
     setProfileFormMode(form, true);
+    syncProfileTradeOtherVisibility(form);
     form.querySelector("input, select")?.focus();
   });
 
@@ -541,6 +591,7 @@ function createProfileForm(user) {
   });
 
   setProfileFormMode(form, false);
+  syncProfileTradeOtherVisibility(form);
 
   return form;
 }
@@ -631,6 +682,14 @@ function renderDashboard(user) {
       href: "/translations-admin.html",
       titleKey: "dashboard_action_manage_translations",
       descriptionKey: "dashboard_action_manage_translations_description"
+    });
+  }
+
+  if (user.permissions?.canManageUsers === true) {
+    actions.push({
+      href: "/admin-users.html",
+      titleKey: "dashboard_action_admin_work_zone",
+      descriptionKey: "dashboard_action_admin_work_zone_description"
     });
   }
 

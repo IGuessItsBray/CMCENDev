@@ -9364,6 +9364,52 @@ html[data-theme="dark"] .login-mfa-cancel:focus-visible {
   color: var(--gold-200);
 }
 
+html[data-theme="dark"] .mfa-field span,
+html[data-theme="dark"] .passkey-manager-heading h4 {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .passkey-manager,
+html[data-theme="dark"] .totp-manager {
+  border-top-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .mfa-field input,
+html[data-theme="dark"] .mfa-secret {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-bg-elevated);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .passkey-item,
+html[data-theme="dark"] .totp-status-card,
+html[data-theme="dark"] .passkey-empty {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-3);
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .passkey-details strong,
+html[data-theme="dark"] .totp-status-card strong {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .passkey-details span,
+html[data-theme="dark"] .totp-status-card span,
+html[data-theme="dark"] .totp-status-card p {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .mfa-link-button {
+  color: var(--dark-link);
+  text-decoration-color: var(--gold-500);
+}
+
+html[data-theme="dark"] .mfa-link-button:hover,
+html[data-theme="dark"] .mfa-link-button:focus-visible {
+  color: var(--gold-200);
+}
+
 /* Dark theme page-specific cleanup */
 
 html[data-theme="dark"] .dashboard-content,

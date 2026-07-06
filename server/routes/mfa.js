@@ -7,6 +7,7 @@ const qrcode = require('qrcode');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { authMiddleware, authOrTempMiddleware } = require('../middleware/auth');
+const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
 
@@ -15,10 +16,48 @@ const configuredRPID = process.env.RP_ID || '';
 const configuredOrigin = process.env.RP_ORIGIN || '';
 const defaultTotpWindow = 2;
 
+function getFirstHeaderValue(value) {
+  return String(value || '')
+    .split(',')
+    .map(part => part.trim())
+    .find(Boolean) || '';
+}
+
+function isLocalHostname(hostname) {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+}
+
+function getPublicHost(req) {
+  const forwardedHost = getFirstHeaderValue(req.get('x-forwarded-host'));
+  return forwardedHost || req.get('host') || 'localhost';
+}
+
+function getPublicHostname(req) {
+  const host = getPublicHost(req);
+
+  if (host.startsWith('[')) {
+    return host.slice(1, host.indexOf(']')).toLowerCase();
+  }
+
+  return host.split(':')[0].toLowerCase();
+}
+
+function getPublicProtocol(req) {
+  const forwardedProto = getFirstHeaderValue(req.get('x-forwarded-proto'));
+  const protocol = forwardedProto || req.protocol || (req.secure ? 'https' : 'http');
+  const hostname = getPublicHostname(req);
+
+  if (protocol === 'http' && !isLocalHostname(hostname)) {
+    return 'https';
+  }
+
+  return protocol;
+}
+
 function getRpID(req) {
   if (configuredRPID) return configuredRPID;
 
-  const hostname = req.hostname || 'localhost';
+  const hostname = getPublicHostname(req);
   if (hostname === '127.0.0.1' || hostname === '::1') return 'localhost';
 
   return hostname;
@@ -32,7 +71,7 @@ function getExpectedOrigin(req) {
       .filter(Boolean);
   }
 
-  return `${req.protocol}://${req.get('host')}`;
+  return `${getPublicProtocol(req)}://${getPublicHost(req)}`;
 }
 
 function bufferToBase64url(input) {
@@ -103,7 +142,8 @@ function serializeCredential(credential, index) {
     credentialDeviceType: credential.credentialDeviceType || '',
     credentialBackedUp: Boolean(credential.credentialBackedUp),
     authenticatorAttachment: credential.authenticatorAttachment || '',
-    aaguid: credential.aaguid || ''
+    aaguid: credential.aaguid || '',
+    rpID: credential.rpID || ''
   };
 }
 
@@ -224,6 +264,7 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
       credentialBackedUp: Boolean(registrationInfo.credentialBackedUp),
       authenticatorAttachment: body.authenticatorAttachment || '',
       aaguid: registrationInfo.aaguid || '',
+      rpID: getRpID(req),
       providerName: String(body.providerName || '').trim(),
       nickname: String(body.nickname || '').trim()
     };
@@ -251,7 +292,14 @@ router.post('/webauthn/authenticate/options', authOrTempMiddleware, async (req, 
     // pass credential IDs as base64url strings (simplewebauthn expects strings here)
     const allowCredentials = (user.webauthn || [])
       .filter(c => c.credentialID && c.publicKey)
+      .filter(c => !c.rpID || c.rpID === rpID)
       .map(c => ({ id: c.credentialID, transports: c.transports || [] }));
+
+    if (!allowCredentials.length) {
+      return res.status(409).json({
+        error: `No passkeys are registered for ${rpID}. Register a passkey on this site, or use another MFA method.`
+      });
+    }
 
     const challenge = crypto.randomBytes(32);
 
@@ -324,6 +372,20 @@ router.post('/webauthn/authenticate/verify', authOrTempMiddleware, async (req, r
       // issue full JWT and clear temp token
       const fullToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
       await User.findByIdAndUpdate(user._id, { $set: { 'twoFactor.tempToken': '', 'twoFactor.tempExpires': null } });
+      await writeAuditLog({
+        req,
+        action: 'user.login',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: {
+          username: user.username,
+          email: user.email,
+          accountName: user.accountName,
+          role: user.role
+        },
+        metadata: { method: 'webauthn' }
+      });
       responsePayload.token = fullToken;
     }
 
@@ -444,6 +506,20 @@ router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
     if (req.isTemp) {
       const fullToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
       await User.findByIdAndUpdate(user._id, { $set: { 'twoFactor.tempToken': '', 'twoFactor.tempExpires': null } });
+      await writeAuditLog({
+        req,
+        action: 'user.login',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: {
+          username: user.username,
+          email: user.email,
+          accountName: user.accountName,
+          role: user.role
+        },
+        metadata: { method: 'totp' }
+      });
       responsePayload.token = fullToken;
     }
 

@@ -611,9 +611,31 @@ svg {
   cursor: pointer;
 }
 
+.theme-toggle {
+  height: 36px;
+  min-width: 62px;
+  padding: 0 10px;
+  border: 1px solid var(--branch-grey-500);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
 .lang-toggle:hover,
-.lang-toggle:focus-visible {
+.lang-toggle:focus-visible,
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
   border-color: var(--gold-500);
+  color: var(--gold-200);
+}
+
+.theme-toggle[aria-pressed="true"] {
+  border-color: var(--gold-500);
+  background: rgba(213, 155, 39, 0.12);
   color: var(--gold-200);
 }
 
@@ -3139,6 +3161,149 @@ a.dropdown-toggle {
 
 .admin-work-zone-page {
   background: var(--white);
+}
+
+.audit-log-shell {
+  width: calc(100vw - 40px);
+  max-width: none;
+}
+
+.audit-log-page {
+  background: var(--white);
+}
+
+.audit-log-content {
+  width: 100%;
+}
+
+.audit-log-panel {
+  min-width: 0;
+  border: 1px solid var(--branch-grey-200);
+  background: var(--white);
+}
+
+.audit-log-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--branch-grey-200);
+}
+
+.audit-log-heading h3 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.audit-log-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 260px)) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--branch-grey-200);
+}
+
+.audit-log-entry {
+  position: relative;
+  overflow: hidden;
+  border-right: 0;
+  border-left: 0;
+  border-bottom: 0;
+  border-top-width: 1px;
+  background: var(--white);
+}
+
+.audit-log-entry::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--audit-accent, var(--navy-900));
+}
+
+.audit-log-entry .admin-post-header,
+.audit-log-entry .admin-post-details,
+.audit-log-entry .audit-log-metadata {
+  margin-left: 8px;
+}
+
+.audit-log-entry .admin-post-details a {
+  color: var(--navy-900);
+  font-weight: 800;
+}
+
+.audit-log-entry .admin-post-type {
+  border-color: var(--audit-accent, var(--navy-900));
+  background: var(--audit-accent, var(--navy-900));
+  color: var(--audit-badge-text, var(--white));
+}
+
+.audit-log-entry.is-user-login,
+.audit-log-entry.is-user-login_mfa_required {
+  --audit-accent: #2f6f9f;
+  background: #eef7fc;
+}
+
+.audit-log-entry.is-content-created {
+  --audit-accent: #6f5aa8;
+  background: #f5f2fb;
+}
+
+.audit-log-entry.is-content-published {
+  --audit-accent: #1f7a4d;
+  background: #edf8f2;
+}
+
+.audit-log-entry.is-content-deleted {
+  --audit-accent: #b42318;
+  background: #fff1f0;
+}
+
+.audit-log-entry.is-user-role_changed {
+  --audit-accent: var(--gold-600);
+  --audit-badge-text: var(--navy-950);
+  background: #fff8e8;
+}
+
+.audit-log-entry.is-user-content_areas_changed {
+  --audit-accent: #0f766e;
+  background: #ecfdfa;
+}
+
+.audit-log-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.audit-log-metadata-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 1px solid rgba(32, 38, 66, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--branch-grey-800);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.audit-log-metadata-chip strong {
+  color: var(--navy-900);
+  font-weight: 900;
+}
+
+.audit-log-metadata-chip[data-metadata-key="commentContent"] {
+  flex-basis: 100%;
+  align-items: flex-start;
+  border-radius: 4px;
+  white-space: normal;
 }
 
 .admin-work-zone-shell {
@@ -7200,6 +7365,42 @@ a.dropdown-toggle {
   gap: 14px;
 }
 
+.retirement-comment {
+  position: relative;
+}
+
+.retirement-comment-delete {
+  flex: 0 0 auto;
+  opacity: 0;
+  transform: translateY(-1px);
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid #b42318;
+  border-radius: 2px;
+  background: #b42318;
+  color: var(--white);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.retirement-comment:hover .retirement-comment-delete,
+.retirement-comment:focus-within .retirement-comment-delete {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.retirement-comment-delete:hover,
+.retirement-comment-delete:focus-visible {
+  background: #8f1d14;
+  border-color: #8f1d14;
+}
+
 .retirement-comment strong {
   color: var(--navy-900);
   font-size: 13px;
@@ -7208,6 +7409,7 @@ a.dropdown-toggle {
 
 .retirement-comment time {
   flex: 0 0 auto;
+  margin-left: auto;
   color: var(--text-muted);
   font-size: 11px;
   line-height: 1.3;
@@ -8454,6 +8656,10 @@ a.dropdown-toggle {
 }
 
 @media (max-width: 760px) {
+  .audit-log-filters {
+    grid-template-columns: 1fr;
+  }
+
   .admin-work-zone-shell {
     grid-template-columns: 1fr;
   }
@@ -8562,4 +8768,1150 @@ a.dropdown-toggle {
   .home-information {
     padding-bottom: 55px;
   }
+}
+
+/* ─────────────────────────────────────────────
+   Dark theme
+   ───────────────────────────────────────────── */
+
+html[data-theme="dark"] {
+  --dark-bg: #080d18;
+  --dark-bg-elevated: #0f1625;
+  --dark-surface: #151d2d;
+  --dark-surface-2: #1b2536;
+  --dark-surface-3: #222d40;
+  --dark-border: #334057;
+  --dark-border-strong: #46556f;
+  --dark-text: #edf2fa;
+  --dark-text-soft: #c8d0dd;
+  --dark-text-muted: #aab4c4;
+  --dark-link: #f0c76c;
+  --dark-danger-bg: #341714;
+  --dark-danger-text: #ffb4ad;
+  --dark-success-bg: #10271a;
+  --dark-success-text: #bde8ca;
+}
+
+html[data-theme="dark"] body {
+  background: var(--dark-bg);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] main {
+  background:
+    radial-gradient(ellipse at 15% 0%,
+      rgba(213, 155, 39, 0.13),
+      transparent 45%),
+    radial-gradient(ellipse at 85% 12%,
+      rgba(81, 106, 176, 0.18),
+      transparent 44%),
+    linear-gradient(180deg,
+      #0c1220 0%,
+      #080d18 58%,
+      #060a12 100%);
+}
+
+html[data-theme="dark"] main::before {
+  opacity: 0.28;
+  filter: saturate(0.8);
+}
+
+html[data-theme="dark"] .site-header,
+html[data-theme="dark"] .site-footer {
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
+}
+
+html[data-theme="dark"] .header-identity-row,
+html[data-theme="dark"] .footer-main,
+html[data-theme="dark"] .signout-modal-header,
+html[data-theme="dark"] .dashboard-heading,
+html[data-theme="dark"] .event-submit-heading,
+html[data-theme="dark"] .event-review-heading,
+html[data-theme="dark"] .event-detail-hero,
+html[data-theme="dark"] .retirement-detail-heading {
+  background:
+    linear-gradient(110deg,
+      #060914,
+      #11192b 58%,
+      #1b2640);
+}
+
+html[data-theme="dark"] .header-navigation-row,
+html[data-theme="dark"] .ownership-band,
+html[data-theme="dark"] .footer-bottom {
+  background: #060914;
+}
+
+html[data-theme="dark"] .dropdown-menu {
+  border-color: var(--dark-border);
+  background: var(--dark-surface);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.38);
+}
+
+html[data-theme="dark"] .dropdown-menu a {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .dropdown-menu li:hover,
+html[data-theme="dark"] .dropdown-menu li:focus-within {
+  background: var(--dark-surface-3);
+}
+
+html[data-theme="dark"] .dropdown-menu li a:hover,
+html[data-theme="dark"] .dropdown-menu li a:focus-visible {
+  background: var(--dark-surface-3);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .header-search,
+html[data-theme="dark"] .header-search:focus-within {
+  border-color: rgba(234, 211, 163, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .theme-toggle[aria-pressed="true"],
+html[data-theme="dark"] .lang-toggle:hover,
+html[data-theme="dark"] .theme-toggle:hover {
+  background: rgba(213, 155, 39, 0.14);
+}
+
+html[data-theme="dark"] main :is(
+  .login-shell,
+  .register-shell,
+  .dashboard-shell,
+  .event-submit-shell,
+  .event-review-shell,
+  .event-detail-shell,
+  .retirement-detail-shell,
+  .retirements-shell,
+  .search-shell,
+  .translations-admin-shell,
+  .calendar-container,
+  .audit-log-panel,
+  .admin-user-list-panel,
+  .admin-user-detail-panel
+) {
+  border-color: var(--dark-border);
+  background: var(--dark-surface);
+  color: var(--dark-text);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.36);
+}
+
+html[data-theme="dark"] main :is(
+  .login-panel,
+  .register-panel,
+  .dashboard-section,
+  .event-form-section,
+  .event-management-panel,
+  .event-language-panel,
+  .event-detail-section,
+  .event-detail-date-card,
+  .retirement-detail-message-section,
+  .retirement-detail-comments,
+  .retirement-card,
+  .home-family-card,
+  .home-feature-panel,
+  .search-result,
+  .translation-row,
+  .review-event-card,
+  .review-language-panel,
+  .retirement-review-card,
+  .mfa-panel,
+  .passkey-manager,
+  .totp-manager,
+  .admin-post-item,
+  .audit-log-entry,
+  .retirement-comment,
+  .retirement-comment-empty,
+  .retirement-comment-login,
+  .my-event-card,
+  .calendar-event-card
+) {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] main :is(
+  .dashboard-details,
+  .dashboard-profile-readonly,
+  .admin-user-row,
+  .admin-user-search,
+  .admin-panel-heading,
+  .admin-user-detail-heading,
+  .audit-log-heading,
+  .audit-log-filters,
+  .event-management-tabs,
+  .event-authorization-section,
+  .event-schedule-section,
+  .event-submitter-section,
+  .event-details-section,
+  .retirement-consent-section,
+  .retirement-trade-panel,
+  .retirement-radio-option,
+  .register-mfa-option,
+  .passkey-item,
+  .totp-status,
+  .home-feed-message,
+  .calendar-message
+) {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-3);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] main :is(
+  h1,
+  h2,
+  h3,
+  h4,
+  legend,
+  label,
+  strong,
+  .dashboard-detail-label,
+  .dashboard-section-heading h2,
+  .admin-user-detail-heading h3,
+  .audit-log-heading h3,
+  .event-section-heading h2,
+  .event-language-heading h3,
+  .review-language-heading h3,
+  .retirement-detail-comments h2,
+  .retirement-card-header h2,
+  .search-heading h1,
+  .translations-admin-heading h1
+) {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] main :is(
+  p,
+  li,
+  small,
+  time,
+  .dashboard-detail-value,
+  .dashboard-member-name,
+  .dashboard-role-summary p,
+  .admin-post-details,
+  .admin-post-excerpt,
+  .admin-empty-state,
+  .retirement-comment p,
+  .retirement-comment time,
+  .event-language-note,
+  .event-time-zone-note,
+  .review-page-message,
+  .search-status
+) {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] main a {
+  color: var(--dark-link);
+}
+
+html[data-theme="dark"] main :is(input, textarea, select) {
+  border-color: var(--dark-border-strong);
+  background: #0d1422;
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] main :is(input, textarea, select)::placeholder {
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] main :is(input, textarea, select):focus {
+  border-color: var(--gold-500);
+  box-shadow: 0 0 0 3px rgba(213, 155, 39, 0.18);
+}
+
+html[data-theme="dark"] main :is(
+  button,
+  .dashboard-profile-button,
+  .admin-work-zone-button,
+  .mfa-button,
+  .event-submit-button,
+  .login-submit,
+  .register-submit,
+  .review-publish-button,
+  .review-reject-button,
+  .translation-save-button
+) {
+  border-color: var(--dark-border-strong);
+}
+
+html[data-theme="dark"] main :is(
+  .dashboard-profile-button.is-primary,
+  .admin-work-zone-button.is-primary,
+  .mfa-button-primary,
+  .event-submit-button,
+  .login-submit,
+  .register-submit,
+  .review-publish-button,
+  .translation-save-button
+) {
+  border-color: var(--gold-500);
+  background: var(--gold-500);
+  color: #101522;
+}
+
+html[data-theme="dark"] main :is(
+  .dashboard-profile-button.is-secondary,
+  .admin-work-zone-button.is-secondary,
+  .mfa-button,
+  .mfa-link-button,
+  .event-management-tab,
+  .review-reject-button
+) {
+  background: transparent;
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] main :is(
+  .dashboard-status,
+  .event-form-message,
+  .event-page-message,
+  .review-page-message,
+  .retirements-message,
+  .retirement-comment-message,
+  .calendar-message,
+  .search-status,
+  .admin-work-zone-message,
+  .dashboard-profile-message
+) {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-3);
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] main :is(
+  .is-error,
+  .login-error,
+  .register-error,
+  .retirement-comment-message.is-error,
+  .event-form-message.is-error,
+  .review-page-message.is-error
+) {
+  border-left-color: var(--danger);
+  background: var(--dark-danger-bg);
+  color: var(--dark-danger-text);
+}
+
+html[data-theme="dark"] main :is(
+  .is-success,
+  .retirement-comment-message.is-success,
+  .event-form-message.is-success,
+  .dashboard-profile-message.is-success
+) {
+  border-left-color: var(--success-border);
+  background: var(--dark-success-bg);
+  color: var(--dark-success-text);
+}
+
+html[data-theme="dark"] main :is(table, th, td) {
+  border-color: var(--dark-border);
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] main th {
+  background: var(--dark-surface-3);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .signout-modal {
+  border-color: var(--dark-border);
+  background: var(--dark-surface);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .signout-modal-body,
+html[data-theme="dark"] .signout-modal-button-secondary {
+  background: var(--dark-surface);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .signout-modal-body p {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .audit-log-entry.is-user-login,
+html[data-theme="dark"] .audit-log-entry.is-user-login_mfa_required {
+  background: #102436;
+}
+
+html[data-theme="dark"] .audit-log-entry.is-content-created {
+  background: #211d3a;
+}
+
+html[data-theme="dark"] .audit-log-entry.is-content-published {
+  background: #10291d;
+}
+
+html[data-theme="dark"] .audit-log-entry.is-content-deleted {
+  background: #351916;
+}
+
+html[data-theme="dark"] .audit-log-entry.is-user-role_changed {
+  background: #332714;
+}
+
+html[data-theme="dark"] .audit-log-entry.is-user-content_areas_changed {
+  background: #0e2c29;
+}
+
+html[data-theme="dark"] .audit-log-metadata-chip {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .audit-log-metadata-chip strong {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .home-family,
+html[data-theme="dark"] .home-information {
+  background: transparent;
+}
+
+html[data-theme="dark"] .home-family-grid {
+  border-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .home-family-card,
+html[data-theme="dark"] .home-family-card:hover,
+html[data-theme="dark"] .home-family-card:focus-visible {
+  border-color: var(--dark-border);
+  border-top-color: var(--gold-500);
+  background:
+    linear-gradient(180deg,
+      #172235,
+      #111929);
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .home-family-card:hover,
+html[data-theme="dark"] .home-family-card:focus-visible {
+  border-top-color: var(--gold-200);
+  background:
+    linear-gradient(180deg,
+      #1d2a42,
+      #141d30);
+}
+
+html[data-theme="dark"] .home-family-card .home-family-icon {
+  color: var(--gold-500);
+}
+
+html[data-theme="dark"] .home-family-card h3,
+html[data-theme="dark"] .home-family-card .home-family-link {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .home-family-card p {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .home-family-card .home-family-link {
+  border-top-color: var(--dark-border-strong);
+}
+
+html[data-theme="dark"] .home-feed-item,
+html[data-theme="dark"] .home-event-item {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .home-feed-date,
+html[data-theme="dark"] .home-feed-meta,
+html[data-theme="dark"] .home-feed-note {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .home-feed-content strong {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .calendar-event {
+  border-color: var(--dark-border-strong);
+  background:
+    linear-gradient(90deg,
+      #151f31 0%,
+      #182337 62%,
+      #202b3f 100%);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .calendar-event-date-line,
+html[data-theme="dark"] .calendar-event-title,
+html[data-theme="dark"] .calendar-event-location,
+html[data-theme="dark"] .calendar-event-description,
+html[data-theme="dark"] .calendar-event-meta-value {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .calendar-event-location,
+html[data-theme="dark"] .calendar-event-description {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .calendar-event-meta {
+  border-left-color: var(--dark-border);
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(213, 155, 39, 0.11));
+}
+
+html[data-theme="dark"] .event-detail-body,
+html[data-theme="dark"] .event-detail-brief,
+html[data-theme="dark"] .event-detail-section,
+html[data-theme="dark"] .event-detail-registration {
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .event-detail-description p,
+html[data-theme="dark"] .event-detail-list dd,
+html[data-theme="dark"] .event-detail-registration p {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .event-language-heading,
+html[data-theme="dark"] .review-language-heading {
+  border-bottom-color: var(--dark-border);
+  background:
+    linear-gradient(180deg,
+      #263349,
+      #1b2638);
+}
+
+html[data-theme="dark"] .event-language-code,
+html[data-theme="dark"] .review-language-code {
+  color: var(--gold-200);
+}
+
+html[data-theme="dark"] .event-language-heading h2,
+html[data-theme="dark"] .review-language-heading h3 {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .event-review-main {
+  background:
+    radial-gradient(circle at top left, rgba(213, 155, 39, 0.07), transparent 32rem),
+    linear-gradient(180deg, var(--dark-bg), #0b1220 62%, var(--dark-bg));
+}
+
+html[data-theme="dark"] .event-review-shell {
+  overflow: hidden;
+}
+
+html[data-theme="dark"] .event-management-tabs {
+  border-bottom-color: var(--dark-border-strong);
+  background: var(--dark-surface-2);
+}
+
+html[data-theme="dark"] .event-management-tab {
+  border-right-color: var(--dark-border);
+  background: transparent;
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .event-management-tab:hover,
+html[data-theme="dark"] .event-management-tab:focus-visible {
+  background: var(--dark-surface-3);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .event-management-tab.is-active {
+  background: #111a2b;
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .event-management-tab.is-active::after {
+  background: var(--gold-500);
+}
+
+html[data-theme="dark"] .event-management-panel {
+  background: var(--dark-surface);
+}
+
+html[data-theme="dark"] .review-queue {
+  background:
+    linear-gradient(180deg,
+      #111a2b,
+      var(--dark-surface) 42%,
+      #0f1727);
+}
+
+html[data-theme="dark"] .review-event-card {
+  border-color: var(--dark-border);
+  border-left-color: var(--gold-500);
+  background: var(--dark-surface-2);
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.36),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+html[data-theme="dark"] .review-event-card-header {
+  background:
+    linear-gradient(105deg,
+      #191f3a,
+      #22294b);
+}
+
+html[data-theme="dark"] .review-event-meta {
+  border-bottom-color: var(--dark-border);
+  background: var(--dark-surface-3);
+}
+
+html[data-theme="dark"] .review-event-meta-item {
+  border-right-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .review-record-section,
+html[data-theme="dark"] .comment-review-comment-section,
+html[data-theme="dark"] .comment-review-related-section {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .review-record-section>h3 {
+  border-bottom-color: var(--dark-border);
+  background:
+    linear-gradient(180deg,
+      #263349,
+      #1b2638);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .review-record-data,
+html[data-theme="dark"] .review-language-body,
+html[data-theme="dark"] .comment-review-body,
+html[data-theme="dark"] .retirement-review-language-grid,
+html[data-theme="dark"] .retirement-review-message-section,
+html[data-theme="dark"] .retirement-review-photo-section {
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .review-event-meta-label,
+html[data-theme="dark"] .review-record-label,
+html[data-theme="dark"] .review-content-label {
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .review-event-meta-value,
+html[data-theme="dark"] .review-record-value,
+html[data-theme="dark"] .review-event-registration,
+html[data-theme="dark"] .review-event-title-value,
+html[data-theme="dark"] .review-event-location,
+html[data-theme="dark"] .review-event-description,
+html[data-theme="dark"] .comment-review-body {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .review-record-value.is-confirmed {
+  color: var(--dark-success-text);
+}
+
+html[data-theme="dark"] .review-record-value.is-unconfirmed {
+  color: var(--dark-danger-text);
+}
+
+html[data-theme="dark"] .review-decision {
+  border-top-color: var(--dark-border);
+  background:
+    linear-gradient(180deg,
+      var(--dark-surface-3),
+      var(--dark-surface-2));
+}
+
+html[data-theme="dark"] .review-decision-copy p,
+html[data-theme="dark"] .retirement-review-message-hint,
+html[data-theme="dark"] .review-language-body .is-missing {
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .review-rejection-reason,
+html[data-theme="dark"] .retirement-review-message-input {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-bg-elevated);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .review-rejection-reason:hover,
+html[data-theme="dark"] .retirement-review-message-input:hover {
+  border-color: rgba(240, 199, 108, 0.58);
+}
+
+html[data-theme="dark"] .comment-review-related-link,
+html[data-theme="dark"] .retirement-review-photo-link {
+  color: var(--dark-link);
+}
+
+html[data-theme="dark"] .comment-review-related-link:hover,
+html[data-theme="dark"] .comment-review-related-link:focus-visible,
+html[data-theme="dark"] .retirement-review-photo-link:hover,
+html[data-theme="dark"] .retirement-review-photo-link:focus-visible {
+  color: var(--gold-200);
+}
+
+html[data-theme="dark"] .retirements-grid {
+  border-color: var(--dark-border);
+  background:
+    linear-gradient(180deg,
+      rgba(21, 29, 45, 0.94),
+      rgba(15, 22, 37, 0.96));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .retirement-card {
+  border-color: var(--dark-border);
+  border-left-color: var(--gold-500);
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .retirement-card-header {
+  background:
+    linear-gradient(105deg,
+      #202b45,
+      #151f35);
+}
+
+html[data-theme="dark"] .retirement-card-header h2 {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .retirement-card-header p,
+html[data-theme="dark"] .retirement-card-footer {
+  color: var(--gold-200);
+}
+
+html[data-theme="dark"] .retirement-card-photo-placeholder {
+  background:
+    linear-gradient(135deg,
+      #263349,
+      #141d2f);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .loading-state-spinner {
+  border-color: rgba(255, 255, 255, 0.18);
+  border-top-color: var(--gold-500);
+}
+
+html[data-theme="dark"] .login-mfa-overlay {
+  background: rgba(3, 7, 15, 0.74);
+}
+
+html[data-theme="dark"] .login-mfa-dialog {
+  border-color: var(--dark-border-strong);
+  border-top-color: var(--gold-500);
+  background:
+    linear-gradient(180deg,
+      var(--dark-surface-2),
+      var(--dark-surface));
+  color: var(--dark-text);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.58),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+html[data-theme="dark"] .login-mfa-heading p {
+  color: var(--gold-200);
+}
+
+html[data-theme="dark"] .login-mfa-heading h2,
+html[data-theme="dark"] .login-mfa-option strong,
+html[data-theme="dark"] .login-mfa-totp label {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .login-mfa-copy,
+html[data-theme="dark"] .login-mfa-option span {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .login-mfa-option {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-3);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .login-mfa-option:hover,
+html[data-theme="dark"] .login-mfa-option:focus-visible {
+  border-color: var(--gold-500);
+  background: #263349;
+  box-shadow: 0 0 0 3px rgba(213, 155, 39, 0.18);
+}
+
+html[data-theme="dark"] .login-mfa-code-row input {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-bg-elevated);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .login-mfa-code-row button {
+  border-color: var(--gold-500);
+  background: var(--gold-500);
+  color: #101522;
+}
+
+html[data-theme="dark"] .login-mfa-cancel {
+  border-color: var(--dark-border-strong);
+  background: transparent;
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .login-mfa-cancel:hover,
+html[data-theme="dark"] .login-mfa-cancel:focus-visible {
+  border-color: var(--gold-500);
+  color: var(--gold-200);
+}
+
+html[data-theme="dark"] .mfa-field span,
+html[data-theme="dark"] .passkey-manager-heading h4 {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .passkey-manager,
+html[data-theme="dark"] .totp-manager {
+  border-top-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .mfa-field input,
+html[data-theme="dark"] .mfa-secret {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-bg-elevated);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .passkey-item,
+html[data-theme="dark"] .totp-status-card,
+html[data-theme="dark"] .passkey-empty {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-3);
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .passkey-details strong,
+html[data-theme="dark"] .totp-status-card strong {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .passkey-details span,
+html[data-theme="dark"] .totp-status-card span,
+html[data-theme="dark"] .totp-status-card p {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .mfa-link-button {
+  color: var(--dark-link);
+  text-decoration-color: var(--gold-500);
+}
+
+html[data-theme="dark"] .mfa-link-button:hover,
+html[data-theme="dark"] .mfa-link-button:focus-visible {
+  color: var(--gold-200);
+}
+
+/* Dark theme page-specific cleanup */
+
+html[data-theme="dark"] .dashboard-content,
+html[data-theme="dark"] .dashboard-status,
+html[data-theme="dark"] .dashboard-actions-section,
+html[data-theme="dark"] .event-submit-layout,
+html[data-theme="dark"] .event-submit-layout .event-submit-shell,
+html[data-theme="dark"] .event-submit-form,
+html[data-theme="dark"] .event-management-panel,
+html[data-theme="dark"] .my-events-section,
+html[data-theme="dark"] .my-events-heading,
+html[data-theme="dark"] .my-events-intro,
+html[data-theme="dark"] .my-events-list,
+html[data-theme="dark"] .translations-admin-shell,
+html[data-theme="dark"] .translations-toolbar,
+html[data-theme="dark"] .translations-list,
+html[data-theme="dark"] .admin-work-zone-page,
+html[data-theme="dark"] .admin-user-editor,
+html[data-theme="dark"] .admin-posts-panel,
+html[data-theme="dark"] .retirement-detail-body,
+html[data-theme="dark"] .event-edit-loading,
+html[data-theme="dark"] .event-loading {
+  border-color: var(--dark-border);
+  background:
+    linear-gradient(180deg,
+      var(--dark-surface-2),
+      var(--dark-surface));
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .dashboard-section {
+  background: var(--dark-surface-2);
+}
+
+html[data-theme="dark"] .dashboard-actions-section {
+  border-left-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .dashboard-action {
+  border-color: var(--dark-border-strong);
+  border-left-color: var(--gold-500);
+  background:
+    linear-gradient(180deg,
+      #202b40,
+      #172135);
+  color: var(--dark-text);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .dashboard-action:hover,
+html[data-theme="dark"] .dashboard-action:focus-visible {
+  border-color: rgba(240, 199, 108, 0.72);
+  border-left-color: var(--gold-300);
+  background:
+    linear-gradient(180deg,
+      #263349,
+      #1b2638);
+}
+
+html[data-theme="dark"] .dashboard-action-copy strong,
+html[data-theme="dark"] .dashboard-action-copy span,
+html[data-theme="dark"] .dashboard-action-arrow {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .dashboard-action-copy span,
+html[data-theme="dark"] .dashboard-detail-value,
+html[data-theme="dark"] .dashboard-profile-message {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .dashboard-profile-field input,
+html[data-theme="dark"] .dashboard-profile-field select,
+html[data-theme="dark"] .dashboard-profile-field input[readonly],
+html[data-theme="dark"] .dashboard-profile-field select:disabled {
+  border-color: transparent;
+  background: transparent;
+  color: var(--dark-text);
+  -webkit-text-fill-color: var(--dark-text);
+}
+
+html[data-theme="dark"] .dashboard-profile-form[data-editing="true"] .dashboard-profile-field input,
+html[data-theme="dark"] .dashboard-profile-form[data-editing="true"] .dashboard-profile-field select {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-bg-elevated);
+}
+
+html[data-theme="dark"] .event-submit-main,
+html[data-theme="dark"] .translations-admin-main,
+html[data-theme="dark"] .admin-work-zone-main,
+html[data-theme="dark"] .retirement-detail-main,
+html[data-theme="dark"] .retirements-main {
+  background:
+    radial-gradient(circle at top left, rgba(213, 155, 39, 0.07), transparent 32rem),
+    linear-gradient(180deg, var(--dark-bg), #0b1220 62%, var(--dark-bg));
+}
+
+html[data-theme="dark"] .event-submit-shell,
+html[data-theme="dark"] .event-submit-form,
+html[data-theme="dark"] .event-form-section,
+html[data-theme="dark"] .event-language-panel,
+html[data-theme="dark"] .event-authorization-section,
+html[data-theme="dark"] .retirement-consent-section {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .event-section-heading,
+html[data-theme="dark"] .event-language-heading,
+html[data-theme="dark"] .event-authorization-heading,
+html[data-theme="dark"] .my-events-heading {
+  border-bottom-color: var(--dark-border);
+  background:
+    linear-gradient(180deg,
+      #263349,
+      #1b2638);
+}
+
+html[data-theme="dark"] .event-section-intro,
+html[data-theme="dark"] .event-language-note,
+html[data-theme="dark"] .event-time-zone-note,
+html[data-theme="dark"] .event-authorization-checkbox small,
+html[data-theme="dark"] .retirement-consent-field small,
+html[data-theme="dark"] .my-events-intro,
+html[data-theme="dark"] .my-events-message,
+html[data-theme="dark"] .event-loading p,
+html[data-theme="dark"] .event-edit-loading p {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .event-authorization-checkbox:hover,
+html[data-theme="dark"] .event-authorization-checkbox:focus-within {
+  background: var(--dark-surface-3);
+}
+
+html[data-theme="dark"] .event-submit-options,
+html[data-theme="dark"] .dashboard-profile-readonly {
+  border-top-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .event-field small,
+html[data-theme="dark"] .event-section-heading p:not(.event-section-eyebrow),
+html[data-theme="dark"] .event-publish-toggle small,
+html[data-theme="dark"] .event-review-note {
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .event-toggle,
+html[data-theme="dark"] .event-publish-toggle strong,
+html[data-theme="dark"] .retirement-consent-field strong,
+html[data-theme="dark"] .event-authorization-checkbox strong {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .event-field input[type="file"]::file-selector-button {
+  border-color: var(--gold-500);
+  background: var(--gold-500);
+  color: #101522;
+}
+
+html[data-theme="dark"] .my-event-card {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .my-event-meta,
+html[data-theme="dark"] .my-event-updated {
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .translations-toolbar {
+  border-bottom-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .translations-count,
+html[data-theme="dark"] .translation-key-label,
+html[data-theme="dark"] .translation-row-status {
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .translation-key-value,
+html[data-theme="dark"] .translations-text-field label {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .translation-row {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .translation-row-status.is-success {
+  color: var(--dark-success-text);
+}
+
+html[data-theme="dark"] .translation-row-status.is-warning {
+  color: var(--gold-200);
+}
+
+html[data-theme="dark"] .translation-row-status.is-error {
+  color: var(--dark-danger-text);
+}
+
+html[data-theme="dark"] .admin-panel-heading,
+html[data-theme="dark"] .admin-user-detail-heading,
+html[data-theme="dark"] .admin-user-search,
+html[data-theme="dark"] .admin-user-editor {
+  border-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .admin-user-row {
+  border-bottom-color: var(--dark-border);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .admin-user-row:hover,
+html[data-theme="dark"] .admin-user-row:focus-visible,
+html[data-theme="dark"] .admin-user-row.is-selected {
+  background: var(--dark-surface-3);
+}
+
+html[data-theme="dark"] .admin-user-row span,
+html[data-theme="dark"] .admin-user-detail-heading p,
+html[data-theme="dark"] .admin-editor-help,
+html[data-theme="dark"] .admin-user-post-count {
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .admin-user-role-badge,
+html[data-theme="dark"] .dashboard-role-badge.role-subscriber {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-3);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .admin-user-role-badge.role-developer,
+html[data-theme="dark"] .dashboard-role-badge.role-developer {
+  border-color: #ef4444;
+  background: #b42318;
+  color: #fff7f5;
+}
+
+html[data-theme="dark"] .admin-content-area-option {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-3);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .admin-content-area-option input {
+  accent-color: var(--gold-500);
+}
+
+html[data-theme="dark"] .admin-work-zone-button.is-danger {
+  border-color: #ef4444;
+  background: #b42318;
+  color: #fff7f5;
+}
+
+html[data-theme="dark"] .retirement-detail-shell {
+  background: var(--dark-surface);
+}
+
+html[data-theme="dark"] .retirement-detail-body {
+  border-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .retirement-detail-message-section,
+html[data-theme="dark"] .retirement-detail-comments {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .retirement-comment {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-2);
+}
+
+html[data-theme="dark"] .retirement-comment-form {
+  border-top-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .retirement-comment-form textarea {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-bg-elevated);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .retirement-comment-form-note,
+html[data-theme="dark"] .retirement-comment p,
+html[data-theme="dark"] .retirement-detail-message-section p {
+  color: var(--dark-text-soft);
 }

@@ -8,6 +8,10 @@ const {
   authMiddleware,
   requirePermission
 } = require('../middleware/auth');
+const {
+  writeAuditLog,
+  snapshotUser
+} = require('../services/audit-log');
 
 const router = express.Router();
 
@@ -37,6 +41,17 @@ function cleanContentAreas(value) {
 
 function validateContentAreas(contentAreas) {
   return contentAreas.every(area => CONTENT_AREAS.includes(area));
+}
+
+function areStringArraysEqual(first = [], second = []) {
+  const normalizedFirst = [...first].map(String).sort();
+  const normalizedSecond = [...second].map(String).sort();
+
+  if (normalizedFirst.length !== normalizedSecond.length) {
+    return false;
+  }
+
+  return normalizedFirst.every((value, index) => value === normalizedSecond[index]);
 }
 
 function getEventTitle(event) {
@@ -71,6 +86,39 @@ function getRetirementMessageTitle(message) {
   return name
     ? `Retirement message for ${name}`
     : 'Retirement message';
+}
+
+function getEventSnapshot(event) {
+  return {
+    title: getEventTitle(event),
+    status: event.status,
+    contentArea: event.contentArea || 'general',
+    createdBy: event.createdBy,
+    publishedBy: event.publishedBy,
+    startDate: event.startDate
+  };
+}
+
+function getRetirementMessageSnapshot(message) {
+  return {
+    title: getRetirementMessageTitle(message),
+    status: message.status,
+    createdBy: message.createdBy,
+    publishedBy: message.publishedBy,
+    retiree: message.retiree
+  };
+}
+
+function getRetirementCommentSnapshot(comment) {
+  return {
+    title: getRetirementCommentTitle(comment),
+    status: comment.status,
+    author: comment.author,
+    publishedBy: comment.publishedBy,
+    retirementMessage: comment.retirementMessage,
+    body: String(comment.body || ''),
+    excerpt: String(comment.body || '').slice(0, 240)
+  };
 }
 
 function isSameId(value, userId) {
@@ -349,12 +397,14 @@ router.patch(
       const { role, contentAreas } = req.body || {};
       const { userId } = req.params;
       const updates = {};
+      let roleValidation = null;
+      let previousContentAreas = null;
 
       if (Object.prototype.hasOwnProperty.call(req.body || {}, 'role')) {
-        const validation = await validateStandardRoleChange(userId, req.user, role);
+        roleValidation = await validateStandardRoleChange(userId, req.user, role);
 
-        if (validation.error) {
-          return res.status(validation.status).json({ error: validation.error });
+        if (roleValidation.error) {
+          return res.status(roleValidation.status).json({ error: roleValidation.error });
         }
 
         updates.role = role;
@@ -367,6 +417,13 @@ router.patch(
           return res.status(400).json({ error: 'Invalid content area provided' });
         }
 
+        const previousUser = await User.findById(userId).select('contentAreas');
+
+        if (!previousUser) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        previousContentAreas = previousUser.contentAreas || [];
         updates.contentAreas = cleanAreas;
       }
 
@@ -385,6 +442,42 @@ router.patch(
 
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (
+        Object.prototype.hasOwnProperty.call(updates, 'role') &&
+        roleValidation?.targetUser?.role !== user.role
+      ) {
+        await writeAuditLog({
+          req,
+          action: 'user.role_changed',
+          actor: req.user,
+          targetType: 'user',
+          target: user._id,
+          targetSnapshot: toAdminUser(user),
+          metadata: {
+            previousRole: roleValidation.targetUser.role,
+            newRole: user.role
+          }
+        });
+      }
+
+      if (
+        Object.prototype.hasOwnProperty.call(updates, 'contentAreas') &&
+        !areStringArraysEqual(previousContentAreas || [], user.contentAreas || [])
+      ) {
+        await writeAuditLog({
+          req,
+          action: 'user.content_areas_changed',
+          actor: req.user,
+          targetType: 'user',
+          target: user._id,
+          targetSnapshot: toAdminUser(user),
+          metadata: {
+            previousContentAreas: previousContentAreas || [],
+            newContentAreas: user.contentAreas || []
+          }
+        });
       }
 
       const postSummary = await getUserPostSummary(user);
@@ -427,6 +520,21 @@ router.patch(
         return res.status(404).json({ error: 'User not found' });
       }
 
+      if (validation.targetUser.role !== user.role) {
+        await writeAuditLog({
+          req,
+          action: 'user.role_changed',
+          actor: req.user,
+          targetType: 'user',
+          target: user._id,
+          targetSnapshot: toAdminUser(user),
+          metadata: {
+            previousRole: validation.targetUser.role,
+            newRole: user.role
+          }
+        });
+      }
+
       const postSummary = await getUserPostSummary(user);
 
       res.json({
@@ -457,6 +565,13 @@ router.patch(
         });
       }
 
+      const previousUser = await User.findById(userId)
+        .select('role username email accountName firstName lastName contentAreas createdAt updatedAt');
+
+      if (!previousUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
       const user = await User.findByIdAndUpdate(
         userId,
         { $set: { role: 'developer' } },
@@ -470,6 +585,21 @@ router.patch(
         return res.status(404).json({ error: 'User not found' });
       }
 
+      if (previousUser.role !== user.role) {
+        await writeAuditLog({
+          req,
+          action: 'user.role_changed',
+          actor: req.user,
+          targetType: 'user',
+          target: user._id,
+          targetSnapshot: toAdminUser(user),
+          metadata: {
+            previousRole: previousUser.role,
+            newRole: user.role
+          }
+        });
+      }
+
       const postSummary = await getUserPostSummary(user);
 
       res.json({
@@ -479,6 +609,133 @@ router.patch(
     } catch (err) {
       console.error('Developer promotion failed:', err);
       res.status(500).json({ error: 'Failed to promote user to developer' });
+    }
+  }
+);
+
+router.delete(
+  '/events/:eventId',
+  authMiddleware,
+  requirePermission('canManageUsers'),
+  async (req, res) => {
+    try {
+      const event = await Event.findById(req.params.eventId);
+
+      if (!event) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+
+      const snapshot = getEventSnapshot(event);
+
+      await event.deleteOne();
+      await writeAuditLog({
+        req,
+        action: 'content.deleted',
+        actor: req.user,
+        targetType: 'event',
+        target: event._id,
+        targetSnapshot: snapshot
+      });
+
+      res.json({ message: 'Event deleted' });
+    } catch (err) {
+      console.error('Admin event delete failed:', err);
+
+      if (err.name === 'CastError') {
+        return res.status(400).json({ error: 'Invalid event ID' });
+      }
+
+      res.status(500).json({ error: 'Failed to delete event' });
+    }
+  }
+);
+
+router.delete(
+  '/retirement-messages/:messageId',
+  authMiddleware,
+  requirePermission('canManageUsers'),
+  async (req, res) => {
+    try {
+      const message = await RetirementMessage.findById(req.params.messageId);
+
+      if (!message) {
+        return res.status(404).json({ error: 'Retirement message not found' });
+      }
+
+      const snapshot = getRetirementMessageSnapshot(message);
+      const deletedComments = await RetirementComment.countDocuments({
+        retirementMessage: message._id
+      });
+
+      await RetirementComment.deleteMany({
+        retirementMessage: message._id
+      });
+      await message.deleteOne();
+      await writeAuditLog({
+        req,
+        action: 'content.deleted',
+        actor: req.user,
+        targetType: 'retirementMessage',
+        target: message._id,
+        targetSnapshot: snapshot,
+        metadata: { deletedComments }
+      });
+
+      res.json({ message: 'Retirement message deleted', deletedComments });
+    } catch (err) {
+      console.error('Admin retirement message delete failed:', err);
+
+      if (err.name === 'CastError') {
+        return res.status(400).json({ error: 'Invalid retirement message ID' });
+      }
+
+      res.status(500).json({ error: 'Failed to delete retirement message' });
+    }
+  }
+);
+
+router.delete(
+  '/retirement-comments/:commentId',
+  authMiddleware,
+  requirePermission('canManageUsers'),
+  async (req, res) => {
+    try {
+      const comment = await RetirementComment.findById(req.params.commentId)
+        .populate('retirementMessage', 'retiree status');
+
+      if (!comment) {
+        return res.status(404).json({ error: 'Retirement comment not found' });
+      }
+
+      const snapshot = getRetirementCommentSnapshot(comment);
+      const deletedBy = snapshotUser(req.user);
+
+      await comment.deleteOne();
+      await writeAuditLog({
+        req,
+        action: 'content.deleted',
+        actor: req.user,
+        targetType: 'retirementComment',
+        target: comment._id,
+        targetSnapshot: snapshot,
+        metadata: {
+          commentContent: snapshot.body,
+          deletedBy: deletedBy.accountName ||
+            deletedBy.username ||
+            deletedBy.email ||
+            'Unknown user'
+        }
+      });
+
+      res.json({ message: 'Retirement comment deleted' });
+    } catch (err) {
+      console.error('Admin retirement comment delete failed:', err);
+
+      if (err.name === 'CastError') {
+        return res.status(400).json({ error: 'Invalid retirement comment ID' });
+      }
+
+      res.status(500).json({ error: 'Failed to delete retirement comment' });
     }
   }
 );

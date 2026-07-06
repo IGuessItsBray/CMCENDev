@@ -402,9 +402,16 @@
           })
         );
 
-        const assertion = await navigator.credentials.get({
-          publicKey: options
-        });
+        let assertion;
+        try {
+          assertion = await navigator.credentials.get({
+            publicKey: options
+          });
+        } catch (error) {
+          throw new Error(
+            'This passkey is not available for this site. Passkeys registered on localhost cannot be used on staging; register a passkey on this domain or use an authenticator app.'
+          );
+        }
 
         const payload = {
           id: assertion.id,

@@ -418,6 +418,19 @@ function syncScheduleFields() {
   }
 }
 
+function getTodayDateValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function syncStartDateMinimum() {
+  eventStartDate.min = getTodayDateValue();
+}
+
 function keepEndDateInRange() {
   eventEndDate.min =
     eventStartDate.value;
@@ -444,6 +457,12 @@ function getEventDateValues() {
   if (!eventStartDate.value) {
     throw new Error(
       translate("event_start_required")
+    );
+  }
+
+  if (eventStartDate.value < getTodayDateValue()) {
+    throw new Error(
+      translate("event_start_in_past")
     );
   }
 
@@ -775,6 +794,7 @@ async function initializeEventPage() {
 
 eventAllDay.addEventListener("change", syncScheduleFields);
 eventStartDate.addEventListener("change", keepEndDateInRange);
+syncStartDateMinimum();
 eventForm.addEventListener(
   "submit",
   async event => {

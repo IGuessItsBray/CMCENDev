@@ -259,6 +259,31 @@ function parseEventDate(
     );
 }
 
+function isEventStartInPast(
+    startDate,
+    allDay,
+    now = new Date()
+) {
+    if (!startDate) {
+        return false;
+    }
+
+    if (allDay) {
+        const startOfToday =
+            new Date(now);
+        startOfToday.setUTCHours(
+            0,
+            0,
+            0,
+            0
+        );
+
+        return startDate < startOfToday;
+    }
+
+    return startDate < now;
+}
+
 const PUBLIC_EVENT_FIELDS = [
     'title',
     'description',
@@ -509,6 +534,18 @@ router.post(
                 return res.status(400).json({
                     error:
                         'A valid event start date is required'
+                });
+            }
+
+            if (
+                isEventStartInPast(
+                    parsedStartDate,
+                    isAllDay
+                )
+            ) {
+                return res.status(400).json({
+                    error:
+                        'Event start date cannot be in the past'
                 });
             }
 
@@ -1049,6 +1086,18 @@ router.patch(
                 return res.status(400).json({
                     error:
                         "The event dates are invalid"
+                });
+            }
+
+            if (
+                isEventStartInPast(
+                    parsedStartDate,
+                    isAllDay
+                )
+            ) {
+                return res.status(400).json({
+                    error:
+                        "Event start date cannot be in the past"
                 });
             }
 

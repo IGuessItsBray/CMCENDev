@@ -86,7 +86,7 @@ const navLinks = {
   about: {
     titleKey: "menu_about_title",
     items: [
-      { route: "/about_family.html", i18n: "menu_about_option_1" },
+      { route: "/about-family.html", i18n: "menu_about_option_1" },
       { route: "/about_branch.html", i18n: "menu_about_option_2" },
       { route: "/about_association.html", i18n: "menu_about_option_3" },
       { route: "/about_foundation.html", i18n: "menu_about_option_4" },

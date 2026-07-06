@@ -964,6 +964,172 @@ a.dropdown-toggle {
 }
 
 /* ─────────────────────────────────────────────
+   About the C&E Family
+   ───────────────────────────────────────────── */
+.about-family-main {
+  display: block;
+  padding: 36px 20px 62px;
+}
+
+.about-family-shell {
+  width: min(100%, 960px);
+  margin: 0 auto;
+}
+
+.about-family-hero {
+  min-height: 280px;
+  padding: 34px 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 34px;
+  overflow: hidden;
+  border: 1px solid rgba(234, 211, 163, 0.32);
+  border-top: 5px solid var(--gold-500);
+  border-radius: 8px;
+  background:
+    linear-gradient(115deg,
+      rgba(23, 28, 50, 0.98) 0%,
+      rgba(32, 38, 66, 0.96) 58%,
+      rgba(68, 76, 88, 0.92) 100%),
+    repeating-linear-gradient(135deg,
+      rgba(255, 255, 255, 0.045) 0,
+      rgba(255, 255, 255, 0.045) 1px,
+      transparent 1px,
+      transparent 13px);
+  color: var(--white);
+  box-shadow:
+    0 18px 42px rgba(15, 18, 31, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.about-family-hero-copy {
+  max-width: 700px;
+}
+
+.about-family-kicker {
+  width: fit-content;
+  margin: 0 0 13px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid var(--gold-500);
+  color: var(--gold-200);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.about-family-hero h1 {
+  margin: 0;
+  color: var(--white);
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: clamp(40px, 5.8vw, 64px);
+  font-weight: normal;
+  line-height: 1;
+}
+
+.about-family-intro {
+  max-width: 660px;
+  margin: 18px 0 0;
+  color: var(--branch-grey-100);
+  font-size: clamp(17px, 2vw, 20px);
+  line-height: 1.55;
+}
+
+.about-family-tagline {
+  max-width: 620px;
+  margin: 18px 0 0;
+  color: var(--gold-200);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.5;
+}
+
+.about-family-emblem {
+  flex: 0 0 150px;
+  width: 150px;
+  height: auto;
+  opacity: 0.88;
+  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.28));
+}
+
+.about-family-body {
+  margin-top: 22px;
+  padding: 34px 38px 38px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow:
+    0 16px 36px rgba(15, 18, 31, 0.18),
+    0 2px 7px rgba(15, 18, 31, 0.10);
+}
+
+.about-family-section {
+  padding-top: 24px;
+  margin-top: 24px;
+  border-top: 1px solid var(--branch-grey-200);
+}
+
+.about-family-section:first-child {
+  padding-top: 0;
+  margin-top: 0;
+  border-top: 0;
+}
+
+.about-family-section h2 {
+  margin: 0 0 12px;
+  color: var(--navy-900);
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: normal;
+  line-height: 1.12;
+}
+
+.about-family-section p {
+  max-width: 780px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.78;
+}
+
+.about-family-section p+p {
+  margin-top: 16px;
+}
+
+.about-family-pillar-list {
+  max-width: 820px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-family-pillar-list li {
+  margin-top: 12px;
+  padding: 13px 16px;
+  border-left: 4px solid var(--gold-500);
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg,
+      rgba(213, 155, 39, 0.13),
+      rgba(238, 240, 242, 0.88));
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.62;
+}
+
+.about-family-pillar-list li:first-child {
+  margin-top: 0;
+}
+
+/* ─────────────────────────────────────────────
    Public events calendar
    ───────────────────────────────────────────── */
 .calendar-main {
@@ -7460,6 +7626,50 @@ a.dropdown-toggle {
     float: none;
     width: min(100%, 320px);
     margin: 0 0 18px;
+  }
+
+  .about-family-main {
+    padding: 24px 12px 42px;
+  }
+
+  .about-family-hero {
+    min-height: 0;
+    padding: 24px 20px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .about-family-hero h1 {
+    font-size: 38px;
+  }
+
+  .about-family-intro {
+    font-size: 16px;
+  }
+
+  .about-family-emblem {
+    width: 92px;
+    flex-basis: auto;
+  }
+
+  .about-family-body {
+    margin-top: 14px;
+    padding: 24px 18px 26px;
+  }
+
+  .about-family-section {
+    padding-top: 20px;
+    margin-top: 20px;
+  }
+
+  .about-family-section h2 {
+    font-size: 24px;
+  }
+
+  .about-family-section p,
+  .about-family-pillar-list li {
+    font-size: 15px;
   }
 
   .calendar-main {

@@ -93,7 +93,8 @@ function getAccessAttributes(item) {
   return '';
 }
 
-function renderDropdown(dropdown) {
+function renderDropdown(dropdown, index) {
+  const menuId = `primaryNavigationDropdown${index}`;
   const itemsHtml = dropdown.items.map(item => `
     <li ${getAccessAttributes(item)}>
       <a
@@ -105,12 +106,18 @@ function renderDropdown(dropdown) {
 
   return `
     <div class="dropdown">
-      <div
+      <button
+        type="button"
         class="dropdown-toggle"
         data-i18n="${dropdown.titleKey}"
-      ></div>
+        aria-controls="${menuId}"
+        aria-expanded="false"
+      ></button>
 
-      <ul class="dropdown-menu">
+      <ul
+        class="dropdown-menu"
+        id="${menuId}"
+      >
         ${itemsHtml}
       </ul>
     </div>
@@ -130,7 +137,7 @@ function renderStandaloneLink(link) {
 
 function loadHeader() {
   const dropdownsHtml = Object.values(navLinks)
-    .map(renderDropdown)
+    .map((dropdown, index) => renderDropdown(dropdown, index))
     .join('');
 
   const standaloneHtml = standaloneLinks
@@ -258,6 +265,31 @@ function loadHeader() {
   `;
 
   const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+  const primaryNavigation = document.getElementById('primaryNavigation');
+
+  function isMobileNavigation() {
+    return window.matchMedia('(max-width: 700px)').matches;
+  }
+
+  function setMobileDropdownOpen(dropdown, isOpen) {
+    dropdown.classList.toggle('is-mobile-dropdown-open', isOpen);
+    dropdown.querySelector('.dropdown-toggle')?.setAttribute(
+      'aria-expanded',
+      String(isOpen)
+    );
+  }
+
+  function openCurrentMobileDropdown() {
+    const currentPath = window.location.pathname;
+    const currentLink = primaryNavigation?.querySelector(
+      `.dropdown-menu a[href="${currentPath}"]`
+    );
+    const currentDropdown = currentLink?.closest('.dropdown');
+
+    if (currentDropdown) {
+      setMobileDropdownOpen(currentDropdown, true);
+    }
+  }
 
   function updateMobileMenuOffset() {
     const identityRow = header.querySelector('.header-identity-row');
@@ -281,13 +313,29 @@ function loadHeader() {
       'aria-label',
       isOpen ? 'Close menu' : 'Open menu'
     );
+
+    if (isOpen) {
+      openCurrentMobileDropdown();
+    }
   }
 
   mobileMenuToggle?.addEventListener('click', () => {
     setMobileMenuOpen(!header.classList.contains('is-mobile-menu-open'));
   });
 
-  document.getElementById('primaryNavigation')?.addEventListener('click', event => {
+  primaryNavigation?.addEventListener('click', event => {
+    const dropdownToggle = event.target.closest('.dropdown-toggle');
+
+    if (dropdownToggle && isMobileNavigation()) {
+      event.preventDefault();
+
+      const dropdown = dropdownToggle.closest('.dropdown');
+      const isOpen = dropdown.classList.contains('is-mobile-dropdown-open');
+
+      setMobileDropdownOpen(dropdown, !isOpen);
+      return;
+    }
+
     if (event.target.closest('a')) {
       setMobileMenuOpen(false);
     }

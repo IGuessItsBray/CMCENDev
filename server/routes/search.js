@@ -18,8 +18,8 @@ const STATIC_PAGES = [
     title: 'CMCEN / RCMCE'
   },
   {
-    path: '/about_family.html',
-    file: 'about_family.html',
+    path: '/about-family.html',
+    file: 'about-family.html',
     type: 'page',
     title: 'About the C&E Family'
   },

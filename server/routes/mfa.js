@@ -16,10 +16,48 @@ const configuredRPID = process.env.RP_ID || '';
 const configuredOrigin = process.env.RP_ORIGIN || '';
 const defaultTotpWindow = 2;
 
+function getFirstHeaderValue(value) {
+  return String(value || '')
+    .split(',')
+    .map(part => part.trim())
+    .find(Boolean) || '';
+}
+
+function isLocalHostname(hostname) {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+}
+
+function getPublicHost(req) {
+  const forwardedHost = getFirstHeaderValue(req.get('x-forwarded-host'));
+  return forwardedHost || req.get('host') || 'localhost';
+}
+
+function getPublicHostname(req) {
+  const host = getPublicHost(req);
+
+  if (host.startsWith('[')) {
+    return host.slice(1, host.indexOf(']')).toLowerCase();
+  }
+
+  return host.split(':')[0].toLowerCase();
+}
+
+function getPublicProtocol(req) {
+  const forwardedProto = getFirstHeaderValue(req.get('x-forwarded-proto'));
+  const protocol = forwardedProto || req.protocol || (req.secure ? 'https' : 'http');
+  const hostname = getPublicHostname(req);
+
+  if (protocol === 'http' && !isLocalHostname(hostname)) {
+    return 'https';
+  }
+
+  return protocol;
+}
+
 function getRpID(req) {
   if (configuredRPID) return configuredRPID;
 
-  const hostname = req.hostname || 'localhost';
+  const hostname = getPublicHostname(req);
   if (hostname === '127.0.0.1' || hostname === '::1') return 'localhost';
 
   return hostname;
@@ -33,7 +71,7 @@ function getExpectedOrigin(req) {
       .filter(Boolean);
   }
 
-  return `${req.protocol}://${req.get('host')}`;
+  return `${getPublicProtocol(req)}://${getPublicHost(req)}`;
 }
 
 function bufferToBase64url(input) {

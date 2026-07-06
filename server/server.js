@@ -20,6 +20,7 @@ const uploadRoutes = require('./routes/uploads');
 const mfaRoutes = require('./routes/mfa');
 
 const app = express();
+app.set('trust proxy', true);
 app.use(express.json());
 app.use(translationRoutes);
 app.use(express.static(path.join(__dirname, 'public')));

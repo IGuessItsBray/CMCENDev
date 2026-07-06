@@ -4,7 +4,8 @@ const USER_ROLES = Object.freeze([
   'contributor',
   'author',
   'editor',
-  'administrator'
+  'administrator',
+  'developer'
 ]);
 
 const ROLE_LEVELS = Object.freeze({
@@ -12,7 +13,8 @@ const ROLE_LEVELS = Object.freeze({
   contributor: 1,
   author: 2,
   editor: 3,
-  administrator: 4
+  administrator: 4,
+  developer: 5
 });
 
 module.exports = {

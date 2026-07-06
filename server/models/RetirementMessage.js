@@ -166,6 +166,21 @@ const retirementMessageSchema =
                 index: true
             },
 
+            createdBy: {
+                type:
+                    mongoose.Schema.Types.ObjectId,
+                ref: "User",
+                default: null,
+                index: true
+            },
+
+            updatedBy: {
+                type:
+                    mongoose.Schema.Types.ObjectId,
+                ref: "User",
+                default: null
+            },
+
             reviewedBy: {
                 type:
                     mongoose.Schema.Types.ObjectId,
@@ -209,6 +224,16 @@ retirementMessageSchema.index({
 
 retirementMessageSchema.index({
     "retiree.retirementDate": -1
+});
+
+retirementMessageSchema.index({
+    createdBy: 1,
+    updatedAt: -1
+});
+
+retirementMessageSchema.index({
+    publishedBy: 1,
+    publishedAt: -1
 });
 
 module.exports = mongoose.model(

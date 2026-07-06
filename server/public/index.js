@@ -69,6 +69,7 @@ const protectedPages = new Set([
   "/submit-event.html",
   "/review-submissions.html",
   "/translations-admin.html",
+  "/admin-users.html",
 
   ...Object.values(navLinks)
     .flatMap(dropdown => dropdown.items)

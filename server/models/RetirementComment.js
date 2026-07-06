@@ -47,6 +47,12 @@ const retirementCommentSchema =
                 default: null
             },
 
+            publishedBy: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+                default: null
+            },
+
             publishedAt: {
                 type: Date,
                 default: null
@@ -73,6 +79,11 @@ retirementCommentSchema.index({
 retirementCommentSchema.index({
     status: 1,
     createdAt: 1
+});
+
+retirementCommentSchema.index({
+    publishedBy: 1,
+    publishedAt: -1
 });
 
 module.exports = mongoose.model(

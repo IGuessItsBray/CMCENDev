@@ -313,6 +313,12 @@ router.post(
         const confirmationDate =
             new Date();
 
+        const permissions =
+            getUserPermissions(req.user);
+
+        const bypassesReview =
+            permissions.canBypassReviewStages === true;
+
         const retirementMessage =
             new RetirementMessage({
                 retiree: cleanRetiree,
@@ -349,14 +355,42 @@ router.post(
                 updatedBy:
                     req.user._id,
 
-                status: 'pending'
+                status:
+                    bypassesReview
+                        ? 'published'
+                        : 'pending',
+
+                reviewedBy:
+                    bypassesReview
+                        ? req.user._id
+                        : null,
+
+                reviewedAt:
+                    bypassesReview
+                        ? confirmationDate
+                        : null,
+
+                publishedBy:
+                    bypassesReview
+                        ? req.user._id
+                        : null,
+
+                publishedAt:
+                    bypassesReview
+                        ? confirmationDate
+                        : null
             });
 
         await retirementMessage.save();
 
         return res.status(201).json({
             message:
-                'Retirement message submitted for review'
+                bypassesReview
+                    ? 'Retirement message published successfully'
+                    : 'Retirement message submitted for review',
+
+            status:
+                retirementMessage.status
         });
     } catch (error) {
         console.error(

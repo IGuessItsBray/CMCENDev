@@ -561,6 +561,10 @@ router.post(
             const permissions =
                 getUserPermissions(req.user);
 
+            const bypassesReview =
+                permissions
+                    .canBypassReviewStages === true;
+
             const mayPublishAnything =
                 permissions
                     .canReviewAndPublish === true;
@@ -594,7 +598,10 @@ router.post(
             }
 
             const status =
-                wantsImmediatePublication
+                (
+                    bypassesReview ||
+                    wantsImmediatePublication
+                )
                     ? 'published'
                     : 'pending';
 
@@ -898,6 +905,9 @@ router.get(
             const canReview =
                 permissions.canReviewAndPublish === true;
 
+            const bypassesReview =
+                permissions.canBypassReviewStages === true;
+
             if (!isOwner && !canReview) {
                 return res.status(403).json({
                     error:
@@ -1135,7 +1145,10 @@ router.patch(
 
             if (canReview) {
                 event.status =
-                    parseBoolean(req.body.publishNow)
+                    (
+                        bypassesReview ||
+                        parseBoolean(req.body.publishNow)
+                    )
                         ? "published"
                         : "pending";
 
@@ -1143,6 +1156,10 @@ router.patch(
                     event.publishedBy =
                         req.user._id;
                     event.publishedAt =
+                        new Date();
+                    event.reviewedBy =
+                        req.user._id;
+                    event.reviewedAt =
                         new Date();
                 }
             } else {

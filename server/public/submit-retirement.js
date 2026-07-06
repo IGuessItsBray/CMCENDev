@@ -316,7 +316,12 @@ retirementSubmitForm.addEventListener(
             setDefaultMessageLanguage();
             updateRetirementTradePicker();
 
-            showRetirementFormMessage(translate("retirement_submit_success"), "success");
+            showRetirementFormMessage(
+                data.status === "published"
+                    ? translate("retirement_submit_success_published")
+                    : data.message || translate("retirement_submit_success"),
+                "success"
+            );
         } catch (error) {
             showRetirementFormMessage(error.message || translate("retirement_submit_error"));
         } finally {

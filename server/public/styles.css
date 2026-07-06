@@ -746,6 +746,7 @@ svg {
   border-radius: 0;
   background: transparent;
   color: var(--branch-grey-100);
+  font-family: inherit;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.025em;
@@ -7849,10 +7850,58 @@ a.dropdown-toggle {
   .nav-bar>a {
     min-height: 44px;
     width: 100%;
+    position: relative;
     justify-content: flex-start;
-    padding-inline: 20px;
+    padding: 0 44px 0 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     white-space: normal;
+  }
+
+  .dropdown-toggle::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    position: absolute;
+    top: 50%;
+    right: 22px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-60%) rotate(45deg);
+    transition: transform 150ms ease;
+  }
+
+  .dropdown.is-mobile-dropdown-open .dropdown-toggle::after {
+    transform: translateY(-35%) rotate(225deg);
+  }
+
+  .dropdown-menu,
+  .dropdown:hover .dropdown-menu,
+  .dropdown:focus-within .dropdown-menu {
+    display: none;
+    position: static;
+    min-width: 0;
+    margin: 0;
+    padding: 4px 0 8px;
+    border-top: 0;
+    border-radius: 0;
+    background: rgba(255, 255, 255, 0.045);
+    box-shadow: none;
+  }
+
+  .dropdown.is-mobile-dropdown-open .dropdown-menu {
+    display: block;
+  }
+
+  .dropdown-menu li a {
+    padding: 10px 20px 10px 34px;
+    color: var(--branch-grey-100);
+    font-size: 13px;
+  }
+
+  .dropdown-menu li a:hover,
+  .dropdown-menu li a:focus-visible {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--white);
   }
 
   .header-search,

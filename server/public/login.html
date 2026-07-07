@@ -176,10 +176,6 @@
       errorElement.classList.toggle('is-info', type === 'info');
     }
 
-    function normalizeToken(value) {
-      return String(value || '').trim().replace(/^Bearer\s+/i, '');
-    }
-
     function setMfaMessage(message, type = 'error') {
       mfaError.textContent = message;
       mfaError.hidden = !message;
@@ -187,11 +183,12 @@
     }
 
     function completeLogin(token) {
-      const fullToken = normalizeToken(token);
-      localStorage.setItem('token', fullToken);
-      localStorage.setItem('api_token', fullToken);
-      sessionStorage.removeItem('tempToken');
-      sessionStorage.removeItem('twoFactorMethods');
+      const fullToken = CMCENUtils.storeAuthToken(token);
+      if (!fullToken) {
+        throw new Error('Login completed but no session token was returned');
+      }
+
+      CMCENUtils.clearMfaSession();
 
       if (typeof window.refreshAuthUI === 'function') {
         window.refreshAuthUI();
@@ -201,38 +198,9 @@
     }
 
     function ensureWebAuthnAvailable() {
-      if (!window.PublicKeyCredential || !navigator.credentials) {
-        throw new Error(
-          'Passkeys are not available in this browser context. Use HTTPS or localhost in a supported browser.'
-        );
-      }
-    }
-
-    function b64ToArrayBuffer(b64url) {
-      const base64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
-      const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
-      const binary = atob(padded);
-      const bytes = new Uint8Array(binary.length);
-
-      for (let index = 0; index < binary.length; index += 1) {
-        bytes[index] = binary.charCodeAt(index);
-      }
-
-      return bytes.buffer;
-    }
-
-    function arrayBufferToBase64url(buffer) {
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-
-      for (let index = 0; index < bytes.byteLength; index += 1) {
-        binary += String.fromCharCode(bytes[index]);
-      }
-
-      return btoa(binary)
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
+      CMCENUtils.ensureWebAuthnAvailable(
+        'Passkeys are not available in this browser context. Use HTTPS or localhost in a supported browser.'
+      );
     }
 
     function openMfaDialog(methods, tempToken) {
@@ -310,11 +278,11 @@
         throw new Error('No passkeys are registered for this account.');
       }
 
-      options.challenge = b64ToArrayBuffer(options.challenge);
+      options.challenge = CMCENUtils.base64urlToArrayBuffer(options.challenge);
       options.allowCredentials = options.allowCredentials.map(
         credential => ({
           ...credential,
-          id: b64ToArrayBuffer(credential.id)
+          id: CMCENUtils.base64urlToArrayBuffer(credential.id)
         })
       );
 
@@ -331,20 +299,20 @@
 
       const payload = {
         id: assertion.id,
-        rawId: arrayBufferToBase64url(assertion.rawId),
+        rawId: CMCENUtils.arrayBufferToBase64url(assertion.rawId),
         type: assertion.type,
         response: {
-          authenticatorData: arrayBufferToBase64url(
+          authenticatorData: CMCENUtils.arrayBufferToBase64url(
             assertion.response.authenticatorData
           ),
-          clientDataJSON: arrayBufferToBase64url(
+          clientDataJSON: CMCENUtils.arrayBufferToBase64url(
             assertion.response.clientDataJSON
           ),
-          signature: arrayBufferToBase64url(
+          signature: CMCENUtils.arrayBufferToBase64url(
             assertion.response.signature
           ),
           userHandle: assertion.response.userHandle
-            ? arrayBufferToBase64url(assertion.response.userHandle)
+            ? CMCENUtils.arrayBufferToBase64url(assertion.response.userHandle)
             : null
         }
       };

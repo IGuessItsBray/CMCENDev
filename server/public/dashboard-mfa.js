@@ -13,32 +13,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let isLoadingPasskeys = false;
     let isLoadingTotpStatus = false;
 
-    function normalizeToken(value) {
-      return String(value || '').trim().replace(/^Bearer\s+/i, '');
-    }
-
     function ensureWebAuthnAvailable() {
-      if (!window.PublicKeyCredential || !navigator.credentials) {
-        throw new Error(translateMfa('mfa_webauthn_unavailable'));
-      }
+      CMCENUtils.ensureWebAuthnAvailable(translateMfa('mfa_webauthn_unavailable'));
     }
 
-    function getDashboardToken() {
-      return normalizeToken(localStorage.getItem('token') || localStorage.getItem('api_token'));
-    }
-
-    let token = getDashboardToken();
+    let token = CMCENUtils.getStoredAuthToken();
 
     if (token) {
-      localStorage.setItem('token', token);
-      localStorage.setItem('api_token', token);
+      token = CMCENUtils.storeAuthToken(token);
     }
 
     function requireToken() {
-      token = getDashboardToken();
+      token = CMCENUtils.requireAuthToken('/login.html');
 
       if (!token) {
-        window.location.replace('/login.html');
         throw new Error(translateMfa('mfa_authentication_required'));
       }
 
@@ -46,35 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleUnauthorized() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('api_token');
-      window.location.replace('/login.html');
-    }
-
-    function b64ToUint8Array(b64url) {
-      const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
-      const pad = b64.length % 4;
-      const withPad = b64 + (pad ? '='.repeat(4 - pad) : '');
-      const binary = atob(withPad);
-      const len = binary.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-      return bytes.buffer;
-    }
-
-    function arrayBufferToBase64url(buffer) {
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-      const b64 = btoa(binary);
-      return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      CMCENUtils.redirectToLogin('/login.html');
     }
 
     async function api(path, opts = {}){
-      const headers = opts.headers || {};
-      headers['Authorization'] = 'Bearer ' + requireToken();
-      headers['Content-Type'] = opts.json ? 'application/json' : (headers['Content-Type'] || 'application/json');
-      const res = await fetch(path, { ...opts, headers });
+      const { json, ...fetchOptions } = opts;
+      const headers = CMCENUtils.authHeaders(requireToken(), { ...(opts.headers || {}) });
+      headers['Content-Type'] = json ? 'application/json' : (headers['Content-Type'] || 'application/json');
+      const res = await fetch(path, { ...fetchOptions, headers });
       if (res.status === 401) {
         handleUnauthorized();
         throw new Error(translateMfa('mfa_authentication_required'));
@@ -414,7 +381,9 @@ document.addEventListener('DOMContentLoaded', () => {
           } else {
             // fallback: fetch QR endpoint
             try {
-              const q = await fetch('/api/mfa/totp/qrcode', { headers: { 'Authorization': 'Bearer ' + requireToken() } });
+              const q = await fetch('/api/mfa/totp/qrcode', {
+                headers: CMCENUtils.authHeaders(requireToken())
+              });
               if (q.ok) {
                 const j = await q.json();
                 let img = document.getElementById('totp-qr');
@@ -447,7 +416,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = await api('/api/mfa/totp/status');
         const res = await fetch('/api/mfa/totp/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + requireToken() },
+          headers: CMCENUtils.authHeaders(requireToken(), {
+            'Content-Type': 'application/json'
+          }),
           body: JSON.stringify({ token: code, appName: status.appName || translateMfa('mfa_totp_default_app') })
         });
         if (res.status === 401) {
@@ -483,9 +454,9 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        options.challenge = b64ToUint8Array(options.challenge);
-        if (options.user && options.user.id) options.user.id = b64ToUint8Array(options.user.id);
-        if (options.excludeCredentials) options.excludeCredentials = options.excludeCredentials.map(c => ({ ...c, id: b64ToUint8Array(c.id) }));
+        options.challenge = CMCENUtils.base64urlToArrayBuffer(options.challenge);
+        if (options.user && options.user.id) options.user.id = CMCENUtils.base64urlToArrayBuffer(options.user.id);
+        if (options.excludeCredentials) options.excludeCredentials = options.excludeCredentials.map(c => ({ ...c, id: CMCENUtils.base64urlToArrayBuffer(c.id) }));
 
         // Fallback for missing pubKeyCredParams
         if (!options.pubKeyCredParams) options.pubKeyCredParams = [ { type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 } ];
@@ -493,13 +464,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const cred = await navigator.credentials.create({ publicKey: options });
 
-        const clientDataJSON = arrayBufferToBase64url(cred.response.clientDataJSON);
-        const attestationObject = arrayBufferToBase64url(cred.response.attestationObject);
-        const rawId = arrayBufferToBase64url(cred.rawId);
+        const clientDataJSON = CMCENUtils.arrayBufferToBase64url(cred.response.clientDataJSON);
+        const attestationObject = CMCENUtils.arrayBufferToBase64url(cred.response.attestationObject);
+        const rawId = CMCENUtils.arrayBufferToBase64url(cred.rawId);
 
         const verifyRes = await fetch('/api/mfa/webauthn/register/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + requireToken() },
+          headers: CMCENUtils.authHeaders(requireToken(), {
+            'Content-Type': 'application/json'
+          }),
           body: JSON.stringify({
             id: cred.id,
             rawId,
@@ -541,19 +514,21 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        options.challenge = b64ToUint8Array(options.challenge);
-        if (options.allowCredentials) options.allowCredentials = options.allowCredentials.map(c => ({ ...c, id: b64ToUint8Array(c.id) }));
+        options.challenge = CMCENUtils.base64urlToArrayBuffer(options.challenge);
+        if (options.allowCredentials) options.allowCredentials = options.allowCredentials.map(c => ({ ...c, id: CMCENUtils.base64urlToArrayBuffer(c.id) }));
 
         const assertion = await navigator.credentials.get({ publicKey: options });
-        const authData = arrayBufferToBase64url(assertion.response.authenticatorData);
-        const clientDataJSON = arrayBufferToBase64url(assertion.response.clientDataJSON);
-        const signature = arrayBufferToBase64url(assertion.response.signature);
-        const userHandle = assertion.response.userHandle ? arrayBufferToBase64url(assertion.response.userHandle) : null;
-        const rawId = arrayBufferToBase64url(assertion.rawId);
+        const authData = CMCENUtils.arrayBufferToBase64url(assertion.response.authenticatorData);
+        const clientDataJSON = CMCENUtils.arrayBufferToBase64url(assertion.response.clientDataJSON);
+        const signature = CMCENUtils.arrayBufferToBase64url(assertion.response.signature);
+        const userHandle = assertion.response.userHandle ? CMCENUtils.arrayBufferToBase64url(assertion.response.userHandle) : null;
+        const rawId = CMCENUtils.arrayBufferToBase64url(assertion.rawId);
 
         const verifyRes = await fetch('/api/mfa/webauthn/authenticate/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + requireToken() },
+          headers: CMCENUtils.authHeaders(requireToken(), {
+            'Content-Type': 'application/json'
+          }),
           body: JSON.stringify({ id: assertion.id, rawId, type: assertion.type, response: { authenticatorData: authData, clientDataJSON, signature, userHandle } })
         });
         if (verifyRes.status === 401) {

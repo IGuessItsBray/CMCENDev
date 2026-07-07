@@ -54,6 +54,46 @@
     };
   }
 
+  function clearMfaSession() {
+    sessionStorage.removeItem("tempToken");
+    sessionStorage.removeItem("twoFactorMethods");
+  }
+
+  function ensureWebAuthnAvailable(message = "Passkeys are not available in this browser context.") {
+    if (!window.PublicKeyCredential || !navigator.credentials) {
+      throw new Error(message);
+    }
+  }
+
+  function base64urlToArrayBuffer(value) {
+    const base64 = String(value || "")
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+
+    return bytes.buffer;
+  }
+
+  function arrayBufferToBase64url(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+
+    for (let index = 0; index < bytes.byteLength; index += 1) {
+      binary += String.fromCharCode(bytes[index]);
+    }
+
+    return btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  }
+
   function getCurrentLanguage() {
     if (typeof window.currentLang === "string") {
       return window.currentLang;
@@ -200,9 +240,13 @@
   }
 
   window.CMCENUtils = {
+    arrayBufferToBase64url,
     authHeaders,
+    base64urlToArrayBuffer,
     clearAuthToken,
+    clearMfaSession,
     createLoadingSpinner,
+    ensureWebAuthnAvailable,
     formatDate,
     formatTitleCaseValue,
     getCurrentLanguage,

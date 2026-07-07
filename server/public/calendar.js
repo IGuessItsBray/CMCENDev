@@ -4,7 +4,7 @@ const calendarMessageElement = document.getElementById('calendarMessage');
 let publicEvents = [];
 
 function getCurrentLanguage() {
-    return localStorage.getItem('lang') || 'en';
+    return CMCENUtils.getCurrentLanguage();
 }
 
 function getLocale(language) {
@@ -14,15 +14,7 @@ function getLocale(language) {
 }
 
 function getLocalizedText(value, language) {
-    if (!value) return '';
-
-    const preferred = typeof value[language] === 'string' ? value[language].trim() : '';
-
-    if (preferred) return preferred;
-
-    const fallbackLanguage = language === 'en' ? 'fr' : 'en';
-
-    return typeof value[fallbackLanguage] === 'string' ? value[fallbackLanguage].trim() : '';
+    return CMCENUtils.getLocalizedText(value, language);
 }
 
 function getCalendarTranslation(key, replacements = {}) {
@@ -80,26 +72,24 @@ function getMonthKey(event) {
 }
 
 function formatMonthHeading(event, locale) {
-    const date = new Date(event.startDate);
-
-    return new Intl.DateTimeFormat(locale, {
+    return CMCENUtils.formatDate(event.startDate, {
+        locale,
         month: 'long',
         year: 'numeric',
         ...(event.allDay
             ? { timeZone: 'UTC' }
             : {})
-    }).format(date);
+    });
 }
 
 function formatMonthAbbreviation(event, locale) {
-    const date = new Date(event.startDate);
-
-    return new Intl.DateTimeFormat(locale, {
+    return CMCENUtils.formatDate(event.startDate, {
+        locale,
         month: 'short',
         ...(event.allDay
             ? { timeZone: 'UTC' }
             : {})
-    }).format(date);
+    });
 }
 
 function getDayNumber(dateValue, allDay) {
@@ -161,31 +151,28 @@ function formatEventTime(event, locale) {
         return getCalendarTranslation("all_day");
     }
 
-    const formatter =
-        new Intl.DateTimeFormat(
-            locale,
-            {
-                hour: "numeric",
-                minute: "2-digit"
-            }
-        );
-
-    const startTime = formatter.format(new Date(event.startDate));
+    const startTime = CMCENUtils.formatDate(event.startDate, {
+        locale,
+        hour: "numeric",
+        minute: "2-digit"
+    });
 
     if (!event.endDate) {
         return startTime;
     }
 
-    const endTime =
-        formatter.format(
-            new Date(event.endDate)
-        );
+    const endTime = CMCENUtils.formatDate(event.endDate, {
+        locale,
+        hour: "numeric",
+        minute: "2-digit"
+    });
 
     return `${startTime}-${endTime}`;
 }
 
 function formatEventDateRange(event, locale) {
-    const formatter = new Intl.DateTimeFormat(locale, {
+    const formatDate = value => CMCENUtils.formatDate(value, {
+        locale,
         month: "short",
         day: "numeric",
         ...(event.allDay
@@ -193,13 +180,13 @@ function formatEventDateRange(event, locale) {
             : {})
     });
 
-    const startLabel = formatter.format(new Date(event.startDate));
+    const startLabel = formatDate(event.startDate);
 
     if (!event.endDate) {
         return startLabel;
     }
 
-    const endLabel = formatter.format(new Date(event.endDate));
+    const endLabel = formatDate(event.endDate);
 
     return endLabel === startLabel
         ? startLabel

@@ -20,17 +20,12 @@ const registerTradeOther = document.getElementById("regTradeOther");
 let registrationToken = "";
 let pendingTotpAppName = "Authenticator app";
 
-function normalizeToken(value) {
-  return String(value || "").trim().replace(/^Bearer\s+/i, "");
-}
-
 function setStoredToken(token) {
-  registrationToken = normalizeToken(token);
+  registrationToken = CMCENUtils.storeAuthToken(token);
 
-  if (!registrationToken) return;
-
-  localStorage.setItem("token", registrationToken);
-  localStorage.setItem("api_token", registrationToken);
+  if (!registrationToken) {
+    throw new Error("Account created, but no setup session token was returned.");
+  }
 
   if (typeof window.refreshAuthUI === "function") {
     window.refreshAuthUI();
@@ -49,49 +44,21 @@ function setMfaError(message, type = "error") {
 }
 
 function getAuthHeaders() {
-  const token = registrationToken || normalizeToken(localStorage.getItem("token"));
+  const token = registrationToken || CMCENUtils.getStoredAuthToken();
 
   if (!token) {
     throw new Error("Your account was created, but the setup session was not available. Please sign in to finish MFA setup.");
   }
 
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`
-  };
+  return CMCENUtils.authHeaders(token, {
+    "Content-Type": "application/json"
+  });
 }
 
 function ensureWebAuthnAvailable() {
-  if (!window.PublicKeyCredential || !navigator.credentials) {
-    throw new Error("Passkeys are not available in this browser context. Choose authenticator app instead.");
-  }
-}
-
-function b64ToArrayBuffer(b64url) {
-  const base64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-
-  return bytes.buffer;
-}
-
-function arrayBufferToBase64url(buffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-
-  for (let index = 0; index < bytes.byteLength; index += 1) {
-    binary += String.fromCharCode(bytes[index]);
-  }
-
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  CMCENUtils.ensureWebAuthnAvailable(
+    "Passkeys are not available in this browser context. Choose authenticator app instead."
+  );
 }
 
 async function mfaApi(path, options = {}) {
@@ -138,16 +105,16 @@ async function setupPasskey() {
       body: JSON.stringify({})
     });
 
-    options.challenge = b64ToArrayBuffer(options.challenge);
+    options.challenge = CMCENUtils.base64urlToArrayBuffer(options.challenge);
 
     if (options.user?.id) {
-      options.user.id = b64ToArrayBuffer(options.user.id);
+      options.user.id = CMCENUtils.base64urlToArrayBuffer(options.user.id);
     }
 
     if (options.excludeCredentials) {
       options.excludeCredentials = options.excludeCredentials.map(credential => ({
         ...credential,
-        id: b64ToArrayBuffer(credential.id)
+        id: CMCENUtils.base64urlToArrayBuffer(credential.id)
       }));
     }
 
@@ -157,12 +124,12 @@ async function setupPasskey() {
 
     const payload = {
       id: credential.id,
-      rawId: arrayBufferToBase64url(credential.rawId),
+      rawId: CMCENUtils.arrayBufferToBase64url(credential.rawId),
       type: credential.type,
       authenticatorAttachment: credential.authenticatorAttachment || "",
       response: {
-        clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
-        attestationObject: arrayBufferToBase64url(credential.response.attestationObject)
+        clientDataJSON: CMCENUtils.arrayBufferToBase64url(credential.response.clientDataJSON),
+        attestationObject: CMCENUtils.arrayBufferToBase64url(credential.response.attestationObject)
       },
       transports: credential.response.getTransports
         ? credential.response.getTransports()

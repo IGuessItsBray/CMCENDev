@@ -663,18 +663,9 @@ const authButtons = document.querySelector('.auth-buttons');
 const mobileMenuAccount = document.getElementById('mobileMenuAccount');
 
 function getStoredAuthToken() {
-  const token = String(
-    localStorage.getItem('token') ||
-    localStorage.getItem('api_token') ||
-    ''
-  ).trim().replace(/^Bearer\s+/i, '');
-
-  if (token) {
-    localStorage.setItem('token', token);
-    localStorage.setItem('api_token', token);
-  }
-
-  return token;
+  return CMCENUtils.storeAuthToken(
+    CMCENUtils.getStoredAuthToken()
+  );
 }
 
 function getAccountIcon() {
@@ -839,8 +830,7 @@ function showSignOutModal(trigger) {
 function performSignOut() {
   const currentPath = window.location.pathname;
 
-  localStorage.removeItem("token");
-  localStorage.removeItem("api_token");
+  CMCENUtils.clearAuthToken();
   sessionStorage.removeItem("tempToken");
   sessionStorage.removeItem("twoFactorMethods");
 
@@ -957,14 +947,11 @@ async function updateAuthRestrictedItems() {
 
   try {
     const response = await fetch('/api/me', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: CMCENUtils.authHeaders(token)
     });
 
     if (response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('api_token');
+      CMCENUtils.clearAuthToken();
       document.getElementById('header')?.classList.remove('is-mobile-menu-open');
       document.body.classList.remove('mobile-menu-lock');
       updateAuthButtons();

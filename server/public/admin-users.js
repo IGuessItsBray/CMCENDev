@@ -1,22 +1,5 @@
-function requireAdminToken() {
-  const storedToken = String(
-    localStorage.getItem("token") ||
-    localStorage.getItem("api_token") ||
-    ""
-  ).trim().replace(/^Bearer\s+/i, "");
-
-  if (!storedToken) {
-    window.location.replace("/login.html");
-    return null;
-  }
-
-  localStorage.setItem("token", storedToken);
-  localStorage.setItem("api_token", storedToken);
-
-  return storedToken;
-}
-
-const adminToken = requireAdminToken();
+const adminToken = CMCENUtils.requireAuthToken();
+const createLoadingSpinner = CMCENUtils.createLoadingSpinner;
 const adminWorkZone = document.getElementById("adminWorkZone");
 const adminWorkZoneContent = document.getElementById("adminWorkZoneContent");
 const adminWorkZoneStatus = document.getElementById("adminWorkZoneStatus");
@@ -46,34 +29,11 @@ let adminSearchTimeout = 0;
 let shouldRestoreAdminSearchFocus = false;
 
 function setAdminStatus(message, state = "") {
-  adminWorkZoneStatus.replaceChildren();
-  adminWorkZoneStatus.className = "dashboard-status";
-  adminWorkZoneStatus.hidden = false;
-  adminWorkZoneStatus.removeAttribute("aria-label");
-
-  if (state) {
-    adminWorkZoneStatus.classList.add(`is-${state}`);
-  }
-
-  const text = document.createElement("p");
-  text.textContent = message;
-  adminWorkZoneStatus.append(text);
+  CMCENUtils.setStatusMessage(adminWorkZoneStatus, message, state);
 }
 
 function showAdminLoading(message = translate("admin_users_loading")) {
-  const spinner = document.createElement("span");
-  const label = document.createElement("span");
-
-  spinner.className = "loading-state-spinner";
-  spinner.setAttribute("aria-hidden", "true");
-
-  label.className = "visually-hidden";
-  label.textContent = message;
-
-  adminWorkZoneStatus.replaceChildren(spinner, label);
-  adminWorkZoneStatus.className = "dashboard-status is-loading";
-  adminWorkZoneStatus.setAttribute("aria-label", message);
-  adminWorkZoneStatus.hidden = false;
+  CMCENUtils.setStatusLoading(adminWorkZoneStatus, message);
   adminWorkZone.hidden = true;
 }
 
@@ -84,17 +44,11 @@ function showAdminWorkZone() {
 }
 
 function formatAdminContentArea(contentArea) {
-  return String(contentArea || "")
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, character => character.toUpperCase());
+  return CMCENUtils.formatTitleCaseValue(contentArea);
 }
 
 function formatAdminDate(value) {
-  if (!value) return "-";
-
-  return new Intl.DateTimeFormat(currentLang === "fr" ? "fr-CA" : "en-CA", {
-    dateStyle: "medium"
-  }).format(new Date(value));
+  return CMCENUtils.formatDate(value);
 }
 
 function formatAdminFileSize(value) {
@@ -113,7 +67,7 @@ function formatAdminFileSize(value) {
 }
 
 function getAdminDisplayName(user) {
-  return user?.accountName || user?.username || user?.email || translate("unknown_user");
+  return CMCENUtils.getUserDisplayName(user, translate("unknown_user"));
 }
 
 function createAdminRoleBadge(role) {
@@ -139,25 +93,6 @@ function isDeveloperUser(user) {
 
 function getStandardAdminRoles() {
   return adminWorkZoneState.roles.filter(role => role !== "developer");
-}
-
-function createLoadingSpinner(label) {
-  const loading = document.createElement("div");
-  loading.className = "loading-state";
-  loading.setAttribute("role", "status");
-  loading.setAttribute("aria-label", label);
-
-  const spinner = document.createElement("span");
-  spinner.className = "loading-state-spinner";
-  spinner.setAttribute("aria-hidden", "true");
-
-  const text = document.createElement("span");
-  text.className = "visually-hidden";
-  text.textContent = label;
-
-  loading.append(spinner, text);
-
-  return loading;
 }
 
 function setAdminWorkZoneState(nextState) {
@@ -740,15 +675,11 @@ async function loadAdminUsers({
       : "/api/admin/users";
 
     const response = await fetch(requestUrl, {
-      headers: {
-        Authorization: `Bearer ${adminToken}`
-      }
+      headers: CMCENUtils.authHeaders(adminToken)
     });
 
     if (response.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("api_token");
-      window.location.href = "/login.html";
+      CMCENUtils.redirectToLogin();
       return;
     }
 
@@ -826,15 +757,11 @@ async function loadAdminMedia({
     }
 
     const response = await fetch(`/api/admin/media?${params}`, {
-      headers: {
-        Authorization: `Bearer ${adminToken}`
-      }
+      headers: CMCENUtils.authHeaders(adminToken)
     });
 
     if (response.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("api_token");
-      window.location.href = "/login.html";
+      CMCENUtils.redirectToLogin();
       return;
     }
 
@@ -893,9 +820,7 @@ async function deleteAdminMedia(mediaItem) {
       `/api/admin/media/${encodeURIComponent(mediaItem.key)}`,
       {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${adminToken}`
-        }
+        headers: CMCENUtils.authHeaders(adminToken)
       }
     );
 
@@ -928,15 +853,11 @@ async function deleteAdminMedia(mediaItem) {
 
 async function loadCurrentAdmin() {
   const response = await fetch("/api/me", {
-    headers: {
-      Authorization: `Bearer ${adminToken}`
-    }
+    headers: CMCENUtils.authHeaders(adminToken)
   });
 
   if (response.status === 401) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("api_token");
-    window.location.href = "/login.html";
+    CMCENUtils.redirectToLogin();
     return null;
   }
 
@@ -977,9 +898,7 @@ async function loadAdminUserDetail(userId, {
 
   try {
     const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
-      headers: {
-        Authorization: `Bearer ${adminToken}`
-      }
+      headers: CMCENUtils.authHeaders(adminToken)
     });
 
     const data = await response.json().catch(() => ({}));
@@ -1017,10 +936,9 @@ async function saveAdminUser(userId, payload) {
   try {
     const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${adminToken}`
-      },
+      headers: CMCENUtils.authHeaders(adminToken, {
+        "Content-Type": "application/json"
+      }),
       body: JSON.stringify(payload)
     });
 
@@ -1087,10 +1005,9 @@ async function promoteAdminUserToDeveloper(user) {
       `/api/admin/users/${encodeURIComponent(user._id)}/developer`,
       {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminToken}`
-        },
+        headers: CMCENUtils.authHeaders(adminToken, {
+          "Content-Type": "application/json"
+        }),
         body: JSON.stringify({
           confirmed: true,
           confirmation
@@ -1165,9 +1082,7 @@ async function deleteAdminPost(post) {
   try {
     const response = await fetch(endpoint, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${adminToken}`
-      }
+      headers: CMCENUtils.authHeaders(adminToken)
     });
 
     const data = await response.json().catch(() => ({}));
@@ -1198,7 +1113,7 @@ document.addEventListener("languagechange", () => {
 });
 
 window.addEventListener("pageshow", () => {
-  if (!requireAdminToken()) {
+  if (!CMCENUtils.requireAuthToken()) {
     window.location.replace("/login.html");
   }
 });

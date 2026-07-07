@@ -4,6 +4,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
+    "check": "node --check server/server.js && node --check server/public/app-utils.js && node --check server/public/index.js && node --check server/public/admin-users.js && node --check server/public/audit-log.js && node --check server/public/site-config.js && node --check server/public/translations-admin.js && node --check server/public/dashboard.js && node --check server/public/dashboard-mfa.js && node --check server/public/register.js && node --check server/public/submit-event.js && node --check server/public/submit-retirement.js && node --check server/public/event.js && node --check server/public/retirement-message.js && node --check server/public/review-submissions.js && node --check server/public/home.js && node --check server/public/calendar.js && node --check server/public/search.js && node --check server/public/retirements.js",
     "start": "node server/server.js",
     "start:dev": "nodemon server/server.js"
   }

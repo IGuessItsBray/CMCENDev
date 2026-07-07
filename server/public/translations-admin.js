@@ -8,29 +8,13 @@ let activeTranslationsMessageKey = "";
 const translationSaveSuccessDisplayMs = 2200;
 
 function getTranslationAdminToken() {
-  const token = String(
-    localStorage.getItem("token") ||
-    localStorage.getItem("api_token") ||
-    ""
-  ).trim().replace(/^Bearer\s+/i, "");
-
-  if (!token) {
-    window.location.replace("/login.html");
-    return null;
-  }
-
-  localStorage.setItem("token", token);
-  localStorage.setItem("api_token", token);
-
-  return token;
+  return CMCENUtils.requireAuthToken();
 }
 
 async function syncDeveloperSiteConfigTab(token) {
   try {
     const response = await fetch("/api/me", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: CMCENUtils.authHeaders(token)
     });
 
     if (!response.ok) {
@@ -280,10 +264,9 @@ async function saveTranslationRow(article, key) {
       `/api/translations/${encodeURIComponent(key)}`,
       {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
+        headers: CMCENUtils.authHeaders(token, {
+          "Content-Type": "application/json"
+        }),
         body: JSON.stringify(values)
       }
     );
@@ -291,7 +274,7 @@ async function saveTranslationRow(article, key) {
     const data = await response.json().catch(() => ({}));
 
     if (response.status === 401) {
-      window.location.replace("/login.html");
+      CMCENUtils.redirectToLogin();
       return;
     }
 
@@ -349,15 +332,13 @@ async function loadTranslationsForEditing() {
 
   try {
     const response = await fetch("/api/translations", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: CMCENUtils.authHeaders(token)
     });
 
     const data = await response.json().catch(() => ({}));
 
     if (response.status === 401) {
-      window.location.replace("/login.html");
+      CMCENUtils.redirectToLogin();
       return;
     }
 

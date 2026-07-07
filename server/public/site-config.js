@@ -1,22 +1,4 @@
-function requireSiteConfigToken() {
-  const storedToken = String(
-    localStorage.getItem("token") ||
-    localStorage.getItem("api_token") ||
-    ""
-  ).trim().replace(/^Bearer\s+/i, "");
-
-  if (!storedToken) {
-    window.location.replace("/login.html");
-    return null;
-  }
-
-  localStorage.setItem("token", storedToken);
-  localStorage.setItem("api_token", storedToken);
-
-  return storedToken;
-}
-
-const siteConfigAuthToken = requireSiteConfigToken();
+const siteConfigAuthToken = CMCENUtils.requireAuthToken();
 const siteConfigStatus = document.getElementById("siteConfigStatus");
 const siteConfigPage = document.getElementById("siteConfigPage");
 const siteConfigContent = document.getElementById("siteConfigContent");
@@ -29,35 +11,12 @@ let siteConfigState = {
 };
 
 function showSiteConfigStatus(message, state = "") {
-  siteConfigStatus.replaceChildren();
-  siteConfigStatus.className = "dashboard-status";
-  siteConfigStatus.hidden = false;
-  siteConfigStatus.removeAttribute("aria-label");
+  CMCENUtils.setStatusMessage(siteConfigStatus, message, state);
   siteConfigPage.hidden = true;
-
-  if (state) {
-    siteConfigStatus.classList.add(`is-${state}`);
-  }
-
-  const text = document.createElement("p");
-  text.textContent = message;
-  siteConfigStatus.append(text);
 }
 
 function showSiteConfigLoading(message = translate("site_config_loading")) {
-  const spinner = document.createElement("span");
-  const label = document.createElement("span");
-
-  spinner.className = "loading-state-spinner";
-  spinner.setAttribute("aria-hidden", "true");
-
-  label.className = "visually-hidden";
-  label.textContent = message;
-
-  siteConfigStatus.replaceChildren(spinner, label);
-  siteConfigStatus.className = "dashboard-status is-loading";
-  siteConfigStatus.setAttribute("aria-label", message);
-  siteConfigStatus.hidden = false;
+  CMCENUtils.setStatusLoading(siteConfigStatus, message);
   siteConfigPage.hidden = true;
 }
 
@@ -78,25 +37,20 @@ function setSiteConfigState(nextState) {
 async function siteConfigFetch(path, options = {}) {
   return fetch(path, {
     ...options,
-    headers: {
+    headers: CMCENUtils.authHeaders(siteConfigAuthToken, {
       ...(options.headers || {}),
-      Authorization: `Bearer ${siteConfigAuthToken}`,
       "X-Config-Token": siteConfigToken
-    }
+    })
   });
 }
 
 async function verifyDeveloperAccount() {
   const response = await fetch("/api/me", {
-    headers: {
-      Authorization: `Bearer ${siteConfigAuthToken}`
-    }
+    headers: CMCENUtils.authHeaders(siteConfigAuthToken)
   });
 
   if (response.status === 401) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("api_token");
-    window.location.href = "/login.html";
+    CMCENUtils.redirectToLogin();
     return null;
   }
 
@@ -136,9 +90,7 @@ async function promptForConfigToken() {
 async function logSiteConfigAccessRequest() {
   await fetch("/api/admin/site-config/access", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${siteConfigAuthToken}`
-    }
+    headers: CMCENUtils.authHeaders(siteConfigAuthToken)
   });
 }
 

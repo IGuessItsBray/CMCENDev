@@ -707,6 +707,30 @@ function resetEventForm() {
   keepEndDateInRange();
 }
 
+function setEventFieldIfEmpty(id, value = "") {
+  const field = document.getElementById(id);
+  const cleanValue = String(value || "").trim();
+
+  if (field && !field.value && cleanValue) {
+    field.value = cleanValue;
+  }
+}
+
+function autofillSubmitterFromProfile(user) {
+  if (!user) {
+    return;
+  }
+
+  setEventFieldIfEmpty("eventSubmitterRank", user.rank);
+  setEventFieldIfEmpty("eventSubmitterFirstName", user.firstName);
+  setEventFieldIfEmpty("eventSubmitterLastName", user.lastName);
+  setEventFieldIfEmpty(
+    "eventSubmitterUnitRole",
+    user.currentUnit || user.company
+  );
+  setEventFieldIfEmpty("eventSubmitterEmail", user.email);
+}
+
 async function initializeEventPage() {
   const token = localStorage.getItem("token");
 
@@ -738,11 +762,7 @@ async function initializeEventPage() {
 
     currentUser = await response.json();
 
-    const submitterEmail = document.getElementById("eventSubmitterEmail");
-
-    if (submitterEmail && !submitterEmail.value) {
-      submitterEmail.value = currentUser.email || "";
-    }
+    autofillSubmitterFromProfile(currentUser);
 
     if (!currentUser.permissions?.canCreateDrafts) {
       accessDenied = true;
@@ -865,6 +885,7 @@ eventForm.addEventListener(
 
       if (!editingEventId) {
         resetEventForm();
+        autofillSubmitterFromProfile(currentUser);
       }
 
       showFormMessage(

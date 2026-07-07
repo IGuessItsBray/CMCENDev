@@ -1,617 +1,532 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
 
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+<head>
+  <meta charset="UTF-8" />
 
-    <title data-i18n="login_page_title">
-      Member Login | CMCEN / RCMCE
-    </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
+  <title data-i18n="login_page_title">
+    Member Login | CMCEN / RCMCE
+  </title>
 
-  <body>
-    <header id="header"></header>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
 
-    <main class="login-main">
-      <section
-        class="login-shell"
-        aria-labelledby="loginTitle"
-      >
-        <div class="login-introduction">
-          <div class="login-introduction-content">
-          
+<body>
+  <header id="header"></header>
 
-<p class="login-eyebrow">
-  CMCEN / RCMCE
-</p>
+  <main class="login-main">
+    <section class="login-shell" aria-labelledby="loginTitle">
+      <div class="login-introduction">
+        <div class="login-introduction-content">
 
-<h1 data-i18n="member_login_heading">
-  Member Access
-</h1>
 
-<p
-  class="login-intro-copy"
-  data-i18n="member_login_intro"
->
-  For Association members, contributors and staff.
-</p>
+          <p class="login-eyebrow">
+            CMCEN / RCMCE
+          </p>
 
-    
-          </div>
+          <h1 data-i18n="member_login_heading">
+            Member Access
+          </h1>
+
+          <p class="login-intro-copy" data-i18n="member_login_intro">
+            For Association members, contributors and staff.
+          </p>
+
+
+        </div>
+      </div>
+
+      <div class="login-panel">
+        <div class="login-panel-heading">
+
+
+          <h2 id="loginTitle" data-i18n="login_title">
+            Sign in
+          </h2>
+
+          <p data-i18n="login_instruction">
+            Enter your registered email and password.
+          </p>
         </div>
 
-        <div class="login-panel">
-          <div class="login-panel-heading">
-            
+        <form class="login-form" id="loginForm">
+          <p class="login-error" id="loginError" role="alert" aria-live="polite" hidden></p>
 
-            <h2
-              id="loginTitle"
-              data-i18n="login_title"
-            >
-              Sign in
-            </h2>
+          <div class="login-field">
+            <label for="loginUsername" data-i18n="email">
+              Email
+            </label>
 
-            <p data-i18n="login_instruction">
-              Enter your registered username and password.
-            </p>
+            <input type="text" id="loginUsername" name="username" autocomplete="email"
+              data-i18n-placeholder="email_placeholder" placeholder="Enter your email" required />
           </div>
 
-          <form
-            class="login-form"
-            id="loginForm"
-          >
-            <p
-              class="login-error"
-              id="loginError"
-              role="alert"
-              aria-live="polite"
-              hidden
-            ></p>
+          <div class="login-field">
+            <label for="loginPassword" data-i18n="password">
+              Password
+            </label>
 
-            <div class="login-field">
-              <label
-                for="loginUsername"
-                data-i18n="username"
-              >
-                Username
-              </label>
-
-              <input
-                type="text"
-                id="loginUsername"
-                name="username"
-                autocomplete="username"
-                data-i18n-placeholder="username_placeholder"
-                placeholder="Enter your username"
-                required
-              />
-            </div>
-
-            <div class="login-field">
-              <label
-                for="loginPassword"
-                data-i18n="password"
-              >
-                Password
-              </label>
-
-              <input
-                type="password"
-                id="loginPassword"
-                name="password"
-                autocomplete="current-password"
-                data-i18n-placeholder="password_placeholder"
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              class="login-submit"
-              id="loginBtn"
-              data-i18n="login_btn"
-            >
-              Sign in
-            </button>
-
-            <div class="login-assistance">
-              <span data-i18n="account_help">
-                Need help accessing your account?
-              </span>
-
-              <a
-                href="/contact.html"
-                data-i18n="menu_contact"
-              >
-                Contact us
-              </a>
-            </div>
-
-            <div
-              class="login-divider"
-              aria-hidden="true"
-            ></div>
-
-            <p class="login-register">
-              <span data-i18n="no_account">
-                Don't have an account?
-              </span>
-
-              <a
-                href="/register.html"
-                data-i18n="register_title"
-              >
-                Register
-              </a>
-            </p>
-          </form>
-        </div>
-      </section>
-    </main>
-
-    <div
-      class="login-mfa-overlay"
-      id="mfaOverlay"
-      hidden
-    >
-      <section
-        class="login-mfa-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="mfaDialogTitle"
-      >
-        <div class="login-mfa-heading">
-          <p>Multi-factor authentication</p>
-          <h2 id="mfaDialogTitle">Finish signing in</h2>
-        </div>
-
-        <p class="login-mfa-copy">
-          Choose how you would like to verify this sign-in.
-        </p>
-
-        <div
-          class="login-mfa-options"
-          id="mfaOptions"
-        ></div>
-
-        <form
-          class="login-mfa-totp"
-          id="mfaTotpForm"
-          hidden
-        >
-          <label for="mfaTotpCode">Authenticator code</label>
-
-          <div class="login-mfa-code-row">
-            <input
-              id="mfaTotpCode"
-              inputmode="numeric"
-              autocomplete="one-time-code"
-              placeholder="000000"
-              maxlength="8"
-            />
-
-            <button type="submit">Verify</button>
+            <input type="password" id="loginPassword" name="password" autocomplete="current-password"
+              data-i18n-placeholder="password_placeholder" placeholder="Enter your password" required />
           </div>
+
+          <button type="submit" class="login-submit" id="loginBtn" data-i18n="login_btn">
+            Sign in
+          </button>
+
+          <div class="login-assistance">
+            <span data-i18n="account_help">
+              Need help accessing your account?
+            </span>
+
+            <a href="/contact.html" data-i18n="menu_contact">
+              Contact us
+            </a>
+          </div>
+
+          <div class="login-divider" aria-hidden="true"></div>
+
+          <p class="login-register">
+            <span data-i18n="no_account">
+              Don't have an account?
+            </span>
+
+            <a href="/register.html" data-i18n="register_title">
+              Register
+            </a>
+          </p>
         </form>
+      </div>
+    </section>
+  </main>
 
-        <p
-          class="login-error"
-          id="mfaError"
-          role="alert"
-          aria-live="polite"
-          hidden
-        ></p>
+  <div class="login-mfa-overlay" id="mfaOverlay" hidden>
+    <section class="login-mfa-dialog" role="dialog" aria-modal="true" aria-labelledby="mfaDialogTitle">
+      <div class="login-mfa-heading">
+        <p>Multi-factor authentication</p>
+        <h2 id="mfaDialogTitle">Finish signing in</h2>
+      </div>
 
-        <button
-          class="login-mfa-cancel"
-          id="mfaCancel"
-          type="button"
-        >
-          Cancel
-        </button>
-      </section>
-    </div>
+      <p class="login-mfa-copy">
+        Choose how you would like to verify this sign-in.
+      </p>
 
-    <footer id="footer"></footer>
+      <div class="login-mfa-options" id="mfaOptions"></div>
 
-    <script src="/index.js"></script>
-    <script src="/translations.js"></script>
-    <script src="/validation-i18n.js"></script>
+      <form class="login-mfa-totp" id="mfaTotpForm" hidden>
+        <label for="mfaTotpCode">Authenticator code</label>
 
-    <script>
-      const loginForm =
-        document.getElementById('loginForm');
+        <div class="login-mfa-code-row">
+          <input id="mfaTotpCode" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="8" />
 
-      const loginButton =
-        document.getElementById('loginBtn');
+          <button type="submit">Verify</button>
+        </div>
+      </form>
 
-      const errorElement =
-        document.getElementById('loginError');
+      <p class="login-error" id="mfaError" role="alert" aria-live="polite" hidden></p>
 
-      const mfaOverlay =
-        document.getElementById('mfaOverlay');
+      <button class="login-mfa-cancel" id="mfaCancel" type="button">
+        Cancel
+      </button>
+    </section>
+  </div>
 
-      const mfaOptions =
-        document.getElementById('mfaOptions');
+  <footer id="footer"></footer>
 
-      const mfaTotpForm =
-        document.getElementById('mfaTotpForm');
+  <script src="/index.js"></script>
+  <script src="/translations.js"></script>
+  <script src="/validation-i18n.js"></script>
 
-      const mfaTotpCode =
-        document.getElementById('mfaTotpCode');
+  <script>
+    const loginForm =
+      document.getElementById('loginForm');
 
-      const mfaError =
-        document.getElementById('mfaError');
+    const loginButton =
+      document.getElementById('loginBtn');
 
-      const mfaCancel =
-        document.getElementById('mfaCancel');
+    const errorElement =
+      document.getElementById('loginError');
 
-      let pendingMfa = null;
+    const mfaOverlay =
+      document.getElementById('mfaOverlay');
 
-      function setLoginMessage(message, type = 'error') {
-        errorElement.textContent = message;
-        errorElement.hidden = !message;
-        errorElement.classList.toggle('is-info', type === 'info');
+    const mfaOptions =
+      document.getElementById('mfaOptions');
+
+    const mfaTotpForm =
+      document.getElementById('mfaTotpForm');
+
+    const mfaTotpCode =
+      document.getElementById('mfaTotpCode');
+
+    const mfaError =
+      document.getElementById('mfaError');
+
+    const mfaCancel =
+      document.getElementById('mfaCancel');
+
+    let pendingMfa = null;
+
+    function setLoginMessage(message, type = 'error') {
+      errorElement.textContent = message;
+      errorElement.hidden = !message;
+      errorElement.classList.toggle('is-info', type === 'info');
+    }
+
+    function normalizeToken(value) {
+      return String(value || '').trim().replace(/^Bearer\s+/i, '');
+    }
+
+    function setMfaMessage(message, type = 'error') {
+      mfaError.textContent = message;
+      mfaError.hidden = !message;
+      mfaError.classList.toggle('is-info', type === 'info');
+    }
+
+    function completeLogin(token) {
+      const fullToken = normalizeToken(token);
+      localStorage.setItem('token', fullToken);
+      localStorage.setItem('api_token', fullToken);
+      sessionStorage.removeItem('tempToken');
+      sessionStorage.removeItem('twoFactorMethods');
+
+      if (typeof window.refreshAuthUI === 'function') {
+        window.refreshAuthUI();
       }
 
-      function normalizeToken(value) {
-        return String(value || '').trim().replace(/^Bearer\s+/i, '');
+      window.location.href = '/dashboard.html';
+    }
+
+    function ensureWebAuthnAvailable() {
+      if (!window.PublicKeyCredential || !navigator.credentials) {
+        throw new Error(
+          'Passkeys are not available in this browser context. Use HTTPS or localhost in a supported browser.'
+        );
+      }
+    }
+
+    function b64ToArrayBuffer(b64url) {
+      const base64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
+      const binary = atob(padded);
+      const bytes = new Uint8Array(binary.length);
+
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
       }
 
-      function setMfaMessage(message, type = 'error') {
-        mfaError.textContent = message;
-        mfaError.hidden = !message;
-        mfaError.classList.toggle('is-info', type === 'info');
+      return bytes.buffer;
+    }
+
+    function arrayBufferToBase64url(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+
+      for (let index = 0; index < bytes.byteLength; index += 1) {
+        binary += String.fromCharCode(bytes[index]);
       }
 
-      function completeLogin(token) {
-        const fullToken = normalizeToken(token);
-        localStorage.setItem('token', fullToken);
-        localStorage.setItem('api_token', fullToken);
-        sessionStorage.removeItem('tempToken');
-        sessionStorage.removeItem('twoFactorMethods');
+      return btoa(binary)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
 
-        if (typeof window.refreshAuthUI === 'function') {
-          window.refreshAuthUI();
+    function openMfaDialog(methods, tempToken) {
+      mfaOptions.replaceChildren();
+      mfaTotpForm.hidden = true;
+      mfaTotpCode.value = '';
+      setMfaMessage('');
+      mfaOverlay.hidden = false;
+
+      return new Promise((resolve, reject) => {
+        pendingMfa = { resolve, reject, tempToken };
+
+        if (methods.includes('webauthn')) {
+          const passkey = document.createElement('button');
+          passkey.type = 'button';
+          passkey.className = 'login-mfa-option';
+          passkey.dataset.method = 'webauthn';
+          passkey.innerHTML = '<strong>Use passkey</strong><span>Verify with a registered device passkey.</span>';
+          mfaOptions.appendChild(passkey);
         }
 
-        window.location.href = '/dashboard.html';
-      }
-
-      function ensureWebAuthnAvailable() {
-        if (!window.PublicKeyCredential || !navigator.credentials) {
-          throw new Error(
-            'Passkeys are not available in this browser context. Use HTTPS or localhost in a supported browser.'
-          );
-        }
-      }
-
-      function b64ToArrayBuffer(b64url) {
-        const base64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
-        const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
-        const binary = atob(padded);
-        const bytes = new Uint8Array(binary.length);
-
-        for (let index = 0; index < binary.length; index += 1) {
-          bytes[index] = binary.charCodeAt(index);
+        if (methods.includes('totp')) {
+          const totp = document.createElement('button');
+          totp.type = 'button';
+          totp.className = 'login-mfa-option';
+          totp.dataset.method = 'totp';
+          totp.innerHTML = '<strong>Use authenticator app</strong><span>Enter a six-digit code from your app.</span>';
+          mfaOptions.appendChild(totp);
         }
 
-        return bytes.buffer;
-      }
+        const firstButton = mfaOptions.querySelector('button');
+        if (firstButton) firstButton.focus();
+      });
+    }
 
-      function arrayBufferToBase64url(buffer) {
-        const bytes = new Uint8Array(buffer);
-        let binary = '';
+    function closeMfaDialog() {
+      mfaOverlay.hidden = true;
+      mfaTotpForm.hidden = true;
+      mfaTotpCode.value = '';
+      pendingMfa = null;
+    }
 
-        for (let index = 0; index < bytes.byteLength; index += 1) {
-          binary += String.fromCharCode(bytes[index]);
-        }
+    async function passkeyMfaLogin(tempToken) {
+      ensureWebAuthnAvailable();
+      setMfaMessage(
+        'Use your passkey to finish signing in.',
+        'info'
+      );
 
-        return btoa(binary)
-          .replace(/\+/g, '-')
-          .replace(/\//g, '_')
-          .replace(/=+$/, '');
-      }
-
-      function openMfaDialog(methods, tempToken) {
-        mfaOptions.replaceChildren();
-        mfaTotpForm.hidden = true;
-        mfaTotpCode.value = '';
-        setMfaMessage('');
-        mfaOverlay.hidden = false;
-
-        return new Promise((resolve, reject) => {
-          pendingMfa = { resolve, reject, tempToken };
-
-          if (methods.includes('webauthn')) {
-            const passkey = document.createElement('button');
-            passkey.type = 'button';
-            passkey.className = 'login-mfa-option';
-            passkey.dataset.method = 'webauthn';
-            passkey.innerHTML = '<strong>Use passkey</strong><span>Verify with a registered device passkey.</span>';
-            mfaOptions.appendChild(passkey);
+      const optionsResponse = await fetch(
+        '/api/mfa/webauthn/authenticate/options',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-temp-token': tempToken
           }
+        }
+      );
 
-          if (methods.includes('totp')) {
-            const totp = document.createElement('button');
-            totp.type = 'button';
-            totp.className = 'login-mfa-option';
-            totp.dataset.method = 'totp';
-            totp.innerHTML = '<strong>Use authenticator app</strong><span>Enter a six-digit code from your app.</span>';
-            mfaOptions.appendChild(totp);
-          }
+      const options = await optionsResponse
+        .json()
+        .catch(() => ({}));
 
-          const firstButton = mfaOptions.querySelector('button');
-          if (firstButton) firstButton.focus();
+      if (!optionsResponse.ok) {
+        throw new Error(
+          options.error || 'Could not start passkey authentication'
+        );
+      }
+
+      if (
+        !options.allowCredentials ||
+        options.allowCredentials.length === 0
+      ) {
+        throw new Error('No passkeys are registered for this account.');
+      }
+
+      options.challenge = b64ToArrayBuffer(options.challenge);
+      options.allowCredentials = options.allowCredentials.map(
+        credential => ({
+          ...credential,
+          id: b64ToArrayBuffer(credential.id)
+        })
+      );
+
+      let assertion;
+      try {
+        assertion = await navigator.credentials.get({
+          publicKey: options
         });
+      } catch (error) {
+        throw new Error(
+          'This passkey is not available for this site. Passkeys registered on localhost cannot be used on staging; register a passkey on this domain or use an authenticator app.'
+        );
       }
 
-      function closeMfaDialog() {
-        mfaOverlay.hidden = true;
-        mfaTotpForm.hidden = true;
-        mfaTotpCode.value = '';
-        pendingMfa = null;
-      }
-
-      async function passkeyMfaLogin(tempToken) {
-        ensureWebAuthnAvailable();
-        setMfaMessage(
-          'Use your passkey to finish signing in.',
-          'info'
-        );
-
-        const optionsResponse = await fetch(
-          '/api/mfa/webauthn/authenticate/options',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-temp-token': tempToken
-            }
-          }
-        );
-
-        const options = await optionsResponse
-          .json()
-          .catch(() => ({}));
-
-        if (!optionsResponse.ok) {
-          throw new Error(
-            options.error || 'Could not start passkey authentication'
-          );
+      const payload = {
+        id: assertion.id,
+        rawId: arrayBufferToBase64url(assertion.rawId),
+        type: assertion.type,
+        response: {
+          authenticatorData: arrayBufferToBase64url(
+            assertion.response.authenticatorData
+          ),
+          clientDataJSON: arrayBufferToBase64url(
+            assertion.response.clientDataJSON
+          ),
+          signature: arrayBufferToBase64url(
+            assertion.response.signature
+          ),
+          userHandle: assertion.response.userHandle
+            ? arrayBufferToBase64url(assertion.response.userHandle)
+            : null
         }
+      };
 
-        if (
-          !options.allowCredentials ||
-          options.allowCredentials.length === 0
-        ) {
-          throw new Error('No passkeys are registered for this account.');
-        }
-
-        options.challenge = b64ToArrayBuffer(options.challenge);
-        options.allowCredentials = options.allowCredentials.map(
-          credential => ({
-            ...credential,
-            id: b64ToArrayBuffer(credential.id)
-          })
-        );
-
-        let assertion;
-        try {
-          assertion = await navigator.credentials.get({
-            publicKey: options
-          });
-        } catch (error) {
-          throw new Error(
-            'This passkey is not available for this site. Passkeys registered on localhost cannot be used on staging; register a passkey on this domain or use an authenticator app.'
-          );
-        }
-
-        const payload = {
-          id: assertion.id,
-          rawId: arrayBufferToBase64url(assertion.rawId),
-          type: assertion.type,
-          response: {
-            authenticatorData: arrayBufferToBase64url(
-              assertion.response.authenticatorData
-            ),
-            clientDataJSON: arrayBufferToBase64url(
-              assertion.response.clientDataJSON
-            ),
-            signature: arrayBufferToBase64url(
-              assertion.response.signature
-            ),
-            userHandle: assertion.response.userHandle
-              ? arrayBufferToBase64url(assertion.response.userHandle)
-              : null
-          }
-        };
-
-        const verifyResponse = await fetch(
-          '/api/mfa/webauthn/authenticate/verify',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-temp-token': tempToken
-            },
-            body: JSON.stringify(payload)
-          }
-        );
-
-        const result = await verifyResponse
-          .json()
-          .catch(() => ({}));
-
-        if (!verifyResponse.ok) {
-          throw new Error(
-            result.error || 'Passkey authentication failed'
-          );
-        }
-
-        if (!result.token) {
-          throw new Error('Login completed but no session token was returned');
-        }
-
-        return result.token;
-      }
-
-      async function totpMfaLogin(tempToken, code) {
-        const response = await fetch('/api/mfa/totp/verify', {
+      const verifyResponse = await fetch(
+        '/api/mfa/webauthn/authenticate/verify',
+        {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-temp-token': tempToken
           },
-          body: JSON.stringify({ token: code })
-        });
-
-        const result = await response
-          .json()
-          .catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Authenticator code was not accepted');
-        }
-
-        if (!result.token) {
-          throw new Error('Login completed but no session token was returned');
-        }
-
-        return result.token;
-      }
-
-      mfaOptions.addEventListener('click', async event => {
-        const button = event.target.closest('button[data-method]');
-        if (!button || !pendingMfa) return;
-
-        setMfaMessage('');
-
-        if (button.dataset.method === 'totp') {
-          mfaTotpForm.hidden = false;
-          mfaTotpCode.focus();
-          return;
-        }
-
-        try {
-          button.disabled = true;
-          const token = await passkeyMfaLogin(pendingMfa.tempToken);
-          pendingMfa.resolve(token);
-        } catch (error) {
-          setMfaMessage(error.message);
-        } finally {
-          button.disabled = false;
-        }
-      });
-
-      mfaTotpForm.addEventListener('submit', async event => {
-        event.preventDefault();
-        if (!pendingMfa) return;
-
-        const code = mfaTotpCode.value.trim();
-        if (!code) {
-          setMfaMessage('Enter the code from your authenticator app.');
-          return;
-        }
-
-        try {
-          setMfaMessage('Checking authenticator code...', 'info');
-          const token = await totpMfaLogin(pendingMfa.tempToken, code);
-          pendingMfa.resolve(token);
-        } catch (error) {
-          setMfaMessage(error.message);
-        }
-      });
-
-      mfaCancel.addEventListener('click', () => {
-        if (pendingMfa) {
-          pendingMfa.reject(new Error('Sign-in cancelled'));
-        }
-
-        closeMfaDialog();
-      });
-
-      loginForm.addEventListener(
-        'submit',
-        async event => {
-          event.preventDefault();
-
-          const username = document
-            .getElementById('loginUsername')
-            .value
-            .trim();
-
-          const password =
-            document.getElementById('loginPassword').value;
-
-          setLoginMessage('');
-
-          loginButton.disabled = true;
-          loginButton.setAttribute('aria-busy', 'true');
-
-          try {
-            const response = await fetch('/api/login', {
-              method: 'POST',
-
-              headers: {
-                'Content-Type': 'application/json'
-              },
-
-              body: JSON.stringify({
-                username,
-                password
-              })
-            });
-
-            const data = await response
-              .json()
-              .catch(() => ({}));
-
-            if (!response.ok) {
-              throw new Error(
-                data.error || 'Login failed'
-              );
-            }
-
-            if (data.twoFactorRequired) {
-              const methods = Array.isArray(data.methods)
-                ? data.methods
-                : [];
-
-              sessionStorage.setItem(
-                'tempToken',
-                data.tempToken
-              );
-
-              sessionStorage.setItem(
-                'twoFactorMethods',
-                JSON.stringify(methods)
-              );
-
-              const token = await openMfaDialog(methods, data.tempToken);
-              closeMfaDialog();
-              completeLogin(token);
-            } else {
-              completeLogin(data.token);
-            }
-          } catch (error) {
-            setLoginMessage(error.message);
-          } finally {
-            loginButton.disabled = false;
-
-            loginButton.removeAttribute(
-              'aria-busy'
-            );
-          }
+          body: JSON.stringify(payload)
         }
       );
-    </script>
-  </body>
+
+      const result = await verifyResponse
+        .json()
+        .catch(() => ({}));
+
+      if (!verifyResponse.ok) {
+        throw new Error(
+          result.error || 'Passkey authentication failed'
+        );
+      }
+
+      if (!result.token) {
+        throw new Error('Login completed but no session token was returned');
+      }
+
+      return result.token;
+    }
+
+    async function totpMfaLogin(tempToken, code) {
+      const response = await fetch('/api/mfa/totp/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-temp-token': tempToken
+        },
+        body: JSON.stringify({ token: code })
+      });
+
+      const result = await response
+        .json()
+        .catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Authenticator code was not accepted');
+      }
+
+      if (!result.token) {
+        throw new Error('Login completed but no session token was returned');
+      }
+
+      return result.token;
+    }
+
+    mfaOptions.addEventListener('click', async event => {
+      const button = event.target.closest('button[data-method]');
+      if (!button || !pendingMfa) return;
+
+      setMfaMessage('');
+
+      if (button.dataset.method === 'totp') {
+        mfaTotpForm.hidden = false;
+        mfaTotpCode.focus();
+        return;
+      }
+
+      try {
+        button.disabled = true;
+        const token = await passkeyMfaLogin(pendingMfa.tempToken);
+        pendingMfa.resolve(token);
+      } catch (error) {
+        setMfaMessage(error.message);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    mfaTotpForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!pendingMfa) return;
+
+      const code = mfaTotpCode.value.trim();
+      if (!code) {
+        setMfaMessage('Enter the code from your authenticator app.');
+        return;
+      }
+
+      try {
+        setMfaMessage('Checking authenticator code...', 'info');
+        const token = await totpMfaLogin(pendingMfa.tempToken, code);
+        pendingMfa.resolve(token);
+      } catch (error) {
+        setMfaMessage(error.message);
+      }
+    });
+
+    mfaCancel.addEventListener('click', () => {
+      if (pendingMfa) {
+        pendingMfa.reject(new Error('Sign-in cancelled'));
+      }
+
+      closeMfaDialog();
+    });
+
+    loginForm.addEventListener(
+      'submit',
+      async event => {
+        event.preventDefault();
+
+        const username = document
+          .getElementById('loginUsername')
+          .value
+          .trim();
+
+        const password =
+          document.getElementById('loginPassword').value;
+
+        setLoginMessage('');
+
+        loginButton.disabled = true;
+        loginButton.setAttribute('aria-busy', 'true');
+
+        try {
+          const response = await fetch('/api/login', {
+            method: 'POST',
+
+            headers: {
+              'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+              username,
+              password
+            })
+          });
+
+          const data = await response
+            .json()
+            .catch(() => ({}));
+
+          if (!response.ok) {
+            throw new Error(
+              data.error || 'Login failed'
+            );
+          }
+
+          if (data.twoFactorRequired) {
+            const methods = Array.isArray(data.methods)
+              ? data.methods
+              : [];
+
+            sessionStorage.setItem(
+              'tempToken',
+              data.tempToken
+            );
+
+            sessionStorage.setItem(
+              'twoFactorMethods',
+              JSON.stringify(methods)
+            );
+
+            const token = await openMfaDialog(methods, data.tempToken);
+            closeMfaDialog();
+            completeLogin(token);
+          } else {
+            completeLogin(data.token);
+          }
+        } catch (error) {
+          setLoginMessage(error.message);
+        } finally {
+          loginButton.disabled = false;
+
+          loginButton.removeAttribute(
+            'aria-busy'
+          );
+        }
+      }
+    );
+  </script>
+</body>
+
 </html>

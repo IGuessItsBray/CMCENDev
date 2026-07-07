@@ -22,6 +22,7 @@ const adminWorkZoneContent = document.getElementById("adminWorkZoneContent");
 const adminWorkZoneStatus = document.getElementById("adminWorkZoneStatus");
 
 let adminWorkZoneState = {
+  activeView: "users",
   currentUserId: "",
   users: [],
   roles: [],
@@ -29,6 +30,11 @@ let adminWorkZoneState = {
   selectedUserId: "",
   selectedUser: null,
   posts: [],
+  media: [],
+  mediaNextCursor: "",
+  mediaIsTruncated: false,
+  mediaBucket: "",
+  mediaIsLoading: false,
   isLoading: false,
   message: "",
   searchQuery: ""
@@ -88,6 +94,21 @@ function formatAdminDate(value) {
   }).format(new Date(value));
 }
 
+function formatAdminFileSize(value) {
+  const bytes = Number(value || 0);
+
+  if (!bytes) return "0 B";
+
+  const units = ["B", "KB", "MB", "GB"];
+  const unitIndex = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1
+  );
+  const amount = bytes / (1024 ** unitIndex);
+
+  return `${amount.toFixed(amount >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
 function getAdminDisplayName(user) {
   return user?.accountName || user?.username || user?.email || "Unknown user";
 }
@@ -142,6 +163,43 @@ function setAdminWorkZoneState(nextState) {
     ...nextState
   };
   renderAdminWorkZone();
+}
+
+function createAdminViewTabs() {
+  const tabs = document.createElement("div");
+  tabs.className = "admin-work-zone-tabs";
+  tabs.setAttribute("role", "tablist");
+  tabs.setAttribute("aria-label", "Admin work zone views");
+
+  [
+    ["users", "Users"],
+    ["media", "Media library"]
+  ].forEach(([view, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "admin-work-zone-tab";
+    button.classList.toggle("is-active", adminWorkZoneState.activeView === view);
+    button.setAttribute("role", "tab");
+    button.setAttribute(
+      "aria-selected",
+      String(adminWorkZoneState.activeView === view)
+    );
+    button.textContent = label;
+    button.addEventListener("click", () => {
+      setAdminWorkZoneState({
+        activeView: view,
+        message: ""
+      });
+
+      if (view === "media" && !adminWorkZoneState.media.length) {
+        loadAdminMedia();
+      }
+    });
+
+    tabs.append(button);
+  });
+
+  return tabs;
 }
 
 function createAdminMessage() {
@@ -493,12 +551,182 @@ function createAdminEditor() {
   return panel;
 }
 
+function createAdminMediaAttachment(attachment) {
+  const item = document.createElement("li");
+  item.className = "admin-media-attachment";
+
+  const link = document.createElement(attachment.href ? "a" : "span");
+  link.textContent = attachment.title || "Untitled content";
+
+  if (attachment.href) {
+    link.href = attachment.href;
+  }
+
+  const meta = document.createElement("span");
+  meta.textContent = [
+    attachment.type === "event" ? "Event" : "Retirement message",
+    attachment.status || "",
+    attachment.field || ""
+  ].filter(Boolean).join(" · ");
+
+  item.append(link, meta);
+
+  return item;
+}
+
+function createAdminMediaCard(mediaItem) {
+  const card = document.createElement("article");
+  card.className = "admin-media-card";
+
+  const previewLink = document.createElement("a");
+  previewLink.className = "admin-media-preview";
+  previewLink.href = mediaItem.url;
+  previewLink.target = "_blank";
+  previewLink.rel = "noopener";
+
+  const image = document.createElement("img");
+  image.src = mediaItem.url;
+  image.alt = mediaItem.key;
+  image.loading = "lazy";
+
+  previewLink.append(image);
+
+  const body = document.createElement("div");
+  body.className = "admin-media-body";
+
+  const title = document.createElement("h4");
+  title.textContent = mediaItem.key;
+
+  const meta = document.createElement("p");
+  meta.className = "admin-media-meta";
+  meta.textContent = [
+    formatAdminFileSize(mediaItem.size),
+    mediaItem.lastModified
+      ? `Modified ${formatAdminDate(mediaItem.lastModified)}`
+      : ""
+  ].filter(Boolean).join(" · ");
+
+  const attachmentCount = Number(mediaItem.attachedPostCount || 0);
+  const attachments = document.createElement("div");
+  attachments.className = "admin-media-attachments";
+
+  const attachmentHeading = document.createElement("strong");
+  attachmentHeading.textContent = attachmentCount
+    ? `Attached to ${attachmentCount} post${attachmentCount === 1 ? "" : "s"}`
+    : "Not attached to any posts";
+  attachments.append(attachmentHeading);
+
+  if (attachmentCount) {
+    const list = document.createElement("ul");
+    (mediaItem.attachedPosts || []).forEach(attachment => {
+      list.append(createAdminMediaAttachment(attachment));
+    });
+    attachments.append(list);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "admin-media-actions";
+
+  const open = document.createElement("a");
+  open.className = "admin-work-zone-button is-secondary";
+  open.href = mediaItem.url;
+  open.target = "_blank";
+  open.rel = "noopener";
+  open.textContent = "Open";
+
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "admin-work-zone-button is-danger";
+  remove.textContent = attachmentCount ? "In use" : "Delete";
+  remove.disabled = Boolean(attachmentCount);
+  remove.addEventListener("click", () => deleteAdminMedia(mediaItem));
+
+  actions.append(open, remove);
+  body.append(title, meta, attachments, actions);
+  card.append(previewLink, body);
+
+  return card;
+}
+
+function createAdminMediaLibrary() {
+  const panel = document.createElement("div");
+  panel.className = "admin-media-library";
+
+  const header = document.createElement("div");
+  header.className = "admin-media-heading";
+
+  const copy = document.createElement("div");
+  const title = document.createElement("h3");
+  title.textContent = "Media library";
+
+  const intro = document.createElement("p");
+  intro.textContent = adminWorkZoneState.mediaBucket
+    ? `Images in MinIO bucket: ${adminWorkZoneState.mediaBucket}`
+    : "Images in the configured MinIO bucket.";
+
+  copy.append(title, intro);
+
+  const refresh = document.createElement("button");
+  refresh.type = "button";
+  refresh.className = "admin-work-zone-button is-secondary";
+  refresh.textContent = "Refresh";
+  refresh.disabled = adminWorkZoneState.mediaIsLoading;
+  refresh.addEventListener("click", () => loadAdminMedia());
+
+  header.append(copy, refresh);
+  panel.append(header);
+
+  if (adminWorkZoneState.mediaIsLoading && !adminWorkZoneState.media.length) {
+    panel.append(createLoadingSpinner("Loading media library"));
+    return panel;
+  }
+
+  if (!adminWorkZoneState.media.length) {
+    const empty = document.createElement("p");
+    empty.className = "admin-empty-state";
+    empty.textContent = "No images were found in the bucket.";
+    panel.append(empty);
+    return panel;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "admin-media-grid";
+  adminWorkZoneState.media.forEach(mediaItem => {
+    grid.append(createAdminMediaCard(mediaItem));
+  });
+  panel.append(grid);
+
+  if (adminWorkZoneState.mediaIsTruncated) {
+    const loadMore = document.createElement("button");
+    loadMore.type = "button";
+    loadMore.className = "admin-work-zone-button is-secondary admin-media-load-more";
+    loadMore.textContent = adminWorkZoneState.mediaIsLoading
+      ? "Loading..."
+      : "Load more";
+    loadMore.disabled = adminWorkZoneState.mediaIsLoading;
+    loadMore.addEventListener("click", () => loadAdminMedia({
+      append: true,
+      cursor: adminWorkZoneState.mediaNextCursor
+    }));
+    panel.append(loadMore);
+  }
+
+  return panel;
+}
+
 function renderAdminWorkZone() {
-  adminWorkZoneContent.replaceChildren(
+  const content = [
     createAdminMessage(),
-    createAdminUserList(),
-    createAdminEditor()
-  );
+    createAdminViewTabs()
+  ];
+
+  if (adminWorkZoneState.activeView === "media") {
+    content.push(createAdminMediaLibrary());
+  } else {
+    content.push(createAdminUserList(), createAdminEditor());
+  }
+
+  adminWorkZoneContent.replaceChildren(...content);
 }
 
 async function loadAdminUsers({
@@ -594,6 +822,117 @@ async function loadAdminUsers({
     setAdminWorkZoneState({
       isLoading: false,
       message: error.message || "Could not load users"
+    });
+  }
+}
+
+async function loadAdminMedia({
+  append = false,
+  cursor = ""
+} = {}) {
+  setAdminWorkZoneState({
+    mediaIsLoading: true,
+    message: ""
+  });
+
+  try {
+    const params = new URLSearchParams();
+    params.set("limit", "100");
+
+    if (cursor) {
+      params.set("cursor", cursor);
+    }
+
+    const response = await fetch(`/api/admin/media?${params}`, {
+      headers: {
+        Authorization: `Bearer ${adminToken}`
+      }
+    });
+
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("api_token");
+      window.location.href = "/login.html";
+      return;
+    }
+
+    if (response.status === 403) {
+      window.location.href = "/dashboard.html";
+      return;
+    }
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not load media library");
+    }
+
+    setAdminWorkZoneState({
+      media: append
+        ? [...adminWorkZoneState.media, ...(data.media || [])]
+        : data.media || [],
+      mediaNextCursor: data.nextCursor || "",
+      mediaIsTruncated: Boolean(data.isTruncated),
+      mediaBucket: data.bucket || "",
+      mediaIsLoading: false
+    });
+  } catch (error) {
+    setAdminWorkZoneState({
+      mediaIsLoading: false,
+      message: error.message || "Could not load media library"
+    });
+  }
+}
+
+async function deleteAdminMedia(mediaItem) {
+  if (mediaItem.attachedPostCount) {
+    setAdminWorkZoneState({
+      message: "This image is still attached to content and cannot be deleted."
+    });
+    return;
+  }
+
+  if (
+    !window.confirm(
+      `Delete "${mediaItem.key}" from the MinIO bucket? This cannot be undone.`
+    )
+  ) {
+    return;
+  }
+
+  setAdminWorkZoneState({
+    message: ""
+  });
+
+  try {
+    const response = await fetch(
+      `/api/admin/media/${encodeURIComponent(mediaItem.key)}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${adminToken}`
+        }
+      }
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const attachedCount = data.attachedPosts?.length || 0;
+      const fallback = attachedCount
+        ? `Image is still attached to ${attachedCount} post${attachedCount === 1 ? "" : "s"}.`
+        : "Could not delete image";
+
+      throw new Error(data.error || fallback);
+    }
+
+    setAdminWorkZoneState({
+      media: adminWorkZoneState.media.filter(item => item.key !== mediaItem.key),
+      message: data.message || "Image deleted."
+    });
+  } catch (error) {
+    setAdminWorkZoneState({
+      message: error.message || "Could not delete image"
     });
   }
 }

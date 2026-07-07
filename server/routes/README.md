@@ -24,6 +24,8 @@ Defined in `admin.js`.
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
+| `GET` | `/api/admin/media` | User management | List MinIO bucket images with public CDN URLs and current post attachments. Optional `limit` and `cursor` query parameters page through bucket objects. |
+| `DELETE` | `/api/admin/media/:key` | User management | Delete one unattached image object from MinIO. Returns `409` when the image is still attached to content. |
 | `GET` | `/api/admin/users` | User management | List users with role, content areas, and post-count summaries. Optional `query` parameter filters by username or account name. |
 | `GET` | `/api/admin/users/:userId` | User management | Return one user's editable admin profile plus submitted event/comment summaries. |
 | `PATCH` | `/api/admin/users/:userId` | User management | Update a user's standard role and content-area assignments. |
@@ -53,6 +55,8 @@ Defined in `uploads.js`.
 | `GET` | `/api/image/:key` | Bearer token | Generate a 15-minute signed URL for an object-storage image key. |
 
 `POST /api/upload` expects `multipart/form-data` with an `image` file field. It returns the generated object key and CDN URL.
+
+Public object URLs use `CDN_PUBLIC_BASE_URL` when configured, otherwise the legacy CDN base is used.
 
 ## Translation Routes
 

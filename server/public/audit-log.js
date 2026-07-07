@@ -35,6 +35,7 @@ const auditActions = [
   ["content.created", "New content"],
   ["content.published", "Published"],
   ["content.deleted", "Deleted"],
+  ["media.deleted", "Media deleted"],
   ["translation.updated", "Translation updated"],
   ["user.role_changed", "Role changed"],
   ["user.content_areas_changed", "Content areas changed"]
@@ -44,6 +45,7 @@ const auditTargetTypes = [
   ["", "All targets"],
   ["user", "Users"],
   ["event", "Events"],
+  ["media", "Media"],
   ["translation", "Translations"],
   ["retirementMessage", "Retirement posts"],
   ["retirementComment", "Comments"]

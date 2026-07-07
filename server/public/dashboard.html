@@ -122,7 +122,12 @@
             aria-labelledby="mfaTitle"
           >
             <header class="dashboard-section-heading">
-              <h2 id="mfaTitle">Multi-factor authentication</h2>
+              <h2
+                id="mfaTitle"
+                data-i18n="dashboard_mfa_title"
+              >
+                Multi-factor authentication
+              </h2>
             </header>
 
             <div
@@ -130,13 +135,14 @@
               id="mfa-config"
             >
               <div class="mfa-panel">
-                <h3>TOTP</h3>
+                <h3 data-i18n="mfa_totp_title">TOTP</h3>
 
                 <div class="mfa-actions">
                   <button
                     class="mfa-button mfa-button-primary"
                     id="totp-setup"
                     type="button"
+                    data-i18n="mfa_setup_totp"
                   >
                     Setup TOTP
                   </button>
@@ -150,7 +156,9 @@
 
                 <div class="mfa-verification-row">
                   <label class="mfa-field">
-                    <span>Authenticator code</span>
+                    <span data-i18n="mfa_authenticator_code">
+                      Authenticator code
+                    </span>
                     <input
                       id="totp-code"
                       inputmode="numeric"
@@ -163,6 +171,7 @@
                     class="mfa-button"
                     id="totp-verify"
                     type="button"
+                    data-i18n="mfa_verify"
                   >
                     Verify
                   </button>
@@ -173,7 +182,10 @@
                   aria-labelledby="totpStatusTitle"
                 >
                   <div class="passkey-manager-heading">
-                    <h4 id="totpStatusTitle">
+                    <h4
+                      id="totpStatusTitle"
+                      data-i18n="mfa_totp_status_title"
+                    >
                       Authenticator app status
                     </h4>
 
@@ -181,6 +193,7 @@
                       class="mfa-link-button"
                       id="totp-refresh"
                       type="button"
+                      data-i18n="mfa_refresh"
                     >
                       Refresh
                     </button>
@@ -195,13 +208,14 @@
               </div>
 
               <div class="mfa-panel">
-                <h3>Passkey</h3>
+                <h3 data-i18n="mfa_passkey_title">Passkey</h3>
 
                 <div class="mfa-actions">
                   <button
                     class="mfa-button mfa-button-primary"
                     id="webauthn-register"
                     type="button"
+                    data-i18n="mfa_register_passkey"
                   >
                     Register Passkey
                   </button>
@@ -210,6 +224,7 @@
                     class="mfa-button"
                     id="webauthn-authenticate"
                     type="button"
+                    data-i18n="mfa_authenticate"
                   >
                     Authenticate
                   </button>
@@ -220,7 +235,10 @@
                   aria-labelledby="passkeyListTitle"
                 >
                   <div class="passkey-manager-heading">
-                    <h4 id="passkeyListTitle">
+                    <h4
+                      id="passkeyListTitle"
+                      data-i18n="mfa_registered_passkeys_title"
+                    >
                       Registered passkeys
                     </h4>
 
@@ -228,6 +246,7 @@
                       class="mfa-link-button"
                       id="passkey-refresh"
                       type="button"
+                      data-i18n="mfa_refresh"
                     >
                       Refresh
                     </button>
@@ -250,6 +269,7 @@
 
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
+    <script src="/validation-i18n.js"></script>
     <script src="/trade-options.js"></script>
     <script src="/dashboard.js"></script>
     <script src="/dashboard-mfa.js"></script>

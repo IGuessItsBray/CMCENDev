@@ -22,7 +22,9 @@ const adminWorkZoneContent = document.getElementById("adminWorkZoneContent");
 const adminWorkZoneStatus = document.getElementById("adminWorkZoneStatus");
 
 let adminWorkZoneState = {
-  activeView: "users",
+  activeView: new URLSearchParams(window.location.search).get("view") === "media"
+    ? "media"
+    : "users",
   currentUserId: "",
   users: [],
   roles: [],
@@ -173,7 +175,7 @@ function createAdminViewTabs() {
 
   [
     ["users", "Users"],
-    ["media", "Media library"]
+    ["media", "Media Manager"]
   ].forEach(([view, label]) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -186,6 +188,16 @@ function createAdminViewTabs() {
     );
     button.textContent = label;
     button.addEventListener("click", () => {
+      const url = new URL(window.location.href);
+
+      if (view === "media") {
+        url.searchParams.set("view", "media");
+      } else {
+        url.searchParams.delete("view");
+      }
+
+      window.history.replaceState({}, "", url);
+
       setAdminWorkZoneState({
         activeView: view,
         message: ""
@@ -197,6 +209,19 @@ function createAdminViewTabs() {
     });
 
     tabs.append(button);
+  });
+
+  [
+    ["/translations-admin.html", "Translations"],
+    ["/audit-log.html", "Audit Log"]
+  ].forEach(([href, label]) => {
+    const link = document.createElement("a");
+    link.className = "admin-work-zone-tab";
+    link.setAttribute("role", "tab");
+    link.setAttribute("aria-selected", "false");
+    link.href = href;
+    link.textContent = label;
+    tabs.append(link);
   });
 
   return tabs;
@@ -1216,6 +1241,10 @@ async function initializeAdminUsersPage() {
     if (!user) return;
 
     await loadAdminUsers();
+
+    if (adminWorkZoneState.activeView === "media") {
+      await loadAdminMedia();
+    }
   } catch (error) {
     setAdminStatus(error.message || "Could not load admin work zone.", "error");
   }

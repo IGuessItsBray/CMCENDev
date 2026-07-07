@@ -677,7 +677,10 @@ function renderDashboard(user) {
     });
   }
 
-  if (user.permissions?.canManageTranslations === true) {
+  if (
+    user.permissions?.canManageTranslations === true &&
+    user.permissions?.canManageUsers !== true
+  ) {
     actions.push({
       href: "/translations-admin.html",
       titleKey: "dashboard_action_manage_translations",
@@ -690,12 +693,6 @@ function renderDashboard(user) {
       href: "/admin-users.html",
       titleKey: "dashboard_action_admin_work_zone",
       descriptionKey: "dashboard_action_admin_work_zone_description"
-    });
-
-    actions.push({
-      href: "/audit-log.html",
-      titleKey: "dashboard_action_audit_log",
-      descriptionKey: "dashboard_action_audit_log_description"
     });
   }
 

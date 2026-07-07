@@ -9,7 +9,7 @@
     />
 
     <title>
-      Audit Log | CMCEN / RCMCE
+      Site Config | CMCEN / RCMCE
     </title>
 
     <link rel="stylesheet" href="/styles.css" />
@@ -20,28 +20,28 @@
 
     <main class="dashboard-main">
       <section
-        class="dashboard-shell audit-log-shell"
-        aria-labelledby="auditLogTitle"
+        class="dashboard-shell admin-work-zone-dashboard-shell"
+        aria-labelledby="siteConfigTitle"
       >
         <header class="dashboard-heading">
           <div class="dashboard-heading-copy">
             <p class="dashboard-eyebrow">
-              Administrator
+              Developer
             </p>
 
-            <h1 id="auditLogTitle">
-              Audit log
+            <h1 id="siteConfigTitle">
+              Site config
             </h1>
 
             <p class="dashboard-member-name">
-              Review logins, publishing, deletions, and role changes.
+              Review and update environment-backed site configuration.
             </p>
           </div>
         </header>
 
         <div
           class="dashboard-status is-loading"
-          id="auditLogStatus"
+          id="siteConfigStatus"
           role="status"
           aria-live="polite"
           aria-label="Loading..."
@@ -51,8 +51,8 @@
         </div>
 
         <section
-          class="dashboard-section audit-log-page"
-          id="auditLogPage"
+          class="dashboard-section admin-work-zone-page site-config-page"
+          id="siteConfigPage"
           hidden
         >
           <nav
@@ -68,21 +68,21 @@
             <a class="admin-work-zone-tab" href="/translations-admin.html">
               Translations
             </a>
-            <a
-              class="admin-work-zone-tab is-active"
-              href="/audit-log.html"
-              aria-current="page"
-            >
+            <a class="admin-work-zone-tab" href="/audit-log.html">
               Audit Log
             </a>
-            <a class="admin-work-zone-tab" href="/site-config.html">
+            <a
+              class="admin-work-zone-tab is-active"
+              href="/site-config.html"
+              aria-current="page"
+            >
               Site Config
             </a>
           </nav>
 
           <div
-            class="audit-log-content"
-            id="auditLogContent"
+            class="site-config-content"
+            id="siteConfigContent"
           ></div>
         </section>
       </section>
@@ -92,6 +92,6 @@
 
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
-    <script src="/audit-log.js"></script>
+    <script src="/site-config.js"></script>
   </body>
 </html>

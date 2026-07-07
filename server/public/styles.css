@@ -3858,6 +3858,100 @@ a.dropdown-toggle {
   justify-self: center;
 }
 
+.site-config-content,
+.site-config-form {
+  display: grid;
+  gap: 16px;
+}
+
+.site-config-toolbar {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--branch-grey-200);
+  background: var(--branch-grey-100);
+}
+
+.site-config-toolbar p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--branch-grey-700);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.site-config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.site-config-list {
+  display: grid;
+  gap: 10px;
+}
+
+.site-config-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(170px, 0.35fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--branch-grey-200);
+  background: var(--white);
+}
+
+.site-config-key {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: var(--navy-900);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.site-config-badge {
+  padding: 3px 6px;
+  background: var(--gold-500);
+  color: var(--navy-950);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.site-config-row input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--branch-grey-300);
+  background: var(--branch-grey-100);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.site-config-row input:focus {
+  outline: 2px solid rgba(213, 155, 39, 0.45);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .site-config-toolbar,
+  .site-config-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-posts-panel {
   display: grid;
   gap: 10px;
@@ -10293,7 +10387,9 @@ html[data-theme="dark"] .admin-work-zone-tabs {
 html[data-theme="dark"] .admin-work-zone-tab,
 html[data-theme="dark"] .admin-media-heading,
 html[data-theme="dark"] .admin-media-card,
-html[data-theme="dark"] .admin-media-attachment {
+html[data-theme="dark"] .admin-media-attachment,
+html[data-theme="dark"] .site-config-toolbar,
+html[data-theme="dark"] .site-config-row {
   border-color: var(--dark-border-strong);
   background: var(--dark-surface-3);
   color: var(--dark-text);
@@ -10318,15 +10414,23 @@ html[data-theme="dark"] .admin-media-heading h3,
 html[data-theme="dark"] .admin-media-body h4,
 html[data-theme="dark"] .admin-media-attachments strong,
 html[data-theme="dark"] .admin-media-attachment a,
-html[data-theme="dark"] .admin-media-attachment > span:first-child {
+html[data-theme="dark"] .admin-media-attachment > span:first-child,
+html[data-theme="dark"] .site-config-key {
   color: var(--dark-text);
 }
 
 html[data-theme="dark"] .admin-media-heading p,
 html[data-theme="dark"] .admin-media-meta,
 html[data-theme="dark"] .admin-media-attachments,
-html[data-theme="dark"] .admin-media-attachment span {
+html[data-theme="dark"] .admin-media-attachment span,
+html[data-theme="dark"] .site-config-toolbar p {
   color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .site-config-row input {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-bg-elevated);
+  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .admin-user-row {

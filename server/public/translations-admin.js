@@ -25,20 +25,6 @@ function getTranslationAdminToken() {
   return token;
 }
 
-function appendDeveloperSiteConfigTab() {
-  const tabs = document.querySelector(".admin-work-zone-tabs");
-
-  if (!tabs || tabs.querySelector("a[href='/site-config.html']")) {
-    return;
-  }
-
-  const link = document.createElement("a");
-  link.className = "admin-work-zone-tab";
-  link.href = "/site-config.html";
-  link.textContent = "Site Config";
-  tabs.append(link);
-}
-
 async function syncDeveloperSiteConfigTab(token) {
   try {
     const response = await fetch("/api/me", {
@@ -53,9 +39,7 @@ async function syncDeveloperSiteConfigTab(token) {
 
     const user = await response.json();
 
-    if (user.role === "developer") {
-      appendDeveloperSiteConfigTab();
-    }
+    window.updateAdminWorkZoneTabsForUser(user);
   } catch {
     // The translation editor still works without the developer-only tab.
   }

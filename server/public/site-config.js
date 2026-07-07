@@ -44,7 +44,7 @@ function showSiteConfigStatus(message, state = "") {
   siteConfigStatus.append(text);
 }
 
-function showSiteConfigLoading(message = "Loading site config") {
+function showSiteConfigLoading(message = translate("site_config_loading")) {
   const spinner = document.createElement("span");
   const label = document.createElement("span");
 
@@ -101,7 +101,7 @@ async function verifyDeveloperAccount() {
   }
 
   if (!response.ok) {
-    throw new Error("Could not verify developer account");
+    throw new Error(translate("site_config_verify_error"));
   }
 
   const user = await response.json();
@@ -115,10 +115,10 @@ async function verifyDeveloperAccount() {
 }
 
 async function promptForConfigToken() {
-  const token = window.prompt("Enter the site config access token.");
+  const token = window.prompt(translate("site_config_token_prompt"));
 
   if (!token) {
-    throw new Error("Site config token is required.");
+    throw new Error(translate("site_config_token_required"));
   }
 
   siteConfigToken = token;
@@ -129,7 +129,7 @@ async function promptForConfigToken() {
 
   if (!response.ok) {
     siteConfigToken = "";
-    throw new Error("Invalid site config token.");
+    throw new Error(translate("site_config_token_invalid"));
   }
 }
 
@@ -158,8 +158,7 @@ function createSiteConfigToolbar() {
   toolbar.className = "site-config-toolbar";
 
   const copy = document.createElement("p");
-  copy.textContent =
-    "Values are read from the server .env file. The config token is never displayed; enter a new value only when rotating it.";
+  copy.textContent = translate("site_config_toolbar_copy");
 
   const actions = document.createElement("div");
   actions.className = "site-config-actions";
@@ -167,14 +166,16 @@ function createSiteConfigToolbar() {
   const reload = document.createElement("button");
   reload.type = "button";
   reload.className = "admin-work-zone-button is-secondary";
-  reload.textContent = "Reload .env";
+  reload.textContent = translate("site_config_reload");
   reload.disabled = siteConfigState.isSaving;
   reload.addEventListener("click", () => loadSiteConfig());
 
   const save = document.createElement("button");
   save.type = "submit";
   save.className = "admin-work-zone-button is-primary";
-  save.textContent = siteConfigState.isSaving ? "Saving..." : "Save changes";
+  save.textContent = siteConfigState.isSaving
+    ? translate("translations_saving")
+    : translate("site_config_save");
   save.disabled = siteConfigState.isSaving;
 
   actions.append(reload, save);
@@ -194,7 +195,9 @@ function createSiteConfigRow(variable) {
   if (variable.isSecret) {
     const badge = document.createElement("span");
     badge.className = "site-config-badge";
-    badge.textContent = variable.isConfigToken ? "Access token" : "Sensitive";
+    badge.textContent = variable.isConfigToken
+      ? translate("site_config_access_token_badge")
+      : translate("site_config_sensitive_badge");
     meta.append(badge);
   }
 
@@ -207,7 +210,7 @@ function createSiteConfigRow(variable) {
   input.dataset.originalValue = variable.value || "";
 
   if (variable.isConfigToken) {
-    input.placeholder = "Enter a new token to rotate";
+    input.placeholder = translate("site_config_token_placeholder");
     input.dataset.originalValue = "";
   }
 
@@ -249,7 +252,7 @@ function renderSiteConfig() {
   if (!siteConfigState.variables.length) {
     const empty = document.createElement("p");
     empty.className = "admin-empty-state";
-    empty.textContent = "No environment variables were found.";
+    empty.textContent = translate("site_config_empty");
     fields.append(empty);
   } else {
     siteConfigState.variables.forEach(variable => {
@@ -276,7 +279,7 @@ async function loadSiteConfig() {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not load site configuration");
+      throw new Error(data.error || translate("site_config_load_error"));
     }
 
     setSiteConfigState({
@@ -286,7 +289,7 @@ async function loadSiteConfig() {
     showSiteConfigPage();
   } catch (error) {
     setSiteConfigState({
-      message: error.message || "Could not load site configuration"
+      message: error.message || translate("site_config_load_error")
     });
   }
 }
@@ -296,7 +299,7 @@ async function saveSiteConfig(form) {
 
   if (!Object.keys(updates).length) {
     setSiteConfigState({
-      message: "No configuration changes to save."
+      message: translate("site_config_no_changes")
     });
     return;
   }
@@ -317,18 +320,18 @@ async function saveSiteConfig(form) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not save site configuration");
+      throw new Error(data.error || translate("site_config_save_error"));
     }
 
     setSiteConfigState({
       variables: data.variables || [],
       isSaving: false,
-      message: data.message || "Site configuration updated."
+      message: data.message || translate("site_config_save_success")
     });
   } catch (error) {
     setSiteConfigState({
       isSaving: false,
-      message: error.message || "Could not save site configuration"
+      message: error.message || translate("site_config_save_error")
     });
   }
 }
@@ -341,16 +344,22 @@ async function initializeSiteConfigPage() {
 
     if (!user) return;
 
+    window.updateAdminWorkZoneTabsForUser(user);
+
     await logSiteConfigAccessRequest();
     await promptForConfigToken();
     await loadSiteConfig();
   } catch (error) {
-    showSiteConfigStatus(error.message || "Could not load site config.", "error");
+    showSiteConfigStatus(error.message || translate("site_config_load_error"), "error");
   }
 }
+
+document.addEventListener("languagechange", () => {
+  renderSiteConfig();
+});
 
 if (siteConfigAuthToken) {
   initializeSiteConfigPage();
 } else {
-  showSiteConfigStatus("Sign in to continue.");
+  showSiteConfigStatus(translate("sign_in_to_continue"));
 }

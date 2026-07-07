@@ -26,38 +26,39 @@ let auditState = {
   action: "",
   targetType: "",
   user: "",
-  message: ""
+  message: "",
+  isLoading: false
 };
 
 const auditActions = [
-  ["", "All actions"],
-  ["user.login", "User login"],
-  ["user.login_mfa_required", "MFA challenge"],
-  ["content.created", "New content"],
-  ["content.published", "Published"],
-  ["content.deleted", "Deleted"],
-  ["config.access_requested", "Config access requested"],
-  ["config.token_accepted", "Config token accepted"],
-  ["config.token_rejected", "Config token rejected"],
-  ["config.updated", "Config updated"],
-  ["media.deleted", "Media deleted"],
-  ["translation.updated", "Translation updated"],
-  ["user.role_changed", "Role changed"],
-  ["user.content_areas_changed", "Content areas changed"]
+  ["", "audit_action_all"],
+  ["user.login", "audit_action_user_login"],
+  ["user.login_mfa_required", "audit_action_mfa_required"],
+  ["content.created", "audit_action_content_created"],
+  ["content.published", "audit_action_content_published"],
+  ["content.deleted", "audit_action_content_deleted"],
+  ["config.access_requested", "audit_action_config_access_requested"],
+  ["config.token_accepted", "audit_action_config_token_accepted"],
+  ["config.token_rejected", "audit_action_config_token_rejected"],
+  ["config.updated", "audit_action_config_updated"],
+  ["media.deleted", "audit_action_media_deleted"],
+  ["translation.updated", "audit_action_translation_updated"],
+  ["user.role_changed", "audit_action_role_changed"],
+  ["user.content_areas_changed", "audit_action_content_areas_changed"]
 ];
 
 const auditTargetTypes = [
-  ["", "All targets"],
-  ["user", "Users"],
-  ["event", "Events"],
-  ["config", "Config"],
-  ["media", "Media"],
-  ["translation", "Translations"],
-  ["retirementMessage", "Retirement posts"],
-  ["retirementComment", "Comments"]
+  ["", "audit_target_all"],
+  ["user", "audit_target_users"],
+  ["event", "audit_target_events"],
+  ["config", "audit_target_config"],
+  ["media", "audit_target_media"],
+  ["translation", "audit_target_translations"],
+  ["retirementMessage", "audit_target_retirement_posts"],
+  ["retirementComment", "audit_target_comments"]
 ];
 
-function showAuditLoading(message = "Loading audit log") {
+function showAuditLoading(message = translate("audit_log_loading")) {
   const spinner = document.createElement("span");
   const label = document.createElement("span");
 
@@ -110,7 +111,7 @@ function getAuditActor(log) {
     actor.accountName ||
     actor.username ||
     actor.email ||
-    "System"
+    translate("audit_actor_system")
   );
 }
 
@@ -124,7 +125,7 @@ function getAuditTarget(log) {
     target.username ||
     target.email ||
     log.targetType ||
-    "Unknown target"
+    translate("audit_unknown_target")
   );
 }
 
@@ -170,7 +171,13 @@ function getAuditTargetHref(log) {
 }
 
 function formatAuditAction(action) {
-  return auditActions.find(item => item[0] === action)?.[1] || action;
+  const translationKey = auditActions.find(item => item[0] === action)?.[1];
+  return translationKey ? translate(translationKey) : action;
+}
+
+function formatAuditTargetType(targetType) {
+  const translationKey = auditTargetTypes.find(item => item[0] === targetType)?.[1];
+  return translationKey ? translate(translationKey) : targetType || translate("audit_target_target");
 }
 
 function getAuditActionClass(action) {
@@ -181,24 +188,24 @@ function getAuditActionClass(action) {
 
 function formatMetadataLabel(key) {
   const knownLabels = {
-    previousRole: "Previous Role",
-    newRole: "New Role",
-    previousContentAreas: "Previous Content Areas",
-    newContentAreas: "New Content Areas",
-    commentContent: "Comment Content",
-    deletedBy: "Deleted By",
-    status: "Status",
-    source: "Source",
-    method: "Method",
-    methods: "Methods",
-    deletedComments: "Deleted Comments",
-    changedLanguages: "Changed Languages",
-    previousValues: "Previous Values",
-    newValues: "New Values"
+    previousRole: "audit_metadata_previous_role",
+    newRole: "audit_metadata_new_role",
+    previousContentAreas: "audit_metadata_previous_content_areas",
+    newContentAreas: "audit_metadata_new_content_areas",
+    commentContent: "audit_metadata_comment_content",
+    deletedBy: "audit_metadata_deleted_by",
+    status: "audit_metadata_status",
+    source: "audit_metadata_source",
+    method: "audit_metadata_method",
+    methods: "audit_metadata_methods",
+    deletedComments: "audit_metadata_deleted_comments",
+    changedLanguages: "audit_metadata_changed_languages",
+    previousValues: "audit_metadata_previous_values",
+    newValues: "audit_metadata_new_values"
   };
 
   if (knownLabels[key]) {
-    return knownLabels[key];
+    return translate(knownLabels[key]);
   }
 
   return String(key || "")
@@ -209,7 +216,7 @@ function formatMetadataLabel(key) {
 
 function formatMetadataValue(value) {
   if (Array.isArray(value)) {
-    return value.length ? value.join(", ") : "None";
+    return value.length ? value.join(", ") : translate("admin_none");
   }
 
   if (value && typeof value === "object") {
@@ -218,7 +225,7 @@ function formatMetadataValue(value) {
 
     return entries.length
       ? entries.map(([key, item]) => `${key}: ${item}`).join("; ")
-      : "None";
+      : translate("admin_none");
   }
 
   return String(value);
@@ -229,13 +236,13 @@ function createAuditSearchField() {
   label.className = "admin-editor-field audit-log-user-search";
 
   const labelSpan = document.createElement("span");
-  labelSpan.textContent = "User";
+  labelSpan.textContent = translate("audit_filter_user");
 
   const input = document.createElement("input");
   input.type = "search";
   input.name = "user";
   input.value = auditState.user;
-  input.placeholder = "Name, username, or email";
+  input.placeholder = translate("admin_users_search_placeholder");
   input.autocomplete = "off";
   input.addEventListener("input", event => {
     auditState.user = event.target.value;
@@ -257,7 +264,7 @@ function createAuditSelect(labelText, value, options, onChange) {
   options.forEach(([optionValue, optionLabel]) => {
     const option = document.createElement("option");
     option.value = optionValue;
-    option.textContent = optionLabel;
+    option.textContent = translate(optionLabel);
     option.selected = optionValue === value;
     select.append(option);
   });
@@ -275,11 +282,11 @@ function createAuditFilters() {
 
   form.append(
     createAuditSearchField(),
-    createAuditSelect("Action", auditState.action, auditActions, value => {
+    createAuditSelect(translate("audit_filter_action"), auditState.action, auditActions, value => {
       auditState.action = value;
       loadAuditLogs();
     }),
-    createAuditSelect("Target", auditState.targetType, auditTargetTypes, value => {
+    createAuditSelect(translate("audit_filter_target"), auditState.targetType, auditTargetTypes, value => {
       auditState.targetType = value;
       loadAuditLogs();
     })
@@ -288,7 +295,7 @@ function createAuditFilters() {
   const filterButton = document.createElement("button");
   filterButton.type = "submit";
   filterButton.className = "admin-work-zone-button is-primary audit-log-filter-button";
-  filterButton.textContent = "Filter";
+  filterButton.textContent = translate("audit_filter_submit");
   form.append(filterButton);
 
   form.addEventListener("submit", event => {
@@ -305,8 +312,20 @@ function createAuditRefreshButton() {
   const refresh = document.createElement("button");
   refresh.type = "button";
   refresh.className = "admin-work-zone-button is-secondary audit-log-refresh-button";
-  refresh.setAttribute("aria-label", "Refresh audit log");
-  refresh.title = "Refresh";
+  refresh.setAttribute("aria-label", translate("audit_refresh_label"));
+  refresh.title = translate("admin_refresh");
+  refresh.disabled = auditState.isLoading;
+
+  if (auditState.isLoading) {
+    const label = document.createElement("span");
+    label.className = "visually-hidden";
+    label.textContent = translate("audit_refreshing_label");
+
+    refresh.classList.add("is-loading");
+    refresh.setAttribute("aria-label", translate("audit_refreshing_label"));
+    refresh.title = translate("audit_refreshing_title");
+    refresh.append(label);
+  }
 
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   icon.setAttribute("viewBox", "0 0 24 24");
@@ -330,23 +349,9 @@ function createAuditRefreshButton() {
   bottomArrow.setAttribute("d", "M21 21v-5h-5");
 
   icon.append(topPath, topArrow, bottomPath, bottomArrow);
-  refresh.append(icon);
+  refresh.prepend(icon);
   refresh.addEventListener("click", () => loadAuditLogs());
   return refresh;
-}
-
-function appendDeveloperSiteConfigTab() {
-  const tabs = document.querySelector(".admin-work-zone-tabs");
-
-  if (!tabs || tabs.querySelector("a[href='/site-config.html']")) {
-    return;
-  }
-
-  const link = document.createElement("a");
-  link.className = "admin-work-zone-tab";
-  link.href = "/site-config.html";
-  link.textContent = "Site Config";
-  tabs.append(link);
 }
 
 function createAuditRow(log) {
@@ -364,7 +369,7 @@ function createAuditRow(log) {
 
   const type = document.createElement("span");
   type.className = `admin-post-type type-${log.targetType || "content"}`;
-  type.textContent = log.targetType || "target";
+  type.textContent = formatAuditTargetType(log.targetType);
 
   badges.append(type);
   header.append(title, badges);
@@ -372,7 +377,9 @@ function createAuditRow(log) {
   const details = document.createElement("p");
   details.className = "admin-post-details";
   details.append(
-    document.createTextNode(`${formatAuditDate(log.createdAt)} · By ${getAuditActor(log)} · `)
+    document.createTextNode(`${formatAuditDate(log.createdAt)} · ${translate("audit_by_actor", {
+      actor: getAuditActor(log)
+    })} · `)
   );
 
   const targetHref = getAuditTargetHref(log);
@@ -430,7 +437,9 @@ function renderAuditLog() {
 
   const titleWrapper = document.createElement("div");
   const title = document.createElement("h3");
-  title.textContent = `Entries (${auditState.logs.length})`;
+  title.textContent = translate("audit_entries_heading", {
+    count: auditState.logs.length
+  });
   titleWrapper.append(title);
   heading.append(titleWrapper, createAuditRefreshButton());
 
@@ -446,7 +455,9 @@ function renderAuditLog() {
   if (!auditState.logs.length) {
     const empty = document.createElement("p");
     empty.className = "admin-empty-state";
-    empty.textContent = "No audit entries matched these filters.";
+    empty.textContent = auditState.isLoading
+      ? translate("audit_entries_loading")
+      : translate("audit_entries_empty");
     panel.append(empty);
   } else {
     auditState.logs.forEach(log => {
@@ -472,7 +483,7 @@ async function verifyAuditAccess() {
   }
 
   if (!response.ok) {
-    throw new Error("Could not verify administrator account");
+    throw new Error(translate("admin_verify_error"));
   }
 
   const user = await response.json();
@@ -482,9 +493,7 @@ async function verifyAuditAccess() {
     return false;
   }
 
-  if (user.role === "developer") {
-    appendDeveloperSiteConfigTab();
-  }
+  window.updateAdminWorkZoneTabsForUser(user);
 
   return true;
 }
@@ -492,7 +501,16 @@ async function verifyAuditAccess() {
 async function loadAuditLogs() {
   if (!auditToken) return;
 
-  showAuditLoading();
+  const preserveLayout = !auditLogPage.hidden;
+
+  auditState.isLoading = true;
+  auditState.message = "";
+
+  if (preserveLayout) {
+    renderAuditLog();
+  } else {
+    showAuditLoading();
+  }
 
   try {
     const params = new URLSearchParams();
@@ -533,17 +551,19 @@ async function loadAuditLogs() {
     }
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not load audit log");
+      throw new Error(data.error || translate("audit_log_load_error"));
     }
 
+    auditState.isLoading = false;
     auditState.logs = data.logs || [];
     auditState.message = "";
     showAuditPage();
     renderAuditLog();
   } catch (error) {
+    auditState.isLoading = false;
     showAuditPage();
     auditState.logs = [];
-    auditState.message = error.message || "Could not load audit log";
+    auditState.message = error.message || translate("audit_log_load_error");
     renderAuditLog();
   }
 }
@@ -566,12 +586,12 @@ async function initializeAuditLogPage() {
       await loadAuditLogs();
     }
   } catch (error) {
-    setAuditStatus(error.message || "Could not load audit log.", "error");
+    setAuditStatus(error.message || translate("audit_log_load_error"), "error");
   }
 }
 
 if (auditToken) {
   initializeAuditLogPage();
 } else {
-  setAuditStatus("Sign in to continue.");
+  setAuditStatus(translate("sign_in_to_continue"));
 }

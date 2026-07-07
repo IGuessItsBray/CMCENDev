@@ -8,7 +8,7 @@
       content="width=device-width, initial-scale=1.0"
     />
 
-    <title>
+    <title data-i18n="audit_log_page_title">
       Audit Log | CMCEN / RCMCE
     </title>
 
@@ -25,19 +25,35 @@
       >
         <header class="dashboard-heading">
           <div class="dashboard-heading-copy">
-            <p class="dashboard-eyebrow">
+            <p
+              class="dashboard-eyebrow"
+              data-i18n="admin_work_zone_eyebrow"
+            >
               Administrator
             </p>
 
-            <h1 id="auditLogTitle">
+            <h1
+              id="auditLogTitle"
+              data-i18n="audit_log_heading"
+            >
               Audit log
             </h1>
 
-            <p class="dashboard-member-name">
+            <p
+              class="dashboard-member-name"
+              data-i18n="audit_log_intro"
+            >
               Review logins, publishing, deletions, and role changes.
             </p>
           </div>
         </header>
+
+        <nav
+          class="admin-work-zone-tabs admin-work-zone-page-tabs"
+          id="adminWorkZoneTabs"
+          aria-label="Admin work zone views"
+          data-i18n-aria-label="admin_work_zone_tabs_label"
+        ></nav>
 
         <div
           class="dashboard-status is-loading"
@@ -45,9 +61,10 @@
           role="status"
           aria-live="polite"
           aria-label="Loading..."
+          data-i18n-aria-label="loading_text"
         >
           <span class="loading-state-spinner" aria-hidden="true"></span>
-          <span class="visually-hidden">Loading...</span>
+          <span class="visually-hidden" data-i18n="loading_text">Loading...</span>
         </div>
 
         <section
@@ -55,28 +72,6 @@
           id="auditLogPage"
           hidden
         >
-          <nav
-            class="admin-work-zone-tabs admin-work-zone-page-tabs"
-            aria-label="Admin work zone views"
-          >
-            <a class="admin-work-zone-tab" href="/admin-users.html">
-              Users
-            </a>
-            <a class="admin-work-zone-tab" href="/admin-users.html?view=media">
-              Media Manager
-            </a>
-            <a class="admin-work-zone-tab" href="/translations-admin.html">
-              Translations
-            </a>
-            <a
-              class="admin-work-zone-tab is-active"
-              href="/audit-log.html"
-              aria-current="page"
-            >
-              Audit Log
-            </a>
-          </nav>
-
           <div
             class="audit-log-content"
             id="auditLogContent"
@@ -89,6 +84,7 @@
 
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
+    <script src="/admin-work-zone-tabs.js"></script>
     <script src="/audit-log.js"></script>
   </body>
 </html>

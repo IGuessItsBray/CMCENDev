@@ -15,56 +15,42 @@
   <body>
     <header id="header"></header>
 
-    <main class="translations-admin-main">
+    <main class="dashboard-main translations-admin-main">
       <section
-        class="translations-admin-shell"
+        class="dashboard-shell translations-admin-shell"
         aria-labelledby="translationsAdminTitle"
       >
-        <header class="event-review-heading translations-admin-heading">
-          <div class="event-review-heading-main">
-            <div class="event-review-heading-copy">
-              <p
-                class="event-review-eyebrow"
-                data-i18n="translations_eyebrow"
-              >
-                Site administration
-              </p>
+        <header class="dashboard-heading translations-admin-heading">
+          <div class="dashboard-heading-copy">
+            <p
+              class="dashboard-eyebrow"
+              data-i18n="translations_eyebrow"
+            >
+              Site administration
+            </p>
 
-              <h1
-                id="translationsAdminTitle"
-                data-i18n="translations_heading"
-              >
-                Manage Translations
-              </h1>
+            <h1
+              id="translationsAdminTitle"
+              data-i18n="translations_heading"
+            >
+              Manage Translations
+            </h1>
 
-              <p data-i18n="translations_intro">
-                Review English and French interface text side by side and update existing translation keys.
-              </p>
-            </div>
+            <p
+              class="dashboard-member-name"
+              data-i18n="translations_intro"
+            >
+              Review English and French interface text side by side and update existing translation keys.
+            </p>
           </div>
         </header>
 
         <nav
           class="admin-work-zone-tabs admin-work-zone-page-tabs"
+          id="adminWorkZoneTabs"
           aria-label="Admin work zone views"
-        >
-          <a class="admin-work-zone-tab" href="/admin-users.html">
-            Users
-          </a>
-          <a class="admin-work-zone-tab" href="/admin-users.html?view=media">
-            Media Manager
-          </a>
-          <a
-            class="admin-work-zone-tab is-active"
-            href="/translations-admin.html"
-            aria-current="page"
-          >
-            Translations
-          </a>
-          <a class="admin-work-zone-tab" href="/audit-log.html">
-            Audit Log
-          </a>
-        </nav>
+          data-i18n-aria-label="admin_work_zone_tabs_label"
+        ></nav>
 
         <div class="translations-toolbar">
           <div class="event-field translations-search-field">
@@ -111,6 +97,7 @@
 
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
+    <script src="/admin-work-zone-tabs.js"></script>
     <script src="/translations-admin.js"></script>
   </body>
 </html>

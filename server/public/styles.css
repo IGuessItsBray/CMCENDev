@@ -3303,6 +3303,11 @@ a.dropdown-toggle {
   pointer-events: none;
 }
 
+.audit-log-refresh-button.is-loading svg {
+  animation: audit-log-refresh-spin 750ms linear infinite;
+  transform-origin: center;
+}
+
 .audit-log-refresh-button:hover,
 .audit-log-refresh-button:focus-visible,
 .audit-log-filter-button:hover,
@@ -3322,6 +3327,12 @@ a.dropdown-toggle {
   border-color: var(--gold-600);
   background: var(--gold-600);
   color: var(--navy-950);
+}
+
+@keyframes audit-log-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .audit-log-entry {
@@ -3724,7 +3735,7 @@ a.dropdown-toggle {
 }
 
 .admin-work-zone-page-tabs {
-  margin: 0 0 16px;
+  margin: 18px 30px 0;
 }
 
 .admin-work-zone-tab:hover,
@@ -6278,7 +6289,7 @@ a.dropdown-toggle {
    ───────────────────────────────────────────── */
 
 .translations-admin-main {
-  padding: 18px 14px 34px;
+  padding: 26px 20px 42px;
 }
 
 .translations-admin-shell {
@@ -8752,6 +8763,10 @@ a.dropdown-toggle {
 
   .dashboard-section {
     padding: 24px 22px;
+  }
+
+  .admin-work-zone-page-tabs {
+    margin: 16px 22px 0;
   }
 
   .dashboard-actions-section {

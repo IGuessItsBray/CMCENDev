@@ -9945,6 +9945,17 @@ html[data-theme="dark"] .event-time-selects select option {
   color: var(--dark-text);
 }
 
+html[data-theme="dark"] .retirement-trade-panel p,
+html[data-theme="dark"] .retirement-radio-option span {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .retirement-radio-option:hover,
+html[data-theme="dark"] .retirement-radio-option:focus-within {
+  border-color: var(--gold-500);
+  background: var(--dark-surface-2);
+}
+
 html[data-theme="dark"] .event-field input[type="file"]::file-selector-button {
   border-color: var(--gold-500);
   background: var(--gold-500);

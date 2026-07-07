@@ -41,7 +41,7 @@ const retirementMessageSchema =
 
                 retirementDate: {
                     type: Date,
-                    required: true
+                    default: null
                 }
             },
 
@@ -49,8 +49,7 @@ const retirementMessageSchema =
                 type: String,
                 required: true,
                 trim: true,
-                minlength: 100,
-                maxlength: 10000
+                minlength: 100
             },
 
             messageLanguage: {
@@ -63,14 +62,12 @@ const retirementMessageSchema =
                 en: {
                     type: String,
                     trim: true,
-                    maxlength: 10000,
                     default: ""
                 },
 
                 fr: {
                     type: String,
                     trim: true,
-                    maxlength: 10000,
                     default: ""
                 }
             },
@@ -210,6 +207,11 @@ const retirementMessageSchema =
                 trim: true,
                 maxlength: 2000,
                 default: ""
+            },
+
+            legacy: {
+                type: mongoose.Schema.Types.Mixed,
+                default: null
             }
         },
         {

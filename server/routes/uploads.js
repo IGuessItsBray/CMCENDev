@@ -7,6 +7,7 @@ const {
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { randomUUID } = require('crypto');
 const { authMiddleware } = require('../middleware/auth');
+const { buildPublicMediaUrl } = require('../services/media-library');
 const s3Client = require('../storage');
 
 const router = express.Router();
@@ -33,7 +34,7 @@ router.post('/upload', authMiddleware, upload.single('image'), async (req, res) 
     res.status(201).json({
       message: 'Upload successful',
       key: fileKey,
-      url: `https://cdn.corebot.ca/cmcen-demo/${fileKey}`
+      url: buildPublicMediaUrl(fileKey)
     });
   } catch (err) {
     console.error('Upload Error:', err);

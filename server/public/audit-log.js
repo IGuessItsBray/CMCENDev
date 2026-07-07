@@ -468,6 +468,10 @@ async function verifyAuditAccess() {
     return false;
   }
 
+  if (user.role === "developer") {
+    appendDeveloperSiteConfigTab();
+  }
+
   return true;
 }
 

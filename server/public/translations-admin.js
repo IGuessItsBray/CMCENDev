@@ -25,6 +25,42 @@ function getTranslationAdminToken() {
   return token;
 }
 
+function appendDeveloperSiteConfigTab() {
+  const tabs = document.querySelector(".admin-work-zone-tabs");
+
+  if (!tabs || tabs.querySelector("a[href='/site-config.html']")) {
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.className = "admin-work-zone-tab";
+  link.href = "/site-config.html";
+  link.textContent = "Site Config";
+  tabs.append(link);
+}
+
+async function syncDeveloperSiteConfigTab(token) {
+  try {
+    const response = await fetch("/api/me", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const user = await response.json();
+
+    if (user.role === "developer") {
+      appendDeveloperSiteConfigTab();
+    }
+  } catch {
+    // The translation editor still works without the developer-only tab.
+  }
+}
+
 function setTranslationsMessage(message, state = "", messageKey = "") {
   activeTranslationsMessageKey = messageKey;
   translationsMessage.textContent = message;
@@ -318,6 +354,8 @@ async function loadTranslationsForEditing() {
   if (!token) {
     return;
   }
+
+  syncDeveloperSiteConfigTab(token);
 
   setTranslationsMessage(
     translate("translations_loading"),

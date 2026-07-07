@@ -1,22 +1,4 @@
-function requireAuditToken() {
-  const storedToken = String(
-    localStorage.getItem("token") ||
-    localStorage.getItem("api_token") ||
-    ""
-  ).trim().replace(/^Bearer\s+/i, "");
-
-  if (!storedToken) {
-    window.location.replace("/login.html");
-    return null;
-  }
-
-  localStorage.setItem("token", storedToken);
-  localStorage.setItem("api_token", storedToken);
-
-  return storedToken;
-}
-
-const auditToken = requireAuditToken();
+const auditToken = CMCENUtils.requireAuthToken();
 const auditLogStatus = document.getElementById("auditLogStatus");
 const auditLogPage = document.getElementById("auditLogPage");
 const auditLogContent = document.getElementById("auditLogContent");
@@ -59,18 +41,7 @@ const auditTargetTypes = [
 ];
 
 function showAuditLoading(message = translate("audit_log_loading")) {
-  const spinner = document.createElement("span");
-  const label = document.createElement("span");
-
-  spinner.className = "loading-state-spinner";
-  spinner.setAttribute("aria-hidden", "true");
-  label.className = "visually-hidden";
-  label.textContent = message;
-
-  auditLogStatus.replaceChildren(spinner, label);
-  auditLogStatus.className = "dashboard-status is-loading";
-  auditLogStatus.setAttribute("aria-label", message);
-  auditLogStatus.hidden = false;
+  CMCENUtils.setStatusLoading(auditLogStatus, message);
   auditLogPage.hidden = true;
 }
 
@@ -81,27 +52,13 @@ function showAuditPage() {
 }
 
 function setAuditStatus(message, state = "") {
-  auditLogStatus.replaceChildren();
-  auditLogStatus.className = "dashboard-status";
-  auditLogStatus.hidden = false;
-  auditLogStatus.removeAttribute("aria-label");
-
-  if (state) {
-    auditLogStatus.classList.add(`is-${state}`);
-  }
-
-  const text = document.createElement("p");
-  text.textContent = message;
-  auditLogStatus.append(text);
+  CMCENUtils.setStatusMessage(auditLogStatus, message, state);
 }
 
 function formatAuditDate(value) {
-  if (!value) return "-";
-
-  return new Intl.DateTimeFormat(currentLang === "fr" ? "fr-CA" : "en-CA", {
-    dateStyle: "medium",
+  return CMCENUtils.formatDate(value, {
     timeStyle: "short"
-  }).format(new Date(value));
+  });
 }
 
 function getAuditActor(log) {
@@ -470,15 +427,11 @@ function renderAuditLog() {
 
 async function verifyAuditAccess() {
   const response = await fetch("/api/me", {
-    headers: {
-      Authorization: `Bearer ${auditToken}`
-    }
+    headers: CMCENUtils.authHeaders(auditToken)
   });
 
   if (response.status === 401) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("api_token");
-    window.location.href = "/login.html";
+    CMCENUtils.redirectToLogin();
     return false;
   }
 
@@ -530,18 +483,14 @@ async function loadAuditLogs() {
     const response = await fetch(
       `/api/audit-logs${params.toString() ? `?${params}` : ""}`,
       {
-        headers: {
-          Authorization: `Bearer ${auditToken}`
-        }
+        headers: CMCENUtils.authHeaders(auditToken)
       }
     );
 
     const data = await response.json().catch(() => ({}));
 
     if (response.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("api_token");
-      window.location.href = "/login.html";
+      CMCENUtils.redirectToLogin();
       return;
     }
 
@@ -573,7 +522,7 @@ document.addEventListener("languagechange", () => {
 });
 
 window.addEventListener("pageshow", () => {
-  if (!requireAuditToken()) {
+  if (!CMCENUtils.requireAuthToken()) {
     window.location.replace("/login.html");
   }
 });

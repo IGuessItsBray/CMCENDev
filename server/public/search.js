@@ -6,7 +6,7 @@ const searchResults = document.getElementById('searchResults');
 let lastSearchQuery = '';
 
 function getCurrentLanguage() {
-  return localStorage.getItem('lang') || 'en';
+  return CMCENUtils.getCurrentLanguage();
 }
 
 function getInitialQuery() {
@@ -32,14 +32,13 @@ function formatResultDate(value) {
     return '';
   }
 
-  return new Intl.DateTimeFormat(
-    getCurrentLanguage() === 'fr' ? 'fr-CA' : 'en-CA',
-    {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    }
-  ).format(date);
+  return CMCENUtils.formatDate(value, {
+    locale: CMCENUtils.getCurrentLocale(),
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    fallback: ''
+  });
 }
 
 function setStatus(messageKey, replacements = {}) {

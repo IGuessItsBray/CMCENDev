@@ -1,22 +1,4 @@
-function requireDashboardAuth() {
-  const token = String(
-    localStorage.getItem("token") ||
-    localStorage.getItem("api_token") ||
-    ""
-  ).trim().replace(/^Bearer\s+/i, "");
-
-  if (!token) {
-    window.location.replace("/login.html");
-    return null;
-  }
-
-  localStorage.setItem("token", token);
-  localStorage.setItem("api_token", token);
-
-  return token;
-}
-
-const token = requireDashboardAuth();
+const token = CMCENUtils.requireAuthToken();
 
 const dashboardStatus = document.getElementById("dashboardStatus");
 const dashboardContent = document.getElementById("dashboardContent");
@@ -50,20 +32,9 @@ const profileSelectOptions = {
 };
 
 function showDashboardLoading() {
-  const spinner = document.createElement("span");
-  const label = document.createElement("span");
   const message = translate("loading_text");
 
-  spinner.className = "loading-state-spinner";
-  spinner.setAttribute("aria-hidden", "true");
-
-  label.className = "visually-hidden";
-  label.textContent = message;
-
-  dashboardStatus.replaceChildren(spinner, label);
-  dashboardStatus.className = "dashboard-status is-loading";
-  dashboardStatus.setAttribute("aria-label", message);
-  dashboardStatus.hidden = false;
+  CMCENUtils.setStatusLoading(dashboardStatus, message);
   dashboardContent.hidden = true;
 }
 
@@ -83,12 +54,7 @@ function getRoleKey(role) {
 }
 
 function formatContentArea(contentArea) {
-  return String(contentArea)
-    .replace(/[_-]+/g, " ")
-    .replace(
-      /\b\w/g,
-      character => character.toUpperCase()
-    );
+  return CMCENUtils.formatTitleCaseValue(contentArea);
 }
 
 function formatContentAreas(contentAreas) {
@@ -553,17 +519,14 @@ function createProfileForm(user) {
     try {
       const response = await fetch("/api/profile", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
+        headers: CMCENUtils.authHeaders(token, {
+          "Content-Type": "application/json"
+        }),
         body: JSON.stringify(getProfilePayload(form))
       });
 
       if (response.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("api_token");
-        window.location.href = "/login.html";
+        CMCENUtils.redirectToLogin();
         return;
       }
 
@@ -723,16 +686,11 @@ async function loadDashboard() {
 
   try {
     const response = await fetch("/api/me", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: CMCENUtils.authHeaders(token)
     });
 
     if (response.status === 401) {
-      localStorage.removeItem("token");
-
-      window.location.href = "/login.html";
-
+      CMCENUtils.redirectToLogin();
       return;
     }
 
@@ -778,7 +736,7 @@ document.addEventListener(
 );
 
 window.addEventListener("pageshow", () => {
-  if (!requireDashboardAuth()) {
+  if (!CMCENUtils.requireAuthToken()) {
     window.location.replace("/login.html");
   }
 });

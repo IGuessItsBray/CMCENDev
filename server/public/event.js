@@ -47,15 +47,11 @@ let visibleEventMessageKey = "";
 let visibleEventMessageType = "neutral";
 
 function getEventLanguage() {
-    return document.documentElement.lang === "fr"
-        ? "fr"
-        : localStorage.getItem("lang") || "en";
+    return CMCENUtils.getCurrentLanguage();
 }
 
 function getEventLocale() {
-    return getEventLanguage() === "fr"
-        ? "fr-CA"
-        : "en-CA";
+    return CMCENUtils.getCurrentLocale();
 }
 
 function getEventTranslation(key, replacements = {}) {
@@ -67,11 +63,7 @@ function getEventTranslation(key, replacements = {}) {
 }
 
 function getStoredToken() {
-    return String(
-        localStorage.getItem("token") ||
-        localStorage.getItem("api_token") ||
-        ""
-    ).trim().replace(/^Bearer\s+/i, "");
+    return CMCENUtils.getStoredAuthToken();
 }
 
 function removeEventAdminActions() {
@@ -109,17 +101,14 @@ async function deletePublishedEvent() {
             `/api/admin/events/${encodeURIComponent(currentEventId)}`,
             {
                 method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                headers: CMCENUtils.authHeaders(token)
             }
         );
 
         const data = await response.json().catch(() => ({}));
 
         if (response.status === 401) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("api_token");
+            CMCENUtils.clearAuthToken();
             await setupEventAdminAccess();
             throw new Error("Sign in again to delete events.");
         }
@@ -183,19 +172,15 @@ async function setupEventAdminAccess() {
         return;
     }
 
-    localStorage.setItem("token", token);
-    localStorage.setItem("api_token", token);
+    CMCENUtils.storeAuthToken(token);
 
     try {
         const response = await fetch("/api/me", {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
+            headers: CMCENUtils.authHeaders(token)
         });
 
         if (response.status === 401) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("api_token");
+            CMCENUtils.clearAuthToken();
             canManageEvents = false;
             removeEventAdminActions();
             return;
@@ -219,37 +204,13 @@ async function setupEventAdminAccess() {
 }
 
 function getLocalizedEventText(value) {
-    if (!value) return "";
-
-    const language = getEventLanguage();
-
-    const preferred =
-        typeof value[language] === "string"
-            ? value[language].trim()
-            : "";
-
-    if (preferred) return preferred;
-
-    const fallbackLanguage = language === "en" ? "fr" : "en";
-
-    return typeof value[fallbackLanguage] === "string"
-        ? value[fallbackLanguage].trim()
-        : "";
+    return CMCENUtils.getLocalizedText(value, getEventLanguage());
 }
 
 function createEventLoadingContent(message) {
-    const spinner = document.createElement("span");
-    spinner.className = "loading-state-spinner";
-    spinner.setAttribute("aria-hidden", "true");
+    const loading = CMCENUtils.createLoadingSpinner(message);
 
-    const label = document.createElement("span");
-    label.className = "visually-hidden";
-    label.textContent = message;
-
-    return [
-        spinner,
-        label
-    ];
+    return Array.from(loading.childNodes);
 }
 
 function showEventDetailMessage(message, type = "neutral") {

@@ -20,22 +20,19 @@ let commentLoadFailed = false;
 let noticeTimer = null;
 
 function getReviewLanguage() {
-  if (typeof currentLang === "string") {
-    return currentLang;
-  }
-
-  return localStorage.getItem("lang") || "en";
+  return CMCENUtils.getCurrentLanguage();
 }
 
 function getReviewLocale() {
-  return getReviewLanguage() === "fr"
-    ? "fr-CA"
-    : "en-CA";
+  return CMCENUtils.getCurrentLocale();
 }
 
 function redirectToLogin() {
-  localStorage.removeItem("token");
-  window.location.replace("/login.html");
+  CMCENUtils.redirectToLogin();
+}
+
+function getReviewToken() {
+  return CMCENUtils.requireAuthToken();
 }
 
 function getContentValue(value, language) {
@@ -47,24 +44,17 @@ function getContentValue(value, language) {
 }
 
 function getDisplayTitle(event) {
-  const language = getReviewLanguage();
-  const fallbackLanguage = language === "fr" ? "en" : "fr";
-
   return (
-    getContentValue(event.title, language) ||
-    getContentValue(event.title, fallbackLanguage) ||
+    CMCENUtils.getLocalizedText(event.title, getReviewLanguage()) ||
     translate("translation_missing")
   );
 }
 
 function formatSubmittedDate(dateValue) {
-  return new Intl.DateTimeFormat(
-    getReviewLocale(),
-    {
-      dateStyle: "medium",
-      timeStyle: "short"
-    }
-  ).format(new Date(dateValue));
+  return CMCENUtils.formatDate(dateValue, {
+    locale: getReviewLocale(),
+    timeStyle: "short"
+  });
 }
 
 function formatEventSchedule(event) {
@@ -127,16 +117,7 @@ function formatEventSchedule(event) {
 }
 
 function formatContentArea(value) {
-  if (!value) {
-    return "—";
-  }
-
-  return String(value)
-    .replace(/[_-]+/g, " ")
-    .replace(
-      /\b\w/g,
-      character => character.toUpperCase()
-    );
+  return CMCENUtils.formatTitleCaseValue(value, "—");
 }
 
 const timezoneTranslationKeys = {
@@ -201,16 +182,7 @@ function formatEventTimezone(value) {
 }
 
 function formatReviewUser(user) {
-  if (!user || typeof user !== "object") {
-    return "—";
-  }
-
-  return (
-    user.accountName ||
-    user.username ||
-    user.email ||
-    "—"
-  );
+  return CMCENUtils.getUserDisplayName(user, "—");
 }
 
 function formatRetireeName(retirementMessage) {
@@ -248,17 +220,12 @@ function formatCommentAuthor(comment) {
 }
 
 function formatDateOnly(dateValue) {
-  if (!dateValue) {
-    return "—";
-  }
-
-  return new Intl.DateTimeFormat(
-    getReviewLocale(),
-    {
-      dateStyle: "long",
-      timeZone: "UTC"
-    }
-  ).format(new Date(dateValue));
+  return CMCENUtils.formatDate(dateValue, {
+    locale: getReviewLocale(),
+    dateStyle: "long",
+    timeZone: "UTC",
+    fallback: "—"
+  });
 }
 
 function createReviewRecordSection(titleKey, items, additionalClass = "") {
@@ -1513,16 +1480,9 @@ function showQueueLoading(
   queueElement = reviewQueue
 ) {
   const message = translate(messageKey);
-  const spinner = document.createElement("span");
-  const label = document.createElement("span");
+  const loading = CMCENUtils.createLoadingSpinner(message);
 
-  spinner.className = "loading-state-spinner";
-  spinner.setAttribute("aria-hidden", "true");
-
-  label.className = "visually-hidden";
-  label.textContent = message;
-
-  messageElement.replaceChildren(spinner, label);
+  messageElement.replaceChildren(...Array.from(loading.childNodes));
   messageElement.className =
     "review-page-message is-loading";
   messageElement.setAttribute("aria-label", message);
@@ -1611,7 +1571,7 @@ function renderCommentReviewQueue() {
 }
 
 async function submitReview(eventId, action, card) {
-  const token = localStorage.getItem("token");
+  const token = getReviewToken();
 
   if (!token) {
     redirectToLogin();
@@ -1651,13 +1611,10 @@ async function submitReview(eventId, action, card) {
       {
         method: "PATCH",
 
-        headers: {
+        headers: CMCENUtils.authHeaders(token, {
           "Content-Type":
-            "application/json",
-
-          Authorization:
-            `Bearer ${token}`
-        },
+            "application/json"
+        }),
 
         body: JSON.stringify({
           action,
@@ -1738,7 +1695,7 @@ async function submitReview(eventId, action, card) {
 }
 
 async function submitRetirementReview(messageId, action, card) {
-  const token = localStorage.getItem("token");
+  const token = getReviewToken();
 
   if (!token) {
     redirectToLogin();
@@ -1807,13 +1764,10 @@ async function submitRetirementReview(messageId, action, card) {
       {
         method: "PATCH",
 
-        headers: {
+        headers: CMCENUtils.authHeaders(token, {
           "Content-Type":
-            "application/json",
-
-          Authorization:
-            `Bearer ${token}`
-        },
+            "application/json"
+        }),
 
         body: JSON.stringify({
           action,
@@ -1896,7 +1850,7 @@ async function submitRetirementReview(messageId, action, card) {
 }
 
 async function submitCommentReview(commentId, action, card) {
-  const token = localStorage.getItem("token");
+  const token = getReviewToken();
 
   if (!token) {
     redirectToLogin();
@@ -1942,13 +1896,10 @@ async function submitCommentReview(commentId, action, card) {
       {
         method: "PATCH",
 
-        headers: {
+        headers: CMCENUtils.authHeaders(token, {
           "Content-Type":
-            "application/json",
-
-          Authorization:
-            `Bearer ${token}`
-        },
+            "application/json"
+        }),
 
         body: JSON.stringify({
           action,
@@ -2025,7 +1976,7 @@ async function submitCommentReview(commentId, action, card) {
 }
 
 async function loadReviewQueue() {
-  const token = localStorage.getItem("token");
+  const token = getReviewToken();
 
   if (!token) {
     redirectToLogin();
@@ -2051,10 +2002,7 @@ async function loadReviewQueue() {
 
   try {
     const userResponse = await fetch("/api/me", {
-      headers: {
-        Authorization:
-          `Bearer ${token}`
-      }
+      headers: CMCENUtils.authHeaders(token)
     });
 
     if (userResponse.status === 401) {
@@ -2094,28 +2042,19 @@ async function loadReviewQueue() {
       fetch(
         "/api/events/review",
         {
-          headers: {
-            Authorization:
-              `Bearer ${token}`
-          }
+          headers: CMCENUtils.authHeaders(token)
         }
       ),
       fetch(
         "/api/retirement-messages/review",
         {
-          headers: {
-            Authorization:
-              `Bearer ${token}`
-          }
+          headers: CMCENUtils.authHeaders(token)
         }
       ),
       fetch(
         "/api/retirement-messages/comments/review",
         {
-          headers: {
-            Authorization:
-              `Bearer ${token}`
-          }
+          headers: CMCENUtils.authHeaders(token)
         }
       )
     ]);
@@ -2341,7 +2280,7 @@ reviewTabs.forEach(tab => {
 
 window.addEventListener(
   "pageshow", () => {
-    if (!localStorage.getItem("token")) {
+    if (!getReviewToken()) {
       redirectToLogin();
     }
   }

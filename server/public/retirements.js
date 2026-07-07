@@ -7,18 +7,9 @@ const retirementsMessage =
 let loadedRetirementMessages = [];
 
 function createRetirementLoadingContent(message) {
-    const spinner = document.createElement("span");
-    spinner.className = "loading-state-spinner";
-    spinner.setAttribute("aria-hidden", "true");
+    const loading = CMCENUtils.createLoadingSpinner(message);
 
-    const label = document.createElement("span");
-    label.className = "visually-hidden";
-    label.textContent = message;
-
-    return [
-        spinner,
-        label
-    ];
+    return Array.from(loading.childNodes);
 }
 
 function showRetirementsMessage(message, type = "neutral") {

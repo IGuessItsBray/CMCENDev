@@ -29,6 +29,8 @@ const publishNowContainer = document.getElementById("publishNowContainer");
 const eventPublishNow = document.getElementById("eventPublishNow");
 const reviewNote = document.getElementById("eventReviewNote");
 const pageTitle = document.getElementById("submitEventTitle");
+const createLoadingSpinner = CMCENUtils.createLoadingSpinner;
+const redirectToLogin = CMCENUtils.redirectToLogin;
 
 let currentUser = null;
 let isSubmitting = false;
@@ -42,25 +44,6 @@ const initialEventPanel =
   eventPageParams.get("panel") === "form"
     ? "form"
     : "events";
-
-function createLoadingSpinner(label) {
-  const loading = document.createElement("div");
-  loading.className = "loading-state";
-  loading.setAttribute("role", "status");
-  loading.setAttribute("aria-label", label);
-
-  const spinner = document.createElement("span");
-  spinner.className = "loading-state-spinner";
-  spinner.setAttribute("aria-hidden", "true");
-
-  const text = document.createElement("span");
-  text.className = "visually-hidden";
-  text.textContent = label;
-
-  loading.append(spinner, text);
-
-  return loading;
-}
 
 function showMyEventsLoading() {
   myEventsSection.hidden = false;
@@ -85,50 +68,30 @@ function setEventEditLoading(isLoading) {
 }
 
 function getLocalizedEventTitle(event) {
-  const language =
-    typeof currentLang === "string"
-      ? currentLang
-      : "en";
-
-  const fallbackLanguage =
-    language === "fr"
-      ? "en"
-      : "fr";
-
   return (
-    event.title?.[language] ||
-    event.title?.[fallbackLanguage] ||
+    CMCENUtils.getLocalizedText(event.title) ||
     translate("my_events_untitled")
   );
 }
 
 function formatMyEventDate(event) {
-  const locale = currentLang === "fr" ? "fr-CA" : "en-CA";
-  const date = new Date(event.startDate);
-
   if (event.allDay) {
-    return new Intl.DateTimeFormat(locale, {
-      dateStyle: "medium",
+    return CMCENUtils.formatDate(event.startDate, {
       timeZone: "UTC"
-    }).format(date);
+    });
   }
 
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
+  return CMCENUtils.formatDate(event.startDate, {
     timeStyle: "short",
     hourCycle: "h23",
     timeZone: event.timezone || undefined
-  }).format(date);
+  });
 }
 
 function formatMyEventUpdatedDate(value) {
-  if (!value) {
-    return "—";
-  }
-
-  return new Intl.DateTimeFormat(currentLang === "fr" ? "fr-CA" : "en-CA", {
-    dateStyle: "medium"
-  }).format(new Date(value));
+  return CMCENUtils.formatDate(value, {
+    fallback: "—"
+  });
 }
 
 function createMyEventCard(submittedEvent) {
@@ -242,10 +205,7 @@ async function loadMyEvents(token) {
     const response = await fetch(
       "/api/events/mine",
       {
-        headers: {
-          Authorization:
-            `Bearer ${token}`
-        }
+        headers: CMCENUtils.authHeaders(token)
       }
     );
 
@@ -335,11 +295,6 @@ function initializeTimeControls() {
     eventEndMinute,
     minutes
   );
-}
-
-function redirectToLogin() {
-  localStorage.removeItem("token");
-  window.location.replace("/login.html");
 }
 
 function showPageMessage(
@@ -732,7 +687,7 @@ function autofillSubmitterFromProfile(user) {
 }
 
 async function initializeEventPage() {
-  const token = localStorage.getItem("token");
+  const token = CMCENUtils.requireAuthToken();
 
   if (!token) {
     redirectToLogin();
@@ -741,10 +696,7 @@ async function initializeEventPage() {
 
   try {
     const response = await fetch("/api/me", {
-      headers: {
-        Authorization:
-          `Bearer ${token}`
-      }
+      headers: CMCENUtils.authHeaders(token)
     });
 
     if (response.status === 401) {
@@ -823,7 +775,7 @@ eventForm.addEventListener(
     clearFormMessage();
 
     const token =
-      localStorage.getItem("token");
+      CMCENUtils.requireAuthToken();
 
     if (!token) {
       redirectToLogin();
@@ -856,10 +808,9 @@ eventForm.addEventListener(
         requestUrl,
         {
           method: requestMethod,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
+          headers: CMCENUtils.authHeaders(token, {
+            "Content-Type": "application/json"
+          }),
           body: JSON.stringify(eventData)
         }
       );
@@ -943,7 +894,7 @@ document.addEventListener(
 
 window.addEventListener(
   "pageshow", () => {
-    if (!localStorage.getItem("token")) {
+    if (!CMCENUtils.requireAuthToken()) {
       redirectToLogin();
     }
   }
@@ -1060,10 +1011,7 @@ async function loadEventForEditing(token, eventId) {
   const response = await fetch(
     `/api/events/${encodeURIComponent(eventId)}/edit`,
     {
-      headers: {
-        Authorization:
-          `Bearer ${token}`
-      }
+      headers: CMCENUtils.authHeaders(token)
     }
   );
 
@@ -1091,7 +1039,7 @@ async function loadEventForEditing(token, eventId) {
 }
 
 async function startEditingEvent(eventId) {
-  const token = localStorage.getItem("token");
+  const token = CMCENUtils.requireAuthToken();
 
   if (!token) {
     redirectToLogin();

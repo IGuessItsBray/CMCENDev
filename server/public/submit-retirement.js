@@ -8,13 +8,9 @@ const retireeTradeRole = document.getElementById("retireeTradeRole");
 const retireeOfficerTradePanel = document.getElementById("retireeOfficerTradePanel");
 const retireeNcmTradePanel = document.getElementById("retireeNcmTradePanel");
 
-const retirementAuthToken = localStorage.getItem("token");
+const retirementAuthToken = CMCENUtils.requireAuthToken();
 const RETIREMENT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
-
-function redirectToLogin() {
-    localStorage.removeItem("token");
-    window.location.replace("/login.html");
-}
+const redirectToLogin = CMCENUtils.redirectToLogin;
 
 function showRetirementFormMessage(message, type = "error") {
     retirementFormMessage.textContent = message;
@@ -46,7 +42,7 @@ function setRetirementSubmitting(isSubmitting) {
 }
 
 function getRetirementLanguage() {
-    return (document.documentElement.lang === "fr" ? "fr" : "en");
+    return CMCENUtils.getCurrentLanguage();
 }
 
 function setDefaultMessageLanguage() {
@@ -138,10 +134,7 @@ async function uploadRetirementPhoto() {
         {
             method: "POST",
 
-            headers: {
-                Authorization:
-                    `Bearer ${retirementAuthToken}`
-            },
+            headers: CMCENUtils.authHeaders(retirementAuthToken),
 
             body:
                 uploadData
@@ -225,10 +218,7 @@ async function verifyRetirementAccess() {
         const response = await fetch(
             "/api/me",
             {
-                headers: {
-                    Authorization:
-                        `Bearer ${retirementAuthToken}`
-                }
+                headers: CMCENUtils.authHeaders(retirementAuthToken)
             }
         );
 
@@ -293,13 +283,10 @@ retirementSubmitForm.addEventListener(
                 {
                     method: "POST",
 
-                    headers: {
+                    headers: CMCENUtils.authHeaders(retirementAuthToken, {
                         "Content-Type":
-                            "application/json",
-
-                        Authorization:
-                            `Bearer ${retirementAuthToken}`
-                    },
+                            "application/json"
+                    }),
 
                     body:
                         JSON.stringify(formData)

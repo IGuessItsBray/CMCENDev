@@ -51,18 +51,9 @@ let visibleCommentMessageKey = "";
 let visibleCommentMessageType = "neutral";
 
 function createRetirementLoadingContent(message) {
-    const spinner = document.createElement("span");
-    spinner.className = "loading-state-spinner";
-    spinner.setAttribute("aria-hidden", "true");
+    const loading = CMCENUtils.createLoadingSpinner(message);
 
-    const label = document.createElement("span");
-    label.className = "visually-hidden";
-    label.textContent = message;
-
-    return [
-        spinner,
-        label
-    ];
+    return Array.from(loading.childNodes);
 }
 
 function showRetirementDetailMessage(message, type = "neutral") {
@@ -124,13 +115,8 @@ function getMosid(retirementMessage) {
 }
 
 function getRetirementMessageText(retirementMessage) {
-    const language =
-        document.documentElement.lang === "fr" ? "fr" : "en";
-
     return (
-        retirementMessage.messages?.[language] ||
-        retirementMessage.messages?.en ||
-        retirementMessage.messages?.fr ||
+        CMCENUtils.getLocalizedText(retirementMessage.messages) ||
         retirementMessage.message ||
         ""
     );
@@ -165,23 +151,16 @@ function formatCommentAuthor(author) {
 }
 
 function formatCommentDate(value) {
-    if (!value) {
-        return "";
-    }
-
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) {
+    if (!value || Number.isNaN(date.getTime())) {
         return "";
     }
 
-    return new Intl.DateTimeFormat(
-        currentLang === "fr" ? "fr-CA" : "en-CA",
-        {
-            dateStyle: "medium",
-            timeStyle: "short"
-        }
-    ).format(date);
+    return CMCENUtils.formatDate(value, {
+        timeStyle: "short",
+        fallback: ""
+    });
 }
 
 function formatRetirementDate(value) {
@@ -196,15 +175,11 @@ function formatRetirementDate(value) {
     }
 
     const dateLabel =
-        date.toLocaleDateString(
-            currentLang === "fr" ? "fr-CA" : "en-CA",
-            {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                timeZone: "UTC"
-            }
-        );
+        CMCENUtils.formatDate(value, {
+            dateStyle: "long",
+            timeZone: "UTC",
+            fallback: translate("retirement_date_pending")
+        });
 
     return translate(
         "retirement_date_label",
@@ -294,11 +269,7 @@ function showRetirementCommentMessageKey(key, type = "neutral") {
 }
 
 function getStoredToken() {
-    return String(
-        localStorage.getItem("token") ||
-        localStorage.getItem("api_token") ||
-        ""
-    ).trim().replace(/^Bearer\s+/i, "");
+    return CMCENUtils.getStoredAuthToken();
 }
 
 function removeRetirementAdminActions() {
@@ -336,17 +307,14 @@ async function deleteRetirementMessage() {
             `/api/admin/retirement-messages/${encodeURIComponent(currentRetirementMessageId)}`,
             {
                 method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                headers: CMCENUtils.authHeaders(token)
             }
         );
 
         const data = await response.json().catch(() => ({}));
 
         if (response.status === 401) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("api_token");
+            CMCENUtils.clearAuthToken();
             await setupCommentAccess();
             throw new Error("Sign in again to delete retirement messages.");
         }
@@ -430,10 +398,7 @@ async function deleteRetirementComment(comment) {
                 `/api/admin/retirement-comments/${encodeURIComponent(comment._id)}`,
                 {
                     method: "DELETE",
-                    headers: {
-                        Authorization:
-                            `Bearer ${token}`
-                    }
+                    headers: CMCENUtils.authHeaders(token)
                 }
             );
 
@@ -441,8 +406,7 @@ async function deleteRetirementComment(comment) {
             await response.json().catch(() => ({}));
 
         if (response.status === 401) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("api_token");
+            CMCENUtils.clearAuthToken();
             await setupCommentAccess();
             throw new Error("Sign in again to delete comments.");
         }
@@ -581,22 +545,17 @@ async function setupCommentAccess() {
     const token = getStoredToken();
 
     if (token) {
-        localStorage.setItem("token", token);
-        localStorage.setItem("api_token", token);
+        CMCENUtils.storeAuthToken(token);
         retirementCommentForm.hidden = false;
         retirementCommentLogin.hidden = true;
 
         try {
             const response = await fetch("/api/me", {
-                headers: {
-                    Authorization:
-                        `Bearer ${token}`
-                }
+                headers: CMCENUtils.authHeaders(token)
             });
 
             if (response.status === 401) {
-                localStorage.removeItem("token");
-                localStorage.removeItem("api_token");
+                CMCENUtils.clearAuthToken();
                 canManageRetirementComments = false;
                 retirementCommentForm.hidden = true;
                 retirementCommentLogin.hidden = false;
@@ -714,13 +673,10 @@ retirementCommentForm.addEventListener(
                     {
                         method: "POST",
 
-                        headers: {
+                        headers: CMCENUtils.authHeaders(token, {
                             "Content-Type":
-                                "application/json",
-
-                            Authorization:
-                                `Bearer ${token}`
-                        },
+                                "application/json"
+                        }),
 
                         body:
                             JSON.stringify({ body })
@@ -731,8 +687,7 @@ retirementCommentForm.addEventListener(
                 await response.json().catch(() => ({}));
 
             if (response.status === 401) {
-                localStorage.removeItem("token");
-                localStorage.removeItem("api_token");
+                CMCENUtils.clearAuthToken();
                 setupCommentAccess();
                 throw new Error(
                     translate(

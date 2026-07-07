@@ -10,7 +10,7 @@ let homeEventsState = "loading";
 let homeRetirementsState = "loading";
 
 function getHomeLanguage() {
-  return localStorage.getItem("lang") || "en";
+  return CMCENUtils.getCurrentLanguage();
 }
 
 function getHomeLocale(language) {
@@ -18,20 +18,7 @@ function getHomeLocale(language) {
 }
 
 function getHomeLocalizedText(value, language) {
-  if (!value) return "";
-
-  const preferred =
-    typeof value[language] === "string"
-      ? value[language].trim()
-      : "";
-
-  if (preferred) return preferred;
-
-  const fallbackLanguage = language === "en" ? "fr" : "en";
-
-  return typeof value[fallbackLanguage] === "string"
-    ? value[fallbackLanguage].trim()
-    : "";
+  return CMCENUtils.getLocalizedText(value, language);
 }
 
 function getHomeTranslation(key, replacements = {}) {
@@ -57,20 +44,18 @@ function clearHomeMessage(element) {
 }
 
 function formatHomeEventDate(event, language) {
-  const locale = getHomeLocale(language);
   const startDate = new Date(event.startDate);
 
   if (Number.isNaN(startDate.getTime())) {
     return "";
   }
 
-  const formatter = new Intl.DateTimeFormat(locale, {
+  return CMCENUtils.formatDate(event.startDate, {
+    locale: getHomeLocale(language),
     month: "short",
     day: "numeric",
     ...(event.allDay ? { timeZone: "UTC" } : {})
   });
-
-  return formatter.format(startDate);
 }
 
 function formatHomeEventTime(event, language) {
@@ -84,10 +69,11 @@ function formatHomeEventTime(event, language) {
     return "";
   }
 
-  return new Intl.DateTimeFormat(getHomeLocale(language), {
+  return CMCENUtils.formatDate(event.startDate, {
+    locale: getHomeLocale(language),
     hour: "numeric",
     minute: "2-digit"
-  }).format(startDate);
+  });
 }
 
 function formatRetireeName(retirementMessage) {
@@ -116,12 +102,13 @@ function formatRetirementMeta(retirementMessage, language) {
 
     if (!Number.isNaN(date.getTime())) {
       details.push(
-        new Intl.DateTimeFormat(getHomeLocale(language), {
+        CMCENUtils.formatDate(retiree.retirementDate, {
+          locale: getHomeLocale(language),
           month: "short",
           day: "numeric",
           year: "numeric",
           timeZone: "UTC"
-        }).format(date)
+        })
       );
     }
   }

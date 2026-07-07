@@ -42,18 +42,65 @@ function tokensMatch(submittedToken, expectedToken) {
   return timingSafeEqual(submitted, expected);
 }
 
-function requireConfigToken(req, res, next) {
+async function writeConfigAuditLog(req, action, metadata = {}) {
+  try {
+    await writeAuditLog({
+      req,
+      action,
+      actor: req.user,
+      targetType: 'config',
+      targetSnapshot: {
+        area: 'site-config'
+      },
+      metadata
+    });
+  } catch (error) {
+    console.error('Site config audit log failed:', error);
+  }
+}
+
+async function validateConfigToken(req) {
   const expectedToken = getExpectedConfigToken();
+  const submittedToken = getSubmittedConfigToken(req);
 
   if (!expectedToken) {
-    return res.status(503).json({
-      error: 'Site configuration access token is not configured'
-    });
+    return {
+      ok: false,
+      status: 503,
+      error: 'Site configuration access token is not configured',
+      reason: 'token_not_configured',
+      hasSubmittedToken: Boolean(submittedToken)
+    };
   }
 
-  if (!tokensMatch(getSubmittedConfigToken(req), expectedToken)) {
-    return res.status(403).json({
-      error: 'Invalid site configuration token'
+  if (!tokensMatch(submittedToken, expectedToken)) {
+    return {
+      ok: false,
+      status: 403,
+      error: 'Invalid site configuration token',
+      reason: 'invalid_token',
+      hasSubmittedToken: Boolean(submittedToken)
+    };
+  }
+
+  return {
+    ok: true,
+    hasSubmittedToken: true
+  };
+}
+
+async function requireConfigToken(req, res, next) {
+  const tokenResult = await validateConfigToken(req);
+
+  if (!tokenResult.ok) {
+    await writeConfigAuditLog(req, 'config.token_rejected', {
+      reason: tokenResult.reason,
+      hasSubmittedToken: tokenResult.hasSubmittedToken,
+      route: req.originalUrl
+    });
+
+    return res.status(tokenResult.status).json({
+      error: tokenResult.error
     });
   }
 
@@ -213,7 +260,33 @@ function applyProcessUpdates(updates) {
 
 router.use(authMiddleware, requireExactRole('developer'));
 
-router.post('/verify', requireConfigToken, (req, res) => {
+router.post('/access', async (req, res) => {
+  await writeConfigAuditLog(req, 'config.access_requested', {
+    route: req.originalUrl
+  });
+
+  res.json({ ok: true });
+});
+
+router.post('/verify', async (req, res) => {
+  const tokenResult = await validateConfigToken(req);
+
+  if (!tokenResult.ok) {
+    await writeConfigAuditLog(req, 'config.token_rejected', {
+      reason: tokenResult.reason,
+      hasSubmittedToken: tokenResult.hasSubmittedToken,
+      route: req.originalUrl
+    });
+
+    return res.status(tokenResult.status).json({
+      error: tokenResult.error
+    });
+  }
+
+  await writeConfigAuditLog(req, 'config.token_accepted', {
+    route: req.originalUrl
+  });
+
   res.json({ ok: true });
 });
 

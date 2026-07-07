@@ -133,6 +133,15 @@ async function promptForConfigToken() {
   }
 }
 
+async function logSiteConfigAccessRequest() {
+  await fetch("/api/admin/site-config/access", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${siteConfigAuthToken}`
+    }
+  });
+}
+
 function createSiteConfigMessage() {
   const message = document.createElement("p");
   message.className = "admin-work-zone-message";
@@ -332,6 +341,7 @@ async function initializeSiteConfigPage() {
 
     if (!user) return;
 
+    await logSiteConfigAccessRequest();
     await promptForConfigToken();
     await loadSiteConfig();
   } catch (error) {

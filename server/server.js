@@ -1,4 +1,7 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({
+  path: path.join(__dirname, '.env')
+});
 const nodeCrypto = require('crypto');
 
 if (!globalThis.crypto) {
@@ -7,7 +10,6 @@ if (!globalThis.crypto) {
 
 const express = require('express');
 const mongoose = require('mongoose');
-const path = require('path');
 const adminRoutes = require('./routes/admin');
 const auditLogRoutes = require('./routes/audit-logs');
 const authRoutes = require('./routes/auth');

@@ -6,7 +6,7 @@ const { authMiddleware, requireExactRole } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
-const ENV_FILE_PATH = path.join(__dirname, '..', '..', '.env');
+const ENV_FILE_PATH = path.join(__dirname, '..', '.env');
 const CONFIG_TOKEN_KEY = 'config_token';
 const CONFIG_TOKEN_ALIASES = Object.freeze([
   CONFIG_TOKEN_KEY,

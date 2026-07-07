@@ -27,8 +27,8 @@ Defined in `admin.js`.
 | `GET` | `/api/admin/media` | User management | List MinIO bucket images with public CDN URLs and current post attachments. Optional `limit` and `cursor` query parameters page through bucket objects. |
 | `DELETE` | `/api/admin/media/:key` | User management | Delete one unattached image object from MinIO. Returns `409` when the image is still attached to content. |
 | `POST` | `/api/admin/site-config/verify` | Developer + config token | Verify the separate site configuration access token. |
-| `GET` | `/api/admin/site-config` | Developer + config token | Read editable variables from the server `.env` file. The `config_token` value is never returned. |
-| `PATCH` | `/api/admin/site-config` | Developer + config token | Update one or more `.env` variables and record the changed keys in the audit log. |
+| `GET` | `/api/admin/site-config` | Developer + config token | Read editable variables from `server/.env`. The `config_token` value is never returned. |
+| `PATCH` | `/api/admin/site-config` | Developer + config token | Update one or more `server/.env` variables and record the changed keys in the audit log. |
 | `GET` | `/api/admin/users` | User management | List users with role, content areas, and post-count summaries. Optional `query` parameter filters by username or account name. |
 | `GET` | `/api/admin/users/:userId` | User management | Return one user's editable admin profile plus submitted event/comment summaries. |
 | `PATCH` | `/api/admin/users/:userId` | User management | Update a user's standard role and content-area assignments. |

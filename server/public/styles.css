@@ -3678,6 +3678,7 @@ a.dropdown-toggle {
 }
 
 .admin-work-zone-tabs {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;

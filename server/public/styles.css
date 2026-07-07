@@ -3688,13 +3688,22 @@ a.dropdown-toggle {
 .admin-work-zone-tab {
   min-height: 38px;
   padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--branch-grey-300);
   background: var(--white);
   color: var(--navy-900);
   font: inherit;
   font-size: 13px;
   font-weight: 900;
+  line-height: 1.2;
+  text-decoration: none;
   cursor: pointer;
+}
+
+.admin-work-zone-page-tabs {
+  margin: 0 0 16px;
 }
 
 .admin-work-zone-tab:hover,

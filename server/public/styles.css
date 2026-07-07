@@ -8909,10 +8909,22 @@ html[data-theme="dark"] .header-search:focus-within {
   background: rgba(255, 255, 255, 0.08);
 }
 
-html[data-theme="dark"] .theme-toggle[aria-pressed="true"],
 html[data-theme="dark"] .lang-toggle:hover,
 html[data-theme="dark"] .theme-toggle:hover {
   background: rgba(213, 155, 39, 0.14);
+}
+
+html[data-theme="dark"] .theme-toggle[aria-pressed="true"] {
+  border-color: var(--branch-grey-500);
+  background: transparent;
+  color: var(--white);
+}
+
+html[data-theme="dark"] .theme-toggle[aria-pressed="true"]:hover,
+html[data-theme="dark"] .theme-toggle[aria-pressed="true"]:focus-visible {
+  border-color: var(--gold-500);
+  background: rgba(213, 155, 39, 0.14);
+  color: var(--gold-200);
 }
 
 html[data-theme="dark"] main :is(
@@ -9210,6 +9222,21 @@ html[data-theme="dark"] .audit-log-entry.is-user-content_areas_changed {
   background: #0e2c29;
 }
 
+html[data-theme="dark"] .audit-log-entry .admin-post-type {
+  border-color: var(--audit-accent, var(--gold-500));
+  background: var(--audit-accent, var(--gold-500));
+  color: var(--audit-badge-text, #101522);
+}
+
+html[data-theme="dark"] .audit-log-entry .admin-post-details a {
+  color: var(--gold-200);
+}
+
+html[data-theme="dark"] .audit-log-entry .admin-post-details a:hover,
+html[data-theme="dark"] .audit-log-entry .admin-post-details a:focus-visible {
+  color: var(--dark-link);
+}
+
 html[data-theme="dark"] .audit-log-metadata-chip {
   border-color: rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.07);
@@ -9270,6 +9297,15 @@ html[data-theme="dark"] .home-family-card .home-family-link {
   border-top-color: var(--dark-border-strong);
 }
 
+html[data-theme="dark"] .home-feature-panel .home-text-link {
+  color: var(--gold-200);
+}
+
+html[data-theme="dark"] .home-feature-panel .home-text-link:hover,
+html[data-theme="dark"] .home-feature-panel .home-text-link:focus-visible {
+  color: var(--dark-link);
+}
+
 html[data-theme="dark"] .home-feed-item,
 html[data-theme="dark"] .home-event-item {
   border-color: var(--dark-border);
@@ -9316,6 +9352,29 @@ html[data-theme="dark"] .calendar-event-meta {
     linear-gradient(180deg,
       rgba(255, 255, 255, 0.06),
       rgba(213, 155, 39, 0.11));
+}
+
+html[data-theme="dark"] .calendar-submit-callout {
+  border-color: var(--dark-border);
+  border-left-color: var(--gold-500);
+  background: rgba(13, 20, 34, 0.72);
+}
+
+html[data-theme="dark"] .calendar-submit-callout p {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .calendar-submit-callout a {
+  border-color: var(--gold-500);
+  background: var(--gold-500);
+  color: #101522;
+}
+
+html[data-theme="dark"] .calendar-submit-callout a:hover,
+html[data-theme="dark"] .calendar-submit-callout a:focus-visible {
+  border-color: var(--gold-200);
+  background: var(--gold-200);
+  color: #101522;
 }
 
 html[data-theme="dark"] .event-detail-body,
@@ -9711,6 +9770,20 @@ html[data-theme="dark"] .dashboard-actions-section {
   border-left-color: var(--dark-border);
 }
 
+html[data-theme="dark"] .dashboard-profile-readonly {
+  margin-top: 4px;
+  padding-top: 16px;
+}
+
+html[data-theme="dark"] .dashboard-profile-form[data-editing="false"] .dashboard-profile-grid {
+  gap: 16px 24px;
+}
+
+html[data-theme="dark"] .dashboard-profile-form[data-editing="false"] .dashboard-profile-field {
+  gap: 5px;
+  padding-bottom: 4px;
+}
+
 html[data-theme="dark"] .dashboard-action {
   border-color: var(--dark-border-strong);
   border-left-color: var(--gold-500);
@@ -9822,10 +9895,65 @@ html[data-theme="dark"] .event-review-note {
 }
 
 html[data-theme="dark"] .event-toggle,
+html[data-theme="dark"] .event-field-title,
+html[data-theme="dark"] .event-time-separator,
 html[data-theme="dark"] .event-publish-toggle strong,
 html[data-theme="dark"] .retirement-consent-field strong,
 html[data-theme="dark"] .event-authorization-checkbox strong {
   color: var(--dark-text);
+}
+
+html[data-theme="dark"] .event-time-selects select,
+html[data-theme="dark"] .event-field select {
+  border-color: var(--dark-border-strong);
+  background-color: var(--dark-bg-elevated);
+  background-image:
+    linear-gradient(45deg,
+      transparent 50%,
+      var(--dark-text-soft) 50%),
+    linear-gradient(135deg,
+      var(--dark-text-soft) 50%,
+      transparent 50%);
+  background-position:
+    calc(100% - 17px) 19px,
+    calc(100% - 12px) 19px;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .event-time-selects select {
+  background-position:
+    calc(100% - 16px) 19px,
+    calc(100% - 11px) 19px;
+}
+
+html[data-theme="dark"] .event-time-selects select:disabled {
+  background-color: var(--dark-surface-3);
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .event-field select:invalid {
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .event-field select option,
+html[data-theme="dark"] .event-time-selects select option {
+  background: var(--dark-bg-elevated);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .retirement-trade-panel p,
+html[data-theme="dark"] .retirement-radio-option span {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .retirement-radio-option:hover,
+html[data-theme="dark"] .retirement-radio-option:focus-within {
+  border-color: var(--gold-500);
+  background: var(--dark-surface-2);
 }
 
 html[data-theme="dark"] .event-field input[type="file"]::file-selector-button {

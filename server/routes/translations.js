@@ -10,6 +10,7 @@ const {
   readTranslations,
   writeTranslations
 } = require('../services/translation-store');
+const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
 
@@ -112,11 +113,45 @@ router.patch(
         }
       }
 
+      const previousValues = {};
+      const newValues = {};
+      const changedLanguages = [];
+
       languages.forEach(language => {
-        translations[language][key] = values[language].trim();
+        const previousValue = translations[language][key] || '';
+        const nextValue = values[language].trim();
+
+        previousValues[language] = previousValue;
+        newValues[language] = nextValue;
+        translations[language][key] = nextValue;
+
+        if (previousValue !== nextValue) {
+          changedLanguages.push(language);
+        }
       });
 
       await writeTranslations(translations);
+
+      if (changedLanguages.length) {
+        await writeAuditLog({
+          action: 'translation.updated',
+          actor: req.user,
+          targetType: 'translation',
+          targetSnapshot: { key },
+          metadata: {
+            key,
+            changedLanguages,
+            previousValues: changedLanguages.reduce((result, language) => {
+              result[language] = previousValues[language];
+              return result;
+            }, {}),
+            newValues: changedLanguages.reduce((result, language) => {
+              result[language] = newValues[language];
+              return result;
+            }, {})
+          }
+        });
+      }
 
       res.json({
         key,

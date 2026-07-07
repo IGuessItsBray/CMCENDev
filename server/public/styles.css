@@ -9072,7 +9072,20 @@ html[data-theme="dark"] main :is(input, textarea, select)::placeholder {
 
 html[data-theme="dark"] main :is(input, textarea, select):focus {
   border-color: var(--gold-500);
+  background: #0d1422;
   box-shadow: 0 0 0 3px rgba(213, 155, 39, 0.18);
+}
+
+html[data-theme="dark"] main :is(input, textarea, select):-webkit-autofill,
+html[data-theme="dark"] main :is(input, textarea, select):-webkit-autofill:hover,
+html[data-theme="dark"] main :is(input, textarea, select):-webkit-autofill:focus {
+  border-color: var(--gold-500);
+  -webkit-text-fill-color: var(--dark-text);
+  caret-color: var(--dark-text);
+  box-shadow:
+    0 0 0 1000px #0d1422 inset,
+    0 0 0 3px rgba(213, 155, 39, 0.18);
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 html[data-theme="dark"] main :is(

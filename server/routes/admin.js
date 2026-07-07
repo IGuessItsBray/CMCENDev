@@ -1,4 +1,8 @@
 const express = require('express');
+const {
+  DeleteObjectCommand,
+  ListObjectsV2Command
+} = require('@aws-sdk/client-s3');
 const User = require('../models/User');
 const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
@@ -12,6 +16,11 @@ const {
   writeAuditLog,
   snapshotUser
 } = require('../services/audit-log');
+const {
+  buildPublicMediaUrl,
+  getMediaKeyFromValue
+} = require('../services/media-library');
+const s3Client = require('../storage');
 
 const router = express.Router();
 
@@ -24,6 +33,8 @@ const CONTENT_AREAS = Object.freeze([
 ]);
 
 const DEVELOPER_CONFIRMATION = 'DEVELOPER';
+const DEFAULT_MEDIA_PAGE_SIZE = 100;
+const MAX_MEDIA_PAGE_SIZE = 500;
 
 function cleanContentAreas(value) {
   if (!Array.isArray(value)) {
@@ -96,6 +107,86 @@ function getEventSnapshot(event) {
     createdBy: event.createdBy,
     publishedBy: event.publishedBy,
     startDate: event.startDate
+  };
+}
+
+function cleanMediaPageSize(value) {
+  const parsed = Number.parseInt(value, 10);
+
+  if (Number.isNaN(parsed)) {
+    return DEFAULT_MEDIA_PAGE_SIZE;
+  }
+
+  return Math.min(Math.max(parsed, 1), MAX_MEDIA_PAGE_SIZE);
+}
+
+function getMediaAttachmentMap(events, retirementMessages) {
+  const attachmentMap = new Map();
+
+  function addAttachment(key, attachment) {
+    if (!key) return;
+
+    if (!attachmentMap.has(key)) {
+      attachmentMap.set(key, []);
+    }
+
+    attachmentMap.get(key).push(attachment);
+  }
+
+  events.forEach(event => {
+    addAttachment(getMediaKeyFromValue(event.imagePath), {
+      _id: event._id,
+      type: 'event',
+      title: getEventTitle(event),
+      status: event.status,
+      field: 'imagePath',
+      href: `/submit-event.html?id=${encodeURIComponent(event._id)}`
+    });
+  });
+
+  retirementMessages.forEach(message => {
+    addAttachment(getMediaKeyFromValue(message.photoUrl), {
+      _id: message._id,
+      type: 'retirementMessage',
+      title: getRetirementMessageTitle(message),
+      status: message.status,
+      field: 'photoUrl',
+      href: `/retirement-message.html?id=${encodeURIComponent(message._id)}`
+    });
+  });
+
+  return attachmentMap;
+}
+
+async function getMediaAttachments() {
+  const [events, retirementMessages] = await Promise.all([
+    Event.find({
+      imagePath: { $nin: [null, ''] }
+    })
+      .select('title status imagePath updatedAt createdAt')
+      .lean(),
+    RetirementMessage.find({
+      photoUrl: { $nin: [null, ''] }
+    })
+      .select('retiree status photoUrl updatedAt createdAt')
+      .lean()
+  ]);
+
+  return getMediaAttachmentMap(events, retirementMessages);
+}
+
+function toAdminMediaItem(object, attachmentMap) {
+  const key = object.Key;
+  const attachments = attachmentMap.get(key) || [];
+
+  return {
+    key,
+    url: buildPublicMediaUrl(key),
+    size: object.Size || 0,
+    lastModified: object.LastModified || null,
+    eTag: object.ETag ? String(object.ETag).replace(/^"|"$/gu, '') : '',
+    attachedPosts: attachments,
+    attachedPostCount: attachments.length
   };
 }
 
@@ -234,6 +325,92 @@ async function validateStandardRoleChange(userId, currentUser, role) {
 
   return { targetUser };
 }
+
+// GET /api/admin/media
+// List images currently present in object storage with linked post usage.
+router.get(
+  '/media',
+  authMiddleware,
+  requirePermission('canManageUsers'),
+  async (req, res) => {
+    try {
+      const maxKeys = cleanMediaPageSize(req.query.limit);
+      const continuationToken = String(req.query.cursor || '').trim() || undefined;
+
+      const [bucketObjects, attachmentMap] = await Promise.all([
+        s3Client.send(new ListObjectsV2Command({
+          Bucket: process.env.MINIO_BUCKET_NAME,
+          MaxKeys: maxKeys,
+          ContinuationToken: continuationToken
+        })),
+        getMediaAttachments()
+      ]);
+
+      res.json({
+        bucket: process.env.MINIO_BUCKET_NAME || '',
+        media: (bucketObjects.Contents || [])
+          .filter(object => object.Key)
+          .map(object => toAdminMediaItem(object, attachmentMap)),
+        nextCursor: bucketObjects.NextContinuationToken || '',
+        isTruncated: Boolean(bucketObjects.IsTruncated)
+      });
+    } catch (err) {
+      console.error('Admin media list failed:', err);
+      res.status(500).json({ error: 'Failed to fetch media library' });
+    }
+  }
+);
+
+// DELETE /api/admin/media/:key
+// Delete one unattached object-storage image.
+router.delete(
+  '/media/:key',
+  authMiddleware,
+  requirePermission('canManageUsers'),
+  async (req, res) => {
+    try {
+      const key = decodeURIComponent(String(req.params.key || '')).trim();
+
+      if (!key) {
+        return res.status(400).json({ error: 'Image key is required' });
+      }
+
+      const attachmentMap = await getMediaAttachments();
+      const attachedPosts = attachmentMap.get(key) || [];
+
+      if (attachedPosts.length) {
+        return res.status(409).json({
+          error: 'Image is still attached to content',
+          attachedPosts
+        });
+      }
+
+      await s3Client.send(new DeleteObjectCommand({
+        Bucket: process.env.MINIO_BUCKET_NAME,
+        Key: key
+      }));
+
+      await writeAuditLog({
+        req,
+        action: 'media.deleted',
+        actor: req.user,
+        targetType: 'media',
+        targetSnapshot: {
+          key,
+          url: buildPublicMediaUrl(key)
+        }
+      });
+
+      res.json({
+        message: 'Image deleted',
+        key
+      });
+    } catch (err) {
+      console.error('Admin media delete failed:', err);
+      res.status(500).json({ error: 'Failed to delete image' });
+    }
+  }
+);
 
 // GET /api/admin/users?query=name
 // List users, optionally filtering by username or account name.

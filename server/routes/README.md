@@ -26,6 +26,7 @@ Defined in `admin.js`.
 | --- | --- | --- | --- |
 | `GET` | `/api/admin/media` | User management | List MinIO bucket images with public CDN URLs and current post attachments. Optional `limit` and `cursor` query parameters page through bucket objects. |
 | `DELETE` | `/api/admin/media/:key` | User management | Delete one unattached image object from MinIO. Returns `409` when the image is still attached to content. |
+| `POST` | `/api/admin/site-config/access` | Developer | Record that a developer opened the Site Config page before the separate token prompt. |
 | `POST` | `/api/admin/site-config/verify` | Developer + config token | Verify the separate site configuration access token. |
 | `GET` | `/api/admin/site-config` | Developer + config token | Read editable variables from `server/.env`. The `config_token` value is never returned. |
 | `PATCH` | `/api/admin/site-config` | Developer + config token | Update one or more `server/.env` variables and record the changed keys in the audit log. |

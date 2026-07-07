@@ -26,6 +26,7 @@ let adminWorkZoneState = {
     ? "media"
     : "users",
   currentUserId: "",
+  currentUserRole: "",
   users: [],
   roles: [],
   contentAreas: [],
@@ -223,6 +224,16 @@ function createAdminViewTabs() {
     link.textContent = label;
     tabs.append(link);
   });
+
+  if (adminWorkZoneState.currentUserRole === "developer") {
+    const link = document.createElement("a");
+    link.className = "admin-work-zone-tab";
+    link.setAttribute("role", "tab");
+    link.setAttribute("aria-selected", "false");
+    link.href = "/site-config.html";
+    link.textContent = "Site Config";
+    tabs.append(link);
+  }
 
   return tabs;
 }
@@ -988,7 +999,8 @@ async function loadCurrentAdmin() {
   }
 
   setAdminWorkZoneState({
-    currentUserId: user._id || user.id || ""
+    currentUserId: user._id || user.id || "",
+    currentUserRole: user.role || ""
   });
 
   return user;

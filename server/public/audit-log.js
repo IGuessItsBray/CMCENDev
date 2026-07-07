@@ -25,6 +25,7 @@ let auditState = {
   logs: [],
   action: "",
   targetType: "",
+  user: "",
   message: ""
 };
 
@@ -218,6 +219,27 @@ function formatMetadataValue(value) {
   return String(value);
 }
 
+function createAuditSearchField() {
+  const label = document.createElement("label");
+  label.className = "admin-editor-field audit-log-user-search";
+
+  const labelSpan = document.createElement("span");
+  labelSpan.textContent = "User";
+
+  const input = document.createElement("input");
+  input.type = "search";
+  input.name = "user";
+  input.value = auditState.user;
+  input.placeholder = "Name, username, or email";
+  input.autocomplete = "off";
+  input.addEventListener("input", event => {
+    auditState.user = event.target.value;
+  });
+
+  label.append(labelSpan, input);
+  return label;
+}
+
 function createAuditSelect(labelText, value, options, onChange) {
   const label = document.createElement("label");
   label.className = "admin-editor-field";
@@ -247,6 +269,7 @@ function createAuditFilters() {
   form.className = "audit-log-filters";
 
   form.append(
+    createAuditSearchField(),
     createAuditSelect("Action", auditState.action, auditActions, value => {
       auditState.action = value;
       loadAuditLogs();
@@ -257,14 +280,54 @@ function createAuditFilters() {
     })
   );
 
-  const refresh = document.createElement("button");
-  refresh.type = "button";
-  refresh.className = "admin-work-zone-button is-secondary";
-  refresh.textContent = "Refresh";
-  refresh.addEventListener("click", () => loadAuditLogs());
-  form.append(refresh);
+  const filterButton = document.createElement("button");
+  filterButton.type = "submit";
+  filterButton.className = "admin-work-zone-button is-primary audit-log-filter-button";
+  filterButton.textContent = "Filter";
+  form.append(filterButton);
+
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    auditState.user = String(formData.get("user") || "").trim();
+    loadAuditLogs();
+  });
 
   return form;
+}
+
+function createAuditRefreshButton() {
+  const refresh = document.createElement("button");
+  refresh.type = "button";
+  refresh.className = "admin-work-zone-button is-secondary audit-log-refresh-button";
+  refresh.setAttribute("aria-label", "Refresh audit log");
+  refresh.title = "Refresh";
+
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("fill", "none");
+  icon.setAttribute("stroke", "currentColor");
+  icon.setAttribute("stroke-width", "2");
+  icon.setAttribute("stroke-linecap", "round");
+  icon.setAttribute("stroke-linejoin", "round");
+  icon.setAttribute("aria-hidden", "true");
+
+  const topPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  topPath.setAttribute("d", "M21 12a9 9 0 0 0-15.5-6.2L3 8");
+
+  const topArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  topArrow.setAttribute("d", "M3 3v5h5");
+
+  const bottomPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  bottomPath.setAttribute("d", "M3 12a9 9 0 0 0 15.5 6.2L21 16");
+
+  const bottomArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  bottomArrow.setAttribute("d", "M21 21v-5h-5");
+
+  icon.append(topPath, topArrow, bottomPath, bottomArrow);
+  refresh.append(icon);
+  refresh.addEventListener("click", () => loadAuditLogs());
+  return refresh;
 }
 
 function createAuditRow(log) {
@@ -323,10 +386,11 @@ function createAuditRow(log) {
       const label = document.createElement("strong");
       label.textContent = `${formatMetadataLabel(key)}:`;
 
-      chip.append(
-        label,
-        document.createTextNode(` ${formatMetadataValue(value)}`)
-      );
+      const valueText = document.createElement("span");
+      valueText.className = "audit-log-metadata-value";
+      valueText.textContent = formatMetadataValue(value);
+
+      chip.append(label, valueText);
       metadataList.append(chip);
     });
 
@@ -349,7 +413,7 @@ function renderAuditLog() {
   const title = document.createElement("h3");
   title.textContent = `Entries (${auditState.logs.length})`;
   titleWrapper.append(title);
-  heading.append(titleWrapper);
+  heading.append(titleWrapper, createAuditRefreshButton());
 
   panel.append(heading, createAuditFilters());
 
@@ -416,6 +480,10 @@ async function loadAuditLogs() {
 
     if (auditState.targetType) {
       params.set("targetType", auditState.targetType);
+    }
+
+    if (auditState.user) {
+      params.set("user", auditState.user);
     }
 
     const response = await fetch(

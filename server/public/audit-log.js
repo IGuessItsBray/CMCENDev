@@ -272,6 +272,20 @@ function createAuditFilters() {
   return form;
 }
 
+function appendDeveloperSiteConfigTab() {
+  const tabs = document.querySelector(".admin-work-zone-tabs");
+
+  if (!tabs || tabs.querySelector("a[href='/site-config.html']")) {
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.className = "admin-work-zone-tab";
+  link.href = "/site-config.html";
+  link.textContent = "Site Config";
+  tabs.append(link);
+}
+
 function createAuditRow(log) {
   const item = document.createElement("article");
   item.className = `admin-post-item audit-log-entry ${getAuditActionClass(log.action)}`;
@@ -402,6 +416,10 @@ async function verifyAuditAccess() {
   if (user.permissions?.canManageUsers !== true) {
     window.location.href = "/dashboard.html";
     return false;
+  }
+
+  if (user.role === "developer") {
+    appendDeveloperSiteConfigTab();
   }
 
   return true;

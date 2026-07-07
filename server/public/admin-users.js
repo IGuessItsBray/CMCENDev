@@ -60,7 +60,7 @@ function setAdminStatus(message, state = "") {
   adminWorkZoneStatus.append(text);
 }
 
-function showAdminLoading(message = "Loading users") {
+function showAdminLoading(message = translate("admin_users_loading")) {
   const spinner = document.createElement("span");
   const label = document.createElement("span");
 
@@ -113,7 +113,7 @@ function formatAdminFileSize(value) {
 }
 
 function getAdminDisplayName(user) {
-  return user?.accountName || user?.username || user?.email || "Unknown user";
+  return user?.accountName || user?.username || user?.email || translate("unknown_user");
 }
 
 function createAdminRoleBadge(role) {
@@ -168,76 +168,6 @@ function setAdminWorkZoneState(nextState) {
   renderAdminWorkZone();
 }
 
-function createAdminViewTabs() {
-  const tabs = document.createElement("div");
-  tabs.className = "admin-work-zone-tabs";
-  tabs.setAttribute("role", "tablist");
-  tabs.setAttribute("aria-label", "Admin work zone views");
-
-  [
-    ["users", "Users"],
-    ["media", "Media Manager"]
-  ].forEach(([view, label]) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "admin-work-zone-tab";
-    button.classList.toggle("is-active", adminWorkZoneState.activeView === view);
-    button.setAttribute("role", "tab");
-    button.setAttribute(
-      "aria-selected",
-      String(adminWorkZoneState.activeView === view)
-    );
-    button.textContent = label;
-    button.addEventListener("click", () => {
-      const url = new URL(window.location.href);
-
-      if (view === "media") {
-        url.searchParams.set("view", "media");
-      } else {
-        url.searchParams.delete("view");
-      }
-
-      window.history.replaceState({}, "", url);
-
-      setAdminWorkZoneState({
-        activeView: view,
-        message: ""
-      });
-
-      if (view === "media" && !adminWorkZoneState.media.length) {
-        loadAdminMedia();
-      }
-    });
-
-    tabs.append(button);
-  });
-
-  [
-    ["/translations-admin.html", "Translations"],
-    ["/audit-log.html", "Audit Log"]
-  ].forEach(([href, label]) => {
-    const link = document.createElement("a");
-    link.className = "admin-work-zone-tab";
-    link.setAttribute("role", "tab");
-    link.setAttribute("aria-selected", "false");
-    link.href = href;
-    link.textContent = label;
-    tabs.append(link);
-  });
-
-  if (adminWorkZoneState.currentUserRole === "developer") {
-    const link = document.createElement("a");
-    link.className = "admin-work-zone-tab";
-    link.setAttribute("role", "tab");
-    link.setAttribute("aria-selected", "false");
-    link.href = "/site-config.html";
-    link.textContent = "Site Config";
-    tabs.append(link);
-  }
-
-  return tabs;
-}
-
 function createAdminMessage() {
   const message = document.createElement("p");
   message.className = "admin-work-zone-message";
@@ -266,7 +196,9 @@ function createAdminUserButton(user) {
 
   const count = document.createElement("span");
   count.className = "admin-user-post-count";
-  count.textContent = `${user.postSummary?.total || 0} posts`;
+  count.textContent = translate("admin_users_post_count", {
+    count: user.postSummary?.total || 0
+  });
 
   button.append(name, meta, createAdminRoleBadge(user.role), count);
   button.addEventListener("click", () => loadAdminUserDetail(user._id));
@@ -282,18 +214,18 @@ function createAdminUserList() {
   header.className = "admin-panel-heading";
 
   const title = document.createElement("h3");
-  title.textContent = "Users";
+  title.textContent = translate("admin_users_heading");
 
   const search = document.createElement("label");
   search.className = "admin-user-search";
 
   const searchLabel = document.createElement("span");
-  searchLabel.textContent = "Search users";
+  searchLabel.textContent = translate("admin_users_search_label");
 
   const searchInput = document.createElement("input");
   searchInput.type = "search";
   searchInput.value = adminWorkZoneState.searchQuery;
-  searchInput.placeholder = "Name, username, or email";
+  searchInput.placeholder = translate("admin_users_search_placeholder");
   searchInput.autocomplete = "off";
   searchInput.addEventListener("input", event => {
     scheduleAdminUserSearch(event.target.value);
@@ -302,7 +234,7 @@ function createAdminUserList() {
   const refresh = document.createElement("button");
   refresh.type = "button";
   refresh.className = "admin-work-zone-button is-secondary";
-  refresh.textContent = "Refresh";
+  refresh.textContent = translate("admin_refresh");
   refresh.addEventListener("click", () => loadAdminUsers());
 
   search.append(searchLabel, searchInput);
@@ -313,13 +245,13 @@ function createAdminUserList() {
   list.className = "admin-user-list";
 
   if (adminWorkZoneState.isLoading && !adminWorkZoneState.users.length) {
-    list.append(createLoadingSpinner("Loading users"));
+    list.append(createLoadingSpinner(translate("admin_users_loading")));
   } else if (!adminWorkZoneState.users.length) {
     const empty = document.createElement("p");
     empty.className = "admin-empty-state";
     empty.textContent = adminWorkZoneState.searchQuery
-      ? "No users matched your search."
-      : "No users found.";
+      ? translate("admin_users_search_empty")
+      : translate("admin_users_empty");
     list.append(empty);
   } else {
     adminWorkZoneState.users.forEach(user => {
@@ -415,17 +347,17 @@ function createAdminPostItem(post) {
   header.className = "admin-post-header";
 
   const title = document.createElement(post.href ? "a" : "strong");
-  title.textContent = post.title || "Untitled";
+  title.textContent = post.title || translate("admin_content_untitled");
 
   if (post.href) {
     title.href = post.href;
   }
 
   const typeLabel = {
-    event: "Event",
-    retirementMessage: "Post",
-    retirementComment: "Comment"
-  }[post.type] || "Content";
+    event: translate("admin_content_type_event"),
+    retirementMessage: translate("admin_content_type_post"),
+    retirementComment: translate("admin_content_type_comment")
+  }[post.type] || translate("admin_content_type_content");
 
   const badges = document.createElement("div");
   badges.className = "admin-post-badges";
@@ -462,7 +394,7 @@ function createAdminPostItem(post) {
   const deleteButton = document.createElement("button");
   deleteButton.type = "button";
   deleteButton.className = "admin-work-zone-button is-danger";
-  deleteButton.textContent = "Delete";
+  deleteButton.textContent = translate("admin_delete");
   deleteButton.addEventListener("click", () => {
     deleteAdminPost(post);
   });
@@ -481,8 +413,7 @@ function createAdminEditor() {
   if (!user) {
     const empty = document.createElement("p");
     empty.className = "admin-empty-state";
-    empty.textContent =
-      "Select a user to manage their role, content areas, and posts.";
+    empty.textContent = translate("admin_users_select_empty");
     panel.append(empty);
     return panel;
   }
@@ -495,8 +426,12 @@ function createAdminEditor() {
   title.textContent = getAdminDisplayName(user);
 
   const meta = document.createElement("p");
-  meta.textContent =
-    `${user.email || user.username || ""} · Joined ${formatAdminDate(user.createdAt)}`;
+  meta.textContent = [
+    user.email || user.username || "",
+    translate("admin_users_joined", {
+      date: formatAdminDate(user.createdAt)
+    })
+  ].filter(Boolean).join(" · ");
 
   identity.append(title, createAdminRoleBadge(user.role), meta);
   header.append(identity);
@@ -508,20 +443,19 @@ function createAdminEditor() {
   roleField.className = "admin-editor-field";
 
   const roleLabel = document.createElement("span");
-  roleLabel.textContent = "Role";
+  roleLabel.textContent = translate("admin_users_role_label");
 
   roleField.append(roleLabel, createAdminRoleSelect(user));
 
   if (isSelectedAdminSelf(user)) {
     const roleHelp = document.createElement("small");
     roleHelp.className = "admin-editor-help";
-    roleHelp.textContent = "You cannot remove your own administrator access.";
+    roleHelp.textContent = translate("admin_users_self_role_help");
     roleField.append(roleHelp);
   } else if (isDeveloperUser(user)) {
     const roleHelp = document.createElement("small");
     roleHelp.className = "admin-editor-help";
-    roleHelp.textContent =
-      "Developer accounts are managed outside the standard role dropdown.";
+    roleHelp.textContent = translate("admin_users_developer_role_help");
     roleField.append(roleHelp);
   }
 
@@ -529,14 +463,14 @@ function createAdminEditor() {
   contentField.className = "admin-editor-fieldset";
 
   const legend = document.createElement("legend");
-  legend.textContent = "Content areas";
+  legend.textContent = translate("admin_users_content_areas_label");
 
   contentField.append(legend, createAdminContentAreaOptions(user));
 
   const save = document.createElement("button");
   save.type = "submit";
   save.className = "admin-work-zone-button is-primary";
-  save.textContent = "Save user";
+  save.textContent = translate("admin_users_save");
 
   form.append(roleField, contentField, save);
 
@@ -544,7 +478,7 @@ function createAdminEditor() {
     const promoteDeveloper = document.createElement("button");
     promoteDeveloper.type = "button";
     promoteDeveloper.className = "admin-work-zone-button is-danger";
-    promoteDeveloper.textContent = "Promote to developer";
+    promoteDeveloper.textContent = translate("admin_users_promote_developer");
     promoteDeveloper.addEventListener("click", () => {
       promoteAdminUserToDeveloper(user);
     });
@@ -568,13 +502,15 @@ function createAdminEditor() {
   postsPanel.className = "admin-posts-panel";
 
   const postsHeading = document.createElement("h4");
-  postsHeading.textContent = `Posts (${adminWorkZoneState.posts.length})`;
+  postsHeading.textContent = translate("admin_users_posts_heading", {
+    count: adminWorkZoneState.posts.length
+  });
   postsPanel.append(postsHeading);
 
   if (!adminWorkZoneState.posts.length) {
     const empty = document.createElement("p");
     empty.className = "admin-empty-state";
-    empty.textContent = "This user has not posted anything yet.";
+    empty.textContent = translate("admin_users_posts_empty");
     postsPanel.append(empty);
   } else {
     adminWorkZoneState.posts.forEach(post => {
@@ -592,7 +528,7 @@ function createAdminMediaAttachment(attachment) {
   item.className = "admin-media-attachment";
 
   const link = document.createElement(attachment.href ? "a" : "span");
-  link.textContent = attachment.title || "Untitled content";
+  link.textContent = attachment.title || translate("admin_content_untitled_content");
 
   if (attachment.href) {
     link.href = attachment.href;
@@ -600,7 +536,9 @@ function createAdminMediaAttachment(attachment) {
 
   const meta = document.createElement("span");
   meta.textContent = [
-    attachment.type === "event" ? "Event" : "Retirement message",
+    attachment.type === "event"
+      ? translate("admin_content_type_event")
+      : translate("admin_content_type_retirement_message"),
     attachment.status || "",
     attachment.field || ""
   ].filter(Boolean).join(" · ");
@@ -638,7 +576,9 @@ function createAdminMediaCard(mediaItem) {
   meta.textContent = [
     formatAdminFileSize(mediaItem.size),
     mediaItem.lastModified
-      ? `Modified ${formatAdminDate(mediaItem.lastModified)}`
+      ? translate("admin_media_modified", {
+        date: formatAdminDate(mediaItem.lastModified)
+      })
       : ""
   ].filter(Boolean).join(" · ");
 
@@ -648,8 +588,13 @@ function createAdminMediaCard(mediaItem) {
 
   const attachmentHeading = document.createElement("strong");
   attachmentHeading.textContent = attachmentCount
-    ? `Attached to ${attachmentCount} post${attachmentCount === 1 ? "" : "s"}`
-    : "Not attached to any posts";
+    ? translate(
+      attachmentCount === 1
+        ? "admin_media_attached_count_singular"
+        : "admin_media_attached_count_plural",
+      { count: attachmentCount }
+    )
+    : translate("admin_media_not_attached");
   attachments.append(attachmentHeading);
 
   if (attachmentCount) {
@@ -668,12 +613,12 @@ function createAdminMediaCard(mediaItem) {
   open.href = mediaItem.url;
   open.target = "_blank";
   open.rel = "noopener";
-  open.textContent = "Open";
+  open.textContent = translate("admin_media_open");
 
   const remove = document.createElement("button");
   remove.type = "button";
   remove.className = "admin-work-zone-button is-danger";
-  remove.textContent = attachmentCount ? "In use" : "Delete";
+  remove.textContent = attachmentCount ? translate("admin_media_in_use") : translate("admin_delete");
   remove.disabled = Boolean(attachmentCount);
   remove.addEventListener("click", () => deleteAdminMedia(mediaItem));
 
@@ -693,19 +638,21 @@ function createAdminMediaLibrary() {
 
   const copy = document.createElement("div");
   const title = document.createElement("h3");
-  title.textContent = "Media library";
+  title.textContent = translate("admin_media_heading");
 
   const intro = document.createElement("p");
   intro.textContent = adminWorkZoneState.mediaBucket
-    ? `Images in MinIO bucket: ${adminWorkZoneState.mediaBucket}`
-    : "Images in the configured MinIO bucket.";
+    ? translate("admin_media_intro_bucket", {
+      bucket: adminWorkZoneState.mediaBucket
+    })
+    : translate("admin_media_intro");
 
   copy.append(title, intro);
 
   const refresh = document.createElement("button");
   refresh.type = "button";
   refresh.className = "admin-work-zone-button is-secondary";
-  refresh.textContent = "Refresh";
+  refresh.textContent = translate("admin_refresh");
   refresh.disabled = adminWorkZoneState.mediaIsLoading;
   refresh.addEventListener("click", () => loadAdminMedia());
 
@@ -713,14 +660,14 @@ function createAdminMediaLibrary() {
   panel.append(header);
 
   if (adminWorkZoneState.mediaIsLoading && !adminWorkZoneState.media.length) {
-    panel.append(createLoadingSpinner("Loading media library"));
+    panel.append(createLoadingSpinner(translate("admin_media_loading")));
     return panel;
   }
 
   if (!adminWorkZoneState.media.length) {
     const empty = document.createElement("p");
     empty.className = "admin-empty-state";
-    empty.textContent = "No images were found in the bucket.";
+    empty.textContent = translate("admin_media_empty");
     panel.append(empty);
     return panel;
   }
@@ -737,8 +684,8 @@ function createAdminMediaLibrary() {
     loadMore.type = "button";
     loadMore.className = "admin-work-zone-button is-secondary admin-media-load-more";
     loadMore.textContent = adminWorkZoneState.mediaIsLoading
-      ? "Loading..."
-      : "Load more";
+      ? translate("loading_text")
+      : translate("admin_media_load_more");
     loadMore.disabled = adminWorkZoneState.mediaIsLoading;
     loadMore.addEventListener("click", () => loadAdminMedia({
       append: true,
@@ -752,8 +699,7 @@ function createAdminMediaLibrary() {
 
 function renderAdminWorkZone() {
   const content = [
-    createAdminMessage(),
-    createAdminViewTabs()
+    createAdminMessage()
   ];
 
   if (adminWorkZoneState.activeView === "media") {
@@ -814,7 +760,7 @@ async function loadAdminUsers({
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not load users");
+      throw new Error(data.error || translate("admin_users_load_error"));
     }
 
     const selectedUserId = preserveSelection &&
@@ -857,7 +803,7 @@ async function loadAdminUsers({
 
     setAdminWorkZoneState({
       isLoading: false,
-      message: error.message || "Could not load users"
+      message: error.message || translate("admin_users_load_error")
     });
   }
 }
@@ -900,7 +846,7 @@ async function loadAdminMedia({
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not load media library");
+      throw new Error(data.error || translate("admin_media_load_error"));
     }
 
     setAdminWorkZoneState({
@@ -915,7 +861,7 @@ async function loadAdminMedia({
   } catch (error) {
     setAdminWorkZoneState({
       mediaIsLoading: false,
-      message: error.message || "Could not load media library"
+      message: error.message || translate("admin_media_load_error")
     });
   }
 }
@@ -923,14 +869,16 @@ async function loadAdminMedia({
 async function deleteAdminMedia(mediaItem) {
   if (mediaItem.attachedPostCount) {
     setAdminWorkZoneState({
-      message: "This image is still attached to content and cannot be deleted."
+      message: translate("admin_media_delete_attached_error")
     });
     return;
   }
 
   if (
     !window.confirm(
-      `Delete "${mediaItem.key}" from the MinIO bucket? This cannot be undone.`
+      translate("admin_media_delete_confirm", {
+        key: mediaItem.key
+      })
     )
   ) {
     return;
@@ -956,19 +904,24 @@ async function deleteAdminMedia(mediaItem) {
     if (!response.ok) {
       const attachedCount = data.attachedPosts?.length || 0;
       const fallback = attachedCount
-        ? `Image is still attached to ${attachedCount} post${attachedCount === 1 ? "" : "s"}.`
-        : "Could not delete image";
+        ? translate(
+          attachedCount === 1
+            ? "admin_media_delete_attached_count_singular"
+            : "admin_media_delete_attached_count_plural",
+          { count: attachedCount }
+        )
+        : translate("admin_media_delete_error");
 
       throw new Error(data.error || fallback);
     }
 
     setAdminWorkZoneState({
       media: adminWorkZoneState.media.filter(item => item.key !== mediaItem.key),
-      message: data.message || "Image deleted."
+      message: data.message || translate("admin_media_delete_success")
     });
   } catch (error) {
     setAdminWorkZoneState({
-      message: error.message || "Could not delete image"
+      message: error.message || translate("admin_media_delete_error")
     });
   }
 }
@@ -988,7 +941,7 @@ async function loadCurrentAdmin() {
   }
 
   if (!response.ok) {
-    throw new Error("Could not verify administrator account");
+    throw new Error(translate("admin_verify_error"));
   }
 
   const user = await response.json();
@@ -1002,6 +955,8 @@ async function loadCurrentAdmin() {
     currentUserId: user._id || user.id || "",
     currentUserRole: user.role || ""
   });
+
+  window.updateAdminWorkZoneTabsForUser(user);
 
   return user;
 }
@@ -1030,7 +985,7 @@ async function loadAdminUserDetail(userId, {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not load user details");
+      throw new Error(data.error || translate("admin_users_detail_load_error"));
     }
 
     if (restoreSearchFocus) {
@@ -1049,7 +1004,7 @@ async function loadAdminUserDetail(userId, {
     }
 
     setAdminWorkZoneState({
-      message: error.message || "Could not load user details"
+      message: error.message || translate("admin_users_detail_load_error")
     });
   }
 }
@@ -1072,7 +1027,7 @@ async function saveAdminUser(userId, payload) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not save user");
+      throw new Error(data.error || translate("admin_users_save_error"));
     }
 
     setAdminWorkZoneState({
@@ -1082,11 +1037,11 @@ async function saveAdminUser(userId, payload) {
           ? data.user
           : user
       ),
-      message: "User updated."
+      message: translate("admin_users_save_success")
     });
   } catch (error) {
     setAdminWorkZoneState({
-      message: error.message || "Could not save user"
+      message: error.message || translate("admin_users_save_error")
     });
   }
 }
@@ -1096,7 +1051,9 @@ async function promoteAdminUserToDeveloper(user) {
 
   if (
     !window.confirm(
-      `Promote ${displayName} to DEVELOPER? This grants global superadmin access.`
+      translate("admin_users_promote_confirm", {
+        name: displayName
+      })
     )
   ) {
     return;
@@ -1104,19 +1061,19 @@ async function promoteAdminUserToDeveloper(user) {
 
   if (
     !window.confirm(
-      "Developer access can manage all users and administrative areas. Continue?"
+      translate("admin_users_promote_access_confirm")
     )
   ) {
     return;
   }
 
   const confirmation = window.prompt(
-    'Type "DEVELOPER" to confirm this promotion.'
+    translate("admin_users_promote_prompt")
   );
 
   if (confirmation !== "DEVELOPER") {
     setAdminWorkZoneState({
-      message: "Developer promotion cancelled."
+      message: translate("admin_users_promote_cancelled")
     });
     return;
   }
@@ -1144,7 +1101,7 @@ async function promoteAdminUserToDeveloper(user) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not promote user to developer");
+      throw new Error(data.error || translate("admin_users_promote_error"));
     }
 
     setAdminWorkZoneState({
@@ -1154,11 +1111,11 @@ async function promoteAdminUserToDeveloper(user) {
           ? data.user
           : existingUser
       ),
-      message: "User promoted to developer."
+      message: translate("admin_users_promote_success")
     });
   } catch (error) {
     setAdminWorkZoneState({
-      message: error.message || "Could not promote user to developer"
+      message: error.message || translate("admin_users_promote_error")
     });
   }
 }
@@ -1186,14 +1143,16 @@ async function deleteAdminPost(post) {
 
   if (!endpoint) {
     setAdminWorkZoneState({
-      message: "This content type cannot be deleted here."
+      message: translate("admin_content_delete_type_error")
     });
     return;
   }
 
   if (
     !window.confirm(
-      `Delete "${post.title || "this item"}"? This will be recorded in the audit log.`
+      translate("admin_content_delete_confirm", {
+        title: post.title || translate("admin_content_this_item")
+      })
     )
   ) {
     return;
@@ -1214,14 +1173,14 @@ async function deleteAdminPost(post) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not delete content");
+      throw new Error(data.error || translate("admin_content_delete_error"));
     }
 
     setAdminWorkZoneState({
       posts: adminWorkZoneState.posts.filter(
         item => String(item._id) !== String(post._id)
       ),
-      message: data.message || "Content deleted."
+      message: data.message || translate("admin_content_delete_success")
     });
 
     await loadAdminUsers({
@@ -1229,7 +1188,7 @@ async function deleteAdminPost(post) {
     });
   } catch (error) {
     setAdminWorkZoneState({
-      message: error.message || "Could not delete content"
+      message: error.message || translate("admin_content_delete_error")
     });
   }
 }
@@ -1258,12 +1217,12 @@ async function initializeAdminUsersPage() {
       await loadAdminMedia();
     }
   } catch (error) {
-    setAdminStatus(error.message || "Could not load admin work zone.", "error");
+    setAdminStatus(error.message || translate("admin_work_zone_load_error"), "error");
   }
 }
 
 if (adminToken) {
   initializeAdminUsersPage();
 } else {
-  setAdminStatus("Sign in to continue.");
+  setAdminStatus(translate("sign_in_to_continue"));
 }

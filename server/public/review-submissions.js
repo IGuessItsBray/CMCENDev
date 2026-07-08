@@ -1594,109 +1594,135 @@ function renderCommentReviewQueue() {
   });
 }
 
-async function submitReview(eventId, action, card) {
-  const reasonInput = card.querySelector(".review-rejection-reason");
-  const messageElement = card.querySelector(".review-action-message");
-  const buttons = card.querySelectorAll("button");
-  const rejectionReason = reasonInput.value.trim();
+function createReviewActionContext(card) {
+  const context = {
+    card,
+    messageElement: card.querySelector(".review-action-message"),
+    buttons: card.querySelectorAll("button"),
+    publishButton: card.querySelector(".review-publish-button"),
+    rejectButton: card.querySelector(".review-reject-button"),
+    reasonInput: card.querySelector(".review-rejection-reason")
+  };
 
-  messageElement.textContent = "";
-  messageElement.hidden = true;
+  context.messageElement.textContent = "";
+  context.messageElement.hidden = true;
 
-  if (action === "reject" && !rejectionReason) {
-    messageElement.textContent = translate("rejection_reason_required");
-    messageElement.hidden = false;
+  return context;
+}
 
-    reasonInput.focus();
+function showReviewValidationError(context, message, input) {
+  context.messageElement.textContent = message;
+  context.messageElement.hidden = false;
+  input.focus();
+}
 
-    return;
-  }
-
-  buttons.forEach(button => {
+async function performReviewAction({
+  action,
+  context,
+  path,
+  body,
+  errorMessage,
+  successMessageKey,
+  publishLabelKey,
+  rejectLabelKey,
+  onSuccess,
+  renderQueue
+}) {
+  context.buttons.forEach(button => {
     button.disabled = true;
   });
 
-  const activeButton = action === "publish" ?
-    card.querySelector(".review-publish-button")
-    : card.querySelector(".review-reject-button");
-
-  activeButton.textContent = translate(action === "publish" ? "review_publishing" : "review_rejecting");
+  const activeButton = action === "publish"
+    ? context.publishButton
+    : context.rejectButton;
+  activeButton.textContent = translate(
+    action === "publish"
+      ? "review_publishing"
+      : "review_rejecting"
+  );
 
   try {
-    await reviewApiJson(`/api/events/${eventId}/review`, {
+    await reviewApiJson(path, {
       method: "PATCH",
-      body: {
-        action,
-        rejectionReason:
-          action === "reject"
-            ? rejectionReason
-            : undefined
-      },
-      errorMessage: translate("review_failed")
+      body,
+      errorMessage
     });
 
-    pendingEvents =
-      pendingEvents.filter(
-        event => event._id !== eventId
-      );
-
-    card.classList.add("is-resolved");
+    onSuccess();
+    context.card.classList.add("is-resolved");
 
     window.setTimeout(() => {
-      card.remove();
-      renderReviewQueue();
+      context.card.remove();
+      renderQueue();
     }, 160);
 
-    showNotice(
-      translate(
-        action === "publish"
-          ? "review_publish_success"
-          : "review_reject_success"
-      )
-    );
+    showNotice(translate(successMessageKey));
   } catch (error) {
-    messageElement.textContent =
-      error.message;
+    context.messageElement.textContent = error.message;
+    context.messageElement.hidden = false;
 
-    messageElement.hidden = false;
-
-    buttons.forEach(button => {
+    context.buttons.forEach(button => {
       button.disabled = false;
     });
 
-    card.querySelector(
-      ".review-publish-button"
-    ).textContent =
-      translate("publish_event");
-
-    card.querySelector(
-      ".review-reject-button"
-    ).textContent =
-      translate("reject_event");
+    context.publishButton.textContent = translate(publishLabelKey);
+    context.rejectButton.textContent = translate(rejectLabelKey);
   }
 }
 
+async function submitReview(eventId, action, card) {
+  const context = createReviewActionContext(card);
+  const rejectionReason = context.reasonInput.value.trim();
+
+  if (action === "reject" && !rejectionReason) {
+    showReviewValidationError(
+      context,
+      translate("rejection_reason_required"),
+      context.reasonInput
+    );
+    return;
+  }
+
+  await performReviewAction({
+    action,
+    context,
+    path: `/api/events/${eventId}/review`,
+    body: {
+      action,
+      rejectionReason:
+        action === "reject"
+          ? rejectionReason
+          : undefined
+    },
+    errorMessage: translate("review_failed"),
+    successMessageKey:
+      action === "publish"
+        ? "review_publish_success"
+        : "review_reject_success",
+    publishLabelKey: "publish_event",
+    rejectLabelKey: "reject_event",
+    onSuccess() {
+      pendingEvents = pendingEvents.filter(event => event._id !== eventId);
+    },
+    renderQueue: renderReviewQueue
+  });
+}
+
 async function submitRetirementReview(messageId, action, card) {
-  const reasonInput = card.querySelector(".review-rejection-reason");
-  const messageElement = card.querySelector(".review-action-message");
-  const buttons = card.querySelectorAll("button");
-  const rejectionReason = reasonInput.value.trim();
+  const context = createReviewActionContext(card);
+  const rejectionReason = context.reasonInput.value.trim();
   const messageInputs =
     card.querySelectorAll(
       ".retirement-review-message-input"
     );
   const messages = {};
 
-  messageElement.textContent = "";
-  messageElement.hidden = true;
-
   if (action === "reject" && !rejectionReason) {
-    messageElement.textContent =
-      translate("retirement_rejection_reason_required");
-    messageElement.hidden = false;
-
-    reasonInput.focus();
-
+    showReviewValidationError(
+      context,
+      translate("retirement_rejection_reason_required"),
+      context.reasonInput
+    );
     return;
   }
 
@@ -1708,176 +1734,85 @@ async function submitRetirementReview(messageId, action, card) {
       messages[language] = input.value.trim();
 
       if (messages[language].length < 100) {
-        messageElement.textContent =
-          translate("retirement_review_translation_required");
-        messageElement.hidden = false;
-        input.focus();
-
+        showReviewValidationError(
+          context,
+          translate("retirement_review_translation_required"),
+          input
+        );
         return;
       }
     }
   }
 
-  buttons.forEach(button => {
-    button.disabled = true;
-  });
-
-  const activeButton = action === "publish" ?
-    card.querySelector(".review-publish-button")
-    : card.querySelector(".review-reject-button");
-
-  activeButton.textContent =
-    translate(
-      action === "publish"
-        ? "review_publishing"
-        : "review_rejecting"
-    );
-
-  try {
-    await reviewApiJson(`/api/retirement-messages/${messageId}/review`, {
-      method: "PATCH",
-      body: {
-        action,
-        rejectionReason:
-          action === "reject"
-            ? rejectionReason
-            : undefined,
-        messages:
-          action === "publish"
-            ? messages
-            : undefined
-      },
-      errorMessage: translate("retirement_review_failed")
-    });
-
-    pendingRetirementMessages =
-      pendingRetirementMessages.filter(
-        retirementMessage =>
-          retirementMessage._id !== messageId
-      );
-
-    card.classList.add("is-resolved");
-
-    window.setTimeout(() => {
-      card.remove();
-      renderRetirementReviewQueue();
-    }, 160);
-
-    showNotice(
-      translate(
+  await performReviewAction({
+    action,
+    context,
+    path: `/api/retirement-messages/${messageId}/review`,
+    body: {
+      action,
+      rejectionReason:
+        action === "reject"
+          ? rejectionReason
+          : undefined,
+      messages:
         action === "publish"
-          ? "retirement_review_publish_success"
-          : "retirement_review_reject_success"
-      )
-    );
-  } catch (error) {
-    messageElement.textContent =
-      error.message;
-
-    messageElement.hidden = false;
-
-    buttons.forEach(button => {
-      button.disabled = false;
-    });
-
-    card.querySelector(
-      ".review-publish-button"
-    ).textContent =
-      translate("publish_retirement_message");
-
-    card.querySelector(
-      ".review-reject-button"
-    ).textContent =
-      translate("reject_retirement_message");
-  }
+          ? messages
+          : undefined
+    },
+    errorMessage: translate("retirement_review_failed"),
+    successMessageKey:
+      action === "publish"
+        ? "retirement_review_publish_success"
+        : "retirement_review_reject_success",
+    publishLabelKey: "publish_retirement_message",
+    rejectLabelKey: "reject_retirement_message",
+    onSuccess() {
+      pendingRetirementMessages = pendingRetirementMessages.filter(
+        retirementMessage => retirementMessage._id !== messageId
+      );
+    },
+    renderQueue: renderRetirementReviewQueue
+  });
 }
 
 async function submitCommentReview(commentId, action, card) {
-  const reasonInput = card.querySelector(".review-rejection-reason");
-  const messageElement = card.querySelector(".review-action-message");
-  const buttons = card.querySelectorAll("button");
-  const rejectionReason = reasonInput.value.trim();
-
-  messageElement.textContent = "";
-  messageElement.hidden = true;
+  const context = createReviewActionContext(card);
+  const rejectionReason = context.reasonInput.value.trim();
 
   if (action === "reject" && !rejectionReason) {
-    messageElement.textContent =
-      translate("comment_rejection_reason_required");
-    messageElement.hidden = false;
-
-    reasonInput.focus();
-
+    showReviewValidationError(
+      context,
+      translate("comment_rejection_reason_required"),
+      context.reasonInput
+    );
     return;
   }
 
-  buttons.forEach(button => {
-    button.disabled = true;
-  });
-
-  const activeButton = action === "publish" ?
-    card.querySelector(".review-publish-button")
-    : card.querySelector(".review-reject-button");
-
-  activeButton.textContent =
-    translate(
+  await performReviewAction({
+    action,
+    context,
+    path: `/api/retirement-messages/comments/${commentId}/review`,
+    body: {
+      action,
+      rejectionReason:
+        action === "reject"
+          ? rejectionReason
+          : undefined
+    },
+    errorMessage: translate("comment_review_failed"),
+    successMessageKey:
       action === "publish"
-        ? "review_publishing"
-        : "review_rejecting"
-    );
-
-  try {
-    await reviewApiJson(`/api/retirement-messages/comments/${commentId}/review`, {
-      method: "PATCH",
-      body: {
-        action,
-        rejectionReason:
-          action === "reject"
-            ? rejectionReason
-            : undefined
-      },
-      errorMessage: translate("comment_review_failed")
-    });
-
-    pendingComments =
-      pendingComments.filter(
+        ? "comment_review_publish_success"
+        : "comment_review_reject_success",
+    publishLabelKey: "publish_comment",
+    rejectLabelKey: "reject_comment",
+    onSuccess() {
+      pendingComments = pendingComments.filter(
         comment => comment._id !== commentId
       );
-
-    card.classList.add("is-resolved");
-
-    window.setTimeout(() => {
-      card.remove();
-      renderCommentReviewQueue();
-    }, 160);
-
-    showNotice(
-      translate(
-        action === "publish"
-          ? "comment_review_publish_success"
-          : "comment_review_reject_success"
-      )
-    );
-  } catch (error) {
-    messageElement.textContent =
-      error.message;
-
-    messageElement.hidden = false;
-
-    buttons.forEach(button => {
-      button.disabled = false;
-    });
-
-    card.querySelector(
-      ".review-publish-button"
-    ).textContent =
-      translate("publish_comment");
-
-    card.querySelector(
-      ".review-reject-button"
-    ).textContent =
-      translate("reject_comment");
-  }
+    },
+    renderQueue: renderCommentReviewQueue
+  });
 }
 
 async function loadReviewQueue() {

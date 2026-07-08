@@ -4,6 +4,8 @@ const retirementsGrid =
 const retirementsMessage =
     document.getElementById("retirementsMessage");
 
+const RETIREMENT_PLACEHOLDER_PHOTO_URL = "/images/logo.png";
+
 let loadedRetirementMessages = [];
 
 function createRetirementLoadingContent(message) {
@@ -80,33 +82,79 @@ function formatCommentCount(count) {
     );
 }
 
+function isRetirementPlaceholderPhoto(photoUrl) {
+    if (!photoUrl) {
+        return false;
+    }
+
+    try {
+        const url =
+            new URL(photoUrl, window.location.origin);
+        const pathname =
+            url.pathname.toLowerCase();
+        const fileName =
+            pathname.split("/").pop();
+
+        return fileName === "logo.png" ||
+            fileName.includes("cmcen-crest") ||
+            pathname.includes("/legacy/wordpress/348036/");
+    } catch (error) {
+        const pathname =
+            String(photoUrl)
+                .toLowerCase()
+                .split(/[?#]/)[0];
+        const fileName =
+            pathname.split("/").pop();
+
+        return fileName === "logo.png" ||
+            fileName.includes("cmcen-crest") ||
+            pathname.includes("/legacy/wordpress/348036/");
+    }
+}
+
+function createRetirementPlaceholderImage(className) {
+    const image = document.createElement("img");
+
+    image.className = className;
+    image.src = RETIREMENT_PLACEHOLDER_PHOTO_URL;
+    image.alt = "";
+    image.loading = "lazy";
+    image.setAttribute("aria-hidden", "true");
+
+    return image;
+}
+
 function createPhotoElement(retirementMessage, name) {
     if (retirementMessage.photoUrl) {
         const image = document.createElement("img");
+        const isPlaceholderPhoto =
+            isRetirementPlaceholderPhoto(
+                retirementMessage.photoUrl
+            );
 
-        image.src = retirementMessage.photoUrl;
-        image.alt = translate(
-            "retirement_photo_alt",
-            { name }
-        );
+        image.src = isPlaceholderPhoto
+            ? RETIREMENT_PLACEHOLDER_PHOTO_URL
+            : retirementMessage.photoUrl;
+        image.alt = isPlaceholderPhoto
+            ? ""
+            : translate(
+                "retirement_photo_alt",
+                { name }
+            );
         image.loading = "lazy";
+
+        if (isPlaceholderPhoto) {
+            image.className =
+                "retirement-card-photo-placeholder retirement-card-photo-logo";
+            image.setAttribute("aria-hidden", "true");
+        }
 
         return image;
     }
 
-    const placeholder = document.createElement("div");
-
-    placeholder.className = "retirement-card-photo-placeholder";
-    placeholder.setAttribute("aria-hidden", "true");
-    placeholder.textContent = name
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(-2)
-        .map(part => part[0])
-        .join("")
-        .toUpperCase() || "CE";
-
-    return placeholder;
+    return createRetirementPlaceholderImage(
+        "retirement-card-photo-placeholder retirement-card-photo-logo"
+    );
 }
 
 function createRetirementCard(retirementMessage) {

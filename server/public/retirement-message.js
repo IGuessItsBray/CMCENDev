@@ -40,6 +40,8 @@ const retirementCommentSubmit =
 const retirementCommentLogin =
     document.getElementById("retirementCommentLogin");
 
+const RETIREMENT_PLACEHOLDER_PHOTO_URL = "/images/logo.png";
+
 let currentRetirementMessageId = "";
 let currentRetirementMessage = null;
 let loadedComments = [];
@@ -122,13 +124,59 @@ function getRetirementMessageText(retirementMessage) {
     );
 }
 
+function isRetirementPlaceholderPhoto(photoUrl) {
+    if (!photoUrl) {
+        return false;
+    }
+
+    try {
+        const url =
+            new URL(photoUrl, window.location.origin);
+        const pathname =
+            url.pathname.toLowerCase();
+        const fileName =
+            pathname.split("/").pop();
+
+        return fileName === "logo.png" ||
+            fileName.includes("cmcen-crest") ||
+            pathname.includes("/legacy/wordpress/348036/");
+    } catch (error) {
+        const pathname =
+            String(photoUrl)
+                .toLowerCase()
+                .split(/[?#]/)[0];
+        const fileName =
+            pathname.split("/").pop();
+
+        return fileName === "logo.png" ||
+            fileName.includes("cmcen-crest") ||
+            pathname.includes("/legacy/wordpress/348036/");
+    }
+}
+
+function formatRetirementMessageText(text) {
+    return text
+        .replace(/\r\n?/g, "\n")
+        .replace(
+            /[ \t]+([1-9]\d?\.\s+)/g,
+            (match, marker, offset) =>
+                offset === 0 ? marker : `\n\n${marker}`
+        );
+}
+
+function setRetirementMessageText(retirementMessage) {
+    retirementDetailText.textContent =
+        formatRetirementMessageText(
+            getRetirementMessageText(retirementMessage)
+        );
+}
+
 function updateRetirementMessageLanguage() {
     if (!currentRetirementMessage) {
         return;
     }
 
-    retirementDetailText.textContent =
-        getRetirementMessageText(currentRetirementMessage);
+    setRetirementMessageText(currentRetirementMessage);
     retirementDetailDate.textContent =
         formatRetirementDate(
             currentRetirementMessage.retiree?.retirementDate
@@ -187,40 +235,45 @@ function formatRetirementDate(value) {
     );
 }
 
-function getInitials(name) {
-    return name
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(-2)
-        .map(part => part[0])
-        .join("")
-        .toUpperCase() || "CE";
-}
-
 function renderPhoto(retirementMessage, name) {
     retirementDetailPhoto.replaceChildren();
 
     if (retirementMessage.photoUrl) {
         const image = document.createElement("img");
+        const isPlaceholderPhoto =
+            isRetirementPlaceholderPhoto(
+                retirementMessage.photoUrl
+            );
 
-        image.src = retirementMessage.photoUrl;
-        image.alt = translate(
-            "retirement_photo_alt",
-            { name }
-        );
+        image.src = isPlaceholderPhoto
+            ? RETIREMENT_PLACEHOLDER_PHOTO_URL
+            : retirementMessage.photoUrl;
+        image.alt = isPlaceholderPhoto
+            ? ""
+            : translate(
+                "retirement_photo_alt",
+                { name }
+            );
+
+        if (isPlaceholderPhoto) {
+            image.className =
+                "retirement-detail-photo-placeholder retirement-detail-photo-logo";
+            image.setAttribute("aria-hidden", "true");
+        }
 
         retirementDetailPhoto.appendChild(image);
         return;
     }
 
-    const placeholder = document.createElement("div");
+    const logo = document.createElement("img");
 
-    placeholder.className =
-        "retirement-detail-photo-placeholder";
-    placeholder.setAttribute("aria-hidden", "true");
-    placeholder.textContent = getInitials(name);
+    logo.className =
+        "retirement-detail-photo-placeholder retirement-detail-photo-logo";
+    logo.src = RETIREMENT_PLACEHOLDER_PHOTO_URL;
+    logo.alt = "";
+    logo.setAttribute("aria-hidden", "true");
 
-    retirementDetailPhoto.appendChild(placeholder);
+    retirementDetailPhoto.appendChild(logo);
 }
 
 function renderRetirementMessage(retirementMessage) {
@@ -242,8 +295,7 @@ function renderRetirementMessage(retirementMessage) {
         formatRetirementDate(
             retirementMessage.retiree?.retirementDate
         );
-    retirementDetailText.textContent =
-        getRetirementMessageText(retirementMessage);
+    setRetirementMessageText(retirementMessage);
 
     renderPhoto(retirementMessage, name);
 
@@ -328,7 +380,7 @@ async function deleteRetirementMessage() {
         if (!response.ok) {
             throw new Error(
                 data.error ||
-                    "Could not delete retirement message"
+                "Could not delete retirement message"
             );
         }
 
@@ -343,7 +395,7 @@ async function deleteRetirementMessage() {
     } catch (error) {
         showRetirementCommentMessage(
             error.message ||
-                "Could not delete retirement message",
+            "Could not delete retirement message",
             "error"
         );
 
@@ -420,7 +472,7 @@ async function deleteRetirementComment(comment) {
         if (!response.ok) {
             throw new Error(
                 data.error ||
-                    "Could not delete comment"
+                "Could not delete comment"
             );
         }
 
@@ -437,7 +489,7 @@ async function deleteRetirementComment(comment) {
     } catch (error) {
         showRetirementCommentMessage(
             error.message ||
-                "Could not delete comment",
+            "Could not delete comment",
             "error"
         );
     }
@@ -522,7 +574,7 @@ async function loadComments(messageId) {
         if (!response.ok) {
             throw new Error(
                 data.error ||
-                    translate("retirement_comments_load_error")
+                translate("retirement_comments_load_error")
             );
         }
 
@@ -535,7 +587,7 @@ async function loadComments(messageId) {
     } catch (error) {
         showRetirementCommentMessage(
             error.message ||
-                translate("retirement_comments_load_error"),
+            translate("retirement_comments_load_error"),
             "error"
         );
     }
@@ -623,7 +675,7 @@ async function loadRetirementMessage() {
         if (!response.ok) {
             throw new Error(
                 data.error ||
-                    translate("retirement_detail_load_error")
+                translate("retirement_detail_load_error")
             );
         }
 
@@ -633,7 +685,7 @@ async function loadRetirementMessage() {
     } catch (error) {
         showRetirementDetailMessage(
             error.message ||
-                translate("retirement_detail_load_error"),
+            translate("retirement_detail_load_error"),
             "error"
         );
     }
@@ -699,7 +751,7 @@ retirementCommentForm.addEventListener(
             if (!response.ok) {
                 throw new Error(
                     data.error ||
-                        translate("retirement_comment_submit_error")
+                    translate("retirement_comment_submit_error")
                 );
             }
 
@@ -731,7 +783,7 @@ retirementCommentForm.addEventListener(
         } catch (error) {
             showRetirementCommentMessage(
                 error.message ||
-                    translate("retirement_comment_submit_error"),
+                translate("retirement_comment_submit_error"),
                 "error"
             );
         } finally {

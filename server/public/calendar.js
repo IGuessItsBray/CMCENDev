@@ -321,6 +321,8 @@ function renderEvents() {
 
     if (!publicEvents.length) {
         calendarMessageElement.hidden = false;
+        calendarMessageElement.className =
+            "app-status is-empty calendar-message";
         calendarMessageElement.textContent = getCalendarTranslation("no_upcoming_events");
 
         return;
@@ -354,6 +356,8 @@ function renderEvents() {
 
 async function loadEvents() {
     calendarMessageElement.hidden = false;
+    calendarMessageElement.className =
+        "app-status is-loading calendar-message";
     calendarMessageElement.textContent = getCalendarTranslation("loading_events");
 
     try {
@@ -375,6 +379,8 @@ async function loadEvents() {
         console.error(error);
 
         calendarMessageElement.hidden = false;
+        calendarMessageElement.className =
+            "app-status is-error calendar-message";
         calendarMessageElement.textContent = getCalendarTranslation("events_load_error");
     }
 }

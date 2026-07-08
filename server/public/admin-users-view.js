@@ -63,7 +63,7 @@
     function createMessage() {
       const message = document.createElement("p");
       const state = getState();
-      message.className = "admin-work-zone-message";
+      message.className = "app-status admin-work-zone-message";
       message.setAttribute("role", "status");
       message.setAttribute("aria-live", "polite");
       message.hidden = !state.message;

@@ -35,7 +35,8 @@ async function syncDeveloperSiteConfigTab(token) {
 function setTranslationsMessage(message, state = "", messageKey = "") {
   activeTranslationsMessageKey = messageKey;
   translationsMessage.textContent = message;
-  translationsMessage.className = "review-page-message";
+  translationsMessage.className =
+    "app-status review-page-message";
 
   if (state) {
     translationsMessage.classList.add(`is-${state}`);

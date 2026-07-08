@@ -713,7 +713,7 @@ function createReviewCard(event) {
     document.createElement("p");
 
   actionMessage.className =
-    "review-action-message";
+    "app-status is-error review-action-message";
 
   actionMessage.setAttribute(
     "role",
@@ -1182,7 +1182,7 @@ function createRetirementReviewCard(retirementMessage) {
     document.createElement("p");
 
   actionMessage.className =
-    "review-action-message";
+    "app-status is-error review-action-message";
 
   actionMessage.setAttribute(
     "role",
@@ -1419,7 +1419,8 @@ function createCommentReviewCard(comment) {
   );
 
   const actionMessage = document.createElement("p");
-  actionMessage.className = "review-action-message";
+  actionMessage.className =
+    "app-status is-error review-action-message";
   actionMessage.setAttribute("role", "alert");
   actionMessage.hidden = true;
 
@@ -1492,7 +1493,7 @@ function showPageMessage(
     message;
 
   messageElement.className =
-    `review-page-message is-${type}`;
+    `app-status review-page-message is-${type}`;
   messageElement.removeAttribute("aria-label");
 
   messageElement.hidden = false;
@@ -1508,7 +1509,7 @@ function showQueueLoading(
 
   messageElement.replaceChildren(...Array.from(loading.childNodes));
   messageElement.className =
-    "review-page-message is-loading";
+    "app-status is-loading is-large review-page-message";
   messageElement.setAttribute("aria-label", message);
   messageElement.hidden = false;
   queueElement.hidden = true;
@@ -1518,7 +1519,8 @@ function showNotice(message, type = "success") {
   clearTimeout(noticeTimer);
 
   reviewNotice.textContent = message;
-  reviewNotice.className = `review-notice is-${type}`;
+  reviewNotice.className =
+    `app-status review-notice is-${type}`;
   reviewNotice.hidden = false;
 
   noticeTimer = window.setTimeout(() => {

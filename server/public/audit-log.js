@@ -423,7 +423,7 @@ function renderAuditLog() {
 
   if (auditState.message) {
     const message = document.createElement("p");
-    message.className = "admin-work-zone-message";
+    message.className = "app-status admin-work-zone-message";
     message.textContent = auditState.message;
     panel.append(message);
   }

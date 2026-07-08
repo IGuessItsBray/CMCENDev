@@ -61,7 +61,7 @@ function createRetirementLoadingContent(message) {
 function showRetirementDetailMessage(message, type = "neutral") {
     retirementDetailMessage.textContent = message;
     retirementDetailMessage.className =
-        `retirements-message is-${type}`;
+        `app-status retirements-message is-${type}`;
     retirementDetailMessage.removeAttribute("aria-label");
     retirementDetailMessage.hidden = false;
     retirementDetailContent.hidden = true;
@@ -78,7 +78,7 @@ function showRetirementDetailMessageKey(key, type = "neutral") {
             ...createRetirementLoadingContent(message)
         );
         retirementDetailMessage.className =
-            "retirements-message is-loading";
+            "app-status is-loading is-large retirements-message";
         retirementDetailMessage.setAttribute("aria-label", message);
         retirementDetailMessage.hidden = false;
         retirementDetailContent.hidden = true;
@@ -307,7 +307,7 @@ function renderRetirementMessage(retirementMessage) {
 function showRetirementCommentMessage(message, type = "neutral") {
     retirementCommentMessage.textContent = message;
     retirementCommentMessage.className =
-        `retirement-comment-message is-${type}`;
+        `app-status retirement-comment-message is-${type}`;
     retirementCommentMessage.hidden = false;
 }
 

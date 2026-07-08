@@ -93,7 +93,7 @@ function createDetailRow(labelKey, value) {
 
 function createProfileMessage() {
   const message = document.createElement("p");
-  message.className = "dashboard-profile-message";
+  message.className = "app-status dashboard-profile-message";
   message.setAttribute("role", "status");
   message.setAttribute("aria-live", "polite");
   message.hidden = true;
@@ -103,7 +103,7 @@ function createProfileMessage() {
 
 function setProfileMessage(messageElement, text, state = "") {
   messageElement.textContent = text;
-  messageElement.className = "dashboard-profile-message";
+  messageElement.className = "app-status dashboard-profile-message";
 
   if (state) {
     messageElement.classList.add(`is-${state}`);
@@ -694,15 +694,12 @@ function renderDashboard(user) {
 
 function showDashboardError(message) {
   dashboardStatus.replaceChildren();
-  dashboardStatus.className = "dashboard-status";
+  dashboardStatus.className =
+    "app-status is-error dashboard-status";
   dashboardStatus.removeAttribute("aria-label");
   dashboardStatus.hidden = false;
 
-  const error = document.createElement("p");
-  error.className = "dashboard-error";
-  error.textContent = message;
-
-  dashboardStatus.appendChild(error);
+  dashboardStatus.textContent = message;
 }
 
 async function loadDashboard() {
@@ -751,10 +748,8 @@ document.addEventListener(
       return;
     }
 
-    const error = dashboardStatus.querySelector(".dashboard-error");
-
-    if (error) {
-      error.textContent = translate("dashboard_load_error");
+    if (dashboardStatus.classList.contains("is-error")) {
+      dashboardStatus.textContent = translate("dashboard_load_error");
     }
   }
 );

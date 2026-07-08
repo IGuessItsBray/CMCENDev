@@ -33,7 +33,7 @@ function setHomeMessage(element, message, type = "neutral") {
   if (!element) return;
 
   element.textContent = message;
-  element.className = `home-feed-message is-${type}`;
+  element.className = `app-status home-feed-message is-${type}`;
   element.hidden = false;
 }
 

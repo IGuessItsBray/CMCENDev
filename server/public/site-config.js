@@ -94,7 +94,7 @@ async function logSiteConfigAccessRequest() {
 
 function createSiteConfigMessage() {
   const message = document.createElement("p");
-  message.className = "admin-work-zone-message";
+  message.className = "app-status admin-work-zone-message";
   message.setAttribute("role", "status");
   message.setAttribute("aria-live", "polite");
   message.hidden = !siteConfigState.message;

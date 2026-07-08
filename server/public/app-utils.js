@@ -411,7 +411,7 @@
 
   function setStatusMessage(element, message, state = "") {
     element.replaceChildren();
-    element.className = "dashboard-status";
+    element.className = "app-status dashboard-status";
     element.hidden = false;
     element.removeAttribute("aria-label");
 
@@ -435,7 +435,8 @@
     label.textContent = message;
 
     element.replaceChildren(spinner, label);
-    element.className = "dashboard-status is-loading";
+    element.className =
+      "app-status is-loading is-large dashboard-status";
     element.setAttribute("aria-label", message);
     element.hidden = false;
   }

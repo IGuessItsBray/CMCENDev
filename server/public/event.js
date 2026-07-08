@@ -216,7 +216,7 @@ function createEventLoadingContent(message) {
 function showEventDetailMessage(message, type = "neutral") {
     eventDetailMessage.textContent = message;
     eventDetailMessage.className =
-        `calendar-message is-${type}`;
+        `app-status calendar-message is-${type}`;
     eventDetailMessage.removeAttribute("aria-label");
     eventDetailMessage.hidden = false;
     eventDetailContent.hidden = true;
@@ -233,7 +233,7 @@ function showEventDetailMessageKey(key, type = "neutral") {
             ...createEventLoadingContent(message)
         );
         eventDetailMessage.className =
-            "calendar-message is-loading";
+            "app-status is-loading calendar-message";
         eventDetailMessage.setAttribute("aria-label", message);
         eventDetailMessage.hidden = false;
         eventDetailContent.hidden = true;

@@ -17,7 +17,7 @@ function createRetirementLoadingContent(message) {
 function showRetirementsMessage(message, type = "neutral") {
     retirementsMessage.textContent = message;
     retirementsMessage.className =
-        `retirements-message is-${type}`;
+        `app-status retirements-message is-${type}`;
     retirementsMessage.removeAttribute("aria-label");
     retirementsMessage.hidden = false;
     retirementsGrid.hidden = true;
@@ -30,7 +30,7 @@ function showRetirementsLoading() {
         ...createRetirementLoadingContent(message)
     );
     retirementsMessage.className =
-        "retirements-message is-loading";
+        "app-status is-loading is-large retirements-message";
     retirementsMessage.setAttribute("aria-label", message);
     retirementsMessage.hidden = false;
     retirementsGrid.hidden = true;

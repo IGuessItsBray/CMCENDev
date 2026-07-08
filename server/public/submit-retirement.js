@@ -34,7 +34,8 @@ function retirementApiFetch(path, options = {}) {
 
 function showRetirementFormMessage(message, type = "error") {
     retirementFormMessage.textContent = message;
-    retirementFormMessage.className = `event-page-message is-${type}`;
+    retirementFormMessage.className =
+        `app-status event-page-message is-${type}`;
     retirementFormMessage.hidden = false;
     retirementFormMessage.scrollIntoView({
         behavior: "smooth",
@@ -44,7 +45,8 @@ function showRetirementFormMessage(message, type = "error") {
 
 function clearRetirementFormMessage() {
     retirementFormMessage.textContent = "";
-    retirementFormMessage.className = "event-page-message";
+    retirementFormMessage.className =
+        "app-status event-page-message";
     retirementFormMessage.hidden = true;
 }
 

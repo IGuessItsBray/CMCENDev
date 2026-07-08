@@ -194,7 +194,7 @@ function renderMyEvents() {
   if (!count) {
     const message = document.createElement("p");
 
-    message.className = "my-events-message";
+    message.className = "app-status is-empty my-events-message";
     message.textContent = translate("my_events_empty");
 
     myEventsList.appendChild(message);
@@ -293,20 +293,21 @@ function showPageMessage(
   eventPageMessage.textContent = message;
 
   eventPageMessage.className =
-    `event-page-message is-${type}`;
+    `app-status event-page-message is-${type}`;
 
   eventPageMessage.hidden = false;
 }
 
 function clearFormMessage() {
   eventFormMessage.textContent = "";
-  eventFormMessage.className = "event-form-message";
+  eventFormMessage.className = "app-status event-form-message";
   eventFormMessage.hidden = true;
 }
 
 function showFormMessage(message, type = "error") {
   eventFormMessage.textContent = message;
-  eventFormMessage.className = `event-form-message is-${type}`;
+  eventFormMessage.className =
+    `app-status event-form-message is-${type}`;
   eventFormMessage.hidden = false;
   eventFormMessage.scrollIntoView({
     block: "nearest"

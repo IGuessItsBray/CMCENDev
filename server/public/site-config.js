@@ -34,31 +34,26 @@ function setSiteConfigState(nextState) {
   renderSiteConfig();
 }
 
-async function siteConfigFetch(path, options = {}) {
-  return fetch(path, {
+function siteConfigApiJson(path, options = {}) {
+  return CMCENUtils.apiJson(path, {
     ...options,
-    headers: CMCENUtils.authHeaders(siteConfigAuthToken, {
+    token: siteConfigAuthToken,
+    redirectOnUnauthorized: true,
+    headers: {
       ...(options.headers || {}),
       "X-Config-Token": siteConfigToken
-    })
+    },
+    unauthorizedMessage: translate("site_config_verify_error")
   });
 }
 
 async function verifyDeveloperAccount() {
-  const response = await fetch("/api/me", {
-    headers: CMCENUtils.authHeaders(siteConfigAuthToken)
+  const user = await CMCENUtils.apiJson("/api/me", {
+    token: siteConfigAuthToken,
+    redirectOnUnauthorized: true,
+    unauthorizedMessage: translate("site_config_verify_error"),
+    errorMessage: translate("site_config_verify_error")
   });
-
-  if (response.status === 401) {
-    CMCENUtils.redirectToLogin();
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error(translate("site_config_verify_error"));
-  }
-
-  const user = await response.json();
 
   if (user.role !== "developer") {
     window.location.href = "/dashboard.html";
@@ -77,20 +72,23 @@ async function promptForConfigToken() {
 
   siteConfigToken = token;
 
-  const response = await siteConfigFetch("/api/admin/site-config/verify", {
-    method: "POST"
-  });
-
-  if (!response.ok) {
+  try {
+    await siteConfigApiJson("/api/admin/site-config/verify", {
+      method: "POST",
+      errorMessage: translate("site_config_token_invalid")
+    });
+  } catch (error) {
     siteConfigToken = "";
     throw new Error(translate("site_config_token_invalid"));
   }
 }
 
 async function logSiteConfigAccessRequest() {
-  await fetch("/api/admin/site-config/access", {
+  await CMCENUtils.apiJson("/api/admin/site-config/access", {
     method: "POST",
-    headers: CMCENUtils.authHeaders(siteConfigAuthToken)
+    token: siteConfigAuthToken,
+    redirectOnUnauthorized: true,
+    unauthorizedMessage: translate("site_config_verify_error")
   });
 }
 
@@ -227,12 +225,9 @@ async function loadSiteConfig() {
   });
 
   try {
-    const response = await siteConfigFetch("/api/admin/site-config");
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("site_config_load_error"));
-    }
+    const data = await siteConfigApiJson("/api/admin/site-config", {
+      errorMessage: translate("site_config_load_error")
+    });
 
     setSiteConfigState({
       variables: data.variables || [],
@@ -262,18 +257,11 @@ async function saveSiteConfig(form) {
   });
 
   try {
-    const response = await siteConfigFetch("/api/admin/site-config", {
+    const data = await siteConfigApiJson("/api/admin/site-config", {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ updates })
+      body: { updates },
+      errorMessage: translate("site_config_save_error")
     });
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("site_config_save_error"));
-    }
 
     setSiteConfigState({
       variables: data.variables || [],

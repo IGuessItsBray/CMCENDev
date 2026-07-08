@@ -11,17 +11,20 @@ function getTranslationAdminToken() {
   return CMCENUtils.requireAuthToken();
 }
 
+function translationApiJson(path, token, options = {}) {
+  return CMCENUtils.apiJson(path, {
+    ...options,
+    token,
+    redirectOnUnauthorized: true,
+    unauthorizedMessage: translate("translations_access_denied")
+  });
+}
+
 async function syncDeveloperSiteConfigTab(token) {
   try {
-    const response = await fetch("/api/me", {
-      headers: CMCENUtils.authHeaders(token)
+    const user = await translationApiJson("/api/me", token, {
+      errorMessage: translate("translations_access_denied")
     });
-
-    if (!response.ok) {
-      return;
-    }
-
-    const user = await response.json();
 
     window.updateAdminWorkZoneTabsForUser(user);
   } catch {
@@ -260,31 +263,15 @@ async function saveTranslationRow(article, key) {
   status.textContent = "";
 
   try {
-    const response = await fetch(
+    const data = await translationApiJson(
       `/api/translations/${encodeURIComponent(key)}`,
+      token,
       {
         method: "PATCH",
-        headers: CMCENUtils.authHeaders(token, {
-          "Content-Type": "application/json"
-        }),
-        body: JSON.stringify(values)
+        body: values,
+        errorMessage: translate("translations_save_error")
       }
     );
-
-    const data = await response.json().catch(() => ({}));
-
-    if (response.status === 401) {
-      CMCENUtils.redirectToLogin();
-      return;
-    }
-
-    if (response.status === 403) {
-      throw new Error(translate("translations_access_denied"));
-    }
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("translations_save_error"));
-    }
 
     const row = translationRows.find(item => item.key === key);
 
@@ -307,7 +294,9 @@ async function saveTranslationRow(article, key) {
     console.error("Translation save failed:", error);
     status.classList.add("is-error");
     status.textContent =
-      error.message || translate("translations_save_error");
+      error.status === 403
+        ? translate("translations_access_denied")
+        : error.message || translate("translations_save_error");
   } finally {
     if (!didSave) {
       setTranslationSaveButtonLoading(saveButton, false);
@@ -331,18 +320,14 @@ async function loadTranslationsForEditing() {
   );
 
   try {
-    const response = await fetch("/api/translations", {
-      headers: CMCENUtils.authHeaders(token)
+    const data = await translationApiJson("/api/translations", token, {
+      errorMessage: translate("translations_load_error")
     });
 
-    const data = await response.json().catch(() => ({}));
-
-    if (response.status === 401) {
-      CMCENUtils.redirectToLogin();
-      return;
-    }
-
-    if (response.status === 403) {
+    translationRows = Array.isArray(data.rows) ? data.rows : [];
+    renderTranslationRows();
+  } catch (error) {
+    if (error.status === 403) {
       setTranslationsMessage(
         translate("translations_access_denied"),
         "error",
@@ -351,13 +336,6 @@ async function loadTranslationsForEditing() {
       return;
     }
 
-    if (!response.ok) {
-      throw new Error(data.error || translate("translations_load_error"));
-    }
-
-    translationRows = Array.isArray(data.rows) ? data.rows : [];
-    renderTranslationRows();
-  } catch (error) {
     console.error("Translation load failed:", error);
     setTranslationsMessage(
       error.message || translate("translations_load_error"),

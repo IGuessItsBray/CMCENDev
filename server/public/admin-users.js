@@ -28,6 +28,23 @@ let adminWorkZoneState = {
 let adminSearchTimeout = 0;
 let shouldRestoreAdminSearchFocus = false;
 
+async function adminApiJson(path, options = {}) {
+  try {
+    return await CMCENUtils.apiJson(path, {
+      ...options,
+      token: adminToken,
+      redirectOnUnauthorized: true,
+      unauthorizedMessage: translate("admin_verify_error")
+    });
+  } catch (error) {
+    if (error.status === 403) {
+      window.location.href = "/dashboard.html";
+    }
+
+    throw error;
+  }
+}
+
 function setAdminStatus(message, state = "") {
   CMCENUtils.setStatusMessage(adminWorkZoneStatus, message, state);
 }
@@ -674,25 +691,9 @@ async function loadAdminUsers({
       ? `/api/admin/users?${params}`
       : "/api/admin/users";
 
-    const response = await fetch(requestUrl, {
-      headers: CMCENUtils.authHeaders(adminToken)
+    const data = await adminApiJson(requestUrl, {
+      errorMessage: translate("admin_users_load_error")
     });
-
-    if (response.status === 401) {
-      CMCENUtils.redirectToLogin();
-      return;
-    }
-
-    if (response.status === 403) {
-      window.location.href = "/dashboard.html";
-      return;
-    }
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("admin_users_load_error"));
-    }
 
     const selectedUserId = preserveSelection &&
       data.users?.some(user => String(user._id) === adminWorkZoneState.selectedUserId)
@@ -756,25 +757,9 @@ async function loadAdminMedia({
       params.set("cursor", cursor);
     }
 
-    const response = await fetch(`/api/admin/media?${params}`, {
-      headers: CMCENUtils.authHeaders(adminToken)
+    const data = await adminApiJson(`/api/admin/media?${params}`, {
+      errorMessage: translate("admin_media_load_error")
     });
-
-    if (response.status === 401) {
-      CMCENUtils.redirectToLogin();
-      return;
-    }
-
-    if (response.status === 403) {
-      window.location.href = "/dashboard.html";
-      return;
-    }
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("admin_media_load_error"));
-    }
 
     setAdminWorkZoneState({
       media: append
@@ -816,56 +801,39 @@ async function deleteAdminMedia(mediaItem) {
   });
 
   try {
-    const response = await fetch(
+    const data = await adminApiJson(
       `/api/admin/media/${encodeURIComponent(mediaItem.key)}`,
       {
         method: "DELETE",
-        headers: CMCENUtils.authHeaders(adminToken)
+        errorMessage: translate("admin_media_delete_error")
       }
     );
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      const attachedCount = data.attachedPosts?.length || 0;
-      const fallback = attachedCount
-        ? translate(
-          attachedCount === 1
-            ? "admin_media_delete_attached_count_singular"
-            : "admin_media_delete_attached_count_plural",
-          { count: attachedCount }
-        )
-        : translate("admin_media_delete_error");
-
-      throw new Error(data.error || fallback);
-    }
 
     setAdminWorkZoneState({
       media: adminWorkZoneState.media.filter(item => item.key !== mediaItem.key),
       message: data.message || translate("admin_media_delete_success")
     });
   } catch (error) {
+    const attachedCount = error.data?.attachedPosts?.length || 0;
+    const fallback = attachedCount
+      ? translate(
+        attachedCount === 1
+          ? "admin_media_delete_attached_count_singular"
+          : "admin_media_delete_attached_count_plural",
+        { count: attachedCount }
+      )
+      : translate("admin_media_delete_error");
+
     setAdminWorkZoneState({
-      message: error.message || translate("admin_media_delete_error")
+      message: attachedCount ? fallback : error.message || fallback
     });
   }
 }
 
 async function loadCurrentAdmin() {
-  const response = await fetch("/api/me", {
-    headers: CMCENUtils.authHeaders(adminToken)
+  const user = await adminApiJson("/api/me", {
+    errorMessage: translate("admin_verify_error")
   });
-
-  if (response.status === 401) {
-    CMCENUtils.redirectToLogin();
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error(translate("admin_verify_error"));
-  }
-
-  const user = await response.json();
 
   if (user.permissions?.canManageUsers !== true) {
     window.location.href = "/dashboard.html";
@@ -897,15 +865,9 @@ async function loadAdminUserDetail(userId, {
   });
 
   try {
-    const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
-      headers: CMCENUtils.authHeaders(adminToken)
+    const data = await adminApiJson(`/api/admin/users/${encodeURIComponent(userId)}`, {
+      errorMessage: translate("admin_users_detail_load_error")
     });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("admin_users_detail_load_error"));
-    }
 
     if (restoreSearchFocus) {
       shouldRestoreAdminSearchFocus = true;
@@ -934,19 +896,11 @@ async function saveAdminUser(userId, payload) {
   });
 
   try {
-    const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
+    const data = await adminApiJson(`/api/admin/users/${encodeURIComponent(userId)}`, {
       method: "PATCH",
-      headers: CMCENUtils.authHeaders(adminToken, {
-        "Content-Type": "application/json"
-      }),
-      body: JSON.stringify(payload)
+      body: payload,
+      errorMessage: translate("admin_users_save_error")
     });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("admin_users_save_error"));
-    }
 
     setAdminWorkZoneState({
       selectedUser: data.user,
@@ -1001,25 +955,17 @@ async function promoteAdminUserToDeveloper(user) {
   });
 
   try {
-    const response = await fetch(
+    const data = await adminApiJson(
       `/api/admin/users/${encodeURIComponent(user._id)}/developer`,
       {
         method: "PATCH",
-        headers: CMCENUtils.authHeaders(adminToken, {
-          "Content-Type": "application/json"
-        }),
-        body: JSON.stringify({
+        body: {
           confirmed: true,
           confirmation
-        })
+        },
+        errorMessage: translate("admin_users_promote_error")
       }
     );
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("admin_users_promote_error"));
-    }
 
     setAdminWorkZoneState({
       selectedUser: data.user,
@@ -1080,16 +1026,10 @@ async function deleteAdminPost(post) {
   });
 
   try {
-    const response = await fetch(endpoint, {
+    const data = await adminApiJson(endpoint, {
       method: "DELETE",
-      headers: CMCENUtils.authHeaders(adminToken)
+      errorMessage: translate("admin_content_delete_error")
     });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("admin_content_delete_error"));
-    }
 
     setAdminWorkZoneState({
       posts: adminWorkZoneState.posts.filter(

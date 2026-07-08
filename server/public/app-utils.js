@@ -78,6 +78,15 @@
     return response.json().catch(() => ({}));
   }
 
+  function createApiError(message, response, data = {}) {
+    const error = new Error(message);
+    error.status = response.status;
+    error.statusText = response.statusText;
+    error.data = data;
+
+    return error;
+  }
+
   async function apiFetch(path, options = {}) {
     const {
       auth = false,
@@ -137,14 +146,16 @@
           ? "/login.html"
           : redirectOnUnauthorized
       );
-      throw new Error(unauthorizedMessage);
+      throw createApiError(unauthorizedMessage, response, data);
     }
 
     if (!response.ok) {
-      throw new Error(
+      throw createApiError(
         parseJson
           ? extractErrorMessage(data, response, errorMessage)
-          : (errorMessage || `HTTP ${response.status} ${response.statusText}`)
+          : (errorMessage || `HTTP ${response.status} ${response.statusText}`),
+        response,
+        data
       );
     }
 

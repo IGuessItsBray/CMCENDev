@@ -40,6 +40,23 @@ const auditTargetTypes = [
   ["retirementComment", "audit_target_comments"]
 ];
 
+async function auditApiJson(path, options = {}) {
+  try {
+    return await CMCENUtils.apiJson(path, {
+      ...options,
+      token: auditToken,
+      redirectOnUnauthorized: true,
+      unauthorizedMessage: translate("admin_verify_error")
+    });
+  } catch (error) {
+    if (error.status === 403) {
+      window.location.href = "/dashboard.html";
+    }
+
+    throw error;
+  }
+}
+
 function showAuditLoading(message = translate("audit_log_loading")) {
   CMCENUtils.setStatusLoading(auditLogStatus, message);
   auditLogPage.hidden = true;
@@ -426,20 +443,9 @@ function renderAuditLog() {
 }
 
 async function verifyAuditAccess() {
-  const response = await fetch("/api/me", {
-    headers: CMCENUtils.authHeaders(auditToken)
+  const user = await auditApiJson("/api/me", {
+    errorMessage: translate("admin_verify_error")
   });
-
-  if (response.status === 401) {
-    CMCENUtils.redirectToLogin();
-    return false;
-  }
-
-  if (!response.ok) {
-    throw new Error(translate("admin_verify_error"));
-  }
-
-  const user = await response.json();
 
   if (user.permissions?.canManageUsers !== true) {
     window.location.href = "/dashboard.html";
@@ -480,28 +486,12 @@ async function loadAuditLogs() {
       params.set("user", auditState.user);
     }
 
-    const response = await fetch(
+    const data = await auditApiJson(
       `/api/audit-logs${params.toString() ? `?${params}` : ""}`,
       {
-        headers: CMCENUtils.authHeaders(auditToken)
+        errorMessage: translate("audit_log_load_error")
       }
     );
-
-    const data = await response.json().catch(() => ({}));
-
-    if (response.status === 401) {
-      CMCENUtils.redirectToLogin();
-      return;
-    }
-
-    if (response.status === 403) {
-      window.location.href = "/dashboard.html";
-      return;
-    }
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("audit_log_load_error"));
-    }
 
     auditState.isLoading = false;
     auditState.logs = data.logs || [];

@@ -4796,7 +4796,8 @@ a.dropdown-toggle {
   letter-spacing: 0.11em;
 }
 
-.review-language-heading h3 {
+.review-language-heading h3,
+.review-decision-copy h3 {
   margin: 0;
   color: var(--navy-900);
   font-family:
@@ -4945,17 +4946,6 @@ a.dropdown-toggle {
 
 .review-decision-copy {
   margin-bottom: 13px;
-}
-
-.review-decision-copy h3 {
-  margin: 0;
-  color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
-  font-size: 19px;
-  font-weight: normal;
 }
 
 .review-decision-copy p {
@@ -5527,26 +5517,10 @@ a.dropdown-toggle {
   line-height: 1.7;
 }
 
-.home-family-grid {
-  display: grid;
-  grid-template-columns:
-    repeat(4, minmax(0, 1fr));
-}
-
-.home-family-card:last-child {
-  border-right: 0;
-}
-
-.home-family-card:hover,
-.home-family-card:focus-visible {
-  background: rgba(213, 155, 39, 0.045);
-}
-
 .home-family-icon {
-  width: 64px;
-  height: 64px;
-  margin-bottom: 19px;
-  margin-top: 24px;
+  width: 58px;
+  height: 58px;
+  margin: 0 0 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5576,7 +5550,7 @@ a.dropdown-toggle {
     Georgia,
     "Times New Roman",
     serif;
-  font-size: 21px;
+  font-size: 25px;
   font-weight: normal;
   line-height: 1.2;
   letter-spacing: -0.01em;
@@ -5584,9 +5558,13 @@ a.dropdown-toggle {
 }
 
 .home-family-card p {
-  max-width: 230px;
-  margin: 17px auto 24px;
+  max-width: 245px;
+  margin: 16px auto 24px;
   color: var(--branch-grey-800);
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
   font-size: 12px;
   line-height: 1.65;
   text-align: center;
@@ -5594,8 +5572,13 @@ a.dropdown-toggle {
 
 .home-family-link {
   margin-top: auto;
-  padding-top: 15px;
+  padding-top: 17px;
+  border-top: 1px solid var(--branch-grey-200);
   color: var(--navy-900);
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
@@ -5617,47 +5600,19 @@ a.dropdown-toggle {
   margin-left: 13px;
 }
 
-.home-family-card:focus-visible {
-  z-index: 1;
-  outline: 2px solid var(--gold-500);
-  outline-offset: -2px;
-}
-
-.home-family-grid {
-  display: grid;
-  grid-template-columns:
-    repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--branch-grey-300);
-  border-left: 1px solid var(--branch-grey-300);
-}
-
-.home-family-card:hover,
-.home-family-card:focus-visible {
-  z-index: 1;
-  background: #faf9f5;
-  box-shadow:
-    0 12px 26px rgba(15, 18, 31, 0.12);
-  transform: translateY(-2px);
-}
-
 .home-family-number {
-  margin-bottom: 34px;
-  color: var(--gold-600);
+  margin: 0 0 18px;
+  color: var(--gold-700);
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
   font-size: 10px;
   font-weight: 900;
-  letter-spacing: 0.12em;
+  line-height: 1;
+  letter-spacing: 0.16em;
 }
 
-.home-card-link {
-  margin-top: auto;
-  color: var(--navy-900);
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.home-card-link::after,
 .home-text-link::after {
   content: " →";
   color: var(--gold-600);
@@ -5989,50 +5944,6 @@ a.dropdown-toggle {
 .home-family-card:focus-visible {
   outline: 3px solid rgba(213, 155, 39, 0.55);
   outline-offset: 3px;
-}
-
-.home-family-card .home-family-icon {
-  width: 58px;
-  height: 58px;
-  margin: 0 0 22px;
-  color: var(--navy-900);
-}
-
-.home-family-card .home-family-number {
-  margin: 0 0 18px;
-  color: var(--gold-700);
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-  font-size: 10px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.16em;
-}
-
-.home-family-card h3 {
-  font-size: 25px;
-}
-
-.home-family-card p {
-  max-width: 245px;
-  margin: 16px auto 24px;
-  color: var(--branch-grey-800);
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-  font-size: 12px;
-}
-
-.home-family-card .home-family-link {
-  padding-top: 17px;
-  border-top: 1px solid var(--branch-grey-200);
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
 }
 
 .event-edit-loading,
@@ -7998,10 +7909,7 @@ html[data-theme="dark"] main :is(p,
 }
 
 html[data-theme="dark"] .app-panel {
-  border-color: var(--dark-border);
   border-left-color: var(--gold-500);
-  background: var(--dark-surface-2);
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .app-panel-heading {
@@ -8391,12 +8299,6 @@ html[data-theme="dark"] .review-language-heading h3 {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .event-review-main {
-  background:
-    radial-gradient(circle at top left, rgba(213, 155, 39, 0.07), transparent 32rem),
-    linear-gradient(180deg, var(--dark-bg), #0b1220 62%, var(--dark-bg));
-}
-
 html[data-theme="dark"] .event-review-shell {
   overflow: hidden;
 }
@@ -8543,10 +8445,7 @@ html[data-theme="dark"] .retirements-grid {
 }
 
 html[data-theme="dark"] .retirement-card {
-  border-color: var(--dark-border);
   border-left-color: var(--gold-500);
-  background: var(--dark-surface-2);
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .retirement-card-header {
@@ -8608,12 +8507,6 @@ html[data-theme="dark"] .login-mfa-totp label {
 html[data-theme="dark"] .login-mfa-copy,
 html[data-theme="dark"] .login-mfa-option span {
   color: var(--dark-text-soft);
-}
-
-html[data-theme="dark"] .login-mfa-option {
-  border-color: var(--dark-border-strong);
-  background: var(--dark-surface-3);
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .login-mfa-option:hover,
@@ -8764,10 +8657,12 @@ html[data-theme="dark"] .dashboard-profile-form[data-editing="true"] .dashboard-
 }
 
 html[data-theme="dark"] .event-submit-main,
+html[data-theme="dark"] .event-review-main,
 html[data-theme="dark"] .translations-admin-main,
 html[data-theme="dark"] .admin-work-zone-main,
 html[data-theme="dark"] .retirement-detail-main,
-html[data-theme="dark"] .retirements-main {
+html[data-theme="dark"] .retirements-main,
+html[data-theme="dark"] .about-family-main {
   background:
     radial-gradient(circle at top left, rgba(213, 155, 39, 0.07), transparent 32rem),
     linear-gradient(180deg, var(--dark-bg), #0b1220 62%, var(--dark-bg));
@@ -8838,7 +8733,8 @@ html[data-theme="dark"] .event-submit-form .app-field input[type="file"]::file-s
   color: #101522;
 }
 
-html[data-theme="dark"] .my-event-card {
+html[data-theme="dark"] .my-event-card,
+html[data-theme="dark"] .translation-row {
   border-color: var(--dark-border-strong);
   background: var(--dark-surface-2);
   color: var(--dark-text);
@@ -8861,12 +8757,6 @@ html[data-theme="dark"] .translation-row-status {
 
 html[data-theme="dark"] .translation-key-value,
 html[data-theme="dark"] .translation-fields .app-field label {
-  color: var(--dark-text);
-}
-
-html[data-theme="dark"] .translation-row {
-  border-color: var(--dark-border-strong);
-  background: var(--dark-surface-2);
   color: var(--dark-text);
 }
 
@@ -8895,11 +8785,15 @@ html[data-theme="dark"] .admin-work-zone-tabs {
 }
 
 html[data-theme="dark"] .admin-work-zone-tab,
+html[data-theme="dark"] .login-mfa-option,
 html[data-theme="dark"] .admin-media-heading,
 html[data-theme="dark"] .admin-media-card,
 html[data-theme="dark"] .admin-media-attachment,
 html[data-theme="dark"] .site-config-toolbar,
-html[data-theme="dark"] .site-config-list > .app-field {
+html[data-theme="dark"] .site-config-list > .app-field,
+html[data-theme="dark"] .admin-user-role-badge,
+html[data-theme="dark"] .dashboard-role-badge.role-subscriber,
+html[data-theme="dark"] .admin-content-area-option {
   border-color: var(--dark-border-strong);
   background: var(--dark-surface-3);
   color: var(--dark-text);
@@ -8955,24 +8849,11 @@ html[data-theme="dark"] .admin-user-post-count {
   color: var(--dark-text-muted);
 }
 
-html[data-theme="dark"] .admin-user-role-badge,
-html[data-theme="dark"] .dashboard-role-badge.role-subscriber {
-  border-color: var(--dark-border-strong);
-  background: var(--dark-surface-3);
-  color: var(--dark-text);
-}
-
 html[data-theme="dark"] .admin-user-role-badge.role-developer,
 html[data-theme="dark"] .dashboard-role-badge.role-developer {
   border-color: #ef4444;
   background: #b42318;
   color: #fff7f5;
-}
-
-html[data-theme="dark"] .admin-content-area-option {
-  border-color: var(--dark-border-strong);
-  background: var(--dark-surface-3);
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .admin-content-area-option input {
@@ -9000,12 +8881,6 @@ html[data-theme="dark"] .retirement-comment-form-note,
 html[data-theme="dark"] .retirement-comment p,
 html[data-theme="dark"] .retirement-detail-message-section p {
   color: var(--dark-text-soft);
-}
-
-html[data-theme="dark"] .about-family-main {
-  background:
-    radial-gradient(circle at top left, rgba(213, 155, 39, 0.07), transparent 32rem),
-    linear-gradient(180deg, var(--dark-bg), #0b1220 62%, var(--dark-bg));
 }
 
 html[data-theme="dark"] .about-family-body {

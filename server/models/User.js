@@ -177,6 +177,13 @@ const UserSchema = new mongoose.Schema({
     default: ''
   },
 
+  preferredLanguage: {
+    type: String,
+    enum: ['en', 'fr'],
+    default: 'en',
+    required: true
+  },
+
   role: {
     type: String,
     enum: USER_ROLES,

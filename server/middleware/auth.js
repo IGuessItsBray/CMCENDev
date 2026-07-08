@@ -30,7 +30,7 @@ async function authMiddleware(req, res, next) {
     try {
         const user = await User.findById(decoded.userId)
             .select(
-                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit role contentAreas createdAt updatedAt'
+                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role contentAreas createdAt updatedAt'
             );
 
         if (!user) {
@@ -116,7 +116,7 @@ async function authOrTempMiddleware(req, res, next) {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             const user = await User.findById(decoded.userId)
                 .select(
-                    'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit role contentAreas createdAt updatedAt'
+                    'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role contentAreas createdAt updatedAt'
                 );
 
             if (!user) return res.status(401).json({ error: 'User no longer exists' });
@@ -138,7 +138,7 @@ async function authOrTempMiddleware(req, res, next) {
     try {
         const user = await User.findOne({ 'twoFactor.tempToken': tempToken, 'twoFactor.tempExpires': { $gt: new Date() } })
             .select(
-                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit role contentAreas createdAt updatedAt webauthn totp'
+                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role contentAreas createdAt updatedAt webauthn totp'
             );
 
         if (!user) return res.status(401).json({ error: 'Invalid or expired temp token' });

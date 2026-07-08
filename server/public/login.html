@@ -182,13 +182,36 @@
       mfaError.classList.toggle('is-info', type === 'info');
     }
 
-    function completeLogin(token) {
+    async function applyAccountLanguage(token) {
+      try {
+        const response = await fetch('/api/me', {
+          headers: CMCENUtils.authHeaders(token)
+        });
+
+        const user = await response
+          .json()
+          .catch(() => ({}));
+
+        if (
+          response.ok &&
+          ['en', 'fr'].includes(user.preferredLanguage) &&
+          typeof window.applyLanguage === 'function'
+        ) {
+          window.applyLanguage(user.preferredLanguage);
+        }
+      } catch (error) {
+        console.warn('Could not apply account language preference:', error);
+      }
+    }
+
+    async function completeLogin(token) {
       const fullToken = CMCENUtils.storeAuthToken(token);
       if (!fullToken) {
         throw new Error('Login completed but no session token was returned');
       }
 
       CMCENUtils.clearMfaSession();
+      await applyAccountLanguage(fullToken);
 
       if (typeof window.refreshAuthUI === 'function') {
         window.refreshAuthUI();
@@ -480,9 +503,9 @@
 
             const token = await openMfaDialog(methods, data.tempToken);
             closeMfaDialog();
-            completeLogin(token);
+            await completeLogin(token);
           } else {
-            completeLogin(data.token);
+            await completeLogin(data.token);
           }
         } catch (error) {
           setLoginMessage(error.message);

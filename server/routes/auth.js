@@ -14,7 +14,7 @@ const { writeAuditLog } = require('../services/audit-log');
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit role contentAreas createdAt updatedAt';
+  'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role contentAreas createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -26,7 +26,8 @@ const EDITABLE_PROFILE_FIELDS = [
   'affiliationElement',
   'trade',
   'tradeOther',
-  'currentUnit'
+  'currentUnit',
+  'preferredLanguage'
 ];
 
 const EDITABLE_ADDRESS_FIELDS = [
@@ -69,6 +70,8 @@ const VALID_AFFILIATION_ELEMENTS = new Set([
   'air_force',
   'other'
 ]);
+
+const VALID_PREFERRED_LANGUAGES = new Set(['en', 'fr']);
 
 function hasOwnValue(source, key) {
   return Object.prototype.hasOwnProperty.call(source, key);
@@ -139,6 +142,13 @@ function getProfileUpdate(body, currentUser) {
   }
 
   if (
+    hasOwnValue(updates, 'preferredLanguage') &&
+    !VALID_PREFERRED_LANGUAGES.has(updates.preferredLanguage)
+  ) {
+    throw new Error('Invalid preferred language');
+  }
+
+  if (
     hasOwnValue(updates, 'firstName') ||
     hasOwnValue(updates, 'lastName')
   ) {
@@ -178,6 +188,7 @@ router.post('/register', async (req, res) => {
       trade,
       tradeOther,
       currentUnit,
+      preferredLanguage,
       email,
       password,
       passwordConfirmation
@@ -192,6 +203,22 @@ router.post('/register', async (req, res) => {
     const cleanEmail = String(email || '').trim().toLowerCase();
     const cleanFirstName = String(firstName || '').trim();
     const cleanLastName = String(lastName || '').trim();
+    const incomingPreferredLanguage =
+      String(preferredLanguage || '').trim();
+
+    if (
+      incomingPreferredLanguage &&
+      !VALID_PREFERRED_LANGUAGES.has(incomingPreferredLanguage)
+    ) {
+      return res.status(400).json({
+        error: 'Invalid preferred language'
+      });
+    }
+
+    const cleanPreferredLanguage =
+      VALID_PREFERRED_LANGUAGES.has(incomingPreferredLanguage)
+        ? incomingPreferredLanguage
+        : 'en';
     const requiredFields = [
       cleanFirstName,
       cleanLastName,
@@ -237,6 +264,7 @@ router.post('/register', async (req, res) => {
       trade: String(trade || '').trim(),
       tradeOther: String(tradeOther || '').trim(),
       currentUnit: String(currentUnit || '').trim(),
+      preferredLanguage: cleanPreferredLanguage,
       password,
       role: 'subscriber'
     });
@@ -369,7 +397,8 @@ router.patch('/profile', authMiddleware, async (req, res) => {
         'Required profile fields are missing',
         'Required address fields are missing',
         'Invalid status',
-        'Invalid affiliation element'
+        'Invalid affiliation element',
+        'Invalid preferred language'
       ].includes(error.message)
     ) {
       return res.status(400).json({

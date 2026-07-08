@@ -16,6 +16,7 @@ const registerTotpVerify = document.getElementById("registerTotpVerify");
 const registerTrade = document.getElementById("regTrade");
 const registerTradeOtherField = document.getElementById("regTradeOtherField");
 const registerTradeOther = document.getElementById("regTradeOther");
+const registerPreferredLanguage = document.getElementById("regPreferredLanguage");
 
 let registrationToken = "";
 let pendingTotpAppName = "Authenticator app";
@@ -269,6 +270,10 @@ window.populateCmcenTradeSelect?.(registerTrade);
 updateRegisterTradeOtherVisibility();
 registerTrade?.addEventListener("change", updateRegisterTradeOtherVisibility);
 
+if (registerPreferredLanguage) {
+  registerPreferredLanguage.value = CMCENUtils.getCurrentLanguage();
+}
+
 registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -305,6 +310,7 @@ registerForm.addEventListener("submit", async (event) => {
     trade: String(formData.get("trade") || "").trim(),
     tradeOther: String(formData.get("tradeOther") || "").trim(),
     currentUnit: String(formData.get("currentUnit") || "").trim(),
+    preferredLanguage: String(formData.get("preferredLanguage") || "en").trim(),
     email: String(formData.get("email") || "").trim(),
     password,
     passwordConfirmation
@@ -327,6 +333,9 @@ registerForm.addEventListener("submit", async (event) => {
     }
 
     setStoredToken(data.token);
+    if (typeof window.applyLanguage === "function") {
+      window.applyLanguage(registration.preferredLanguage);
+    }
     showMfaSetup();
 
   } catch (error) {

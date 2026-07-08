@@ -28,6 +28,10 @@ const profileSelectOptions = {
     "navy",
     "air_force",
     "other"
+  ],
+  preferredLanguage: [
+    "en",
+    "fr"
   ]
 };
 
@@ -450,6 +454,14 @@ function createProfileForm(user) {
       labelKey: "current_unit",
       value: user.currentUnit,
       wide: true
+    }),
+    createProfileSelect({
+      name: "preferredLanguage",
+      labelKey: "preferred_language",
+      value: user.preferredLanguage || "en",
+      options: profileSelectOptions.preferredLanguage,
+      optionPrefix: "language",
+      required: true
     })
   );
 
@@ -539,6 +551,15 @@ function createProfileForm(user) {
       currentDashboardUser = data;
       cancelButton.hidden = true;
       setProfileSaveButtonSaved(saveButton, () => {
+        if (
+          typeof window.applyLanguage === "function" &&
+          ["en", "fr"].includes(currentDashboardUser.preferredLanguage) &&
+          CMCENUtils.getCurrentLanguage() !== currentDashboardUser.preferredLanguage
+        ) {
+          window.applyLanguage(currentDashboardUser.preferredLanguage);
+          return;
+        }
+
         renderDashboard(currentDashboardUser);
       });
     } catch (error) {

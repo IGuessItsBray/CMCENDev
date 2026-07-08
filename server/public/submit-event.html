@@ -30,10 +30,10 @@
       </div>
       <div class="event-management-panel is-active" id="myEventsPanel" role="tabpanel" aria-labelledby="myEventsTab"
         data-event-panel="events">
-        <section class="my-events-section" id="myEventsSection" aria-labelledby="myEventsHeading" hidden>
-          <header class="my-events-heading">
+        <section class="app-panel my-events-section" id="myEventsSection" aria-labelledby="myEventsHeading" hidden>
+          <header class="app-panel-heading my-events-heading">
             <div>
-              <p class="event-section-eyebrow" data-i18n="my_events_eyebrow">
+                <p class="app-eyebrow event-section-eyebrow" data-i18n="my_events_eyebrow">
                 Event management
               </p>
               <h2 id="myEventsHeading" data-i18n="my_events_heading">
@@ -50,18 +50,18 @@
       </div>
       <div class="event-management-panel" id="eventFormPanel" role="tabpanel" aria-labelledby="eventFormTab"
         data-event-panel="form" hidden>
-        <section class="event-submit-shell" aria-labelledby="submitEventTitle">
-          <header class="event-submit-heading">
-            <div class="event-submit-heading-copy">
-              <p class="event-submit-eyebrow" data-i18n="event_submission_eyebrow">
+        <section class="app-shell event-submit-shell" aria-labelledby="submitEventTitle">
+          <header class="app-page-header">
+            <div class="app-page-header-copy">
+              <p class="app-eyebrow" data-i18n="event_submission_eyebrow">
                 Event submission
               </p>
 
-              <h1 id="submitEventTitle" data-i18n="submit_event_title">
+              <h1 class="app-page-title" id="submitEventTitle" data-i18n="submit_event_title">
                 Submit an Event
               </h1>
 
-              <p id="submitEventIntro" data-i18n="submit_event_intro">
+              <p class="app-page-summary" id="submitEventIntro" data-i18n="submit_event_intro">
                 Propose an event for publication in the C&amp;E Calendar.
               </p>
             </div>
@@ -78,8 +78,8 @@
 
           <form class="event-submit-form" id="eventForm" hidden>
             <div class="event-language-grid">
-              <section class="event-language-panel" lang="en" aria-labelledby="englishEventDetails">
-                <header class="event-language-heading">
+              <section class="app-panel event-language-panel" lang="en" aria-labelledby="englishEventDetails">
+                <header class="app-panel-heading event-language-heading">
                   <div>
                     <span class="event-language-code">
                       EN
@@ -130,8 +130,8 @@
                 </div>
               </section>
 
-              <section class="event-language-panel" lang="fr" aria-labelledby="frenchEventDetails">
-                <header class="event-language-heading">
+              <section class="app-panel event-language-panel" lang="fr" aria-labelledby="frenchEventDetails">
+                <header class="app-panel-heading event-language-heading">
                   <div>
                     <span class="event-language-code">
                       FR
@@ -186,10 +186,10 @@
               At least one event title is required. Add both
               language versions whenever possible.
             </p>
-            <section class="event-details-section" aria-labelledby="eventDetailsHeading">
-              <header class="event-section-heading">
+            <section class="app-panel event-details-section" aria-labelledby="eventDetailsHeading">
+              <header class="app-section-heading event-section-heading">
                 <div>
-                  <p class="event-section-eyebrow" data-i18n="event_details_eyebrow">
+                  <p class="app-eyebrow event-section-eyebrow" data-i18n="event_details_eyebrow">
                     Event information
                   </p>
 
@@ -342,10 +342,10 @@
                 </div>
               </div>
             </section>
-            <section class="event-schedule-section" aria-labelledby="eventScheduleHeading">
-              <header class="event-section-heading">
+            <section class="app-panel event-schedule-section" aria-labelledby="eventScheduleHeading">
+              <header class="app-section-heading event-section-heading">
                 <div>
-                  <p class="event-section-eyebrow" data-i18n="event_shared_details">
+                  <p class="app-eyebrow event-section-eyebrow" data-i18n="event_shared_details">
                     Shared details
                   </p>
 
@@ -489,10 +489,10 @@
               </p>
             </section>
 
-            <section class="event-submitter-section" aria-labelledby="eventSubmitterHeading">
-              <header class="event-section-heading">
+            <section class="app-panel event-submitter-section" aria-labelledby="eventSubmitterHeading">
+              <header class="app-section-heading event-section-heading">
                 <div>
-                  <p class="event-section-eyebrow" data-i18n="event_submitter_eyebrow">
+                  <p class="app-eyebrow event-section-eyebrow" data-i18n="event_submitter_eyebrow">
                     Submission contact
                   </p>
 
@@ -573,10 +573,10 @@
               </div>
             </section>
 
-            <section class="event-authorization-section" aria-labelledby="eventAuthorizationHeading">
-              <header class="event-authorization-heading">
+            <section class="app-panel event-authorization-section" aria-labelledby="eventAuthorizationHeading">
+              <header class="app-panel-heading event-authorization-heading">
                 <div>
-                  <p class="event-section-eyebrow" data-i18n="event_authorization_eyebrow">
+                  <p class="app-eyebrow event-section-eyebrow" data-i18n="event_authorization_eyebrow">
                     Publication authorization
                   </p>
 

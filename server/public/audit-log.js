@@ -406,10 +406,10 @@ function renderAuditLog() {
   auditLogContent.replaceChildren();
 
   const panel = document.createElement("div");
-  panel.className = "audit-log-panel";
+  panel.className = "app-panel audit-log-panel";
 
   const heading = document.createElement("div");
-  heading.className = "audit-log-heading";
+  heading.className = "app-panel-heading audit-log-heading";
 
   const titleWrapper = document.createElement("div");
   const title = document.createElement("h3");

@@ -103,10 +103,10 @@
     function createUserList() {
       const panel = document.createElement("div");
       const state = getState();
-      panel.className = "admin-user-list-panel";
+      panel.className = "app-panel admin-user-list-panel";
 
       const header = document.createElement("div");
-      header.className = "admin-panel-heading";
+      header.className = "app-panel-heading admin-panel-heading";
 
       const title = document.createElement("h3");
       title.textContent = translate("admin_users_heading");
@@ -290,7 +290,7 @@
     function createEditor() {
       const panel = document.createElement("div");
       const state = getState();
-      panel.className = "admin-user-detail-panel";
+      panel.className = "app-panel admin-user-detail-panel";
 
       const user = state.selectedUser;
 
@@ -303,7 +303,7 @@
       }
 
       const header = document.createElement("div");
-      header.className = "admin-user-detail-heading";
+      header.className = "app-panel-heading admin-user-detail-heading";
 
       const identity = document.createElement("div");
       const title = document.createElement("h3");

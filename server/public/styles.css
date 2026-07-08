@@ -1055,7 +1055,8 @@ svg {
   border-bottom: 2px solid var(--gold-500);
 }
 
-.app-section-heading h2 {
+.app-section-heading h2,
+.app-panel-heading :is(h2, h3) {
   margin: 0;
   color: var(--navy-900);
   font-family:
@@ -1084,18 +1085,6 @@ svg {
   gap: 16px;
   border-bottom: 2px solid var(--gold-500);
   background: var(--branch-grey-100);
-}
-
-.app-panel-heading :is(h2, h3) {
-  margin: 0;
-  color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
-  font-size: 20px;
-  font-weight: normal;
-  line-height: 1.2;
 }
 
 .app-status {
@@ -1145,6 +1134,138 @@ svg {
 
 .app-status p {
   margin: 0;
+}
+
+.app-field {
+  --app-field-gap: 7px;
+  --app-control-height: 45px;
+  --app-control-padding-inline: 12px;
+  --app-control-font-size: 14px;
+  --app-control-background: var(--white);
+  --app-textarea-min-height: 120px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-field-gap);
+}
+
+.app-field > :where(label, .app-field-label) {
+  color: var(--navy-900);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.025em;
+}
+
+.app-control,
+.app-field :where(input:not([type="checkbox"],
+    [type="radio"],
+    [type="hidden"],
+    [type="range"],
+    [type="color"],
+    [type="button"],
+    [type="submit"],
+    [type="reset"]),
+  select,
+  textarea) {
+  width: 100%;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 2px;
+  outline: 0;
+  background-color: var(--app-control-background, var(--white));
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--app-control-font-size, 14px);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.app-control:not(textarea),
+.app-field :where(input:not([type="checkbox"],
+    [type="radio"],
+    [type="hidden"],
+    [type="range"],
+    [type="color"],
+    [type="button"],
+    [type="submit"],
+    [type="reset"]),
+  select) {
+  height: var(--app-control-height, 45px);
+  padding-inline: var(--app-control-padding-inline, 12px);
+}
+
+textarea.app-control,
+.app-field textarea {
+  min-height: var(--app-textarea-min-height, 120px);
+  padding: 11px var(--app-control-padding-inline, 12px);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+select.app-control,
+.app-field select {
+  padding-right: 38px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg,
+      transparent 50%,
+      var(--branch-grey-800) 50%),
+    linear-gradient(135deg,
+      var(--branch-grey-800) 50%,
+      transparent 50%);
+  background-position:
+    calc(100% - 17px) 50%,
+    calc(100% - 12px) 50%;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.app-control::placeholder,
+.app-field :where(input, textarea)::placeholder {
+  color: var(--branch-grey-500);
+}
+
+.app-control:hover,
+.app-field :where(input:not([type="checkbox"],
+    [type="radio"],
+    [type="hidden"],
+    [type="range"],
+    [type="color"],
+    [type="button"],
+    [type="submit"],
+    [type="reset"]),
+  select,
+  textarea):hover {
+  border-color: var(--branch-grey-500);
+}
+
+.app-control:focus,
+.app-field :where(input:not([type="checkbox"],
+    [type="radio"],
+    [type="hidden"],
+    [type="range"],
+    [type="color"],
+    [type="button"],
+    [type="submit"],
+    [type="reset"]),
+  select,
+  textarea):focus {
+  border-color: var(--gold-600);
+  box-shadow: 0 0 0 3px rgba(197, 141, 35, 0.14);
+}
+
+.app-field select:invalid {
+  color: var(--text-muted);
+}
+
+.app-field select option {
+  color: var(--ink);
 }
 
 .hero {
@@ -1836,7 +1957,9 @@ a.dropdown-toggle {
 }
 
 .event-detail-section h2,
-.event-detail-brief h2 {
+.event-detail-brief h2,
+.retirement-detail-message-section h2,
+.retirement-detail-comments h2 {
   margin: 0 0 14px;
   color: var(--navy-900);
   font-family:
@@ -2249,51 +2372,6 @@ a.dropdown-toggle {
   gap: 20px;
 }
 
-.login-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.login-field label {
-  color: var(--navy-900);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.035em;
-}
-
-.login-field input {
-  width: 100%;
-  height: 48px;
-  padding: 0 14px;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  outline: 0;
-  background: var(--white);
-  color: var(--ink);
-  font: inherit;
-  font-size: 15px;
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease,
-    background-color 150ms ease;
-}
-
-.login-field input::placeholder {
-  color: var(--branch-grey-500);
-}
-
-.login-field input:hover {
-  border-color: var(--branch-grey-500);
-}
-
-.login-field input:focus {
-  border-color: var(--gold-600);
-  background: var(--white);
-  box-shadow:
-    0 0 0 3px rgba(197, 141, 35, 0.14);
-}
-
 .login-submit {
   position: relative;
   margin-top: 4px;
@@ -2482,18 +2560,8 @@ a.dropdown-toggle {
 }
 
 .login-mfa-code-row input {
-  min-width: 0;
   height: 44px;
   padding: 0 12px;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  font: inherit;
-}
-
-.login-mfa-code-row input:focus {
-  border-color: var(--gold-600);
-  outline: 0;
-  box-shadow: 0 0 0 3px rgba(197, 141, 35, 0.14);
 }
 
 .login-mfa-cancel {
@@ -2552,91 +2620,14 @@ a.dropdown-toggle {
   gap: 19px 24px;
 }
 
-.register-field {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.register-field label {
-  color: var(--navy-900);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.3;
-  letter-spacing: 0.025em;
-}
-
-.register-field label:has(+ input[required])::after,
-.register-field label:has(+ select[required])::after {
+.register-fields label:has(+ input[required])::after,
+.register-fields label:has(+ select[required])::after {
   content: " *";
   color: var(--danger);
 }
 
-.register-field input,
-.register-field select {
-  width: 100%;
-  height: 47px;
-  padding: 0 14px;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  outline: none;
-  background: var(--white);
-  color: var(--ink);
-  font: inherit;
-  font-size: 15px;
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease;
-}
-
-.register-field select {
-  padding-right: 38px;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image:
-    linear-gradient(45deg,
-      transparent 50%,
-      var(--branch-grey-800) 50%),
-    linear-gradient(135deg,
-      var(--branch-grey-800) 50%,
-      transparent 50%);
-  background-position:
-    calc(100% - 17px) 20px,
-    calc(100% - 12px) 20px;
-  background-size:
-    5px 5px,
-    5px 5px;
-  background-repeat: no-repeat;
-  cursor: pointer;
-}
-
-.register-field select:invalid {
-  color: var(--text-muted);
-}
-
-.register-field select option {
-  color: var(--ink);
-}
-
-.register-field-wide {
+.register-fields > .is-wide {
   grid-column: 1 / -1;
-}
-
-.register-field input::placeholder {
-  color: var(--branch-grey-500);
-}
-
-.register-field input:hover,
-.register-field select:hover {
-  border-color: var(--branch-grey-500);
-}
-
-.register-field input:focus,
-.register-field select:focus {
-  border-color: var(--gold-600);
-  box-shadow:
-    0 0 0 3px rgba(197, 141, 35, 0.14);
 }
 
 .password-strength {
@@ -2898,13 +2889,15 @@ a.dropdown-toggle {
 }
 
 .dashboard-role-badge.role-editor,
-.dashboard-role-badge.role-administrator {
+.dashboard-role-badge.role-administrator,
+.admin-post-type.type-retirementMessage {
   border-color: var(--gold-500);
   background: var(--gold-500);
   color: var(--navy-950);
 }
 
-.dashboard-role-badge.role-developer {
+.dashboard-role-badge.role-developer,
+.admin-user-role-badge.role-developer {
   border-color: #b42318;
   background: #b42318;
   color: var(--white);
@@ -2944,7 +2937,13 @@ a.dropdown-toggle {
   border-bottom: 0;
 }
 
-.dashboard-detail-label {
+.dashboard-detail-label,
+.dashboard-profile-grid > .app-field label,
+.admin-user-list-panel > .app-field > span,
+.audit-log-filters .app-field > span,
+.admin-user-editor > .app-field > span,
+.admin-user-editor > fieldset legend,
+.mfa-verification-row .app-field span {
   color: var(--branch-grey-800);
   font-size: 11px;
   font-weight: 800;
@@ -2973,42 +2972,27 @@ a.dropdown-toggle {
   gap: 10px 18px;
 }
 
-.dashboard-profile-field {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+.dashboard-profile-grid > .app-field {
+  --app-field-gap: 3px;
+  --app-control-height: auto;
+  --app-control-padding-inline: 0;
 }
 
-.dashboard-profile-field.is-wide {
+.dashboard-profile-grid > .is-wide {
   grid-column: 1 / -1;
 }
 
-.dashboard-profile-field label {
-  color: var(--branch-grey-800);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.3;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.dashboard-profile-field input,
-.dashboard-profile-field select {
-  width: 100%;
+.dashboard-profile-grid > .app-field input,
+.dashboard-profile-grid > .app-field select {
   min-height: 0;
   padding: 0;
-  border: 1px solid transparent;
-  border-radius: 2px;
-  background: var(--white);
-  color: var(--ink);
-  font: inherit;
+  border-color: transparent;
   font-size: 14px;
   line-height: 1.4;
 }
 
-.dashboard-profile-field input[readonly],
-.dashboard-profile-field select:disabled {
+.dashboard-profile-grid > .app-field input[readonly],
+.dashboard-profile-grid > .app-field select:disabled {
   border-color: transparent;
   background: var(--white);
   color: var(--ink);
@@ -3018,16 +3002,16 @@ a.dropdown-toggle {
   user-select: text;
 }
 
-.dashboard-profile-form[data-editing="false"] .dashboard-profile-field label {
+.dashboard-profile-form[data-editing="false"] .dashboard-profile-grid > .app-field label {
   pointer-events: none;
 }
 
-.dashboard-profile-field select:disabled {
+.dashboard-profile-grid > .app-field select:disabled {
   appearance: none;
 }
 
-.dashboard-profile-form[data-editing="true"] .dashboard-profile-field input,
-.dashboard-profile-form[data-editing="true"] .dashboard-profile-field select {
+.dashboard-profile-form[data-editing="true"] .dashboard-profile-grid > .app-field input,
+.dashboard-profile-form[data-editing="true"] .dashboard-profile-grid > .app-field select {
   min-height: 42px;
   padding: 9px 10px;
   border-color: var(--branch-grey-300);
@@ -3035,23 +3019,17 @@ a.dropdown-toggle {
   pointer-events: auto;
 }
 
-.dashboard-profile-form[data-editing="true"] .dashboard-profile-field {
+.dashboard-profile-form[data-editing="true"] .dashboard-profile-grid > .app-field {
   gap: 6px;
 }
 
-.dashboard-profile-form[data-editing="true"] .dashboard-profile-field input {
+.dashboard-profile-form[data-editing="true"] .dashboard-profile-grid > .app-field input {
   cursor: text;
 }
 
-.dashboard-profile-form[data-editing="true"] .dashboard-profile-field select {
+.dashboard-profile-form[data-editing="true"] .dashboard-profile-grid > .app-field select {
   appearance: auto;
   cursor: pointer;
-}
-
-.dashboard-profile-form[data-editing="true"] .dashboard-profile-field input:focus,
-.dashboard-profile-form[data-editing="true"] .dashboard-profile-field select:focus {
-  outline: 2px solid rgba(213, 155, 39, 0.45);
-  outline-offset: 2px;
 }
 
 .dashboard-profile-readonly {
@@ -3079,21 +3057,18 @@ a.dropdown-toggle {
   border-bottom: 1px solid var(--branch-grey-200);
 }
 
-.audit-log-user-search input {
+.audit-log-filters .app-field,
+.admin-user-editor > .app-field {
+  --app-control-height: 40px;
+  --app-control-padding-inline: 10px;
+  --app-control-background: var(--branch-grey-100);
+}
+
+.audit-log-filters input {
   box-sizing: border-box;
   height: 40px;
   min-height: 40px;
-  width: 100%;
   padding: 8px 10px;
-  border: 1px solid var(--branch-grey-300);
-  background: var(--branch-grey-100);
-  color: var(--ink);
-  font: inherit;
-}
-
-.audit-log-user-search input:focus {
-  outline: 2px solid rgba(213, 155, 39, 0.45);
-  outline-offset: 2px;
 }
 
 .audit-log-filter-button {
@@ -3102,7 +3077,7 @@ a.dropdown-toggle {
   min-height: 40px;
 }
 
-.audit-log-filters .admin-editor-field select {
+.audit-log-filters select {
   box-sizing: border-box;
   height: 40px;
   min-height: 40px;
@@ -3258,36 +3233,18 @@ a.dropdown-toggle {
   grid-column: 1 / -1;
 }
 
-.admin-user-search {
+.admin-user-list-panel > .app-field {
+  --app-control-height: 40px;
+  --app-control-padding-inline: 10px;
+  --app-control-background: var(--branch-grey-100);
   display: grid;
   gap: 6px;
   padding: 12px;
   border-bottom: 1px solid var(--branch-grey-200);
 }
 
-.admin-user-search span {
-  color: var(--branch-grey-800);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.3;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.admin-user-search input {
-  min-height: 40px;
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--branch-grey-300);
-  background: var(--branch-grey-100);
-  color: var(--ink);
-  font: inherit;
+.admin-user-list-panel > .app-field input {
   font-size: 14px;
-}
-
-.admin-user-search input:focus {
-  outline: 2px solid rgba(213, 155, 39, 0.45);
-  outline-offset: 2px;
 }
 
 .admin-posts-panel h4 {
@@ -3352,12 +3309,6 @@ a.dropdown-toggle {
   text-transform: uppercase;
 }
 
-.admin-user-role-badge.role-developer {
-  border-color: #b42318;
-  background: #b42318;
-  color: var(--white);
-}
-
 .admin-user-post-count {
   font-weight: 800;
 }
@@ -3369,8 +3320,7 @@ a.dropdown-toggle {
   border-bottom: 1px solid var(--branch-grey-200);
 }
 
-.admin-editor-field,
-.admin-editor-fieldset {
+.admin-user-editor > :is(.app-field, fieldset) {
   display: grid;
   gap: 7px;
   min-width: 0;
@@ -3379,26 +3329,11 @@ a.dropdown-toggle {
   border: 0;
 }
 
-.admin-editor-field>span,
-.admin-editor-fieldset legend {
-  color: var(--branch-grey-800);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 1.3;
-  text-transform: uppercase;
+.admin-user-editor > .app-field select {
+  font-size: 14px;
 }
 
-.admin-editor-field select {
-  min-height: 40px;
-  padding: 8px 10px;
-  border: 1px solid var(--branch-grey-300);
-  background: var(--branch-grey-100);
-  color: var(--ink);
-  font: inherit;
-}
-
-.admin-editor-field select:disabled {
+.admin-user-editor > .app-field select:disabled {
   background: var(--white);
   color: var(--branch-grey-700);
   opacity: 1;
@@ -3477,7 +3412,8 @@ a.dropdown-toggle {
   gap: 16px;
 }
 
-.admin-media-heading {
+.admin-media-heading,
+.site-config-toolbar {
   display: flex;
   align-items: start;
   justify-content: space-between;
@@ -3618,16 +3554,6 @@ a.dropdown-toggle {
   gap: 16px;
 }
 
-.site-config-toolbar {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px;
-  border: 1px solid var(--branch-grey-200);
-  background: var(--branch-grey-100);
-}
-
 .site-config-toolbar p {
   max-width: 680px;
   margin: 0;
@@ -3648,7 +3574,10 @@ a.dropdown-toggle {
   gap: 10px;
 }
 
-.site-config-row {
+.site-config-list > .app-field {
+  --app-control-height: 40px;
+  --app-control-padding-inline: 10px;
+  --app-control-background: var(--branch-grey-100);
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(170px, 0.35fr) minmax(0, 1fr);
@@ -3682,26 +3611,14 @@ a.dropdown-toggle {
   text-transform: uppercase;
 }
 
-.site-config-row input {
-  width: 100%;
-  min-height: 40px;
-  padding: 8px 10px;
-  border: 1px solid var(--branch-grey-300);
-  background: var(--branch-grey-100);
-  color: var(--ink);
-  font: inherit;
+.site-config-list > .app-field input {
   font-size: 14px;
-}
-
-.site-config-row input:focus {
-  outline: 2px solid rgba(213, 155, 39, 0.45);
-  outline-offset: 2px;
 }
 
 @media (max-width: 700px) {
 
   .site-config-toolbar,
-  .site-config-row {
+  .site-config-list > .app-field {
     display: grid;
     grid-template-columns: 1fr;
   }
@@ -3769,12 +3686,6 @@ a.dropdown-toggle {
   color: var(--white);
 }
 
-.admin-post-type.type-retirementMessage {
-  border-color: var(--gold-500);
-  background: var(--gold-500);
-  color: var(--navy-950);
-}
-
 .admin-post-type.type-retirementComment {
   border-color: var(--navy-800);
   background: var(--white);
@@ -3797,13 +3708,17 @@ a.dropdown-toggle {
   gap: 10px;
 }
 
-.dashboard-profile-button.is-loading {
+.dashboard-profile-button.is-loading,
+.translation-save-button.is-loading {
   cursor: progress;
 }
 
 .dashboard-profile-button.is-saved,
 .dashboard-profile-button.is-saved:hover,
-.dashboard-profile-button.is-saved:focus-visible {
+.dashboard-profile-button.is-saved:focus-visible,
+.translation-save-button.is-saved,
+.translation-save-button.is-saved:hover,
+.translation-save-button.is-saved:focus-visible {
   border-color: var(--success-border);
   background: var(--success-border);
   color: var(--white);
@@ -3811,7 +3726,8 @@ a.dropdown-toggle {
   opacity: 1;
 }
 
-.dashboard-profile-button .loading-state-spinner {
+.dashboard-profile-button .loading-state-spinner,
+.translation-save-button .loading-state-spinner {
   width: 24px;
   height: 24px;
   border-width: 3px;
@@ -3959,43 +3875,12 @@ a.dropdown-toggle {
   color: var(--danger);
 }
 
-.mfa-field {
+.mfa-verification-row .app-field {
+  --app-control-height: 42px;
+  --app-control-padding-inline: 13px;
+  --app-control-font-size: 15px;
   min-width: 180px;
   flex: 1 1 180px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.mfa-field span {
-  color: var(--branch-grey-800);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.3;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.mfa-field input {
-  width: 100%;
-  height: 42px;
-  padding: 0 13px;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  outline: 0;
-  background: var(--white);
-  color: var(--ink);
-  font: inherit;
-  font-size: 15px;
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease;
-}
-
-.mfa-field input:focus {
-  border-color: var(--gold-600);
-  box-shadow:
-    0 0 0 3px rgba(197, 141, 35, 0.14);
 }
 
 .mfa-output {
@@ -4162,51 +4047,19 @@ a.dropdown-toggle {
   letter-spacing: 0.12em;
 }
 
-.event-language-panel .event-field {
+.event-language-panel .app-field {
   margin: 17px 17px 0;
 }
 
-.event-language-panel .event-field:last-child {
+.event-language-panel .app-field:last-child {
   margin-bottom: 18px;
 }
 
-.event-field {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
+.event-submit-form .app-field {
+  --app-textarea-min-height: 138px;
 }
 
-.event-field label {
-  color: var(--navy-900);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.3;
-  letter-spacing: 0.02em;
-}
-
-.event-field input,
-.event-field textarea {
-  width: 100%;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  outline: none;
-  background: var(--white);
-  color: var(--ink);
-  font: inherit;
-  font-size: 14px;
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease,
-    background-color 150ms ease;
-}
-
-.event-field input {
-  height: 45px;
-  padding: 0 12px;
-}
-
-.event-field input[type="file"] {
+.event-submit-form .app-field input[type="file"] {
   height: auto;
   min-height: 45px;
   padding: 9px 12px;
@@ -4214,7 +4067,7 @@ a.dropdown-toggle {
   cursor: pointer;
 }
 
-.event-field input[type="file"]::file-selector-button {
+.event-submit-form .app-field input[type="file"]::file-selector-button {
   min-height: 28px;
   margin-right: 12px;
   padding: 0 12px;
@@ -4230,34 +4083,14 @@ a.dropdown-toggle {
   cursor: pointer;
 }
 
-.event-field input[type="file"]:hover::file-selector-button,
-.event-field input[type="file"]:focus::file-selector-button {
+.event-submit-form .app-field input[type="file"]:hover::file-selector-button,
+.event-submit-form .app-field input[type="file"]:focus::file-selector-button {
   border-color: var(--gold-600);
   background: var(--navy-800);
   color: var(--gold-200);
 }
 
-.event-field textarea {
-  min-height: 138px;
-  padding: 11px 12px;
-  line-height: 1.5;
-  resize: vertical;
-}
-
-.event-field input:hover,
-.event-field textarea:hover {
-  border-color:
-    var(--branch-grey-500);
-}
-
-.event-field input:focus,
-.event-field textarea:focus {
-  border-color: var(--gold-600);
-  box-shadow:
-    0 0 0 3px rgba(197, 141, 35, 0.14);
-}
-
-.event-field small {
+.event-submit-form .app-field small {
   color: var(--text-muted);
   font-size: 10px;
   line-height: 1.4;
@@ -4382,7 +4215,8 @@ a.dropdown-toggle {
   margin: 18px 18px 0;
 }
 
-.review-record-section {
+.review-record-section,
+.review-language-panel {
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--branch-grey-200);
@@ -4429,7 +4263,8 @@ a.dropdown-toggle {
   grid-column: 1 / -1;
 }
 
-.review-record-label {
+.review-record-label,
+.review-event-meta-label {
   display: block;
   margin-bottom: 4px;
   color: var(--branch-grey-800);
@@ -4440,7 +4275,8 @@ a.dropdown-toggle {
   text-transform: uppercase;
 }
 
-.review-record-value {
+.review-record-value,
+.review-event-meta-value {
   display: block;
   overflow-wrap: anywhere;
   color: var(--ink);
@@ -4657,14 +4493,6 @@ a.dropdown-toggle {
   min-width: 122px;
 }
 
-.event-field-title {
-  color: var(--navy-900);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.3;
-  letter-spacing: 0.02em;
-}
-
 .event-time-selects {
   height: 45px;
   display: grid;
@@ -4694,49 +4522,12 @@ a.dropdown-toggle {
 }
 
 .event-time-selects select {
-  width: 100%;
-  height: 45px;
   margin: 0;
-  padding: 0 34px 0 12px;
-
-  -webkit-appearance: none;
-  appearance: none;
-
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-
-  background-color: var(--white);
-  background-image:
-    linear-gradient(45deg,
-      transparent 50%,
-      var(--branch-grey-800) 50%),
-    linear-gradient(135deg,
-      var(--branch-grey-800) 50%,
-      transparent 50%);
+  padding-right: 34px;
   background-position:
-    calc(100% - 16px) 19px,
-    calc(100% - 11px) 19px;
-  background-size:
-    5px 5px,
-    5px 5px;
-  background-repeat: no-repeat;
-
-  color: var(--ink);
-  font: inherit;
-  font-size: 14px;
+    calc(100% - 16px) 50%,
+    calc(100% - 11px) 50%;
   font-variant-numeric: tabular-nums;
-  cursor: pointer;
-}
-
-.event-time-selects select:hover {
-  border-color: var(--branch-grey-500);
-}
-
-.event-time-selects select:focus {
-  border-color: var(--gold-600);
-  outline: none;
-  box-shadow:
-    0 0 0 3px rgba(197, 141, 35, 0.14);
 }
 
 .event-time-selects select:disabled {
@@ -4765,68 +4556,12 @@ a.dropdown-toggle {
   gap: 17px 20px;
 }
 
-.event-field-wide {
+.event-form-grid > .is-wide,
+.event-details-grid > .is-wide {
   grid-column: 1 / -1;
 }
 
-.event-field select {
-  width: 100%;
-  height: 45px;
-  margin: 0;
-  padding: 0 38px 0 12px;
-
-  -webkit-appearance: none;
-  appearance: none;
-
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  outline: none;
-
-  background-color: var(--white);
-  background-image:
-    linear-gradient(45deg,
-      transparent 50%,
-      var(--branch-grey-800) 50%),
-    linear-gradient(135deg,
-      var(--branch-grey-800) 50%,
-      transparent 50%);
-  background-position:
-    calc(100% - 17px) 19px,
-    calc(100% - 12px) 19px;
-  background-size:
-    5px 5px,
-    5px 5px;
-  background-repeat: no-repeat;
-
-  color: var(--ink);
-  font: inherit;
-  font-size: 14px;
-  cursor: pointer;
-
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease;
-}
-
-.event-field select:hover {
-  border-color: var(--branch-grey-500);
-}
-
-.event-field select:focus {
-  border-color: var(--gold-600);
-  box-shadow:
-    0 0 0 3px rgba(197, 141, 35, 0.14);
-}
-
-.event-field select:invalid {
-  color: var(--text-muted);
-}
-
-.event-field select option {
-  color: var(--ink);
-}
-
-.retirement-trade-field {
+.event-details-grid > .app-field:has(.retirement-trade-panel) {
   gap: 11px;
 }
 
@@ -5033,39 +4768,12 @@ a.dropdown-toggle {
   border-right: 0;
 }
 
-.review-event-meta-label {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--branch-grey-800);
-  font-size: 9px;
-  font-weight: 900;
-  line-height: 1.25;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-
-.review-event-meta-value {
-  display: block;
-  overflow-wrap: anywhere;
-  color: var(--ink);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
 .review-language-grid {
   padding: 18px;
   display: grid;
   grid-template-columns:
     repeat(2, minmax(0, 1fr));
   gap: 16px;
-}
-
-.review-language-panel {
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  background: var(--white);
 }
 
 .review-language-heading {
@@ -5182,32 +4890,9 @@ a.dropdown-toggle {
   padding: 14px 15px 15px;
 }
 
-.retirement-review-message-input {
-  width: 100%;
+.retirement-review-language-grid textarea {
   min-height: 168px;
-  padding: 11px 12px;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  outline: none;
-  background: var(--white);
-  color: var(--ink);
-  font: inherit;
   font-size: 13px;
-  line-height: 1.5;
-  resize: vertical;
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease;
-}
-
-.retirement-review-message-input:hover {
-  border-color: var(--branch-grey-500);
-}
-
-.retirement-review-message-input:focus {
-  border-color: var(--gold-600);
-  box-shadow:
-    0 0 0 3px rgba(197, 141, 35, 0.14);
 }
 
 .retirement-review-message-hint {
@@ -5280,41 +4965,17 @@ a.dropdown-toggle {
   line-height: 1.45;
 }
 
-.review-rejection-field {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
+.review-decision .app-field {
+  --app-control-font-size: 13px;
+  --app-textarea-min-height: 78px;
 }
 
-.review-rejection-field label {
-  color: var(--navy-900);
+.review-decision .app-field label {
   font-size: 11px;
-  font-weight: 800;
 }
 
-.review-rejection-reason {
-  width: 100%;
-  min-height: 78px;
+.review-decision textarea {
   padding: 10px 12px;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  outline: none;
-  background: var(--white);
-  color: var(--ink);
-  font: inherit;
-  font-size: 13px;
-  line-height: 1.5;
-  resize: vertical;
-}
-
-.review-rejection-reason:hover {
-  border-color: var(--branch-grey-500);
-}
-
-.review-rejection-reason:focus {
-  border-color: var(--gold-600);
-  box-shadow:
-    0 0 0 3px rgba(197, 141, 35, 0.14);
 }
 
 .review-action-message {
@@ -5348,16 +5009,9 @@ a.dropdown-toggle {
   gap: 17px 20px;
 }
 
-.event-field-unit {
+.event-submitter-grid > .app-field:nth-child(4),
+.event-submitter-grid > .app-field:nth-child(5) {
   grid-column: span 2;
-}
-
-.event-field-email {
-  grid-column: span 2;
-}
-
-.event-field-phone {
-  grid-column: span 1;
 }
 
 .event-authorization-section {
@@ -5513,12 +5167,9 @@ a.dropdown-toggle {
   background: var(--branch-grey-100);
 }
 
-.translations-search-field {
+.translations-toolbar .app-field {
+  --app-control-height: 38px;
   max-width: 460px;
-}
-
-.translations-search-field input {
-  height: 38px;
 }
 
 .translations-count {
@@ -5616,17 +5267,17 @@ a.dropdown-toggle {
   padding: 0;
 }
 
-.translations-text-field {
+.translation-fields .app-field {
   gap: 4px;
 }
 
-.translations-text-field label {
+.translation-fields .app-field label {
   font-size: 10px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.translations-text-field textarea {
+.translation-fields .app-field textarea {
   height: 38px;
   min-height: 38px;
   max-height: 180px;
@@ -5645,26 +5296,6 @@ a.dropdown-toggle {
 
 .translation-save-button {
   min-width: 92px;
-}
-
-.translation-save-button.is-loading {
-  cursor: progress;
-}
-
-.translation-save-button.is-saved,
-.translation-save-button.is-saved:hover,
-.translation-save-button.is-saved:focus-visible {
-  border-color: var(--success-border);
-  background: var(--success-border);
-  color: var(--white);
-  cursor: default;
-}
-
-.translation-save-button .loading-state-spinner {
-  width: 24px;
-  height: 24px;
-  border-width: 3px;
-  border-top-color: currentColor;
 }
 
 .translation-save-check {
@@ -6404,50 +6035,7 @@ a.dropdown-toggle {
     sans-serif;
 }
 
-.event-edit-loading {
-  min-height: 360px;
-  padding: 70px 24px;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  justify-content: center;
-  border: 1px solid var(--branch-grey-200);
-  border-top: 0;
-  background: var(--white);
-  color: var(--branch-grey-800);
-  text-align: center;
-}
-
-.event-edit-loading[hidden] {
-  display: none !important;
-}
-
-.event-edit-loading-spinner {
-  width: 34px;
-  height: 34px;
-  margin-bottom: 18px;
-  border: 3px solid var(--branch-grey-200);
-  border-top-color: var(--gold-600);
-  border-radius: 50%;
-  animation:
-    event-edit-loading-spin 750ms linear infinite;
-}
-
-.event-edit-loading p {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-
-@keyframes event-edit-loading-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-
+.event-edit-loading,
 .event-loading {
   min-height: 360px;
   padding: 70px 24px;
@@ -6462,10 +6050,12 @@ a.dropdown-toggle {
   text-align: center;
 }
 
+.event-edit-loading[hidden],
 .event-loading[hidden] {
   display: none !important;
 }
 
+.event-edit-loading-spinner,
 .event-loading-spinner {
   width: 34px;
   height: 34px;
@@ -6474,21 +6064,16 @@ a.dropdown-toggle {
   border-top-color: var(--gold-600);
   border-radius: 50%;
   animation:
-    event-edit-loading-spin 750ms linear infinite;
+    loading-state-spin 750ms linear infinite;
 }
 
+.event-edit-loading p,
 .event-loading p {
   margin: 0;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-}
-
-@keyframes event-loading-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .retirement-consent-section {
@@ -6970,20 +6555,10 @@ a.dropdown-toggle {
 }
 
 .retirement-comment-form textarea {
-  width: 100%;
-  resize: vertical;
-  padding: 11px 12px;
-  border: 1px solid var(--branch-grey-500);
-  border-radius: 2px;
-  color: var(--ink);
-  font: inherit;
+  min-height: 0;
+  border-color: var(--branch-grey-500);
   font-size: 13px;
   line-height: 1.55;
-}
-
-.retirement-comment-form textarea:focus {
-  outline: 3px solid rgba(213, 155, 39, 0.28);
-  border-color: var(--gold-600);
 }
 
 .retirement-comment-form-footer {
@@ -6998,19 +6573,6 @@ a.dropdown-toggle {
   color: var(--text-muted);
   font-size: 11px;
   line-height: 1.4;
-}
-
-.retirement-detail-message-section h2,
-.retirement-detail-comments h2 {
-  margin: 0 0 14px;
-  color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
-  font-size: 24px;
-  font-weight: normal;
-  line-height: 1.2;
 }
 
 .retirement-detail-message-section p {
@@ -7870,7 +7432,7 @@ a.dropdown-toggle {
     flex-direction: column;
   }
 
-  .mfa-field {
+  .mfa-verification-row .app-field {
     min-width: 0;
     flex-basis: auto;
   }
@@ -7987,7 +7549,8 @@ a.dropdown-toggle {
     grid-template-columns: 1fr;
   }
 
-  .event-field-wide {
+  .event-form-grid > .is-wide,
+  .event-details-grid > .is-wide {
     grid-column: span 1;
   }
 
@@ -8010,12 +7573,8 @@ a.dropdown-toggle {
       repeat(2, minmax(0, 1fr));
   }
 
-  .event-field-rank {
-    grid-column: span 1;
-  }
-
-  .event-field-unit,
-  .event-field-email {
+  .event-submitter-grid > .app-field:nth-child(4),
+  .event-submitter-grid > .app-field:nth-child(5) {
     grid-column: span 2;
   }
 }
@@ -8025,10 +7584,7 @@ a.dropdown-toggle {
     grid-template-columns: 1fr;
   }
 
-  .event-field-rank,
-  .event-field-unit,
-  .event-field-email,
-  .event-field-phone {
+  .event-submitter-grid > .app-field {
     grid-column: span 1;
   }
 
@@ -8362,14 +7918,21 @@ html[data-theme="dark"] main :is(.login-panel,
   .home-family-card,
   .home-feature-panel,
   .search-result,
+  .home-feed-item,
+  .home-event-item,
   .translation-row,
   .review-event-card,
+  .review-record-section,
   .review-language-panel,
+  .comment-review-comment-section,
+  .comment-review-related-section,
   .retirement-review-card,
   .passkey-manager,
   .totp-manager,
   .admin-post-item,
   .audit-log-entry,
+  .event-submit-form,
+  .retirement-consent-section,
   .retirement-comment,
   .retirement-comment-empty,
   .retirement-comment-login,
@@ -8383,7 +7946,7 @@ html[data-theme="dark"] main :is(.login-panel,
 html[data-theme="dark"] main :is(.dashboard-details,
   .dashboard-profile-readonly,
   .admin-user-row,
-  .admin-user-search,
+  .admin-user-list-panel > .app-field,
   .app-panel-heading,
   .audit-log-filters,
   .event-management-tabs,
@@ -8407,6 +7970,7 @@ html[data-theme="dark"] main :is(h1,
   legend,
   label,
   strong,
+  .app-field-label,
   .dashboard-detail-label,
   .review-language-heading h3,
   .retirement-detail-comments h2,
@@ -8468,6 +8032,25 @@ html[data-theme="dark"] main :is(input, textarea, select):focus {
   border-color: var(--gold-500);
   background: #0d1422;
   box-shadow: 0 0 0 3px rgba(213, 155, 39, 0.18);
+}
+
+html[data-theme="dark"] :is(select.app-control, .app-field select) {
+  background-image:
+    linear-gradient(45deg,
+      transparent 50%,
+      var(--dark-text-soft) 50%),
+    linear-gradient(135deg,
+      var(--dark-text-soft) 50%,
+      transparent 50%);
+}
+
+html[data-theme="dark"] .app-field select:invalid {
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] :is(select.app-control, .app-field select) option {
+  background: var(--dark-bg-elevated);
+  color: var(--dark-text);
 }
 
 html[data-theme="dark"] main :is(input, textarea, select):-webkit-autofill,
@@ -8724,13 +8307,6 @@ html[data-theme="dark"] .home-feature-panel .home-text-link:focus-visible {
   color: var(--dark-link);
 }
 
-html[data-theme="dark"] .home-feed-item,
-html[data-theme="dark"] .home-event-item {
-  border-color: var(--dark-border);
-  background: var(--dark-surface-2);
-  color: var(--dark-text);
-}
-
 html[data-theme="dark"] .home-feed-date,
 html[data-theme="dark"] .home-feed-meta,
 html[data-theme="dark"] .home-feed-note {
@@ -8888,14 +8464,6 @@ html[data-theme="dark"] .review-event-meta-item {
   border-right-color: var(--dark-border);
 }
 
-html[data-theme="dark"] .review-record-section,
-html[data-theme="dark"] .comment-review-comment-section,
-html[data-theme="dark"] .comment-review-related-section {
-  border-color: var(--dark-border);
-  background: var(--dark-surface-2);
-  color: var(--dark-text);
-}
-
 html[data-theme="dark"] .review-record-section>h3 {
   border-bottom-color: var(--dark-border);
   background:
@@ -8951,18 +8519,6 @@ html[data-theme="dark"] .review-decision-copy p,
 html[data-theme="dark"] .retirement-review-message-hint,
 html[data-theme="dark"] .review-language-body .is-missing {
   color: var(--dark-text-muted);
-}
-
-html[data-theme="dark"] .review-rejection-reason,
-html[data-theme="dark"] .retirement-review-message-input {
-  border-color: var(--dark-border-strong);
-  background: var(--dark-bg-elevated);
-  color: var(--dark-text);
-}
-
-html[data-theme="dark"] .review-rejection-reason:hover,
-html[data-theme="dark"] .retirement-review-message-input:hover {
-  border-color: rgba(240, 199, 108, 0.58);
 }
 
 html[data-theme="dark"] .comment-review-related-link,
@@ -9067,13 +8623,7 @@ html[data-theme="dark"] .login-mfa-option:focus-visible {
   box-shadow: 0 0 0 3px rgba(213, 155, 39, 0.18);
 }
 
-html[data-theme="dark"] .login-mfa-code-row input {
-  border-color: var(--dark-border-strong);
-  background: var(--dark-bg-elevated);
-  color: var(--dark-text);
-}
-
-html[data-theme="dark"] .mfa-field span,
+html[data-theme="dark"] .mfa-verification-row .app-field span,
 html[data-theme="dark"] .passkey-manager-heading h4 {
   color: var(--dark-text);
 }
@@ -9083,7 +8633,6 @@ html[data-theme="dark"] .totp-manager {
   border-top-color: var(--dark-border);
 }
 
-html[data-theme="dark"] .mfa-field input,
 html[data-theme="dark"] .mfa-secret {
   border-color: var(--dark-border-strong);
   background: var(--dark-bg-elevated);
@@ -9161,7 +8710,7 @@ html[data-theme="dark"] .dashboard-profile-form[data-editing="false"] .dashboard
   gap: 16px 24px;
 }
 
-html[data-theme="dark"] .dashboard-profile-form[data-editing="false"] .dashboard-profile-field {
+html[data-theme="dark"] .dashboard-profile-form[data-editing="false"] .dashboard-profile-grid > .app-field {
   gap: 5px;
   padding-bottom: 4px;
 }
@@ -9198,18 +8747,18 @@ html[data-theme="dark"] .dashboard-detail-value {
   color: var(--dark-text-soft);
 }
 
-html[data-theme="dark"] .dashboard-profile-field input,
-html[data-theme="dark"] .dashboard-profile-field select,
-html[data-theme="dark"] .dashboard-profile-field input[readonly],
-html[data-theme="dark"] .dashboard-profile-field select:disabled {
+html[data-theme="dark"] .dashboard-profile-grid > .app-field input,
+html[data-theme="dark"] .dashboard-profile-grid > .app-field select,
+html[data-theme="dark"] .dashboard-profile-grid > .app-field input[readonly],
+html[data-theme="dark"] .dashboard-profile-grid > .app-field select:disabled {
   border-color: transparent;
   background: transparent;
   color: var(--dark-text);
   -webkit-text-fill-color: var(--dark-text);
 }
 
-html[data-theme="dark"] .dashboard-profile-form[data-editing="true"] .dashboard-profile-field input,
-html[data-theme="dark"] .dashboard-profile-form[data-editing="true"] .dashboard-profile-field select {
+html[data-theme="dark"] .dashboard-profile-form[data-editing="true"] .dashboard-profile-grid > .app-field input,
+html[data-theme="dark"] .dashboard-profile-form[data-editing="true"] .dashboard-profile-grid > .app-field select {
   border-color: var(--dark-border-strong);
   background: var(--dark-bg-elevated);
 }
@@ -9222,13 +8771,6 @@ html[data-theme="dark"] .retirements-main {
   background:
     radial-gradient(circle at top left, rgba(213, 155, 39, 0.07), transparent 32rem),
     linear-gradient(180deg, var(--dark-bg), #0b1220 62%, var(--dark-bg));
-}
-
-html[data-theme="dark"] .event-submit-form,
-html[data-theme="dark"] .retirement-consent-section {
-  border-color: var(--dark-border);
-  background: var(--dark-surface-2);
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .event-section-intro,
@@ -9253,7 +8795,7 @@ html[data-theme="dark"] .dashboard-profile-readonly {
   border-top-color: var(--dark-border);
 }
 
-html[data-theme="dark"] .event-field small,
+html[data-theme="dark"] .event-submit-form .app-field small,
 html[data-theme="dark"] .event-section-heading p:not(.event-section-eyebrow),
 html[data-theme="dark"] .event-publish-toggle small,
 html[data-theme="dark"] .event-review-note {
@@ -9261,7 +8803,6 @@ html[data-theme="dark"] .event-review-note {
 }
 
 html[data-theme="dark"] .event-toggle,
-html[data-theme="dark"] .event-field-title,
 html[data-theme="dark"] .event-time-separator,
 html[data-theme="dark"] .event-publish-toggle strong,
 html[data-theme="dark"] .retirement-consent-field strong,
@@ -9269,46 +8810,15 @@ html[data-theme="dark"] .event-authorization-checkbox strong {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .event-time-selects select,
-html[data-theme="dark"] .event-field select {
-  border-color: var(--dark-border-strong);
-  background-color: var(--dark-bg-elevated);
-  background-image:
-    linear-gradient(45deg,
-      transparent 50%,
-      var(--dark-text-soft) 50%),
-    linear-gradient(135deg,
-      var(--dark-text-soft) 50%,
-      transparent 50%);
-  background-position:
-    calc(100% - 17px) 19px,
-    calc(100% - 12px) 19px;
-  background-size:
-    5px 5px,
-    5px 5px;
-  background-repeat: no-repeat;
-  color: var(--dark-text);
-}
-
 html[data-theme="dark"] .event-time-selects select {
   background-position:
-    calc(100% - 16px) 19px,
-    calc(100% - 11px) 19px;
+    calc(100% - 16px) 50%,
+    calc(100% - 11px) 50%;
 }
 
 html[data-theme="dark"] .event-time-selects select:disabled {
   background-color: var(--dark-surface-3);
   color: var(--dark-text-muted);
-}
-
-html[data-theme="dark"] .event-field select:invalid {
-  color: var(--dark-text-muted);
-}
-
-html[data-theme="dark"] .event-field select option,
-html[data-theme="dark"] .event-time-selects select option {
-  background: var(--dark-bg-elevated);
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .retirement-trade-panel p,
@@ -9322,7 +8832,7 @@ html[data-theme="dark"] .retirement-radio-option:focus-within {
   background: var(--dark-surface-2);
 }
 
-html[data-theme="dark"] .event-field input[type="file"]::file-selector-button {
+html[data-theme="dark"] .event-submit-form .app-field input[type="file"]::file-selector-button {
   border-color: var(--gold-500);
   background: var(--gold-500);
   color: #101522;
@@ -9350,7 +8860,7 @@ html[data-theme="dark"] .translation-row-status {
 }
 
 html[data-theme="dark"] .translation-key-value,
-html[data-theme="dark"] .translations-text-field label {
+html[data-theme="dark"] .translation-fields .app-field label {
   color: var(--dark-text);
 }
 
@@ -9374,7 +8884,7 @@ html[data-theme="dark"] .translation-row-status.is-error {
 
 html[data-theme="dark"] .admin-panel-heading,
 html[data-theme="dark"] .admin-user-detail-heading,
-html[data-theme="dark"] .admin-user-search,
+html[data-theme="dark"] .admin-user-list-panel > .app-field,
 html[data-theme="dark"] .admin-media-heading,
 html[data-theme="dark"] .admin-user-editor {
   border-color: var(--dark-border);
@@ -9389,7 +8899,7 @@ html[data-theme="dark"] .admin-media-heading,
 html[data-theme="dark"] .admin-media-card,
 html[data-theme="dark"] .admin-media-attachment,
 html[data-theme="dark"] .site-config-toolbar,
-html[data-theme="dark"] .site-config-row {
+html[data-theme="dark"] .site-config-list > .app-field {
   border-color: var(--dark-border-strong);
   background: var(--dark-surface-3);
   color: var(--dark-text);
@@ -9425,12 +8935,6 @@ html[data-theme="dark"] .admin-media-attachments,
 html[data-theme="dark"] .admin-media-attachment span,
 html[data-theme="dark"] .site-config-toolbar p {
   color: var(--dark-text-muted);
-}
-
-html[data-theme="dark"] .site-config-row input {
-  border-color: var(--dark-border-strong);
-  background: var(--dark-bg-elevated);
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .admin-user-row {
@@ -9483,13 +8987,6 @@ html[data-theme="dark"] .retirement-detail-body {
   border-color: var(--dark-border);
 }
 
-html[data-theme="dark"] .retirement-detail-message-section,
-html[data-theme="dark"] .retirement-detail-comments {
-  border-color: var(--dark-border);
-  background: var(--dark-surface-2);
-  color: var(--dark-text);
-}
-
 html[data-theme="dark"] .retirement-comment {
   border-color: var(--dark-border-strong);
   background: var(--dark-surface-2);
@@ -9497,12 +8994,6 @@ html[data-theme="dark"] .retirement-comment {
 
 html[data-theme="dark"] .retirement-comment-form {
   border-top-color: var(--dark-border);
-}
-
-html[data-theme="dark"] .retirement-comment-form textarea {
-  border-color: var(--dark-border-strong);
-  background: var(--dark-bg-elevated);
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .retirement-comment-form-note,

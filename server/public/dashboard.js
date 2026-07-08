@@ -124,8 +124,8 @@ function createProfileField({
 }) {
   const field = document.createElement("div");
   field.className = wide
-    ? "dashboard-profile-field is-wide"
-    : "dashboard-profile-field";
+    ? "app-field is-wide"
+    : "app-field";
 
   const id = `profile-${name.replace(/\./g, "-")}`;
 
@@ -173,7 +173,7 @@ function createProfileSelect({
   preserveUnknownValue = false
 }) {
   const field = document.createElement("div");
-  field.className = "dashboard-profile-field";
+  field.className = "app-field";
 
   const id = `profile-${name}`;
 

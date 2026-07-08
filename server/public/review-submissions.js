@@ -674,7 +674,7 @@ function createReviewCard(event) {
     document.createElement("div");
 
   rejectionField.className =
-    "review-rejection-field";
+    "app-field";
 
   const rejectionLabel =
     document.createElement("label");
@@ -686,9 +686,6 @@ function createReviewCard(event) {
 
   const rejectionReason =
     document.createElement("textarea");
-
-  rejectionReason.className =
-    "review-rejection-reason";
 
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
@@ -841,7 +838,7 @@ function createRetirementMessageSection(retirementMessage) {
     textarea.id =
       `retirementMessage${retirementMessage._id}${languageCode}`;
     textarea.className =
-      "retirement-review-message-input";
+      "app-control";
     textarea.dataset.retirementMessageLanguage =
       languageCode;
     textarea.rows = 9;
@@ -1148,7 +1145,7 @@ function createRetirementReviewCard(retirementMessage) {
     document.createElement("div");
 
   rejectionField.className =
-    "review-rejection-field";
+    "app-field";
 
   const rejectionLabel =
     document.createElement("label");
@@ -1158,9 +1155,6 @@ function createRetirementReviewCard(retirementMessage) {
 
   const rejectionReason =
     document.createElement("textarea");
-
-  rejectionReason.className =
-    "review-rejection-reason";
 
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
@@ -1395,14 +1389,13 @@ function createCommentReviewCard(comment) {
   );
 
   const rejectionField = document.createElement("div");
-  rejectionField.className = "review-rejection-field";
+  rejectionField.className = "app-field";
 
   const rejectionLabel = document.createElement("label");
   rejectionLabel.textContent =
     translate("rejection_reason_label");
 
   const rejectionReason = document.createElement("textarea");
-  rejectionReason.className = "review-rejection-reason";
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
   rejectionReason.placeholder =
@@ -1603,7 +1596,7 @@ function createReviewActionContext(card) {
     buttons: card.querySelectorAll("button"),
     publishButton: card.querySelector(".review-publish-button"),
     rejectButton: card.querySelector(".review-reject-button"),
-    reasonInput: card.querySelector(".review-rejection-reason")
+    reasonInput: card.querySelector(".review-decision textarea")
   };
 
   context.messageElement.textContent = "";
@@ -1715,7 +1708,7 @@ async function submitRetirementReview(messageId, action, card) {
   const rejectionReason = context.reasonInput.value.trim();
   const messageInputs =
     card.querySelectorAll(
-      ".retirement-review-message-input"
+      ".retirement-review-language-grid textarea"
     );
   const messages = {};
 

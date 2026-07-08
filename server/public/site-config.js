@@ -138,7 +138,7 @@ function createSiteConfigToolbar() {
 
 function createSiteConfigRow(variable) {
   const row = document.createElement("label");
-  row.className = "site-config-row";
+  row.className = "app-field";
 
   const meta = document.createElement("span");
   meta.className = "site-config-key";

@@ -112,7 +112,7 @@
       title.textContent = translate("admin_users_heading");
 
       const search = document.createElement("label");
-      search.className = "admin-user-search";
+      search.className = "app-field";
 
       const searchLabel = document.createElement("span");
       searchLabel.textContent = translate("admin_users_search_label");
@@ -324,7 +324,7 @@
       form.className = "admin-user-editor";
 
       const roleField = document.createElement("label");
-      roleField.className = "admin-editor-field";
+      roleField.className = "app-field";
 
       const roleLabel = document.createElement("span");
       roleLabel.textContent = translate("admin_users_role_label");
@@ -344,7 +344,6 @@
       }
 
       const contentField = document.createElement("fieldset");
-      contentField.className = "admin-editor-fieldset";
 
       const legend = document.createElement("legend");
       legend.textContent = translate("admin_users_content_areas_label");

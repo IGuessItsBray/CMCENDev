@@ -207,7 +207,7 @@ function formatMetadataValue(value) {
 
 function createAuditSearchField() {
   const label = document.createElement("label");
-  label.className = "admin-editor-field audit-log-user-search";
+  label.className = "app-field";
 
   const labelSpan = document.createElement("span");
   labelSpan.textContent = translate("audit_filter_user");
@@ -228,7 +228,7 @@ function createAuditSearchField() {
 
 function createAuditSelect(labelText, value, options, onChange) {
   const label = document.createElement("label");
-  label.className = "admin-editor-field";
+  label.className = "app-field";
 
   const labelSpan = document.createElement("span");
   labelSpan.textContent = labelText;

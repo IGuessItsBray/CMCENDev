@@ -143,7 +143,7 @@ function syncVisibleTranslationEdits() {
 
 function createTranslationTextarea(row, language) {
   const field = document.createElement("div");
-  field.className = "event-field translations-text-field";
+  field.className = "app-field";
 
   const label = document.createElement("label");
   label.textContent = translate(

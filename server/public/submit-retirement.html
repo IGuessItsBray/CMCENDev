@@ -102,23 +102,8 @@
                                     Select the officer MOSID:
                                 </p>
 
-                                <div class="retirement-trade-options">
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption"
-                                            value="00172-07 - GENERAL OFFICER LIST (BGEN+)" />
-                                        <span>00172-07 - GENERAL OFFICER LIST (BGEN+)</span>
-                                    </label>
-
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00340 - CELE" />
-                                        <span>00340 - CELE</span>
-                                    </label>
-
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00341 - SIGS" />
-                                        <span>00341 - SIGS</span>
-                                    </label>
-                                </div>
+                                <div class="retirement-trade-options"
+                                    data-retirement-trade-options="officer"></div>
                             </div>
 
                             <div class="retirement-trade-panel" id="retireeNcmTradePanel" hidden>
@@ -126,52 +111,8 @@
                                     Select the NCM MOSID:
                                 </p>
 
-                                <div class="retirement-trade-options">
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00109 - ATIS TECH" />
-                                        <span>00109 - ATIS TECH</span>
-                                    </label>
-
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00120 - SIGINT SPEC" />
-                                        <span>00120 - SIGINT SPEC</span>
-                                    </label>
-
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00299 - NAV COMM" />
-                                        <span>00299 - NAV COMM</span>
-                                    </label>
-
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00378 - CYBER OP" />
-                                        <span>00378 - CYBER OP</span>
-                                    </label>
-
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00381 - CWO" />
-                                        <span>00381 - CWO</span>
-                                    </label>
-
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00383 - SIG OP" />
-                                        <span>00383 - SIG OP</span>
-                                    </label>
-
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00384 - LINE TECH" />
-                                        <span>00384 - LINE TECH</span>
-                                    </label>
-
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00385 - SIG TECH" />
-                                        <span>00385 - SIG TECH</span>
-                                    </label>
-
-                                    <label class="retirement-radio-option">
-                                        <input type="radio" name="retireeTradeRoleOption" value="00394 - IS TECH" />
-                                        <span>00394 - IS TECH</span>
-                                    </label>
-                                </div>
+                                <div class="retirement-trade-options"
+                                    data-retirement-trade-options="ncm"></div>
                             </div>
 
                             <input id="retireeTradeRole" name="retireeTradeRole" type="hidden" />
@@ -395,6 +336,7 @@
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
     <script src="/validation-i18n.js"></script>
+    <script src="/trade-options.js"></script>
     <script src="/submit-retirement.js"></script>
 </body>
 

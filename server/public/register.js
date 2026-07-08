@@ -44,16 +44,14 @@ function setMfaError(message, type = "error") {
   registerMfaError.classList.toggle("is-info", type === "info");
 }
 
-function getAuthHeaders() {
+function getMfaToken() {
   const token = registrationToken || CMCENUtils.getStoredAuthToken();
 
   if (!token) {
     throw new Error("Your account was created, but the setup session was not available. Please sign in to finish MFA setup.");
   }
 
-  return CMCENUtils.authHeaders(token, {
-    "Content-Type": "application/json"
-  });
+  return token;
 }
 
 function ensureWebAuthnAvailable() {
@@ -63,21 +61,11 @@ function ensureWebAuthnAvailable() {
 }
 
 async function mfaApi(path, options = {}) {
-  const response = await fetch(path, {
+  return CMCENUtils.apiJson(path, {
     ...options,
-    headers: {
-      ...getAuthHeaders(),
-      ...(options.headers || {})
-    }
+    token: getMfaToken(),
+    errorMessage: options.errorMessage || "Could not complete MFA setup"
   });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.error || "Could not complete MFA setup");
-  }
-
-  return data;
 }
 
 function showMfaSetup() {
@@ -101,45 +89,18 @@ async function setupPasskey() {
     ensureWebAuthnAvailable();
     setMfaError("Use your passkey to secure this account.", "info");
 
-    const options = await mfaApi("/api/mfa/webauthn/register/options", {
+    const options = CMCENUtils.preparePublicKeyCreationOptions(await mfaApi("/api/mfa/webauthn/register/options", {
       method: "POST",
-      body: JSON.stringify({})
-    });
-
-    options.challenge = CMCENUtils.base64urlToArrayBuffer(options.challenge);
-
-    if (options.user?.id) {
-      options.user.id = CMCENUtils.base64urlToArrayBuffer(options.user.id);
-    }
-
-    if (options.excludeCredentials) {
-      options.excludeCredentials = options.excludeCredentials.map(credential => ({
-        ...credential,
-        id: CMCENUtils.base64urlToArrayBuffer(credential.id)
-      }));
-    }
+      body: {}
+    }));
 
     const credential = await navigator.credentials.create({
       publicKey: options
     });
 
-    const payload = {
-      id: credential.id,
-      rawId: CMCENUtils.arrayBufferToBase64url(credential.rawId),
-      type: credential.type,
-      authenticatorAttachment: credential.authenticatorAttachment || "",
-      response: {
-        clientDataJSON: CMCENUtils.arrayBufferToBase64url(credential.response.clientDataJSON),
-        attestationObject: CMCENUtils.arrayBufferToBase64url(credential.response.attestationObject)
-      },
-      transports: credential.response.getTransports
-        ? credential.response.getTransports()
-        : []
-    };
-
     await mfaApi("/api/mfa/webauthn/register/verify", {
       method: "POST",
-      body: JSON.stringify(payload)
+      body: CMCENUtils.serializeAttestationCredential(credential)
     });
 
     finishRegistration();
@@ -167,7 +128,7 @@ async function setupTotp() {
 
     const setup = await mfaApi("/api/mfa/totp/setup", {
       method: "POST",
-      body: JSON.stringify({ appName: pendingTotpAppName })
+      body: { appName: pendingTotpAppName }
     });
 
     registerMfaOptions.hidden = true;
@@ -208,7 +169,7 @@ async function verifyTotp() {
   try {
     await mfaApi("/api/mfa/totp/verify", {
       method: "POST",
-      body: JSON.stringify({ token: code, appName: pendingTotpAppName })
+      body: { token: code, appName: pendingTotpAppName }
     });
 
     finishRegistration();
@@ -317,20 +278,11 @@ registerForm.addEventListener("submit", async (event) => {
   };
 
   try {
-    const response = await fetch("/api/register", {
+    const data = await CMCENUtils.apiJson("/api/register", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify(registration)
+      body: registration,
+      errorMessage: "Could not create account"
     });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || "Could not create account");
-    }
 
     setStoredToken(data.token);
     if (typeof window.applyLanguage === "function") {

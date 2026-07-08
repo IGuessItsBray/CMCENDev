@@ -8,7 +8,21 @@ const {
 const {
     getUserPermissions
 } = require('../config/permissions');
+const {
+    RETIREMENT_TRADE_ROLES
+} = require('../config/content');
 const { writeAuditLog } = require('../services/audit-log');
+const {
+    getRetirementCommentSnapshot,
+    getRetirementMessageSnapshot
+} = require('../services/content-snapshots');
+const {
+    cleanLocalizedText,
+    cleanString,
+    getValidationErrorMessage,
+    parseAffirmativeBoolean,
+    parseDateOnly
+} = require('../services/content-utils');
 
 const router = express.Router();
 
@@ -24,64 +38,10 @@ const ALLOWED_LANGUAGES = [
     'fr'
 ];
 
-const ALLOWED_RETIREMENT_TRADE_ROLES = [
-    '00172-07 - GENERAL OFFICER LIST (BGEN+)',
-    '00340 - CELE',
-    '00341 - SIGS',
-    '00109 - ATIS TECH',
-    '00120 - SIGINT SPEC',
-    '00299 - NAV COMM',
-    '00378 - CYBER OP',
-    '00381 - CWO',
-    '00383 - SIG OP',
-    '00384 - LINE TECH',
-    '00385 - SIG TECH',
-    '00394 - IS TECH',
-    'Civilian'
-];
-
-function cleanString(value) {
-    return typeof value === 'string'
-        ? value.trim()
-        : '';
-}
-
-function parseBoolean(value) {
-    return (
-        value === true ||
-        value === 'true' ||
-        value === 1 ||
-        value === '1'
-    );
-}
-
-function parseDateOnly(value) {
-    if (
-        typeof value !== 'string' ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(value)
-    ) {
-        return null;
-    }
-
-    const date =
-        new Date(`${value}T12:00:00.000Z`);
-
-    return Number.isNaN(date.getTime())
-        ? null
-        : date;
-}
-
 function isValidEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
         value
     );
-}
-
-function cleanLocalizedMessages(messages = {}) {
-    return {
-        en: cleanString(messages.en),
-        fr: cleanString(messages.fr)
-    };
 }
 
 function getLocalizedMessages(retirementMessage) {
@@ -91,7 +51,7 @@ function getLocalizedMessages(retirementMessage) {
         {};
 
     const cleanMessages =
-        cleanLocalizedMessages(storedMessages);
+        cleanLocalizedText(storedMessages);
 
     const originalLanguage =
         retirementMessage.messageLanguage;
@@ -118,40 +78,6 @@ function getRetirementMessageText(retirementMessage, language = 'en') {
         cleanString(messages.fr) ||
         cleanString(retirementMessage.message)
     );
-}
-
-function getRetirementMessageTitle(retirementMessage) {
-    const retiree = retirementMessage.retiree || {};
-    const name = [
-        retiree.rank,
-        retiree.firstName,
-        retiree.lastName
-    ].filter(Boolean).join(' ');
-
-    return name
-        ? `Retirement message for ${name}`
-        : 'Retirement message';
-}
-
-function getRetirementMessageSnapshot(retirementMessage) {
-    return {
-        title: getRetirementMessageTitle(retirementMessage),
-        status: retirementMessage.status,
-        createdBy: retirementMessage.createdBy,
-        publishedBy: retirementMessage.publishedBy,
-        retiree: retirementMessage.retiree
-    };
-}
-
-function getRetirementCommentSnapshot(comment) {
-    return {
-        title: 'Retirement comment',
-        status: comment.status,
-        author: comment.author,
-        retirementMessage: comment.retirementMessage,
-        publishedBy: comment.publishedBy,
-        excerpt: String(comment.body || '').slice(0, 240)
-    };
 }
 
 router.post(
@@ -210,7 +136,7 @@ router.post(
             cleanString(message);
 
         const cleanMessages =
-            cleanLocalizedMessages({
+            cleanLocalizedText({
                 [messageLanguage]: cleanMessage
             });
 
@@ -239,12 +165,12 @@ router.post(
         };
 
         const consentConfirmed =
-            parseBoolean(
+            parseAffirmativeBoolean(
                 publicationConsentConfirmed
             );
 
         const memberReviewWasConfirmed =
-            parseBoolean(
+            parseAffirmativeBoolean(
                 memberReviewConfirmed
             );
 
@@ -262,7 +188,7 @@ router.post(
         }
 
         if (
-            !ALLOWED_RETIREMENT_TRADE_ROLES.includes(
+            !RETIREMENT_TRADE_ROLES.includes(
                 cleanRetiree.tradeRole
             )
         ) {
@@ -781,9 +707,7 @@ router.patch(
 
             if (error.name === 'ValidationError') {
                 return res.status(400).json({
-                    error: Object.values(error.errors)
-                        .map(item => item.message)
-                        .join(', ')
+                    error: getValidationErrorMessage(error)
                 });
             }
 
@@ -993,9 +917,7 @@ router.post(
 
             if (error.name === 'ValidationError') {
                 return res.status(400).json({
-                    error: Object.values(error.errors)
-                        .map(item => item.message)
-                        .join(', ')
+                    error: getValidationErrorMessage(error)
                 });
             }
 
@@ -1233,9 +1155,7 @@ router.patch(
 
             if (error.name === 'ValidationError') {
                 return res.status(400).json({
-                    error: Object.values(error.errors)
-                        .map(item => item.message)
-                        .join(', ')
+                    error: getValidationErrorMessage(error)
                 });
             }
 

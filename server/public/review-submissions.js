@@ -35,6 +35,30 @@ function getReviewToken() {
   return CMCENUtils.requireAuthToken();
 }
 
+async function reviewApiJson(path, options = {}) {
+  const token = getReviewToken();
+
+  if (!token) {
+    redirectToLogin();
+    throw new Error(translate("sign_in_to_continue"));
+  }
+
+  try {
+    return await CMCENUtils.apiJson(path, {
+      ...options,
+      token,
+      redirectOnUnauthorized: true,
+      unauthorizedMessage: translate("sign_in_to_continue")
+    });
+  } catch (error) {
+    if (error.status === 403) {
+      error.message = translate("review_access_denied");
+    }
+
+    throw error;
+  }
+}
+
 function getContentValue(value, language) {
   if (typeof value?.[language] !== "string") {
     return "";
@@ -1570,158 +1594,135 @@ function renderCommentReviewQueue() {
   });
 }
 
-async function submitReview(eventId, action, card) {
-  const token = getReviewToken();
+function createReviewActionContext(card) {
+  const context = {
+    card,
+    messageElement: card.querySelector(".review-action-message"),
+    buttons: card.querySelectorAll("button"),
+    publishButton: card.querySelector(".review-publish-button"),
+    rejectButton: card.querySelector(".review-reject-button"),
+    reasonInput: card.querySelector(".review-rejection-reason")
+  };
 
-  if (!token) {
-    redirectToLogin();
-    return;
-  }
+  context.messageElement.textContent = "";
+  context.messageElement.hidden = true;
 
-  const reasonInput = card.querySelector(".review-rejection-reason");
-  const messageElement = card.querySelector(".review-action-message");
-  const buttons = card.querySelectorAll("button");
-  const rejectionReason = reasonInput.value.trim();
+  return context;
+}
 
-  messageElement.textContent = "";
-  messageElement.hidden = true;
+function showReviewValidationError(context, message, input) {
+  context.messageElement.textContent = message;
+  context.messageElement.hidden = false;
+  input.focus();
+}
 
-  if (action === "reject" && !rejectionReason) {
-    messageElement.textContent = translate("rejection_reason_required");
-    messageElement.hidden = false;
-
-    reasonInput.focus();
-
-    return;
-  }
-
-  buttons.forEach(button => {
+async function performReviewAction({
+  action,
+  context,
+  path,
+  body,
+  errorMessage,
+  successMessageKey,
+  publishLabelKey,
+  rejectLabelKey,
+  onSuccess,
+  renderQueue
+}) {
+  context.buttons.forEach(button => {
     button.disabled = true;
   });
 
-  const activeButton = action === "publish" ?
-    card.querySelector(".review-publish-button")
-    : card.querySelector(".review-reject-button");
-
-  activeButton.textContent = translate(action === "publish" ? "review_publishing" : "review_rejecting");
+  const activeButton = action === "publish"
+    ? context.publishButton
+    : context.rejectButton;
+  activeButton.textContent = translate(
+    action === "publish"
+      ? "review_publishing"
+      : "review_rejecting"
+  );
 
   try {
-    const response = await fetch(
-      `/api/events/${eventId}/review`,
-      {
-        method: "PATCH",
+    await reviewApiJson(path, {
+      method: "PATCH",
+      body,
+      errorMessage
+    });
 
-        headers: CMCENUtils.authHeaders(token, {
-          "Content-Type":
-            "application/json"
-        }),
-
-        body: JSON.stringify({
-          action,
-
-          rejectionReason:
-            action === "reject"
-              ? rejectionReason
-              : undefined
-        })
-      }
-    );
-
-    const data = await response
-      .json()
-      .catch(() => ({}));
-
-    if (response.status === 401) {
-      redirectToLogin();
-      return;
-    }
-
-    if (response.status === 403) {
-      throw new Error(
-        translate(
-          "review_access_denied"
-        )
-      );
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        translate(
-          "review_failed"
-        )
-      );
-    }
-
-    pendingEvents =
-      pendingEvents.filter(
-        event => event._id !== eventId
-      );
-
-    card.classList.add("is-resolved");
+    onSuccess();
+    context.card.classList.add("is-resolved");
 
     window.setTimeout(() => {
-      card.remove();
-      renderReviewQueue();
+      context.card.remove();
+      renderQueue();
     }, 160);
 
-    showNotice(
-      translate(
-        action === "publish"
-          ? "review_publish_success"
-          : "review_reject_success"
-      )
-    );
+    showNotice(translate(successMessageKey));
   } catch (error) {
-    messageElement.textContent =
-      error.message;
+    context.messageElement.textContent = error.message;
+    context.messageElement.hidden = false;
 
-    messageElement.hidden = false;
-
-    buttons.forEach(button => {
+    context.buttons.forEach(button => {
       button.disabled = false;
     });
 
-    card.querySelector(
-      ".review-publish-button"
-    ).textContent =
-      translate("publish_event");
-
-    card.querySelector(
-      ".review-reject-button"
-    ).textContent =
-      translate("reject_event");
+    context.publishButton.textContent = translate(publishLabelKey);
+    context.rejectButton.textContent = translate(rejectLabelKey);
   }
 }
 
-async function submitRetirementReview(messageId, action, card) {
-  const token = getReviewToken();
+async function submitReview(eventId, action, card) {
+  const context = createReviewActionContext(card);
+  const rejectionReason = context.reasonInput.value.trim();
 
-  if (!token) {
-    redirectToLogin();
+  if (action === "reject" && !rejectionReason) {
+    showReviewValidationError(
+      context,
+      translate("rejection_reason_required"),
+      context.reasonInput
+    );
     return;
   }
 
-  const reasonInput = card.querySelector(".review-rejection-reason");
-  const messageElement = card.querySelector(".review-action-message");
-  const buttons = card.querySelectorAll("button");
-  const rejectionReason = reasonInput.value.trim();
+  await performReviewAction({
+    action,
+    context,
+    path: `/api/events/${eventId}/review`,
+    body: {
+      action,
+      rejectionReason:
+        action === "reject"
+          ? rejectionReason
+          : undefined
+    },
+    errorMessage: translate("review_failed"),
+    successMessageKey:
+      action === "publish"
+        ? "review_publish_success"
+        : "review_reject_success",
+    publishLabelKey: "publish_event",
+    rejectLabelKey: "reject_event",
+    onSuccess() {
+      pendingEvents = pendingEvents.filter(event => event._id !== eventId);
+    },
+    renderQueue: renderReviewQueue
+  });
+}
+
+async function submitRetirementReview(messageId, action, card) {
+  const context = createReviewActionContext(card);
+  const rejectionReason = context.reasonInput.value.trim();
   const messageInputs =
     card.querySelectorAll(
       ".retirement-review-message-input"
     );
   const messages = {};
 
-  messageElement.textContent = "";
-  messageElement.hidden = true;
-
   if (action === "reject" && !rejectionReason) {
-    messageElement.textContent =
-      translate("retirement_rejection_reason_required");
-    messageElement.hidden = false;
-
-    reasonInput.focus();
-
+    showReviewValidationError(
+      context,
+      translate("retirement_rejection_reason_required"),
+      context.reasonInput
+    );
     return;
   }
 
@@ -1733,256 +1734,88 @@ async function submitRetirementReview(messageId, action, card) {
       messages[language] = input.value.trim();
 
       if (messages[language].length < 100) {
-        messageElement.textContent =
-          translate("retirement_review_translation_required");
-        messageElement.hidden = false;
-        input.focus();
-
+        showReviewValidationError(
+          context,
+          translate("retirement_review_translation_required"),
+          input
+        );
         return;
       }
     }
   }
 
-  buttons.forEach(button => {
-    button.disabled = true;
-  });
-
-  const activeButton = action === "publish" ?
-    card.querySelector(".review-publish-button")
-    : card.querySelector(".review-reject-button");
-
-  activeButton.textContent =
-    translate(
-      action === "publish"
-        ? "review_publishing"
-        : "review_rejecting"
-    );
-
-  try {
-    const response = await fetch(
-      `/api/retirement-messages/${messageId}/review`,
-      {
-        method: "PATCH",
-
-        headers: CMCENUtils.authHeaders(token, {
-          "Content-Type":
-            "application/json"
-        }),
-
-        body: JSON.stringify({
-          action,
-
-          rejectionReason:
-            action === "reject"
-              ? rejectionReason
-              : undefined,
-
-          messages:
-            action === "publish"
-              ? messages
-              : undefined
-        })
-      }
-    );
-
-    const data = await response
-      .json()
-      .catch(() => ({}));
-
-    if (response.status === 401) {
-      redirectToLogin();
-      return;
-    }
-
-    if (response.status === 403) {
-      throw new Error(
-        translate("review_access_denied")
-      );
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        translate("retirement_review_failed")
-      );
-    }
-
-    pendingRetirementMessages =
-      pendingRetirementMessages.filter(
-        retirementMessage =>
-          retirementMessage._id !== messageId
-      );
-
-    card.classList.add("is-resolved");
-
-    window.setTimeout(() => {
-      card.remove();
-      renderRetirementReviewQueue();
-    }, 160);
-
-    showNotice(
-      translate(
+  await performReviewAction({
+    action,
+    context,
+    path: `/api/retirement-messages/${messageId}/review`,
+    body: {
+      action,
+      rejectionReason:
+        action === "reject"
+          ? rejectionReason
+          : undefined,
+      messages:
         action === "publish"
-          ? "retirement_review_publish_success"
-          : "retirement_review_reject_success"
-      )
-    );
-  } catch (error) {
-    messageElement.textContent =
-      error.message;
-
-    messageElement.hidden = false;
-
-    buttons.forEach(button => {
-      button.disabled = false;
-    });
-
-    card.querySelector(
-      ".review-publish-button"
-    ).textContent =
-      translate("publish_retirement_message");
-
-    card.querySelector(
-      ".review-reject-button"
-    ).textContent =
-      translate("reject_retirement_message");
-  }
+          ? messages
+          : undefined
+    },
+    errorMessage: translate("retirement_review_failed"),
+    successMessageKey:
+      action === "publish"
+        ? "retirement_review_publish_success"
+        : "retirement_review_reject_success",
+    publishLabelKey: "publish_retirement_message",
+    rejectLabelKey: "reject_retirement_message",
+    onSuccess() {
+      pendingRetirementMessages = pendingRetirementMessages.filter(
+        retirementMessage => retirementMessage._id !== messageId
+      );
+    },
+    renderQueue: renderRetirementReviewQueue
+  });
 }
 
 async function submitCommentReview(commentId, action, card) {
-  const token = getReviewToken();
-
-  if (!token) {
-    redirectToLogin();
-    return;
-  }
-
-  const reasonInput = card.querySelector(".review-rejection-reason");
-  const messageElement = card.querySelector(".review-action-message");
-  const buttons = card.querySelectorAll("button");
-  const rejectionReason = reasonInput.value.trim();
-
-  messageElement.textContent = "";
-  messageElement.hidden = true;
+  const context = createReviewActionContext(card);
+  const rejectionReason = context.reasonInput.value.trim();
 
   if (action === "reject" && !rejectionReason) {
-    messageElement.textContent =
-      translate("comment_rejection_reason_required");
-    messageElement.hidden = false;
-
-    reasonInput.focus();
-
+    showReviewValidationError(
+      context,
+      translate("comment_rejection_reason_required"),
+      context.reasonInput
+    );
     return;
   }
 
-  buttons.forEach(button => {
-    button.disabled = true;
-  });
-
-  const activeButton = action === "publish" ?
-    card.querySelector(".review-publish-button")
-    : card.querySelector(".review-reject-button");
-
-  activeButton.textContent =
-    translate(
+  await performReviewAction({
+    action,
+    context,
+    path: `/api/retirement-messages/comments/${commentId}/review`,
+    body: {
+      action,
+      rejectionReason:
+        action === "reject"
+          ? rejectionReason
+          : undefined
+    },
+    errorMessage: translate("comment_review_failed"),
+    successMessageKey:
       action === "publish"
-        ? "review_publishing"
-        : "review_rejecting"
-    );
-
-  try {
-    const response = await fetch(
-      `/api/retirement-messages/comments/${commentId}/review`,
-      {
-        method: "PATCH",
-
-        headers: CMCENUtils.authHeaders(token, {
-          "Content-Type":
-            "application/json"
-        }),
-
-        body: JSON.stringify({
-          action,
-
-          rejectionReason:
-            action === "reject"
-              ? rejectionReason
-              : undefined
-        })
-      }
-    );
-
-    const data = await response
-      .json()
-      .catch(() => ({}));
-
-    if (response.status === 401) {
-      redirectToLogin();
-      return;
-    }
-
-    if (response.status === 403) {
-      throw new Error(
-        translate("review_access_denied")
-      );
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        translate("comment_review_failed")
-      );
-    }
-
-    pendingComments =
-      pendingComments.filter(
+        ? "comment_review_publish_success"
+        : "comment_review_reject_success",
+    publishLabelKey: "publish_comment",
+    rejectLabelKey: "reject_comment",
+    onSuccess() {
+      pendingComments = pendingComments.filter(
         comment => comment._id !== commentId
       );
-
-    card.classList.add("is-resolved");
-
-    window.setTimeout(() => {
-      card.remove();
-      renderCommentReviewQueue();
-    }, 160);
-
-    showNotice(
-      translate(
-        action === "publish"
-          ? "comment_review_publish_success"
-          : "comment_review_reject_success"
-      )
-    );
-  } catch (error) {
-    messageElement.textContent =
-      error.message;
-
-    messageElement.hidden = false;
-
-    buttons.forEach(button => {
-      button.disabled = false;
-    });
-
-    card.querySelector(
-      ".review-publish-button"
-    ).textContent =
-      translate("publish_comment");
-
-    card.querySelector(
-      ".review-reject-button"
-    ).textContent =
-      translate("reject_comment");
-  }
+    },
+    renderQueue: renderCommentReviewQueue
+  });
 }
 
 async function loadReviewQueue() {
-  const token = getReviewToken();
-
-  if (!token) {
-    redirectToLogin();
-    return;
-  }
-
   accessDenied = false;
   loadFailed = false;
   retirementLoadFailed = false;
@@ -2001,22 +1834,11 @@ async function loadReviewQueue() {
   );
 
   try {
-    const userResponse = await fetch("/api/me", {
-      headers: CMCENUtils.authHeaders(token)
+    const user = await reviewApiJson("/api/me", {
+      errorMessage: translate("review_access_denied")
     });
 
-    if (userResponse.status === 401) {
-      redirectToLogin();
-      return;
-    }
-
-    const user = await userResponse.json().catch(() => ({}));
-
-    if (
-      !userResponse.ok ||
-      !user.permissions
-        ?.canReviewAndPublish
-    ) {
+    if (!user.permissions?.canReviewAndPublish) {
       accessDenied = true;
 
       showPageMessage(translate("review_access_denied"), "error");
@@ -2035,72 +1857,52 @@ async function loadReviewQueue() {
     }
 
     const [
-      eventResponse,
-      retirementResponse,
-      commentResponse
-    ] = await Promise.all([
-      fetch(
-        "/api/events/review",
-        {
-          headers: CMCENUtils.authHeaders(token)
-        }
-      ),
-      fetch(
-        "/api/retirement-messages/review",
-        {
-          headers: CMCENUtils.authHeaders(token)
-        }
-      ),
-      fetch(
-        "/api/retirement-messages/comments/review",
-        {
-          headers: CMCENUtils.authHeaders(token)
-        }
-      )
+      eventResult,
+      retirementResult,
+      commentResult
+    ] = await Promise.allSettled([
+      reviewApiJson("/api/events/review", {
+        errorMessage: translate("review_load_error")
+      }),
+      reviewApiJson("/api/retirement-messages/review", {
+        errorMessage: translate("retirement_review_load_error")
+      }),
+      reviewApiJson("/api/retirement-messages/comments/review", {
+        errorMessage: translate("comment_review_load_error")
+      })
     ]);
 
-    if (
-      eventResponse.status === 401 ||
-      retirementResponse.status === 401 ||
-      commentResponse.status === 401
-    ) {
-      redirectToLogin();
+    const results = [
+      eventResult,
+      retirementResult,
+      commentResult
+    ];
+    const rejectedResults = results.filter(
+      result => result.status === "rejected"
+    );
+
+    if (rejectedResults.some(result => result.reason?.status === 401)) {
       return;
     }
 
-    if (
-      eventResponse.status === 403 ||
-      retirementResponse.status === 403 ||
-      commentResponse.status === 403
-    ) {
-      accessDenied = true;
+    const forbiddenResult = rejectedResults.find(
+      result => result.reason?.status === 403
+    );
 
-      throw new Error(
-        translate("review_access_denied")
-      );
+    if (forbiddenResult) {
+      accessDenied = true;
+      throw forbiddenResult.reason;
     }
 
-    const eventData = await eventResponse
-      .json()
-      .catch(() => ({}));
-
-    const retirementData = await retirementResponse
-      .json()
-      .catch(() => ({}));
-
-    const commentData = await commentResponse
-      .json()
-      .catch(() => ({}));
-
-    if (!eventResponse.ok) {
+    if (eventResult.status === "rejected") {
       loadFailed = true;
 
       showPageMessage(
-        eventData.error ||
-        translate("review_load_error"),
+        eventResult.reason?.message || translate("review_load_error"),
         "error"
       );
     } else {
+      const eventData = eventResult.value;
       pendingEvents = Array.isArray(eventData.events)
         ? eventData.events
         : [];
@@ -2108,16 +1910,17 @@ async function loadReviewQueue() {
       renderReviewQueue();
     }
 
-    if (!retirementResponse.ok) {
+    if (retirementResult.status === "rejected") {
       retirementLoadFailed = true;
 
       showPageMessage(
-        retirementData.error ||
+        retirementResult.reason?.message ||
         translate("retirement_review_load_error"),
         "error",
         retirementReviewPageMessage
       );
     } else {
+      const retirementData = retirementResult.value;
       pendingRetirementMessages =
         Array.isArray(
           retirementData.retirementMessages
@@ -2128,16 +1931,17 @@ async function loadReviewQueue() {
       renderRetirementReviewQueue();
     }
 
-    if (!commentResponse.ok) {
+    if (commentResult.status === "rejected") {
       commentLoadFailed = true;
 
       showPageMessage(
-        commentData.error ||
+        commentResult.reason?.message ||
         translate("comment_review_load_error"),
         "error",
         commentReviewPageMessage
       );
     } else {
+      const commentData = commentResult.value;
       pendingComments =
         Array.isArray(commentData.comments)
           ? commentData.comments
@@ -2147,6 +1951,7 @@ async function loadReviewQueue() {
     }
 
   } catch (error) {
+    accessDenied = accessDenied || error.status === 403;
     loadFailed = !accessDenied;
     retirementLoadFailed = !accessDenied;
     commentLoadFailed = !accessDenied;

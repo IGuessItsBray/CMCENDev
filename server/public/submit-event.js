@@ -45,6 +45,15 @@ const initialEventPanel =
     ? "form"
     : "events";
 
+function eventApiJson(path, token, options = {}) {
+  return CMCENUtils.apiJson(path, {
+    ...options,
+    token,
+    redirectOnUnauthorized: true,
+    unauthorizedMessage: translate("event_permission_error")
+  });
+}
+
 function showMyEventsLoading() {
   myEventsSection.hidden = false;
   myEventsCount.hidden = true;
@@ -202,30 +211,9 @@ async function loadMyEvents(token) {
   showMyEventsLoading();
 
   try {
-    const response = await fetch(
-      "/api/events/mine",
-      {
-        headers: CMCENUtils.authHeaders(token)
-      }
-    );
-
-    if (response.status === 401) {
-      redirectToLogin();
-      return;
-    }
-
-    const data = await response
-      .json()
-      .catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        translate(
-          "my_events_load_error"
-        )
-      );
-    }
+    const data = await eventApiJson("/api/events/mine", token, {
+      errorMessage: translate("my_events_load_error")
+    });
 
     myEvents =
       Array.isArray(data.events)
@@ -695,24 +683,9 @@ async function initializeEventPage() {
   }
 
   try {
-    const response = await fetch("/api/me", {
-      headers: CMCENUtils.authHeaders(token)
+    currentUser = await eventApiJson("/api/me", token, {
+      errorMessage: translate("event_permission_error")
     });
-
-    if (response.status === 401) {
-      redirectToLogin();
-      return;
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        translate(
-          "event_permission_error"
-        )
-      );
-    }
-
-    currentUser = await response.json();
 
     autofillSubmitterFromProfile(currentUser);
 
@@ -804,35 +777,11 @@ eventForm.addEventListener(
           ? "PATCH"
           : "POST";
 
-      const response = await fetch(
-        requestUrl,
-        {
-          method: requestMethod,
-          headers: CMCENUtils.authHeaders(token, {
-            "Content-Type": "application/json"
-          }),
-          body: JSON.stringify(eventData)
-        }
-      );
-
-      const data =
-        await response
-          .json()
-          .catch(() => ({}));
-
-      if (response.status === 401) {
-        redirectToLogin();
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          data.error ||
-          translate(
-            "event_submit_error"
-          )
-        );
-      }
+      const data = await eventApiJson(requestUrl, token, {
+        method: requestMethod,
+        body: eventData,
+        errorMessage: translate("event_submit_error")
+      });
 
       if (!editingEventId) {
         resetEventForm();
@@ -1008,28 +957,13 @@ function populateEventForm(event) {
 }
 
 async function loadEventForEditing(token, eventId) {
-  const response = await fetch(
+  const data = await eventApiJson(
     `/api/events/${encodeURIComponent(eventId)}/edit`,
+    token,
     {
-      headers: CMCENUtils.authHeaders(token)
+      errorMessage: "Could not load event for editing"
     }
   );
-
-  const data = await response
-    .json()
-    .catch(() => ({}));
-
-  if (response.status === 401) {
-    redirectToLogin();
-    return;
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data.error ||
-      "Could not load event for editing"
-    );
-  }
 
   editingEvent = data.event;
 

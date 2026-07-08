@@ -20,6 +20,14 @@ const {
   buildPublicMediaUrl,
   getMediaKeyFromValue
 } = require('../services/media-library');
+const {
+  getEventSnapshot,
+  getEventTitle,
+  getRetirementCommentSnapshot,
+  getRetirementCommentTitle,
+  getRetirementMessageSnapshot,
+  getRetirementMessageTitle
+} = require('../services/content-snapshots');
 const s3Client = require('../storage');
 
 const router = express.Router();
@@ -63,51 +71,6 @@ function areStringArraysEqual(first = [], second = []) {
   }
 
   return normalizedFirst.every((value, index) => value === normalizedSecond[index]);
-}
-
-function getEventTitle(event) {
-  return (
-    event.title?.en ||
-    event.title?.fr ||
-    'Untitled event'
-  );
-}
-
-function getRetirementCommentTitle(comment) {
-  const retiree = comment.retirementMessage?.retiree;
-  const name = [
-    retiree?.rank,
-    retiree?.firstName,
-    retiree?.lastName
-  ].filter(Boolean).join(' ');
-
-  return name
-    ? `Retirement comment for ${name}`
-    : 'Retirement comment';
-}
-
-function getRetirementMessageTitle(message) {
-  const retiree = message.retiree;
-  const name = [
-    retiree?.rank,
-    retiree?.firstName,
-    retiree?.lastName
-  ].filter(Boolean).join(' ');
-
-  return name
-    ? `Retirement message for ${name}`
-    : 'Retirement message';
-}
-
-function getEventSnapshot(event) {
-  return {
-    title: getEventTitle(event),
-    status: event.status,
-    contentArea: event.contentArea || 'general',
-    createdBy: event.createdBy,
-    publishedBy: event.publishedBy,
-    startDate: event.startDate
-  };
 }
 
 function cleanMediaPageSize(value) {
@@ -187,28 +150,6 @@ function toAdminMediaItem(object, attachmentMap) {
     eTag: object.ETag ? String(object.ETag).replace(/^"|"$/gu, '') : '',
     attachedPosts: attachments,
     attachedPostCount: attachments.length
-  };
-}
-
-function getRetirementMessageSnapshot(message) {
-  return {
-    title: getRetirementMessageTitle(message),
-    status: message.status,
-    createdBy: message.createdBy,
-    publishedBy: message.publishedBy,
-    retiree: message.retiree
-  };
-}
-
-function getRetirementCommentSnapshot(comment) {
-  return {
-    title: getRetirementCommentTitle(comment),
-    status: comment.status,
-    author: comment.author,
-    publishedBy: comment.publishedBy,
-    retirementMessage: comment.retirementMessage,
-    body: String(comment.body || ''),
-    excerpt: String(comment.body || '').slice(0, 240)
   };
 }
 
@@ -884,7 +825,10 @@ router.delete(
         return res.status(404).json({ error: 'Retirement comment not found' });
       }
 
-      const snapshot = getRetirementCommentSnapshot(comment);
+      const snapshot = getRetirementCommentSnapshot(comment, {
+        includeBody: true,
+        includeRetirementMessageTitle: true
+      });
       const deletedBy = snapshotUser(req.user);
 
       await comment.deleteOne();

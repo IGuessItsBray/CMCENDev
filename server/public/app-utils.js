@@ -54,6 +54,122 @@
     };
   }
 
+  function hasHeader(headers, name) {
+    const normalizedName = name.toLowerCase();
+
+    return Object.keys(headers).some(
+      key => key.toLowerCase() === normalizedName
+    );
+  }
+
+  function extractErrorMessage(data, response, fallback) {
+    if (data && typeof data.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+
+    if (data && typeof data.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return fallback || `HTTP ${response.status} ${response.statusText}`;
+  }
+
+  async function readJsonResponse(response) {
+    return response.json().catch(() => ({}));
+  }
+
+  function createApiError(message, response, data = {}) {
+    const error = new Error(message);
+    error.status = response.status;
+    error.statusText = response.statusText;
+    error.data = data;
+
+    return error;
+  }
+
+  async function apiFetch(path, options = {}) {
+    const {
+      auth = false,
+      body,
+      errorMessage,
+      headers = {},
+      json = false,
+      parseJson = true,
+      redirectOnUnauthorized = "",
+      tempToken = "",
+      token,
+      unauthorizedMessage = "Authentication required",
+      ...fetchOptions
+    } = options;
+    const requestHeaders = { ...headers };
+    const requestBody =
+      json &&
+      body !== undefined &&
+      !(body instanceof FormData) &&
+      typeof body !== "string"
+        ? JSON.stringify(body)
+        : body;
+    const requestToken =
+      token !== undefined
+        ? token
+        : auth
+          ? getStoredAuthToken()
+          : undefined;
+
+    if (
+      json &&
+      !(body instanceof FormData) &&
+      !hasHeader(requestHeaders, "Content-Type")
+    ) {
+      requestHeaders["Content-Type"] = "application/json";
+    }
+
+    if (tempToken) {
+      requestHeaders["x-temp-token"] = tempToken;
+    }
+
+    const response = await fetch(path, {
+      ...fetchOptions,
+      body: requestBody,
+      headers: requestToken !== undefined
+        ? authHeaders(requestToken, requestHeaders)
+        : requestHeaders
+    });
+
+    const data = parseJson
+      ? await readJsonResponse(response)
+      : response;
+
+    if (response.status === 401 && redirectOnUnauthorized) {
+      redirectToLogin(
+        redirectOnUnauthorized === true
+          ? "/login.html"
+          : redirectOnUnauthorized
+      );
+      throw createApiError(unauthorizedMessage, response, data);
+    }
+
+    if (!response.ok) {
+      throw createApiError(
+        parseJson
+          ? extractErrorMessage(data, response, errorMessage)
+          : (errorMessage || `HTTP ${response.status} ${response.statusText}`),
+        response,
+        data
+      );
+    }
+
+    return data;
+  }
+
+  function apiJson(path, options = {}) {
+    return apiFetch(path, {
+      ...options,
+      json: true,
+      parseJson: true
+    });
+  }
+
   function clearMfaSession() {
     sessionStorage.removeItem("tempToken");
     sessionStorage.removeItem("twoFactorMethods");
@@ -92,6 +208,91 @@
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
       .replace(/=+$/, "");
+  }
+
+  function convertPublicKeyCredentialDescriptors(credentials) {
+    if (!Array.isArray(credentials)) {
+      return credentials;
+    }
+
+    return credentials.map(credential => ({
+      ...credential,
+      id: base64urlToArrayBuffer(credential.id)
+    }));
+  }
+
+  function preparePublicKeyCreationOptions(options = {}) {
+    const publicKey = { ...options };
+
+    if (publicKey.challenge) {
+      publicKey.challenge = base64urlToArrayBuffer(publicKey.challenge);
+    }
+
+    if (publicKey.user?.id) {
+      publicKey.user = {
+        ...publicKey.user,
+        id: base64urlToArrayBuffer(publicKey.user.id)
+      };
+    }
+
+    if (publicKey.excludeCredentials) {
+      publicKey.excludeCredentials =
+        convertPublicKeyCredentialDescriptors(publicKey.excludeCredentials);
+    }
+
+    return publicKey;
+  }
+
+  function preparePublicKeyRequestOptions(options = {}) {
+    const publicKey = { ...options };
+
+    if (publicKey.challenge) {
+      publicKey.challenge = base64urlToArrayBuffer(publicKey.challenge);
+    }
+
+    if (publicKey.allowCredentials) {
+      publicKey.allowCredentials =
+        convertPublicKeyCredentialDescriptors(publicKey.allowCredentials);
+    }
+
+    return publicKey;
+  }
+
+  function serializeAttestationCredential(credential) {
+    return {
+      id: credential.id,
+      rawId: arrayBufferToBase64url(credential.rawId),
+      type: credential.type,
+      authenticatorAttachment: credential.authenticatorAttachment || "",
+      response: {
+        clientDataJSON:
+          arrayBufferToBase64url(credential.response.clientDataJSON),
+        attestationObject:
+          arrayBufferToBase64url(credential.response.attestationObject)
+      },
+      transports: credential.response.getTransports
+        ? credential.response.getTransports()
+        : []
+    };
+  }
+
+  function serializeAssertionCredential(assertion) {
+    return {
+      id: assertion.id,
+      rawId: arrayBufferToBase64url(assertion.rawId),
+      type: assertion.type,
+      response: {
+        authenticatorData:
+          arrayBufferToBase64url(assertion.response.authenticatorData),
+        clientDataJSON:
+          arrayBufferToBase64url(assertion.response.clientDataJSON),
+        signature:
+          arrayBufferToBase64url(assertion.response.signature),
+        userHandle: assertion.response.userHandle
+          ? arrayBufferToBase64url(assertion.response.userHandle)
+          : null
+      }
+    };
   }
 
   function getCurrentLanguage() {
@@ -240,6 +441,8 @@
   }
 
   window.CMCENUtils = {
+    apiFetch,
+    apiJson,
     arrayBufferToBase64url,
     authHeaders,
     base64urlToArrayBuffer,
@@ -255,8 +458,12 @@
     getStoredAuthToken,
     getUserDisplayName,
     normalizeToken,
+    preparePublicKeyCreationOptions,
+    preparePublicKeyRequestOptions,
     redirectToLogin,
     requireAuthToken,
+    serializeAssertionCredential,
+    serializeAttestationCredential,
     setStatusLoading,
     setStatusMessage,
     storeAuthToken

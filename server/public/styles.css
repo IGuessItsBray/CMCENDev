@@ -3614,7 +3614,7 @@ a.dropdown-toggle {
   border: 0;
 }
 
-.admin-editor-field > span,
+.admin-editor-field>span,
 .admin-editor-fieldset legend {
   color: var(--branch-grey-800);
   font-size: 11px;
@@ -3864,7 +3864,7 @@ a.dropdown-toggle {
 }
 
 .admin-media-attachment a,
-.admin-media-attachment > span:first-child {
+.admin-media-attachment>span:first-child {
   color: var(--navy-900);
   font-size: 13px;
   font-weight: 900;
@@ -3974,6 +3974,7 @@ a.dropdown-toggle {
 }
 
 @media (max-width: 700px) {
+
   .site-config-toolbar,
   .site-config-row {
     display: grid;
@@ -7057,6 +7058,14 @@ a.dropdown-toggle {
 .home-retirement-photo img {
   display: block;
   object-fit: cover;
+  object-position: center top;
+}
+
+.home-retirement-photo img.home-retirement-photo-placeholder {
+  padding: 6px;
+  background: var(--branch-grey-100);
+  object-fit: contain;
+  object-position: center;
 }
 
 .home-retirement-initials {
@@ -7589,6 +7598,7 @@ a.dropdown-toggle {
 
 .retirement-card-photo img {
   object-fit: cover;
+  object-position: center top;
 }
 
 .retirement-card-photo-placeholder {
@@ -7604,6 +7614,17 @@ a.dropdown-toggle {
     linear-gradient(135deg,
       #f4f1e9,
       var(--branch-grey-200));
+}
+
+.retirement-card-photo img.retirement-card-photo-logo {
+  display: block;
+  padding: 28px;
+  background:
+    linear-gradient(135deg,
+      #f4f1e9,
+      var(--branch-grey-200));
+  object-fit: contain;
+  object-position: center;
 }
 
 .retirement-card-footer {
@@ -7707,39 +7728,32 @@ a.dropdown-toggle {
 
 .retirement-detail-photo {
   margin: 0 auto 28px;
-  width: min(100%, 620px);
+  width: 100%;
+  text-align: center;
 }
 
-.retirement-detail-photo img,
-.retirement-detail-photo-placeholder {
-  width: 100%;
-  aspect-ratio: 4 / 3;
+.retirement-detail-photo img {
   display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 90vh;
+  height: auto;
+  margin: 0 auto;
   border: 1px solid var(--branch-grey-200);
   border-radius: 2px;
   background: var(--branch-grey-100);
   box-shadow:
     0 8px 20px rgba(15, 18, 31, 0.12);
+  object-fit: contain;
 }
 
-.retirement-detail-photo img {
-  height: auto;
-  object-fit: cover;
-}
-
-.retirement-detail-photo-placeholder {
-  display: grid;
-  place-items: center;
-  color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
-  font-size: 64px;
-  background:
-    linear-gradient(135deg,
-      #f4f1e9,
-      var(--branch-grey-200));
+.retirement-detail-photo img.retirement-detail-photo-logo {
+  width: min(44vw, 220px);
+  max-height: 260px;
+  padding: 18px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .retirement-detail-message-section,
@@ -9326,8 +9340,7 @@ html[data-theme="dark"] .theme-toggle[aria-pressed="true"]:focus-visible {
   color: var(--gold-200);
 }
 
-html[data-theme="dark"] main :is(
-  .login-shell,
+html[data-theme="dark"] main :is(.login-shell,
   .register-shell,
   .dashboard-shell,
   .event-submit-shell,
@@ -9340,16 +9353,14 @@ html[data-theme="dark"] main :is(
   .calendar-container,
   .audit-log-panel,
   .admin-user-list-panel,
-  .admin-user-detail-panel
-) {
+  .admin-user-detail-panel) {
   border-color: var(--dark-border);
   background: var(--dark-surface);
   color: var(--dark-text);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.36);
 }
 
-html[data-theme="dark"] main :is(
-  .login-panel,
+html[data-theme="dark"] main :is(.login-panel,
   .register-panel,
   .dashboard-section,
   .event-form-section,
@@ -9376,15 +9387,13 @@ html[data-theme="dark"] main :is(
   .retirement-comment-empty,
   .retirement-comment-login,
   .my-event-card,
-  .calendar-event-card
-) {
+  .calendar-event-card) {
   border-color: var(--dark-border);
   background: var(--dark-surface-2);
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] main :is(
-  .dashboard-details,
+html[data-theme="dark"] main :is(.dashboard-details,
   .dashboard-profile-readonly,
   .admin-user-row,
   .admin-user-search,
@@ -9404,15 +9413,13 @@ html[data-theme="dark"] main :is(
   .passkey-item,
   .totp-status,
   .home-feed-message,
-  .calendar-message
-) {
+  .calendar-message) {
   border-color: var(--dark-border);
   background: var(--dark-surface-3);
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] main :is(
-  h1,
+html[data-theme="dark"] main :is(h1,
   h2,
   h3,
   h4,
@@ -9429,13 +9436,11 @@ html[data-theme="dark"] main :is(
   .retirement-detail-comments h2,
   .retirement-card-header h2,
   .search-heading h1,
-  .translations-admin-heading h1
-) {
+  .translations-admin-heading h1) {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] main :is(
-  p,
+html[data-theme="dark"] main :is(p,
   li,
   small,
   time,
@@ -9450,8 +9455,7 @@ html[data-theme="dark"] main :is(
   .event-language-note,
   .event-time-zone-note,
   .review-page-message,
-  .search-status
-) {
+  .search-status) {
   color: var(--dark-text-soft);
 }
 
@@ -9487,8 +9491,7 @@ html[data-theme="dark"] main :is(input, textarea, select):-webkit-autofill:focus
   transition: background-color 9999s ease-in-out 0s;
 }
 
-html[data-theme="dark"] main :is(
-  button,
+html[data-theme="dark"] main :is(button,
   .dashboard-profile-button,
   .admin-work-zone-button,
   .mfa-button,
@@ -9497,40 +9500,34 @@ html[data-theme="dark"] main :is(
   .register-submit,
   .review-publish-button,
   .review-reject-button,
-  .translation-save-button
-) {
+  .translation-save-button) {
   border-color: var(--dark-border-strong);
 }
 
-html[data-theme="dark"] main :is(
-  .dashboard-profile-button.is-primary,
+html[data-theme="dark"] main :is(.dashboard-profile-button.is-primary,
   .admin-work-zone-button.is-primary,
   .mfa-button-primary,
   .event-submit-button,
   .login-submit,
   .register-submit,
   .review-publish-button,
-  .translation-save-button
-) {
+  .translation-save-button) {
   border-color: var(--gold-500);
   background: var(--gold-500);
   color: #101522;
 }
 
-html[data-theme="dark"] main :is(
-  .dashboard-profile-button.is-secondary,
+html[data-theme="dark"] main :is(.dashboard-profile-button.is-secondary,
   .admin-work-zone-button.is-secondary,
   .mfa-button,
   .mfa-link-button,
   .event-management-tab,
-  .review-reject-button
-) {
+  .review-reject-button) {
   background: transparent;
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] main :is(
-  .dashboard-status,
+html[data-theme="dark"] main :is(.dashboard-status,
   .event-form-message,
   .event-page-message,
   .review-page-message,
@@ -9539,32 +9536,27 @@ html[data-theme="dark"] main :is(
   .calendar-message,
   .search-status,
   .admin-work-zone-message,
-  .dashboard-profile-message
-) {
+  .dashboard-profile-message) {
   border-color: var(--dark-border);
   background: var(--dark-surface-3);
   color: var(--dark-text-soft);
 }
 
-html[data-theme="dark"] main :is(
-  .is-error,
+html[data-theme="dark"] main :is(.is-error,
   .login-error,
   .register-error,
   .retirement-comment-message.is-error,
   .event-form-message.is-error,
-  .review-page-message.is-error
-) {
+  .review-page-message.is-error) {
   border-left-color: var(--danger);
   background: var(--dark-danger-bg);
   color: var(--dark-danger-text);
 }
 
-html[data-theme="dark"] main :is(
-  .is-success,
+html[data-theme="dark"] main :is(.is-success,
   .retirement-comment-message.is-success,
   .event-form-message.is-success,
-  .dashboard-profile-message.is-success
-) {
+  .dashboard-profile-message.is-success) {
   border-left-color: var(--success-border);
   background: var(--dark-success-bg);
   color: var(--dark-success-text);
@@ -10467,7 +10459,7 @@ html[data-theme="dark"] .admin-media-heading h3,
 html[data-theme="dark"] .admin-media-body h4,
 html[data-theme="dark"] .admin-media-attachments strong,
 html[data-theme="dark"] .admin-media-attachment a,
-html[data-theme="dark"] .admin-media-attachment > span:first-child,
+html[data-theme="dark"] .admin-media-attachment>span:first-child,
 html[data-theme="dark"] .site-config-key {
   color: var(--dark-text);
 }

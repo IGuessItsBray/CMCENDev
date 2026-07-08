@@ -131,14 +131,46 @@ function formatHomeCommentCount(count) {
   );
 }
 
-function getHomeInitials(name) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(-2)
-    .map(part => part[0])
-    .join("")
-    .toUpperCase() || "CE";
+function isHomeRetirementPlaceholderPhoto(photoUrl) {
+  if (!photoUrl) {
+    return false;
+  }
+
+  try {
+    const url =
+      new URL(photoUrl, window.location.origin);
+    const pathname =
+      url.pathname.toLowerCase();
+    const fileName =
+      pathname.split("/").pop();
+
+    return fileName === "logo.png" ||
+      fileName.includes("cmcen-crest") ||
+      pathname.includes("/legacy/wordpress/348036/");
+  } catch (error) {
+    const pathname =
+      String(photoUrl)
+        .toLowerCase()
+        .split(/[?#]/)[0];
+    const fileName =
+      pathname.split("/").pop();
+
+    return fileName === "logo.png" ||
+      fileName.includes("cmcen-crest") ||
+      pathname.includes("/legacy/wordpress/348036/");
+  }
+}
+
+function createHomeRetirementPlaceholderImage() {
+  const image = document.createElement("img");
+
+  image.className = "home-retirement-photo-placeholder";
+  image.src = "/images/logo.png";
+  image.alt = "";
+  image.loading = "lazy";
+  image.setAttribute("aria-hidden", "true");
+
+  return image;
 }
 
 function createHomeRetirementMedia(retirementMessage, name) {
@@ -147,25 +179,33 @@ function createHomeRetirementMedia(retirementMessage, name) {
 
   if (retirementMessage.photoUrl) {
     const image = document.createElement("img");
+    const isPlaceholderPhoto =
+      isHomeRetirementPlaceholderPhoto(
+        retirementMessage.photoUrl
+      );
 
-    image.src = retirementMessage.photoUrl;
-    image.alt = getHomeTranslation(
-      "retirement_photo_alt",
-      { name }
-    );
+    image.src = isPlaceholderPhoto
+      ? "/images/logo.png"
+      : retirementMessage.photoUrl;
+    image.alt = isPlaceholderPhoto
+      ? ""
+      : getHomeTranslation(
+        "retirement_photo_alt",
+        { name }
+      );
     image.loading = "lazy";
+
+    if (isPlaceholderPhoto) {
+      image.className =
+        "home-retirement-photo-placeholder";
+      image.setAttribute("aria-hidden", "true");
+    }
 
     media.appendChild(image);
     return media;
   }
 
-  const initials = document.createElement("span");
-
-  initials.className = "home-retirement-initials";
-  initials.setAttribute("aria-hidden", "true");
-  initials.textContent = getHomeInitials(name);
-
-  media.appendChild(initials);
+  media.appendChild(createHomeRetirementPlaceholderImage());
   return media;
 }
 

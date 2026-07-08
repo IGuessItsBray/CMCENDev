@@ -156,7 +156,8 @@ function createMyEventCard(submittedEvent) {
   }
 
   const editLink = document.createElement("a");
-  editLink.className = "my-event-edit-link";
+  editLink.className =
+    "app-button is-primary is-small my-event-edit-link";
   editLink.href = `/submit-event.html?id=${encodeURIComponent(submittedEvent._id)}`;
   editLink.textContent = submittedEvent.status === "rejected" ? translate("my_events_edit_resubmit") : translate("my_events_edit");
   editLink.addEventListener("click", event => {

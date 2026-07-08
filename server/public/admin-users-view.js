@@ -128,7 +128,8 @@
 
       const refresh = document.createElement("button");
       refresh.type = "button";
-      refresh.className = "admin-work-zone-button is-secondary";
+      refresh.className =
+        "app-button is-secondary is-small admin-work-zone-button";
       refresh.textContent = translate("admin_refresh");
       refresh.addEventListener("click", actions.refreshUsers);
 
@@ -276,7 +277,8 @@
 
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
-      deleteButton.className = "admin-work-zone-button is-danger";
+      deleteButton.className =
+        "app-button is-danger is-small admin-work-zone-button";
       deleteButton.textContent = translate("admin_delete");
       deleteButton.addEventListener("click", () => actions.deletePost(post));
 
@@ -351,7 +353,8 @@
 
       const save = document.createElement("button");
       save.type = "submit";
-      save.className = "admin-work-zone-button is-primary";
+      save.className =
+        "app-button is-primary is-small admin-work-zone-button";
       save.textContent = translate("admin_users_save");
 
       form.append(roleField, contentField, save);
@@ -359,7 +362,8 @@
       if (!isDeveloper(user)) {
         const promoteDeveloper = document.createElement("button");
         promoteDeveloper.type = "button";
-        promoteDeveloper.className = "admin-work-zone-button is-danger";
+        promoteDeveloper.className =
+          "app-button is-danger is-small admin-work-zone-button";
         promoteDeveloper.textContent = translate("admin_users_promote_developer");
         promoteDeveloper.addEventListener("click", () => {
           actions.promoteDeveloper(user);
@@ -491,7 +495,8 @@
       actionsWrapper.className = "admin-media-actions";
 
       const open = document.createElement("a");
-      open.className = "admin-work-zone-button is-secondary";
+      open.className =
+        "app-button is-secondary is-small admin-work-zone-button";
       open.href = mediaItem.url;
       open.target = "_blank";
       open.rel = "noopener";
@@ -499,7 +504,8 @@
 
       const remove = document.createElement("button");
       remove.type = "button";
-      remove.className = "admin-work-zone-button is-danger";
+      remove.className =
+        "app-button is-danger is-small admin-work-zone-button";
       remove.textContent = attachmentCount
         ? translate("admin_media_in_use")
         : translate("admin_delete");
@@ -536,7 +542,8 @@
 
       const refresh = document.createElement("button");
       refresh.type = "button";
-      refresh.className = "admin-work-zone-button is-secondary";
+      refresh.className =
+        "app-button is-secondary is-small admin-work-zone-button";
       refresh.textContent = translate("admin_refresh");
       refresh.disabled = state.mediaIsLoading;
       refresh.addEventListener("click", actions.refreshMedia);
@@ -567,7 +574,8 @@
       if (state.mediaIsTruncated) {
         const loadMore = document.createElement("button");
         loadMore.type = "button";
-        loadMore.className = "admin-work-zone-button is-secondary admin-media-load-more";
+        loadMore.className =
+          "app-button is-secondary is-small admin-work-zone-button admin-media-load-more";
         loadMore.textContent = state.mediaIsLoading
           ? translate("loading_text")
           : translate("admin_media_load_more");

@@ -733,7 +733,7 @@ function createReviewCard(event) {
   publishButton.type = "button";
 
   publishButton.className =
-    "review-publish-button";
+    "app-button is-primary review-publish-button";
 
   publishButton.textContent =
     translate("publish_event");
@@ -744,7 +744,7 @@ function createReviewCard(event) {
   rejectButton.type = "button";
 
   rejectButton.className =
-    "review-reject-button";
+    "app-button is-danger review-reject-button";
 
   rejectButton.textContent =
     translate("reject_event");
@@ -1201,7 +1201,7 @@ function createRetirementReviewCard(retirementMessage) {
 
   publishButton.type = "button";
   publishButton.className =
-    "review-publish-button";
+    "app-button is-primary review-publish-button";
   publishButton.textContent =
     translate("publish_retirement_message");
 
@@ -1210,7 +1210,7 @@ function createRetirementReviewCard(retirementMessage) {
 
   rejectButton.type = "button";
   rejectButton.className =
-    "review-reject-button";
+    "app-button is-danger review-reject-button";
   rejectButton.textContent =
     translate("reject_retirement_message");
 
@@ -1428,13 +1428,13 @@ function createCommentReviewCard(comment) {
 
   const publishButton = document.createElement("button");
   publishButton.type = "button";
-  publishButton.className = "review-publish-button";
+  publishButton.className = "app-button is-primary review-publish-button";
   publishButton.textContent =
     translate("publish_comment");
 
   const rejectButton = document.createElement("button");
   rejectButton.type = "button";
-  rejectButton.className = "review-reject-button";
+  rejectButton.className = "app-button is-danger review-reject-button";
   rejectButton.textContent =
     translate("reject_comment");
 

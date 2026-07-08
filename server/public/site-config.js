@@ -115,14 +115,16 @@ function createSiteConfigToolbar() {
 
   const reload = document.createElement("button");
   reload.type = "button";
-  reload.className = "admin-work-zone-button is-secondary";
+  reload.className =
+    "app-button is-secondary is-small admin-work-zone-button";
   reload.textContent = translate("site_config_reload");
   reload.disabled = siteConfigState.isSaving;
   reload.addEventListener("click", () => loadSiteConfig());
 
   const save = document.createElement("button");
   save.type = "submit";
-  save.className = "admin-work-zone-button is-primary";
+  save.className =
+    "app-button is-primary is-small admin-work-zone-button";
   save.textContent = siteConfigState.isSaving
     ? translate("translations_saving")
     : translate("site_config_save");

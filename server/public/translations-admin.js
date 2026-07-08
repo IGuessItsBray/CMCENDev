@@ -202,7 +202,8 @@ function createTranslationRow(row) {
 
   const saveButton = document.createElement("button");
   saveButton.type = "button";
-  saveButton.className = "review-publish-button translation-save-button";
+  saveButton.className =
+    "app-button is-primary is-small is-block translation-save-button";
   saveButton.textContent = translate("translations_save");
   saveButton.addEventListener("click", () => {
     saveTranslationRow(article, row.key);

@@ -154,7 +154,7 @@ function renderEventAdminActions() {
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className =
-        "published-content-delete event-delete";
+        "app-button is-danger is-small published-content-delete event-delete";
     deleteButton.dataset.action = "delete-event";
     deleteButton.textContent = "Delete event";
     deleteButton.addEventListener("click", deletePublishedEvent);

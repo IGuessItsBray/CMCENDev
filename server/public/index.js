@@ -748,7 +748,7 @@ function createSignOutModal() {
         <div class="signout-modal-actions">
           <button
             type="button"
-            class="signout-modal-button signout-modal-button-secondary"
+            class="app-button is-secondary signout-modal-button"
             data-signout-cancel
             data-i18n="signout_cancel"
           >
@@ -757,7 +757,7 @@ function createSignOutModal() {
 
           <button
             type="button"
-            class="signout-modal-button signout-modal-button-danger"
+            class="app-button is-danger signout-modal-button"
             data-signout-confirm
             data-i18n="signout_confirm"
           >

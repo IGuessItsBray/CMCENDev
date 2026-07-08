@@ -72,7 +72,7 @@
               data-i18n-placeholder="password_placeholder" placeholder="Enter your password" required />
           </div>
 
-          <button type="submit" class="login-submit" id="loginBtn" data-i18n="login_btn">
+          <button type="submit" class="app-button is-primary is-large is-block login-submit" id="loginBtn" data-i18n="login_btn">
             Sign in
           </button>
 
@@ -121,13 +121,13 @@
         <div class="login-mfa-code-row">
           <input id="mfaTotpCode" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="8" />
 
-          <button type="submit">Verify</button>
+          <button type="submit" class="app-button is-primary">Verify</button>
         </div>
       </form>
 
       <p class="login-error" id="mfaError" role="alert" aria-live="polite" hidden></p>
 
-      <button class="login-mfa-cancel" id="mfaCancel" type="button">
+      <button class="app-button is-secondary is-block login-mfa-cancel" id="mfaCancel" type="button">
         Cancel
       </button>
     </section>

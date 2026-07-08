@@ -268,7 +268,8 @@ function createAuditFilters() {
 
   const filterButton = document.createElement("button");
   filterButton.type = "submit";
-  filterButton.className = "admin-work-zone-button is-primary audit-log-filter-button";
+  filterButton.className =
+    "app-button is-primary is-small admin-work-zone-button audit-log-filter-button";
   filterButton.textContent = translate("audit_filter_submit");
   form.append(filterButton);
 
@@ -285,7 +286,8 @@ function createAuditFilters() {
 function createAuditRefreshButton() {
   const refresh = document.createElement("button");
   refresh.type = "button";
-  refresh.className = "admin-work-zone-button is-secondary audit-log-refresh-button";
+  refresh.className =
+    "app-button is-secondary is-icon admin-work-zone-button audit-log-refresh-button";
   refresh.setAttribute("aria-label", translate("audit_refresh_label"));
   refresh.title = translate("admin_refresh");
   refresh.disabled = auditState.isLoading;

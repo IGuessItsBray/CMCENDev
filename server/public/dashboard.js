@@ -483,19 +483,22 @@ function createProfileForm(user) {
 
   const editButton = document.createElement("button");
   editButton.type = "button";
-  editButton.className = "dashboard-profile-button is-secondary";
+  editButton.className =
+    "app-button is-secondary dashboard-profile-button";
   editButton.dataset.profileAction = "edit";
   editButton.textContent = translate("dashboard_edit_profile");
 
   const saveButton = document.createElement("button");
   saveButton.type = "submit";
-  saveButton.className = "dashboard-profile-button is-primary";
+  saveButton.className =
+    "app-button is-primary dashboard-profile-button";
   saveButton.dataset.profileAction = "save";
   saveButton.textContent = translate("dashboard_save_profile");
 
   const cancelButton = document.createElement("button");
   cancelButton.type = "button";
-  cancelButton.className = "dashboard-profile-button is-secondary";
+  cancelButton.className =
+    "app-button is-secondary dashboard-profile-button";
   cancelButton.dataset.profileAction = "cancel";
   cancelButton.textContent = translate("dashboard_cancel_profile");
 

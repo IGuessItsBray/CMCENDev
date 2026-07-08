@@ -419,7 +419,7 @@ function renderRetirementAdminActions() {
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className =
-        "published-content-delete retirement-message-delete";
+        "app-button is-danger is-small published-content-delete retirement-message-delete";
     deleteButton.dataset.action = "delete-retirement-message";
     deleteButton.textContent = "Delete retirement message";
     deleteButton.addEventListener("click", deleteRetirementMessage);
@@ -521,7 +521,8 @@ function createCommentElement(comment) {
     if (canManageRetirementComments) {
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
-        deleteButton.className = "retirement-comment-delete";
+        deleteButton.className =
+            "app-button is-danger is-small retirement-comment-delete";
         deleteButton.textContent = "Delete";
         deleteButton.setAttribute(
             "aria-label",

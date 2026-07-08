@@ -122,13 +122,29 @@ function getRetirementMessageText(retirementMessage) {
     );
 }
 
+function formatRetirementMessageText(text) {
+    return text
+        .replace(/\r\n?/g, "\n")
+        .replace(
+            /[ \t]+([1-9]\d?\.\s+)/g,
+            (match, marker, offset) =>
+                offset === 0 ? marker : `\n\n${marker}`
+        );
+}
+
+function setRetirementMessageText(retirementMessage) {
+    retirementDetailText.textContent =
+        formatRetirementMessageText(
+            getRetirementMessageText(retirementMessage)
+        );
+}
+
 function updateRetirementMessageLanguage() {
     if (!currentRetirementMessage) {
         return;
     }
 
-    retirementDetailText.textContent =
-        getRetirementMessageText(currentRetirementMessage);
+    setRetirementMessageText(currentRetirementMessage);
     retirementDetailDate.textContent =
         formatRetirementDate(
             currentRetirementMessage.retiree?.retirementDate
@@ -242,8 +258,7 @@ function renderRetirementMessage(retirementMessage) {
         formatRetirementDate(
             retirementMessage.retiree?.retirementDate
         );
-    retirementDetailText.textContent =
-        getRetirementMessageText(retirementMessage);
+    setRetirementMessageText(retirementMessage);
 
     renderPhoto(retirementMessage, name);
 
@@ -328,7 +343,7 @@ async function deleteRetirementMessage() {
         if (!response.ok) {
             throw new Error(
                 data.error ||
-                    "Could not delete retirement message"
+                "Could not delete retirement message"
             );
         }
 
@@ -343,7 +358,7 @@ async function deleteRetirementMessage() {
     } catch (error) {
         showRetirementCommentMessage(
             error.message ||
-                "Could not delete retirement message",
+            "Could not delete retirement message",
             "error"
         );
 
@@ -420,7 +435,7 @@ async function deleteRetirementComment(comment) {
         if (!response.ok) {
             throw new Error(
                 data.error ||
-                    "Could not delete comment"
+                "Could not delete comment"
             );
         }
 
@@ -437,7 +452,7 @@ async function deleteRetirementComment(comment) {
     } catch (error) {
         showRetirementCommentMessage(
             error.message ||
-                "Could not delete comment",
+            "Could not delete comment",
             "error"
         );
     }
@@ -522,7 +537,7 @@ async function loadComments(messageId) {
         if (!response.ok) {
             throw new Error(
                 data.error ||
-                    translate("retirement_comments_load_error")
+                translate("retirement_comments_load_error")
             );
         }
 
@@ -535,7 +550,7 @@ async function loadComments(messageId) {
     } catch (error) {
         showRetirementCommentMessage(
             error.message ||
-                translate("retirement_comments_load_error"),
+            translate("retirement_comments_load_error"),
             "error"
         );
     }
@@ -623,7 +638,7 @@ async function loadRetirementMessage() {
         if (!response.ok) {
             throw new Error(
                 data.error ||
-                    translate("retirement_detail_load_error")
+                translate("retirement_detail_load_error")
             );
         }
 
@@ -633,7 +648,7 @@ async function loadRetirementMessage() {
     } catch (error) {
         showRetirementDetailMessage(
             error.message ||
-                translate("retirement_detail_load_error"),
+            translate("retirement_detail_load_error"),
             "error"
         );
     }
@@ -699,7 +714,7 @@ retirementCommentForm.addEventListener(
             if (!response.ok) {
                 throw new Error(
                     data.error ||
-                        translate("retirement_comment_submit_error")
+                    translate("retirement_comment_submit_error")
                 );
             }
 
@@ -731,7 +746,7 @@ retirementCommentForm.addEventListener(
         } catch (error) {
             showRetirementCommentMessage(
                 error.message ||
-                    translate("retirement_comment_submit_error"),
+                translate("retirement_comment_submit_error"),
                 "error"
             );
         } finally {

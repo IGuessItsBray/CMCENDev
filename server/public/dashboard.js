@@ -79,7 +79,7 @@ function createDetailRow(labelKey, value) {
   row.className = "dashboard-detail-row";
 
   const label = document.createElement("span");
-  label.className = "dashboard-detail-label";
+  label.className = "app-meta-label";
   label.textContent = translate(labelKey);
 
   const valueElement = document.createElement("span");
@@ -279,7 +279,7 @@ function setProfileSaveButtonSaved(saveButton, onDone) {
   saveButton.classList.add("is-saved");
 
   const check = document.createElement("span");
-  check.className = "dashboard-profile-save-check";
+  check.className = "app-state-check";
   check.setAttribute("aria-hidden", "true");
   check.textContent = "\u2713";
 
@@ -484,21 +484,21 @@ function createProfileForm(user) {
   const editButton = document.createElement("button");
   editButton.type = "button";
   editButton.className =
-    "app-button is-secondary dashboard-profile-button";
+    "app-button is-secondary";
   editButton.dataset.profileAction = "edit";
   editButton.textContent = translate("dashboard_edit_profile");
 
   const saveButton = document.createElement("button");
   saveButton.type = "submit";
   saveButton.className =
-    "app-button is-primary dashboard-profile-button";
+    "app-button is-primary app-state-button";
   saveButton.dataset.profileAction = "save";
   saveButton.textContent = translate("dashboard_save_profile");
 
   const cancelButton = document.createElement("button");
   cancelButton.type = "button";
   cancelButton.className =
-    "app-button is-secondary dashboard-profile-button";
+    "app-button is-secondary";
   cancelButton.dataset.profileAction = "cancel";
   cancelButton.textContent = translate("dashboard_cancel_profile");
 

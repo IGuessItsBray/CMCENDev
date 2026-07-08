@@ -254,7 +254,7 @@ function formatDateOnly(dateValue) {
 
 function createReviewRecordSection(titleKey, items, additionalClass = "") {
   const section = document.createElement("section");
-  section.className = `review-record-section ${additionalClass}`.trim();
+  section.className = `app-card review-record-section ${additionalClass}`.trim();
 
   const heading = document.createElement("h3");
   heading.textContent = translate(titleKey);
@@ -273,13 +273,13 @@ function createReviewRecordSection(titleKey, items, additionalClass = "") {
 
     const label = document.createElement("span");
 
-    label.className = "review-record-label";
+    label.className = "app-meta-label is-compact";
 
     label.textContent = translate(item.labelKey);
 
     const value = document.createElement("span");
 
-    value.className = "review-record-value";
+    value.className = "app-meta-value";
 
     if (item.valueClass) {
       value.classList.add(
@@ -303,11 +303,11 @@ function createMetaItem(labelKey, value) {
   item.className = "review-event-meta-item";
 
   const label = document.createElement("span");
-  label.className = "review-event-meta-label";
+  label.className = "app-meta-label is-compact";
   label.textContent = translate(labelKey);
 
   const content = document.createElement("span");
-  content.className = "review-event-meta-value";
+  content.className = "app-meta-value";
   content.textContent = value || "—";
 
   item.append(label, content);
@@ -334,7 +334,7 @@ function createContentValue(className, value) {
 
 function createContentSection(event, language, heading) {
   const section = document.createElement("section");
-  section.className = "review-language-panel";
+  section.className = "app-card review-language-panel";
   section.lang = language;
 
   const header = document.createElement("header");
@@ -795,7 +795,7 @@ function createReviewCard(event) {
 function createRetirementMessageSection(retirementMessage) {
   const section = document.createElement("section");
   section.className =
-    "review-record-section retirement-review-message-section";
+    "app-card review-record-section retirement-review-message-section";
 
   const heading = document.createElement("h3");
   heading.textContent =
@@ -807,7 +807,7 @@ function createRetirementMessageSection(retirementMessage) {
 
   ["en", "fr"].forEach(languageCode => {
     const panel = document.createElement("section");
-    panel.className = "review-language-panel";
+    panel.className = "app-card review-language-panel";
 
     const panelHeading = document.createElement("header");
     panelHeading.className = "review-language-heading";
@@ -887,7 +887,7 @@ function createRetirementPhotoSection(retirementMessage) {
 
   const section = document.createElement("section");
   section.className =
-    "review-record-section retirement-review-photo-section";
+    "app-card review-record-section retirement-review-photo-section";
 
   const heading = document.createElement("h3");
   heading.textContent =
@@ -1310,7 +1310,7 @@ function createCommentReviewCard(comment) {
 
   const commentSection = document.createElement("section");
   commentSection.className =
-    "review-record-section comment-review-comment-section";
+    "app-card review-record-section comment-review-comment-section";
 
   const commentHeading = document.createElement("h3");
   commentHeading.textContent =
@@ -1328,7 +1328,7 @@ function createCommentReviewCard(comment) {
 
   const relatedSection = document.createElement("section");
   relatedSection.className =
-    "review-record-section comment-review-related-section";
+    "app-card review-record-section comment-review-related-section";
 
   const relatedHeading = document.createElement("h3");
   relatedHeading.textContent =
@@ -1341,13 +1341,13 @@ function createCommentReviewCard(comment) {
   relatedItem.className = "review-record-item is-wide";
 
   const relatedLabel = document.createElement("span");
-  relatedLabel.className = "review-record-label";
+  relatedLabel.className = "app-meta-label is-compact";
   relatedLabel.textContent =
     translate("comment_review_retiree_label");
 
   const relatedLink = document.createElement("a");
   relatedLink.className =
-    "review-record-value comment-review-related-link";
+    "app-meta-value comment-review-related-link";
 
   if (comment.retirementMessage?._id) {
     relatedLink.href =

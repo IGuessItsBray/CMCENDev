@@ -83,7 +83,7 @@ function setTranslationSaveButtonSaved(saveButton) {
   saveButton.classList.add("is-saved");
 
   const check = document.createElement("span");
-  check.className = "translation-save-check";
+  check.className = "app-state-check";
   check.setAttribute("aria-hidden", "true");
   check.textContent = "\u2713";
 
@@ -204,7 +204,8 @@ function createTranslationRow(row) {
   const saveButton = document.createElement("button");
   saveButton.type = "button";
   saveButton.className =
-    "app-button is-primary is-small is-block translation-save-button";
+    "app-button is-primary is-small is-block app-state-button translation-save-action";
+  saveButton.dataset.translationSaveButton = "true";
   saveButton.textContent = translate("translations_save");
   saveButton.addEventListener("click", () => {
     saveTranslationRow(article, row.key);
@@ -251,7 +252,7 @@ async function saveTranslationRow(article, key) {
     return;
   }
 
-  const saveButton = article.querySelector(".translation-save-button");
+  const saveButton = article.querySelector("[data-translation-save-button]");
   const status = article.querySelector(".translation-row-status");
   const values = {};
   let didSave = false;

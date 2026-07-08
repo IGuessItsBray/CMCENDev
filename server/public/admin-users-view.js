@@ -524,13 +524,15 @@
       panel.className = "admin-media-library";
 
       const header = document.createElement("div");
-      header.className = "admin-media-heading";
+      header.className = "app-toolbar admin-media-heading";
 
       const copy = document.createElement("div");
       const title = document.createElement("h3");
+      title.className = "app-toolbar-title";
       title.textContent = translate("admin_media_heading");
 
       const intro = document.createElement("p");
+      intro.className = "app-toolbar-copy";
       intro.textContent = state.mediaBucket
         ? translate("admin_media_intro_bucket", {
           bucket: state.mediaBucket

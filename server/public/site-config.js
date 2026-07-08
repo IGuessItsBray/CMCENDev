@@ -105,9 +105,10 @@ function createSiteConfigMessage() {
 
 function createSiteConfigToolbar() {
   const toolbar = document.createElement("div");
-  toolbar.className = "site-config-toolbar";
+  toolbar.className = "app-toolbar site-config-toolbar";
 
   const copy = document.createElement("p");
+  copy.className = "app-toolbar-copy";
   copy.textContent = translate("site_config_toolbar_copy");
 
   const actions = document.createElement("div");

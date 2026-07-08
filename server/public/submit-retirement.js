@@ -14,6 +14,24 @@ const retirementAuthToken = CMCENUtils.requireAuthToken();
 const RETIREMENT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const redirectToLogin = CMCENUtils.redirectToLogin;
 
+function retirementApiJson(path, options = {}) {
+    return CMCENUtils.apiJson(path, {
+        ...options,
+        token: retirementAuthToken,
+        redirectOnUnauthorized: true,
+        unauthorizedMessage: translate("retirement_permission_error")
+    });
+}
+
+function retirementApiFetch(path, options = {}) {
+    return CMCENUtils.apiFetch(path, {
+        ...options,
+        token: retirementAuthToken,
+        redirectOnUnauthorized: true,
+        unauthorizedMessage: translate("retirement_permission_error")
+    });
+}
+
 function showRetirementFormMessage(message, type = "error") {
     retirementFormMessage.textContent = message;
     retirementFormMessage.className = `event-page-message is-${type}`;
@@ -161,27 +179,14 @@ async function uploadRetirementPhoto() {
 
     uploadData.append("image", file);
 
-    const response = await fetch(
-        "/api/upload",
-        {
-            method: "POST",
+    const data = await retirementApiFetch("/api/upload", {
+        method: "POST",
+        body: uploadData,
+        errorMessage: translate("retirement_photo_upload_error")
+    });
 
-            headers: CMCENUtils.authHeaders(retirementAuthToken),
-
-            body:
-                uploadData
-        }
-    );
-
-    if (response.status === 401) {
-        redirectToLogin();
-        throw new Error(translate("retirement_permission_error"));
-    }
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok || !data.url) {
-        throw new Error(data.error || translate("retirement_photo_upload_error"));
+    if (!data.url) {
+        throw new Error(translate("retirement_photo_upload_error"));
     }
 
     return data.url;
@@ -247,23 +252,9 @@ async function verifyRetirementAccess() {
     }
 
     try {
-        const response = await fetch(
-            "/api/me",
-            {
-                headers: CMCENUtils.authHeaders(retirementAuthToken)
-            }
-        );
-
-        if (response.status === 401) {
-            redirectToLogin();
-            return;
-        }
-
-        if (!response.ok) {
-            throw new Error(translate("retirement_permission_error"));
-        }
-
-        const user = await response.json();
+        const user = await retirementApiJson("/api/me", {
+            errorMessage: translate("retirement_permission_error")
+        });
 
         if (user.permissions?.canSubmitRetirementMessages !== true) {
             showRetirementFormMessage(translate("retirement_access_denied"));
@@ -310,26 +301,11 @@ retirementSubmitForm.addEventListener(
             formData.photoUrl =
                 await uploadRetirementPhoto();
 
-            const response = await fetch(
-                "/api/retirement-messages",
-                {
-                    method: "POST",
-
-                    headers: CMCENUtils.authHeaders(retirementAuthToken, {
-                        "Content-Type":
-                            "application/json"
-                    }),
-
-                    body:
-                        JSON.stringify(formData)
-                }
-            );
-
-            const data = await response.json().catch(() => ({}));
-
-            if (!response.ok) {
-                throw new Error(data.error || translate("retirement_submit_error"));
-            }
+            const data = await retirementApiJson("/api/retirement-messages", {
+                method: "POST",
+                body: formData,
+                errorMessage: translate("retirement_submit_error")
+            });
 
             retirementSubmitForm.reset();
             setDefaultMessageLanguage();

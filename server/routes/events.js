@@ -17,29 +17,17 @@ const {
     getUserPermissions
 } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
+const {
+    getEventSnapshot
+} = require('../services/content-snapshots');
+const {
+    cleanLocalizedText,
+    cleanString,
+    getValidationErrorMessage,
+    parseBoolean
+} = require('../services/content-utils');
 
 const router = express.Router();
-
-function cleanLocalizedText(value) {
-    return {
-        en: typeof value?.en === 'string'
-            ? value.en.trim()
-            : '',
-
-        fr: typeof value?.fr === 'string'
-            ? value.fr.trim()
-            : ''
-    };
-}
-
-function cleanString(
-    value,
-    fallback = ''
-) {
-    return typeof value === 'string'
-        ? value.trim()
-        : fallback;
-}
 
 function cleanSubmitter(submitter = {}) {
     return {
@@ -62,25 +50,6 @@ function cleanSubmitter(submitter = {}) {
     };
 }
 
-function getEventTitle(event) {
-    return (
-        event.title?.en ||
-        event.title?.fr ||
-        'Untitled event'
-    );
-}
-
-function getEventSnapshot(event) {
-    return {
-        title: getEventTitle(event),
-        status: event.status,
-        contentArea: event.contentArea || 'general',
-        createdBy: event.createdBy,
-        publishedBy: event.publishedBy,
-        startDate: event.startDate
-    };
-}
-
 function isAllowedOption(
     value,
     allowedValues
@@ -89,28 +58,6 @@ function isAllowedOption(
         value === '' ||
         allowedValues.includes(value)
     );
-}
-
-function parseBoolean(
-    value,
-    fallback = false
-) {
-    if (typeof value === 'boolean') {
-        return value;
-    }
-
-
-    if (value === 'true') {
-        return true;
-    }
-
-    if (value === 'false') {
-        return false;
-    }
-
-    return fallback;
-
-
 }
 
 function getDatePartsInTimezone(
@@ -785,15 +732,7 @@ router.post(
                 'ValidationError'
             ) {
                 return res.status(400).json({
-                    error:
-                        Object.values(
-                            error.errors
-                        )
-                            .map(
-                                item =>
-                                    item.message
-                            )
-                            .join(', ')
+                    error: getValidationErrorMessage(error)
                 });
             }
 
@@ -1419,9 +1358,7 @@ router.patch(
 
             if (error.name === 'ValidationError') {
                 return res.status(400).json({
-                    error: Object.values(error.errors)
-                        .map(item => item.message)
-                        .join(', ')
+                    error: getValidationErrorMessage(error)
                 });
             }
 

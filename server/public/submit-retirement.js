@@ -7,6 +7,8 @@ const retireeTradeCategory = document.getElementById("retireeTradeCategory");
 const retireeTradeRole = document.getElementById("retireeTradeRole");
 const retireeOfficerTradePanel = document.getElementById("retireeOfficerTradePanel");
 const retireeNcmTradePanel = document.getElementById("retireeNcmTradePanel");
+const retirementTradeOptionContainers =
+    document.querySelectorAll("[data-retirement-trade-options]");
 
 const retirementAuthToken = CMCENUtils.requireAuthToken();
 const RETIREMENT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
@@ -69,6 +71,36 @@ function clearTradeRoleOptions() {
         .forEach(option => {
             option.checked = false;
         });
+}
+
+function createTradeRoleOption(tradeRole) {
+    const label = document.createElement("label");
+    label.className = "retirement-radio-option";
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "retireeTradeRoleOption";
+    input.value = tradeRole;
+
+    const text = document.createElement("span");
+    text.textContent = tradeRole;
+
+    label.append(input, text);
+
+    return label;
+}
+
+function populateRetirementTradeOptions() {
+    retirementTradeOptionContainers.forEach(container => {
+        const category = container.dataset.retirementTradeOptions || "";
+        const options = typeof window.getCmcenRetirementTradeRoles === "function"
+            ? window.getCmcenRetirementTradeRoles(category)
+            : [];
+
+        container.replaceChildren(
+            ...options.map(createTradeRoleOption)
+        );
+    });
 }
 
 function updateRetirementTradePicker({ clearSelection = true } = {}) {
@@ -319,17 +351,15 @@ retirementSubmitForm.addEventListener(
 
 retireeTradeCategory.addEventListener("change", updateRetirementTradePicker);
 
-document
-    .querySelectorAll('input[name="retireeTradeRoleOption"]')
-    .forEach(option => {
-        option.addEventListener(
-            "change",
-            () => updateRetirementTradePicker({
-                clearSelection: false
-            })
-        );
-    });
+retirementSubmitForm.addEventListener("change", event => {
+    if (event.target.matches('input[name="retireeTradeRoleOption"]')) {
+        updateRetirementTradePicker({
+            clearSelection: false
+        });
+    }
+});
 
+populateRetirementTradeOptions();
 setDefaultMessageLanguage();
 updateRetirementTradePicker();
 verifyRetirementAccess();

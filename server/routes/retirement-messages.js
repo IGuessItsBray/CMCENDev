@@ -8,6 +8,9 @@ const {
 const {
     getUserPermissions
 } = require('../config/permissions');
+const {
+    RETIREMENT_TRADE_ROLES
+} = require('../config/content');
 const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
@@ -22,22 +25,6 @@ const ALLOWED_RELATIONSHIPS = [
 const ALLOWED_LANGUAGES = [
     'en',
     'fr'
-];
-
-const ALLOWED_RETIREMENT_TRADE_ROLES = [
-    '00172-07 - GENERAL OFFICER LIST (BGEN+)',
-    '00340 - CELE',
-    '00341 - SIGS',
-    '00109 - ATIS TECH',
-    '00120 - SIGINT SPEC',
-    '00299 - NAV COMM',
-    '00378 - CYBER OP',
-    '00381 - CWO',
-    '00383 - SIG OP',
-    '00384 - LINE TECH',
-    '00385 - SIG TECH',
-    '00394 - IS TECH',
-    'Civilian'
 ];
 
 function cleanString(value) {
@@ -262,7 +249,7 @@ router.post(
         }
 
         if (
-            !ALLOWED_RETIREMENT_TRADE_ROLES.includes(
+            !RETIREMENT_TRADE_ROLES.includes(
                 cleanRetiree.tradeRole
             )
         ) {

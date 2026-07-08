@@ -48,10 +48,49 @@ const CANADIAN_TIMEZONES = Object.freeze([
   'America/Vancouver'
 ]);
 
+const RETIREMENT_TRADE_ROLE_GROUPS = Object.freeze({
+  officer: Object.freeze([
+    '00172-07 - GENERAL OFFICER LIST (BGEN+)',
+    '00340 - CELE',
+    '00341 - SIGS'
+  ]),
+
+  ncm: Object.freeze([
+    '00109 - ATIS TECH',
+    '00120 - SIGINT SPEC',
+    '00299 - NAV COMM',
+    '00378 - CYBER OP',
+    '00381 - CWO',
+    '00383 - SIG OP',
+    '00384 - LINE TECH',
+    '00385 - SIG TECH',
+    '00394 - IS TECH'
+  ])
+});
+
+const MILITARY_TRADE_ROLES = Object.freeze([
+  ...RETIREMENT_TRADE_ROLE_GROUPS.officer,
+  ...RETIREMENT_TRADE_ROLE_GROUPS.ncm
+]);
+
+const ACCOUNT_TRADE_OPTIONS = Object.freeze([
+  ...MILITARY_TRADE_ROLES,
+  'other'
+]);
+
+const RETIREMENT_TRADE_ROLES = Object.freeze([
+  ...MILITARY_TRADE_ROLES,
+  'Civilian'
+]);
+
 module.exports = {
   CONTENT_STATUSES,
   EVENT_ORGANIZING_ENTITIES,
   EVENT_TYPES,
   CANADIAN_REGIONS,
-  CANADIAN_TIMEZONES
+  CANADIAN_TIMEZONES,
+  ACCOUNT_TRADE_OPTIONS,
+  MILITARY_TRADE_ROLES,
+  RETIREMENT_TRADE_ROLE_GROUPS,
+  RETIREMENT_TRADE_ROLES
 };

@@ -75,6 +75,17 @@ Defined in `translations.js`.
 
 `PATCH /api/translations/:key` expects one or both string fields: `{ "en": "...", "fr": "..." }`. Version one only edits existing keys.
 
+## Content Option Routes
+
+Defined in `content-options.js`.
+
+| Method | Path | Access | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/trade-options.js` | Public | Return the browser runtime generated from shared trade option config. |
+| `GET` | `/api/content-options` | Public | Return account trade options and retirement trade role groups as JSON. |
+
+Trade option values are defined in `server/config/content.js` so frontend selectors and backend retirement-message validation use the same source.
+
 ## Search Routes
 
 Defined in `search.js`.

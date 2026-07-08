@@ -33,28 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return token;
     }
 
-    function handleUnauthorized() {
-      CMCENUtils.redirectToLogin('/login.html');
-    }
-
     async function api(path, opts = {}){
-      const { json, ...fetchOptions } = opts;
-      const headers = CMCENUtils.authHeaders(requireToken(), { ...(opts.headers || {}) });
-      headers['Content-Type'] = json ? 'application/json' : (headers['Content-Type'] || 'application/json');
-      const res = await fetch(path, { ...fetchOptions, headers });
-      if (res.status === 401) {
-        handleUnauthorized();
-        throw new Error(translateMfa('mfa_authentication_required'));
-      }
-      if (!res.ok) {
-        const contentType = res.headers.get('Content-Type') || '';
-        const detail = contentType.includes('application/json')
-          ? (await res.json().catch(() => ({}))).error
-          : '';
-
-        throw new Error(detail || `HTTP ${res.status} ${res.statusText}`);
-      }
-      return res.json();
+      return CMCENUtils.apiJson(path, {
+        ...opts,
+        token: requireToken(),
+        redirectOnUnauthorized: '/login.html',
+        unauthorizedMessage: translateMfa('mfa_authentication_required')
+      });
     }
 
     function credentialLabel(credential, index) {
@@ -187,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await api(`/api/mfa/webauthn/credentials/${encodeURIComponent(credentialID)}`, {
         method: 'PATCH',
         json: true,
-        body: JSON.stringify({ nickname })
+        body: { nickname }
       });
 
       await loadPasskeys();
@@ -201,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await api(`/api/mfa/webauthn/credentials/${encodeURIComponent(credentialID)}`, {
         method: 'DELETE',
         json: true,
-        body: JSON.stringify({})
+        body: {}
       });
 
       await loadPasskeys();
@@ -319,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const status = await api('/api/mfa/totp/rename', {
         method: 'POST',
         json: true,
-        body: JSON.stringify({ appName })
+        body: { appName }
       });
 
       currentTotpStatus = status;
@@ -332,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const status = await api('/api/mfa/totp', {
         method: 'DELETE',
         json: true,
-        body: JSON.stringify({})
+        body: {}
       });
 
       const container = document.getElementById('totp-otpauth');
@@ -363,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await api('/api/mfa/totp/setup', {
           method: 'POST',
           json: true,
-          body: JSON.stringify({ appName })
+          body: { appName }
         });
         const container = document.getElementById('totp-otpauth');
         if (container) {
@@ -381,17 +366,14 @@ document.addEventListener('DOMContentLoaded', () => {
           } else {
             // fallback: fetch QR endpoint
             try {
-              const q = await fetch('/api/mfa/totp/qrcode', {
-                headers: CMCENUtils.authHeaders(requireToken())
-              });
-              if (q.ok) {
-                const j = await q.json();
+              const qr = await api('/api/mfa/totp/qrcode');
+              if (qr.qrcode) {
                 let img = document.getElementById('totp-qr');
                 if (!img) {
                   img = document.createElement('img');
                   img.id = 'totp-qr';
                 }
-                img.src = j.qrcode;
+                img.src = qr.qrcode;
                 img.alt = translateMfa('mfa_totp_qr_alt');
                 container.appendChild(img);
               }
@@ -414,27 +396,19 @@ document.addEventListener('DOMContentLoaded', () => {
         totpVerifyBtn.disabled = true;
         const code = document.getElementById('totp-code').value.trim();
         const status = await api('/api/mfa/totp/status');
-        const res = await fetch('/api/mfa/totp/verify', {
+        await api('/api/mfa/totp/verify', {
           method: 'POST',
-          headers: CMCENUtils.authHeaders(requireToken(), {
-            'Content-Type': 'application/json'
-          }),
-          body: JSON.stringify({ token: code, appName: status.appName || translateMfa('mfa_totp_default_app') })
+          body: {
+            token: code,
+            appName: status.appName || translateMfa('mfa_totp_default_app')
+          },
+          errorMessage: 'Could not verify TOTP token'
         });
-        if (res.status === 401) {
-          handleUnauthorized();
-          return;
-        }
-        const j = await res.json();
-        if (res.ok) {
-          alert(translateMfa('mfa_totp_verified'));
-          await loadTotpStatus();
-        } else {
-          alert(translateMfa('mfa_verify_failed', {
-            message: j.error || JSON.stringify(j)
-          }));
-        }
-      } catch (e) { alert(translateMfa('mfa_error', { message: e.message })); }
+        alert(translateMfa('mfa_totp_verified'));
+        await loadTotpStatus();
+      } catch (e) {
+        alert(translateMfa('mfa_verify_failed', { message: e.message }));
+      }
       finally { totpVerifyBtn.disabled = false; }
     });
 
@@ -448,15 +422,13 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         waRegisterBtn.disabled = true;
         ensureWebAuthnAvailable();
-        const options = await api('/api/mfa/webauthn/register/options', { method: 'POST', json: true });
+        const options = CMCENUtils.preparePublicKeyCreationOptions(
+          await api('/api/mfa/webauthn/register/options', { method: 'POST', json: true })
+        );
         if (!options || !options.challenge) {
           alert(translateMfa('mfa_registration_options_missing'));
           return;
         }
-
-        options.challenge = CMCENUtils.base64urlToArrayBuffer(options.challenge);
-        if (options.user && options.user.id) options.user.id = CMCENUtils.base64urlToArrayBuffer(options.user.id);
-        if (options.excludeCredentials) options.excludeCredentials = options.excludeCredentials.map(c => ({ ...c, id: CMCENUtils.base64urlToArrayBuffer(c.id) }));
 
         // Fallback for missing pubKeyCredParams
         if (!options.pubKeyCredParams) options.pubKeyCredParams = [ { type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 } ];
@@ -464,38 +436,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const cred = await navigator.credentials.create({ publicKey: options });
 
-        const clientDataJSON = CMCENUtils.arrayBufferToBase64url(cred.response.clientDataJSON);
-        const attestationObject = CMCENUtils.arrayBufferToBase64url(cred.response.attestationObject);
-        const rawId = CMCENUtils.arrayBufferToBase64url(cred.rawId);
-
-        const verifyRes = await fetch('/api/mfa/webauthn/register/verify', {
+        await api('/api/mfa/webauthn/register/verify', {
           method: 'POST',
-          headers: CMCENUtils.authHeaders(requireToken(), {
-            'Content-Type': 'application/json'
-          }),
-          body: JSON.stringify({
-            id: cred.id,
-            rawId,
-            type: cred.type,
-            authenticatorAttachment: cred.authenticatorAttachment || '',
-            response: { clientDataJSON, attestationObject },
-            transports: cred.response.getTransports ? cred.response.getTransports() : []
-          })
+          body: CMCENUtils.serializeAttestationCredential(cred),
+          errorMessage: 'Could not verify passkey registration'
         });
-        if (verifyRes.status === 401) {
-          handleUnauthorized();
-          return;
-        }
 
-        const j = await verifyRes.json();
-        if (verifyRes.ok) {
-          alert(translateMfa('mfa_passkey_registered'));
-          await loadPasskeys();
-        } else {
-          alert(translateMfa('mfa_register_failed', {
-            message: j.error || JSON.stringify(j)
-          }));
-        }
+        alert(translateMfa('mfa_passkey_registered'));
+        await loadPasskeys();
       } catch (e) { alert(translateMfa('mfa_error', { message: e.message })); }
       finally { waRegisterBtn.disabled = false; }
     });
@@ -514,36 +462,16 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        options.challenge = CMCENUtils.base64urlToArrayBuffer(options.challenge);
-        if (options.allowCredentials) options.allowCredentials = options.allowCredentials.map(c => ({ ...c, id: CMCENUtils.base64urlToArrayBuffer(c.id) }));
+        const publicKey = CMCENUtils.preparePublicKeyRequestOptions(options);
+        const assertion = await navigator.credentials.get({ publicKey });
 
-        const assertion = await navigator.credentials.get({ publicKey: options });
-        const authData = CMCENUtils.arrayBufferToBase64url(assertion.response.authenticatorData);
-        const clientDataJSON = CMCENUtils.arrayBufferToBase64url(assertion.response.clientDataJSON);
-        const signature = CMCENUtils.arrayBufferToBase64url(assertion.response.signature);
-        const userHandle = assertion.response.userHandle ? CMCENUtils.arrayBufferToBase64url(assertion.response.userHandle) : null;
-        const rawId = CMCENUtils.arrayBufferToBase64url(assertion.rawId);
-
-        const verifyRes = await fetch('/api/mfa/webauthn/authenticate/verify', {
+        await api('/api/mfa/webauthn/authenticate/verify', {
           method: 'POST',
-          headers: CMCENUtils.authHeaders(requireToken(), {
-            'Content-Type': 'application/json'
-          }),
-          body: JSON.stringify({ id: assertion.id, rawId, type: assertion.type, response: { authenticatorData: authData, clientDataJSON, signature, userHandle } })
+          body: CMCENUtils.serializeAssertionCredential(assertion),
+          errorMessage: 'Passkey authentication failed'
         });
-        if (verifyRes.status === 401) {
-          handleUnauthorized();
-          return;
-        }
 
-        const j = await verifyRes.json();
-        if (verifyRes.ok) {
-          alert(translateMfa('mfa_passkey_auth_succeeded'));
-        } else {
-          alert(translateMfa('mfa_auth_failed', {
-            message: j.error || JSON.stringify(j)
-          }));
-        }
+        alert(translateMfa('mfa_passkey_auth_succeeded'));
       } catch (e) { alert(translateMfa('mfa_error', { message: e.message })); }
       finally { waAuthBtn.disabled = false; }
     });

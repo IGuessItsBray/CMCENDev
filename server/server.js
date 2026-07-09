@@ -22,6 +22,7 @@ const siteConfigRoutes = require('./routes/site-config');
 const translationRoutes = require('./routes/translations');
 const uploadRoutes = require('./routes/uploads');
 const mfaRoutes = require('./routes/mfa');
+const pageRoutes = require('./routes/pages');
 
 const app = express();
 app.set('trust proxy', true);
@@ -39,6 +40,7 @@ app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/retirement-messages', retirementMessageRoutes);
 app.use('/api/search', searchRoutes);
+app.use(pageRoutes);
 
 // wait for MongoDB before listening
 async function startServer() {

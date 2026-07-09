@@ -58,6 +58,20 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Edit site translation strings.'
   },
   {
+    key: 'pages.manage',
+    label: 'Manage pages',
+    group: 'Pages',
+    action: 'edit',
+    description: 'Create, edit, publish, archive, and delete custom pages.'
+  },
+  {
+    key: 'navigation.manage',
+    label: 'Manage navigation',
+    group: 'Pages',
+    action: 'edit',
+    description: 'Add custom pages to the main navigation and reorder custom links.'
+  },
+  {
     key: 'users.read',
     label: 'View users',
     group: 'Users',
@@ -138,6 +152,8 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canDeleteContent: 'content.delete',
   canManageContentAreas: 'content_areas.manage',
   canManageTranslations: 'translations.manage',
+  canManagePages: 'pages.manage',
+  canManageNavigation: 'navigation.manage',
   canReadUsers: 'users.read',
   canManageUsers: 'users.manage',
   canManageRoles: 'roles.manage',
@@ -192,6 +208,12 @@ function getBuiltInPermissionFlags(user) {
 
     canManageTranslations:
       hasMinimumRole(role, 'editor'),
+
+    canManagePages:
+      hasMinimumRole(role, 'editor'),
+
+    canManageNavigation:
+      hasMinimumRole(role, 'administrator'),
 
     canReadUsers:
       hasMinimumRole(role, 'administrator'),

@@ -51,6 +51,36 @@ async function authMiddleware(req, res, next) {
     }
 }
 
+async function optionalAuthMiddleware(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader?.startsWith('Bearer ')) {
+        return next();
+    }
+
+    const token = authHeader.slice(7);
+
+    try {
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+        const user = await User.findById(decoded.userId)
+            .select(
+                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt'
+            )
+            .populate('customRoles', 'name slug color permissions');
+
+        if (user) {
+            req.user = user;
+        }
+    } catch {
+        req.user = null;
+    }
+
+    return next();
+}
+
 function requireMinimumRole(minimumRole) {
     return (req, res, next) => {
         const userLevel = ROLE_LEVELS[req.user?.role];
@@ -163,6 +193,7 @@ async function authOrTempMiddleware(req, res, next) {
 
 module.exports = {
     authMiddleware,
+    optionalAuthMiddleware,
     authOrTempMiddleware,
     requireMinimumRole,
     requireExactRole,

@@ -80,6 +80,7 @@ document.addEventListener("languagechange", () => {
   applyTheme(document.documentElement.dataset.theme || getPreferredTheme(), {
     persist: false
   });
+  updateDynamicNavigationLabels();
 });
 
 const navLinks = {
@@ -140,6 +141,52 @@ const navLinks = {
 const standaloneLinks = [
   //{ route: "/contact.html", i18n: "menu_connections", protected: true },
 ];
+let customNavigationItems = [];
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeCssIdentifier(value) {
+  if (window.CSS?.escape) {
+    return window.CSS.escape(value);
+  }
+
+  return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+}
+
+function getLocalizedNavigationLabel(label) {
+  const language = CMCENUtils?.getCurrentLanguage?.() || 'en';
+  const fallbackLanguage = language === 'fr' ? 'en' : 'fr';
+
+  return String(label?.[language] || label?.[fallbackLanguage] || '').trim();
+}
+
+function updateDynamicNavigationLabels() {
+  document.querySelectorAll('[data-nav-label-en], [data-nav-label-fr]').forEach(link => {
+    link.textContent = getLocalizedNavigationLabel({
+      en: link.dataset.navLabelEn || '',
+      fr: link.dataset.navLabelFr || ''
+    });
+  });
+}
+
+function applyCurrentLanguage() {
+  if (typeof applyLanguage === 'function') {
+    applyLanguage(
+      typeof currentLang === 'string'
+        ? currentLang
+        : CMCENUtils?.getCurrentLanguage?.() || 'en'
+    );
+  }
+
+  updateDynamicNavigationLabels();
+}
 
 // list of only protected pages
 const protectedPages = new Set([
@@ -148,6 +195,7 @@ const protectedPages = new Set([
   "/submit-event.html",
   "/review-submissions.html",
   "/translations-admin.html",
+  "/pages-admin.html",
   "/admin-users.html",
 
   ...Object.values(navLinks)
@@ -660,8 +708,97 @@ function loadFooter() {
 loadHeader();
 loadFooter();
 
-const authButtons = document.querySelector('.auth-buttons');
-const mobileMenuAccount = document.getElementById('mobileMenuAccount');
+async function loadCustomNavigationItems() {
+  try {
+    const response = await fetch('/api/navigation');
+
+    if (!response.ok) {
+      throw new Error('Navigation request failed');
+    }
+
+    const data = await response.json();
+    customNavigationItems = Array.isArray(data.items) ? data.items : [];
+
+    renderCustomNavigationItems();
+    updateAuthRestrictedItems();
+  } catch (error) {
+    console.warn('Custom navigation unavailable:', error);
+  }
+}
+
+function renderCustomNavigationItems() {
+  const primaryNavigation = document.getElementById('primaryNavigation');
+  primaryNavigation
+    ?.querySelectorAll('[data-custom-nav-group], [data-custom-nav-item]')
+    .forEach(item => item.remove());
+
+  const groupKeys = Object.keys(navLinks);
+  const customGroups = customNavigationItems.filter(item =>
+    item.type === 'group' && !groupKeys.includes(item.group)
+  );
+
+  customGroups.forEach(group => {
+    const wrapper = document.createElement('div');
+    const menuId = `primaryNavigationCustom${group.group}`;
+    wrapper.className = 'dropdown';
+    wrapper.dataset.customNavGroup = group.group;
+    wrapper.innerHTML = `
+      <button
+        type="button"
+        class="dropdown-toggle"
+        aria-controls="${escapeHtml(menuId)}"
+        aria-expanded="false"
+        data-nav-label-en="${escapeHtml(group.label?.en || '')}"
+        data-nav-label-fr="${escapeHtml(group.label?.fr || '')}"
+      >${escapeHtml(getLocalizedNavigationLabel(group.label))}</button>
+
+      <ul
+        class="dropdown-menu"
+        id="${escapeHtml(menuId)}"
+      ></ul>
+    `;
+
+    primaryNavigation?.append(wrapper);
+  });
+
+  customNavigationItems.forEach(item => {
+    if (item.type === 'group') return;
+
+    const groupIndex = groupKeys.indexOf(item.group);
+    const menu = groupIndex >= 0
+      ? document.getElementById(`primaryNavigationDropdown${groupIndex}`)
+      : document.querySelector(`[data-custom-nav-group="${escapeCssIdentifier(item.group)}"] .dropdown-menu`);
+
+    if (!menu || !item.route) return;
+
+    const listItem = document.createElement('li');
+    listItem.dataset.customNavItem = 'true';
+
+    if (item.permission) {
+      listItem.dataset.permission = item.permission;
+      listItem.hidden = true;
+    }
+
+    const link = document.createElement('a');
+    link.href = item.route;
+    link.dataset.navLabelEn = item.label?.en || '';
+    link.dataset.navLabelFr = item.label?.fr || '';
+    link.textContent = getLocalizedNavigationLabel(item.label);
+
+    listItem.append(link);
+    menu.append(listItem);
+  });
+}
+
+loadCustomNavigationItems();
+
+window.reloadSiteNavigation = async function reloadSiteNavigation() {
+  loadHeader();
+  await loadCustomNavigationItems();
+  applyCurrentLanguage();
+  updateAuthButtons();
+  updateAuthRestrictedItems();
+};
 
 function getStoredAuthToken() {
   return CMCENUtils.storeAuthToken(
@@ -881,6 +1018,12 @@ function updateNotificationBadges(count = 0) {
 
 function updateAuthButtons() {
   const token = getStoredAuthToken();
+  const authButtons = document.querySelector('.auth-buttons');
+  const mobileMenuAccount = document.getElementById('mobileMenuAccount');
+
+  if (!authButtons || !mobileMenuAccount) {
+    return;
+  }
 
   if (token) {
     authButtons.innerHTML = `
@@ -945,9 +1088,7 @@ function updateAuthButtons() {
     `;
   }
 
-  if (typeof applyLanguage === 'function') {
-    applyLanguage(currentLang);
-  }
+  applyCurrentLanguage();
 
   updateNotificationBadges(0);
 }

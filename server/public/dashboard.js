@@ -699,6 +699,7 @@ function renderDashboard(user) {
     "canReadUsers",
     "canManageUsers",
     "canManageRoles",
+    "canManagePages",
     "canViewMediaLibrary",
     "canViewAuditLog",
     "canAccessSiteConfig"
@@ -721,11 +722,13 @@ function renderDashboard(user) {
         ? "/admin-users.html"
         : user.permissions?.canManageRoles === true
           ? "/admin-users.html?view=roles"
-          : user.permissions?.canViewMediaLibrary === true
-            ? "/admin-users.html?view=media"
-            : user.permissions?.canViewAuditLog === true
-              ? "/audit-log.html"
-              : "/site-config.html",
+          : user.permissions?.canManagePages === true
+            ? "/pages-admin.html"
+            : user.permissions?.canViewMediaLibrary === true
+              ? "/admin-users.html?view=media"
+              : user.permissions?.canViewAuditLog === true
+                ? "/audit-log.html"
+                : "/site-config.html",
       titleKey: "dashboard_action_admin_work_zone",
       descriptionKey: "dashboard_action_admin_work_zone_description"
     });

@@ -3,6 +3,7 @@
     const fallbacks = {
       admin_tab_users: "Users",
       admin_tab_roles: "Roles",
+      admin_tab_pages: "Pages",
       admin_tab_media: "Media Manager",
       admin_tab_translations: "Translations",
       admin_tab_audit_log: "Audit Log",
@@ -29,6 +30,12 @@
       href: "/admin-users.html?view=roles",
       labelKey: "admin_tab_roles",
       permission: "canManageRoles"
+    },
+    {
+      key: "pages",
+      href: "/pages-admin.html",
+      labelKey: "admin_tab_pages",
+      permission: "canManagePages"
     },
     {
       key: "media",
@@ -76,6 +83,10 @@
 
     if (path === "/translations-admin.html") {
       return "translations";
+    }
+
+    if (path === "/pages-admin.html") {
+      return "pages";
     }
 
     if (path === "/audit-log.html") {

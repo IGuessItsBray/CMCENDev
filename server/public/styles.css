@@ -1366,61 +1366,10 @@ select.app-control,
   }
 }
 
-.content-main {
-  display: flex;
-  justify-content: center;
-  padding: 40px 20px;
-}
-
-.content-column {
-  max-width: 700px;
-  width: 100%;
-  color: #222;
-  line-height: 1.7;
-}
-
-.content-column h1 {
-  font-size: 28px;
-  margin-bottom: 24px;
-  color: var(--gold-500);
-}
-
-.content-column p {
-  margin-bottom: 20px;
-  font-size: 15px;
-  color: var(--white);
-}
-
-.content-figure {
-  margin: 28px 0;
-}
-
-.content-figure img {
-  width: 100%;
-  height: auto;
-  border-radius: 6px;
-  display: block;
-}
-
-.content-figure figcaption {
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--branch-grey-800);
-  text-align: center;
-}
-
 a.dropdown-toggle {
   display: flex;
   align-items: center;
   text-decoration: none;
-}
-
-.inline-float-img {
-  float: left;
-  width: 240px;
-  height: auto;
-  margin: 4px 20px 12px 0;
-  border-radius: 4px;
 }
 
 /* ─────────────────────────────────────────────
@@ -2369,25 +2318,6 @@ a.dropdown-toggle {
   position: relative;
   z-index: 1;
   max-width: 480px;
-}
-
-.login-standard {
-  width: 64px;
-  height: 36px;
-  margin-bottom: 24px;
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  overflow: hidden;
-  border: 1px solid var(--gold-500);
-  box-shadow: 0 0 0 3px rgba(213, 155, 39, 0.08);
-}
-
-.login-standard-grey {
-  background: var(--branch-grey-500);
-}
-
-.login-standard-navy {
-  background: var(--navy-800);
 }
 
 .login-eyebrow {
@@ -5478,12 +5408,6 @@ a.dropdown-toggle {
   padding: 72px 0;
 }
 
-.home-section-heading {
-  max-width: 720px;
-  margin-bottom: 33px;
-}
-
-.home-section-heading h2,
 .home-feature-panel h2 {
   margin: 0;
   color: var(--navy-900);
@@ -5492,19 +5416,6 @@ a.dropdown-toggle {
     "Times New Roman",
     serif;
   font-weight: normal;
-}
-
-.home-section-heading h2 {
-  font-size: clamp(33px, 4vw, 48px);
-  line-height: 1.05;
-}
-
-.home-section-heading>p:last-child {
-  max-width: 670px;
-  margin: 16px 0 0;
-  color: var(--text-muted);
-  font-size: 14px;
-  line-height: 1.7;
 }
 
 .home-family-icon {
@@ -5755,8 +5666,7 @@ a.dropdown-toggle {
   grid-template-columns: auto minmax(0, 1fr);
 }
 
-.home-retirement-photo img,
-.home-retirement-initials {
+.home-retirement-photo img {
   width: 100%;
   height: 100%;
   min-height: 54px;
@@ -5775,16 +5685,6 @@ a.dropdown-toggle {
   background: var(--branch-grey-100);
   object-fit: contain;
   object-position: center;
-}
-
-.home-retirement-initials {
-  color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
-  font-size: 20px;
-  font-weight: normal;
 }
 
 .home-feed-content {
@@ -5936,8 +5836,7 @@ a.dropdown-toggle {
   outline-offset: 3px;
 }
 
-.event-edit-loading,
-.event-loading {
+.event-edit-loading {
   min-height: 360px;
   padding: 70px 24px;
   display: flex;
@@ -5951,13 +5850,11 @@ a.dropdown-toggle {
   text-align: center;
 }
 
-.event-edit-loading[hidden],
-.event-loading[hidden] {
+.event-edit-loading[hidden] {
   display: none !important;
 }
 
-.event-edit-loading-spinner,
-.event-loading-spinner {
+.event-edit-loading-spinner {
   width: 34px;
   height: 34px;
   margin-bottom: 18px;
@@ -5968,8 +5865,7 @@ a.dropdown-toggle {
     loading-state-spin 750ms linear infinite;
 }
 
-.event-edit-loading p,
-.event-loading p {
+.event-edit-loading p {
   margin: 0;
   font-size: 11px;
   font-weight: 800;
@@ -6567,14 +6463,6 @@ a.dropdown-toggle {
 }
 
 @media (max-width: 650px) {
-  .content-main {
-    padding: 28px 14px;
-  }
-
-  .content-column h1 {
-    font-size: 25px;
-  }
-
   .hero {
     padding: 18px 12px;
   }
@@ -6583,12 +6471,6 @@ a.dropdown-toggle {
     width: 100%;
     height: auto;
     margin: 0 auto;
-  }
-
-  .inline-float-img {
-    float: none;
-    width: min(100%, 320px);
-    margin: 0 0 18px;
   }
 
   .about-family-main {
@@ -6824,11 +6706,6 @@ a.dropdown-toggle {
     align-items: center;
   }
 
-  .login-standard {
-    grid-row: 1 / 3;
-    margin: 0;
-  }
-
   .login-eyebrow {
     margin-bottom: 5px;
   }
@@ -6858,22 +6735,12 @@ a.dropdown-toggle {
     padding: 32px 26px;
   }
 
-  .login-standard {
-    width: 68px;
-    height: 38px;
-    margin-bottom: 24px;
-  }
-
   .login-introduction h1 {
     font-size: 29px;
   }
 
   .login-intro-copy {
     font-size: 14px;
-  }
-
-  .login-service-note {
-    display: none;
   }
 
   .login-panel {
@@ -7824,7 +7691,6 @@ html[data-theme="dark"] main :is(.login-panel,
   .translation-row,
   .review-event-card,
   .app-card,
-  .retirement-review-card,
   .passkey-manager,
   .totp-manager,
   .admin-post-item,
@@ -7834,8 +7700,7 @@ html[data-theme="dark"] main :is(.login-panel,
   .retirement-comment,
   .retirement-comment-empty,
   .retirement-comment-login,
-  .my-event-card,
-  .calendar-event-card) {
+  .my-event-card) {
   border-color: var(--dark-border);
   background: var(--dark-surface-2);
   color: var(--dark-text);
@@ -8561,8 +8426,7 @@ html[data-theme="dark"] .admin-work-zone-page,
 html[data-theme="dark"] .admin-user-editor,
 html[data-theme="dark"] .admin-posts-panel,
 html[data-theme="dark"] .retirement-detail-body,
-html[data-theme="dark"] .event-edit-loading,
-html[data-theme="dark"] .event-loading {
+html[data-theme="dark"] .event-edit-loading {
   border-color: var(--dark-border);
   background:
     linear-gradient(180deg,
@@ -8644,7 +8508,6 @@ html[data-theme="dark"] .dashboard-profile-form[data-editing="true"] .dashboard-
 html[data-theme="dark"] .event-submit-main,
 html[data-theme="dark"] .event-review-main,
 html[data-theme="dark"] .translations-admin-main,
-html[data-theme="dark"] .admin-work-zone-main,
 html[data-theme="dark"] .retirement-detail-main,
 html[data-theme="dark"] .retirements-main,
 html[data-theme="dark"] .about-family-main {
@@ -8660,7 +8523,6 @@ html[data-theme="dark"] .event-authorization-checkbox small,
 html[data-theme="dark"] .retirement-consent-field small,
 html[data-theme="dark"] .my-events-intro,
 html[data-theme="dark"] .my-events-message,
-html[data-theme="dark"] .event-loading p,
 html[data-theme="dark"] .event-edit-loading p {
   color: var(--dark-text-soft);
 }
@@ -8723,11 +8585,6 @@ html[data-theme="dark"] .translation-row {
   border-color: var(--dark-border-strong);
   background: var(--dark-surface-2);
   color: var(--dark-text);
-}
-
-html[data-theme="dark"] .my-event-meta,
-html[data-theme="dark"] .my-event-updated {
-  color: var(--dark-text-muted);
 }
 
 html[data-theme="dark"] .translations-toolbar {
@@ -8859,7 +8716,6 @@ html[data-theme="dark"] .retirement-comment-form {
   border-top-color: var(--dark-border);
 }
 
-html[data-theme="dark"] .retirement-comment-form-note,
 html[data-theme="dark"] .retirement-comment p,
 html[data-theme="dark"] .retirement-detail-message-section p {
   color: var(--dark-text-soft);

@@ -9463,6 +9463,12 @@ html[data-theme="dark"] main a {
   color: var(--dark-link);
 }
 
+html[data-theme="dark"] .home-button-primary,
+html[data-theme="dark"] .home-button-primary:hover,
+html[data-theme="dark"] .home-button-primary:focus-visible {
+  color: var(--navy-900);
+}
+
 html[data-theme="dark"] main :is(input, textarea, select) {
   border-color: var(--dark-border-strong);
   background: #0d1422;

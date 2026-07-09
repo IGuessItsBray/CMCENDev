@@ -2046,42 +2046,16 @@ document.addEventListener(
   }
 );
 
-function activateReviewTab(tabName) {
-  reviewTabs.forEach(tab => {
-    const isActive =
-      tab.dataset.reviewTab === tabName;
-
-    tab.classList.toggle(
-      "is-active",
-      isActive
-    );
-
-    tab.setAttribute(
-      "aria-selected",
-      String(isActive)
-    );
-  });
-
-  reviewPanels.forEach(panel => {
-    const isActive =
-      panel.dataset.reviewPanel === tabName;
-
-    panel.classList.toggle(
-      "is-active",
-      isActive
-    );
-
-    panel.hidden = !isActive;
-  });
-}
-
-reviewTabs.forEach(tab => {
-  tab.addEventListener("click", () => {
-    activateReviewTab(
-      tab.dataset.reviewTab
-    );
-  });
+const reviewTabController = CMCENUtils.bindTabs({
+  panels: reviewPanels,
+  panelKey: "reviewPanel",
+  tabs: reviewTabs,
+  tabKey: "reviewTab"
 });
+
+function activateReviewTab(tabName) {
+  reviewTabController.activate(tabName);
+}
 
 window.addEventListener(
   "pageshow", () => {

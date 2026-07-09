@@ -1092,6 +1092,22 @@ svg {
   grid-column: 1 / -1;
 }
 
+.app-form-grid.is-schedule {
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.app-form-grid.is-submitter {
+  grid-template-columns:
+    minmax(110px, 0.65fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.app-form-grid.is-submitter > .app-field:nth-child(4),
+.app-form-grid.is-submitter > .app-field:nth-child(5) {
+  grid-column: span 2;
+}
+
 .app-confirmation {
   display: flex;
   align-items: flex-start;
@@ -4173,13 +4189,6 @@ a.dropdown-toggle {
   accent-color: var(--gold-600);
 }
 
-.event-schedule-grid {
-  display: grid;
-  grid-template-columns:
-    repeat(4, minmax(0, 1fr));
-  gap: 16px;
-}
-
 .event-time-zone-note {
   margin: 11px 0 0;
   color: var(--text-muted);
@@ -4960,18 +4969,6 @@ a.dropdown-toggle {
   color: var(--text-muted);
   font-size: 11px;
   line-height: 1.5;
-}
-
-.event-submitter-grid {
-  display: grid;
-  grid-template-columns:
-    minmax(110px, 0.65fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 17px 20px;
-}
-
-.event-submitter-grid > .app-field:nth-child(4),
-.event-submitter-grid > .app-field:nth-child(5) {
-  grid-column: span 2;
 }
 
 .event-authorization-section {
@@ -7245,7 +7242,14 @@ a.dropdown-toggle {
     grid-template-columns: 1fr;
   }
 
-  .event-schedule-grid {
+  .app-form-grid.is-schedule {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .app-form-grid.is-submitter {
     grid-template-columns:
       repeat(2, minmax(0, 1fr));
   }
@@ -7271,8 +7275,13 @@ a.dropdown-toggle {
     grid-column: span 1;
   }
 
-  .event-schedule-grid {
+  .app-form-grid.is-schedule,
+  .app-form-grid.is-submitter {
     grid-template-columns: 1fr;
+  }
+
+  .app-form-grid.is-submitter > .app-field {
+    grid-column: span 1;
   }
 
   .event-form-actions {
@@ -7281,28 +7290,6 @@ a.dropdown-toggle {
 
   .event-submit-button {
     width: 100%;
-  }
-}
-
-@media (max-width: 760px) {
-  .event-submitter-grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-  }
-
-  .event-submitter-grid > .app-field:nth-child(4),
-  .event-submitter-grid > .app-field:nth-child(5) {
-    grid-column: span 2;
-  }
-}
-
-@media (max-width: 560px) {
-  .event-submitter-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .event-submitter-grid > .app-field {
-    grid-column: span 1;
   }
 
   .event-authorization-heading,

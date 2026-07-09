@@ -104,6 +104,18 @@ function getAuditTarget(log) {
   );
 }
 
+function getActorId(value) {
+  if (!value) return "";
+
+  if (typeof value === "string") return value;
+
+  if (typeof value === "object") {
+    return value._id || value.id || "";
+  }
+
+  return "";
+}
+
 function getTargetId(value) {
   if (!value) return "";
 
@@ -114,6 +126,29 @@ function getTargetId(value) {
   }
 
   return "";
+}
+
+function normalizeAuditIdentity(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function hasSameUserIdentity(actor, target) {
+  const actorId = normalizeAuditIdentity(getActorId(actor));
+  const targetId = normalizeAuditIdentity(getTargetId(target));
+
+  if (actorId && targetId) {
+    return actorId === targetId;
+  }
+
+  return false;
+}
+
+function shouldRenderAuditTarget(log) {
+  if (log.targetType !== "user") {
+    return true;
+  }
+
+  return !hasSameUserIdentity(log.actor, log.target);
 }
 
 function getAuditTargetHref(log) {
@@ -356,19 +391,23 @@ function createAuditRow(log) {
   details.append(
     document.createTextNode(`${formatAuditDate(log.createdAt)} · ${translate("audit_by_actor", {
       actor: getAuditActor(log)
-    })} · `)
+    })}`)
   );
 
-  const targetHref = getAuditTargetHref(log);
-  const targetLabel = getAuditTarget(log);
+  if (shouldRenderAuditTarget(log)) {
+    details.append(document.createTextNode(" · "));
 
-  if (targetHref) {
-    const targetLink = document.createElement("a");
-    targetLink.href = targetHref;
-    targetLink.textContent = targetLabel;
-    details.append(targetLink);
-  } else {
-    details.append(document.createTextNode(targetLabel));
+    const targetHref = getAuditTargetHref(log);
+    const targetLabel = getAuditTarget(log);
+
+    if (targetHref) {
+      const targetLink = document.createElement("a");
+      targetLink.href = targetHref;
+      targetLink.textContent = targetLabel;
+      details.append(targetLink);
+    } else {
+      details.append(document.createTextNode(targetLabel));
+    }
   }
 
   item.append(header, details);

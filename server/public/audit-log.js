@@ -14,6 +14,7 @@ let auditState = {
 
 const auditActions = [
   ["", "audit_action_all"],
+  ["user.created", "audit_action_user_created"],
   ["user.login", "audit_action_user_login"],
   ["user.login_mfa_required", "audit_action_mfa_required"],
   ["content.created", "audit_action_content_created"],
@@ -172,6 +173,7 @@ function formatMetadataLabel(key) {
     source: "audit_metadata_source",
     method: "audit_metadata_method",
     methods: "audit_metadata_methods",
+    mfaMethod: "audit_metadata_mfa_method",
     ipAddress: "audit_metadata_ip_address",
     deletedComments: "audit_metadata_deleted_comments",
     changedLanguages: "audit_metadata_changed_languages",

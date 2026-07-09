@@ -271,6 +271,27 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
+    await writeAuditLog({
+      req,
+      action: 'user.created',
+      actor: user,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: {
+        username: user.username,
+        email: user.email,
+        accountName: user.accountName,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      },
+      metadata: {
+        accountName: user.accountName,
+        email: user.email,
+        mfaMethod: 'pending'
+      }
+    });
+
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET,

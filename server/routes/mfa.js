@@ -7,7 +7,10 @@ const qrcode = require('qrcode');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { authMiddleware, authOrTempMiddleware } = require('../middleware/auth');
-const { writeAuditLog } = require('../services/audit-log');
+const {
+  updateAccountCreationMfaMethod,
+  writeAuditLog
+} = require('../services/audit-log');
 
 const router = express.Router();
 
@@ -275,6 +278,7 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
       $set: { webauthnRegistrationChallenge: '' }
     });
     await User.findByIdAndUpdate(user._id, { $push: { webauthn: credential } });
+    await updateAccountCreationMfaMethod(user, 'webauthn');
 
     res.json({ verified: true });
   } catch (err) {
@@ -501,6 +505,7 @@ router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
     if (cleanAppName) updates['totp.appName'] = cleanAppName;
 
     await User.findByIdAndUpdate(user._id, { $set: updates });
+    await updateAccountCreationMfaMethod(user, 'totp');
 
     const responsePayload = { verified: true };
     if (req.isTemp) {

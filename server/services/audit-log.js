@@ -27,6 +27,11 @@ function getRequestIp(req) {
   return rawIp;
 }
 
+function shouldCaptureRequestIp(action) {
+  return ['user.created', 'user.login', 'user.login_mfa_required']
+    .includes(String(action || ''));
+}
+
 async function writeAuditLog({
   req = null,
   action,
@@ -40,7 +45,7 @@ async function writeAuditLog({
     const requestIp = getRequestIp(req);
     const auditMetadata = {
       ...metadata,
-      ...(String(action || '').startsWith('user.login') && requestIp
+      ...(shouldCaptureRequestIp(action) && requestIp
         ? { ipAddress: requestIp }
         : {})
     };
@@ -59,7 +64,30 @@ async function writeAuditLog({
   }
 }
 
+async function updateAccountCreationMfaMethod(user, method) {
+  try {
+    await AuditLog.findOneAndUpdate(
+      {
+        action: 'user.created',
+        target: user?._id || user,
+        'metadata.mfaMethod': 'pending'
+      },
+      {
+        $set: {
+          'metadata.mfaMethod': cleanString(method)
+        }
+      },
+      {
+        sort: { createdAt: -1 }
+      }
+    );
+  } catch (error) {
+    console.error('Audit log MFA method update failed:', error);
+  }
+}
+
 module.exports = {
   writeAuditLog,
+  updateAccountCreationMfaMethod,
   snapshotUser
 };

@@ -56,6 +56,8 @@
     }
   ];
 
+  let currentPermissions = null;
+
   function getActiveAdminWorkZoneTab() {
     const path = window.location.pathname;
     const params = new URLSearchParams(window.location.search);
@@ -93,8 +95,14 @@
 
     if (!tabs) return;
 
+    if (Object.prototype.hasOwnProperty.call(options, "permissions")) {
+      currentPermissions = options.permissions || null;
+    }
+
     const active = options.active || getActiveAdminWorkZoneTab();
-    const permissions = options.permissions || null;
+    const permissions = Object.prototype.hasOwnProperty.call(options, "permissions")
+      ? options.permissions
+      : currentPermissions;
     const includeSiteConfig = permissions
       ? permissions.canAccessSiteConfig === true
       : options.includeSiteConfig === true ||
@@ -102,6 +110,8 @@
         active === "site-config";
 
     tabs.dataset.includeSiteConfig = includeSiteConfig ? "true" : "false";
+    tabs.classList.add("event-management-tabs");
+    tabs.setAttribute("role", "tablist");
     tabs.replaceChildren();
 
     tabItems
@@ -112,8 +122,11 @@
         const isActive = item.key === active;
 
         link.className = "admin-work-zone-tab";
-        link.classList.toggle("is-active", isActive);
+        link.classList.add("event-management-tab");
         link.href = item.href;
+        link.dataset.adminTab = item.key;
+        link.setAttribute("role", "tab");
+        link.setAttribute("aria-selected", String(isActive));
         link.textContent = translateAdminTab(item.labelKey);
 
         if (isActive) {
@@ -122,6 +135,12 @@
 
         tabs.append(link);
       });
+
+    CMCENUtils.activateTabs({
+      active,
+      tabs: tabs.querySelectorAll("[data-admin-tab]"),
+      tabKey: "adminTab"
+    });
   }
 
   window.renderAdminWorkZoneTabs = renderAdminWorkZoneTabs;
@@ -132,7 +151,7 @@
   };
 
   document.addEventListener("languagechange", () => {
-    renderAdminWorkZoneTabs();
+    renderAdminWorkZoneTabs({ permissions: currentPermissions });
   });
 
   renderAdminWorkZoneTabs();

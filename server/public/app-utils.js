@@ -409,6 +409,84 @@
     return loading;
   }
 
+  function getElementList(value) {
+    if (!value) {
+      return [];
+    }
+
+    if (typeof value === "string") {
+      return Array.from(document.querySelectorAll(value));
+    }
+
+    return Array.from(value);
+  }
+
+  function activateTabs(options = {}) {
+    const {
+      active,
+      activeClass = "is-active",
+      panels,
+      panelKey = "panel",
+      tabs,
+      tabKey = "tab"
+    } = options;
+
+    getElementList(tabs).forEach(tab => {
+      const isActive = tab.dataset[tabKey] === active;
+
+      tab.classList.toggle(activeClass, isActive);
+
+      if (
+        tab.getAttribute("role") === "tab" ||
+        tab.hasAttribute("aria-selected")
+      ) {
+        tab.setAttribute("aria-selected", String(isActive));
+      }
+    });
+
+    getElementList(panels).forEach(panel => {
+      const isActive = panel.dataset[panelKey] === active;
+
+      panel.classList.toggle(activeClass, isActive);
+      panel.hidden = !isActive;
+    });
+  }
+
+  function bindTabs(options = {}) {
+    const tabs = getElementList(options.tabs);
+    const tabKey = options.tabKey || "tab";
+
+    function activate(active) {
+      activateTabs({
+        ...options,
+        active,
+        tabs
+      });
+    }
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", event => {
+        const active = tab.dataset[tabKey];
+
+        if (options.preventDefault) {
+          event.preventDefault();
+        }
+
+        activate(active);
+
+        if (typeof options.onActivate === "function") {
+          options.onActivate(active, tab, event);
+        }
+      });
+    });
+
+    if (options.active) {
+      activate(options.active);
+    }
+
+    return { activate };
+  }
+
   function setStatusMessage(element, message, state = "") {
     element.replaceChildren();
     element.className = "dashboard-status";
@@ -441,11 +519,13 @@
   }
 
   window.CMCENUtils = {
+    activateTabs,
     apiFetch,
     apiJson,
     arrayBufferToBase64url,
     authHeaders,
     base64urlToArrayBuffer,
+    bindTabs,
     clearAuthToken,
     clearMfaSession,
     createLoadingSpinner,

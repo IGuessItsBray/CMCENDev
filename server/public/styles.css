@@ -3899,7 +3899,7 @@ a.dropdown-toggle {
 }
 
 .admin-work-zone-page-tabs {
-  margin: 18px 30px 0;
+  margin: 0;
 }
 
 .admin-work-zone-tab:hover,
@@ -6646,10 +6646,20 @@ a.dropdown-toggle {
   background: var(--branch-grey-100);
 }
 
+.admin-work-zone-tabs.event-management-tabs {
+  width: 100%;
+  gap: 0;
+  overflow: visible;
+  padding: 0;
+}
+
 .event-management-tab {
   position: relative;
   min-height: 52px;
   padding: 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-right: 1px solid var(--branch-grey-200);
   background: transparent;
@@ -6658,6 +6668,9 @@ a.dropdown-toggle {
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
   text-transform: uppercase;
   cursor: pointer;
 }
@@ -9200,7 +9213,7 @@ a.dropdown-toggle {
   }
 
   .admin-work-zone-page-tabs {
-    margin: 16px 22px 0;
+    margin: 0;
   }
 
   .dashboard-actions-section {
@@ -10936,11 +10949,11 @@ html[data-theme="dark"] .admin-role-list {
   border-color: var(--dark-border);
 }
 
-html[data-theme="dark"] .admin-work-zone-tabs {
+html[data-theme="dark"] .admin-work-zone-tabs:not(.event-management-tabs) {
   border-bottom-color: var(--dark-border);
 }
 
-html[data-theme="dark"] .admin-work-zone-tab,
+html[data-theme="dark"] .admin-work-zone-tab:not(.event-management-tab),
 html[data-theme="dark"] .admin-media-heading,
 html[data-theme="dark"] .admin-media-card,
 html[data-theme="dark"] .admin-media-attachment,
@@ -10957,9 +10970,9 @@ html[data-theme="dark"] .site-config-row {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .admin-work-zone-tab:hover,
-html[data-theme="dark"] .admin-work-zone-tab:focus-visible,
-html[data-theme="dark"] .admin-work-zone-tab.is-active {
+html[data-theme="dark"] .admin-work-zone-tab:not(.event-management-tab):hover,
+html[data-theme="dark"] .admin-work-zone-tab:not(.event-management-tab):focus-visible,
+html[data-theme="dark"] .admin-work-zone-tab:not(.event-management-tab).is-active {
   border-color: var(--gold-500);
   background: var(--gold-500);
   color: #101522;

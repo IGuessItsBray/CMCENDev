@@ -1076,6 +1076,56 @@ svg {
   background: var(--white);
 }
 
+.app-form-section {
+  margin-top: 22px;
+  padding: 20px;
+}
+
+.app-form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 17px 20px;
+}
+
+.app-form-grid > .is-wide {
+  grid-column: 1 / -1;
+}
+
+.app-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.app-confirmation input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  flex: 0 0 auto;
+  accent-color: var(--gold-600);
+}
+
+.app-confirmation > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-confirmation strong {
+  color: var(--navy-900);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.app-confirmation small {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .app-panel-heading {
   min-height: 52px;
   padding: 12px 16px;
@@ -4078,19 +4128,7 @@ a.dropdown-toggle {
   line-height: 1.45;
 }
 
-.event-form-section,
-.event-details-section,
-.event-submitter-section {
-  margin-top: 22px;
-  padding: 20px;
-}
-
-.event-schedule-section {
-  margin-top: 22px;
-  padding: 20px;
-}
-
-.event-submit-form>.event-form-section:first-child {
+.event-submit-form > .app-form-section:first-child {
   margin-top: 0;
 }
 
@@ -4493,20 +4531,7 @@ a.dropdown-toggle {
   line-height: 1;
 }
 
-.event-form-grid,
-.event-details-grid {
-  display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
-  gap: 17px 20px;
-}
-
-.event-form-grid > .is-wide,
-.event-details-grid > .is-wide {
-  grid-column: 1 / -1;
-}
-
-.event-details-grid > .app-field:has(.retirement-trade-panel) {
+.app-form-grid > .app-field:has(.retirement-trade-panel) {
   gap: 11px;
 }
 
@@ -4954,46 +4979,15 @@ a.dropdown-toggle {
   overflow: hidden;
 }
 
-.event-authorization-checkbox {
+.event-authorization-section .app-confirmation {
   padding: 18px 20px;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  cursor: pointer;
 }
 
-.event-authorization-checkbox input {
-  width: 19px;
-  height: 19px;
-  margin: 1px 0 0;
-  flex: 0 0 auto;
-  accent-color: var(--gold-600);
-}
-
-.event-authorization-checkbox>span {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.event-authorization-checkbox strong {
-  color: var(--navy-900);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.event-authorization-checkbox small {
-  color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-.event-authorization-checkbox:hover {
+.event-authorization-section .app-confirmation:hover {
   background: var(--branch-grey-100);
 }
 
-.event-authorization-checkbox:focus-within {
+.event-authorization-section .app-confirmation:focus-within {
   background: var(--branch-grey-100);
   box-shadow:
     inset 0 0 0 2px rgba(197, 141, 35, 0.18);
@@ -5900,36 +5894,11 @@ a.dropdown-toggle {
   gap: 16px;
 }
 
-.retirement-consent-field {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  cursor: pointer;
-}
-
-.retirement-consent-field input {
-  width: 18px;
-  height: 18px;
-  margin: 1px 0 0;
-  flex: 0 0 auto;
-  accent-color: var(--gold-600);
-}
-
-.retirement-consent-field span {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.retirement-consent-field strong {
+.retirement-consent-section .app-confirmation strong {
   color: var(--ink);
-  font-size: 13px;
-  line-height: 1.45;
 }
 
-.retirement-consent-field small {
-  color: var(--text-muted);
+.retirement-consent-section .app-confirmation small {
   font-size: 12px;
   line-height: 1.5;
 }
@@ -7290,8 +7259,7 @@ a.dropdown-toggle {
     flex-direction: column;
   }
 
-  .event-form-grid,
-  .event-details-grid {
+  .app-form-grid {
     grid-template-columns: 1fr;
   }
 
@@ -7299,8 +7267,7 @@ a.dropdown-toggle {
     grid-template-columns: 1fr;
   }
 
-  .event-form-grid > .is-wide,
-  .event-details-grid > .is-wide {
+  .app-form-grid > .is-wide {
     grid-column: span 1;
   }
 
@@ -7339,7 +7306,7 @@ a.dropdown-toggle {
   }
 
   .event-authorization-heading,
-  .event-authorization-checkbox {
+  .event-authorization-section .app-confirmation {
     padding-left: 16px;
     padding-right: 16px;
   }
@@ -7754,6 +7721,14 @@ html[data-theme="dark"] .app-panel-heading {
 
 html[data-theme="dark"] .app-section-heading {
   border-bottom-color: var(--gold-500);
+}
+
+html[data-theme="dark"] .app-confirmation strong {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .app-confirmation small {
+  color: var(--dark-text-soft);
 }
 
 html[data-theme="dark"] main a {
@@ -8501,16 +8476,14 @@ html[data-theme="dark"] .about-family-main {
 html[data-theme="dark"] .event-section-intro,
 html[data-theme="dark"] .event-language-note,
 html[data-theme="dark"] .event-time-zone-note,
-html[data-theme="dark"] .event-authorization-checkbox small,
-html[data-theme="dark"] .retirement-consent-field small,
 html[data-theme="dark"] .my-events-intro,
 html[data-theme="dark"] .my-events-message,
 html[data-theme="dark"] .event-edit-loading p {
   color: var(--dark-text-soft);
 }
 
-html[data-theme="dark"] .event-authorization-checkbox:hover,
-html[data-theme="dark"] .event-authorization-checkbox:focus-within {
+html[data-theme="dark"] .event-authorization-section .app-confirmation:hover,
+html[data-theme="dark"] .event-authorization-section .app-confirmation:focus-within {
   background: var(--dark-surface-3);
 }
 
@@ -8528,9 +8501,7 @@ html[data-theme="dark"] .event-review-note {
 
 html[data-theme="dark"] .event-toggle,
 html[data-theme="dark"] .event-time-separator,
-html[data-theme="dark"] .event-publish-toggle strong,
-html[data-theme="dark"] .retirement-consent-field strong,
-html[data-theme="dark"] .event-authorization-checkbox strong {
+html[data-theme="dark"] .event-publish-toggle strong {
   color: var(--dark-text);
 }
 

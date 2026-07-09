@@ -828,28 +828,14 @@ function showSignOutModal(trigger) {
 }
 
 function performSignOut() {
-  const currentPath = window.location.pathname;
-
-  CMCENUtils.clearAuthToken();
-  sessionStorage.removeItem("tempToken");
-  sessionStorage.removeItem("twoFactorMethods");
+  CMCENUtils.clearMfaSession();
 
   document.getElementById('header')?.classList.remove('is-mobile-menu-open');
   document.body.classList.remove('mobile-menu-lock');
   document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded', 'false');
   document.getElementById('mobileMenuToggle')?.setAttribute('aria-label', 'Open menu');
 
-  if (protectedPages.has(currentPath)) {
-    window.location.replace("/login.html");
-    return;
-  }
-
-  updateAuthRestrictedItems();
-  updateAuthButtons();
-
-  if (typeof applyLanguage === "function") {
-    applyLanguage(currentLang);
-  }
+  CMCENUtils.redirectToLogin();
 }
 
 function handleSignOut(event) {

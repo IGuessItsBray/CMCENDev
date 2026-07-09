@@ -1911,28 +1911,36 @@ a.dropdown-toggle {
   flex-direction: column;
 }
 
-.event-detail-eyebrow {
-  margin: 0 0 11px;
+.event-detail-eyebrow,
+.retirement-detail-mosid {
   color: var(--gold-200);
-  font-size: 12px;
   font-weight: 900;
   line-height: 1.35;
-  letter-spacing: 0;
   text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 
-.event-detail-heading h1 {
+.event-detail-eyebrow {
+  margin: 0 0 11px;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.event-detail-heading h1,
+.retirement-detail-heading h1 {
   margin: 0;
   color: var(--white);
   font-family:
     Georgia,
     "Times New Roman",
     serif;
-  font-size: clamp(30px, 4.7vw, 48px);
   font-weight: normal;
   line-height: 1.15;
   overflow-wrap: anywhere;
+}
+
+.event-detail-heading h1 {
+  font-size: clamp(30px, 4.7vw, 48px);
 }
 
 .event-detail-summary {
@@ -1951,11 +1959,8 @@ a.dropdown-toggle {
   justify-content: flex-end;
 }
 
-.event-detail-body {
-  padding: 24px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
-  gap: 24px;
+.event-detail-body,
+.retirement-detail-body {
   border: 1px solid rgba(255, 255, 255, 0.34);
   border-top: 0;
   background:
@@ -1966,20 +1971,31 @@ a.dropdown-toggle {
     inset 0 1px 0 rgba(255, 255, 255, 0.52);
 }
 
-.event-detail-description {
-  min-width: 0;
+.event-detail-body {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 24px;
 }
 
 .event-detail-section,
-.event-detail-brief {
+.event-detail-brief,
+.retirement-detail-message-section,
+.retirement-detail-comments {
   border-radius: 2px;
   background: var(--white);
 }
 
-.event-detail-section {
-  padding: 26px 28px;
+.event-detail-section,
+.retirement-detail-message-section,
+.retirement-detail-comments {
   border: 1px solid var(--branch-grey-200);
   border-left: 4px solid var(--gold-500);
+}
+
+.event-detail-section {
+  min-width: 0;
+  padding: 26px 28px;
 }
 
 .event-detail-brief {
@@ -2015,12 +2031,16 @@ a.dropdown-toggle {
   font-size: 21px;
 }
 
-.event-detail-description p {
+.event-detail-section p,
+.retirement-detail-message-section p {
   margin: 0;
   color: var(--ink);
   font-size: 15px;
-  line-height: 1.7;
   white-space: pre-line;
+}
+
+.event-detail-section p {
+  line-height: 1.7;
   overflow-wrap: anywhere;
 }
 
@@ -6176,27 +6196,13 @@ a.dropdown-toggle {
 }
 
 .retirement-detail-heading h1 {
-  margin: 0;
-  color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
   font-size: 34px;
-  font-weight: normal;
-  line-height: 1.15;
-  overflow-wrap: anywhere;
 }
 
 .retirement-detail-mosid {
   margin: 12px 0 0;
-  color: var(--gold-200);
   font-size: 15px;
-  font-weight: 900;
-  line-height: 1.35;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
-  overflow-wrap: anywhere;
 }
 
 .retirement-detail-date {
@@ -6208,14 +6214,6 @@ a.dropdown-toggle {
 
 .retirement-detail-body {
   padding: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  border-top: 0;
-  background:
-    linear-gradient(180deg,
-      rgba(238, 240, 242, 0.94),
-      rgba(255, 255, 255, 0.88));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.52);
 }
 
 .retirement-detail-photo {
@@ -6251,10 +6249,6 @@ a.dropdown-toggle {
 .retirement-detail-message-section,
 .retirement-detail-comments {
   padding: 22px 24px;
-  border: 1px solid var(--branch-grey-200);
-  border-left: 4px solid var(--gold-500);
-  border-radius: 2px;
-  background: var(--white);
 }
 
 .retirement-detail-comments {
@@ -6373,11 +6367,7 @@ a.dropdown-toggle {
 }
 
 .retirement-detail-message-section p {
-  margin: 0;
-  color: var(--ink);
-  font-size: 15px;
   line-height: 1.75;
-  white-space: pre-line;
 }
 
 .retirement-detail-comments>p:not(.retirement-comment-message) {
@@ -6434,20 +6424,25 @@ a.dropdown-toggle {
     padding: 22px 20px 23px;
   }
 
-  .retirement-detail-heading h1 {
+  .retirement-detail-heading h1,
+  .event-detail-heading h1 {
     font-size: 28px;
   }
 
-  .retirement-detail-body {
+  .retirement-detail-body,
+  .event-detail-body {
     padding: 16px;
   }
 
   .retirement-detail-message-section,
-  .retirement-detail-comments {
+  .retirement-detail-comments,
+  .event-detail-section {
     padding: 18px;
   }
 
-  .retirement-detail-message-section p {
+  .retirement-detail-message-section p,
+  .event-detail-section p,
+  .event-detail-registration p {
     font-size: 14px;
   }
 
@@ -6655,23 +6650,14 @@ a.dropdown-toggle {
     font-size: 42px;
   }
 
-  .event-detail-heading h1 {
-    font-size: 28px;
-  }
-
   .event-detail-summary {
     margin-top: 9px;
     font-size: 13px;
   }
 
   .event-detail-body {
-    padding: 16px;
     grid-template-columns: 1fr;
     gap: 16px;
-  }
-
-  .event-detail-section {
-    padding: 18px;
   }
 
   .event-detail-section h2,
@@ -6679,10 +6665,6 @@ a.dropdown-toggle {
     font-size: 22px;
   }
 
-  .event-detail-description p,
-  .event-detail-registration p {
-    font-size: 14px;
-  }
 }
 
 @media (max-width: 760px) {
@@ -8126,7 +8108,7 @@ html[data-theme="dark"] .event-detail-registration {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .event-detail-description p,
+html[data-theme="dark"] .event-detail-section p,
 html[data-theme="dark"] .event-detail-list dd,
 html[data-theme="dark"] .event-detail-registration p {
   color: var(--dark-text-soft);
@@ -8697,14 +8679,6 @@ html[data-theme="dark"] .dashboard-role-badge.role-developer {
 
 html[data-theme="dark"] .admin-content-area-option input {
   accent-color: var(--gold-500);
-}
-
-html[data-theme="dark"] .retirement-detail-shell {
-  background: var(--dark-surface);
-}
-
-html[data-theme="dark"] .retirement-detail-body {
-  border-color: var(--dark-border);
 }
 
 html[data-theme="dark"] .retirement-comment {

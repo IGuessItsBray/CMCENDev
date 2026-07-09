@@ -30,8 +30,9 @@ async function authMiddleware(req, res, next) {
     try {
         const user = await User.findById(decoded.userId)
             .select(
-                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role contentAreas createdAt updatedAt'
-            );
+                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt'
+            )
+            .populate('customRoles', 'name slug color permissions');
 
         if (!user) {
             return res.status(401).json({
@@ -92,8 +93,14 @@ function requireExactRole(...allowedRoles) {
 function requirePermission(permissionName) {
     return (req, res, next) => {
         const permissions = getUserPermissions(req.user);
+        const permissionKeys = Array.isArray(permissions.keys)
+            ? permissions.keys
+            : [];
 
-        if (permissions[permissionName] !== true) {
+        if (
+            permissions[permissionName] !== true &&
+            !permissionKeys.includes(permissionName)
+        ) {
             return res.status(403).json({
                 error: 'Insufficient permissions'
             });
@@ -116,8 +123,9 @@ async function authOrTempMiddleware(req, res, next) {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             const user = await User.findById(decoded.userId)
                 .select(
-                    'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role contentAreas createdAt updatedAt'
-                );
+                    'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt'
+                )
+                .populate('customRoles', 'name slug color permissions');
 
             if (!user) return res.status(401).json({ error: 'User no longer exists' });
 
@@ -138,8 +146,9 @@ async function authOrTempMiddleware(req, res, next) {
     try {
         const user = await User.findOne({ 'twoFactor.tempToken': tempToken, 'twoFactor.tempExpires': { $gt: new Date() } })
             .select(
-                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role contentAreas createdAt updatedAt webauthn totp'
-            );
+                'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt webauthn totp'
+            )
+            .populate('customRoles', 'name slug color permissions');
 
         if (!user) return res.status(401).json({ error: 'Invalid or expired temp token' });
 

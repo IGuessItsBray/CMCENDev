@@ -26,8 +26,15 @@ const auditActions = [
   ["config.token_rejected", "audit_action_config_token_rejected"],
   ["config.updated", "audit_action_config_updated"],
   ["media.deleted", "audit_action_media_deleted"],
+  ["role.created", "audit_action_role_created"],
+  ["role.updated", "audit_action_role_updated"],
+  ["role.permissions_changed", "audit_action_role_permissions_changed"],
+  ["role.deleted", "audit_action_role_deleted"],
   ["translation.updated", "audit_action_translation_updated"],
   ["user.role_changed", "audit_action_role_changed"],
+  ["user.custom_roles_changed", "audit_action_custom_roles_changed"],
+  ["user.custom_role_added", "audit_action_custom_role_added"],
+  ["user.custom_role_removed", "audit_action_custom_role_removed"],
   ["user.content_areas_changed", "audit_action_content_areas_changed"]
 ];
 
@@ -37,6 +44,7 @@ const auditTargetTypes = [
   ["event", "audit_target_events"],
   ["config", "audit_target_config"],
   ["media", "audit_target_media"],
+  ["role", "audit_target_roles"],
   ["translation", "audit_target_translations"],
   ["retirementMessage", "audit_target_retirement_posts"],
   ["retirementComment", "audit_target_comments"]
@@ -97,6 +105,8 @@ function getAuditTarget(log) {
   return (
     target.title ||
     target.key ||
+    target.name ||
+    target.slug ||
     target.accountName ||
     target.username ||
     target.email ||
@@ -491,7 +501,7 @@ async function verifyAuditAccess() {
     errorMessage: translate("admin_verify_error")
   });
 
-  if (user.permissions?.canManageUsers !== true) {
+  if (user.permissions?.canViewAuditLog !== true) {
     window.location.href = "/dashboard.html";
     return false;
   }

@@ -14,6 +14,14 @@
       return CMCENUtils.formatDate(value);
     }
 
+    function getText(key, fallback, replacements = {}) {
+      const translated = typeof translate === "function"
+        ? translate(key, replacements)
+        : key;
+
+      return translated === key ? fallback : translated;
+    }
+
     function formatFileSize(value) {
       const bytes = Number(value || 0);
 
@@ -38,6 +46,20 @@
       const roleKey = role || "subscriber";
       badge.className = `admin-user-role-badge role-${roleKey}`;
       badge.textContent = translate(`role_${roleKey}`);
+
+      return badge;
+    }
+
+    function createCustomRoleBadge(role) {
+      const badge = document.createElement("span");
+      badge.className = "admin-user-role-badge is-custom";
+      badge.textContent = role?.name || getText("admin_roles_custom_role", "Custom role");
+
+      if (role?.color) {
+        badge.style.borderColor = role.color;
+        badge.style.backgroundColor = role.color;
+        badge.style.color = "#ffffff";
+      }
 
       return badge;
     }
@@ -94,7 +116,13 @@
         count: user.postSummary?.total || 0
       });
 
-      button.append(name, meta, createRoleBadge(user.role), count);
+      button.append(name, meta, createRoleBadge(user.role));
+
+      (user.customRoles || []).slice(0, 3).forEach(role => {
+        button.append(createCustomRoleBadge(role));
+      });
+
+      button.append(count);
       button.addEventListener("click", () => actions.loadUserDetail(user._id));
 
       return button;
@@ -217,9 +245,61 @@
       return wrapper;
     }
 
+    function createCustomRoleOptions(user) {
+      const wrapper = document.createElement("div");
+      const state = getState();
+      wrapper.className = "admin-custom-role-options";
+      const selectedRoles = new Set((user?.customRoleIds || []).map(String));
+
+      if (!state.customRoles.length) {
+        const empty = document.createElement("p");
+        empty.className = "admin-empty-state";
+        empty.textContent = getText(
+          "admin_roles_assignment_empty",
+          "No custom roles have been created yet."
+        );
+        wrapper.append(empty);
+        return wrapper;
+      }
+
+      state.customRoles.forEach(role => {
+        const label = document.createElement("label");
+        label.className = "admin-custom-role-option";
+
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = role._id;
+        input.checked = selectedRoles.has(String(role._id));
+
+        const swatch = document.createElement("span");
+        swatch.className = "admin-role-color-swatch";
+        swatch.style.backgroundColor = role.color || "#4F46E5";
+
+        const text = document.createElement("span");
+        text.textContent = role.name;
+
+        label.append(input, swatch, text);
+        wrapper.append(label);
+      });
+
+      return wrapper;
+    }
+
     function getSelectedContentAreas(form) {
       return Array
         .from(form.querySelectorAll(".admin-content-area-option input:checked"))
+        .map(input => input.value);
+    }
+
+    function getSelectedCustomRoleIds(form) {
+      return Array
+        .from(form.querySelectorAll(".admin-custom-role-option input:checked"))
+        .map(input => input.value);
+    }
+
+    function getSelectedPermissions(form) {
+      return Array
+        .from(form.querySelectorAll(".admin-permission-option input:checked"))
         .map(input => input.value);
     }
 
@@ -283,6 +363,263 @@
       item.append(deleteButton);
 
       return item;
+    }
+
+    function getPermissionGroups() {
+      const groups = new Map();
+
+      getState().permissionCatalog.forEach(permission => {
+        const groupName = permission.group || "Permissions";
+
+        if (!groups.has(groupName)) {
+          groups.set(groupName, []);
+        }
+
+        groups.get(groupName).push(permission);
+      });
+
+      return groups;
+    }
+
+    function createPermissionOptions(role) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "admin-permission-groups";
+      const selectedPermissions = new Set(role?.permissions || []);
+      const groups = getPermissionGroups();
+
+      if (!groups.size) {
+        const empty = document.createElement("p");
+        empty.className = "admin-empty-state";
+        empty.textContent = "No permissions are configured yet.";
+        wrapper.append(empty);
+        return wrapper;
+      }
+
+      groups.forEach((permissions, groupName) => {
+        const group = document.createElement("div");
+        group.className = "admin-permission-group";
+
+        const title = document.createElement("strong");
+        title.textContent = groupName;
+        group.append(title);
+
+        permissions.forEach(permission => {
+          const label = document.createElement("label");
+          label.className = "admin-permission-option";
+
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.value = permission.key;
+          input.checked = selectedPermissions.has(permission.key);
+
+          const text = document.createElement("span");
+          text.textContent = permission.label || permission.key;
+
+          const detail = document.createElement("small");
+          detail.textContent = [
+            permission.action,
+            permission.description
+          ].filter(Boolean).join(" · ");
+
+          label.append(input, text, detail);
+          group.append(label);
+        });
+
+        wrapper.append(group);
+      });
+
+      return wrapper;
+    }
+
+    function createRoleDefinitionButton(role) {
+      const button = document.createElement("button");
+      const state = getState();
+      button.type = "button";
+      button.className = "admin-role-row";
+      button.classList.toggle(
+        "is-selected",
+        String(role._id) === String(state.selectedRoleId)
+      );
+
+      const swatch = document.createElement("span");
+      swatch.className = "admin-role-color-swatch";
+      swatch.style.backgroundColor = role.color || "#4F46E5";
+
+      const name = document.createElement("strong");
+      name.textContent = role.name;
+
+      const meta = document.createElement("span");
+      meta.textContent = `${role.permissions?.length || 0} permissions`;
+
+      button.append(swatch, name, meta);
+      button.addEventListener("click", () => actions.selectRole(role._id));
+
+      return button;
+    }
+
+    function createRoleDefinitionsPanel() {
+      const panel = document.createElement("div");
+      const state = getState();
+      panel.className = "admin-role-editor-panel";
+
+      const header = document.createElement("div");
+      header.className = "admin-panel-heading";
+
+      const title = document.createElement("h3");
+      title.textContent = getText("admin_roles_heading", "Custom roles");
+
+      const createButton = document.createElement("button");
+      createButton.type = "button";
+      createButton.className = "admin-work-zone-button is-secondary";
+      createButton.textContent = getText("admin_roles_new", "New role");
+      createButton.addEventListener("click", () => {
+        const roleNumber = state.customRoles.length + 1;
+
+        actions.createRole({
+          name: `New role ${roleNumber}`,
+          color: "#4F46E5",
+          permissions: []
+        });
+      });
+
+      header.append(title, createButton);
+      panel.append(header);
+
+      const body = document.createElement("div");
+      body.className = "admin-role-editor-body";
+
+      const list = document.createElement("div");
+      list.className = "admin-role-list";
+
+      if (!state.customRoles.length) {
+        const empty = document.createElement("p");
+        empty.className = "admin-empty-state";
+        empty.textContent = getText(
+          "admin_roles_empty",
+          "Create a role to start assigning custom permissions."
+        );
+        list.append(empty);
+      } else {
+        state.customRoles.forEach(role => {
+          list.append(createRoleDefinitionButton(role));
+        });
+      }
+
+      const selectedRole =
+        state.customRoles.find(role => String(role._id) === String(state.selectedRoleId)) ||
+        state.customRoles[0] ||
+        null;
+
+      const form = document.createElement("form");
+      form.className = "admin-role-form";
+
+      if (!selectedRole) {
+        const empty = document.createElement("p");
+        empty.className = "admin-empty-state";
+        empty.textContent = getText(
+          "admin_roles_select_empty",
+          "No custom role selected."
+        );
+        form.append(empty);
+      } else {
+        const nameField = document.createElement("label");
+        nameField.className = "admin-editor-field admin-role-field-name";
+        const nameLabel = document.createElement("span");
+        nameLabel.textContent = "Name";
+        const nameInput = document.createElement("input");
+        nameInput.name = "name";
+        nameInput.type = "text";
+        nameInput.required = true;
+        nameInput.maxLength = 80;
+        nameInput.value = selectedRole.name || "";
+        nameField.append(nameLabel, nameInput);
+
+        const slugField = document.createElement("label");
+        slugField.className = "admin-editor-field admin-role-field-slug";
+        const slugLabel = document.createElement("span");
+        slugLabel.textContent = "Slug";
+        const slugInput = document.createElement("input");
+        slugInput.name = "slug";
+        slugInput.type = "text";
+        slugInput.maxLength = 100;
+        slugInput.value = selectedRole.slug || "";
+        slugField.append(slugLabel, slugInput);
+
+        const colorField = document.createElement("label");
+        colorField.className = "admin-editor-field admin-role-field-color";
+        const colorLabel = document.createElement("span");
+        colorLabel.textContent = "Badge color";
+        const colorInput = document.createElement("input");
+        colorInput.name = "color";
+        colorInput.type = "color";
+        colorInput.value = selectedRole.color || "#4F46E5";
+        colorField.append(colorLabel, colorInput);
+
+        const descriptionField = document.createElement("label");
+        descriptionField.className = "admin-editor-field admin-role-field-description";
+        const descriptionLabel = document.createElement("span");
+        descriptionLabel.textContent = "Description";
+        const descriptionInput = document.createElement("textarea");
+        descriptionInput.name = "description";
+        descriptionInput.maxLength = 240;
+        descriptionInput.rows = 3;
+        descriptionInput.value = selectedRole.description || "";
+        descriptionField.append(descriptionLabel, descriptionInput);
+
+        const permissionField = document.createElement("fieldset");
+        permissionField.className = "admin-editor-fieldset admin-role-field-permissions";
+        const permissionLegend = document.createElement("legend");
+        permissionLegend.textContent = "Permissions";
+        permissionField.append(permissionLegend, createPermissionOptions(selectedRole));
+
+        const actionsRow = document.createElement("div");
+        actionsRow.className = "admin-role-form-actions";
+
+        const save = document.createElement("button");
+        save.type = "submit";
+        save.className = "admin-work-zone-button is-primary";
+        save.textContent = "Save role";
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "admin-work-zone-button is-danger";
+        remove.textContent = "Delete role";
+        remove.addEventListener("click", () => actions.deleteRole(selectedRole));
+
+        actionsRow.append(save, remove);
+        form.append(
+          nameField,
+          slugField,
+          colorField,
+          descriptionField,
+          permissionField,
+          actionsRow
+        );
+
+        form.addEventListener("submit", event => {
+          event.preventDefault();
+          actions.saveRole(selectedRole._id, {
+            name: form.elements.name.value,
+            slug: form.elements.slug.value,
+            color: form.elements.color.value,
+            description: form.elements.description.value,
+            permissions: getSelectedPermissions(form)
+          });
+        });
+      }
+
+      body.append(list, form);
+      panel.append(body);
+
+      return panel;
+    }
+
+    function createRolesManager() {
+      const wrapper = document.createElement("div");
+      wrapper.className = "admin-roles-manager";
+      wrapper.append(createRoleDefinitionsPanel());
+
+      return wrapper;
     }
 
     function createEditor() {
@@ -349,12 +686,23 @@
 
       contentField.append(legend, createContentAreaOptions(user));
 
+      const customRolesField = document.createElement("fieldset");
+      customRolesField.className = "admin-editor-fieldset";
+
+      const customRolesLegend = document.createElement("legend");
+      customRolesLegend.textContent = getText(
+        "admin_roles_assign_label",
+        "Custom roles"
+      );
+
+      customRolesField.append(customRolesLegend, createCustomRoleOptions(user));
+
       const save = document.createElement("button");
       save.type = "submit";
       save.className = "admin-work-zone-button is-primary";
       save.textContent = translate("admin_users_save");
 
-      form.append(roleField, contentField, save);
+      form.append(roleField, customRolesField, contentField, save);
 
       if (!isDeveloper(user)) {
         const promoteDeveloper = document.createElement("button");
@@ -370,7 +718,8 @@
       form.addEventListener("submit", event => {
         event.preventDefault();
         const payload = {
-          contentAreas: getSelectedContentAreas(form)
+          contentAreas: getSelectedContentAreas(form),
+          customRoleIds: getSelectedCustomRoleIds(form)
         };
 
         if (!isDeveloper(user)) {
@@ -585,8 +934,14 @@
       const state = getState();
       const content = [createMessage()];
 
+      root.classList.toggle("is-users-view", state.activeView === "users");
+      root.classList.toggle("is-roles-view", state.activeView === "roles");
+      root.classList.toggle("is-media-view", state.activeView === "media");
+
       if (state.activeView === "media") {
         content.push(createMediaLibrary());
+      } else if (state.activeView === "roles") {
+        content.push(createRolesManager());
       } else {
         content.push(createUserList(), createEditor());
       }

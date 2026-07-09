@@ -7,6 +7,7 @@ let siteConfigToken = "";
 let siteConfigState = {
   variables: [],
   message: "",
+  canManageSiteConfig: false,
   isSaving: false
 };
 
@@ -47,7 +48,7 @@ function siteConfigApiJson(path, options = {}) {
   });
 }
 
-async function verifyDeveloperAccount() {
+async function verifySiteConfigAccess() {
   const user = await CMCENUtils.apiJson("/api/me", {
     token: siteConfigAuthToken,
     redirectOnUnauthorized: true,
@@ -55,7 +56,7 @@ async function verifyDeveloperAccount() {
     errorMessage: translate("site_config_verify_error")
   });
 
-  if (user.role !== "developer") {
+  if (user.permissions?.canAccessSiteConfig !== true) {
     window.location.href = "/dashboard.html";
     return null;
   }
@@ -126,7 +127,7 @@ function createSiteConfigToolbar() {
   save.textContent = siteConfigState.isSaving
     ? translate("translations_saving")
     : translate("site_config_save");
-  save.disabled = siteConfigState.isSaving;
+  save.disabled = siteConfigState.isSaving || !siteConfigState.canManageSiteConfig;
 
   actions.append(reload, save);
   toolbar.append(copy, actions);
@@ -280,11 +281,14 @@ async function initializeSiteConfigPage() {
   showSiteConfigLoading();
 
   try {
-    const user = await verifyDeveloperAccount();
+    const user = await verifySiteConfigAccess();
 
     if (!user) return;
 
     window.updateAdminWorkZoneTabsForUser(user);
+    setSiteConfigState({
+      canManageSiteConfig: user.permissions?.canManageSiteConfig === true
+    });
 
     await logSiteConfigAccessRequest();
     await promptForConfigToken();

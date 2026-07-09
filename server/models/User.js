@@ -190,6 +190,16 @@ const UserSchema = new mongoose.Schema({
     default: 'subscriber'
   },
 
+  customRoles: {
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role'
+      }
+    ],
+    default: []
+  },
+
   contentAreas: {
     type: [String],
     default: []

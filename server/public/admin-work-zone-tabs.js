@@ -1,36 +1,58 @@
 (function () {
   function translateAdminTab(key) {
-    return typeof window.translate === "function"
+    const fallbacks = {
+      admin_tab_users: "Users",
+      admin_tab_roles: "Roles",
+      admin_tab_media: "Media Manager",
+      admin_tab_translations: "Translations",
+      admin_tab_audit_log: "Audit Log",
+      admin_tab_site_config: "Site Config"
+    };
+    const translated = typeof window.translate === "function"
       ? window.translate(key)
       : key;
+
+    return translated === key
+      ? fallbacks[key] || key
+      : translated;
   }
 
   const tabItems = [
     {
       key: "users",
       href: "/admin-users.html",
-      labelKey: "admin_tab_users"
+      labelKey: "admin_tab_users",
+      permission: "canReadUsers"
+    },
+    {
+      key: "roles",
+      href: "/admin-users.html?view=roles",
+      labelKey: "admin_tab_roles",
+      permission: "canManageRoles"
     },
     {
       key: "media",
       href: "/admin-users.html?view=media",
-      labelKey: "admin_tab_media"
+      labelKey: "admin_tab_media",
+      permission: "canViewMediaLibrary"
     },
     {
       key: "translations",
       href: "/translations-admin.html",
-      labelKey: "admin_tab_translations"
+      labelKey: "admin_tab_translations",
+      permission: "canManageTranslations"
     },
     {
       key: "audit-log",
       href: "/audit-log.html",
-      labelKey: "admin_tab_audit_log"
+      labelKey: "admin_tab_audit_log",
+      permission: "canViewAuditLog"
     },
     {
       key: "site-config",
       href: "/site-config.html",
       labelKey: "admin_tab_site_config",
-      developerOnly: true
+      permission: "canAccessSiteConfig"
     }
   ];
 
@@ -40,6 +62,10 @@
 
     if (path === "/admin-users.html" && params.get("view") === "media") {
       return "media";
+    }
+
+    if (path === "/admin-users.html" && params.get("view") === "roles") {
+      return "roles";
     }
 
     if (path === "/admin-users.html") {
@@ -68,15 +94,19 @@
     if (!tabs) return;
 
     const active = options.active || getActiveAdminWorkZoneTab();
-    const includeSiteConfig = options.includeSiteConfig === true ||
-      tabs.dataset.includeSiteConfig === "true" ||
-      active === "site-config";
+    const permissions = options.permissions || null;
+    const includeSiteConfig = permissions
+      ? permissions.canAccessSiteConfig === true
+      : options.includeSiteConfig === true ||
+        tabs.dataset.includeSiteConfig === "true" ||
+        active === "site-config";
 
     tabs.dataset.includeSiteConfig = includeSiteConfig ? "true" : "false";
     tabs.replaceChildren();
 
     tabItems
-      .filter(item => !item.developerOnly || includeSiteConfig)
+      .filter(item => !item.permission || !permissions || permissions[item.permission] === true)
+      .filter(item => item.key !== "site-config" || includeSiteConfig)
       .forEach(item => {
         const link = document.createElement("a");
         const isActive = item.key === active;
@@ -97,7 +127,7 @@
   window.renderAdminWorkZoneTabs = renderAdminWorkZoneTabs;
   window.updateAdminWorkZoneTabsForUser = function updateAdminWorkZoneTabsForUser(user) {
     renderAdminWorkZoneTabs({
-      includeSiteConfig: user?.role === "developer"
+      permissions: user?.permissions || null
     });
   };
 

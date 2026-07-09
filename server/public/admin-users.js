@@ -3,12 +3,15 @@ const adminWorkZone = document.getElementById("adminWorkZone");
 const adminWorkZoneStatus = document.getElementById("adminWorkZoneStatus");
 
 let adminWorkZoneState = {
-  activeView: new URLSearchParams(window.location.search).get("view") === "media"
-    ? "media"
+  activeView: ["media", "roles"].includes(new URLSearchParams(window.location.search).get("view"))
+    ? new URLSearchParams(window.location.search).get("view")
     : "users",
   currentUserId: "",
   users: [],
   roles: [],
+  customRoles: [],
+  permissionCatalog: [],
+  selectedRoleId: "",
   contentAreas: [],
   selectedUserId: "",
   selectedUser: null,
@@ -33,6 +36,10 @@ const adminUsersView = CMCENAdminUsersView.create({
     refreshUsers: () => loadAdminUsers(),
     saveUser: saveAdminUser,
     promoteDeveloper: promoteAdminUserToDeveloper,
+    selectRole: selectAdminRole,
+    createRole: createAdminRole,
+    saveRole: saveAdminRole,
+    deleteRole: deleteAdminRole,
     deletePost: deleteAdminPost,
     refreshMedia: () => loadAdminMedia(),
     loadMoreMedia: cursor => loadAdminMedia({
@@ -141,6 +148,13 @@ async function loadAdminUsers({
     setAdminWorkZoneState({
       users: data.users || [],
       roles: data.roles || [],
+      customRoles: data.customRoles || [],
+      permissionCatalog: data.permissionCatalog || [],
+      selectedRoleId:
+        adminWorkZoneState.selectedRoleId &&
+        data.customRoles?.some(role => String(role._id) === adminWorkZoneState.selectedRoleId)
+          ? adminWorkZoneState.selectedRoleId
+          : data.customRoles?.[0]?._id || "",
       contentAreas: data.contentAreas || [],
       selectedUserId,
       selectedUser: selectedUserId && !selectionChanged
@@ -168,6 +182,38 @@ async function loadAdminUsers({
     setAdminWorkZoneState({
       isLoading: false,
       message: error.message || translate("admin_users_load_error")
+    });
+  }
+}
+
+async function loadAdminRoles() {
+  setAdminWorkZoneState({
+    isLoading: true,
+    message: ""
+  });
+
+  try {
+    const data = await adminApiJson("/api/admin/roles", {
+      errorMessage: "Could not load roles"
+    });
+    const roles = data.roles || [];
+
+    setAdminWorkZoneState({
+      customRoles: roles,
+      permissionCatalog: data.permissionCatalog || [],
+      selectedRoleId:
+        adminWorkZoneState.selectedRoleId &&
+        roles.some(role => String(role._id) === adminWorkZoneState.selectedRoleId)
+          ? adminWorkZoneState.selectedRoleId
+          : roles[0]?._id || "",
+      isLoading: false
+    });
+    showAdminWorkZone();
+  } catch (error) {
+    showAdminWorkZone();
+    setAdminWorkZoneState({
+      isLoading: false,
+      message: error.message || "Could not load roles"
     });
   }
 }
@@ -202,7 +248,9 @@ async function loadAdminMedia({
       mediaBucket: data.bucket || "",
       mediaIsLoading: false
     });
+    showAdminWorkZone();
   } catch (error) {
+    showAdminWorkZone();
     setAdminWorkZoneState({
       mediaIsLoading: false,
       message: error.message || translate("admin_media_load_error")
@@ -266,8 +314,13 @@ async function loadCurrentAdmin() {
   const user = await adminApiJson("/api/me", {
     errorMessage: translate("admin_verify_error")
   });
+  const requiredPermission = {
+    media: "canViewMediaLibrary",
+    roles: "canManageRoles",
+    users: "canReadUsers"
+  }[adminWorkZoneState.activeView] || "canReadUsers";
 
-  if (user.permissions?.canManageUsers !== true) {
+  if (user.permissions?.[requiredPermission] !== true) {
     window.location.href = "/dashboard.html";
     return null;
   }
@@ -308,6 +361,14 @@ async function loadAdminUserDetail(userId, {
       selectedUser: data.user,
       posts: data.posts || [],
       roles: data.roles || adminWorkZoneState.roles,
+      customRoles: data.customRoles || adminWorkZoneState.customRoles,
+      permissionCatalog: data.permissionCatalog || adminWorkZoneState.permissionCatalog,
+      selectedRoleId:
+        adminWorkZoneState.selectedRoleId &&
+        (data.customRoles || adminWorkZoneState.customRoles)
+          .some(role => String(role._id) === adminWorkZoneState.selectedRoleId)
+          ? adminWorkZoneState.selectedRoleId
+          : (data.customRoles || adminWorkZoneState.customRoles)[0]?._id || "",
       contentAreas: data.contentAreas || adminWorkZoneState.contentAreas
     });
   } catch (error) {
@@ -335,6 +396,7 @@ async function saveAdminUser(userId, payload) {
 
     setAdminWorkZoneState({
       selectedUser: data.user,
+      customRoles: data.customRoles || adminWorkZoneState.customRoles,
       users: adminWorkZoneState.users.map(user =>
         String(user._id) === String(data.user._id)
           ? data.user
@@ -345,6 +407,149 @@ async function saveAdminUser(userId, payload) {
   } catch (error) {
     setAdminWorkZoneState({
       message: error.message || translate("admin_users_save_error")
+    });
+  }
+}
+
+function selectAdminRole(roleId) {
+  setAdminWorkZoneState({
+    selectedRoleId: String(roleId || "")
+  });
+}
+
+function syncAssignedCustomRoles(users, customRoles) {
+  const rolesById = new Map(
+    (customRoles || []).map(role => [String(role._id), role])
+  );
+
+  return (users || []).map(user => ({
+    ...user,
+    customRoles: (user.customRoleIds || [])
+      .map(roleId => rolesById.get(String(roleId)))
+      .filter(Boolean)
+  }));
+}
+
+async function createAdminRole(payload) {
+  setAdminWorkZoneState({
+    message: ""
+  });
+
+  try {
+    const data = await adminApiJson("/api/admin/roles", {
+      method: "POST",
+      body: payload,
+      errorMessage: "Could not create role"
+    });
+
+    setAdminWorkZoneState({
+      customRoles: data.roles || adminWorkZoneState.customRoles,
+      users: syncAssignedCustomRoles(
+        adminWorkZoneState.users,
+        data.roles || adminWorkZoneState.customRoles
+      ),
+      selectedUser: adminWorkZoneState.selectedUser
+        ? syncAssignedCustomRoles(
+          [adminWorkZoneState.selectedUser],
+          data.roles || adminWorkZoneState.customRoles
+        )[0]
+        : null,
+      selectedRoleId: data.role?._id || adminWorkZoneState.selectedRoleId,
+      message: data.message || "Role created"
+    });
+  } catch (error) {
+    setAdminWorkZoneState({
+      message: error.message || "Could not create role"
+    });
+  }
+}
+
+async function saveAdminRole(roleId, payload) {
+  if (!roleId) return;
+
+  setAdminWorkZoneState({
+    message: ""
+  });
+
+  try {
+    const data = await adminApiJson(`/api/admin/roles/${encodeURIComponent(roleId)}`, {
+      method: "PATCH",
+      body: payload,
+      errorMessage: "Could not save role"
+    });
+
+    setAdminWorkZoneState({
+      customRoles: data.roles || adminWorkZoneState.customRoles,
+      users: syncAssignedCustomRoles(
+        adminWorkZoneState.users,
+        data.roles || adminWorkZoneState.customRoles
+      ),
+      selectedUser: adminWorkZoneState.selectedUser
+        ? syncAssignedCustomRoles(
+          [adminWorkZoneState.selectedUser],
+          data.roles || adminWorkZoneState.customRoles
+        )[0]
+        : null,
+      selectedRoleId: data.role?._id || roleId,
+      message: data.message || "Role updated"
+    });
+  } catch (error) {
+    setAdminWorkZoneState({
+      message: error.message || "Could not save role"
+    });
+  }
+}
+
+async function deleteAdminRole(role) {
+  if (!role?._id) return;
+
+  if (
+    !window.confirm(
+      `Delete role "${role.name}"? It will be removed from every assigned member.`
+    )
+  ) {
+    return;
+  }
+
+  setAdminWorkZoneState({
+    message: ""
+  });
+
+  try {
+    const data = await adminApiJson(`/api/admin/roles/${encodeURIComponent(role._id)}`, {
+      method: "DELETE",
+      errorMessage: "Could not delete role"
+    });
+    const nextRoles = data.roles || [];
+
+    setAdminWorkZoneState({
+      customRoles: nextRoles,
+      selectedRoleId: nextRoles[0]?._id || "",
+      users: adminWorkZoneState.users.map(user => ({
+        ...user,
+        customRoles: (user.customRoles || []).filter(
+          assignedRole => String(assignedRole._id) !== String(role._id)
+        ),
+        customRoleIds: (user.customRoleIds || []).filter(
+          assignedRoleId => String(assignedRoleId) !== String(role._id)
+        )
+      })),
+      selectedUser: adminWorkZoneState.selectedUser
+        ? {
+          ...adminWorkZoneState.selectedUser,
+          customRoles: (adminWorkZoneState.selectedUser.customRoles || []).filter(
+            assignedRole => String(assignedRole._id) !== String(role._id)
+          ),
+          customRoleIds: (adminWorkZoneState.selectedUser.customRoleIds || []).filter(
+            assignedRoleId => String(assignedRoleId) !== String(role._id)
+          )
+        }
+        : null,
+      message: data.message || "Role deleted"
+    });
+  } catch (error) {
+    setAdminWorkZoneState({
+      message: error.message || "Could not delete role"
     });
   }
 }
@@ -500,10 +705,12 @@ async function initializeAdminUsersPage() {
 
     if (!user) return;
 
-    await loadAdminUsers();
-
-    if (adminWorkZoneState.activeView === "media") {
+    if (adminWorkZoneState.activeView === "roles") {
+      await loadAdminRoles();
+    } else if (adminWorkZoneState.activeView === "media") {
       await loadAdminMedia();
+    } else {
+      await loadAdminUsers();
     }
   } catch (error) {
     setAdminStatus(error.message || translate("admin_work_zone_load_error"), "error");

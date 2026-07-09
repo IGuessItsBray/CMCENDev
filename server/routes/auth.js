@@ -17,7 +17,7 @@ const { writeAuditLog } = require('../services/audit-log');
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role contentAreas createdAt updatedAt';
+  'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -552,7 +552,9 @@ router.patch('/profile', authMiddleware, async (req, res) => {
         new: true,
         runValidators: true
       }
-    ).select(PROFILE_SELECT);
+    )
+      .select(PROFILE_SELECT)
+      .populate('customRoles', 'name slug color permissions');
 
     if (!user) {
       return res.status(404).json({

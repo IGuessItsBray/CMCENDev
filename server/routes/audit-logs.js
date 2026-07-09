@@ -19,7 +19,7 @@ function escapeRegex(value) {
 router.get(
   '/',
   authMiddleware,
-  requirePermission('canManageUsers'),
+  requirePermission('canViewAuditLog'),
   async (req, res) => {
     try {
       const action = cleanString(req.query.action);

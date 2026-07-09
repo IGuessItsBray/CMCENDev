@@ -3484,9 +3484,14 @@ a.dropdown-toggle {
 
 .admin-work-zone-shell {
   display: grid;
-  grid-template-columns: minmax(220px, 0.85fr) minmax(320px, 1.5fr);
+  grid-template-columns: minmax(240px, 0.8fr) minmax(360px, 1.4fr);
   gap: 16px;
   align-items: start;
+}
+
+.admin-work-zone-shell.is-roles-view,
+.admin-work-zone-shell.is-media-view {
+  grid-template-columns: 1fr;
 }
 
 .admin-work-zone-message {
@@ -3500,10 +3505,16 @@ a.dropdown-toggle {
 }
 
 .admin-user-list-panel,
-.admin-user-detail-panel {
+.admin-user-detail-panel,
+.admin-role-editor-panel {
   min-width: 0;
   border: 1px solid var(--branch-grey-200);
   background: var(--white);
+}
+
+.admin-roles-manager {
+  width: 100%;
+  max-width: 1180px;
 }
 
 .admin-panel-heading,
@@ -3649,13 +3660,25 @@ a.dropdown-toggle {
   text-transform: uppercase;
 }
 
-.admin-editor-field select {
+.admin-editor-field input,
+.admin-editor-field select,
+.admin-editor-field textarea {
   min-height: 40px;
   padding: 8px 10px;
   border: 1px solid var(--branch-grey-300);
   background: var(--branch-grey-100);
   color: var(--ink);
   font: inherit;
+}
+
+.admin-editor-field textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.admin-editor-field input[type="color"] {
+  width: 76px;
+  padding: 3px;
 }
 
 .admin-editor-field select:disabled {
@@ -3670,13 +3693,15 @@ a.dropdown-toggle {
   line-height: 1.4;
 }
 
-.admin-content-area-options {
+.admin-content-area-options,
+.admin-custom-role-options {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.admin-content-area-option {
+.admin-content-area-option,
+.admin-custom-role-option {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -3688,8 +3713,122 @@ a.dropdown-toggle {
   font-weight: 700;
 }
 
-.admin-content-area-option input {
+.admin-content-area-option input,
+.admin-custom-role-option input {
   margin: 0;
+}
+
+.admin-role-color-swatch {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 999px;
+}
+
+.admin-role-editor-body {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.38fr) minmax(420px, 1fr);
+  gap: 0;
+}
+
+.admin-role-list {
+  display: grid;
+  align-content: start;
+  max-height: 560px;
+  overflow: auto;
+  border-right: 1px solid var(--branch-grey-200);
+}
+
+.admin-role-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--branch-grey-200);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-role-row:hover,
+.admin-role-row:focus-visible,
+.admin-role-row.is-selected {
+  background: var(--branch-grey-100);
+}
+
+.admin-role-row strong {
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.admin-role-row span:last-child {
+  grid-column: 2;
+  color: var(--branch-grey-700);
+  font-size: 12px;
+}
+
+.admin-role-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 16px;
+}
+
+.admin-role-field-description,
+.admin-role-field-permissions,
+.admin-role-form-actions {
+  grid-column: 1 / -1;
+}
+
+.admin-permission-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-permission-group {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--branch-grey-200);
+  background: var(--branch-grey-100);
+}
+
+.admin-permission-group>strong {
+  color: var(--branch-grey-900);
+  font-size: 12px;
+}
+
+.admin-permission-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  align-items: start;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-permission-option input {
+  grid-row: span 2;
+  margin: 2px 0 0;
+}
+
+.admin-permission-option small {
+  color: var(--branch-grey-700);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.admin-role-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .admin-work-zone-button {
@@ -9412,8 +9551,23 @@ a.dropdown-toggle {
     grid-template-columns: 1fr;
   }
 
-  .admin-user-list {
+  .admin-user-list,
+  .admin-role-list {
     max-height: 360px;
+  }
+
+  .admin-role-editor-body {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-role-form,
+  .admin-permission-groups {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-role-list {
+    border-right: 0;
+    border-bottom: 1px solid var(--branch-grey-200);
   }
 
   .admin-panel-heading,
@@ -10776,7 +10930,9 @@ html[data-theme="dark"] .admin-panel-heading,
 html[data-theme="dark"] .admin-user-detail-heading,
 html[data-theme="dark"] .admin-user-search,
 html[data-theme="dark"] .admin-media-heading,
-html[data-theme="dark"] .admin-user-editor {
+html[data-theme="dark"] .admin-user-editor,
+html[data-theme="dark"] .admin-role-form,
+html[data-theme="dark"] .admin-role-list {
   border-color: var(--dark-border);
 }
 
@@ -10788,6 +10944,12 @@ html[data-theme="dark"] .admin-work-zone-tab,
 html[data-theme="dark"] .admin-media-heading,
 html[data-theme="dark"] .admin-media-card,
 html[data-theme="dark"] .admin-media-attachment,
+html[data-theme="dark"] .admin-user-list-panel,
+html[data-theme="dark"] .admin-user-detail-panel,
+html[data-theme="dark"] .admin-role-editor-panel,
+html[data-theme="dark"] .admin-role-form,
+html[data-theme="dark"] .admin-role-row,
+html[data-theme="dark"] .admin-permission-group,
 html[data-theme="dark"] .site-config-toolbar,
 html[data-theme="dark"] .site-config-row {
   border-color: var(--dark-border-strong);
@@ -10815,6 +10977,12 @@ html[data-theme="dark"] .admin-media-body h4,
 html[data-theme="dark"] .admin-media-attachments strong,
 html[data-theme="dark"] .admin-media-attachment a,
 html[data-theme="dark"] .admin-media-attachment>span:first-child,
+html[data-theme="dark"] .admin-panel-heading h3,
+html[data-theme="dark"] .admin-user-detail-heading h3,
+html[data-theme="dark"] .admin-editor-field>span,
+html[data-theme="dark"] .admin-editor-fieldset legend,
+html[data-theme="dark"] .admin-permission-group>strong,
+html[data-theme="dark"] .admin-role-row strong,
 html[data-theme="dark"] .site-config-key {
   color: var(--dark-text);
 }
@@ -10827,26 +10995,35 @@ html[data-theme="dark"] .site-config-toolbar p {
   color: var(--dark-text-muted);
 }
 
-html[data-theme="dark"] .site-config-row input {
+html[data-theme="dark"] .site-config-row input,
+html[data-theme="dark"] .admin-editor-field input,
+html[data-theme="dark"] .admin-editor-field select,
+html[data-theme="dark"] .admin-editor-field textarea {
   border-color: var(--dark-border-strong);
   background: var(--dark-bg-elevated);
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .admin-user-row {
+html[data-theme="dark"] .admin-user-row,
+html[data-theme="dark"] .admin-role-row {
   border-bottom-color: var(--dark-border);
   color: var(--dark-text);
 }
 
 html[data-theme="dark"] .admin-user-row:hover,
 html[data-theme="dark"] .admin-user-row:focus-visible,
-html[data-theme="dark"] .admin-user-row.is-selected {
+html[data-theme="dark"] .admin-user-row.is-selected,
+html[data-theme="dark"] .admin-role-row:hover,
+html[data-theme="dark"] .admin-role-row:focus-visible,
+html[data-theme="dark"] .admin-role-row.is-selected {
   background: var(--dark-surface-3);
 }
 
 html[data-theme="dark"] .admin-user-row span,
+html[data-theme="dark"] .admin-role-row span:last-child,
 html[data-theme="dark"] .admin-user-detail-heading p,
 html[data-theme="dark"] .admin-editor-help,
+html[data-theme="dark"] .admin-permission-option small,
 html[data-theme="dark"] .admin-user-post-count {
   color: var(--dark-text-muted);
 }
@@ -10865,7 +11042,8 @@ html[data-theme="dark"] .dashboard-role-badge.role-developer {
   color: #fff7f5;
 }
 
-html[data-theme="dark"] .admin-content-area-option {
+html[data-theme="dark"] .admin-content-area-option,
+html[data-theme="dark"] .admin-custom-role-option {
   border-color: var(--dark-border-strong);
   background: var(--dark-surface-3);
   color: var(--dark-text);

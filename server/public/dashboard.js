@@ -695,9 +695,18 @@ function renderDashboard(user) {
     });
   }
 
+  const hasAdminWorkZoneAccess = [
+    "canReadUsers",
+    "canManageUsers",
+    "canManageRoles",
+    "canViewMediaLibrary",
+    "canViewAuditLog",
+    "canAccessSiteConfig"
+  ].some(permission => user.permissions?.[permission] === true);
+
   if (
     user.permissions?.canManageTranslations === true &&
-    user.permissions?.canManageUsers !== true
+    !hasAdminWorkZoneAccess
   ) {
     actions.push({
       href: "/translations-admin.html",
@@ -706,9 +715,17 @@ function renderDashboard(user) {
     });
   }
 
-  if (user.permissions?.canManageUsers === true) {
+  if (hasAdminWorkZoneAccess) {
     actions.push({
-      href: "/admin-users.html",
+      href: user.permissions?.canReadUsers === true || user.permissions?.canManageUsers === true
+        ? "/admin-users.html"
+        : user.permissions?.canManageRoles === true
+          ? "/admin-users.html?view=roles"
+          : user.permissions?.canViewMediaLibrary === true
+            ? "/admin-users.html?view=media"
+            : user.permissions?.canViewAuditLog === true
+              ? "/audit-log.html"
+              : "/site-config.html",
       titleKey: "dashboard_action_admin_work_zone",
       descriptionKey: "dashboard_action_admin_work_zone_description"
     });

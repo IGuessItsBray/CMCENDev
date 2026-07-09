@@ -4,10 +4,15 @@ const {
   ListObjectsV2Command
 } = require('@aws-sdk/client-s3');
 const User = require('../models/User');
+const Role = require('../models/Role');
 const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const { USER_ROLES } = require('../config/roles');
+const {
+  PERMISSION_CATALOG,
+  normalizePermissionKeys
+} = require('../config/permissions');
 const {
   authMiddleware,
   requirePermission
@@ -58,6 +63,160 @@ function cleanContentAreas(value) {
   ];
 }
 
+function normalizeRoleSlug(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function cleanRoleName(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ');
+}
+
+function cleanRoleColor(value) {
+  const cleanValue = String(value || '').trim();
+
+  return /^#[0-9a-f]{6}$/iu.test(cleanValue)
+    ? cleanValue.toUpperCase()
+    : '';
+}
+
+function cleanRoleIds(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return [
+    ...new Set(
+      value
+        .map(roleId => String(roleId || '').trim())
+        .filter(Boolean)
+    )
+  ];
+}
+
+async function validateCustomRoleIds(roleIds) {
+  const cleanIds = cleanRoleIds(roleIds);
+
+  if (!cleanIds.length) {
+    return {
+      roleIds: [],
+      roles: []
+    };
+  }
+
+  const roles = await Role.find({
+    _id: { $in: cleanIds }
+  }).select('_id name slug color permissions');
+
+  if (roles.length !== cleanIds.length) {
+    return {
+      error: 'Invalid custom role provided'
+    };
+  }
+
+  return {
+    roleIds: cleanIds,
+    roles
+  };
+}
+
+function toAdminRole(role) {
+  const plainRole = role.toObject ? role.toObject() : role;
+
+  return {
+    _id: plainRole._id,
+    name: plainRole.name,
+    slug: plainRole.slug,
+    description: plainRole.description || '',
+    color: plainRole.color || '#4F46E5',
+    permissions: plainRole.permissions || [],
+    createdAt: plainRole.createdAt,
+    updatedAt: plainRole.updatedAt
+  };
+}
+
+async function getAdminRoles() {
+  const roles = await Role.find({})
+    .select('name slug description color permissions createdAt updatedAt')
+    .sort({ name: 1 })
+    .lean();
+
+  return roles.map(toAdminRole);
+}
+
+async function createRoleUpdate(body, actor, { requireName = false } = {}) {
+  const source = body || {};
+  const update = {};
+  let hasEditableUpdate = false;
+
+  if (
+    requireName ||
+    Object.prototype.hasOwnProperty.call(source, 'name')
+  ) {
+    const name = cleanRoleName(source.name);
+
+    if (!name) {
+      return { error: 'Role name is required' };
+    }
+
+    update.name = name;
+    hasEditableUpdate = true;
+  }
+
+  if (
+    requireName ||
+    Object.prototype.hasOwnProperty.call(source, 'slug')
+  ) {
+    const slug = normalizeRoleSlug(source.slug || source.name);
+
+    if (!slug) {
+      return { error: 'Role slug is required' };
+    }
+
+    update.slug = slug;
+    hasEditableUpdate = true;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(source, 'description')) {
+    update.description = String(source.description || '').trim();
+    hasEditableUpdate = true;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(source, 'color')) {
+    const color = cleanRoleColor(source.color);
+
+    if (!color) {
+      return { error: 'Role color must be a hex color like #4F46E5' };
+    }
+
+    update.color = color;
+    hasEditableUpdate = true;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(source, 'permissions')) {
+    const permissions = normalizePermissionKeys(source.permissions);
+
+    if (permissions.length !== cleanRoleIds(source.permissions).length) {
+      return { error: 'Invalid permission provided' };
+    }
+
+    update.permissions = permissions;
+    hasEditableUpdate = true;
+  }
+
+  if (hasEditableUpdate) {
+    update.updatedBy = actor?._id || null;
+  }
+
+  return {
+    update,
+    hasEditableUpdate
+  };
+}
+
 function validateContentAreas(contentAreas) {
   return contentAreas.every(area => CONTENT_AREAS.includes(area));
 }
@@ -71,6 +230,50 @@ function areStringArraysEqual(first = [], second = []) {
   }
 
   return normalizedFirst.every((value, index) => value === normalizedSecond[index]);
+}
+
+function getStringArrayDiff(previousValues = [], nextValues = []) {
+  const previousSet = new Set((previousValues || []).map(String));
+  const nextSet = new Set((nextValues || []).map(String));
+
+  return {
+    added: [...nextSet].filter(value => !previousSet.has(value)).sort(),
+    removed: [...previousSet].filter(value => !nextSet.has(value)).sort()
+  };
+}
+
+function getPermissionDetails(permissionKeys = []) {
+  const permissionsByKey = new Map(
+    PERMISSION_CATALOG.map(permission => [permission.key, permission])
+  );
+
+  return (permissionKeys || []).map(permissionKey => {
+    const permission = permissionsByKey.get(permissionKey);
+
+    return {
+      key: permissionKey,
+      label: permission?.label || permissionKey,
+      group: permission?.group || '',
+      action: permission?.action || ''
+    };
+  });
+}
+
+function getRoleDetailsById(roles = []) {
+  const details = new Map();
+
+  roles.forEach(role => {
+    const adminRole = toAdminRole(role);
+    details.set(String(adminRole._id), adminRole);
+  });
+
+  return details;
+}
+
+function getRoleDetails(roleMap, roleIds = []) {
+  return (roleIds || [])
+    .map(roleId => roleMap.get(String(roleId)))
+    .filter(Boolean);
 }
 
 function cleanMediaPageSize(value) {
@@ -209,6 +412,15 @@ async function getUserPostSummary(user) {
 
 function toAdminUser(user, postSummary = null) {
   const plainUser = user.toObject ? user.toObject() : user;
+  const customRoles = Array.isArray(plainUser.customRoles)
+    ? plainUser.customRoles.map(role => {
+      if (role && typeof role === 'object' && role.name) {
+        return toAdminRole(role);
+      }
+
+      return role;
+    })
+    : [];
 
   return {
     _id: plainUser._id,
@@ -218,6 +430,10 @@ function toAdminUser(user, postSummary = null) {
     firstName: plainUser.firstName,
     lastName: plainUser.lastName,
     role: plainUser.role,
+    customRoles,
+    customRoleIds: customRoles.map(role =>
+      typeof role === 'object' ? String(role._id) : String(role)
+    ),
     contentAreas: plainUser.contentAreas || [],
     createdAt: plainUser.createdAt,
     updatedAt: plainUser.updatedAt,
@@ -267,12 +483,227 @@ async function validateStandardRoleChange(userId, currentUser, role) {
   return { targetUser };
 }
 
+// GET /api/admin/roles
+// List editable custom roles and the permission catalog.
+router.get(
+  '/roles',
+  authMiddleware,
+  requirePermission('canManageRoles'),
+  async (req, res) => {
+    try {
+      res.json({
+        permissionCatalog: PERMISSION_CATALOG,
+        roles: await getAdminRoles()
+      });
+    } catch (err) {
+      console.error('Admin role list failed:', err);
+      res.status(500).json({ error: 'Failed to fetch roles' });
+    }
+  }
+);
+
+// POST /api/admin/roles
+// Create a custom role.
+router.post(
+  '/roles',
+  authMiddleware,
+  requirePermission('canManageRoles'),
+  async (req, res) => {
+    try {
+      const result = await createRoleUpdate(req.body, req.user, {
+        requireName: true
+      });
+
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      const role = await Role.create({
+        ...result.update,
+        createdBy: req.user?._id || null
+      });
+
+      await writeAuditLog({
+        req,
+        action: 'role.created',
+        actor: req.user,
+        targetType: 'role',
+        target: role._id,
+        targetSnapshot: toAdminRole(role),
+        metadata: {
+          permissions: getPermissionDetails(role.permissions || [])
+        }
+      });
+
+      if ((role.permissions || []).length) {
+        await writeAuditLog({
+          req,
+          action: 'role.permissions_changed',
+          actor: req.user,
+          targetType: 'role',
+          target: role._id,
+          targetSnapshot: toAdminRole(role),
+          metadata: {
+            previousPermissions: [],
+            newPermissions: getPermissionDetails(role.permissions || []),
+            addedPermissions: getPermissionDetails(role.permissions || []),
+            removedPermissions: []
+          }
+        });
+      }
+
+      res.status(201).json({
+        message: 'Role created',
+        role: toAdminRole(role),
+        roles: await getAdminRoles()
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        return res.status(409).json({ error: 'A role with that slug already exists' });
+      }
+
+      console.error('Admin role create failed:', err);
+      res.status(500).json({ error: 'Failed to create role' });
+    }
+  }
+);
+
+// PATCH /api/admin/roles/:roleId
+// Update a custom role.
+router.patch(
+  '/roles/:roleId',
+  authMiddleware,
+  requirePermission('canManageRoles'),
+  async (req, res) => {
+    try {
+      const result = await createRoleUpdate(req.body, req.user);
+
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      if (!result.hasEditableUpdate) {
+        return res.status(400).json({ error: 'No role updates provided' });
+      }
+
+      const previousRole = await Role.findById(req.params.roleId);
+
+      if (!previousRole) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+
+      const role = await Role.findByIdAndUpdate(
+        req.params.roleId,
+        { $set: result.update },
+        {
+          new: true,
+          runValidators: true
+        }
+      );
+      const previousAdminRole = toAdminRole(previousRole);
+      const nextAdminRole = toAdminRole(role);
+      const permissionDiff = getStringArrayDiff(
+        previousAdminRole.permissions || [],
+        nextAdminRole.permissions || []
+      );
+
+      await writeAuditLog({
+        req,
+        action: 'role.updated',
+        actor: req.user,
+        targetType: 'role',
+        target: role._id,
+        targetSnapshot: nextAdminRole,
+        metadata: {
+          previousRole: previousAdminRole,
+          newRole: nextAdminRole
+        }
+      });
+
+      if (permissionDiff.added.length || permissionDiff.removed.length) {
+        await writeAuditLog({
+          req,
+          action: 'role.permissions_changed',
+          actor: req.user,
+          targetType: 'role',
+          target: role._id,
+          targetSnapshot: nextAdminRole,
+          metadata: {
+            previousPermissions: getPermissionDetails(previousAdminRole.permissions || []),
+            newPermissions: getPermissionDetails(nextAdminRole.permissions || []),
+            addedPermissions: getPermissionDetails(permissionDiff.added),
+            removedPermissions: getPermissionDetails(permissionDiff.removed)
+          }
+        });
+      }
+
+      res.json({
+        message: 'Role updated',
+        role: nextAdminRole,
+        roles: await getAdminRoles()
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        return res.status(409).json({ error: 'A role with that slug already exists' });
+      }
+
+      console.error('Admin role update failed:', err);
+      res.status(500).json({ error: 'Failed to update role' });
+    }
+  }
+);
+
+// DELETE /api/admin/roles/:roleId
+// Delete a custom role and remove it from users.
+router.delete(
+  '/roles/:roleId',
+  authMiddleware,
+  requirePermission('canManageRoles'),
+  async (req, res) => {
+    try {
+      const role = await Role.findById(req.params.roleId);
+
+      if (!role) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+
+      const updateResult = await User.updateMany(
+        { customRoles: role._id },
+        { $pull: { customRoles: role._id } }
+      );
+
+      await role.deleteOne();
+
+      await writeAuditLog({
+        req,
+        action: 'role.deleted',
+        actor: req.user,
+        targetType: 'role',
+        target: role._id,
+        targetSnapshot: toAdminRole(role),
+        metadata: {
+          removedFromUserCount: updateResult.modifiedCount || 0,
+          permissions: getPermissionDetails(role.permissions || [])
+        }
+      });
+
+      res.json({
+        message: 'Role deleted',
+        roles: await getAdminRoles()
+      });
+    } catch (err) {
+      console.error('Admin role delete failed:', err);
+      res.status(500).json({ error: 'Failed to delete role' });
+    }
+  }
+);
+
 // GET /api/admin/media
 // List images currently present in object storage with linked post usage.
 router.get(
   '/media',
   authMiddleware,
-  requirePermission('canManageUsers'),
+  requirePermission('canViewMediaLibrary'),
   async (req, res) => {
     try {
       const maxKeys = cleanMediaPageSize(req.query.limit);
@@ -307,7 +738,7 @@ router.get(
 router.delete(
   '/media/:key',
   authMiddleware,
-  requirePermission('canManageUsers'),
+  requirePermission('canDeleteMedia'),
   async (req, res) => {
     try {
       const key = decodeURIComponent(String(req.params.key || '')).trim();
@@ -358,7 +789,7 @@ router.delete(
 router.get(
   '/users',
   authMiddleware,
-  requirePermission('canManageUsers'),
+  requirePermission('canReadUsers'),
   async (req, res) => {
     try {
       const { query } = req.query;
@@ -376,14 +807,17 @@ router.get(
         : {};
 
       const users = await User.find(filter)
-        .select('username email accountName firstName lastName role contentAreas createdAt updatedAt')
-        .sort({ accountName: 1, username: 1 });
+        .select('username email accountName firstName lastName role customRoles contentAreas createdAt updatedAt')
+        .sort({ accountName: 1, username: 1 })
+        .populate('customRoles', 'name slug color permissions');
       const summaries = await Promise.all(
         users.map(user => getUserPostSummary(user))
       );
 
       res.json({
         roles: USER_ROLES,
+        customRoles: await getAdminRoles(),
+        permissionCatalog: PERMISSION_CATALOG,
         contentAreas: CONTENT_AREAS,
         users: users.map((user, index) =>
           toAdminUser(user, summaries[index])
@@ -401,13 +835,14 @@ router.get(
 router.get(
   '/users/:userId',
   authMiddleware,
-  requirePermission('canManageUsers'),
+  requirePermission('canReadUsers'),
   async (req, res) => {
     try {
       const { userId } = req.params;
 
       const user = await User.findById(userId)
-        .select('username email accountName firstName lastName role contentAreas createdAt updatedAt');
+        .select('username email accountName firstName lastName role customRoles contentAreas createdAt updatedAt')
+        .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -488,6 +923,8 @@ router.get(
 
       res.json({
         roles: USER_ROLES,
+        customRoles: await getAdminRoles(),
+        permissionCatalog: PERMISSION_CATALOG,
         contentAreas: CONTENT_AREAS,
         user: toAdminUser(user, {
           events: events.length,
@@ -512,11 +949,13 @@ router.patch(
   requirePermission('canManageUsers'),
   async (req, res) => {
     try {
-      const { role, contentAreas } = req.body || {};
+      const { role, contentAreas, customRoleIds } = req.body || {};
       const { userId } = req.params;
       const updates = {};
       let roleValidation = null;
       let previousContentAreas = null;
+      let previousCustomRoleIds = null;
+      let customRoleChange = null;
 
       if (Object.prototype.hasOwnProperty.call(req.body || {}, 'role')) {
         roleValidation = await validateStandardRoleChange(userId, req.user, role);
@@ -545,6 +984,50 @@ router.patch(
         updates.contentAreas = cleanAreas;
       }
 
+      if (Object.prototype.hasOwnProperty.call(req.body || {}, 'customRoleIds')) {
+        const roleIdValidation = await validateCustomRoleIds(customRoleIds);
+
+        if (roleIdValidation.error) {
+          return res.status(400).json({ error: roleIdValidation.error });
+        }
+
+        const previousUser = await User.findById(userId).select('customRoles');
+
+        if (!previousUser) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        previousCustomRoleIds = (previousUser.customRoles || []).map(String);
+        updates.customRoles = roleIdValidation.roleIds;
+
+        const allRoleIds = [
+          ...new Set([
+            ...previousCustomRoleIds,
+            ...roleIdValidation.roleIds
+          ])
+        ];
+        const rolesForAudit = allRoleIds.length
+          ? await Role.find({ _id: { $in: allRoleIds } })
+            .select('name slug description color permissions createdAt updatedAt')
+          : [];
+        const roleDetailsById = getRoleDetailsById(rolesForAudit);
+        const roleDiff = getStringArrayDiff(
+          previousCustomRoleIds,
+          roleIdValidation.roleIds
+        );
+
+        customRoleChange = {
+          previousCustomRoleIds,
+          newCustomRoleIds: roleIdValidation.roleIds,
+          addedRoleIds: roleDiff.added,
+          removedRoleIds: roleDiff.removed,
+          previousRoles: getRoleDetails(roleDetailsById, previousCustomRoleIds),
+          newRoles: getRoleDetails(roleDetailsById, roleIdValidation.roleIds),
+          addedRoles: getRoleDetails(roleDetailsById, roleDiff.added),
+          removedRoles: getRoleDetails(roleDetailsById, roleDiff.removed)
+        };
+      }
+
       if (!Object.keys(updates).length) {
         return res.status(400).json({ error: 'No admin user updates provided' });
       }
@@ -556,7 +1039,9 @@ router.patch(
           new: true,
           runValidators: true
         }
-      ).select('username email accountName firstName lastName role contentAreas createdAt updatedAt');
+      )
+        .select('username email accountName firstName lastName role customRoles contentAreas createdAt updatedAt')
+        .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -598,11 +1083,68 @@ router.patch(
         });
       }
 
+      if (
+        Object.prototype.hasOwnProperty.call(updates, 'customRoles') &&
+        !areStringArraysEqual(
+          previousCustomRoleIds || [],
+          toAdminUser(user).customRoleIds || []
+        )
+      ) {
+        await writeAuditLog({
+          req,
+          action: 'user.custom_roles_changed',
+          actor: req.user,
+          targetType: 'user',
+          target: user._id,
+          targetSnapshot: toAdminUser(user),
+          metadata: {
+            previousCustomRoleIds: customRoleChange?.previousCustomRoleIds || [],
+            newCustomRoleIds: customRoleChange?.newCustomRoleIds || [],
+            addedRoleIds: customRoleChange?.addedRoleIds || [],
+            removedRoleIds: customRoleChange?.removedRoleIds || [],
+            previousRoles: customRoleChange?.previousRoles || [],
+            newRoles: customRoleChange?.newRoles || [],
+            addedRoles: customRoleChange?.addedRoles || [],
+            removedRoles: customRoleChange?.removedRoles || []
+          }
+        });
+
+        await Promise.all([
+          ...(customRoleChange?.addedRoles || []).map(role =>
+            writeAuditLog({
+              req,
+              action: 'user.custom_role_added',
+              actor: req.user,
+              targetType: 'user',
+              target: user._id,
+              targetSnapshot: toAdminUser(user),
+              metadata: {
+                role
+              }
+            })
+          ),
+          ...(customRoleChange?.removedRoles || []).map(role =>
+            writeAuditLog({
+              req,
+              action: 'user.custom_role_removed',
+              actor: req.user,
+              targetType: 'user',
+              target: user._id,
+              targetSnapshot: toAdminUser(user),
+              metadata: {
+                role
+              }
+            })
+          )
+        ]);
+      }
+
       const postSummary = await getUserPostSummary(user);
 
       res.json({
         message: 'User updated',
-        user: toAdminUser(user, postSummary)
+        user: toAdminUser(user, postSummary),
+        customRoles: await getAdminRoles()
       });
     } catch (err) {
       console.error('Admin user update failed:', err);
@@ -632,7 +1174,9 @@ router.patch(
         userId,
         { $set: { role } },
         { new: true }
-      ).select('username email accountName firstName lastName role contentAreas createdAt updatedAt');
+      )
+        .select('username email accountName firstName lastName role customRoles contentAreas createdAt updatedAt')
+        .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -684,7 +1228,7 @@ router.patch(
       }
 
       const previousUser = await User.findById(userId)
-        .select('role username email accountName firstName lastName contentAreas createdAt updatedAt');
+        .select('role username email accountName firstName lastName customRoles contentAreas createdAt updatedAt');
 
       if (!previousUser) {
         return res.status(404).json({ error: 'User not found' });
@@ -697,7 +1241,9 @@ router.patch(
           new: true,
           runValidators: true
         }
-      ).select('username email accountName firstName lastName role contentAreas createdAt updatedAt');
+      )
+        .select('username email accountName firstName lastName role customRoles contentAreas createdAt updatedAt')
+        .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -734,7 +1280,7 @@ router.patch(
 router.delete(
   '/events/:eventId',
   authMiddleware,
-  requirePermission('canManageUsers'),
+  requirePermission('canDeleteContent'),
   async (req, res) => {
     try {
       const event = await Event.findById(req.params.eventId);
@@ -771,7 +1317,7 @@ router.delete(
 router.delete(
   '/retirement-messages/:messageId',
   authMiddleware,
-  requirePermission('canManageUsers'),
+  requirePermission('canDeleteContent'),
   async (req, res) => {
     try {
       const message = await RetirementMessage.findById(req.params.messageId);
@@ -815,7 +1361,7 @@ router.delete(
 router.delete(
   '/retirement-comments/:commentId',
   authMiddleware,
-  requirePermission('canManageUsers'),
+  requirePermission('canDeleteContent'),
   async (req, res) => {
     try {
       const comment = await RetirementComment.findById(req.params.commentId)

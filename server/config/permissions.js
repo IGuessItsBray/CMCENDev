@@ -1,5 +1,159 @@
 const { ROLE_LEVELS } = require('./roles');
 
+const PERMISSION_CATALOG = Object.freeze([
+  {
+    key: 'connections.read',
+    label: 'Read connections',
+    group: 'Connections',
+    action: 'read',
+    description: 'View member-only connection areas.'
+  },
+  {
+    key: 'content.create',
+    label: 'Create content',
+    group: 'Content',
+    action: 'write',
+    description: 'Create draft events and other site content.'
+  },
+  {
+    key: 'retirements.submit',
+    label: 'Submit retirement messages',
+    group: 'Retirements',
+    action: 'write',
+    description: 'Submit retirement messages for review.'
+  },
+  {
+    key: 'content.publish_own',
+    label: 'Publish own content',
+    group: 'Content',
+    action: 'write',
+    description: 'Publish content owned by the member.'
+  },
+  {
+    key: 'content.review',
+    label: 'Review and publish content',
+    group: 'Content',
+    action: 'edit',
+    description: 'Review, edit, approve, and publish content.'
+  },
+  {
+    key: 'content.delete',
+    label: 'Delete content',
+    group: 'Content',
+    action: 'delete',
+    description: 'Delete events, retirement messages, and comments.'
+  },
+  {
+    key: 'content_areas.manage',
+    label: 'Manage content areas',
+    group: 'Content',
+    action: 'admin',
+    description: 'Assign or change content-area access for members.'
+  },
+  {
+    key: 'translations.manage',
+    label: 'Manage translations',
+    group: 'Translations',
+    action: 'edit',
+    description: 'Edit site translation strings.'
+  },
+  {
+    key: 'users.read',
+    label: 'View users',
+    group: 'Users',
+    action: 'read',
+    description: 'View the member list and member details in the admin work zone.'
+  },
+  {
+    key: 'users.manage',
+    label: 'Manage users',
+    group: 'Users',
+    action: 'edit',
+    description: 'Edit member roles, content areas, and role assignments.'
+  },
+  {
+    key: 'roles.manage',
+    label: 'Manage roles',
+    group: 'Roles',
+    action: 'edit',
+    description: 'Create, edit, and delete custom roles.'
+  },
+  {
+    key: 'audit.view',
+    label: 'View audit log',
+    group: 'Audit log',
+    action: 'read',
+    description: 'Review security, login, publishing, deletion, and role-change logs.'
+  },
+  {
+    key: 'site_config.access',
+    label: 'Access site config',
+    group: 'Site config',
+    action: 'read',
+    description: 'Open the site configuration work zone after token verification.'
+  },
+  {
+    key: 'site_config.manage',
+    label: 'Manage site config',
+    group: 'Site config',
+    action: 'admin',
+    description: 'Edit environment-backed site configuration values after token verification.'
+  },
+  {
+    key: 'media.read',
+    label: 'View media library',
+    group: 'Media',
+    action: 'read',
+    description: 'View uploaded media and attachment usage.'
+  },
+  {
+    key: 'media.upload',
+    label: 'Upload media',
+    group: 'Media',
+    action: 'write',
+    description: 'Upload authenticated image assets for content.'
+  },
+  {
+    key: 'media.delete',
+    label: 'Delete media',
+    group: 'Media',
+    action: 'delete',
+    description: 'Delete unattached media from storage.'
+  },
+  {
+    key: 'review.bypass',
+    label: 'Bypass review stages',
+    group: 'Moderation',
+    action: 'admin',
+    description: 'Skip review-only workflow gates.'
+  }
+]);
+
+const LEGACY_PERMISSION_KEYS = Object.freeze({
+  canAccessConnections: 'connections.read',
+  canCreateDrafts: 'content.create',
+  canSubmitRetirementMessages: 'retirements.submit',
+  canPublishOwnContent: 'content.publish_own',
+  canReviewAndPublish: 'content.review',
+  canDeleteContent: 'content.delete',
+  canManageContentAreas: 'content_areas.manage',
+  canManageTranslations: 'translations.manage',
+  canReadUsers: 'users.read',
+  canManageUsers: 'users.manage',
+  canManageRoles: 'roles.manage',
+  canViewAuditLog: 'audit.view',
+  canAccessSiteConfig: 'site_config.access',
+  canManageSiteConfig: 'site_config.manage',
+  canViewMediaLibrary: 'media.read',
+  canUploadMedia: 'media.upload',
+  canDeleteMedia: 'media.delete',
+  canBypassReviewStages: 'review.bypass'
+});
+
+function getAllPermissionKeys() {
+  return PERMISSION_CATALOG.map(permission => permission.key);
+}
+
 function hasMinimumRole(userRole, minimumRole) {
   const userLevel = ROLE_LEVELS[userRole];
   const requiredLevel = ROLE_LEVELS[minimumRole];
@@ -11,35 +165,133 @@ function hasMinimumRole(userRole, minimumRole) {
   );
 }
 
-function getUserPermissions(user) {
+function getBuiltInPermissionFlags(user) {
+  const role = user?.role;
+
   return {
     canAccessConnections:
-      hasMinimumRole(user.role, 'subscriber'),
+      hasMinimumRole(role, 'subscriber'),
 
     canCreateDrafts:
-      hasMinimumRole(user.role, 'contributor'),
+      hasMinimumRole(role, 'contributor'),
 
     canSubmitRetirementMessages:
-      hasMinimumRole(user.role, 'contributor'),
+      hasMinimumRole(role, 'contributor'),
 
     canPublishOwnContent:
-      hasMinimumRole(user.role, 'author'),
+      hasMinimumRole(role, 'author'),
 
     canReviewAndPublish:
-      hasMinimumRole(user.role, 'editor'),
+      hasMinimumRole(role, 'editor'),
+
+    canDeleteContent:
+      hasMinimumRole(role, 'administrator'),
+
+    canManageContentAreas:
+      hasMinimumRole(role, 'administrator'),
 
     canManageTranslations:
-      hasMinimumRole(user.role, 'editor'),
+      hasMinimumRole(role, 'editor'),
+
+    canReadUsers:
+      hasMinimumRole(role, 'administrator'),
 
     canManageUsers:
-      hasMinimumRole(user.role, 'administrator'),
+      hasMinimumRole(role, 'administrator'),
+
+    canManageRoles:
+      hasMinimumRole(role, 'administrator'),
+
+    canViewAuditLog:
+      hasMinimumRole(role, 'administrator'),
+
+    canAccessSiteConfig:
+      role === 'developer',
+
+    canManageSiteConfig:
+      role === 'developer',
+
+    canViewMediaLibrary:
+      hasMinimumRole(role, 'administrator'),
+
+    canUploadMedia:
+      hasMinimumRole(role, 'contributor'),
+
+    canDeleteMedia:
+      hasMinimumRole(role, 'administrator'),
 
     canBypassReviewStages:
-      user.role === 'developer'
+      role === 'developer'
+  };
+}
+
+function normalizePermissionKeys(value) {
+  const catalogKeys = new Set(PERMISSION_CATALOG.map(permission => permission.key));
+
+  return [
+    ...new Set(
+      (Array.isArray(value) ? value : [])
+        .map(permission => String(permission || '').trim())
+        .filter(permission => catalogKeys.has(permission))
+    )
+  ];
+}
+
+function getCustomPermissionSet(user) {
+  const assignedRoles = Array.isArray(user?.customRoles)
+    ? user.customRoles
+    : [];
+  const permissions = new Set();
+
+  assignedRoles.forEach(role => {
+    normalizePermissionKeys(role?.permissions).forEach(permission => {
+      permissions.add(permission);
+    });
+  });
+
+  return permissions;
+}
+
+function getUserPermissions(user) {
+  const flags = getBuiltInPermissionFlags(user);
+  const explicitPermissions = new Set();
+  const isDeveloper = user?.role === 'developer';
+
+  if (isDeveloper) {
+    Object.keys(flags).forEach(permissionName => {
+      flags[permissionName] = true;
+    });
+
+    getAllPermissionKeys().forEach(permission => {
+      explicitPermissions.add(permission);
+    });
+  }
+
+  Object.entries(flags).forEach(([legacyName, isAllowed]) => {
+    if (isAllowed) {
+      explicitPermissions.add(LEGACY_PERMISSION_KEYS[legacyName]);
+    }
+  });
+
+  getCustomPermissionSet(user).forEach(permission => {
+    explicitPermissions.add(permission);
+  });
+
+  Object.entries(LEGACY_PERMISSION_KEYS).forEach(([legacyName, permission]) => {
+    flags[legacyName] = flags[legacyName] || explicitPermissions.has(permission);
+  });
+
+  return {
+    ...flags,
+    keys: [...explicitPermissions].sort()
   };
 }
 
 module.exports = {
+  LEGACY_PERMISSION_KEYS,
+  PERMISSION_CATALOG,
+  getAllPermissionKeys,
   hasMinimumRole,
-  getUserPermissions
+  getUserPermissions,
+  normalizePermissionKeys
 };

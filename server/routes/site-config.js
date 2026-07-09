@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs/promises');
 const path = require('path');
 const { timingSafeEqual } = require('crypto');
-const { authMiddleware, requireExactRole } = require('../middleware/auth');
+const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
@@ -258,9 +258,9 @@ function applyProcessUpdates(updates) {
   });
 }
 
-router.use(authMiddleware, requireExactRole('developer'));
+router.use(authMiddleware);
 
-router.post('/access', async (req, res) => {
+router.post('/access', requirePermission('canAccessSiteConfig'), async (req, res) => {
   await writeConfigAuditLog(req, 'config.access_requested', {
     route: req.originalUrl
   });
@@ -268,7 +268,7 @@ router.post('/access', async (req, res) => {
   res.json({ ok: true });
 });
 
-router.post('/verify', async (req, res) => {
+router.post('/verify', requirePermission('canAccessSiteConfig'), async (req, res) => {
   const tokenResult = await validateConfigToken(req);
 
   if (!tokenResult.ok) {
@@ -290,7 +290,11 @@ router.post('/verify', async (req, res) => {
   res.json({ ok: true });
 });
 
-router.get('/', requireConfigToken, async (req, res) => {
+router.get(
+  '/',
+  requirePermission('canAccessSiteConfig'),
+  requireConfigToken,
+  async (req, res) => {
   try {
     const contents = await readEnvFile();
 
@@ -302,9 +306,14 @@ router.get('/', requireConfigToken, async (req, res) => {
     console.error('Site config read failed:', error);
     res.status(500).json({ error: 'Could not read site configuration' });
   }
-});
+  }
+);
 
-router.patch('/', requireConfigToken, async (req, res) => {
+router.patch(
+  '/',
+  requirePermission('canManageSiteConfig'),
+  requireConfigToken,
+  async (req, res) => {
   try {
     const updates = req.body?.updates || {};
     const updateKeys = Object.keys(updates);
@@ -344,6 +353,7 @@ router.patch('/', requireConfigToken, async (req, res) => {
       error: error.message || 'Could not update site configuration'
     });
   }
-});
+  }
+);
 
 module.exports = router;

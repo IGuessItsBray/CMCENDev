@@ -7575,11 +7575,7 @@ html[data-theme="dark"] main :is(h1,
   label,
   strong,
   .app-field-label,
-  .app-meta-label,
-  .review-language-heading h3,
-  .retirement-detail-comments h2,
-  .retirement-card-header h2,
-  .search-heading h1) {
+  .app-meta-label) {
   color: var(--dark-text);
 }
 
@@ -7588,16 +7584,9 @@ html[data-theme="dark"] main :is(p,
   small,
   time,
   .dashboard-detail-value,
-  .dashboard-role-summary p,
   .admin-post-details,
   .admin-post-excerpt,
-  .admin-empty-state,
-  .retirement-comment p,
-  .retirement-comment time,
-  .event-language-note,
-  .event-time-zone-note,
-  .review-page-message,
-  .search-status) {
+  .admin-empty-state) {
   color: var(--dark-text-soft);
 }
 
@@ -8189,8 +8178,7 @@ html[data-theme="dark"] .passkey-empty {
   color: var(--dark-text-soft);
 }
 
-html[data-theme="dark"] .passkey-details span,
-html[data-theme="dark"] .totp-status-card span {
+html[data-theme="dark"] .passkey-details span {
   color: var(--dark-text-soft);
 }
 
@@ -8211,7 +8199,6 @@ html[data-theme="dark"] .dashboard-actions-section,
 html[data-theme="dark"] .event-submit-layout,
 html[data-theme="dark"] .event-submit-form,
 html[data-theme="dark"] .event-management-panel,
-html[data-theme="dark"] .my-events-intro,
 html[data-theme="dark"] .my-events-list,
 html[data-theme="dark"] .translations-toolbar,
 html[data-theme="dark"] .translations-list,
@@ -8234,6 +8221,10 @@ html[data-theme="dark"] .dashboard-section {
 
 html[data-theme="dark"] .dashboard-actions-section {
   border-left-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .my-events-intro {
+  border-bottom-color: var(--dark-border);
 }
 
 html[data-theme="dark"] .dashboard-profile-readonly {
@@ -8304,12 +8295,6 @@ html[data-theme="dark"] .about-family-main {
   background:
     radial-gradient(circle at top left, rgba(213, 155, 39, 0.07), transparent 32rem),
     linear-gradient(180deg, var(--dark-bg), #0b1220 62%, var(--dark-bg));
-}
-
-html[data-theme="dark"] .event-section-intro,
-html[data-theme="dark"] .my-events-intro,
-html[data-theme="dark"] .my-events-message {
-  color: var(--dark-text-soft);
 }
 
 html[data-theme="dark"] .event-authorization-section .app-confirmation:hover,

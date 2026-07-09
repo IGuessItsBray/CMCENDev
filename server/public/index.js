@@ -297,6 +297,11 @@ function loadHeader() {
         <div class="header-utilities">
           <div class="auth-buttons"></div>
 
+          <div class="launch-countdown" id="launchCountdown" aria-live="polite" title="Time to Launch">
+            <span class="countdown-label">Time to Launch</span>
+            <span class="countdown-timer" id="launchCountdownTimer">—</span>
+          </div>
+
           <button
             type="button"
             class="lang-toggle"
@@ -721,6 +726,42 @@ function loadFooter() {
 
 loadHeader();
 loadFooter();
+
+// Initialize and run the launch countdown shown in the header
+function initLaunchCountdown() {
+  const timerEl = document.getElementById('launchCountdownTimer');
+  if (!timerEl) return;
+
+  // Target: 2026-10-31 12:00 in America/Toronto local time (EDT at that date)
+  const targetMs = new Date('2026-10-31T12:00:00-04:00').getTime();
+  let intervalId = null;
+
+  function updateTimer() {
+    const now = Date.now();
+    let diff = Math.max(0, targetMs - now);
+
+    if (diff === 0) {
+      timerEl.textContent = 'Launched';
+      timerEl.classList.add('launched');
+      if (intervalId) clearInterval(intervalId);
+      return;
+    }
+
+    const days = Math.floor(diff / 86400000);
+    diff -= days * 86400000;
+    const hours = Math.floor(diff / 3600000);
+    diff -= hours * 3600000;
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+
+    timerEl.textContent = `${days}d ${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+  }
+
+  updateTimer();
+  intervalId = setInterval(updateTimer, 1000);
+}
+
+initLaunchCountdown();
 
 async function loadCustomNavigationItems() {
   try {

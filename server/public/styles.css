@@ -683,6 +683,46 @@ svg {
   width: 148px;
 }
 
+/* Launch countdown shown in header */
+.launch-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
+.launch-countdown .countdown-label {
+  display: none;
+  color: var(--branch-grey-200);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.launch-countdown .countdown-timer {
+  min-width: 120px;
+  text-align: right;
+  background: rgba(255,255,255,0.03);
+  padding: 6px 8px;
+  border-radius: 2px;
+  border: 1px solid rgba(255,255,255,0.04);
+  color: var(--branch-grey-100);
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+  font-size: 13px;
+}
+
+@media (min-width: 900px) {
+  .launch-countdown .countdown-label {
+    display: inline-block;
+  }
+}
+
 .donate-link:hover,
 .donate-link:focus-visible {
   background: var(--gold-500);

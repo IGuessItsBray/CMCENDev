@@ -144,6 +144,7 @@ const standaloneLinks = [
 // list of only protected pages
 const protectedPages = new Set([
   "/dashboard.html",
+  "/notifications.html",
   "/submit-event.html",
   "/review-submissions.html",
   "/translations-admin.html",
@@ -843,6 +844,41 @@ function handleSignOut(event) {
   showSignOutModal(event?.currentTarget);
 }
 
+function getNotificationBadge(count) {
+  const notificationCount = Number(count) || 0;
+
+  if (notificationCount <= 0) {
+    return "";
+  }
+
+  const label = `${notificationCount} notification${notificationCount === 1 ? "" : "s"}`;
+
+  return `
+    <span
+      class="notification-badge"
+      aria-label="${label}"
+    >${notificationCount}</span>
+  `;
+}
+
+function updateNotificationBadges(count = 0) {
+  document
+    .querySelectorAll(".notification-badge")
+    .forEach(badge => badge.remove());
+
+  const badgeHtml = getNotificationBadge(count);
+
+  if (!badgeHtml) {
+    return;
+  }
+
+  document
+    .querySelectorAll(".account-link, .mobile-menu-account-link")
+    .forEach(link => {
+      link.insertAdjacentHTML("beforeend", badgeHtml);
+    });
+}
+
 function updateAuthButtons() {
   const token = getStoredAuthToken();
 
@@ -912,6 +948,8 @@ function updateAuthButtons() {
   if (typeof applyLanguage === 'function') {
     applyLanguage(currentLang);
   }
+
+  updateNotificationBadges(0);
 }
 
 async function updateAuthRestrictedItems() {
@@ -951,6 +989,8 @@ async function updateAuthRestrictedItems() {
     }
 
     const user = await response.json();
+
+    updateNotificationBadges(user.notifications?.count || 0);
 
     authRequiredItems.forEach(element => {
       element.hidden = false;

@@ -580,16 +580,39 @@ function createProfileForm(user) {
   return form;
 }
 
-function createActionLink({ href, titleKey, descriptionKey }) {
+function createActionLink({
+  href,
+  titleKey,
+  descriptionKey,
+  count = 0,
+  variant = ""
+}) {
   const link = document.createElement("a");
   link.className = "dashboard-action";
+
+  if (variant) {
+    link.classList.add(`is-${variant}`);
+  }
+
   link.href = href;
 
   const copy = document.createElement("span");
   copy.className = "dashboard-action-copy";
 
+  const titleRow = document.createElement("span");
+  titleRow.className = "dashboard-action-title-row";
+
   const title = document.createElement("strong");
   title.textContent = translate(titleKey);
+
+  titleRow.appendChild(title);
+
+  if (count > 0) {
+    const badge = document.createElement("span");
+    badge.className = "dashboard-action-count";
+    badge.textContent = String(count);
+    titleRow.appendChild(badge);
+  }
 
   const description = document.createElement("span");
   description.textContent = translate(descriptionKey);
@@ -599,7 +622,7 @@ function createActionLink({ href, titleKey, descriptionKey }) {
   arrow.setAttribute("aria-hidden", "true");
   arrow.textContent = "→";
 
-  copy.append(title, description);
+  copy.append(titleRow, description);
   link.append(copy, arrow);
 
   return link;
@@ -636,6 +659,17 @@ function renderDashboard(user) {
   );
 
   const actions = [];
+  const notificationCount = user.notifications?.count || 0;
+
+  if (notificationCount > 0) {
+    actions.push({
+      href: user.notifications?.href || "/notifications.html",
+      titleKey: "dashboard_action_notifications",
+      descriptionKey: "dashboard_action_notifications_description",
+      count: notificationCount,
+      variant: "notification"
+    });
+  }
 
   if (user.permissions?.canSubmitRetirementMessages === true) {
     actions.push({

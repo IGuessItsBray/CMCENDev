@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
+const Event = require('../models/Event');
+const RetirementMessage = require('../models/RetirementMessage');
+const RetirementComment = require('../models/RetirementComment');
 const {
   authMiddleware,
   requirePermission,
@@ -81,12 +84,158 @@ function cleanProfileString(value) {
   return String(value || '').trim();
 }
 
-function getProfileResponse(user) {
+async function getRejectedEventNotifications(user) {
+  const query = {
+    createdBy: user._id,
+    status: 'rejected'
+  };
+  const [count, events] = await Promise.all([
+    Event.countDocuments(query),
+    Event.find(query)
+      .select('title rejectionReason updatedAt')
+      .sort({ updatedAt: -1 })
+      .limit(10)
+      .lean()
+  ]);
+
+  return {
+    count,
+    items: events.map(event => ({
+      type: 'event',
+      id: event._id,
+      title: event.title,
+      reason: event.rejectionReason || '',
+      updatedAt: event.updatedAt,
+      editHref: `/submit-event.html?id=${encodeURIComponent(String(event._id))}`,
+      href: `/submit-event.html?id=${encodeURIComponent(String(event._id))}`
+    }))
+  };
+}
+
+function getRetirementMessageNotificationTitle(retirementMessage) {
+  const retiree = retirementMessage.retiree || {};
+  const name = [
+    retiree.rank,
+    retiree.firstName,
+    retiree.lastName
+  ].filter(Boolean).join(' ');
+
+  return name
+    ? `Retirement message for ${name}`
+    : 'Retirement message';
+}
+
+async function getRejectedRetirementMessageNotifications(user) {
+  const query = {
+    createdBy: user._id,
+    status: 'rejected'
+  };
+  const [count, retirementMessages] = await Promise.all([
+    RetirementMessage.countDocuments(query),
+    RetirementMessage.find(query)
+      .select('retiree rejectionReason updatedAt')
+      .sort({ updatedAt: -1 })
+      .limit(10)
+      .lean()
+  ]);
+
+  return {
+    count,
+    items: retirementMessages.map(retirementMessage => ({
+      type: 'retirementMessage',
+      id: retirementMessage._id,
+      title: getRetirementMessageNotificationTitle(retirementMessage),
+      reason: retirementMessage.rejectionReason || '',
+      updatedAt: retirementMessage.updatedAt,
+      editHref: `/submit-retirement.html?id=${encodeURIComponent(String(retirementMessage._id))}`,
+      href: `/submit-retirement.html?id=${encodeURIComponent(String(retirementMessage._id))}`
+    }))
+  };
+}
+
+async function getRejectedRetirementCommentNotifications(user) {
+  const query = {
+    author: user._id,
+    status: 'rejected'
+  };
+  const [count, comments] = await Promise.all([
+    RetirementComment.countDocuments(query),
+    RetirementComment.find(query)
+      .select('body rejectionReason updatedAt retirementMessage')
+      .populate('retirementMessage', 'retiree status')
+      .sort({ updatedAt: -1 })
+      .limit(10)
+      .lean()
+  ]);
+
+  return {
+    count,
+    items: comments.map(comment => ({
+      type: 'retirementComment',
+      id: comment._id,
+      title: getRetirementMessageNotificationTitle(
+        comment.retirementMessage || {}
+      ),
+      body: comment.body || '',
+      reason: comment.rejectionReason || '',
+      updatedAt: comment.updatedAt,
+      editHref: `/notifications.html?comment=${encodeURIComponent(String(comment._id))}`,
+      href: `/notifications.html?comment=${encodeURIComponent(String(comment._id))}`
+    }))
+  };
+}
+
+async function getNotificationSummary(user) {
+  const permissions = getUserPermissions(user);
+  const items = [];
+  let count = 0;
+
+  if (permissions.canCreateDrafts === true) {
+    const rejectedEvents = await getRejectedEventNotifications(user);
+    count += rejectedEvents.count;
+    items.push(...rejectedEvents.items);
+  }
+
+  if (permissions.canSubmitRetirementMessages === true) {
+    const rejectedRetirementMessages =
+      await getRejectedRetirementMessageNotifications(user);
+    count += rejectedRetirementMessages.count;
+    items.push(...rejectedRetirementMessages.items);
+  }
+
+  const rejectedRetirementComments =
+    await getRejectedRetirementCommentNotifications(user);
+  count += rejectedRetirementComments.count;
+  items.push(...rejectedRetirementComments.items);
+
+  items.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+  return {
+    count,
+    items,
+    href: '/notifications.html'
+  };
+}
+
+async function getProfileResponse(user) {
   const profile = user.toObject ? user.toObject() : user;
+  const permissions = getUserPermissions(profile);
+  let notifications = {
+    count: 0,
+    items: [],
+    href: '/notifications.html'
+  };
+
+  try {
+    notifications = await getNotificationSummary(profile);
+  } catch (error) {
+    console.error('Could not load notification summary:', error);
+  }
 
   return {
     ...profile,
-    permissions: getUserPermissions(profile)
+    permissions,
+    notifications
   };
 }
 
@@ -374,8 +523,14 @@ router.post('/login', async (req, res) => {
 
 // GET /api/me
 // Return the authenticated user's profile and computed permissions.
-router.get('/me', authMiddleware, (req, res) => {
-  res.json(getProfileResponse(req.user));
+router.get('/me', authMiddleware, async (req, res) => {
+  res.json(await getProfileResponse(req.user));
+});
+
+router.get('/notifications', authMiddleware, async (req, res) => {
+  res.json({
+    notifications: await getNotificationSummary(req.user)
+  });
 });
 
 // PATCH /api/profile
@@ -405,7 +560,7 @@ router.patch('/profile', authMiddleware, async (req, res) => {
       });
     }
 
-    res.json(getProfileResponse(user));
+    res.json(await getProfileResponse(user));
   } catch (error) {
     if (error.name === 'ValidationError') {
       return res.status(400).json({

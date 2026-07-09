@@ -1,6 +1,10 @@
 const retirementSubmitForm = document.getElementById("retirementSubmitForm");
 const retirementFormMessage = document.getElementById("retirementFormMessage");
 const retirementSubmitButton = document.getElementById("retirementSubmitButton");
+const retirementSubmitButtonLabel =
+    retirementSubmitButton.querySelector("span");
+const retirementSubmitTitle = document.getElementById("submitEventTitle");
+const retirementSubmitIntro = document.getElementById("submitEventIntro");
 const retirementMessageLanguage = document.getElementById("retirementMessageLanguage");
 const retirementPhotoInput = document.getElementById("retirementPhoto");
 const retireeTradeCategory = document.getElementById("retireeTradeCategory");
@@ -13,6 +17,10 @@ const retirementTradeOptionContainers =
 const retirementAuthToken = CMCENUtils.requireAuthToken();
 const RETIREMENT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const redirectToLogin = CMCENUtils.redirectToLogin;
+const retirementPageParams = new URLSearchParams(window.location.search);
+const editingRetirementMessageId = retirementPageParams.get("id");
+
+let editingRetirementMessage = null;
 
 function retirementApiJson(path, options = {}) {
     return CMCENUtils.apiJson(path, {
@@ -56,9 +64,39 @@ function setRetirementSubmitting(isSubmitting) {
         translate(
             isSubmitting
                 ? "retirement_submitting"
-                : "retirement_submit_button"
+                : editingRetirementMessageId
+                    ? "retirement_save_changes"
+                    : "retirement_submit_button"
         )
     );
+}
+
+function updateRetirementFormModeText() {
+    const isEditing = Boolean(editingRetirementMessageId);
+
+    if (retirementSubmitTitle) {
+        retirementSubmitTitle.textContent = translate(
+            isEditing
+                ? "retirement_edit_title"
+                : "retirement_submit_title"
+        );
+    }
+
+    if (retirementSubmitIntro) {
+        retirementSubmitIntro.textContent = translate(
+            isEditing
+                ? "retirement_edit_intro"
+                : "retirement_submit_intro"
+        );
+    }
+
+    if (retirementSubmitButtonLabel) {
+        retirementSubmitButtonLabel.textContent = translate(
+            isEditing
+                ? "retirement_save_changes"
+                : "retirement_submit_button"
+        );
+    }
 }
 
 function getRetirementLanguage() {
@@ -230,7 +268,10 @@ function buildRetirementMessageData(photoUrl = "") {
 
         message,
         messageLanguage: retirementMessageLanguage.value,
-        photoUrl,
+        photoUrl:
+            photoUrl ||
+            editingRetirementMessage?.photoUrl ||
+            "",
         submitter: {
             firstName: getFieldValue("retirementSubmitterFirstName"),
             lastName: getFieldValue("retirementSubmitterLastName"),
@@ -255,7 +296,6 @@ async function verifyRetirementAccess() {
         const user = await retirementApiJson("/api/me", {
             errorMessage: translate("retirement_permission_error")
         });
-
         if (user.permissions?.canSubmitRetirementMessages !== true) {
             showRetirementFormMessage(translate("retirement_access_denied"));
             return;
@@ -267,9 +307,135 @@ async function verifyRetirementAccess() {
             submitterEmail.value = user.email || "";
         }
 
+        if (editingRetirementMessageId) {
+            await loadRetirementMessageForEditing();
+        }
+
         retirementSubmitForm.hidden = false;
     } catch (error) {
         showRetirementFormMessage(error.message || translate("retirement_permission_error"));
+    }
+}
+
+function formatDateInputValue(value) {
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    return date.toISOString().slice(0, 10);
+}
+
+function setRetirementField(id, value = "") {
+    const field = document.getElementById(id);
+
+    if (field) {
+        field.value = value || "";
+    }
+}
+
+function setRetirementCheckbox(id, value = false) {
+    const field = document.getElementById(id);
+
+    if (field) {
+        field.checked = Boolean(value);
+    }
+}
+
+function selectRetirementTradeRole(tradeRole) {
+    const option = Array.from(
+        document.querySelectorAll('input[name="retireeTradeRoleOption"]')
+    ).find(input => input.value === tradeRole);
+
+    if (option) {
+        option.checked = true;
+        retireeTradeCategory.value =
+            option.closest("[data-retirement-trade-options]")?.dataset
+                .retirementTradeOptions || "";
+        updateRetirementTradePicker({
+            clearSelection: false
+        });
+        return;
+    }
+
+    if (tradeRole === "Civilian") {
+        retireeTradeCategory.value = "civilian";
+        updateRetirementTradePicker({
+            clearSelection: false
+        });
+    }
+}
+
+function getRetirementMessageText(retirementMessage) {
+    return (
+        retirementMessage.message ||
+        retirementMessage.messages?.[retirementMessage.messageLanguage] ||
+        retirementMessage.messages?.en ||
+        retirementMessage.messages?.fr ||
+        ""
+    );
+}
+
+function populateRetirementForm(retirementMessage) {
+    const retiree = retirementMessage.retiree || {};
+    const submitter = retirementMessage.submitter || {};
+
+    setRetirementField("retireeRank", retiree.rank);
+    setRetirementField("retireeFirstName", retiree.firstName);
+    setRetirementField("retireeLastName", retiree.lastName);
+    setRetirementField("retireePostNominals", retiree.postNominals);
+    setRetirementField(
+        "retireeRetirementDate",
+        formatDateInputValue(retiree.retirementDate)
+    );
+    selectRetirementTradeRole(retiree.tradeRole);
+    setRetirementField(
+        "retirementMessageLanguage",
+        retirementMessage.messageLanguage || getRetirementLanguage()
+    );
+    setRetirementField(
+        "retirementMessageText",
+        getRetirementMessageText(retirementMessage)
+    );
+    setRetirementField("retirementSubmitterFirstName", submitter.firstName);
+    setRetirementField("retirementSubmitterLastName", submitter.lastName);
+    setRetirementField("retirementSubmitterRelationship", submitter.relationship);
+    setRetirementField("retirementSubmitterEmail", submitter.email);
+    setRetirementField("retirementSubmitterUnit", submitter.unit);
+    setRetirementCheckbox("retirementMemberReviewConfirmed", true);
+    setRetirementCheckbox("retirementPublicationConsent", true);
+}
+
+async function loadRetirementMessageForEditing() {
+    retirementSubmitForm.hidden = true;
+
+    showRetirementFormMessage(
+        translate("retirement_edit_loading"),
+        "info"
+    );
+
+    const data = await retirementApiJson(
+        `/api/retirement-messages/${encodeURIComponent(editingRetirementMessageId)}/edit`,
+        {
+            errorMessage: translate("retirement_edit_load_error")
+        }
+    );
+
+    editingRetirementMessage = data.retirementMessage;
+    populateRetirementForm(editingRetirementMessage);
+
+    if (editingRetirementMessage.rejectionReason) {
+        showRetirementFormMessage(
+            `${translate("my_events_rejection_reason")}: ${editingRetirementMessage.rejectionReason}`,
+            "error"
+        );
+    } else {
+        clearRetirementFormMessage();
     }
 }
 
@@ -301,22 +467,40 @@ retirementSubmitForm.addEventListener(
             formData.photoUrl =
                 await uploadRetirementPhoto();
 
-            const data = await retirementApiJson("/api/retirement-messages", {
-                method: "POST",
+            const requestUrl = editingRetirementMessageId
+                ? `/api/retirement-messages/${encodeURIComponent(editingRetirementMessageId)}`
+                : "/api/retirement-messages";
+            const requestMethod = editingRetirementMessageId
+                ? "PATCH"
+                : "POST";
+
+            const data = await retirementApiJson(requestUrl, {
+                method: requestMethod,
                 body: formData,
                 errorMessage: translate("retirement_submit_error")
             });
 
-            retirementSubmitForm.reset();
-            setDefaultMessageLanguage();
-            updateRetirementTradePicker();
+            if (!editingRetirementMessageId) {
+                retirementSubmitForm.reset();
+                setDefaultMessageLanguage();
+                updateRetirementTradePicker();
+            }
 
             showRetirementFormMessage(
-                data.status === "published"
+                data.status === "published" ||
+                    data.retirementMessage?.status === "published"
                     ? translate("retirement_submit_success_published")
-                    : data.message || translate("retirement_submit_success"),
+                    : data.message || translate(
+                        editingRetirementMessageId
+                            ? "retirement_update_success"
+                            : "retirement_submit_success"
+                    ),
                 "success"
             );
+
+            if (typeof window.refreshAuthUI === "function") {
+                window.refreshAuthUI();
+            }
         } catch (error) {
             showRetirementFormMessage(error.message || translate("retirement_submit_error"));
         } finally {
@@ -338,6 +522,13 @@ retirementSubmitForm.addEventListener("change", event => {
 populateRetirementTradeOptions();
 setDefaultMessageLanguage();
 updateRetirementTradePicker();
+updateRetirementFormModeText();
 verifyRetirementAccess();
 
-window.addEventListener("languagechange", setDefaultMessageLanguage);
+window.addEventListener("languagechange", () => {
+    if (!editingRetirementMessageId) {
+        setDefaultMessageLanguage();
+    }
+
+    updateRetirementFormModeText();
+});

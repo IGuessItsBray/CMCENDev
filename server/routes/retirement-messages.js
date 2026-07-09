@@ -80,24 +80,123 @@ function getRetirementMessageText(retirementMessage, language = 'en') {
     );
 }
 
+function getCleanRetirementMessagePayload(body = {}) {
+    const {
+        retiree = {},
+        message,
+        messageLanguage,
+        photoUrl,
+        submitter = {},
+        publicationConsentConfirmed,
+        memberReviewConfirmed
+    } = body;
+
+    const cleanRetiree = {
+        rank: cleanString(retiree.rank),
+        firstName: cleanString(retiree.firstName),
+        lastName: cleanString(retiree.lastName),
+        postNominals: cleanString(retiree.postNominals),
+        tradeRole: cleanString(retiree.tradeRole),
+        retirementDate: parseDateOnly(retiree.retirementDate)
+    };
+
+    const cleanMessage = cleanString(message);
+    const cleanSubmitter = {
+        firstName: cleanString(submitter.firstName),
+        lastName: cleanString(submitter.lastName),
+        relationship: cleanString(submitter.relationship),
+        email: cleanString(submitter.email).toLowerCase(),
+        unit: cleanString(submitter.unit)
+    };
+
+    return {
+        cleanRetiree,
+        cleanMessage,
+        cleanMessages: cleanLocalizedText({
+            [messageLanguage]: cleanMessage
+        }),
+        cleanPhotoUrl: cleanString(photoUrl),
+        cleanSubmitter,
+        messageLanguage,
+        consentConfirmed:
+            parseAffirmativeBoolean(publicationConsentConfirmed),
+        memberReviewWasConfirmed:
+            parseAffirmativeBoolean(memberReviewConfirmed)
+    };
+}
+
+function validateRetirementMessagePayload(payload) {
+    const {
+        cleanRetiree,
+        cleanMessage,
+        cleanPhotoUrl,
+        cleanSubmitter,
+        messageLanguage,
+        consentConfirmed,
+        memberReviewWasConfirmed
+    } = payload;
+
+    if (
+        !cleanRetiree.rank ||
+        !cleanRetiree.firstName ||
+        !cleanRetiree.lastName ||
+        !cleanRetiree.tradeRole ||
+        !cleanRetiree.retirementDate
+    ) {
+        return 'Required retiree information is missing';
+    }
+
+    if (!RETIREMENT_TRADE_ROLES.includes(cleanRetiree.tradeRole)) {
+        return 'The retiree MOSID or role is invalid';
+    }
+
+    if (cleanMessage.length < 100) {
+        return 'The retirement message must contain at least 100 characters';
+    }
+
+    if (!ALLOWED_LANGUAGES.includes(messageLanguage)) {
+        return 'The message language is invalid';
+    }
+
+    if (cleanPhotoUrl.length > 2000) {
+        return 'The photo URL is too long';
+    }
+
+    if (
+        !cleanSubmitter.firstName ||
+        !cleanSubmitter.lastName ||
+        !cleanSubmitter.email ||
+        !cleanSubmitter.unit
+    ) {
+        return 'Required submitter information is missing';
+    }
+
+    if (!ALLOWED_RELATIONSHIPS.includes(cleanSubmitter.relationship)) {
+        return 'The submitter relationship is invalid';
+    }
+
+    if (!isValidEmail(cleanSubmitter.email)) {
+        return 'A valid submitter email is required';
+    }
+
+    if (!memberReviewWasConfirmed) {
+        return 'The releasing member review must be confirmed';
+    }
+
+    if (!consentConfirmed) {
+        return 'The releasing member publication acknowledgement must be confirmed';
+    }
+
+    return '';
+}
+
 router.post(
     '/',
     authMiddleware,
     requirePermission('canSubmitRetirementMessages'),
     async (req, res) => {
     try {
-        const {
-            retiree = {},
-            message,
-            messageLanguage,
-            photoUrl,
-            submitter = {},
-            publicationConsentConfirmed,
-            memberReviewConfirmed,
-
-            // Hidden honeypot field.
-            website
-        } = req.body;
+        const { website } = req.body;
 
         /*
          * Bots commonly fill every input. Return the
@@ -110,166 +209,25 @@ router.post(
             });
         }
 
-        const cleanRetiree = {
-            rank:
-                cleanString(retiree.rank),
+        const payload =
+            getCleanRetirementMessagePayload(req.body);
+        const validationError =
+            validateRetirementMessagePayload(payload);
 
-            firstName:
-                cleanString(retiree.firstName),
-
-            lastName:
-                cleanString(retiree.lastName),
-
-            postNominals:
-                cleanString(retiree.postNominals),
-
-            tradeRole:
-                cleanString(retiree.tradeRole),
-
-            retirementDate:
-                parseDateOnly(
-                    retiree.retirementDate
-                )
-        };
-
-        const cleanMessage =
-            cleanString(message);
-
-        const cleanMessages =
-            cleanLocalizedText({
-                [messageLanguage]: cleanMessage
-            });
-
-        const cleanPhotoUrl =
-            cleanString(photoUrl);
-
-        const cleanSubmitter = {
-            firstName:
-                cleanString(submitter.firstName),
-
-            lastName:
-                cleanString(submitter.lastName),
-
-            relationship:
-                cleanString(
-                    submitter.relationship
-                ),
-
-            email:
-                cleanString(
-                    submitter.email
-                ).toLowerCase(),
-
-            unit:
-                cleanString(submitter.unit)
-        };
-
-        const consentConfirmed =
-            parseAffirmativeBoolean(
-                publicationConsentConfirmed
-            );
-
-        const memberReviewWasConfirmed =
-            parseAffirmativeBoolean(
-                memberReviewConfirmed
-            );
-
-        if (
-            !cleanRetiree.rank ||
-            !cleanRetiree.firstName ||
-            !cleanRetiree.lastName ||
-            !cleanRetiree.tradeRole ||
-            !cleanRetiree.retirementDate
-        ) {
+        if (validationError) {
             return res.status(400).json({
-                error:
-                    'Required retiree information is missing'
+                error: validationError
             });
         }
 
-        if (
-            !RETIREMENT_TRADE_ROLES.includes(
-                cleanRetiree.tradeRole
-            )
-        ) {
-            return res.status(400).json({
-                error:
-                    'The retiree MOSID or role is invalid'
-            });
-        }
-
-        if (cleanMessage.length < 100) {
-            return res.status(400).json({
-                error:
-                    'The retirement message must contain at least 100 characters'
-            });
-        }
-
-        if (
-            !ALLOWED_LANGUAGES.includes(
-                messageLanguage
-            )
-        ) {
-            return res.status(400).json({
-                error:
-                    'The message language is invalid'
-            });
-        }
-
-        if (cleanPhotoUrl.length > 2000) {
-            return res.status(400).json({
-                error:
-                    'The photo URL is too long'
-            });
-        }
-
-        if (
-            !cleanSubmitter.firstName ||
-            !cleanSubmitter.lastName ||
-            !cleanSubmitter.email ||
-            !cleanSubmitter.unit
-        ) {
-            return res.status(400).json({
-                error:
-                    'Required submitter information is missing'
-            });
-        }
-
-        if (
-            !ALLOWED_RELATIONSHIPS.includes(
-                cleanSubmitter.relationship
-            )
-        ) {
-            return res.status(400).json({
-                error:
-                    'The submitter relationship is invalid'
-            });
-        }
-
-        if (
-            !isValidEmail(
-                cleanSubmitter.email
-            )
-        ) {
-            return res.status(400).json({
-                error:
-                    'A valid submitter email is required'
-            });
-        }
-
-        if (!memberReviewWasConfirmed) {
-            return res.status(400).json({
-                error:
-                    'The releasing member review must be confirmed'
-            });
-        }
-
-        if (!consentConfirmed) {
-            return res.status(400).json({
-                error:
-                    'The releasing member publication acknowledgement must be confirmed'
-            });
-        }
+        const {
+            cleanRetiree,
+            cleanMessage,
+            cleanMessages,
+            cleanPhotoUrl,
+            cleanSubmitter,
+            messageLanguage
+        } = payload;
 
         const confirmationDate =
             new Date();
@@ -729,6 +687,361 @@ router.patch(
             res.status(500).json({
                 error:
                     'Could not review retirement comment'
+            });
+        }
+    }
+);
+
+router.get(
+    '/comments/:commentId/edit',
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const comment =
+                await RetirementComment.findById(
+                    req.params.commentId
+                )
+                    .populate(
+                        'retirementMessage',
+                        'retiree status'
+                    )
+                    .lean();
+
+            if (!comment) {
+                return res.status(404).json({
+                    error: 'Retirement comment not found'
+                });
+            }
+
+            const permissions = getUserPermissions(req.user);
+            const isOwner =
+                comment.author &&
+                String(comment.author) === String(req.user._id);
+            const canReview =
+                permissions.canReviewAndPublish === true;
+
+            if (!isOwner && !canReview) {
+                return res.status(403).json({
+                    error: 'You do not have permission to edit this comment'
+                });
+            }
+
+            res.json({ comment });
+        } catch (error) {
+            if (error.name === 'CastError') {
+                return res.status(404).json({
+                    error: 'Retirement comment not found'
+                });
+            }
+
+            console.error(
+                'Could not load retirement comment for editing:',
+                error
+            );
+
+            res.status(500).json({
+                error: 'Could not load retirement comment for editing'
+            });
+        }
+    }
+);
+
+router.patch(
+    '/comments/:commentId',
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const cleanBody =
+                cleanString(req.body?.body);
+
+            if (cleanBody.length < 2) {
+                return res.status(400).json({
+                    error: 'Comment must contain at least 2 characters'
+                });
+            }
+
+            if (cleanBody.length > 2000) {
+                return res.status(400).json({
+                    error: 'Comment must be 2000 characters or fewer'
+                });
+            }
+
+            const comment =
+                await RetirementComment.findById(
+                    req.params.commentId
+                );
+
+            if (!comment) {
+                return res.status(404).json({
+                    error: 'Retirement comment not found'
+                });
+            }
+
+            const permissions = getUserPermissions(req.user);
+            const isOwner =
+                comment.author &&
+                String(comment.author) === String(req.user._id);
+            const canReview =
+                permissions.canReviewAndPublish === true;
+
+            if (!isOwner && !canReview) {
+                return res.status(403).json({
+                    error: 'You do not have permission to edit this comment'
+                });
+            }
+
+            comment.body = cleanBody;
+            comment.status =
+                canReview && permissions.canPublishOwnContent === true
+                    ? 'published'
+                    : 'pending';
+            comment.rejectionReason = '';
+            comment.reviewedBy =
+                comment.status === 'published'
+                    ? req.user._id
+                    : null;
+            comment.reviewedAt =
+                comment.status === 'published'
+                    ? new Date()
+                    : null;
+            comment.publishedBy =
+                comment.status === 'published'
+                    ? req.user._id
+                    : null;
+            comment.publishedAt =
+                comment.status === 'published'
+                    ? new Date()
+                    : null;
+
+            await comment.save();
+            await comment.populate(
+                'retirementMessage',
+                'retiree status'
+            );
+
+            await writeAuditLog({
+                req,
+                action: 'content.created',
+                actor: req.user,
+                targetType: 'retirementComment',
+                target: comment._id,
+                targetSnapshot: getRetirementCommentSnapshot(comment),
+                metadata: {
+                    source: 'resubmit',
+                    status: comment.status
+                }
+            });
+
+            res.json({
+                message:
+                    comment.status === 'published'
+                        ? 'Comment updated and published'
+                        : 'Comment updated and submitted for review',
+                comment
+            });
+        } catch (error) {
+            if (error.name === 'CastError') {
+                return res.status(404).json({
+                    error: 'Retirement comment not found'
+                });
+            }
+
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({
+                    error: getValidationErrorMessage(error)
+                });
+            }
+
+            console.error(
+                'Could not update retirement comment:',
+                error
+            );
+
+            res.status(500).json({
+                error: 'Could not update retirement comment'
+            });
+        }
+    }
+);
+
+router.get(
+    '/:messageId/edit',
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const retirementMessage =
+                await RetirementMessage.findById(
+                    req.params.messageId
+                ).lean();
+
+            if (!retirementMessage) {
+                return res.status(404).json({
+                    error: 'Retirement message not found'
+                });
+            }
+
+            const permissions = getUserPermissions(req.user);
+            const isOwner =
+                retirementMessage.createdBy &&
+                String(retirementMessage.createdBy) === String(req.user._id);
+            const canReview =
+                permissions.canReviewAndPublish === true;
+
+            if (!isOwner && !canReview) {
+                return res.status(403).json({
+                    error: 'You do not have permission to edit this retirement message'
+                });
+            }
+
+            res.json({ retirementMessage });
+        } catch (error) {
+            if (error.name === 'CastError') {
+                return res.status(404).json({
+                    error: 'Retirement message not found'
+                });
+            }
+
+            console.error(
+                'Could not load retirement message for editing:',
+                error
+            );
+
+            res.status(500).json({
+                error: 'Could not load retirement message for editing'
+            });
+        }
+    }
+);
+
+router.patch(
+    '/:messageId',
+    authMiddleware,
+    async (req, res) => {
+        try {
+            const retirementMessage =
+                await RetirementMessage.findById(
+                    req.params.messageId
+                );
+
+            if (!retirementMessage) {
+                return res.status(404).json({
+                    error: 'Retirement message not found'
+                });
+            }
+
+            const permissions = getUserPermissions(req.user);
+            const isOwner =
+                retirementMessage.createdBy &&
+                String(retirementMessage.createdBy) === String(req.user._id);
+            const canReview =
+                permissions.canReviewAndPublish === true;
+
+            if (!isOwner && !canReview) {
+                return res.status(403).json({
+                    error: 'You do not have permission to edit this retirement message'
+                });
+            }
+
+            const payload =
+                getCleanRetirementMessagePayload(req.body);
+            const validationError =
+                validateRetirementMessagePayload(payload);
+
+            if (validationError) {
+                return res.status(400).json({
+                    error: validationError
+                });
+            }
+
+            const {
+                cleanRetiree,
+                cleanMessage,
+                cleanMessages,
+                cleanPhotoUrl,
+                cleanSubmitter,
+                messageLanguage
+            } = payload;
+            const now = new Date();
+
+            retirementMessage.retiree = cleanRetiree;
+            retirementMessage.message = cleanMessage;
+            retirementMessage.messageLanguage = messageLanguage;
+            retirementMessage.messages = cleanMessages;
+            retirementMessage.photoUrl = cleanPhotoUrl;
+            retirementMessage.submitter = cleanSubmitter;
+            retirementMessage.publicationConsent = {
+                confirmed: true,
+                confirmedAt: now
+            };
+            retirementMessage.memberReviewConfirmation = {
+                confirmed: true,
+                confirmedAt: now
+            };
+            retirementMessage.updatedBy = req.user._id;
+            retirementMessage.status =
+                canReview && permissions.canBypassReviewStages === true
+                    ? 'published'
+                    : 'pending';
+            retirementMessage.rejectionReason = '';
+            retirementMessage.reviewedBy =
+                retirementMessage.status === 'published'
+                    ? req.user._id
+                    : null;
+            retirementMessage.reviewedAt =
+                retirementMessage.status === 'published'
+                    ? now
+                    : null;
+            retirementMessage.publishedBy =
+                retirementMessage.status === 'published'
+                    ? req.user._id
+                    : null;
+            retirementMessage.publishedAt =
+                retirementMessage.status === 'published'
+                    ? now
+                    : null;
+
+            await retirementMessage.save();
+
+            await writeAuditLog({
+                req,
+                action: 'content.created',
+                actor: req.user,
+                targetType: 'retirementMessage',
+                target: retirementMessage._id,
+                targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+                metadata: {
+                    source: 'resubmit',
+                    status: retirementMessage.status
+                }
+            });
+
+            res.json({
+                message:
+                    retirementMessage.status === 'published'
+                        ? 'Retirement message updated and published'
+                        : 'Retirement message updated and submitted for review',
+                retirementMessage
+            });
+        } catch (error) {
+            if (error.name === 'CastError') {
+                return res.status(404).json({
+                    error: 'Retirement message not found'
+                });
+            }
+
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({
+                    error: getValidationErrorMessage(error)
+                });
+            }
+
+            console.error(
+                'Could not update retirement message:',
+                error
+            );
+
+            res.status(500).json({
+                error: 'Could not update retirement message'
             });
         }
     }

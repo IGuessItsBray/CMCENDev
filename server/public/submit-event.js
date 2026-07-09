@@ -799,6 +799,10 @@ eventForm.addEventListener(
         ),
         "success"
       );
+
+      if (typeof window.refreshAuthUI === "function") {
+        window.refreshAuthUI();
+      }
     } catch (error) {
       showFormMessage(
         error.message ||

@@ -463,42 +463,16 @@ function getEventDateValues() {
   };
 }
 
-function activateEventTab(tabName) {
-  eventTabs.forEach(tab => {
-    const isActive =
-      tab.dataset.eventTab === tabName;
-
-    tab.classList.toggle(
-      "is-active",
-      isActive
-    );
-
-    tab.setAttribute(
-      "aria-selected",
-      String(isActive)
-    );
-  });
-
-  eventPanels.forEach(panel => {
-    const isActive =
-      panel.dataset.eventPanel === tabName;
-
-    panel.classList.toggle(
-      "is-active",
-      isActive
-    );
-
-    panel.hidden = !isActive;
-  });
-}
-
-eventTabs.forEach(tab => {
-  tab.addEventListener("click", () => {
-    activateEventTab(
-      tab.dataset.eventTab
-    );
-  });
+const eventTabController = CMCENUtils.bindTabs({
+  panels: eventPanels,
+  panelKey: "eventPanel",
+  tabs: eventTabs,
+  tabKey: "eventTab"
 });
+
+function activateEventTab(tabName) {
+  eventTabController.activate(tabName);
+}
 
 function buildEventData() {
   const title = {

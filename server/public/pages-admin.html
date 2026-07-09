@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Pages | CMCEN / RCMCE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="dashboard-main">
+      <section
+        class="dashboard-shell admin-work-zone-dashboard-shell"
+        aria-labelledby="pagesAdminTitle"
+      >
+        <header class="dashboard-heading">
+          <div class="dashboard-heading-copy">
+            <p class="dashboard-eyebrow">Administrator</p>
+            <h1 id="pagesAdminTitle">Pages</h1>
+            <p class="dashboard-member-name">
+              Create simple pages with text blocks, images, and navigation links.
+            </p>
+          </div>
+        </header>
+
+        <nav
+          class="admin-work-zone-tabs admin-work-zone-page-tabs"
+          id="adminWorkZoneTabs"
+          aria-label="Admin work zone views"
+        ></nav>
+
+        <div
+          class="dashboard-status is-loading"
+          id="pagesAdminStatus"
+          role="status"
+          aria-live="polite"
+        >
+          <span class="loading-state-spinner" aria-hidden="true"></span>
+          <span class="visually-hidden">Loading...</span>
+        </div>
+
+        <section
+          class="dashboard-section admin-work-zone-page"
+          id="pagesAdminPage"
+          hidden
+        >
+          <div
+            class="pages-admin-shell"
+            id="pagesAdminContent"
+          ></div>
+        </section>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/app-utils.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/admin-work-zone-tabs.js"></script>
+    <script src="/pages-admin.js"></script>
+  </body>
+</html>

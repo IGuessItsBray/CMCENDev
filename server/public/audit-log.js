@@ -26,6 +26,14 @@ const auditActions = [
   ["config.token_rejected", "audit_action_config_token_rejected"],
   ["config.updated", "audit_action_config_updated"],
   ["media.deleted", "audit_action_media_deleted"],
+  ["page.created", "audit_action_page_created"],
+  ["page.updated", "audit_action_page_updated"],
+  ["page.published", "audit_action_page_published"],
+  ["page.status_changed", "audit_action_page_status_changed"],
+  ["page.deleted", "audit_action_page_deleted"],
+  ["navigation.created", "audit_action_navigation_created"],
+  ["navigation.updated", "audit_action_navigation_updated"],
+  ["navigation.deleted", "audit_action_navigation_deleted"],
   ["role.created", "audit_action_role_created"],
   ["role.updated", "audit_action_role_updated"],
   ["role.permissions_changed", "audit_action_role_permissions_changed"],
@@ -44,6 +52,8 @@ const auditTargetTypes = [
   ["event", "audit_target_events"],
   ["config", "audit_target_config"],
   ["media", "audit_target_media"],
+  ["page", "audit_target_pages"],
+  ["navigation", "audit_target_navigation"],
   ["role", "audit_target_roles"],
   ["translation", "audit_target_translations"],
   ["retirementMessage", "audit_target_retirement_posts"],
@@ -99,20 +109,85 @@ function getAuditActor(log) {
   );
 }
 
+function formatLocalizedAuditValue(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return "";
+  }
+
+  const language =
+    document.documentElement.lang ||
+    localStorage.getItem("language") ||
+    "en";
+  const candidates = [
+    value[language],
+    value.en,
+    value.fr
+  ];
+
+  return String(candidates.find(item => typeof item === "string" && item.trim()) || "");
+}
+
+function formatAuditValue(value) {
+  if (value === undefined || value === null || value === "") {
+    return translate("admin_none");
+  }
+
+  if (Array.isArray(value)) {
+    return value.length
+      ? value.map(formatAuditValue).join(", ")
+      : translate("admin_none");
+  }
+
+  if (value && typeof value === "object") {
+    const localizedValue = formatLocalizedAuditValue(value);
+
+    if (localizedValue) {
+      return localizedValue;
+    }
+
+    const preferredValue =
+      value.label ||
+      value.title ||
+      value.name ||
+      value.slug ||
+      value.key ||
+      value.route ||
+      value.username ||
+      value.email;
+
+    if (preferredValue) {
+      return formatAuditValue(preferredValue);
+    }
+
+    const entries = Object.entries(value)
+      .filter(([, item]) => item !== undefined && item !== null && item !== "")
+      .filter(([key]) => !["id", "_id", "__v"].includes(key));
+
+    return entries.length
+      ? entries.map(([key, item]) => `${formatMetadataLabel(key)}: ${formatAuditValue(item)}`).join("; ")
+      : translate("admin_none");
+  }
+
+  return String(value);
+}
+
 function getAuditTarget(log) {
   const target = log.targetSnapshot || {};
 
-  return (
+  const preferredValue =
     target.title ||
     target.key ||
     target.name ||
     target.slug ||
     target.accountName ||
     target.username ||
-    target.email ||
-    log.targetType ||
-    translate("audit_unknown_target")
-  );
+    target.email;
+
+  if (preferredValue) {
+    return formatAuditValue(preferredValue);
+  }
+
+  return log.targetType ? formatAuditTargetType(log.targetType) : translate("audit_unknown_target");
 }
 
 function getActorId(value) {
@@ -225,7 +300,19 @@ function formatMetadataLabel(key) {
     deletedComments: "audit_metadata_deleted_comments",
     changedLanguages: "audit_metadata_changed_languages",
     previousValues: "audit_metadata_previous_values",
-    newValues: "audit_metadata_new_values"
+    newValues: "audit_metadata_new_values",
+    previousPage: "audit_metadata_previous_page",
+    newPage: "audit_metadata_new_page",
+    previousNavigation: "audit_metadata_previous_navigation",
+    newNavigation: "audit_metadata_new_navigation",
+    previousPermissions: "audit_metadata_previous_permissions",
+    newPermissions: "audit_metadata_new_permissions",
+    addedPermissions: "audit_metadata_added_permissions",
+    removedPermissions: "audit_metadata_removed_permissions",
+    previousRoles: "audit_metadata_previous_roles",
+    newRoles: "audit_metadata_new_roles",
+    role: "audit_metadata_role",
+    permissions: "audit_metadata_permissions"
   };
 
   if (knownLabels[key]) {
@@ -239,20 +326,7 @@ function formatMetadataLabel(key) {
 }
 
 function formatMetadataValue(value) {
-  if (Array.isArray(value)) {
-    return value.length ? value.join(", ") : translate("admin_none");
-  }
-
-  if (value && typeof value === "object") {
-    const entries = Object.entries(value)
-      .filter(([, item]) => item !== undefined && item !== null);
-
-    return entries.length
-      ? entries.map(([key, item]) => `${key}: ${item}`).join("; ")
-      : translate("admin_none");
-  }
-
-  return String(value);
+  return formatAuditValue(value);
 }
 
 function createAuditSearchField() {

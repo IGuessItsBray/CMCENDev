@@ -22,10 +22,6 @@ router.get(
   requirePermission('canManageUsers'),
   async (req, res) => {
     try {
-      const limit = Math.min(
-        Math.max(Number(req.query.limit) || 100, 1),
-        250
-      );
       const action = cleanString(req.query.action);
       const targetType = cleanString(req.query.targetType);
       const user = cleanString(req.query.user).slice(0, 100);
@@ -64,7 +60,6 @@ router.get(
 
       const logs = await AuditLog.find(filter)
         .sort({ createdAt: -1 })
-        .limit(limit)
         .lean();
 
       res.json({ logs });

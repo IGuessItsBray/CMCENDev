@@ -1,44 +1,39 @@
 // the header'z dropdown menus are built from this
-const themeStorageKey = "cmcen-theme";
-const darkModeQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
+const themeStorageKey = "theme";
+const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
 function getPreferredTheme() {
-  const storedTheme = localStorage.getItem(themeStorageKey);
+  const savedTheme = localStorage.getItem(themeStorageKey);
 
-  if (storedTheme === "dark" || storedTheme === "light") {
-    return storedTheme;
+  if (savedTheme === "light" || savedTheme === "dark") {
+    return savedTheme;
   }
 
-  return darkModeQuery?.matches ? "dark" : "light";
+  return darkModeQuery.matches ? "dark" : "light";
 }
 
-function applyTheme(theme, { persist = true } = {}) {
-  const nextTheme = theme === "dark" ? "dark" : "light";
+function applyTheme(nextTheme, { persist = true } = {}) {
+  const isDark = nextTheme === "dark";
 
   document.documentElement.dataset.theme = nextTheme;
-  document.documentElement.style.colorScheme = nextTheme;
 
   const themeToggle = document.getElementById("themeToggle");
 
   if (themeToggle) {
     const isDark = nextTheme === "dark";
+
     const translateText =
       typeof window.translate === "function"
         ? window.translate
-        : (key, replacements, lang) => {
+        : key => {
           const fallbacks = {
             theme_switch_to_light_label: "Switch to light mode",
-            theme_switch_to_dark_label: "Switch to dark mode",
-            theme_light_short: "LIGHT",
-            theme_dark_short: "DARK"
+            theme_switch_to_dark_label: "Switch to dark mode"
           };
 
           return fallbacks[key] || key;
         };
 
-    themeToggle.textContent = isDark
-      ? translateText("theme_light_short")
-      : translateText("theme_dark_short");
     themeToggle.setAttribute("aria-pressed", String(isDark));
     themeToggle.setAttribute(
       "aria-label",
@@ -61,18 +56,18 @@ function applyTheme(theme, { persist = true } = {}) {
 }
 
 function toggleTheme() {
-  applyTheme(
-    document.documentElement.dataset.theme === "dark"
-      ? "light"
-      : "dark"
-  );
+  const currentTheme = document.documentElement.dataset.theme;
+
+  applyTheme(currentTheme === "dark" ? "light" : "dark");
 }
 
 applyTheme(getPreferredTheme(), { persist: false });
 
-darkModeQuery?.addEventListener?.("change", event => {
+darkModeQuery.addEventListener("change", event => {
   if (!localStorage.getItem(themeStorageKey)) {
-    applyTheme(event.matches ? "dark" : "light", { persist: false });
+    applyTheme(event.matches ? "dark" : "light", {
+      persist: false
+    });
   }
 });
 
@@ -309,16 +304,6 @@ function loadHeader() {
             aria-label="Change language"
           >
             FR
-          </button>
-
-          <button
-            type="button"
-            class="theme-toggle"
-            id="themeToggle"
-            aria-label="Switch to dark mode"
-            aria-pressed="false"
-          >
-            DARK
           </button>
 
           <a
@@ -574,6 +559,32 @@ function loadFooter() {
             Connecting members, supporting veterans,
             and preserving the history of the Branch.
           </p>
+            <button
+  id="themeToggle"
+  class="theme-toggle"
+  type="button"
+  aria-label="Switch to dark mode"
+  aria-pressed="false"
+>
+  <span class="theme-toggle__icon" aria-hidden="true">
+    <!-- Sun -->
+    <svg viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path
+        d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42
+           M17.66 17.66l1.41 1.41M2 12h2M20 12h2
+           M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"
+      ></path>
+    </svg>
+  </span>
+
+  <span class="theme-toggle__icon" aria-hidden="true">
+    <!-- Moon -->
+    <svg viewBox="0 0 24 24">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3A7 7 0 0 0 21 12.8Z"></path>
+    </svg>
+  </span>
+</button>
         </section>
 
         <nav
@@ -676,6 +687,7 @@ function loadFooter() {
           >
             ${socialLinksHtml}
           </div>
+  
         </section>
       </div>
     </div>
@@ -703,6 +715,8 @@ function loadFooter() {
     yearElement.textContent =
       new Date().getFullYear();
   }
+
+  document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
 }
 
 loadHeader();

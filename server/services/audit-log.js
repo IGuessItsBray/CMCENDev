@@ -17,7 +17,18 @@ function snapshotUser(user) {
   };
 }
 
+function getRequestIp(req) {
+  const rawIp = String(req?.ip || '').trim();
+
+  if (rawIp.startsWith('::ffff:')) {
+    return rawIp.slice(7);
+  }
+
+  return rawIp;
+}
+
 async function writeAuditLog({
+  req = null,
   action,
   actor = null,
   targetType,
@@ -26,6 +37,14 @@ async function writeAuditLog({
   metadata = {}
 }) {
   try {
+    const requestIp = getRequestIp(req);
+    const auditMetadata = {
+      ...metadata,
+      ...(String(action || '').startsWith('user.login') && requestIp
+        ? { ipAddress: requestIp }
+        : {})
+    };
+
     await AuditLog.create({
       action,
       actor: actor?._id || actor || null,
@@ -33,7 +52,7 @@ async function writeAuditLog({
       targetType,
       target,
       targetSnapshot,
-      metadata
+      metadata: auditMetadata
     });
   } catch (error) {
     console.error('Audit log write failed:', error);

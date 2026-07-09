@@ -172,6 +172,7 @@ function formatMetadataLabel(key) {
     source: "audit_metadata_source",
     method: "audit_metadata_method",
     methods: "audit_metadata_methods",
+    ipAddress: "audit_metadata_ip_address",
     deletedComments: "audit_metadata_deleted_comments",
     changedLanguages: "audit_metadata_changed_languages",
     previousValues: "audit_metadata_previous_values",

@@ -664,6 +664,21 @@ router.patch(
                 });
             }
 
+            if (action === 'reject') {
+                await writeAuditLog({
+                    req,
+                    action: 'content.rejected',
+                    actor: req.user,
+                    targetType: 'retirementComment',
+                    target: comment._id,
+                    targetSnapshot: getRetirementCommentSnapshot(comment),
+                    metadata: {
+                        source: 'review',
+                        rejectionReason: comment.rejectionReason
+                    }
+                });
+            }
+
             await comment.populate(
                 'author',
                 'username accountName firstName lastName email role'
@@ -1119,6 +1134,21 @@ router.patch(
                     target: retirementMessage._id,
                     targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
                     metadata: { source: 'review' }
+                });
+            }
+
+            if (action === 'reject') {
+                await writeAuditLog({
+                    req,
+                    action: 'content.rejected',
+                    actor: req.user,
+                    targetType: 'retirementMessage',
+                    target: retirementMessage._id,
+                    targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+                    metadata: {
+                        source: 'review',
+                        rejectionReason: retirementMessage.rejectionReason
+                    }
                 });
             }
 

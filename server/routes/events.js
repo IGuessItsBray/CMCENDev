@@ -1326,6 +1326,21 @@ router.patch(
                 });
             }
 
+            if (action === 'reject') {
+                await writeAuditLog({
+                    req,
+                    action: 'content.rejected',
+                    actor: req.user,
+                    targetType: 'event',
+                    target: event._id,
+                    targetSnapshot: getEventSnapshot(event),
+                    metadata: {
+                        source: 'review',
+                        rejectionReason: event.rejectionReason
+                    }
+                });
+            }
+
             await event.populate(
                 'createdBy',
                 'username accountName email role'

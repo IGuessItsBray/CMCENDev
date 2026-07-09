@@ -3386,6 +3386,11 @@ a.dropdown-toggle {
   background: #edf8f2;
 }
 
+.audit-log-entry.is-content-rejected {
+  --audit-accent: #b45309;
+  background: #fff7ed;
+}
+
 .audit-log-entry.is-content-deleted {
   --audit-accent: #b42318;
   background: #fff1f0;
@@ -9605,6 +9610,10 @@ html[data-theme="dark"] .audit-log-entry.is-content-created {
 
 html[data-theme="dark"] .audit-log-entry.is-content-published {
   background: #10291d;
+}
+
+html[data-theme="dark"] .audit-log-entry.is-content-rejected {
+  background: #3a2412;
 }
 
 html[data-theme="dark"] .audit-log-entry.is-content-deleted {

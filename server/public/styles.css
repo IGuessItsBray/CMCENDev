@@ -7710,14 +7710,6 @@ html[data-theme="dark"] .app-section-heading {
   border-bottom-color: var(--gold-500);
 }
 
-html[data-theme="dark"] .app-confirmation strong {
-  color: var(--dark-text);
-}
-
-html[data-theme="dark"] .app-confirmation small {
-  color: var(--dark-text-soft);
-}
-
 html[data-theme="dark"] main a {
   color: var(--dark-link);
 }
@@ -7878,7 +7870,7 @@ html[data-theme="dark"] .signout-modal-body {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .signout-modal-body p {
+html[data-theme="dark"] .signout-modal p {
   color: var(--dark-text-soft);
 }
 
@@ -7948,10 +7940,6 @@ html[data-theme="dark"] .audit-log-metadata-chip {
   color: var(--dark-text-soft);
 }
 
-html[data-theme="dark"] .audit-log-metadata-chip strong {
-  color: var(--dark-text);
-}
-
 html[data-theme="dark"] .home-family,
 html[data-theme="dark"] .home-information {
   background: transparent;
@@ -7989,16 +7977,8 @@ html[data-theme="dark"] .home-family-card .home-family-icon {
   color: var(--gold-500);
 }
 
-html[data-theme="dark"] .home-family-card h3,
 html[data-theme="dark"] .home-family-card .home-family-link {
   color: var(--dark-text);
-}
-
-html[data-theme="dark"] .home-family-card p {
-  color: var(--dark-text-soft);
-}
-
-html[data-theme="dark"] .home-family-card .home-family-link {
   border-top-color: var(--dark-border-strong);
 }
 
@@ -8017,10 +7997,6 @@ html[data-theme="dark"] .home-feed-note {
   color: var(--dark-text-soft);
 }
 
-html[data-theme="dark"] .home-feed-content strong {
-  color: var(--dark-text);
-}
-
 html[data-theme="dark"] .calendar-event {
   border-color: var(--dark-border-strong);
   background:
@@ -8032,16 +8008,8 @@ html[data-theme="dark"] .calendar-event {
 }
 
 html[data-theme="dark"] .calendar-event-date-line,
-html[data-theme="dark"] .calendar-event-title,
-html[data-theme="dark"] .calendar-event-location,
-html[data-theme="dark"] .calendar-event-description,
 html[data-theme="dark"] .calendar-event-meta-value {
   color: var(--dark-text);
-}
-
-html[data-theme="dark"] .calendar-event-location,
-html[data-theme="dark"] .calendar-event-description {
-  color: var(--dark-text-soft);
 }
 
 html[data-theme="dark"] .calendar-event-meta {
@@ -8070,9 +8038,7 @@ html[data-theme="dark"] .event-detail-registration {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .event-detail-section p,
-html[data-theme="dark"] .event-detail-list dd,
-html[data-theme="dark"] .event-detail-registration p {
+html[data-theme="dark"] .event-detail-list dd {
   color: var(--dark-text-soft);
 }
 
@@ -8088,11 +8054,6 @@ html[data-theme="dark"] .review-language-heading {
 html[data-theme="dark"] .event-language-code,
 html[data-theme="dark"] .review-language-code {
   color: var(--gold-200);
-}
-
-html[data-theme="dark"] .event-language-heading h2,
-html[data-theme="dark"] .review-language-heading h3 {
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .event-review-shell {
@@ -8168,7 +8129,6 @@ html[data-theme="dark"] .review-record-section>h3 {
     linear-gradient(180deg,
       #263349,
       #1b2638);
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .review-record-data,
@@ -8186,12 +8146,7 @@ html[data-theme="dark"] .review-content-label {
   color: var(--dark-text-muted);
 }
 
-html[data-theme="dark"] .app-meta-value,
-html[data-theme="dark"] .review-event-registration,
-html[data-theme="dark"] .review-event-title-value,
-html[data-theme="dark"] .review-event-location,
-html[data-theme="dark"] .review-event-description,
-html[data-theme="dark"] .comment-review-body {
+html[data-theme="dark"] .app-meta-value {
   color: var(--dark-text-soft);
 }
 
@@ -8247,10 +8202,6 @@ html[data-theme="dark"] .retirement-card-header {
     linear-gradient(105deg,
       #202b45,
       #151f35);
-}
-
-html[data-theme="dark"] .retirement-card-header h2 {
-  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .retirement-card-header p,
@@ -8310,8 +8261,7 @@ html[data-theme="dark"] .login-mfa-option:focus-visible {
   box-shadow: 0 0 0 3px rgba(213, 155, 39, 0.18);
 }
 
-html[data-theme="dark"] .mfa-verification-row .app-field span,
-html[data-theme="dark"] .passkey-manager-heading h4 {
+html[data-theme="dark"] .mfa-verification-row .app-field span {
   color: var(--dark-text);
 }
 
@@ -8334,14 +8284,8 @@ html[data-theme="dark"] .passkey-empty {
   color: var(--dark-text-soft);
 }
 
-html[data-theme="dark"] .passkey-details strong,
-html[data-theme="dark"] .totp-status-card strong {
-  color: var(--dark-text);
-}
-
 html[data-theme="dark"] .passkey-details span,
-html[data-theme="dark"] .totp-status-card span,
-html[data-theme="dark"] .totp-status-card p {
+html[data-theme="dark"] .totp-status-card span {
   color: var(--dark-text-soft);
 }
 
@@ -8422,14 +8366,11 @@ html[data-theme="dark"] .dashboard-action:focus-visible {
       #1b2638);
 }
 
-html[data-theme="dark"] .dashboard-action-copy strong,
-html[data-theme="dark"] .dashboard-action-copy span,
 html[data-theme="dark"] .dashboard-action-arrow {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .dashboard-action-copy span,
-html[data-theme="dark"] .dashboard-detail-value {
+html[data-theme="dark"] .dashboard-action-copy span {
   color: var(--dark-text-soft);
 }
 
@@ -8461,11 +8402,8 @@ html[data-theme="dark"] .about-family-main {
 }
 
 html[data-theme="dark"] .event-section-intro,
-html[data-theme="dark"] .event-language-note,
-html[data-theme="dark"] .event-time-zone-note,
 html[data-theme="dark"] .my-events-intro,
-html[data-theme="dark"] .my-events-message,
-html[data-theme="dark"] .event-edit-loading p {
+html[data-theme="dark"] .my-events-message {
   color: var(--dark-text-soft);
 }
 
@@ -8486,9 +8424,7 @@ html[data-theme="dark"] .event-review-note {
   color: var(--dark-text-muted);
 }
 
-html[data-theme="dark"] .event-toggle,
-html[data-theme="dark"] .event-time-separator,
-html[data-theme="dark"] .event-publish-toggle strong {
+html[data-theme="dark"] .event-time-separator {
   color: var(--dark-text);
 }
 
@@ -8537,8 +8473,7 @@ html[data-theme="dark"] .translation-row-status {
   color: var(--dark-text-muted);
 }
 
-html[data-theme="dark"] .translation-key-value,
-html[data-theme="dark"] .translation-fields .app-field label {
+html[data-theme="dark"] .translation-key-value {
   color: var(--dark-text);
 }
 
@@ -8648,11 +8583,6 @@ html[data-theme="dark"] .retirement-comment-form {
   border-top-color: var(--dark-border);
 }
 
-html[data-theme="dark"] .retirement-comment p,
-html[data-theme="dark"] .retirement-detail-message-section p {
-  color: var(--dark-text-soft);
-}
-
 html[data-theme="dark"] .about-family-body {
   border-color: var(--dark-border);
   background:
@@ -8669,19 +8599,10 @@ html[data-theme="dark"] .about-family-section {
   border-top-color: var(--dark-border);
 }
 
-html[data-theme="dark"] .about-family-section h2 {
-  color: var(--dark-text);
-}
-
-html[data-theme="dark"] .about-family-section p {
-  color: var(--dark-text-soft);
-}
-
 html[data-theme="dark"] .about-family-pillar-list li {
   border-left-color: var(--gold-500);
   background:
     linear-gradient(90deg,
       rgba(213, 155, 39, 0.16),
       rgba(34, 45, 64, 0.88));
-  color: var(--dark-text-soft);
 }

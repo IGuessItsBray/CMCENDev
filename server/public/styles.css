@@ -707,10 +707,10 @@ svg {
 .launch-countdown .countdown-timer {
   min-width: 120px;
   text-align: right;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   padding: 6px 8px;
   border-radius: 2px;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   color: var(--branch-grey-100);
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
@@ -5396,6 +5396,11 @@ a.dropdown-toggle {
   color: #36523d;
 }
 
+.retirement-page-loading {
+  min-height: 220px;
+  background: var(--white);
+}
+
 .event-submit-form {
   padding: 26px 28px 28px;
   background: var(--white);
@@ -9852,6 +9857,119 @@ a.dropdown-toggle {
   }
 }
 
+@media (max-width: 720px) {
+  .retirement-submit-main {
+    padding: 0;
+  }
+
+  .retirement-submit-main .event-submit-shell {
+    width: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .retirement-submit-main .event-submit-form {
+    padding: 0;
+  }
+
+  .retirement-submit-main .event-form-section {
+    margin-top: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .retirement-submit-main .event-form-actions {
+    margin-top: 22px;
+    padding-bottom: 22px;
+  }
+
+  .submit-event-main {
+    padding: 0;
+  }
+
+  .submit-event-main .event-submit-layout,
+  .submit-event-main .event-submit-shell {
+    width: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .submit-event-main .event-submit-form {
+    padding: 0;
+  }
+
+  .submit-event-main .event-language-grid {
+    gap: 0;
+  }
+
+  .submit-event-main :is(.event-language-panel,
+    .event-details-section,
+    .event-schedule-section,
+    .event-submitter-section,
+    .event-authorization-section) {
+    margin-top: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .submit-event-main .event-submit-options {
+    margin-top: 22px;
+    padding: 0 0 22px;
+    border-top: 0;
+  }
+
+  .admin-work-zone-main .admin-work-zone-page {
+    padding: 0;
+  }
+
+  .admin-work-zone-main .admin-work-zone-shell {
+    gap: 0;
+  }
+
+  .admin-work-zone-main .admin-work-zone-shell > :is(.admin-user-list-panel,
+    .admin-user-detail-panel,
+    .admin-role-editor-panel) {
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .admin-work-zone-main .admin-work-zone-page-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 0 40px 0 0;
+    border-top: 0;
+    border-bottom: 0;
+    border-radius: 0;
+    box-shadow: inset 0 -3px var(--navy-900);
+    scroll-padding-inline: 0;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+  }
+
+  .admin-work-zone-main .admin-work-zone-page-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-work-zone-main .admin-work-zone-tab {
+    flex: 0 0 auto;
+    border-top: 0;
+    scroll-snap-align: start;
+  }
+
+  .admin-work-zone-main .admin-work-zone-tab.is-active::after {
+    display: none;
+  }
+
+  .admin-work-zone-main .admin-work-zone-tab.is-active {
+    box-shadow: inset 0 -3px var(--gold-500);
+  }
+}
+
 @media (max-width: 560px) {
 
   .event-section-heading,
@@ -10015,6 +10133,26 @@ a.dropdown-toggle {
   .review-publish-button,
   .review-reject-button {
     width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .event-review-main .event-management-panel {
+    background: var(--branch-grey-100);
+  }
+
+  .event-review-main .event-management-panel .review-page-message {
+    margin: 0;
+  }
+
+  .event-review-main .review-queue {
+    padding: 0;
+  }
+
+  .event-review-main .review-event-card {
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
   }
 }
 
@@ -11781,6 +11919,22 @@ html[data-theme="dark"] .theme-toggle__icon:last-child {
 
   html[data-theme="dark"] .event-review-main .event-review-shell {
     box-shadow: none;
+  }
+
+  html[data-theme="dark"] .retirement-submit-main .event-submit-shell {
+    box-shadow: none;
+  }
+
+  html[data-theme="dark"] .submit-event-main .event-submit-shell {
+    box-shadow: none;
+  }
+
+  html[data-theme="dark"] .admin-work-zone-main .dashboard-shell {
+    box-shadow: none;
+  }
+
+  html[data-theme="dark"] .retirement-page-loading {
+    background: var(--dark-surface);
   }
 }
 

@@ -16,7 +16,7 @@
 <body>
     <header id="header"></header>
 
-    <main class="event-submit-main">
+    <main class="event-submit-main retirement-submit-main">
         <section class="event-submit-shell" aria-labelledby="retirementSubmitTitle">
             <header class="event-submit-heading">
                 <div class="event-submit-heading-copy">
@@ -34,6 +34,18 @@
                     </p>
                 </div>
             </header>
+
+            <div
+                class="retirement-page-loading loading-state"
+                id="retirementPageLoading"
+                role="status"
+                aria-live="polite"
+                aria-label="Loading..."
+                data-i18n-aria-label="loading_text"
+            >
+                <span class="loading-state-spinner" aria-hidden="true"></span>
+                <span class="visually-hidden" data-i18n="loading_text">Loading...</span>
+            </div>
 
             <p class="event-page-message" id="retirementFormMessage" role="status"
                 aria-live="polite" hidden></p>

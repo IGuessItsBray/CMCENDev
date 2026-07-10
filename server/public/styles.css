@@ -717,6 +717,10 @@ svg {
   font-size: 13px;
 }
 
+.mobile-launch-countdown {
+  display: none;
+}
+
 @media (min-width: 900px) {
   .launch-countdown .countdown-label {
     display: inline-block;
@@ -9276,6 +9280,38 @@ a.dropdown-toggle {
     gap: 8px;
   }
 
+  .header-utilities .launch-countdown {
+    display: none;
+  }
+
+  .mobile-launch-countdown {
+    min-height: 36px;
+    padding: 7px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(213, 155, 39, 0.45);
+    background: linear-gradient(90deg, var(--navy-800), var(--navy-900), var(--navy-800));
+    color: var(--branch-grey-100);
+  }
+
+  .mobile-launch-countdown .countdown-label {
+    color: var(--branch-grey-200);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mobile-launch-countdown .countdown-timer {
+    color: var(--gold-200);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
   .auth-buttons {
     min-width: 0;
     flex: 1 1 auto;
@@ -9580,6 +9616,31 @@ a.dropdown-toggle {
 @media (max-width: 720px) {
   .dashboard-main {
     padding: 16px 11px 28px;
+  }
+
+  .account-dashboard-main {
+    padding: 0;
+  }
+
+  .account-dashboard-main .dashboard-shell {
+    width: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .event-submit-main,
+  .event-review-main,
+  .admin-work-zone-main {
+    padding: 0;
+  }
+
+  .event-submit-main .event-submit-layout,
+  .event-submit-main .event-submit-shell,
+  .event-review-main .event-review-shell,
+  .admin-work-zone-main .dashboard-shell {
+    width: 100%;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .dashboard-heading {
@@ -9901,6 +9962,12 @@ a.dropdown-toggle {
   }
 }
 
+@media (max-width: 720px) {
+  .event-review-main {
+    padding: 0;
+  }
+}
+
 @media (max-width: 560px) {
   .event-review-heading {
     align-items: flex-start;
@@ -10023,6 +10090,7 @@ a.dropdown-toggle {
   }
 
   .home-hero-identity {
+    order: -1;
     min-height: auto;
     flex-direction: row;
     gap: 22px;
@@ -10053,7 +10121,16 @@ a.dropdown-toggle {
 
   .home-hero-inner {
     min-height: auto;
-    padding: 54px 0;
+    padding: 32px 0 54px;
+  }
+
+  .home-hero-identity {
+    display: none;
+  }
+
+  .home-family {
+    padding-top: 42px;
+    padding-bottom: 42px;
   }
 
   .home-hero h1 {
@@ -11695,6 +11772,16 @@ html[data-theme="dark"] .theme-toggle__icon:first-child {
 
 html[data-theme="dark"] .theme-toggle__icon:last-child {
   color: #dbeafe;
+}
+
+@media (max-width: 720px) {
+  html[data-theme="dark"] .account-dashboard-main .dashboard-shell {
+    box-shadow: none;
+  }
+
+  html[data-theme="dark"] .event-review-main .event-review-shell {
+    box-shadow: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

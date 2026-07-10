@@ -299,7 +299,7 @@ function loadHeader() {
 
           <div class="launch-countdown" id="launchCountdown" aria-live="polite" title="Time to Launch">
             <span class="countdown-label">Time to Launch</span>
-            <span class="countdown-timer" id="launchCountdownTimer">—</span>
+            <span class="countdown-timer" data-launch-countdown-timer>—</span>
           </div>
 
           <button
@@ -333,6 +333,15 @@ function loadHeader() {
           </button>
         </div>
       </div>
+    </div>
+
+    <div
+      class="mobile-launch-countdown"
+      aria-live="polite"
+      title="Time to Launch"
+    >
+      <span class="countdown-label">Time to Launch</span>
+      <span class="countdown-timer" data-launch-countdown-timer>—</span>
     </div>
 
     <div class="header-navigation-row">
@@ -419,11 +428,9 @@ function loadHeader() {
   }
 
   function updateMobileMenuOffset() {
-    const identityRow = header.querySelector('.header-identity-row');
-
     header.style.setProperty(
       '--mobile-header-height',
-      `${identityRow?.offsetHeight || header.offsetHeight}px`
+      `${header.offsetHeight}px`
     );
   }
 
@@ -729,8 +736,8 @@ loadFooter();
 
 // Initialize and run the launch countdown shown in the header
 function initLaunchCountdown() {
-  const timerEl = document.getElementById('launchCountdownTimer');
-  if (!timerEl) return;
+  const timerEls = document.querySelectorAll('[data-launch-countdown-timer]');
+  if (!timerEls.length) return;
 
   // Target: 2026-10-31 12:00 in America/Toronto local time (EDT at that date)
   const targetMs = new Date('2026-10-31T12:00:00-04:00').getTime();
@@ -741,8 +748,10 @@ function initLaunchCountdown() {
     let diff = Math.max(0, targetMs - now);
 
     if (diff === 0) {
-      timerEl.textContent = 'Launched';
-      timerEl.classList.add('launched');
+      timerEls.forEach(timerEl => {
+        timerEl.textContent = 'Launched';
+        timerEl.classList.add('launched');
+      });
       if (intervalId) clearInterval(intervalId);
       return;
     }
@@ -754,7 +763,11 @@ function initLaunchCountdown() {
     const minutes = Math.floor(diff / 60000);
     const seconds = Math.floor((diff % 60000) / 1000);
 
-    timerEl.textContent = `${days}d ${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+    const timerText = `${days}d ${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+
+    timerEls.forEach(timerEl => {
+      timerEl.textContent = timerText;
+    });
   }
 
   updateTimer();

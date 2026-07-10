@@ -12,6 +12,7 @@ const {
     RETIREMENT_TRADE_ROLES
 } = require('../config/content');
 const { writeAuditLog } = require('../services/audit-log');
+const { sendMail } = require('../services/mailer');
 const {
     getRetirementCommentSnapshot,
     getRetirementMessageSnapshot
@@ -37,6 +38,121 @@ const ALLOWED_LANGUAGES = [
     'en',
     'fr'
 ];
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/gu, '&amp;')
+        .replace(/</gu, '&lt;')
+        .replace(/>/gu, '&gt;')
+        .replace(/"/gu, '&quot;')
+        .replace(/'/gu, '&#39;');
+}
+
+function getBaseUrl(req) {
+    const configuredBaseUrl =
+        String(process.env.APP_BASE_URL || '').trim();
+
+    if (configuredBaseUrl) {
+        return configuredBaseUrl.replace(/\/+$/u, '');
+    }
+
+    return `${req.protocol}://${req.get('host')}`;
+}
+
+function getRetireeName(retirementMessage) {
+    const retiree = retirementMessage?.retiree || {};
+
+    return [
+        retiree.rank,
+        retiree.firstName,
+        retiree.lastName,
+        retiree.postNominals
+    ]
+        .filter(Boolean)
+        .join(' ') || 'the retiree';
+}
+
+function getSubmissionRecipient(content, accountUser) {
+    return String(
+        accountUser?.email ||
+        content?.createdBy?.email ||
+        content?.author?.email ||
+        content?.submitter?.email ||
+        ''
+    )
+        .trim()
+        .toLowerCase();
+}
+
+function getSubmissionRecipientName(content, accountUser) {
+    return (
+        accountUser?.accountName ||
+        accountUser?.firstName ||
+        content?.createdBy?.accountName ||
+        content?.createdBy?.firstName ||
+        content?.author?.accountName ||
+        content?.author?.firstName ||
+        content?.submitter?.firstName ||
+        'there'
+    );
+}
+
+function renderReviewOutcomeEmail({
+    accountName,
+    contentLabel,
+    action,
+    publicUrl,
+    rejectionReason
+}) {
+    const isPublished = action === 'publish';
+
+    return `
+        <p>Hello ${escapeHtml(accountName)},</p>
+        <p>Your ${escapeHtml(contentLabel)} has ${isPublished ? 'been approved and published' : 'not been approved'} on CMCEN / RCMCE.</p>
+        ${isPublished
+            ? `<p><a href="${escapeHtml(publicUrl)}">View the published post</a></p>`
+            : `<p><strong>Reason:</strong> ${escapeHtml(rejectionReason)}</p>`}
+    `;
+}
+
+async function notifyReviewOutcome({
+    req,
+    content,
+    accountUser = null,
+    contentLabel,
+    action,
+    publicUrl
+}) {
+    try {
+        const to = getSubmissionRecipient(content, accountUser);
+
+        if (!to) {
+            console.warn(
+                'Could not send review outcome email: no recipient',
+                content?._id
+            );
+            return;
+        }
+
+        const isPublished = action === 'publish';
+
+        await sendMail({
+            to,
+            subject: isPublished
+                ? `${contentLabel} approved`
+                : `${contentLabel} not approved`,
+            html: renderReviewOutcomeEmail({
+                accountName: getSubmissionRecipientName(content, accountUser),
+                contentLabel,
+                action,
+                publicUrl,
+                rejectionReason: content.rejectionReason
+            })
+        });
+    } catch (error) {
+        console.error('Could not send review outcome email:', error);
+    }
+}
 
 function isValidEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
@@ -641,6 +757,15 @@ router.patch(
                 'author',
                 'username accountName firstName lastName email role'
             );
+
+            await notifyReviewOutcome({
+                req,
+                content: comment,
+                contentLabel: 'retirement comment',
+                action,
+                publicUrl:
+                    `${getBaseUrl(req)}/retirement-message.html?id=${encodeURIComponent(String(comment.retirementMessage))}#comments`
+            });
 
             await comment.populate(
                 'reviewedBy',
@@ -1464,6 +1589,21 @@ router.patch(
                     }
                 });
             }
+
+            await retirementMessage.populate(
+                'createdBy',
+                'accountName firstName email'
+            );
+
+            await notifyReviewOutcome({
+                req,
+                content: retirementMessage,
+                contentLabel:
+                    `retirement message for ${getRetireeName(retirementMessage)}`,
+                action,
+                publicUrl:
+                    `${getBaseUrl(req)}/retirement-message.html?id=${encodeURIComponent(String(retirementMessage._id))}`
+            });
 
             await retirementMessage.populate(
                 'reviewedBy',

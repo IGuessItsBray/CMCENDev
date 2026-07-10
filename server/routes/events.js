@@ -124,6 +124,19 @@ function renderEventPublishedEmail({
     `;
 }
 
+function renderEventRejectedEmail({
+    accountName,
+    event,
+    rejectionReason
+}) {
+    return `
+        <p>Hello ${escapeHtml(accountName)},</p>
+        <p>Your event submission was not approved for publication on CMCEN / RCMCE.</p>
+        <p><strong>${escapeHtml(getEventTitle(event))}</strong></p>
+        <p><strong>Reason:</strong> ${escapeHtml(rejectionReason)}</p>
+    `;
+}
+
 async function notifyEventPublished(event, req, options = {}) {
     try {
         const {
@@ -169,6 +182,46 @@ async function notifyEventPublished(event, req, options = {}) {
     } catch (error) {
         console.error(
             'Could not send event publication email:',
+            error
+        );
+    }
+}
+
+async function notifyEventRejected(event, options = {}) {
+    try {
+        const {
+            accountUser = null
+        } = options;
+
+        if (!accountUser && !event?.createdBy?.email && event?.populate) {
+            await event.populate(
+                'createdBy',
+                'username accountName firstName email'
+            );
+        }
+
+        const to = getEventAccountHolderEmail(event, accountUser);
+
+        if (!to) {
+            console.warn(
+                'Could not send event rejection email: no recipient',
+                event?._id
+            );
+            return;
+        }
+
+        await sendMail({
+            to,
+            subject: `Event not approved: ${getEventTitle(event)}`,
+            html: renderEventRejectedEmail({
+                accountName: getEventAccountHolderName(event, accountUser),
+                event,
+                rejectionReason: event.rejectionReason
+            })
+        });
+    } catch (error) {
+        console.error(
+            'Could not send event rejection email:',
             error
         );
     }
@@ -1502,6 +1555,8 @@ router.patch(
                         rejectionReason: event.rejectionReason
                     }
                 });
+
+                await notifyEventRejected(event);
             }
 
             await event.populate(

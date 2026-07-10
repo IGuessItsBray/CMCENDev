@@ -17,6 +17,7 @@ const {
     getUserPermissions
 } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
+const { sendMail } = require('../services/mailer');
 const {
     getEventSnapshot
 } = require('../services/content-snapshots');
@@ -28,6 +29,150 @@ const {
 } = require('../services/content-utils');
 
 const router = express.Router();
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/gu, '&amp;')
+        .replace(/</gu, '&lt;')
+        .replace(/>/gu, '&gt;')
+        .replace(/"/gu, '&quot;')
+        .replace(/'/gu, '&#39;');
+}
+
+function getBaseUrl(req) {
+    const configuredBaseUrl =
+        String(process.env.APP_BASE_URL || '').trim();
+
+    if (configuredBaseUrl) {
+        return configuredBaseUrl.replace(/\/+$/u, '');
+    }
+
+    return `${req.protocol}://${req.get('host')}`;
+}
+
+function getLocalizedValue(value) {
+    return (
+        value?.en ||
+        value?.fr ||
+        ''
+    );
+}
+
+function getEventTitle(event) {
+    return (
+        getLocalizedValue(event?.title) ||
+        'Untitled event'
+    );
+}
+
+function formatEventDate(value) {
+    const date = value instanceof Date
+        ? value
+        : new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return new Intl.DateTimeFormat('en-CA', {
+        dateStyle: 'long',
+        timeZone: 'UTC'
+    }).format(date);
+}
+
+function getEventAccountHolderEmail(event, accountUser) {
+    if (accountUser?.email) {
+        return String(accountUser.email).trim().toLowerCase();
+    }
+
+    if (event?.createdBy?.email) {
+        return String(event.createdBy.email).trim().toLowerCase();
+    }
+
+    return String(event?.submitter?.email || '').trim().toLowerCase();
+}
+
+function getEventAccountHolderName(event, accountUser) {
+    return (
+        accountUser?.accountName ||
+        accountUser?.firstName ||
+        event?.createdBy?.accountName ||
+        event?.createdBy?.username ||
+        event?.submitter?.firstName ||
+        'there'
+    );
+}
+
+function renderEventPublishedEmail({
+    accountName,
+    event,
+    eventUrl
+}) {
+    const title = getEventTitle(event);
+    const startDate = formatEventDate(event.startDate);
+    const city = String(event.city || '').trim();
+    const location = getLocalizedValue(event.location);
+
+    return `
+        <p>Hello ${escapeHtml(accountName)},</p>
+        <p>Your event submission has been approved and published on CMCEN / RCMCE.</p>
+        <p><strong>${escapeHtml(title)}</strong></p>
+        ${startDate ? `<p><strong>Date:</strong> ${escapeHtml(startDate)}</p>` : ''}
+        ${city ? `<p><strong>City:</strong> ${escapeHtml(city)}</p>` : ''}
+        ${location ? `<p><strong>Location:</strong> ${escapeHtml(location)}</p>` : ''}
+        <p><a href="${escapeHtml(eventUrl)}">View the published event</a></p>
+    `;
+}
+
+async function notifyEventPublished(event, req, options = {}) {
+    try {
+        const {
+            accountUser = null
+        } = options;
+
+        if (!accountUser && !event?.createdBy?.email && event?.populate) {
+            await event.populate(
+                'createdBy',
+                'username accountName firstName email'
+            );
+        }
+
+        const to = getEventAccountHolderEmail(
+            event,
+            accountUser
+        );
+
+        if (!to) {
+            console.warn(
+                'Could not send event publication email: no recipient',
+                event?._id
+            );
+            return;
+        }
+
+        const eventUrl =
+            `${getBaseUrl(req)}/event.html?id=${encodeURIComponent(String(event._id))}`;
+        const title = getEventTitle(event);
+
+        await sendMail({
+            to,
+            subject: `Event published: ${title}`,
+            html: renderEventPublishedEmail({
+                accountName: getEventAccountHolderName(
+                    event,
+                    accountUser
+                ),
+                event,
+                eventUrl
+            })
+        });
+    } catch (error) {
+        console.error(
+            'Could not send event publication email:',
+            error
+        );
+    }
+}
 
 function cleanSubmitter(submitter = {}) {
     return {
@@ -309,7 +454,7 @@ router.get('/', async (req, res) => {
 router.post(
     '/',
     authMiddleware,
-    requireMinimumRole('contributor'),
+    requirePermission('canCreateDrafts'),
     async (req, res) => {
         try {
             const {
@@ -711,6 +856,12 @@ router.post(
                     targetSnapshot: getEventSnapshot(event),
                     metadata: { source: 'create' }
                 });
+
+                await notifyEventPublished(
+                    event,
+                    req,
+                    { accountUser: req.user }
+                );
             }
 
             return res.status(201).json({
@@ -1218,6 +1369,16 @@ router.patch(
                     targetSnapshot: getEventSnapshot(event),
                     metadata: { source: 'update' }
                 });
+
+                await notifyEventPublished(
+                    event,
+                    req,
+                    {
+                        accountUser: isOwner
+                            ? req.user
+                            : null
+                    }
+                );
             }
 
             return res.json({
@@ -1324,6 +1485,8 @@ router.patch(
                     targetSnapshot: getEventSnapshot(event),
                     metadata: { source: 'review' }
                 });
+
+                await notifyEventPublished(event, req);
             }
 
             if (action === 'reject') {

@@ -2980,6 +2980,10 @@ a.dropdown-toggle {
   width: min(100%, 1120px);
 }
 
+.admin-work-zone-dashboard-shell {
+  overflow: visible;
+}
+
 .dashboard-heading {
   min-height: 126px;
   padding: 25px 32px;
@@ -4211,6 +4215,9 @@ a.dropdown-toggle {
   display: grid;
   gap: 8px;
   width: 100%;
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  align-self: start;
   padding: 10px;
   border: 1px solid var(--branch-grey-200);
   background: var(--white);
@@ -10047,6 +10054,8 @@ a.dropdown-toggle {
     position: static;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     width: auto;
+    max-height: none;
+    overflow: visible;
     margin-inline: 12px;
     box-shadow: none;
   }

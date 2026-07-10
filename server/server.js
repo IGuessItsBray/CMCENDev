@@ -42,6 +42,48 @@ app.use('/api/retirement-messages', retirementMessageRoutes);
 app.use('/api/search', searchRoutes);
 app.use(pageRoutes);
 
+const publicDirectory = path.join(__dirname, 'public');
+
+function wantsHtmlResponse(req) {
+  return !req.path.startsWith('/api/') && Boolean(req.accepts('html'));
+}
+
+function sendErrorPage(res, statusCode) {
+  const page = [401, 403, 404].includes(statusCode)
+    ? `${statusCode}.html`
+    : '500.html';
+
+  res.status(statusCode).sendFile(path.join(publicDirectory, page));
+}
+
+app.use((req, res) => {
+  if (wantsHtmlResponse(req)) {
+    return sendErrorPage(res, 404);
+  }
+
+  return res.status(404).json({ error: 'Endpoint not found' });
+});
+
+app.use((error, req, res, next) => {
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  const statusCode = Number.isInteger(error.status) && error.status >= 400 && error.status < 600
+    ? error.status
+    : 500;
+
+  console.error('Unhandled request error:', error);
+
+  if (wantsHtmlResponse(req)) {
+    return sendErrorPage(res, statusCode);
+  }
+
+  return res.status(statusCode).json({
+    error: statusCode >= 500 ? 'Internal server error' : 'Request failed'
+  });
+});
+
 // wait for MongoDB before listening
 async function startServer() {
   try {

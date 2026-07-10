@@ -1,5 +1,6 @@
 const retirementSubmitForm = document.getElementById("retirementSubmitForm");
 const retirementFormMessage = document.getElementById("retirementFormMessage");
+const retirementPageLoading = document.getElementById("retirementPageLoading");
 const retirementSubmitButton = document.getElementById("retirementSubmitButton");
 const retirementSubmitButtonLabel =
     retirementSubmitButton.querySelector("span");
@@ -314,6 +315,8 @@ async function verifyRetirementAccess() {
         retirementSubmitForm.hidden = false;
     } catch (error) {
         showRetirementFormMessage(error.message || translate("retirement_permission_error"));
+    } finally {
+        retirementPageLoading.hidden = true;
     }
 }
 
@@ -413,11 +416,6 @@ function populateRetirementForm(retirementMessage) {
 
 async function loadRetirementMessageForEditing() {
     retirementSubmitForm.hidden = true;
-
-    showRetirementFormMessage(
-        translate("retirement_edit_loading"),
-        "info"
-    );
 
     const data = await retirementApiJson(
         `/api/retirement-messages/${encodeURIComponent(editingRetirementMessageId)}/edit`,

@@ -2162,6 +2162,10 @@ a.dropdown-toggle {
   gap: 20px;
 }
 
+.login-secondary-form[hidden] {
+  display: none;
+}
+
 .login-field {
   display: flex;
   flex-direction: column;
@@ -2286,6 +2290,30 @@ a.dropdown-toggle {
   text-align: center;
 }
 
+.login-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 16px;
+  margin-top: -6px;
+}
+
+.login-text-button {
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: var(--navy-800);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-decoration: underline;
+  text-decoration-color: var(--gold-500);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .login-assistance a,
 .login-register a {
   color: var(--navy-800);
@@ -2296,6 +2324,8 @@ a.dropdown-toggle {
 
 .login-assistance a:hover,
 .login-assistance a:focus-visible,
+.login-text-button:hover,
+.login-text-button:focus-visible,
 .login-register a:hover,
 .login-register a:focus-visible {
   color: var(--gold-700);
@@ -3667,6 +3697,19 @@ a.dropdown-toggle {
   border-color: #b42318;
   background: #b42318;
   color: var(--white);
+}
+
+.admin-user-role-badge.verification-verified {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: var(--white);
+}
+
+.admin-user-role-badge.account-ghost,
+.dashboard-role-badge.role-ghost {
+  border-color: #9ca3af;
+  background: #e5e7eb;
+  color: #374151;
 }
 
 .admin-user-post-count {
@@ -9161,6 +9204,10 @@ a.dropdown-toggle {
   .login-panel {
     padding: 38px 34px;
   }
+
+  .login-secondary-actions {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 520px) {
@@ -10414,6 +10461,18 @@ html[data-theme="dark"] main :is(.dashboard-profile-button.is-secondary,
   color: var(--dark-text);
 }
 
+html[data-theme="dark"] .login-text-button {
+  border-color: transparent;
+  background: transparent;
+  color: var(--gold-200);
+  text-decoration-color: var(--gold-500);
+}
+
+html[data-theme="dark"] .login-text-button:hover,
+html[data-theme="dark"] .login-text-button:focus-visible {
+  color: var(--gold-500);
+}
+
 html[data-theme="dark"] main :is(.dashboard-status,
   .event-form-message,
   .event-page-message,
@@ -11515,6 +11574,19 @@ html[data-theme="dark"] .dashboard-role-badge.role-developer {
   border-color: #ef4444;
   background: #b42318;
   color: #fff7f5;
+}
+
+html[data-theme="dark"] .admin-user-role-badge.verification-verified {
+  border-color: #14b8a6;
+  background: #0f766e;
+  color: #ecfeff;
+}
+
+html[data-theme="dark"] .admin-user-role-badge.account-ghost,
+html[data-theme="dark"] .dashboard-role-badge.role-ghost {
+  border-color: #9ca3af;
+  background: #374151;
+  color: #f3f4f6;
 }
 
 html[data-theme="dark"] .admin-content-area-option,

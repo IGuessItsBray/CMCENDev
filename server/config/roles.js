@@ -1,5 +1,6 @@
 // shared role configuration to prevent middleware and model from maintaining separate, potentially contradictory lists.
 const USER_ROLES = Object.freeze([
+  'ghost',
   'subscriber',
   'contributor',
   'author',
@@ -9,6 +10,7 @@ const USER_ROLES = Object.freeze([
 ]);
 
 const ROLE_LEVELS = Object.freeze({
+  ghost: -1,
   subscriber: 0,
   contributor: 1,
   author: 2,

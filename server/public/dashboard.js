@@ -45,6 +45,7 @@ function showDashboardLoading() {
 function getRoleKey(role) {
   const knownRoles = [
     "subscriber",
+    "ghost",
     "contributor",
     "author",
     "editor",
@@ -326,6 +327,152 @@ function syncProfileTradeOtherVisibility(form) {
       tradeOther.value = "";
     }
   }
+}
+
+function createGhostUpgradeForm(user) {
+  const form = document.createElement("form");
+  form.className = "dashboard-profile-form";
+
+  const message = createProfileMessage();
+  const grid = document.createElement("div");
+  grid.className = "dashboard-profile-grid";
+
+  grid.append(
+    createProfileField({
+      name: "firstName",
+      labelKey: "first_name",
+      value: user.firstName,
+      autocomplete: "given-name",
+      required: true
+    }),
+    createProfileField({
+      name: "lastName",
+      labelKey: "last_name",
+      autocomplete: "family-name",
+      required: true
+    }),
+    createProfileField({
+      name: "addressLine1",
+      labelKey: "address_line_1",
+      autocomplete: "address-line1",
+      required: true,
+      wide: true
+    }),
+    createProfileField({
+      name: "city",
+      labelKey: "city",
+      autocomplete: "address-level2",
+      required: true
+    }),
+    createProfileField({
+      name: "country",
+      labelKey: "country",
+      autocomplete: "country-name",
+      required: true
+    }),
+    createProfileField({
+      name: "stateProvince",
+      labelKey: "state_province",
+      autocomplete: "address-level1",
+      required: true
+    }),
+    createProfileField({
+      name: "postalCode",
+      labelKey: "postal_code",
+      autocomplete: "postal-code",
+      required: true
+    }),
+    createProfileSelect({
+      name: "status",
+      labelKey: "status",
+      options: profileSelectOptions.status,
+      optionPrefix: "status",
+      required: true
+    }),
+    createProfileSelect({
+      name: "affiliationElement",
+      labelKey: "affiliation_element",
+      options: profileSelectOptions.affiliationElement,
+      optionPrefix: "element",
+      required: true
+    }),
+    createProfileSelect({
+      name: "preferredLanguage",
+      labelKey: "preferred_language",
+      value: CMCENUtils.getCurrentLanguage(),
+      options: profileSelectOptions.preferredLanguage,
+      optionPrefix: "language",
+      required: true
+    })
+  );
+
+  ["password", "passwordConfirmation"].forEach(name => {
+    const field = createProfileField({
+      name,
+      labelKey: name === "password" ? "password" : "password_confirmation",
+      required: true
+    });
+    const input = field.querySelector("input");
+    input.type = "password";
+    input.autocomplete = "new-password";
+    grid.append(field);
+  });
+
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.className = "dashboard-profile-button is-primary";
+  submit.textContent = translate("dashboard_upgrade_account");
+
+  form.append(message, grid, submit);
+  form.querySelectorAll("input").forEach(input => {
+    input.readOnly = false;
+  });
+  form.querySelectorAll("select").forEach(select => {
+    select.disabled = false;
+  });
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (!form.reportValidity()) {
+      return;
+    }
+
+    const payload = {};
+    form.querySelectorAll("[data-profile-field]").forEach(field => {
+      payload[field.dataset.profileField] = field.value;
+    });
+
+    submit.disabled = true;
+    setProfileMessage(message, translate("dashboard_profile_saving"), "info");
+
+    try {
+      const response = await fetch("/api/ghost/upgrade", {
+        method: "POST",
+        headers: CMCENUtils.authHeaders(token, {
+          "Content-Type": "application/json"
+        }),
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || translate("dashboard_upgrade_error"));
+      }
+
+      CMCENUtils.storeAuthToken(data.token);
+      window.location.reload();
+    } catch (error) {
+      setProfileMessage(
+        message,
+        error.message || translate("dashboard_upgrade_error"),
+        "error"
+      );
+      submit.disabled = false;
+    }
+  });
+
+  return form;
 }
 
 function createProfileForm(user) {
@@ -640,7 +787,7 @@ function renderDashboard(user) {
   //     .join(" ") ||
   //   user.username ||
   //   "";
-  const displayName = user.firstName;
+  const displayName = user.firstName || user.email || "";
 
   dashboardTitle.textContent =
     translate("dashboard_welcome", {
@@ -654,84 +801,99 @@ function renderDashboard(user) {
   dashboardRoleDescription.textContent = translate(`role_description_${role}`);
   dashboardRoleSummary.hidden = false;
 
+  const isGhost = user.accountType === "ghost" || user.role === "ghost";
+  document
+    .querySelector(".dashboard-mfa-section")
+    ?.toggleAttribute("hidden", isGhost);
+
   dashboardDetails.replaceChildren(
-    createProfileForm(user)
+    isGhost
+      ? createGhostUpgradeForm(user)
+      : createProfileForm(user)
   );
 
   const actions = [];
   const notificationCount = user.notifications?.count || 0;
 
-  if (notificationCount > 0) {
-    actions.push({
-      href: user.notifications?.href || "/notifications.html",
-      titleKey: "dashboard_action_notifications",
-      descriptionKey: "dashboard_action_notifications_description",
-      count: notificationCount,
-      variant: "notification"
-    });
-  }
-
-  if (user.permissions?.canSubmitRetirementMessages === true) {
-    actions.push({
-      href: "/submit-retirement.html",
-      titleKey: "dashboard_action_submit_retirement",
-      descriptionKey: "dashboard_action_submit_retirement_description"
-    });
-  }
-
-  if (user.permissions?.canCreateDrafts === true) {
+  if (isGhost) {
     actions.push({
       href: "/submit-event.html",
-      titleKey: "dashboard_action_submit_event",
-      descriptionKey: "dashboard_action_submit_event_description"
+      titleKey: "dashboard_action_my_submissions",
+      descriptionKey: "dashboard_action_my_submissions_description"
     });
-  }
+  } else {
+    if (notificationCount > 0) {
+      actions.push({
+        href: user.notifications?.href || "/notifications.html",
+        titleKey: "dashboard_action_notifications",
+        descriptionKey: "dashboard_action_notifications_description",
+        count: notificationCount,
+        variant: "notification"
+      });
+    }
 
-  if (user.permissions?.canReviewAndPublish === true) {
-    actions.push({
-      href: "/review-submissions.html",
-      titleKey: "dashboard_action_review_events",
-      descriptionKey: "dashboard_action_review_events_description"
-    });
-  }
+    if (user.permissions?.canSubmitRetirementMessages === true) {
+      actions.push({
+        href: "/submit-retirement.html",
+        titleKey: "dashboard_action_submit_retirement",
+        descriptionKey: "dashboard_action_submit_retirement_description"
+      });
+    }
 
-  const hasAdminWorkZoneAccess = [
-    "canReadUsers",
-    "canManageUsers",
-    "canManageRoles",
-    "canManagePages",
-    "canViewMediaLibrary",
-    "canViewAuditLog",
-    "canAccessSiteConfig"
-  ].some(permission => user.permissions?.[permission] === true);
+    if (user.permissions?.canCreateDrafts === true) {
+      actions.push({
+        href: "/submit-event.html",
+        titleKey: "dashboard_action_submit_event",
+        descriptionKey: "dashboard_action_submit_event_description"
+      });
+    }
 
-  if (
-    user.permissions?.canManageTranslations === true &&
-    !hasAdminWorkZoneAccess
-  ) {
-    actions.push({
-      href: "/translations-admin.html",
-      titleKey: "dashboard_action_manage_translations",
-      descriptionKey: "dashboard_action_manage_translations_description"
-    });
-  }
+    if (user.permissions?.canReviewAndPublish === true) {
+      actions.push({
+        href: "/review-submissions.html",
+        titleKey: "dashboard_action_review_events",
+        descriptionKey: "dashboard_action_review_events_description"
+      });
+    }
 
-  if (hasAdminWorkZoneAccess) {
-    actions.push({
-      href: user.permissions?.canReadUsers === true || user.permissions?.canManageUsers === true
-        ? "/admin-users.html"
-        : user.permissions?.canManageRoles === true
-          ? "/admin-users.html?view=roles"
-          : user.permissions?.canManagePages === true
-            ? "/pages-admin.html"
-            : user.permissions?.canViewMediaLibrary === true
-              ? "/admin-users.html?view=media"
-              : user.permissions?.canViewAuditLog === true
-                ? "/audit-log.html"
-                : "/site-config.html",
-      titleKey: "dashboard_action_admin_work_zone",
-      descriptionKey: "dashboard_action_admin_work_zone_description"
-    });
+    const hasAdminWorkZoneAccess = [
+      "canReadUsers",
+      "canManageUsers",
+      "canManageRoles",
+      "canManagePages",
+      "canViewMediaLibrary",
+      "canViewAuditLog",
+      "canAccessSiteConfig"
+    ].some(permission => user.permissions?.[permission] === true);
+
+    if (
+      user.permissions?.canManageTranslations === true &&
+      !hasAdminWorkZoneAccess
+    ) {
+      actions.push({
+        href: "/translations-admin.html",
+        titleKey: "dashboard_action_manage_translations",
+        descriptionKey: "dashboard_action_manage_translations_description"
+      });
+    }
+
+    if (hasAdminWorkZoneAccess) {
+      actions.push({
+        href: user.permissions?.canReadUsers === true || user.permissions?.canManageUsers === true
+          ? "/admin-users.html"
+          : user.permissions?.canManageRoles === true
+            ? "/admin-users.html?view=roles"
+            : user.permissions?.canManagePages === true
+              ? "/pages-admin.html"
+              : user.permissions?.canViewMediaLibrary === true
+                ? "/admin-users.html?view=media"
+                : user.permissions?.canViewAuditLog === true
+                  ? "/audit-log.html"
+                  : "/site-config.html",
+        titleKey: "dashboard_action_admin_work_zone",
+        descriptionKey: "dashboard_action_admin_work_zone_description"
+      });
+    }
   }
 
   dashboardActions.replaceChildren(

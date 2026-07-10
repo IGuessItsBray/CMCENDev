@@ -430,6 +430,12 @@ function toAdminUser(user, postSummary = null) {
     firstName: plainUser.firstName,
     lastName: plainUser.lastName,
     role: plainUser.role,
+    accountType: plainUser.accountType || 'member',
+    emailVerification: {
+      required: plainUser.emailVerification?.required === true,
+      verified: plainUser.emailVerification?.verified === true,
+      verifiedAt: plainUser.emailVerification?.verifiedAt || null
+    },
     customRoles,
     customRoleIds: customRoles.map(role =>
       typeof role === 'object' ? String(role._id) : String(role)
@@ -807,7 +813,7 @@ router.get(
         : {};
 
       const users = await User.find(filter)
-        .select('username email accountName firstName lastName role customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
         .sort({ accountName: 1, username: 1 })
         .populate('customRoles', 'name slug color permissions');
       const summaries = await Promise.all(
@@ -841,7 +847,7 @@ router.get(
       const { userId } = req.params;
 
       const user = await User.findById(userId)
-        .select('username email accountName firstName lastName role customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
@@ -1040,7 +1046,7 @@ router.patch(
           runValidators: true
         }
       )
-        .select('username email accountName firstName lastName role customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
@@ -1175,7 +1181,7 @@ router.patch(
         { $set: { role } },
         { new: true }
       )
-        .select('username email accountName firstName lastName role customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
@@ -1228,7 +1234,7 @@ router.patch(
       }
 
       const previousUser = await User.findById(userId)
-        .select('role username email accountName firstName lastName customRoles contentAreas createdAt updatedAt');
+        .select('role accountType username email accountName firstName lastName customRoles contentAreas createdAt updatedAt');
 
       if (!previousUser) {
         return res.status(404).json({ error: 'User not found' });
@@ -1242,7 +1248,7 @@ router.patch(
           runValidators: true
         }
       )
-        .select('username email accountName firstName lastName role customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {

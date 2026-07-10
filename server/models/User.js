@@ -19,6 +19,12 @@ function formatAccountName(value) {
 }
 
 const UserSchema = new mongoose.Schema({
+  accountType: {
+    type: String,
+    enum: ['member', 'ghost'],
+    default: 'member'
+  },
+
   username: {
     type: String,
     required: true,
@@ -42,7 +48,9 @@ const UserSchema = new mongoose.Schema({
 
   accountName: {
     type: String,
-    required: true,
+    required() {
+      return this.accountType !== 'ghost';
+    },
     trim: true,
     set: formatAccountName,
     get: formatAccountName
@@ -50,7 +58,9 @@ const UserSchema = new mongoose.Schema({
 
   firstName: {
     type: String,
-    required: true,
+    required() {
+      return this.accountType !== 'ghost';
+    },
     trim: true,
     set: capitalizeFirstLetter,
     get: capitalizeFirstLetter,
@@ -59,7 +69,9 @@ const UserSchema = new mongoose.Schema({
 
   lastName: {
     type: String,
-    required: true,
+    required() {
+      return this.accountType !== 'ghost';
+    },
     trim: true,
     set: capitalizeFirstLetter,
     get: capitalizeFirstLetter,
@@ -69,7 +81,9 @@ const UserSchema = new mongoose.Schema({
   address: {
     line1: {
       type: String,
-      required: true,
+      required() {
+        return this.ownerDocument().accountType !== 'ghost';
+      },
       trim: true,
       maxlength: 160
     },
@@ -83,28 +97,36 @@ const UserSchema = new mongoose.Schema({
 
     city: {
       type: String,
-      required: true,
+      required() {
+        return this.ownerDocument().accountType !== 'ghost';
+      },
       trim: true,
       maxlength: 100
     },
 
     country: {
       type: String,
-      required: true,
+      required() {
+        return this.ownerDocument().accountType !== 'ghost';
+      },
       trim: true,
       maxlength: 100
     },
 
     stateProvince: {
       type: String,
-      required: true,
+      required() {
+        return this.ownerDocument().accountType !== 'ghost';
+      },
       trim: true,
       maxlength: 100
     },
 
     postalCode: {
       type: String,
-      required: true,
+      required() {
+        return this.ownerDocument().accountType !== 'ghost';
+      },
       trim: true,
       maxlength: 40
     }
@@ -142,7 +164,9 @@ const UserSchema = new mongoose.Schema({
       'released',
       'other'
     ],
-    required: true
+    required() {
+      return this.accountType !== 'ghost';
+    }
   },
 
   affiliationElement: {
@@ -153,7 +177,9 @@ const UserSchema = new mongoose.Schema({
       'air_force',
       'other'
     ],
-    required: true
+    required() {
+      return this.accountType !== 'ghost';
+    }
   },
 
   trade: {
@@ -236,6 +262,21 @@ const UserSchema = new mongoose.Schema({
   twoFactor: {
     tempToken: { type: String, default: '' },
     tempExpires: { type: Date, default: null }
+  },
+
+  emailVerification: {
+    required: { type: Boolean, default: false },
+    verified: { type: Boolean, default: false },
+    verifiedAt: { type: Date, default: null },
+    codeHash: { type: String, default: '', select: false },
+    codeExpiresAt: { type: Date, default: null, select: false },
+    tempTokenHash: { type: String, default: '', select: false },
+    tempTokenExpiresAt: { type: Date, default: null, select: false }
+  },
+
+  passwordReset: {
+    tokenHash: { type: String, default: '', select: false },
+    expiresAt: { type: Date, default: null, select: false }
   }
 }, {
   timestamps: true,

@@ -488,6 +488,57 @@
 
           <section
             class="register-mfa"
+            id="registerEmailVerification"
+            aria-labelledby="registerEmailVerificationTitle"
+            hidden
+          >
+            <div class="register-mfa-heading">
+              <p class="register-eyebrow">
+                Email verification
+              </p>
+
+              <h2 id="registerEmailVerificationTitle">
+                Check your email
+              </h2>
+            </div>
+
+            <p class="register-mfa-copy">
+              Enter the six-digit code we sent to your email address.
+            </p>
+
+            <p
+              class="register-error"
+              id="registerEmailVerificationError"
+              role="alert"
+              aria-live="polite"
+              hidden
+            ></p>
+
+            <div class="mfa-verification-row">
+              <label class="mfa-field">
+                <span>Email verification code</span>
+
+                <input
+                  id="registerEmailVerificationCode"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  placeholder="000000"
+                  maxlength="6"
+                />
+              </label>
+
+              <button
+                class="mfa-button mfa-button-primary"
+                id="registerEmailVerificationVerify"
+                type="button"
+              >
+                Verify
+              </button>
+            </div>
+          </section>
+
+          <section
+            class="register-mfa"
             id="registerMfa"
             aria-labelledby="registerMfaTitle"
             hidden

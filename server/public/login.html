@@ -72,6 +72,16 @@
               data-i18n-placeholder="password_placeholder" placeholder="Enter your password" required />
           </div>
 
+          <div class="login-secondary-actions">
+            <button type="button" class="login-text-button" id="forgotPasswordLink" data-i18n="forgot_password">
+              Forgot your password?
+            </button>
+
+            <button type="button" class="login-text-button" id="guestAccessLink">
+              Continue as guest
+            </button>
+          </div>
+
           <button type="submit" class="login-submit" id="loginBtn" data-i18n="login_btn">
             Sign in
           </button>
@@ -97,6 +107,114 @@
               Register
             </a>
           </p>
+        </form>
+
+        <form class="login-form login-secondary-form" id="forgotPasswordForm" hidden>
+          <p class="login-error" id="forgotPasswordMessage" role="alert" aria-live="polite" hidden></p>
+
+          <div class="login-field">
+            <label for="resetEmail" data-i18n="email">
+              Email
+            </label>
+
+            <input type="email" id="resetEmail" name="email" autocomplete="email"
+              data-i18n-placeholder="email_placeholder" placeholder="Enter your email" required />
+          </div>
+
+          <button type="submit" class="login-submit" id="forgotPasswordBtn" data-i18n="send_reset_link">
+            Send reset link
+          </button>
+
+          <button type="button" class="login-text-button" id="forgotPasswordBack" data-i18n="back_to_sign_in">
+            Back to sign in
+          </button>
+        </form>
+
+        <form class="login-form login-secondary-form" id="resetPasswordForm" hidden>
+          <p class="login-error" id="resetPasswordMessage" role="alert" aria-live="polite" hidden></p>
+
+          <div class="login-field">
+            <label for="newPassword" data-i18n="password">
+              Password
+            </label>
+
+            <input type="password" id="newPassword" name="password" autocomplete="new-password"
+              data-i18n-placeholder="password_create_placeholder" placeholder="Create a password" required />
+          </div>
+
+          <div class="login-field">
+            <label for="newPasswordConfirmation" data-i18n="password_confirmation">
+              Password confirmation
+            </label>
+
+            <input type="password" id="newPasswordConfirmation" name="passwordConfirmation" autocomplete="new-password"
+              data-i18n-placeholder="password_confirm_placeholder" placeholder="Confirm your password" required />
+          </div>
+
+          <button type="submit" class="login-submit" id="resetPasswordBtn" data-i18n="reset_password_btn">
+            Reset password
+          </button>
+
+          <button type="button" class="login-text-button" id="resetPasswordBack" data-i18n="back_to_sign_in">
+            Back to sign in
+          </button>
+        </form>
+
+        <form class="login-form login-secondary-form" id="emailVerificationForm" hidden>
+          <p class="login-error" id="emailVerificationMessage" role="alert" aria-live="polite" hidden></p>
+
+          <div class="login-field">
+            <label for="emailVerificationCode">
+              Email verification code
+            </label>
+
+            <input id="emailVerificationCode" name="emailVerificationCode" inputmode="numeric"
+              autocomplete="one-time-code" placeholder="000000" maxlength="6" required />
+          </div>
+
+          <button type="submit" class="login-submit" id="emailVerificationBtn">
+            Verify email
+          </button>
+
+          <button type="button" class="login-text-button" id="emailVerificationBack" data-i18n="back_to_sign_in">
+            Back to sign in
+          </button>
+        </form>
+
+        <form class="login-form login-secondary-form" id="guestAccessForm" hidden>
+          <p class="login-error" id="guestAccessMessage" role="alert" aria-live="polite" hidden></p>
+
+          <div class="login-field" id="guestEmailField">
+            <label for="guestEmail" data-i18n="email">
+              Email
+            </label>
+
+            <input type="email" id="guestEmail" autocomplete="email" placeholder="Enter your email" required />
+          </div>
+
+          <div class="login-field" id="guestFirstNameField" hidden>
+            <label for="guestFirstName" data-i18n="first_name">
+              First name
+            </label>
+
+            <input type="text" id="guestFirstName" autocomplete="given-name" placeholder="First name" />
+          </div>
+
+          <div class="login-field" id="guestCodeField" hidden>
+            <label for="guestCode">
+              Guest access code
+            </label>
+
+            <input id="guestCode" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="6" />
+          </div>
+
+          <button type="submit" class="login-submit" id="guestAccessBtn">
+            Send code
+          </button>
+
+          <button type="button" class="login-text-button" id="guestAccessBack" data-i18n="back_to_sign_in">
+            Back to sign in
+          </button>
         </form>
       </div>
     </section>

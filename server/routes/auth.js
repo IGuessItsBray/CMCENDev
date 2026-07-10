@@ -13,11 +13,12 @@ const {
 } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
+const { sendMail } = require('../services/mailer');
 
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt';
+  'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -75,6 +76,12 @@ const VALID_AFFILIATION_ELEMENTS = new Set([
 ]);
 
 const VALID_PREFERRED_LANGUAGES = new Set(['en', 'fr']);
+const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const PASSWORD_RESET_GENERIC_MESSAGE =
+  'If an account exists for that email address, a password reset link has been sent.';
+const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
+const EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS = 30 * 60 * 1000;
+const GHOST_PASSWORD_BYTES = 32;
 
 function hasOwnValue(source, key) {
   return Object.prototype.hasOwnProperty.call(source, key);
@@ -82,6 +89,126 @@ function hasOwnValue(source, key) {
 
 function cleanProfileString(value) {
   return String(value || '').trim();
+}
+
+function hashPasswordResetToken(token) {
+  return crypto
+    .createHash('sha256')
+    .update(String(token || ''))
+    .digest('hex');
+}
+
+function hashToken(token) {
+  return crypto
+    .createHash('sha256')
+    .update(String(token || ''))
+    .digest('hex');
+}
+
+function generateEmailVerificationCode() {
+  return String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+}
+
+function getBaseUrl(req) {
+  const configuredBaseUrl = String(process.env.APP_BASE_URL || '').trim();
+
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/+$/u, '');
+  }
+
+  return `${req.protocol}://${req.get('host')}`;
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/gu, '&amp;')
+    .replace(/</gu, '&lt;')
+    .replace(/>/gu, '&gt;')
+    .replace(/"/gu, '&quot;')
+    .replace(/'/gu, '&#39;');
+}
+
+function renderPasswordResetEmail({ resetUrl, accountName }) {
+  const cleanName = escapeHtml(String(accountName || 'there').trim());
+  const cleanResetUrl = escapeHtml(resetUrl);
+
+  return `
+    <p>Hello ${cleanName},</p>
+    <p>We received a request to reset the password for your CMCEN / RCMCE account.</p>
+    <p><a href="${cleanResetUrl}">Reset your password</a></p>
+    <p>This link expires in 60 minutes. If you did not request a password reset, you can ignore this email.</p>
+  `;
+}
+
+function renderEmailVerificationEmail({ code, accountName }) {
+  const cleanName = escapeHtml(String(accountName || 'there').trim());
+  const cleanCode = escapeHtml(code);
+
+  return `
+    <p>Hello ${cleanName},</p>
+    <p>Use this code to verify your CMCEN / RCMCE account email address:</p>
+    <p><strong style="font-size: 24px; letter-spacing: 0.18em;">${cleanCode}</strong></p>
+    <p>This code expires in 15 minutes.</p>
+  `;
+}
+
+async function prepareEmailVerification(user) {
+  const code = generateEmailVerificationCode();
+  const tempToken = crypto.randomBytes(32).toString('hex');
+
+  user.emailVerification.required = true;
+  user.emailVerification.verified = false;
+  user.emailVerification.verifiedAt = null;
+  user.emailVerification.codeHash = hashToken(code);
+  user.emailVerification.codeExpiresAt =
+    new Date(Date.now() + EMAIL_VERIFICATION_CODE_TTL_MS);
+  user.emailVerification.tempTokenHash = hashToken(tempToken);
+  user.emailVerification.tempTokenExpiresAt =
+    new Date(Date.now() + EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS);
+
+  return { code, tempToken };
+}
+
+async function sendEmailVerificationCode(user, code) {
+  await sendMail({
+    to: user.email,
+    subject: 'Verify your CMCEN / RCMCE account',
+    html: renderEmailVerificationEmail({
+      code,
+      accountName: user.accountName || user.firstName
+    })
+  });
+}
+
+function userRequiresEmailVerification(user) {
+  return (
+    user?.emailVerification?.required === true &&
+    user.emailVerification.verified !== true
+  );
+}
+
+function createSessionToken(user) {
+  return jwt.sign(
+    { userId: user._id },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+}
+
+function getUserSnapshot(user) {
+  return {
+    username: user.username,
+    email: user.email,
+    accountName: user.accountName,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+    accountType: user.accountType || 'member'
+  };
+}
+
+function createGhostPassword() {
+  return crypto.randomBytes(GHOST_PASSWORD_BYTES).toString('hex');
 }
 
 async function getRejectedEventNotifications(user) {
@@ -316,6 +443,121 @@ function getProfileUpdate(body, currentUser) {
   return updates;
 }
 
+// POST /api/ghost/request
+// Start a strict guest account session by emailing a one-time code.
+router.post('/ghost/request', async (req, res) => {
+  const cleanEmail = String(req.body?.email || '').trim().toLowerCase();
+
+  if (!cleanEmail) {
+    return res.status(400).json({
+      error: 'Email is required'
+    });
+  }
+
+  try {
+    let user = await User.findOne({ email: cleanEmail })
+      .select('+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt');
+
+    if (user && user.accountType !== 'ghost') {
+      return res.status(409).json({
+        error: 'An account already exists for this email. Please sign in.'
+      });
+    }
+
+    if (!user) {
+      user = new User({
+        accountType: 'ghost',
+        username: cleanEmail,
+        email: cleanEmail,
+        accountName: '',
+        firstName: '',
+        lastName: '',
+        password: createGhostPassword(),
+        role: 'ghost'
+      });
+    }
+
+    const verification = await prepareEmailVerification(user);
+    await user.save();
+    await sendEmailVerificationCode(user, verification.code);
+
+    res.json({
+      message: 'Check your email for a guest access code.',
+      verificationToken: verification.tempToken,
+      email: user.email
+    });
+  } catch (error) {
+    console.error('Ghost account request failed:', error);
+
+    res.status(500).json({
+      error: 'Could not request guest access'
+    });
+  }
+});
+
+// POST /api/ghost/confirm
+// Verify a guest access code and return a ghost session token.
+router.post('/ghost/confirm', async (req, res) => {
+  const verificationToken = String(req.body?.verificationToken || '').trim();
+  const code = String(req.body?.code || '').replace(/\D/gu, '').trim();
+  const firstName = String(req.body?.firstName || '').trim();
+
+  if (!verificationToken || !/^\d{6}$/u.test(code) || !firstName) {
+    return res.status(400).json({
+      error: 'First name and verification code are required'
+    });
+  }
+
+  try {
+    const user = await User.findOne({
+      accountType: 'ghost',
+      'emailVerification.tempTokenHash': hashToken(verificationToken),
+      'emailVerification.tempTokenExpiresAt': { $gt: new Date() },
+      'emailVerification.codeHash': hashToken(code),
+      'emailVerification.codeExpiresAt': { $gt: new Date() }
+    }).select(
+      '+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt'
+    );
+
+    if (!user) {
+      return res.status(400).json({
+        error: 'Guest access code is invalid or has expired'
+      });
+    }
+
+    user.firstName = firstName;
+    user.accountName = firstName;
+    user.emailVerification.required = true;
+    user.emailVerification.verified = true;
+    user.emailVerification.verifiedAt = new Date();
+    user.emailVerification.codeHash = '';
+    user.emailVerification.codeExpiresAt = null;
+    user.emailVerification.tempTokenHash = '';
+    user.emailVerification.tempTokenExpiresAt = null;
+    await user.save();
+
+    await writeAuditLog({
+      req,
+      action: 'user.ghost_verified',
+      actor: user,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: getUserSnapshot(user)
+    });
+
+    res.json({
+      message: 'Guest access confirmed',
+      token: createSessionToken(user)
+    });
+  } catch (error) {
+    console.error('Ghost account confirmation failed:', error);
+
+    res.status(500).json({
+      error: 'Could not confirm guest access'
+    });
+  }
+});
+
 // POST /api/register
 // Create a subscriber account from the public registration form.
 router.post('/register', async (req, res) => {
@@ -418,7 +660,10 @@ router.post('/register', async (req, res) => {
       role: 'subscriber'
     });
 
+    const verification = await prepareEmailVerification(user);
+
     await user.save();
+    await sendEmailVerificationCode(user, verification.code);
 
     await writeAuditLog({
       req,
@@ -437,17 +682,17 @@ router.post('/register', async (req, res) => {
       metadata: {
         accountName: user.accountName,
         email: user.email,
+        emailVerification: 'pending',
         mfaMethod: 'pending'
       }
     });
 
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.status(201).json({ message: 'User created', token });
+    res.status(201).json({
+      message: 'User created. Check your email for a verification code.',
+      emailVerificationRequired: true,
+      email: user.email,
+      verificationToken: verification.tempToken
+    });
   } catch (err) {
     console.error('--- FULL ERROR DETAILS ---');
     console.error('Name:', err.name);
@@ -462,9 +707,23 @@ router.post('/register', async (req, res) => {
 // Authenticate a user and return a short-lived JWT.
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  const user = await User.findOne({ username }).select('+password');
+  const user = await User.findOne({ username })
+    .select('+password +emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt');
 
   if (user && (await bcrypt.compare(password, user.password))) {
+    if (userRequiresEmailVerification(user)) {
+      const verification = await prepareEmailVerification(user);
+      await user.save();
+      await sendEmailVerificationCode(user, verification.code);
+
+      return res.json({
+        emailVerificationRequired: true,
+        email: user.email,
+        verificationToken: verification.tempToken,
+        message: 'Check your email for a verification code.'
+      });
+    }
+
     const hasWebAuthn = Array.isArray(user.webauthn) && user.webauthn.some(
       credential => credential?.credentialID && credential?.publicKey
     );
@@ -495,11 +754,7 @@ router.post('/login', async (req, res) => {
       return res.json({ twoFactorRequired: true, methods, tempToken, expiresAt: expires.toISOString() });
     }
 
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    const token = createSessionToken(user);
 
     await writeAuditLog({
       req,
@@ -521,6 +776,198 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/email-verification/confirm
+// Verify a newly registered account email address with the emailed code.
+router.post('/email-verification/confirm', async (req, res) => {
+  const verificationToken = String(req.body?.verificationToken || '').trim();
+  const code = String(req.body?.code || '').replace(/\D/gu, '').trim();
+
+  if (!verificationToken || !/^\d{6}$/u.test(code)) {
+    return res.status(400).json({
+      error: 'Verification token and code are required'
+    });
+  }
+
+  try {
+    const user = await User.findOne({
+      'emailVerification.tempTokenHash': hashToken(verificationToken),
+      'emailVerification.tempTokenExpiresAt': { $gt: new Date() },
+      'emailVerification.codeHash': hashToken(code),
+      'emailVerification.codeExpiresAt': { $gt: new Date() }
+    }).select(
+      '+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt'
+    );
+
+    if (!user || !userRequiresEmailVerification(user)) {
+      return res.status(400).json({
+        error: 'Verification code is invalid or has expired'
+      });
+    }
+
+    user.emailVerification.required = true;
+    user.emailVerification.verified = true;
+    user.emailVerification.verifiedAt = new Date();
+    user.emailVerification.codeHash = '';
+    user.emailVerification.codeExpiresAt = null;
+    user.emailVerification.tempTokenHash = '';
+    user.emailVerification.tempTokenExpiresAt = null;
+    await user.save();
+
+    await writeAuditLog({
+      req,
+      action: 'user.email_verified',
+      actor: user,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: {
+        username: user.username,
+        email: user.email,
+        accountName: user.accountName,
+        role: user.role
+      }
+    });
+
+    res.json({
+      message: 'Email verified',
+      token: createSessionToken(user)
+    });
+  } catch (error) {
+    console.error('Email verification failed:', error);
+
+    res.status(500).json({
+      error: 'Could not verify email'
+    });
+  }
+});
+
+// POST /api/password-reset/request
+// Send a one-time password reset link when the submitted email belongs to an account.
+router.post('/password-reset/request', async (req, res) => {
+  const cleanEmail = String(req.body?.email || '').trim().toLowerCase();
+
+  try {
+    if (!cleanEmail) {
+      return res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
+    }
+
+    const user = await User.findOne({ email: cleanEmail });
+
+    if (!user) {
+      return res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetUrl =
+      `${getBaseUrl(req)}/login.html?resetToken=${encodeURIComponent(resetToken)}`;
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
+
+    user.passwordReset = {
+      tokenHash: hashPasswordResetToken(resetToken),
+      expiresAt
+    };
+    await user.save();
+
+    await sendMail({
+      to: user.email,
+      subject: 'Reset your CMCEN / RCMCE password',
+      html: renderPasswordResetEmail({
+        resetUrl,
+        accountName: user.accountName || user.firstName
+      })
+    });
+
+    await writeAuditLog({
+      req,
+      action: 'user.password_reset_requested',
+      actor: user,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: {
+        username: user.username,
+        email: user.email,
+        accountName: user.accountName,
+        role: user.role
+      }
+    });
+
+    res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
+  } catch (error) {
+    console.error('Password reset request failed:', error);
+
+    res.status(500).json({
+      error: 'Could not request password reset'
+    });
+  }
+});
+
+// POST /api/password-reset/confirm
+// Consume a valid reset token and set a new account password.
+router.post('/password-reset/confirm', async (req, res) => {
+  const resetToken = String(req.body?.token || '').trim();
+  const password = String(req.body?.password || '');
+  const passwordConfirmation = String(req.body?.passwordConfirmation || '');
+
+  if (!resetToken || !password || !passwordConfirmation) {
+    return res.status(400).json({
+      error: 'Required password reset fields are missing'
+    });
+  }
+
+  if (password !== passwordConfirmation) {
+    return res.status(400).json({
+      error: 'Passwords do not match'
+    });
+  }
+
+  try {
+    const user = await User.findOne({
+      'passwordReset.tokenHash': hashPasswordResetToken(resetToken),
+      'passwordReset.expiresAt': { $gt: new Date() }
+    }).select('+password +passwordReset.tokenHash +passwordReset.expiresAt');
+
+    if (!user) {
+      return res.status(400).json({
+        error: 'Password reset link is invalid or has expired'
+      });
+    }
+
+    user.password = password;
+    user.passwordReset = {
+      tokenHash: '',
+      expiresAt: null
+    };
+    user.twoFactor = {
+      tempToken: '',
+      tempExpires: null
+    };
+    await user.save();
+
+    await writeAuditLog({
+      req,
+      action: 'user.password_reset_completed',
+      actor: user,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: {
+        username: user.username,
+        email: user.email,
+        accountName: user.accountName,
+        role: user.role
+      }
+    });
+
+    res.json({
+      message: 'Password has been reset. You can now sign in.'
+    });
+  } catch (error) {
+    console.error('Password reset confirmation failed:', error);
+
+    res.status(500).json({
+      error: 'Could not reset password'
+    });
+  }
+});
+
 // GET /api/me
 // Return the authenticated user's profile and computed permissions.
 router.get('/me', authMiddleware, async (req, res) => {
@@ -531,6 +978,135 @@ router.get('/notifications', authMiddleware, async (req, res) => {
   res.json({
     notifications: await getNotificationSummary(req.user)
   });
+});
+
+// POST /api/ghost/upgrade
+// Convert a verified ghost account into a full subscriber account.
+router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
+  if (req.user.accountType !== 'ghost' || req.user.role !== 'ghost') {
+    return res.status(400).json({
+      error: 'Only ghost accounts can be upgraded'
+    });
+  }
+
+  const {
+    firstName,
+    lastName,
+    addressLine1,
+    addressLine2,
+    city,
+    country,
+    stateProvince,
+    postalCode,
+    rank,
+    postNominals,
+    company,
+    status,
+    affiliationElement,
+    trade,
+    tradeOther,
+    currentUnit,
+    preferredLanguage,
+    password,
+    passwordConfirmation
+  } = req.body || {};
+
+  if (password !== passwordConfirmation) {
+    return res.status(400).json({
+      error: 'Passwords do not match'
+    });
+  }
+
+  const cleanFirstName = String(firstName || '').trim();
+  const cleanLastName = String(lastName || '').trim();
+  const incomingPreferredLanguage = String(preferredLanguage || '').trim();
+  const cleanPreferredLanguage =
+    VALID_PREFERRED_LANGUAGES.has(incomingPreferredLanguage)
+      ? incomingPreferredLanguage
+      : 'en';
+
+  const requiredFields = [
+    cleanFirstName,
+    cleanLastName,
+    String(addressLine1 || '').trim(),
+    String(city || '').trim(),
+    String(country || '').trim(),
+    String(stateProvince || '').trim(),
+    String(postalCode || '').trim(),
+    String(status || '').trim(),
+    String(affiliationElement || '').trim(),
+    String(password || ''),
+    String(passwordConfirmation || '')
+  ];
+
+  if (requiredFields.some(value => !value)) {
+    return res.status(400).json({
+      error: 'Required account fields are missing'
+    });
+  }
+
+  try {
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user || user.accountType !== 'ghost') {
+      return res.status(404).json({
+        error: 'Ghost account not found'
+      });
+    }
+
+    user.accountType = 'member';
+    user.accountName = [cleanFirstName, cleanLastName]
+      .filter(Boolean)
+      .join(' ');
+    user.firstName = cleanFirstName;
+    user.lastName = cleanLastName;
+    user.address = {
+      line1: String(addressLine1 || '').trim(),
+      line2: String(addressLine2 || '').trim(),
+      city: String(city || '').trim(),
+      country: String(country || '').trim(),
+      stateProvince: String(stateProvince || '').trim(),
+      postalCode: String(postalCode || '').trim()
+    };
+    user.rank = String(rank || '').trim();
+    user.postNominals = String(postNominals || '').trim();
+    user.company = String(company || '').trim();
+    user.status = String(status || '').trim();
+    user.affiliationElement = String(affiliationElement || '').trim();
+    user.trade = String(trade || '').trim();
+    user.tradeOther = String(tradeOther || '').trim();
+    user.currentUnit = String(currentUnit || '').trim();
+    user.preferredLanguage = cleanPreferredLanguage;
+    user.password = password;
+    user.role = 'subscriber';
+    user.emailVerification.required = true;
+    user.emailVerification.verified = true;
+    user.emailVerification.verifiedAt =
+      user.emailVerification.verifiedAt || new Date();
+
+    await user.save();
+
+    await writeAuditLog({
+      req,
+      action: 'user.ghost_upgraded',
+      actor: user,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: getUserSnapshot(user)
+    });
+
+    res.json({
+      message: 'Account upgraded',
+      token: createSessionToken(user),
+      user: await getProfileResponse(user)
+    });
+  } catch (error) {
+    console.error('Ghost account upgrade failed:', error);
+
+    res.status(500).json({
+      error: 'Could not upgrade account'
+    });
+  }
 });
 
 // PATCH /api/profile

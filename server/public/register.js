@@ -4,6 +4,10 @@ const registerError = document.getElementById("registerError");
 const passwordInput = document.getElementById("regPassword");
 const passwordConfirmationInput = document.getElementById("regPasswordConfirmation");
 const passwordStrength = document.getElementById("passwordStrength");
+const registerEmailVerification = document.getElementById("registerEmailVerification");
+const registerEmailVerificationError = document.getElementById("registerEmailVerificationError");
+const registerEmailVerificationCode = document.getElementById("registerEmailVerificationCode");
+const registerEmailVerificationVerify = document.getElementById("registerEmailVerificationVerify");
 const registerMfa = document.getElementById("registerMfa");
 const registerMfaError = document.getElementById("registerMfaError");
 const registerMfaOptions = document.getElementById("registerMfaOptions");
@@ -20,6 +24,7 @@ const registerPreferredLanguage = document.getElementById("regPreferredLanguage"
 
 let registrationToken = "";
 let pendingTotpAppName = "Authenticator app";
+let emailVerificationToken = "";
 
 function setStoredToken(token) {
   registrationToken = CMCENUtils.storeAuthToken(token);
@@ -36,6 +41,12 @@ function setStoredToken(token) {
 function setRegisterError(message) {
   registerError.textContent = message;
   registerError.hidden = !message;
+}
+
+function setEmailVerificationError(message, type = "error") {
+  registerEmailVerificationError.textContent = message;
+  registerEmailVerificationError.hidden = !message;
+  registerEmailVerificationError.classList.toggle("is-info", type === "info");
 }
 
 function setMfaError(message, type = "error") {
@@ -68,8 +79,20 @@ async function mfaApi(path, options = {}) {
   });
 }
 
+function showEmailVerification() {
+  registerForm.hidden = true;
+  registerEmailVerification.hidden = false;
+  registerMfa.hidden = true;
+  setEmailVerificationError("Enter the code from your email.", "info");
+  document
+    .querySelector(".register-shell")
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  registerEmailVerificationCode.focus();
+}
+
 function showMfaSetup() {
   registerForm.hidden = true;
+  registerEmailVerification.hidden = true;
   registerMfa.hidden = false;
   document
     .querySelector(".register-shell")
@@ -79,6 +102,37 @@ function showMfaSetup() {
 
 function finishRegistration() {
   window.location.href = "/dashboard.html";
+}
+
+async function verifyEmailCode() {
+  const code = registerEmailVerificationCode.value.trim();
+
+  if (!code) {
+    setEmailVerificationError("Enter the six-digit code from your email.");
+    registerEmailVerificationCode.focus();
+    return;
+  }
+
+  registerEmailVerificationVerify.disabled = true;
+
+  try {
+    const data = await CMCENUtils.apiJson("/api/email-verification/confirm", {
+      method: "POST",
+      body: {
+        verificationToken: emailVerificationToken,
+        code
+      },
+      errorMessage: "Could not verify email"
+    });
+
+    setStoredToken(data.token);
+    showMfaSetup();
+  } catch (error) {
+    setEmailVerificationError(error.message);
+    registerEmailVerificationCode.focus();
+  } finally {
+    registerEmailVerificationVerify.disabled = false;
+  }
 }
 
 async function setupPasskey() {
@@ -284,6 +338,12 @@ registerForm.addEventListener("submit", async (event) => {
       errorMessage: "Could not create account"
     });
 
+    if (data.emailVerificationRequired) {
+      emailVerificationToken = data.verificationToken || "";
+      showEmailVerification();
+      return;
+    }
+
     setStoredToken(data.token);
     if (typeof window.applyLanguage === "function") {
       window.applyLanguage(registration.preferredLanguage);
@@ -302,6 +362,13 @@ registerForm.addEventListener("submit", async (event) => {
 registerPasskeyOption.addEventListener("click", setupPasskey);
 registerTotpOption.addEventListener("click", setupTotp);
 registerTotpVerify.addEventListener("click", verifyTotp);
+registerEmailVerificationVerify.addEventListener("click", verifyEmailCode);
+registerEmailVerificationCode.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    verifyEmailCode();
+  }
+});
 registerTotpCode.addEventListener("keydown", event => {
   if (event.key === "Enter") {
     event.preventDefault();

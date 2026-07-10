@@ -64,6 +64,33 @@
       return badge;
     }
 
+    function createEmailVerificationBadge(user) {
+      const verification = user?.emailVerification || {};
+      const isVerified = verification.verified === true;
+
+      if (!isVerified) {
+        return null;
+      }
+
+      const badge = document.createElement("span");
+      badge.className = "admin-user-role-badge verification-verified";
+      badge.textContent = getText("admin_users_email_verified", "Verified");
+
+      return badge;
+    }
+
+    function createAccountTypeBadge(user) {
+      if (user?.accountType !== "ghost" && user?.role !== "ghost") {
+        return null;
+      }
+
+      const badge = document.createElement("span");
+      badge.className = "admin-user-role-badge account-ghost";
+      badge.textContent = getText("admin_users_account_ghost", "Ghost");
+
+      return badge;
+    }
+
     function isSelectedSelf(user) {
       const state = getState();
 
@@ -116,7 +143,16 @@
         count: user.postSummary?.total || 0
       });
 
-      button.append(name, meta, createRoleBadge(user.role));
+      button.append(
+        name,
+        meta,
+        createAccountTypeBadge(user) || createRoleBadge(user.role)
+      );
+
+      const emailVerificationBadge = createEmailVerificationBadge(user);
+      if (emailVerificationBadge) {
+        button.append(emailVerificationBadge);
+      }
 
       (user.customRoles || []).slice(0, 3).forEach(role => {
         button.append(createCustomRoleBadge(role));
@@ -652,7 +688,16 @@
         })
       ].filter(Boolean).join(" · ");
 
-      identity.append(title, createRoleBadge(user.role), meta);
+      const identityBadges = [
+        createAccountTypeBadge(user) || createRoleBadge(user.role),
+        createEmailVerificationBadge(user)
+      ].filter(Boolean);
+
+      identity.append(
+        title,
+        ...identityBadges,
+        meta
+      );
       header.append(identity);
 
       const form = document.createElement("form");

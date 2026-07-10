@@ -183,16 +183,17 @@ function hasMinimumRole(userRole, minimumRole) {
 
 function getBuiltInPermissionFlags(user) {
   const role = user?.role;
+  const isGhost = role === 'ghost';
 
   return {
     canAccessConnections:
       hasMinimumRole(role, 'subscriber'),
 
     canCreateDrafts:
-      hasMinimumRole(role, 'contributor'),
+      isGhost || hasMinimumRole(role, 'contributor'),
 
     canSubmitRetirementMessages:
-      hasMinimumRole(role, 'contributor'),
+      isGhost || hasMinimumRole(role, 'contributor'),
 
     canPublishOwnContent:
       hasMinimumRole(role, 'author'),

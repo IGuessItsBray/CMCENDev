@@ -1,6 +1,30 @@
 const loginForm = document.getElementById("loginForm");
 const loginButton = document.getElementById("loginBtn");
 const errorElement = document.getElementById("loginError");
+const forgotPasswordLink = document.getElementById("forgotPasswordLink");
+const guestAccessLink = document.getElementById("guestAccessLink");
+const forgotPasswordForm = document.getElementById("forgotPasswordForm");
+const forgotPasswordButton = document.getElementById("forgotPasswordBtn");
+const forgotPasswordBack = document.getElementById("forgotPasswordBack");
+const forgotPasswordMessage = document.getElementById("forgotPasswordMessage");
+const resetPasswordForm = document.getElementById("resetPasswordForm");
+const resetPasswordButton = document.getElementById("resetPasswordBtn");
+const resetPasswordBack = document.getElementById("resetPasswordBack");
+const resetPasswordMessage = document.getElementById("resetPasswordMessage");
+const emailVerificationForm = document.getElementById("emailVerificationForm");
+const emailVerificationButton = document.getElementById("emailVerificationBtn");
+const emailVerificationBack = document.getElementById("emailVerificationBack");
+const emailVerificationMessage = document.getElementById("emailVerificationMessage");
+const emailVerificationCode = document.getElementById("emailVerificationCode");
+const guestAccessForm = document.getElementById("guestAccessForm");
+const guestAccessButton = document.getElementById("guestAccessBtn");
+const guestAccessBack = document.getElementById("guestAccessBack");
+const guestAccessMessage = document.getElementById("guestAccessMessage");
+const guestEmail = document.getElementById("guestEmail");
+const guestFirstName = document.getElementById("guestFirstName");
+const guestCode = document.getElementById("guestCode");
+const guestFirstNameField = document.getElementById("guestFirstNameField");
+const guestCodeField = document.getElementById("guestCodeField");
 const mfaOverlay = document.getElementById("mfaOverlay");
 const mfaOptions = document.getElementById("mfaOptions");
 const mfaTotpForm = document.getElementById("mfaTotpForm");
@@ -9,6 +33,9 @@ const mfaError = document.getElementById("mfaError");
 const mfaCancel = document.getElementById("mfaCancel");
 
 let pendingMfa = null;
+let emailVerificationToken = "";
+let guestVerificationToken = "";
+const resetToken = new URLSearchParams(window.location.search).get("resetToken") || "";
 
 function setLoginMessage(message, type = "error") {
   errorElement.textContent = message;
@@ -20,6 +47,104 @@ function setMfaMessage(message, type = "error") {
   mfaError.textContent = message;
   mfaError.hidden = !message;
   mfaError.classList.toggle("is-info", type === "info");
+}
+
+function setForgotPasswordMessage(message, type = "error") {
+  forgotPasswordMessage.textContent = message;
+  forgotPasswordMessage.hidden = !message;
+  forgotPasswordMessage.classList.toggle("is-info", type === "info");
+}
+
+function setResetPasswordMessage(message, type = "error") {
+  resetPasswordMessage.textContent = message;
+  resetPasswordMessage.hidden = !message;
+  resetPasswordMessage.classList.toggle("is-info", type === "info");
+}
+
+function setEmailVerificationMessage(message, type = "error") {
+  emailVerificationMessage.textContent = message;
+  emailVerificationMessage.hidden = !message;
+  emailVerificationMessage.classList.toggle("is-info", type === "info");
+}
+
+function setGuestAccessMessage(message, type = "error") {
+  guestAccessMessage.textContent = message;
+  guestAccessMessage.hidden = !message;
+  guestAccessMessage.classList.toggle("is-info", type === "info");
+}
+
+function showLoginForm(message = "", type = "info") {
+  loginForm.hidden = false;
+  forgotPasswordForm.hidden = true;
+  resetPasswordForm.hidden = true;
+  emailVerificationForm.hidden = true;
+  guestAccessForm.hidden = true;
+  setForgotPasswordMessage("");
+  setResetPasswordMessage("");
+  setEmailVerificationMessage("");
+  setGuestAccessMessage("");
+  setLoginMessage(message, type);
+}
+
+function showForgotPasswordForm() {
+  loginForm.hidden = true;
+  forgotPasswordForm.hidden = false;
+  resetPasswordForm.hidden = true;
+  emailVerificationForm.hidden = true;
+  guestAccessForm.hidden = true;
+  setLoginMessage("");
+  setResetPasswordMessage("");
+  setEmailVerificationMessage("");
+  setGuestAccessMessage("");
+  setForgotPasswordMessage("");
+  document.getElementById("resetEmail").focus();
+}
+
+function showResetPasswordForm(message = "", type = "info") {
+  loginForm.hidden = true;
+  forgotPasswordForm.hidden = true;
+  resetPasswordForm.hidden = false;
+  emailVerificationForm.hidden = true;
+  guestAccessForm.hidden = true;
+  setLoginMessage("");
+  setForgotPasswordMessage("");
+  setEmailVerificationMessage("");
+  setGuestAccessMessage("");
+  setResetPasswordMessage(message, type);
+  document.getElementById("newPassword").focus();
+}
+
+function showGuestAccessForm() {
+  loginForm.hidden = true;
+  forgotPasswordForm.hidden = true;
+  resetPasswordForm.hidden = true;
+  emailVerificationForm.hidden = true;
+  guestAccessForm.hidden = false;
+  guestVerificationToken = "";
+  guestFirstNameField.hidden = true;
+  guestCodeField.hidden = true;
+  guestFirstName.required = false;
+  guestCode.required = false;
+  guestAccessButton.textContent = "Send code";
+  setLoginMessage("");
+  setForgotPasswordMessage("");
+  setResetPasswordMessage("");
+  setEmailVerificationMessage("");
+  setGuestAccessMessage("");
+  guestEmail.focus();
+}
+
+function showEmailVerificationForm(message = "", type = "info") {
+  loginForm.hidden = true;
+  forgotPasswordForm.hidden = true;
+  resetPasswordForm.hidden = true;
+  emailVerificationForm.hidden = false;
+  guestAccessForm.hidden = true;
+  setLoginMessage("");
+  setForgotPasswordMessage("");
+  setResetPasswordMessage("");
+  setEmailVerificationMessage(message, type);
+  emailVerificationCode.focus();
 }
 
 async function applyAccountLanguage(token) {
@@ -215,6 +340,164 @@ mfaCancel.addEventListener("click", () => {
   closeMfaDialog();
 });
 
+forgotPasswordLink.addEventListener("click", showForgotPasswordForm);
+guestAccessLink.addEventListener("click", showGuestAccessForm);
+forgotPasswordBack.addEventListener("click", () => showLoginForm(""));
+resetPasswordBack.addEventListener("click", () => {
+  window.history.replaceState({}, document.title, "/login.html");
+  showLoginForm("");
+});
+emailVerificationBack.addEventListener("click", () => showLoginForm(""));
+guestAccessBack.addEventListener("click", () => showLoginForm(""));
+
+forgotPasswordForm.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const email = document.getElementById("resetEmail").value.trim();
+  forgotPasswordButton.disabled = true;
+  forgotPasswordButton.setAttribute("aria-busy", "true");
+  setForgotPasswordMessage("");
+
+  try {
+    const data = await CMCENUtils.apiJson("/api/password-reset/request", {
+      method: "POST",
+      body: { email },
+      errorMessage: "Could not request password reset"
+    });
+
+    setForgotPasswordMessage(
+      data.message || "If an account exists for that email address, a password reset link has been sent.",
+      "info"
+    );
+  } catch (error) {
+    setForgotPasswordMessage(error.message);
+  } finally {
+    forgotPasswordButton.disabled = false;
+    forgotPasswordButton.removeAttribute("aria-busy");
+  }
+});
+
+resetPasswordForm.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const password = document.getElementById("newPassword").value;
+  const passwordConfirmation = document.getElementById("newPasswordConfirmation").value;
+
+  if (password !== passwordConfirmation) {
+    setResetPasswordMessage("Passwords do not match.");
+    return;
+  }
+
+  resetPasswordButton.disabled = true;
+  resetPasswordButton.setAttribute("aria-busy", "true");
+  setResetPasswordMessage("");
+
+  try {
+    const data = await CMCENUtils.apiJson("/api/password-reset/confirm", {
+      method: "POST",
+      body: {
+        token: resetToken,
+        password,
+        passwordConfirmation
+      },
+      errorMessage: "Could not reset password"
+    });
+
+    resetPasswordForm.reset();
+    window.history.replaceState({}, document.title, "/login.html");
+    showLoginForm(data.message || "Password has been reset. You can now sign in.", "info");
+  } catch (error) {
+    setResetPasswordMessage(error.message);
+  } finally {
+    resetPasswordButton.disabled = false;
+    resetPasswordButton.removeAttribute("aria-busy");
+  }
+});
+
+emailVerificationForm.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const code = emailVerificationCode.value.trim();
+
+  if (!code) {
+    setEmailVerificationMessage("Enter the six-digit code from your email.");
+    emailVerificationCode.focus();
+    return;
+  }
+
+  emailVerificationButton.disabled = true;
+  emailVerificationButton.setAttribute("aria-busy", "true");
+  setEmailVerificationMessage("");
+
+  try {
+    const data = await CMCENUtils.apiJson("/api/email-verification/confirm", {
+      method: "POST",
+      body: {
+        verificationToken: emailVerificationToken,
+        code
+      },
+      errorMessage: "Could not verify email"
+    });
+
+    await completeLogin(data.token);
+  } catch (error) {
+    setEmailVerificationMessage(error.message);
+  } finally {
+    emailVerificationButton.disabled = false;
+    emailVerificationButton.removeAttribute("aria-busy");
+  }
+});
+
+guestAccessForm.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  guestAccessButton.disabled = true;
+  guestAccessButton.setAttribute("aria-busy", "true");
+  setGuestAccessMessage("");
+
+  try {
+    if (!guestVerificationToken) {
+      const data = await CMCENUtils.apiJson("/api/ghost/request", {
+        method: "POST",
+        body: {
+          email: guestEmail.value.trim()
+        },
+        errorMessage: "Could not request guest access"
+      });
+
+      guestVerificationToken = data.verificationToken || "";
+      guestFirstNameField.hidden = false;
+      guestCodeField.hidden = false;
+      guestFirstName.required = true;
+      guestCode.required = true;
+      guestAccessButton.textContent = "Verify";
+      setGuestAccessMessage(
+        data.message || "Check your email for a guest access code.",
+        "info"
+      );
+      guestFirstName.focus();
+      return;
+    }
+
+    const data = await CMCENUtils.apiJson("/api/ghost/confirm", {
+      method: "POST",
+      body: {
+        verificationToken: guestVerificationToken,
+        firstName: guestFirstName.value.trim(),
+        code: guestCode.value.trim()
+      },
+      errorMessage: "Could not confirm guest access"
+    });
+
+    await completeLogin(data.token);
+  } catch (error) {
+    setGuestAccessMessage(error.message);
+  } finally {
+    guestAccessButton.disabled = false;
+    guestAccessButton.removeAttribute("aria-busy");
+  }
+});
+
 loginForm.addEventListener("submit", async event => {
   event.preventDefault();
 
@@ -234,6 +517,15 @@ loginForm.addEventListener("submit", async event => {
       },
       errorMessage: "Login failed"
     });
+
+    if (data.emailVerificationRequired) {
+      emailVerificationToken = data.verificationToken || "";
+      showEmailVerificationForm(
+        data.message || "Check your email for a verification code before signing in.",
+        "info"
+      );
+      return;
+    }
 
     if (data.twoFactorRequired) {
       const methods = Array.isArray(data.methods)
@@ -256,3 +548,7 @@ loginForm.addEventListener("submit", async event => {
     loginButton.removeAttribute("aria-busy");
   }
 });
+
+if (resetToken) {
+  showResetPasswordForm("Choose a new password for your account.", "info");
+}

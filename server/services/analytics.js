@@ -105,23 +105,59 @@ function getSource(req, referrerHost) {
   return referrerHost;
 }
 
-function getCountry(req) {
+function normalizeCountryCode(value) {
+  const countryCode = cleanString(value).toUpperCase();
+
+  return /^[A-Z]{2}$/u.test(countryCode) && !['XX', 'ZZ'].includes(countryCode)
+    ? countryCode
+    : '';
+}
+
+function getCountryFromLocale(locale) {
+  const localeParts = cleanString(locale)
+    .replace(/_/gu, '-')
+    .split('-');
+
+  return localeParts
+    .map(normalizeCountryCode)
+    .find(Boolean) || '';
+}
+
+function getCountryFromTimeZone(timeZone) {
+  const cleanTimeZone = cleanString(timeZone);
+
+  if (/^(America\/Toronto|America\/Vancouver|America\/Edmonton|America\/Winnipeg|America\/Halifax|America\/St_Johns|America\/Regina|America\/Whitehorse)$/u.test(cleanTimeZone)) {
+    return 'CA';
+  }
+
+  if (/^(America\/New_York|America\/Chicago|America\/Denver|America\/Los_Angeles|America\/Phoenix|America\/Anchorage|Pacific\/Honolulu)$/u.test(cleanTimeZone)) {
+    return 'US';
+  }
+
+  const region = cleanTimeZone.split('/')[0];
+  return region === 'Australia' ? 'AU' : '';
+}
+
+function getCountry(req, fallbackLocale = '', fallbackTimeZone = '') {
   const country = [
     req.headers['cf-ipcountry'],
     req.headers['x-vercel-ip-country'],
     req.headers['x-appengine-country'],
+    req.headers['x-real-ip-country'],
+    req.headers['x-forwarded-country'],
+    req.headers['x-client-country'],
+    req.headers['x-country'],
     req.headers['x-country-code'],
+    req.headers['x-geoip-country-code'],
     req.headers['x-geo-country'],
+    req.headers['x-ip-country'],
     req.headers['fastly-client-country']
-  ].map(cleanString).find(Boolean);
+  ].map(normalizeCountryCode).find(Boolean);
 
-  const countryCode = cleanString(country).toUpperCase();
-
-  if (/^[A-Z]{2}$/u.test(countryCode) && !['XX', 'ZZ'].includes(countryCode)) {
-    return countryCode;
-  }
-
-  return 'Unknown';
+  return country ||
+    getCountryFromLocale(fallbackLocale) ||
+    getCountryFromTimeZone(fallbackTimeZone) ||
+    'Unknown';
 }
 
 module.exports = {

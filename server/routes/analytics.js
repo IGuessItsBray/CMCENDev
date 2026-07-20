@@ -74,7 +74,7 @@ async function groupCounts(match, field, { limit = 10 } = {}) {
 }
 
 router.get(
-  '/',
+  ['/', ''],
   authMiddleware,
   requirePermission('canViewAnalytics'),
   async (req, res) => {
@@ -151,6 +151,8 @@ router.post(
       const userAgent = cleanString(req.headers['user-agent']).slice(0, 520);
       const referrer = cleanString(req.body?.referrer || req.headers.referer).slice(0, 520);
       const referrerHost = getReferrerHost(referrer);
+      const locale = cleanString(req.body?.locale).slice(0, 80);
+      const timeZone = cleanString(req.body?.timeZone).slice(0, 120);
       const user = req.user || null;
 
       await AnalyticsVisit.create({
@@ -167,7 +169,7 @@ router.post(
         user: user?._id || null,
         userRole: user?.role || 'guest',
         ipAddress: req.ip || '',
-        country: getCountry(req),
+        country: getCountry(req, locale, timeZone),
         userAgent
       });
     } catch (error) {
@@ -175,6 +177,25 @@ router.post(
     }
 
     res.status(204).end();
+  }
+);
+
+router.delete(
+  ['/', ''],
+  authMiddleware,
+  requirePermission('canViewAnalytics'),
+  async (req, res) => {
+    try {
+      const result = await AnalyticsVisit.deleteMany({});
+
+      res.json({
+        message: 'Analytics history purged',
+        deletedCount: result.deletedCount || 0
+      });
+    } catch (error) {
+      console.error('Analytics purge failed:', error);
+      res.status(500).json({ error: 'Failed to purge analytics' });
+    }
   }
 );
 

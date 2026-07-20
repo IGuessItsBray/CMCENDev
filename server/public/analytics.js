@@ -109,17 +109,64 @@ function createRangeToolbar() {
   });
 
   label.append(labelText, select);
-  toolbar.append(label);
+
+  const purge = document.createElement("button");
+  purge.type = "button";
+  purge.className = "admin-work-zone-button is-danger analytics-purge-button";
+  purge.textContent = "Purge history";
+  purge.disabled = analyticsState.isLoading;
+  purge.addEventListener("click", purgeAnalyticsHistory);
+
+  toolbar.append(label, purge);
   return toolbar;
 }
 
-function createBreakdown(title, items, emptyText = "No visits yet") {
+async function purgeAnalyticsHistory() {
+  if (!window.confirm("Purge all analytics history? This cannot be undone.")) {
+    return;
+  }
+
+  try {
+    analyticsState.isLoading = true;
+    await analyticsApi("/api/analytics", {
+      method: "DELETE",
+      errorMessage: "Failed to purge analytics"
+    });
+    analyticsState.data = null;
+    await loadAnalytics(true);
+  } catch (error) {
+    analyticsState.isLoading = false;
+    setAnalyticsStatus(error.message || "Failed to purge analytics");
+  }
+}
+
+function createPanelHeading(title, tooltip = "") {
+  const heading = document.createElement("h2");
+  heading.className = "analytics-panel-heading";
+
+  const text = document.createElement("span");
+  text.textContent = title;
+  heading.append(text);
+
+  if (tooltip) {
+    const help = document.createElement("span");
+    help.className = "analytics-help";
+    help.tabIndex = 0;
+    help.setAttribute("role", "img");
+    help.setAttribute("aria-label", tooltip);
+    help.dataset.tooltip = tooltip;
+    help.textContent = "?";
+    heading.append(help);
+  }
+
+  return heading;
+}
+
+function createBreakdown(title, items, emptyText = "No visits yet", tooltip = "") {
   const panel = document.createElement("section");
   panel.className = "analytics-panel";
 
-  const heading = document.createElement("h2");
-  heading.textContent = title;
-  panel.append(heading);
+  panel.append(createPanelHeading(title, tooltip));
 
   if (!items?.length) {
     const empty = document.createElement("p");
@@ -221,12 +268,13 @@ function renderAnalytics() {
     createCard("Registered", totals.registered),
     createCard("Guests", totals.guests)
   );
+  const trafficSourcesTooltip = "Direct means no outside referrer was sent, including typed URLs, bookmarks, and same-site navigation. Internal is historical same-site traffic recorded before this dashboard treated it as direct.";
 
   const grid = document.createElement("div");
   grid.className = "analytics-grid";
   grid.append(
     createBreakdown("Visits by page", data.pages),
-    createBreakdown("Traffic sources", data.sources),
+    createBreakdown("Traffic sources", data.sources, "No visits yet", trafficSourcesTooltip),
     createBreakdown("Device types", data.devices),
     createBreakdown("Operating systems", data.operatingSystems),
     createBreakdown("Browsers", data.browsers),

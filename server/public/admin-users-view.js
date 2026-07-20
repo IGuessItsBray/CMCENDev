@@ -849,11 +849,12 @@
       body.className = "admin-media-body";
 
       const title = document.createElement("h4");
-      title.textContent = mediaItem.key;
+      title.textContent = mediaItem.name || mediaItem.originalName || mediaItem.key;
 
       const meta = document.createElement("p");
       meta.className = "admin-media-meta";
       meta.textContent = [
+        mediaItem.name && mediaItem.name !== mediaItem.key ? mediaItem.key : "",
         formatFileSize(mediaItem.size),
         mediaItem.lastModified
           ? translate("admin_media_modified", {
@@ -935,6 +936,29 @@
       const headerActions = document.createElement("div");
       headerActions.className = "admin-media-heading-actions";
 
+      const sortLabel = document.createElement("label");
+      sortLabel.className = "admin-media-sort-field";
+      const sortText = document.createElement("span");
+      sortText.textContent = "Sort";
+      const sortSelect = document.createElement("select");
+      [
+        ["newest", "Newest first"],
+        ["oldest", "Oldest first"],
+        ["name", "Name"],
+        ["size", "Largest first"]
+      ].forEach(([value, label]) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        sortSelect.append(option);
+      });
+      sortSelect.value = state.mediaSort || "newest";
+      sortSelect.disabled = state.mediaIsLoading || state.mediaIsUploading;
+      sortSelect.addEventListener("change", () => {
+        actions.setMediaSort(sortSelect.value);
+      });
+      sortLabel.append(sortText, sortSelect);
+
       const uploadLabel = document.createElement("label");
       uploadLabel.className = "admin-work-zone-button is-primary admin-media-upload-button";
       uploadLabel.textContent = state.mediaIsUploading ? "Uploading..." : "Upload images";
@@ -958,7 +982,7 @@
       refresh.disabled = state.mediaIsLoading || state.mediaIsUploading;
       refresh.addEventListener("click", actions.refreshMedia);
 
-      headerActions.append(uploadLabel, refresh);
+      headerActions.append(sortLabel, uploadLabel, refresh);
       header.append(copy, headerActions);
       header.addEventListener("dragover", event => {
         event.preventDefault();

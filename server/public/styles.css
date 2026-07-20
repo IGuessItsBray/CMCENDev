@@ -5104,6 +5104,29 @@ a.dropdown-toggle {
   gap: 8px;
 }
 
+.admin-media-sort-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--branch-grey-700);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-media-sort-field select {
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid var(--branch-grey-300);
+  background: var(--white);
+  color: var(--branch-grey-900);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .admin-media-upload-button {
   cursor: pointer;
 }

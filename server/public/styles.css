@@ -11548,20 +11548,6 @@ html[data-theme="dark"] .dashboard-actions-section {
   border-left-color: var(--dark-border);
 }
 
-html[data-theme="dark"] .dashboard-profile-readonly {
-  margin-top: 4px;
-  padding-top: 16px;
-}
-
-html[data-theme="dark"] .dashboard-profile-form[data-editing="false"] .dashboard-profile-grid {
-  gap: 16px 24px;
-}
-
-html[data-theme="dark"] .dashboard-profile-form[data-editing="false"] .dashboard-profile-field {
-  gap: 5px;
-  padding-bottom: 4px;
-}
-
 html[data-theme="dark"] .dashboard-action {
   border-color: var(--dark-border-strong);
   border-left-color: var(--gold-500);

@@ -502,7 +502,7 @@ async function cmdUpdateUser(identifier, updateJson) {
     { _id: existingUser._id },
     { $set: updates },
     {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
       context: 'query'
     }
@@ -555,7 +555,7 @@ async function cmdResetMfa(identifier, flags) {
   const updatedUser = await User.findByIdAndUpdate(
     user._id,
     { $set: updates },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   console.log('\nAfter reset:');
@@ -691,7 +691,7 @@ async function cmdSetRole(username, role, contentAreasArg) {
   const user = await User.findOneAndUpdate(
     { username },
     { $set: { role, contentAreas: role === 'author' ? contentAreas : [] } },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   ).select('username email accountName role contentAreas');
 
   if (!user) throw new Error(`User "${username}" was not found`);

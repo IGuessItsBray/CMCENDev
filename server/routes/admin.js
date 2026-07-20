@@ -602,7 +602,7 @@ router.patch(
         req.params.roleId,
         { $set: result.update },
         {
-          new: true,
+          returnDocument: 'after',
           runValidators: true
         }
       );
@@ -1042,7 +1042,7 @@ router.patch(
         userId,
         { $set: updates },
         {
-          new: true,
+          returnDocument: 'after',
           runValidators: true
         }
       )
@@ -1179,7 +1179,7 @@ router.patch(
       const user = await User.findByIdAndUpdate(
         userId,
         { $set: { role } },
-        { new: true }
+        { returnDocument: 'after' }
       )
         .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
@@ -1244,7 +1244,7 @@ router.patch(
         userId,
         { $set: { role: 'developer' } },
         {
-          new: true,
+          returnDocument: 'after',
           runValidators: true
         }
       )

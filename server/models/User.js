@@ -18,6 +18,20 @@ function formatAccountName(value) {
     .join(' ');
 }
 
+function requiresMemberProfileFields(context) {
+  const document =
+    typeof context?.ownerDocument === 'function'
+      ? context.ownerDocument()
+      : context;
+  const accountType =
+    document?.accountType ??
+    (typeof context?.get === 'function'
+      ? context.get('accountType')
+      : undefined);
+
+  return accountType !== 'ghost';
+}
+
 const UserSchema = new mongoose.Schema({
   accountType: {
     type: String,
@@ -49,7 +63,7 @@ const UserSchema = new mongoose.Schema({
   accountName: {
     type: String,
     required() {
-      return this.accountType !== 'ghost';
+      return requiresMemberProfileFields(this);
     },
     trim: true,
     set: formatAccountName,
@@ -59,7 +73,7 @@ const UserSchema = new mongoose.Schema({
   firstName: {
     type: String,
     required() {
-      return this.accountType !== 'ghost';
+      return requiresMemberProfileFields(this);
     },
     trim: true,
     set: capitalizeFirstLetter,
@@ -70,7 +84,7 @@ const UserSchema = new mongoose.Schema({
   lastName: {
     type: String,
     required() {
-      return this.accountType !== 'ghost';
+      return requiresMemberProfileFields(this);
     },
     trim: true,
     set: capitalizeFirstLetter,
@@ -82,7 +96,7 @@ const UserSchema = new mongoose.Schema({
     line1: {
       type: String,
       required() {
-        return this.ownerDocument().accountType !== 'ghost';
+        return requiresMemberProfileFields(this);
       },
       trim: true,
       maxlength: 160
@@ -98,7 +112,7 @@ const UserSchema = new mongoose.Schema({
     city: {
       type: String,
       required() {
-        return this.ownerDocument().accountType !== 'ghost';
+        return requiresMemberProfileFields(this);
       },
       trim: true,
       maxlength: 100
@@ -107,7 +121,7 @@ const UserSchema = new mongoose.Schema({
     country: {
       type: String,
       required() {
-        return this.ownerDocument().accountType !== 'ghost';
+        return requiresMemberProfileFields(this);
       },
       trim: true,
       maxlength: 100
@@ -116,7 +130,7 @@ const UserSchema = new mongoose.Schema({
     stateProvince: {
       type: String,
       required() {
-        return this.ownerDocument().accountType !== 'ghost';
+        return requiresMemberProfileFields(this);
       },
       trim: true,
       maxlength: 100
@@ -125,7 +139,7 @@ const UserSchema = new mongoose.Schema({
     postalCode: {
       type: String,
       required() {
-        return this.ownerDocument().accountType !== 'ghost';
+        return requiresMemberProfileFields(this);
       },
       trim: true,
       maxlength: 40
@@ -165,7 +179,7 @@ const UserSchema = new mongoose.Schema({
       'other'
     ],
     required() {
-      return this.accountType !== 'ghost';
+      return requiresMemberProfileFields(this);
     }
   },
 
@@ -178,7 +192,7 @@ const UserSchema = new mongoose.Schema({
       'other'
     ],
     required() {
-      return this.accountType !== 'ghost';
+      return requiresMemberProfileFields(this);
     }
   },
 

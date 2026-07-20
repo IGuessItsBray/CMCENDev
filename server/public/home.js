@@ -77,15 +77,11 @@ function formatHomeEventTime(event, language) {
 }
 
 function formatRetireeName(retirementMessage) {
-  const retiree = retirementMessage.retiree || {};
+  const { name } = CMCENUtils.getRetireeNameParts(
+    retirementMessage.retiree
+  );
 
-  return [
-    retiree.rank,
-    retiree.firstName,
-    retiree.lastName
-  ]
-    .filter(Boolean)
-    .join(" ") ||
+  return name ||
     getHomeTranslation("retirement_card_default_name");
 }
 
@@ -405,7 +401,9 @@ async function loadHomeEvents() {
 
 async function loadHomeRetirements() {
   try {
-    const response = await fetch("/api/retirement-messages");
+    const response = await fetch(
+      "/api/retirement-messages?limit=3"
+    );
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {

@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const {
@@ -37,6 +38,96 @@ const ALLOWED_LANGUAGES = [
     'en',
     'fr'
 ];
+
+const DEFAULT_RETIREMENT_PAGE_SIZE = 24;
+const MAX_RETIREMENT_PAGE_SIZE = 48;
+
+function getRetirementPageSize(value) {
+    const requestedSize = Number.parseInt(value, 10);
+
+    if (!Number.isInteger(requestedSize) || requestedSize < 1) {
+        return DEFAULT_RETIREMENT_PAGE_SIZE;
+    }
+
+    return Math.min(requestedSize, MAX_RETIREMENT_PAGE_SIZE);
+}
+
+function encodeRetirementCursor(retirementMessage) {
+    return Buffer.from(
+        JSON.stringify({
+            id: String(retirementMessage._id),
+            publishedAt: retirementMessage.publishedAt
+                ? new Date(retirementMessage.publishedAt).toISOString()
+                : null
+        })
+    ).toString('base64url');
+}
+
+function decodeRetirementCursor(value) {
+    const cursor = cleanString(value);
+
+    if (!cursor) {
+        return null;
+    }
+
+    try {
+        const decoded = JSON.parse(
+            Buffer.from(cursor, 'base64url').toString('utf8')
+        );
+
+        if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+            return undefined;
+        }
+
+        if (decoded.publishedAt === null) {
+            return {
+                id: new mongoose.Types.ObjectId(decoded.id),
+                publishedAt: null
+            };
+        }
+
+        const publishedAt = new Date(decoded.publishedAt);
+
+        if (Number.isNaN(publishedAt.getTime())) {
+            return undefined;
+        }
+
+        return {
+            id: new mongoose.Types.ObjectId(decoded.id),
+            publishedAt
+        };
+    } catch (error) {
+        return undefined;
+    }
+}
+
+function getRetirementCursorFilter(cursor) {
+    if (!cursor) {
+        return {};
+    }
+
+    if (!cursor.publishedAt) {
+        return {
+            publishedAt: null,
+            _id: { $lt: cursor.id }
+        };
+    }
+
+    return {
+        $or: [
+            {
+                publishedAt: { $lt: cursor.publishedAt }
+            },
+            {
+                publishedAt: cursor.publishedAt,
+                _id: { $lt: cursor.id }
+            },
+            {
+                publishedAt: null
+            }
+        ]
+    };
+}
 
 function isValidEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
@@ -350,9 +441,23 @@ router.get(
     '/',
     async (req, res) => {
         try {
-            const retirementMessages =
+            const pageSize = getRetirementPageSize(
+                req.query.limit
+            );
+            const cursor = decodeRetirementCursor(
+                req.query.cursor
+            );
+
+            if (cursor === undefined) {
+                return res.status(400).json({
+                    error: 'Invalid retirement message cursor'
+                });
+            }
+
+            const retirementMessagesWithExtra =
                 await RetirementMessage.find({
-                    status: 'published'
+                    status: 'published',
+                    ...getRetirementCursorFilter(cursor)
                 })
                     .select({
                         retiree: 1,
@@ -361,9 +466,17 @@ router.get(
                     })
                     .sort({
                         publishedAt: -1,
-                        createdAt: -1
+                        _id: -1
                     })
+                    .limit(pageSize + 1)
                     .lean();
+
+            const hasMore =
+                retirementMessagesWithExtra.length > pageSize;
+            const retirementMessages =
+                hasMore
+                    ? retirementMessagesWithExtra.slice(0, pageSize)
+                    : retirementMessagesWithExtra;
 
             const commentCounts =
                 await RetirementComment.aggregate([
@@ -406,7 +519,16 @@ router.get(
                                     )
                                 ) || 0
                         })
-                    )
+                    ),
+                hasMore,
+                nextCursor:
+                    hasMore && retirementMessages.length
+                        ? encodeRetirementCursor(
+                            retirementMessages[
+                                retirementMessages.length - 1
+                            ]
+                        )
+                        : ''
             });
         } catch (error) {
             console.error(

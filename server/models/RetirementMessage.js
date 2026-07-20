@@ -221,7 +221,8 @@ const retirementMessageSchema =
 
 retirementMessageSchema.index({
     status: 1,
-    publishedAt: -1
+    publishedAt: -1,
+    _id: -1
 });
 
 retirementMessageSchema.index({

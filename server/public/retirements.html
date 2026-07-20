@@ -57,6 +57,33 @@
           id="retirementsGrid"
           hidden
         ></div>
+
+        <div
+          class="retirements-load-more"
+          id="retirementsLoadMore"
+          hidden
+        >
+          <button
+            type="button"
+            id="retirementsLoadMoreButton"
+            aria-controls="retirementsGrid"
+          >
+            <span
+              id="retirementsLoadMoreLabel"
+              data-i18n="retirements_load_more"
+            >
+              Load more retirement messages
+            </span>
+          </button>
+
+          <p
+            class="retirements-load-more-message"
+            id="retirementsLoadMoreMessage"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></p>
+        </div>
       </section>
     </main>
 

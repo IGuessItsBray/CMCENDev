@@ -41,13 +41,30 @@ function parseRetiree(record) {
   const title = cleanString(record.title)
     .replace(/^RETIREMENT\s+(ANNOUNCEMENT\s+)?[-–:]?\s*/iu, '');
   const withoutTrade = title.split(/\s+-\s+\d{3,}/u)[0];
-  const parts = withoutTrade.split(/\s+/u).filter(Boolean);
+  const postNominalsMatch = withoutTrade.match(
+    /,\s*([A-Z][A-Z. -]*(?:,\s*[A-Z][A-Z. -]*)*)\s*$/u
+  );
+  const nameTitle = postNominalsMatch
+    ? withoutTrade.slice(0, postNominalsMatch.index).trim()
+    : withoutTrade;
+  const parts = nameTitle.split(/\s+/u).filter(Boolean);
+  const postNominals = postNominalsMatch
+    ? Array.from(
+      new Map(
+        postNominalsMatch[1]
+          .split(',')
+          .map(value => value.trim())
+          .filter(Boolean)
+          .map(value => [value.toUpperCase(), value])
+      ).values()
+    ).join(', ')
+    : '';
 
   return {
     rank: parts.slice(0, Math.min(3, parts.length - 2)).join(' ') || 'Unknown',
     firstName: parts.length >= 2 ? parts[parts.length - 2] : 'Unknown',
     lastName: parts.length >= 1 ? parts[parts.length - 1].replace(/,+$/u, '') : 'Unknown',
-    postNominals: title.match(/,\s*([A-Z, ]*CD[A-Z, ]*)/u)?.[1]?.trim() || '',
+    postNominals,
     tradeRole: title.match(/\d{3,}\s*,\s*(.+)$/u)?.[1]?.trim() || '',
     retirementDate: parseDate(record.retirementDate) || null
   };

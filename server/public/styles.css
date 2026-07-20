@@ -8664,6 +8664,49 @@ a.dropdown-toggle {
   text-transform: uppercase;
 }
 
+.retirements-load-more {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 20px 24px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-top: 0;
+  background: var(--branch-grey-100);
+}
+
+.retirements-load-more button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--navy-900);
+  border-radius: 2px;
+  background: var(--navy-900);
+  color: var(--white);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.retirements-load-more button:hover,
+.retirements-load-more button:focus-visible {
+  border-color: var(--navy-800);
+  background: var(--navy-800);
+}
+
+.retirements-load-more button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.retirements-load-more-message {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .retirement-detail-main {
   padding: 30px 18px 54px;
 }
@@ -11309,6 +11352,11 @@ html[data-theme="dark"] .retirements-grid {
       rgba(21, 29, 45, 0.94),
       rgba(15, 22, 37, 0.96));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .retirements-load-more {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-3);
 }
 
 html[data-theme="dark"] .retirement-card {

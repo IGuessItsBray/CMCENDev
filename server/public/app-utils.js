@@ -3,6 +3,45 @@
     return String(value || "").trim().replace(/^Bearer\s+/i, "");
   }
 
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function getRetireeNameParts(retiree = {}) {
+    let name = [
+      retiree.rank,
+      retiree.firstName,
+      retiree.lastName
+    ]
+      .map(value => String(value || "").trim())
+      .filter(Boolean)
+      .join(" ");
+    const postNominals = String(retiree.postNominals || "").trim();
+
+    /*
+     * Some legacy records were imported with the final post-nominal still in
+     * the name fields. Remove only matching trailing nominal tokens here so
+     * those records display correctly until their data is re-imported.
+     */
+    postNominals
+      .split(",")
+      .map(value => value.trim())
+      .filter(Boolean)
+      .reverse()
+      .forEach(postNominal => {
+        const trailingPostNominal = new RegExp(
+          `(?:,\\s*|\\s+)${escapeRegExp(postNominal)}$`,
+          "i"
+        );
+
+        if (trailingPostNominal.test(name)) {
+          name = name.replace(trailingPostNominal, "").trim();
+        }
+      });
+
+    return { name, postNominals };
+  }
+
   function storeAuthToken(token) {
     const cleanToken = normalizeToken(token);
 
@@ -535,6 +574,7 @@
     getCurrentLanguage,
     getCurrentLocale,
     getLocalizedText,
+    getRetireeNameParts,
     getStoredAuthToken,
     getUserDisplayName,
     normalizeToken,

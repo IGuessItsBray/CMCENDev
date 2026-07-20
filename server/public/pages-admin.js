@@ -2,6 +2,9 @@ const pagesAdminToken = CMCENUtils.requireAuthToken();
 const pagesAdminStatus = document.getElementById("pagesAdminStatus");
 const pagesAdminPage = document.getElementById("pagesAdminPage");
 const pagesAdminContent = document.getElementById("pagesAdminContent");
+const autoSaveDelayMs = 1200;
+let autoSaveTimer = null;
+let autoSaveRequestId = 0;
 
 let pagesState = {
   pages: [],
@@ -14,6 +17,16 @@ let pagesState = {
   selectedPage: null,
   message: "",
   isLoading: false,
+  autoSaveStatus: "idle",
+  autoSaveMessage: "",
+  lastSavedAt: null,
+  media: [],
+  mediaNextCursor: "",
+  mediaIsTruncated: false,
+  mediaIsLoading: false,
+  mediaPicker: null,
+  cropEditor: null,
+  uploadProgress: {},
   canManageNavigation: false
 };
 
@@ -66,12 +79,90 @@ function setPagesState(nextState) {
   renderPagesAdmin();
 }
 
+function setAutoSaveState(status, message = "") {
+  pagesState = {
+    ...pagesState,
+    autoSaveStatus: status,
+    autoSaveMessage: message
+  };
+  renderAutoSaveStatus();
+}
+
+function renderAutoSaveStatus() {
+  const status = pagesAdminContent.querySelector(".pages-autosave-status");
+  if (!status) return;
+
+  status.className = `pages-autosave-status is-${pagesState.autoSaveStatus || "idle"}`;
+  status.textContent = getAutoSaveLabel();
+}
+
+function scheduleAutoSave() {
+  if (!pagesState.selectedPage?._id) return;
+
+  window.clearTimeout(autoSaveTimer);
+  pagesState = {
+    ...pagesState,
+    autoSaveStatus: "pending",
+    autoSaveMessage: "Unsaved changes"
+  };
+  renderAutoSaveStatus();
+
+  autoSaveTimer = window.setTimeout(() => {
+    saveSelectedPage({ auto: true });
+  }, autoSaveDelayMs);
+}
+
+function cancelAutoSave() {
+  window.clearTimeout(autoSaveTimer);
+  autoSaveTimer = null;
+}
+
+function setUploadProgress(progressKey, update) {
+  pagesState = {
+    ...pagesState,
+    uploadProgress: {
+      ...(pagesState.uploadProgress || {}),
+      [progressKey]: {
+        ...(pagesState.uploadProgress?.[progressKey] || {}),
+        ...update
+      }
+    }
+  };
+  renderPagesAdmin();
+}
+
+function clearUploadProgress(progressKey) {
+  const uploadProgress = { ...(pagesState.uploadProgress || {}) };
+  delete uploadProgress[progressKey];
+  setPagesState({ uploadProgress });
+}
+
+function getUploadProgress(progressKey) {
+  return pagesState.uploadProgress?.[progressKey] || null;
+}
+
 function getEmptyLocalized() {
   return { en: "", fr: "" };
 }
 
-function getNewBlock(type = "text") {
+function getDefaultCrop() {
   return {
+    x: 50,
+    y: 50,
+    zoom: 1,
+    rotate: 0
+  };
+}
+
+function getCrop(value) {
+  return {
+    ...getDefaultCrop(),
+    ...(value || {})
+  };
+}
+
+function getNewBlock(type = "text") {
+  const block = {
     type,
     level: 2,
     text: getEmptyLocalized(),
@@ -81,8 +172,50 @@ function getNewBlock(type = "text") {
     mediaUrl: "",
     alt: getEmptyLocalized(),
     caption: getEmptyLocalized(),
-    variant: "standard"
+    crop: getDefaultCrop(),
+    variant: "standard",
+    columns: [],
+    items: []
   };
+
+  if (type === "columns") {
+    block.columns = [
+      {
+        title: { en: "Left column", fr: "" },
+        body: getEmptyLocalized(),
+        mediaKey: "",
+        mediaUrl: "",
+        alt: getEmptyLocalized(),
+        crop: getDefaultCrop()
+      },
+      {
+        title: { en: "Right column", fr: "" },
+        body: getEmptyLocalized(),
+        mediaKey: "",
+        mediaUrl: "",
+        alt: getEmptyLocalized(),
+        crop: getDefaultCrop()
+      }
+    ];
+  }
+
+  if (type === "carousel") {
+    block.text = {
+      en: "Carousel heading",
+      fr: ""
+    };
+    block.items = [
+      {
+        mediaKey: "",
+        mediaUrl: "",
+        alt: getEmptyLocalized(),
+        caption: getEmptyLocalized(),
+        crop: getDefaultCrop()
+      }
+    ];
+  }
+
+  return block;
 }
 
 function getDefaultPageAccess() {
@@ -109,7 +242,7 @@ function getCleanSlug(value) {
     .replace(/^-+|-+$/g, "");
 }
 
-function updateSelectedPage(update, { render = true } = {}) {
+function updateSelectedPage(update, { render = true, autosave = true } = {}) {
   const selectedPage = {
     ...pagesState.selectedPage,
     ...update
@@ -120,10 +253,19 @@ function updateSelectedPage(update, { render = true } = {}) {
       ...pagesState,
       selectedPage
     };
+
+    if (autosave) {
+      scheduleAutoSave();
+    }
+
     return;
   }
 
   setPagesState({ selectedPage });
+
+  if (autosave) {
+    scheduleAutoSave();
+  }
 }
 
 function updateLocalizedField(field, language, value) {
@@ -132,7 +274,7 @@ function updateLocalizedField(field, language, value) {
       ...(pagesState.selectedPage?.[field] || {}),
       [language]: value
     }
-  }, { render: false });
+  }, { render: false, autosave: true });
 }
 
 function updateBlock(index, update, { render = true } = {}) {
@@ -149,6 +291,48 @@ function updateBlockLocalized(index, field, language, value) {
   updateBlock(index, {
     [field]: {
       ...(block[field] || {}),
+      [language]: value
+    }
+  }, { render: false });
+}
+
+function updateBlockColumn(index, columnIndex, update, { render = true } = {}) {
+  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("columns");
+  const columns = [...(block.columns || [])];
+  columns[columnIndex] = {
+    ...(columns[columnIndex] || {}),
+    ...update
+  };
+  updateBlock(index, { columns }, { render });
+}
+
+function updateBlockColumnLocalized(index, columnIndex, field, language, value) {
+  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("columns");
+  const column = block.columns?.[columnIndex] || {};
+  updateBlockColumn(index, columnIndex, {
+    [field]: {
+      ...(column[field] || {}),
+      [language]: value
+    }
+  }, { render: false });
+}
+
+function updateCarouselItem(index, itemIndex, update, { render = true } = {}) {
+  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
+  const items = [...(block.items || [])];
+  items[itemIndex] = {
+    ...(items[itemIndex] || {}),
+    ...update
+  };
+  updateBlock(index, { items }, { render });
+}
+
+function updateCarouselItemLocalized(index, itemIndex, field, language, value) {
+  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
+  const item = block.items?.[itemIndex] || {};
+  updateCarouselItem(index, itemIndex, {
+    [field]: {
+      ...(item[field] || {}),
       [language]: value
     }
   }, { render: false });
@@ -174,6 +358,82 @@ function toggleAccessListValue(field, value, isChecked) {
   }
 
   updatePageAccess({ [field]: [...values] });
+}
+
+function openMediaPicker(target) {
+  setPagesState({
+    mediaPicker: target,
+    mediaIsLoading: !pagesState.media.length
+  });
+
+  if (!pagesState.media.length) {
+    loadPageBuilderMedia();
+  }
+}
+
+function closeMediaPicker() {
+  setPagesState({ mediaPicker: null });
+}
+
+function applySelectedMedia(mediaItem) {
+  const target = pagesState.mediaPicker;
+
+  if (!target || !mediaItem) return;
+
+  const update = {
+    mediaKey: mediaItem.key || "",
+    mediaUrl: mediaItem.url || "",
+    crop: getCrop(getCropTargetMedia(target)?.crop)
+  };
+
+  if (target.type === "block") {
+    updateBlock(target.blockIndex, update);
+  } else if (target.type === "column") {
+    updateBlockColumn(target.blockIndex, target.columnIndex, update);
+  } else if (target.type === "carousel") {
+    updateCarouselItem(target.blockIndex, target.itemIndex, update);
+  }
+
+  closeMediaPicker();
+}
+
+function openCropEditor(target) {
+  setPagesState({ cropEditor: target });
+}
+
+function closeCropEditor() {
+  setPagesState({ cropEditor: null });
+}
+
+function getCropTargetMedia(target = pagesState.cropEditor) {
+  if (!target) return null;
+
+  if (target.type === "block") {
+    return pagesState.selectedPage?.blocks?.[target.blockIndex] || null;
+  }
+
+  if (target.type === "column") {
+    return pagesState.selectedPage?.blocks?.[target.blockIndex]?.columns?.[target.columnIndex] || null;
+  }
+
+  if (target.type === "carousel") {
+    return pagesState.selectedPage?.blocks?.[target.blockIndex]?.items?.[target.itemIndex] || null;
+  }
+
+  return null;
+}
+
+function updateCropTarget(crop) {
+  const target = pagesState.cropEditor;
+  if (!target) return;
+
+  if (target.type === "block") {
+    updateBlock(target.blockIndex, { crop });
+  } else if (target.type === "column") {
+    updateBlockColumn(target.blockIndex, target.columnIndex, { crop });
+  } else if (target.type === "carousel") {
+    updateCarouselItem(target.blockIndex, target.itemIndex, { crop });
+  }
 }
 
 function getBuiltInRoleLabel(role) {
@@ -256,9 +516,13 @@ function createPageList() {
   list.className = "pages-admin-list";
 
   if (!pagesState.pages.length) {
-    const empty = document.createElement("p");
-    empty.className = "admin-empty-state";
-    empty.textContent = "No pages yet.";
+    const empty = document.createElement("div");
+    empty.className = "pages-list-empty";
+    const emptyTitle = document.createElement("strong");
+    emptyTitle.textContent = "No pages yet";
+    const emptyText = document.createElement("span");
+    emptyText.textContent = "Create your first page to start building.";
+    empty.append(emptyTitle, emptyText);
     list.append(empty);
   } else {
     pagesState.pages.forEach(page => {
@@ -341,6 +605,33 @@ function createBlockLocalizedInput(index, label, field, type = "textarea") {
   return wrapper;
 }
 
+function createNestedLocalizedInput({ label, value = {}, onInput, type = "textarea" }) {
+  const wrapper = document.createElement("fieldset");
+  wrapper.className = "pages-editor-fieldset";
+
+  const legend = document.createElement("legend");
+  legend.textContent = label;
+  wrapper.append(legend);
+
+  ["en", "fr"].forEach(language => {
+    const inputLabel = document.createElement("label");
+    inputLabel.className = "pages-editor-field";
+
+    const text = document.createElement("span");
+    text.textContent = language.toUpperCase();
+
+    const input = document.createElement(type === "textarea" ? "textarea" : "input");
+    if (type !== "textarea") input.type = "text";
+    input.value = value?.[language] || "";
+    input.addEventListener("input", event => onInput(language, event.target.value));
+
+    inputLabel.append(text, input);
+    wrapper.append(inputLabel);
+  });
+
+  return wrapper;
+}
+
 function createBlockToolbar(index) {
   const toolbar = document.createElement("div");
   toolbar.className = "pages-block-toolbar";
@@ -369,7 +660,82 @@ function createBlockToolbar(index) {
   return toolbar;
 }
 
-function createImageDropZone(index, block) {
+function createCanvasDropZone(insertIndex) {
+  const zone = document.createElement("div");
+  zone.className = "pages-canvas-drop-zone";
+  zone.dataset.insertIndex = String(insertIndex);
+
+  const label = document.createElement("span");
+  label.textContent = "Drop block here";
+  zone.append(label);
+
+  zone.addEventListener("dragover", event => {
+    const hasBlockType = event.dataTransfer.types.includes("application/x-cmcen-block-type");
+    const hasBlockIndex = event.dataTransfer.types.includes("application/x-cmcen-block-index");
+
+    if (!hasBlockType && !hasBlockIndex) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    zone.classList.add("is-active");
+  });
+
+  zone.addEventListener("dragleave", () => {
+    zone.classList.remove("is-active");
+  });
+
+  zone.addEventListener("drop", event => {
+    event.preventDefault();
+    zone.classList.remove("is-active");
+
+    const blockType = event.dataTransfer.getData("application/x-cmcen-block-type");
+    const existingIndex = Number(event.dataTransfer.getData("application/x-cmcen-block-index"));
+
+    if (blockType) {
+      insertBlock(blockType, insertIndex);
+      return;
+    }
+
+    if (Number.isInteger(existingIndex)) {
+      reorderBlock(existingIndex, insertIndex);
+    }
+  });
+
+  return zone;
+}
+
+function applyCropStyles(image, cropValue) {
+  const crop = getCrop(cropValue);
+  image.style.objectPosition = `${crop.x}% ${crop.y}%`;
+  image.style.transform = `scale(${crop.zoom}) rotate(${crop.rotate}deg)`;
+}
+
+function createCroppedPreview({ src, alt = "", crop }) {
+  const frame = document.createElement("div");
+  frame.className = "pages-image-preview-frame";
+
+  const image = document.createElement("img");
+  image.className = "pages-image-preview";
+  image.src = src;
+  image.alt = alt;
+  applyCropStyles(image, crop);
+
+  frame.append(image);
+  return frame;
+}
+
+function createMediaDropZone({
+  hasMedia,
+  onUpload,
+  onChoose,
+  onCrop,
+  progressKey,
+  label = "Drop image here or choose file"
+}) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "pages-media-field";
+  const progress = progressKey ? getUploadProgress(progressKey) : null;
+
   const zone = document.createElement("label");
   zone.className = "pages-image-drop-zone";
 
@@ -379,13 +745,11 @@ function createImageDropZone(index, block) {
   input.hidden = true;
   input.addEventListener("change", () => {
     const file = input.files?.[0];
-    if (file) uploadBlockImage(index, file);
+    if (file) onUpload(file);
   });
 
   const text = document.createElement("span");
-  text.textContent = block.mediaUrl
-    ? "Replace image"
-    : "Drop image here or choose file";
+  text.textContent = hasMedia ? "Replace image" : label;
 
   zone.addEventListener("dragover", event => {
     event.preventDefault();
@@ -398,22 +762,223 @@ function createImageDropZone(index, block) {
     event.preventDefault();
     zone.classList.remove("is-dragging");
     const file = event.dataTransfer?.files?.[0];
-    if (file) uploadBlockImage(index, file);
+    if (file) onUpload(file);
   });
 
   zone.append(input, text);
-  return zone;
+
+  const actions = document.createElement("div");
+  actions.className = "pages-media-actions";
+
+  const choose = document.createElement("button");
+  choose.type = "button";
+  choose.className = "admin-work-zone-button is-secondary";
+  choose.textContent = "Choose from CDN";
+  choose.disabled = progress?.status === "uploading";
+  choose.addEventListener("click", onChoose);
+
+  actions.append(choose);
+
+  if (hasMedia) {
+    const crop = document.createElement("button");
+    crop.type = "button";
+    crop.className = "admin-work-zone-button is-secondary";
+    crop.textContent = "Crop / rotate";
+    crop.disabled = progress?.status === "uploading";
+    crop.addEventListener("click", onCrop);
+    actions.append(crop);
+  }
+
+  wrapper.append(zone, actions);
+
+  if (progress) {
+    const progressWrapper = document.createElement("div");
+    progressWrapper.className = `pages-upload-progress is-${progress.status || "uploading"}`;
+
+    const labelElement = document.createElement("span");
+    labelElement.textContent = progress.status === "error"
+      ? progress.message || "Upload failed"
+      : progress.status === "complete"
+        ? "Upload complete"
+        : progress.message || `Uploading ${Math.round(progress.percent || 0)}%`;
+
+    const bar = document.createElement("span");
+    bar.className = "pages-upload-progress-bar";
+    bar.style.setProperty("--upload-progress", `${Math.max(0, Math.min(progress.percent || 0, 100))}%`);
+
+    progressWrapper.append(labelElement, bar);
+    wrapper.append(progressWrapper);
+  }
+
+  return wrapper;
+}
+
+function createColumnEditor(block, index, column, columnIndex) {
+  const panel = document.createElement("section");
+  panel.className = "pages-column-editor";
+
+  const title = document.createElement("h4");
+  title.textContent = `Column ${columnIndex + 1}`;
+  panel.append(title);
+
+  if (column.mediaUrl) {
+    panel.append(createCroppedPreview({
+      src: column.mediaUrl,
+      crop: column.crop
+    }));
+  }
+
+  panel.append(
+    createMediaDropZone({
+      hasMedia: Boolean(column.mediaUrl),
+      label: "Add column image",
+      progressKey: `column:${index}:${columnIndex}`,
+      onUpload: file => uploadColumnImage(index, columnIndex, file),
+      onCrop: () => openCropEditor({
+        type: "column",
+        blockIndex: index,
+        columnIndex
+      }),
+      onChoose: () => openMediaPicker({
+        type: "column",
+        blockIndex: index,
+        columnIndex
+      })
+    }),
+    createNestedLocalizedInput({
+      label: "Column title",
+      value: column.title,
+      type: "input",
+      onInput: (language, value) => updateBlockColumnLocalized(index, columnIndex, "title", language, value)
+    }),
+    createNestedLocalizedInput({
+      label: "Column body",
+      value: column.body,
+      onInput: (language, value) => updateBlockColumnLocalized(index, columnIndex, "body", language, value)
+    }),
+    createNestedLocalizedInput({
+      label: "Image alt text",
+      value: column.alt,
+      type: "input",
+      onInput: (language, value) => updateBlockColumnLocalized(index, columnIndex, "alt", language, value)
+    })
+  );
+
+  return panel;
+}
+
+function createCarouselItemEditor(block, index, item, itemIndex) {
+  const panel = document.createElement("section");
+  panel.className = "pages-carousel-item-editor";
+
+  const header = document.createElement("div");
+  header.className = "pages-mini-heading";
+
+  const title = document.createElement("h4");
+  title.textContent = `Slide ${itemIndex + 1}`;
+
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "admin-work-zone-button is-danger";
+  remove.textContent = "Remove slide";
+  remove.disabled = (block.items || []).length <= 1;
+  remove.addEventListener("click", () => removeCarouselItem(index, itemIndex));
+
+  header.append(title, remove);
+  panel.append(header);
+
+  if (item.mediaUrl) {
+    panel.append(createCroppedPreview({
+      src: item.mediaUrl,
+      crop: item.crop
+    }));
+  }
+
+  panel.append(
+    createMediaDropZone({
+      hasMedia: Boolean(item.mediaUrl),
+      label: "Add slide image",
+      progressKey: `carousel:${index}:${itemIndex}`,
+      onUpload: file => uploadCarouselImage(index, itemIndex, file),
+      onCrop: () => openCropEditor({
+        type: "carousel",
+        blockIndex: index,
+        itemIndex
+      }),
+      onChoose: () => openMediaPicker({
+        type: "carousel",
+        blockIndex: index,
+        itemIndex
+      })
+    }),
+    createNestedLocalizedInput({
+      label: "Alt text",
+      value: item.alt,
+      type: "input",
+      onInput: (language, value) => updateCarouselItemLocalized(index, itemIndex, "alt", language, value)
+    }),
+    createNestedLocalizedInput({
+      label: "Caption",
+      value: item.caption,
+      type: "input",
+      onInput: (language, value) => updateCarouselItemLocalized(index, itemIndex, "caption", language, value)
+    })
+  );
+
+  return panel;
 }
 
 function createBlockEditor(block, index) {
   const article = document.createElement("article");
   article.className = `pages-block-editor is-${block.type}`;
+  article.draggable = true;
+  article.dataset.blockIndex = String(index);
+
+  article.addEventListener("dragstart", event => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(index));
+    event.dataTransfer.setData("application/x-cmcen-block-index", String(index));
+    article.classList.add("is-dragging");
+  });
+  article.addEventListener("dragend", () => {
+    article.classList.remove("is-dragging");
+  });
+  article.addEventListener("dragover", event => {
+    const hasBlockType = event.dataTransfer.types.includes("application/x-cmcen-block-type");
+    const hasBlockIndex = event.dataTransfer.types.includes("application/x-cmcen-block-index");
+
+    if (!hasBlockType && !hasBlockIndex) return;
+
+    event.preventDefault();
+    article.classList.add("is-drop-target");
+  });
+  article.addEventListener("dragleave", () => {
+    article.classList.remove("is-drop-target");
+  });
+  article.addEventListener("drop", event => {
+    event.preventDefault();
+    article.classList.remove("is-drop-target");
+    const blockType = event.dataTransfer.getData("application/x-cmcen-block-type");
+    const fromIndex = Number(
+      event.dataTransfer.getData("application/x-cmcen-block-index") ||
+      event.dataTransfer.getData("text/plain")
+    );
+
+    if (blockType) {
+      insertBlock(blockType, index);
+      return;
+    }
+
+    if (Number.isInteger(fromIndex) && fromIndex !== index) {
+      reorderBlock(fromIndex, index);
+    }
+  });
 
   const header = document.createElement("div");
   header.className = "pages-block-heading";
 
   const type = document.createElement("strong");
-  type.textContent = block.type;
+  type.textContent = block.type === "columns" ? "Side-by-side" : block.type;
   header.append(type, createBlockToolbar(index));
   article.append(header);
 
@@ -421,14 +986,25 @@ function createBlockEditor(block, index) {
     article.append(createBlockLocalizedInput(index, "Heading text", "text", "input"));
   } else if (block.type === "image") {
     if (block.mediaUrl) {
-      const preview = document.createElement("img");
-      preview.className = "pages-image-preview";
-      preview.src = block.mediaUrl;
-      preview.alt = "";
-      article.append(preview);
+      article.append(createCroppedPreview({
+        src: block.mediaUrl,
+        crop: block.crop
+      }));
     }
     article.append(
-      createImageDropZone(index, block),
+      createMediaDropZone({
+        hasMedia: Boolean(block.mediaUrl),
+        progressKey: `block:${index}`,
+        onUpload: file => uploadBlockImage(index, file),
+        onCrop: () => openCropEditor({
+          type: "block",
+          blockIndex: index
+        }),
+        onChoose: () => openMediaPicker({
+          type: "block",
+          blockIndex: index
+        })
+      }),
       createBlockLocalizedInput(index, "Alt text", "alt", "input"),
       createBlockLocalizedInput(index, "Caption", "caption", "input")
     );
@@ -452,6 +1028,30 @@ function createBlockEditor(block, index) {
     note.className = "admin-empty-state";
     note.textContent = "Divider line";
     article.append(note);
+  } else if (block.type === "columns") {
+    const columns = document.createElement("div");
+    columns.className = "pages-column-editors";
+    (block.columns?.length ? block.columns : getNewBlock("columns").columns).forEach((column, columnIndex) => {
+      columns.append(createColumnEditor(block, index, column, columnIndex));
+    });
+    article.append(columns);
+  } else if (block.type === "carousel") {
+    const carouselItems = document.createElement("div");
+    carouselItems.className = "pages-carousel-item-editors";
+    (block.items?.length ? block.items : getNewBlock("carousel").items).forEach((item, itemIndex) => {
+      carouselItems.append(createCarouselItemEditor(block, index, item, itemIndex));
+    });
+
+    const addSlide = document.createElement("button");
+    addSlide.type = "button";
+    addSlide.className = "admin-work-zone-button is-secondary";
+    addSlide.textContent = "Add slide";
+    addSlide.addEventListener("click", () => addCarouselItem(index));
+    article.append(
+      createBlockLocalizedInput(index, "Carousel heading", "text", "input"),
+      carouselItems,
+      addSlide
+    );
   } else {
     article.append(createBlockLocalizedInput(index, block.type === "callout" ? "Callout text" : "Text", "body"));
   }
@@ -460,6 +1060,12 @@ function createBlockEditor(block, index) {
 }
 
 function createBlockControls() {
+  if (!pagesState.selectedPage) {
+    const placeholder = document.createElement("div");
+    placeholder.className = "pages-add-block-placeholder";
+    return placeholder;
+  }
+
   const controls = document.createElement("div");
   controls.className = "pages-add-block-controls";
 
@@ -468,13 +1074,36 @@ function createBlockControls() {
   title.textContent = "Add block";
   controls.append(title);
 
-  ["heading", "text", "image", "callout", "button", "divider"].forEach(type => {
+  [
+    ["heading", "Heading"],
+    ["text", "Text"],
+    ["image", "Image"],
+    ["columns", "Side-by-side"],
+    ["carousel", "Carousel"],
+    ["callout", "Callout"],
+    ["button", "Button"],
+    ["divider", "Divider"]
+  ].forEach(([type, label]) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "admin-work-zone-button is-secondary";
-    button.textContent = `Add ${type}`;
+    button.className = "pages-palette-block";
+    button.draggable = true;
+    button.textContent = label;
     button.disabled = !pagesState.selectedPage;
     button.addEventListener("click", () => addBlock(type));
+    button.addEventListener("dragstart", event => {
+      if (!pagesState.selectedPage) {
+        event.preventDefault();
+        return;
+      }
+
+      event.dataTransfer.effectAllowed = "copy";
+      event.dataTransfer.setData("application/x-cmcen-block-type", type);
+      button.classList.add("is-dragging");
+    });
+    button.addEventListener("dragend", () => {
+      button.classList.remove("is-dragging");
+    });
     controls.append(button);
   });
 
@@ -579,11 +1208,19 @@ function createPageAccessEditor() {
 function createPageEditor() {
   const panel = document.createElement("form");
   panel.className = "pages-admin-editor";
+  panel.classList.toggle("is-empty", !pagesState.selectedPage);
 
   if (!pagesState.selectedPage) {
-    const empty = document.createElement("p");
-    empty.className = "admin-empty-state";
-    empty.textContent = "Select or create a page.";
+    const empty = document.createElement("div");
+    empty.className = "pages-editor-empty";
+
+    const heading = document.createElement("strong");
+    heading.textContent = "Select or create a page";
+
+    const copy = document.createElement("span");
+    copy.textContent = "Choose a page on the left, or create a new one to open the drag-and-drop builder.";
+
+    empty.append(heading, copy);
     panel.append(empty);
     return panel;
   }
@@ -595,7 +1232,16 @@ function createPageEditor() {
   const status = document.createElement("span");
   status.className = "admin-user-role-badge";
   status.textContent = pagesState.selectedPage.status;
-  header.append(title, status);
+
+  const headerMeta = document.createElement("div");
+  headerMeta.className = "pages-editor-header-meta";
+
+  const autoSave = document.createElement("span");
+  autoSave.className = `pages-autosave-status is-${pagesState.autoSaveStatus || "idle"}`;
+  autoSave.textContent = getAutoSaveLabel();
+
+  headerMeta.append(status, autoSave);
+  header.append(title, headerMeta);
 
   const slugField = document.createElement("label");
   slugField.className = "pages-editor-field";
@@ -613,9 +1259,18 @@ function createPageEditor() {
 
   const blocks = document.createElement("div");
   blocks.className = "pages-block-list";
-  (pagesState.selectedPage.blocks || []).forEach((block, index) => {
-    blocks.append(createBlockEditor(block, index));
-  });
+  if ((pagesState.selectedPage.blocks || []).length) {
+    blocks.append(createCanvasDropZone(0));
+    (pagesState.selectedPage.blocks || []).forEach((block, index) => {
+      blocks.append(createBlockEditor(block, index));
+      blocks.append(createCanvasDropZone(index + 1));
+    });
+  } else {
+    const empty = document.createElement("div");
+    empty.className = "pages-builder-empty";
+    empty.append(createCanvasDropZone(0));
+    blocks.append(empty);
+  }
 
   const actions = document.createElement("div");
   actions.className = "pages-editor-actions";
@@ -660,7 +1315,7 @@ function createPageEditor() {
 
   panel.addEventListener("submit", event => {
     event.preventDefault();
-    saveSelectedPage();
+    saveSelectedPage({ auto: false });
   });
 
   return panel;
@@ -686,10 +1341,14 @@ function createNavigationPanel() {
   }
 
   const form = document.createElement("form");
-  form.className = "pages-navigation-form";
+  form.className = "pages-navigation-form pages-navigation-add-page-form";
 
   const groupForm = document.createElement("form");
-  groupForm.className = "pages-navigation-form";
+  groupForm.className = "pages-navigation-form pages-navigation-group-form";
+
+  const groupFormTitle = document.createElement("strong");
+  groupFormTitle.className = "pages-navigation-form-title";
+  groupFormTitle.textContent = "Add parent";
 
   const groupName = document.createElement("input");
   groupName.type = "text";
@@ -704,7 +1363,7 @@ function createNavigationPanel() {
   addGroup.className = "admin-work-zone-button is-secondary";
   addGroup.textContent = "Add parent";
 
-  groupForm.append(groupName, groupNameFr, addGroup);
+  groupForm.append(groupFormTitle, groupName, groupNameFr, addGroup);
   groupForm.addEventListener("submit", event => {
     event.preventDefault();
     const labelEn = groupName.value.trim();
@@ -751,7 +1410,11 @@ function createNavigationPanel() {
   add.className = "admin-work-zone-button is-primary";
   add.textContent = "Add to navbar";
 
-  form.append(group, page, add);
+  const addPageTitle = document.createElement("strong");
+  addPageTitle.className = "pages-navigation-form-title";
+  addPageTitle.textContent = "Add page";
+
+  form.append(addPageTitle, group, page, add);
   form.addEventListener("submit", event => {
     event.preventDefault();
     const option = page.selectedOptions[0];
@@ -797,14 +1460,221 @@ function createNavigationPanel() {
   return panel;
 }
 
+function createMediaPickerModal() {
+  if (!pagesState.mediaPicker) {
+    return null;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "pages-media-picker-overlay";
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) {
+      closeMediaPicker();
+    }
+  });
+
+  const modal = document.createElement("section");
+  modal.className = "pages-media-picker";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "pagesMediaPickerTitle");
+
+  const header = document.createElement("div");
+  header.className = "pages-media-picker-header";
+
+  const title = document.createElement("h3");
+  title.id = "pagesMediaPickerTitle";
+  title.textContent = "Choose from CDN";
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "admin-work-zone-button is-secondary";
+  close.textContent = "Close";
+  close.addEventListener("click", closeMediaPicker);
+
+  header.append(title, close);
+
+  const body = document.createElement("div");
+  body.className = "pages-media-picker-body";
+
+  if (pagesState.mediaIsLoading && !pagesState.media.length) {
+    body.append(CMCENUtils.createLoadingSpinner("Loading media..."));
+  } else if (!pagesState.media.length) {
+    const empty = document.createElement("p");
+    empty.className = "admin-empty-state";
+    empty.textContent = "No CDN media found yet. Upload an image from a page block to add one.";
+    body.append(empty);
+  } else {
+    const grid = document.createElement("div");
+    grid.className = "pages-media-picker-grid";
+
+    pagesState.media.forEach(mediaItem => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "pages-media-picker-item";
+      button.addEventListener("click", () => applySelectedMedia(mediaItem));
+
+      const image = document.createElement("img");
+      image.src = mediaItem.url;
+      image.alt = mediaItem.key;
+      image.loading = "lazy";
+
+      const label = document.createElement("span");
+      label.textContent = mediaItem.key;
+
+      button.append(image, label);
+      grid.append(button);
+    });
+
+    body.append(grid);
+  }
+
+  const footer = document.createElement("div");
+  footer.className = "pages-media-picker-footer";
+
+  const refresh = document.createElement("button");
+  refresh.type = "button";
+  refresh.className = "admin-work-zone-button is-secondary";
+  refresh.textContent = pagesState.mediaIsLoading ? "Loading..." : "Refresh";
+  refresh.disabled = pagesState.mediaIsLoading;
+  refresh.addEventListener("click", () => loadPageBuilderMedia({ reset: true }));
+  footer.append(refresh);
+
+  if (pagesState.mediaIsTruncated) {
+    const loadMore = document.createElement("button");
+    loadMore.type = "button";
+    loadMore.className = "admin-work-zone-button is-secondary";
+    loadMore.textContent = pagesState.mediaIsLoading ? "Loading..." : "Load more";
+    loadMore.disabled = pagesState.mediaIsLoading;
+    loadMore.addEventListener("click", () => loadPageBuilderMedia());
+    footer.append(loadMore);
+  }
+
+  modal.append(header, body, footer);
+  overlay.append(modal);
+  return overlay;
+}
+
+function createCropEditorModal() {
+  const media = getCropTargetMedia();
+
+  if (!pagesState.cropEditor || !media?.mediaUrl) {
+    return null;
+  }
+
+  const crop = getCrop(media.crop);
+  const overlay = document.createElement("div");
+  overlay.className = "pages-media-picker-overlay";
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) {
+      closeCropEditor();
+    }
+  });
+
+  const modal = document.createElement("section");
+  modal.className = "pages-crop-editor";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "pagesCropEditorTitle");
+
+  const header = document.createElement("div");
+  header.className = "pages-media-picker-header";
+
+  const title = document.createElement("h3");
+  title.id = "pagesCropEditorTitle";
+  title.textContent = "Crop and rotate";
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "admin-work-zone-button is-secondary";
+  close.textContent = "Done";
+  close.addEventListener("click", closeCropEditor);
+  header.append(title, close);
+
+  const body = document.createElement("div");
+  body.className = "pages-crop-editor-body";
+
+  const preview = createCroppedPreview({
+    src: media.mediaUrl,
+    crop
+  });
+  preview.classList.add("pages-crop-preview");
+
+  const controls = document.createElement("div");
+  controls.className = "pages-crop-controls";
+
+  function addRange(label, key, min, max, step = 1) {
+    const field = document.createElement("label");
+    field.className = "pages-editor-field";
+    const text = document.createElement("span");
+    text.textContent = label;
+    const input = document.createElement("input");
+    input.type = "range";
+    input.min = String(min);
+    input.max = String(max);
+    input.step = String(step);
+    input.value = String(crop[key]);
+    input.addEventListener("change", event => {
+      updateCropTarget({
+        ...getCrop(getCropTargetMedia()?.crop),
+        [key]: Number(event.target.value)
+      });
+    });
+    field.append(text, input);
+    controls.append(field);
+  }
+
+  addRange("Horizontal", "x", 0, 100);
+  addRange("Vertical", "y", 0, 100);
+  addRange("Zoom", "zoom", 1, 3, 0.05);
+
+  const rotateField = document.createElement("div");
+  rotateField.className = "pages-crop-rotate-controls";
+
+  [0, 90, 180, 270].forEach(value => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "admin-work-zone-button is-secondary";
+    button.classList.toggle("is-active", Number(crop.rotate) === value);
+    button.textContent = `${value}deg`;
+    button.addEventListener("click", () => {
+      updateCropTarget({
+        ...getCrop(getCropTargetMedia()?.crop),
+        rotate: value
+      });
+    });
+    rotateField.append(button);
+  });
+
+  controls.append(rotateField);
+  body.append(preview, controls);
+  modal.append(header, body);
+  overlay.append(modal);
+  return overlay;
+}
+
 function renderPagesAdmin() {
-  pagesAdminContent.replaceChildren(
+  pagesAdminContent.classList.toggle("is-page-selected", Boolean(pagesState.selectedPage));
+
+  const children = [
     createMessage(),
     createPageList(),
     createBlockControls(),
     createPageEditor(),
     createNavigationPanel()
-  );
+  ];
+  const mediaPicker = createMediaPickerModal();
+  const cropEditor = createCropEditorModal();
+
+  if (mediaPicker) {
+    children.push(mediaPicker);
+  }
+
+  if (cropEditor) {
+    children.push(cropEditor);
+  }
+
+  pagesAdminContent.replaceChildren(...children);
 }
 
 async function verifyAccess() {
@@ -823,6 +1693,7 @@ async function verifyAccess() {
 }
 
 async function loadPages() {
+  cancelAutoSave();
   const data = await pageApi("/api/admin/pages", {
     errorMessage: "Could not load pages"
   });
@@ -842,7 +1713,9 @@ async function loadPages() {
     selectedPage: selectedPageId === pagesState.selectedPageId
       ? pagesState.selectedPage
       : null,
-    message: ""
+    message: "",
+    autoSaveStatus: "idle",
+    autoSaveMessage: ""
   });
   showPagesPage();
 
@@ -852,14 +1725,58 @@ async function loadPages() {
 }
 
 async function loadPageDetail(pageId) {
+  cancelAutoSave();
   const data = await pageApi(`/api/admin/pages/${encodeURIComponent(pageId)}`, {
     errorMessage: "Could not load page"
   });
   setPagesState({
     selectedPageId: data.page._id,
     selectedPage: data.page,
-    message: ""
+    message: "",
+    autoSaveStatus: "idle",
+    autoSaveMessage: "",
+    lastSavedAt: data.page.updatedAt || null
   });
+}
+
+async function loadPageBuilderMedia({ reset = false } = {}) {
+  setPagesState({
+    mediaIsLoading: true,
+    ...(reset
+      ? {
+        media: [],
+        mediaNextCursor: "",
+        mediaIsTruncated: false
+      }
+      : {})
+  });
+
+  try {
+    const params = new URLSearchParams({ limit: "60" });
+    const cursor = reset ? "" : pagesState.mediaNextCursor;
+
+    if (cursor) {
+      params.set("cursor", cursor);
+    }
+
+    const data = await pageApi(`/api/admin/pages/media?${params}`, {
+      errorMessage: "Could not load CDN media"
+    });
+
+    setPagesState({
+      media: reset
+        ? data.media || []
+        : [...pagesState.media, ...(data.media || [])],
+      mediaNextCursor: data.nextCursor || "",
+      mediaIsTruncated: Boolean(data.isTruncated),
+      mediaIsLoading: false
+    });
+  } catch (error) {
+    setPagesState({
+      mediaIsLoading: false,
+      message: error.message || "Could not load CDN media"
+    });
+  }
 }
 
 async function createPage() {
@@ -878,30 +1795,104 @@ async function createPage() {
   await loadPageDetail(data.page._id);
 }
 
-async function saveSelectedPage() {
+function getAutoSaveLabel() {
+  if (!pagesState.selectedPage) return "";
+
+  if (pagesState.autoSaveStatus === "pending") {
+    return "Unsaved changes";
+  }
+
+  if (pagesState.autoSaveStatus === "saving") {
+    return "Saving...";
+  }
+
+  if (pagesState.autoSaveStatus === "error") {
+    return pagesState.autoSaveMessage || "Autosave failed";
+  }
+
+  if (pagesState.lastSavedAt) {
+    return "Saved";
+  }
+
+  return "Draft autosaves";
+}
+
+async function saveSelectedPage({ auto = false } = {}) {
   if (!pagesState.selectedPage?._id) return;
 
-  const data = await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}`, {
-    method: "PATCH",
-    body: {
-      title: pagesState.selectedPage.title,
-      slug: pagesState.selectedPage.slug,
-      summary: pagesState.selectedPage.summary,
-      access: getSelectedPageAccess(),
-      blocks: pagesState.selectedPage.blocks || []
-    },
-    errorMessage: "Could not save page"
-  });
+  cancelAutoSave();
+  const requestId = ++autoSaveRequestId;
+  const pageId = pagesState.selectedPage._id;
+
+  if (auto) {
+    setAutoSaveState("saving", "Saving...");
+  }
+
+  let data;
+
+  try {
+    data = await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}`, {
+      method: "PATCH",
+      body: {
+        title: pagesState.selectedPage.title,
+        slug: pagesState.selectedPage.slug,
+        summary: pagesState.selectedPage.summary,
+        access: getSelectedPageAccess(),
+        blocks: pagesState.selectedPage.blocks || []
+      },
+      errorMessage: "Could not save page"
+    });
+  } catch (error) {
+    if (auto) {
+      setAutoSaveState("error", error.message || "Autosave failed");
+      return;
+    }
+
+    throw error;
+  }
+
+  if (requestId !== autoSaveRequestId || String(pagesState.selectedPageId) !== String(pageId)) {
+    return;
+  }
+
+  if (auto) {
+    pagesState = {
+      ...pagesState,
+      autoSaveStatus: "saved",
+      autoSaveMessage: "Saved",
+      lastSavedAt: data.page.updatedAt || new Date().toISOString()
+    };
+    renderAutoSaveStatus();
+    return;
+  }
 
   setPagesState({
     selectedPage: data.page,
-    message: data.message || "Page saved"
+    message: data.message || "Page saved",
+    autoSaveStatus: "saved",
+    autoSaveMessage: "Saved",
+    lastSavedAt: data.page.updatedAt || new Date().toISOString()
   });
-  await loadPages();
+
+  const listData = await pageApi("/api/admin/pages", {
+    errorMessage: "Could not refresh page list"
+  }).catch(() => null);
+
+  if (listData && String(pagesState.selectedPageId) === String(pageId)) {
+    setPagesState({
+      pages: listData.pages || pagesState.pages,
+      navigationItems: listData.navigationItems || pagesState.navigationItems,
+      navigationGroups: listData.navigationGroups || pagesState.navigationGroups,
+      roles: listData.roles || pagesState.roles,
+      customRoles: listData.customRoles || pagesState.customRoles,
+      permissionCatalog: listData.permissionCatalog || pagesState.permissionCatalog
+    });
+  }
 }
 
 async function updatePageStatus(status) {
   if (!pagesState.selectedPage?._id) return;
+  cancelAutoSave();
 
   const data = await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}/status`, {
     method: "PATCH",
@@ -919,6 +1910,7 @@ async function updatePageStatus(status) {
 async function deleteSelectedPage() {
   if (!pagesState.selectedPage?._id) return;
   if (!window.confirm("Delete this page?")) return;
+  cancelAutoSave();
 
   await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}`, {
     method: "DELETE",
@@ -934,12 +1926,14 @@ async function deleteSelectedPage() {
 }
 
 function addBlock(type) {
-  updateSelectedPage({
-    blocks: [
-      ...(pagesState.selectedPage?.blocks || []),
-      getNewBlock(type)
-    ]
-  });
+  insertBlock(type, (pagesState.selectedPage?.blocks || []).length);
+}
+
+function insertBlock(type, index) {
+  const blocks = [...(pagesState.selectedPage?.blocks || [])];
+  const insertIndex = Math.max(0, Math.min(index, blocks.length));
+  blocks.splice(insertIndex, 0, getNewBlock(type));
+  updateSelectedPage({ blocks });
 }
 
 function removeBlock(index) {
@@ -957,20 +1951,192 @@ function moveBlock(index, direction) {
   updateSelectedPage({ blocks });
 }
 
-async function uploadBlockImage(index, file) {
-  const formData = new FormData();
-  formData.append("image", file);
+function reorderBlock(fromIndex, toIndex) {
+  const blocks = [...(pagesState.selectedPage?.blocks || [])];
+  if (fromIndex < 0 || fromIndex >= blocks.length) return;
 
-  const data = await pageApi("/api/upload", {
-    method: "POST",
-    body: formData,
-    json: false,
-    errorMessage: "Could not upload image"
+  const [block] = blocks.splice(fromIndex, 1);
+  const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+  const insertIndex = Math.max(0, Math.min(adjustedToIndex, blocks.length));
+  blocks.splice(insertIndex, 0, block);
+  updateSelectedPage({ blocks });
+}
+
+function addCarouselItem(index) {
+  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
+  updateBlock(index, {
+    items: [
+      ...(block.items || []),
+      {
+        mediaKey: "",
+        mediaUrl: "",
+        alt: getEmptyLocalized(),
+        caption: getEmptyLocalized()
+      }
+    ]
   });
+}
+
+function removeCarouselItem(index, itemIndex) {
+  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
+  const items = [...(block.items || [])];
+  items.splice(itemIndex, 1);
+  updateBlock(index, { items });
+}
+
+async function uploadBlockImage(index, file) {
+  const data = await uploadImageToCdn(file, `block:${index}`);
 
   updateBlock(index, {
     mediaKey: data.key || "",
-    mediaUrl: data.url || ""
+    mediaUrl: data.url || "",
+    crop: getCrop(pagesState.selectedPage?.blocks?.[index]?.crop)
+  });
+}
+
+async function uploadColumnImage(index, columnIndex, file) {
+  const data = await uploadImageToCdn(file, `column:${index}:${columnIndex}`);
+
+  updateBlockColumn(index, columnIndex, {
+    mediaKey: data.key || "",
+    mediaUrl: data.url || "",
+    crop: getCrop(pagesState.selectedPage?.blocks?.[index]?.columns?.[columnIndex]?.crop)
+  });
+}
+
+async function uploadCarouselImage(index, itemIndex, file) {
+  const data = await uploadImageToCdn(file, `carousel:${index}:${itemIndex}`);
+
+  updateCarouselItem(index, itemIndex, {
+    mediaKey: data.key || "",
+    mediaUrl: data.url || "",
+    crop: getCrop(pagesState.selectedPage?.blocks?.[index]?.items?.[itemIndex]?.crop)
+  });
+}
+
+function uploadImageToCdn(file, progressKey) {
+  setUploadProgress(progressKey, {
+    status: "uploading",
+    percent: 0,
+    message: "Preparing image"
+  });
+
+  return CMCENUtils.prepareImageUploadFile(file)
+    .catch(() => file)
+    .then(uploadFile => {
+      setUploadProgress(progressKey, {
+        status: "uploading",
+        percent: 0,
+        message: uploadFile.size < file.size ? "Optimized image" : ""
+      });
+
+      return uploadImageToCdnDirect(uploadFile, progressKey)
+        .catch(() => uploadImageToCdnThroughServer(uploadFile, progressKey));
+    });
+}
+
+async function createDirectPageUpload(file) {
+  return pageApi("/api/upload-url", {
+    method: "POST",
+    body: {
+      filename: file.name,
+      contentType: file.type || "application/octet-stream"
+    },
+    errorMessage: "Could not prepare upload"
+  });
+}
+
+function uploadImageToCdnDirect(file, progressKey) {
+  return createDirectPageUpload(file).then(upload => new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+
+    request.open("PUT", upload.uploadUrl);
+    Object.entries(upload.headers || {}).forEach(([key, value]) => {
+      request.setRequestHeader(key, value);
+    });
+
+    request.upload.addEventListener("progress", event => {
+      if (!event.lengthComputable) return;
+
+      setUploadProgress(progressKey, {
+        status: "uploading",
+        percent: Math.round((event.loaded / event.total) * 100)
+      });
+    });
+
+    request.addEventListener("load", () => {
+      if (request.status < 200 || request.status >= 300) {
+        reject(new Error("Direct upload failed"));
+        return;
+      }
+
+      setUploadProgress(progressKey, {
+        status: "complete",
+        percent: 100,
+        message: "Upload complete"
+      });
+      window.setTimeout(() => clearUploadProgress(progressKey), 900);
+      resolve(upload);
+    });
+
+    request.addEventListener("error", () => reject(new Error("Direct upload failed")));
+    request.send(file);
+  }));
+}
+
+function uploadImageToCdnThroughServer(file, progressKey) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+
+    request.open("POST", "/api/upload");
+    request.setRequestHeader("Authorization", `Bearer ${pagesAdminToken}`);
+
+    request.upload.addEventListener("progress", event => {
+      if (!event.lengthComputable) return;
+
+      setUploadProgress(progressKey, {
+        status: "uploading",
+        percent: Math.round((event.loaded / event.total) * 100)
+      });
+    });
+
+    request.addEventListener("load", () => {
+      const data = JSON.parse(request.responseText || "{}");
+
+      if (request.status < 200 || request.status >= 300) {
+        const message = data.error || "Could not upload image";
+        setUploadProgress(progressKey, {
+          status: "error",
+          percent: 0,
+          message
+        });
+        reject(new Error(message));
+        return;
+      }
+
+      setUploadProgress(progressKey, {
+        status: "complete",
+        percent: 100,
+        message: "Upload complete"
+      });
+      window.setTimeout(() => clearUploadProgress(progressKey), 900);
+      resolve(data);
+    });
+
+    request.addEventListener("error", () => {
+      const message = "Could not upload image";
+      setUploadProgress(progressKey, {
+        status: "error",
+        percent: 0,
+        message
+      });
+      reject(new Error(message));
+    });
+
+    request.send(formData);
   });
 }
 

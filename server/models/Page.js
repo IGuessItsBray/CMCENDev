@@ -15,11 +15,21 @@ const LocalizedStringSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const ImageCropSchema = new mongoose.Schema(
+  {
+    x: { type: Number, min: 0, max: 100, default: 50 },
+    y: { type: Number, min: 0, max: 100, default: 50 },
+    zoom: { type: Number, min: 1, max: 3, default: 1 },
+    rotate: { type: Number, enum: [0, 90, 180, 270], default: 0 }
+  },
+  { _id: false }
+);
+
 const PageBlockSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ['heading', 'text', 'image', 'callout', 'button', 'divider'],
+      enum: ['heading', 'text', 'image', 'callout', 'button', 'divider', 'columns', 'carousel'],
       required: true
     },
     level: {
@@ -59,10 +69,76 @@ const PageBlockSchema = new mongoose.Schema(
       type: LocalizedStringSchema,
       default: () => ({})
     },
+    crop: {
+      type: ImageCropSchema,
+      default: () => ({})
+    },
     variant: {
       type: String,
       enum: ['standard', 'important'],
       default: 'standard'
+    },
+    columns: {
+      type: [
+        {
+          title: {
+            type: LocalizedStringSchema,
+            default: () => ({})
+          },
+          body: {
+            type: LocalizedStringSchema,
+            default: () => ({})
+          },
+          mediaKey: {
+            type: String,
+            trim: true,
+            default: ''
+          },
+          mediaUrl: {
+            type: String,
+            trim: true,
+            default: ''
+          },
+          alt: {
+            type: LocalizedStringSchema,
+            default: () => ({})
+          },
+          crop: {
+            type: ImageCropSchema,
+            default: () => ({})
+          }
+        }
+      ],
+      default: []
+    },
+    items: {
+      type: [
+        {
+          mediaKey: {
+            type: String,
+            trim: true,
+            default: ''
+          },
+          mediaUrl: {
+            type: String,
+            trim: true,
+            default: ''
+          },
+          alt: {
+            type: LocalizedStringSchema,
+            default: () => ({})
+          },
+          caption: {
+            type: LocalizedStringSchema,
+            default: () => ({})
+          },
+          crop: {
+            type: ImageCropSchema,
+            default: () => ({})
+          }
+        }
+      ],
+      default: []
     }
   },
   { _id: true }

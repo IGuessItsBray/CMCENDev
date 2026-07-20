@@ -23,6 +23,34 @@
       });
   }
 
+  function getCrop(value) {
+    return {
+      x: 50,
+      y: 50,
+      zoom: 1,
+      rotate: 0,
+      ...(value || {})
+    };
+  }
+
+  function applyCrop(image, cropValue) {
+    const crop = getCrop(cropValue);
+    image.style.objectPosition = `${crop.x}% ${crop.y}%`;
+    image.style.transform = `scale(${crop.zoom}) rotate(${crop.rotate}deg)`;
+  }
+
+  function createCroppedImage({ src, alt, crop }) {
+    const frame = document.createElement("span");
+    frame.className = "cms-image-frame";
+    const image = document.createElement("img");
+    image.src = src || "";
+    image.alt = alt || "";
+    image.loading = "lazy";
+    applyCrop(image, crop);
+    frame.append(image);
+    return frame;
+  }
+
   function createBlock(block) {
     const section = document.createElement("section");
     section.className = `cms-block cms-block-${block.type || "text"}`;
@@ -35,11 +63,11 @@
     }
 
     if (block.type === "image") {
-      const image = document.createElement("img");
-      image.src = block.mediaUrl || "";
-      image.alt = localized(block.alt);
-      image.loading = "lazy";
-      section.append(image);
+      section.append(createCroppedImage({
+        src: block.mediaUrl,
+        alt: localized(block.alt),
+        crop: block.crop
+      }));
 
       const caption = localized(block.caption);
       if (caption) {
@@ -57,6 +85,78 @@
       createParagraphs(localized(block.body)).forEach(paragraph => {
         section.append(paragraph);
       });
+      return section;
+    }
+
+    if (block.type === "columns") {
+      const grid = document.createElement("div");
+      grid.className = "cms-columns";
+
+      (block.columns || []).forEach(column => {
+        const card = document.createElement("article");
+        card.className = "cms-column";
+
+        if (column.mediaUrl) {
+          card.append(createCroppedImage({
+            src: column.mediaUrl,
+            alt: localized(column.alt),
+            crop: column.crop
+          }));
+        }
+
+        const title = localized(column.title);
+        if (title) {
+          const heading = document.createElement("h3");
+          heading.textContent = title;
+          card.append(heading);
+        }
+
+        createParagraphs(localized(column.body)).forEach(paragraph => {
+          card.append(paragraph);
+        });
+
+        grid.append(card);
+      });
+
+      section.append(grid);
+      return section;
+    }
+
+    if (block.type === "carousel") {
+      const title = localized(block.text);
+
+      if (title) {
+        const heading = document.createElement("h2");
+        heading.textContent = title;
+        section.append(heading);
+      }
+
+      const carousel = document.createElement("div");
+      carousel.className = "cms-carousel";
+
+      (block.items || []).forEach(item => {
+        const slide = document.createElement("figure");
+        slide.className = "cms-carousel-slide";
+
+        if (item.mediaUrl) {
+          slide.append(createCroppedImage({
+            src: item.mediaUrl,
+            alt: localized(item.alt),
+            crop: item.crop
+          }));
+        }
+
+        const caption = localized(item.caption);
+        if (caption) {
+          const captionElement = document.createElement("figcaption");
+          captionElement.textContent = caption;
+          slide.append(captionElement);
+        }
+
+        carousel.append(slide);
+      });
+
+      section.append(carousel);
       return section;
     }
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const Page = require('../models/Page');
 const NavigationItem = require('../models/NavigationItem');
 const Role = require('../models/Role');
@@ -15,6 +16,8 @@ const {
   requirePermission
 } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
+const { buildPublicMediaUrl } = require('../services/media-library');
+const s3Client = require('../storage');
 
 const router = express.Router();
 const PAGE_SHELL_PATH = path.join(__dirname, '..', 'public', 'page.html');
@@ -25,7 +28,9 @@ const NAV_GROUP_LABELS = Object.freeze({
   news: { en: 'News', fr: 'Nouvelles' },
   benefits: { en: 'Benefits', fr: 'Avantages' }
 });
-const BLOCK_TYPES = new Set(['heading', 'text', 'image', 'callout', 'button', 'divider']);
+const BLOCK_TYPES = new Set(['heading', 'text', 'image', 'callout', 'button', 'divider', 'columns', 'carousel']);
+const DEFAULT_MEDIA_PAGE_SIZE = 60;
+const MAX_MEDIA_PAGE_SIZE = 120;
 
 function cleanText(value, maxLength = 10000) {
   return String(value || '').trim().slice(0, maxLength);
@@ -70,11 +75,64 @@ function cleanUrl(value) {
   return '';
 }
 
+function cleanCrop(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value)
+    ? value
+    : {};
+  const cleanNumber = (numberValue, fallback, min, max) => {
+    const parsedValue = Number(numberValue);
+
+    if (!Number.isFinite(parsedValue)) {
+      return fallback;
+    }
+
+    return Math.min(Math.max(parsedValue, min), max);
+  };
+  const rotate = [0, 90, 180, 270].includes(Number(source.rotate))
+    ? Number(source.rotate)
+    : 0;
+
+  return {
+    x: cleanNumber(source.x, 50, 0, 100),
+    y: cleanNumber(source.y, 50, 0, 100),
+    zoom: cleanNumber(source.zoom, 1, 1, 3),
+    rotate
+  };
+}
+
 function cleanBlock(block) {
   const source = block && typeof block === 'object' && !Array.isArray(block)
     ? block
     : {};
   const type = BLOCK_TYPES.has(source.type) ? source.type : 'text';
+
+  const cleanMediaItem = item => {
+    const itemSource = item && typeof item === 'object' && !Array.isArray(item)
+      ? item
+      : {};
+
+    return {
+      mediaKey: cleanText(itemSource.mediaKey, 500),
+      mediaUrl: cleanUrl(itemSource.mediaUrl),
+      alt: cleanLocalizedText(itemSource.alt, 500),
+      caption: cleanLocalizedText(itemSource.caption, 500),
+      crop: cleanCrop(itemSource.crop)
+    };
+  };
+  const cleanColumn = column => {
+    const columnSource = column && typeof column === 'object' && !Array.isArray(column)
+      ? column
+      : {};
+
+    return {
+      title: cleanLocalizedText(columnSource.title, 500),
+      body: cleanLocalizedText(columnSource.body, 10000),
+      mediaKey: cleanText(columnSource.mediaKey, 500),
+      mediaUrl: cleanUrl(columnSource.mediaUrl),
+      alt: cleanLocalizedText(columnSource.alt, 500),
+      crop: cleanCrop(columnSource.crop)
+    };
+  };
 
   return {
     type,
@@ -86,7 +144,14 @@ function cleanBlock(block) {
     mediaUrl: cleanUrl(source.mediaUrl),
     alt: cleanLocalizedText(source.alt, 500),
     caption: cleanLocalizedText(source.caption, 500),
-    variant: source.variant === 'important' ? 'important' : 'standard'
+    crop: cleanCrop(source.crop),
+    variant: source.variant === 'important' ? 'important' : 'standard',
+    columns: (Array.isArray(source.columns) ? source.columns : [])
+      .slice(0, 3)
+      .map(cleanColumn),
+    items: (Array.isArray(source.items) ? source.items : [])
+      .slice(0, 12)
+      .map(cleanMediaItem)
   };
 }
 
@@ -96,6 +161,27 @@ function cleanBlocks(value) {
   }
 
   return value.slice(0, 80).map(cleanBlock);
+}
+
+function cleanMediaPageSize(value) {
+  const parsedValue = Number.parseInt(value, 10);
+
+  if (!Number.isFinite(parsedValue)) {
+    return DEFAULT_MEDIA_PAGE_SIZE;
+  }
+
+  return Math.min(Math.max(parsedValue, 1), MAX_MEDIA_PAGE_SIZE);
+}
+
+function toPageBuilderMediaItem(object) {
+  const key = object.Key || '';
+
+  return {
+    key,
+    url: buildPublicMediaUrl(key),
+    size: object.Size || 0,
+    lastModified: object.LastModified || null
+  };
 }
 
 function cleanObjectIdList(value) {
@@ -496,6 +582,34 @@ router.get(
     } catch (error) {
       console.error('Admin page list failed:', error);
       res.status(500).json({ error: 'Could not load pages' });
+    }
+  }
+);
+
+router.get(
+  '/api/admin/pages/media',
+  authMiddleware,
+  requirePermission('canManagePages'),
+  async (req, res) => {
+    try {
+      const maxKeys = cleanMediaPageSize(req.query.limit);
+      const continuationToken = String(req.query.cursor || '').trim() || undefined;
+      const bucketObjects = await s3Client.send(new ListObjectsV2Command({
+        Bucket: process.env.MINIO_BUCKET_NAME,
+        MaxKeys: maxKeys,
+        ContinuationToken: continuationToken
+      }));
+
+      res.json({
+        media: (bucketObjects.Contents || [])
+          .filter(object => object.Key)
+          .map(toPageBuilderMediaItem),
+        nextCursor: bucketObjects.NextContinuationToken || '',
+        isTruncated: Boolean(bucketObjects.IsTruncated)
+      });
+    } catch (error) {
+      console.error('Page builder media list failed:', error);
+      res.status(500).json({ error: 'Could not load media library' });
     }
   }
 );

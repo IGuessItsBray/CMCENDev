@@ -11,6 +11,7 @@ if (!globalThis.crypto) {
 const express = require('express');
 const mongoose = require('mongoose');
 const adminRoutes = require('./routes/admin');
+const analyticsRoutes = require('./routes/analytics');
 const auditLogRoutes = require('./routes/audit-logs');
 const authRoutes = require('./routes/auth');
 const contentOptionRoutes = require('./routes/content-options');
@@ -30,6 +31,7 @@ app.use(express.json());
 app.use(translationRoutes);
 app.use(contentOptionRoutes);
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api', authRoutes);
 app.use('/api/mfa', mfaRoutes);
 app.use('/api', diagnosticsRoutes);

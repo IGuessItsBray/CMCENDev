@@ -100,6 +100,13 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Review security, login, publishing, deletion, and role-change logs.'
   },
   {
+    key: 'analytics.view',
+    label: 'View analytics',
+    group: 'Analytics',
+    action: 'read',
+    description: 'Review page visits, traffic sources, device types, operating systems, and guest/member usage.'
+  },
+  {
     key: 'site_config.access',
     label: 'Access site config',
     group: 'Site config',
@@ -158,6 +165,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canManageUsers: 'users.manage',
   canManageRoles: 'roles.manage',
   canViewAuditLog: 'audit.view',
+  canViewAnalytics: 'analytics.view',
   canAccessSiteConfig: 'site_config.access',
   canManageSiteConfig: 'site_config.manage',
   canViewMediaLibrary: 'media.read',
@@ -226,6 +234,9 @@ function getBuiltInPermissionFlags(user) {
       hasMinimumRole(role, 'administrator'),
 
     canViewAuditLog:
+      hasMinimumRole(role, 'administrator'),
+
+    canViewAnalytics:
       hasMinimumRole(role, 'administrator'),
 
     canAccessSiteConfig:

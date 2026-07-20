@@ -557,6 +557,31 @@
     element.hidden = false;
   }
 
+  function trackPageVisit() {
+    if (window.location.pathname === "/analytics.html") {
+      return;
+    }
+
+    const payload = JSON.stringify({
+      path: window.location.pathname || "/",
+      fullPath: `${window.location.pathname || "/"}${window.location.search || ""}`,
+      title: document.title || "",
+      referrer: document.referrer || ""
+    });
+    const token = getStoredAuthToken();
+    const headers = {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+
+    fetch("/api/analytics/visit", {
+      method: "POST",
+      headers,
+      body: payload,
+      keepalive: true
+    }).catch(() => {});
+  }
+
   window.CMCENUtils = {
     activateTabs,
     apiFetch,
@@ -586,6 +611,9 @@
     serializeAttestationCredential,
     setStatusLoading,
     setStatusMessage,
-    storeAuthToken
+    storeAuthToken,
+    trackPageVisit
   };
+
+  window.addEventListener("load", trackPageVisit, { once: true });
 })();

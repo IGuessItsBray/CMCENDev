@@ -7,6 +7,7 @@
       admin_tab_media: "Media Manager",
       admin_tab_translations: "Translations",
       admin_tab_audit_log: "Audit Log",
+      admin_tab_analytics: "Analytics",
       admin_tab_site_config: "Site Config"
     };
     const translated = typeof window.translate === "function"
@@ -56,6 +57,12 @@
       permission: "canViewAuditLog"
     },
     {
+      key: "analytics",
+      href: "/analytics.html",
+      labelKey: "admin_tab_analytics",
+      permission: "canViewAnalytics"
+    },
+    {
       key: "site-config",
       href: "/site-config.html",
       labelKey: "admin_tab_site_config",
@@ -91,6 +98,10 @@
 
     if (path === "/audit-log.html") {
       return "audit-log";
+    }
+
+    if (path === "/analytics.html") {
+      return "analytics";
     }
 
     if (path === "/site-config.html") {

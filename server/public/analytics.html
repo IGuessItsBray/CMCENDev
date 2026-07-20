@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>Analytics | CMCEN / RCMCE</title>
+
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="dashboard-main">
+      <section
+        class="dashboard-shell analytics-shell"
+        aria-labelledby="analyticsTitle"
+      >
+        <header class="dashboard-heading">
+          <div class="dashboard-heading-copy">
+            <p class="dashboard-eyebrow">Administrator</p>
+
+            <h1 id="analyticsTitle">Analytics</h1>
+
+            <p class="dashboard-member-name">
+              Page visits, sources, devices, and audience split.
+            </p>
+          </div>
+        </header>
+
+        <nav
+          class="admin-work-zone-tabs admin-work-zone-page-tabs"
+          id="adminWorkZoneTabs"
+          aria-label="Admin work zone views"
+        ></nav>
+
+        <div
+          class="dashboard-status is-loading"
+          id="analyticsStatus"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading..."
+        >
+          <span class="loading-state-spinner" aria-hidden="true"></span>
+          <span class="visually-hidden">Loading...</span>
+        </div>
+
+        <section
+          class="dashboard-section analytics-page"
+          id="analyticsPage"
+          hidden
+        >
+          <div
+            class="analytics-content"
+            id="analyticsContent"
+          ></div>
+        </section>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/app-utils.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/admin-work-zone-tabs.js"></script>
+    <script src="/analytics.js"></script>
+  </body>
+</html>

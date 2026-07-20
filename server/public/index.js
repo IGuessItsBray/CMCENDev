@@ -717,6 +717,10 @@ function loadFooter() {
         <p class="footer-language-mark">
           CMCEN <span aria-hidden="true">/</span> RCMCE
         </p>
+
+        <p class="footer-credit">
+          Made with ♥ by Bray &amp; Eric
+        </p>
       </div>
     </div>
   `;

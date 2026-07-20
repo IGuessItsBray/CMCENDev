@@ -321,6 +321,12 @@ svg {
   color: var(--gold-500);
 }
 
+.footer-credit {
+  margin-left: auto;
+  color: var(--branch-grey-300);
+  text-align: right;
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -3698,11 +3704,12 @@ a.dropdown-toggle {
   min-width: 0;
   border: 1px solid var(--branch-grey-200);
   background: var(--white);
+  overflow: hidden;
 }
 
 .admin-roles-manager {
   width: 100%;
-  max-width: 1180px;
+  max-width: 1280px;
 }
 
 .admin-panel-heading,
@@ -3929,7 +3936,7 @@ a.dropdown-toggle {
 
 .admin-role-editor-body {
   display: grid;
-  grid-template-columns: minmax(220px, 0.38fr) minmax(420px, 1fr);
+  grid-template-columns: minmax(240px, 0.32fr) minmax(520px, 1fr);
   gap: 0;
 }
 
@@ -3975,9 +3982,9 @@ a.dropdown-toggle {
 .admin-role-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: 14px;
   align-items: start;
-  padding: 16px;
+  padding: 18px;
 }
 
 .admin-role-field-description,
@@ -3987,43 +3994,71 @@ a.dropdown-toggle {
 }
 
 .admin-permission-groups {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  column-count: 2;
+  column-gap: 14px;
 }
 
 .admin-permission-group {
-  display: grid;
-  gap: 6px;
-  padding: 10px;
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 14px;
+  padding: 12px;
   border: 1px solid var(--branch-grey-200);
+  border-radius: 8px;
   background: var(--branch-grey-100);
+  break-inside: avoid;
 }
 
 .admin-permission-group>strong {
+  display: block;
+  margin-bottom: 10px;
   color: var(--branch-grey-900);
   font-size: 12px;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .admin-permission-option {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 2px 8px;
+  gap: 2px 10px;
   align-items: start;
+  min-height: 44px;
+  margin-top: 7px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1.25;
+  cursor: pointer;
+}
+
+.admin-permission-option:hover,
+.admin-permission-option:focus-within {
+  border-color: var(--branch-grey-300);
+  background: var(--white);
+}
+
+.admin-permission-option.is-selected {
+  border-color: rgba(213, 155, 39, 0.65);
+  background: rgba(234, 211, 163, 0.22);
 }
 
 .admin-permission-option input {
   grid-row: span 2;
-  margin: 2px 0 0;
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
+  accent-color: var(--gold-600);
 }
 
 .admin-permission-option small {
   color: var(--branch-grey-700);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 500;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .admin-role-form-actions {
@@ -9893,6 +9928,11 @@ a.dropdown-toggle {
     justify-content: center;
     gap: 5px;
     padding-block: 15px;
+  }
+
+  .footer-credit {
+    margin-left: 0;
+    text-align: left;
   }
 }
 

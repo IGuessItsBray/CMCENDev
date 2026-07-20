@@ -447,6 +447,10 @@
           input.type = "checkbox";
           input.value = permission.key;
           input.checked = selectedPermissions.has(permission.key);
+          label.classList.toggle("is-selected", input.checked);
+          input.addEventListener("change", () => {
+            label.classList.toggle("is-selected", input.checked);
+          });
 
           const text = document.createElement("span");
           text.textContent = permission.label || permission.key;

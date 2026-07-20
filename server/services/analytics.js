@@ -100,7 +100,7 @@ function getSource(req, referrerHost) {
   if (!referrerHost) return 'direct';
 
   const host = cleanString(req.headers.host).split(':')[0].replace(/^www\./iu, '');
-  if (host && referrerHost === host) return 'internal';
+  if (host && referrerHost === host) return 'direct';
 
   return referrerHost;
 }
@@ -115,23 +115,10 @@ function getCountry(req) {
     req.headers['fastly-client-country']
   ].map(cleanString).find(Boolean);
 
-  if (country && country !== 'XX') {
-    return country.toUpperCase();
-  }
+  const countryCode = cleanString(country).toUpperCase();
 
-  const ipAddress = cleanString(req.ip || req.socket?.remoteAddress);
-
-  if (
-    ipAddress === '::1' ||
-    ipAddress === '127.0.0.1' ||
-    ipAddress.startsWith('::ffff:127.') ||
-    ipAddress.startsWith('10.') ||
-    ipAddress.startsWith('192.168.') ||
-    /^172\.(1[6-9]|2\d|3[0-1])\./u.test(ipAddress) ||
-    ipAddress.startsWith('fc') ||
-    ipAddress.startsWith('fd')
-  ) {
-    return 'Local/Internal';
+  if (/^[A-Z]{2}$/u.test(countryCode) && !['XX', 'ZZ'].includes(countryCode)) {
+    return countryCode;
   }
 
   return 'Unknown';

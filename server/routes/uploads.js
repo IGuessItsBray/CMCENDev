@@ -2,16 +2,41 @@ const express = require('express');
 const multer = require('multer');
 const {
   GetObjectCommand,
-  PutObjectCommand
+  PutObjectCommand,
+  S3Client
 } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { randomUUID } = require('crypto');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
-const { buildPublicMediaUrl } = require('../services/media-library');
+const { buildPublicMediaUrl, getCdnBaseUrl } = require('../services/media-library');
 const s3Client = require('../storage');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+function getPublicUploadEndpoint() {
+  if (process.env.MINIO_PUBLIC_ENDPOINT) {
+    return process.env.MINIO_PUBLIC_ENDPOINT;
+  }
+
+  try {
+    return new URL(getCdnBaseUrl()).origin;
+  } catch {
+    return process.env.MINIO_ENDPOINT;
+  }
+}
+
+function createPublicUploadClient() {
+  return new S3Client({
+    region: 'us-east-1',
+    endpoint: getPublicUploadEndpoint(),
+    credentials: {
+      accessKeyId: process.env.MINIO_ACCESS_KEY,
+      secretAccessKey: process.env.MINIO_SECRET_KEY
+    },
+    forcePathStyle: true
+  });
+}
 
 // POST /api/upload
 // Upload an authenticated user's image to object storage.
@@ -68,7 +93,7 @@ router.post('/upload-url', authMiddleware, requirePermission('canUploadMedia'), 
       ContentType: contentType
     });
 
-    const uploadUrl = await getSignedUrl(s3Client, command, {
+    const uploadUrl = await getSignedUrl(createPublicUploadClient(), command, {
       expiresIn: 900
     });
 

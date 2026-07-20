@@ -89,7 +89,6 @@ function createRangeToolbar() {
   labelText.textContent = analyticsText("analytics_range", "Range");
 
   const select = document.createElement("select");
-  select.value = analyticsState.range;
 
   [
     ["7d", "Last 7 days"],
@@ -102,6 +101,7 @@ function createRangeToolbar() {
     option.textContent = text;
     select.append(option);
   });
+  select.value = analyticsState.range;
 
   select.addEventListener("change", () => {
     analyticsState.range = select.value;
@@ -266,6 +266,7 @@ async function loadAnalytics(preserveLayout = false) {
   try {
     const params = new URLSearchParams({ range: analyticsState.range });
     analyticsState.data = await analyticsApi(`/api/analytics?${params}`);
+    analyticsState.range = analyticsState.data.range || analyticsState.range;
     analyticsState.isLoading = false;
     renderAnalytics();
     showAnalyticsPage();

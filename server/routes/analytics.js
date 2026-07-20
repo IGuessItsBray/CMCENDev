@@ -7,10 +7,12 @@ const {
 } = require('../middleware/auth');
 const {
   getBrowser,
+  getClientIp,
   getCountry,
   getDeviceType,
   getOsType,
   getReferrerHost,
+  normalizeStoredCountry,
   getSource
 } = require('../services/analytics');
 
@@ -53,6 +55,25 @@ function cleanPath(value) {
 }
 
 async function groupCounts(match, field, { limit = 10 } = {}) {
+  if (field === 'country') {
+    const visits = await AnalyticsVisit.find(match)
+      .select('country ipAddress')
+      .lean();
+    const counts = new Map();
+
+    visits.forEach(visit => {
+      const label = normalizeStoredCountry(visit.country, visit.ipAddress);
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+
+    return Array.from(counts, ([label, visitsCount]) => ({
+      label,
+      visits: visitsCount
+    }))
+      .sort((first, second) => second.visits - first.visits || first.label.localeCompare(second.label))
+      .slice(0, limit);
+  }
+
   return AnalyticsVisit.aggregate([
     { $match: match },
     {
@@ -168,7 +189,7 @@ router.post(
         isRegistered: Boolean(user),
         user: user?._id || null,
         userRole: user?.role || 'guest',
-        ipAddress: req.ip || '',
+        ipAddress: getClientIp(req),
         country: getCountry(req, locale, timeZone),
         userAgent
       });

@@ -9,6 +9,7 @@ const myEventsCount = document.getElementById("myEventsCount");
 const eventTabs = document.querySelectorAll("[data-event-tab]");
 const eventPanels = document.querySelectorAll("[data-event-panel]");
 const eventFormTabLabel = document.getElementById("eventFormTabLabel");
+const cancelEventEditing = document.getElementById("cancelEventEditing");
 
 const submitEventTitle = document.getElementById("submitEventTitle");
 const submitEventIntro = document.getElementById("submitEventIntro");
@@ -624,6 +625,29 @@ function resetEventForm() {
   keepEndDateInRange();
 }
 
+function cancelEditingEvent() {
+  if (isSubmitting) {
+    return;
+  }
+
+  editingEventId = null;
+  editingEvent = null;
+  clearFormMessage();
+  eventPageMessage.hidden = true;
+  setEventEditLoading(false);
+  resetEventForm();
+  autofillSubmitterFromProfile(currentUser);
+  eventForm.hidden = false;
+  activateEventTab("form");
+  updateEventFormModeText();
+
+  const createUrl = "/submit-event.html?panel=form";
+
+  if (window.location.pathname + window.location.search !== createUrl) {
+    window.history.pushState({}, "", createUrl);
+  }
+}
+
 function setEventFieldIfEmpty(id, value = "") {
   const field = document.getElementById(id);
   const cleanValue = String(value || "").trim();
@@ -691,12 +715,17 @@ async function initializeEventPage() {
 
     await loadMyEvents(token);
     if (editingEventId) {
+      const eventId = editingEventId;
+
       activateEventTab("form");
       setEventEditLoading(true);
-      await loadEventForEditing(
-        token,
-        editingEventId
-      );
+      try {
+        await loadEventForEditing(token, eventId);
+      } catch (error) {
+        if (editingEventId === eventId) {
+          throw error;
+        }
+      }
     }
     setEventEditLoading(false);
     eventForm.hidden = false;
@@ -713,6 +742,7 @@ async function initializeEventPage() {
 
 eventAllDay.addEventListener("change", syncScheduleFields);
 eventStartDate.addEventListener("change", keepEndDateInRange);
+cancelEventEditing.addEventListener("click", cancelEditingEvent);
 syncStartDateMinimum();
 eventForm.addEventListener(
   "submit",
@@ -943,6 +973,10 @@ async function loadEventForEditing(token, eventId) {
     }
   );
 
+  if (editingEventId !== eventId) {
+    return;
+  }
+
   editingEvent = data.event;
 
   populateEventForm(editingEvent);
@@ -975,6 +1009,10 @@ async function startEditingEvent(eventId) {
   try {
     await loadEventForEditing(token, eventId);
   } catch (error) {
+    if (editingEventId !== eventId) {
+      return;
+    }
+
     setEventEditLoading(false);
     eventForm.hidden = true;
     showPageMessage(
@@ -987,6 +1025,8 @@ async function startEditingEvent(eventId) {
 function updateEventFormModeText() {
   const isEditing = Boolean(editingEventId);
 
+  cancelEventEditing.hidden = !isEditing;
+  cancelEventEditing.disabled = isSubmitting;
   eventFormTabLabel.textContent = translate(isEditing ? "edit_event_tab" : "submit_new_event_tab");
   submitEventTitle.textContent = translate(isEditing ? "edit_event_heading" : "submit_event_heading");
   submitEventIntro.textContent = translate(isEditing ? "edit_event_intro" : "submit_event_intro");

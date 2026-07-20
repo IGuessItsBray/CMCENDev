@@ -14,6 +14,28 @@
   <header id="header"></header>
   <main class="event-submit-main submit-event-main">
     <div class="event-submit-layout">
+      <section class="event-submit-shell" aria-labelledby="submitEventTitle">
+        <header class="event-submit-heading">
+          <div class="event-submit-heading-copy">
+            <p class="event-submit-eyebrow" data-i18n="event_submission_eyebrow">
+              Event submission
+            </p>
+
+            <h1 id="submitEventTitle" data-i18n="submit_event_title">
+              Submit an Event
+            </h1>
+
+            <p id="submitEventIntro" data-i18n="submit_event_intro">
+              Propose an event for publication in the C&amp;E Calendar.
+            </p>
+          </div>
+
+          <button class="event-cancel-editing" id="cancelEventEditing" type="button" hidden
+            data-i18n="cancel_event_editing">
+            Cancel Editing
+          </button>
+        </header>
+
       <div class="event-management-tabs" role="tablist" aria-label="Event management">
         <button class="event-management-tab is-active" id="myEventsTab" type="button" role="tab" aria-selected="true"
           aria-controls="myEventsPanel" data-event-tab="events">
@@ -50,23 +72,6 @@
       </div>
       <div class="event-management-panel" id="eventFormPanel" role="tabpanel" aria-labelledby="eventFormTab"
         data-event-panel="form" hidden>
-        <section class="event-submit-shell" aria-labelledby="submitEventTitle">
-          <header class="event-submit-heading">
-            <div class="event-submit-heading-copy">
-              <p class="event-submit-eyebrow" data-i18n="event_submission_eyebrow">
-                Event submission
-              </p>
-
-              <h1 id="submitEventTitle" data-i18n="submit_event_title">
-                Submit an Event
-              </h1>
-
-              <p id="submitEventIntro" data-i18n="submit_event_intro">
-                Propose an event for publication in the C&amp;E Calendar.
-              </p>
-            </div>
-          </header>
-
           <p class="event-page-message" id="eventPageMessage" role="alert" aria-live="polite" hidden></p>
 
           <div class="event-edit-loading" id="eventEditLoading" role="status" aria-live="polite" hidden>
@@ -634,8 +639,8 @@
             </section>
             <p class="event-form-message" id="eventFormMessage" role="status" aria-live="polite" hidden></p>
           </form>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   </main>
 

@@ -4,9 +4,25 @@ const retirementsGrid =
 const retirementsMessage =
     document.getElementById("retirementsMessage");
 
+const retirementsLoadMore =
+    document.getElementById("retirementsLoadMore");
+
+const retirementsLoadMoreButton =
+    document.getElementById("retirementsLoadMoreButton");
+
+const retirementsLoadMoreLabel =
+    document.getElementById("retirementsLoadMoreLabel");
+
+const retirementsLoadMoreMessage =
+    document.getElementById("retirementsLoadMoreMessage");
+
 const RETIREMENT_PLACEHOLDER_PHOTO_URL = "/images/logo.png";
+const RETIREMENT_PAGE_SIZE = 24;
 
 let loadedRetirementMessages = [];
+let retirementNextCursor = "";
+let retirementHasMore = false;
+let isLoadingMoreRetirements = false;
 
 function createRetirementLoadingContent(message) {
     const loading = CMCENUtils.createLoadingSpinner(message);
@@ -21,6 +37,7 @@ function showRetirementsMessage(message, type = "neutral") {
     retirementsMessage.removeAttribute("aria-label");
     retirementsMessage.hidden = false;
     retirementsGrid.hidden = true;
+    retirementsLoadMore.hidden = true;
 }
 
 function showRetirementsLoading() {
@@ -34,22 +51,41 @@ function showRetirementsLoading() {
     retirementsMessage.setAttribute("aria-label", message);
     retirementsMessage.hidden = false;
     retirementsGrid.hidden = true;
+    retirementsLoadMore.hidden = true;
+}
+
+function updateRetirementsLoadMore() {
+    const showLoadMore =
+        retirementHasMore && loadedRetirementMessages.length;
+
+    retirementsLoadMore.hidden = !showLoadMore;
+    retirementsLoadMoreButton.disabled =
+        isLoadingMoreRetirements;
+    retirementsLoadMoreButton.setAttribute(
+        "aria-busy",
+        String(isLoadingMoreRetirements)
+    );
+    retirementsLoadMoreLabel.textContent = translate(
+        isLoadingMoreRetirements
+            ? "retirements_loading_more"
+            : "retirements_load_more"
+    );
+}
+
+function showRetirementsLoadMoreMessage(message = "") {
+    retirementsLoadMoreMessage.textContent = message;
+    retirementsLoadMoreMessage.hidden = !message;
 }
 
 function formatRetireeName(retirementMessage) {
-    const retiree = retirementMessage.retiree || {};
-
-    const name = [
-        retiree.rank,
-        retiree.firstName,
-        retiree.lastName
-    ]
-        .filter(Boolean)
-        .join(" ");
+    const { name, postNominals } =
+        CMCENUtils.getRetireeNameParts(
+            retirementMessage.retiree
+        );
 
     return [
         name,
-        retiree.postNominals
+        postNominals
     ]
         .filter(Boolean)
         .join(", ") ||
@@ -220,14 +256,40 @@ function renderRetirements(retirementMessages) {
 
     retirementsMessage.hidden = true;
     retirementsGrid.hidden = false;
+    updateRetirementsLoadMore();
 }
 
-async function loadRetirements() {
-    showRetirementsLoading();
+function appendRetirements(retirementMessages) {
+    retirementMessages.forEach(retirementMessage => {
+        retirementsGrid.appendChild(
+            createRetirementCard(retirementMessage)
+        );
+    });
+
+    updateRetirementsLoadMore();
+}
+
+async function loadRetirements({ append = false } = {}) {
+    if (append) {
+        isLoadingMoreRetirements = true;
+        showRetirementsLoadMoreMessage();
+        updateRetirementsLoadMore();
+    } else {
+        showRetirementsLoading();
+    }
 
     try {
-        const response =
-            await fetch("/api/retirement-messages");
+        const params = new URLSearchParams({
+            limit: String(RETIREMENT_PAGE_SIZE)
+        });
+
+        if (append && retirementNextCursor) {
+            params.set("cursor", retirementNextCursor);
+        }
+
+        const response = await fetch(
+            `/api/retirement-messages?${params}`
+        );
 
         const data =
             await response.json().catch(() => ({}));
@@ -239,28 +301,60 @@ async function loadRetirements() {
             );
         }
 
-        loadedRetirementMessages =
+        const retirementMessages =
             Array.isArray(data.retirementMessages)
                 ? data.retirementMessages
                 : [];
 
-        renderRetirements(
-            loadedRetirementMessages
-        );
+        retirementHasMore = data.hasMore === true;
+        retirementNextCursor =
+            typeof data.nextCursor === "string"
+                ? data.nextCursor
+                : "";
+
+        if (append) {
+            loadedRetirementMessages.push(
+                ...retirementMessages
+            );
+            appendRetirements(retirementMessages);
+            return;
+        }
+
+        loadedRetirementMessages = retirementMessages;
+        renderRetirements(loadedRetirementMessages);
     } catch (error) {
+        if (append) {
+            showRetirementsLoadMoreMessage(
+                error.message ||
+                    translate("retirements_load_more_error")
+            );
+            return;
+        }
+
         showRetirementsMessage(
             error.message ||
                 translate("retirements_load_error"),
             "error"
         );
+    } finally {
+        if (append) {
+            isLoadingMoreRetirements = false;
+            updateRetirementsLoadMore();
+        }
     }
 }
+
+retirementsLoadMoreButton.addEventListener(
+    "click",
+    () => loadRetirements({ append: true })
+);
 
 document.addEventListener(
     "languagechange",
     () => {
         if (loadedRetirementMessages.length) {
             renderRetirements(loadedRetirementMessages);
+            showRetirementsLoadMoreMessage();
             return;
         }
 

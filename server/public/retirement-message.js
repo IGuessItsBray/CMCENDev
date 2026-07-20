@@ -92,19 +92,14 @@ function showRetirementDetailMessageKey(key, type = "neutral") {
 }
 
 function formatRetireeName(retirementMessage) {
-    const retiree = retirementMessage.retiree || {};
-
-    const name = [
-        retiree.rank,
-        retiree.firstName,
-        retiree.lastName
-    ]
-        .filter(Boolean)
-        .join(" ");
+    const { name, postNominals } =
+        CMCENUtils.getRetireeNameParts(
+            retirementMessage.retiree
+        );
 
     return [
         name,
-        retiree.postNominals
+        postNominals
     ]
         .filter(Boolean)
         .join(", ") ||

@@ -928,15 +928,86 @@
 
       copy.append(title, intro);
 
+      const headerActions = document.createElement("div");
+      headerActions.className = "admin-media-heading-actions";
+
+      const uploadLabel = document.createElement("label");
+      uploadLabel.className = "admin-work-zone-button is-primary admin-media-upload-button";
+      uploadLabel.textContent = state.mediaIsUploading ? "Uploading..." : "Upload images";
+
+      const uploadInput = document.createElement("input");
+      uploadInput.type = "file";
+      uploadInput.accept = "image/*";
+      uploadInput.multiple = true;
+      uploadInput.hidden = true;
+      uploadInput.disabled = state.mediaIsUploading;
+      uploadInput.addEventListener("change", () => {
+        actions.uploadMediaFiles(uploadInput.files);
+        uploadInput.value = "";
+      });
+      uploadLabel.append(uploadInput);
+
       const refresh = document.createElement("button");
       refresh.type = "button";
       refresh.className = "admin-work-zone-button is-secondary";
       refresh.textContent = translate("admin_refresh");
-      refresh.disabled = state.mediaIsLoading;
+      refresh.disabled = state.mediaIsLoading || state.mediaIsUploading;
       refresh.addEventListener("click", actions.refreshMedia);
 
-      header.append(copy, refresh);
+      headerActions.append(uploadLabel, refresh);
+      header.append(copy, headerActions);
+      header.addEventListener("dragover", event => {
+        event.preventDefault();
+        header.classList.add("is-dragging");
+      });
+      header.addEventListener("dragleave", () => {
+        header.classList.remove("is-dragging");
+      });
+      header.addEventListener("drop", event => {
+        event.preventDefault();
+        header.classList.remove("is-dragging");
+        actions.uploadMediaFiles(event.dataTransfer?.files || []);
+      });
       panel.append(header);
+
+      if (state.mediaUploadQueue?.length) {
+        const uploads = document.createElement("div");
+        uploads.className = "admin-media-upload-list";
+
+        state.mediaUploadQueue.forEach(item => {
+          const row = document.createElement("div");
+          row.className = `admin-media-upload-row is-${item.status}`;
+
+          const details = document.createElement("div");
+          details.className = "admin-media-upload-details";
+
+          const name = document.createElement("strong");
+          name.textContent = item.name;
+
+          const meta = document.createElement("span");
+          const sizeLabel = item.originalSize && item.originalSize > item.size
+            ? `${formatFileSize(item.originalSize)} -> ${formatFileSize(item.size)}`
+            : formatFileSize(item.size);
+          meta.textContent = [
+            sizeLabel,
+            item.status === "error"
+              ? item.message || "Upload failed"
+              : item.status === "complete"
+                ? "Uploaded"
+                : item.message || `${item.progress || 0}%`
+          ].filter(Boolean).join(" · ");
+
+          const progress = document.createElement("span");
+          progress.className = "admin-media-upload-progress";
+          progress.style.setProperty("--upload-progress", `${Math.max(0, Math.min(item.progress || 0, 100))}%`);
+
+          details.append(name, meta);
+          row.append(details, progress);
+          uploads.append(row);
+        });
+
+        panel.append(uploads);
+      }
 
       if (state.mediaIsLoading && !state.media.length) {
         panel.append(CMCENUtils.createLoadingSpinner(translate("admin_media_loading")));

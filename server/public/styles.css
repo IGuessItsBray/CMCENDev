@@ -4501,6 +4501,85 @@ a.dropdown-toggle {
   line-height: 1.45;
 }
 
+.admin-media-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.admin-media-upload-button {
+  cursor: pointer;
+}
+
+.admin-media-upload-list {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--branch-grey-200);
+  background: var(--branch-grey-100);
+}
+
+.admin-media-upload-row {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--branch-grey-200);
+  background: var(--white);
+}
+
+.admin-media-upload-details {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-media-upload-details strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--branch-grey-900);
+  font-size: 13px;
+}
+
+.admin-media-upload-details span {
+  flex: 0 0 auto;
+  color: var(--branch-grey-700);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-media-upload-progress {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--branch-grey-200);
+}
+
+.admin-media-upload-progress::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--upload-progress, 0%);
+  border-radius: inherit;
+  background: #2563eb;
+  transition: width 150ms ease;
+}
+
+.admin-media-upload-row.is-complete .admin-media-upload-progress::before {
+  background: #0f766e;
+}
+
+.admin-media-upload-row.is-error .admin-media-upload-progress::before {
+  background: #b42318;
+}
+
+.admin-media-upload-row.is-error .admin-media-upload-details span {
+  color: #b42318;
+}
+
 .admin-media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -11838,6 +11917,8 @@ html[data-theme="dark"] .admin-work-zone-tab:not(.event-management-tab),
 html[data-theme="dark"] .admin-media-heading,
 html[data-theme="dark"] .admin-media-card,
 html[data-theme="dark"] .admin-media-attachment,
+html[data-theme="dark"] .admin-media-upload-list,
+html[data-theme="dark"] .admin-media-upload-row,
 html[data-theme="dark"] .admin-user-list-panel,
 html[data-theme="dark"] .admin-user-detail-panel,
 html[data-theme="dark"] .admin-role-editor-panel,
@@ -11904,6 +11985,7 @@ html[data-theme="dark"] .admin-media-heading p,
 html[data-theme="dark"] .admin-media-meta,
 html[data-theme="dark"] .admin-media-attachments,
 html[data-theme="dark"] .admin-media-attachment span,
+html[data-theme="dark"] .admin-media-upload-details span,
 html[data-theme="dark"] .cms-page-summary,
 html[data-theme="dark"] .cms-block p,
 html[data-theme="dark"] .cms-image-caption,
@@ -11911,6 +11993,19 @@ html[data-theme="dark"] .pages-admin-page-row span,
 html[data-theme="dark"] .pages-access-option,
 html[data-theme="dark"] .site-config-toolbar p {
   color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .admin-media-heading.is-dragging {
+  border-color: var(--gold-500);
+  background: rgba(213, 155, 39, 0.14);
+}
+
+html[data-theme="dark"] .admin-media-upload-details strong {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .admin-media-upload-progress {
+  background: var(--dark-border-strong);
 }
 
 html[data-theme="dark"] .site-config-row input,

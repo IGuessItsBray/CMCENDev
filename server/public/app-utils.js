@@ -582,6 +582,79 @@
     }).catch(() => {});
   }
 
+  function getCompressedImageName(file, mimeType) {
+    const extension = mimeType === "image/png" ? "png" : "jpg";
+    const baseName = String(file?.name || "image")
+      .replace(/\.[^.]+$/, "")
+      .replace(/[^\w.-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "image";
+
+    return `${baseName}.${extension}`;
+  }
+
+  async function prepareImageUploadFile(file, options = {}) {
+    const {
+      maxDimension = 2200,
+      jpegQuality = 0.82,
+      minSavingsRatio = 0.92
+    } = options;
+    const imageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+    if (!file || !imageTypes.has(file.type)) {
+      return file;
+    }
+
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(img);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Could not prepare image"));
+      };
+      img.src = objectUrl;
+    });
+
+    const width = image.naturalWidth || image.width;
+    const height = image.naturalHeight || image.height;
+    const scale = Math.min(1, maxDimension / Math.max(width, height));
+    const targetWidth = Math.max(1, Math.round(width * scale));
+    const targetHeight = Math.max(1, Math.round(height * scale));
+    const mimeType = file.type === "image/png" && scale === 1 ? "image/png" : "image/jpeg";
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return file;
+    }
+
+    if (mimeType === "image/jpeg") {
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, targetWidth, targetHeight);
+    }
+
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+    const blob = await new Promise(resolve => {
+      canvas.toBlob(resolve, mimeType, mimeType === "image/jpeg" ? jpegQuality : undefined);
+    });
+
+    if (!blob || blob.size >= file.size * minSavingsRatio) {
+      return file;
+    }
+
+    return new File([blob], getCompressedImageName(file, mimeType), {
+      type: mimeType,
+      lastModified: Date.now()
+    });
+  }
+
   window.CMCENUtils = {
     activateTabs,
     apiFetch,
@@ -605,6 +678,7 @@
     normalizeToken,
     preparePublicKeyCreationOptions,
     preparePublicKeyRequestOptions,
+    prepareImageUploadFile,
     redirectToLogin,
     requireAuthToken,
     serializeAssertionCredential,

@@ -48,6 +48,44 @@ router.post(
   }
 );
 
+// POST /api/upload-url
+// Create a short-lived signed URL so browsers can upload directly to object storage.
+router.post('/upload-url', authMiddleware, requirePermission('canUploadMedia'), async (req, res) => {
+  try {
+    const originalName = String(req.body?.filename || 'image').trim();
+    const contentType = String(req.body?.contentType || 'application/octet-stream').trim();
+    const rawExtension = originalName.includes('.')
+      ? originalName.split('.').pop()
+      : contentType.split('/').pop() || 'bin';
+    const fileExtension = String(rawExtension || 'bin')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '') || 'bin';
+    const fileKey = `${randomUUID()}.${fileExtension}`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.MINIO_BUCKET_NAME,
+      Key: fileKey,
+      ContentType: contentType
+    });
+
+    const uploadUrl = await getSignedUrl(s3Client, command, {
+      expiresIn: 900
+    });
+
+    res.status(201).json({
+      key: fileKey,
+      url: buildPublicMediaUrl(fileKey),
+      uploadUrl,
+      headers: {
+        'Content-Type': contentType
+      }
+    });
+  } catch (err) {
+    console.error('Upload URL Error:', err);
+    res.status(500).json({ error: 'Could not prepare upload' });
+  }
+});
+
 // GET /api/image/:key
 // Generate a short-lived signed URL for an object-storage image.
 router.get('/image/:key', authMiddleware, requirePermission('canViewMediaLibrary'), async (req, res) => {

@@ -5509,6 +5509,36 @@ a.dropdown-toggle {
   min-width: 0;
 }
 
+.event-cancel-editing {
+  min-height: 36px;
+  padding: 8px 14px;
+  margin-left: auto;
+  flex: 0 0 auto;
+  border: 1px solid var(--gold-500);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--gold-200);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.event-cancel-editing:hover,
+.event-cancel-editing:focus-visible {
+  border-color: var(--gold-200);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--white);
+}
+
+.event-cancel-editing:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
 .event-submit-eyebrow,
 .event-section-eyebrow {
   margin: 0 0 5px;
@@ -9996,6 +10026,11 @@ a.dropdown-toggle {
     min-height: auto;
     padding: 22px 23px;
     gap: 16px;
+  }
+
+  .event-cancel-editing {
+    padding: 8px 11px;
+    font-size: 10px;
   }
 
   .event-submit-standard {

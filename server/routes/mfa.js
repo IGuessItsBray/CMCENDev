@@ -574,7 +574,7 @@ async function renameTotpApp(req, res) {
     const updated = await User.findByIdAndUpdate(
       req.user._id,
       { $set: { 'totp.appName': appName } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     res.json({
@@ -612,7 +612,7 @@ router.patch('/webauthn/credentials/:credentialID', authMiddleware, async (req, 
     const updated = await User.findOneAndUpdate(
       { _id: req.user._id, 'webauthn.credentialID': req.params.credentialID },
       { $set: { 'webauthn.$.nickname': nickname } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updated) return res.status(404).json({ error: 'Passkey not found' });
@@ -647,7 +647,7 @@ router.delete('/webauthn/credentials/:credentialID', authMiddleware, async (req,
     const updated = await User.findByIdAndUpdate(
       user._id,
       { $pull: { webauthn: { credentialID: req.params.credentialID } } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     res.json((updated.webauthn || []).map(serializeCredential));
@@ -665,7 +665,11 @@ router.post('/webauthn/cleanup', authMiddleware, async (req, res) => {
     const filtered = before.filter(c => c && c.credentialID && String(c.credentialID).trim() !== '');
     const removed = before.length - filtered.length;
 
-    const updated = await User.findByIdAndUpdate(user._id, { $set: { webauthn: filtered } }, { new: true });
+    const updated = await User.findByIdAndUpdate(
+      user._id,
+      { $set: { webauthn: filtered } },
+      { returnDocument: 'after' }
+    );
     const remaining = Array.isArray(updated.webauthn) ? updated.webauthn.length : 0;
     console.log('webauthn/cleanup -> removed invalid entries:', removed, 'remaining:', remaining);
     res.json(updated.webauthn || []);

@@ -40,7 +40,7 @@ async function setUserRole() {
             }
         },
         {
-            new: true,
+            returnDocument: 'after',
             runValidators: true
         }
     ).select('username email accountName role contentAreas');

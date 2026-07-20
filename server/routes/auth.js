@@ -1125,7 +1125,7 @@ router.patch('/profile', authMiddleware, async (req, res) => {
       req.user._id,
       { $set: updates },
       {
-        new: true,
+        returnDocument: 'after',
         runValidators: true
       }
     )

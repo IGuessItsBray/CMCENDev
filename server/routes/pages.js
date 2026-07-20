@@ -584,7 +584,7 @@ router.patch(
       const page = await Page.findByIdAndUpdate(
         req.params.pageId,
         { $set: result.update },
-        { new: true, runValidators: true }
+        { returnDocument: 'after', runValidators: true }
       );
 
       await writeAuditLog({
@@ -642,7 +642,7 @@ router.patch(
       const page = await Page.findByIdAndUpdate(
         req.params.pageId,
         { $set: updates },
-        { new: true, runValidators: true }
+        { returnDocument: 'after', runValidators: true }
       );
 
       if (!page) {
@@ -756,7 +756,7 @@ router.patch(
       const item = await NavigationItem.findByIdAndUpdate(
         req.params.itemId,
         { $set: result.update },
-        { new: true, runValidators: true }
+        { returnDocument: 'after', runValidators: true }
       );
 
       if (!item) {

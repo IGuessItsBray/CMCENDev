@@ -78,6 +78,35 @@
   ];
 
   let currentPermissions = null;
+  let activeTooltip = null;
+
+  function removeTooltip() {
+    if (activeTooltip) {
+      activeTooltip.remove();
+      activeTooltip = null;
+    }
+  }
+
+  function showTooltip(trigger) {
+    removeTooltip();
+
+    const tooltip = document.createElement("div");
+    tooltip.className = "admin-work-zone-tooltip";
+    tooltip.textContent = trigger.dataset.tooltip || "";
+    document.body.append(tooltip);
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const left = Math.max(12, Math.min(
+      triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2),
+      window.innerWidth - tooltipRect.width - 12
+    ));
+    const top = Math.max(12, triggerRect.bottom + 10);
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+    activeTooltip = tooltip;
+  }
 
   function getActiveAdminWorkZoneTab() {
     const path = window.location.pathname;
@@ -143,7 +172,6 @@
         active === "site-config";
 
     tabs.dataset.includeSiteConfig = includeSiteConfig ? "true" : "false";
-    tabs.classList.add("event-management-tabs");
     tabs.setAttribute("role", "tablist");
     tabs.replaceChildren();
 
@@ -155,7 +183,6 @@
         const isActive = item.key === active;
 
         link.className = "admin-work-zone-tab";
-        link.classList.add("event-management-tab");
         link.href = item.href;
         link.dataset.adminTab = item.key;
         link.setAttribute("role", "tab");
@@ -169,6 +196,15 @@
           help.dataset.tooltip = "Schedule colored site banners, including countdown banners for key dates.";
           help.setAttribute("aria-label", help.dataset.tooltip);
           help.tabIndex = 0;
+          help.addEventListener("mouseenter", () => showTooltip(help));
+          help.addEventListener("mouseleave", removeTooltip);
+          help.addEventListener("focus", () => showTooltip(help));
+          help.addEventListener("blur", removeTooltip);
+          help.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            showTooltip(help);
+          });
           link.append(help);
         }
 

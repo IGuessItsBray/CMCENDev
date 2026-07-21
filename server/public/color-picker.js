@@ -102,6 +102,7 @@
     const name = options.name || "color";
     const fallback = normalizeColor(options.fallback || "#1d4ed8");
     const value = normalizeColor(options.value, fallback);
+    const sectionLabels = options.sectionLabels || {};
 
     const picker = document.createElement("div");
     picker.className = "cmcen-color-picker";
@@ -165,10 +166,10 @@
     const popover = document.createElement("div");
     popover.className = "cmcen-color-picker-popover";
     popover.append(
-      createRow("Light theme", LIGHT_THEME_COLORS, input, textInput, () => setPickerOpen(false)),
-      createRow("Dark theme", DARK_THEME_COLORS, input, textInput, () => setPickerOpen(false)),
-      createRow("RGB", RGB_COLORS.slice(0, 9), input, textInput, () => setPickerOpen(false)),
-      createRow("RGB", RGB_COLORS.slice(9), input, textInput, () => setPickerOpen(false))
+      createRow(sectionLabels.light || "Light theme", LIGHT_THEME_COLORS, input, textInput, () => setPickerOpen(false)),
+      createRow(sectionLabels.dark || "Dark theme", DARK_THEME_COLORS, input, textInput, () => setPickerOpen(false)),
+      createRow(sectionLabels.rgb || "RGB", RGB_COLORS.slice(0, 9), input, textInput, () => setPickerOpen(false)),
+      createRow(sectionLabels.rgb || "RGB", RGB_COLORS.slice(9), input, textInput, () => setPickerOpen(false))
     );
 
     preview.addEventListener("click", event => {

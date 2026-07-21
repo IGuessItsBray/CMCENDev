@@ -193,7 +193,7 @@
           const help = document.createElement("span");
           help.className = "admin-work-zone-tab-help";
           help.textContent = "?";
-          help.dataset.tooltip = "Schedule colored site banners, including countdown banners for key dates.";
+          help.dataset.tooltip = translateAdminTab("timers_tab_help");
           help.setAttribute("aria-label", help.dataset.tooltip);
           help.tabIndex = 0;
           help.addEventListener("mouseenter", () => showTooltip(help));

@@ -346,6 +346,37 @@
     return getCurrentLanguage() === "fr" ? "fr-CA" : "en-CA";
   }
 
+  function toLocalDateTimeInput(value) {
+    if (!value) {
+      return "";
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+  }
+
+  function toLocalDateInput(value) {
+    return toLocalDateTimeInput(value).slice(0, 10);
+  }
+
+  function toLocalTimeInput(value) {
+    return toLocalDateTimeInput(value).slice(11, 16);
+  }
+
+  function fromLocalDateAndTime(dateValue, timeValue = "00:00") {
+    if (!dateValue) {
+      return "";
+    }
+
+    const date = new Date(`${dateValue}T${timeValue || "00:00"}`);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+  }
+
   function formatDate(value, options = {}) {
     if (!value) {
       return options.fallback || "-";
@@ -671,6 +702,7 @@
     ensureWebAuthnAvailable,
     formatDate,
     formatTitleCaseValue,
+    fromLocalDateAndTime,
     getCurrentLanguage,
     getCurrentLocale,
     getLocalizedText,
@@ -688,6 +720,9 @@
     setStatusLoading,
     setStatusMessage,
     storeAuthToken,
+    toLocalDateInput,
+    toLocalDateTimeInput,
+    toLocalTimeInput,
     trackPageVisit
   };
 

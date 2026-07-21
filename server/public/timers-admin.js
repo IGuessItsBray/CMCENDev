@@ -79,8 +79,12 @@ function fromDateAndTime(dateValue, timeValue) {
 }
 
 function normalizeHexColor(value, fallback) {
+  if (window.CMCENColorPicker?.normalize) {
+    return window.CMCENColorPicker.normalize(value, fallback);
+  }
+
   const color = String(value || "").trim();
-  return /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
+  return /^#[0-9a-f]{6}$/iu.test(color) ? color.toLowerCase() : fallback.toLowerCase();
 }
 
 function createMessage() {
@@ -170,51 +174,30 @@ function createTextarea(name, value = "") {
 }
 
 function createDateInput(name, value = "") {
-  const group = document.createElement("span");
-  group.className = "timers-date-control";
+  if (window.CMCENDateTimePicker?.create) {
+    return window.CMCENDateTimePicker.create({
+      name,
+      date: toDateValue(value),
+      time: toTimeValue(value),
+      label: name === "countdownAt" ? "Countdown target" : "Banner date and time",
+      placeholder: "Select date and time"
+    });
+  }
 
-  const date = document.createElement("input");
-  date.name = `${name}Date`;
-  date.type = "date";
-  date.value = toDateValue(value);
-
-  const time = document.createElement("input");
-  time.name = `${name}Time`;
-  time.type = "time";
-  time.value = toTimeValue(value);
-
-  group.append(date, time);
-  return group;
+  const input = document.createElement("input");
+  input.name = `${name}Date`;
+  input.type = "date";
+  input.value = toDateValue(value);
+  return input;
 }
 
 function createColorInput(name, value, fallback) {
-  const group = document.createElement("span");
-  group.className = "timers-color-control";
-
-  const color = document.createElement("input");
-  color.name = name;
-  color.type = "color";
-  color.value = normalizeHexColor(value, fallback);
-
-  const text = document.createElement("input");
-  text.name = `${name}Text`;
-  text.type = "text";
-  text.value = color.value;
-  text.maxLength = 7;
-  text.spellcheck = false;
-
-  color.addEventListener("input", () => {
-    text.value = color.value;
+  return window.CMCENColorPicker.create({
+    name,
+    value,
+    fallback,
+    label: name === "textColor" ? "Text color" : "Background color"
   });
-
-  text.addEventListener("input", () => {
-    if (/^#[0-9a-f]{6}$/iu.test(text.value)) {
-      color.value = text.value;
-    }
-  });
-
-  group.append(color, text);
-  return group;
 }
 
 function createToggle(name, checked) {
@@ -319,8 +302,8 @@ function createTimerEditor() {
         fr: form.elements.textFr?.value || ""
       },
       title: form.elements.title?.value || "",
-      color: normalizeHexColor(form.elements.colorText?.value || form.elements.color?.value, "#1d4ed8"),
-      textColor: normalizeHexColor(form.elements.textColorText?.value || form.elements.textColor?.value, "#ffffff"),
+      color: normalizeHexColor(form.elements.color?.value, "#1d4ed8"),
+      textColor: normalizeHexColor(form.elements.textColor?.value, "#ffffff"),
       countdownAt: fromDateAndTime(form.elements.countdownAtDate?.value, form.elements.countdownAtTime?.value)
     };
 

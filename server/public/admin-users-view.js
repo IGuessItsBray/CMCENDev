@@ -589,10 +589,12 @@
         colorField.className = "admin-editor-field admin-role-field-color";
         const colorLabel = document.createElement("span");
         colorLabel.textContent = "Badge color";
-        const colorInput = document.createElement("input");
-        colorInput.name = "color";
-        colorInput.type = "color";
-        colorInput.value = selectedRole.color || "#4F46E5";
+        const colorInput = window.CMCENColorPicker.create({
+          name: "color",
+          value: selectedRole.color || "#4F46E5",
+          fallback: "#4F46E5",
+          label: "Badge color"
+        });
         colorField.append(colorLabel, colorInput);
 
         const descriptionField = document.createElement("label");

@@ -3,6 +3,7 @@ require('dotenv').config({
   path: path.join(__dirname, '.env')
 });
 const nodeCrypto = require('crypto');
+const childProcess = require('child_process');
 
 if (!globalThis.crypto) {
   globalThis.crypto = nodeCrypto.webcrypto;
@@ -31,6 +32,39 @@ app.set('trust proxy', true);
 app.use(express.json());
 app.use(translationRoutes);
 app.use(contentOptionRoutes);
+
+function getBuildCommit() {
+  const envCommit =
+    process.env.COMMIT_SHA ||
+    process.env.GIT_COMMIT ||
+    process.env.RENDER_GIT_COMMIT ||
+    process.env.VERCEL_GIT_COMMIT_SHA;
+
+  if (envCommit) {
+    return String(envCommit).trim();
+  }
+
+  try {
+    return childProcess
+      .execFileSync('git', ['rev-parse', 'HEAD'], {
+        cwd: path.join(__dirname, '..'),
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore']
+      })
+      .trim();
+  } catch (error) {
+    return '';
+  }
+}
+
+const buildCommit = getBuildCommit();
+
+app.get('/api/version', (req, res) => {
+  res.json({
+    commit: buildCommit,
+    shortCommit: buildCommit ? buildCommit.slice(0, 7) : ''
+  });
+});
 
 function redirectHtmlExtension(req, res, next) {
   if (!['GET', 'HEAD'].includes(req.method) || !req.path.endsWith('.html')) {

@@ -1,5 +1,6 @@
 (function () {
   const COUNTDOWN_INTERVAL_MS = 1000;
+  const TIMER_CACHE_KEY_PREFIX = "cmcen.active-timers.";
   let timersRoot = null;
   let countdownInterval = 0;
   let activeTimers = [];
@@ -27,6 +28,70 @@
     return window.location.pathname === "/" || window.location.pathname === "/index"
       ? "home"
       : "global";
+  }
+
+  function getCacheKey(scope = getScope()) {
+    return `${TIMER_CACHE_KEY_PREFIX}${scope}`;
+  }
+
+  function readCachedTimers(scope = getScope()) {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(getCacheKey(scope)) || "null");
+
+      if (
+        !cached ||
+        !Array.isArray(cached.timers) ||
+        !Number.isFinite(cached.savedAt)
+      ) {
+        return null;
+      }
+
+      return cached.timers;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeTimerCache(scope, timers) {
+    try {
+      sessionStorage.setItem(getCacheKey(scope), JSON.stringify({
+        savedAt: Date.now(),
+        timers
+      }));
+    } catch (error) {
+      // Browsers can disable session storage; banners still load normally.
+    }
+  }
+
+  function cacheTimers(timers) {
+    const scope = getScope();
+    writeTimerCache(scope, timers);
+
+    if (scope === "home") {
+      writeTimerCache("global", timers.filter(timer => timer.placement === "global"));
+    }
+  }
+
+  function getCachedTimersForCurrentScope() {
+    const scope = getScope();
+    const timers = readCachedTimers(scope);
+
+    if (timers !== null) {
+      return timers;
+    }
+
+    const otherScope = scope === "home" ? "global" : "home";
+    const sharedTimers = readCachedTimers(otherScope);
+
+    if (sharedTimers === null) {
+      return [];
+    }
+
+    return sharedTimers.filter(timer => timer.placement === "global");
+  }
+
+  function timersMatch(first, second) {
+    return JSON.stringify(first) === JSON.stringify(second);
   }
 
   function createTimerElement(timer) {
@@ -89,7 +154,7 @@
   function renderTimers() {
     clearTimers();
 
-    if (!activeTimers.length) return;
+    if (!activeTimers.length || !document.body) return;
 
     const root = document.createElement("div");
     root.className = "site-timers";
@@ -105,15 +170,17 @@
 
   async function loadTimers() {
     try {
-      clearTimers();
-      activeTimers = [];
-
       const data = await CMCENUtils.apiJson(
         `/api/timers/active?scope=${encodeURIComponent(getScope())}`,
         { errorMessage: "Banners unavailable" }
       );
-      activeTimers = Array.isArray(data.timers) ? data.timers : [];
-      renderTimers();
+      const nextTimers = Array.isArray(data.timers) ? data.timers : [];
+      cacheTimers(nextTimers);
+
+      if (!timersMatch(activeTimers, nextTimers)) {
+        activeTimers = nextTimers;
+        renderTimers();
+      }
     } catch (error) {
       console.warn("Banners unavailable:", error);
     }
@@ -123,11 +190,17 @@
     reload: loadTimers
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", loadTimers);
-  } else {
-    loadTimers();
+  activeTimers = getCachedTimersForCurrentScope();
+
+  if (activeTimers.length) {
+    if (document.body) {
+      renderTimers();
+    } else {
+      document.addEventListener("DOMContentLoaded", renderTimers, { once: true });
+    }
   }
+
+  loadTimers();
 
   document.addEventListener("languagechange", renderTimers);
 })();

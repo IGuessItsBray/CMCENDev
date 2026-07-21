@@ -708,6 +708,12 @@ function loadFooter() {
         <p class="footer-credit">
           Made with ♥ by Bray &amp; Eric
         </p>
+
+        <p
+          class="footer-version"
+          id="footerVersion"
+          hidden
+        ></p>
       </div>
     </div>
   `;
@@ -719,7 +725,50 @@ function loadFooter() {
       new Date().getFullYear();
   }
 
+  updateFooterVersion();
+
   document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
+}
+
+async function updateFooterVersion() {
+  const versionElement = document.getElementById('footerVersion');
+
+  if (!versionElement) return;
+
+  const hostname = window.location.hostname;
+  const isLocal =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]';
+  const showsCommit =
+    hostname === 'cmcen-staging.corebot.ca' ||
+    hostname === 'beta.cmcen-rcmce.ca';
+
+  if (isLocal) {
+    versionElement.textContent = 'Running version: Local development';
+    versionElement.hidden = false;
+    return;
+  }
+
+  if (!showsCommit) return;
+
+  try {
+    const response = await fetch('/api/version', {
+      cache: 'no-store'
+    });
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+    const hash = data.shortCommit || data.commit;
+
+    if (hash) {
+      versionElement.textContent = `Running version: ${hash}`;
+      versionElement.hidden = false;
+    }
+  } catch (error) {
+    console.warn('Version unavailable:', error);
+  }
 }
 
 loadHeader();

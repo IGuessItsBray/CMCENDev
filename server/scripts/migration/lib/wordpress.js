@@ -45,10 +45,6 @@ function isRetirementPost(post, meta = {}) {
   );
 }
 
-function isLastPost(post) {
-  return cleanString(post.post_type) === 'lp';
-}
-
 function getStatus(wordpressStatus) {
   const status = cleanString(wordpressStatus);
 
@@ -185,7 +181,6 @@ module.exports = {
   ensureDirectory,
   getPostLanguage,
   getStatus,
-  isLastPost,
   isRetirementPost,
   parseDate,
   stripHtml,

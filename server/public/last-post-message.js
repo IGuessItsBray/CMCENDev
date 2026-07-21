@@ -2,7 +2,6 @@ const lastPostDetailContent = document.getElementById('lastPostDetailContent');
 const lastPostDetailMessage = document.getElementById('lastPostDetailMessage');
 const lastPostDetailTitle = document.getElementById('lastPostDetailTitle');
 const lastPostDetailDate = document.getElementById('lastPostDetailDate');
-const lastPostDetailLanguage = document.getElementById('lastPostDetailLanguage');
 const lastPostDetailImage = document.getElementById('lastPostDetailImage');
 const lastPostDetailText = document.getElementById('lastPostDetailText');
 
@@ -60,12 +59,8 @@ function renderLastPost(lastPost) {
   document.title = `${name} | ${translate('last_post_heading')} | CMCEN / RCMCE`;
   lastPostDetailTitle.textContent = name;
   lastPostDetailDate.textContent = formatPublishedDate(lastPost.publishedAt);
-  lastPostDetailLanguage.textContent = translate(
-    lastPost.messageLanguage === 'fr'
-      ? 'last_post_notice_language_fr'
-      : 'last_post_notice_language_en'
-  );
-  lastPostDetailText.textContent = lastPost.message || '';
+  lastPostDetailText.textContent =
+    CMCENUtils.getLocalizedText(lastPost.messages) || '';
   renderImage(lastPost, name);
   lastPostDetailMessage.hidden = true;
   lastPostDetailContent.hidden = false;
@@ -80,11 +75,11 @@ async function loadLastPost() {
 
   showDetailLoading();
   try {
-    const response = await fetch(`/api/last-posts/${encodeURIComponent(messageId)}`);
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.lastPost) {
-      throw new Error(data.error || translate('last_post_detail_load_error'));
-    }
+    const data = await CMCENUtils.apiJson(
+      `/api/last-posts/${encodeURIComponent(messageId)}`,
+      { errorMessage: translate('last_post_detail_load_error') }
+    );
+    if (!data.lastPost) throw new Error(translate('last_post_detail_load_error'));
     renderLastPost(data.lastPost);
   } catch (error) {
     showDetailMessage(error.message || translate('last_post_detail_load_error'), 'error');

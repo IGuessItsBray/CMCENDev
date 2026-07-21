@@ -42,7 +42,7 @@
               </h1>
 
               <p data-i18n="review_events_intro">
-                Review pending event, retirement message, and comment submissions.
+                Review pending event, retirement message, Last Post, and comment submissions.
               </p>
             </div>
           </div>
@@ -103,6 +103,20 @@
               Comments
             </span>
           </button>
+
+          <button
+            class="event-management-tab"
+            id="reviewLastPostsTab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="reviewLastPostsPanel"
+            data-review-tab="last-posts"
+          >
+            <span data-i18n="review_last_posts_tab">
+              Last Post
+            </span>
+          </button>
         </div>
 
         <div
@@ -156,6 +170,34 @@
           <div
             class="review-queue"
             id="retirementReviewQueue"
+            hidden
+          ></div>
+        </div>
+
+        <div
+          class="event-management-panel"
+          id="reviewLastPostsPanel"
+          role="tabpanel"
+          aria-labelledby="reviewLastPostsTab"
+          data-review-panel="last-posts"
+          hidden
+        >
+          <p
+            class="review-page-message is-loading"
+            id="lastPostReviewPageMessage"
+            role="status"
+            aria-live="polite"
+            aria-label="Loading Last Post notices..."
+          >
+            <span class="loading-state-spinner" aria-hidden="true"></span>
+            <span class="visually-hidden">
+              Loading Last Post notices...
+            </span>
+          </p>
+
+          <div
+            class="review-queue"
+            id="lastPostReviewQueue"
             hidden
           ></div>
         </div>

@@ -4,20 +4,25 @@ const reviewNotice = document.getElementById("reviewNotice");
 const retirementReviewQueue = document.getElementById("retirementReviewQueue");
 const retirementReviewPageMessage =
   document.getElementById("retirementReviewPageMessage");
+const lastPostReviewQueue = document.getElementById("lastPostReviewQueue");
+const lastPostReviewPageMessage =
+  document.getElementById("lastPostReviewPageMessage");
 const commentReviewQueue = document.getElementById("commentReviewQueue");
 const commentReviewPageMessage =
   document.getElementById("commentReviewPageMessage");
 const reviewTabs = document.querySelectorAll("[data-review-tab]");
 const reviewPanels = document.querySelectorAll("[data-review-panel]");
-const reviewTabNames = ["events", "retirements", "comments"];
+const reviewTabNames = ["events", "retirements", "last-posts", "comments"];
 const requestedReviewTab = new URLSearchParams(window.location.search).get("tab");
 
 let pendingEvents = [];
 let pendingRetirementMessages = [];
+let pendingLastPosts = [];
 let pendingComments = [];
 let accessDenied = false;
 let loadFailed = false;
 let retirementLoadFailed = false;
+let lastPostLoadFailed = false;
 let commentLoadFailed = false;
 let noticeTimer = null;
 
@@ -223,6 +228,23 @@ function formatRetireeName(retirementMessage) {
     .filter(Boolean)
     .join(", ") ||
     translate("retirement_review_untitled");
+}
+
+function formatLastPostName(lastPost) {
+  const deceased = lastPost?.deceased || {};
+  const name = [
+    deceased.fullRank,
+    deceased.firstName,
+    deceased.surname
+  ]
+    .map(value => String(value || "").trim())
+    .filter(Boolean)
+    .join(" ");
+
+  return [name, deceased.postNominal]
+    .filter(Boolean)
+    .join(", ") ||
+    translate("last_post_default_name");
 }
 
 function formatCommentAuthor(comment) {
@@ -1265,6 +1287,206 @@ function createRetirementReviewCard(retirementMessage) {
   return article;
 }
 
+function createLastPostMessageSection(lastPost) {
+  const section = document.createElement("section");
+  section.className = "review-record-section retirement-review-message-section";
+
+  const heading = document.createElement("h3");
+  heading.textContent = translate("last_post_review_message_record");
+
+  const grid = document.createElement("div");
+  grid.className = "review-language-grid retirement-review-language-grid";
+
+  ["en", "fr"].forEach(languageCode => {
+    const panel = document.createElement("section");
+    panel.className = "review-language-panel";
+
+    const panelHeading = document.createElement("header");
+    panelHeading.className = "review-language-heading";
+
+    const code = document.createElement("span");
+    code.className = "review-language-code";
+    code.textContent = languageCode.toUpperCase();
+
+    const title = document.createElement("h3");
+    title.textContent = translate(
+      languageCode === "en"
+        ? "last_post_review_english_notice"
+        : "last_post_review_french_notice"
+    );
+    panelHeading.append(code, title);
+
+    const body = document.createElement("div");
+    body.className = "review-language-body";
+
+    const label = document.createElement("label");
+    label.className = "review-content-label";
+    label.htmlFor = `lastPostMessage${lastPost._id}${languageCode}`;
+    label.textContent = translate("last_post_message");
+
+    const textarea = document.createElement("textarea");
+    textarea.id = `lastPostMessage${lastPost._id}${languageCode}`;
+    textarea.className = "last-post-review-message-input";
+    textarea.dataset.lastPostMessageLanguage = languageCode;
+    textarea.rows = 9;
+    textarea.maxLength = 10000;
+    textarea.required = true;
+    textarea.value = lastPost.messages?.[languageCode] || "";
+
+    const hint = document.createElement("small");
+    hint.className = "retirement-review-message-hint";
+    const updateHint = () => {
+      hint.textContent = translate(
+        textarea.value.trim()
+          ? "last_post_review_translation_ready"
+          : "last_post_review_translation_missing"
+      );
+    };
+    textarea.addEventListener("input", updateHint);
+    updateHint();
+
+    body.append(label, textarea, hint);
+    panel.append(panelHeading, body);
+    grid.appendChild(panel);
+  });
+
+  section.append(heading, grid);
+  return section;
+}
+
+function createLastPostImageSection(lastPost) {
+  if (!lastPost.imageUrl) return null;
+
+  const section = document.createElement("section");
+  section.className = "review-record-section retirement-review-photo-section";
+
+  const heading = document.createElement("h3");
+  heading.textContent = translate("last_post_review_image_record");
+
+  const link = document.createElement("a");
+  link.className = "retirement-review-photo-link";
+  link.href = lastPost.imageUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+
+  const image = document.createElement("img");
+  image.src = lastPost.imageUrl;
+  image.alt = translate("last_post_image_alt", {
+    name: formatLastPostName(lastPost)
+  });
+  image.loading = "lazy";
+
+  const label = document.createElement("span");
+  label.textContent = translate("last_post_review_open_image");
+  link.append(image, label);
+  section.append(heading, link);
+  return section;
+}
+
+function createLastPostReviewCard(lastPost) {
+  const article = document.createElement("article");
+  article.className = "review-event-card";
+  article.dataset.lastPostId = lastPost._id;
+
+  const cardHeader = document.createElement("header");
+  cardHeader.className = "review-event-card-header";
+
+  const headingCopy = document.createElement("div");
+  headingCopy.className = "review-event-card-heading";
+  const eyebrow = document.createElement("p");
+  eyebrow.textContent = translate("last_post_review_pending_submission");
+  const title = document.createElement("h2");
+  title.textContent = formatLastPostName(lastPost);
+  headingCopy.append(eyebrow, title);
+
+  const status = document.createElement("span");
+  status.className = "review-status-badge";
+  status.textContent = translate("review_status_pending");
+  cardHeader.append(headingCopy, status);
+
+  const meta = document.createElement("div");
+  meta.className = "review-event-meta is-two-column";
+  meta.append(
+    createMetaItem(
+      "submitted_by",
+      [lastPost.submitter?.rank, lastPost.submitter?.firstName, lastPost.submitter?.lastName]
+        .filter(Boolean)
+        .join(" ") || translate("unknown_user")
+    ),
+    createMetaItem("submitted_on", formatSubmittedDate(lastPost.createdAt))
+  );
+
+  const deceasedInformation = createReviewRecordSection(
+    "last_post_review_deceased_record",
+    [
+      { labelKey: "last_post_full_rank", value: lastPost.deceased?.fullRank },
+      { labelKey: "last_post_first_name", value: lastPost.deceased?.firstName },
+      { labelKey: "last_post_surname", value: lastPost.deceased?.surname },
+      { labelKey: "last_post_post_nominal", value: lastPost.deceased?.postNominal }
+    ],
+    "review-event-information"
+  );
+
+  const submitterInformation = createReviewRecordSection(
+    "last_post_submitter_heading",
+    [
+      { labelKey: "rank", value: lastPost.submitter?.rank },
+      { labelKey: "first_name", value: lastPost.submitter?.firstName },
+      { labelKey: "last_name", value: lastPost.submitter?.lastName },
+      { labelKey: "email", value: lastPost.submitter?.email, wide: true }
+    ]
+  );
+
+  const imageSection = createLastPostImageSection(lastPost);
+  const decision = document.createElement("section");
+  decision.className = "review-decision";
+  const decisionCopy = document.createElement("div");
+  decisionCopy.className = "review-decision-copy";
+  const decisionHeading = document.createElement("h3");
+  decisionHeading.textContent = translate("review_decision");
+  const decisionHelp = document.createElement("p");
+  decisionHelp.textContent = translate("last_post_rejection_reason_help");
+  decisionCopy.append(decisionHeading, decisionHelp);
+
+  const rejectionField = document.createElement("div");
+  rejectionField.className = "review-rejection-field";
+  const rejectionLabel = document.createElement("label");
+  rejectionLabel.textContent = translate("rejection_reason_label");
+  rejectionLabel.htmlFor = `last-post-rejection-${lastPost._id}`;
+  const rejectionReason = document.createElement("textarea");
+  rejectionReason.id = `last-post-rejection-${lastPost._id}`;
+  rejectionReason.className = "review-rejection-reason";
+  rejectionReason.rows = 3;
+  rejectionReason.maxLength = 2000;
+  rejectionReason.placeholder = translate("rejection_reason_placeholder");
+  rejectionField.append(rejectionLabel, rejectionReason);
+
+  const actionMessage = document.createElement("p");
+  actionMessage.className = "review-action-message";
+  actionMessage.setAttribute("role", "alert");
+  actionMessage.hidden = true;
+
+  const actions = document.createElement("div");
+  actions.className = "review-actions";
+  const rejectButton = document.createElement("button");
+  rejectButton.type = "button";
+  rejectButton.className = "review-reject-button";
+  rejectButton.textContent = translate("reject_last_post");
+  const publishButton = document.createElement("button");
+  publishButton.type = "button";
+  publishButton.className = "review-publish-button";
+  publishButton.textContent = translate("publish_last_post");
+  rejectButton.addEventListener("click", () => submitLastPostReview(lastPost._id, "reject", article));
+  publishButton.addEventListener("click", () => submitLastPostReview(lastPost._id, "publish", article));
+  actions.append(rejectButton, publishButton);
+  decision.append(decisionCopy, rejectionField, actionMessage, actions);
+
+  article.append(cardHeader, meta, deceasedInformation, createLastPostMessageSection(lastPost));
+  if (imageSection) article.append(imageSection);
+  article.append(submitterInformation, decision);
+  return article;
+}
+
 function createCommentReviewCard(comment) {
   const article = document.createElement("article");
   article.className = "review-event-card";
@@ -1566,6 +1788,29 @@ function renderRetirementReviewQueue() {
   });
 }
 
+function renderLastPostReviewQueue() {
+  lastPostReviewQueue.replaceChildren();
+
+  if (!pendingLastPosts.length) {
+    lastPostReviewQueue.hidden = true;
+    showPageMessage(
+      translate("no_pending_last_posts"),
+      "empty",
+      lastPostReviewPageMessage
+    );
+    return;
+  }
+
+  lastPostReviewPageMessage.hidden = true;
+  lastPostReviewQueue.hidden = false;
+
+  pendingLastPosts.forEach(lastPost => {
+    lastPostReviewQueue.appendChild(
+      createLastPostReviewCard(lastPost)
+    );
+  });
+}
+
 function renderCommentReviewQueue() {
   commentReviewQueue.replaceChildren();
 
@@ -1771,6 +2016,65 @@ async function submitRetirementReview(messageId, action, card) {
   });
 }
 
+async function submitLastPostReview(messageId, action, card) {
+  const context = createReviewActionContext(card);
+  const rejectionReason = context.reasonInput.value.trim();
+  const messages = {};
+
+  if (action === "reject" && !rejectionReason) {
+    showReviewValidationError(
+      context,
+      translate("last_post_rejection_reason_required"),
+      context.reasonInput
+    );
+    return;
+  }
+
+  if (action === "publish") {
+    const messageInputs = card.querySelectorAll(
+      ".last-post-review-message-input"
+    );
+
+    for (const input of messageInputs) {
+      const language = input.dataset.lastPostMessageLanguage;
+      messages[language] = input.value.trim();
+
+      if (!messages[language]) {
+        showReviewValidationError(
+          context,
+          translate("last_post_review_translation_required"),
+          input
+        );
+        return;
+      }
+    }
+  }
+
+  await performReviewAction({
+    action,
+    context,
+    path: `/api/last-posts/${messageId}/review`,
+    body: {
+      action,
+      rejectionReason: action === "reject" ? rejectionReason : undefined,
+      messages: action === "publish" ? messages : undefined
+    },
+    errorMessage: translate("last_post_review_failed"),
+    successMessageKey:
+      action === "publish"
+        ? "last_post_review_publish_success"
+        : "last_post_review_reject_success",
+    publishLabelKey: "publish_last_post",
+    rejectLabelKey: "reject_last_post",
+    onSuccess() {
+      pendingLastPosts = pendingLastPosts.filter(
+        lastPost => lastPost._id !== messageId
+      );
+    },
+    renderQueue: renderLastPostReviewQueue
+  });
+}
+
 async function submitCommentReview(commentId, action, card) {
   const context = createReviewActionContext(card);
   const rejectionReason = context.reasonInput.value.trim();
@@ -1815,6 +2119,7 @@ async function loadReviewQueue() {
   accessDenied = false;
   loadFailed = false;
   retirementLoadFailed = false;
+  lastPostLoadFailed = false;
   commentLoadFailed = false;
 
   showQueueLoading("loading_events");
@@ -1827,6 +2132,11 @@ async function loadReviewQueue() {
     "loading_retirement_comments",
     commentReviewPageMessage,
     commentReviewQueue
+  );
+  showQueueLoading(
+    "loading_last_posts",
+    lastPostReviewPageMessage,
+    lastPostReviewQueue
   );
 
   try {
@@ -1848,6 +2158,11 @@ async function loadReviewQueue() {
         "error",
         commentReviewPageMessage
       );
+      showPageMessage(
+        translate("review_access_denied"),
+        "error",
+        lastPostReviewPageMessage
+      );
 
       return;
     }
@@ -1855,6 +2170,7 @@ async function loadReviewQueue() {
     const [
       eventResult,
       retirementResult,
+      lastPostResult,
       commentResult
     ] = await Promise.allSettled([
       reviewApiJson("/api/events/review", {
@@ -1862,6 +2178,9 @@ async function loadReviewQueue() {
       }),
       reviewApiJson("/api/retirement-messages/review", {
         errorMessage: translate("retirement_review_load_error")
+      }),
+      reviewApiJson("/api/last-posts/review", {
+        errorMessage: translate("last_post_review_load_error")
       }),
       reviewApiJson("/api/retirement-messages/comments/review", {
         errorMessage: translate("comment_review_load_error")
@@ -1871,6 +2190,7 @@ async function loadReviewQueue() {
     const results = [
       eventResult,
       retirementResult,
+      lastPostResult,
       commentResult
     ];
     const rejectedResults = results.filter(
@@ -1946,10 +2266,26 @@ async function loadReviewQueue() {
       renderCommentReviewQueue();
     }
 
+    if (lastPostResult.status === "rejected") {
+      lastPostLoadFailed = true;
+      showPageMessage(
+        lastPostResult.reason?.message || translate("last_post_review_load_error"),
+        "error",
+        lastPostReviewPageMessage
+      );
+    } else {
+      const lastPostData = lastPostResult.value;
+      pendingLastPosts = Array.isArray(lastPostData.lastPosts)
+        ? lastPostData.lastPosts
+        : [];
+      renderLastPostReviewQueue();
+    }
+
   } catch (error) {
     accessDenied = accessDenied || error.status === 403;
     loadFailed = !accessDenied;
     retirementLoadFailed = !accessDenied;
+    lastPostLoadFailed = !accessDenied;
     commentLoadFailed = !accessDenied;
 
     showPageMessage(error.message || translate("review_load_error"), "error");
@@ -1965,6 +2301,11 @@ async function loadReviewQueue() {
       "error",
       commentReviewPageMessage
     );
+    showPageMessage(
+      error.message || translate("last_post_review_load_error"),
+      "error",
+      lastPostReviewPageMessage
+    );
   }
 }
 
@@ -1974,6 +2315,7 @@ document.addEventListener(
     if (
       reviewPageMessage.classList.contains("is-loading") ||
       retirementReviewPageMessage.classList.contains("is-loading") ||
+      lastPostReviewPageMessage.classList.contains("is-loading") ||
       commentReviewPageMessage.classList.contains("is-loading")
     ) {
       if (reviewPageMessage.classList.contains("is-loading")) {
@@ -1996,6 +2338,14 @@ document.addEventListener(
         );
       }
 
+      if (lastPostReviewPageMessage.classList.contains("is-loading")) {
+        showQueueLoading(
+          "loading_last_posts",
+          lastPostReviewPageMessage,
+          lastPostReviewQueue
+        );
+      }
+
       return;
     }
 
@@ -2010,6 +2360,11 @@ document.addEventListener(
         translate("review_access_denied"),
         "error",
         commentReviewPageMessage
+      );
+      showPageMessage(
+        translate("review_access_denied"),
+        "error",
+        lastPostReviewPageMessage
       );
       return;
     }
@@ -2038,6 +2393,16 @@ document.addEventListener(
       );
     } else {
       renderCommentReviewQueue();
+    }
+
+    if (lastPostLoadFailed) {
+      showPageMessage(
+        translate("last_post_review_load_error"),
+        "error",
+        lastPostReviewPageMessage
+      );
+    } else {
+      renderLastPostReviewQueue();
     }
   }
 );

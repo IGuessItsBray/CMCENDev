@@ -1,14 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const LastPostMessage = require('../models/LastPostMessage');
+const {
+  authMiddleware,
+  requirePermission
+} = require('../middleware/auth');
+const { cleanString } = require('../services/content-utils');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 24;
 const MAX_PAGE_SIZE = 48;
-
-function cleanString(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
 
 function getPageSize(value) {
   const requested = Number.parseInt(value, 10);
@@ -18,6 +19,17 @@ function getPageSize(value) {
   }
 
   return Math.min(requested, MAX_PAGE_SIZE);
+}
+
+function isValidImageUrl(value) {
+  if (!value) return true;
+
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol);
+  } catch (error) {
+    return false;
+  }
 }
 
 function encodeCursor(lastPost) {
@@ -92,9 +104,17 @@ function getDeceasedName(lastPost) {
   ].filter(Boolean).join(' ');
   const postNominal = cleanString(deceased.postNominal);
 
-  return [name, postNominal].filter(Boolean).join(', ') ||
-    cleanString(lastPost.title) ||
-    'In Memoriam';
+  return [name, postNominal].filter(Boolean).join(', ') || 'In Memoriam';
+}
+
+function getLocalizedMessages(lastPost) {
+  const storedMessages = lastPost.messages?.toObject?.() ||
+    lastPost.messages || {};
+  const messages = {
+    en: cleanString(storedMessages.en),
+    fr: cleanString(storedMessages.fr)
+  };
+  return messages;
 }
 
 function serializeLastPost(lastPost) {
@@ -110,15 +130,175 @@ function serializeLastPost(lastPost) {
       postNominal: cleanString(deceased.postNominal)
     },
     displayName: getDeceasedName(lastPost),
-    message: cleanString(lastPost.message),
-    messageLanguage: ['en', 'fr'].includes(lastPost.messageLanguage)
-      ? lastPost.messageLanguage
-      : 'en',
-    imageUrl: cleanString(lastPost.imageUrl) ||
-      cleanString(lastPost.photoUrl),
+    messages: getLocalizedMessages(lastPost),
+    imageUrl: cleanString(lastPost.imageUrl),
     publishedAt: lastPost.publishedAt || null
   };
 }
+
+router.post(
+  '/',
+  authMiddleware,
+  requirePermission('canCreateDrafts'),
+  async (req, res) => {
+    try {
+      const deceased = req.body?.deceased || {};
+      const messageLanguage = cleanString(req.body?.messageLanguage);
+      const message = cleanString(req.body?.message);
+      const imageUrl = cleanString(req.body?.imageUrl);
+      const submitter = {
+        rank: cleanString(req.user.rank),
+        firstName: cleanString(req.user.firstName),
+        lastName: cleanString(req.user.lastName),
+        email: cleanString(req.user.email).toLowerCase()
+      };
+      const cleanDeceased = {
+        fullRank: cleanString(deceased.fullRank),
+        firstName: cleanString(deceased.firstName),
+        surname: cleanString(deceased.surname),
+        postNominal: cleanString(deceased.postNominal)
+      };
+
+      if (Object.values(submitter).some(value => !value)) {
+        return res.status(400).json({
+          error: 'Complete your profile rank, name, and email before submitting a Last Post notice'
+        });
+      }
+
+      if (
+        !cleanDeceased.fullRank ||
+        !cleanDeceased.firstName ||
+        !cleanDeceased.surname
+      ) {
+        return res.status(400).json({
+          error: 'Full rank, first name, and surname are required for the deceased member'
+        });
+      }
+
+      if (!['en', 'fr'].includes(messageLanguage)) {
+        return res.status(400).json({
+          error: 'Choose whether the notice was submitted in English or French'
+        });
+      }
+
+      if (!message) {
+        return res.status(400).json({ error: 'A Last Post notice is required' });
+      }
+
+      if (!isValidImageUrl(imageUrl)) {
+        return res.status(400).json({
+          error: 'The image URL must begin with http:// or https://'
+        });
+      }
+
+      const lastPost = await LastPostMessage.create({
+        submitter,
+        deceased: cleanDeceased,
+        messageLanguage,
+        messages: {
+          [messageLanguage]: message
+        },
+        imageUrl,
+        status: 'pending'
+      });
+
+      return res.status(201).json({
+        lastPost: {
+          _id: lastPost._id,
+          status: lastPost.status
+        },
+        message: 'Last Post notice submitted for review'
+      });
+    } catch (error) {
+      console.error('Could not submit Last Post notice:', error);
+      return res.status(500).json({ error: 'Could not submit Last Post notice' });
+    }
+  }
+);
+
+router.get(
+  '/review',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      const lastPosts = await LastPostMessage.find({ status: 'pending' })
+        .sort({ createdAt: 1, _id: 1 })
+        .lean();
+
+      return res.json({ lastPosts });
+    } catch (error) {
+      console.error('Could not load Last Post review queue:', error);
+      return res.status(500).json({ error: 'Could not load Last Post review queue' });
+    }
+  }
+);
+
+router.patch(
+  '/:messageId/review',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      const { messageId } = req.params;
+      const action = cleanString(req.body?.action);
+      const rejectionReason = cleanString(req.body?.rejectionReason);
+
+      if (!mongoose.Types.ObjectId.isValid(messageId)) {
+        return res.status(404).json({ error: 'Last Post notice not found' });
+      }
+
+      if (!['publish', 'reject'].includes(action)) {
+        return res.status(400).json({
+          error: 'Review action must be publish or reject'
+        });
+      }
+
+      const lastPost = await LastPostMessage.findOne({
+        _id: messageId,
+        status: 'pending'
+      });
+
+      if (!lastPost) {
+        return res.status(404).json({ error: 'Pending Last Post notice not found' });
+      }
+
+      if (action === 'reject') {
+        if (!rejectionReason) {
+          return res.status(400).json({ error: 'A rejection reason is required' });
+        }
+
+        lastPost.status = 'rejected';
+        lastPost.rejectionReason = rejectionReason;
+        await lastPost.save();
+
+        return res.json({ lastPost });
+      }
+
+      const messages = {
+        en: cleanString(req.body?.messages?.en),
+        fr: cleanString(req.body?.messages?.fr)
+      };
+
+      if (!messages.en || !messages.fr) {
+        return res.status(400).json({
+          error: 'English and French notices are required before publication'
+        });
+      }
+
+      lastPost.messages = messages;
+      lastPost.status = 'published';
+      lastPost.publishedAt = new Date();
+      lastPost.rejectionReason = '';
+      await lastPost.save();
+
+      return res.json({ lastPost });
+    } catch (error) {
+      console.error('Could not review Last Post notice:', error);
+      return res.status(500).json({ error: 'Could not review Last Post notice' });
+    }
+  }
+);
 
 router.get('/', async (req, res) => {
   try {

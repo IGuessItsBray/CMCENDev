@@ -9,6 +9,7 @@ const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
+const LastPostMessage = require('../models/LastPostMessage');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
@@ -59,15 +60,17 @@ router.get(
   requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
-      const [events, retirementMessages, comments] = await Promise.all([
+      const [events, retirementMessages, lastPosts, comments] = await Promise.all([
         Event.countDocuments({ status: 'pending' }),
         RetirementMessage.countDocuments({ status: 'pending' }),
+        LastPostMessage.countDocuments({ status: 'pending' }),
         RetirementComment.countDocuments({ status: 'pending' })
       ]);
 
       res.json({
         events,
         retirementMessages,
+        lastPosts,
         comments
       });
     } catch (error) {

@@ -961,6 +961,12 @@ function renderDashboard(user) {
           count: currentReviewCounts.retirementMessages
         }),
         createReviewQueueLink({
+          tab: "last-posts",
+          type: "last_posts",
+          labelKey: "review_last_posts_tab",
+          count: currentReviewCounts.lastPosts
+        }),
+        createReviewQueueLink({
           tab: "comments",
           type: "comments",
           labelKey: "review_comments_tab",

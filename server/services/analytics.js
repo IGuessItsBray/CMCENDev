@@ -186,8 +186,8 @@ function getCountry(req, fallbackLocale = '', fallbackTimeZone = '') {
 
   return country ||
     (isInternalIpAddress(getClientIp(req)) ? 'Internal' : '') ||
-    getCountryFromLocale(fallbackLocale) ||
     getCountryFromTimeZone(fallbackTimeZone) ||
+    getCountryFromLocale(fallbackLocale) ||
     'CA';
 }
 

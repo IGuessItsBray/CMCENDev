@@ -8,6 +8,7 @@
       admin_tab_translations: "Translations",
       admin_tab_audit_log: "Audit Log",
       admin_tab_analytics: "Analytics",
+      admin_tab_timers: "Banners",
       admin_tab_site_config: "Site Config"
     };
     const translated = typeof window.translate === "function"
@@ -22,49 +23,55 @@
   const tabItems = [
     {
       key: "users",
-      href: "/admin-users.html",
+      href: "/admin-users",
       labelKey: "admin_tab_users",
       permission: "canReadUsers"
     },
     {
       key: "roles",
-      href: "/admin-users.html?view=roles",
+      href: "/admin-users?view=roles",
       labelKey: "admin_tab_roles",
       permission: "canManageRoles"
     },
     {
       key: "pages",
-      href: "/pages-admin.html",
+      href: "/pages-admin",
       labelKey: "admin_tab_pages",
       permission: "canManagePages"
     },
     {
       key: "media",
-      href: "/admin-users.html?view=media",
+      href: "/admin-users?view=media",
       labelKey: "admin_tab_media",
       permission: "canViewMediaLibrary"
     },
     {
       key: "translations",
-      href: "/translations-admin.html",
+      href: "/translations-admin",
       labelKey: "admin_tab_translations",
       permission: "canManageTranslations"
     },
     {
       key: "audit-log",
-      href: "/audit-log.html",
+      href: "/audit-log",
       labelKey: "admin_tab_audit_log",
       permission: "canViewAuditLog"
     },
     {
       key: "analytics",
-      href: "/analytics.html",
+      href: "/analytics",
       labelKey: "admin_tab_analytics",
       permission: "canViewAnalytics"
     },
     {
+      key: "timers",
+      href: "/timers-admin",
+      labelKey: "admin_tab_timers",
+      permission: "canManageTimers"
+    },
+    {
       key: "site-config",
-      href: "/site-config.html",
+      href: "/site-config",
       labelKey: "admin_tab_site_config",
       permission: "canAccessSiteConfig"
     }
@@ -76,35 +83,39 @@
     const path = window.location.pathname;
     const params = new URLSearchParams(window.location.search);
 
-    if (path === "/admin-users.html" && params.get("view") === "media") {
+    if (path === "/admin-users" && params.get("view") === "media") {
       return "media";
     }
 
-    if (path === "/admin-users.html" && params.get("view") === "roles") {
+    if (path === "/admin-users" && params.get("view") === "roles") {
       return "roles";
     }
 
-    if (path === "/admin-users.html") {
+    if (path === "/admin-users") {
       return "users";
     }
 
-    if (path === "/translations-admin.html") {
+    if (path === "/translations-admin") {
       return "translations";
     }
 
-    if (path === "/pages-admin.html") {
+    if (path === "/pages-admin") {
       return "pages";
     }
 
-    if (path === "/audit-log.html") {
+    if (path === "/audit-log") {
       return "audit-log";
     }
 
-    if (path === "/analytics.html") {
+    if (path === "/analytics") {
       return "analytics";
     }
 
-    if (path === "/site-config.html") {
+    if (path === "/timers-admin") {
+      return "timers";
+    }
+
+    if (path === "/site-config") {
       return "site-config";
     }
 
@@ -150,6 +161,16 @@
         link.setAttribute("role", "tab");
         link.setAttribute("aria-selected", String(isActive));
         link.textContent = translateAdminTab(item.labelKey);
+
+        if (item.key === "timers" && isActive) {
+          const help = document.createElement("span");
+          help.className = "admin-work-zone-tab-help";
+          help.textContent = "?";
+          help.dataset.tooltip = "Schedule colored site banners, including countdown banners for key dates.";
+          help.setAttribute("aria-label", help.dataset.tooltip);
+          help.tabIndex = 0;
+          link.append(help);
+        }
 
         if (isActive) {
           link.setAttribute("aria-current", "page");

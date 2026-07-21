@@ -158,7 +158,7 @@ function createMyEventCard(submittedEvent) {
 
   const editLink = document.createElement("a");
   editLink.className = "my-event-edit-link";
-  editLink.href = `/submit-event.html?id=${encodeURIComponent(submittedEvent._id)}`;
+  editLink.href = `/submit-event?id=${encodeURIComponent(submittedEvent._id)}`;
   editLink.textContent = submittedEvent.status === "rejected" ? translate("my_events_edit_resubmit") : translate("my_events_edit");
   editLink.addEventListener("click", event => {
     event.preventDefault();
@@ -641,7 +641,7 @@ function cancelEditingEvent() {
   activateEventTab("form");
   updateEventFormModeText();
 
-  const createUrl = "/submit-event.html?panel=form";
+  const createUrl = "/submit-event?panel=form";
 
   if (window.location.pathname + window.location.search !== createUrl) {
     window.history.pushState({}, "", createUrl);
@@ -1000,7 +1000,7 @@ async function startEditingEvent(eventId) {
   setEventEditLoading(true);
 
   const editUrl =
-    `/submit-event.html?id=${encodeURIComponent(eventId)}`;
+    `/submit-event?id=${encodeURIComponent(eventId)}`;
 
   if (window.location.pathname + window.location.search !== editUrl) {
     window.history.pushState({}, "", editUrl);

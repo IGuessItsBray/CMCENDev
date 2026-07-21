@@ -200,7 +200,7 @@ function createRetirementCard(retirementMessage) {
 
     card.className = "retirement-card";
     card.href =
-        `/retirement-message.html?id=${encodeURIComponent(
+        `/retirement-message?id=${encodeURIComponent(
             retirementMessage._id
         )}`;
     card.setAttribute(

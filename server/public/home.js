@@ -209,7 +209,7 @@ function createHomeEventItem(event, language) {
   const item = document.createElement("a");
   item.className = "home-feed-item home-event-item";
   item.href =
-    `/event.html?id=${encodeURIComponent(event._id)}`;
+    `/event?id=${encodeURIComponent(event._id)}`;
 
   const date = document.createElement("span");
   date.className = "home-feed-date";
@@ -249,7 +249,7 @@ function createHomeRetirementItem(retirementMessage, language) {
 
   item.className = "home-feed-item home-retirement-item";
   item.href =
-    `/retirement-message.html?id=${encodeURIComponent(
+    `/retirement-message?id=${encodeURIComponent(
       retirementMessage._id
     )}`;
 

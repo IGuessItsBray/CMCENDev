@@ -82,7 +82,7 @@ const navLinks = {
   about: {
     titleKey: "menu_about_title",
     items: [
-      { route: "/about-family.html", i18n: "menu_about_option_1" },
+      { route: "/about-family", i18n: "menu_about_option_1" },
       { route: "/about_branch.html", i18n: "menu_about_option_2" },
       { route: "/about_association.html", i18n: "menu_about_option_3" },
       { route: "/about_foundation.html", i18n: "menu_about_option_4" },
@@ -100,20 +100,20 @@ const navLinks = {
   news: {
     titleKey: "menu_news_title",
     items: [
-      { route: "/calendar.html", i18n: "menu_news_option_1" },
+      { route: "/calendar", i18n: "menu_news_option_1" },
       {
-        route: "/submit-event.html",
+        route: "/submit-event",
         i18n: "menu_news_option_2",
         permission: "canCreateDrafts"
       },
       {
-        route: '/review-submissions.html',
+        route: '/review-submissions',
         i18n: 'menu_review_events',
         permission: 'canReviewAndPublish'
       },
       { route: "/news_stories.html", i18n: "menu_news_option_3" },
       { route: "/last_post.html", i18n: "menu_news_option_4" },
-      { route: "/retirements.html", i18n: "menu_news_option_5" },
+      { route: "/retirements", i18n: "menu_news_option_5" },
       { route: "/certificates.html", i18n: "menu_news_option_6" },
       { route: "/promotions.html", i18n: "menu_news_option_7" },
       { route: "/history.html", i18n: "menu_news_option_8" },
@@ -185,13 +185,14 @@ function applyCurrentLanguage() {
 
 // list of only protected pages
 const protectedPages = new Set([
-  "/dashboard.html",
-  "/notifications.html",
-  "/submit-event.html",
-  "/review-submissions.html",
-  "/translations-admin.html",
-  "/pages-admin.html",
-  "/admin-users.html",
+  "/dashboard",
+  "/notifications",
+  "/submit-event",
+  "/review-submissions",
+  "/translations-admin",
+  "/pages-admin",
+  "/timers-admin",
+  "/admin-users",
 
   ...Object.values(navLinks)
     .flatMap(dropdown => dropdown.items)
@@ -272,7 +273,7 @@ function loadHeader() {
     <div class="header-identity-row">
       <div class="header-inner">
         <a
-          href="/index.html"
+          href="/index"
           class="site-identity"
           aria-label="CMCEN / RCMCE home"
         >
@@ -357,7 +358,7 @@ function loadHeader() {
 
         <form
           class="header-search"
-          action="/search.html"
+          action="/search"
           method="get"
           role="search"
         >
@@ -544,7 +545,7 @@ function loadFooter() {
       <div class="footer-inner footer-grid">
         <section class="footer-brand">
           <a
-            href="/index.html"
+            href="/index"
             class="footer-identity"
             aria-label="CMCEN / RCMCE home"
           >
@@ -624,7 +625,7 @@ function loadFooter() {
             </li>
 
             <li>
-              <a href="/calendar.html" data-i18n="calendar_title">
+              <a href="/calendar" data-i18n="calendar_title">
                 Events Calendar
               </a>
             </li>
@@ -1100,7 +1101,7 @@ function updateAuthButtons() {
   if (token) {
     authButtons.innerHTML = `
       <a
-        href="/dashboard.html"
+        href="/dashboard"
         class="utility-link account-link"
       >
         ${getAccountIcon()}
@@ -1119,7 +1120,7 @@ function updateAuthButtons() {
 
     mobileMenuAccount.innerHTML = `
       <a
-        href="/dashboard.html"
+        href="/dashboard"
         class="mobile-menu-account-link"
       >
         ${getAccountIcon()}
@@ -1141,7 +1142,7 @@ function updateAuthButtons() {
   } else {
     authButtons.innerHTML = `
       <a
-        href="/login.html"
+        href="/login"
         class="utility-link account-link"
       >
         ${getAccountIcon()}
@@ -1151,7 +1152,7 @@ function updateAuthButtons() {
 
     mobileMenuAccount.innerHTML = `
       <a
-        href="/login.html"
+        href="/login"
         class="mobile-menu-account-link"
       >
         ${getAccountIcon()}

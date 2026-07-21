@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function requireToken() {
-      token = CMCENUtils.requireAuthToken('/login.html');
+      token = CMCENUtils.requireAuthToken('/login');
 
       if (!token) {
         throw new Error(translateMfa('mfa_authentication_required'));
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return CMCENUtils.apiJson(path, {
         ...opts,
         token: requireToken(),
-        redirectOnUnauthorized: '/login.html',
+        redirectOnUnauthorized: '/login',
         unauthorizedMessage: translateMfa('mfa_authentication_required')
       });
     }

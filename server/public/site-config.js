@@ -59,7 +59,7 @@ async function verifySiteConfigAccess() {
   });
 
   if (user.permissions?.canAccessSiteConfig !== true) {
-    window.location.href = "/dashboard.html";
+    window.location.href = "/dashboard";
     return null;
   }
 

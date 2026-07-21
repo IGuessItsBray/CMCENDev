@@ -216,7 +216,7 @@ function createEventCard(event, language, locale) {
     const article = document.createElement('a');
     article.className = 'calendar-event';
     article.href =
-        `/event.html?id=${encodeURIComponent(event._id)}`;
+        `/event?id=${encodeURIComponent(event._id)}`;
 
     const dayColumn = document.createElement('div');
     dayColumn.className = 'calendar-event-day';

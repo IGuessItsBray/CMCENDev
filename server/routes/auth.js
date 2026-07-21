@@ -233,8 +233,8 @@ async function getRejectedEventNotifications(user) {
       title: event.title,
       reason: event.rejectionReason || '',
       updatedAt: event.updatedAt,
-      editHref: `/submit-event.html?id=${encodeURIComponent(String(event._id))}`,
-      href: `/submit-event.html?id=${encodeURIComponent(String(event._id))}`
+      editHref: `/submit-event?id=${encodeURIComponent(String(event._id))}`,
+      href: `/submit-event?id=${encodeURIComponent(String(event._id))}`
     }))
   };
 }
@@ -274,8 +274,8 @@ async function getRejectedRetirementMessageNotifications(user) {
       title: getRetirementMessageNotificationTitle(retirementMessage),
       reason: retirementMessage.rejectionReason || '',
       updatedAt: retirementMessage.updatedAt,
-      editHref: `/submit-retirement.html?id=${encodeURIComponent(String(retirementMessage._id))}`,
-      href: `/submit-retirement.html?id=${encodeURIComponent(String(retirementMessage._id))}`
+      editHref: `/submit-retirement?id=${encodeURIComponent(String(retirementMessage._id))}`,
+      href: `/submit-retirement?id=${encodeURIComponent(String(retirementMessage._id))}`
     }))
   };
 }
@@ -306,8 +306,8 @@ async function getRejectedRetirementCommentNotifications(user) {
       body: comment.body || '',
       reason: comment.rejectionReason || '',
       updatedAt: comment.updatedAt,
-      editHref: `/notifications.html?comment=${encodeURIComponent(String(comment._id))}`,
-      href: `/notifications.html?comment=${encodeURIComponent(String(comment._id))}`
+      editHref: `/notifications?comment=${encodeURIComponent(String(comment._id))}`,
+      href: `/notifications?comment=${encodeURIComponent(String(comment._id))}`
     }))
   };
 }
@@ -340,7 +340,7 @@ async function getNotificationSummary(user) {
   return {
     count,
     items,
-    href: '/notifications.html'
+    href: '/notifications'
   };
 }
 
@@ -350,7 +350,7 @@ async function getProfileResponse(user) {
   let notifications = {
     count: 0,
     items: [],
-    href: '/notifications.html'
+    href: '/notifications'
   };
 
   try {
@@ -858,7 +858,7 @@ router.post('/password-reset/request', async (req, res) => {
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetUrl =
-      `${getBaseUrl(req)}/login.html?resetToken=${encodeURIComponent(resetToken)}`;
+      `${getBaseUrl(req)}/login?resetToken=${encodeURIComponent(resetToken)}`;
     const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
 
     user.passwordReset = {

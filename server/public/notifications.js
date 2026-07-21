@@ -286,7 +286,7 @@ document.addEventListener("languagechange", () => {
 });
 
 if (!notificationsToken) {
-  window.location.replace("/login.html");
+  window.location.replace("/login");
 } else {
   loadNotifications();
 }

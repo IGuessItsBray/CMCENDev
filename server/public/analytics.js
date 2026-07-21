@@ -44,7 +44,7 @@ async function analyticsApi(path, options = {}) {
     });
   } catch (error) {
     if (error.status === 403) {
-      window.location.href = "/dashboard.html";
+      window.location.href = "/dashboard";
     }
 
     throw error;
@@ -269,7 +269,7 @@ async function verifyAnalyticsAccess() {
   }
 
   if (!user.permissions?.canViewAnalytics) {
-    window.location.href = "/dashboard.html";
+    window.location.href = "/dashboard";
     return false;
   }
 

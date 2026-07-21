@@ -1353,7 +1353,7 @@ function createCommentReviewCard(comment) {
 
   if (comment.retirementMessage?._id) {
     relatedLink.href =
-      `/retirement-message.html?id=${encodeURIComponent(
+      `/retirement-message?id=${encodeURIComponent(
         comment.retirementMessage._id
       )}`;
   }

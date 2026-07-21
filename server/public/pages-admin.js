@@ -1704,7 +1704,7 @@ async function verifyAccess() {
   });
 
   if (user.permissions?.canManagePages !== true) {
-    window.location.href = "/dashboard.html";
+    window.location.href = "/dashboard";
     return null;
   }
 

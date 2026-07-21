@@ -68,12 +68,12 @@
     localStorage.removeItem("api_token");
   }
 
-  function redirectToLogin(path = "/login.html") {
+  function redirectToLogin(path = "/login") {
     clearAuthToken();
     window.location.href = path;
   }
 
-  function requireAuthToken(path = "/login.html") {
+  function requireAuthToken(path = "/login") {
     const token = getStoredAuthToken();
 
     if (!token) {
@@ -182,7 +182,7 @@
     if (response.status === 401 && redirectOnUnauthorized) {
       redirectToLogin(
         redirectOnUnauthorized === true
-          ? "/login.html"
+          ? "/login"
           : redirectOnUnauthorized
       );
       throw createApiError(unauthorizedMessage, response, data);
@@ -558,7 +558,7 @@
   }
 
   function trackPageVisit() {
-    if (window.location.pathname === "/analytics.html") {
+    if (window.location.pathname === "/analytics") {
       return;
     }
 

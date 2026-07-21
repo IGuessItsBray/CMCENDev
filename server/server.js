@@ -21,6 +21,7 @@ const retirementMessageRoutes = require('./routes/retirement-messages');
 const searchRoutes = require('./routes/search');
 const siteConfigRoutes = require('./routes/site-config');
 const translationRoutes = require('./routes/translations');
+const timerRoutes = require('./routes/timers');
 const uploadRoutes = require('./routes/uploads');
 const mfaRoutes = require('./routes/mfa');
 const pageRoutes = require('./routes/pages');
@@ -30,11 +31,43 @@ app.set('trust proxy', true);
 app.use(express.json());
 app.use(translationRoutes);
 app.use(contentOptionRoutes);
+
+function redirectHtmlExtension(req, res, next) {
+  if (!['GET', 'HEAD'].includes(req.method) || !req.path.endsWith('.html')) {
+    return next();
+  }
+
+  const nextPath = req.path === '/index.html'
+    ? '/'
+    : req.path.replace(/\.html$/u, '');
+
+  return res.redirect(301, `${nextPath}${req.url.slice(req.path.length)}`);
+}
+
+function serveExtensionlessHtml(req, res, next) {
+  if (
+    !['GET', 'HEAD'].includes(req.method) ||
+    req.path === '/' ||
+    req.path.includes('.') ||
+    req.path.startsWith('/api/')
+  ) {
+    return next();
+  }
+
+  return res.sendFile(path.join(__dirname, 'public', `${req.path.slice(1)}.html`), error => {
+    if (error) {
+      return next();
+    }
+  });
+}
+
+app.use(redirectHtmlExtension);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api', authRoutes);
 app.use('/api/mfa', mfaRoutes);
 app.use('/api', diagnosticsRoutes);
+app.use('/api', timerRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/site-config', siteConfigRoutes);
@@ -43,6 +76,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/retirement-messages', retirementMessageRoutes);
 app.use('/api/search', searchRoutes);
 app.use(pageRoutes);
+app.use(serveExtensionlessHtml);
 
 const publicDirectory = path.join(__dirname, 'public');
 

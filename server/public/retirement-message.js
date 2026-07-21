@@ -385,7 +385,7 @@ async function deleteRetirementMessage() {
         );
 
         setTimeout(() => {
-            window.location.href = "/retirements.html";
+            window.location.href = "/retirements";
         }, 900);
     } catch (error) {
         showRetirementCommentMessage(

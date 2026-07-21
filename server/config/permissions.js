@@ -107,6 +107,13 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Review page visits, traffic sources, device types, operating systems, and guest/member usage.'
   },
   {
+    key: 'timers.manage',
+    label: 'Manage banners',
+    group: 'Banners',
+    action: 'edit',
+    description: 'Create, update, schedule, and delete public site banners.'
+  },
+  {
     key: 'site_config.access',
     label: 'Access site config',
     group: 'Site config',
@@ -166,6 +173,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canManageRoles: 'roles.manage',
   canViewAuditLog: 'audit.view',
   canViewAnalytics: 'analytics.view',
+  canManageTimers: 'timers.manage',
   canAccessSiteConfig: 'site_config.access',
   canManageSiteConfig: 'site_config.manage',
   canViewMediaLibrary: 'media.read',
@@ -238,6 +246,9 @@ function getBuiltInPermissionFlags(user) {
 
     canViewAnalytics:
       hasMinimumRole(role, 'administrator'),
+
+    canManageTimers:
+      hasMinimumRole(role, 'editor'),
 
     canAccessSiteConfig:
       role === 'developer',

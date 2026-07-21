@@ -151,7 +151,7 @@ async function notifyEventPublished(event, req, options = {}) {
         }
 
         const eventUrl =
-            `${getBaseUrl(req)}/event.html?id=${encodeURIComponent(String(event._id))}`;
+            `${getBaseUrl(req)}/event?id=${encodeURIComponent(String(event._id))}`;
         const title = getEventTitle(event);
 
         await sendMail({

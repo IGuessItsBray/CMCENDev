@@ -68,7 +68,7 @@ async function adminApiJson(path, options = {}) {
     });
   } catch (error) {
     if (error.status === 403) {
-      window.location.href = "/dashboard.html";
+      window.location.href = "/dashboard";
     }
 
     throw error;
@@ -454,7 +454,7 @@ async function loadCurrentAdmin() {
   }[adminWorkZoneState.activeView] || "canReadUsers";
 
   if (user.permissions?.[requiredPermission] !== true) {
-    window.location.href = "/dashboard.html";
+    window.location.href = "/dashboard";
     return null;
   }
 
@@ -826,7 +826,7 @@ document.addEventListener("languagechange", () => {
 
 window.addEventListener("pageshow", () => {
   if (!CMCENUtils.requireAuthToken()) {
-    window.location.replace("/login.html");
+    window.location.replace("/login");
   }
 });
 

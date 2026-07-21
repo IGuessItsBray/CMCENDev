@@ -129,7 +129,7 @@ async function deletePublishedEvent() {
         );
 
         setTimeout(() => {
-            window.location.href = "/calendar.html";
+            window.location.href = "/calendar";
         }, 900);
     } catch (error) {
         window.alert(error.message || "Could not delete event");

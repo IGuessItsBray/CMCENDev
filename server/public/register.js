@@ -101,7 +101,7 @@ function showMfaSetup() {
 }
 
 function finishRegistration() {
-  window.location.href = "/dashboard.html";
+  window.location.href = "/dashboard";
 }
 
 async function verifyEmailCode() {

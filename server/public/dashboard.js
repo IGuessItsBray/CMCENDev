@@ -864,14 +864,14 @@ function renderDashboard(user) {
 
   if (isGhost) {
     actions.push({
-      href: "/submit-event.html",
+      href: "/submit-event",
       titleKey: "dashboard_action_my_submissions",
       descriptionKey: "dashboard_action_my_submissions_description"
     });
   } else {
     if (notificationCount > 0) {
       actions.push({
-        href: user.notifications?.href || "/notifications.html",
+        href: user.notifications?.href || "/notifications",
         titleKey: "dashboard_action_notifications",
         descriptionKey: "dashboard_action_notifications_description",
         count: notificationCount,
@@ -881,7 +881,7 @@ function renderDashboard(user) {
 
     if (user.permissions?.canSubmitRetirementMessages === true) {
       actions.push({
-        href: "/submit-retirement.html",
+        href: "/submit-retirement",
         titleKey: "dashboard_action_submit_retirement",
         descriptionKey: "dashboard_action_submit_retirement_description"
       });
@@ -889,7 +889,7 @@ function renderDashboard(user) {
 
     if (user.permissions?.canCreateDrafts === true) {
       actions.push({
-        href: "/submit-event.html",
+        href: "/submit-event",
         titleKey: "dashboard_action_submit_event",
         descriptionKey: "dashboard_action_submit_event_description"
       });
@@ -900,6 +900,7 @@ function renderDashboard(user) {
       "canManageUsers",
       "canManageRoles",
       "canManagePages",
+      "canManageTimers",
       "canViewMediaLibrary",
       "canViewAuditLog",
       "canAccessSiteConfig"
@@ -910,7 +911,7 @@ function renderDashboard(user) {
       !hasAdminWorkZoneAccess
     ) {
       actions.push({
-        href: "/translations-admin.html",
+        href: "/translations-admin",
         titleKey: "dashboard_action_manage_translations",
         descriptionKey: "dashboard_action_manage_translations_description"
       });
@@ -919,16 +920,16 @@ function renderDashboard(user) {
     if (hasAdminWorkZoneAccess) {
       actions.push({
         href: user.permissions?.canReadUsers === true || user.permissions?.canManageUsers === true
-          ? "/admin-users.html"
+          ? "/admin-users"
           : user.permissions?.canManageRoles === true
-            ? "/admin-users.html?view=roles"
+            ? "/admin-users?view=roles"
             : user.permissions?.canManagePages === true
-              ? "/pages-admin.html"
+              ? "/pages-admin"
               : user.permissions?.canViewMediaLibrary === true
-                ? "/admin-users.html?view=media"
+                ? "/admin-users?view=media"
                 : user.permissions?.canViewAuditLog === true
-                  ? "/audit-log.html"
-                  : "/site-config.html",
+                  ? "/audit-log"
+                  : "/site-config",
         titleKey: "dashboard_action_admin_work_zone",
         descriptionKey: "dashboard_action_admin_work_zone_description"
       });
@@ -1070,7 +1071,7 @@ document.addEventListener(
 
 window.addEventListener("pageshow", () => {
   if (!CMCENUtils.requireAuthToken()) {
-    window.location.replace("/login.html");
+    window.location.replace("/login");
   }
 });
 

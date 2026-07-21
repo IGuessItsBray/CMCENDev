@@ -12,25 +12,25 @@ const MAX_RESULTS_PER_SOURCE = 10;
 
 const STATIC_PAGES = [
   {
-    path: '/index.html',
+    path: '/index',
     file: 'index.html',
     type: 'page',
     title: 'CMCEN / RCMCE'
   },
   {
-    path: '/about-family.html',
+    path: '/about-family',
     file: 'about-family.html',
     type: 'page',
     title: 'About the C&E Family'
   },
   {
-    path: '/calendar.html',
+    path: '/calendar',
     file: 'calendar.html',
     type: 'page',
     title: 'Events Calendar'
   },
   {
-    path: '/submit-retirement.html',
+    path: '/submit-retirement',
     file: 'submit-retirement.html',
     type: 'page',
     title: 'Submit a Retirement Message'
@@ -184,7 +184,7 @@ async function searchEvents(query, queryTerms, language) {
       sourceId: String(event._id),
       title,
       summary,
-      url: `/event.html?id=${encodeURIComponent(String(event._id))}`,
+      url: `/event?id=${encodeURIComponent(String(event._id))}`,
       date: event.startDate || event.createdAt || null,
       score: scoreText(queryTerms, [
         title,

@@ -179,7 +179,7 @@ async function completeLogin(token) {
     window.refreshAuthUI();
   }
 
-  window.location.href = "/dashboard.html";
+  window.location.href = "/dashboard";
 }
 
 function ensureWebAuthnAvailable() {
@@ -344,7 +344,7 @@ forgotPasswordLink.addEventListener("click", showForgotPasswordForm);
 guestAccessLink.addEventListener("click", showGuestAccessForm);
 forgotPasswordBack.addEventListener("click", () => showLoginForm(""));
 resetPasswordBack.addEventListener("click", () => {
-  window.history.replaceState({}, document.title, "/login.html");
+  window.history.replaceState({}, document.title, "/login");
   showLoginForm("");
 });
 emailVerificationBack.addEventListener("click", () => showLoginForm(""));
@@ -404,7 +404,7 @@ resetPasswordForm.addEventListener("submit", async event => {
     });
 
     resetPasswordForm.reset();
-    window.history.replaceState({}, document.title, "/login.html");
+    window.history.replaceState({}, document.title, "/login");
     showLoginForm(data.message || "Password has been reset. You can now sign in.", "info");
   } catch (error) {
     setResetPasswordMessage(error.message);

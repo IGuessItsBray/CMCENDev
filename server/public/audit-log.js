@@ -39,6 +39,9 @@ const auditActions = [
   ["navigation.created", "audit_action_navigation_created"],
   ["navigation.updated", "audit_action_navigation_updated"],
   ["navigation.deleted", "audit_action_navigation_deleted"],
+  ["timer.created", "audit_action_timer_created"],
+  ["timer.updated", "audit_action_timer_updated"],
+  ["timer.deleted", "audit_action_timer_deleted"],
   ["role.created", "audit_action_role_created"],
   ["role.updated", "audit_action_role_updated"],
   ["role.permissions_changed", "audit_action_role_permissions_changed"],
@@ -59,6 +62,7 @@ const auditTargetTypes = [
   ["media", "audit_target_media"],
   ["page", "audit_target_pages"],
   ["navigation", "audit_target_navigation"],
+  ["timer", "audit_target_timers"],
   ["role", "audit_target_roles"],
   ["translation", "audit_target_translations"],
   ["retirementMessage", "audit_target_retirement_posts"],
@@ -75,7 +79,7 @@ async function auditApiJson(path, options = {}) {
     });
   } catch (error) {
     if (error.status === 403) {
-      window.location.href = "/dashboard.html";
+      window.location.href = "/dashboard";
     }
 
     throw error;
@@ -252,19 +256,19 @@ function getAuditTargetHref(log) {
 
   if (log.targetType === "event" && targetId) {
     return log.action === "content.published"
-      ? `/event.html?id=${encodeURIComponent(targetId)}`
-      : `/submit-event.html?id=${encodeURIComponent(targetId)}`;
+      ? `/event?id=${encodeURIComponent(targetId)}`
+      : `/submit-event?id=${encodeURIComponent(targetId)}`;
   }
 
   if (log.targetType === "retirementMessage" && targetId) {
-    return `/retirement-message.html?id=${encodeURIComponent(targetId)}`;
+    return `/retirement-message?id=${encodeURIComponent(targetId)}`;
   }
 
   if (log.targetType === "retirementComment") {
     const messageId = getTargetId(snapshot.retirementMessage);
 
     if (messageId) {
-      return `/retirement-message.html?id=${encodeURIComponent(messageId)}`;
+      return `/retirement-message?id=${encodeURIComponent(messageId)}`;
     }
   }
 
@@ -581,7 +585,7 @@ async function verifyAuditAccess() {
   });
 
   if (user.permissions?.canViewAuditLog !== true) {
-    window.location.href = "/dashboard.html";
+    window.location.href = "/dashboard";
     return false;
   }
 
@@ -646,7 +650,7 @@ document.addEventListener("languagechange", () => {
 
 window.addEventListener("pageshow", () => {
   if (!CMCENUtils.requireAuthToken()) {
-    window.location.replace("/login.html");
+    window.location.replace("/login");
   }
 });
 

@@ -336,7 +336,7 @@ function getMediaAttachmentMap(events, retirementMessages) {
       title: getEventTitle(event),
       status: event.status,
       field: 'imagePath',
-      href: `/submit-event.html?id=${encodeURIComponent(event._id)}`
+      href: `/submit-event?id=${encodeURIComponent(event._id)}`
     });
   });
 
@@ -347,7 +347,7 @@ function getMediaAttachmentMap(events, retirementMessages) {
       title: getRetirementMessageTitle(message),
       status: message.status,
       field: 'photoUrl',
-      href: `/retirement-message.html?id=${encodeURIComponent(message._id)}`
+      href: `/retirement-message?id=${encodeURIComponent(message._id)}`
     });
   });
 
@@ -1070,7 +1070,7 @@ router.get(
           date: event.startDate,
           updatedAt: event.updatedAt,
           createdAt: event.createdAt,
-          href: `/submit-event.html?id=${encodeURIComponent(event._id)}`
+          href: `/submit-event?id=${encodeURIComponent(event._id)}`
         })),
         ...retirementMessages.map(message => ({
           _id: message._id,
@@ -1081,7 +1081,7 @@ router.get(
           date: message.retiree?.retirementDate,
           updatedAt: message.updatedAt,
           createdAt: message.createdAt,
-          href: `/retirement-message.html?id=${encodeURIComponent(message._id)}`
+          href: `/retirement-message?id=${encodeURIComponent(message._id)}`
         })),
         ...retirementComments.map(comment => ({
           _id: comment._id,
@@ -1093,7 +1093,7 @@ router.get(
           updatedAt: comment.updatedAt,
           createdAt: comment.createdAt,
           href: comment.retirementMessage?._id
-            ? `/retirement-message.html?id=${encodeURIComponent(comment.retirementMessage._id)}`
+            ? `/retirement-message?id=${encodeURIComponent(comment.retirementMessage._id)}`
             : ''
         }))
       ].sort((a, b) =>

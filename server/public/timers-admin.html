@@ -8,7 +8,7 @@
       content="width=device-width, initial-scale=1.0"
     />
 
-    <title>Analytics | CMCEN / RCMCE</title>
+    <title>Banners | CMCEN / RCMCE</title>
     <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -18,17 +18,17 @@
 
     <main class="dashboard-main">
       <section
-        class="dashboard-shell analytics-shell"
-        aria-labelledby="analyticsTitle"
+        class="dashboard-shell admin-work-zone-dashboard-shell"
+        aria-labelledby="timersAdminTitle"
       >
         <header class="dashboard-heading">
           <div class="dashboard-heading-copy">
-            <p class="dashboard-eyebrow">Administrator</p>
+            <p class="dashboard-eyebrow">Admin work zone</p>
 
-            <h1 id="analyticsTitle">Analytics</h1>
+            <h1 id="timersAdminTitle">Banners</h1>
 
             <p class="dashboard-member-name">
-              Page visits, sources, devices, and audience split.
+              Schedule public banners for the home page or the whole site.
             </p>
           </div>
         </header>
@@ -37,27 +37,29 @@
           class="admin-work-zone-tabs admin-work-zone-page-tabs"
           id="adminWorkZoneTabs"
           aria-label="Admin work zone views"
+          data-i18n-aria-label="admin_work_zone_tabs_label"
         ></nav>
 
         <div
           class="dashboard-status is-loading"
-          id="analyticsStatus"
+          id="timersAdminStatus"
           role="status"
           aria-live="polite"
           aria-label="Loading..."
+          data-i18n-aria-label="loading_text"
         >
           <span class="loading-state-spinner" aria-hidden="true"></span>
-          <span class="visually-hidden">Loading...</span>
+          <span class="visually-hidden" data-i18n="loading_text">Loading...</span>
         </div>
 
         <section
-          class="dashboard-section analytics-page"
-          id="analyticsPage"
+          class="dashboard-section admin-work-zone-page timers-admin-page"
+          id="timersAdminPage"
           hidden
         >
           <div
-            class="analytics-content"
-            id="analyticsContent"
+            class="timers-admin-content"
+            id="timersAdminContent"
           ></div>
         </section>
       </section>
@@ -70,6 +72,6 @@
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
     <script src="/admin-work-zone-tabs.js"></script>
-    <script src="/analytics.js"></script>
+    <script src="/timers-admin.js"></script>
   </body>
 </html>

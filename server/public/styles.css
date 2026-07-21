@@ -689,50 +689,6 @@ svg {
   width: 148px;
 }
 
-/* Launch countdown shown in header */
-.launch-countdown {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--white);
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-  margin-right: 8px;
-}
-
-.launch-countdown .countdown-label {
-  display: none;
-  color: var(--branch-grey-200);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.launch-countdown .countdown-timer {
-  min-width: 120px;
-  text-align: right;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 6px 8px;
-  border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  color: var(--branch-grey-100);
-  font-weight: 700;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
-  font-size: 13px;
-}
-
-.mobile-launch-countdown {
-  display: none;
-}
-
-@media (min-width: 900px) {
-  .launch-countdown .countdown-label {
-    display: inline-block;
-  }
-}
-
 .donate-link:hover,
 .donate-link:focus-visible {
   background: var(--gold-500);
@@ -10360,38 +10316,6 @@ a.dropdown-toggle {
     gap: 8px;
   }
 
-  .header-utilities .launch-countdown {
-    display: none;
-  }
-
-  .mobile-launch-countdown {
-    min-height: 36px;
-    padding: 7px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    border-bottom: 1px solid rgba(213, 155, 39, 0.45);
-    background: linear-gradient(90deg, var(--navy-800), var(--navy-900), var(--navy-800));
-    color: var(--branch-grey-100);
-  }
-
-  .mobile-launch-countdown .countdown-label {
-    color: var(--branch-grey-200);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .mobile-launch-countdown .countdown-timer {
-    color: var(--gold-200);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
   .auth-buttons {
     min-width: 0;
     flex: 1 1 auto;
@@ -13338,9 +13262,17 @@ html[data-theme="dark"] .theme-toggle__icon:last-child {
   white-space: nowrap;
 }
 
+.site-timer:not(.is-marquee) .site-timer-track {
+  text-align: center;
+}
+
 .site-timer-text {
   display: inline-block;
   padding-right: 0.75rem;
+}
+
+.site-timer:not(.is-marquee) .site-timer-text {
+  padding-right: 0;
 }
 
 .site-timer.is-marquee .site-timer-text {

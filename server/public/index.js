@@ -298,11 +298,6 @@ function loadHeader() {
         <div class="header-utilities">
           <div class="auth-buttons"></div>
 
-          <div class="launch-countdown" id="launchCountdown" aria-live="polite" title="Time to Launch">
-            <span class="countdown-label">Time to Launch</span>
-            <span class="countdown-timer" data-launch-countdown-timer>—</span>
-          </div>
-
           <button
             type="button"
             class="lang-toggle"
@@ -334,15 +329,6 @@ function loadHeader() {
           </button>
         </div>
       </div>
-    </div>
-
-    <div
-      class="mobile-launch-countdown"
-      aria-live="polite"
-      title="Time to Launch"
-    >
-      <span class="countdown-label">Time to Launch</span>
-      <span class="countdown-timer" data-launch-countdown-timer>—</span>
     </div>
 
     <div class="header-navigation-row">
@@ -738,48 +724,6 @@ function loadFooter() {
 
 loadHeader();
 loadFooter();
-
-// Initialize and run the launch countdown shown in the header
-function initLaunchCountdown() {
-  const timerEls = document.querySelectorAll('[data-launch-countdown-timer]');
-  if (!timerEls.length) return;
-
-  // Target: 2026-10-31 12:00 in America/Toronto local time (EDT at that date)
-  const targetMs = new Date('2026-10-31T12:00:00-04:00').getTime();
-  let intervalId = null;
-
-  function updateTimer() {
-    const now = Date.now();
-    let diff = Math.max(0, targetMs - now);
-
-    if (diff === 0) {
-      timerEls.forEach(timerEl => {
-        timerEl.textContent = 'Launched';
-        timerEl.classList.add('launched');
-      });
-      if (intervalId) clearInterval(intervalId);
-      return;
-    }
-
-    const days = Math.floor(diff / 86400000);
-    diff -= days * 86400000;
-    const hours = Math.floor(diff / 3600000);
-    diff -= hours * 3600000;
-    const minutes = Math.floor(diff / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-
-    const timerText = `${days}d ${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
-
-    timerEls.forEach(timerEl => {
-      timerEl.textContent = timerText;
-    });
-  }
-
-  updateTimer();
-  intervalId = setInterval(updateTimer, 1000);
-}
-
-initLaunchCountdown();
 
 async function loadCustomNavigationItems() {
   try {

@@ -208,21 +208,25 @@ function formatCommentDate(value) {
 
 function formatRetirementDate(value) {
     if (!value) {
-        return translate("retirement_date_pending");
+        return "";
     }
 
     const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
-        return translate("retirement_date_pending");
+        return "";
     }
 
     const dateLabel =
         CMCENUtils.formatDate(value, {
             dateStyle: "long",
             timeZone: "UTC",
-            fallback: translate("retirement_date_pending")
+            fallback: ""
         });
+
+    if (!dateLabel) {
+        return "";
+    }
 
     return translate(
         "retirement_date_label",

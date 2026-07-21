@@ -63,6 +63,11 @@ const retirementCommentSchema =
                 trim: true,
                 maxlength: 2000,
                 default: ""
+            },
+
+            legacy: {
+                type: mongoose.Schema.Types.Mixed,
+                default: null
             }
         },
         {

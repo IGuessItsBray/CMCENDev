@@ -44,3 +44,133 @@ node server/scripts/migration/import-retirement-messages.js --apply
 node server/scripts/migration/import-last-post-messages.js --apply
 node server/scripts/migration/verify-wordpress-migration.js
 ```
+
+## Live Retirement Scrape
+
+Use this path when importing directly from the current public CMCEN WordPress
+site instead of phpMyAdmin export files.
+
+The scraper pulls retirement posts from:
+
+```text
+https://cmcen-rcmce.ca/retirements/
+```
+
+It uses the WordPress REST API to import retirement messages, source photos,
+generated media variants, media asset records, and approved WordPress comments.
+
+### Dry Run
+
+Run this first. It reads from WordPress, builds a local manifest, and does not
+write to MongoDB or MinIO.
+
+```sh
+node server/scripts/migration/scrape-current-retirements.js
+```
+
+To test only a small slice:
+
+```sh
+node server/scripts/migration/scrape-current-retirements.js --limit=3
+```
+
+### Apply
+
+This writes to MongoDB and MinIO/CDN:
+
+```sh
+node server/scripts/migration/scrape-current-retirements.js --apply
+```
+
+To apply only a limited test batch:
+
+```sh
+node server/scripts/migration/scrape-current-retirements.js --apply --limit=3
+```
+
+### What It Creates Or Updates
+
+- `RetirementMessage` documents, upserted by `legacy.source` and
+  `legacy.wordpressPostId`.
+- `MediaAsset` documents for retirement photos.
+- Original image objects plus `thumb`, `medium`, `large`, and `hero` WebP
+  variants in MinIO.
+- `RetirementComment` documents for approved WordPress comments, upserted by
+  `legacy.wordpressCommentId`.
+- A ghost `User` named `LegacyImport` for retirement message ownership fields:
+  `createdBy`, `updatedBy`, `reviewedBy`, and `publishedBy`.
+- Ghost `User` documents for original WordPress comment authors, so imported
+  comments display with the original commenter names.
+
+### Required Environment
+
+The script loads `server/.env`. For `--apply`, these values must be set:
+
+- `MONGO_URI`
+- `MINIO_ENDPOINT`
+- `MINIO_BUCKET_NAME`
+- `MINIO_ACCESS_KEY`
+- `MINIO_SECRET_KEY`
+
+The CDN URL is built through `server/services/media-library.js`, using
+`CDN_PUBLIC_BASE_URL`, `CDN_BASE_URL`, or `MINIO_ENDPOINT/MINIO_BUCKET_NAME`.
+
+### Output
+
+The dry-run and apply modes both write:
+
+```text
+server/scripts/migration/output/current-retirement-scrape-manifest.json
+```
+
+The manifest includes the WordPress post IDs, mapped retiree fields, retirement
+dates parsed from article text, source image URLs, media keys, and imported
+comment summaries.
+
+## Retirement Media Linking
+
+Use this reconciliation script when retirement messages already exist and media
+assets already exist, but the admin media manager shows images as unattached or
+the retirement message needs its media reference repaired.
+
+### Dry Run
+
+```sh
+node server/scripts/migration/link-retirement-media.js
+```
+
+This scans MongoDB, matches retirement messages to `MediaAsset` records, and
+writes a local report. It does not update the database.
+
+### Apply
+
+```sh
+node server/scripts/migration/link-retirement-media.js --apply
+```
+
+This updates matched retirement messages by:
+
+- setting `photoUrl` to the matched media asset URL
+- setting `legacy.mediaAssetKey`
+- setting `legacy.mediaLinkedAt`
+
+### Matching Rules
+
+The script matches in this order:
+
+- existing `legacy.mediaAssetKey`
+- current `photoUrl` resolved to a media object key
+- WordPress post ID embedded in imported media paths like
+  `legacy/current-site/retirements/{postId}-{slug}/original.jpg`
+- retirement title against media asset display names
+
+### Output
+
+The script writes:
+
+```text
+server/scripts/migration/output/retirement-media-link-manifest.json
+```
+
+The manifest reports how many retirement messages were scanned, matched,
+changed, and left unmatched.

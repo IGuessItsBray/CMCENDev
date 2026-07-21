@@ -354,6 +354,34 @@ function getMediaAttachmentMap(events, retirementMessages) {
   return attachmentMap;
 }
 
+function addAttachmentAliases(attachmentMap, aliasKeys) {
+  const attachments = aliasKeys
+    .flatMap(key => attachmentMap.get(key) || []);
+  const uniqueAttachments = Array.from(
+    new Map(attachments.map(attachment => [
+      `${attachment.type}:${attachment._id}:${attachment.field}`,
+      attachment
+    ])).values()
+  );
+
+  aliasKeys.forEach(key => {
+    if (key && uniqueAttachments.length && !attachmentMap.has(key)) {
+      attachmentMap.set(key, uniqueAttachments);
+    }
+  });
+}
+
+function getMediaAssetAttachmentKeys(asset) {
+  return [
+    asset?.key,
+    asset?.originalKey,
+    getMediaVariantKey(asset, 'thumb'),
+    getMediaVariantKey(asset, 'medium'),
+    getMediaVariantKey(asset, 'large'),
+    getMediaVariantKey(asset, 'hero')
+  ].filter(Boolean);
+}
+
 async function getMediaAttachments() {
   const [events, retirementMessages] = await Promise.all([
     Event.find({
@@ -402,6 +430,8 @@ function getMediaVariantKey(asset, name) {
 
 function toAdminMediaAssetItem(asset, attachmentMap) {
   const key = asset.key || asset.originalKey;
+  const objectKeys = getMediaAssetAttachmentKeys(asset);
+  addAttachmentAliases(attachmentMap, objectKeys);
   const attachments = attachmentMap.get(key) || [];
 
   return {
@@ -419,13 +449,7 @@ function toAdminMediaAssetItem(asset, attachmentMap) {
     updatedAt: asset.updatedAt || null,
     attachedPosts: attachments,
     attachedPostCount: attachments.length,
-    objectKeys: [
-      key,
-      getMediaVariantKey(asset, 'thumb'),
-      getMediaVariantKey(asset, 'medium'),
-      getMediaVariantKey(asset, 'large'),
-      getMediaVariantKey(asset, 'hero')
-    ].filter(Boolean)
+    objectKeys
   };
 }
 

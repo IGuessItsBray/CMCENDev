@@ -1,7 +1,7 @@
 (function () {
   const COUNTDOWN_INTERVAL_MS = 1000;
   const TIMER_CACHE_KEY_PREFIX = "cmcen.active-timers.";
-  let timersRoot = null;
+  let timersRoots = [];
   let countdownInterval = 0;
   let activeTimers = [];
 
@@ -145,10 +145,41 @@
       countdownInterval = 0;
     }
 
-    if (timersRoot) {
-      timersRoot.remove();
-      timersRoot = null;
+    timersRoots.forEach(root => root.remove());
+    timersRoots = [];
+  }
+
+  function getHeader() {
+    const header = document.getElementById("header");
+    return header?.classList.contains("site-header") ? header : null;
+  }
+
+  function updateHeaderOffset() {
+    const header = getHeader();
+
+    if (header) {
+      document.documentElement.style.setProperty(
+        "--site-header-height",
+        `${header.offsetHeight}px`
+      );
     }
+  }
+
+  function appendTimers(timers, screenPosition, header) {
+    const root = document.createElement("div");
+    root.className = "site-timers";
+    root.classList.toggle("site-timers-below-header", screenPosition === "below-header");
+    timers.forEach(timer => root.append(createTimerElement(timer)));
+
+    if (!header) {
+      document.body.prepend(root);
+    } else if (screenPosition === "below-header") {
+      header.insertAdjacentElement("afterend", root);
+    } else {
+      header.prepend(root);
+    }
+
+    return root;
   }
 
   function renderTimers() {
@@ -156,14 +187,26 @@
 
     if (!activeTimers.length || !document.body) return;
 
-    const root = document.createElement("div");
-    root.className = "site-timers";
-    activeTimers.forEach(timer => root.append(createTimerElement(timer)));
-    document.body.prepend(root);
-    timersRoot = root;
-    updateCountdowns(root);
+    const header = getHeader();
+    const headerTimers = activeTimers.filter(
+      timer => timer.screenPosition !== "below-header"
+    );
+    const belowHeaderTimers = activeTimers.filter(
+      timer => timer.screenPosition === "below-header"
+    );
+
+    if (headerTimers.length) {
+      timersRoots.push(appendTimers(headerTimers, "header", header));
+    }
+
+    if (belowHeaderTimers.length) {
+      timersRoots.push(appendTimers(belowHeaderTimers, "below-header", header));
+    }
+
+    updateHeaderOffset();
+    timersRoots.forEach(updateCountdowns);
     countdownInterval = window.setInterval(
-      () => updateCountdowns(root),
+      () => timersRoots.forEach(updateCountdowns),
       COUNTDOWN_INTERVAL_MS
     );
   }
@@ -203,4 +246,6 @@
   loadTimers();
 
   document.addEventListener("languagechange", renderTimers);
+  document.addEventListener("cmcenheaderready", renderTimers);
+  window.addEventListener("resize", updateHeaderOffset);
 })();

@@ -33,6 +33,10 @@ function cleanPlacement(value) {
   return value === 'home' ? 'home' : 'global';
 }
 
+function cleanScreenPosition(value) {
+  return value === 'below-header' ? 'below-header' : 'header';
+}
+
 function timerPayload(body = {}) {
   return {
     title: cleanString(body.title, 'Untitled banner').slice(0, 120) || 'Untitled banner',
@@ -43,6 +47,7 @@ function timerPayload(body = {}) {
     endsAt: cleanDate(body.endsAt),
     countdownAt: cleanDate(body.countdownAt),
     placement: cleanPlacement(body.placement),
+    screenPosition: cleanScreenPosition(body.screenPosition),
     enabled: body.enabled !== false,
     order: Number.isFinite(Number(body.order)) ? Number(body.order) : 0
   };
@@ -59,6 +64,7 @@ function toTimerResponse(timer) {
     endsAt: timer.endsAt ? timer.endsAt.toISOString() : '',
     countdownAt: timer.countdownAt ? timer.countdownAt.toISOString() : '',
     placement: timer.placement || 'global',
+    screenPosition: timer.screenPosition || 'header',
     enabled: timer.enabled !== false,
     order: timer.order || 0,
     createdAt: timer.createdAt ? timer.createdAt.toISOString() : '',

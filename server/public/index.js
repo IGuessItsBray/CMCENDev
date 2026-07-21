@@ -112,7 +112,7 @@ const navLinks = {
         permission: 'canReviewAndPublish'
       },
       { route: "/news_stories.html", i18n: "menu_news_option_3" },
-      { route: "/last_post.html", i18n: "menu_news_option_4" },
+      { route: "/last-post", i18n: "menu_news_option_4" },
       { route: "/retirements", i18n: "menu_news_option_5" },
       { route: "/certificates.html", i18n: "menu_news_option_6" },
       { route: "/promotions.html", i18n: "menu_news_option_7" },

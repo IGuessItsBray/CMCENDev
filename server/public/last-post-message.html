@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="last_post_detail_page_title">Last Post | CMCEN / RCMCE</title>
+    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="last-post-detail-main">
+      <article class="last-post-detail-shell" aria-labelledby="lastPostDetailTitle">
+        <p class="last-post-message is-loading" id="lastPostDetailMessage" role="status" aria-live="polite"></p>
+
+        <div id="lastPostDetailContent" hidden>
+          <header class="last-post-detail-masthead">
+            <a class="last-post-detail-back" href="/last-post">
+              <span aria-hidden="true">←</span>
+              <span data-i18n="last_post_detail_back">Back to Last Post</span>
+            </a>
+            <p class="last-post-masthead" data-i18n="last_post_heading">Last Post</p>
+            <p class="last-post-masthead-subtitle" data-i18n="last_post_kicker">
+              The Regimental Memorial Archive
+            </p>
+          </header>
+
+          <section class="last-post-detail-paper">
+            <p class="last-post-detail-notice" data-i18n="last_post_in_memoriam">In Memoriam</p>
+            <p class="last-post-detail-date" id="lastPostDetailDate"></p>
+            <h1 id="lastPostDetailTitle"></h1>
+            <p class="last-post-detail-language" id="lastPostDetailLanguage"></p>
+            <div class="last-post-detail-rule" aria-hidden="true"></div>
+            <figure class="last-post-detail-image" id="lastPostDetailImage" hidden></figure>
+            <section class="last-post-detail-message" aria-label="Memorial notice" data-i18n-aria-label="last_post_detail_message_label">
+              <p id="lastPostDetailText"></p>
+            </section>
+            <footer class="last-post-detail-footer">
+              <p data-i18n="last_post_lest_we_forget">Lest We Forget</p>
+              <a href="/last-post" data-i18n="last_post_detail_back">Back to Last Post</a>
+            </footer>
+          </section>
+        </div>
+      </article>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/last-post-message.js"></script>
+  </body>
+</html>

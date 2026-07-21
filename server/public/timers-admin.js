@@ -135,7 +135,7 @@ function createTimerList() {
       title.textContent = timer.title || "Untitled banner";
 
       const meta = document.createElement("span");
-      meta.textContent = `${timer.enabled ? "Enabled" : "Disabled"} · ${timer.placement === "home" ? "Home page" : "Global"}`;
+      meta.textContent = `${timer.enabled ? "Enabled" : "Disabled"} · ${timer.placement === "home" ? "Home page" : "Global"} · ${timer.screenPosition === "below-header" ? "Below header" : "Top of screen"}`;
 
       button.append(title, meta);
       list.append(button);
@@ -285,6 +285,11 @@ function createTimerEditor() {
   placement.value = timer.placement || "global";
   form.append(createField("Placement", placement));
 
+  form.append(createField(
+    "Below sticky header",
+    createToggle("belowHeader", timer.screenPosition === "below-header")
+  ));
+
   form.append(createField("Enabled", createToggle("enabled", timer.enabled !== false)));
 
   const order = document.createElement("input");
@@ -352,6 +357,7 @@ function getTimerPayload(form) {
     endsAt: fromDateAndTime(formData.get("endsAtDate"), formData.get("endsAtTime")),
     countdownAt: fromDateAndTime(formData.get("countdownAtDate"), formData.get("countdownAtTime")),
     placement: formData.get("placement"),
+    screenPosition: formData.get("belowHeader") === "on" ? "below-header" : "header",
     enabled: formData.get("enabled") === "on",
     order: Number(formData.get("order") || 0)
   };

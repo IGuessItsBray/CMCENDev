@@ -476,6 +476,8 @@ function loadHeader() {
       setMobileMenuOpen(false);
     }
   });
+
+  document.dispatchEvent(new Event('cmcenheaderready'));
 }
 
 const footerSocialLinks = [

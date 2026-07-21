@@ -46,6 +46,11 @@ const TimerSchema = new mongoose.Schema(
       enum: ['global', 'home'],
       default: 'global'
     },
+    screenPosition: {
+      type: String,
+      enum: ['header', 'below-header'],
+      default: 'header'
+    },
     enabled: {
       type: Boolean,
       default: true

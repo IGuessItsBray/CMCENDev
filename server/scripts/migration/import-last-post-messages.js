@@ -46,7 +46,7 @@ function buildDocument(record, imageMap) {
     slug: record.slug,
     message,
     messageLanguage: record.messageLanguage || 'unknown',
-    photoUrl: record.thumbnailId && imageMap.has(record.thumbnailId)
+    imageUrl: record.thumbnailId && imageMap.has(record.thumbnailId)
       ? imageMap.get(record.thumbnailId)
       : record.image?.sourceUrl || '',
     status: record.status,

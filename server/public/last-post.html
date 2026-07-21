@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="last_post_page_title">Last Post | CMCEN / RCMCE</title>
+    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="last-post-main">
+      <section class="last-post-shell" aria-labelledby="lastPostTitle">
+        <header class="last-post-archive-heading">
+          <p class="last-post-archive-kicker" data-i18n="last_post_kicker">
+            The Regimental Memorial Archive
+          </p>
+          <h1 id="lastPostTitle" data-i18n="last_post_heading">Last Post</h1>
+          <p data-i18n="last_post_intro">
+            Notices honouring members of the C&E Family.
+          </p>
+        </header>
+
+        <p class="last-post-message is-loading" id="lastPostMessage" role="status" aria-live="polite">
+          <span class="loading-state-spinner" aria-hidden="true"></span>
+          <span class="visually-hidden" data-i18n="last_post_loading">
+            Loading Last Post notices...
+          </span>
+        </p>
+
+        <div class="last-post-grid" id="lastPostGrid" hidden></div>
+
+        <div class="last-post-load-more" id="lastPostLoadMore" hidden>
+          <button type="button" id="lastPostLoadMoreButton" aria-controls="lastPostGrid">
+            <span id="lastPostLoadMoreLabel" data-i18n="last_post_load_more">
+              Load more notices
+            </span>
+          </button>
+          <p id="lastPostLoadMoreMessage" role="status" aria-live="polite" hidden></p>
+        </div>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/last-post.js"></script>
+  </body>
+</html>

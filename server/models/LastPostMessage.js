@@ -96,6 +96,11 @@ const LegacyCommentSchema = new mongoose.Schema(
 
 const LastPostMessageSchema = new mongoose.Schema(
   {
+    /*
+     * These records were originally created for the WordPress import. Keep
+     * the legacy fields below so that history remains displayable, while new
+     * Last Post submissions use the structured fields that follow.
+     */
     title: {
       type: String,
       trim: true,
@@ -122,11 +127,80 @@ const LastPostMessageSchema = new mongoose.Schema(
       default: 'unknown'
     },
 
+    imageUrl: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: ''
+    },
+
+    // Retained solely for imported WordPress records.
     photoUrl: {
       type: String,
       trim: true,
       maxlength: 2000,
       default: ''
+    },
+
+    deceased: {
+      fullRank: {
+        type: String,
+        trim: true,
+        maxlength: 80,
+        default: ''
+      },
+
+      firstName: {
+        type: String,
+        trim: true,
+        maxlength: 80,
+        default: ''
+      },
+
+      surname: {
+        type: String,
+        trim: true,
+        maxlength: 80,
+        default: ''
+      },
+
+      postNominal: {
+        type: String,
+        trim: true,
+        maxlength: 120,
+        default: ''
+      }
+    },
+
+    submitter: {
+      rank: {
+        type: String,
+        trim: true,
+        maxlength: 80,
+        default: ''
+      },
+
+      firstName: {
+        type: String,
+        trim: true,
+        maxlength: 80,
+        default: ''
+      },
+
+      lastName: {
+        type: String,
+        trim: true,
+        maxlength: 80,
+        default: ''
+      },
+
+      email: {
+        type: String,
+        trim: true,
+        lowercase: true,
+        maxlength: 254,
+        default: ''
+      }
     },
 
     status: {
@@ -149,7 +223,7 @@ const LastPostMessageSchema = new mongoose.Schema(
 
     legacy: {
       type: LegacySchema,
-      required: true
+      default: null
     }
   },
   {
@@ -157,12 +231,18 @@ const LastPostMessageSchema = new mongoose.Schema(
   }
 );
 
-LastPostMessageSchema.index({
-  'legacy.source': 1,
-  'legacy.postId': 1
-}, {
-  unique: true
-});
+LastPostMessageSchema.index(
+  {
+    'legacy.source': 1,
+    'legacy.postId': 1
+  },
+  {
+    unique: true,
+    partialFilterExpression: {
+      'legacy.postId': { $exists: true }
+    }
+  }
+);
 
 LastPostMessageSchema.index({
   status: 1,

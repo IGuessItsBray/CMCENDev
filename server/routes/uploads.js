@@ -1,17 +1,174 @@
 const express = require('express');
 const multer = require('multer');
+const sharp = require('sharp');
 const {
   GetObjectCommand,
-  PutObjectCommand
+  PutObjectCommand,
+  S3Client
 } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { randomUUID } = require('crypto');
+const MediaAsset = require('../models/MediaAsset');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
-const { buildPublicMediaUrl } = require('../services/media-library');
+const { buildPublicMediaUrl, getCdnBaseUrl } = require('../services/media-library');
 const s3Client = require('../storage');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+const IMAGE_VARIANTS = Object.freeze([
+  { name: 'thumb', width: 400 },
+  { name: 'medium', width: 900 },
+  { name: 'large', width: 1600 },
+  { name: 'hero', width: 2200 }
+]);
+
+function getPublicUploadEndpoint() {
+  if (process.env.MINIO_PUBLIC_ENDPOINT) {
+    return process.env.MINIO_PUBLIC_ENDPOINT;
+  }
+
+  try {
+    return new URL(getCdnBaseUrl()).origin;
+  } catch {
+    return process.env.MINIO_ENDPOINT;
+  }
+}
+
+function createPublicUploadClient() {
+  return new S3Client({
+    region: 'us-east-1',
+    endpoint: getPublicUploadEndpoint(),
+    credentials: {
+      accessKeyId: process.env.MINIO_ACCESS_KEY,
+      secretAccessKey: process.env.MINIO_SECRET_KEY
+    },
+    forcePathStyle: true
+  });
+}
+
+function getCleanExtension(value, fallback = 'bin') {
+  return String(value || fallback)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '') || fallback;
+}
+
+function getOriginalExtension(file) {
+  const originalName = String(file?.originalname || '');
+  const rawExtension = originalName.includes('.')
+    ? originalName.split('.').pop()
+    : String(file?.mimetype || '').split('/').pop();
+
+  return getCleanExtension(rawExtension, 'bin');
+}
+
+function getImageBaseKey() {
+  return `images/${randomUUID()}`;
+}
+
+async function putObject({ key, body, contentType }) {
+  await s3Client.send(new PutObjectCommand({
+    Bucket: process.env.MINIO_BUCKET_NAME,
+    Key: key,
+    Body: body,
+    ContentType: contentType
+  }));
+}
+
+function toVariantResponse(variants) {
+  return Object.fromEntries(
+    Object.entries(variants).map(([name, variant]) => [
+      name,
+      {
+        key: variant.key,
+        url: buildPublicMediaUrl(variant.key),
+        width: variant.width,
+        height: variant.height,
+        size: variant.size,
+        mimeType: variant.mimeType
+      }
+    ])
+  );
+}
+
+function getDisplayName(file) {
+  return String(file?.originalname || '')
+    .trim()
+    .slice(0, 240) || 'Uploaded image';
+}
+
+async function processImageUpload(file) {
+  const baseKey = getImageBaseKey();
+  const originalKey = `${baseKey}/original.${getOriginalExtension(file)}`;
+  const metadata = await sharp(file.buffer).metadata();
+  const sourceWidth = metadata.width || 0;
+  const variants = {};
+
+  await putObject({
+    key: originalKey,
+    body: file.buffer,
+    contentType: file.mimetype
+  });
+
+  await Promise.all(IMAGE_VARIANTS.map(async variant => {
+    const width = sourceWidth ? Math.min(sourceWidth, variant.width) : variant.width;
+    const buffer = await sharp(file.buffer)
+      .rotate()
+      .resize({
+        width,
+        withoutEnlargement: true
+      })
+      .webp({ quality: 82 })
+      .toBuffer({ resolveWithObject: true });
+    const key = `${baseKey}/${variant.name}.webp`;
+
+    await putObject({
+      key,
+      body: buffer.data,
+      contentType: 'image/webp'
+    });
+
+    variants[variant.name] = {
+      key,
+      width: buffer.info.width,
+      height: buffer.info.height,
+      size: buffer.info.size,
+      mimeType: 'image/webp'
+    };
+  }));
+
+  return {
+    key: originalKey,
+    url: buildPublicMediaUrl(variants.large?.key || variants.hero?.key || originalKey),
+    original: {
+      key: originalKey,
+      url: buildPublicMediaUrl(originalKey),
+      width: metadata.width || null,
+      height: metadata.height || null,
+      size: file.size,
+      mimeType: file.mimetype
+    },
+    variants: toVariantResponse(variants)
+  };
+}
+
+async function createMediaAsset(uploadResult, file, user) {
+  const asset = await MediaAsset.create({
+    key: uploadResult.key,
+    url: uploadResult.url,
+    originalKey: uploadResult.original.key,
+    originalUrl: uploadResult.original.url,
+    originalName: getDisplayName(file),
+    displayName: getDisplayName(file),
+    mimeType: uploadResult.original.mimeType,
+    width: uploadResult.original.width || 0,
+    height: uploadResult.original.height || 0,
+    size: uploadResult.original.size || 0,
+    variants: uploadResult.variants,
+    uploadedBy: user?._id || null
+  });
+
+  return asset.toObject();
+}
 
 // POST /api/upload
 // Upload an authenticated user's image to object storage.
@@ -26,20 +183,12 @@ router.post(
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const fileExtension = req.file.originalname.split('.').pop();
-    const fileKey = `${randomUUID()}.${fileExtension}`;
-
-    await s3Client.send(new PutObjectCommand({
-      Bucket: process.env.MINIO_BUCKET_NAME,
-      Key: fileKey,
-      Body: req.file.buffer,
-      ContentType: req.file.mimetype
-    }));
+    const uploadResult = await processImageUpload(req.file);
+    await createMediaAsset(uploadResult, req.file, req.user);
 
     res.status(201).json({
       message: 'Upload successful',
-      key: fileKey,
-      url: buildPublicMediaUrl(fileKey)
+      ...uploadResult
     });
   } catch (err) {
     console.error('Upload Error:', err);
@@ -57,9 +206,7 @@ router.post('/upload-url', authMiddleware, requirePermission('canUploadMedia'), 
     const rawExtension = originalName.includes('.')
       ? originalName.split('.').pop()
       : contentType.split('/').pop() || 'bin';
-    const fileExtension = String(rawExtension || 'bin')
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '') || 'bin';
+    const fileExtension = getCleanExtension(rawExtension, 'bin');
     const fileKey = `${randomUUID()}.${fileExtension}`;
 
     const command = new PutObjectCommand({
@@ -68,7 +215,7 @@ router.post('/upload-url', authMiddleware, requirePermission('canUploadMedia'), 
       ContentType: contentType
     });
 
-    const uploadUrl = await getSignedUrl(s3Client, command, {
+    const uploadUrl = await getSignedUrl(createPublicUploadClient(), command, {
       expiresIn: 900
     });
 

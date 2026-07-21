@@ -21,6 +21,7 @@ let adminWorkZoneState = {
   mediaIsTruncated: false,
   mediaBucket: "",
   mediaIsLoading: false,
+  mediaSort: "newest",
   mediaUploadQueue: [],
   mediaIsUploading: false,
   isLoading: false,
@@ -48,6 +49,10 @@ const adminUsersView = CMCENAdminUsersView.create({
       append: true,
       cursor
     }),
+    setMediaSort: sort => {
+      setAdminWorkZoneState({ mediaSort: sort || "newest" });
+      loadAdminMedia({ sort: sort || "newest" });
+    },
     uploadMediaFiles: uploadAdminMediaFiles,
     deleteMedia: deleteAdminMedia
   }
@@ -223,7 +228,8 @@ async function loadAdminRoles() {
 
 async function loadAdminMedia({
   append = false,
-  cursor = ""
+  cursor = "",
+  sort = adminWorkZoneState.mediaSort || "newest"
 } = {}) {
   setAdminWorkZoneState({
     mediaIsLoading: true,
@@ -233,6 +239,7 @@ async function loadAdminMedia({
   try {
     const params = new URLSearchParams();
     params.set("limit", "100");
+    params.set("sort", sort);
 
     if (cursor) {
       params.set("cursor", cursor);
@@ -249,6 +256,7 @@ async function loadAdminMedia({
       mediaNextCursor: data.nextCursor || "",
       mediaIsTruncated: Boolean(data.isTruncated),
       mediaBucket: data.bucket || "",
+      mediaSort: data.sort || sort,
       mediaIsLoading: false
     });
     showAdminWorkZone();
@@ -376,56 +384,6 @@ function uploadSingleAdminMediaFile(file, id) {
   });
 }
 
-async function createDirectAdminUpload(file) {
-  return adminApiJson("/api/upload-url", {
-    method: "POST",
-    body: {
-      filename: file.name,
-      contentType: file.type || "application/octet-stream"
-    },
-    errorMessage: "Could not prepare upload"
-  });
-}
-
-function uploadSingleAdminMediaFileDirect(file, id) {
-  return createDirectAdminUpload(file)
-    .then(upload => new Promise((resolve, reject) => {
-      const request = new XMLHttpRequest();
-
-      request.open("PUT", upload.uploadUrl);
-      Object.entries(upload.headers || {}).forEach(([key, value]) => {
-        request.setRequestHeader(key, value);
-      });
-
-      request.upload.addEventListener("progress", event => {
-        if (!event.lengthComputable) return;
-
-        updateMediaUploadItem(id, {
-          status: "uploading",
-          progress: Math.round((event.loaded / event.total) * 100)
-        });
-      });
-
-      request.addEventListener("load", () => {
-        if (request.status < 200 || request.status >= 300) {
-          reject(new Error("Direct upload failed"));
-          return;
-        }
-
-        updateMediaUploadItem(id, {
-          status: "complete",
-          progress: 100,
-          message: "Uploaded"
-        });
-        resolve(upload);
-      });
-
-      request.addEventListener("error", () => reject(new Error("Direct upload failed")));
-      request.send(file);
-    }))
-    .catch(() => uploadSingleAdminMediaFile(file, id));
-}
-
 async function uploadAdminMediaFiles(files) {
   const imageFiles = [...(files || [])].filter(file => file.type.startsWith("image/"));
 
@@ -463,14 +421,12 @@ async function uploadAdminMediaFiles(files) {
         progress: 0,
         message: "Preparing image"
       });
-      const uploadFile = await CMCENUtils.prepareImageUploadFile(file).catch(() => file);
       updateMediaUploadItem(item.id, {
-        name: uploadFile.name,
-        size: uploadFile.size,
-        originalSize: file.size,
-        message: uploadFile.size < file.size ? "Optimized image" : ""
+        name: file.name,
+        size: file.size,
+        message: "Processing variants"
       });
-      await uploadSingleAdminMediaFileDirect(uploadFile, item.id);
+      await uploadSingleAdminMediaFile(file, item.id);
     }
   };
 

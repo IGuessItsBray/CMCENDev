@@ -566,7 +566,9 @@
       path: window.location.pathname || "/",
       fullPath: `${window.location.pathname || "/"}${window.location.search || ""}`,
       title: document.title || "",
-      referrer: document.referrer || ""
+      referrer: document.referrer || "",
+      locale: navigator.language || "",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || ""
     });
     const token = getStoredAuthToken();
     const headers = {

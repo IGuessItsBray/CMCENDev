@@ -7,10 +7,12 @@ const {
 } = require('../middleware/auth');
 const {
   getBrowser,
+  getClientIp,
   getCountry,
   getDeviceType,
   getOsType,
   getReferrerHost,
+  normalizeStoredCountry,
   getSource
 } = require('../services/analytics');
 
@@ -53,6 +55,25 @@ function cleanPath(value) {
 }
 
 async function groupCounts(match, field, { limit = 10 } = {}) {
+  if (field === 'country') {
+    const visits = await AnalyticsVisit.find(match)
+      .select('country ipAddress')
+      .lean();
+    const counts = new Map();
+
+    visits.forEach(visit => {
+      const label = normalizeStoredCountry(visit.country, visit.ipAddress);
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+
+    return Array.from(counts, ([label, visitsCount]) => ({
+      label,
+      visits: visitsCount
+    }))
+      .sort((first, second) => second.visits - first.visits || first.label.localeCompare(second.label))
+      .slice(0, limit);
+  }
+
   return AnalyticsVisit.aggregate([
     { $match: match },
     {
@@ -74,7 +95,7 @@ async function groupCounts(match, field, { limit = 10 } = {}) {
 }
 
 router.get(
-  '/',
+  ['/', ''],
   authMiddleware,
   requirePermission('canViewAnalytics'),
   async (req, res) => {
@@ -151,6 +172,8 @@ router.post(
       const userAgent = cleanString(req.headers['user-agent']).slice(0, 520);
       const referrer = cleanString(req.body?.referrer || req.headers.referer).slice(0, 520);
       const referrerHost = getReferrerHost(referrer);
+      const locale = cleanString(req.body?.locale).slice(0, 80);
+      const timeZone = cleanString(req.body?.timeZone).slice(0, 120);
       const user = req.user || null;
 
       await AnalyticsVisit.create({
@@ -166,8 +189,8 @@ router.post(
         isRegistered: Boolean(user),
         user: user?._id || null,
         userRole: user?.role || 'guest',
-        ipAddress: req.ip || '',
-        country: getCountry(req),
+        ipAddress: getClientIp(req),
+        country: getCountry(req, locale, timeZone),
         userAgent
       });
     } catch (error) {
@@ -175,6 +198,25 @@ router.post(
     }
 
     res.status(204).end();
+  }
+);
+
+router.delete(
+  ['/', ''],
+  authMiddleware,
+  requirePermission('canViewAnalytics'),
+  async (req, res) => {
+    try {
+      const result = await AnalyticsVisit.deleteMany({});
+
+      res.json({
+        message: 'Analytics history purged',
+        deletedCount: result.deletedCount || 0
+      });
+    } catch (error) {
+      console.error('Analytics purge failed:', error);
+      res.status(500).json({ error: 'Failed to purge analytics' });
+    }
   }
 );
 

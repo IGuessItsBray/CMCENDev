@@ -5,6 +5,7 @@ const {
 } = require('@aws-sdk/client-s3');
 const User = require('../models/User');
 const Role = require('../models/Role');
+const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
@@ -48,6 +49,7 @@ const CONTENT_AREAS = Object.freeze([
 const DEVELOPER_CONFIRMATION = 'DEVELOPER';
 const DEFAULT_MEDIA_PAGE_SIZE = 100;
 const MAX_MEDIA_PAGE_SIZE = 500;
+const MAX_MEDIA_LIST_OBJECTS = 5000;
 
 function cleanContentAreas(value) {
   if (!Array.isArray(value)) {
@@ -343,17 +345,146 @@ async function getMediaAttachments() {
 
 function toAdminMediaItem(object, attachmentMap) {
   const key = object.Key;
+  const processedMatch = key.match(/^(images\/[^/]+)\/original\.[a-z0-9]+$/iu);
+  const variants = processedMatch
+    ? {
+      thumb: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`),
+      medium: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`),
+      large: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`),
+      hero: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`)
+    }
+    : {};
   const attachments = attachmentMap.get(key) || [];
 
   return {
     key,
     url: buildPublicMediaUrl(key),
+    variants,
     size: object.Size || 0,
     lastModified: object.LastModified || null,
     eTag: object.ETag ? String(object.ETag).replace(/^"|"$/gu, '') : '',
     attachedPosts: attachments,
     attachedPostCount: attachments.length
   };
+}
+
+function getMediaVariantKey(asset, name) {
+  return asset?.variants?.[name]?.key || '';
+}
+
+function toAdminMediaAssetItem(asset, attachmentMap) {
+  const key = asset.key || asset.originalKey;
+  const attachments = attachmentMap.get(key) || [];
+
+  return {
+    key,
+    url: asset.url || buildPublicMediaUrl(key),
+    variants: asset.variants || {},
+    size: asset.size || 0,
+    width: asset.width || 0,
+    height: asset.height || 0,
+    mimeType: asset.mimeType || '',
+    name: asset.displayName || asset.originalName || key,
+    originalName: asset.originalName || '',
+    lastModified: asset.createdAt || asset.updatedAt || null,
+    createdAt: asset.createdAt || null,
+    updatedAt: asset.updatedAt || null,
+    attachedPosts: attachments,
+    attachedPostCount: attachments.length,
+    objectKeys: [
+      key,
+      getMediaVariantKey(asset, 'thumb'),
+      getMediaVariantKey(asset, 'medium'),
+      getMediaVariantKey(asset, 'large'),
+      getMediaVariantKey(asset, 'hero')
+    ].filter(Boolean)
+  };
+}
+
+function getMediaSort(value) {
+  if (value === 'oldest') return { createdAt: 1, _id: 1 };
+  if (value === 'name') return { displayName: 1, createdAt: -1 };
+  if (value === 'size') return { size: -1, createdAt: -1 };
+  return { createdAt: -1, _id: -1 };
+}
+
+function getMediaSortKey(value) {
+  return ['newest', 'oldest', 'name', 'size'].includes(value) ? value : 'newest';
+}
+
+function sortStorageObjectsNewestFirst(objects = []) {
+  return [...objects].sort((first, second) => {
+    const firstTime = first.LastModified ? new Date(first.LastModified).getTime() : 0;
+    const secondTime = second.LastModified ? new Date(second.LastModified).getTime() : 0;
+
+    return secondTime - firstTime || String(second.Key || '').localeCompare(String(first.Key || ''));
+  });
+}
+
+function isVisibleMediaObject(object) {
+  const key = String(object?.Key || '');
+  return key && (!key.startsWith('images/') || /\/original\.[a-z0-9]+$/iu.test(key));
+}
+
+function cleanMediaCursor(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+async function listVisibleMediaObjectsNewestFirst() {
+  const objects = [];
+  let continuationToken;
+
+  do {
+    const result = await s3Client.send(new ListObjectsV2Command({
+      Bucket: process.env.MINIO_BUCKET_NAME,
+      MaxKeys: 1000,
+      ContinuationToken: continuationToken
+    }));
+
+    objects.push(...(result.Contents || []).filter(isVisibleMediaObject));
+    continuationToken = result.NextContinuationToken;
+  } while (continuationToken && objects.length < MAX_MEDIA_LIST_OBJECTS);
+
+  return sortStorageObjectsNewestFirst(objects);
+}
+
+function inferVariantsFromStorageKey(key) {
+  const processedMatch = key.match(/^(images\/[^/]+)\/original\.[a-z0-9]+$/iu);
+  return processedMatch
+    ? {
+      thumb: { key: `${processedMatch[1]}/thumb.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`), width: 400 },
+      medium: { key: `${processedMatch[1]}/medium.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`), width: 900 },
+      large: { key: `${processedMatch[1]}/large.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`), width: 1600 },
+      hero: { key: `${processedMatch[1]}/hero.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`), width: 2200 }
+    }
+    : {};
+}
+
+async function seedMediaAssetsFromStorageIfEmpty() {
+  const existingCount = await MediaAsset.estimatedDocumentCount();
+  if (existingCount) return;
+
+  const objects = await listVisibleMediaObjectsNewestFirst();
+  if (!objects.length) return;
+
+  await MediaAsset.insertMany(objects.map(object => {
+    const key = object.Key;
+    return {
+      key,
+      url: buildPublicMediaUrl(key),
+      originalKey: key,
+      originalUrl: buildPublicMediaUrl(key),
+      originalName: key.split('/').pop() || key,
+      displayName: key.split('/').pop() || key,
+      size: object.Size || 0,
+      variants: inferVariantsFromStorageKey(key),
+      createdAt: object.LastModified || new Date(),
+      updatedAt: object.LastModified || new Date()
+    };
+  }), { ordered: false }).catch(error => {
+    if (error.code !== 11000) throw error;
+  });
 }
 
 function isSameId(value, userId) {
@@ -713,24 +844,29 @@ router.get(
   async (req, res) => {
     try {
       const maxKeys = cleanMediaPageSize(req.query.limit);
-      const continuationToken = String(req.query.cursor || '').trim() || undefined;
+      const offset = cleanMediaCursor(req.query.cursor);
+      const sortKey = getMediaSortKey(req.query.sort);
+      const sort = getMediaSort(sortKey);
 
-      const [bucketObjects, attachmentMap] = await Promise.all([
-        s3Client.send(new ListObjectsV2Command({
-          Bucket: process.env.MINIO_BUCKET_NAME,
-          MaxKeys: maxKeys,
-          ContinuationToken: continuationToken
-        })),
+      await seedMediaAssetsFromStorageIfEmpty();
+
+      const [mediaAssets, totalMedia, attachmentMap] = await Promise.all([
+        MediaAsset.find({})
+          .sort(sort)
+          .skip(offset)
+          .limit(maxKeys)
+          .lean(),
+        MediaAsset.countDocuments({}),
         getMediaAttachments()
       ]);
+      const nextOffset = offset + mediaAssets.length;
 
       res.json({
         bucket: process.env.MINIO_BUCKET_NAME || '',
-        media: (bucketObjects.Contents || [])
-          .filter(object => object.Key)
-          .map(object => toAdminMediaItem(object, attachmentMap)),
-        nextCursor: bucketObjects.NextContinuationToken || '',
-        isTruncated: Boolean(bucketObjects.IsTruncated)
+        sort: sortKey,
+        media: mediaAssets.map(asset => toAdminMediaAssetItem(asset, attachmentMap)),
+        nextCursor: nextOffset < totalMedia ? String(nextOffset) : '',
+        isTruncated: nextOffset < totalMedia
       });
     } catch (err) {
       console.error('Admin media list failed:', err);
@@ -763,10 +899,20 @@ router.delete(
         });
       }
 
-      await s3Client.send(new DeleteObjectCommand({
-        Bucket: process.env.MINIO_BUCKET_NAME,
-        Key: key
-      }));
+      const mediaAsset = await MediaAsset.findOne({
+        $or: [{ key }, { originalKey: key }]
+      }).lean();
+      const objectKeys = mediaAsset
+        ? toAdminMediaAssetItem(mediaAsset, attachmentMap).objectKeys
+        : [key];
+
+      await Promise.all(objectKeys.map(objectKey =>
+        s3Client.send(new DeleteObjectCommand({
+          Bucket: process.env.MINIO_BUCKET_NAME,
+          Key: objectKey
+        }))
+      ));
+      await MediaAsset.deleteOne({ $or: [{ key }, { originalKey: key }] });
 
       await writeAuditLog({
         req,

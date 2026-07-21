@@ -25,6 +25,28 @@ const ImageCropSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const ImageVariantSchema = new mongoose.Schema(
+  {
+    key: { type: String, trim: true, default: '' },
+    url: { type: String, trim: true, default: '' },
+    width: { type: Number, min: 0, default: 0 },
+    height: { type: Number, min: 0, default: 0 },
+    size: { type: Number, min: 0, default: 0 },
+    mimeType: { type: String, trim: true, default: 'image/webp' }
+  },
+  { _id: false }
+);
+
+const ImageVariantsSchema = new mongoose.Schema(
+  {
+    thumb: { type: ImageVariantSchema, default: () => ({}) },
+    medium: { type: ImageVariantSchema, default: () => ({}) },
+    large: { type: ImageVariantSchema, default: () => ({}) },
+    hero: { type: ImageVariantSchema, default: () => ({}) }
+  },
+  { _id: false }
+);
+
 const PageBlockSchema = new mongoose.Schema(
   {
     type: {
@@ -60,6 +82,10 @@ const PageBlockSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: ''
+    },
+    mediaVariants: {
+      type: ImageVariantsSchema,
+      default: () => ({})
     },
     alt: {
       type: LocalizedStringSchema,
@@ -99,6 +125,10 @@ const PageBlockSchema = new mongoose.Schema(
             trim: true,
             default: ''
           },
+          mediaVariants: {
+            type: ImageVariantsSchema,
+            default: () => ({})
+          },
           alt: {
             type: LocalizedStringSchema,
             default: () => ({})
@@ -123,6 +153,10 @@ const PageBlockSchema = new mongoose.Schema(
             type: String,
             trim: true,
             default: ''
+          },
+          mediaVariants: {
+            type: ImageVariantsSchema,
+            default: () => ({})
           },
           alt: {
             type: LocalizedStringSchema,

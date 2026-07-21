@@ -170,6 +170,7 @@ function getNewBlock(type = "text") {
     url: "",
     mediaKey: "",
     mediaUrl: "",
+    mediaVariants: {},
     alt: getEmptyLocalized(),
     caption: getEmptyLocalized(),
     crop: getDefaultCrop(),
@@ -185,6 +186,7 @@ function getNewBlock(type = "text") {
         body: getEmptyLocalized(),
         mediaKey: "",
         mediaUrl: "",
+        mediaVariants: {},
         alt: getEmptyLocalized(),
         crop: getDefaultCrop()
       },
@@ -193,6 +195,7 @@ function getNewBlock(type = "text") {
         body: getEmptyLocalized(),
         mediaKey: "",
         mediaUrl: "",
+        mediaVariants: {},
         alt: getEmptyLocalized(),
         crop: getDefaultCrop()
       }
@@ -232,6 +235,23 @@ function getSelectedPageAccess() {
     ...getDefaultPageAccess(),
     ...(pagesState.selectedPage?.access || {})
   };
+}
+
+function getUploadMediaUpdate(data) {
+  return {
+    mediaKey: data.key || "",
+    mediaUrl: data.url || "",
+    mediaVariants: data.variants || {}
+  };
+}
+
+function getPreviewMediaUrl(media = {}) {
+  const variants = media.mediaVariants || {};
+  return variants.medium?.url ||
+    variants.large?.url ||
+    variants.hero?.url ||
+    media.mediaUrl ||
+    "";
 }
 
 function getCleanSlug(value) {
@@ -383,6 +403,7 @@ function applySelectedMedia(mediaItem) {
   const update = {
     mediaKey: mediaItem.key || "",
     mediaUrl: mediaItem.url || "",
+    mediaVariants: mediaItem.variants || {},
     crop: getCrop(getCropTargetMedia(target)?.crop)
   };
 
@@ -823,7 +844,7 @@ function createColumnEditor(block, index, column, columnIndex) {
 
   if (column.mediaUrl) {
     panel.append(createCroppedPreview({
-      src: column.mediaUrl,
+      src: getPreviewMediaUrl(column),
       crop: column.crop
     }));
   }
@@ -889,7 +910,7 @@ function createCarouselItemEditor(block, index, item, itemIndex) {
 
   if (item.mediaUrl) {
     panel.append(createCroppedPreview({
-      src: item.mediaUrl,
+      src: getPreviewMediaUrl(item),
       crop: item.crop
     }));
   }
@@ -987,7 +1008,7 @@ function createBlockEditor(block, index) {
   } else if (block.type === "image") {
     if (block.mediaUrl) {
       article.append(createCroppedPreview({
-        src: block.mediaUrl,
+        src: getPreviewMediaUrl(block),
         crop: block.crop
       }));
     }
@@ -1595,7 +1616,7 @@ function createCropEditorModal() {
   body.className = "pages-crop-editor-body";
 
   const preview = createCroppedPreview({
-    src: media.mediaUrl,
+    src: getPreviewMediaUrl(media),
     crop
   });
   preview.classList.add("pages-crop-preview");
@@ -1970,6 +1991,7 @@ function addCarouselItem(index) {
       {
         mediaKey: "",
         mediaUrl: "",
+        mediaVariants: {},
         alt: getEmptyLocalized(),
         caption: getEmptyLocalized()
       }
@@ -1988,8 +2010,7 @@ async function uploadBlockImage(index, file) {
   const data = await uploadImageToCdn(file, `block:${index}`);
 
   updateBlock(index, {
-    mediaKey: data.key || "",
-    mediaUrl: data.url || "",
+    ...getUploadMediaUpdate(data),
     crop: getCrop(pagesState.selectedPage?.blocks?.[index]?.crop)
   });
 }
@@ -1998,8 +2019,7 @@ async function uploadColumnImage(index, columnIndex, file) {
   const data = await uploadImageToCdn(file, `column:${index}:${columnIndex}`);
 
   updateBlockColumn(index, columnIndex, {
-    mediaKey: data.key || "",
-    mediaUrl: data.url || "",
+    ...getUploadMediaUpdate(data),
     crop: getCrop(pagesState.selectedPage?.blocks?.[index]?.columns?.[columnIndex]?.crop)
   });
 }
@@ -2008,8 +2028,7 @@ async function uploadCarouselImage(index, itemIndex, file) {
   const data = await uploadImageToCdn(file, `carousel:${index}:${itemIndex}`);
 
   updateCarouselItem(index, itemIndex, {
-    mediaKey: data.key || "",
-    mediaUrl: data.url || "",
+    ...getUploadMediaUpdate(data),
     crop: getCrop(pagesState.selectedPage?.blocks?.[index]?.items?.[itemIndex]?.crop)
   });
 }
@@ -2021,67 +2040,7 @@ function uploadImageToCdn(file, progressKey) {
     message: "Preparing image"
   });
 
-  return CMCENUtils.prepareImageUploadFile(file)
-    .catch(() => file)
-    .then(uploadFile => {
-      setUploadProgress(progressKey, {
-        status: "uploading",
-        percent: 0,
-        message: uploadFile.size < file.size ? "Optimized image" : ""
-      });
-
-      return uploadImageToCdnDirect(uploadFile, progressKey)
-        .catch(() => uploadImageToCdnThroughServer(uploadFile, progressKey));
-    });
-}
-
-async function createDirectPageUpload(file) {
-  return pageApi("/api/upload-url", {
-    method: "POST",
-    body: {
-      filename: file.name,
-      contentType: file.type || "application/octet-stream"
-    },
-    errorMessage: "Could not prepare upload"
-  });
-}
-
-function uploadImageToCdnDirect(file, progressKey) {
-  return createDirectPageUpload(file).then(upload => new Promise((resolve, reject) => {
-    const request = new XMLHttpRequest();
-
-    request.open("PUT", upload.uploadUrl);
-    Object.entries(upload.headers || {}).forEach(([key, value]) => {
-      request.setRequestHeader(key, value);
-    });
-
-    request.upload.addEventListener("progress", event => {
-      if (!event.lengthComputable) return;
-
-      setUploadProgress(progressKey, {
-        status: "uploading",
-        percent: Math.round((event.loaded / event.total) * 100)
-      });
-    });
-
-    request.addEventListener("load", () => {
-      if (request.status < 200 || request.status >= 300) {
-        reject(new Error("Direct upload failed"));
-        return;
-      }
-
-      setUploadProgress(progressKey, {
-        status: "complete",
-        percent: 100,
-        message: "Upload complete"
-      });
-      window.setTimeout(() => clearUploadProgress(progressKey), 900);
-      resolve(upload);
-    });
-
-    request.addEventListener("error", () => reject(new Error("Direct upload failed")));
-    request.send(file);
-  }));
+  return uploadImageToCdnThroughServer(file, progressKey);
 }
 
 function uploadImageToCdnThroughServer(file, progressKey) {

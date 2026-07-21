@@ -4,6 +4,7 @@ const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const Page = require('../models/Page');
 const NavigationItem = require('../models/NavigationItem');
 const Role = require('../models/Role');
+const MediaAsset = require('../models/MediaAsset');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
@@ -31,6 +32,7 @@ const NAV_GROUP_LABELS = Object.freeze({
 const BLOCK_TYPES = new Set(['heading', 'text', 'image', 'callout', 'button', 'divider', 'columns', 'carousel']);
 const DEFAULT_MEDIA_PAGE_SIZE = 60;
 const MAX_MEDIA_PAGE_SIZE = 120;
+const MAX_MEDIA_LIST_OBJECTS = 5000;
 
 function cleanText(value, maxLength = 10000) {
   return String(value || '').trim().slice(0, maxLength);
@@ -100,6 +102,38 @@ function cleanCrop(value) {
   };
 }
 
+function cleanImageVariant(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value)
+    ? value
+    : {};
+  const cleanPositiveNumber = numberValue => {
+    const parsedValue = Number(numberValue);
+    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0;
+  };
+
+  return {
+    key: cleanText(source.key, 500),
+    url: cleanUrl(source.url),
+    width: cleanPositiveNumber(source.width),
+    height: cleanPositiveNumber(source.height),
+    size: cleanPositiveNumber(source.size),
+    mimeType: cleanText(source.mimeType || 'image/webp', 100)
+  };
+}
+
+function cleanImageVariants(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value)
+    ? value
+    : {};
+
+  return {
+    thumb: cleanImageVariant(source.thumb),
+    medium: cleanImageVariant(source.medium),
+    large: cleanImageVariant(source.large),
+    hero: cleanImageVariant(source.hero)
+  };
+}
+
 function cleanBlock(block) {
   const source = block && typeof block === 'object' && !Array.isArray(block)
     ? block
@@ -114,6 +148,7 @@ function cleanBlock(block) {
     return {
       mediaKey: cleanText(itemSource.mediaKey, 500),
       mediaUrl: cleanUrl(itemSource.mediaUrl),
+      mediaVariants: cleanImageVariants(itemSource.mediaVariants),
       alt: cleanLocalizedText(itemSource.alt, 500),
       caption: cleanLocalizedText(itemSource.caption, 500),
       crop: cleanCrop(itemSource.crop)
@@ -129,6 +164,7 @@ function cleanBlock(block) {
       body: cleanLocalizedText(columnSource.body, 10000),
       mediaKey: cleanText(columnSource.mediaKey, 500),
       mediaUrl: cleanUrl(columnSource.mediaUrl),
+      mediaVariants: cleanImageVariants(columnSource.mediaVariants),
       alt: cleanLocalizedText(columnSource.alt, 500),
       crop: cleanCrop(columnSource.crop)
     };
@@ -142,6 +178,7 @@ function cleanBlock(block) {
     url: cleanUrl(source.url),
     mediaKey: cleanText(source.mediaKey, 500),
     mediaUrl: cleanUrl(source.mediaUrl),
+    mediaVariants: cleanImageVariants(source.mediaVariants),
     alt: cleanLocalizedText(source.alt, 500),
     caption: cleanLocalizedText(source.caption, 500),
     crop: cleanCrop(source.crop),
@@ -175,13 +212,124 @@ function cleanMediaPageSize(value) {
 
 function toPageBuilderMediaItem(object) {
   const key = object.Key || '';
+  const processedMatch = key.match(/^(images\/[^/]+)\/original\.[a-z0-9]+$/iu);
+  const variants = processedMatch
+    ? {
+      thumb: { key: `${processedMatch[1]}/thumb.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`), width: 400 },
+      medium: { key: `${processedMatch[1]}/medium.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`), width: 900 },
+      large: { key: `${processedMatch[1]}/large.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`), width: 1600 },
+      hero: { key: `${processedMatch[1]}/hero.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`), width: 2200 }
+    }
+    : {};
 
   return {
     key,
     url: buildPublicMediaUrl(key),
+    variants,
     size: object.Size || 0,
     lastModified: object.LastModified || null
   };
+}
+
+function toPageBuilderMediaAssetItem(asset) {
+  const key = asset.key || asset.originalKey || '';
+
+  return {
+    key,
+    url: asset.url || buildPublicMediaUrl(key),
+    variants: asset.variants || {},
+    size: asset.size || 0,
+    width: asset.width || 0,
+    height: asset.height || 0,
+    name: asset.displayName || asset.originalName || key,
+    lastModified: asset.createdAt || asset.updatedAt || null
+  };
+}
+
+function getMediaSort(value) {
+  if (value === 'oldest') return { createdAt: 1, _id: 1 };
+  if (value === 'name') return { displayName: 1, createdAt: -1 };
+  if (value === 'size') return { size: -1, createdAt: -1 };
+  return { createdAt: -1, _id: -1 };
+}
+
+function getMediaSortKey(value) {
+  return ['newest', 'oldest', 'name', 'size'].includes(value) ? value : 'newest';
+}
+
+function sortStorageObjectsNewestFirst(objects = []) {
+  return [...objects].sort((first, second) => {
+    const firstTime = first.LastModified ? new Date(first.LastModified).getTime() : 0;
+    const secondTime = second.LastModified ? new Date(second.LastModified).getTime() : 0;
+
+    return secondTime - firstTime || String(second.Key || '').localeCompare(String(first.Key || ''));
+  });
+}
+
+function isVisibleMediaObject(object) {
+  const key = String(object?.Key || '');
+  return key && (!key.startsWith('images/') || /\/original\.[a-z0-9]+$/iu.test(key));
+}
+
+function cleanMediaCursor(value) {
+  const parsedValue = Number.parseInt(value, 10);
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0;
+}
+
+async function listVisibleMediaObjectsNewestFirst() {
+  const objects = [];
+  let continuationToken;
+
+  do {
+    const result = await s3Client.send(new ListObjectsV2Command({
+      Bucket: process.env.MINIO_BUCKET_NAME,
+      MaxKeys: 1000,
+      ContinuationToken: continuationToken
+    }));
+
+    objects.push(...(result.Contents || []).filter(isVisibleMediaObject));
+    continuationToken = result.NextContinuationToken;
+  } while (continuationToken && objects.length < MAX_MEDIA_LIST_OBJECTS);
+
+  return sortStorageObjectsNewestFirst(objects);
+}
+
+function inferVariantsFromStorageKey(key) {
+  const processedMatch = key.match(/^(images\/[^/]+)\/original\.[a-z0-9]+$/iu);
+  return processedMatch
+    ? {
+      thumb: { key: `${processedMatch[1]}/thumb.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`), width: 400 },
+      medium: { key: `${processedMatch[1]}/medium.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`), width: 900 },
+      large: { key: `${processedMatch[1]}/large.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`), width: 1600 },
+      hero: { key: `${processedMatch[1]}/hero.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`), width: 2200 }
+    }
+    : {};
+}
+
+async function seedMediaAssetsFromStorageIfEmpty() {
+  const existingCount = await MediaAsset.estimatedDocumentCount();
+  if (existingCount) return;
+
+  const objects = await listVisibleMediaObjectsNewestFirst();
+  if (!objects.length) return;
+
+  await MediaAsset.insertMany(objects.map(object => {
+    const key = object.Key;
+    return {
+      key,
+      url: buildPublicMediaUrl(key),
+      originalKey: key,
+      originalUrl: buildPublicMediaUrl(key),
+      originalName: key.split('/').pop() || key,
+      displayName: key.split('/').pop() || key,
+      size: object.Size || 0,
+      variants: inferVariantsFromStorageKey(key),
+      createdAt: object.LastModified || new Date(),
+      updatedAt: object.LastModified || new Date()
+    };
+  }), { ordered: false }).catch(error => {
+    if (error.code !== 11000) throw error;
+  });
 }
 
 function cleanObjectIdList(value) {
@@ -593,19 +741,27 @@ router.get(
   async (req, res) => {
     try {
       const maxKeys = cleanMediaPageSize(req.query.limit);
-      const continuationToken = String(req.query.cursor || '').trim() || undefined;
-      const bucketObjects = await s3Client.send(new ListObjectsV2Command({
-        Bucket: process.env.MINIO_BUCKET_NAME,
-        MaxKeys: maxKeys,
-        ContinuationToken: continuationToken
-      }));
+      const offset = cleanMediaCursor(req.query.cursor);
+      const sortKey = getMediaSortKey(req.query.sort);
+      const sort = getMediaSort(sortKey);
+
+      await seedMediaAssetsFromStorageIfEmpty();
+
+      const [mediaAssets, totalMedia] = await Promise.all([
+        MediaAsset.find({})
+          .sort(sort)
+          .skip(offset)
+          .limit(maxKeys)
+          .lean(),
+        MediaAsset.countDocuments({})
+      ]);
+      const nextOffset = offset + mediaAssets.length;
 
       res.json({
-        media: (bucketObjects.Contents || [])
-          .filter(object => object.Key)
-          .map(toPageBuilderMediaItem),
-        nextCursor: bucketObjects.NextContinuationToken || '',
-        isTruncated: Boolean(bucketObjects.IsTruncated)
+        sort: sortKey,
+        media: mediaAssets.map(toPageBuilderMediaAssetItem),
+        nextCursor: nextOffset < totalMedia ? String(nextOffset) : '',
+        isTruncated: nextOffset < totalMedia
       });
     } catch (error) {
       console.error('Page builder media list failed:', error);

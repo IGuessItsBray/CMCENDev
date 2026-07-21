@@ -1,0 +1,87 @@
+const mongoose = require('mongoose');
+
+const MediaVariantSchema = new mongoose.Schema(
+  {
+    key: { type: String, trim: true, default: '' },
+    url: { type: String, trim: true, default: '' },
+    width: { type: Number, min: 0, default: 0 },
+    height: { type: Number, min: 0, default: 0 },
+    size: { type: Number, min: 0, default: 0 },
+    mimeType: { type: String, trim: true, default: 'image/webp' }
+  },
+  { _id: false }
+);
+
+const MediaAssetSchema = new mongoose.Schema(
+  {
+    key: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true
+    },
+    url: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    originalKey: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    originalUrl: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    originalName: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    displayName: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    mimeType: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    width: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    height: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    size: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    variants: {
+      thumb: { type: MediaVariantSchema, default: () => ({}) },
+      medium: { type: MediaVariantSchema, default: () => ({}) },
+      large: { type: MediaVariantSchema, default: () => ({}) },
+      hero: { type: MediaVariantSchema, default: () => ({}) }
+    },
+    uploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    }
+  },
+  { timestamps: true }
+);
+
+MediaAssetSchema.index({ createdAt: -1 });
+MediaAssetSchema.index({ displayName: 1, createdAt: -1 });
+MediaAssetSchema.index({ size: -1, createdAt: -1 });
+
+module.exports = mongoose.model('MediaAsset', MediaAssetSchema);

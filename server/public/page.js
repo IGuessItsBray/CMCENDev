@@ -39,11 +39,37 @@
     image.style.transform = `scale(${crop.zoom}) rotate(${crop.rotate}deg)`;
   }
 
-  function createCroppedImage({ src, alt, crop }) {
+  function getImageVariants(media = {}) {
+    const variants = media.mediaVariants || {};
+    return ["thumb", "medium", "large", "hero"]
+      .map(name => variants[name])
+      .filter(variant => variant?.url && variant?.width);
+  }
+
+  function getBestImageUrl(media = {}) {
+    const variants = getImageVariants(media);
+    return variants.find(variant => variant.width >= 900)?.url ||
+      variants.at(-1)?.url ||
+      media.mediaUrl ||
+      "";
+  }
+
+  function getImageSrcSet(media = {}) {
+    return getImageVariants(media)
+      .map(variant => `${variant.url} ${variant.width}w`)
+      .join(", ");
+  }
+
+  function createCroppedImage({ media, alt, crop, sizes = "(max-width: 720px) 100vw, 900px" }) {
     const frame = document.createElement("span");
     frame.className = "cms-image-frame";
     const image = document.createElement("img");
-    image.src = src || "";
+    const srcSet = getImageSrcSet(media);
+    image.src = getBestImageUrl(media);
+    if (srcSet) {
+      image.srcset = srcSet;
+      image.sizes = sizes;
+    }
     image.alt = alt || "";
     image.loading = "lazy";
     applyCrop(image, crop);
@@ -64,9 +90,10 @@
 
     if (block.type === "image") {
       section.append(createCroppedImage({
-        src: block.mediaUrl,
+        media: block,
         alt: localized(block.alt),
-        crop: block.crop
+        crop: block.crop,
+        sizes: "(max-width: 920px) 100vw, 1100px"
       }));
 
       const caption = localized(block.caption);
@@ -98,9 +125,10 @@
 
         if (column.mediaUrl) {
           card.append(createCroppedImage({
-            src: column.mediaUrl,
+            media: column,
             alt: localized(column.alt),
-            crop: column.crop
+            crop: column.crop,
+            sizes: "(max-width: 620px) 100vw, 50vw"
           }));
         }
 
@@ -140,9 +168,10 @@
 
         if (item.mediaUrl) {
           slide.append(createCroppedImage({
-            src: item.mediaUrl,
+            media: item,
             alt: localized(item.alt),
-            crop: item.crop
+            crop: item.crop,
+            sizes: "(max-width: 620px) 88vw, 78vw"
           }));
         }
 

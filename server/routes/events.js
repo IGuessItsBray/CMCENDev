@@ -710,10 +710,6 @@ router.post(
             const permissions =
                 getUserPermissions(req.user);
 
-            const bypassesReview =
-                permissions
-                    .canBypassReviewStages === true;
-
             const mayPublishAnything =
                 permissions
                     .canReviewAndPublish === true;
@@ -747,10 +743,7 @@ router.post(
             }
 
             const status =
-                (
-                    bypassesReview ||
-                    wantsImmediatePublication
-                )
+                wantsImmediatePublication
                     ? 'published'
                     : 'pending';
 
@@ -1065,7 +1058,6 @@ router.get(
 
             const permissions =
                 getUserPermissions(req.user);
-            const previousStatus = event.status;
 
             const isOwner =
                 event.createdBy &&
@@ -1074,9 +1066,6 @@ router.get(
 
             const canReview =
                 permissions.canReviewAndPublish === true;
-
-            const bypassesReview =
-                permissions.canBypassReviewStages === true;
 
             if (!isOwner && !canReview) {
                 return res.status(403).json({
@@ -1126,6 +1115,8 @@ router.patch(
             const permissions =
                 getUserPermissions(req.user);
 
+            const previousStatus = event.status;
+
             const isOwner =
                 event.createdBy &&
                 String(event.createdBy) ===
@@ -1134,10 +1125,37 @@ router.patch(
             const canReview =
                 permissions.canReviewAndPublish === true;
 
+            const userContentAreas =
+                Array.isArray(req.user.contentAreas)
+                    ? req.user.contentAreas
+                    : [];
+
+            const mayPublishOwnArea =
+                permissions.canPublishOwnContent === true &&
+                userContentAreas.includes(
+                    event.contentArea || 'general'
+                );
+
+            const mayPublish =
+                canReview || mayPublishOwnArea;
+
+            const wantsImmediatePublication =
+                parseBoolean(req.body.publishNow);
+
             if (!isOwner && !canReview) {
                 return res.status(403).json({
                     error:
                         "You do not have permission to edit this event"
+                });
+            }
+
+            if (
+                wantsImmediatePublication &&
+                !mayPublish
+            ) {
+                return res.status(403).json({
+                    error:
+                        'You do not have permission to publish in this content area'
                 });
             }
 
@@ -1325,25 +1343,20 @@ router.patch(
             event.updatedBy = req.user._id;
             event.lastSubmittedAt = new Date();
 
-            if (canReview) {
-                event.status =
-                    (
-                        bypassesReview ||
-                        parseBoolean(req.body.publishNow)
-                    )
-                        ? "published"
-                        : "pending";
+            event.status =
+                wantsImmediatePublication
+                    ? "published"
+                    : "pending";
 
-                if (event.status === "published") {
-                    event.publishedBy =
-                        req.user._id;
-                    event.publishedAt =
-                        new Date();
-                    event.reviewedBy =
-                        req.user._id;
-                    event.reviewedAt =
-                        new Date();
-                }
+            if (event.status === "published") {
+                event.publishedBy =
+                    req.user._id;
+                event.publishedAt =
+                    new Date();
+                event.reviewedBy =
+                    req.user._id;
+                event.reviewedAt =
+                    new Date();
             } else {
                 event.status = "pending";
                 event.reviewedBy = undefined;

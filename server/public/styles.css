@@ -5661,10 +5661,6 @@ a.dropdown-toggle {
 .notifications-main {
   min-height: 70vh;
   padding: 42px 20px 64px;
-  background:
-    linear-gradient(180deg,
-      var(--branch-grey-100),
-      var(--white));
 }
 
 .notifications-shell {
@@ -5673,19 +5669,29 @@ a.dropdown-toggle {
 }
 
 .notifications-heading {
+  min-height: 126px;
   margin-bottom: 22px;
-  padding-bottom: 18px;
-  border-bottom: 3px solid var(--gold-500);
+  padding: 25px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  color: var(--white);
+  background:
+    linear-gradient(110deg,
+      var(--navy-950),
+      var(--navy-900) 64%,
+      var(--navy-800));
 }
 
 .notifications-heading h1 {
   margin: 0;
-  color: var(--navy-900);
+  color: var(--white);
   font-family:
     Georgia,
     "Times New Roman",
     serif;
-  font-size: 36px;
+  font-size: 31px;
   font-weight: normal;
   line-height: 1.15;
 }
@@ -5693,7 +5699,7 @@ a.dropdown-toggle {
 .notifications-heading p:last-child {
   max-width: 640px;
   margin: 10px 0 0;
-  color: var(--text-muted);
+  color: var(--branch-grey-200);
   font-size: 14px;
   line-height: 1.55;
 }
@@ -8368,6 +8374,7 @@ a.dropdown-toggle {
   letter-spacing: 0.07em;
   text-decoration: none;
   text-transform: uppercase;
+  cursor: pointer;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -8382,8 +8389,8 @@ a.dropdown-toggle {
 
 .home-button-primary:hover,
 .home-button-primary:focus-visible {
-  border-color: var(--gold-300);
-  background: var(--gold-300);
+  border-color: var(--gold-200);
+  background: var(--gold-200);
 }
 
 .home-button-secondary {
@@ -12330,13 +12337,11 @@ html[data-theme="dark"] .notifications-main {
   background: var(--dark-bg);
 }
 
-html[data-theme="dark"] .notifications-heading h1,
 html[data-theme="dark"] .notification-card h2,
 html[data-theme="dark"] .notification-comment-form label {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .notifications-heading p:last-child,
 html[data-theme="dark"] .notification-date {
   color: var(--dark-text-soft);
 }

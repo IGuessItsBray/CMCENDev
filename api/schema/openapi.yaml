@@ -1,0 +1,1347 @@
+openapi: 3.1.0
+info:
+  title: CMCEN / RCMCE API
+  version: 1.0.0
+  description: >
+    OpenAPI-style inventory for the Express routes mounted by server/server.js.
+    Schemas are intentionally broad where handlers return Mongoose documents.
+servers:
+  - url: http://localhost:3000
+    description: Local development (Eric)
+  - url: http://localhost:3001
+    description: Local development (Bray)
+  - url: https://cmcen-staging.corebot.ca
+    description: Staging
+  - url: https://beta.cmcen-rcmce.ca
+    description: Beta
+security:
+  - bearerAuth: []
+tags:
+  - name: System
+  - name: Auth
+  - name: MFA
+  - name: Analytics
+  - name: Audit Log
+  - name: Admin
+  - name: Site Config
+  - name: Uploads
+  - name: Banners
+  - name: Translations
+  - name: Search
+  - name: Pages
+  - name: Events
+  - name: Retirements
+paths:
+  /api/version:
+    get:
+      tags: [System]
+      summary: Get running build version.
+      security: []
+      responses:
+        "200":
+          description: Build metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+  /api/data:
+    get:
+      tags: [System]
+      summary: Public smoke-test endpoint.
+      security: []
+      responses:
+        "200":
+          $ref: "#/components/responses/Message"
+  /api/protected_data:
+    get:
+      tags: [System]
+      summary: Authenticated smoke-test endpoint.
+      responses:
+        "200":
+          $ref: "#/components/responses/Message"
+        "401":
+          $ref: "#/components/responses/Error"
+  /trade-options.js:
+    get:
+      tags: [System]
+      summary: Get browser trade-options runtime.
+      security: []
+      responses:
+        "200":
+          description: JavaScript response.
+  /api/content-options:
+    get:
+      tags: [System]
+      summary: Get shared content option lists.
+      security: []
+      responses:
+        "200":
+          description: Content option data.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /translations.json:
+    get:
+      tags: [Translations]
+      summary: Get public translation dictionary.
+      security: []
+      responses:
+        "200":
+          description: Translation dictionary.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /translations.js:
+    get:
+      tags: [Translations]
+      summary: Get browser translation runtime.
+      security: []
+      responses:
+        "200":
+          description: JavaScript response.
+  /api/translations:
+    get:
+      tags: [Translations]
+      summary: List translations for admin editor.
+      x-permission: canManageTranslations
+      responses:
+        "200":
+          description: Translation rows.
+  /api/translations/{key}:
+    patch:
+      tags: [Translations]
+      summary: Update a translation key.
+      x-permission: canManageTranslations
+      parameters:
+        - $ref: "#/components/parameters/TranslationKey"
+      requestBody:
+        $ref: "#/components/requestBodies/TranslationUpdate"
+      responses:
+        "200":
+          description: Updated translation.
+  /api/ghost/request:
+    post:
+      tags: [Auth]
+      summary: Request ghost-account claim.
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Claim request result.
+  /api/ghost/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm ghost-account claim.
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Claim confirmation result.
+  /api/register:
+    post:
+      tags: [Auth]
+      summary: Register a user account.
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/AuthRegister"
+      responses:
+        "201":
+          description: Registered user and token/verification state.
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/login:
+    post:
+      tags: [Auth]
+      summary: Login with username and password.
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/Login"
+      responses:
+        "200":
+          description: Login result; may require MFA.
+  /api/email-verification/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm email verification token.
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Verification result.
+  /api/password-reset/request:
+    post:
+      tags: [Auth]
+      summary: Request password reset.
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Reset request result.
+  /api/password-reset/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm password reset.
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Reset confirmation result.
+  /api/me:
+    get:
+      tags: [Auth]
+      summary: Get current user.
+      responses:
+        "200":
+          description: Current user, permissions, and notifications.
+  /api/notifications:
+    get:
+      tags: [Auth]
+      summary: Get user notifications.
+      responses:
+        "200":
+          description: Notification summary.
+  /api/ghost/upgrade:
+    post:
+      tags: [Auth]
+      summary: Upgrade or merge ghost account.
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Upgrade result.
+  /api/profile:
+    patch:
+      tags: [Auth]
+      summary: Update current user profile.
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated user profile.
+  /api/contributor-check:
+    get:
+      tags: [Auth]
+      summary: Confirm contributor access.
+      x-permission: canCreateDrafts
+      responses:
+        "200":
+          $ref: "#/components/responses/Message"
+  /api/admin-check:
+    get:
+      tags: [Auth]
+      summary: Confirm admin access.
+      responses:
+        "200":
+          $ref: "#/components/responses/Message"
+  /api/mfa/webauthn/register/options:
+    post:
+      tags: [MFA]
+      summary: Generate WebAuthn registration options.
+      responses:
+        "200":
+          description: WebAuthn registration options.
+  /api/mfa/webauthn/register/verify:
+    post:
+      tags: [MFA]
+      summary: Verify WebAuthn registration.
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Stored credential result.
+  /api/mfa/webauthn/authenticate/options:
+    post:
+      tags: [MFA]
+      summary: Generate WebAuthn authentication options.
+      parameters:
+        - $ref: "#/components/parameters/TempTokenQuery"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: WebAuthn authentication options.
+  /api/mfa/webauthn/authenticate/verify:
+    post:
+      tags: [MFA]
+      summary: Verify WebAuthn authentication.
+      parameters:
+        - $ref: "#/components/parameters/TempTokenQuery"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Authentication result; may include JWT.
+  /api/mfa/totp/setup:
+    post:
+      tags: [MFA]
+      summary: Initialize TOTP setup.
+      responses:
+        "200":
+          description: TOTP secret, otpauth URL, and QR data.
+  /api/mfa/totp/status:
+    get:
+      tags: [MFA]
+      summary: Get TOTP status.
+      responses:
+        "200":
+          description: TOTP status.
+  /api/mfa/totp/qrcode:
+    get:
+      tags: [MFA]
+      summary: Get TOTP QR code.
+      responses:
+        "200":
+          description: TOTP QR code data.
+  /api/mfa/totp/verify:
+    post:
+      tags: [MFA]
+      summary: Verify TOTP code.
+      parameters:
+        - $ref: "#/components/parameters/TempTokenQuery"
+      requestBody:
+        $ref: "#/components/requestBodies/TotpVerify"
+      responses:
+        "200":
+          description: Verification result; may include JWT.
+  /api/mfa/totp:
+    patch:
+      tags: [MFA]
+      summary: Rename TOTP app.
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Rename result.
+    delete:
+      tags: [MFA]
+      summary: Disable TOTP.
+      responses:
+        "200":
+          description: Disable result.
+  /api/mfa/totp/rename:
+    post:
+      tags: [MFA]
+      summary: Rename TOTP app, compatibility endpoint.
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Rename result.
+  /api/mfa/webauthn/credentials:
+    get:
+      tags: [MFA]
+      summary: List passkey credentials.
+      responses:
+        "200":
+          description: Credential list.
+  /api/mfa/webauthn/credentials/{credentialID}:
+    patch:
+      tags: [MFA]
+      summary: Rename passkey credential.
+      parameters:
+        - $ref: "#/components/parameters/CredentialID"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Rename result.
+    delete:
+      tags: [MFA]
+      summary: Delete passkey credential.
+      parameters:
+        - $ref: "#/components/parameters/CredentialID"
+      responses:
+        "200":
+          description: Delete result.
+  /api/mfa/webauthn/cleanup:
+    post:
+      tags: [MFA]
+      summary: Cleanup invalid passkey records.
+      responses:
+        "200":
+          description: Updated credential list.
+  /api/analytics:
+    get:
+      tags: [Analytics]
+      summary: Get analytics summary.
+      x-permission: canViewAnalytics
+      parameters:
+        - name: range
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, all]
+            default: 30d
+      responses:
+        "200":
+          description: Analytics summary.
+  /api/analytics/visit:
+    post:
+      tags: [Analytics]
+      summary: Record analytics visit.
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/AnalyticsVisit"
+      responses:
+        "204":
+          description: Visit accepted.
+  /api/audit-logs:
+    get:
+      tags: [Audit Log]
+      summary: List audit log entries.
+      x-permission: canViewAuditLog
+      parameters:
+        - name: action
+          in: query
+          schema: { type: string }
+        - name: targetType
+          in: query
+          schema: { type: string }
+        - name: user
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Audit logs.
+  /api/admin/review-counts:
+    get:
+      tags: [Admin]
+      summary: Get pending review counts.
+      x-permission: canReviewAndPublish
+      responses:
+        "200":
+          description: Review counts.
+  /api/admin/roles:
+    get:
+      tags: [Admin]
+      summary: List custom roles.
+      x-permission: canManageRoles
+      responses:
+        "200":
+          description: Roles and permission catalog.
+    post:
+      tags: [Admin]
+      summary: Create custom role.
+      x-permission: canManageRoles
+      requestBody:
+        $ref: "#/components/requestBodies/Role"
+      responses:
+        "201":
+          description: Created role.
+  /api/admin/roles/{roleId}:
+    patch:
+      tags: [Admin]
+      summary: Update custom role.
+      x-permission: canManageRoles
+      parameters:
+        - $ref: "#/components/parameters/RoleId"
+      requestBody:
+        $ref: "#/components/requestBodies/Role"
+      responses:
+        "200":
+          description: Updated role.
+    delete:
+      tags: [Admin]
+      summary: Delete custom role.
+      x-permission: canManageRoles
+      parameters:
+        - $ref: "#/components/parameters/RoleId"
+      responses:
+        "200":
+          description: Delete result.
+  /api/admin/media:
+    get:
+      tags: [Admin, Uploads]
+      summary: List media assets.
+      x-permission: canViewMediaLibrary
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - name: cursor
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Media assets.
+  /api/admin/media/{key}:
+    delete:
+      tags: [Admin, Uploads]
+      summary: Delete unattached media asset.
+      x-permission: canDeleteMedia
+      parameters:
+        - $ref: "#/components/parameters/ObjectKey"
+      responses:
+        "200":
+          description: Delete result.
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List users.
+      x-permission: canReadUsers
+      parameters:
+        - name: query
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Users.
+  /api/admin/users/{userId}:
+    get:
+      tags: [Admin]
+      summary: Get user detail.
+      x-permission: canReadUsers
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User detail.
+    patch:
+      tags: [Admin]
+      summary: Update user admin assignments.
+      x-permission: canManageUsers
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated user.
+  /api/admin/users/{userId}/role:
+    patch:
+      tags: [Admin]
+      summary: Update built-in role.
+      x-permission: canManageUsers
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated role.
+  /api/admin/users/{userId}/developer:
+    patch:
+      tags: [Admin]
+      summary: Promote user to developer.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Promotion result.
+  /api/admin/events/{eventId}:
+    delete:
+      tags: [Admin, Events]
+      summary: Delete any event.
+      x-permission: canDeleteContent
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Delete result.
+  /api/admin/retirement-messages/{messageId}:
+    delete:
+      tags: [Admin, Retirements]
+      summary: Delete any retirement message.
+      x-permission: canDeleteContent
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Delete result.
+  /api/admin/retirement-comments/{commentId}:
+    delete:
+      tags: [Admin, Retirements]
+      summary: Delete any retirement comment.
+      x-permission: canDeleteContent
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      responses:
+        "200":
+          description: Delete result.
+  /api/admin/site-config/access:
+    post:
+      tags: [Site Config]
+      summary: Log site config access request.
+      x-permission: canAccessSiteConfig
+      responses:
+        "200":
+          description: Access recorded.
+  /api/admin/site-config/verify:
+    post:
+      tags: [Site Config]
+      summary: Verify site-config token.
+      x-permission: canAccessSiteConfig
+      requestBody:
+        $ref: "#/components/requestBodies/SiteConfigToken"
+      responses:
+        "200":
+          description: Verification result.
+  /api/admin/site-config:
+    get:
+      tags: [Site Config]
+      summary: Read site config.
+      x-permission: canAccessSiteConfig
+      responses:
+        "200":
+          description: Config values.
+    patch:
+      tags: [Site Config]
+      summary: Update site config.
+      x-permission: canManageSiteConfig
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated config.
+  /api/admin/site-config/analytics:
+    delete:
+      tags: [Site Config, Analytics]
+      summary: Purge analytics history.
+      description: Development-only and token-gated.
+      x-permission: canManageSiteConfig
+      responses:
+        "200":
+          description: Purge result.
+  /api/upload:
+    post:
+      tags: [Uploads]
+      summary: Upload image through server.
+      x-permission: canUploadMedia
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Upload result with variants.
+  /api/upload-url:
+    post:
+      tags: [Uploads]
+      summary: Create signed direct-upload URL.
+      x-permission: canUploadMedia
+      requestBody:
+        $ref: "#/components/requestBodies/UploadUrl"
+      responses:
+        "201":
+          description: Signed upload URL.
+  /api/image/{key}:
+    get:
+      tags: [Uploads]
+      summary: Create signed image download URL.
+      x-permission: canViewMediaLibrary
+      parameters:
+        - $ref: "#/components/parameters/ObjectKey"
+      responses:
+        "200":
+          description: Signed URL.
+  /api/timers/active:
+    get:
+      tags: [Banners]
+      summary: List active public banners.
+      security: []
+      parameters:
+        - name: scope
+          in: query
+          schema:
+            type: string
+            enum: [global, home]
+            default: global
+      responses:
+        "200":
+          description: Active banners.
+  /api/admin/timers:
+    get:
+      tags: [Banners]
+      summary: List all banners.
+      x-permission: canManageTimers
+      responses:
+        "200":
+          description: Banners.
+    post:
+      tags: [Banners]
+      summary: Create banner.
+      x-permission: canManageTimers
+      requestBody:
+        $ref: "#/components/requestBodies/Banner"
+      responses:
+        "201":
+          description: Created banner.
+  /api/admin/timers/{timerId}:
+    patch:
+      tags: [Banners]
+      summary: Update banner.
+      x-permission: canManageTimers
+      parameters:
+        - $ref: "#/components/parameters/TimerId"
+      requestBody:
+        $ref: "#/components/requestBodies/Banner"
+      responses:
+        "200":
+          description: Updated banner.
+    delete:
+      tags: [Banners]
+      summary: Delete banner.
+      x-permission: canManageTimers
+      parameters:
+        - $ref: "#/components/parameters/TimerId"
+      responses:
+        "200":
+          description: Delete result.
+  /api/search:
+    get:
+      tags: [Search]
+      summary: Search public content.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Search results.
+  /pages/{slug}:
+    get:
+      tags: [Pages]
+      summary: Serve page shell.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Slug"
+      responses:
+        "200":
+          description: HTML page shell.
+  /api/navigation:
+    get:
+      tags: [Pages]
+      summary: Get dynamic navigation.
+      security: []
+      responses:
+        "200":
+          description: Navigation items.
+  /api/pages/{slug}:
+    get:
+      tags: [Pages]
+      summary: Get public page content.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Slug"
+      responses:
+        "200":
+          description: Page content.
+  /api/admin/pages/{pageId}/preview:
+    get:
+      tags: [Pages]
+      summary: Preview page.
+      x-permission: canManagePages
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+      responses:
+        "200":
+          description: Page preview.
+  /api/admin/pages:
+    get:
+      tags: [Pages]
+      summary: List pages for admin.
+      x-permission: canManagePages
+      responses:
+        "200":
+          description: Admin page list.
+    post:
+      tags: [Pages]
+      summary: Create page.
+      x-permission: canManagePages
+      requestBody:
+        $ref: "#/components/requestBodies/Page"
+      responses:
+        "201":
+          description: Created page.
+  /api/admin/pages/media:
+    get:
+      tags: [Pages, Uploads]
+      summary: List page-editor media assets.
+      x-permission: canManagePages
+      responses:
+        "200":
+          description: Media picker data.
+  /api/admin/pages/{pageId}:
+    get:
+      tags: [Pages]
+      summary: Get full admin page payload.
+      x-permission: canManagePages
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+      responses:
+        "200":
+          description: Page payload.
+    patch:
+      tags: [Pages]
+      summary: Update page.
+      x-permission: canManagePages
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+      requestBody:
+        $ref: "#/components/requestBodies/Page"
+      responses:
+        "200":
+          description: Updated page.
+    delete:
+      tags: [Pages]
+      summary: Delete page.
+      x-permission: canManagePages
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+      responses:
+        "200":
+          description: Delete result.
+  /api/admin/pages/{pageId}/status:
+    patch:
+      tags: [Pages]
+      summary: Update page status.
+      x-permission: canManagePages
+      parameters:
+        - $ref: "#/components/parameters/PageId"
+      requestBody:
+        $ref: "#/components/requestBodies/PageStatus"
+      responses:
+        "200":
+          description: Updated page status.
+  /api/admin/navigation-items:
+    post:
+      tags: [Pages]
+      summary: Create navigation item.
+      x-permission: canManageNavigation
+      requestBody:
+        $ref: "#/components/requestBodies/NavigationItem"
+      responses:
+        "201":
+          description: Created navigation item.
+  /api/admin/navigation-items/{itemId}:
+    patch:
+      tags: [Pages]
+      summary: Update navigation item.
+      x-permission: canManageNavigation
+      parameters:
+        - $ref: "#/components/parameters/ItemId"
+      requestBody:
+        $ref: "#/components/requestBodies/NavigationItem"
+      responses:
+        "200":
+          description: Updated navigation item.
+    delete:
+      tags: [Pages]
+      summary: Delete navigation item.
+      x-permission: canManageNavigation
+      parameters:
+        - $ref: "#/components/parameters/ItemId"
+      responses:
+        "200":
+          description: Delete result.
+  /api/events:
+    get:
+      tags: [Events]
+      summary: List published events.
+      security: []
+      responses:
+        "200":
+          description: Events.
+    post:
+      tags: [Events]
+      summary: Submit event.
+      x-permission: canCreateDrafts
+      requestBody:
+        $ref: "#/components/requestBodies/Event"
+      responses:
+        "201":
+          description: Created event.
+  /api/events/review:
+    get:
+      tags: [Events]
+      summary: List event review queue.
+      x-permission: canReviewAndPublish
+      responses:
+        "200":
+          description: Review events.
+  /api/events/mine:
+    get:
+      tags: [Events]
+      summary: List current user's events.
+      responses:
+        "200":
+          description: User events.
+  /api/events/{id}:
+    get:
+      tags: [Events]
+      summary: Get published event.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Event.
+    patch:
+      tags: [Events]
+      summary: Update event.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        $ref: "#/components/requestBodies/Event"
+      responses:
+        "200":
+          description: Updated event.
+  /api/events/{id}/edit:
+    get:
+      tags: [Events]
+      summary: Get event edit payload.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Event edit payload.
+  /api/events/{eventId}/review:
+    patch:
+      tags: [Events]
+      summary: Publish or reject event.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        $ref: "#/components/requestBodies/ReviewDecision"
+      responses:
+        "200":
+          description: Review result.
+  /api/retirement-messages:
+    post:
+      tags: [Retirements]
+      summary: Submit retirement message.
+      x-permission: canSubmitRetirementMessages
+      requestBody:
+        $ref: "#/components/requestBodies/RetirementMessage"
+      responses:
+        "201":
+          description: Created retirement message.
+    get:
+      tags: [Retirements]
+      summary: List published retirement messages.
+      security: []
+      responses:
+        "200":
+          description: Retirement messages.
+  /api/retirement-messages/review:
+    get:
+      tags: [Retirements]
+      summary: List retirement-message review queue.
+      x-permission: canReviewAndPublish
+      responses:
+        "200":
+          description: Review messages.
+  /api/retirement-messages/comments/review:
+    get:
+      tags: [Retirements]
+      summary: List retirement-comment review queue.
+      x-permission: canReviewAndPublish
+      responses:
+        "200":
+          description: Review comments.
+  /api/retirement-messages/comments/{commentId}/review:
+    patch:
+      tags: [Retirements]
+      summary: Publish or reject retirement comment.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      requestBody:
+        $ref: "#/components/requestBodies/ReviewDecision"
+      responses:
+        "200":
+          description: Review result.
+  /api/retirement-messages/comments/{commentId}/edit:
+    get:
+      tags: [Retirements]
+      summary: Get retirement comment edit payload.
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      responses:
+        "200":
+          description: Comment edit payload.
+  /api/retirement-messages/comments/{commentId}:
+    patch:
+      tags: [Retirements]
+      summary: Update retirement comment.
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated comment.
+  /api/retirement-messages/{messageId}/edit:
+    get:
+      tags: [Retirements]
+      summary: Get retirement message edit payload.
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Message edit payload.
+  /api/retirement-messages/{messageId}:
+    get:
+      tags: [Retirements]
+      summary: Get published retirement message.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Retirement message.
+    patch:
+      tags: [Retirements]
+      summary: Update retirement message.
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/RetirementMessage"
+      responses:
+        "200":
+          description: Updated retirement message.
+  /api/retirement-messages/{messageId}/comments:
+    get:
+      tags: [Retirements]
+      summary: List published comments for message.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Comments.
+    post:
+      tags: [Retirements]
+      summary: Create retirement comment.
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "201":
+          description: Created comment.
+  /api/retirement-messages/{messageId}/review:
+    patch:
+      tags: [Retirements]
+      summary: Publish or reject retirement message.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/ReviewDecision"
+      responses:
+        "200":
+          description: Review result.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    EventId:
+      name: eventId
+      in: path
+      required: true
+      schema: { type: string }
+    MessageId:
+      name: messageId
+      in: path
+      required: true
+      schema: { type: string }
+    CommentId:
+      name: commentId
+      in: path
+      required: true
+      schema: { type: string }
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: { type: string }
+    RoleId:
+      name: roleId
+      in: path
+      required: true
+      schema: { type: string }
+    PageId:
+      name: pageId
+      in: path
+      required: true
+      schema: { type: string }
+    ItemId:
+      name: itemId
+      in: path
+      required: true
+      schema: { type: string }
+    TimerId:
+      name: timerId
+      in: path
+      required: true
+      schema: { type: string }
+    CredentialID:
+      name: credentialID
+      in: path
+      required: true
+      schema: { type: string }
+    ObjectKey:
+      name: key
+      in: path
+      required: true
+      schema: { type: string }
+    Slug:
+      name: slug
+      in: path
+      required: true
+      schema: { type: string }
+    TranslationKey:
+      name: key
+      in: path
+      required: true
+      schema: { type: string }
+    TempTokenQuery:
+      name: tempToken
+      in: query
+      required: false
+      schema: { type: string }
+  requestBodies:
+    GenericJson:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    Login:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [username, password]
+            properties:
+              username: { type: string }
+              password: { type: string, format: password }
+    AuthRegister:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    TotpVerify:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token]
+            properties:
+              token: { type: string }
+              tempToken: { type: string }
+    AnalyticsVisit:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              path: { type: string, example: /calendar }
+              fullPath: { type: string }
+              title: { type: string }
+              referrer: { type: string }
+              locale: { type: string, example: en-CA }
+              timeZone: { type: string, example: America/Toronto }
+    SiteConfigToken:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token]
+            properties:
+              token: { type: string }
+    UploadUrl:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              filename: { type: string }
+              contentType: { type: string }
+    Banner:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BannerInput"
+    Role:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RoleInput"
+    Page:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    PageStatus:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [status]
+            properties:
+              status:
+                type: string
+                enum: [draft, published, archived]
+    NavigationItem:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    Event:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    RetirementMessage:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    ReviewDecision:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              decision:
+                type: string
+                enum: [publish, reject, approve]
+              status:
+                type: string
+              reason:
+                type: string
+    TranslationUpdate:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              en: { type: string }
+              fr: { type: string }
+  responses:
+    Error:
+      description: Error response.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Message:
+      description: Message response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    VersionResponse:
+      type: object
+      properties:
+        commit: { type: string }
+        shortCommit: { type: string }
+    LocalizedText:
+      type: object
+      properties:
+        en: { type: string }
+        fr: { type: string }
+    BannerInput:
+      type: object
+      properties:
+        title: { type: string, maxLength: 120 }
+        text:
+          $ref: "#/components/schemas/LocalizedText"
+        color:
+          type: string
+          pattern: "^#[0-9a-fA-F]{6}$"
+        textColor:
+          type: string
+          pattern: "^#[0-9a-fA-F]{6}$"
+        startsAt:
+          type: string
+          format: date-time
+          nullable: true
+        endsAt:
+          type: string
+          format: date-time
+          nullable: true
+        countdownAt:
+          type: string
+          format: date-time
+          nullable: true
+        placement:
+          type: string
+          enum: [global, home]
+        enabled:
+          type: boolean
+        order:
+          type: number
+    RoleInput:
+      type: object
+      properties:
+        name: { type: string }
+        slug: { type: string }
+        color:
+          type: string
+          pattern: "^#[0-9a-fA-F]{6}$"
+        description: { type: string }
+        permissions:
+          type: array
+          items: { type: string }

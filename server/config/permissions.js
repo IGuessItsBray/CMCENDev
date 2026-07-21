@@ -182,6 +182,12 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canBypassReviewStages: 'review.bypass'
 });
 
+const CUSTOM_ROLE_DENYLIST = Object.freeze([
+  'review.bypass',
+  'site_config.access',
+  'site_config.manage'
+]);
+
 function getAllPermissionKeys() {
   return PERMISSION_CATALOG.map(permission => permission.key);
 }
@@ -319,7 +325,9 @@ function getUserPermissions(user) {
   });
 
   getCustomPermissionSet(user).forEach(permission => {
-    explicitPermissions.add(permission);
+    if (!CUSTOM_ROLE_DENYLIST.includes(permission)) {
+      explicitPermissions.add(permission);
+    }
   });
 
   Object.entries(LEGACY_PERMISSION_KEYS).forEach(([legacyName, permission]) => {
@@ -338,5 +346,6 @@ module.exports = {
   getAllPermissionKeys,
   hasMinimumRole,
   getUserPermissions,
-  normalizePermissionKeys
+  normalizePermissionKeys,
+  CUSTOM_ROLE_DENYLIST
 };

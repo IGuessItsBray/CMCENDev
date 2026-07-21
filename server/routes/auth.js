@@ -8,8 +8,7 @@ const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const {
   authMiddleware,
-  requirePermission,
-  requireMinimumRole
+  requirePermission
 } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
@@ -1173,7 +1172,7 @@ router.patch('/profile', authMiddleware, async (req, res) => {
 router.get(
   '/contributor-check',
   authMiddleware,
-  requireMinimumRole('contributor'),
+  requirePermission('canCreateDrafts'),
   (req, res) => {
     res.json({
       message: 'You may submit content',

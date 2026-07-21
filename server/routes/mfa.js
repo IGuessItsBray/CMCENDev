@@ -462,6 +462,11 @@ router.get('/totp/qrcode', authMiddleware, async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (!user.totp?.secret) return res.status(400).json({ error: 'No TOTP secret set' });
+    if (user.totp?.enabled === true) {
+      return res.status(403).json({
+        error: 'TOTP QR code is only available during setup'
+      });
+    }
 
     const otpauth = speakeasy.otpauthURL({
       secret: user.totp.secret,

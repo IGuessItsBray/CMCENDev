@@ -28,6 +28,7 @@ const mfaRoutes = require('./routes/mfa');
 const pageRoutes = require('./routes/pages');
 
 const app = express();
+const isApiDocsEnabled = process.env.ENABLE_API_DOCS === 'true';
 app.set('trust proxy', true);
 app.use(express.json());
 app.use(translationRoutes);
@@ -65,6 +66,43 @@ app.get('/api/version', (req, res) => {
     shortCommit: buildCommit ? buildCommit.slice(0, 7) : ''
   });
 });
+
+if (isApiDocsEnabled) {
+  app.get('/api-docs/openapi.yaml', (req, res) => {
+    res.type('yaml');
+    res.sendFile(path.join(__dirname, '..', 'api', 'schema', 'openapi.yaml'));
+  });
+
+  app.get('/api-docs', (req, res) => {
+    res.type('html').send(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CMCEN API Docs</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+    <style>
+      body {
+        margin: 0;
+        background: #f7f7f7;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+      window.ui = SwaggerUIBundle({
+        url: "/api-docs/openapi.yaml",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        displayRequestDuration: true
+      });
+    </script>
+  </body>
+</html>`);
+  });
+}
 
 function redirectHtmlExtension(req, res, next) {
   if (!['GET', 'HEAD'].includes(req.method) || !req.path.endsWith('.html')) {

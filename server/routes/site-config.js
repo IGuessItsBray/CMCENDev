@@ -121,6 +121,16 @@ function requireDevelopmentSiteConfig(req, res, next) {
   next();
 }
 
+function requireDeveloperRole(req, res, next) {
+  if (req.user?.role !== 'developer') {
+    return res.status(404).json({
+      error: 'Endpoint not found'
+    });
+  }
+
+  next();
+}
+
 async function readEnvFile() {
   try {
     return await fs.readFile(ENV_FILE_PATH, 'utf8');
@@ -187,13 +197,15 @@ function isConfigTokenKey(key) {
 
 function toConfigVariable(entry) {
   const isConfigToken = isConfigTokenKey(entry.key);
+  const isSecret = isSecretKey(entry.key);
+  const masked = isSecret || isConfigToken;
 
   return {
     key: entry.key,
-    value: isConfigToken ? '' : entry.value,
-    isSecret: isSecretKey(entry.key),
+    value: masked ? '' : entry.value,
+    isSecret,
     isConfigToken,
-    masked: isConfigToken,
+    masked,
     source: 'env-file'
   };
 }
@@ -274,7 +286,7 @@ function applyProcessUpdates(updates) {
 
 router.use(authMiddleware);
 
-router.post('/access', requirePermission('canAccessSiteConfig'), async (req, res) => {
+router.post('/access', requireDeveloperRole, requirePermission('canAccessSiteConfig'), async (req, res) => {
   await writeConfigAuditLog(req, 'config.access_requested', {
     route: req.originalUrl
   });
@@ -282,7 +294,7 @@ router.post('/access', requirePermission('canAccessSiteConfig'), async (req, res
   res.json({ ok: true });
 });
 
-router.post('/verify', requirePermission('canAccessSiteConfig'), async (req, res) => {
+router.post('/verify', requireDeveloperRole, requirePermission('canAccessSiteConfig'), async (req, res) => {
   const tokenResult = await validateConfigToken(req);
 
   if (!tokenResult.ok) {
@@ -306,6 +318,7 @@ router.post('/verify', requirePermission('canAccessSiteConfig'), async (req, res
 
 router.get(
   '/',
+  requireDeveloperRole,
   requirePermission('canAccessSiteConfig'),
   requireConfigToken,
   async (req, res) => {
@@ -325,6 +338,7 @@ router.get(
 
 router.patch(
   '/',
+  requireDeveloperRole,
   requirePermission('canManageSiteConfig'),
   requireConfigToken,
   async (req, res) => {
@@ -372,6 +386,7 @@ router.patch(
 
 router.delete(
   '/analytics',
+  requireDeveloperRole,
   requirePermission('canManageSiteConfig'),
   requireConfigToken,
   requireDevelopmentSiteConfig,

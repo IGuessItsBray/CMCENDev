@@ -610,6 +610,16 @@ function isSelf(userId, currentUser) {
   return String(userId) === String(currentUser?._id);
 }
 
+function requireDeveloperRole(req, res, next) {
+  if (req.user?.role !== 'developer') {
+    return res.status(403).json({
+      error: 'Developer access required'
+    });
+  }
+
+  next();
+}
+
 async function validateStandardRoleChange(userId, currentUser, role) {
   if (!USER_ROLES.includes(role)) {
     return { status: 400, error: 'Invalid role provided' };
@@ -1396,6 +1406,7 @@ router.patch(
   '/users/:userId/developer',
   authMiddleware,
   requirePermission('canManageUsers'),
+  requireDeveloperRole,
   async (req, res) => {
     try {
       const { confirmation, confirmed } = req.body || {};

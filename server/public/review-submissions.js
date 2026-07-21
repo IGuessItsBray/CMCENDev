@@ -213,7 +213,7 @@ function formatReviewUser(user) {
 
 function formatRetireeName(retirementMessage) {
   const { name, postNominals } = CMCENUtils.getRetireeNameParts(
-    retirementMessage.retiree
+    retirementMessage?.retiree
   );
 
   return [

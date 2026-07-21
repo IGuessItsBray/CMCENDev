@@ -1,21 +1,27 @@
-const DEFAULT_CDN_BASE_URL = 'https://cdn.corebot.ca/cmcen-demo';
-
 function trimTrailingSlash(value) {
   return String(value || '').replace(/\/+$/u, '');
+}
+
+function getMinioPublicBaseUrl() {
+  const endpoint = trimTrailingSlash(process.env.MINIO_ENDPOINT);
+  const bucketName = String(process.env.MINIO_BUCKET_NAME || '').replace(/^\/+|\/+$/gu, '');
+
+  return endpoint && bucketName
+    ? `${endpoint}/${bucketName}`
+    : endpoint;
 }
 
 function getCdnBaseUrl() {
   return trimTrailingSlash(
     process.env.CDN_PUBLIC_BASE_URL ||
     process.env.CDN_BASE_URL ||
-    DEFAULT_CDN_BASE_URL
+    getMinioPublicBaseUrl()
   );
 }
 
 function getKnownCdnBaseUrls() {
   return [
-    getCdnBaseUrl(),
-    DEFAULT_CDN_BASE_URL
+    getCdnBaseUrl()
   ].filter((value, index, allValues) =>
     value && allValues.indexOf(value) === index
   );
@@ -36,6 +42,19 @@ function buildPublicMediaUrl(key) {
     : '';
 }
 
+function getMediaKeyFromPath(pathname, basePath = '') {
+  const cleanBasePath = trimTrailingSlash(basePath);
+  let objectPath = String(pathname || '');
+
+  if (cleanBasePath && objectPath.startsWith(`${cleanBasePath}/`)) {
+    objectPath = objectPath.slice(cleanBasePath.length + 1);
+  } else {
+    objectPath = objectPath.replace(/^\/+/u, '');
+  }
+
+  return decodeURIComponent(objectPath);
+}
+
 function getMediaKeyFromValue(value) {
   const rawValue = String(value || '').trim();
 
@@ -44,29 +63,36 @@ function getMediaKeyFromValue(value) {
   }
 
   if (!/^https?:\/\//iu.test(rawValue)) {
-    return decodeURIComponent(rawValue.replace(/^\/+/u, ''));
+    for (const knownBaseUrl of getKnownCdnBaseUrls()) {
+      if (!knownBaseUrl.startsWith('/')) continue;
+
+      if (rawValue === knownBaseUrl || rawValue.startsWith(`${knownBaseUrl}/`)) {
+        return getMediaKeyFromPath(rawValue, knownBaseUrl);
+      }
+    }
+
+    return getMediaKeyFromPath(rawValue);
   }
 
   try {
     const url = new URL(rawValue);
 
     for (const knownBaseUrl of getKnownCdnBaseUrls()) {
+      if (knownBaseUrl.startsWith('/')) {
+        if (url.pathname === knownBaseUrl || url.pathname.startsWith(`${knownBaseUrl}/`)) {
+          return getMediaKeyFromPath(url.pathname, knownBaseUrl);
+        }
+
+        continue;
+      }
+
       const cdnBaseUrl = new URL(knownBaseUrl);
 
       if (url.origin !== cdnBaseUrl.origin) {
         continue;
       }
 
-      const basePath = cdnBaseUrl.pathname.replace(/\/+$/u, '');
-      let objectPath = url.pathname;
-
-      if (basePath && objectPath.startsWith(`${basePath}/`)) {
-        objectPath = objectPath.slice(basePath.length + 1);
-      } else {
-        objectPath = objectPath.replace(/^\/+/u, '');
-      }
-
-      return decodeURIComponent(objectPath);
+      return getMediaKeyFromPath(url.pathname, cdnBaseUrl.pathname);
     }
   } catch {
     return '';

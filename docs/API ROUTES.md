@@ -83,7 +83,7 @@ Defined in `uploads.js`.
 | `POST` | `/api/upload` | Bearer token | Upload one `image` multipart file to object storage and return its object key and CDN URL. |
 | `GET` | `/api/image/:key` | Bearer token + `canViewMediaLibrary` | Generate a short-lived signed URL for an object-storage image key. |
 
-Public object URLs prefer `CDN_PUBLIC_BASE_URL` when configured.
+Public object URLs prefer `CDN_PUBLIC_BASE_URL` when configured and otherwise use `MINIO_ENDPOINT` plus `MINIO_BUCKET_NAME`.
 
 ## Translation Routes
 

@@ -74,7 +74,9 @@ function createLastPostCard(lastPost) {
 
   const excerpt = document.createElement('p');
   excerpt.className = 'last-post-card-excerpt';
-  excerpt.textContent = getExcerpt(lastPost.message);
+  excerpt.textContent = getExcerpt(
+    CMCENUtils.getLocalizedText(lastPost.messages) || ''
+  );
 
   const readMore = document.createElement('p');
   readMore.className = 'last-post-card-read-more';
@@ -125,9 +127,9 @@ async function loadLastPosts({ append = false } = {}) {
     const params = new URLSearchParams({ limit: String(LAST_POST_PAGE_SIZE) });
     if (append && lastPostNextCursor) params.set('cursor', lastPostNextCursor);
 
-    const response = await fetch(`/api/last-posts?${params}`);
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || translate('last_post_load_error'));
+    const data = await CMCENUtils.apiJson(`/api/last-posts?${params}`, {
+      errorMessage: translate('last_post_load_error')
+    });
 
     const lastPosts = Array.isArray(data.lastPosts) ? data.lastPosts : [];
     lastPostHasMore = data.hasMore === true;

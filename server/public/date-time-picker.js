@@ -1,21 +1,4 @@
 (function () {
-  const MONTHS = Object.freeze([
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December"
-  ]);
-
-  const WEEKDAYS = Object.freeze(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
-
   function pad(value) {
     return String(value).padStart(2, "0");
   }
@@ -109,6 +92,15 @@
     const name = options.name || "dateTime";
     const includeTime = options.includeTime !== false;
     const placeholder = options.placeholder || "Select date and time";
+    const locale = options.locale || document.documentElement.lang || undefined;
+    const monthFormatter = new Intl.DateTimeFormat(locale, {
+      month: "long",
+      year: "numeric"
+    });
+    const weekdayFormatter = new Intl.DateTimeFormat(locale, {
+      weekday: "short",
+      timeZone: "UTC"
+    });
     const valueDate = parseDateParts(options.date || "") ? options.date : "";
     const valueTime = parseTimeParts(options.time || "") ? options.time : "";
     const now = new Date();
@@ -212,7 +204,7 @@
       });
 
       const title = document.createElement("strong");
-      title.textContent = `${MONTHS[visibleMonth]} ${visibleYear}`;
+      title.textContent = monthFormatter.format(new Date(visibleYear, visibleMonth, 1));
 
       const next = createButton("cmcen-date-time-nav", ">", () => {
         visibleMonth += 1;
@@ -227,7 +219,9 @@
 
       const grid = document.createElement("div");
       grid.className = "cmcen-date-time-grid";
-      WEEKDAYS.forEach(day => {
+      Array.from({ length: 7 }, (_, day) => weekdayFormatter.format(
+        new Date(Date.UTC(2023, 0, day + 1))
+      )).forEach(day => {
         const label = document.createElement("span");
         label.className = "cmcen-date-time-weekday";
         label.textContent = day;
@@ -256,7 +250,7 @@
         timeRow.className = "cmcen-date-time-time-row";
 
         const timeLabel = document.createElement("span");
-        timeLabel.textContent = "Time";
+        timeLabel.textContent = options.timeLabel || "Time";
 
         const nativeTime = document.createElement("input");
         nativeTime.type = "time";
@@ -270,7 +264,7 @@
       const actions = document.createElement("div");
       actions.className = "cmcen-date-time-actions";
       actions.append(
-        createButton("cmcen-date-time-action", "Clear", () => {
+        createButton("cmcen-date-time-action", options.clearLabel || "Clear", () => {
           selectedDate = "";
           selectedTime = "00:00";
           dateInput.value = "";
@@ -279,7 +273,7 @@
           renderCalendar();
           emitInput();
         }),
-        createButton("cmcen-date-time-action is-primary", "Done", () => setOpen(false))
+        createButton("cmcen-date-time-action is-primary", options.doneLabel || "Done", () => setOpen(false))
       );
 
       popover.prepend(header, grid);

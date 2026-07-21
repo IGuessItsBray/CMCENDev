@@ -14274,6 +14274,10 @@ html[data-theme="dark"] .theme-toggle__icon:last-child {
   font: inherit;
 }
 
+.timers-editor-field select {
+  height: 44px;
+}
+
 .timers-editor-field textarea {
   resize: vertical;
   line-height: 1.45;

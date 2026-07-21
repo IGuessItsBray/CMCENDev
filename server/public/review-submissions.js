@@ -9,6 +9,8 @@ const commentReviewPageMessage =
   document.getElementById("commentReviewPageMessage");
 const reviewTabs = document.querySelectorAll("[data-review-tab]");
 const reviewPanels = document.querySelectorAll("[data-review-panel]");
+const reviewTabNames = ["events", "retirements", "comments"];
+const requestedReviewTab = new URLSearchParams(window.location.search).get("tab");
 
 let pendingEvents = [];
 let pendingRetirementMessages = [];
@@ -2041,6 +2043,9 @@ document.addEventListener(
 );
 
 const reviewTabController = CMCENUtils.bindTabs({
+  active: reviewTabNames.includes(requestedReviewTab)
+    ? requestedReviewTab
+    : "events",
   panels: reviewPanels,
   panelKey: "reviewPanel",
   tabs: reviewTabs,

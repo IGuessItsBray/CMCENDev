@@ -5563,6 +5563,92 @@ a.dropdown-toggle {
   gap: 10px;
 }
 
+.dashboard-review-work {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--branch-grey-200);
+}
+
+.dashboard-review-work h3 {
+  margin: 0;
+  color: var(--navy-900);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  font-weight: normal;
+  line-height: 1.2;
+}
+
+.dashboard-review-queues {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dashboard-review-queue-link {
+  min-height: 72px;
+  padding: 10px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--branch-grey-200);
+  border-top: 3px solid var(--navy-800);
+  border-radius: 2px;
+  background: var(--branch-grey-100);
+  color: var(--navy-900);
+  text-align: center;
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.dashboard-review-queue-link:hover,
+.dashboard-review-queue-link:focus-visible {
+  border-color: var(--gold-600);
+  border-top-color: var(--navy-800);
+  background: #fff8e7;
+}
+
+.dashboard-review-queue-link strong {
+  color: var(--gold-700);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 23px;
+  font-weight: normal;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.dashboard-review-queue-link strong.is-empty {
+  color: var(--text-muted);
+}
+
+.dashboard-review-queue-link span,
+.dashboard-review-counts-unavailable {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.dashboard-review-queue-link span {
+  min-height: 2.6em;
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-review-counts-unavailable {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.dashboard-review-open-link {
+  grid-column: 1 / -1;
+  color: var(--navy-800);
+  font-size: 12px;
+}
+
 .dashboard-action {
   min-height: 65px;
   padding: 12px 14px;
@@ -12314,6 +12400,42 @@ html[data-theme="dark"] .dashboard-action:focus-visible {
 
 html[data-theme="dark"] .dashboard-action.is-notification {
   border-left-color: #d06a62;
+}
+
+html[data-theme="dark"] .dashboard-review-work {
+  border-top-color: var(--dark-border-strong);
+}
+
+html[data-theme="dark"] .dashboard-review-work h3 {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .dashboard-review-queue-link {
+  border-color: var(--dark-border-strong);
+  border-top-color: #5d789f;
+  background: #202b40;
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .dashboard-review-queue-link:hover,
+html[data-theme="dark"] .dashboard-review-queue-link:focus-visible {
+  border-color: var(--gold-300);
+  border-top-color: #5d789f;
+  background: #263349;
+}
+
+html[data-theme="dark"] .dashboard-review-queue-link strong {
+  color: var(--gold-300);
+}
+
+html[data-theme="dark"] .dashboard-review-queue-link strong.is-empty {
+  color: #93a0b3;
+}
+
+html[data-theme="dark"] .dashboard-review-queue-link span,
+html[data-theme="dark"] .dashboard-review-counts-unavailable,
+html[data-theme="dark"] .dashboard-review-open-link {
+  color: var(--dark-text-soft);
 }
 
 html[data-theme="dark"] .dashboard-action-copy strong,

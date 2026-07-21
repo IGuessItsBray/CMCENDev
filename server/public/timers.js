@@ -2,14 +2,10 @@
   const COUNTDOWN_INTERVAL_MS = 1000;
   let timersRoot = null;
   let countdownInterval = 0;
-
-  function getLanguage() {
-    return document.documentElement.lang === "fr" ? "fr" : "en";
-  }
+  let activeTimers = [];
 
   function localized(value = {}) {
-    const language = getLanguage();
-    return value[language] || value.en || value.fr || "";
+    return CMCENUtils.getLocalizedText(value);
   }
 
   function formatCountdown(targetDate) {
@@ -78,33 +74,46 @@
     });
   }
 
+  function clearTimers() {
+    if (countdownInterval) {
+      window.clearInterval(countdownInterval);
+      countdownInterval = 0;
+    }
+
+    if (timersRoot) {
+      timersRoot.remove();
+      timersRoot = null;
+    }
+  }
+
+  function renderTimers() {
+    clearTimers();
+
+    if (!activeTimers.length) return;
+
+    const root = document.createElement("div");
+    root.className = "site-timers";
+    activeTimers.forEach(timer => root.append(createTimerElement(timer)));
+    document.body.prepend(root);
+    timersRoot = root;
+    updateCountdowns(root);
+    countdownInterval = window.setInterval(
+      () => updateCountdowns(root),
+      COUNTDOWN_INTERVAL_MS
+    );
+  }
+
   async function loadTimers() {
     try {
-      if (countdownInterval) {
-        window.clearInterval(countdownInterval);
-        countdownInterval = 0;
-      }
+      clearTimers();
+      activeTimers = [];
 
-      if (timersRoot) {
-        timersRoot.remove();
-        timersRoot = null;
-      }
-
-      const response = await fetch(`/api/timers/active?scope=${encodeURIComponent(getScope())}`);
-
-      if (!response.ok) return;
-
-      const data = await response.json();
-      const timers = data.timers || [];
-      if (!timers.length) return;
-
-      const root = document.createElement("div");
-      root.className = "site-timers";
-      timers.forEach(timer => root.append(createTimerElement(timer)));
-      document.body.prepend(root);
-      timersRoot = root;
-      updateCountdowns(root);
-      countdownInterval = window.setInterval(() => updateCountdowns(root), COUNTDOWN_INTERVAL_MS);
+      const data = await CMCENUtils.apiJson(
+        `/api/timers/active?scope=${encodeURIComponent(getScope())}`,
+        { errorMessage: "Banners unavailable" }
+      );
+      activeTimers = Array.isArray(data.timers) ? data.timers : [];
+      renderTimers();
     } catch (error) {
       console.warn("Banners unavailable:", error);
     }
@@ -119,4 +128,6 @@
   } else {
     loadTimers();
   }
+
+  document.addEventListener("languagechange", renderTimers);
 })();

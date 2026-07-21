@@ -110,34 +110,8 @@ function createRangeToolbar() {
 
   label.append(labelText, select);
 
-  const purge = document.createElement("button");
-  purge.type = "button";
-  purge.className = "admin-work-zone-button is-danger analytics-purge-button";
-  purge.textContent = "Purge history";
-  purge.disabled = analyticsState.isLoading;
-  purge.addEventListener("click", purgeAnalyticsHistory);
-
-  toolbar.append(label, purge);
+  toolbar.append(label);
   return toolbar;
-}
-
-async function purgeAnalyticsHistory() {
-  if (!window.confirm("Purge all analytics history? This cannot be undone.")) {
-    return;
-  }
-
-  try {
-    analyticsState.isLoading = true;
-    await analyticsApi("/api/analytics", {
-      method: "DELETE",
-      errorMessage: "Failed to purge analytics"
-    });
-    analyticsState.data = null;
-    await loadAnalytics(true);
-  } catch (error) {
-    analyticsState.isLoading = false;
-    setAnalyticsStatus(error.message || "Failed to purge analytics");
-  }
 }
 
 function createPanelHeading(title, tooltip = "") {

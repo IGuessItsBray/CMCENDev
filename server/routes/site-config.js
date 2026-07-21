@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { timingSafeEqual } = require('crypto');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
+const AnalyticsVisit = require('../models/AnalyticsVisit');
 const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
@@ -101,6 +102,19 @@ async function requireConfigToken(req, res, next) {
 
     return res.status(tokenResult.status).json({
       error: tokenResult.error
+    });
+  }
+
+  next();
+}
+
+function requireDevelopmentSiteConfig(req, res, next) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isDeveloper = req.user?.role === 'developer';
+
+  if (isProduction || !isDeveloper) {
+    return res.status(404).json({
+      error: 'Endpoint not found'
     });
   }
 
@@ -352,6 +366,40 @@ router.patch(
     res.status(400).json({
       error: error.message || 'Could not update site configuration'
     });
+  }
+  }
+);
+
+router.delete(
+  '/analytics',
+  requirePermission('canManageSiteConfig'),
+  requireConfigToken,
+  requireDevelopmentSiteConfig,
+  async (req, res) => {
+  try {
+    const result = await AnalyticsVisit.deleteMany({});
+
+    await writeAuditLog({
+      req,
+      action: 'analytics.purged',
+      actor: req.user,
+      targetType: 'analytics',
+      targetSnapshot: {
+        deletedCount: result.deletedCount || 0
+      },
+      metadata: {
+        deletedCount: result.deletedCount || 0,
+        route: req.originalUrl
+      }
+    });
+
+    res.json({
+      message: 'Analytics history purged',
+      deletedCount: result.deletedCount || 0
+    });
+  } catch (error) {
+    console.error('Analytics purge failed:', error);
+    res.status(500).json({ error: 'Failed to purge analytics' });
   }
   }
 );

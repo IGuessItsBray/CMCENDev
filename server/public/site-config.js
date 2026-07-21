@@ -8,7 +8,9 @@ let siteConfigState = {
   variables: [],
   message: "",
   canManageSiteConfig: false,
-  isSaving: false
+  isDeveloper: false,
+  isSaving: false,
+  isPurgingAnalytics: false
 };
 
 function showSiteConfigStatus(message, state = "") {
@@ -128,6 +130,18 @@ function createSiteConfigToolbar() {
     ? translate("translations_saving")
     : translate("site_config_save");
   save.disabled = siteConfigState.isSaving || !siteConfigState.canManageSiteConfig;
+
+  if (siteConfigState.canManageSiteConfig && siteConfigState.isDeveloper) {
+    const purgeAnalytics = document.createElement("button");
+    purgeAnalytics.type = "button";
+    purgeAnalytics.className = "admin-work-zone-button is-danger";
+    purgeAnalytics.textContent = siteConfigState.isPurgingAnalytics
+      ? translate("site_config_analytics_purging")
+      : translate("site_config_analytics_purge");
+    purgeAnalytics.disabled = siteConfigState.isSaving || siteConfigState.isPurgingAnalytics;
+    purgeAnalytics.addEventListener("click", purgeAnalyticsHistory);
+    actions.append(purgeAnalytics);
+  }
 
   actions.append(reload, save);
   toolbar.append(copy, actions);
@@ -277,6 +291,34 @@ async function saveSiteConfig(form) {
   }
 }
 
+async function purgeAnalyticsHistory() {
+  if (!window.confirm(translate("site_config_analytics_purge_confirm"))) {
+    return;
+  }
+
+  setSiteConfigState({
+    isPurgingAnalytics: true,
+    message: ""
+  });
+
+  try {
+    const data = await siteConfigApiJson("/api/admin/site-config/analytics", {
+      method: "DELETE",
+      errorMessage: translate("site_config_analytics_purge_error")
+    });
+
+    setSiteConfigState({
+      isPurgingAnalytics: false,
+      message: data.message || translate("site_config_analytics_purge_success")
+    });
+  } catch (error) {
+    setSiteConfigState({
+      isPurgingAnalytics: false,
+      message: error.message || translate("site_config_analytics_purge_error")
+    });
+  }
+}
+
 async function initializeSiteConfigPage() {
   showSiteConfigLoading();
 
@@ -287,7 +329,8 @@ async function initializeSiteConfigPage() {
 
     window.updateAdminWorkZoneTabsForUser(user);
     setSiteConfigState({
-      canManageSiteConfig: user.permissions?.canManageSiteConfig === true
+      canManageSiteConfig: user.permissions?.canManageSiteConfig === true,
+      isDeveloper: user.role === "developer"
     });
 
     await logSiteConfigAccessRequest();

@@ -853,7 +853,12 @@
     "site_config_load_error": "Could not load site configuration",
     "site_config_no_changes": "No configuration changes to save.",
     "site_config_save_error": "Could not save site configuration",
-    "site_config_save_success": "Site configuration updated."
+    "site_config_save_success": "Site configuration updated.",
+    "site_config_analytics_purge": "Purge analytics history",
+    "site_config_analytics_purging": "Purging analytics...",
+    "site_config_analytics_purge_confirm": "Purge all analytics history? This cannot be undone.",
+    "site_config_analytics_purge_error": "Failed to purge analytics history",
+    "site_config_analytics_purge_success": "Analytics history purged."
   },
   "fr": {
     "title": "RCMCE",
@@ -1709,6 +1714,11 @@
     "site_config_load_error": "Impossible de charger la configuration du site",
     "site_config_no_changes": "Aucun changement de configuration à enregistrer.",
     "site_config_save_error": "Impossible d’enregistrer la configuration du site",
-    "site_config_save_success": "Configuration du site mise à jour."
+    "site_config_save_success": "Configuration du site mise à jour.",
+    "site_config_analytics_purge": "Purger l’historique analytique",
+    "site_config_analytics_purging": "Purge de l’historique...",
+    "site_config_analytics_purge_confirm": "Purger tout l’historique analytique? Cette action est irréversible.",
+    "site_config_analytics_purge_error": "Impossible de purger l’historique analytique",
+    "site_config_analytics_purge_success": "Historique analytique purgé."
   }
 }

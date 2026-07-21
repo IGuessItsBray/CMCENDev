@@ -13265,10 +13265,6 @@ html[data-theme="dark"] .theme-toggle__icon:last-child {
   max-width: 220px;
 }
 
-.analytics-purge-button {
-  min-height: 40px;
-}
-
 .analytics-stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -201,23 +201,4 @@ router.post(
   }
 );
 
-router.delete(
-  ['/', ''],
-  authMiddleware,
-  requirePermission('canViewAnalytics'),
-  async (req, res) => {
-    try {
-      const result = await AnalyticsVisit.deleteMany({});
-
-      res.json({
-        message: 'Analytics history purged',
-        deletedCount: result.deletedCount || 0
-      });
-    } catch (error) {
-      console.error('Analytics purge failed:', error);
-      res.status(500).json({ error: 'Failed to purge analytics' });
-    }
-  }
-);
-
 module.exports = router;

@@ -51,6 +51,34 @@ const DEFAULT_MEDIA_PAGE_SIZE = 100;
 const MAX_MEDIA_PAGE_SIZE = 500;
 const MAX_MEDIA_LIST_OBJECTS = 5000;
 
+// GET /api/admin/review-counts
+// Return the current moderation workload without loading each submission.
+router.get(
+  '/review-counts',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      const [events, retirementMessages, comments] = await Promise.all([
+        Event.countDocuments({ status: 'pending' }),
+        RetirementMessage.countDocuments({ status: 'pending' }),
+        RetirementComment.countDocuments({ status: 'pending' })
+      ]);
+
+      res.json({
+        events,
+        retirementMessages,
+        comments
+      });
+    } catch (error) {
+      console.error('Could not load review submission counts:', error);
+      res.status(500).json({
+        error: 'Could not load review submission counts'
+      });
+    }
+  }
+);
+
 function cleanContentAreas(value) {
   if (!Array.isArray(value)) {
     return [];

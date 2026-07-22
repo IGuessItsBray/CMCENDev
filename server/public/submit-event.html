@@ -192,7 +192,7 @@
               At least one event title is required. Add both
               language versions whenever possible.
             </p>
-            <section class="event-details-section" aria-labelledby="eventDetailsHeading">
+            <section class="event-details-section event-section--full-bleed-heading" aria-labelledby="eventDetailsHeading">
               <header class="event-section-heading">
                 <div>
                   <p class="event-section-eyebrow" data-i18n="event_details_eyebrow">
@@ -205,7 +205,8 @@
                 </div>
               </header>
 
-              <div class="event-details-grid">
+              <div class="event-section-content">
+                <div class="event-details-grid">
                 <div class="event-field">
                   <label for="eventCity" data-i18n="event_city">
                     City
@@ -346,9 +347,10 @@
                     </option>
                   </select>
                 </div>
+                </div>
               </div>
             </section>
-            <section class="event-schedule-section" aria-labelledby="eventScheduleHeading">
+            <section class="event-schedule-section event-section--full-bleed-heading" aria-labelledby="eventScheduleHeading">
               <header class="event-section-heading">
                 <div>
                   <p class="event-section-eyebrow" data-i18n="event_shared_details">
@@ -369,7 +371,8 @@
                 </label>
               </header>
 
-              <div class="event-schedule-grid">
+              <div class="event-section-content">
+                <div class="event-schedule-grid">
                 <div class="event-field">
                   <label for="eventStartDate" data-i18n="event_start_date">
                     Start date
@@ -488,14 +491,15 @@
                     Choose the timezone where the event takes place.
                   </small>
                 </div>
-              </div>
+                </div>
 
-              <p class="event-time-zone-note" id="eventTimeZoneNote" data-i18n="event_local_time_note" hidden>
-                Please use the local time of the event.
-              </p>
+                <p class="event-time-zone-note" id="eventTimeZoneNote" data-i18n="event_local_time_note" hidden>
+                  Please use the local time of the event.
+                </p>
+              </div>
             </section>
 
-            <section class="event-submitter-section" aria-labelledby="eventSubmitterHeading">
+            <section class="event-submitter-section event-section--full-bleed-heading" aria-labelledby="eventSubmitterHeading">
               <header class="event-section-heading">
                 <div>
                   <p class="event-section-eyebrow" data-i18n="event_submitter_eyebrow">
@@ -508,12 +512,13 @@
                 </div>
               </header>
 
-              <p class="event-section-intro" data-i18n="event_submitter_intro">
-                Enter the contact information for the person responsible
-                for this event submission.
-              </p>
+              <div class="event-section-content">
+                <p class="event-section-intro" data-i18n="event_submitter_intro">
+                  Enter the contact information for the person responsible
+                  for this event submission.
+                </p>
 
-              <div class="event-submitter-grid">
+                <div class="event-submitter-grid">
                 <div class="event-field event-field-rank">
                   <label for="eventSubmitterRank" data-i18n="event_submitter_rank">
                     Rank
@@ -575,6 +580,7 @@
                   <small data-i18n="event_optional">
                     Optional
                   </small>
+                </div>
                 </div>
               </div>
             </section>

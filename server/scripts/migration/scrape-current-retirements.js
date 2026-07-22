@@ -14,6 +14,7 @@ const {
   assertPublicMediaBaseUrl,
   configurePublicMediaBaseUrl
 } = require('./lib/public-media');
+const { downloadSourceImage } = require('./lib/source-image');
 const {
   cleanString,
   parseDate,
@@ -587,23 +588,21 @@ async function putObject({ key, body, contentType }) {
 
 async function uploadImageForPost(post) {
   const sourceUrl = getImageUrl(post);
+  const sourceImage = await downloadSourceImage(sourceUrl, {
+    userAgent: 'CMCEN migration script'
+  });
 
-  if (!sourceUrl) {
-    console.log(`No source image found for post ${post.id}`);
-    return null;
+  if (sourceImage.usedFallback) {
+    console.log(`Source image ${sourceImage.fallbackReason} for post ${post.id}; using jimmy-crest.webp`);
+  } else {
+    console.log(`Downloaded source image for post ${post.id}: ${sourceUrl}`);
   }
 
-  console.log(`Downloading source image for post ${post.id}: ${sourceUrl}`);
-  const response = await axios.get(sourceUrl, {
-    responseType: 'arraybuffer',
-    timeout: 30000,
-    headers: {
-      'User-Agent': 'CMCEN migration test script'
-    }
-  });
-  const buffer = Buffer.from(response.data);
-  const contentType = response.headers['content-type'] || 'image/jpeg';
-  const extension = getExtensionFromUrl(sourceUrl, contentType);
+  const buffer = sourceImage.buffer;
+  const contentType = sourceImage.contentType;
+  const extension = sourceImage.usedFallback
+    ? 'webp'
+    : getExtensionFromUrl(sourceUrl, contentType);
   const baseKey = `legacy/current-site/retirements/${post.id}-${slugify(post.slug || getPostTitle(post))}`;
   const originalKey = `${baseKey}/original.${extension}`;
   const metadata = await sharp(buffer).metadata();
@@ -651,7 +650,7 @@ async function uploadImageForPost(post) {
     url: buildPublicMediaUrl(variants.large?.key || variants.hero?.key || originalKey),
     originalKey,
     originalUrl: buildPublicMediaUrl(originalKey),
-    originalName: path.basename(new URL(sourceUrl).pathname) || `${slugify(title)}.${extension}`,
+    originalName: sourceImage.originalName || `${slugify(title)}.${extension}`,
     displayName: title || `Retirement ${post.id}`,
     mimeType: contentType,
     width: metadata.width || 0,
@@ -670,11 +669,15 @@ async function uploadImageForPost(post) {
     },
     inferredName: title || `Retirement ${post.id}`,
     fileMetadata: {
-      originalName: path.basename(new URL(sourceUrl).pathname) || `${slugify(title)}.${extension}`,
+      originalName: sourceImage.originalName || `${slugify(title)}.${extension}`,
       mimeType: contentType,
       size: buffer.length,
       storageKey: originalKey,
-      sourceUrl
+      sourceUrl,
+      usedFallback: sourceImage.usedFallback,
+      fallbackReason: sourceImage.fallbackReason,
+      fallbackAsset: sourceImage.usedFallback ? 'jimmy-crest' : '',
+      fallbackSourceUrl: sourceImage.fallbackSourceUrl
     },
     imageMetadata: sanitizeImageMetadata(metadata),
     uploadedBy: null

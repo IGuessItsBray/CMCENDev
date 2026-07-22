@@ -16,6 +16,10 @@ const {
 } = require('./lib/public-media');
 const { downloadSourceImage } = require('./lib/source-image');
 const {
+  LEGACY_SUBMITTER_RANK,
+  normalizeDeceasedRank
+} = require('./lib/legacy-rank');
+const {
   cleanString,
   parseDate,
   stripHtml,
@@ -279,7 +283,7 @@ function parseDeceased(title) {
   const parts = nameOnly.split(/\s+/u).filter(Boolean);
 
   return {
-    fullRank: rank || '',
+    fullRank: normalizeDeceasedRank(rank),
     firstName: parts.length >= 2 ? parts[parts.length - 2].replace(/[",]/gu, '') : '',
     surname: parts.length >= 1 ? parts[parts.length - 1].replace(/[",]/gu, '') : '',
     postNominal: postNominalsMatch
@@ -305,7 +309,7 @@ function toPostDocument(post, mediaResult) {
     photoUrl: mediaResult?.asset?.url || getImageUrl(post),
     deceased: parseDeceased(title),
     submitter: {
-      rank: '',
+      rank: LEGACY_SUBMITTER_RANK,
       firstName: 'Live Site',
       lastName: 'Import',
       email: 'legacy-import@cmcen.local'

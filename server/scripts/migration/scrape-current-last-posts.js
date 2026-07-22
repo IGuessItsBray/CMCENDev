@@ -538,6 +538,9 @@ async function getLatestPostsFromArchive() {
 
     const html = await fetchText(pageUrl);
     const slugs = getLastPostSlugs(html);
+    const totalToCollect = Number.isFinite(limit)
+      ? Math.min(seenSlugs.size + slugs.filter(slug => !seenSlugs.has(slug)).length, limit)
+      : seenSlugs.size + slugs.filter(slug => !seenSlugs.has(slug)).length;
     console.log(`Found ${slugs.length} Last Post links on archive page`);
 
     for (const slug of slugs) {
@@ -550,7 +553,7 @@ async function getLatestPostsFromArchive() {
 
       if (post) {
         posts.push(post);
-        console.log(`Collected Last Post ${post.id}: ${getPostTitle(post)}`);
+        console.log(`[${posts.length}/${totalToCollect}] Collected Last Post ${post.id}: ${getPostTitle(post)}`);
       }
     }
 

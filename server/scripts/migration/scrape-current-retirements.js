@@ -455,6 +455,7 @@ async function getLatestPostsFromRetirementList() {
   const html = await fetchText(RETIREMENT_LIST_URL);
   const slugs = getRetirementListSlugs(html);
   const posts = [];
+  const totalToCollect = Number.isFinite(limit) ? Math.min(slugs.length, limit) : slugs.length;
 
   console.log(`Found ${slugs.length} retirement links on retirement list page`);
 
@@ -467,7 +468,7 @@ async function getLatestPostsFromRetirementList() {
 
     if (post) {
       posts.push(post);
-      console.log(`Collected retirement ${post.id}: ${getPostTitle(post)}`);
+      console.log(`[${posts.length}/${totalToCollect}] Collected retirement ${post.id}: ${getPostTitle(post)}`);
     }
   }
 

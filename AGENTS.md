@@ -12,7 +12,8 @@ that include credentials, certificates, or production secrets here.
 - Express entrypoint: `server/server.js`
 - Docker demo image: root `Dockerfile`
 - MongoDB is configured with `MONGO_URI` from environment variables.
-- Local secrets live in `.env`. Example placeholders live in `.env.example`.
+- Local secrets live in `server/.env`. Example placeholders live in the root
+  `.env.example`.
 
 ## Safety Rules
 
@@ -37,10 +38,13 @@ These requirements are mandatory. They are not optional.
 
 ## Local Development
 
-Current known local flow:
+Install and run from the authoritative `server/` package:
 
 ```sh
-node server/server.js
+cd server
+npm ci
+cp ../.env.example .env
+npm run start:dev
 ```
 
 Notes:
@@ -50,18 +54,15 @@ Notes:
 - Default port is `3000` unless `PORT` is set.
 - Static pages are served from `server/public/`.
 
-Useful checks:
+Useful checks from `server/`:
 
 ```sh
-node --check server/routes/mfa.js
-node --check server/routes/auth.js
-node --check server/public/dashboard-mfa.js
-node --check server/public/register.js
+npm run check
+npm test
 ```
 
-The current `server/package.json` test script is a placeholder and exits with
-failure. Do not treat `npm test` as a meaningful test until that script is
-replaced.
+`npm test` currently runs syntax checks. It is useful, but it is not a unit or
+integration test suite.
 
 ## Docker Demo Suite
 
@@ -227,25 +228,30 @@ Passkeys/WebAuthn:
 
 ## Environment Variables
 
-Required or commonly used:
+Required or commonly used values are documented in `.env.example`, including:
 
 ```sh
 MONGO_URI=
 JWT_SECRET=
 PORT=
+APP_BASE_URL=
+MINIO_ENDPOINT=
+MINIO_ACCESS_KEY=
+MINIO_SECRET_KEY=
+MINIO_BUCKET_NAME=
+CDN_PUBLIC_BASE_URL=
 RP_NAME=
 RP_ID=
 RP_ORIGIN=
 TOTP_WINDOW=
+CONFIG_TOKEN=
 ```
 
 Use `.env.example` for placeholders only. Use `.env` or deployment secrets for
 real values.
 
-## Documentation To Improve Later
+## Documentation Gaps
 
-- Add exact local install/setup commands.
-- Add exact Docker image tag and registry commands.
-- Add Forgejo remote and PR workflow.
-- Add Komodo deployment commands and health checks.
-- Add a real automated test command.
+- Add exact registry image tags and publish commands.
+- Add Komodo resource names, deployment commands, health checks, and rollback.
+- Add unit and integration tests beyond the current syntax-check suite.

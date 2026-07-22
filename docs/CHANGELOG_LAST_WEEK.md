@@ -1,7 +1,115 @@
-# Changelog: Past Week
+# Changelog: July 21-22, 2026
+
+Date range: 2026-07-21 through 2026-07-22
+Source: git history from commit `f8866ab` through `c351bd5`.
+
+This entry summarizes the changes added after the previous July 14-21 snapshot.
+
+## Summary
+
+Recent work extended the admin and CMS toolset, added a current-site migration
+workflow, improved media metadata handling, refined MFA and login-adjacent UI,
+added refresh-token support, and tightened banner, retirement, analytics, and
+submission-review behavior.
+
+## Added
+
+- Added a site migration console and supporting current-site migration scripts,
+  including progress reporting while migration posts are collected.
+- Added expanded admin user and media tools for richer management workflows.
+- Added audit-log export and related audit-log UI refinements.
+- Added a public sitemap.
+- Added reporting for unique analytics visitors.
+- Added refresh-token support for authentication.
+- Added a Last Post archive plus a separate Last Post submission and review
+  workflow.
+- Added retirement live import tooling.
+- Added dashboard submission counts and dedicated buttons for individual review
+  queues.
+
+## Changed
+
+- Replaced the default browser modal with a custom branded shared modal.
+- Refreshed the dashboard MFA configuration visuals.
+- Hardened API administration routes.
+- Continued normalizing admin documentation, shared styles, Work Zone tabs, and
+  shared admin picker components.
+- Improved banner placement options, including above/below-header placement,
+  sticky behavior, and preview font consistency.
+- Moved analytics purge controls under site configuration.
+- Updated media CDN URL handling to derive the CDN base from MinIO environment
+  settings.
+- Added media upload metadata capture and isolated migration tooling for current
+  site work.
+
+## Fixed
+
+- Fixed media library refresh behavior after deleting images.
+- Fixed banner language switching, banner caching during navigation, and
+  non-scrolling banner text centering.
+- Fixed crashes caused by orphaned retirement comments.
+- Fixed retirement post-nominal duplication and added pagination.
+- Fixed analytics country normalization, country capture, fallback order,
+  filters, purge behavior, and public upload signing.
+- Fixed user update saves by replacing deprecated Mongoose update usage.
+- Fixed hero button hover visibility, pointer cursor behavior, and dashboard
+  dark-mode page-height changes.
+
+## Admin And CMS Notes
+
+- Admins now have more direct tools for media, users, audit exports, migration,
+  analytics, submissions, Last Post reviews, banners, and site configuration.
+- The current-site migration workflow includes visible progress feedback and
+  isolated scripts for safer operation.
+- MFA and dashboard presentation received visual polish without changing the
+  core TOTP/passkey behavior documented elsewhere.
+
+## Developer Notes
+
+- New or heavily changed backend areas include migration scripts, API
+  administration routes, auth refresh-token handling, media routes, audit log
+  export behavior, analytics services, retirement/comment handling, and Last
+  Post submission/review routes.
+- New or heavily changed frontend areas include migration/admin screens, media
+  management, dashboard MFA styling, shared modals, banner utilities, analytics
+  views, audit-log export UI, and dashboard review shortcuts.
+
+## Commit Reference
+
+- `c351bd5` - Merge migration tools into main
+- `ab25418` - Isolate current site migration tools
+- `5a9f93f` - Show progress while collecting migration posts
+- `26f3ce7` - Show migration progress counts
+- `616c1b8` - Add custom branded shared modal
+- `a2143fd` - Add current site migration script
+- `e74a07a` - Refresh media after deleting images
+- `f990dc2` - Refresh dashboard MFA configuration visuals
+- `be2f9cb` - Capture media upload metadata
+- `d6f3cf0` - Sync admin docs and styles
+- `cdb0ff4` - Export and refine audit logs
+- `e2efd54` - Expand admin user and media tools
+- `403f63d` - Add public sitemap
+- `9ef8a55` - Add site migration console
+- `283d3a2` - Report unique analytics visitors
+- `4e0317f` - Implement refresh tokens
+- `7c9d7c2` - Localize banner admin editor
+- `ce43b0e` - Add Last Post submission and review workflow
+- `418c488` - Add Last Post archive
+- `885108b` - Add retirement live import tooling
+- `82b2083` - Harden API administration routes
+- `af33c04` - Add banner placement, sticky banners, and preview font alignment
+- `6b9a9d1` - Fix crash on orphaned retirement comments
+- `06a369c` - Cache banner in tab while navigating
+
+---
+
+# Changelog: July 14-21, 2026
 
 Date range: 2026-07-14 through 2026-07-21  
 Source: git history through commit `f965a44` on 2026-07-21.
+
+This is a dated historical snapshot. For current setup, routes, and migration
+instructions, use the repository README and the other documents in this folder.
 
 ## Summary
 

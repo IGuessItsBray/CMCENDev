@@ -7,12 +7,13 @@ RUN groupadd -r nodeuser && useradd -r -g nodeuser nodeuser
 
 WORKDIR /usr/src/app/server
 
-# Copy package files and change ownership so the non-root user can run npm install
+# Install production dependencies from the authoritative server lockfile.
 COPY --chown=nodeuser:nodeuser server/package*.json ./
-RUN npm install
+RUN npm ci --omit=dev
 
-# Copy the rest of the application
+# Copy the application and the OpenAPI schema served in development mode.
 COPY --chown=nodeuser:nodeuser server/ .
+COPY --chown=nodeuser:nodeuser api/schema/ /usr/src/app/api/schema/
 
 USER nodeuser
 

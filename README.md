@@ -1,227 +1,154 @@
-# CMCEN — Docker Setup Guide
+# CMCEN / RCMCE
 
-This guide explains how to build and run your application using Docker.
+CMCEN is the Canadian Military Communications and Electronics Network web
+application. It provides public bilingual content, events, retirement and Last
+Post notices, account management, submissions, moderation, media management,
+analytics, audit logging, and an administrator work zone.
 
----
+The application is a single Express service. Browser assets are served directly
+from `server/public/`, application records are stored in MongoDB, and uploaded
+media is stored in MinIO or another S3-compatible object store.
 
-## Prerequisites
+## Requirements
 
-- [Docker](https://docs.docker.com/get-docker/) installed on your machine!
+- Node.js 20 or newer
+- npm 10 or newer
+- MongoDB 7 or newer, or a compatible managed MongoDB service
+- MinIO, or another S3-compatible object store with an existing writable bucket
+- Docker, only when building or running the container image
+- An SMTP relay, only when email verification and password-reset delivery are
+  required
 
----
+## Repository Layout
 
-## Build the Image
+| Path | Purpose |
+| --- | --- |
+| `server/server.js` | Express entrypoint |
+| `server/public/` | Static HTML, CSS, and browser JavaScript |
+| `server/routes/` | API route modules |
+| `server/models/` | Mongoose models |
+| `server/services/` | Shared application services |
+| `server/scripts/migration/` | Current-site WordPress migration tools |
+| `api/schema/openapi.yaml` | OpenAPI schema |
+| `docs/` | Developer and operational documentation |
 
-From the root directory of your project, run:
+The authoritative Node manifest and lockfile are in `server/`. Run npm commands
+from that directory.
 
-```bash
-docker build -t CMCEN .
+## Local Setup
+
+1. Install dependencies:
+
+   ```sh
+   cd server
+   npm ci
+   ```
+
+2. Create the local environment file from the repository root:
+
+   ```sh
+   cp .env.example server/.env
+   ```
+
+3. Start MongoDB and create or choose a database. The example configuration
+   uses `mongodb://127.0.0.1:27017/cmcen`.
+
+4. Start MinIO and create the bucket named by `MINIO_BUCKET_NAME`. The configured
+   access key must be able to read, write, list, and delete objects in that
+   bucket. Configure the bucket or CDN for public reads when browser-facing
+   media URLs should be public.
+
+5. Set a strong `JWT_SECRET`, MinIO credentials, and any environment-specific
+   passkey settings in `server/.env`.
+
+6. Start the application:
+
+   ```sh
+   npm run start:dev
+   ```
+
+   The default URL is `http://localhost:3000`.
+
+## Environment
+
+The complete development template is [.env.example](.env.example). Important
+settings include:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `MONGO_URI` | Yes | MongoDB connection string |
+| `JWT_SECRET` | Yes | Signs access, refresh, and temporary authentication tokens |
+| `PORT` | No | HTTP port; defaults to `3000` |
+| `APP_BASE_URL` | Recommended | Absolute application URL used in generated links |
+| `MINIO_ENDPOINT` | Yes | Internal S3-compatible endpoint |
+| `MINIO_ACCESS_KEY` | Yes | Object-storage access key |
+| `MINIO_SECRET_KEY` | Yes | Object-storage secret key |
+| `MINIO_BUCKET_NAME` | Yes | Existing media bucket |
+| `MINIO_PUBLIC_ENDPOINT` | Recommended | Browser-accessible object-storage endpoint |
+| `CDN_PUBLIC_BASE_URL` | No | Preferred public media/CDN base URL |
+| `RP_ID` | Production MFA | WebAuthn relying-party domain |
+| `RP_ORIGIN` | Production MFA | Exact WebAuthn application origin |
+| `CONFIG_TOKEN` | Site config | Additional token for protected site-config operations |
+| `SMTP_HOST` | Email | SMTP relay host |
+| `SMTP_PORT` | Email | SMTP relay port |
+| `MAIL_FROM` | Email | Sender address |
+| `ENABLE_API_DOCS` | No | Set to `true` only in trusted development environments |
+
+Do not commit `server/.env` or real credentials.
+
+## Commands
+
+Run these from `server/`:
+
+```sh
+npm start          # production-style local start
+npm run start:dev  # restart automatically when source files change
+npm run check      # syntax-check server, browser, and migration JavaScript
+npm test           # currently aliases the syntax check
 ```
 
----
+There is not yet a unit or integration test suite. `npm test` verifies syntax,
+not application behavior.
 
-## Run the Container
+## Docker
 
-### Option 1: Using an environment file (Recommended)
+Build from the repository root. The image installs the locked server
+dependencies and does not copy an environment file into the image.
 
-If you have a `.env` file inside the `server/` folder:
-
-```bash
-docker run -p 3000:3000 --env-file ./server/.env -d CMCEN
+```sh
+docker build -t cmcen:local .
+docker run --rm --name cmcen \
+  --env-file server/.env \
+  -p 3000:3000 \
+  cmcen:local
 ```
 
-### Option 2: Using the baked-in `.env`
+MongoDB and MinIO must be reachable from inside the container. When they run on
+the host, use host-accessible endpoints rather than `127.0.0.1` in the container
+environment. The image health check calls `GET /api/data` every 30 seconds.
 
-If your `.env` was included during the build via your `Dockerfile`:
+## Migration Tools
 
-```bash
-docker run -p 3000:3000 -d CMCEN
+The retained migration tool imports retirement messages, Last Post notices,
+media, metadata, and available WordPress comments from the current public site.
+It is dry-run by default:
+
+```sh
+node server/scripts/migration/migrate-current-site-content.js --limit=3
+node server/scripts/migration/migrate-current-site-content.js --apply
 ```
 
----
+Read [docs/MIGRATION INFO.md](docs/MIGRATION%20INFO.md) before using `--apply`.
 
-## Useful Commands
+## Documentation
 
-| Action | Command |
-|---|---|
-| List running containers | `docker ps` |
-| Stop a container | `docker stop <container_id>` |
-| View container logs | `docker logs -f <container_id>` |
+- [API routes](docs/API%20ROUTES.md)
+- [OpenAPI schema](api/schema/openapi.yaml)
+- [Migration guide](docs/MIGRATION%20INFO.md)
+- [Notifications](docs/NOTIFICATIONS.md)
+- [Page builder](docs/PAGE_BUILDER.md)
+- [Role editor](docs/ROLE_EDITOR.md)
+- [Recent changelog](docs/CHANGELOG_LAST_WEEK.md)
 
----
-
-## API Routes
-
-All API routes are mounted from `server/server.js` and use the `/api` prefix. Route module details also live in `server/routes/README.md`.
-
-### Authentication & Accounts
-
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/register` | Public | Create a new subscriber account from registration form fields. |
-| `POST` | `/api/login` | Public | Authenticate with username and password, returning a JWT. |
-| `GET` | `/api/me` | Bearer token | Return the authenticated user's profile and computed permissions. |
-| `GET` | `/api/contributor-check` | Contributor or higher | Confirm the current user has contributor-level access. |
-| `GET` | `/api/admin-check` | Administrator | Confirm administrator-only access. |
-
-### Admin
-
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/admin/users` | Administrator | List users. Optional `query` parameter filters by username or account name. |
-| `PATCH` | `/api/admin/users/:userId/role` | Administrator | Update a user's role using the shared role configuration. |
-
-### Diagnostics
-
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/data` | Public | Public API smoke-test response. |
-| `GET` | `/api/protected_data` | Bearer token | Authenticated API smoke-test response. |
-
-### Uploads
-
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/upload` | Bearer token | Upload one `image` multipart file to object storage and return its generated key and CDN URL. |
-| `GET` | `/api/image/:key` | Bearer token | Generate a 15-minute signed URL for an object-storage image key. |
-
-### Events
-
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/events` | Public | List published current or future events. |
-| `POST` | `/api/events` | Contributor or higher | Create an event submission. |
-| `GET` | `/api/events/review` | Review/publish permission | List reviewable events. Optional `status` query accepts `pending`, `rejected`, or `published`. |
-| `GET` | `/api/events/mine` | Bearer token with draft permission | List events created by the authenticated user. |
-| `GET` | `/api/events/:id/edit` | Owner or reviewer | Load a full event record for editing. |
-| `PATCH` | `/api/events/:id` | Owner or reviewer | Update an event and resubmit or republish based on permissions. |
-| `PATCH` | `/api/events/:eventId/review` | Review/publish permission | Publish or reject a pending event. Body `action` must be `publish` or `reject`. |
-
-### Retirement Messages
-
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/retirement-messages` | Retirement-message submit permission | Submit a retirement message for review. Validates retiree details, submitter details, message language, length, and consent. |
-
----
-
-## Admin Scripts
-
-The `server/scripts/admin.js` script provides utilities for user management, event inspection, authentication, and diagnostics. Run all commands from the `server/` directory:
-
-```bash
-cd server
-```
-
----
-
-### User Management
-
-#### List all users
-```bash
-node admin.js list-users
-```
-Displays a table of all registered users with details.
-
-#### Search users
-```bash
-node admin.js search <query>
-```
-Searches by username, email, or name. **Requires server running on `localhost:3000`.**
-
-**Example:**
-```bash
-node admin.js search johndoe
-```
-
-#### Set user role (direct database)
-```bash
-node admin.js set-role <username> <role> [contentAreas]
-```
-Updates a user's role directly in the database. **No server needed.**
-
-**Arguments:**
-- `<username>` — Username to update
-- `<role>` — One of: `subscriber`, `contributor`, `author`, `editor`, `admin`
-- `[contentAreas]` — *Optional* comma-separated content areas (authors only)
-
-**Examples:**
-```bash
-# Set as author with specific content areas
-node admin.js set-role johndoe author science,health
-
-# Promote to admin (clears content areas automatically)
-node admin.js set-role johndoe admin
-```
-
-#### Promote user (via API)
-```bash
-node admin.js promote <userId> <role>
-```
-Updates a user's role through the API. **Requires server running on `localhost:3000`.**
-
-**Arguments:**
-- `<userId>` — MongoDB user ID
-- `<role>` — New role to assign
-
-**Example:**
-```bash
-node admin.js promote 64a1b2c3d4e5f6g7h8i9j0k1 author
-```
-
----
-
-### Events
-
-#### List all events
-```bash
-# Summary table
-node admin.js list-events
-
-# Full details for every event
-node admin.js list-events --full
-```
-
----
-
-### Auth & Tokens
-
-#### Generate admin JWT token
-```bash
-node admin.js token
-```
-Generates a 24-hour admin JWT token. Useful for testing API calls in Postman or curl.
-
----
-
-### Diagnostics
-
-#### Test database connection
-```bash
-node admin.js test-db
-```
-Confirms MongoDB connection and lists all collections. **No server needed.**
-
-#### Test auth flow
-```bash
-node admin.js test-auth
-```
-Registers a throwaway test user and logs in. **Requires server running on `localhost:3000`.**
-
-#### Test full upload flow
-```bash
-node admin.js test-upload
-```
-Complete smoke test: register → login → upload image. **Requires server running on `localhost:3000`.**
-
----
-
-## Notes
-
-- Ensure your `server.js` loads environment variables via `dotenv`:
-
-  ```js
-  require('dotenv').config();
-  ```
-
-  This should appear at the **top** of your `server.js` file before any other imports.
+When an endpoint changes, update both `docs/API ROUTES.md` and
+`api/schema/openapi.yaml` in the same change.

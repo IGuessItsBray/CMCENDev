@@ -1,0 +1,9 @@
+.git
+.codex
+.env
+server/.env
+node_modules
+server/node_modules
+server/scripts/migration/output
+npm-debug.log*
+.DS_Store

@@ -1,48 +1,45 @@
-Role Editor — Developer documentation
+# Role Editor
 
-Overview
-- Purpose: Admin work-zone UI for viewing/creating/editing/deleting custom roles and assigning them to users.
-- Key client file: /server/public/admin-users.js
-- Permissions config: /server/config/permissions.js (PERMISSION_CATALOG lists keys and descriptions)
-- Built-in roles: /server/config/roles.js (USER_ROLES and ROLE_LEVELS)
+The role editor manages custom roles and user assignments in the administrator
+work zone. The main client is
+[`admin-users.js`](../server/public/admin-users.js). Canonical permissions live
+in [`permissions.js`](../server/config/permissions.js), and built-in role levels
+live in [`roles.js`](../server/config/roles.js).
 
-Client flows
-- Initialization: initializeAdminUsersPage() verifies current admin via /api/me and then loads users or roles depending on the active view.
-- Loading roles: loadAdminRoles() GET /api/admin/roles -> sets customRoles and permissionCatalog.
-- Create role: createAdminRole(payload) POST /api/admin/roles with payload { name, permissions, ... }.
-- Save role: saveAdminRole(roleId, payload) PATCH /api/admin/roles/:id.
-- Delete role: deleteAdminRole(role) DELETE /api/admin/roles/:id (client confirms before request).
-- Role selection: selectAdminRole(roleId) updates selectedRoleId in state and re-renders view.
+## Access
 
-Data model (client-side expectations)
-- Role object fields (from API):
-  - _id: ObjectId
-  - name: string
-  - permissions: [string] (permission keys from PERMISSION_CATALOG)
-  - createdAt/updatedAt metadata
+Role listing and changes require the corresponding role-management permission.
+User reads and edits are separately protected by user-management permissions.
+The server remains authoritative; hiding an action in the browser is not an
+access-control boundary.
 
-Permissions & access
-- Permission keys are canonical strings (e.g., pages.manage, users.manage). See /server/config/permissions.js for full catalog and legacy mapping.
-- getUserPermissions(user) merges built-in flags based on role level and custom role permissions; developers should use this server-side and client-side for UI gating.
+## Role Routes
 
-Assigning roles to users
-- Server returns customRoles and users; syncAssignedCustomRoles(users, customRoles) maps user.customRoleIds to role objects for quick rendering.
-- Saving user: saveAdminUser(userId, payload) PATCH /api/admin/users/:id.
+- `GET /api/admin/roles` lists custom roles and the permission catalog.
+- `POST /api/admin/roles` creates a role.
+- `PATCH /api/admin/roles/:roleId` updates its name and permissions.
+- `DELETE /api/admin/roles/:roleId` removes it and unassigns it from users.
 
-Developer notes
-- To add a new permission: add to PERMISSION_CATALOG and update any UI lists that render permissionCatalog.
-- To change default role hierarchy, edit /server/config/roles.js ROLE_LEVELS; getBuiltInPermissionFlags uses those levels to compute legacy flags.
-- Be careful: deleting a role removes it from all assigned users client-side; server should enforce the same.
+Custom role records contain an ObjectId, name, canonical permission keys, and
+timestamps. Add new permissions to `PERMISSION_CATALOG` before using them in a
+role or route guard.
 
-API endpoints (admin)
-- GET /api/admin/roles
-- POST /api/admin/roles
-- PATCH /api/admin/roles/:id
-- DELETE /api/admin/roles/:id
-- GET /api/admin/users and GET /api/admin/users/:id
-- PATCH /api/admin/users/:id
-- PATCH /api/admin/users/:id/developer (promote): only existing developers can promote, and only administrator accounts can be promoted to developer. Subscribers must be promoted to administrator first.
+## User Assignment
 
-UI components
-- AdminUsersView (client) orchestrates tabs, actions and binds to state/actions (createRole, saveRole, deleteRole, selectRole).
-- Use adminApiJson() wrapper to automatically include token and standard error/redirect behavior.
+- `GET /api/admin/users` lists user summaries.
+- `GET /api/admin/users/:userId` returns editable detail.
+- `PATCH /api/admin/users/:userId` updates built-in role, custom roles, and
+  content areas.
+- `PATCH /api/admin/users/:userId/developer` promotes an administrator to
+  developer after explicit `DEVELOPER` confirmation. Only an existing developer
+  may perform this operation.
+
+The client maps `customRoleIds` to loaded role records for display, but the
+server validates assignments and computes effective permissions.
+
+## Maintenance
+
+When adding a permission, update the permission catalog, route middleware,
+administrator labels, role UI, API documentation, OpenAPI schema, and audit
+logging as applicable. When changing role hierarchy, review every use of
+`ROLE_LEVELS` and the derived built-in permission flags.

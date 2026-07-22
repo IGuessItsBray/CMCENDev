@@ -93,7 +93,7 @@ Mounted at `/api/analytics`.
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
-| `GET` | `/api/analytics` | Authenticated + `canViewAnalytics` (`analytics.view`) | Return visits, pages, sources, devices, browsers, countries, roles, and recent visits. Query: `range=7d\|30d\|90d\|all`. |
+| `GET` | `/api/analytics` | Authenticated + `canViewAnalytics` (`analytics.view`) | Return visit totals, unique visitor totals, pages, sources, devices, browsers, countries, unique visitors by role, and recent visits. Query: `range=7d\|30d\|90d\|all`. |
 | `POST` | `/api/analytics/visit` | Public with optional auth | Record a page visit. Body includes `path`, `fullPath`, `title`, `referrer`, `locale`, `timeZone`. Always returns `204`. |
 
 ## Audit Log
@@ -102,7 +102,8 @@ Mounted at `/api/audit-logs`.
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
-| `GET` | `/api/audit-logs` | Authenticated + `canViewAuditLog` (`audit.view`) | List audit entries. Query: `action`, `targetType`, `user`. |
+| `GET` | `/api/audit-logs` | Authenticated + `canViewAuditLog` (`audit.view`) | List audit entries. Query: `action`, `targetType`, `user`, `startDate`, `endDate`. |
+| `GET` | `/api/audit-logs/export.csv` | Authenticated + `canViewAuditLog` (`audit.view`) | Export matching audit entries as CSV. Query: `action`, `targetType`, `user`, `startDate`, `endDate`. |
 
 ## Admin Users, Roles, Media, Moderation
 
@@ -115,13 +116,14 @@ Mounted at `/api/admin`.
 | `POST` | `/api/admin/roles` | Authenticated + `canManageRoles` | Create custom role. |
 | `PATCH` | `/api/admin/roles/:roleId` | Authenticated + `canManageRoles` | Update custom role. |
 | `DELETE` | `/api/admin/roles/:roleId` | Authenticated + `canManageRoles` | Delete custom role and remove it from users. |
-| `GET` | `/api/admin/media` | Authenticated + `canViewMediaLibrary` | List media assets. Query: `limit`, `cursor`. |
+| `GET` | `/api/admin/media` | Authenticated + `canViewMediaLibrary` | List media assets with linked event, retirement, and Last Post usage. Query: `limit`, `cursor`, `sort=newest\|oldest\|name\|size\|orphaned`. |
+| `POST` | `/api/admin/media/bulk-delete` | Authenticated + `canDeleteMedia` | Delete selected unattached media assets by JSON body `keys`; attached assets are skipped and reported. |
 | `DELETE` | `/api/admin/media/:key` | Authenticated + `canDeleteMedia` | Delete unattached media by key. |
-| `GET` | `/api/admin/users` | Authenticated + `canReadUsers` | List users. Query: `query`. |
+| `GET` | `/api/admin/users` | Authenticated + `canReadUsers` | List lightweight user rows. Query: `query`, `limit` from 1-100. Post summaries and editable detail load from the user detail endpoint. |
 | `GET` | `/api/admin/users/:userId` | Authenticated + `canReadUsers` | Get one user admin detail. |
 | `PATCH` | `/api/admin/users/:userId` | Authenticated + `canManageUsers` | Update role, custom roles, and content areas. |
 | `PATCH` | `/api/admin/users/:userId/role` | Authenticated + `canManageUsers` | Update built-in role only. |
-| `PATCH` | `/api/admin/users/:userId/developer` | Authenticated + developer-level flow | Promote a user to developer after explicit confirmation. |
+| `PATCH` | `/api/admin/users/:userId/developer` | Authenticated + `canManageUsers` + current user must be `developer` | Promote an `administrator` account to developer after explicit `DEVELOPER` confirmation. Subscriber and other non-administrator accounts cannot be promoted directly. |
 | `DELETE` | `/api/admin/events/:eventId` | Authenticated + `canDeleteContent` | Delete any event. |
 | `DELETE` | `/api/admin/retirement-messages/:messageId` | Authenticated + `canDeleteContent` | Delete any retirement message. |
 | `DELETE` | `/api/admin/retirement-comments/:commentId` | Authenticated + `canDeleteContent` | Delete any retirement comment. |
@@ -134,9 +136,9 @@ Mounted at `/api/admin/site-config`.
 | --- | --- | --- | --- |
 | `POST` | `/api/admin/site-config/access` | Authenticated + `canAccessSiteConfig` | Audit/log site-config access attempt. |
 | `POST` | `/api/admin/site-config/verify` | Authenticated + `canAccessSiteConfig` + token | Verify token gate for config access. |
-| `GET` | `/api/admin/site-config` | Authenticated + `canAccessSiteConfig` + verified token | Read editable config values. |
-| `PATCH` | `/api/admin/site-config` | Authenticated + `canManageSiteConfig` + verified token | Update editable config values. |
-| `DELETE` | `/api/admin/site-config/analytics` | Authenticated + `canManageSiteConfig` + verified token + development only | Purge analytics history. |
+| `GET` | `/api/admin/site-config` | Authenticated + `canAccessSiteConfig` + verified token | Read available protected site operations. |
+| `POST` | `/api/admin/site-config/migrations/:migrationKey` | Authenticated + `canManageSiteConfig` + verified token | Run `retirement`, `comments`, or `lastPost` migration in `dry-run` or `apply` mode with an optional `limit` from 1-1000. Streams newline-delimited JSON progress events and writes audit metadata. |
+| `DELETE` | `/api/admin/site-config/analytics` | Authenticated + `canManageSiteConfig` + verified token | Purge analytics history. |
 
 ## Uploads and Media
 
@@ -185,6 +187,7 @@ Defined in `routes/pages.js`, mounted at root.
 | --- | --- | --- | --- |
 | `GET` | `/pages/:slug` | Public | Serve custom page shell. |
 | `GET` | `/api/navigation` | Public with optional auth | Return visible dynamic navigation. |
+| `GET` | `/api/sitemap` | Public with optional auth | Return generated sitemap sections and links from public HTML files plus published custom pages. Excludes Site Config and non-public utility/admin shells. |
 | `GET` | `/api/pages/:slug` | Public with optional auth | Return page content if access rules allow it. |
 | `GET` | `/api/admin/pages/:pageId/preview` | Authenticated + `canManagePages` | Preview page by ID regardless of publication status. |
 | `GET` | `/api/admin/pages` | Authenticated + `canManagePages` | List admin page summaries plus navigation/admin metadata. |

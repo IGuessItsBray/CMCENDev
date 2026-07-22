@@ -87,6 +87,14 @@ const args = parseArgs();
 const apply = Boolean(args.apply);
 const limit = args.limit ? Number(args.limit) : Infinity;
 const categorySlug = String(args.category || DEFAULT_CATEGORY_SLUG);
+const contentMode = ['all', 'retirements', 'comments'].includes(String(args.content || 'all'))
+  ? String(args.content || 'all')
+  : 'all';
+const shouldImportRetirements = contentMode === 'all' || contentMode === 'retirements';
+const shouldImportComments = contentMode === 'all' || contentMode === 'comments';
+const postScanLabel = contentMode === 'comments'
+  ? 'retirement parent post'
+  : 'retirement post';
 const outputDir = resolvePath(args.output, path.join(__dirname, 'output'));
 const manifestPath = resolvePath(
   args.manifest,
@@ -333,6 +341,7 @@ function getTotalPages(response) {
 }
 
 async function getCategoryId() {
+  console.log(`Looking up WordPress category "${categorySlug}"`);
   const categories = await fetchJson(
     `${WORDPRESS_BASE_URL}/wp-json/wp/v2/categories?slug=${encodeURIComponent(categorySlug)}`
   );
@@ -350,6 +359,10 @@ async function getLatestPosts(categoryId) {
   let page = 1;
   let totalPages = 1;
 
+  console.log(contentMode === 'comments'
+    ? `Scanning retirement posts in category ${categoryId} so comments can be fetched by parent post`
+    : `Fetching WordPress retirement posts for category ${categoryId}`);
+
   while (page <= totalPages && posts.length < limit) {
     const perPage = Number.isFinite(limit)
       ? Math.min(WORDPRESS_PAGE_SIZE, limit - posts.length)
@@ -361,7 +374,7 @@ async function getLatestPosts(categoryId) {
 
     totalPages = getTotalPages(response);
     posts.push(...pagePosts);
-    console.log(`Fetched retirement post page ${page}/${totalPages} (${posts.length} collected)`);
+    console.log(`Fetched ${postScanLabel} page ${page}/${totalPages} (${posts.length} collected)`);
 
     if (pagePosts.length === 0) {
       break;
@@ -378,6 +391,8 @@ async function getPostComments(postId) {
   let page = 1;
   let totalPages = 1;
 
+  console.log(`Fetching approved comments for WordPress post ${postId}`);
+
   while (page <= totalPages) {
     const response = await fetchJsonResponse(
       `${WORDPRESS_BASE_URL}/wp-json/wp/v2/comments?post=${postId}&per_page=${WORDPRESS_PAGE_SIZE}&page=${page}&status=approve`
@@ -386,6 +401,7 @@ async function getPostComments(postId) {
 
     totalPages = getTotalPages(response);
     comments.push(...pageComments);
+    console.log(`Fetched comment page ${page}/${totalPages} for post ${postId} (${comments.length} collected)`);
 
     if (pageComments.length === 0) {
       break;
@@ -458,9 +474,11 @@ async function uploadImageForPost(post) {
   const sourceUrl = getImageUrl(post);
 
   if (!sourceUrl) {
+    console.log(`No source image found for post ${post.id}`);
     return null;
   }
 
+  console.log(`Downloading source image for post ${post.id}: ${sourceUrl}`);
   const response = await axios.get(sourceUrl, {
     responseType: 'arraybuffer',
     timeout: 30000,
@@ -476,6 +494,7 @@ async function uploadImageForPost(post) {
   const metadata = await sharp(buffer).metadata();
   const variants = {};
 
+  console.log(`Uploading original image for post ${post.id}`);
   await putObject({
     key: originalKey,
     body: buffer,
@@ -508,6 +527,7 @@ async function uploadImageForPost(post) {
       size: variantBuffer.info.size,
       mimeType: 'image/webp'
     };
+    console.log(`Uploaded ${variant.name} image variant for post ${post.id}`);
   }));
 
   const title = getPostTitle(post);
@@ -531,6 +551,7 @@ async function uploadImageForPost(post) {
     { $set: assetDocument },
     { new: true, upsert: true, runValidators: true }
   );
+  console.log(`Upserted media asset for post ${post.id}: ${originalKey}`);
 
   return {
     sourceUrl,
@@ -550,7 +571,7 @@ function summarize(post, document, mediaResult) {
     sourceImageUrl: mediaResult?.sourceUrl || getImageUrl(post),
     mediaAssetKey: mediaResult?.asset?.key || '',
     photoUrl: document.photoUrl,
-    imported: apply,
+    imported: apply && shouldImportRetirements,
     commentsImported: 0,
     comments: []
   };
@@ -571,9 +592,11 @@ async function importComments({ comments, retirementMessage }) {
   const importedComments = [];
 
   for (const comment of comments) {
+    console.log(`Processing WordPress comment ${comment.id} for post ${comment.post}`);
     const body = getCommentBody(comment);
 
     if (body.length < 2) {
+      console.log(`Skipping comment ${comment.id}: body too short`);
       continue;
     }
 
@@ -610,6 +633,7 @@ async function importComments({ comments, retirementMessage }) {
     );
 
     importedComments.push(importedComment);
+    console.log(`Imported comment ${comment.id}`);
   }
 
   return importedComments;
@@ -620,7 +644,7 @@ async function main() {
     throw new Error('MONGO_URI is not configured.');
   }
 
-  if (apply && !process.env.MINIO_BUCKET_NAME) {
+  if (apply && shouldImportRetirements && !process.env.MINIO_BUCKET_NAME) {
     throw new Error('MINIO_BUCKET_NAME is not configured.');
   }
 
@@ -629,17 +653,26 @@ async function main() {
   const results = [];
   let legacyImportUser = null;
 
+  console.log(contentMode === 'comments'
+    ? `Collected ${posts.length} retirement parent posts to scan for approved comments`
+    : `Collected ${posts.length} retirement posts for ${contentMode} mode`);
+
   if (apply) {
+    console.log('Connecting to MongoDB');
     await mongoose.connect(process.env.MONGO_URI);
     legacyImportUser = await getLegacyImportUser();
+    console.log('Legacy import user is ready');
   }
 
   for (const post of posts) {
     let mediaResult = null;
     let retirementMessage = null;
+    console.log(contentMode === 'comments'
+      ? `Scanning comments for retirement parent post ${post.id}: ${getPostTitle(post)}`
+      : `Processing WordPress retirement post ${post.id}: ${getPostTitle(post)}`);
     const comments = await getPostComments(post.id);
 
-    if (apply) {
+    if (apply && shouldImportRetirements) {
       mediaResult = await uploadImageForPost(post);
     }
 
@@ -656,7 +689,8 @@ async function main() {
       continue;
     }
 
-    if (apply) {
+    if (apply && shouldImportRetirements) {
+      console.log(`Upserting retirement message for WordPress post ${post.id}`);
       retirementMessage = await RetirementMessage.findOneAndUpdate(
         {
           'legacy.source': 'cmcen-live-site',
@@ -665,12 +699,25 @@ async function main() {
         { $set: document },
         { new: true, upsert: true, runValidators: true }
       );
+    } else if (apply && shouldImportComments) {
+      console.log(`Finding migrated retirement message for WordPress post ${post.id}`);
+      retirementMessage = await RetirementMessage.findOne({
+        'legacy.source': 'cmcen-live-site',
+        'legacy.wordpressPostId': post.id
+      });
     }
 
     const summary = summarize(post, document, mediaResult);
     summary.comments = summarizeComments(comments);
 
-    if (apply) {
+    if (apply && shouldImportComments) {
+      if (!retirementMessage) {
+        summary.error = 'Retirement message must be migrated before importing comments.';
+        results.push(summary);
+        console.log(`Skipping comments for ${post.id}: retirement message not found`);
+        continue;
+      }
+
       const importedComments = await importComments({
         comments,
         retirementMessage
@@ -679,25 +726,33 @@ async function main() {
     }
 
     results.push(summary);
-    console.log(`${apply ? 'Imported' : 'Would import'} ${post.id}: ${document.legacy.title}`);
-    console.log(`${apply ? 'Imported' : 'Would import'} ${summary.comments.length} comments for ${post.id}`);
+    if (shouldImportRetirements) {
+      console.log(`${apply ? 'Imported' : 'Would import'} ${post.id}: ${document.legacy.title}`);
+    }
+
+    if (shouldImportComments) {
+      console.log(`${apply ? 'Imported' : 'Would import'} ${summary.comments.length} comments for ${post.id}`);
+    }
   }
 
   if (apply) {
+    console.log('Disconnecting from MongoDB');
     await mongoose.disconnect();
   }
 
+  console.log(`Writing manifest: ${manifestPath}`);
   writeJson(manifestPath, {
     source: `${WORDPRESS_BASE_URL}/retirements/`,
     categoryId,
     limit: Number.isFinite(limit) ? limit : 'all',
+    contentMode,
     apply,
     scrapedAt: new Date().toISOString(),
     results
   });
 
-  console.log(`${apply ? 'Imported' : 'Would import'} ${results.filter(result => !result.error).length} retirement messages.`);
-  console.log(`${apply ? 'Imported' : 'Would import'} ${results.reduce((sum, result) => sum + result.comments.length, 0)} retirement comments.`);
+  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportRetirements ? results.filter(result => !result.error).length : 0} retirement messages.`);
+  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportComments ? results.reduce((sum, result) => sum + result.comments.length, 0) : 0} retirement comments.`);
   console.log(`Wrote manifest: ${manifestPath}`);
 }
 

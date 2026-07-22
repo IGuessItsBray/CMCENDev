@@ -814,15 +814,20 @@ async function main() {
     const progressLabel = `${index + 1}/${posts.length}`;
     let mediaResult = null;
     let retirementMessage = null;
+    let stage = 'fetch-comments';
+
+    try {
     console.log(contentMode === 'comments'
       ? `[${progressLabel}] Scanning comments for retirement parent post ${post.id}: ${getPostTitle(post)}`
       : `[${progressLabel}] Processing WordPress retirement message ${post.id}: ${getPostTitle(post)}`);
     const comments = await getPostComments(post.id);
 
     if (apply && shouldImportRetirements) {
+      stage = 'upload-image';
       mediaResult = await uploadImageForPost(post);
     }
 
+    stage = 'build-message';
     const document = toPostDocument(post, mediaResult, legacyImportUser);
 
     if (document.message.length < 100) {
@@ -837,6 +842,7 @@ async function main() {
     }
 
     if (apply && shouldImportRetirements) {
+      stage = 'upsert-message';
       console.log(`[${progressLabel}] Upserting retirement message for WordPress post ${post.id}`);
       retirementMessage = await RetirementMessage.findOneAndUpdate(
         {
@@ -865,6 +871,7 @@ async function main() {
         continue;
       }
 
+      stage = 'import-comments';
       const importedComments = await importComments({
         comments,
         retirementMessage
@@ -879,6 +886,18 @@ async function main() {
 
     if (shouldImportComments) {
       console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} ${summary.comments.length} retirement comments for ${post.id}`);
+    }
+    } catch (error) {
+      const errorMessage = error?.message || String(error);
+      results.push({
+        wordpressPostId: post.id,
+        title: getPostTitle(post),
+        imported: Boolean(retirementMessage),
+        skipped: true,
+        failedStage: stage,
+        error: errorMessage
+      });
+      console.error(`[${progressLabel}] Skipping retirement message ${post.id} after ${stage} failed: ${errorMessage}`);
     }
   }
 
@@ -900,7 +919,7 @@ async function main() {
   });
 
   console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportRetirements ? results.filter(result => !result.error).length : 0} retirement messages.`);
-  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportComments ? results.reduce((sum, result) => sum + result.comments.length, 0) : 0} retirement comments.`);
+  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportComments ? results.reduce((sum, result) => sum + (result.comments?.length || 0), 0) : 0} retirement comments.`);
   console.log(`Wrote manifest: ${manifestPath}`);
 }
 

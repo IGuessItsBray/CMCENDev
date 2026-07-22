@@ -590,7 +590,7 @@ async function uploadImageForPost(post) {
   const sourceUrl = getImageUrl(post);
   const sourceImage = await downloadSourceImage(sourceUrl, {
     userAgent: 'CMCEN migration script',
-    validateImage: buffer => sharp(buffer).metadata()
+    validateImage: buffer => sharp(buffer).rotate().raw().toBuffer()
   });
 
   if (sourceImage.usedFallback) {

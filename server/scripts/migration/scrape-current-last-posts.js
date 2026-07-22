@@ -794,7 +794,7 @@ async function putObject({ key, body, contentType }) {
 async function uploadImageForPost(post) {
   const sourceUrl = getImageUrl(post);
   const sourceImage = await downloadSourceImage(sourceUrl, {
-    validateImage: buffer => sharp(buffer).metadata()
+    validateImage: buffer => sharp(buffer).rotate().raw().toBuffer()
   });
 
   if (sourceImage.usedFallback) {

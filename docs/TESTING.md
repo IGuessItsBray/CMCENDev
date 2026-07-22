@@ -11,13 +11,15 @@ Run commands from `server/`:
 
 ```sh
 npm test
+npm run test:unit
+npm run test:contract
 npm run test:integration
 npm run test:integration:watch
 ```
 
-`npm test` is the normal local and CI command. It runs JavaScript syntax checks
-before integration tests. The integration-only commands are useful while
-working on API behavior.
+`npm test` is the normal local and CI command. It runs JavaScript syntax checks,
+unit tests, OpenAPI contract checks, and Mongo-backed integration tests. The
+individual commands are useful while working on one layer.
 
 The first Mongo-backed run may download a compatible `mongod` binary. Subsequent
 runs use the local cache. The test process needs permission to start the binary
@@ -25,17 +27,28 @@ and bind a loopback port.
 
 ## Current Coverage
 
-The initial suite covers:
+The suite covers:
 
 - public health response and controlled API 404 behavior
 - invalid credentials and malformed bearer tokens
 - login, safe profile serialization, refresh, logout, and session revocation
-- subscriber denial on protected audit routes
-- audit action/target filtering, CSV escaping, and export audit records
+- built-in and custom-role authorization across audit, content review, page,
+  and developer-only configuration routes
+- rejection of otherwise valid sessions after the user is deleted
+- audit action, target, user, and date-range filtering; CSV escaping; IPv4 and
+  IPv6 tracking; and export audit records
 - retirement submission permissions and pending status
 - retirement review permissions, bilingual publication, rejection reasons,
   public visibility, and publication audit records
 - Last Post submission, bilingual review, publication, and public listing
+- bilingual event submission, review, publication, and public retrieval
+- bilingual page creation and publication permissions
+- retirement comment moderation and author publication behavior
+- TOTP setup and verification, including audit-log secret redaction
+- image upload processing, generated variants, media metadata, orphan deletion,
+  attached-media protection, and mixed-result bulk deletion
+- uniqueness and repeated-transition integrity checks
+- OpenAPI parsing, operation IDs, responses, and critical route coverage
 
 The suite exposed and now guards against a retirement publication failure caused
 by an undefined localization helper.
@@ -44,8 +57,12 @@ by an undefined localization helper.
 
 ```text
 server/test/
+  contract/
+    openapi.test.js
   integration/
     api.test.js
+  unit/
+    media-url.test.js
 ```
 
 `server.js` exports `app` for Supertest and starts MongoDB/listening only when it
@@ -64,26 +81,22 @@ write endpoint, verify the response status, stored document, linked documents,
 and expected audit record. For protected endpoints, include at least one allowed
 role and one denied role.
 
-Keep fixtures explicit and deterministic. Do not call the public WordPress site
-from the standard integration suite; migration tests should use checked-in HTML
-and REST fixtures so results do not change when the old site changes.
+Keep fixtures explicit and deterministic. Do not call public or production
+services from the standard suite.
 
 ## Remaining Layers
 
-The following are intentionally not part of the first suite:
+The following remain intentionally separate from the standard suite:
 
-- MinIO object and image-variant integration tests
-- event and page-builder lifecycle coverage
-- retirement comment lifecycle coverage
-- MFA/WebAuthn and email delivery flows
-- migration fixture and idempotency tests
+- a real disposable MinIO process and partial-upload cleanup failures
+- complete WebAuthn ceremonies, password reset, and email delivery
 - browser journeys and responsive visual checks
 
-MinIO tests should run against a disposable S3-compatible service, preferably a
-Testcontainers MinIO instance. They should verify original objects, generated
-variants, `MediaAsset` metadata, attached-media protection, bulk deletion, and
-cleanup after partial failures. Keep them in a separately runnable suite until
-Docker is a documented CI dependency.
+Current media integration tests exercise multipart uploads, image processing,
+`MediaAsset` persistence, attachment checks, and the exact S3 commands through
+a test double. A future storage suite should run the same flows against a
+disposable S3-compatible service, preferably a Testcontainers MinIO instance.
+Keep it separately runnable until Docker is a documented CI dependency.
 
 Browser end-to-end tests should be limited to critical wiring such as login,
 MFA, submission/review, media management, page publication, audit CSV download,
@@ -98,5 +111,6 @@ npm ci
 npm test
 ```
 
-Do not inject production credentials. The Mongo-backed suite supplies its own
-JWT and object-storage placeholders and does not connect to configured MinIO.
+Do not inject production credentials. The suite supplies its own JWT and
+object-storage placeholders, suppresses outbound email, and does not connect to
+configured MinIO.

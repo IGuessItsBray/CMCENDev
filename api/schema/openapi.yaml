@@ -166,6 +166,24 @@ paths:
       responses:
         "200":
           description: Login result; may require MFA.
+  /api/session/refresh:
+    post:
+      tags: [Auth]
+      summary: Exchange a valid refresh-token cookie for a new access token.
+      security: []
+      responses:
+        "200":
+          description: Refreshed access token.
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/session/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke the refresh session and clear its cookie.
+      security: []
+      responses:
+        "204":
+          description: Session revoked.
   /api/email-verification/confirm:
     post:
       tags: [Auth]

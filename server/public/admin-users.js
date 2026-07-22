@@ -7,10 +7,13 @@ let adminWorkZoneState = {
     ? new URLSearchParams(window.location.search).get("view")
     : "users",
   currentUserId: "",
+  currentUserPermissions: {},
   users: [],
   roles: [],
   customRoles: [],
   permissionCatalog: [],
+  userListLimit: 50,
+  userListHasMore: false,
   selectedRoleId: "",
   contentAreas: [],
   selectedUserId: "",
@@ -22,6 +25,7 @@ let adminWorkZoneState = {
   mediaBucket: "",
   mediaIsLoading: false,
   mediaSort: "newest",
+  selectedMediaKeys: [],
   mediaUploadQueue: [],
   mediaIsUploading: false,
   isLoading: false,
@@ -29,6 +33,7 @@ let adminWorkZoneState = {
   searchQuery: ""
 };
 let adminSearchTimeout = 0;
+let adminUserSearchRequestId = 0;
 
 const adminUsersView = CMCENAdminUsersView.create({
   root: document.getElementById("adminWorkZoneContent"),
@@ -37,7 +42,13 @@ const adminUsersView = CMCENAdminUsersView.create({
     loadUserDetail: loadAdminUserDetail,
     searchUsers: scheduleAdminUserSearch,
     refreshUsers: () => loadAdminUsers(),
+    showMoreUsers: () => loadAdminUsers({
+      limit: Math.min((adminWorkZoneState.userListLimit || 50) + 50, 100),
+      preserveSelection: true
+    }),
+    exportUsers: exportAdminUsers,
     saveUser: saveAdminUser,
+    resetMfa: resetAdminUserMfa,
     promoteDeveloper: promoteAdminUserToDeveloper,
     selectRole: selectAdminRole,
     createRole: createAdminRole,
@@ -53,8 +64,12 @@ const adminUsersView = CMCENAdminUsersView.create({
       setAdminWorkZoneState({ mediaSort: sort || "newest" });
       loadAdminMedia({ sort: sort || "newest" });
     },
+    toggleMediaSelection: toggleAdminMediaSelection,
+    selectVisibleMedia: selectVisibleAdminMedia,
+    clearMediaSelection: clearAdminMediaSelection,
     uploadMediaFiles: uploadAdminMediaFiles,
-    deleteMedia: deleteAdminMedia
+    deleteMedia: deleteAdminMedia,
+    deleteSelectedMedia: deleteSelectedAdminMedia
   }
 });
 
@@ -75,6 +90,55 @@ async function adminApiJson(path, options = {}) {
   }
 }
 
+async function adminApiBlob(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${adminToken}`
+    }
+  });
+
+  if (response.status === 401) {
+    window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+    throw new Error(translate("admin_verify_error"));
+  }
+
+  if (response.status === 403) {
+    window.location.href = "/dashboard";
+    throw new Error(translate("admin_verify_error"));
+  }
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || options.errorMessage || translate("admin_verify_error"));
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: getDownloadFilename(response.headers.get("Content-Disposition"))
+  };
+}
+
+function getDownloadFilename(contentDisposition) {
+  const header = String(contentDisposition || "");
+  const match = header.match(/filename="?([^"]+)"?/iu);
+
+  return match?.[1] || "";
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function setAdminStatus(message, state = "") {
   CMCENUtils.setStatusMessage(adminWorkZoneStatus, message, state);
 }
@@ -90,32 +154,51 @@ function showAdminWorkZone() {
   adminWorkZone.hidden = false;
 }
 
-function setAdminWorkZoneState(nextState) {
+function setAdminWorkZoneState(nextState, { render = true } = {}) {
   adminWorkZoneState = {
     ...adminWorkZoneState,
     ...nextState
   };
-  adminUsersView.render();
+
+  if (render) {
+    adminUsersView.render();
+  }
 }
 
 function scheduleAdminUserSearch(value) {
+  const query = String(value || "");
+  const requestId = adminUserSearchRequestId + 1;
+
+  adminUserSearchRequestId = requestId;
+
   window.clearTimeout(adminSearchTimeout);
-  adminUsersView.restoreSearchFocus();
+  setAdminWorkZoneState({
+    searchQuery: query
+  }, {
+    render: false
+  });
+
   adminSearchTimeout = window.setTimeout(() => {
     loadAdminUsers({
-      query: value,
+      query,
       preserveSelection: false,
-      restoreSearchFocus: true
+      restoreSearchFocus: true,
+      suppressLoadingRender: true,
+      searchRequestId: requestId
     });
   }, 250);
 }
 
 async function loadAdminUsers({
   query = adminWorkZoneState.searchQuery,
+  limit = adminWorkZoneState.userListLimit || 50,
   preserveSelection = true,
-  restoreSearchFocus = false
+  restoreSearchFocus = false,
+  suppressLoadingRender = false,
+  searchRequestId = null
 } = {}) {
   const cleanQuery = String(query || "").trim();
+  const requestId = searchRequestId || adminUserSearchRequestId;
 
   if (restoreSearchFocus) {
     adminUsersView.restoreSearchFocus();
@@ -125,6 +208,8 @@ async function loadAdminUsers({
     isLoading: true,
     message: "",
     searchQuery: cleanQuery
+  }, {
+    render: !suppressLoadingRender
   });
 
   try {
@@ -133,6 +218,7 @@ async function loadAdminUsers({
     if (cleanQuery) {
       params.set("query", cleanQuery);
     }
+    params.set("limit", String(limit));
 
     const requestUrl = params.toString()
       ? `/api/admin/users?${params}`
@@ -142,10 +228,14 @@ async function loadAdminUsers({
       errorMessage: translate("admin_users_load_error")
     });
 
+    if (restoreSearchFocus && requestId !== adminUserSearchRequestId) {
+      return;
+    }
+
     const selectedUserId = preserveSelection &&
       data.users?.some(user => String(user._id) === adminWorkZoneState.selectedUserId)
       ? adminWorkZoneState.selectedUserId
-      : data.users?.[0]?._id || "";
+      : "";
     const selectionChanged =
       selectedUserId !== adminWorkZoneState.selectedUserId;
 
@@ -155,6 +245,8 @@ async function loadAdminUsers({
 
     setAdminWorkZoneState({
       users: data.users || [],
+      userListLimit: data.limit || limit,
+      userListHasMore: Boolean(data.hasMore),
       roles: data.roles || [],
       customRoles: data.customRoles || [],
       permissionCatalog: data.permissionCatalog || [],
@@ -175,12 +267,16 @@ async function loadAdminUsers({
     });
     showAdminWorkZone();
 
-    if (selectedUserId) {
+    if (selectedUserId && selectionChanged) {
       await loadAdminUserDetail(selectedUserId, {
         restoreSearchFocus
       });
     }
   } catch (error) {
+    if (restoreSearchFocus && requestId !== adminUserSearchRequestId) {
+      return;
+    }
+
     showAdminWorkZone();
 
     if (restoreSearchFocus) {
@@ -249,14 +345,19 @@ async function loadAdminMedia({
       errorMessage: translate("admin_media_load_error")
     });
 
+    const nextMedia = append
+      ? [...adminWorkZoneState.media, ...(data.media || [])]
+      : data.media || [];
+    const visibleKeys = new Set(nextMedia.map(item => item.key));
+
     setAdminWorkZoneState({
-      media: append
-        ? [...adminWorkZoneState.media, ...(data.media || [])]
-        : data.media || [],
+      media: nextMedia,
       mediaNextCursor: data.nextCursor || "",
       mediaIsTruncated: Boolean(data.isTruncated),
       mediaBucket: data.bucket || "",
       mediaSort: data.sort || sort,
+      selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || [])
+        .filter(key => visibleKeys.has(key)),
       mediaIsLoading: false
     });
     showAdminWorkZone();
@@ -302,6 +403,8 @@ async function deleteAdminMedia(mediaItem) {
 
     setAdminWorkZoneState({
       media: adminWorkZoneState.media.filter(item => item.key !== mediaItem.key),
+      selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || [])
+        .filter(key => key !== mediaItem.key),
       message: data.message || translate("admin_media_delete_success")
     });
   } catch (error) {
@@ -317,6 +420,108 @@ async function deleteAdminMedia(mediaItem) {
 
     setAdminWorkZoneState({
       message: attachedCount ? fallback : error.message || fallback
+    });
+  }
+}
+
+function toggleAdminMediaSelection(mediaItem, selected) {
+  const key = mediaItem?.key;
+  if (!key) return;
+
+  const selectedKeys = new Set(adminWorkZoneState.selectedMediaKeys || []);
+
+  if (selected) {
+    selectedKeys.add(key);
+  } else {
+    selectedKeys.delete(key);
+  }
+
+  setAdminWorkZoneState({
+    selectedMediaKeys: [...selectedKeys]
+  });
+}
+
+function selectVisibleAdminMedia() {
+  setAdminWorkZoneState({
+    selectedMediaKeys: [
+      ...new Set([
+        ...(adminWorkZoneState.selectedMediaKeys || []),
+        ...adminWorkZoneState.media.map(item => item.key).filter(Boolean)
+      ])
+    ]
+  });
+}
+
+function clearAdminMediaSelection() {
+  setAdminWorkZoneState({
+    selectedMediaKeys: []
+  });
+}
+
+async function deleteSelectedAdminMedia() {
+  const selectedKeys = new Set(adminWorkZoneState.selectedMediaKeys || []);
+  const selectedItems = adminWorkZoneState.media.filter(item => selectedKeys.has(item.key));
+  const removableItems = selectedItems.filter(item => !Number(item.attachedPostCount || 0));
+
+  if (!removableItems.length) {
+    setAdminWorkZoneState({
+      message: translate("admin_media_bulk_delete_none")
+    });
+    return;
+  }
+
+  if (
+    !window.confirm(
+      translate("admin_media_bulk_delete_confirm", {
+        count: removableItems.length
+      })
+    )
+  ) {
+    return;
+  }
+
+  setAdminWorkZoneState({
+    message: ""
+  });
+
+  try {
+    const data = await adminApiJson("/api/admin/media/bulk-delete", {
+      method: "POST",
+      body: JSON.stringify({
+        keys: removableItems.map(item => item.key)
+      }),
+      errorMessage: translate("admin_media_bulk_delete_error")
+    });
+    const deletedKeys = new Set(data.deleted || []);
+    const skippedCount = Number(data.skipped?.length || 0);
+    const missingCount = Number(data.missing?.length || 0);
+    const parts = [
+      translate("admin_media_bulk_delete_success", {
+        count: deletedKeys.size
+      })
+    ];
+
+    if (skippedCount) {
+      parts.push(translate("admin_media_bulk_delete_skipped", {
+        count: skippedCount
+      }));
+    }
+
+    if (missingCount) {
+      parts.push(translate("admin_media_bulk_delete_missing", {
+        count: missingCount
+      }));
+    }
+
+    setAdminWorkZoneState({
+      media: adminWorkZoneState.media.filter(item => !deletedKeys.has(item.key)),
+      selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || [])
+        .filter(key => !deletedKeys.has(key)),
+      message: parts.join(" ")
+    });
+  } catch (error) {
+    setAdminWorkZoneState({
+      message: error.message || translate("admin_media_bulk_delete_error")
     });
   }
 }
@@ -459,7 +664,8 @@ async function loadCurrentAdmin() {
   }
 
   setAdminWorkZoneState({
-    currentUserId: user._id || user.id || ""
+    currentUserId: user._id || user.id || "",
+    currentUserPermissions: user.permissions || {}
   });
 
   window.updateAdminWorkZoneTabsForUser(user);
@@ -540,6 +746,82 @@ async function saveAdminUser(userId, payload) {
   } catch (error) {
     setAdminWorkZoneState({
       message: error.message || translate("admin_users_save_error")
+    });
+  }
+}
+
+async function exportAdminUsers(format, options = {}) {
+  const params = new URLSearchParams();
+
+  params.set("format", format === "pdf" ? "pdf" : "csv");
+
+  params.set("includeRoles", (options.includeRoles || []).join(","));
+  params.set("includeAccountTypes", (options.includeAccountTypes || []).join(","));
+
+  setAdminWorkZoneState({
+    message: translate("admin_users_export_preparing")
+  });
+
+  try {
+    const { blob, filename } = await adminApiBlob(
+      `/api/admin/users/export?${params}`,
+      {
+        errorMessage: translate("admin_users_export_error")
+      }
+    );
+
+    downloadBlob(
+      blob,
+      filename || `cmcen-users.${format === "pdf" ? "pdf" : "csv"}`
+    );
+    setAdminWorkZoneState({
+      message: translate("admin_users_export_success")
+    });
+  } catch (error) {
+    setAdminWorkZoneState({
+      message: error.message || translate("admin_users_export_error")
+    });
+  }
+}
+
+async function resetAdminUserMfa(user) {
+  if (!user?._id) return;
+
+  if (
+    !window.confirm(
+      translate("admin_users_mfa_reset_confirm", {
+        name: CMCENUtils.getUserDisplayName(user, translate("unknown_user"))
+      })
+    )
+  ) {
+    return;
+  }
+
+  setAdminWorkZoneState({
+    message: ""
+  });
+
+  try {
+    const data = await adminApiJson(
+      `/api/admin/users/${encodeURIComponent(user._id)}/mfa-reset`,
+      {
+        method: "PATCH",
+        errorMessage: translate("admin_users_mfa_reset_error")
+      }
+    );
+
+    setAdminWorkZoneState({
+      selectedUser: data.user,
+      users: adminWorkZoneState.users.map(existingUser =>
+        String(existingUser._id) === String(data.user._id)
+          ? data.user
+          : existingUser
+      ),
+      message: translate("admin_users_mfa_reset_success")
+    });
+  } catch (error) {
+    setAdminWorkZoneState({
+      message: error.message || translate("admin_users_mfa_reset_error")
     });
   }
 }

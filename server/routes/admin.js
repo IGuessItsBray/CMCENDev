@@ -7,6 +7,7 @@ const User = require('../models/User');
 const Role = require('../models/Role');
 const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
+const LastPostMessage = require('../models/LastPostMessage');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const { USER_ROLES } = require('../config/roles');
@@ -50,6 +51,51 @@ const DEVELOPER_CONFIRMATION = 'DEVELOPER';
 const DEFAULT_MEDIA_PAGE_SIZE = 100;
 const MAX_MEDIA_PAGE_SIZE = 500;
 const MAX_MEDIA_LIST_OBJECTS = 5000;
+const DEFAULT_USER_PAGE_SIZE = 50;
+const MAX_USER_PAGE_SIZE = 100;
+const USER_EXPORT_FORMATS = Object.freeze(['csv', 'pdf']);
+const USER_EXPORT_FILTER_OPTIONS = Object.freeze({
+  roles: USER_ROLES,
+  accountTypes: ['member', 'ghost']
+});
+const USER_EXPORT_FIELDS = Object.freeze([
+  ['id', 'User ID'],
+  ['accountType', 'Account type'],
+  ['username', 'Username'],
+  ['email', 'Email'],
+  ['accountName', 'Account name'],
+  ['firstName', 'First name'],
+  ['lastName', 'Last name'],
+  ['rank', 'Rank'],
+  ['postNominals', 'Post-nominals'],
+  ['company', 'Company'],
+  ['status', 'Status'],
+  ['affiliationElement', 'Affiliation element'],
+  ['trade', 'Trade'],
+  ['tradeOther', 'Trade other'],
+  ['currentUnit', 'Current unit'],
+  ['preferredLanguage', 'Preferred language'],
+  ['role', 'Role'],
+  ['customRoles', 'Custom roles'],
+  ['contentAreas', 'Content areas'],
+  ['addressLine1', 'Address line 1'],
+  ['addressLine2', 'Address line 2'],
+  ['addressCity', 'City'],
+  ['addressStateProvince', 'State/province'],
+  ['addressPostalCode', 'Postal code'],
+  ['addressCountry', 'Country'],
+  ['emailVerificationRequired', 'Email verification required'],
+  ['emailVerified', 'Email verified'],
+  ['emailVerifiedAt', 'Email verified at'],
+  ['mfaEnabled', 'MFA enabled'],
+  ['totpEnabled', 'TOTP enabled'],
+  ['totpAppName', 'TOTP app name'],
+  ['passkeyCount', 'Passkey count'],
+  ['passkeyLabels', 'Passkey labels'],
+  ['passkeyMetadata', 'Passkey metadata'],
+  ['createdAt', 'Created at'],
+  ['updatedAt', 'Updated at']
+]);
 
 // GET /api/admin/review-counts
 // Return the current moderation workload without loading each submission.
@@ -316,7 +362,29 @@ function cleanMediaPageSize(value) {
   return Math.min(Math.max(parsed, 1), MAX_MEDIA_PAGE_SIZE);
 }
 
-function getMediaAttachmentMap(events, retirementMessages) {
+function cleanUserPageSize(value) {
+  const parsed = Number.parseInt(value, 10);
+
+  if (Number.isNaN(parsed)) {
+    return DEFAULT_USER_PAGE_SIZE;
+  }
+
+  return Math.min(Math.max(parsed, 1), MAX_USER_PAGE_SIZE);
+}
+
+function getLastPostMessageTitle(message) {
+  return message.displayName ||
+    message.title ||
+    [
+      message.deceased?.fullRank,
+      message.deceased?.firstName,
+      message.deceased?.surname,
+      message.deceased?.postNominal
+    ].filter(Boolean).join(' ') ||
+    'Last Post notice';
+}
+
+function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
   const attachmentMap = new Map();
 
   function addAttachment(key, attachment) {
@@ -348,6 +416,23 @@ function getMediaAttachmentMap(events, retirementMessages) {
       status: message.status,
       field: 'photoUrl',
       href: `/retirement-message?id=${encodeURIComponent(message._id)}`
+    });
+  });
+
+  lastPostMessages.forEach(message => {
+    const attachment = {
+      _id: message._id,
+      type: 'lastPostMessage',
+      title: getLastPostMessageTitle(message),
+      status: message.status,
+      field: 'imageUrl',
+      href: `/last-post-message?id=${encodeURIComponent(message._id)}`
+    };
+
+    addAttachment(getMediaKeyFromValue(message.imageUrl), attachment);
+    addAttachment(getMediaKeyFromValue(message.photoUrl), {
+      ...attachment,
+      field: 'photoUrl'
     });
   });
 
@@ -383,7 +468,7 @@ function getMediaAssetAttachmentKeys(asset) {
 }
 
 async function getMediaAttachments() {
-  const [events, retirementMessages] = await Promise.all([
+  const [events, retirementMessages, lastPostMessages] = await Promise.all([
     Event.find({
       imagePath: { $nin: [null, ''] }
     })
@@ -393,10 +478,18 @@ async function getMediaAttachments() {
       photoUrl: { $nin: [null, ''] }
     })
       .select('retiree status photoUrl updatedAt createdAt')
+      .lean(),
+    LastPostMessage.find({
+      $or: [
+        { imageUrl: { $nin: [null, ''] } },
+        { photoUrl: { $nin: [null, ''] } }
+      ]
+    })
+      .select('title deceased status imageUrl photoUrl updatedAt createdAt')
       .lean()
   ]);
 
-  return getMediaAttachmentMap(events, retirementMessages);
+  return getMediaAttachmentMap(events, retirementMessages, lastPostMessages);
 }
 
 function toAdminMediaItem(object, attachmentMap) {
@@ -453,7 +546,20 @@ function toAdminMediaAssetItem(asset, attachmentMap) {
   };
 }
 
+function sortAdminMediaItems(items, sortKey) {
+  if (sortKey === 'orphaned') {
+    return [...items].sort((first, second) =>
+      Number(first.attachedPostCount || 0) - Number(second.attachedPostCount || 0) ||
+      String(first.name || first.key || '').localeCompare(String(second.name || second.key || '')) ||
+      String(first.key || '').localeCompare(String(second.key || ''))
+    );
+  }
+
+  return items;
+}
+
 function getMediaSort(value) {
+  if (value === 'orphaned') return { createdAt: -1, _id: -1 };
   if (value === 'oldest') return { createdAt: 1, _id: 1 };
   if (value === 'name') return { displayName: 1, createdAt: -1 };
   if (value === 'size') return { size: -1, createdAt: -1 };
@@ -461,7 +567,7 @@ function getMediaSort(value) {
 }
 
 function getMediaSortKey(value) {
-  return ['newest', 'oldest', 'name', 'size'].includes(value) ? value : 'newest';
+  return ['newest', 'oldest', 'name', 'size', 'orphaned'].includes(value) ? value : 'newest';
 }
 
 function sortStorageObjectsNewestFirst(objects = []) {
@@ -481,6 +587,20 @@ function isVisibleMediaObject(object) {
 function cleanMediaCursor(value) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function cleanMediaKeyList(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return [
+    ...new Set(
+      value
+        .map(key => String(key || '').trim())
+        .filter(Boolean)
+    )
+  ].slice(0, 200);
 }
 
 async function listVisibleMediaObjectsNewestFirst() {
@@ -604,6 +724,13 @@ function toAdminUser(user, postSummary = null) {
       return role;
     })
     : [];
+  const passkeyCount = Array.isArray(plainUser.webauthn)
+    ? plainUser.webauthn.filter(credential =>
+      credential?.credentialID && credential?.publicKey
+    ).length
+    : 0;
+  const hasTotp = plainUser.totp?.enabled === true &&
+    Boolean(plainUser.totp?.secret);
 
   return {
     _id: plainUser._id,
@@ -619,6 +746,13 @@ function toAdminUser(user, postSummary = null) {
       verified: plainUser.emailVerification?.verified === true,
       verifiedAt: plainUser.emailVerification?.verifiedAt || null
     },
+    mfa: {
+      hasTotp,
+      totpAppName: plainUser.totp?.appName || '',
+      passkeyCount,
+      methodCount: passkeyCount + (hasTotp ? 1 : 0),
+      enabled: hasTotp || passkeyCount > 0
+    },
     customRoles,
     customRoleIds: customRoles.map(role =>
       typeof role === 'object' ? String(role._id) : String(role)
@@ -630,6 +764,334 @@ function toAdminUser(user, postSummary = null) {
   };
 }
 
+function getMfaAuditSnapshot(user) {
+  const plainUser = user.toObject ? user.toObject() : user;
+  const passkeyCount = Array.isArray(plainUser.webauthn)
+    ? plainUser.webauthn.filter(credential =>
+      credential?.credentialID && credential?.publicKey
+    ).length
+    : 0;
+  const hasTotp = plainUser.totp?.enabled === true &&
+    Boolean(plainUser.totp?.secret);
+  const methods = [
+    hasTotp ? 'totp' : '',
+    passkeyCount ? 'passkey' : ''
+  ].filter(Boolean);
+
+  return {
+    hadTotp: hasTotp,
+    totpAppName: plainUser.totp?.appName || '',
+    passkeyCount,
+    methodCount: passkeyCount + (hasTotp ? 1 : 0),
+    methods
+  };
+}
+
+function splitExportFilter(value) {
+  return String(value || '')
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function cleanExportFilter(value, allowedValues) {
+  const allowed = new Set(allowedValues);
+
+  return [
+    ...new Set(
+      splitExportFilter(value)
+        .filter(item => allowed.has(item))
+    )
+  ];
+}
+
+function getUserExportCriteria(query = {}) {
+  const hasIncludeRoles = Object.prototype.hasOwnProperty.call(query, 'includeRoles');
+  const hasIncludeAccountTypes = Object.prototype.hasOwnProperty.call(query, 'includeAccountTypes');
+  const includedRoles = cleanExportFilter(
+    query.includeRoles,
+    USER_EXPORT_FILTER_OPTIONS.roles
+  );
+  const includedAccountTypes = cleanExportFilter(
+    query.includeAccountTypes,
+    USER_EXPORT_FILTER_OPTIONS.accountTypes
+  );
+  const filter = {};
+
+  if (hasIncludeRoles) {
+    filter.role = { $in: includedRoles };
+  }
+
+  if (hasIncludeAccountTypes) {
+    const accountTypeConditions = [];
+
+    if (includedAccountTypes.includes('member')) {
+      accountTypeConditions.push(
+        { accountType: 'member' },
+        { accountType: { $exists: false } },
+        { accountType: null },
+        { accountType: '' }
+      );
+    }
+
+    if (includedAccountTypes.includes('ghost')) {
+      accountTypeConditions.push({ accountType: 'ghost' });
+    }
+
+    filter.$and = [
+      ...(filter.$and || []),
+      accountTypeConditions.length
+        ? { $or: accountTypeConditions }
+        : { accountType: { $in: [] } }
+    ];
+  }
+
+  return {
+    filter,
+    includedRoles,
+    includedAccountTypes
+  };
+}
+
+function formatExportDate(value) {
+  if (!value) return '';
+
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+}
+
+function formatExportBoolean(value) {
+  return value === true ? 'Yes' : 'No';
+}
+
+function getExportPasskeyLabel(credential, index) {
+  return credential?.nickname ||
+    credential?.providerName ||
+    credential?.credentialDeviceType ||
+    `Passkey ${index + 1}`;
+}
+
+function toUserExportRow(user) {
+  const plainUser = user.toObject ? user.toObject() : user;
+  const customRoles = Array.isArray(plainUser.customRoles)
+    ? plainUser.customRoles
+      .map(role => role?.name || role?.slug || String(role || ''))
+      .filter(Boolean)
+    : [];
+  const passkeys = Array.isArray(plainUser.webauthn)
+    ? plainUser.webauthn.filter(credential =>
+      credential?.credentialID && credential?.publicKey
+    )
+    : [];
+  const totpEnabled = plainUser.totp?.enabled === true &&
+    Boolean(plainUser.totp?.secret);
+  const address = plainUser.address || {};
+
+  return {
+    id: String(plainUser._id || ''),
+    accountType: plainUser.accountType || 'member',
+    username: plainUser.username || '',
+    email: plainUser.email || '',
+    accountName: plainUser.accountName || '',
+    firstName: plainUser.firstName || '',
+    lastName: plainUser.lastName || '',
+    rank: plainUser.rank || '',
+    postNominals: plainUser.postNominals || '',
+    company: plainUser.company || '',
+    status: plainUser.status || '',
+    affiliationElement: plainUser.affiliationElement || '',
+    trade: plainUser.trade || '',
+    tradeOther: plainUser.tradeOther || '',
+    currentUnit: plainUser.currentUnit || '',
+    preferredLanguage: plainUser.preferredLanguage || '',
+    role: plainUser.role || '',
+    customRoles: customRoles.join('; '),
+    contentAreas: (plainUser.contentAreas || []).join('; '),
+    addressLine1: address.line1 || '',
+    addressLine2: address.line2 || '',
+    addressCity: address.city || '',
+    addressStateProvince: address.stateProvince || '',
+    addressPostalCode: address.postalCode || '',
+    addressCountry: address.country || '',
+    emailVerificationRequired: formatExportBoolean(
+      plainUser.emailVerification?.required === true
+    ),
+    emailVerified: formatExportBoolean(
+      plainUser.emailVerification?.verified === true
+    ),
+    emailVerifiedAt: formatExportDate(plainUser.emailVerification?.verifiedAt),
+    mfaEnabled: formatExportBoolean(totpEnabled || passkeys.length > 0),
+    totpEnabled: formatExportBoolean(totpEnabled),
+    totpAppName: plainUser.totp?.appName || '',
+    passkeyCount: String(passkeys.length),
+    passkeyLabels: passkeys
+      .map(getExportPasskeyLabel)
+      .join('; '),
+    passkeyMetadata: passkeys
+      .map((credential, index) => [
+        getExportPasskeyLabel(credential, index),
+        credential.transports?.length ? `transports=${credential.transports.join('|')}` : '',
+        credential.credentialDeviceType ? `device=${credential.credentialDeviceType}` : '',
+        credential.authenticatorAttachment ? `attachment=${credential.authenticatorAttachment}` : '',
+        credential.credentialBackedUp === true ? 'backedUp=yes' : ''
+      ].filter(Boolean).join(' '))
+      .join('; '),
+    createdAt: formatExportDate(plainUser.createdAt),
+    updatedAt: formatExportDate(plainUser.updatedAt)
+  };
+}
+
+function escapeCsvValue(value) {
+  const text = String(value ?? '');
+
+  if (/[",\n\r]/u.test(text)) {
+    return `"${text.replace(/"/gu, '""')}"`;
+  }
+
+  return text;
+}
+
+function buildUsersCsv(rows) {
+  const header = USER_EXPORT_FIELDS.map(([, label]) => label);
+  const lines = [
+    header.map(escapeCsvValue).join(','),
+    ...rows.map(row =>
+      USER_EXPORT_FIELDS
+        .map(([key]) => escapeCsvValue(row[key]))
+        .join(',')
+    )
+  ];
+
+  return `${lines.join('\r\n')}\r\n`;
+}
+
+function escapePdfText(value) {
+  return String(value ?? '')
+    .replace(/\\/gu, '\\\\')
+    .replace(/\(/gu, '\\(')
+    .replace(/\)/gu, '\\)')
+    .replace(/[^\x09\x0A\x0D\x20-\x7E]/gu, '?');
+}
+
+function wrapPdfText(value, maxLength = 96) {
+  const words = String(value || '').replace(/\s+/gu, ' ').trim().split(' ');
+  const lines = [];
+  let line = '';
+
+  words.forEach(word => {
+    if (!word) return;
+
+    if ((line.length + word.length + 1) > maxLength) {
+      if (line) lines.push(line);
+      line = word;
+      return;
+    }
+
+    line = line ? `${line} ${word}` : word;
+  });
+
+  if (line) lines.push(line);
+
+  return lines.length ? lines : [''];
+}
+
+function addPdfObject(objects, content) {
+  objects.push(content);
+
+  return objects.length;
+}
+
+function buildSimplePdf(pages) {
+  const objects = [];
+  const catalogId = addPdfObject(objects, '<< /Type /Catalog /Pages 2 0 R >>');
+  const pagesId = addPdfObject(objects, '');
+  const fontId = addPdfObject(objects, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  const pageIds = [];
+
+  pages.forEach(pageLines => {
+    const streamLines = [
+      'BT',
+      '/F1 8 Tf',
+      '50 760 Td',
+      '10 TL',
+      ...pageLines.map((line, index) =>
+        `${index === 0 ? '' : 'T* ' }(${escapePdfText(line)}) Tj`
+      ),
+      'ET'
+    ];
+    const stream = streamLines.join('\n');
+    const contentId = addPdfObject(
+      objects,
+      `<< /Length ${Buffer.byteLength(stream, 'utf8')} >>\nstream\n${stream}\nendstream`
+    );
+    const pageId = addPdfObject(
+      objects,
+      `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentId} 0 R >>`
+    );
+    pageIds.push(pageId);
+  });
+
+  objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map(id => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
+
+  const chunks = ['%PDF-1.4\n'];
+  const offsets = [0];
+
+  objects.forEach((object, index) => {
+    offsets.push(Buffer.byteLength(chunks.join(''), 'utf8'));
+    chunks.push(`${index + 1} 0 obj\n${object}\nendobj\n`);
+  });
+
+  const xrefOffset = Buffer.byteLength(chunks.join(''), 'utf8');
+  chunks.push(`xref\n0 ${objects.length + 1}\n`);
+  chunks.push('0000000000 65535 f \n');
+  offsets.slice(1).forEach(offset => {
+    chunks.push(`${String(offset).padStart(10, '0')} 00000 n \n`);
+  });
+  chunks.push(`trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`);
+
+  return Buffer.from(chunks.join(''), 'utf8');
+}
+
+function buildUsersPdf(rows, {
+  includedRoles = [],
+  includedAccountTypes = []
+} = {}) {
+  const pages = [];
+  let lines = [
+    'CMCEN User Export',
+    `Generated: ${new Date().toISOString()}`,
+    `Users included: ${rows.length}`,
+    `Included roles: ${includedRoles.join(', ') || 'All'}`,
+    `Included account types: ${includedAccountTypes.join(', ') || 'All'}`,
+    ''
+  ];
+
+  function pushLine(line = '') {
+    if (lines.length >= 72) {
+      pages.push(lines);
+      lines = [];
+    }
+
+    lines.push(line);
+  }
+
+  rows.forEach((row, index) => {
+    pushLine(`${index + 1}. ${row.accountName || row.username || row.email || 'Unknown user'}`);
+    USER_EXPORT_FIELDS.forEach(([key, label]) => {
+      const value = row[key];
+      wrapPdfText(`${label}: ${value || ''}`, 100).forEach(pushLine);
+    });
+    pushLine('');
+  });
+
+  if (lines.length) {
+    pages.push(lines);
+  }
+
+  return buildSimplePdf(pages.length ? pages : [['CMCEN User Export', 'No users matched the selected filters.']]);
+}
+
 function isSelf(userId, currentUser) {
   return String(userId) === String(currentUser?._id);
 }
@@ -637,7 +1099,7 @@ function isSelf(userId, currentUser) {
 function requireDeveloperRole(req, res, next) {
   if (req.user?.role !== 'developer') {
     return res.status(403).json({
-      error: 'Developer access required'
+      error: 'Developer access required to promote administrators to developer'
     });
   }
 
@@ -912,27 +1374,119 @@ router.get(
 
       await seedMediaAssetsFromStorageIfEmpty();
 
-      const [mediaAssets, totalMedia, attachmentMap] = await Promise.all([
-        MediaAsset.find({})
-          .sort(sort)
-          .skip(offset)
-          .limit(maxKeys)
-          .lean(),
-        MediaAsset.countDocuments({}),
-        getMediaAttachments()
-      ]);
-      const nextOffset = offset + mediaAssets.length;
+      const attachmentMap = await getMediaAttachments();
+      const mediaQuery = MediaAsset.find({}).sort(sort);
+      const mediaAssets = sortKey === 'orphaned'
+        ? await mediaQuery.lean()
+        : await mediaQuery.skip(offset).limit(maxKeys).lean();
+      const totalMedia = sortKey === 'orphaned'
+        ? mediaAssets.length
+        : await MediaAsset.countDocuments({});
+      const sortedMedia = sortAdminMediaItems(
+        mediaAssets.map(asset => toAdminMediaAssetItem(asset, attachmentMap)),
+        sortKey
+      );
+      const media = sortKey === 'orphaned'
+        ? sortedMedia.slice(offset, offset + maxKeys)
+        : sortedMedia;
+      const nextOffset = offset + media.length;
 
       res.json({
         bucket: process.env.MINIO_BUCKET_NAME || '',
         sort: sortKey,
-        media: mediaAssets.map(asset => toAdminMediaAssetItem(asset, attachmentMap)),
+        media,
         nextCursor: nextOffset < totalMedia ? String(nextOffset) : '',
         isTruncated: nextOffset < totalMedia
       });
     } catch (err) {
       console.error('Admin media list failed:', err);
       res.status(500).json({ error: 'Failed to fetch media library' });
+    }
+  }
+);
+
+// POST /api/admin/media/bulk-delete
+// Delete selected unattached object-storage images.
+router.post(
+  '/media/bulk-delete',
+  authMiddleware,
+  requirePermission('canDeleteMedia'),
+  async (req, res) => {
+    try {
+      const keys = cleanMediaKeyList(req.body?.keys);
+
+      if (!keys.length) {
+        return res.status(400).json({ error: 'At least one image key is required' });
+      }
+
+      const attachmentMap = await getMediaAttachments();
+      const skipped = [];
+      const deleted = [];
+      const missing = [];
+
+      for (const key of keys) {
+        const attachedPosts = attachmentMap.get(key) || [];
+
+        if (attachedPosts.length) {
+          skipped.push({ key, attachedPosts });
+          continue;
+        }
+
+        const mediaAsset = await MediaAsset.findOne({
+          $or: [{ key }, { originalKey: key }]
+        }).lean();
+
+        if (!mediaAsset) {
+          missing.push(key);
+          continue;
+        }
+
+        const objectKeys = toAdminMediaAssetItem(mediaAsset, attachmentMap).objectKeys;
+
+        await Promise.all(objectKeys.map(objectKey =>
+          s3Client.send(new DeleteObjectCommand({
+            Bucket: process.env.MINIO_BUCKET_NAME,
+            Key: objectKey
+          }))
+        ));
+        await MediaAsset.deleteOne({ $or: [{ key }, { originalKey: key }] });
+        deleted.push(key);
+      }
+
+      if (deleted.length) {
+        await writeAuditLog({
+          req,
+          action: 'media.bulk_deleted',
+          actor: req.user,
+          targetType: 'media',
+          targetSnapshot: {
+            name: `${deleted.length} media image${deleted.length === 1 ? '' : 's'}`,
+            deletedKeys: deleted,
+            skippedKeys: skipped.map(item => item.key),
+            missingKeys: missing
+          },
+          metadata: {
+            deletedCount: deleted.length,
+            skippedCount: skipped.length,
+            missingCount: missing.length,
+            deletedKeys: deleted,
+            skippedKeys: skipped.map(item => item.key),
+            missingKeys: missing
+          }
+        });
+      }
+
+      res.json({
+        message: deleted.length === 1
+          ? '1 image deleted'
+          : `${deleted.length} images deleted`,
+        deleted,
+        skipped,
+        missing
+      });
+    } catch (err) {
+      console.error('Admin media bulk delete failed:', err);
+      res.status(500).json({ error: 'Failed to delete selected images' });
     }
   }
 );
@@ -998,7 +1552,7 @@ router.delete(
   }
 );
 
-// GET /api/admin/users?query=name
+// GET /api/admin/users?query=name&limit=50
 // List users, optionally filtering by username or account name.
 router.get(
   '/users',
@@ -1007,6 +1561,7 @@ router.get(
   async (req, res) => {
     try {
       const { query } = req.query;
+      const limit = cleanUserPageSize(req.query.limit);
 
       const filter = query
         ? {
@@ -1021,25 +1576,90 @@ router.get(
         : {};
 
       const users = await User.find(filter)
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt')
         .sort({ accountName: 1, username: 1 })
+        .limit(limit + 1)
         .populate('customRoles', 'name slug color permissions');
-      const summaries = await Promise.all(
-        users.map(user => getUserPostSummary(user))
-      );
+      const visibleUsers = users.slice(0, limit);
 
       res.json({
         roles: USER_ROLES,
         customRoles: await getAdminRoles(),
         permissionCatalog: PERMISSION_CATALOG,
         contentAreas: CONTENT_AREAS,
-        users: users.map((user, index) =>
-          toAdminUser(user, summaries[index])
-        )
+        users: visibleUsers.map(user => toAdminUser(user)),
+        limit,
+        hasMore: users.length > limit
       });
     } catch (err) {
       console.error('Admin user list failed:', err);
       res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  }
+);
+
+// GET /api/admin/users/export?format=csv|pdf&includeRoles=subscriber,editor&includeAccountTypes=member
+// Export sanitized user records for administrator review and reporting.
+router.get(
+  '/users/export',
+  authMiddleware,
+  requirePermission('canReadUsers'),
+  async (req, res) => {
+    try {
+      const format = String(req.query.format || 'csv').trim().toLowerCase();
+
+      if (!USER_EXPORT_FORMATS.includes(format)) {
+        return res.status(400).json({ error: 'Invalid export format' });
+      }
+
+      const {
+        filter,
+        includedRoles,
+        includedAccountTypes
+      } = getUserExportCriteria(req.query);
+      const users = await User.find(filter)
+        .select('accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas webauthn totp emailVerification.required emailVerification.verified emailVerification.verifiedAt createdAt updatedAt')
+        .sort({ accountName: 1, username: 1 })
+        .populate('customRoles', 'name slug color permissions')
+        .lean({ getters: true });
+      const rows = users.map(toUserExportRow);
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const extension = format === 'pdf' ? 'pdf' : 'csv';
+      const filename = `cmcen-users-${timestamp}.${extension}`;
+
+      await writeAuditLog({
+        req,
+        action: 'user.exported',
+        actor: req.user,
+        targetType: 'user',
+        target: null,
+        targetSnapshot: {
+          username: 'User export',
+          accountName: 'User export'
+        },
+        metadata: {
+          format,
+          userCount: rows.length,
+          includedRoles,
+          includedAccountTypes
+        }
+      });
+
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+      if (format === 'pdf') {
+        res.type('application/pdf');
+        return res.send(buildUsersPdf(rows, {
+          includedRoles,
+          includedAccountTypes
+        }));
+      }
+
+      res.type('text/csv; charset=utf-8');
+      return res.send(buildUsersCsv(rows));
+    } catch (err) {
+      console.error('Admin user export failed:', err);
+      return res.status(500).json({ error: 'Failed to export users' });
     }
   }
 );
@@ -1055,7 +1675,7 @@ router.get(
       const { userId } = req.params;
 
       const user = await User.findById(userId)
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
@@ -1254,7 +1874,7 @@ router.patch(
           runValidators: true
         }
       )
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
@@ -1367,6 +1987,88 @@ router.patch(
   }
 );
 
+// PATCH /api/admin/users/:userId/mfa-reset
+// Clear a user's MFA methods so they can enroll again on their next sign-in.
+router.patch(
+  '/users/:userId/mfa-reset',
+  authMiddleware,
+  requirePermission('canResetUserMfa'),
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      if (isSelf(userId, req.user)) {
+        return res.status(400).json({ error: 'Administrators cannot reset their own MFA here' });
+      }
+
+      const previousUser = await User.findById(userId)
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn webauthnRegistrationChallenge webauthnAuthenticationChallenge totp twoFactor customRoles contentAreas createdAt updatedAt')
+        .populate('customRoles', 'name slug color permissions');
+
+      if (!previousUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const previousMfa = getMfaAuditSnapshot(previousUser);
+
+      const user = await User.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            webauthn: [],
+            webauthnRegistrationChallenge: '',
+            webauthnAuthenticationChallenge: '',
+            totp: {
+              secret: '',
+              enabled: false,
+              appName: ''
+            },
+            twoFactor: {
+              tempToken: '',
+              tempExpires: null
+            }
+          }
+        },
+        {
+          returnDocument: 'after',
+          runValidators: true
+        }
+      )
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
+        .populate('customRoles', 'name slug color permissions');
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      await writeAuditLog({
+        req,
+        action: 'user.mfa_reset',
+        actor: req.user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: toAdminUser(user),
+        metadata: {
+          previousMfa,
+          previousMethods: previousMfa.methods,
+          previousPasskeyCount: previousMfa.passkeyCount,
+          previousTotpEnabled: previousMfa.hadTotp
+        }
+      });
+
+      const postSummary = await getUserPostSummary(user);
+
+      res.json({
+        message: 'User MFA reset',
+        user: toAdminUser(user, postSummary)
+      });
+    } catch (err) {
+      console.error('Admin MFA reset failed:', err);
+      res.status(500).json({ error: 'Failed to reset user MFA' });
+    }
+  }
+);
+
 // PATCH /api/admin/users/:userId/role
 // Change a user's role after validating it against the shared role config.
 router.patch(
@@ -1389,7 +2091,7 @@ router.patch(
         { $set: { role } },
         { returnDocument: 'after' }
       )
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
@@ -1425,7 +2127,7 @@ router.patch(
 );
 
 // PATCH /api/admin/users/:userId/developer
-// Promote a user to the global developer role after an explicit confirmation.
+// Promote an administrator to the global developer role after an explicit confirmation.
 router.patch(
   '/users/:userId/developer',
   authMiddleware,
@@ -1449,6 +2151,12 @@ router.patch(
         return res.status(404).json({ error: 'User not found' });
       }
 
+      if (previousUser.role !== 'administrator') {
+        return res.status(400).json({
+          error: 'Only administrator accounts can be promoted to developer'
+        });
+      }
+
       const user = await User.findByIdAndUpdate(
         userId,
         { $set: { role: 'developer' } },
@@ -1457,7 +2165,7 @@ router.patch(
           runValidators: true
         }
       )
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {

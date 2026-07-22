@@ -5,6 +5,8 @@
     actions
   }) {
     let shouldRestoreSearchFocus = false;
+    let searchFocusSelection = null;
+    const USER_ROW_RENDER_LIMIT = 100;
 
     function formatContentArea(contentArea) {
       return CMCENUtils.formatTitleCaseValue(contentArea);
@@ -105,6 +107,20 @@
       return user?.role === "developer";
     }
 
+    function canPromoteToDeveloper(user) {
+      return user?.role === "administrator";
+    }
+
+    function canResetMfa(user) {
+      const state = getState();
+
+      return Boolean(
+        state.currentUserPermissions?.canResetUserMfa === true &&
+        user?._id &&
+        !isSelectedSelf(user)
+      );
+    }
+
     function getStandardRoles() {
       return getState().roles.filter(role => role !== "developer");
     }
@@ -139,9 +155,11 @@
 
       const count = document.createElement("span");
       count.className = "admin-user-post-count";
-      count.textContent = translate("admin_users_post_count", {
-        count: user.postSummary?.total || 0
-      });
+      count.textContent = user.postSummary
+        ? translate("admin_users_post_count", {
+          count: user.postSummary.total || 0
+        })
+        : getText("admin_users_row_select", "Open profile");
 
       button.append(
         name,
@@ -162,6 +180,106 @@
       button.addEventListener("click", () => actions.loadUserDetail(user._id));
 
       return button;
+    }
+
+    function createExportCheckbox(name, value, labelText, checked = false) {
+      const label = document.createElement("label");
+      label.className = "admin-users-export-option";
+
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.name = name;
+      input.value = value;
+      input.checked = checked;
+
+      const text = document.createElement("span");
+      text.textContent = labelText;
+
+      label.append(input, text);
+
+      return label;
+    }
+
+    function getExportOptions(panel) {
+      return {
+        includeRoles: Array
+          .from(panel.querySelectorAll('input[name="includeRoles"]:checked'))
+          .map(input => input.value),
+        includeAccountTypes: Array
+          .from(panel.querySelectorAll('input[name="includeAccountTypes"]:checked'))
+          .map(input => input.value)
+      };
+    }
+
+    function createUsersExportPanel() {
+      const state = getState();
+      const panel = document.createElement("details");
+      panel.className = "admin-users-export-panel";
+
+      const title = document.createElement("summary");
+      title.textContent = getText("admin_users_export_heading", "Export users");
+
+      const content = document.createElement("div");
+      content.className = "admin-users-export-content";
+
+      const filters = document.createElement("div");
+      filters.className = "admin-users-export-filters";
+
+      const roleGroup = document.createElement("div");
+      roleGroup.className = "admin-users-export-group";
+      const roleTitle = document.createElement("span");
+      roleTitle.textContent = getText("admin_users_export_include_roles", "Roles to include");
+      roleGroup.append(roleTitle);
+
+      (state.roles || []).forEach(role => {
+        roleGroup.append(createExportCheckbox(
+          "includeRoles",
+          role,
+          translate(`role_${role}`),
+          !["developer", "administrator"].includes(role)
+        ));
+      });
+
+      const accountTypeGroup = document.createElement("div");
+      accountTypeGroup.className = "admin-users-export-group";
+      const accountTypeTitle = document.createElement("span");
+      accountTypeTitle.textContent = getText("admin_users_export_include_account_types", "Account types to include");
+      accountTypeGroup.append(accountTypeTitle);
+      [
+        ["member", getText("admin_users_account_member", "Member")],
+        ["ghost", getText("admin_users_account_ghost", "Ghost")]
+      ].forEach(([value, label]) => {
+        accountTypeGroup.append(createExportCheckbox(
+          "includeAccountTypes",
+          value,
+          label,
+          value === "member"
+        ));
+      });
+
+      filters.append(roleGroup, accountTypeGroup);
+
+      const actionsWrapper = document.createElement("div");
+      actionsWrapper.className = "admin-users-export-actions";
+
+      [
+        ["csv", getText("admin_users_export_csv", "Export CSV")],
+        ["pdf", getText("admin_users_export_pdf", "Export PDF")]
+      ].forEach(([format, label]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "admin-work-zone-button is-secondary";
+        button.textContent = label;
+        button.addEventListener("click", () => {
+          actions.exportUsers(format, getExportOptions(panel));
+        });
+        actionsWrapper.append(button);
+      });
+
+      content.append(filters, actionsWrapper);
+      panel.append(title, content);
+
+      return panel;
     }
 
     function createUserList() {
@@ -187,6 +305,10 @@
       searchInput.placeholder = translate("admin_users_search_placeholder");
       searchInput.autocomplete = "off";
       searchInput.addEventListener("input", event => {
+        searchFocusSelection = {
+          start: searchInput.selectionStart,
+          end: searchInput.selectionEnd
+        };
         actions.searchUsers(event.target.value);
       });
 
@@ -198,7 +320,7 @@
 
       search.append(searchLabel, searchInput);
       header.append(title, refresh);
-      panel.append(header, search);
+      panel.append(header, search, createUsersExportPanel());
 
       const list = document.createElement("div");
       list.className = "admin-user-list";
@@ -213,19 +335,37 @@
           : translate("admin_users_empty");
         list.append(empty);
       } else {
-        state.users.forEach(user => {
+        state.users.slice(0, USER_ROW_RENDER_LIMIT).forEach(user => {
           list.append(createUserButton(user));
         });
       }
 
       panel.append(list);
 
+      if (state.userListHasMore || state.users.length > USER_ROW_RENDER_LIMIT) {
+        const isAtListCap = state.userListHasMore && (state.userListLimit || 0) >= USER_ROW_RENDER_LIMIT;
+        const more = document.createElement("button");
+        more.type = "button";
+        more.className = "admin-work-zone-button is-secondary admin-users-more";
+        more.textContent = isAtListCap || state.users.length > USER_ROW_RENDER_LIMIT
+          ? getText("admin_users_more_rendered", "Refine search to narrow results")
+          : getText("admin_users_more", "Show more users");
+        more.disabled = isAtListCap || state.users.length > USER_ROW_RENDER_LIMIT || state.isLoading;
+        more.addEventListener("click", actions.showMoreUsers);
+        panel.append(more);
+      }
+
       if (shouldRestoreSearchFocus) {
         window.requestAnimationFrame(() => {
+          const selection = searchFocusSelection || {
+            start: searchInput.value.length,
+            end: searchInput.value.length
+          };
+
           searchInput.focus();
           searchInput.setSelectionRange(
-            searchInput.value.length,
-            searchInput.value.length
+            Math.min(selection.start ?? searchInput.value.length, searchInput.value.length),
+            Math.min(selection.end ?? searchInput.value.length, searchInput.value.length)
           );
           shouldRestoreSearchFocus = false;
         });
@@ -319,6 +459,59 @@
       });
 
       return wrapper;
+    }
+
+    function createMfaPanel(user) {
+      const panel = document.createElement("div");
+      panel.className = "admin-user-mfa-panel";
+      const mfa = user?.mfa || {};
+
+      const heading = document.createElement("div");
+      heading.className = "admin-panel-heading";
+
+      const title = document.createElement("h4");
+      title.textContent = getText("admin_users_mfa_heading", "Multi-factor authentication");
+
+      const status = document.createElement("span");
+      status.className = `admin-user-mfa-status ${mfa.enabled ? "is-enabled" : "is-empty"}`;
+      status.textContent = mfa.enabled
+        ? getText("admin_users_mfa_enabled", "Enabled")
+        : getText("admin_users_mfa_not_enabled", "Not enabled");
+
+      heading.append(title, status);
+
+      const details = document.createElement("p");
+      details.className = "admin-post-details";
+      details.textContent = [
+        mfa.hasTotp
+          ? getText("admin_users_mfa_totp_enabled", "Authenticator app enabled")
+          : getText("admin_users_mfa_totp_not_enabled", "No authenticator app"),
+        translate("admin_users_mfa_passkeys", {
+          count: mfa.passkeyCount || 0
+        })
+      ].join(" · ");
+
+      const reset = document.createElement("button");
+      reset.type = "button";
+      reset.className = "admin-work-zone-button is-danger";
+      reset.textContent = getText("admin_users_mfa_reset", "Reset MFA");
+      reset.disabled = !mfa.enabled || !canResetMfa(user);
+      reset.addEventListener("click", () => actions.resetMfa(user));
+
+      if (isSelectedSelf(user)) {
+        const help = document.createElement("small");
+        help.className = "admin-editor-help";
+        help.textContent = getText(
+          "admin_users_mfa_self_help",
+          "You cannot reset your own MFA from this panel."
+        );
+        panel.append(heading, details, reset, help);
+        return panel;
+      }
+
+      panel.append(heading, details, reset);
+
+      return panel;
     }
 
     function getSelectedContentAreas(form) {
@@ -455,13 +648,16 @@
           const text = document.createElement("span");
           text.textContent = permission.label || permission.key;
 
-          const detail = document.createElement("small");
-          detail.textContent = [
-            permission.action,
-            permission.description
-          ].filter(Boolean).join(" · ");
+          const action = document.createElement("em");
+          action.textContent = permission.action || "";
+          action.className = `permission-action-${String(permission.action || "other")
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]/g, "-")}`;
 
-          label.append(input, text, detail);
+          const detail = document.createElement("small");
+          detail.textContent = permission.description || "";
+
+          label.append(input, text, detail, action);
           group.append(label);
         });
 
@@ -672,9 +868,19 @@
       const user = state.selectedUser;
 
       if (!user) {
-        const empty = document.createElement("p");
-        empty.className = "admin-empty-state";
-        empty.textContent = translate("admin_users_select_empty");
+        const empty = document.createElement("div");
+        empty.className = "admin-user-empty-detail";
+
+        const title = document.createElement("h3");
+        title.textContent = getText("admin_users_select_profile_title", "Select a user");
+
+        const copy = document.createElement("p");
+        copy.textContent = getText(
+          "admin_users_select_profile_body",
+          "Choose a user from the list to edit roles, custom permissions, MFA, and submitted content."
+        );
+
+        empty.append(title, copy);
         panel.append(empty);
         return panel;
       }
@@ -755,7 +961,7 @@
 
       form.append(roleField, customRolesField, contentField, save);
 
-      if (!isDeveloper(user)) {
+      if (canPromoteToDeveloper(user)) {
         const promoteDeveloper = document.createElement("button");
         promoteDeveloper.type = "button";
         promoteDeveloper.className = "admin-work-zone-button is-danger";
@@ -800,7 +1006,7 @@
         });
       }
 
-      panel.append(header, form, postsPanel);
+      panel.append(header, form, createMfaPanel(user), postsPanel);
 
       return panel;
     }
@@ -817,10 +1023,14 @@
       }
 
       const meta = document.createElement("span");
+      const typeLabel = {
+        event: translate("admin_content_type_event"),
+        retirementMessage: translate("admin_content_type_retirement_message"),
+        lastPostMessage: translate("admin_content_type_last_post_message")
+      }[attachment.type] || translate("admin_content_type_content");
+
       meta.textContent = [
-        attachment.type === "event"
-          ? translate("admin_content_type_event")
-          : translate("admin_content_type_retirement_message"),
+        typeLabel,
         attachment.status || "",
         attachment.field || ""
       ].filter(Boolean).join(" · ");
@@ -831,8 +1041,26 @@
     }
 
     function createMediaCard(mediaItem) {
+      const state = getState();
+      const selectedKeys = new Set(state.selectedMediaKeys || []);
+      const isSelected = selectedKeys.has(mediaItem.key);
       const card = document.createElement("article");
       card.className = "admin-media-card";
+      card.classList.toggle("is-selected", isSelected);
+
+      const selectLabel = document.createElement("label");
+      selectLabel.className = "admin-media-select";
+
+      const selectInput = document.createElement("input");
+      selectInput.type = "checkbox";
+      selectInput.checked = isSelected;
+      selectInput.addEventListener("change", () => {
+        actions.toggleMediaSelection(mediaItem, selectInput.checked);
+      });
+
+      const selectText = document.createElement("span");
+      selectText.textContent = "Select";
+      selectLabel.append(selectInput, selectText);
 
       const previewLink = document.createElement("a");
       previewLink.className = "admin-media-preview";
@@ -909,9 +1137,53 @@
 
       actionsWrapper.append(open, remove);
       body.append(title, meta, attachments, actionsWrapper);
-      card.append(previewLink, body);
+      card.append(selectLabel, previewLink, body);
 
       return card;
+    }
+
+    function createMediaBulkToolbar() {
+      const state = getState();
+      const selectedKeys = new Set(state.selectedMediaKeys || []);
+      const selectedItems = state.media.filter(item => selectedKeys.has(item.key));
+      const selectedCount = selectedItems.length;
+      const removableCount = selectedItems
+        .filter(item => !Number(item.attachedPostCount || 0))
+        .length;
+
+      if (!selectedCount) {
+        return null;
+      }
+
+      const toolbar = document.createElement("div");
+      toolbar.className = "admin-media-bulk-toolbar";
+
+      const summary = document.createElement("p");
+      summary.textContent = `${selectedCount} selected · ${removableCount} unattached removable`;
+
+      const selectVisible = document.createElement("button");
+      selectVisible.type = "button";
+      selectVisible.className = "admin-work-zone-button is-secondary";
+      selectVisible.textContent = "Select visible";
+      selectVisible.disabled = state.mediaIsLoading || !state.media.length;
+      selectVisible.addEventListener("click", actions.selectVisibleMedia);
+
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "admin-work-zone-button is-secondary";
+      clear.textContent = "Clear";
+      clear.disabled = !selectedCount;
+      clear.addEventListener("click", actions.clearMediaSelection);
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "admin-work-zone-button is-danger";
+      remove.textContent = `Delete ${selectedCount} ${selectedCount === 1 ? "image" : "images"}`;
+      remove.disabled = state.mediaIsLoading || !removableCount;
+      remove.addEventListener("click", actions.deleteSelectedMedia);
+
+      toolbar.append(summary, selectVisible, clear, remove);
+      return toolbar;
     }
 
     function createMediaLibrary() {
@@ -947,7 +1219,8 @@
         ["newest", "Newest first"],
         ["oldest", "Oldest first"],
         ["name", "Name"],
-        ["size", "Largest first"]
+        ["size", "Largest first"],
+        ["orphaned", "Orphaned first"]
       ].forEach(([value, label]) => {
         const option = document.createElement("option");
         option.value = value;
@@ -960,6 +1233,14 @@
         actions.setMediaSort(sortSelect.value);
       });
       sortLabel.append(sortText, sortSelect);
+
+      if (state.mediaIsLoading) {
+        const sortLoading = document.createElement("span");
+        sortLoading.className = "admin-media-sort-loading";
+        sortLoading.setAttribute("role", "status");
+        sortLoading.textContent = "Loading";
+        sortLabel.append(sortLoading);
+      }
 
       const uploadLabel = document.createElement("label");
       uploadLabel.className = "admin-work-zone-button is-primary admin-media-upload-button";
@@ -1037,6 +1318,11 @@
         });
 
         panel.append(uploads);
+      }
+
+      const bulkToolbar = createMediaBulkToolbar();
+      if (bulkToolbar) {
+        panel.append(bulkToolbar);
       }
 
       if (state.mediaIsLoading && !state.media.length) {

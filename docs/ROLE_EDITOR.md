@@ -41,7 +41,7 @@ API endpoints (admin)
 - DELETE /api/admin/roles/:id
 - GET /api/admin/users and GET /api/admin/users/:id
 - PATCH /api/admin/users/:id
-- PATCH /api/admin/users/:id/developer (promote)  
+- PATCH /api/admin/users/:id/developer (promote): only existing developers can promote, and only administrator accounts can be promoted to developer. Subscribers must be promoted to administrator first.
 
 UI components
 - AdminUsersView (client) orchestrates tabs, actions and binds to state/actions (createRole, saveRole, deleteRole, selectRole).

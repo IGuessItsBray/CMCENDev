@@ -1,6 +1,9 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { resolvePostWithFallback } = require('../scripts/migration/lib/post-resolver');
+const {
+  resolveCollectionWithFallback,
+  resolvePostWithFallback
+} = require('../scripts/migration/lib/post-resolver');
 
 test('falls back to the legacy page when the WordPress REST lookup returns 403', async () => {
   const restFailure = new Error('Request failed with status code 403');
@@ -36,4 +39,23 @@ test('skips one legacy post when both REST and page lookups fail', async () => {
 
   assert.equal(post, null);
   assert.deepEqual(pageErrors, [pageFailure]);
+});
+
+test('falls back to the category scan when the Last Post archive returns 403', async () => {
+  const archiveFailure = new Error('Request failed with status code 403');
+  archiveFailure.response = { status: 403 };
+  const errors = [];
+  const categoryPosts = [{ id: 456 }];
+
+  const result = await resolveCollectionWithFallback({
+    fetchPrimary: async () => {
+      throw archiveFailure;
+    },
+    fetchFallback: async () => categoryPosts,
+    onPrimaryError: error => errors.push(error)
+  });
+
+  assert.equal(result.usedFallback, true);
+  assert.equal(result.items, categoryPosts);
+  assert.deepEqual(errors, [archiveFailure]);
 });

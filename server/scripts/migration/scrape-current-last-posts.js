@@ -19,7 +19,10 @@ const {
   LEGACY_SUBMITTER_RANK,
   normalizeDeceasedRank
 } = require('./lib/legacy-rank');
-const { resolvePostWithFallback } = require('./lib/post-resolver');
+const {
+  resolveCollectionWithFallback,
+  resolvePostWithFallback
+} = require('./lib/post-resolver');
 const {
   cleanString,
   parseDate,
@@ -42,6 +45,11 @@ const CATEGORY_SLUG_FALLBACKS = Object.freeze([
   'last-post'
 ]);
 const WORDPRESS_PAGE_SIZE = 100;
+const LEGACY_REQUEST_HEADERS = Object.freeze({
+  Accept: 'application/json,text/html,application/xhtml+xml',
+  'Accept-Language': 'en-CA,en;q=0.9,fr-CA;q=0.8',
+  'User-Agent': 'Mozilla/5.0 (compatible; CMCENContentMigration/1.0; +https://cmcen-rcmce.ca/)'
+});
 const IMAGE_VARIANTS = Object.freeze([
   { name: 'thumb', width: 400 },
   { name: 'medium', width: 900 },
@@ -341,9 +349,7 @@ async function fetchJsonResponse(url) {
   const response = await axios.get(url, {
     responseType: 'json',
     timeout: 30000,
-    headers: {
-      'User-Agent': 'CMCEN migration script'
-    }
+    headers: LEGACY_REQUEST_HEADERS
   });
 
   return response;
@@ -358,9 +364,7 @@ async function fetchText(url, { allowNotFound = false } = {}) {
     responseType: 'text',
     timeout: 30000,
     validateStatus: status => status < 400 || (allowNotFound && status === 404),
-    headers: {
-      'User-Agent': 'CMCEN migration script'
-    }
+    headers: LEGACY_REQUEST_HEADERS
   });
 
   if (response.status === 404) {
@@ -655,21 +659,33 @@ async function getPostComments(post) {
 }
 
 async function getLatestLastPostPosts() {
-  const archivePosts = await getLatestPostsFromArchive();
+  let categoryId = null;
+  const collection = await resolveCollectionWithFallback({
+    fetchPrimary: getLatestPostsFromArchive,
+    fetchFallback: async () => {
+      categoryId = await getCategoryId();
+      return getLatestPosts(categoryId);
+    },
+    onPrimaryError: error => {
+      const status = error.response?.status;
+      const detail = status ? `status ${status}` : (error.message || 'request failed');
+      console.log(`Last Post archive scan failed (${detail}); falling back to category scan`);
+    },
+    onPrimaryEmpty: () => {
+      console.log('No /lp/ links found on the Last Post archive; falling back to category scan');
+    }
+  });
 
-  if (archivePosts.length) {
+  if (!collection.usedFallback) {
     return {
-      posts: Number.isFinite(limit) ? archivePosts.slice(0, limit) : archivePosts,
+      posts: Number.isFinite(limit) ? collection.items.slice(0, limit) : collection.items,
       sourceType: 'archive-links',
       categoryId: null
     };
   }
 
-  console.log('No /lp/ links found on the Last Post archive; falling back to category scan');
-  const categoryId = await getCategoryId();
-
   return {
-    posts: await getLatestPosts(categoryId),
+    posts: collection.items,
     sourceType: 'category',
     categoryId
   };

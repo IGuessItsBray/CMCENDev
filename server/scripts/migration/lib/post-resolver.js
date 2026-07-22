@@ -25,4 +25,31 @@ async function resolvePostWithFallback({
   }
 }
 
-module.exports = { resolvePostWithFallback };
+async function resolveCollectionWithFallback({
+  fetchPrimary,
+  fetchFallback,
+  onPrimaryError = () => {},
+  onPrimaryEmpty = () => {}
+}) {
+  try {
+    const items = await fetchPrimary();
+
+    if (items.length) {
+      return { items, usedFallback: false };
+    }
+
+    onPrimaryEmpty();
+  } catch (error) {
+    onPrimaryError(error);
+  }
+
+  return {
+    items: await fetchFallback(),
+    usedFallback: true
+  };
+}
+
+module.exports = {
+  resolveCollectionWithFallback,
+  resolvePostWithFallback
+};

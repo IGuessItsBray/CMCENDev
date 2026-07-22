@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTotpError = '';
     let isLoadingPasskeys = false;
     let isLoadingTotpStatus = false;
+    let isTotpSetupInProgress = false;
     let activeMfaTooltip = null;
 
     function removeMfaTooltip() {
@@ -275,58 +276,59 @@ document.addEventListener('DOMContentLoaded', () => {
       const manager = document.querySelector('.totp-manager');
       if (!container) return;
 
+      const enabled = status?.enabled === true;
+      const pending = status?.pending === true;
+
       if (isLoadingTotpStatus) {
+        if (pending) {
+          if (manager) manager.hidden = true;
+          container.replaceChildren();
+          return;
+        }
+
         if (manager) manager.hidden = false;
         container.textContent = translateMfa('mfa_totp_status_loading');
         return;
       }
 
       if (currentTotpError) {
+        if (pending) {
+          if (manager) manager.hidden = true;
+          container.replaceChildren();
+          return;
+        }
+
         if (manager) manager.hidden = false;
         container.replaceChildren(createEmptyMessage(currentTotpError));
         return;
       }
 
-      const enabled = status?.enabled === true;
-      const pending = status?.pending === true;
-      const appName = status?.appName || translateMfa('mfa_totp_default_app');
-
       const setupButton = document.getElementById('totp-setup');
       const verificationRow = document.getElementById('totp-verification');
-      const verificationHint = document.getElementById('totp-verification-hint');
       const setupOutput = document.getElementById('totp-otpauth');
 
       if (verificationRow) verificationRow.hidden = !pending;
-      if (verificationHint) verificationHint.hidden = !pending;
       if (enabled && setupOutput) setupOutput.replaceChildren();
 
       if (setupButton) {
         setupButton.hidden = enabled;
         setupButton.disabled = false;
         setupButton.textContent = pending
-          ? translateMfa('mfa_totp_restart_setup')
+          ? translateMfa('mfa_cancel_setup')
           : translateMfa('mfa_setup_totp');
       }
 
-      const title = enabled
-        ? appName
-        : pending
-          ? translateMfa('mfa_totp_setup_pending_title', { appName })
-          : translateMfa('mfa_totp_not_enabled');
-      const detail = enabled
-        ? translateMfa('mfa_totp_active_detail')
-        : pending
-          ? translateMfa('mfa_totp_pending_detail')
-          : translateMfa('mfa_totp_not_enabled_detail');
-
       container.replaceChildren();
 
-      if (!enabled && !pending) {
+      if (!enabled) {
         if (manager) manager.hidden = true;
         return;
       }
 
       if (manager) manager.hidden = false;
+
+      const title = translateMfa('mfa_totp_default_app');
+      const detail = translateMfa('mfa_totp_active_detail');
 
       const item = document.createElement('div');
       item.className = 'totp-status-card';
@@ -345,26 +347,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const actions = document.createElement('div');
       actions.className = 'passkey-actions';
 
-      if ((enabled || pending) && status?.canRename === true) {
-        const rename = document.createElement('button');
-        rename.className = 'mfa-link-button';
-        rename.type = 'button';
-        rename.textContent = translateMfa('mfa_rename');
-        rename.dataset.action = 'rename-totp';
-        rename.dataset.currentName = appName;
-        actions.appendChild(rename);
-      }
-
-      if (enabled || pending) {
-        const disable = document.createElement('button');
-        disable.className = 'mfa-link-button mfa-link-button-danger';
-        disable.type = 'button';
-        disable.textContent = enabled
-          ? translateMfa('mfa_disable')
-          : translateMfa('mfa_cancel_setup');
-        disable.dataset.action = 'disable-totp';
-        actions.appendChild(disable);
-      }
+      const disable = document.createElement('button');
+      disable.className = 'mfa-link-button mfa-link-button-danger';
+      disable.type = 'button';
+      disable.textContent = translateMfa('mfa_disable');
+      disable.dataset.action = 'disable-totp';
+      actions.appendChild(disable);
 
       item.append(copy, actions);
       container.appendChild(item);
@@ -379,36 +367,21 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTotpStatus(currentTotpStatus);
 
       try {
-        currentTotpStatus = await api('/api/mfa/totp/status');
+        const status = await api('/api/mfa/totp/status');
+
+        currentTotpStatus = status.pending && !isTotpSetupInProgress
+          ? await api('/api/mfa/totp', {
+              method: 'DELETE',
+              json: true,
+              body: {}
+            })
+          : status;
       } catch (error) {
         currentTotpError = error.message;
       } finally {
         isLoadingTotpStatus = false;
         renderTotpStatus(currentTotpStatus);
       }
-    }
-
-    async function renameTotp(currentName) {
-      const appName = await CMCENModal.prompt(
-        translateMfa('mfa_totp_rename_prompt'),
-        {
-          title: translateMfa('mfa_totp_title'),
-          inputLabel: translateMfa('mfa_totp_rename_prompt'),
-          defaultValue: currentName || translateMfa('mfa_totp_default_app'),
-          confirmText: translateMfa('mfa_rename')
-        }
-      );
-
-      if (appName === null) return;
-
-      const status = await api('/api/mfa/totp/rename', {
-        method: 'POST',
-        json: true,
-        body: { appName }
-      });
-
-      currentTotpStatus = status;
-      renderTotpStatus(currentTotpStatus);
     }
 
     async function disableTotp() {
@@ -433,6 +406,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const code = document.getElementById('totp-code');
       if (code) code.value = '';
 
+      isTotpSetupInProgress = false;
+      currentTotpStatus = status;
+      renderTotpStatus(currentTotpStatus);
+    }
+
+    async function cancelTotpSetup() {
+      const status = await api('/api/mfa/totp', {
+        method: 'DELETE',
+        json: true,
+        body: {}
+      });
+
+      const container = document.getElementById('totp-otpauth');
+      if (container) container.replaceChildren();
+
+      const code = document.getElementById('totp-code');
+      if (code) code.value = '';
+
+      isTotpSetupInProgress = false;
       currentTotpStatus = status;
       renderTotpStatus(currentTotpStatus);
     }
@@ -442,63 +434,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const totpVerifyBtn = document.getElementById('totp-verify');
     const totpStatus = document.getElementById('totp-status');
 
+    function appendTotpQrCode(container, qrcode) {
+      if (!qrcode) return false;
+
+      const setup = document.createElement('div');
+      setup.className = 'totp-qr-setup';
+
+      const img = document.createElement('img');
+      img.id = 'totp-qr';
+      img.src = qrcode;
+      img.alt = translateMfa('mfa_totp_qr_alt');
+
+      const instruction = document.createElement('p');
+      instruction.className = 'mfa-qr-instruction';
+      instruction.id = 'totp-qr-instruction';
+      instruction.textContent = translateMfa('mfa_totp_scan_qr');
+
+      setup.append(img, instruction);
+      container.appendChild(setup);
+      return true;
+    }
+
     if (totpSetupBtn) totpSetupBtn.addEventListener('click', async () => {
       try {
         totpSetupBtn.disabled = true;
-        const appName = await CMCENModal.prompt(
-          translateMfa('mfa_totp_rename_prompt'),
-          {
-            title: translateMfa('mfa_totp_title'),
-            inputLabel: translateMfa('mfa_totp_rename_prompt'),
-            defaultValue: translateMfa('mfa_totp_default_app'),
-            confirmText: translateMfa('mfa_setup')
-          }
-        );
-        if (appName === null) return;
+
+        if (currentTotpStatus?.pending) {
+          await cancelTotpSetup();
+          return;
+        }
 
         const res = await api('/api/mfa/totp/setup', {
           method: 'POST',
-          json: true,
-          body: { appName }
+          json: true
         });
         const container = document.getElementById('totp-otpauth');
         if (container) {
           container.replaceChildren();
-          // show QR returned directly
-          if (res.qrcode) {
-            let img = document.getElementById('totp-qr');
-            if (!img) {
-              img = document.createElement('img');
-              img.id = 'totp-qr';
-            }
-            img.src = res.qrcode;
-            img.alt = translateMfa('mfa_totp_qr_alt');
-            container.appendChild(img);
-          } else {
+          if (!appendTotpQrCode(container, res.qrcode)) {
             // fallback: fetch QR endpoint
             try {
               const qr = await api('/api/mfa/totp/qrcode');
-              if (qr.qrcode) {
-                let img = document.getElementById('totp-qr');
-                if (!img) {
-                  img = document.createElement('img');
-                  img.id = 'totp-qr';
-                }
-                img.src = qr.qrcode;
-                img.alt = translateMfa('mfa_totp_qr_alt');
-                container.appendChild(img);
-              }
+              appendTotpQrCode(container, qr.qrcode);
             } catch (e) { console.warn('Could not fetch QR', e); }
           }
-
-          const secret = document.createElement('code');
-          secret.className = 'mfa-secret';
-          secret.textContent = res.otpauth_url || JSON.stringify(res);
-          container.appendChild(secret);
         }
-        await CMCENModal.alert(translateMfa('mfa_totp_secret_created'), {
-          title: translateMfa('mfa_totp_title')
-        });
+        isTotpSetupInProgress = true;
+        currentTotpStatus = { enabled: false, pending: true };
+        renderTotpStatus(currentTotpStatus);
         await loadTotpStatus();
       } catch (e) {
         await CMCENModal.alert(translateMfa('mfa_error', { message: e.message }));
@@ -510,15 +493,14 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         totpVerifyBtn.disabled = true;
         const code = document.getElementById('totp-code').value.trim();
-        const status = await api('/api/mfa/totp/status');
         await api('/api/mfa/totp/verify', {
           method: 'POST',
           body: {
-            token: code,
-            appName: status.appName || translateMfa('mfa_totp_default_app')
+            token: code
           },
           errorMessage: 'Could not verify TOTP token'
         });
+        isTotpSetupInProgress = false;
         await CMCENModal.alert(translateMfa('mfa_totp_verified'), {
           title: translateMfa('mfa_totp_title')
         });
@@ -580,10 +562,6 @@ document.addEventListener('DOMContentLoaded', () => {
           if (button.dataset.action === 'disable-totp') {
             await disableTotp();
           }
-
-          if (button.dataset.action === 'rename-totp') {
-            await renameTotp(button.dataset.currentName);
-          }
         } catch (error) {
           await CMCENModal.alert(translateMfa('mfa_error', { message: error.message }));
         } finally {
@@ -624,6 +602,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const qrCode = document.getElementById('totp-qr');
       if (qrCode) {
         qrCode.alt = translateMfa('mfa_totp_qr_alt');
+      }
+
+      const qrInstruction = document.getElementById('totp-qr-instruction');
+      if (qrInstruction) {
+        qrInstruction.textContent = translateMfa('mfa_totp_scan_qr');
       }
     });
 

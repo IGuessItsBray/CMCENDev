@@ -21,6 +21,7 @@ const rpName = process.env.RP_NAME || 'CMCEN';
 const configuredRPID = process.env.RP_ID || '';
 const configuredOrigin = process.env.RP_ORIGIN || '';
 const defaultTotpWindow = 2;
+const defaultTotpAppName = 'Authenticator app';
 
 function getFirstHeaderValue(value) {
   return String(value || '')
@@ -416,13 +417,12 @@ router.post('/totp/setup', authMiddleware, async (req, res) => {
     }
 
     const secret = speakeasy.generateSecret({ name: `${rpName} (${user.email})` });
-    const appName = String(req.body?.appName || '').trim().slice(0, 80);
 
     await User.findByIdAndUpdate(user._id, {
       $set: {
         'totp.secret': secret.base32,
         'totp.enabled': false,
-        'totp.appName': appName
+        'totp.appName': defaultTotpAppName
       }
     });
 
@@ -450,9 +450,7 @@ router.get('/totp/status', authMiddleware, async (req, res) => {
 
     res.json({
       enabled: user.totp?.enabled === true,
-      pending: Boolean(user.totp?.secret) && user.totp?.enabled !== true,
-      appName: user.totp?.appName || '',
-      canRename: true
+      pending: Boolean(user.totp?.secret) && user.totp?.enabled !== true
     });
   } catch (err) {
     console.error('totp/status error', err);
@@ -490,7 +488,6 @@ router.get('/totp/qrcode', authMiddleware, async (req, res) => {
 router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    const { appName } = req.body;
     const token = normalizeTotpToken(req.body?.token);
 
     if (!user.totp?.secret) return res.status(400).json({ error: 'No TOTP secret set' });
@@ -509,11 +506,7 @@ router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
       console.warn('totp/verify -> accepted token with time-step delta:', verification.delta, 'user:', String(user._id));
     }
 
-    const updates = { 'totp.enabled': true };
-    const cleanAppName = String(appName || '').trim().slice(0, 80);
-    if (cleanAppName) updates['totp.appName'] = cleanAppName;
-
-    await User.findByIdAndUpdate(user._id, { $set: updates });
+    await User.findByIdAndUpdate(user._id, { $set: { 'totp.enabled': true } });
     await updateAccountCreationMfaMethod(user, 'totp');
 
     const responsePayload = { verified: true };
@@ -548,6 +541,7 @@ router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
 router.delete('/totp', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    const wasEnabled = user.totp?.enabled === true;
     const remainingMethods = countActiveMfaMethods({
       ...user.toObject(),
       totp: {
@@ -570,37 +564,27 @@ router.delete('/totp', authMiddleware, async (req, res) => {
       }
     });
 
+    await writeAuditLog({
+      req,
+      action: wasEnabled ? 'user.mfa_totp_disabled' : 'user.mfa_totp_setup_cancelled',
+      actor: user,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: {
+        username: user.username,
+        email: user.email,
+        accountName: user.accountName,
+        role: user.role
+      },
+      metadata: { method: 'totp' }
+    });
+
     res.json({ enabled: false, pending: false });
   } catch (err) {
     console.error('totp/disable error', err);
     res.status(500).json({ error: 'Could not disable TOTP' });
   }
 });
-
-async function renameTotpApp(req, res) {
-  try {
-    const appName = String(req.body?.appName || '').trim().slice(0, 80);
-
-    const updated = await User.findByIdAndUpdate(
-      req.user._id,
-      { $set: { 'totp.appName': appName } },
-      { returnDocument: 'after' }
-    );
-
-    res.json({
-      enabled: updated.totp?.enabled === true,
-      pending: Boolean(updated.totp?.secret) && updated.totp?.enabled !== true,
-      appName: updated.totp?.appName || '',
-      canRename: true
-    });
-  } catch (err) {
-    console.error('totp/rename error', err);
-    res.status(500).json({ error: 'Could not rename authenticator app' });
-  }
-}
-
-router.patch('/totp', authMiddleware, renameTotpApp);
-router.post('/totp/rename', authMiddleware, renameTotpApp);
 
 // Return user's WebAuthn credentials array
 router.get('/webauthn/credentials', authMiddleware, async (req, res) => {

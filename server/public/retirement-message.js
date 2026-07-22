@@ -601,25 +601,10 @@ async function setupCommentAccess() {
         retirementCommentLogin.hidden = true;
 
         try {
-            const response = await fetch("/api/me", {
-                headers: CMCENUtils.authHeaders(token)
+            const user = await CMCENUtils.apiJson("/api/me", {
+                token,
+                errorMessage: "Could not verify retirement permissions"
             });
-
-            if (response.status === 401) {
-                CMCENUtils.clearAuthToken();
-                canManageRetirementComments = false;
-                retirementCommentForm.hidden = true;
-                retirementCommentLogin.hidden = false;
-                return;
-            }
-
-            if (!response.ok) {
-                canManageRetirementComments = false;
-                return;
-            }
-
-            const user =
-                await response.json().catch(() => ({}));
 
             canManageRetirementComments =
                 user.permissions?.canManageUsers === true;

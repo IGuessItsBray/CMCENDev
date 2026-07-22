@@ -13,6 +13,13 @@ const {
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
 const { sendMail } = require('../services/mailer');
+const {
+  REFRESH_COOKIE_NAME,
+  clearRefreshTokenCookie,
+  createSessionToken,
+  readCookie,
+  setRefreshTokenCookie
+} = require('../services/auth-session');
 
 const router = express.Router();
 
@@ -183,14 +190,6 @@ function userRequiresEmailVerification(user) {
   return (
     user?.emailVerification?.required === true &&
     user.emailVerification.verified !== true
-  );
-}
-
-function createSessionToken(user) {
-  return jwt.sign(
-    { userId: user._id },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' }
   );
 }
 
@@ -544,6 +543,7 @@ router.post('/ghost/confirm', async (req, res) => {
       targetSnapshot: getUserSnapshot(user)
     });
 
+    setRefreshTokenCookie(req, res, user);
     res.json({
       message: 'Guest access confirmed',
       token: createSessionToken(user)
@@ -754,6 +754,7 @@ router.post('/login', async (req, res) => {
     }
 
     const token = createSessionToken(user);
+    setRefreshTokenCookie(req, res, user);
 
     await writeAuditLog({
       req,
@@ -826,6 +827,7 @@ router.post('/email-verification/confirm', async (req, res) => {
       }
     });
 
+    setRefreshTokenCookie(req, res, user);
     res.json({
       message: 'Email verified',
       token: createSessionToken(user)
@@ -939,6 +941,7 @@ router.post('/password-reset/confirm', async (req, res) => {
       tempToken: '',
       tempExpires: null
     };
+    user.sessionVersion = Number(user.sessionVersion || 0) + 1;
     await user.save();
 
     await writeAuditLog({
@@ -977,6 +980,56 @@ router.get('/notifications', authMiddleware, async (req, res) => {
   res.json({
     notifications: await getNotificationSummary(req.user)
   });
+});
+
+// Exchange the HTTP-only, long-lived refresh cookie for a new short-lived API token.
+router.post('/session/refresh', async (req, res) => {
+  const refreshToken = readCookie(req, REFRESH_COOKIE_NAME);
+
+  if (!refreshToken) {
+    clearRefreshTokenCookie(req, res);
+    return res.status(401).json({ error: 'Refresh session is missing or expired' });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+    if (decoded.tokenType !== 'refresh' || !decoded.userId) {
+      throw new Error('Invalid refresh token');
+    }
+
+    const user = await User.findById(decoded.userId).select('sessionVersion');
+
+    if (!user || Number(decoded.sessionVersion || 0) !== Number(user.sessionVersion || 0)) {
+      throw new Error('Refresh session has been revoked');
+    }
+
+    setRefreshTokenCookie(req, res, user);
+    return res.json({ token: createSessionToken(user) });
+  } catch {
+    clearRefreshTokenCookie(req, res);
+    return res.status(401).json({ error: 'Refresh session is missing or expired' });
+  }
+});
+
+// Signing out revokes refresh sessions and removes the browser cookie.
+router.post('/session/logout', async (req, res) => {
+  const refreshToken = readCookie(req, REFRESH_COOKIE_NAME);
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+    if (decoded.tokenType === 'refresh' && decoded.userId) {
+      await User.findByIdAndUpdate(decoded.userId, {
+        $inc: { sessionVersion: 1 }
+      });
+    }
+  } catch {
+    // Clearing a missing or expired cookie is still a successful sign-out.
+  }
+
+  clearRefreshTokenCookie(req, res);
+  return res.status(204).end();
 });
 
 // POST /api/ghost/upgrade
@@ -1094,6 +1147,7 @@ router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
       targetSnapshot: getUserSnapshot(user)
     });
 
+    setRefreshTokenCookie(req, res, user);
     res.json({
       message: 'Account upgraded',
       token: createSessionToken(user),

@@ -175,24 +175,10 @@ async function setupEventAdminAccess() {
     CMCENUtils.storeAuthToken(token);
 
     try {
-        const response = await fetch("/api/me", {
-            headers: CMCENUtils.authHeaders(token)
+        const user = await CMCENUtils.apiJson("/api/me", {
+            token,
+            errorMessage: "Could not verify event permissions"
         });
-
-        if (response.status === 401) {
-            CMCENUtils.clearAuthToken();
-            canManageEvents = false;
-            removeEventAdminActions();
-            return;
-        }
-
-        if (!response.ok) {
-            canManageEvents = false;
-            removeEventAdminActions();
-            return;
-        }
-
-        const user = await response.json().catch(() => ({}));
 
         canManageEvents =
             user.permissions?.canManageUsers === true;

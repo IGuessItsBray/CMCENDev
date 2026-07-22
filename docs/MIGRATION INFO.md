@@ -18,7 +18,6 @@ node server/scripts/migration/parse-wordpress-dumps.js
 node server/scripts/migration/download-wordpress-images.js --limit 10
 node server/scripts/migration/upload-wordpress-images.js
 node server/scripts/migration/import-retirement-messages.js
-node server/scripts/migration/import-last-post-messages.js
 ```
 
 The upload and import scripts are dry-run by default. Add `--apply` to write to
@@ -41,7 +40,6 @@ Generated files are written to `server/scripts/migration/output/` by default:
 node server/scripts/migration/download-wordpress-images.js
 node server/scripts/migration/upload-wordpress-images.js --apply
 node server/scripts/migration/import-retirement-messages.js --apply
-node server/scripts/migration/import-last-post-messages.js --apply
 node server/scripts/migration/verify-wordpress-migration.js
 ```
 

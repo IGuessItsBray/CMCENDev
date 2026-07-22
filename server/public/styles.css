@@ -10901,6 +10901,30 @@ a.dropdown-toggle {
   line-height: 1.55;
 }
 
+.last-post-submit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  margin-top: 19px;
+  padding: 0 14px;
+  border: 1px solid var(--navy-900);
+  border-radius: 2px;
+  background: var(--navy-900);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.055em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.last-post-submit-button:hover,
+.last-post-submit-button:focus-visible {
+  background: var(--navy-800);
+  color: var(--white);
+}
+
 .last-post-message {
   margin: 24px 0 0;
   padding: 14px 16px;
@@ -11232,6 +11256,12 @@ html[data-theme="dark"] .last-post-detail-footer {
 html[data-theme="dark"] .last-post-detail-footer,
 html[data-theme="dark"] .last-post-detail-footer a {
   color: var(--gold-200);
+}
+
+html[data-theme="dark"] .last-post-submit-button {
+  border-color: var(--gold-500);
+  background: var(--gold-500);
+  color: var(--navy-950);
 }
 
 @media (max-width: 860px) {
@@ -15143,6 +15173,10 @@ html[data-theme="dark"] .theme-toggle__icon:last-child {
   background: var(--white);
   color: var(--body-text);
   font: inherit;
+}
+
+.timers-editor-field select {
+  height: 44px;
 }
 
 .timers-editor-field textarea {

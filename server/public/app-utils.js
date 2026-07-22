@@ -51,21 +51,101 @@
 
     localStorage.setItem("token", cleanToken);
     localStorage.setItem("api_token", cleanToken);
+    scheduleTokenRefresh(cleanToken);
 
     return cleanToken;
   }
 
   function getStoredAuthToken() {
-    return normalizeToken(
+    const token = normalizeToken(
       localStorage.getItem("token") ||
       localStorage.getItem("api_token") ||
       ""
     );
+
+    if (token) {
+      scheduleTokenRefresh(token);
+    }
+
+    return token;
   }
 
   function clearAuthToken() {
     localStorage.removeItem("token");
     localStorage.removeItem("api_token");
+    if (tokenRefreshTimer) {
+      window.clearTimeout(tokenRefreshTimer);
+      tokenRefreshTimer = null;
+    }
+  }
+
+  let tokenRefreshPromise = null;
+  let tokenRefreshTimer = null;
+
+  function getTokenExpiryMs(token) {
+    const parts = normalizeToken(token).split(".");
+
+    if (parts.length !== 3) return 0;
+
+    try {
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+      return Number(payload.exp || 0) * 1000;
+    } catch {
+      return 0;
+    }
+  }
+
+  function scheduleTokenRefresh(token) {
+    if (tokenRefreshTimer) {
+      window.clearTimeout(tokenRefreshTimer);
+      tokenRefreshTimer = null;
+    }
+
+    const expiresAt = getTokenExpiryMs(token);
+
+    if (!expiresAt) return;
+
+    // Refresh five minutes before expiry, while keeping a short-lived access token.
+    const delay = Math.max(0, expiresAt - Date.now() - 5 * 60 * 1000);
+    tokenRefreshTimer = window.setTimeout(() => {
+      refreshAuthToken();
+    }, delay);
+  }
+
+  async function refreshAuthToken() {
+    if (tokenRefreshPromise) return tokenRefreshPromise;
+
+    tokenRefreshPromise = fetch("/api/session/refresh", {
+      method: "POST",
+      credentials: "same-origin"
+    })
+      .then(async response => {
+        const data = await readJsonResponse(response);
+
+        if (!response.ok || !data.token) {
+          clearAuthToken();
+          return "";
+        }
+
+        return storeAuthToken(data.token);
+      })
+      .catch(() => "")
+      .finally(() => {
+        tokenRefreshPromise = null;
+      });
+
+    return tokenRefreshPromise;
+  }
+
+  async function signOut() {
+    try {
+      await fetch("/api/session/logout", {
+        method: "POST",
+        credentials: "same-origin"
+      });
+    } finally {
+      clearAuthToken();
+    }
   }
 
   function redirectToLogin(path = "/login") {
@@ -85,7 +165,12 @@
   }
 
   function authHeaders(token = getStoredAuthToken(), headers = {}) {
-    const cleanToken = normalizeToken(token);
+    const suppliedToken = normalizeToken(token);
+    const storedToken = getStoredAuthToken();
+    const cleanToken =
+      storedToken && getTokenExpiryMs(storedToken) > getTokenExpiryMs(suppliedToken)
+        ? storedToken
+        : suppliedToken;
 
     return {
       ...headers,
@@ -135,6 +220,7 @@
       json = false,
       parseJson = true,
       redirectOnUnauthorized = "",
+      _retriedAfterRefresh = false,
       tempToken = "",
       token,
       unauthorizedMessage = "Authentication required",
@@ -175,9 +261,24 @@
         : requestHeaders
     });
 
-    const data = parseJson
-      ? await readJsonResponse(response)
-      : response;
+    if (
+      response.status === 401 &&
+      requestToken &&
+      !_retriedAfterRefresh &&
+      path !== "/api/session/refresh"
+    ) {
+      const refreshedToken = await refreshAuthToken();
+
+      if (refreshedToken) {
+        return apiFetch(path, {
+          ...options,
+          token: refreshedToken,
+          _retriedAfterRefresh: true
+        });
+      }
+    }
+
+    const data = parseJson ? await readJsonResponse(response) : response;
 
     if (response.status === 401 && redirectOnUnauthorized) {
       redirectToLogin(
@@ -344,6 +445,37 @@
 
   function getCurrentLocale() {
     return getCurrentLanguage() === "fr" ? "fr-CA" : "en-CA";
+  }
+
+  function toLocalDateTimeInput(value) {
+    if (!value) {
+      return "";
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+  }
+
+  function toLocalDateInput(value) {
+    return toLocalDateTimeInput(value).slice(0, 10);
+  }
+
+  function toLocalTimeInput(value) {
+    return toLocalDateTimeInput(value).slice(11, 16);
+  }
+
+  function fromLocalDateAndTime(dateValue, timeValue = "00:00") {
+    if (!dateValue) {
+      return "";
+    }
+
+    const date = new Date(`${dateValue}T${timeValue || "00:00"}`);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString();
   }
 
   function formatDate(value, options = {}) {
@@ -671,6 +803,7 @@
     ensureWebAuthnAvailable,
     formatDate,
     formatTitleCaseValue,
+    fromLocalDateAndTime,
     getCurrentLanguage,
     getCurrentLocale,
     getLocalizedText,
@@ -682,12 +815,17 @@
     preparePublicKeyRequestOptions,
     prepareImageUploadFile,
     redirectToLogin,
+    refreshAuthToken,
     requireAuthToken,
     serializeAssertionCredential,
     serializeAttestationCredential,
+    signOut,
     setStatusLoading,
     setStatusMessage,
     storeAuthToken,
+    toLocalDateInput,
+    toLocalDateTimeInput,
+    toLocalTimeInput,
     trackPageVisit
   };
 

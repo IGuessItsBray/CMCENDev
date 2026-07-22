@@ -6,7 +6,6 @@ const path = require('path');
 const mongoose = require('mongoose');
 const { parseArgs, resolvePath } = require('./lib/args');
 const RetirementMessage = require('../../models/RetirementMessage');
-const LastPostMessage = require('../../models/LastPostMessage');
 
 const args = parseArgs();
 const outputDir = resolvePath(args.output, path.join(__dirname, 'output'));
@@ -24,26 +23,16 @@ async function main() {
 
   await mongoose.connect(process.env.MONGO_URI);
 
-  const [
-    importedRetirements,
-    importedLastPosts
-  ] = await Promise.all([
-    RetirementMessage.countDocuments({
-      'legacy.source': 'wordpress'
-    }),
-    LastPostMessage.countDocuments({
-      'legacy.source': 'wordpress'
-    })
-  ]);
+  const importedRetirements = await RetirementMessage.countDocuments({
+    'legacy.source': 'wordpress'
+  });
 
   const summary = {
     manifest: {
-      retirement: records.filter(record => record.type === 'retirement').length,
-      lastPost: records.filter(record => record.type === 'lastPost').length
+      retirement: records.filter(record => record.type === 'retirement').length
     },
     mongo: {
-      retirement: importedRetirements,
-      lastPost: importedLastPosts
+      retirement: importedRetirements
     }
   };
 

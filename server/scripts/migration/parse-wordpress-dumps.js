@@ -10,7 +10,6 @@ const {
   buildMetaMap,
   getPostLanguage,
   getStatus,
-  isLastPost,
   isRetirementPost,
   parseDate,
   stripHtml,
@@ -81,7 +80,7 @@ function buildRecord(post, meta, comments, attachmentsById) {
   const primaryImage = images[0] || null;
 
   return {
-    type: isLastPost(post) ? 'lastPost' : 'retirement',
+    type: 'retirement',
     wordpressPostId,
     wordpressAuthorId: Number(post.post_author || 0) || null,
     postType: post.post_type,
@@ -139,7 +138,6 @@ function main() {
 
   const records = posts
     .filter(post => (
-      isLastPost(post) ||
       isRetirementPost(post, metaByPost.get(Number(post.ID)) || {})
     ))
     .map(post => {
@@ -164,10 +162,7 @@ function main() {
       sourceAttachments: attachments.length,
       migrationRecords: records.length,
       retirementRecords: records.filter(record => record.type === 'retirement').length,
-      lastPostRecords: records.filter(record => record.type === 'lastPost').length,
       recordsWithImages: records.filter(record => record.image?.sourceUrl).length,
-      lastPostRecordsWithImages:
-        records.filter(record => record.type === 'lastPost' && record.image?.sourceUrl).length,
       unresolvedImageReferences:
         records.reduce((sum, record) => sum + record.unresolvedImageReferences.length, 0),
       commentsAttached: records.reduce((sum, record) => sum + record.comments.length, 0)

@@ -1,0 +1,163 @@
+const lastPostSubmitForm = document.getElementById('lastPostSubmitForm');
+const lastPostPageMessage = document.getElementById('lastPostPageMessage');
+const lastPostFormMessage = document.getElementById('lastPostFormMessage');
+const lastPostSubmitButton = document.getElementById('lastPostSubmitButton');
+const lastPostSubmitButtonLabel = lastPostSubmitButton.querySelector('span');
+const lastPostImage = document.getElementById('lastPostImage');
+const LAST_POST_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+let currentUser = null;
+
+function getFieldValue(id) {
+  return String(document.getElementById(id)?.value || '').trim();
+}
+
+function showPageMessage(message) {
+  lastPostPageMessage.textContent = message;
+  lastPostPageMessage.hidden = false;
+}
+
+function showFormMessage(message, type = 'error') {
+  lastPostFormMessage.textContent = message;
+  lastPostFormMessage.className = `event-form-message is-${type}`;
+  lastPostFormMessage.hidden = false;
+}
+
+function clearFormMessage() {
+  lastPostFormMessage.textContent = '';
+  lastPostFormMessage.className = 'event-form-message';
+  lastPostFormMessage.hidden = true;
+}
+
+function setSubmitting(isSubmitting) {
+  lastPostSubmitButton.disabled = isSubmitting;
+  lastPostSubmitButton.setAttribute('aria-busy', String(isSubmitting));
+  lastPostSubmitButtonLabel.textContent = translate(
+    isSubmitting ? 'last_post_submitting' : 'last_post_submit_button'
+  );
+}
+
+function setProfileField(id, value) {
+  const field = document.getElementById(id);
+  if (field) field.value = String(value || '').trim();
+}
+
+function populateSubmitter(user) {
+  setProfileField('lastPostSubmitterRank', user.rank);
+  setProfileField('lastPostSubmitterFirstName', user.firstName);
+  setProfileField('lastPostSubmitterLastName', user.lastName);
+  setProfileField('lastPostSubmitterEmail', user.email);
+}
+
+function getSubmissionPayload(imageUrl = '') {
+  const messageLanguage = getFieldValue('lastPostMessageLanguage');
+
+  return {
+    deceased: {
+      fullRank: getFieldValue('lastPostDeceasedRank'),
+      firstName: getFieldValue('lastPostDeceasedFirstName'),
+      surname: getFieldValue('lastPostDeceasedSurname'),
+      postNominal: getFieldValue('lastPostDeceasedPostNominal')
+    },
+    messageLanguage,
+    message: getFieldValue('lastPostMessage'),
+    imageUrl
+  };
+}
+
+function validateLastPostImage(file) {
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    throw new Error(translate('last_post_image_invalid'));
+  }
+
+  if (file.size > LAST_POST_IMAGE_MAX_BYTES) {
+    throw new Error(translate('last_post_image_too_large'));
+  }
+}
+
+async function uploadLastPostImage(token) {
+  const file = lastPostImage.files?.[0] || null;
+  validateLastPostImage(file);
+  if (!file) return '';
+
+  const preparedFile = await CMCENUtils.prepareImageUploadFile(file);
+  const uploadData = new FormData();
+  uploadData.append('image', preparedFile);
+
+  const data = await CMCENUtils.apiFetch('/api/upload', {
+    method: 'POST',
+    body: uploadData,
+    token,
+    redirectOnUnauthorized: true,
+    unauthorizedMessage: translate('last_post_permission_error'),
+    errorMessage: translate('last_post_image_upload_error')
+  });
+
+  if (!data.url) {
+    throw new Error(translate('last_post_image_upload_error'));
+  }
+
+  return data.url;
+}
+
+async function initializeLastPostSubmission() {
+  const token = CMCENUtils.requireAuthToken();
+  if (!token) return;
+
+  try {
+    currentUser = await CMCENUtils.apiJson('/api/me', {
+      token,
+      redirectOnUnauthorized: true,
+      unauthorizedMessage: translate('last_post_permission_error')
+    });
+
+    if (!currentUser.permissions?.canCreateDrafts) {
+      showPageMessage(translate('last_post_access_denied'));
+      return;
+    }
+
+    populateSubmitter(currentUser);
+    document.getElementById('lastPostMessageLanguage').value =
+      CMCENUtils.getCurrentLanguage();
+    lastPostSubmitForm.hidden = false;
+  } catch (error) {
+    showPageMessage(error.message || translate('last_post_permission_error'));
+  }
+}
+
+lastPostSubmitForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  clearFormMessage();
+
+  if (!lastPostSubmitForm.checkValidity()) {
+    lastPostSubmitForm.reportValidity();
+    return;
+  }
+
+  const token = CMCENUtils.requireAuthToken();
+  if (!token) return;
+
+  setSubmitting(true);
+  try {
+    const imageUrl = await uploadLastPostImage(token);
+    const data = await CMCENUtils.apiJson('/api/last-posts', {
+      method: 'POST',
+      token,
+      body: getSubmissionPayload(imageUrl),
+      redirectOnUnauthorized: true,
+      unauthorizedMessage: translate('last_post_permission_error')
+    });
+    lastPostSubmitForm.reset();
+    populateSubmitter(currentUser);
+    document.getElementById('lastPostMessageLanguage').value =
+      CMCENUtils.getCurrentLanguage();
+    showFormMessage(data.message || translate('last_post_submit_success'), 'success');
+  } catch (error) {
+    showFormMessage(error.message || translate('last_post_submit_error'));
+  } finally {
+    setSubmitting(false);
+  }
+});
+
+initializeLastPostSubmission();

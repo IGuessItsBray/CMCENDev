@@ -176,7 +176,7 @@ async function authOrTempMiddleware(req, res, next) {
     try {
         const user = await User.findOne({ 'twoFactor.tempToken': tempToken, 'twoFactor.tempExpires': { $gt: new Date() } })
             .select(
-                    'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt webauthn totp'
+                'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt webauthn totp sessionVersion'
             )
             .populate('customRoles', 'name slug color permissions');
 

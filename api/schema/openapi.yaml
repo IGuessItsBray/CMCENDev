@@ -30,6 +30,7 @@ tags:
   - name: Search
   - name: Pages
   - name: Events
+  - name: Last Posts
   - name: Retirements
 paths:
   /api/version:
@@ -1025,6 +1026,55 @@ paths:
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/EventId"
+      requestBody:
+        $ref: "#/components/requestBodies/ReviewDecision"
+      responses:
+        "200":
+          description: Review result.
+  /api/last-posts:
+    get:
+      tags: [Last Posts]
+      summary: List published Last Post notices.
+      security: []
+      responses:
+        "200":
+          description: Paginated Last Post notices.
+    post:
+      tags: [Last Posts]
+      summary: Submit a Last Post notice.
+      x-permission: canCreateDrafts
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "201":
+          description: Created Last Post notice.
+  /api/last-posts/review:
+    get:
+      tags: [Last Posts]
+      summary: List pending Last Post notices.
+      x-permission: canReviewAndPublish
+      responses:
+        "200":
+          description: Last Post review queue.
+  /api/last-posts/{messageId}:
+    get:
+      tags: [Last Posts]
+      summary: Get a published Last Post notice.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Last Post notice.
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/last-posts/{messageId}/review:
+    patch:
+      tags: [Last Posts]
+      summary: Publish or reject a Last Post notice.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
       requestBody:
         $ref: "#/components/requestBodies/ReviewDecision"
       responses:

@@ -1,12 +1,13 @@
 {
-  "name": "server",
+  "name": "cmcen",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Canadian Military Communications and Electronics Network web application",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test:mail": "node scripts/test-mail.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start:dev": "nodemon server.js",
+    "check": "node --check server.js && node --check routes/last-posts.js && node --check public/app-utils.js && node --check public/color-picker.js && node --check public/date-time-picker.js && node --check public/index.js && node --check public/admin-users.js && node --check public/audit-log.js && node --check public/site-config.js && node --check public/timers-admin.js && node --check public/timers.js && node --check public/translations-admin.js && node --check public/dashboard.js && node --check public/dashboard-mfa.js && node --check public/register.js && node --check public/submit-event.js && node --check public/submit-retirement.js && node --check public/event.js && node --check public/retirement-message.js && node --check public/review-submissions.js && node --check public/home.js && node --check public/calendar.js && node --check public/search.js && node --check public/retirements.js && node --check public/last-post.js && node --check public/last-post-message.js && node --check public/submit-last-post.js && node --check scripts/migration/migrate-current-site-content.js && node --check scripts/migration/scrape-current-retirements.js && node --check scripts/migration/scrape-current-last-posts.js",
+    "test": "npm run check"
   },
   "keywords": [],
   "author": "",
@@ -21,16 +22,15 @@
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "form-data": "^4.0.6",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.0",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
-    "pino": "^10.3.1",
-    "pino-http": "^11.0.0",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.3",
-    "speakeasy": "^2.0.0",
-    "uuid": "^14.0.1"
+    "speakeasy": "^2.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }

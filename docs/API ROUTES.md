@@ -27,6 +27,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `routes/site-config.js` | `/api/admin/site-config` |
 | `routes/audit-logs.js` | `/api/audit-logs` |
 | `routes/events.js` | `/api/events` |
+| `routes/last-posts.js` | `/api/last-posts` |
 | `routes/retirement-messages.js` | `/api/retirement-messages` |
 | `routes/search.js` | `/api/search` |
 | `routes/analytics.js` | `/api/analytics` |
@@ -215,6 +216,18 @@ Mounted at `/api/events`.
 | `GET` | `/api/events/:id/edit` | Authenticated owner or reviewer | Get full event edit payload. |
 | `PATCH` | `/api/events/:id` | Authenticated owner or reviewer | Update event. |
 | `PATCH` | `/api/events/:eventId/review` | Authenticated + `canReviewAndPublish` | Publish or reject event. |
+
+## Last Post Notices
+
+Mounted at `/api/last-posts`.
+
+| Method | Path | Access | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/api/last-posts` | Authenticated + `canCreateDrafts` | Submit a Last Post notice for review. |
+| `GET` | `/api/last-posts/review` | Authenticated + `canReviewAndPublish` | List pending Last Post notices. |
+| `PATCH` | `/api/last-posts/:messageId/review` | Authenticated + `canReviewAndPublish` | Publish or reject a pending notice. Publication requires English and French messages. |
+| `GET` | `/api/last-posts` | Public | List published notices. Query: `limit`, `cursor`. |
+| `GET` | `/api/last-posts/:messageId` | Public | Get one published notice. |
 
 ## Retirement Messages and Comments
 

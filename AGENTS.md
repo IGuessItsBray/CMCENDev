@@ -25,6 +25,16 @@ that include credentials, certificates, or production secrets here.
 - Before changing authentication, MFA, roles, permissions, deployment, or data
   models, read the relevant route/model/middleware files first.
 
+## Endpoint Change Requirements
+
+These requirements are mandatory. They are not optional.
+
+- ALWAYS update `docs/API ROUTES.md` and the OpenAPI schema under
+  `api/schema/` each time you add a new endpoint or modify an existing endpoint.
+- Ensure any new permissions are added to the permission set for roles.
+- Ensure new endpoint actions and sensitive operations are tracked in audit
+  logs.
+
 ## Local Development
 
 Current known local flow:

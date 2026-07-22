@@ -19,6 +19,7 @@ const {
   LEGACY_SUBMITTER_RANK,
   normalizeDeceasedRank
 } = require('./lib/legacy-rank');
+const { resolvePostWithFallback } = require('./lib/post-resolver');
 const {
   cleanString,
   parseDate,
@@ -422,23 +423,27 @@ function getLastPostSlugs(html) {
 
 async function fetchPostBySlug(slug) {
   console.log(`Resolving Last Post slug through WordPress REST: ${slug}`);
-  const posts = await fetchJson(
-    `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_embed=1`
-  );
-  const post = Array.isArray(posts) ? posts[0] : null;
-
-  if (!post?.id) {
-    console.log(`REST post not found for ${slug}; scraping the /lp/ page HTML`);
-
-    try {
-      return await fetchPostFromPage(slug);
-    } catch (error) {
+  return resolvePostWithFallback({
+    fetchRest: async () => {
+      const posts = await fetchJson(
+        `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_embed=1`
+      );
+      const post = Array.isArray(posts) ? posts[0] : null;
+      return post?.id ? post : null;
+    },
+    fetchPage: () => fetchPostFromPage(slug),
+    onRestMiss: () => {
+      console.log(`REST post not found for ${slug}; scraping the /lp/ page HTML`);
+    },
+    onRestError: error => {
+      const status = error.response?.status;
+      const detail = status ? `status ${status}` : (error.message || 'request failed');
+      console.log(`REST lookup failed for ${slug} (${detail}); scraping the /lp/ page HTML`);
+    },
+    onPageError: error => {
       console.log(`Skipping Last Post slug ${slug}: ${error.message || 'page scrape failed'}`);
-      return null;
     }
-  }
-
-  return post;
+  });
 }
 
 function extractFirstMatch(html, pattern) {

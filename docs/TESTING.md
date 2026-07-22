@@ -107,11 +107,18 @@ language switching, and a WebKit pass for Safari-sensitive behavior.
 Forgejo Actions runs `.forgejo/workflows/tests.yml` whenever a pull request is
 opened, updated, reopened, or marked ready for review against `main`. The job
 requires a Forgejo runner with the `ubuntu-latest` label and runs from `server/`
-with Node 20:
+with Node 20. A separate job verifies that the production Docker image builds;
+the runner must provide access to a Docker daemon.
 
 ```sh
 npm ci
 npm test
+```
+
+The Docker job runs from the repository root:
+
+```sh
+docker build --tag cmcen-pr-test .
 ```
 
 Do not inject production credentials. The suite supplies its own JWT and

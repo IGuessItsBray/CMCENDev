@@ -39,3 +39,15 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+  docker-build:
+    name: Docker image build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build --tag cmcen-pr-test .

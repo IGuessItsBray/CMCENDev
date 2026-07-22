@@ -8,9 +8,14 @@ const {
 } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { randomUUID } = require('crypto');
-const MediaAsset = require('../models/MediaAsset');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { buildPublicMediaUrl, getCdnBaseUrl } = require('../services/media-library');
+const {
+  buildUploadContextFromBody,
+  createDirectUploadMediaAssetRecord,
+  createMediaAssetRecord,
+  sanitizeImageMetadata
+} = require('../services/media-assets');
 const s3Client = require('../storage');
 
 const router = express.Router();
@@ -90,12 +95,6 @@ function toVariantResponse(variants) {
   );
 }
 
-function getDisplayName(file) {
-  return String(file?.originalname || '')
-    .trim()
-    .slice(0, 240) || 'Uploaded image';
-}
-
 async function processImageUpload(file) {
   const baseKey = getImageBaseKey();
   const originalKey = `${baseKey}/original.${getOriginalExtension(file)}`;
@@ -147,27 +146,9 @@ async function processImageUpload(file) {
       size: file.size,
       mimeType: file.mimetype
     },
-    variants: toVariantResponse(variants)
+    variants: toVariantResponse(variants),
+    imageMetadata: sanitizeImageMetadata(metadata)
   };
-}
-
-async function createMediaAsset(uploadResult, file, user) {
-  const asset = await MediaAsset.create({
-    key: uploadResult.key,
-    url: uploadResult.url,
-    originalKey: uploadResult.original.key,
-    originalUrl: uploadResult.original.url,
-    originalName: getDisplayName(file),
-    displayName: getDisplayName(file),
-    mimeType: uploadResult.original.mimeType,
-    width: uploadResult.original.width || 0,
-    height: uploadResult.original.height || 0,
-    size: uploadResult.original.size || 0,
-    variants: uploadResult.variants,
-    uploadedBy: user?._id || null
-  });
-
-  return asset.toObject();
 }
 
 // POST /api/upload
@@ -184,11 +165,21 @@ router.post(
     }
 
     const uploadResult = await processImageUpload(req.file);
-    await createMediaAsset(uploadResult, req.file, req.user);
+    const mediaAsset = await createMediaAssetRecord({
+      uploadResult,
+      file: req.file,
+      user: req.user,
+      uploadContext: buildUploadContextFromBody(req.body),
+      imageMetadata: uploadResult.imageMetadata
+    });
 
     res.status(201).json({
       message: 'Upload successful',
-      ...uploadResult
+      ...uploadResult,
+      mediaAsset: {
+        _id: mediaAsset._id,
+        uuid: mediaAsset.uuid
+      }
     });
   } catch (err) {
     console.error('Upload Error:', err);
@@ -208,6 +199,14 @@ router.post('/upload-url', authMiddleware, requirePermission('canUploadMedia'), 
       : contentType.split('/').pop() || 'bin';
     const fileExtension = getCleanExtension(rawExtension, 'bin');
     const fileKey = `${randomUUID()}.${fileExtension}`;
+    const mediaAsset = await createDirectUploadMediaAssetRecord({
+      key: fileKey,
+      originalName,
+      contentType,
+      size: req.body?.size,
+      user: req.user,
+      uploadContext: buildUploadContextFromBody(req.body)
+    });
 
     const command = new PutObjectCommand({
       Bucket: process.env.MINIO_BUCKET_NAME,
@@ -223,6 +222,10 @@ router.post('/upload-url', authMiddleware, requirePermission('canUploadMedia'), 
       key: fileKey,
       url: buildPublicMediaUrl(fileKey),
       uploadUrl,
+      mediaAsset: {
+        _id: mediaAsset._id,
+        uuid: mediaAsset.uuid
+      },
       headers: {
         'Content-Type': contentType
       }

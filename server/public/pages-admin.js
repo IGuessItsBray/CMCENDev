@@ -2105,6 +2105,18 @@ function uploadImageToCdn(file, progressKey) {
 function uploadImageToCdnThroughServer(file, progressKey) {
   const formData = new FormData();
   formData.append("image", file);
+  formData.append("uploadSource", "pageBuilder");
+  formData.append("uploadContext", "page-builder");
+  formData.append("sourceField", progressKey || "pageImage");
+  formData.append("sourceId", pagesState.selectedPage?._id || "");
+  formData.append("sourceSlug", pagesState.selectedPage?.slug || "");
+  formData.append(
+    "sourceName",
+    pagesState.selectedPage?.title?.en ||
+    pagesState.selectedPage?.title?.fr ||
+    file.name ||
+    "Page image"
+  );
 
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();

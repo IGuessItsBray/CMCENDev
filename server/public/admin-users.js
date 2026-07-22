@@ -26,6 +26,8 @@ let adminWorkZoneState = {
   mediaIsLoading: false,
   mediaSort: "newest",
   selectedMediaKeys: [],
+  mediaDeletingKeys: [],
+  mediaIsDeleting: false,
   mediaUploadQueue: [],
   mediaIsUploading: false,
   isLoading: false,
@@ -392,6 +394,8 @@ async function deleteAdminMedia(mediaItem) {
   }
 
   setAdminWorkZoneState({
+    mediaDeletingKeys: [mediaItem.key],
+    mediaIsDeleting: true,
     message: ""
   });
 
@@ -404,10 +408,12 @@ async function deleteAdminMedia(mediaItem) {
       }
     );
 
+    await loadAdminMedia();
     setAdminWorkZoneState({
-      media: adminWorkZoneState.media.filter(item => item.key !== mediaItem.key),
       selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || [])
         .filter(key => key !== mediaItem.key),
+      mediaDeletingKeys: [],
+      mediaIsDeleting: false,
       message: data.message || translate("admin_media_delete_success")
     });
   } catch (error) {
@@ -422,6 +428,8 @@ async function deleteAdminMedia(mediaItem) {
       : translate("admin_media_delete_error");
 
     setAdminWorkZoneState({
+      mediaDeletingKeys: [],
+      mediaIsDeleting: false,
       message: attachedCount ? fallback : error.message || fallback
     });
   }
@@ -487,6 +495,8 @@ async function deleteSelectedAdminMedia() {
   }
 
   setAdminWorkZoneState({
+    mediaDeletingKeys: removableItems.map(item => item.key),
+    mediaIsDeleting: true,
     message: ""
   });
 
@@ -519,14 +529,18 @@ async function deleteSelectedAdminMedia() {
       }));
     }
 
+    await loadAdminMedia();
     setAdminWorkZoneState({
-      media: adminWorkZoneState.media.filter(item => !deletedKeys.has(item.key)),
       selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || [])
         .filter(key => !deletedKeys.has(key)),
+      mediaDeletingKeys: [],
+      mediaIsDeleting: false,
       message: parts.join(" ")
     });
   } catch (error) {
     setAdminWorkZoneState({
+      mediaDeletingKeys: [],
+      mediaIsDeleting: false,
       message: error.message || translate("admin_media_bulk_delete_error")
     });
   }
@@ -545,6 +559,10 @@ function updateMediaUploadItem(id, update) {
 function uploadSingleAdminMediaFile(file, id) {
   const formData = new FormData();
   formData.append("image", file);
+  formData.append("uploadSource", "mediaManager");
+  formData.append("uploadContext", "media-manager");
+  formData.append("sourceField", "mediaLibrary");
+  formData.append("sourceName", file.name || "Media manager upload");
 
   return new Promise(resolve => {
     const request = new XMLHttpRequest();

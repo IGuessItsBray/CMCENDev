@@ -21,6 +21,7 @@ const RetirementComment = require('../../models/RetirementComment');
 const RetirementMessage = require('../../models/RetirementMessage');
 const User = require('../../models/User');
 const { buildPublicMediaUrl } = require('../../services/media-library');
+const { sanitizeImageMetadata } = require('../../services/media-assets');
 const s3Client = require('../../storage');
 
 const WORDPRESS_BASE_URL = 'https://cmcen-rcmce.ca';
@@ -543,6 +544,25 @@ async function uploadImageForPost(post) {
     height: metadata.height || 0,
     size: buffer.length,
     variants,
+    uploadContext: {
+      type: 'migration',
+      context: 'retirement-message',
+      sourceId: String(post.id),
+      sourceModel: 'WordPressPost',
+      sourceField: 'photoUrl',
+      sourceUrl: post.link || sourceUrl,
+      label: title || `Retirement ${post.id}`,
+      linkedAt: new Date()
+    },
+    inferredName: title || `Retirement ${post.id}`,
+    fileMetadata: {
+      originalName: path.basename(new URL(sourceUrl).pathname) || `${slugify(title)}.${extension}`,
+      mimeType: contentType,
+      size: buffer.length,
+      storageKey: originalKey,
+      sourceUrl
+    },
+    imageMetadata: sanitizeImageMetadata(metadata),
     uploadedBy: null
   };
 

@@ -61,8 +61,9 @@ npm run check
 npm test
 ```
 
-`npm test` currently runs syntax checks. It is useful, but it is not a unit or
-integration test suite.
+`npm test` runs syntax checks and the Mongo-backed API integration suite. The
+integration runner starts an ephemeral MongoDB process and may require local
+permission to bind a loopback port.
 
 ## Docker Demo Suite
 

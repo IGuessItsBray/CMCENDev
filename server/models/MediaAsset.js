@@ -1,3 +1,4 @@
+const { randomUUID } = require('crypto');
 const mongoose = require('mongoose');
 
 const MediaVariantSchema = new mongoose.Schema(
@@ -14,6 +15,14 @@ const MediaVariantSchema = new mongoose.Schema(
 
 const MediaAssetSchema = new mongoose.Schema(
   {
+    uuid: {
+      type: String,
+      trim: true,
+      default: randomUUID,
+      unique: true,
+      sparse: true,
+      index: true
+    },
     key: {
       type: String,
       required: true,
@@ -71,6 +80,65 @@ const MediaAssetSchema = new mongoose.Schema(
       large: { type: MediaVariantSchema, default: () => ({}) },
       hero: { type: MediaVariantSchema, default: () => ({}) }
     },
+    uploadContext: {
+      type: {
+        type: String,
+        trim: true,
+        default: 'unknown'
+      },
+      context: {
+        type: String,
+        trim: true,
+        default: ''
+      },
+      sourceId: {
+        type: String,
+        trim: true,
+        default: ''
+      },
+      sourceModel: {
+        type: String,
+        trim: true,
+        default: ''
+      },
+      sourceField: {
+        type: String,
+        trim: true,
+        default: ''
+      },
+      sourceUrl: {
+        type: String,
+        trim: true,
+        default: ''
+      },
+      sourceSlug: {
+        type: String,
+        trim: true,
+        default: ''
+      },
+      label: {
+        type: String,
+        trim: true,
+        default: ''
+      },
+      linkedAt: {
+        type: Date,
+        default: null
+      }
+    },
+    inferredName: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    fileMetadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({})
+    },
+    imageMetadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({})
+    },
     uploadedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -83,5 +151,7 @@ const MediaAssetSchema = new mongoose.Schema(
 MediaAssetSchema.index({ createdAt: -1 });
 MediaAssetSchema.index({ displayName: 1, createdAt: -1 });
 MediaAssetSchema.index({ size: -1, createdAt: -1 });
+MediaAssetSchema.index({ 'uploadContext.type': 1, createdAt: -1 });
+MediaAssetSchema.index({ 'uploadContext.sourceId': 1, 'uploadContext.sourceField': 1 });
 
 module.exports = mongoose.model('MediaAsset', MediaAssetSchema);

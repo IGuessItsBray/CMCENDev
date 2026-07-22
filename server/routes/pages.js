@@ -286,6 +286,9 @@ function toPageBuilderMediaAssetItem(asset) {
     width: asset.width || 0,
     height: asset.height || 0,
     name: asset.displayName || asset.originalName || key,
+    uuid: asset.uuid || '',
+    uploadContext: asset.uploadContext || {},
+    inferredName: asset.inferredName || '',
     lastModified: asset.createdAt || asset.updatedAt || null
   };
 }
@@ -367,6 +370,18 @@ async function seedMediaAssetsFromStorageIfEmpty() {
       originalName: key.split('/').pop() || key,
       displayName: key.split('/').pop() || key,
       size: object.Size || 0,
+      uploadContext: {
+        type: 'legacyStorage',
+        context: 'storage-seed',
+        label: key.split('/').pop() || key
+      },
+      inferredName: key.split('/').pop() || key,
+      fileMetadata: {
+        originalName: key.split('/').pop() || key,
+        size: object.Size || 0,
+        storageKey: key,
+        lastModified: object.LastModified || null
+      },
       variants: inferVariantsFromStorageKey(key),
       createdAt: object.LastModified || new Date(),
       updatedAt: object.LastModified || new Date()

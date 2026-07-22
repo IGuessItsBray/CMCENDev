@@ -18,6 +18,7 @@ const {
 const LastPostMessage = require('../../models/LastPostMessage');
 const MediaAsset = require('../../models/MediaAsset');
 const { buildPublicMediaUrl } = require('../../services/media-library');
+const { sanitizeImageMetadata } = require('../../services/media-assets');
 const s3Client = require('../../storage');
 
 const WORDPRESS_BASE_URL = 'https://cmcen-rcmce.ca';
@@ -684,6 +685,25 @@ async function uploadImageForPost(post) {
     height: metadata.height || 0,
     size: buffer.length,
     variants,
+    uploadContext: {
+      type: 'migration',
+      context: 'last-post',
+      sourceId: String(post.id),
+      sourceModel: 'WordPressPost',
+      sourceField: 'imageUrl',
+      sourceUrl: post.link || sourceUrl,
+      label: title || `Last Post ${post.id}`,
+      linkedAt: new Date()
+    },
+    inferredName: title || `Last Post ${post.id}`,
+    fileMetadata: {
+      originalName: path.basename(new URL(sourceUrl).pathname) || `${slugify(title)}.${extension}`,
+      mimeType: contentType,
+      size: buffer.length,
+      storageKey: originalKey,
+      sourceUrl
+    },
+    imageMetadata: sanitizeImageMetadata(metadata),
     uploadedBy: null
   };
   const asset = await MediaAsset.findOneAndUpdate(

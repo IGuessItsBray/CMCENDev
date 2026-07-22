@@ -6,6 +6,7 @@ const {
   requirePermission
 } = require('../middleware/auth');
 const { cleanString } = require('../services/content-utils');
+const { linkMediaAssetToSource } = require('../services/media-assets');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 24;
@@ -136,6 +137,19 @@ function serializeLastPost(lastPost) {
   };
 }
 
+async function linkLastPostImageToMediaAsset(lastPost) {
+  await linkMediaAssetToSource({
+    mediaUrl: lastPost.imageUrl || lastPost.photoUrl,
+    sourceType: 'lastPostMessage',
+    context: 'last-post',
+    sourceModel: 'LastPostMessage',
+    sourceId: lastPost._id,
+    sourceField: 'imageUrl',
+    sourceUrl: `/last-post-message?id=${encodeURIComponent(String(lastPost._id))}`,
+    inferredName: getDeceasedName(lastPost)
+  });
+}
+
 router.post(
   '/',
   authMiddleware,
@@ -201,6 +215,8 @@ router.post(
         imageUrl,
         status: 'pending'
       });
+
+      await linkLastPostImageToMediaAsset(lastPost);
 
       return res.status(201).json({
         lastPost: {

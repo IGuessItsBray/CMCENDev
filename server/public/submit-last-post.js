@@ -84,6 +84,17 @@ async function uploadLastPostImage(token) {
   const preparedFile = await CMCENUtils.prepareImageUploadFile(file);
   const uploadData = new FormData();
   uploadData.append('image', preparedFile);
+  uploadData.append('uploadSource', 'lastPostMessage');
+  uploadData.append('uploadContext', 'last-post');
+  uploadData.append('sourceField', 'imageUrl');
+  uploadData.append(
+    'sourceName',
+    [
+      getFieldValue('lastPostDeceasedRank'),
+      getFieldValue('lastPostDeceasedFirstName'),
+      getFieldValue('lastPostDeceasedSurname')
+    ].filter(Boolean).join(' ')
+  );
 
   const data = await CMCENUtils.apiFetch('/api/upload', {
     method: 'POST',

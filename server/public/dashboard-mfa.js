@@ -12,10 +12,60 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTotpError = '';
     let isLoadingPasskeys = false;
     let isLoadingTotpStatus = false;
+    let activeMfaTooltip = null;
+
+    function removeMfaTooltip() {
+      if (activeMfaTooltip) {
+        activeMfaTooltip.remove();
+        activeMfaTooltip = null;
+      }
+    }
+
+    function showMfaTooltip(trigger) {
+      removeMfaTooltip();
+
+      const tooltip = document.createElement('div');
+      tooltip.className = 'mfa-card-tooltip';
+      tooltip.textContent = trigger.dataset.tooltip || '';
+      document.body.append(tooltip);
+
+      const triggerRect = trigger.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      const left = Math.max(12, Math.min(
+        triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2),
+        window.innerWidth - tooltipRect.width - 12
+      ));
+      const top = Math.max(12, triggerRect.bottom + 10);
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+      activeMfaTooltip = tooltip;
+    }
+
+    function refreshMfaHelpTooltips() {
+      document.querySelectorAll('.mfa-card-help').forEach(help => {
+        const tooltip = translateMfa(help.dataset.tooltipKey);
+        help.dataset.tooltip = tooltip;
+        help.setAttribute('aria-label', tooltip);
+      });
+    }
 
     function ensureWebAuthnAvailable() {
       CMCENUtils.ensureWebAuthnAvailable(translateMfa('mfa_webauthn_unavailable'));
     }
+
+    refreshMfaHelpTooltips();
+
+    document.querySelectorAll('.mfa-card-help').forEach(help => {
+      help.addEventListener('mouseenter', () => showMfaTooltip(help));
+      help.addEventListener('mouseleave', removeMfaTooltip);
+      help.addEventListener('focus', () => showMfaTooltip(help));
+      help.addEventListener('blur', removeMfaTooltip);
+      help.addEventListener('click', event => {
+        event.preventDefault();
+        showMfaTooltip(help);
+      });
+    });
 
     let token = CMCENUtils.getStoredAuthToken();
 
@@ -80,24 +130,40 @@ document.addEventListener('DOMContentLoaded', () => {
       return empty;
     }
 
+    function updatePasskeySetupButton(credentials) {
+      const button = document.getElementById('webauthn-register');
+      if (!button) return;
+
+      button.textContent = Array.isArray(credentials) && credentials.length > 0
+        ? translateMfa('mfa_add')
+        : translateMfa('mfa_setup');
+    }
+
     function renderPasskeys(credentials) {
       const list = document.getElementById('passkey-list');
+      const manager = document.querySelector('.passkey-manager');
       if (!list) return;
 
+      updatePasskeySetupButton(credentials);
+
       if (isLoadingPasskeys) {
+        if (manager) manager.hidden = false;
         list.textContent = translateMfa('mfa_passkeys_loading');
         return;
       }
 
       if (currentPasskeyError) {
+        if (manager) manager.hidden = false;
         list.replaceChildren(createEmptyMessage(currentPasskeyError));
         return;
       }
 
       if (!Array.isArray(credentials) || credentials.length === 0) {
-        list.replaceChildren(createEmptyMessage(translateMfa('mfa_passkeys_empty')));
+        if (manager) manager.hidden = true;
         return;
       }
+
+      if (manager) manager.hidden = false;
 
       list.replaceChildren(
         ...credentials.map((credential, index) => {
@@ -162,9 +228,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function renamePasskey(credentialID, currentName) {
-      const nickname = prompt(
+      const nickname = await CMCENModal.prompt(
         translateMfa('mfa_passkey_provider_prompt'),
-        currentName || ''
+        {
+          title: translateMfa('mfa_passkey_title'),
+          inputLabel: translateMfa('mfa_passkey_provider_prompt'),
+          defaultValue: currentName || '',
+          confirmText: translateMfa('mfa_rename')
+        }
       );
 
       if (nickname === null) return;
@@ -181,7 +252,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deletePasskey(credentialID, currentName) {
       const label = currentName || translateMfa('mfa_this_passkey');
 
-      if (!confirm(translateMfa('mfa_delete_passkey_confirm', { label }))) return;
+      if (!await CMCENModal.confirm(
+        translateMfa('mfa_delete_passkey_confirm', { label }),
+        {
+          title: translateMfa('mfa_delete'),
+          confirmText: translateMfa('mfa_delete'),
+          destructive: true
+        }
+      )) return;
 
       await api(`/api/mfa/webauthn/credentials/${encodeURIComponent(credentialID)}`, {
         method: 'DELETE',
@@ -194,14 +272,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderTotpStatus(status) {
       const container = document.getElementById('totp-status');
+      const manager = document.querySelector('.totp-manager');
       if (!container) return;
 
       if (isLoadingTotpStatus) {
+        if (manager) manager.hidden = false;
         container.textContent = translateMfa('mfa_totp_status_loading');
         return;
       }
 
       if (currentTotpError) {
+        if (manager) manager.hidden = false;
         container.replaceChildren(createEmptyMessage(currentTotpError));
         return;
       }
@@ -211,13 +292,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const appName = status?.appName || translateMfa('mfa_totp_default_app');
 
       const setupButton = document.getElementById('totp-setup');
+      const verificationRow = document.getElementById('totp-verification');
+      const verificationHint = document.getElementById('totp-verification-hint');
+      const setupOutput = document.getElementById('totp-otpauth');
+
+      if (verificationRow) verificationRow.hidden = !pending;
+      if (verificationHint) verificationHint.hidden = !pending;
+      if (enabled && setupOutput) setupOutput.replaceChildren();
+
       if (setupButton) {
-        setupButton.disabled = enabled;
-        setupButton.textContent = enabled
-          ? translateMfa('mfa_totp_enabled_button')
-          : pending
-            ? translateMfa('mfa_totp_restart_setup')
-            : translateMfa('mfa_setup_totp');
+        setupButton.hidden = enabled;
+        setupButton.disabled = false;
+        setupButton.textContent = pending
+          ? translateMfa('mfa_totp_restart_setup')
+          : translateMfa('mfa_setup_totp');
       }
 
       const title = enabled
@@ -232,6 +320,13 @@ document.addEventListener('DOMContentLoaded', () => {
           : translateMfa('mfa_totp_not_enabled_detail');
 
       container.replaceChildren();
+
+      if (!enabled && !pending) {
+        if (manager) manager.hidden = true;
+        return;
+      }
+
+      if (manager) manager.hidden = false;
 
       const item = document.createElement('div');
       item.className = 'totp-status-card';
@@ -294,9 +389,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function renameTotp(currentName) {
-      const appName = prompt(
+      const appName = await CMCENModal.prompt(
         translateMfa('mfa_totp_rename_prompt'),
-        currentName || translateMfa('mfa_totp_default_app')
+        {
+          title: translateMfa('mfa_totp_title'),
+          inputLabel: translateMfa('mfa_totp_rename_prompt'),
+          defaultValue: currentName || translateMfa('mfa_totp_default_app'),
+          confirmText: translateMfa('mfa_rename')
+        }
       );
 
       if (appName === null) return;
@@ -312,7 +412,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function disableTotp() {
-      if (!confirm(translateMfa('mfa_totp_disable_confirm'))) return;
+      if (!await CMCENModal.confirm(
+        translateMfa('mfa_totp_disable_confirm'),
+        {
+          title: translateMfa('mfa_disable'),
+          confirmText: translateMfa('mfa_disable'),
+          destructive: true
+        }
+      )) return;
 
       const status = await api('/api/mfa/totp', {
         method: 'DELETE',
@@ -333,15 +440,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wire TOTP buttons
     const totpSetupBtn = document.getElementById('totp-setup');
     const totpVerifyBtn = document.getElementById('totp-verify');
-    const totpRefreshBtn = document.getElementById('totp-refresh');
     const totpStatus = document.getElementById('totp-status');
 
     if (totpSetupBtn) totpSetupBtn.addEventListener('click', async () => {
       try {
         totpSetupBtn.disabled = true;
-        const appName = prompt(
+        const appName = await CMCENModal.prompt(
           translateMfa('mfa_totp_rename_prompt'),
-          translateMfa('mfa_totp_default_app')
+          {
+            title: translateMfa('mfa_totp_title'),
+            inputLabel: translateMfa('mfa_totp_rename_prompt'),
+            defaultValue: translateMfa('mfa_totp_default_app'),
+            confirmText: translateMfa('mfa_setup')
+          }
         );
         if (appName === null) return;
 
@@ -385,9 +496,13 @@ document.addEventListener('DOMContentLoaded', () => {
           secret.textContent = res.otpauth_url || JSON.stringify(res);
           container.appendChild(secret);
         }
-        alert(translateMfa('mfa_totp_secret_created'));
+        await CMCENModal.alert(translateMfa('mfa_totp_secret_created'), {
+          title: translateMfa('mfa_totp_title')
+        });
         await loadTotpStatus();
-      } catch (e) { alert(translateMfa('mfa_error', { message: e.message })); }
+      } catch (e) {
+        await CMCENModal.alert(translateMfa('mfa_error', { message: e.message }));
+      }
       finally { totpSetupBtn.disabled = false; }
     });
 
@@ -404,18 +519,18 @@ document.addEventListener('DOMContentLoaded', () => {
           },
           errorMessage: 'Could not verify TOTP token'
         });
-        alert(translateMfa('mfa_totp_verified'));
+        await CMCENModal.alert(translateMfa('mfa_totp_verified'), {
+          title: translateMfa('mfa_totp_title')
+        });
         await loadTotpStatus();
       } catch (e) {
-        alert(translateMfa('mfa_verify_failed', { message: e.message }));
+        await CMCENModal.alert(translateMfa('mfa_verify_failed', { message: e.message }));
       }
       finally { totpVerifyBtn.disabled = false; }
     });
 
     // WebAuthn handlers
     const waRegisterBtn = document.getElementById('webauthn-register');
-    const waAuthBtn = document.getElementById('webauthn-authenticate');
-    const passkeyRefreshBtn = document.getElementById('passkey-refresh');
     const passkeyList = document.getElementById('passkey-list');
 
     if (waRegisterBtn) waRegisterBtn.addEventListener('click', async () => {
@@ -426,7 +541,9 @@ document.addEventListener('DOMContentLoaded', () => {
           await api('/api/mfa/webauthn/register/options', { method: 'POST', json: true })
         );
         if (!options || !options.challenge) {
-          alert(translateMfa('mfa_registration_options_missing'));
+          await CMCENModal.alert(translateMfa('mfa_registration_options_missing'), {
+            title: translateMfa('mfa_passkey_title')
+          });
           return;
         }
 
@@ -442,47 +559,15 @@ document.addEventListener('DOMContentLoaded', () => {
           errorMessage: 'Could not verify passkey registration'
         });
 
-        alert(translateMfa('mfa_passkey_registered'));
+        await CMCENModal.alert(translateMfa('mfa_passkey_registered'), {
+          title: translateMfa('mfa_passkey_title')
+        });
         await loadPasskeys();
-      } catch (e) { alert(translateMfa('mfa_error', { message: e.message })); }
+      } catch (e) {
+        await CMCENModal.alert(translateMfa('mfa_error', { message: e.message }));
+      }
       finally { waRegisterBtn.disabled = false; }
     });
-
-    if (waAuthBtn) waAuthBtn.addEventListener('click', async () => {
-      try {
-        waAuthBtn.disabled = true;
-        ensureWebAuthnAvailable();
-        const options = await api('/api/mfa/webauthn/authenticate/options', { method: 'POST', json: true });
-        if (!options || Object.keys(options).length === 0) {
-          alert(translateMfa('mfa_auth_options_missing'));
-          return;
-        }
-        if (!options.allowCredentials || options.allowCredentials.length === 0) {
-          alert(translateMfa('mfa_no_passkeys_registered'));
-          return;
-        }
-
-        const publicKey = CMCENUtils.preparePublicKeyRequestOptions(options);
-        const assertion = await navigator.credentials.get({ publicKey });
-
-        await api('/api/mfa/webauthn/authenticate/verify', {
-          method: 'POST',
-          body: CMCENUtils.serializeAssertionCredential(assertion),
-          errorMessage: 'Passkey authentication failed'
-        });
-
-        alert(translateMfa('mfa_passkey_auth_succeeded'));
-      } catch (e) { alert(translateMfa('mfa_error', { message: e.message })); }
-      finally { waAuthBtn.disabled = false; }
-    });
-
-    if (passkeyRefreshBtn) {
-      passkeyRefreshBtn.addEventListener('click', loadPasskeys);
-    }
-
-    if (totpRefreshBtn) {
-      totpRefreshBtn.addEventListener('click', loadTotpStatus);
-    }
 
     if (totpStatus) {
       totpStatus.addEventListener('click', async event => {
@@ -500,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await renameTotp(button.dataset.currentName);
           }
         } catch (error) {
-          alert(translateMfa('mfa_error', { message: error.message }));
+          await CMCENModal.alert(translateMfa('mfa_error', { message: error.message }));
         } finally {
           button.disabled = false;
         }
@@ -523,7 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await deletePasskey(button.dataset.credentialId, button.dataset.currentName);
           }
         } catch (error) {
-          alert(translateMfa('mfa_error', { message: error.message }));
+          await CMCENModal.alert(translateMfa('mfa_error', { message: error.message }));
         } finally {
           button.disabled = false;
         }
@@ -531,6 +616,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.addEventListener('languagechange', () => {
+      removeMfaTooltip();
+      refreshMfaHelpTooltips();
       renderTotpStatus(currentTotpStatus);
       renderPasskeys(currentPasskeys);
 

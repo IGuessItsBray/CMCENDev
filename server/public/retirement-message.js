@@ -337,11 +337,14 @@ async function deleteRetirementMessage() {
         return;
     }
 
-    if (
-        !window.confirm(
-            "Delete this retirement message and its comments? This will be recorded in the audit log."
-        )
-    ) {
+    if (!await CMCENModal.confirm(
+        "Delete this retirement message and its comments? This will be recorded in the audit log.",
+        {
+            title: "Delete retirement message",
+            confirmText: "Delete",
+            destructive: true
+        }
+    )) {
         return;
     }
 
@@ -435,11 +438,14 @@ async function deleteRetirementComment(comment) {
         return;
     }
 
-    if (
-        !window.confirm(
-            "Delete this comment? This will be recorded in the audit log."
-        )
-    ) {
+    if (!await CMCENModal.confirm(
+        "Delete this comment? This will be recorded in the audit log.",
+        {
+            title: "Delete comment",
+            confirmText: "Delete",
+            destructive: true
+        }
+    )) {
         return;
     }
 

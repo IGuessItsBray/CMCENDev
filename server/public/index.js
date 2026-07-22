@@ -893,150 +893,31 @@ function getAccountIcon() {
   `;
 }
 
-let signOutModal = null;
-let signOutTrigger = null;
-
-function setSignOutModalOpen(isOpen) {
-  if (!signOutModal) return;
-
-  signOutModal.hidden = !isOpen;
-  document.body.classList.toggle('signout-modal-lock', isOpen);
-
-  if (isOpen) {
-    signOutModal
-      .querySelector('[data-signout-cancel]')
-      ?.focus();
-    return;
+function getSignOutTranslation(key, fallback) {
+  if (typeof window.translate !== "function") {
+    return fallback;
   }
 
-  signOutTrigger?.focus();
-  signOutTrigger = null;
+  const translated = window.translate(key);
+  return translated && translated !== key ? translated : fallback;
 }
 
-function createSignOutModal() {
-  if (signOutModal) return signOutModal;
-
-  const modal = document.createElement('div');
-  modal.className = 'signout-modal-overlay';
-  modal.hidden = true;
-  modal.innerHTML = `
-    <section
-      class="signout-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="signOutModalTitle"
-      aria-describedby="signOutModalDescription"
-    >
-      <header class="signout-modal-header">
-        <span class="signout-modal-icon-wrap" aria-hidden="true">
-          <svg
-            class="signout-modal-icon"
-            viewBox="0 0 24 24"
-          >
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <path d="M16 17l5-5-5-5"></path>
-            <path d="M21 12H9"></path>
-          </svg>
-        </span>
-
-        <div>
-          <h2
-            id="signOutModalTitle"
-            data-i18n="signout_confirm_title"
-          >
-            Sign out?
-          </h2>
-        </div>
-      </header>
-
-      <div class="signout-modal-body">
-        <p
-          id="signOutModalDescription"
-          data-i18n="signout_confirm_message"
-        >
-          Are you sure you want to sign out?
-        </p>
-
-        <div class="signout-modal-actions">
-          <button
-            type="button"
-            class="signout-modal-button signout-modal-button-secondary"
-            data-signout-cancel
-            data-i18n="signout_cancel"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="button"
-            class="signout-modal-button signout-modal-button-danger"
-            data-signout-confirm
-            data-i18n="signout_confirm"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-    </section>
-  `;
-
-  modal.addEventListener('click', event => {
-    if (
-      event.target === modal ||
-      event.target.closest('[data-signout-cancel]')
-    ) {
-      setSignOutModalOpen(false);
+async function showSignOutModal() {
+  const confirmed = await CMCENModal.confirm(
+    getSignOutTranslation(
+      "signout_confirm_message",
+      "Are you sure you want to sign out?"
+    ),
+    {
+      title: getSignOutTranslation("signout_confirm_title", "Sign out?"),
+      cancelText: getSignOutTranslation("signout_cancel", "Cancel"),
+      confirmText: getSignOutTranslation("signout_confirm", "Sign out")
     }
+  );
 
-    if (event.target.closest('[data-signout-confirm]')) {
-      setSignOutModalOpen(false);
-      performSignOut();
-    }
-  });
-
-  modal.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      setSignOutModalOpen(false);
-      return;
-    }
-
-    if (event.key !== 'Tab') return;
-
-    const focusableElements = Array.from(
-      modal.querySelectorAll('button')
-    ).filter(element => !element.disabled);
-
-    if (!focusableElements.length) return;
-
-    const firstElement = focusableElements[0];
-    const lastElement =
-      focusableElements[focusableElements.length - 1];
-
-    if (event.shiftKey && document.activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-    } else if (!event.shiftKey && document.activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-    }
-  });
-
-  document.body.appendChild(modal);
-  signOutModal = modal;
-
-  return signOutModal;
-}
-
-function showSignOutModal(trigger) {
-  signOutTrigger = trigger || document.activeElement;
-  createSignOutModal();
-
-  if (typeof applyLanguage === "function") {
-    applyLanguage(currentLang);
+  if (confirmed) {
+    await performSignOut();
   }
-
-  setSignOutModalOpen(true);
 }
 
 async function performSignOut() {
@@ -1051,9 +932,9 @@ async function performSignOut() {
   window.location.href = '/login';
 }
 
-function handleSignOut(event) {
+async function handleSignOut(event) {
   event?.preventDefault();
-  showSignOutModal(event?.currentTarget);
+  await showSignOutModal();
 }
 
 function getNotificationBadge(count) {

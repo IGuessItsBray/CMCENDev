@@ -1985,7 +1985,11 @@ async function updatePageStatus(status) {
 
 async function deleteSelectedPage() {
   if (!pagesState.selectedPage?._id) return;
-  if (!window.confirm("Delete this page?")) return;
+  if (!await CMCENModal.confirm("Delete this page?", {
+    title: "Delete page",
+    confirmText: "Delete",
+    destructive: true
+  })) return;
   cancelAutoSave();
 
   await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}`, {

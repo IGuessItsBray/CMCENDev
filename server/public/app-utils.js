@@ -689,6 +689,260 @@
     element.hidden = false;
   }
 
+  let modalOverlay = null;
+  let modalDialog = null;
+  let modalTitle = null;
+  let modalMessage = null;
+  let modalInputGroup = null;
+  let modalInputLabel = null;
+  let modalInput = null;
+  let modalCancelButton = null;
+  let modalConfirmButton = null;
+  let modalCloseButton = null;
+  let modalActiveRequest = null;
+  let modalQueue = Promise.resolve();
+
+  function getModalTranslation(key, fallback) {
+    if (typeof window.translate !== "function") {
+      return fallback;
+    }
+
+    const translated = window.translate(key);
+    return translated && translated !== key ? translated : fallback;
+  }
+
+  function getFocusableModalElements() {
+    if (!modalDialog) return [];
+
+    return Array.from(
+      modalDialog.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), [href], select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(element => !element.hidden && element.getClientRects().length > 0);
+  }
+
+  function closeModal(value) {
+    const request = modalActiveRequest;
+
+    if (!request) return;
+
+    modalActiveRequest = null;
+    modalOverlay.hidden = true;
+    document.body.classList.remove("cmcen-modal-lock");
+    request.restoreFocus?.focus();
+    request.resolve(value);
+  }
+
+  function createModal() {
+    if (modalOverlay) return modalOverlay;
+
+    modalOverlay = document.createElement("div");
+    modalOverlay.className = "cmcen-modal-overlay";
+    modalOverlay.hidden = true;
+
+    modalDialog = document.createElement("section");
+    modalDialog.className = "cmcen-modal";
+    modalDialog.setAttribute("role", "dialog");
+    modalDialog.setAttribute("aria-modal", "true");
+    modalDialog.setAttribute("aria-labelledby", "cmcenModalTitle");
+    modalDialog.setAttribute("aria-describedby", "cmcenModalMessage");
+
+    const header = document.createElement("header");
+    header.className = "cmcen-modal-header";
+
+    const heading = document.createElement("div");
+    heading.className = "cmcen-modal-heading";
+
+    const brand = document.createElement("span");
+    brand.className = "cmcen-modal-brand";
+    brand.textContent = "CMCEN / RCMCE";
+
+    modalTitle = document.createElement("h2");
+    modalTitle.id = "cmcenModalTitle";
+    heading.append(brand, modalTitle);
+
+    modalCloseButton = document.createElement("button");
+    modalCloseButton.type = "button";
+    modalCloseButton.className = "cmcen-modal-close";
+    modalCloseButton.setAttribute("aria-label", "Close");
+    modalCloseButton.innerHTML = '<span aria-hidden="true">×</span>';
+
+    header.append(heading, modalCloseButton);
+
+    const body = document.createElement("div");
+    body.className = "cmcen-modal-body";
+
+    modalMessage = document.createElement("p");
+    modalMessage.id = "cmcenModalMessage";
+
+    modalInputGroup = document.createElement("label");
+    modalInputGroup.className = "cmcen-modal-field";
+    modalInputGroup.hidden = true;
+
+    modalInputLabel = document.createElement("span");
+    modalInputLabel.className = "visually-hidden";
+
+    modalInput = document.createElement("input");
+    modalInput.id = "cmcenModalInput";
+    modalInput.className = "cmcen-modal-input";
+
+    modalInputGroup.append(modalInputLabel, modalInput);
+
+    const actions = document.createElement("div");
+    actions.className = "cmcen-modal-actions";
+
+    modalCancelButton = document.createElement("button");
+    modalCancelButton.type = "button";
+    modalCancelButton.className = "cmcen-modal-button cmcen-modal-button-secondary";
+
+    modalConfirmButton = document.createElement("button");
+    modalConfirmButton.type = "button";
+    modalConfirmButton.className = "cmcen-modal-button cmcen-modal-button-primary";
+
+    actions.append(modalCancelButton, modalConfirmButton);
+    body.append(modalMessage, modalInputGroup, actions);
+    modalDialog.append(header, body);
+    modalOverlay.append(modalDialog);
+
+    modalOverlay.addEventListener("click", event => {
+      if (event.target === modalOverlay && modalActiveRequest?.closeOnBackdrop) {
+        closeModal(modalActiveRequest.cancelValue);
+      }
+    });
+
+    modalCloseButton.addEventListener("click", () => {
+      if (modalActiveRequest) {
+        closeModal(modalActiveRequest.cancelValue);
+      }
+    });
+
+    modalCancelButton.addEventListener("click", () => {
+      if (modalActiveRequest) {
+        closeModal(modalActiveRequest.cancelValue);
+      }
+    });
+
+    modalConfirmButton.addEventListener("click", () => {
+      if (!modalActiveRequest) return;
+      closeModal(
+        modalActiveRequest.type === "prompt" ? modalInput.value : modalActiveRequest.confirmValue
+      );
+    });
+
+    modalOverlay.addEventListener("keydown", event => {
+      if (!modalActiveRequest) return;
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeModal(modalActiveRequest.cancelValue);
+        return;
+      }
+
+      if (event.key === "Enter" && modalActiveRequest.type === "prompt") {
+        event.preventDefault();
+        closeModal(modalInput.value);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusableElements = getFocusableModalElements();
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (!firstElement || !lastElement) return;
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    });
+
+    document.body.append(modalOverlay);
+    return modalOverlay;
+  }
+
+  function showModal(type, message, options = {}) {
+    const request = () => new Promise(resolve => {
+      createModal();
+
+      const isPrompt = type === "prompt";
+      const isAlert = type === "alert";
+      const titleKey = isPrompt
+        ? "modal_input_title"
+        : isAlert
+          ? "modal_notice_title"
+          : "modal_confirm_title";
+      const defaultTitle = isPrompt
+        ? "Enter a value"
+        : isAlert
+          ? "Notice"
+          : "Confirm action";
+
+      modalActiveRequest = {
+        type,
+        resolve,
+        restoreFocus: document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null,
+        cancelValue: isPrompt ? null : false,
+        confirmValue: isAlert ? undefined : true,
+        closeOnBackdrop: options.closeOnBackdrop !== false
+      };
+
+      modalDialog.setAttribute("role", isAlert ? "alertdialog" : "dialog");
+      modalTitle.textContent = options.title || getModalTranslation(titleKey, defaultTitle);
+      modalMessage.textContent = String(message || "");
+      modalCloseButton.setAttribute(
+        "aria-label",
+        options.closeLabel || getModalTranslation("modal_close", "Close")
+      );
+      modalInputGroup.hidden = !isPrompt;
+      modalInput.type = isPrompt ? options.inputType || "text" : "text";
+      modalInput.value = isPrompt ? String(options.defaultValue || "") : "";
+      modalInput.placeholder = isPrompt ? options.placeholder || "" : "";
+      modalInput.autocomplete = isPrompt ? options.autocomplete || "off" : "off";
+      modalInputLabel.textContent = options.inputLabel || getModalTranslation("modal_input_label", "Value");
+      modalCancelButton.hidden = isAlert;
+      modalCancelButton.textContent = options.cancelText || getModalTranslation("modal_cancel", "Cancel");
+      modalConfirmButton.textContent = options.confirmText || getModalTranslation(
+        isAlert ? "modal_close" : "modal_confirm",
+        isAlert ? "Close" : "Confirm"
+      );
+      modalConfirmButton.classList.toggle("is-danger", Boolean(options.destructive));
+
+      modalOverlay.hidden = false;
+      document.body.classList.add("cmcen-modal-lock");
+
+      window.requestAnimationFrame(() => {
+        if (modalActiveRequest?.resolve !== resolve) return;
+
+        const focusTarget = isPrompt ? modalInput : modalConfirmButton;
+        focusTarget.focus();
+        if (isPrompt) modalInput.select();
+      });
+    });
+
+    const queuedRequest = modalQueue.then(request, request);
+    modalQueue = queuedRequest.catch(() => {});
+    return queuedRequest;
+  }
+
+  window.CMCENModal = {
+    alert(message, options) {
+      return showModal("alert", message, options);
+    },
+    confirm(message, options) {
+      return showModal("confirm", message, options);
+    },
+    prompt(message, options) {
+      return showModal("prompt", message, options);
+    }
+  };
+
   function trackPageVisit() {
     if (window.location.pathname === "/analytics") {
       return;

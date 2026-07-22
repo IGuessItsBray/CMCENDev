@@ -171,7 +171,12 @@ async function setupTotp() {
   registerPasskeyOption.disabled = true;
 
   try {
-    const appName = prompt("Authenticator app name", pendingTotpAppName);
+    const appName = await CMCENModal.prompt("Authenticator app name", {
+      title: "Authenticator app",
+      inputLabel: "Authenticator app name",
+      defaultValue: pendingTotpAppName,
+      confirmText: "Setup"
+    });
     if (appName === null) {
       registerTotpOption.disabled = false;
       registerPasskeyOption.disabled = false;

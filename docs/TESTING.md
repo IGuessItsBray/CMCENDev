@@ -104,7 +104,10 @@ language switching, and a WebKit pass for Safari-sensitive behavior.
 
 ## CI
 
-A CI job should run from `server/` with Node 20 or newer:
+Forgejo Actions runs `.forgejo/workflows/tests.yml` whenever a pull request is
+opened, updated, reopened, or marked ready for review against `main`. The job
+requires a Forgejo runner with the `ubuntu-latest` label and runs from `server/`
+with Node 20:
 
 ```sh
 npm ci

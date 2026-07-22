@@ -136,6 +136,10 @@ function createPanelHeading(title, tooltip = "") {
   return heading;
 }
 
+function getBreakdownCount(item) {
+  return item.visits ?? item.visitors ?? 0;
+}
+
 function createBreakdown(title, items, emptyText = "No visits yet", tooltip = "") {
   const panel = document.createElement("section");
   panel.className = "analytics-panel";
@@ -152,7 +156,7 @@ function createBreakdown(title, items, emptyText = "No visits yet", tooltip = ""
 
   const list = document.createElement("div");
   list.className = "analytics-breakdown-list";
-  const max = Math.max(...items.map(item => item.visits || 0), 1);
+  const max = Math.max(...items.map(getBreakdownCount), 1);
 
   items.forEach(item => {
     const row = document.createElement("div");
@@ -165,11 +169,11 @@ function createBreakdown(title, items, emptyText = "No visits yet", tooltip = ""
     label.textContent = item.label || "Unknown";
 
     const count = document.createElement("strong");
-    count.textContent = formatNumber(item.visits);
+    count.textContent = formatNumber(getBreakdownCount(item));
 
     const meter = document.createElement("span");
     meter.className = "analytics-meter";
-    meter.style.setProperty("--analytics-meter-width", `${Math.max((item.visits / max) * 100, 4)}%`);
+    meter.style.setProperty("--analytics-meter-width", `${Math.max((getBreakdownCount(item) / max) * 100, 4)}%`);
 
     meta.append(label, count);
     row.append(meta, meter);
@@ -239,8 +243,9 @@ function renderAnalytics() {
   stats.className = "analytics-stat-grid";
   stats.append(
     createCard("Visits", totals.visits),
-    createCard("Registered", totals.registered),
-    createCard("Guests", totals.guests)
+    createCard("Unique visitors", totals.uniqueVisitors),
+    createCard("Registered visitors", totals.uniqueRegistered),
+    createCard("Guest visitors", totals.uniqueGuests)
   );
   const trafficSourcesTooltip = "Direct means no outside referrer was sent, including typed URLs, bookmarks, and same-site navigation. Internal is historical same-site traffic recorded before this dashboard treated it as direct.";
 
@@ -253,7 +258,7 @@ function renderAnalytics() {
     createBreakdown("Operating systems", data.operatingSystems),
     createBreakdown("Browsers", data.browsers),
     createBreakdown("Countries", data.countries),
-    createBreakdown("User roles", data.roles)
+    createBreakdown("Unique visitors by role", data.roles)
   );
 
   analyticsContent.append(stats, grid, createRecentVisits(data.recentVisits));

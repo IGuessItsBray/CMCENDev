@@ -1,5 +1,5 @@
 const express = require('express');
-const fs = require('fs/promises');
+const { spawn } = require('child_process');
 const path = require('path');
 const { timingSafeEqual } = require('crypto');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
@@ -7,12 +7,45 @@ const AnalyticsVisit = require('../models/AnalyticsVisit');
 const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
-const ENV_FILE_PATH = path.join(__dirname, '..', '.env');
+const MIGRATION_SCRIPT_PATH = path.join(
+  __dirname,
+  '..',
+  'scripts',
+  'migration',
+  'scrape-current-retirements.js'
+);
+const LAST_POST_MIGRATION_SCRIPT_PATH = path.join(
+  __dirname,
+  '..',
+  'scripts',
+  'migration',
+  'scrape-current-last-posts.js'
+);
 const CONFIG_TOKEN_KEY = 'config_token';
 const CONFIG_TOKEN_ALIASES = Object.freeze([
   CONFIG_TOKEN_KEY,
   'CONFIG_TOKEN'
 ]);
+const MIGRATION_DEFINITIONS = Object.freeze({
+  retirement: {
+    label: 'Retirement migration',
+    scriptPath: MIGRATION_SCRIPT_PATH,
+    args: ['--content=retirements'],
+    maxLimit: 1000
+  },
+  comments: {
+    label: 'Comment migration',
+    scriptPath: MIGRATION_SCRIPT_PATH,
+    args: ['--content=comments'],
+    maxLimit: 1000
+  },
+  lastPost: {
+    label: 'Last Post migration',
+    scriptPath: LAST_POST_MIGRATION_SCRIPT_PATH,
+    args: [],
+    maxLimit: 1000
+  }
+});
 
 function getExpectedConfigToken() {
   return CONFIG_TOKEN_ALIASES
@@ -108,19 +141,6 @@ async function requireConfigToken(req, res, next) {
   next();
 }
 
-function requireDevelopmentSiteConfig(req, res, next) {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isDeveloper = req.user?.role === 'developer';
-
-  if (isProduction || !isDeveloper) {
-    return res.status(404).json({
-      error: 'Endpoint not found'
-    });
-  }
-
-  next();
-}
-
 function requireDeveloperRole(req, res, next) {
   if (req.user?.role !== 'developer') {
     return res.status(404).json({
@@ -131,156 +151,184 @@ function requireDeveloperRole(req, res, next) {
   next();
 }
 
-async function readEnvFile() {
-  try {
-    return await fs.readFile(ENV_FILE_PATH, 'utf8');
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return '';
-    }
-
-    throw error;
-  }
+function getMigrationDefinition(key) {
+  return MIGRATION_DEFINITIONS[String(key || '')] || null;
 }
 
-function parseEnvEntries(contents) {
-  return String(contents || '')
-    .split(/\r?\n/u)
-    .map((line, index) => {
-      const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$/u);
-
-      if (!match) {
-        return {
-          type: line.trim().startsWith('#') ? 'comment' : 'other',
-          line,
-          index
-        };
-      }
-
-      return {
-        type: 'entry',
-        key: match[1],
-        rawValue: match[2],
-        value: parseEnvValue(match[2]),
-        index
-      };
-    });
-}
-
-function parseEnvValue(rawValue) {
-  const value = String(rawValue || '').trim();
-
-  if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
-  ) {
-    return value.slice(1, -1)
-      .replace(/\\n/gu, '\n')
-      .replace(/\\"/gu, '"')
-      .replace(/\\'/gu, "'");
+function parseMigrationLimit(value, maxLimit) {
+  if (value === undefined || value === null || value === '') {
+    return null;
   }
 
-  const commentIndex = value.search(/\s#/u);
+  const limit = Number(value);
 
-  return commentIndex >= 0
-    ? value.slice(0, commentIndex).trim()
-    : value;
+  if (!Number.isInteger(limit) || limit < 1 || limit > maxLimit) {
+    return null;
+  }
+
+  return limit;
 }
 
-function isSecretKey(key) {
-  return /(?:SECRET|TOKEN|PASSWORD|KEY|URI)/iu.test(key);
-}
-
-function isConfigTokenKey(key) {
-  return CONFIG_TOKEN_ALIASES.includes(key);
-}
-
-function toConfigVariable(entry) {
-  const isConfigToken = isConfigTokenKey(entry.key);
-  const isSecret = isSecretKey(entry.key);
-  const masked = isSecret || isConfigToken;
+function getMigrationSummary(stdout, stderr, mode) {
+  const output = `${stdout || ''}\n${stderr || ''}`.trim();
+  const retirementMatch = output.match(/\b(?:Imported|Would import)\s+(\d+)\s+retirement messages\./iu);
+  const commentMatch = output.match(/\b(?:Imported|Would import)\s+(\d+)\s+retirement comments\./iu);
+  const lastPostMatch = output.match(/\b(?:Imported|Would import)\s+(\d+)\s+Last Post messages\./u);
+  const manifestMatch = output.match(/Wrote manifest:\s*(.+)$/imu);
 
   return {
-    key: entry.key,
-    value: masked ? '' : entry.value,
-    isSecret,
-    isConfigToken,
-    masked,
-    source: 'env-file'
+    mode,
+    retirementMessages: retirementMatch ? Number(retirementMatch[1]) : null,
+    comments: commentMatch ? Number(commentMatch[1]) : null,
+    lastPostMessages: lastPostMatch ? Number(lastPostMatch[1]) : null,
+    manifestPath: manifestMatch ? manifestMatch[1].trim() : '',
+    output: output.split(/\r?\n/u).slice(-30)
   };
 }
 
-function listConfigVariables(contents) {
-  return parseEnvEntries(contents)
-    .filter(entry => entry.type === 'entry')
-    .map(toConfigVariable);
+function writeMigrationEvent(res, event) {
+  res.write(`${JSON.stringify({
+    timestamp: new Date().toISOString(),
+    ...event
+  })}\n`);
 }
 
-function validateConfigKey(key) {
-  return /^[A-Za-z_][A-Za-z0-9_]*$/u.test(String(key || ''));
+function splitMigrationOutputLines(chunk, carry = '') {
+  const text = `${carry}${chunk.toString('utf8')}`;
+  const lines = text.split(/\r?\n/u);
+
+  return {
+    lines: lines.slice(0, -1),
+    carry: lines.at(-1) || ''
+  };
 }
 
-function quoteEnvValue(value) {
-  const cleanValue = String(value ?? '');
+function runMigrationStream({ req, res, definition, migrationKey, mode, limit }) {
+  const args = [definition.scriptPath, ...definition.args];
 
-  if (/[\r\n]/u.test(cleanValue)) {
-    throw new Error('Configuration values cannot contain line breaks');
+  if (mode === 'apply') {
+    args.push('--apply');
   }
 
-  if (!cleanValue) {
-    return '';
+  if (limit) {
+    args.push(`--limit=${limit}`);
   }
 
-  if (/^[^\s#"'\\]+$/u.test(cleanValue)) {
-    return cleanValue;
-  }
+  const child = spawn(process.execPath, args, {
+    cwd: path.join(__dirname, '..', '..'),
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  const output = [];
+  let stdoutCarry = '';
+  let stderrCarry = '';
+  let settled = false;
+  const timeout = setTimeout(() => {
+    child.kill('SIGTERM');
+  }, 1000 * 60 * 30);
 
-  return JSON.stringify(cleanValue);
-}
-
-function applyEnvUpdates(contents, updates) {
-  const lines = String(contents || '').split(/\r?\n/u);
-  const seenKeys = new Set();
-  const normalizedUpdates = Object.entries(updates || {})
-    .map(([key, value]) => [String(key || '').trim(), String(value ?? '')])
-    .filter(([key]) => key);
-
-  normalizedUpdates.forEach(([key]) => {
-    if (!validateConfigKey(key)) {
-      throw new Error(`Invalid configuration key: ${key}`);
+  res.on('close', () => {
+    if (!settled) {
+      child.kill('SIGTERM');
     }
   });
 
-  const nextLines = lines.map(line => {
-    const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=/u);
+  function handleLines(lines, stream) {
+    lines
+      .map(line => line.trim())
+      .filter(Boolean)
+      .forEach(line => {
+        output.push(line);
+        writeMigrationEvent(res, {
+          type: 'log',
+          stream,
+          message: line
+        });
+      });
+  }
 
-    if (!match) {
-      return line;
-    }
-
-    const key = match[1];
-    const update = normalizedUpdates.find(([updateKey]) => updateKey === key);
-
-    if (!update) {
-      return line;
-    }
-
-    seenKeys.add(key);
-    return `${key}=${quoteEnvValue(update[1])}`;
+  writeMigrationEvent(res, {
+    type: 'start',
+    migration: migrationKey,
+    mode,
+    limit,
+    message: `${definition.label} ${mode === 'apply' ? 'started' : 'dry run started'}`
   });
 
-  normalizedUpdates.forEach(([key, value]) => {
-    if (!seenKeys.has(key)) {
-      nextLines.push(`${key}=${quoteEnvValue(value)}`);
-    }
+  child.stdout.on('data', chunk => {
+    const result = splitMigrationOutputLines(chunk, stdoutCarry);
+    stdoutCarry = result.carry;
+    handleLines(result.lines, 'stdout');
   });
 
-  return nextLines.join('\n').replace(/\n*$/u, '\n');
-}
+  child.stderr.on('data', chunk => {
+    const result = splitMigrationOutputLines(chunk, stderrCarry);
+    stderrCarry = result.carry;
+    handleLines(result.lines, 'stderr');
+  });
 
-function applyProcessUpdates(updates) {
-  Object.entries(updates || {}).forEach(([key, value]) => {
-    process.env[key] = String(value ?? '');
+  child.on('error', error => {
+    if (settled) return;
+
+    settled = true;
+    clearTimeout(timeout);
+    writeMigrationEvent(res, {
+      type: 'error',
+      message: error.message || 'Migration failed to start'
+    });
+    res.end();
+  });
+
+  child.on('close', async code => {
+    if (settled) return;
+
+    settled = true;
+    clearTimeout(timeout);
+    handleLines(stdoutCarry ? [stdoutCarry] : [], 'stdout');
+    handleLines(stderrCarry ? [stderrCarry] : [], 'stderr');
+
+    const combinedOutput = output.join('\n');
+    const summary = getMigrationSummary(combinedOutput, '', mode);
+    summary.exitCode = code;
+
+    try {
+      await writeAuditLog({
+        req,
+        action: `migration.${migrationKey}.${mode}`,
+        actor: req.user,
+        targetType: 'migration',
+        targetSnapshot: {
+          migration: migrationKey,
+          mode,
+          label: definition.label,
+          limit
+        },
+        metadata: {
+          ...summary,
+          limit
+        }
+      });
+    } catch (error) {
+      console.error('Migration audit log failed:', error);
+    }
+
+    if (code === 0) {
+      writeMigrationEvent(res, {
+        type: 'summary',
+        message: mode === 'apply'
+          ? `${definition.label} completed`
+          : `${definition.label} dry run completed`,
+        summary
+      });
+      writeMigrationEvent(res, { type: 'done' });
+    } else {
+      writeMigrationEvent(res, {
+        type: 'error',
+        message: `${definition.label} failed with exit code ${code}`,
+        summary
+      });
+    }
+
+    res.end();
   });
 }
 
@@ -323,62 +371,63 @@ router.get(
   requireConfigToken,
   async (req, res) => {
   try {
-    const contents = await readEnvFile();
-
     res.json({
-      envFilePresent: Boolean(contents),
-      variables: listConfigVariables(contents)
+      migrations: Object.entries(MIGRATION_DEFINITIONS).map(([key, definition]) => ({
+        key,
+        maxLimit: definition.maxLimit
+      })),
+      maintenance: {
+        canPurgeAnalytics: req.user?.role === 'developer'
+      }
     });
   } catch (error) {
-    console.error('Site config read failed:', error);
-    res.status(500).json({ error: 'Could not read site configuration' });
+    console.error('Site config operations read failed:', error);
+    res.status(500).json({ error: 'Could not load site operations' });
   }
   }
 );
 
-router.patch(
-  '/',
+router.post(
+  '/migrations/:migrationKey',
   requireDeveloperRole,
   requirePermission('canManageSiteConfig'),
   requireConfigToken,
   async (req, res) => {
   try {
-    const updates = req.body?.updates || {};
-    const updateKeys = Object.keys(updates);
+    const definition = getMigrationDefinition(req.params.migrationKey);
+    const mode = req.body?.mode === 'apply' ? 'apply' : 'dry-run';
 
-    if (!updateKeys.length) {
+    if (!definition) {
+      return res.status(404).json({ error: 'Migration not found' });
+    }
+
+    const limit = parseMigrationLimit(req.body?.limit, definition.maxLimit);
+
+    if ((req.body?.limit ?? '') !== '' && !limit) {
       return res.status(400).json({
-        error: 'No configuration updates provided'
+        error: `Migration limit must be a whole number from 1 to ${definition.maxLimit}`
       });
     }
 
-    const contents = await readEnvFile();
-    const nextContents = applyEnvUpdates(contents, updates);
-
-    await fs.writeFile(ENV_FILE_PATH, nextContents, 'utf8');
-    applyProcessUpdates(updates);
-
-    await writeAuditLog({
-      req,
-      action: 'config.updated',
-      actor: req.user,
-      targetType: 'config',
-      targetSnapshot: {
-        keys: updateKeys
-      },
-      metadata: {
-        keys: updateKeys
-      }
+    res.set({
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Accel-Buffering': 'no'
     });
+    res.flushHeaders?.();
 
-    res.json({
-      message: 'Site configuration updated',
-      variables: listConfigVariables(nextContents)
+    runMigrationStream({
+      req,
+      res,
+      definition,
+      migrationKey: req.params.migrationKey,
+      mode,
+      limit
     });
   } catch (error) {
-    console.error('Site config update failed:', error);
-    res.status(400).json({
-      error: error.message || 'Could not update site configuration'
+    console.error('Site config migration failed:', error);
+    res.status(500).json({
+      error: error.message || 'Migration failed'
     });
   }
   }
@@ -389,7 +438,6 @@ router.delete(
   requireDeveloperRole,
   requirePermission('canManageSiteConfig'),
   requireConfigToken,
-  requireDevelopmentSiteConfig,
   async (req, res) => {
   try {
     const result = await AnalyticsVisit.deleteMany({});

@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('fs/promises');
 const path = require('path');
 const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const Page = require('../models/Page');
@@ -22,6 +23,7 @@ const s3Client = require('../storage');
 
 const router = express.Router();
 const PAGE_SHELL_PATH = path.join(__dirname, '..', 'public', 'page.html');
+const PUBLIC_DIRECTORY = path.join(__dirname, '..', 'public');
 const NAV_GROUPS = Object.freeze(['about', 'doctrine', 'news', 'benefits']);
 const NAV_GROUP_LABELS = Object.freeze({
   about: { en: 'About', fr: 'À propos' },
@@ -33,6 +35,48 @@ const BLOCK_TYPES = new Set(['heading', 'text', 'image', 'callout', 'button', 'd
 const DEFAULT_MEDIA_PAGE_SIZE = 60;
 const MAX_MEDIA_PAGE_SIZE = 120;
 const MAX_MEDIA_LIST_OBJECTS = 5000;
+const SITEMAP_EXCLUDED_HTML = new Set([
+  '401.html',
+  '403.html',
+  '404.html',
+  '500.html',
+  'admin-users.html',
+  'analytics.html',
+  'audit-log.html',
+  'event.html',
+  'last-post-message.html',
+  'page.html',
+  'pages-admin.html',
+  'retirement-message.html',
+  'site-config.html',
+  'timers-admin.html',
+  'translations-admin.html'
+]);
+const SITEMAP_ACCOUNT_HTML = new Set([
+  'dashboard.html',
+  'login.html',
+  'notifications.html',
+  'register.html'
+]);
+const SITEMAP_STATIC_LABELS = Object.freeze({
+  'about-family.html': { en: 'About the C&E Family', fr: 'Famille des C et E' },
+  'calendar.html': { en: 'Events Calendar', fr: 'Calendrier des événements' },
+  'dashboard.html': { en: 'Account dashboard', fr: 'Tableau de bord du compte' },
+  'event.html': { en: 'Event details', fr: 'Détails de l’événement' },
+  'index.html': { en: 'Home', fr: 'Accueil' },
+  'last-post.html': { en: 'Last Post', fr: 'Dernière sonnerie' },
+  'last-post-message.html': { en: 'Last Post message', fr: 'Message de dernière sonnerie' },
+  'login.html': { en: 'Sign in', fr: 'Connexion' },
+  'notifications.html': { en: 'Notifications', fr: 'Notifications' },
+  'register.html': { en: 'Create account', fr: 'Créer un compte' },
+  'retirement-message.html': { en: 'Retirement message', fr: 'Message de retraite' },
+  'retirements.html': { en: 'Retirements', fr: 'Retraites' },
+  'review-submissions.html': { en: 'Review submissions', fr: 'Réviser les soumissions' },
+  'search.html': { en: 'Search', fr: 'Recherche' },
+  'sitemap.html': { en: 'Site map', fr: 'Plan du site' },
+  'submit-event.html': { en: 'Submit an event', fr: 'Soumettre un événement' },
+  'submit-retirement.html': { en: 'Submit a retirement message', fr: 'Soumettre un message de retraite' }
+});
 
 function cleanText(value, maxLength = 10000) {
   return String(value || '').trim().slice(0, maxLength);
@@ -402,6 +446,84 @@ function toPageResponse(page, { includeBlocks = true } = {}) {
   };
 }
 
+function titleCaseRouteSegment(value) {
+  return String(value || '')
+    .replace(/\.html$/iu, '')
+    .replace(/[-_]+/gu, ' ')
+    .replace(/\b\w/gu, character => character.toUpperCase());
+}
+
+function routeFromHtmlFile(fileName) {
+  if (fileName === 'index.html') {
+    return '/';
+  }
+
+  return `/${fileName.replace(/\.html$/iu, '')}`;
+}
+
+function getSitemapStaticLabel(fileName) {
+  return SITEMAP_STATIC_LABELS[fileName] || {
+    en: titleCaseRouteSegment(fileName),
+    fr: titleCaseRouteSegment(fileName)
+  };
+}
+
+function getSitemapSection(fileName) {
+  if (fileName === 'index.html') {
+    return 'main';
+  }
+
+  if (SITEMAP_ACCOUNT_HTML.has(fileName)) {
+    return 'account';
+  }
+
+  return 'site';
+}
+
+function toSitemapItem({ title, route, summary, updatedAt, section, type }) {
+  return {
+    title: title || {},
+    route,
+    summary: summary || {},
+    updatedAt: updatedAt || null,
+    section,
+    type
+  };
+}
+
+async function getStaticSitemapItems() {
+  const files = await fs.readdir(PUBLIC_DIRECTORY);
+
+  return files
+    .filter(fileName =>
+      fileName.endsWith('.html') &&
+      !SITEMAP_EXCLUDED_HTML.has(fileName)
+    )
+    .map(fileName => toSitemapItem({
+      title: getSitemapStaticLabel(fileName),
+      route: routeFromHtmlFile(fileName),
+      updatedAt: null,
+      section: getSitemapSection(fileName),
+      type: 'static'
+    }))
+    .sort((first, second) => {
+      if (first.route === '/') return -1;
+      if (second.route === '/') return 1;
+      return first.title.en.localeCompare(second.title.en);
+    });
+}
+
+function toSitemapPageItem(page) {
+  return toSitemapItem({
+    title: page.title,
+    route: `/pages/${page.slug}`,
+    summary: page.summary,
+    updatedAt: page.updatedAt,
+    section: 'pages',
+    type: 'page'
+  });
+}
+
 function cleanPageUpdate(body, actor, { requireTitle = false } = {}) {
   const source = body || {};
   const update = {};
@@ -630,10 +752,6 @@ function getNavigationGroups(items = []) {
   );
 }
 
-router.get('/pages/:slug', (req, res) => {
-  res.sendFile(PAGE_SHELL_PATH);
-});
-
 router.get('/api/navigation', optionalAuthMiddleware, async (req, res) => {
   try {
     const items = await NavigationItem.find({ visible: true })
@@ -654,6 +772,39 @@ router.get('/api/navigation', optionalAuthMiddleware, async (req, res) => {
     console.error('Navigation list failed:', error);
     res.status(500).json({ error: 'Could not load navigation' });
   }
+});
+
+router.get('/api/sitemap', optionalAuthMiddleware, async (req, res) => {
+  try {
+    const [staticItems, pages] = await Promise.all([
+      getStaticSitemapItems(),
+      Page.find({ status: 'published' })
+        .select('title slug summary access updatedAt publishedAt')
+        .sort({ 'title.en': 1, slug: 1 })
+        .lean()
+    ]);
+    const pageItems = pages
+      .filter(page => canViewPage(page, req.user))
+      .map(toSitemapPageItem);
+
+    res.json({
+      generatedAt: new Date().toISOString(),
+      sections: [
+        { key: 'main', title: { en: 'Main', fr: 'Principal' } },
+        { key: 'site', title: { en: 'Site pages', fr: 'Pages du site' } },
+        { key: 'pages', title: { en: 'Published pages', fr: 'Pages publiées' } },
+        { key: 'account', title: { en: 'Account', fr: 'Compte' } }
+      ],
+      items: [...staticItems, ...pageItems]
+    });
+  } catch (error) {
+    console.error('Sitemap generation failed:', error);
+    res.status(500).json({ error: 'Could not generate sitemap' });
+  }
+});
+
+router.get('/pages/:slug', (req, res) => {
+  res.sendFile(PAGE_SHELL_PATH);
 });
 
 router.get('/api/pages/:slug', optionalAuthMiddleware, async (req, res) => {

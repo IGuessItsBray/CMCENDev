@@ -373,6 +373,7 @@ paths:
     get:
       tags: [Analytics]
       summary: Get analytics summary.
+      description: Returns visit totals and unique visitor totals. Registered visitors are deduplicated by user id; guest visitors are deduplicated by stored IP address and user agent. Role counts represent unique visitors by role, not raw page refreshes.
       x-permission: canViewAnalytics
       parameters:
         - name: range
@@ -409,9 +410,43 @@ paths:
         - name: user
           in: query
           schema: { type: string }
+        - name: startDate
+          in: query
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          schema: { type: string, format: date }
       responses:
         "200":
           description: Audit logs.
+  /api/audit-logs/export.csv:
+    get:
+      tags: [Audit Log]
+      summary: Export audit log entries as CSV.
+      x-permission: canViewAuditLog
+      parameters:
+        - name: action
+          in: query
+          schema: { type: string }
+        - name: targetType
+          in: query
+          schema: { type: string }
+        - name: user
+          in: query
+          schema: { type: string }
+        - name: startDate
+          in: query
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Audit log CSV export.
+          content:
+            text/csv:
+              schema:
+                type: string
   /api/admin/review-counts:
     get:
       tags: [Admin]
@@ -462,6 +497,7 @@ paths:
     get:
       tags: [Admin, Uploads]
       summary: List media assets.
+      description: Returns media assets with linked event, retirement, and Last Post usage metadata.
       x-permission: canViewMediaLibrary
       parameters:
         - name: limit
@@ -470,9 +506,25 @@ paths:
         - name: cursor
           in: query
           schema: { type: string }
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [newest, oldest, name, size, orphaned]
       responses:
         "200":
           description: Media assets.
+  /api/admin/media/bulk-delete:
+    post:
+      tags: [Admin, Uploads]
+      summary: Delete selected unattached media assets.
+      description: Deletes selected media assets by key. Attached media assets are skipped and returned in the response.
+      x-permission: canDeleteMedia
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Bulk delete result.
   /api/admin/media/{key}:
     delete:
       tags: [Admin, Uploads]
@@ -489,11 +541,18 @@ paths:
     get:
       tags: [Admin]
       summary: List users.
+      description: Returns lightweight user rows for the admin user manager. Use the user detail endpoint to load post summaries and editable detail for a selected user.
       x-permission: canReadUsers
       parameters:
         - name: query
           in: query
           schema: { type: string }
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
       responses:
         "200":
           description: Users.
@@ -533,7 +592,9 @@ paths:
   /api/admin/users/{userId}/developer:
     patch:
       tags: [Admin]
-      summary: Promote user to developer.
+      summary: Promote an administrator to developer.
+      description: Requires canManageUsers plus an authenticated current user whose built-in role is developer. Only target users with the administrator role can be promoted; subscribers and other non-administrator accounts cannot be promoted directly.
+      x-permission: canManageUsers
       parameters:
         - $ref: "#/components/parameters/UserId"
       requestBody:
@@ -592,25 +653,33 @@ paths:
   /api/admin/site-config:
     get:
       tags: [Site Config]
-      summary: Read site config.
+      summary: Read available site operations.
       x-permission: canAccessSiteConfig
       responses:
         "200":
-          description: Config values.
-    patch:
+          description: Available protected operations.
+  /api/admin/site-config/migrations/{migrationKey}:
+    post:
       tags: [Site Config]
-      summary: Update site config.
+      summary: Run a site migration.
+      description: Streams newline-delimited JSON progress events while the migration process runs.
       x-permission: canManageSiteConfig
+      parameters:
+        - $ref: "#/components/parameters/MigrationKey"
       requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
+        $ref: "#/components/requestBodies/SiteConfigMigrationRun"
       responses:
         "200":
-          description: Updated config.
+          description: Newline-delimited migration events.
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
   /api/admin/site-config/analytics:
     delete:
       tags: [Site Config, Analytics]
       summary: Purge analytics history.
-      description: Development-only and token-gated.
+      description: Token-gated protected maintenance action.
       x-permission: canManageSiteConfig
       responses:
         "200":
@@ -737,6 +806,14 @@ paths:
       responses:
         "200":
           description: Navigation items.
+  /api/sitemap:
+    get:
+      tags: [Pages]
+      summary: Get generated sitemap sections and links.
+      security: []
+      responses:
+        "200":
+          description: Generated sitemap from public HTML files and published pages.
   /api/pages/{slug}:
     get:
       tags: [Pages]
@@ -1126,6 +1203,13 @@ components:
       in: path
       required: true
       schema: { type: string }
+    MigrationKey:
+      name: migrationKey
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [retirement, comments, lastPost]
     TempTokenQuery:
       name: tempToken
       in: query
@@ -1180,14 +1264,30 @@ components:
               locale: { type: string, example: en-CA }
               timeZone: { type: string, example: America/Toronto }
     SiteConfigToken:
-      required: true
+      required: false
       content:
         application/json:
           schema:
             type: object
-            required: [token]
             properties:
-              token: { type: string }
+              configToken: { type: string }
+    SiteConfigMigrationRun:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              mode:
+                type: string
+                enum: [dry-run, apply]
+                default: dry-run
+              limit:
+                type: integer
+                minimum: 1
+                maximum: 1000
+                nullable: true
+                description: Optional maximum number of migration source records to process. Omit or send null to process all records.
     UploadUrl:
       required: true
       content:

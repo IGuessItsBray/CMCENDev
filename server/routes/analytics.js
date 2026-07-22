@@ -94,6 +94,85 @@ async function groupCounts(match, field, { limit = 10 } = {}) {
   ]);
 }
 
+async function getUniqueVisitorSummary(match) {
+  const uniqueVisitors = await AnalyticsVisit.aggregate([
+    { $match: match },
+    {
+      $project: {
+        isRegistered: 1,
+        userRole: 1,
+        visitorKey: {
+          $cond: [
+            { $and: ['$isRegistered', '$user'] },
+            { $concat: ['user:', { $toString: '$user' }] },
+            {
+              $concat: [
+                'guest:',
+                { $ifNull: ['$ipAddress', ''] },
+                ':',
+                { $ifNull: ['$userAgent', ''] }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$visitorKey',
+        isRegistered: { $max: '$isRegistered' },
+        userRole: { $first: '$userRole' }
+      }
+    },
+    {
+      $facet: {
+        totals: [
+          {
+            $group: {
+              _id: null,
+              visitors: { $sum: 1 },
+              registered: {
+                $sum: { $cond: ['$isRegistered', 1, 0] }
+              },
+              guests: {
+                $sum: { $cond: ['$isRegistered', 0, 1] }
+              }
+            }
+          }
+        ],
+        roles: [
+          {
+            $group: {
+              _id: '$userRole',
+              visitors: { $sum: 1 }
+            }
+          },
+          { $sort: { visitors: -1, _id: 1 } },
+          { $limit: 8 },
+          {
+            $project: {
+              _id: 0,
+              label: { $ifNull: ['$_id', 'guest'] },
+              visitors: 1
+            }
+          }
+        ]
+      }
+    }
+  ]);
+  const summary = uniqueVisitors[0] || {};
+  const totals = summary.totals?.[0] || {
+    visitors: 0,
+    registered: 0,
+    guests: 0
+  };
+
+  return {
+    totals,
+    roles: summary.roles || []
+  };
+}
+
 router.get(
   ['/', ''],
   authMiddleware,
@@ -110,6 +189,7 @@ router.get(
         isRegistered: true
       });
       const guestVisits = Math.max(totalVisits - registeredVisits, 0);
+      const uniqueSummary = await getUniqueVisitorSummary(match);
 
       const [
         pages,
@@ -118,7 +198,6 @@ router.get(
         operatingSystems,
         browsers,
         countries,
-        roles,
         recentVisits
       ] = await Promise.all([
         groupCounts(match, 'path', { limit: 12 }),
@@ -127,7 +206,6 @@ router.get(
         groupCounts(match, 'osType', { limit: 8 }),
         groupCounts(match, 'browser', { limit: 8 }),
         groupCounts(match, 'country', { limit: 10 }),
-        groupCounts(match, 'userRole', { limit: 8 }),
         AnalyticsVisit.find(match)
           .select('path source deviceType osType browser isRegistered userRole country createdAt')
           .sort({ createdAt: -1 })
@@ -140,7 +218,10 @@ router.get(
         totals: {
           visits: totalVisits,
           registered: registeredVisits,
-          guests: guestVisits
+          guests: guestVisits,
+          uniqueVisitors: uniqueSummary.totals.visitors,
+          uniqueRegistered: uniqueSummary.totals.registered,
+          uniqueGuests: uniqueSummary.totals.guests
         },
         pages: pages.map(item => ({
           ...item,
@@ -154,7 +235,7 @@ router.get(
         operatingSystems,
         browsers,
         countries,
-        roles,
+        roles: uniqueSummary.roles,
         recentVisits
       });
     } catch (error) {

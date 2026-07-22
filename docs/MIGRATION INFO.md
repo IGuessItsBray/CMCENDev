@@ -172,3 +172,48 @@ server/scripts/migration/output/retirement-media-link-manifest.json
 
 The manifest reports how many retirement messages were scanned, matched,
 changed, and left unmatched.
+
+## Live Last Post Scrape
+
+Use this path when importing Last Post notices directly from the current public
+CMCEN WordPress site.
+
+The scraper pulls Last Post links from the years archive:
+
+```text
+https://cmcen-rcmce.ca/last-post-years-archive/
+```
+
+It follows `/lp/...` links from that archive, resolves WordPress REST records
+when available, and otherwise parses the public Last Post detail HTML directly.
+If the archive cannot be scanned, it falls back to the WordPress Last Post
+category `lp-category`. It imports Last Post notice content and source photos.
+It does not import comments.
+
+### Dry Run
+
+```sh
+node server/scripts/migration/scrape-current-last-posts.js
+```
+
+To test only a small slice:
+
+```sh
+node server/scripts/migration/scrape-current-last-posts.js --limit=3
+```
+
+### Apply
+
+This writes to MongoDB and MinIO/CDN:
+
+```sh
+node server/scripts/migration/scrape-current-last-posts.js --apply
+```
+
+### Output
+
+The dry-run and apply modes both write:
+
+```text
+server/scripts/migration/output/current-last-post-scrape-manifest.json
+```

@@ -568,6 +568,13 @@ function createPageList() {
   return panel;
 }
 
+function createPagesSidebar() {
+  const sidebar = document.createElement("div");
+  sidebar.className = "pages-admin-sidebar";
+  sidebar.append(createPageList(), createNavigationPanel());
+  return sidebar;
+}
+
 function createLocalizedInput(label, field, type = "input") {
   const wrapper = document.createElement("fieldset");
   wrapper.className = "pages-editor-fieldset";
@@ -657,6 +664,10 @@ function createBlockToolbar(index) {
   const toolbar = document.createElement("div");
   toolbar.className = "pages-block-toolbar";
 
+  const handle = document.createElement("span");
+  handle.className = "pages-block-drag-handle";
+  handle.textContent = "Drag";
+
   const moveUp = document.createElement("button");
   moveUp.type = "button";
   moveUp.textContent = "Up";
@@ -677,7 +688,7 @@ function createBlockToolbar(index) {
   remove.className = "admin-work-zone-button is-danger";
   remove.addEventListener("click", () => removeBlock(index));
 
-  toolbar.append(moveUp, moveDown, remove);
+  toolbar.append(handle, moveUp, moveDown, remove);
   return toolbar;
 }
 
@@ -687,7 +698,9 @@ function createCanvasDropZone(insertIndex) {
   zone.dataset.insertIndex = String(insertIndex);
 
   const label = document.createElement("span");
-  label.textContent = "Drop block here";
+  label.textContent = insertIndex === 0
+    ? "Drop block at top"
+    : "Drop block here";
   zone.append(label);
 
   zone.addEventListener("dragover", event => {
@@ -959,9 +972,11 @@ function createBlockEditor(block, index) {
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", String(index));
     event.dataTransfer.setData("application/x-cmcen-block-index", String(index));
+    document.body.classList.add("pages-is-dragging");
     article.classList.add("is-dragging");
   });
   article.addEventListener("dragend", () => {
+    document.body.classList.remove("pages-is-dragging");
     article.classList.remove("is-dragging");
   });
   article.addEventListener("dragover", event => {
@@ -1092,8 +1107,12 @@ function createBlockControls() {
 
   const title = document.createElement("strong");
   title.className = "pages-add-block-title";
-  title.textContent = "Add block";
-  controls.append(title);
+  title.textContent = "Builder blocks";
+
+  const help = document.createElement("span");
+  help.className = "pages-add-block-help";
+  help.textContent = "Click to append, or drag into the page canvas.";
+  controls.append(title, help);
 
   [
     ["heading", "Heading"],
@@ -1120,9 +1139,11 @@ function createBlockControls() {
 
       event.dataTransfer.effectAllowed = "copy";
       event.dataTransfer.setData("application/x-cmcen-block-type", type);
+      document.body.classList.add("pages-is-dragging");
       button.classList.add("is-dragging");
     });
     button.addEventListener("dragend", () => {
+      document.body.classList.remove("pages-is-dragging");
       button.classList.remove("is-dragging");
     });
     controls.append(button);
@@ -1345,11 +1366,14 @@ function createPageEditor() {
 function createNavigationPanel() {
   const panel = document.createElement("div");
   panel.className = "pages-navigation-panel";
+  const selectedPage = pagesState.selectedPage;
+  const selectedPageIsPublished = selectedPage?.status === "published";
+  const publishedPages = pagesState.pages.filter(existingPage => existingPage.status === "published");
 
   const header = document.createElement("div");
   header.className = "admin-panel-heading";
   const title = document.createElement("h3");
-  title.textContent = "Navbar";
+  title.textContent = "Navbar links";
   header.append(title);
   panel.append(header);
 
@@ -1361,6 +1385,21 @@ function createNavigationPanel() {
     return panel;
   }
 
+  const intro = document.createElement("div");
+  intro.className = "pages-navigation-intro";
+  const introTitle = document.createElement("strong");
+  introTitle.textContent = "Published pages only";
+  const introCopy = document.createElement("p");
+  introCopy.textContent = "Draft pages cannot be added to the public navbar. Publish a page first, then add it under a navbar parent.";
+  intro.append(introTitle, introCopy);
+
+  if (selectedPage && !selectedPageIsPublished) {
+    const selectedWarning = document.createElement("p");
+    selectedWarning.className = "pages-navigation-note";
+    selectedWarning.textContent = "The selected page is still a draft, so it is hidden from the Add page menu.";
+    intro.append(selectedWarning);
+  }
+
   const form = document.createElement("form");
   form.className = "pages-navigation-form pages-navigation-add-page-form";
 
@@ -1369,7 +1408,11 @@ function createNavigationPanel() {
 
   const groupFormTitle = document.createElement("strong");
   groupFormTitle.className = "pages-navigation-form-title";
-  groupFormTitle.textContent = "Add parent";
+  groupFormTitle.textContent = "Create navbar parent";
+
+  const groupHelp = document.createElement("p");
+  groupHelp.className = "pages-navigation-help";
+  groupHelp.textContent = "Parents are top-level dropdown labels in the site header.";
 
   const groupName = document.createElement("input");
   groupName.type = "text";
@@ -1384,7 +1427,7 @@ function createNavigationPanel() {
   addGroup.className = "admin-work-zone-button is-secondary";
   addGroup.textContent = "Add parent";
 
-  groupForm.append(groupFormTitle, groupName, groupNameFr, addGroup);
+  groupForm.append(groupFormTitle, groupHelp, groupName, groupNameFr, addGroup);
   groupForm.addEventListener("submit", event => {
     event.preventDefault();
     const labelEn = groupName.value.trim();
@@ -1414,8 +1457,13 @@ function createNavigationPanel() {
   });
 
   const page = document.createElement("select");
-  pagesState.pages
-    .filter(existingPage => existingPage.status === "published")
+  if (!publishedPages.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Publish a page first";
+    page.append(option);
+  }
+  publishedPages
     .forEach(existingPage => {
       const option = document.createElement("option");
       option.value = existingPage._id;
@@ -1425,17 +1473,25 @@ function createNavigationPanel() {
       option.dataset.labelFr = existingPage.title?.fr || "";
       page.append(option);
     });
+  page.disabled = !publishedPages.length;
 
   const add = document.createElement("button");
   add.type = "submit";
   add.className = "admin-work-zone-button is-primary";
   add.textContent = "Add to navbar";
+  add.disabled = !publishedPages.length;
 
   const addPageTitle = document.createElement("strong");
   addPageTitle.className = "pages-navigation-form-title";
-  addPageTitle.textContent = "Add page";
+  addPageTitle.textContent = "Add published page";
 
-  form.append(addPageTitle, group, page, add);
+  const addPageHelp = document.createElement("p");
+  addPageHelp.className = "pages-navigation-help";
+  addPageHelp.textContent = publishedPages.length
+    ? "Choose a parent and a published page. Drafts are intentionally excluded."
+    : "No published pages are available yet. Publish a page before adding it to the navbar.";
+
+  form.append(addPageTitle, addPageHelp, group, page, add);
   form.addEventListener("submit", event => {
     event.preventDefault();
     const option = page.selectedOptions[0];
@@ -1453,7 +1509,7 @@ function createNavigationPanel() {
     });
   });
 
-  panel.append(groupForm, form);
+  panel.append(intro, groupForm, form);
 
   const list = document.createElement("div");
   list.className = "pages-navigation-list";
@@ -1679,10 +1735,9 @@ function renderPagesAdmin() {
 
   const children = [
     createMessage(),
-    createPageList(),
+    createPagesSidebar(),
     createBlockControls(),
-    createPageEditor(),
-    createNavigationPanel()
+    createPageEditor()
   ];
   const mediaPicker = createMediaPickerModal();
   const cropEditor = createCropEditorModal();

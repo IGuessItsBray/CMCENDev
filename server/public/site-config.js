@@ -5,12 +5,45 @@ const siteConfigContent = document.getElementById("siteConfigContent");
 
 let siteConfigToken = "";
 let siteConfigState = {
-  variables: [],
   message: "",
   canManageSiteConfig: false,
   isDeveloper: false,
-  isSaving: false,
-  isPurgingAnalytics: false
+  isPurgingAnalytics: false,
+  migrations: {
+    retirement: {
+      isRunning: false,
+      progress: 0,
+      message: "",
+      limit: "25",
+      maxLimit: 1000,
+      logs: [],
+      summary: null
+    },
+    comments: {
+      isRunning: false,
+      progress: 0,
+      message: "",
+      limit: "25",
+      maxLimit: 1000,
+      logs: [],
+      summary: null
+    },
+    lastPost: {
+      isRunning: false,
+      progress: 0,
+      message: "",
+      limit: "25",
+      maxLimit: 1000,
+      logs: [],
+      summary: null
+    }
+  }
+};
+
+const siteConfigMigrationLabels = {
+  retirement: "site_config_migration_retirement",
+  comments: "site_config_migration_comments",
+  lastPost: "site_config_migration_last_post"
 };
 
 function showSiteConfigStatus(message, state = "") {
@@ -120,118 +153,218 @@ function createSiteConfigToolbar() {
   reload.type = "button";
   reload.className = "admin-work-zone-button is-secondary";
   reload.textContent = translate("site_config_reload");
-  reload.disabled = siteConfigState.isSaving;
   reload.addEventListener("click", () => loadSiteConfig());
 
-  const save = document.createElement("button");
-  save.type = "submit";
-  save.className = "admin-work-zone-button is-primary";
-  save.textContent = siteConfigState.isSaving
-    ? translate("translations_saving")
-    : translate("site_config_save");
-  save.disabled = siteConfigState.isSaving || !siteConfigState.canManageSiteConfig;
-
-  if (siteConfigState.canManageSiteConfig && siteConfigState.isDeveloper) {
-    const purgeAnalytics = document.createElement("button");
-    purgeAnalytics.type = "button";
-    purgeAnalytics.className = "admin-work-zone-button is-danger";
-    purgeAnalytics.textContent = siteConfigState.isPurgingAnalytics
-      ? translate("site_config_analytics_purging")
-      : translate("site_config_analytics_purge");
-    purgeAnalytics.disabled = siteConfigState.isSaving || siteConfigState.isPurgingAnalytics;
-    purgeAnalytics.addEventListener("click", purgeAnalyticsHistory);
-    actions.append(purgeAnalytics);
-  }
-
-  actions.append(reload, save);
+  actions.append(reload);
   toolbar.append(copy, actions);
 
   return toolbar;
 }
 
-function createSiteConfigRow(variable) {
-  const row = document.createElement("label");
-  row.className = "site-config-row";
+function renderSiteConfig() {
+  const content = document.createElement("div");
+  content.className = "site-config-form";
 
-  const meta = document.createElement("span");
-  meta.className = "site-config-key";
-  meta.textContent = variable.key;
+  content.append(createSiteConfigMessage(), createSiteConfigToolbar(), createSiteConfigOperations());
 
-  if (variable.isSecret) {
-    const badge = document.createElement("span");
-    badge.className = "site-config-badge";
-    badge.textContent = variable.isConfigToken
-      ? translate("site_config_access_token_badge")
-      : translate("site_config_sensitive_badge");
-    meta.append(badge);
+  siteConfigContent.replaceChildren(content);
+}
+
+function createSiteConfigOperations() {
+  const operations = document.createElement("div");
+  operations.className = "site-config-operations";
+
+  if (!siteConfigState.canManageSiteConfig || !siteConfigState.isDeveloper) {
+    return operations;
   }
 
-  const input = document.createElement("input");
-  input.name = variable.key;
-  input.autocomplete = "off";
-  input.spellcheck = false;
-  input.type = variable.isSecret ? "password" : "text";
-  input.value = variable.value || "";
-  input.dataset.originalValue = variable.value || "";
+  operations.append(createMigrationSection(), createMaintenanceSection());
 
-  if (variable.isConfigToken) {
-    input.placeholder = translate("site_config_token_placeholder");
-    input.dataset.originalValue = "";
+  return operations;
+}
+
+function createMigrationSection() {
+  const section = document.createElement("section");
+  section.className = "site-config-panel";
+  section.setAttribute("aria-labelledby", "siteConfigMigrationsTitle");
+
+  const heading = document.createElement("div");
+  heading.className = "site-config-panel-heading";
+
+  const title = document.createElement("h2");
+  title.id = "siteConfigMigrationsTitle";
+  title.textContent = translate("site_config_migrations_heading");
+
+  const copy = document.createElement("p");
+  copy.textContent = translate("site_config_migrations_copy");
+
+  heading.append(title, copy);
+  section.append(heading);
+
+  Object.keys(siteConfigMigrationLabels).forEach(key => {
+    section.append(createMigrationControl(key));
+  });
+
+  return section;
+}
+
+function createMigrationControl(key) {
+  const migration = siteConfigState.migrations[key] || {};
+  const maxLimit = migration.maxLimit || 1000;
+  const row = document.createElement("div");
+  row.className = "site-config-operation";
+
+  const body = document.createElement("div");
+  body.className = "site-config-operation-body";
+
+  const title = document.createElement("h3");
+  title.textContent = translate(siteConfigMigrationLabels[key]);
+
+  const message = document.createElement("p");
+  message.textContent = migration.message || translate("site_config_migration_ready");
+
+  const limitField = document.createElement("label");
+  limitField.className = "site-config-limit";
+
+  const limitLabel = document.createElement("span");
+  limitLabel.textContent = translate("site_config_migration_limit");
+
+  const limitInput = document.createElement("input");
+  limitInput.type = "number";
+  limitInput.inputMode = "numeric";
+  limitInput.min = "1";
+  limitInput.max = String(maxLimit);
+  limitInput.step = "1";
+  limitInput.value = migration.limit || "";
+  limitInput.placeholder = translate("site_config_migration_limit_all");
+  limitInput.disabled = migration.isRunning;
+  limitInput.addEventListener("input", event => {
+    updateMigrationState(key, {
+      limit: event.target.value
+    });
+  });
+
+  limitField.append(limitLabel, limitInput);
+  body.append(title, message, limitField);
+
+  if (migration.summary) {
+    body.append(createMigrationSummary(migration.summary));
   }
 
-  row.append(meta, input);
+  if (migration.logs?.length) {
+    body.append(createMigrationLog(migration.logs));
+  }
+
+  const progress = document.createElement("div");
+  progress.className = "site-config-progress";
+  progress.setAttribute("role", "progressbar");
+  progress.setAttribute("aria-valuemin", "0");
+  progress.setAttribute("aria-valuemax", "100");
+  progress.setAttribute("aria-valuenow", String(migration.progress || 0));
+
+  const bar = document.createElement("span");
+  bar.style.width = `${migration.progress || 0}%`;
+  progress.append(bar);
+
+  const actions = document.createElement("div");
+  actions.className = "site-config-actions";
+
+  const dryRun = document.createElement("button");
+  dryRun.type = "button";
+  dryRun.className = "admin-work-zone-button is-secondary";
+  dryRun.textContent = migration.isRunning
+    ? translate("site_config_migration_running")
+    : translate("site_config_migration_dry_run");
+  dryRun.disabled = migration.isRunning;
+  dryRun.addEventListener("click", () => runSiteConfigMigration(key, "dry-run"));
+
+  const apply = document.createElement("button");
+  apply.type = "button";
+  apply.className = "admin-work-zone-button is-danger";
+  apply.textContent = translate("site_config_migration_apply");
+  apply.disabled = migration.isRunning || !migration.summary;
+  apply.addEventListener("click", () => runSiteConfigMigration(key, "apply"));
+
+  actions.append(dryRun, apply);
+  row.append(body, progress, actions);
 
   return row;
 }
 
-function getSiteConfigUpdates(form) {
-  const updates = {};
+function createMigrationSummary(summary) {
+  const list = document.createElement("dl");
+  list.className = "site-config-summary";
+  const items = [
+    [translate("site_config_migration_summary_retirements"), summary.retirementMessages],
+    [translate("site_config_migration_summary_last_posts"), summary.lastPostMessages],
+    [translate("site_config_migration_summary_comments"), summary.comments],
+    [translate("site_config_migration_summary_manifest"), summary.manifestPath || "-"]
+  ];
 
-  form.querySelectorAll("[name]").forEach(input => {
-    const key = input.name;
-    const value = input.value;
-    const originalValue = input.dataset.originalValue || "";
-    const isConfigTokenInput = key === "config_token" || key === "CONFIG_TOKEN";
-
-    if (isConfigTokenInput && !value) {
-      return;
-    }
-
-    if (value !== originalValue) {
-      updates[key] = value;
-    }
+  items.forEach(([label, value]) => {
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const detail = document.createElement("dd");
+    detail.textContent = value === null || value === undefined ? "-" : String(value);
+    list.append(term, detail);
   });
 
-  return updates;
+  return list;
 }
 
-function renderSiteConfig() {
-  const form = document.createElement("form");
-  form.className = "site-config-form";
+function createMigrationLog(logs) {
+  const log = document.createElement("div");
+  log.className = "site-config-log";
+  log.setAttribute("role", "log");
+  log.setAttribute("aria-live", "polite");
+  log.setAttribute("aria-label", translate("site_config_migration_log_label"));
 
-  form.append(createSiteConfigMessage(), createSiteConfigToolbar());
-
-  const fields = document.createElement("div");
-  fields.className = "site-config-list";
-
-  if (!siteConfigState.variables.length) {
-    const empty = document.createElement("p");
-    empty.className = "admin-empty-state";
-    empty.textContent = translate("site_config_empty");
-    fields.append(empty);
-  } else {
-    siteConfigState.variables.forEach(variable => {
-      fields.append(createSiteConfigRow(variable));
-    });
-  }
-
-  form.append(fields);
-  form.addEventListener("submit", event => {
-    event.preventDefault();
-    saveSiteConfig(form);
+  logs.slice(-80).forEach(entry => {
+    const line = document.createElement("p");
+    line.className = entry.type === "stderr" ? "is-error" : "";
+    line.textContent = entry.message;
+    log.append(line);
   });
 
-  siteConfigContent.replaceChildren(form);
+  requestAnimationFrame(() => {
+    log.scrollTop = log.scrollHeight;
+  });
+
+  return log;
+}
+
+function createMaintenanceSection() {
+  const section = document.createElement("section");
+  section.className = "site-config-panel";
+  section.setAttribute("aria-labelledby", "siteConfigMaintenanceTitle");
+
+  const heading = document.createElement("div");
+  heading.className = "site-config-panel-heading";
+
+  const title = document.createElement("h2");
+  title.id = "siteConfigMaintenanceTitle";
+  title.textContent = translate("site_config_maintenance_heading");
+
+  const copy = document.createElement("p");
+  copy.textContent = translate("site_config_maintenance_copy");
+
+  const actions = document.createElement("div");
+  actions.className = "site-config-actions";
+
+  const purgeAnalytics = document.createElement("button");
+  purgeAnalytics.type = "button";
+  purgeAnalytics.className = "admin-work-zone-button is-danger";
+  purgeAnalytics.textContent = siteConfigState.isPurgingAnalytics
+    ? translate("site_config_analytics_purging")
+    : translate("site_config_analytics_purge");
+  purgeAnalytics.disabled = siteConfigState.isPurgingAnalytics;
+  purgeAnalytics.addEventListener("click", purgeAnalyticsHistory);
+
+  actions.append(purgeAnalytics);
+  heading.append(title, copy);
+  section.append(heading, actions);
+
+  return section;
 }
 
 async function loadSiteConfig() {
@@ -244,49 +377,32 @@ async function loadSiteConfig() {
       errorMessage: translate("site_config_load_error")
     });
 
+    const migrationMeta = Array.isArray(data.migrations)
+      ? data.migrations
+      : [];
+    const nextMigrations = { ...siteConfigState.migrations };
+
+    migrationMeta.forEach(item => {
+      const key = typeof item === "string" ? item : item?.key;
+
+      if (!key || !nextMigrations[key]) {
+        return;
+      }
+
+      nextMigrations[key] = {
+        ...nextMigrations[key],
+        maxLimit: Number(item.maxLimit) || nextMigrations[key].maxLimit
+      };
+    });
+
     setSiteConfigState({
-      variables: data.variables || [],
-      message: ""
+      message: "",
+      migrations: nextMigrations
     });
     showSiteConfigPage();
   } catch (error) {
     setSiteConfigState({
       message: error.message || translate("site_config_load_error")
-    });
-  }
-}
-
-async function saveSiteConfig(form) {
-  const updates = getSiteConfigUpdates(form);
-
-  if (!Object.keys(updates).length) {
-    setSiteConfigState({
-      message: translate("site_config_no_changes")
-    });
-    return;
-  }
-
-  setSiteConfigState({
-    isSaving: true,
-    message: ""
-  });
-
-  try {
-    const data = await siteConfigApiJson("/api/admin/site-config", {
-      method: "PATCH",
-      body: { updates },
-      errorMessage: translate("site_config_save_error")
-    });
-
-    setSiteConfigState({
-      variables: data.variables || [],
-      isSaving: false,
-      message: data.message || translate("site_config_save_success")
-    });
-  } catch (error) {
-    setSiteConfigState({
-      isSaving: false,
-      message: error.message || translate("site_config_save_error")
     });
   }
 }
@@ -315,6 +431,207 @@ async function purgeAnalyticsHistory() {
     setSiteConfigState({
       isPurgingAnalytics: false,
       message: error.message || translate("site_config_analytics_purge_error")
+    });
+  }
+}
+
+function updateMigrationState(key, nextState) {
+  setSiteConfigState({
+    migrations: {
+      ...siteConfigState.migrations,
+      [key]: {
+        ...(siteConfigState.migrations[key] || {}),
+        ...nextState
+      }
+    }
+  });
+}
+
+function startMigrationProgress(key) {
+  let progress = 8;
+
+  updateMigrationState(key, { progress });
+
+  return window.setInterval(() => {
+    progress = Math.min(progress + 8, 88);
+    updateMigrationState(key, { progress });
+  }, 900);
+}
+
+function appendMigrationLog(key, message, type = "stdout") {
+  const migration = siteConfigState.migrations[key] || {};
+  const logs = [
+    ...(migration.logs || []),
+    {
+      type,
+      message
+    }
+  ].slice(-120);
+  const progress = migration.isRunning
+    ? Math.min((migration.progress || 8) + 2, 95)
+    : migration.progress;
+
+  updateMigrationState(key, {
+    logs,
+    progress
+  });
+}
+
+function parseMigrationStreamLine(line) {
+  try {
+    return JSON.parse(line);
+  } catch (error) {
+    return {
+      type: "log",
+      stream: "stdout",
+      message: line
+    };
+  }
+}
+
+async function readMigrationStream(key, response) {
+  const reader = response.body?.getReader();
+
+  if (!reader) {
+    throw new Error(translate("site_config_migration_stream_error"));
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split(/\r?\n/u);
+    buffer = lines.pop() || "";
+
+    lines.filter(Boolean).forEach(line => {
+      handleMigrationEvent(key, parseMigrationStreamLine(line));
+    });
+  }
+
+  buffer += decoder.decode();
+
+  if (buffer.trim()) {
+    handleMigrationEvent(key, parseMigrationStreamLine(buffer.trim()));
+  }
+}
+
+function handleMigrationEvent(key, event) {
+  if (event.type === "start") {
+    appendMigrationLog(key, event.message, "stdout");
+    return;
+  }
+
+  if (event.type === "log") {
+    appendMigrationLog(key, event.message, event.stream);
+    return;
+  }
+
+  if (event.type === "summary") {
+    appendMigrationLog(key, event.message, "stdout");
+    updateMigrationState(key, {
+      isRunning: false,
+      progress: 100,
+      message: event.message || translate("site_config_migration_success"),
+      summary: event.summary || null
+    });
+    return;
+  }
+
+  if (event.type === "error") {
+    appendMigrationLog(key, event.message, "stderr");
+    updateMigrationState(key, {
+      isRunning: false,
+      progress: 0,
+      message: event.message || translate("site_config_migration_error"),
+      summary: event.summary || null
+    });
+  }
+}
+
+async function runSiteConfigMigration(key, mode) {
+  const isApply = mode === "apply";
+  const migration = siteConfigState.migrations[key] || {};
+  const maxLimit = migration.maxLimit || 1000;
+  const limitValue = String(migration.limit || "").trim();
+  const limit = limitValue ? Number(limitValue) : null;
+
+  if (limitValue && (!Number.isInteger(limit) || limit < 1 || limit > maxLimit)) {
+    updateMigrationState(key, {
+      message: translate("site_config_migration_limit_error").replace("{max}", String(maxLimit))
+    });
+    return;
+  }
+
+  if (isApply && !window.confirm(translate("site_config_migration_apply_confirm"))) {
+    return;
+  }
+
+  updateMigrationState(key, {
+    isRunning: true,
+    progress: 0,
+    logs: [],
+    summary: null,
+    message: isApply
+      ? translate("site_config_migration_applying")
+      : translate("site_config_migration_dry_running")
+  });
+
+  const progressTimer = startMigrationProgress(key);
+
+  try {
+    const response = await fetch(`/api/admin/site-config/migrations/${key}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${siteConfigAuthToken}`,
+        "X-Config-Token": siteConfigToken
+      },
+      body: JSON.stringify({
+        mode,
+        limit
+      })
+    });
+
+    if (response.status === 401) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || translate("site_config_migration_error"));
+    }
+
+    await readMigrationStream(key, response);
+    window.clearInterval(progressTimer);
+
+    if (siteConfigState.migrations[key]?.isRunning) {
+      updateMigrationState(key, {
+        isRunning: false,
+        progress: 100,
+        message: translate("site_config_migration_success")
+      });
+    }
+  } catch (error) {
+    window.clearInterval(progressTimer);
+    updateMigrationState(key, {
+      isRunning: false,
+      progress: 0,
+      logs: [
+        ...(siteConfigState.migrations[key]?.logs || []),
+        {
+          type: "stderr",
+          message: error.message || translate("site_config_migration_error")
+        }
+      ].slice(-120),
+      message: error.message || translate("site_config_migration_error")
     });
   }
 }

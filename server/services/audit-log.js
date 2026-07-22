@@ -17,19 +17,86 @@ function snapshotUser(user) {
   };
 }
 
-function getRequestIp(req) {
-  const rawIp = String(req?.ip || '').trim();
+function splitIpCandidates(value) {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(splitIpCandidates);
+  }
+
+  return String(value)
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeIpAddress(value) {
+  const rawIp = String(value || '').trim();
 
   if (rawIp.startsWith('::ffff:')) {
     return rawIp.slice(7);
   }
 
+  if (rawIp === '::1') {
+    return '127.0.0.1';
+  }
+
   return rawIp;
 }
 
+function isIpv4Address(value) {
+  return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(String(value || ''));
+}
+
+function getRequestIpDetails(req) {
+  const candidates = [
+    req?.headers?.['cf-connecting-ip'],
+    req?.headers?.['x-real-ip'],
+    req?.headers?.['x-forwarded-for'],
+    req?.ips,
+    req?.ip,
+    req?.socket?.remoteAddress
+  ].flatMap(splitIpCandidates);
+
+  const addresses = [];
+
+  candidates.forEach(candidate => {
+    const normalized = normalizeIpAddress(candidate);
+
+    if (normalized && !addresses.includes(normalized)) {
+      addresses.push(normalized);
+    }
+
+    if (String(candidate || '').trim() === '::1' && !addresses.includes('::1')) {
+      addresses.push('::1');
+    }
+  });
+
+  return {
+    ipAddress: addresses.find(isIpv4Address) || addresses[0] || '',
+    ipAddresses: addresses
+  };
+}
+
 function shouldCaptureRequestIp(action) {
-  return ['user.created', 'user.login', 'user.login_mfa_required']
-    .includes(String(action || ''));
+  const normalizedAction = String(action || '');
+
+  return (
+    normalizedAction.startsWith('user.') ||
+    normalizedAction.startsWith('audit.') ||
+    normalizedAction.startsWith('analytics.') ||
+    normalizedAction.startsWith('config.') ||
+    normalizedAction.startsWith('media.') ||
+    normalizedAction.startsWith('role.') ||
+    normalizedAction.startsWith('page.') ||
+    normalizedAction.startsWith('navigation.') ||
+    normalizedAction.startsWith('timer.') ||
+    normalizedAction.startsWith('translation.') ||
+    normalizedAction.startsWith('content.') ||
+    normalizedAction.startsWith('migration.')
+  );
 }
 
 async function writeAuditLog({
@@ -42,11 +109,14 @@ async function writeAuditLog({
   metadata = {}
 }) {
   try {
-    const requestIp = getRequestIp(req);
+    const requestIpDetails = getRequestIpDetails(req);
     const auditMetadata = {
       ...metadata,
-      ...(shouldCaptureRequestIp(action) && requestIp
-        ? { ipAddress: requestIp }
+      ...(shouldCaptureRequestIp(action) && requestIpDetails.ipAddress
+        ? {
+            ipAddress: requestIpDetails.ipAddress,
+            ipAddresses: requestIpDetails.ipAddresses
+          }
         : {})
     };
 

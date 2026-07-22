@@ -100,7 +100,16 @@ async function verifySiteConfigAccess() {
 }
 
 async function promptForConfigToken() {
-  const token = window.prompt(translate("site_config_token_prompt"));
+  const token = await CMCENModal.prompt(
+    translate("site_config_token_prompt"),
+    {
+      title: translate("site_config_heading"),
+      inputLabel: translate("site_config_token_prompt"),
+      inputType: "password",
+      autocomplete: "off",
+      confirmText: translate("modal_confirm")
+    }
+  );
 
   if (!token) {
     throw new Error(translate("site_config_token_required"));
@@ -408,7 +417,14 @@ async function loadSiteConfig() {
 }
 
 async function purgeAnalyticsHistory() {
-  if (!window.confirm(translate("site_config_analytics_purge_confirm"))) {
+  if (!await CMCENModal.confirm(
+    translate("site_config_analytics_purge_confirm"),
+    {
+      title: translate("site_config_analytics_purge"),
+      confirmText: translate("site_config_analytics_purge"),
+      destructive: true
+    }
+  )) {
     return;
   }
 
@@ -569,7 +585,14 @@ async function runSiteConfigMigration(key, mode) {
     return;
   }
 
-  if (isApply && !window.confirm(translate("site_config_migration_apply_confirm"))) {
+  if (isApply && !await CMCENModal.confirm(
+    translate("site_config_migration_apply_confirm"),
+    {
+      title: translate("site_config_migration_apply"),
+      confirmText: translate("site_config_migration_apply"),
+      destructive: true
+    }
+  )) {
     return;
   }
 

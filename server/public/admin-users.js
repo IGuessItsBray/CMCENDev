@@ -380,13 +380,16 @@ async function deleteAdminMedia(mediaItem) {
     return;
   }
 
-  if (
-    !window.confirm(
-      translate("admin_media_delete_confirm", {
-        key: mediaItem.key
-      })
-    )
-  ) {
+  if (!await CMCENModal.confirm(
+    translate("admin_media_delete_confirm", {
+      key: mediaItem.key
+    }),
+    {
+      title: translate("mfa_delete"),
+      confirmText: translate("mfa_delete"),
+      destructive: true
+    }
+  )) {
     return;
   }
 
@@ -478,13 +481,16 @@ async function deleteSelectedAdminMedia() {
     return;
   }
 
-  if (
-    !window.confirm(
-      translate("admin_media_bulk_delete_confirm", {
-        count: removableItems.length
-      })
-    )
-  ) {
+  if (!await CMCENModal.confirm(
+    translate("admin_media_bulk_delete_confirm", {
+      count: removableItems.length
+    }),
+    {
+      title: translate("mfa_delete"),
+      confirmText: translate("mfa_delete"),
+      destructive: true
+    }
+  )) {
     return;
   }
 
@@ -805,13 +811,16 @@ async function exportAdminUsers(format, options = {}) {
 async function resetAdminUserMfa(user) {
   if (!user?._id) return;
 
-  if (
-    !window.confirm(
-      translate("admin_users_mfa_reset_confirm", {
-        name: CMCENUtils.getUserDisplayName(user, translate("unknown_user"))
-      })
-    )
-  ) {
+  if (!await CMCENModal.confirm(
+    translate("admin_users_mfa_reset_confirm", {
+      name: CMCENUtils.getUserDisplayName(user, translate("unknown_user"))
+    }),
+    {
+      title: translate("admin_users_mfa_reset"),
+      confirmText: translate("admin_users_mfa_reset"),
+      destructive: true
+    }
+  )) {
     return;
   }
 
@@ -936,11 +945,14 @@ async function saveAdminRole(roleId, payload) {
 async function deleteAdminRole(role) {
   if (!role?._id) return;
 
-  if (
-    !window.confirm(
-      `Delete role "${role.name}"? It will be removed from every assigned member.`
-    )
-  ) {
+  if (!await CMCENModal.confirm(
+    `Delete role "${role.name}"? It will be removed from every assigned member.`,
+    {
+      title: translate("mfa_delete"),
+      confirmText: translate("mfa_delete"),
+      destructive: true
+    }
+  )) {
     return;
   }
 
@@ -993,26 +1005,35 @@ async function promoteAdminUserToDeveloper(user) {
     translate("unknown_user")
   );
 
-  if (
-    !window.confirm(
-      translate("admin_users_promote_confirm", {
-        name: displayName
-      })
-    )
-  ) {
+  if (!await CMCENModal.confirm(
+    translate("admin_users_promote_confirm", {
+      name: displayName
+    }),
+    {
+      title: translate("admin_users_promote_developer"),
+      confirmText: translate("modal_confirm")
+    }
+  )) {
     return;
   }
 
-  if (
-    !window.confirm(
-      translate("admin_users_promote_access_confirm")
-    )
-  ) {
+  if (!await CMCENModal.confirm(
+    translate("admin_users_promote_access_confirm"),
+    {
+      title: translate("admin_users_promote_developer"),
+      confirmText: translate("modal_confirm")
+    }
+  )) {
     return;
   }
 
-  const confirmation = window.prompt(
-    translate("admin_users_promote_prompt")
+  const confirmation = await CMCENModal.prompt(
+    translate("admin_users_promote_prompt"),
+    {
+      title: translate("admin_users_promote_developer"),
+      inputLabel: "DEVELOPER",
+      confirmText: translate("modal_confirm")
+    }
   );
 
   if (confirmation !== "DEVELOPER") {
@@ -1083,13 +1104,16 @@ async function deleteAdminPost(post) {
     return;
   }
 
-  if (
-    !window.confirm(
-      translate("admin_content_delete_confirm", {
-        title: post.title || translate("admin_content_this_item")
-      })
-    )
-  ) {
+  if (!await CMCENModal.confirm(
+    translate("admin_content_delete_confirm", {
+      title: post.title || translate("admin_content_this_item")
+    }),
+    {
+      title: translate("mfa_delete"),
+      confirmText: translate("mfa_delete"),
+      destructive: true
+    }
+  )) {
     return;
   }
 

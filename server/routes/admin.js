@@ -1035,7 +1035,7 @@ function buildSimplePdf(pages) {
       '50 760 Td',
       '10 TL',
       ...pageLines.map((line, index) =>
-        `${index === 0 ? '' : 'T* ' }(${escapePdfText(line)}) Tj`
+        `${index === 0 ? '' : 'T* '}(${escapePdfText(line)}) Tj`
       ),
       'ET'
     ];

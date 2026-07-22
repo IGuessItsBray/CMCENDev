@@ -40,7 +40,7 @@ body.mobile-menu-lock {
   overflow: hidden;
 }
 
-body.signout-modal-lock {
+body.cmcen-modal-lock {
   overflow: hidden;
 }
 
@@ -482,10 +482,10 @@ svg {
   color: var(--branch-grey-200);
 }
 
-.signout-modal-overlay {
+.cmcen-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 1200;
   padding: 24px;
   display: grid;
   place-items: center;
@@ -496,11 +496,13 @@ svg {
   backdrop-filter: blur(3px);
 }
 
-.signout-modal {
-  width: min(100%, 440px);
-  position: relative;
+.cmcen-modal-overlay[hidden] {
+  display: none;
+}
+
+.cmcen-modal {
+  width: min(100%, 500px);
   overflow: hidden;
-  border: 0;
   border-top: 4px solid var(--gold-500);
   border-radius: 2px;
   background: var(--white);
@@ -510,11 +512,12 @@ svg {
     0 10px 26px rgba(15, 18, 31, 0.28);
 }
 
-.signout-modal-header {
+.cmcen-modal-header {
   min-height: 104px;
-  padding: 22px 24px;
+  padding: 21px 24px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 18px;
   color: var(--white);
   background:
@@ -525,43 +528,51 @@ svg {
   box-shadow: inset 0 -1px 0 rgba(213, 155, 39, 0.34);
 }
 
-.signout-modal-icon-wrap {
-  width: 62px;
-  height: 62px;
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(213, 155, 39, 0.72);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow:
-    0 0 0 4px rgba(213, 155, 39, 0.08),
-    0 10px 24px rgba(15, 18, 31, 0.26);
+.cmcen-modal-brand {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--gold-200);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1;
 }
 
-.signout-modal-icon {
-  width: 34px;
-  height: 34px;
-  fill: none;
-  stroke: var(--gold-200);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.signout-modal h2 {
+.cmcen-modal h2 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 28px;
   font-weight: normal;
   line-height: 1.14;
 }
 
-.signout-modal-body {
+.cmcen-modal-close {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(234, 211, 163, 0.5);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--gold-200);
+  font: inherit;
+  font-size: 27px;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cmcen-modal-close:hover,
+.cmcen-modal-close:focus-visible {
+  border-color: var(--gold-200);
+  background: rgba(255, 255, 255, 0.16);
+  outline: 2px solid var(--gold-500);
+  outline-offset: 2px;
+}
+
+.cmcen-modal-body {
   padding: 24px;
   background:
     linear-gradient(180deg,
@@ -569,21 +580,45 @@ svg {
       var(--branch-grey-100));
 }
 
-.signout-modal p {
+.cmcen-modal-body > p {
   margin: 0;
   color: var(--text-muted);
   font-size: 15px;
   line-height: 1.55;
+  white-space: pre-wrap;
 }
 
-.signout-modal-actions {
+.cmcen-modal-field {
+  margin-top: 20px;
+  display: grid;
+  gap: 7px;
+}
+
+.cmcen-modal-input {
+  min-height: 44px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--branch-grey-500);
+  border-radius: 2px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+}
+
+.cmcen-modal-input:focus {
+  border-color: var(--gold-600);
+  outline: 2px solid rgba(213, 155, 39, 0.38);
+  outline-offset: 1px;
+}
+
+.cmcen-modal-actions {
   margin-top: 24px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
-.signout-modal-button {
+.cmcen-modal-button {
   min-height: 44px;
   padding: 0 18px;
   border: 1px solid transparent;
@@ -601,37 +636,74 @@ svg {
     transform 150ms ease;
 }
 
-.signout-modal-button-secondary {
+.cmcen-modal-button-secondary {
   border-color: var(--branch-grey-500);
   background: transparent;
   color: var(--navy-900);
 }
 
-.signout-modal-button-danger {
+.cmcen-modal-button-primary {
   border-color: var(--gold-500);
   background: var(--gold-600);
   color: var(--navy-950);
 }
 
-.signout-modal-button-secondary:hover,
-.signout-modal-button-secondary:focus-visible {
+.cmcen-modal-button-primary.is-danger {
+  border-color: #8c312d;
+  background: var(--danger);
+  color: var(--white);
+}
+
+.cmcen-modal-button-secondary:hover,
+.cmcen-modal-button-secondary:focus-visible {
   border-color: var(--navy-800);
   background: var(--white);
   color: var(--navy-950);
 }
 
-.signout-modal-button-danger:hover,
-.signout-modal-button-danger:focus-visible {
+.cmcen-modal-button-primary:hover,
+.cmcen-modal-button-primary:focus-visible {
   border-color: var(--gold-700);
   background: var(--gold-500);
   color: var(--navy-950);
-}
-
-.signout-modal-button:hover,
-.signout-modal-button:focus-visible {
   outline: 2px solid var(--gold-500);
   outline-offset: 2px;
   transform: translateY(-1px);
+}
+
+.cmcen-modal-button-primary.is-danger:hover,
+.cmcen-modal-button-primary.is-danger:focus-visible {
+  border-color: #7a2925;
+  background: #8c312d;
+  color: var(--white);
+  outline-color: var(--danger);
+}
+
+@media (max-width: 560px) {
+  .cmcen-modal-overlay {
+    padding: 16px;
+  }
+
+  .cmcen-modal-header,
+  .cmcen-modal-body {
+    padding: 20px;
+  }
+
+  .cmcen-modal-header {
+    min-height: 84px;
+  }
+
+  .cmcen-modal h2 {
+    font-size: 24px;
+  }
+
+  .cmcen-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .cmcen-modal-button {
+    width: 100%;
+  }
 }
 
 .lang-toggle {
@@ -12117,27 +12189,6 @@ html[data-theme="dark"] .last-post-submit-button {
     color: var(--white);
   }
 
-  .signout-modal-overlay {
-    padding: 16px;
-  }
-
-  .signout-modal-header {
-    min-height: 84px;
-    padding: 20px;
-  }
-
-  .signout-modal-body {
-    padding: 20px;
-  }
-
-  .signout-modal-actions {
-    flex-direction: column-reverse;
-  }
-
-  .signout-modal-button {
-    width: 100%;
-  }
-
   .footer-inner {
     width: min(100% - 30px, 1440px);
   }
@@ -13094,7 +13145,6 @@ html[data-theme="dark"] .site-footer {
 
 html[data-theme="dark"] .header-identity-row,
 html[data-theme="dark"] .footer-main,
-html[data-theme="dark"] .signout-modal-header,
 html[data-theme="dark"] .dashboard-heading,
 html[data-theme="dark"] .event-submit-heading,
 html[data-theme="dark"] .event-review-heading,
@@ -13433,20 +13483,45 @@ html[data-theme="dark"] main th {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .signout-modal {
-  border-color: var(--dark-border);
+html[data-theme="dark"] .cmcen-modal {
+  border: 1px solid var(--dark-border-strong);
+  border-top: 4px solid var(--gold-500);
+  background: var(--dark-surface);
+  color: var(--dark-text);
+  box-shadow:
+    0 36px 96px rgba(0, 0, 0, 0.78),
+    0 0 0 1px rgba(234, 211, 163, 0.12);
+}
+
+html[data-theme="dark"] .cmcen-modal-overlay {
+  background:
+    linear-gradient(180deg,
+      rgba(3, 5, 9, 0.78),
+      rgba(3, 5, 9, 0.88));
+  backdrop-filter: blur(2px);
+}
+
+html[data-theme="dark"] .cmcen-modal-body,
+html[data-theme="dark"] .cmcen-modal-button-secondary {
   background: var(--dark-surface);
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .signout-modal-body,
-html[data-theme="dark"] .signout-modal-button-secondary {
-  background: var(--dark-surface);
-  color: var(--dark-text);
-}
-
-html[data-theme="dark"] .signout-modal-body p {
+html[data-theme="dark"] .cmcen-modal-body > p {
   color: var(--dark-text-soft);
+}
+
+html[data-theme="dark"] .cmcen-modal-input {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-3);
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .cmcen-modal-button-secondary:hover,
+html[data-theme="dark"] .cmcen-modal-button-secondary:focus-visible {
+  border-color: var(--gold-500);
+  background: var(--dark-surface-3);
+  color: var(--dark-text);
 }
 
 html[data-theme="dark"] .audit-log-entry.is-user-login,

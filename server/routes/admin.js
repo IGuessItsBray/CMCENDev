@@ -10,7 +10,6 @@ const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
-const LastPostMessage = require('../models/LastPostMessage');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
@@ -1019,7 +1018,7 @@ function buildSimplePdf(pages) {
       '50 760 Td',
       '10 TL',
       ...pageLines.map((line, index) =>
-        `${index === 0 ? '' : 'T* ' }(${escapePdfText(line)}) Tj`
+        `${index === 0 ? '' : 'T* '}(${escapePdfText(line)}) Tj`
       ),
       'ET'
     ];

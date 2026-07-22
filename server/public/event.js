@@ -80,11 +80,14 @@ async function deletePublishedEvent() {
         return;
     }
 
-    if (
-        !window.confirm(
-            "Delete this event? This will be recorded in the audit log."
-        )
-    ) {
+    if (!await CMCENModal.confirm(
+        "Delete this event? This will be recorded in the audit log.",
+        {
+            title: "Delete event",
+            confirmText: "Delete",
+            destructive: true
+        }
+    )) {
         return;
     }
 
@@ -132,7 +135,9 @@ async function deletePublishedEvent() {
             window.location.href = "/calendar";
         }, 900);
     } catch (error) {
-        window.alert(error.message || "Could not delete event");
+        await CMCENModal.alert(error.message || "Could not delete event", {
+            title: "Delete event"
+        });
 
         if (button) {
             button.disabled = false;

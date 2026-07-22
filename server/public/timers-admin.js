@@ -449,9 +449,13 @@ async function saveTimer(timer, form) {
 }
 
 async function deleteTimer(timer) {
-  if (!window.confirm(t("timers_delete_confirm", {
+  if (!await CMCENModal.confirm(t("timers_delete_confirm", {
     title: timer.title || t("timers_untitled")
-  }))) {
+  }), {
+    title: t("mfa_delete"),
+    confirmText: t("mfa_delete"),
+    destructive: true
+  })) {
     return;
   }
 

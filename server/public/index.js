@@ -680,6 +680,12 @@ function loadFooter() {
                 Accessibility
               </a>
             </li>
+
+            <li>
+              <a href="/sitemap" data-i18n="site_map">
+                Site map
+              </a>
+            </li>
           </ul>
 
           <div

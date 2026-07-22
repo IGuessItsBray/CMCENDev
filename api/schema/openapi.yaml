@@ -284,7 +284,7 @@ paths:
   /api/mfa/totp/setup:
     post:
       tags: [MFA]
-      summary: Initialize TOTP setup.
+      summary: Initialize TOTP setup with a server-assigned authenticator name.
       responses:
         "200":
           description: TOTP secret, otpauth URL, and QR data.
@@ -314,29 +314,12 @@ paths:
         "200":
           description: Verification result; may include JWT.
   /api/mfa/totp:
-    patch:
-      tags: [MFA]
-      summary: Rename TOTP app.
-      requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
-      responses:
-        "200":
-          description: Rename result.
     delete:
       tags: [MFA]
-      summary: Disable TOTP.
+      summary: Disable active TOTP or cancel a pending setup.
       responses:
         "200":
           description: Disable result.
-  /api/mfa/totp/rename:
-    post:
-      tags: [MFA]
-      summary: Rename TOTP app, compatibility endpoint.
-      requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
-      responses:
-        "200":
-          description: Rename result.
   /api/mfa/webauthn/credentials:
     get:
       tags: [MFA]

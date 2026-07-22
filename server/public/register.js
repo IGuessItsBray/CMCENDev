@@ -23,7 +23,6 @@ const registerTradeOther = document.getElementById("regTradeOther");
 const registerPreferredLanguage = document.getElementById("regPreferredLanguage");
 
 let registrationToken = "";
-let pendingTotpAppName = "Authenticator app";
 let emailVerificationToken = "";
 
 function setStoredToken(token) {
@@ -171,23 +170,8 @@ async function setupTotp() {
   registerPasskeyOption.disabled = true;
 
   try {
-    const appName = await CMCENModal.prompt("Authenticator app name", {
-      title: "Authenticator app",
-      inputLabel: "Authenticator app name",
-      defaultValue: pendingTotpAppName,
-      confirmText: "Setup"
-    });
-    if (appName === null) {
-      registerTotpOption.disabled = false;
-      registerPasskeyOption.disabled = false;
-      return;
-    }
-
-    pendingTotpAppName = appName.trim() || "Authenticator app";
-
     const setup = await mfaApi("/api/mfa/totp/setup", {
-      method: "POST",
-      body: { appName: pendingTotpAppName }
+      method: "POST"
     });
 
     registerMfaOptions.hidden = true;
@@ -195,17 +179,21 @@ async function setupTotp() {
     registerTotpOutput.replaceChildren();
 
     if (setup.qrcode) {
+      const qrSetup = document.createElement("div");
+      qrSetup.className = "totp-qr-setup";
+
       const img = document.createElement("img");
       img.className = "mfa-qr";
       img.src = setup.qrcode;
-      img.alt = "TOTP QR code";
-      registerTotpOutput.appendChild(img);
-    }
+      img.alt = translate("mfa_totp_qr_alt");
 
-    const secret = document.createElement("code");
-    secret.className = "mfa-secret";
-    secret.textContent = setup.otpauth_url || JSON.stringify(setup);
-    registerTotpOutput.appendChild(secret);
+      const instruction = document.createElement("p");
+      instruction.className = "mfa-qr-instruction";
+      instruction.textContent = translate("mfa_totp_scan_qr");
+
+      qrSetup.append(img, instruction);
+      registerTotpOutput.appendChild(qrSetup);
+    }
     registerTotpCode.focus();
   } catch (error) {
     setMfaError(error.message);
@@ -228,7 +216,7 @@ async function verifyTotp() {
   try {
     await mfaApi("/api/mfa/totp/verify", {
       method: "POST",
-      body: { token: code, appName: pendingTotpAppName }
+      body: { token: code }
     });
 
     finishRegistration();

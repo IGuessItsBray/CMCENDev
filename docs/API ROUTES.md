@@ -56,6 +56,8 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `POST` | `/api/ghost/confirm` | Public | Confirm ghost-account claim token. |
 | `POST` | `/api/register` | Public | Register a new user account. |
 | `POST` | `/api/login` | Public | Login with username/password; may return MFA temp-token flow. |
+| `POST` | `/api/session/refresh` | Refresh-token cookie | Exchange a valid refresh cookie for a new access token. |
+| `POST` | `/api/session/logout` | Refresh-token cookie | Revoke the refresh session and clear its cookie. |
 | `POST` | `/api/email-verification/confirm` | Public | Confirm email verification token. |
 | `POST` | `/api/password-reset/request` | Public | Request password reset email. |
 | `POST` | `/api/password-reset/confirm` | Public | Complete password reset with token. |

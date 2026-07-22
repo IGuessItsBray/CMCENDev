@@ -459,14 +459,14 @@ function addAttachmentAliases(attachmentMap, aliasKeys) {
 }
 
 function getMediaAssetAttachmentKeys(asset) {
-  return [
+  return [...new Set([
     asset?.key,
     asset?.originalKey,
     getMediaVariantKey(asset, 'thumb'),
     getMediaVariantKey(asset, 'medium'),
     getMediaVariantKey(asset, 'large'),
     getMediaVariantKey(asset, 'hero')
-  ].filter(Boolean);
+  ].filter(Boolean))];
 }
 
 async function getMediaAttachments() {

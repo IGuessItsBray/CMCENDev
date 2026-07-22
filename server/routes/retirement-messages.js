@@ -1529,7 +1529,7 @@ router.patch(
 
             if (action === 'publish') {
                 const cleanMessages =
-                    cleanLocalizedMessages({
+                    cleanLocalizedText({
                         ...getLocalizedMessages(
                             retirementMessage
                         ),

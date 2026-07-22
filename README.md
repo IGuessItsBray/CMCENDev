@@ -104,11 +104,15 @@ Run these from `server/`:
 npm start          # production-style local start
 npm run start:dev  # restart automatically when source files change
 npm run check      # syntax-check server, browser, and migration JavaScript
-npm test           # currently aliases the syntax check
+npm test           # syntax checks plus Mongo-backed API integration tests
+npm run test:integration       # integration tests only
+npm run test:integration:watch # rerun integration tests while editing
 ```
 
-There is not yet a unit or integration test suite. `npm test` verifies syntax,
-not application behavior.
+The integration suite starts a temporary MongoDB instance, uses Supertest to
+exercise the Express application without opening an HTTP port, and deletes the
+temporary database after the run. See [docs/TESTING.md](docs/TESTING.md) for
+coverage, conventions, and remaining test layers.
 
 ## Docker
 
@@ -148,6 +152,7 @@ Read [docs/MIGRATION INFO.md](docs/MIGRATION%20INFO.md) before using `--apply`.
 - [Notifications](docs/NOTIFICATIONS.md)
 - [Page builder](docs/PAGE_BUILDER.md)
 - [Role editor](docs/ROLE_EDITOR.md)
+- [Testing](docs/TESTING.md)
 - [Recent changelog](docs/CHANGELOG_LAST_WEEK.md)
 
 When an endpoint changes, update both `docs/API ROUTES.md` and

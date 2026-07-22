@@ -2,6 +2,21 @@ const mongoose = require('mongoose');
 
 const LastPostMessageSchema = new mongoose.Schema(
   {
+    title: {
+      type: String,
+      trim: true,
+      maxlength: 240,
+      default: ''
+    },
+
+    slug: {
+      type: String,
+      trim: true,
+      maxlength: 240,
+      default: '',
+      index: true
+    },
+
     submitter: {
       rank: {
         type: String,
@@ -84,6 +99,13 @@ const LastPostMessageSchema = new mongoose.Schema(
       default: ''
     },
 
+    photoUrl: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: ''
+    },
+
     // Publication metadata is needed for review and for the public archive.
     status: {
       type: String,
@@ -101,6 +123,11 @@ const LastPostMessageSchema = new mongoose.Schema(
       trim: true,
       maxlength: 2000,
       default: ''
+    },
+
+    legacy: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
     }
   },
   {
@@ -112,6 +139,11 @@ LastPostMessageSchema.index({
   status: 1,
   publishedAt: -1,
   _id: -1
+});
+
+LastPostMessageSchema.index({
+  'legacy.source': 1,
+  'legacy.postId': 1
 });
 
 module.exports = mongoose.model('LastPostMessage', LastPostMessageSchema);

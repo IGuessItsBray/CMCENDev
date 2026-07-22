@@ -25,6 +25,7 @@ const { sanitizeImageMetadata } = require('../../services/media-assets');
 const s3Client = require('../../storage');
 
 const WORDPRESS_BASE_URL = 'https://cmcen-rcmce.ca';
+const RETIREMENT_LIST_URL = `${WORDPRESS_BASE_URL}/retirements/retirements-list/`;
 const DEFAULT_CATEGORY_SLUG = 'retirements';
 const WORDPRESS_PAGE_SIZE = 100;
 const IMAGE_VARIANTS = Object.freeze([
@@ -162,6 +163,25 @@ function getFirstContentImageUrl(post) {
 
 function getImageUrl(post) {
   return getEmbeddedImageUrl(post) || getFirstContentImageUrl(post);
+}
+
+function getPostSlugFromLink(value) {
+  try {
+    const url = new URL(decodeHtml(value), WORDPRESS_BASE_URL);
+    const parts = url.pathname.split('/').filter(Boolean);
+
+    if (parts.length !== 1 || parts[0] === 'retirements') {
+      return '';
+    }
+
+    if (!parts[0].toLowerCase().includes('retirement')) {
+      return '';
+    }
+
+    return parts[0];
+  } catch {
+    return '';
+  }
 }
 
 function getLanguage(post) {
@@ -314,7 +334,7 @@ function toPostDocument(post, mediaResult, legacyImportUser = null) {
       importedAt: new Date(),
       sourceImageUrl: mediaResult?.sourceUrl || getImageUrl(post),
       mediaAssetKey: mediaResult?.asset?.key || '',
-      scrapedFrom: `${WORDPRESS_BASE_URL}/retirements/`
+      scrapedFrom: RETIREMENT_LIST_URL
     }
   };
 }
@@ -333,6 +353,18 @@ async function fetchJsonResponse(url) {
 
 async function fetchJson(url) {
   return (await fetchJsonResponse(url)).data;
+}
+
+async function fetchText(url) {
+  const response = await axios.get(url, {
+    responseType: 'text',
+    timeout: 30000,
+    headers: {
+      'User-Agent': 'CMCEN migration test script'
+    }
+  });
+
+  return String(response.data || '');
 }
 
 function getTotalPages(response) {
@@ -385,6 +417,83 @@ async function getLatestPosts(categoryId) {
   }
 
   return Number.isFinite(limit) ? posts.slice(0, limit) : posts;
+}
+
+function getRetirementListSlugs(html) {
+  const slugs = new Set();
+  const linkPattern = /<a\b[^>]*class=["'][^"']*ninja_table_permalink[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>/giu;
+  let match = linkPattern.exec(html);
+
+  while (match) {
+    const slug = getPostSlugFromLink(match[1]);
+
+    if (slug) {
+      slugs.add(slug);
+    }
+
+    match = linkPattern.exec(html);
+  }
+
+  return [...slugs];
+}
+
+async function fetchPostBySlug(slug) {
+  const posts = await fetchJson(
+    `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_embed=1`
+  );
+  const post = Array.isArray(posts) ? posts[0] : null;
+
+  if (!post?.id) {
+    console.log(`Skipping retirement slug ${slug}: WordPress REST post not found`);
+    return null;
+  }
+
+  return post;
+}
+
+async function getLatestPostsFromRetirementList() {
+  const html = await fetchText(RETIREMENT_LIST_URL);
+  const slugs = getRetirementListSlugs(html);
+  const posts = [];
+  const totalToCollect = Number.isFinite(limit) ? Math.min(slugs.length, limit) : slugs.length;
+
+  console.log(`Found ${slugs.length} retirement links on retirement list page`);
+
+  for (const slug of slugs) {
+    if (posts.length >= limit) {
+      break;
+    }
+
+    const post = await fetchPostBySlug(slug);
+
+    if (post) {
+      posts.push(post);
+      console.log(`[${posts.length}/${totalToCollect}] Collected retirement ${post.id}: ${getPostTitle(post)}`);
+    }
+  }
+
+  return posts;
+}
+
+async function getRetirementPosts() {
+  const listPosts = await getLatestPostsFromRetirementList();
+
+  if (listPosts.length) {
+    return {
+      posts: Number.isFinite(limit) ? listPosts.slice(0, limit) : listPosts,
+      sourceType: 'retirements-list',
+      categoryId: null
+    };
+  }
+
+  console.log('No retirement links found on the list page; falling back to category scan');
+  const categoryId = await getCategoryId();
+
+  return {
+    posts: await getLatestPosts(categoryId),
+    sourceType: 'category',
+    categoryId
+  };
 }
 
 async function getPostComments(postId) {
@@ -668,8 +777,11 @@ async function main() {
     throw new Error('MINIO_BUCKET_NAME is not configured.');
   }
 
-  const categoryId = await getCategoryId();
-  const posts = await getLatestPosts(categoryId);
+  const {
+    posts,
+    sourceType,
+    categoryId
+  } = await getRetirementPosts();
   const results = [];
   let legacyImportUser = null;
 
@@ -684,12 +796,13 @@ async function main() {
     console.log('Legacy import user is ready');
   }
 
-  for (const post of posts) {
+  for (const [index, post] of posts.entries()) {
+    const progressLabel = `${index + 1}/${posts.length}`;
     let mediaResult = null;
     let retirementMessage = null;
     console.log(contentMode === 'comments'
-      ? `Scanning comments for retirement parent post ${post.id}: ${getPostTitle(post)}`
-      : `Processing WordPress retirement post ${post.id}: ${getPostTitle(post)}`);
+      ? `[${progressLabel}] Scanning comments for retirement parent post ${post.id}: ${getPostTitle(post)}`
+      : `[${progressLabel}] Processing WordPress retirement message ${post.id}: ${getPostTitle(post)}`);
     const comments = await getPostComments(post.id);
 
     if (apply && shouldImportRetirements) {
@@ -705,12 +818,12 @@ async function main() {
         imported: false,
         error: 'Message is shorter than the RetirementMessage minimum length.'
       });
-      console.log(`Skipping ${post.id}: message too short`);
+      console.log(`[${progressLabel}] Skipping retirement message ${post.id}: message too short`);
       continue;
     }
 
     if (apply && shouldImportRetirements) {
-      console.log(`Upserting retirement message for WordPress post ${post.id}`);
+      console.log(`[${progressLabel}] Upserting retirement message for WordPress post ${post.id}`);
       retirementMessage = await RetirementMessage.findOneAndUpdate(
         {
           'legacy.source': 'cmcen-live-site',
@@ -720,7 +833,7 @@ async function main() {
         { new: true, upsert: true, runValidators: true }
       );
     } else if (apply && shouldImportComments) {
-      console.log(`Finding migrated retirement message for WordPress post ${post.id}`);
+      console.log(`[${progressLabel}] Finding migrated retirement message for WordPress post ${post.id}`);
       retirementMessage = await RetirementMessage.findOne({
         'legacy.source': 'cmcen-live-site',
         'legacy.wordpressPostId': post.id
@@ -734,7 +847,7 @@ async function main() {
       if (!retirementMessage) {
         summary.error = 'Retirement message must be migrated before importing comments.';
         results.push(summary);
-        console.log(`Skipping comments for ${post.id}: retirement message not found`);
+        console.log(`[${progressLabel}] Skipping comments for ${post.id}: retirement message not found`);
         continue;
       }
 
@@ -747,11 +860,11 @@ async function main() {
 
     results.push(summary);
     if (shouldImportRetirements) {
-      console.log(`${apply ? 'Imported' : 'Would import'} ${post.id}: ${document.legacy.title}`);
+      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} retirement message ${post.id}: ${document.legacy.title}`);
     }
 
     if (shouldImportComments) {
-      console.log(`${apply ? 'Imported' : 'Would import'} ${summary.comments.length} comments for ${post.id}`);
+      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} ${summary.comments.length} retirement comments for ${post.id}`);
     }
   }
 
@@ -762,7 +875,8 @@ async function main() {
 
   console.log(`Writing manifest: ${manifestPath}`);
   writeJson(manifestPath, {
-    source: `${WORDPRESS_BASE_URL}/retirements/`,
+    source: RETIREMENT_LIST_URL,
+    sourceType,
     categoryId,
     limit: Number.isFinite(limit) ? limit : 'all',
     contentMode,

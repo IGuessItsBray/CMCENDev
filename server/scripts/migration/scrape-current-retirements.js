@@ -795,12 +795,13 @@ async function main() {
     console.log('Legacy import user is ready');
   }
 
-  for (const post of posts) {
+  for (const [index, post] of posts.entries()) {
+    const progressLabel = `${index + 1}/${posts.length}`;
     let mediaResult = null;
     let retirementMessage = null;
     console.log(contentMode === 'comments'
-      ? `Scanning comments for retirement parent post ${post.id}: ${getPostTitle(post)}`
-      : `Processing WordPress retirement post ${post.id}: ${getPostTitle(post)}`);
+      ? `[${progressLabel}] Scanning comments for retirement parent post ${post.id}: ${getPostTitle(post)}`
+      : `[${progressLabel}] Processing WordPress retirement message ${post.id}: ${getPostTitle(post)}`);
     const comments = await getPostComments(post.id);
 
     if (apply && shouldImportRetirements) {
@@ -816,12 +817,12 @@ async function main() {
         imported: false,
         error: 'Message is shorter than the RetirementMessage minimum length.'
       });
-      console.log(`Skipping ${post.id}: message too short`);
+      console.log(`[${progressLabel}] Skipping retirement message ${post.id}: message too short`);
       continue;
     }
 
     if (apply && shouldImportRetirements) {
-      console.log(`Upserting retirement message for WordPress post ${post.id}`);
+      console.log(`[${progressLabel}] Upserting retirement message for WordPress post ${post.id}`);
       retirementMessage = await RetirementMessage.findOneAndUpdate(
         {
           'legacy.source': 'cmcen-live-site',
@@ -831,7 +832,7 @@ async function main() {
         { new: true, upsert: true, runValidators: true }
       );
     } else if (apply && shouldImportComments) {
-      console.log(`Finding migrated retirement message for WordPress post ${post.id}`);
+      console.log(`[${progressLabel}] Finding migrated retirement message for WordPress post ${post.id}`);
       retirementMessage = await RetirementMessage.findOne({
         'legacy.source': 'cmcen-live-site',
         'legacy.wordpressPostId': post.id
@@ -845,7 +846,7 @@ async function main() {
       if (!retirementMessage) {
         summary.error = 'Retirement message must be migrated before importing comments.';
         results.push(summary);
-        console.log(`Skipping comments for ${post.id}: retirement message not found`);
+        console.log(`[${progressLabel}] Skipping comments for ${post.id}: retirement message not found`);
         continue;
       }
 
@@ -858,11 +859,11 @@ async function main() {
 
     results.push(summary);
     if (shouldImportRetirements) {
-      console.log(`${apply ? 'Imported' : 'Would import'} ${post.id}: ${document.legacy.title}`);
+      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} retirement message ${post.id}: ${document.legacy.title}`);
     }
 
     if (shouldImportComments) {
-      console.log(`${apply ? 'Imported' : 'Would import'} ${summary.comments.length} comments for ${post.id}`);
+      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} ${summary.comments.length} retirement comments for ${post.id}`);
     }
   }
 

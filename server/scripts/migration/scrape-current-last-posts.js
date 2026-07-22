@@ -954,11 +954,12 @@ async function main() {
     console.log('Legacy import user is ready');
   }
 
-  for (const post of posts) {
+  for (const [index, post] of posts.entries()) {
+    const progressLabel = `${index + 1}/${posts.length}`;
     let mediaResult = null;
     let lastPostMessage = null;
 
-    console.log(`Processing WordPress Last Post ${post.id}: ${getPostTitle(post)}`);
+    console.log(`[${progressLabel}] Processing WordPress Last Post message ${post.id}: ${getPostTitle(post)}`);
     const comments = await getPostComments(post);
 
     if (apply && shouldImportLastPosts) {
@@ -976,12 +977,12 @@ async function main() {
         imported: false,
         error: 'Message is shorter than the LastPostMessage minimum length.'
       });
-      console.log(`Skipping Last Post ${post.id}: message too short`);
+      console.log(`[${progressLabel}] Skipping Last Post message ${post.id}: message too short`);
       continue;
     }
 
     if (apply && shouldImportLastPosts) {
-      console.log(`Upserting Last Post message for WordPress post ${post.id}`);
+      console.log(`[${progressLabel}] Upserting Last Post message for WordPress post ${post.id}`);
       lastPostMessage = await LastPostMessage.findOneAndUpdate(
         {
           'legacy.source': 'cmcen-live-site',
@@ -991,7 +992,7 @@ async function main() {
         { new: true, upsert: true, runValidators: true }
       );
     } else if (apply && shouldImportComments) {
-      console.log(`Finding migrated Last Post message for WordPress post ${post.id}`);
+      console.log(`[${progressLabel}] Finding migrated Last Post message for WordPress post ${post.id}`);
       lastPostMessage = await LastPostMessage.findOne({
         'legacy.source': 'cmcen-live-site',
         'legacy.postId': post.id
@@ -1006,7 +1007,7 @@ async function main() {
       if (!lastPostMessage) {
         summary.error = 'Last Post message must be migrated before importing comments.';
         results.push(summary);
-        console.log(`Skipping comments for Last Post ${post.id}: migrated message not found`);
+        console.log(`[${progressLabel}] Skipping comments for Last Post ${post.id}: migrated message not found`);
         continue;
       }
 
@@ -1021,11 +1022,11 @@ async function main() {
     results.push(summary);
 
     if (shouldImportLastPosts) {
-      console.log(`${apply ? 'Imported' : 'Would import'} Last Post ${post.id}: ${document.title}`);
+      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} Last Post message ${post.id}: ${document.title}`);
     }
 
     if (shouldImportComments) {
-      console.log(`${apply ? 'Imported' : 'Would import'} ${summary.comments.length} Last Post comments for ${post.id}`);
+      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} ${summary.comments.length} Last Post comments for ${post.id}`);
     }
   }
 

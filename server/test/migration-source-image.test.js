@@ -71,3 +71,34 @@ test('does not hide non-404 source download failures', async () => {
     failure
   );
 });
+
+test('uses jimmy crest when downloaded source bytes cannot be decoded', async () => {
+  const sourceUrl = 'https://cmcen-rcmce.ca/wp-content/uploads/corrupt.png';
+  const requestedUrls = [];
+  const validatedBuffers = [];
+  const sourceImage = await downloadSourceImage(sourceUrl, {
+    httpClient: {
+      get: async url => {
+        requestedUrls.push(url);
+        return {
+          data: Buffer.from(url === sourceUrl ? 'corrupt png' : 'jimmy crest'),
+          headers: { 'content-type': url === sourceUrl ? 'image/png' : 'image/webp' }
+        };
+      }
+    },
+    validateImage: async buffer => {
+      validatedBuffers.push(buffer.toString());
+      if (buffer.toString() === 'corrupt png') {
+        throw new Error('libpng read error');
+      }
+    }
+  });
+
+  assert.equal(sourceImage.usedFallback, true);
+  assert.equal(sourceImage.fallbackReason, 'invalid-image-data');
+  assert.equal(sourceImage.originalName, DEFAULT_IMAGE_NAME);
+  assert.equal(sourceImage.sourceUrl, sourceUrl);
+  assert.equal(sourceImage.fallbackSourceUrl, DEFAULT_IMAGE_URL);
+  assert.deepEqual(requestedUrls, [sourceUrl, DEFAULT_IMAGE_URL]);
+  assert.deepEqual(validatedBuffers, ['corrupt png', 'jimmy crest']);
+});

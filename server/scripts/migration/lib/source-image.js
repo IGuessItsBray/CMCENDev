@@ -22,10 +22,18 @@ async function requestImage(httpClient, sourceUrl, userAgent) {
   });
 }
 
-async function loadDefaultImage({ httpClient, sourceUrl = '', fallbackReason, userAgent }) {
+async function validateImage(image, validate) {
+  if (validate) {
+    await validate(image.buffer);
+  }
+
+  return image;
+}
+
+async function loadDefaultImage({ httpClient, sourceUrl = '', fallbackReason, userAgent, validate }) {
   const response = await requestImage(httpClient, DEFAULT_IMAGE_URL, userAgent);
 
-  return {
+  return validateImage({
     buffer: Buffer.from(response.data),
     contentType: response.headers['content-type'] || 'image/webp',
     originalName: DEFAULT_IMAGE_NAME,
@@ -33,33 +41,26 @@ async function loadDefaultImage({ httpClient, sourceUrl = '', fallbackReason, us
     fallbackSourceUrl: DEFAULT_IMAGE_URL,
     usedFallback: true,
     fallbackReason
-  };
+  }, validate);
 }
 
 async function downloadSourceImage(sourceUrl, options = {}) {
   const httpClient = options.httpClient || axios;
   const userAgent = options.userAgent || 'CMCEN migration script';
+  const validate = options.validateImage;
 
   if (!sourceUrl) {
     return loadDefaultImage({
       httpClient,
       fallbackReason: 'missing-source-url',
-      userAgent
+      userAgent,
+      validate
     });
   }
 
+  let response;
   try {
-    const response = await requestImage(httpClient, sourceUrl, userAgent);
-
-    return {
-      buffer: Buffer.from(response.data),
-      contentType: response.headers['content-type'] || 'image/jpeg',
-      originalName: getUrlFileName(sourceUrl),
-      sourceUrl,
-      fallbackSourceUrl: '',
-      usedFallback: false,
-      fallbackReason: ''
-    };
+    response = await requestImage(httpClient, sourceUrl, userAgent);
   } catch (error) {
     if (error.response?.status !== 404) {
       throw error;
@@ -69,7 +70,30 @@ async function downloadSourceImage(sourceUrl, options = {}) {
       httpClient,
       sourceUrl,
       fallbackReason: 'http-404',
-      userAgent
+      userAgent,
+      validate
+    });
+  }
+
+  const sourceImage = {
+    buffer: Buffer.from(response.data),
+    contentType: response.headers['content-type'] || 'image/jpeg',
+    originalName: getUrlFileName(sourceUrl),
+    sourceUrl,
+    fallbackSourceUrl: '',
+    usedFallback: false,
+    fallbackReason: ''
+  };
+
+  try {
+    return await validateImage(sourceImage, validate);
+  } catch {
+    return loadDefaultImage({
+      httpClient,
+      sourceUrl,
+      fallbackReason: 'invalid-image-data',
+      userAgent,
+      validate
     });
   }
 }

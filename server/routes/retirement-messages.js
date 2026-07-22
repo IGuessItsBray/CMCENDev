@@ -17,6 +17,7 @@ const {
     getRetirementCommentSnapshot,
     getRetirementMessageSnapshot
 } = require('../services/content-snapshots');
+const { linkMediaAssetToSource } = require('../services/media-assets');
 const {
     cleanLocalizedText,
     cleanString,
@@ -169,6 +170,35 @@ function getRetirementMessageText(retirementMessage, language = 'en') {
         cleanString(messages.fr) ||
         cleanString(retirementMessage.message)
     );
+}
+
+function getRetireeDisplayName(retirementMessage) {
+    const retiree =
+        retirementMessage?.retiree || {};
+    const name = [
+        cleanString(retiree.rank),
+        cleanString(retiree.firstName),
+        cleanString(retiree.lastName)
+    ].filter(Boolean).join(' ');
+    const postNominals =
+        cleanString(retiree.postNominals);
+
+    return [name, postNominals]
+        .filter(Boolean)
+        .join(', ') || 'Retirement message';
+}
+
+async function linkRetirementPhotoToMediaAsset(retirementMessage) {
+    await linkMediaAssetToSource({
+        mediaUrl: retirementMessage.photoUrl,
+        sourceType: 'retirementMessage',
+        context: 'retirement-message',
+        sourceModel: 'RetirementMessage',
+        sourceId: retirementMessage._id,
+        sourceField: 'photoUrl',
+        sourceUrl: `/retirement-message?id=${encodeURIComponent(String(retirementMessage._id))}`,
+        inferredName: getRetireeDisplayName(retirementMessage)
+    });
 }
 
 function getCleanRetirementMessagePayload(body = {}) {
@@ -392,6 +422,7 @@ router.post(
             });
 
         await retirementMessage.save();
+        await linkRetirementPhotoToMediaAsset(retirementMessage);
 
         await writeAuditLog({
             req,
@@ -1123,6 +1154,7 @@ router.patch(
                     : null;
 
             await retirementMessage.save();
+            await linkRetirementPhotoToMediaAsset(retirementMessage);
 
             await writeAuditLog({
                 req,

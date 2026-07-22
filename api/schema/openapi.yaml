@@ -700,6 +700,31 @@ paths:
                 image:
                   type: string
                   format: binary
+                uploadSource:
+                  type: string
+                  enum: [retirementMessage, lastPostMessage, event, mediaManager, pageBuilder, migration, directUpload, legacyStorage, unknown]
+                  description: UI or workflow that initiated the upload.
+                uploadContext:
+                  type: string
+                  description: Human-readable context such as retirement-message, last-post, event, or media-manager.
+                sourceId:
+                  type: string
+                  description: Source content id when known.
+                sourceModel:
+                  type: string
+                  description: Source model or content type when known.
+                sourceField:
+                  type: string
+                  description: Source field that stores the media URL, such as photoUrl, imageUrl, or imagePath.
+                sourceUrl:
+                  type: string
+                  description: Link back to the source content when known.
+                sourceSlug:
+                  type: string
+                  description: Source slug when known.
+                sourceName:
+                  type: string
+                  description: Name inferred from the source content, such as retiree, deceased member, or event title.
       responses:
         "201":
           description: Upload result with variants.
@@ -1297,6 +1322,17 @@ components:
             properties:
               filename: { type: string }
               contentType: { type: string }
+              size: { type: integer, minimum: 0 }
+              uploadSource:
+                type: string
+                enum: [retirementMessage, lastPostMessage, event, mediaManager, pageBuilder, migration, directUpload, legacyStorage, unknown]
+              uploadContext: { type: string }
+              sourceId: { type: string }
+              sourceModel: { type: string }
+              sourceField: { type: string }
+              sourceUrl: { type: string }
+              sourceSlug: { type: string }
+              sourceName: { type: string }
     Banner:
       required: true
       content:

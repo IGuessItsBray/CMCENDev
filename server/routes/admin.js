@@ -10,7 +10,6 @@ const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
-const LastPostMessage = require('../models/LastPostMessage');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
@@ -540,6 +539,11 @@ function toAdminMediaAssetItem(asset, attachmentMap) {
     mimeType: asset.mimeType || '',
     name: asset.displayName || asset.originalName || key,
     originalName: asset.originalName || '',
+    uuid: asset.uuid || '',
+    uploadContext: asset.uploadContext || {},
+    inferredName: asset.inferredName || '',
+    fileMetadata: asset.fileMetadata || {},
+    imageMetadata: asset.imageMetadata || {},
     lastModified: asset.createdAt || asset.updatedAt || null,
     createdAt: asset.createdAt || null,
     updatedAt: asset.updatedAt || null,
@@ -653,6 +657,18 @@ async function seedMediaAssetsFromStorageIfEmpty() {
       originalName: key.split('/').pop() || key,
       displayName: key.split('/').pop() || key,
       size: object.Size || 0,
+      uploadContext: {
+        type: 'legacyStorage',
+        context: 'storage-seed',
+        label: key.split('/').pop() || key
+      },
+      inferredName: key.split('/').pop() || key,
+      fileMetadata: {
+        originalName: key.split('/').pop() || key,
+        size: object.Size || 0,
+        storageKey: key,
+        lastModified: object.LastModified || null
+      },
       variants: inferVariantsFromStorageKey(key),
       createdAt: object.LastModified || new Date(),
       updatedAt: object.LastModified || new Date()

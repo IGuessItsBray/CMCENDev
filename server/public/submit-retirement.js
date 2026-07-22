@@ -217,6 +217,17 @@ async function uploadRetirementPhoto() {
     const uploadData = new FormData();
 
     uploadData.append("image", file);
+    uploadData.append("uploadSource", "retirementMessage");
+    uploadData.append("uploadContext", "retirement-message");
+    uploadData.append("sourceField", "photoUrl");
+    uploadData.append(
+        "sourceName",
+        [
+            getFieldValue("retireeRank"),
+            getFieldValue("retireeFirstName"),
+            getFieldValue("retireeLastName")
+        ].filter(Boolean).join(" ")
+    );
 
     const data = await retirementApiFetch("/api/upload", {
         method: "POST",

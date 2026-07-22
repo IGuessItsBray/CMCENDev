@@ -539,6 +539,10 @@ function updateMediaUploadItem(id, update) {
 function uploadSingleAdminMediaFile(file, id) {
   const formData = new FormData();
   formData.append("image", file);
+  formData.append("uploadSource", "mediaManager");
+  formData.append("uploadContext", "media-manager");
+  formData.append("sourceField", "mediaLibrary");
+  formData.append("sourceName", file.name || "Media manager upload");
 
   return new Promise(resolve => {
     const request = new XMLHttpRequest();

@@ -27,6 +27,7 @@ const {
     getValidationErrorMessage,
     parseBoolean
 } = require('../services/content-utils');
+const { linkMediaAssetToSource } = require('../services/media-assets');
 
 const router = express.Router();
 
@@ -63,6 +64,19 @@ function getEventTitle(event) {
         getLocalizedValue(event?.title) ||
         'Untitled event'
     );
+}
+
+async function linkEventImageToMediaAsset(event) {
+    await linkMediaAssetToSource({
+        mediaUrl: event.imagePath,
+        sourceType: 'event',
+        context: 'event',
+        sourceModel: 'Event',
+        sourceId: event._id,
+        sourceField: 'imagePath',
+        sourceUrl: `/event?id=${encodeURIComponent(String(event._id))}`,
+        inferredName: getEventTitle(event)
+    });
 }
 
 function formatEventDate(value) {
@@ -470,6 +484,7 @@ router.post(
                 startDate,
                 endDate,
                 allDay = true,
+                imagePath,
                 submitter,
                 publicationPermissionConfirmed = false,
                 contentArea = 'general',
@@ -502,6 +517,9 @@ router.post(
 
             const cleanTimezone =
                 cleanString(timezone);
+
+            const cleanImagePath =
+                cleanString(imagePath);
 
             const cleanSubmitterData =
                 cleanSubmitter(
@@ -775,6 +793,8 @@ router.post(
                     parsedEndDate,
                 allDay:
                     isAllDay,
+                imagePath:
+                    cleanImagePath,
 
                 submitter:
                     cleanSubmitterData,
@@ -828,6 +848,7 @@ router.post(
             });
 
             await event.save();
+            await linkEventImageToMediaAsset(event);
 
             await writeAuditLog({
                 req,
@@ -1172,6 +1193,7 @@ router.patch(
                 startDate,
                 endDate,
                 allDay,
+                imagePath,
                 submitter,
                 publicationPermissionConfirmed
             } = req.body;
@@ -1331,6 +1353,15 @@ router.patch(
             event.startDate = parsedStartDate;
             event.endDate = parsedEndDate;
             event.allDay = isAllDay;
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    req.body,
+                    'imagePath'
+                )
+            ) {
+                event.imagePath =
+                    cleanString(imagePath);
+            }
 
             event.submitter = cleanedSubmitter;
 
@@ -1368,6 +1399,7 @@ router.patch(
             event.rejectionReason = "";
 
             await event.save();
+            await linkEventImageToMediaAsset(event);
 
             if (
                 event.status === "published" &&

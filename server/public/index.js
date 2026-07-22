@@ -1033,7 +1033,7 @@ function showSignOutModal(trigger) {
   setSignOutModalOpen(true);
 }
 
-function performSignOut() {
+async function performSignOut() {
   CMCENUtils.clearMfaSession();
 
   document.getElementById('header')?.classList.remove('is-mobile-menu-open');
@@ -1041,7 +1041,8 @@ function performSignOut() {
   document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded', 'false');
   document.getElementById('mobileMenuToggle')?.setAttribute('aria-label', 'Open menu');
 
-  CMCENUtils.redirectToLogin();
+  await CMCENUtils.signOut();
+  window.location.href = '/login';
 }
 
 function handleSignOut(event) {
@@ -1179,25 +1180,10 @@ async function updateAuthRestrictedItems() {
   if (!token) return;
 
   try {
-    const response = await fetch('/api/me', {
-      headers: CMCENUtils.authHeaders(token)
+    const user = await CMCENUtils.apiJson('/api/me', {
+      token,
+      errorMessage: 'Could not verify navigation permissions'
     });
-
-    if (response.status === 401) {
-      CMCENUtils.clearAuthToken();
-      document.getElementById('header')?.classList.remove('is-mobile-menu-open');
-      document.body.classList.remove('mobile-menu-lock');
-      updateAuthButtons();
-      return;
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        'Could not verify navigation permissions'
-      );
-    }
-
-    const user = await response.json();
 
     updateNotificationBadges(user.notifications?.count || 0);
 
@@ -1210,6 +1196,14 @@ async function updateAuthRestrictedItems() {
       element.hidden = user.permissions?.[permissionName] !== true;
     });
   } catch (error) {
+    if (error.status === 401) {
+      CMCENUtils.clearAuthToken();
+      document.getElementById('header')?.classList.remove('is-mobile-menu-open');
+      document.body.classList.remove('mobile-menu-lock');
+      updateAuthButtons();
+      return;
+    }
+
     console.error(
       'Navigation permission check failed:',
       error

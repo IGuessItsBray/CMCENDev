@@ -450,18 +450,12 @@ function createGhostUpgradeForm(user) {
     setProfileMessage(message, translate("dashboard_profile_saving"), "info");
 
     try {
-      const response = await fetch("/api/ghost/upgrade", {
+      const data = await CMCENUtils.apiJson("/api/ghost/upgrade", {
         method: "POST",
-        headers: CMCENUtils.authHeaders(token, {
-          "Content-Type": "application/json"
-        }),
-        body: JSON.stringify(payload)
+        token,
+        body: payload,
+        errorMessage: translate("dashboard_upgrade_error")
       });
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.error || translate("dashboard_upgrade_error"));
-      }
 
       CMCENUtils.storeAuthToken(data.token);
       window.location.reload();
@@ -679,24 +673,13 @@ function createProfileForm(user) {
     setProfileSaveButtonLoading(saveButton);
 
     try {
-      const response = await fetch("/api/profile", {
+      const data = await CMCENUtils.apiJson("/api/profile", {
         method: "PATCH",
-        headers: CMCENUtils.authHeaders(token, {
-          "Content-Type": "application/json"
-        }),
-        body: JSON.stringify(getProfilePayload(form))
+        token,
+        body: getProfilePayload(form),
+        redirectOnUnauthorized: true,
+        errorMessage: translate("dashboard_profile_save_error")
       });
-
-      if (response.status === 401) {
-        CMCENUtils.redirectToLogin();
-        return;
-      }
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.error || translate("dashboard_profile_save_error"));
-      }
 
       currentDashboardUser = data;
       cancelButton.hidden = true;
@@ -1004,37 +987,18 @@ async function loadDashboard() {
   showDashboardLoading();
 
   try {
-    const response = await fetch("/api/me", {
-      headers: CMCENUtils.authHeaders(token)
+    const user = await CMCENUtils.apiJson("/api/me", {
+      token,
+      redirectOnUnauthorized: true,
+      errorMessage: "Could not load account data"
     });
-
-    if (response.status === 401) {
-      CMCENUtils.redirectToLogin();
-      return;
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        "Could not load account data"
-      );
-    }
-
-    const user = await response.json();
 
     if (user.permissions?.canReviewAndPublish === true) {
       try {
-        const reviewCountsResponse = await fetch("/api/admin/review-counts", {
-          headers: CMCENUtils.authHeaders(token)
+        currentReviewCounts = await CMCENUtils.apiJson("/api/admin/review-counts", {
+          token,
+          errorMessage: "Could not load review submission counts"
         });
-
-        if (reviewCountsResponse.ok) {
-          currentReviewCounts = await reviewCountsResponse.json();
-        } else {
-          console.error(
-            "Review submission counts could not be loaded:",
-            reviewCountsResponse.status
-          );
-        }
       } catch (error) {
         console.error("Review submission counts could not be loaded:", error);
       }

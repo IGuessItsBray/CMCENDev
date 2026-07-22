@@ -291,7 +291,10 @@ const UserSchema = new mongoose.Schema({
   passwordReset: {
     tokenHash: { type: String, default: '', select: false },
     expiresAt: { type: Date, default: null, select: false }
-  }
+  },
+
+  // Incrementing this invalidates all browser refresh sessions for the user.
+  sessionVersion: { type: Number, default: 0 }
 }, {
   timestamps: true,
   toJSON: { getters: true },

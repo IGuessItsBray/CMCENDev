@@ -1,12 +1,15 @@
 const express = require('express');
 const { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } = require('@simplewebauthn/server');
 const base64url = require('base64url');
-const jwt = require('jsonwebtoken');
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { authMiddleware, authOrTempMiddleware } = require('../middleware/auth');
+const {
+  createSessionToken,
+  setRefreshTokenCookie
+} = require('../services/auth-session');
 const {
   updateAccountCreationMfaMethod,
   writeAuditLog
@@ -374,7 +377,8 @@ router.post('/webauthn/authenticate/verify', authOrTempMiddleware, async (req, r
     const responsePayload = { verified: true };
     if (req.isTemp) {
       // issue full JWT and clear temp token
-      const fullToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const fullToken = createSessionToken(user);
+      setRefreshTokenCookie(req, res, user);
       await User.findByIdAndUpdate(user._id, { $set: { 'twoFactor.tempToken': '', 'twoFactor.tempExpires': null } });
       await writeAuditLog({
         req,
@@ -514,7 +518,8 @@ router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
 
     const responsePayload = { verified: true };
     if (req.isTemp) {
-      const fullToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const fullToken = createSessionToken(user);
+      setRefreshTokenCookie(req, res, user);
       await User.findByIdAndUpdate(user._id, { $set: { 'twoFactor.tempToken': '', 'twoFactor.tempExpires': null } });
       await writeAuditLog({
         req,

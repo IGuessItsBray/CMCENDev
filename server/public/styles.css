@@ -6979,38 +6979,137 @@ a.dropdown-toggle {
 
 .dashboard-mfa-section {
   grid-column: 1 / -1;
+  position: relative;
+  overflow: hidden;
   border-top: 1px solid var(--branch-grey-200);
   background:
-    linear-gradient(180deg,
-      var(--white),
-      #f8f9fa);
+    radial-gradient(circle at 92% 8%, rgba(213, 155, 39, 0.16), transparent 19rem),
+    linear-gradient(135deg, #f8fafc, var(--white) 62%, #f4f7fa);
+}
+
+.dashboard-mfa-section .dashboard-section-heading {
+  margin-bottom: 22px;
+}
+
+.dashboard-mfa-intro {
+  max-width: 620px;
+  margin: 7px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .dashboard-mfa-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  align-items: start;
+  gap: 20px;
 }
 
 .mfa-panel {
   min-width: 0;
-  padding: 18px;
+  padding: 16px;
   border: 1px solid var(--branch-grey-200);
-  border-left: 3px solid var(--navy-800);
-  border-radius: 2px;
-  background: var(--white);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 22px rgba(20, 35, 52, 0.07);
+}
+
+.mfa-panel-passkey {
+  order: -1;
+  border-color: rgba(197, 141, 35, 0.46);
+  box-shadow: 0 12px 28px rgba(20, 35, 52, 0.09);
+}
+
+.mfa-panel-header {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mfa-panel-copy {
+  min-width: 0;
+}
+
+.mfa-panel-header .mfa-actions {
+  flex: 0 0 auto;
+}
+
+.mfa-panel-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.mfa-card-help {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--navy-800);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: help;
+}
+
+.mfa-card-help:focus-visible {
+  outline: 3px solid rgba(197, 141, 35, 0.3);
+  outline-offset: 2px;
+}
+
+.mfa-card-tooltip {
+  position: fixed;
+  z-index: 5000;
+  width: min(260px, 75vw);
+  padding: 0.6rem 0.7rem;
+  border-radius: 8px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+  pointer-events: none;
+  box-shadow: 0 18px 40px rgba(8, 13, 24, 0.28);
 }
 
 .mfa-panel h3 {
-  margin: 0 0 14px;
+  margin: 0;
   color: var(--navy-900);
   font-family:
     Georgia,
     "Times New Roman",
     serif;
-  font-size: 18px;
-  font-weight: normal;
+  font-size: 20px;
+  font-weight: 700;
   line-height: 1.2;
+}
+
+.mfa-recommended {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #fdf0cb;
+  color: #77500a;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.mfa-passkey-recommended {
+  display: inline-flex;
+  margin-top: 5px;
 }
 
 .mfa-actions,
@@ -7022,14 +7121,26 @@ a.dropdown-toggle {
 }
 
 .mfa-verification-row {
-  margin-top: 14px;
+  margin-top: 18px;
+}
+
+.mfa-verification-row[hidden],
+.mfa-step-hint[hidden] {
+  display: none;
+}
+
+.mfa-step-hint {
+  margin: 9px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .mfa-button {
-  min-height: 42px;
-  padding: 0 15px;
+  min-height: 44px;
+  padding: 0 17px;
   border: 1px solid var(--navy-900);
-  border-radius: 2px;
+  border-radius: 7px;
   background: var(--white);
   color: var(--navy-900);
   font: inherit;
@@ -7113,7 +7224,7 @@ a.dropdown-toggle {
   height: 42px;
   padding: 0 13px;
   border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
+  border-radius: 7px;
   outline: 0;
   background: var(--white);
   color: var(--ink);
@@ -7131,7 +7242,11 @@ a.dropdown-toggle {
 }
 
 .mfa-output {
-  margin-top: 14px;
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid rgba(197, 141, 35, 0.36);
+  border-radius: 9px;
+  background: #fffaf0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
@@ -7146,7 +7261,9 @@ a.dropdown-toggle {
 .mfa-qr {
   width: 128px;
   max-width: 100%;
-  border: 1px solid var(--branch-grey-200);
+  padding: 5px;
+  border: 1px solid #e6cf9e;
+  border-radius: 6px;
   background: var(--white);
 }
 
@@ -7155,8 +7272,9 @@ a.dropdown-toggle {
   max-height: 128px;
   padding: 10px;
   overflow: auto;
-  border: 1px solid var(--branch-grey-200);
-  background: var(--branch-grey-100);
+  border: 1px solid #eadcbd;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.72);
   color: var(--ink);
   font-size: 11px;
   line-height: 1.45;
@@ -7165,9 +7283,9 @@ a.dropdown-toggle {
 
 .passkey-manager,
 .totp-manager {
-  margin-top: 18px;
-  padding-top: 15px;
-  border-top: 1px solid var(--branch-grey-200);
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #dce3e9;
 }
 
 .passkey-manager-heading {
@@ -7206,9 +7324,9 @@ a.dropdown-toggle {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  background: var(--branch-grey-100);
+  border: 1px solid #dce3e9;
+  border-radius: 8px;
+  background: #f7f9fb;
 }
 
 .passkey-details {
@@ -7243,7 +7361,8 @@ a.dropdown-toggle {
 .passkey-empty {
   margin: 0;
   padding: 11px 12px;
-  border: 1px dashed var(--branch-grey-200);
+  border: 1px dashed #bfcbd6;
+  border-radius: 8px;
   color: var(--text-muted);
 }
 
@@ -10893,7 +11012,7 @@ a.dropdown-toggle {
   letter-spacing: 0.02em;
 }
 
-.last-post-archive-heading > p:last-child {
+.last-post-archive-heading>p:last-child {
   width: min(100%, 590px);
   margin: 12px auto 0;
   color: var(--text-muted);
@@ -11227,7 +11346,7 @@ html[data-theme="dark"] .last-post-detail-paper h1 {
   color: var(--gold-100);
 }
 
-html[data-theme="dark"] .last-post-archive-heading > p:last-child,
+html[data-theme="dark"] .last-post-archive-heading>p:last-child,
 html[data-theme="dark"] .last-post-archive-kicker,
 html[data-theme="dark"] .last-post-card-notice,
 html[data-theme="dark"] .last-post-card-date,
@@ -11271,6 +11390,7 @@ html[data-theme="dark"] .last-post-submit-button {
 }
 
 @media (max-width: 620px) {
+
   .last-post-main,
   .last-post-detail-main {
     padding: 0 0 42px;
@@ -12238,6 +12358,17 @@ html[data-theme="dark"] .last-post-submit-button {
     flex-direction: column;
   }
 
+  .mfa-panel-header {
+    min-height: 0;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .mfa-panel-header .mfa-actions {
+    width: 100%;
+  }
+
   .mfa-field {
     min-width: 0;
     flex-basis: auto;
@@ -12455,7 +12586,7 @@ html[data-theme="dark"] .last-post-submit-button {
     gap: 0;
   }
 
-  .admin-work-zone-main .admin-work-zone-shell > :is(.admin-user-list-panel,
+  .admin-work-zone-main .admin-work-zone-shell> :is(.admin-user-list-panel,
     .admin-user-detail-panel,
     .admin-role-editor-panel) {
     border-left: 0;
@@ -13849,6 +13980,30 @@ html[data-theme="dark"] .passkey-manager-heading h4 {
   color: var(--dark-text);
 }
 
+html[data-theme="dark"] .dashboard-mfa-section {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(213, 155, 39, 0.13), transparent 19rem),
+    var(--dark-surface-2);
+}
+
+html[data-theme="dark"] .mfa-panel-passkey {
+  border-color: rgba(213, 155, 39, 0.62);
+}
+
+html[data-theme="dark"] .mfa-recommended {
+  background: #473817;
+  color: var(--gold-200);
+}
+
+html[data-theme="dark"] .mfa-card-help {
+  color: var(--dark-link);
+}
+
+html[data-theme="dark"] .mfa-output {
+  border-color: rgba(213, 155, 39, 0.5);
+  background: rgba(65, 49, 22, 0.42);
+}
+
 html[data-theme="dark"] .passkey-manager,
 html[data-theme="dark"] .totp-manager {
   border-top-color: var(--dark-border);
@@ -13859,6 +14014,11 @@ html[data-theme="dark"] .mfa-secret {
   border-color: var(--dark-border-strong);
   background: var(--dark-bg-elevated);
   color: var(--dark-text);
+}
+
+html[data-theme="dark"] #totp-qr,
+html[data-theme="dark"] .mfa-qr {
+  border-color: rgba(240, 199, 108, 0.58);
 }
 
 html[data-theme="dark"] .passkey-item,
@@ -15421,6 +15581,7 @@ html[data-theme="dark"] .analytics-meter::before {
 }
 
 @media (max-width: 820px) {
+
   .analytics-stat-grid,
   .analytics-grid {
     grid-template-columns: 1fr;

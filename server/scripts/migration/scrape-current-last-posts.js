@@ -7,6 +7,7 @@ const path = require('path');
 const axios = require('axios');
 const mongoose = require('mongoose');
 const sharp = require('sharp');
+const { randomUUID } = require('crypto');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { parseArgs, resolvePath } = require('./lib/args');
 const {
@@ -16,7 +17,9 @@ const {
   writeJson
 } = require('./lib/wordpress');
 const LastPostMessage = require('../../models/LastPostMessage');
+const LastPostComment = require('../../models/LastPostComment');
 const MediaAsset = require('../../models/MediaAsset');
+const User = require('../../models/User');
 const { buildPublicMediaUrl } = require('../../services/media-library');
 const { sanitizeImageMetadata } = require('../../services/media-assets');
 const s3Client = require('../../storage');
@@ -65,6 +68,11 @@ const args = parseArgs();
 const apply = Boolean(args.apply);
 const limit = args.limit ? Number(args.limit) : Infinity;
 const categorySlug = String(args.category || DEFAULT_CATEGORY_SLUG);
+const contentMode = ['all', 'last-posts', 'comments'].includes(String(args.content || 'all'))
+  ? String(args.content || 'all')
+  : 'all';
+const shouldImportLastPosts = contentMode === 'all' || contentMode === 'last-posts';
+const shouldImportComments = contentMode === 'all' || contentMode === 'comments';
 const outputDir = resolvePath(args.output, path.join(__dirname, 'output'));
 const manifestPath = resolvePath(
   args.manifest,
@@ -186,6 +194,22 @@ function getLanguage(post) {
     : 'en';
 }
 
+function getCommentBody(comment) {
+  return stripHtml(decodeHtml(comment?.content?.rendered || comment?.content || ''));
+}
+
+function getCommentStatus(comment) {
+  if (comment?.status === 'approved' || comment?.status === 'approve') {
+    return 'published';
+  }
+
+  return 'pending';
+}
+
+function getWordPressCommentAuthorName(comment) {
+  return cleanString(decodeHtml(comment?.author_name || comment?.authorName || 'WordPress commenter'));
+}
+
 function normalizeLastPostDate(value) {
   const cleanValue = cleanString(decodeHtml(value))
     .replace(/\s+/gu, ' ')
@@ -262,13 +286,16 @@ function parseDeceased(title) {
 function toPostDocument(post, mediaResult) {
   const title = getPostTitle(post);
   const message = stripHtml(decodeHtml(post.content?.rendered)) || title;
+  const language = getLanguage(post);
   const publishedAt = getPublishedAt(post);
 
   return {
     title: title || `Legacy Last Post ${post.id}`,
     slug: post.slug || slugify(title),
-    message,
-    messageLanguage: getLanguage(post),
+    messageLanguage: language,
+    messages: {
+      [language]: message
+    },
     imageUrl: mediaResult?.asset?.url || getImageUrl(post),
     photoUrl: mediaResult?.asset?.url || getImageUrl(post),
     deceased: parseDeceased(title),
@@ -280,10 +307,10 @@ function toPostDocument(post, mediaResult) {
     },
     status: post.status === 'publish' ? 'published' : 'pending',
     publishedAt: post.status === 'publish' ? publishedAt : null,
-    legacyComments: [],
     legacy: {
       source: 'cmcen-live-site',
       postId: post.id,
+      wordpressPostId: post.id,
       postType: post.type || 'post',
       guid: post.guid?.rendered || '',
       slug: post.slug || '',
@@ -461,6 +488,9 @@ async function fetchPostFromPage(slug) {
   );
   const contentHtml = extractLastPostHtmlContent(html);
   const imageUrl = extractLastPostImageUrl(html);
+  const wordpressPostId = Number(
+    extractFirstMatch(html, /\bpostid-(\d+)\b/iu)
+  ) || getStableNumericId(slug);
 
   if (/^404\s+not\s+found$/iu.test(title)) {
     console.log(`Skipping Last Post slug ${slug}: /lp/ page is a 404 page`);
@@ -468,7 +498,7 @@ async function fetchPostFromPage(slug) {
   }
 
   return {
-    id: getStableNumericId(slug),
+    id: wordpressPostId,
     date: publishedLabel,
     date_gmt: publishedLabel,
     guid: {
@@ -508,6 +538,9 @@ async function getLatestPostsFromArchive() {
 
     const html = await fetchText(pageUrl);
     const slugs = getLastPostSlugs(html);
+    const totalToCollect = Number.isFinite(limit)
+      ? Math.min(seenSlugs.size + slugs.filter(slug => !seenSlugs.has(slug)).length, limit)
+      : seenSlugs.size + slugs.filter(slug => !seenSlugs.has(slug)).length;
     console.log(`Found ${slugs.length} Last Post links on archive page`);
 
     for (const slug of slugs) {
@@ -520,7 +553,7 @@ async function getLatestPostsFromArchive() {
 
       if (post) {
         posts.push(post);
-        console.log(`Collected Last Post ${post.id}: ${getPostTitle(post)}`);
+        console.log(`[${posts.length}/${totalToCollect}] Collected Last Post ${post.id}: ${getPostTitle(post)}`);
       }
     }
 
@@ -564,6 +597,49 @@ async function getLatestPosts(categoryId) {
   return Number.isFinite(limit) ? posts.slice(0, limit) : posts;
 }
 
+async function getPostComments(post) {
+  const postId = post.id;
+  const comments = [];
+  let page = 1;
+  let totalPages = 1;
+
+  console.log(`Fetching approved comments for WordPress Last Post ${postId}`);
+
+  while (page <= totalPages) {
+    let response;
+
+    try {
+      response = await fetchJsonResponse(
+        `${WORDPRESS_BASE_URL}/wp-json/wp/v2/comments?post=${postId}&per_page=${WORDPRESS_PAGE_SIZE}&page=${page}&status=approve`
+      );
+    } catch (error) {
+      const status = error.response?.status;
+
+      if (status === 401 || status === 403 || status === 404) {
+        post.commentFetchError = `WordPress comments REST endpoint returned ${status}`;
+        console.log(`Skipping Last Post comments for ${postId}: ${post.commentFetchError}`);
+        return comments;
+      }
+
+      throw error;
+    }
+
+    const pageComments = Array.isArray(response.data) ? response.data : [];
+
+    totalPages = getTotalPages(response);
+    comments.push(...pageComments);
+    console.log(`Fetched Last Post comment page ${page}/${totalPages} for post ${postId} (${comments.length} collected)`);
+
+    if (pageComments.length === 0) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return comments;
+}
+
 async function getLatestLastPostPosts() {
   const archivePosts = await getLatestPostsFromArchive();
 
@@ -583,6 +659,122 @@ async function getLatestLastPostPosts() {
     sourceType: 'category',
     categoryId
   };
+}
+
+async function getLegacyImportUser() {
+  return User.findOneAndUpdate(
+    { username: 'LegacyImport' },
+    {
+      $setOnInsert: {
+        accountType: 'ghost',
+        username: 'LegacyImport',
+        email: 'legacy-import@cmcen.local',
+        password: randomUUID(),
+        accountName: 'Legacy Import',
+        firstName: 'Legacy',
+        lastName: 'Import',
+        preferredLanguage: 'en',
+        role: 'subscriber',
+        isEmailVerified: true,
+        consent: {
+          privacyAccepted: true,
+          privacyAcceptedAt: new Date(),
+          caslAccepted: false,
+          caslAcceptedAt: null
+        }
+      }
+    },
+    { new: true, upsert: true, runValidators: true }
+  );
+}
+
+async function getWordPressCommentAuthor(comment) {
+  const authorName = getWordPressCommentAuthorName(comment);
+  const username = `wp-comment-${slugify(authorName)}`.slice(0, 80);
+
+  return User.findOneAndUpdate(
+    { username },
+    {
+      $setOnInsert: {
+        accountType: 'ghost',
+        username,
+        email: `${username}@cmcen.local`,
+        password: randomUUID(),
+        accountName: authorName,
+        firstName: authorName.split(/\s+/u)[0] || authorName,
+        lastName: authorName.split(/\s+/u).slice(1).join(' ') || 'Commenter',
+        preferredLanguage: 'en',
+        role: 'subscriber',
+        isEmailVerified: true,
+        consent: {
+          privacyAccepted: true,
+          privacyAcceptedAt: new Date(),
+          caslAccepted: false,
+          caslAcceptedAt: null
+        }
+      }
+    },
+    { new: true, upsert: true, runValidators: true }
+  );
+}
+
+function summarizeComments(comments) {
+  return comments.map(comment => ({
+    wordpressCommentId: comment.id,
+    authorName: getWordPressCommentAuthorName(comment),
+    status: getCommentStatus(comment),
+    publishedAt: parseDate(comment.date_gmt || comment.date),
+    bodyLength: getCommentBody(comment).length
+  }));
+}
+
+async function importComments({ comments, lastPostMessage, legacyImportUser }) {
+  const importedComments = [];
+
+  for (const comment of comments) {
+    const body = getCommentBody(comment);
+
+    if (body.length < 2) {
+      console.log(`Skipping Last Post comment ${comment.id}: empty body`);
+      continue;
+    }
+
+    const author = await getWordPressCommentAuthor(comment);
+    const publishedAt = parseDate(comment.date_gmt || comment.date);
+    const status = getCommentStatus(comment);
+    const document = {
+      lastPostMessage: lastPostMessage._id,
+      author: author._id,
+      body,
+      status,
+      reviewedBy: legacyImportUser?._id || null,
+      reviewedAt: status === 'published' ? publishedAt || new Date() : null,
+      publishedBy: status === 'published' ? legacyImportUser?._id || null : null,
+      publishedAt: status === 'published' ? publishedAt || null : null,
+      legacy: {
+        source: 'cmcen-live-site',
+        wordpressPostId: lastPostMessage.legacy?.postId || lastPostMessage.legacy?.wordpressPostId,
+        wordpressCommentId: comment.id,
+        parentCommentId: comment.parent || null,
+        authorName: getWordPressCommentAuthorName(comment),
+        authorUrl: comment.author_url || '',
+        importedAt: new Date()
+      }
+    };
+    const importedComment = await LastPostComment.findOneAndUpdate(
+      {
+        'legacy.source': 'cmcen-live-site',
+        'legacy.wordpressCommentId': comment.id
+      },
+      { $set: document },
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    importedComments.push(importedComment);
+    console.log(`Upserted Last Post comment ${comment.id}`);
+  }
+
+  return importedComments;
 }
 
 async function putObject({ key, body, contentType }) {
@@ -721,6 +913,9 @@ async function uploadImageForPost(post) {
 }
 
 function summarize(post, document, mediaResult) {
+  const language = document.messageLanguage;
+  const message = document.messages?.[language] || document.messages?.en || document.messages?.fr || '';
+
   return {
     wordpressPostId: post.id,
     title: document.title,
@@ -728,7 +923,7 @@ function summarize(post, document, mediaResult) {
     status: document.status,
     publishedAt: document.publishedAt,
     deceased: document.deceased,
-    messageLength: document.message.length,
+    messageLength: message.length,
     sourceImageUrl: mediaResult?.sourceUrl || getImageUrl(post),
     mediaAssetKey: mediaResult?.asset?.key || '',
     imageUrl: document.imageUrl,
@@ -741,7 +936,7 @@ async function main() {
     throw new Error('MONGO_URI is not configured.');
   }
 
-  if (apply && !process.env.MINIO_BUCKET_NAME) {
+  if (apply && shouldImportLastPosts && !process.env.MINIO_BUCKET_NAME) {
     throw new Error('MINIO_BUCKET_NAME is not configured.');
   }
 
@@ -751,28 +946,47 @@ async function main() {
     categoryId
   } = await getLatestLastPostPosts();
   const results = [];
+  let legacyImportUser = null;
 
   console.log(`Collected ${posts.length} Last Post notices`);
 
   if (apply) {
     console.log('Connecting to MongoDB');
     await mongoose.connect(process.env.MONGO_URI);
+    legacyImportUser = await getLegacyImportUser();
+    console.log('Legacy import user is ready');
   }
 
-  for (const post of posts) {
+  for (const [index, post] of posts.entries()) {
+    const progressLabel = `${index + 1}/${posts.length}`;
     let mediaResult = null;
+    let lastPostMessage = null;
 
-    console.log(`Processing WordPress Last Post ${post.id}: ${getPostTitle(post)}`);
+    console.log(`[${progressLabel}] Processing WordPress Last Post message ${post.id}: ${getPostTitle(post)}`);
+    const comments = await getPostComments(post);
 
-    if (apply) {
+    if (apply && shouldImportLastPosts) {
       mediaResult = await uploadImageForPost(post);
     }
 
     const document = toPostDocument(post, mediaResult);
+    const language = document.messageLanguage;
+    const message = document.messages?.[language] || '';
 
-    if (apply) {
-      console.log(`Upserting Last Post message for WordPress post ${post.id}`);
-      await LastPostMessage.findOneAndUpdate(
+    if (message.length < 2) {
+      results.push({
+        wordpressPostId: post.id,
+        title: document.title,
+        imported: false,
+        error: 'Message is shorter than the LastPostMessage minimum length.'
+      });
+      console.log(`[${progressLabel}] Skipping Last Post message ${post.id}: message too short`);
+      continue;
+    }
+
+    if (apply && shouldImportLastPosts) {
+      console.log(`[${progressLabel}] Upserting Last Post message for WordPress post ${post.id}`);
+      lastPostMessage = await LastPostMessage.findOneAndUpdate(
         {
           'legacy.source': 'cmcen-live-site',
           'legacy.postId': post.id
@@ -780,10 +994,43 @@ async function main() {
         { $set: document },
         { new: true, upsert: true, runValidators: true }
       );
+    } else if (apply && shouldImportComments) {
+      console.log(`[${progressLabel}] Finding migrated Last Post message for WordPress post ${post.id}`);
+      lastPostMessage = await LastPostMessage.findOne({
+        'legacy.source': 'cmcen-live-site',
+        'legacy.postId': post.id
+      });
     }
 
-    results.push(summarize(post, document, mediaResult));
-    console.log(`${apply ? 'Imported' : 'Would import'} Last Post ${post.id}: ${document.title}`);
+    const summary = summarize(post, document, mediaResult);
+    summary.comments = summarizeComments(comments);
+    summary.commentFetchError = post.commentFetchError || '';
+
+    if (apply && shouldImportComments) {
+      if (!lastPostMessage) {
+        summary.error = 'Last Post message must be migrated before importing comments.';
+        results.push(summary);
+        console.log(`[${progressLabel}] Skipping comments for Last Post ${post.id}: migrated message not found`);
+        continue;
+      }
+
+      const importedComments = await importComments({
+        comments,
+        lastPostMessage,
+        legacyImportUser
+      });
+      summary.commentsImported = importedComments.length;
+    }
+
+    results.push(summary);
+
+    if (shouldImportLastPosts) {
+      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} Last Post message ${post.id}: ${document.title}`);
+    }
+
+    if (shouldImportComments) {
+      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} ${summary.comments.length} Last Post comments for ${post.id}`);
+    }
   }
 
   if (apply) {
@@ -797,13 +1044,14 @@ async function main() {
     sourceType,
     categoryId,
     limit: Number.isFinite(limit) ? limit : 'all',
+    contentMode,
     apply,
     scrapedAt: new Date().toISOString(),
     results
   });
 
-  console.log(`${apply ? 'Imported' : 'Would import'} ${results.length} Last Post messages.`);
-  console.log('Would import 0 Last Post comments.');
+  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportLastPosts ? results.filter(result => !result.error).length : 0} Last Post messages.`);
+  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportComments ? results.reduce((sum, result) => sum + result.comments.length, 0) : 0} Last Post comments.`);
   console.log(`Wrote manifest: ${manifestPath}`);
 }
 

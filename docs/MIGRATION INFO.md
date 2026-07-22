@@ -48,10 +48,12 @@ node server/scripts/migration/verify-wordpress-migration.js
 Use this path when importing directly from the current public CMCEN WordPress
 site instead of phpMyAdmin export files.
 
-The scraper pulls retirement posts from:
+The scraper starts from the public retirement list and follows each table link
+back through WordPress REST. If that page cannot produce retirement links, it
+falls back to the WordPress retirement category scan.
 
 ```text
-https://cmcen-rcmce.ca/retirements/
+https://cmcen-rcmce.ca/retirements/retirements-list/
 ```
 
 It uses the WordPress REST API to import retirement messages, source photos,
@@ -188,7 +190,10 @@ It follows `/lp/...` links from that archive, resolves WordPress REST records
 when available, and otherwise parses the public Last Post detail HTML directly.
 If the archive cannot be scanned, it falls back to the WordPress Last Post
 category `lp-category`. It imports Last Post notice content and source photos.
-It does not import comments.
+It also imports approved WordPress comments using the real WordPress post IDs
+exposed on the `/lp/...` pages when WordPress permits anonymous REST comment
+reads; blocked comment endpoints are recorded per item in the manifest as
+`commentFetchError`.
 
 ### Dry Run
 
@@ -217,3 +222,48 @@ The dry-run and apply modes both write:
 ```text
 server/scripts/migration/output/current-last-post-scrape-manifest.json
 ```
+
+## Current Site Migration
+
+Use this script for the combined live-site migration. It runs the retirement
+and Last Post importers in order, including media upload metadata and approved
+WordPress comments.
+
+### Dry Run
+
+```sh
+node server/scripts/migration/migrate-current-site-content.js
+```
+
+Useful limited dry run:
+
+```sh
+node server/scripts/migration/migrate-current-site-content.js --limit=3
+```
+
+Separate limits can be used when one archive needs a smaller sample:
+
+```sh
+node server/scripts/migration/migrate-current-site-content.js --retirement-limit=3 --last-post-limit=3
+```
+
+### Apply
+
+This writes to MongoDB and MinIO/CDN:
+
+```sh
+node server/scripts/migration/migrate-current-site-content.js --apply
+```
+
+### Content Modes
+
+```sh
+node server/scripts/migration/migrate-current-site-content.js --content=messages
+node server/scripts/migration/migrate-current-site-content.js --content=comments
+node server/scripts/migration/migrate-current-site-content.js --content=retirements
+node server/scripts/migration/migrate-current-site-content.js --content=last-posts
+```
+
+The default `--content=all` imports messages and comments together. Comments
+are imported under ghost users named after the original WordPress commenters,
+with original publish timestamps preserved when WordPress provides them.

@@ -14,6 +14,7 @@ const {
   assertPublicMediaBaseUrl,
   configurePublicMediaBaseUrl
 } = require('./lib/public-media');
+const { downloadSourceImage } = require('./lib/source-image');
 const {
   cleanString,
   parseDate,
@@ -30,7 +31,6 @@ const s3Client = require('../../storage');
 
 const WORDPRESS_BASE_URL = 'https://cmcen-rcmce.ca';
 const LAST_POST_ARCHIVE_URL = `${WORDPRESS_BASE_URL}/last-post-years-archive/`;
-const DEFAULT_LAST_POST_IMAGE_URL = 'https://cdn.corebot.ca/cmcen-demo/legacy/wordpress/348036/348036-CMCEN-crest-snip-1.png';
 const DEFAULT_CATEGORY_SLUG = 'lp-category';
 const CATEGORY_SLUG_FALLBACKS = Object.freeze([
   'lp-category',
@@ -792,42 +792,20 @@ async function putObject({ key, body, contentType }) {
 }
 
 async function uploadImageForPost(post) {
-  let sourceUrl = getImageUrl(post);
+  const sourceUrl = getImageUrl(post);
+  const sourceImage = await downloadSourceImage(sourceUrl);
 
-  if (!sourceUrl) {
-    sourceUrl = DEFAULT_LAST_POST_IMAGE_URL;
-    console.log(`No source image found for Last Post ${post.id}; using default crest image`);
+  if (sourceImage.usedFallback) {
+    console.log(`Source image ${sourceImage.fallbackReason} for Last Post ${post.id}; using jimmy-crest.webp`);
+  } else {
+    console.log(`Downloaded source image for Last Post ${post.id}: ${sourceUrl}`);
   }
 
-  console.log(`Downloading source image for Last Post ${post.id}: ${sourceUrl}`);
-  let response;
-
-  try {
-    response = await axios.get(sourceUrl, {
-      responseType: 'arraybuffer',
-      timeout: 30000,
-      headers: {
-        'User-Agent': 'CMCEN migration script'
-      }
-    });
-  } catch (error) {
-    if (sourceUrl === DEFAULT_LAST_POST_IMAGE_URL) {
-      throw error;
-    }
-
-    console.log(`Could not download Last Post image for ${post.id}: ${error.message || 'invalid URL'}; using default crest image`);
-    sourceUrl = DEFAULT_LAST_POST_IMAGE_URL;
-    response = await axios.get(sourceUrl, {
-      responseType: 'arraybuffer',
-      timeout: 30000,
-      headers: {
-        'User-Agent': 'CMCEN migration script'
-      }
-    });
-  }
-  const buffer = Buffer.from(response.data);
-  const contentType = response.headers['content-type'] || 'image/jpeg';
-  const extension = getExtensionFromUrl(sourceUrl, contentType);
+  const buffer = sourceImage.buffer;
+  const contentType = sourceImage.contentType;
+  const extension = sourceImage.usedFallback
+    ? 'webp'
+    : getExtensionFromUrl(sourceUrl, contentType);
   const baseKey = `legacy/current-site/last-post/${post.id}-${slugify(post.slug || getPostTitle(post))}`;
   const originalKey = `${baseKey}/original.${extension}`;
   const metadata = await sharp(buffer).metadata();
@@ -875,7 +853,7 @@ async function uploadImageForPost(post) {
     url: buildPublicMediaUrl(variants.large?.key || variants.hero?.key || originalKey),
     originalKey,
     originalUrl: buildPublicMediaUrl(originalKey),
-    originalName: path.basename(new URL(sourceUrl).pathname) || `${slugify(title)}.${extension}`,
+    originalName: sourceImage.originalName || `${slugify(title)}.${extension}`,
     displayName: title || `Last Post ${post.id}`,
     mimeType: contentType,
     width: metadata.width || 0,
@@ -894,11 +872,15 @@ async function uploadImageForPost(post) {
     },
     inferredName: title || `Last Post ${post.id}`,
     fileMetadata: {
-      originalName: path.basename(new URL(sourceUrl).pathname) || `${slugify(title)}.${extension}`,
+      originalName: sourceImage.originalName || `${slugify(title)}.${extension}`,
       mimeType: contentType,
       size: buffer.length,
       storageKey: originalKey,
-      sourceUrl
+      sourceUrl,
+      usedFallback: sourceImage.usedFallback,
+      fallbackReason: sourceImage.fallbackReason,
+      fallbackAsset: sourceImage.usedFallback ? 'jimmy-crest' : '',
+      fallbackSourceUrl: sourceImage.fallbackSourceUrl
     },
     imageMetadata: sanitizeImageMetadata(metadata),
     uploadedBy: null

@@ -75,13 +75,11 @@ Mounted at `/api/mfa`.
 | `POST` | `/api/mfa/webauthn/register/verify` | Authenticated | Verify and store new passkey credential. |
 | `POST` | `/api/mfa/webauthn/authenticate/options` | Authenticated or temp token | Generate passkey authentication options. |
 | `POST` | `/api/mfa/webauthn/authenticate/verify` | Authenticated or temp token | Verify passkey auth; completes login when using temp token. |
-| `POST` | `/api/mfa/totp/setup` | Authenticated | Create pending TOTP secret and QR data. |
-| `GET` | `/api/mfa/totp/status` | Authenticated | Return TOTP enabled/pending/app-name status. |
+| `POST` | `/api/mfa/totp/setup` | Authenticated | Create a pending TOTP secret with a server-assigned authenticator name and QR data. |
+| `GET` | `/api/mfa/totp/status` | Authenticated | Return TOTP enabled/pending status. |
 | `GET` | `/api/mfa/totp/qrcode` | Authenticated | Return QR code for pending/current TOTP setup. |
 | `POST` | `/api/mfa/totp/verify` | Authenticated or temp token | Verify TOTP; completes login when using temp token. |
-| `DELETE` | `/api/mfa/totp` | Authenticated | Disable TOTP, guarded against removing the last MFA method. |
-| `PATCH` | `/api/mfa/totp` | Authenticated | Rename TOTP authenticator app. |
-| `POST` | `/api/mfa/totp/rename` | Authenticated | Back-compatible TOTP rename endpoint. |
+| `DELETE` | `/api/mfa/totp` | Authenticated | Disable active TOTP (guarded against removing the last MFA method) or cancel a pending setup. |
 | `GET` | `/api/mfa/webauthn/credentials` | Authenticated | List registered passkeys. |
 | `PATCH` | `/api/mfa/webauthn/credentials/:credentialID` | Authenticated | Rename a passkey. |
 | `DELETE` | `/api/mfa/webauthn/credentials/:credentialID` | Authenticated | Delete a passkey, guarded against removing the last MFA method. |

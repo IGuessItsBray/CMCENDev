@@ -7329,6 +7329,25 @@ a.dropdown-toggle {
   display: none;
 }
 
+#totp-otpauth,
+#registerTotpOutput {
+  grid-template-columns: 1fr;
+}
+
+.totp-qr-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.mfa-qr-instruction {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
 #totp-qr,
 .mfa-qr {
   width: 128px;
@@ -14089,6 +14108,10 @@ html[data-theme="dark"] .mfa-secret {
   border-color: var(--dark-border-strong);
   background: var(--dark-bg-elevated);
   color: var(--dark-text);
+}
+
+html[data-theme="dark"] .mfa-qr-instruction {
+  color: var(--dark-text-soft);
 }
 
 html[data-theme="dark"] #totp-qr,

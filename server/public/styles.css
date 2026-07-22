@@ -580,7 +580,7 @@ svg {
       var(--branch-grey-100));
 }
 
-.cmcen-modal-body > p {
+.cmcen-modal-body>p {
   margin: 0;
   color: var(--text-muted);
   font-size: 15px;
@@ -7787,6 +7787,19 @@ a.dropdown-toggle {
   margin-top: 0;
 }
 
+.event-section--full-bleed-heading {
+  padding: 0;
+  overflow: hidden;
+}
+
+.event-section--full-bleed-heading .event-section-heading {
+  padding: 20px 20px 13px;
+}
+
+.event-section--full-bleed-heading .event-section-content {
+  padding: 0 20px 20px;
+}
+
 .event-section-heading {
   margin-bottom: 18px;
   padding-bottom: 13px;
@@ -12255,6 +12268,7 @@ html[data-theme="dark"] .last-post-submit-button {
 }
 
 @media (max-width: 1120px) {
+
   .pages-admin-shell,
   .pages-admin-shell:not(.is-page-selected) {
     grid-template-columns: 260px minmax(0, 1fr);
@@ -13283,9 +13297,7 @@ html[data-theme="dark"] main :is(.login-panel,
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] main :is(.dashboard-details,
-  .dashboard-profile-readonly,
-  .admin-user-row,
+html[data-theme="dark"] main :is(.admin-user-row,
   .admin-user-search,
   .admin-panel-heading,
   .admin-user-detail-heading,
@@ -13526,7 +13538,7 @@ html[data-theme="dark"] .cmcen-modal-button-secondary {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .cmcen-modal-body > p {
+html[data-theme="dark"] .cmcen-modal-body>p {
   color: var(--dark-text-soft);
 }
 

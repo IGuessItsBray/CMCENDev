@@ -84,8 +84,8 @@ settings include:
 | `MINIO_ACCESS_KEY` | Yes | Object-storage access key |
 | `MINIO_SECRET_KEY` | Yes | Object-storage secret key |
 | `MINIO_BUCKET_NAME` | Yes | Existing media bucket |
-| `MINIO_PUBLIC_ENDPOINT` | Recommended | Browser-accessible object-storage endpoint |
-| `CDN_PUBLIC_BASE_URL` | No | Preferred public media/CDN base URL |
+| `MINIO_PUBLIC_ENDPOINT` | Recommended | Browser-accessible object-storage origin; the bucket is appended automatically |
+| `CDN_PUBLIC_BASE_URL` | No | Preferred full public media/CDN base URL, including any bucket path |
 | `RP_ID` | Production MFA | WebAuthn relying-party domain |
 | `RP_ORIGIN` | Production MFA | Exact WebAuthn application origin |
 | `CONFIG_TOKEN` | Site config | Additional token for protected site-config operations |

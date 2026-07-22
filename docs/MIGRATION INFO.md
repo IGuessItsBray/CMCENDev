@@ -44,7 +44,12 @@ mode additionally requires a configured `server/.env` with:
 - `MINIO_BUCKET_NAME`
 - `MINIO_ACCESS_KEY`
 - `MINIO_SECRET_KEY`
-- `CDN_PUBLIC_BASE_URL`, `CDN_BASE_URL`, or a publicly usable MinIO endpoint
+- `MINIO_PUBLIC_ENDPOINT`, set to the browser-facing origin such as
+  `http://cdn.corebot.ca`; the bucket name is appended automatically
+
+`CDN_PUBLIC_BASE_URL` or `CDN_BASE_URL` can instead provide the complete public
+base URL, including the bucket path. Never use the internal `MINIO_ENDPOINT`
+hostname in persisted media URLs outside local development.
 
 The target MinIO bucket must already exist.
 

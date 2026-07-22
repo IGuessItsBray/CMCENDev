@@ -148,25 +148,41 @@
               >
                 Multi-factor authentication
               </h2>
+              <p class="dashboard-mfa-intro" data-i18n="mfa_intro">
+                Add a second sign-in method to keep your account protected.
+              </p>
             </header>
 
             <div
               class="dashboard-mfa-grid"
               id="mfa-config"
             >
-              <div class="mfa-panel">
-                <h3 data-i18n="mfa_totp_title">TOTP</h3>
-
-                <div class="mfa-actions">
-                  <button
-                    class="mfa-button mfa-button-primary"
-                    id="totp-setup"
-                    type="button"
-                    data-i18n="mfa_setup_totp"
-                  >
-                    Setup TOTP
-                  </button>
-                </div>
+              <article class="mfa-panel mfa-panel-totp">
+                <header class="mfa-panel-header">
+                  <div class="mfa-panel-copy">
+                    <div class="mfa-panel-title-row">
+                      <h3 data-i18n="mfa_totp_title">Authenticator app</h3>
+                      <button
+                        class="mfa-card-help"
+                        type="button"
+                        data-tooltip-key="mfa_totp_description"
+                        aria-label="Use an authenticator app to generate a sign-in code."
+                      >
+                        ?
+                      </button>
+                    </div>
+                  </div>
+                  <div class="mfa-actions">
+                    <button
+                      class="mfa-button mfa-button-primary"
+                      id="totp-setup"
+                      type="button"
+                      data-i18n="mfa_setup_totp"
+                    >
+                      Setup
+                    </button>
+                  </div>
+                </header>
 
                 <div
                   class="mfa-output"
@@ -174,7 +190,7 @@
                   aria-live="polite"
                 ></div>
 
-                <div class="mfa-verification-row">
+                <div class="mfa-verification-row" id="totp-verification" hidden>
                   <label class="mfa-field">
                     <span data-i18n="mfa_authenticator_code">
                       Authenticator code
@@ -196,10 +212,14 @@
                     Verify
                   </button>
                 </div>
+                <p class="mfa-step-hint" id="totp-verification-hint" hidden data-i18n="mfa_totp_verify_hint">
+                  Scan the QR code, then enter the current code from your authenticator app.
+                </p>
 
                 <div
                   class="totp-manager"
                   aria-labelledby="totpStatusTitle"
+                  hidden
                 >
                   <div class="passkey-manager-heading">
                     <h4
@@ -209,14 +229,6 @@
                       Authenticator app status
                     </h4>
 
-                    <button
-                      class="mfa-link-button"
-                      id="totp-refresh"
-                      type="button"
-                      data-i18n="mfa_refresh"
-                    >
-                      Refresh
-                    </button>
                   </div>
 
                   <div
@@ -225,34 +237,40 @@
                     aria-live="polite"
                   ></div>
                 </div>
-              </div>
+              </article>
 
-              <div class="mfa-panel">
-                <h3 data-i18n="mfa_passkey_title">Passkey</h3>
-
-                <div class="mfa-actions">
-                  <button
-                    class="mfa-button mfa-button-primary"
-                    id="webauthn-register"
-                    type="button"
-                    data-i18n="mfa_register_passkey"
-                  >
-                    Register Passkey
-                  </button>
-
-                  <button
-                    class="mfa-button"
-                    id="webauthn-authenticate"
-                    type="button"
-                    data-i18n="mfa_authenticate"
-                  >
-                    Authenticate
-                  </button>
-                </div>
+              <article class="mfa-panel mfa-panel-passkey">
+                <header class="mfa-panel-header">
+                  <div class="mfa-panel-copy">
+                    <div class="mfa-panel-title-row">
+                      <h3 data-i18n="mfa_passkey_title">Passkey</h3>
+                      <button
+                        class="mfa-card-help"
+                        type="button"
+                        data-tooltip-key="mfa_passkey_description"
+                        aria-label="Sign in securely with your device, fingerprint, or face recognition."
+                      >
+                        ?
+                      </button>
+                    </div>
+                    <span class="mfa-recommended mfa-passkey-recommended" data-i18n="mfa_recommended">Recommended</span>
+                  </div>
+                  <div class="mfa-actions">
+                    <button
+                      class="mfa-button mfa-button-primary"
+                      id="webauthn-register"
+                      type="button"
+                      data-i18n="mfa_register_passkey"
+                    >
+                      Setup
+                    </button>
+                  </div>
+                </header>
 
                 <div
                   class="passkey-manager"
                   aria-labelledby="passkeyListTitle"
+                  hidden
                 >
                   <div class="passkey-manager-heading">
                     <h4
@@ -262,14 +280,6 @@
                       Registered passkeys
                     </h4>
 
-                    <button
-                      class="mfa-link-button"
-                      id="passkey-refresh"
-                      type="button"
-                      data-i18n="mfa_refresh"
-                    >
-                      Refresh
-                    </button>
                   </div>
 
                   <div
@@ -278,7 +288,7 @@
                     aria-live="polite"
                   ></div>
                 </div>
-              </div>
+              </article>
             </div>
           </section>
         </div>

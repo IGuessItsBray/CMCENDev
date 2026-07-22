@@ -83,14 +83,24 @@ Progress is reported as `x/y` during source collection and import processing.
 `--apply` writes to MongoDB and MinIO:
 
 ```sh
-node server/scripts/migration/migrate-current-site-content.js --apply --limit=3
+node server/scripts/migration/migrate-current-site-content.js \
+  --apply \
+  --limit=3 \
+  --public-media-base-url=http://cdn.corebot.ca/cmcen-demo
 ```
 
 After validating the limited batch and manifests, run the full import:
 
 ```sh
-node server/scripts/migration/migrate-current-site-content.js --apply
+node server/scripts/migration/migrate-current-site-content.js \
+  --apply \
+  --public-media-base-url=http://cdn.corebot.ca/cmcen-demo
 ```
+
+The public media override includes the bucket path and takes precedence over
+the container's MinIO variables. Apply mode stops before writing if its public
+URL would otherwise resolve through the same endpoint used for internal MinIO
+uploads. It prints the resolved public media base URL at startup for review.
 
 The importers use legacy source identifiers for upserts so rerunning the same
 source should update existing migrated records rather than intentionally create

@@ -11,6 +11,10 @@ const { randomUUID } = require('crypto');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { parseArgs, resolvePath } = require('./lib/args');
 const {
+  assertPublicMediaBaseUrl,
+  configurePublicMediaBaseUrl
+} = require('./lib/public-media');
+const {
   cleanString,
   parseDate,
   stripHtml,
@@ -86,6 +90,7 @@ const MONTHS = Object.freeze({
 });
 
 const args = parseArgs();
+const publicMediaBaseUrl = configurePublicMediaBaseUrl(args);
 const apply = Boolean(args.apply);
 const limit = args.limit ? Number(args.limit) : Infinity;
 const categorySlug = String(args.category || DEFAULT_CATEGORY_SLUG);
@@ -775,6 +780,11 @@ async function main() {
 
   if (apply && shouldImportRetirements && !process.env.MINIO_BUCKET_NAME) {
     throw new Error('MINIO_BUCKET_NAME is not configured.');
+  }
+
+  if (apply && shouldImportRetirements) {
+    assertPublicMediaBaseUrl(publicMediaBaseUrl);
+    console.log(`Public media base URL: ${publicMediaBaseUrl}`);
   }
 
   const {

@@ -5,6 +5,10 @@ require('dotenv').config({
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { parseArgs, resolvePath } = require('./lib/args');
+const {
+  assertPublicMediaBaseUrl,
+  configurePublicMediaBaseUrl
+} = require('./lib/public-media');
 
 const args = parseArgs();
 const outputDir = resolvePath(args.output, path.join(__dirname, 'output'));
@@ -18,6 +22,7 @@ const allowedContentModes = new Set([
   'last-posts'
 ]);
 const contentMode = allowedContentModes.has(content) ? content : 'all';
+const publicMediaBaseUrl = configurePublicMediaBaseUrl(args);
 
 function addFlag(argv, name, value) {
   if (value === undefined || value === null || value === false || value === '') {
@@ -95,6 +100,11 @@ function main() {
 
   console.log(`${apply ? 'Applying' : 'Dry-running'} current-site migration`);
   console.log(`Output directory: ${outputDir}`);
+
+  if (apply) {
+    assertPublicMediaBaseUrl(publicMediaBaseUrl);
+    console.log(`Public media base URL: ${publicMediaBaseUrl}`);
+  }
 
   if (retirementContent) {
     const retirementArgs = buildSharedArgs(

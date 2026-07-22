@@ -3,7 +3,9 @@ function trimTrailingSlash(value) {
 }
 
 function getMinioPublicBaseUrl() {
-  const endpoint = trimTrailingSlash(process.env.MINIO_ENDPOINT);
+  const endpoint = trimTrailingSlash(
+    process.env.MINIO_PUBLIC_ENDPOINT || process.env.MINIO_ENDPOINT
+  );
   const bucketName = String(process.env.MINIO_BUCKET_NAME || '').replace(/^\/+|\/+$/gu, '');
 
   return endpoint && bucketName

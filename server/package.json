@@ -7,7 +7,7 @@
     "start": "node server.js",
     "start:dev": "nodemon server.js",
     "check": "node --check server.js && node --check routes/last-posts.js && node --check public/app-utils.js && node --check public/color-picker.js && node --check public/date-time-picker.js && node --check public/index.js && node --check public/admin-users.js && node --check public/audit-log.js && node --check public/site-config.js && node --check public/timers-admin.js && node --check public/timers.js && node --check public/translations-admin.js && node --check public/dashboard.js && node --check public/dashboard-mfa.js && node --check public/register.js && node --check public/submit-event.js && node --check public/submit-retirement.js && node --check public/event.js && node --check public/retirement-message.js && node --check public/review-submissions.js && node --check public/home.js && node --check public/calendar.js && node --check public/search.js && node --check public/retirements.js && node --check public/last-post.js && node --check public/last-post-message.js && node --check public/submit-last-post.js && node --check scripts/migration/migrate-current-site-content.js && node --check scripts/migration/scrape-current-retirements.js && node --check scripts/migration/scrape-current-last-posts.js",
-    "test": "npm run check"
+    "test": "npm run check && node --test test/*.test.js"
   },
   "keywords": [],
   "author": "",

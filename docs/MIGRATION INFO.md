@@ -144,11 +144,15 @@ The migration creates or updates:
 
 Original comment timestamps are preserved when WordPress provides them.
 
-When a legacy post has no source image, or its source image returns HTTP 404,
-the importer downloads the `jimmy-crest.webp` fallback from the configured CMCEN
-CDN and continues. The broken legacy URL, fallback CDN URL, and fallback reason
-remain in the media asset metadata. Other HTTP and network failures still stop
-the run so infrastructure problems are visible.
+When a legacy post has no source image, returns HTTP 404, or contains image data
+that cannot be fully decoded, the importer downloads the `jimmy-crest.webp`
+fallback from the configured CMCEN CDN and continues. The broken legacy URL,
+fallback CDN URL, and fallback reason remain in the media asset metadata.
+
+Other failures are isolated to the affected post. The importer records the post
+as `skipped: true` with `failedStage` and `error` fields in the manifest, logs
+the numbered skip, and continues with the next item. Startup failures such as
+missing configuration or an unavailable database still stop the run.
 
 ## Output
 

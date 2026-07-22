@@ -1043,10 +1043,13 @@
     function createMediaCard(mediaItem) {
       const state = getState();
       const selectedKeys = new Set(state.selectedMediaKeys || []);
+      const deletingKeys = new Set(state.mediaDeletingKeys || []);
       const isSelected = selectedKeys.has(mediaItem.key);
+      const isDeleting = deletingKeys.has(mediaItem.key);
       const card = document.createElement("article");
       card.className = "admin-media-card";
       card.classList.toggle("is-selected", isSelected);
+      card.classList.toggle("is-deleting", isDeleting);
 
       const selectLabel = document.createElement("label");
       selectLabel.className = "admin-media-select";
@@ -1054,6 +1057,7 @@
       const selectInput = document.createElement("input");
       selectInput.type = "checkbox";
       selectInput.checked = isSelected;
+      selectInput.disabled = state.mediaIsDeleting || state.mediaIsLoading;
       selectInput.addEventListener("change", () => {
         actions.toggleMediaSelection(mediaItem, selectInput.checked);
       });
@@ -1129,10 +1133,17 @@
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "admin-work-zone-button is-danger";
-      remove.textContent = attachmentCount
-        ? translate("admin_media_in_use")
-        : translate("admin_delete");
-      remove.disabled = Boolean(attachmentCount);
+      remove.disabled = Boolean(attachmentCount) || state.mediaIsDeleting || state.mediaIsLoading;
+      if (isDeleting) {
+        const deleting = document.createElement("span");
+        deleting.className = "admin-media-sort-loading";
+        deleting.textContent = "Deleting";
+        remove.replaceChildren(deleting);
+      } else {
+        remove.textContent = attachmentCount
+          ? translate("admin_media_in_use")
+          : translate("admin_delete");
+      }
       remove.addEventListener("click", () => actions.deleteMedia(mediaItem));
 
       actionsWrapper.append(open, remove);
@@ -1145,11 +1156,15 @@
     function createMediaBulkToolbar() {
       const state = getState();
       const selectedKeys = new Set(state.selectedMediaKeys || []);
+      const deletingKeys = new Set(state.mediaDeletingKeys || []);
       const selectedItems = state.media.filter(item => selectedKeys.has(item.key));
       const selectedCount = selectedItems.length;
       const removableCount = selectedItems
         .filter(item => !Number(item.attachedPostCount || 0))
         .length;
+      const isDeletingSelection =
+        state.mediaIsDeleting &&
+        selectedItems.some(item => deletingKeys.has(item.key));
 
       if (!selectedCount) {
         return null;
@@ -1165,21 +1180,28 @@
       selectVisible.type = "button";
       selectVisible.className = "admin-work-zone-button is-secondary";
       selectVisible.textContent = "Select visible";
-      selectVisible.disabled = state.mediaIsLoading || !state.media.length;
+      selectVisible.disabled = state.mediaIsLoading || state.mediaIsDeleting || !state.media.length;
       selectVisible.addEventListener("click", actions.selectVisibleMedia);
 
       const clear = document.createElement("button");
       clear.type = "button";
       clear.className = "admin-work-zone-button is-secondary";
       clear.textContent = "Clear";
-      clear.disabled = !selectedCount;
+      clear.disabled = state.mediaIsDeleting || !selectedCount;
       clear.addEventListener("click", actions.clearMediaSelection);
 
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "admin-work-zone-button is-danger";
-      remove.textContent = `Delete ${selectedCount} ${selectedCount === 1 ? "image" : "images"}`;
-      remove.disabled = state.mediaIsLoading || !removableCount;
+      remove.disabled = state.mediaIsLoading || state.mediaIsDeleting || !removableCount;
+      if (isDeletingSelection) {
+        const deleting = document.createElement("span");
+        deleting.className = "admin-media-sort-loading";
+        deleting.textContent = "Deleting";
+        remove.replaceChildren(deleting);
+      } else {
+        remove.textContent = `Delete ${selectedCount} ${selectedCount === 1 ? "image" : "images"}`;
+      }
       remove.addEventListener("click", actions.deleteSelectedMedia);
 
       toolbar.append(summary, selectVisible, clear, remove);
@@ -1228,7 +1250,7 @@
         sortSelect.append(option);
       });
       sortSelect.value = state.mediaSort || "newest";
-      sortSelect.disabled = state.mediaIsLoading || state.mediaIsUploading;
+      sortSelect.disabled = state.mediaIsLoading || state.mediaIsUploading || state.mediaIsDeleting;
       sortSelect.addEventListener("change", () => {
         actions.setMediaSort(sortSelect.value);
       });
@@ -1251,7 +1273,7 @@
       uploadInput.accept = "image/*";
       uploadInput.multiple = true;
       uploadInput.hidden = true;
-      uploadInput.disabled = state.mediaIsUploading;
+      uploadInput.disabled = state.mediaIsUploading || state.mediaIsDeleting;
       uploadInput.addEventListener("change", () => {
         actions.uploadMediaFiles(uploadInput.files);
         uploadInput.value = "";
@@ -1262,7 +1284,7 @@
       refresh.type = "button";
       refresh.className = "admin-work-zone-button is-secondary";
       refresh.textContent = translate("admin_refresh");
-      refresh.disabled = state.mediaIsLoading || state.mediaIsUploading;
+      refresh.disabled = state.mediaIsLoading || state.mediaIsUploading || state.mediaIsDeleting;
       refresh.addEventListener("click", actions.refreshMedia);
 
       headerActions.append(sortLabel, uploadLabel, refresh);

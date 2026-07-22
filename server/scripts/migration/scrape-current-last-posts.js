@@ -794,7 +794,7 @@ async function putObject({ key, body, contentType }) {
 async function uploadImageForPost(post) {
   const sourceUrl = getImageUrl(post);
   const sourceImage = await downloadSourceImage(sourceUrl, {
-    validateImage: buffer => sharp(buffer).metadata()
+    validateImage: buffer => sharp(buffer).rotate().raw().toBuffer()
   });
 
   if (sourceImage.usedFallback) {
@@ -955,14 +955,18 @@ async function main() {
     const progressLabel = `${index + 1}/${posts.length}`;
     let mediaResult = null;
     let lastPostMessage = null;
+    let stage = 'fetch-comments';
 
+    try {
     console.log(`[${progressLabel}] Processing WordPress Last Post message ${post.id}: ${getPostTitle(post)}`);
     const comments = await getPostComments(post);
 
     if (apply && shouldImportLastPosts) {
+      stage = 'upload-image';
       mediaResult = await uploadImageForPost(post);
     }
 
+    stage = 'build-message';
     const document = toPostDocument(post, mediaResult);
     const language = document.messageLanguage;
     const message = document.messages?.[language] || '';
@@ -979,6 +983,7 @@ async function main() {
     }
 
     if (apply && shouldImportLastPosts) {
+      stage = 'upsert-message';
       console.log(`[${progressLabel}] Upserting Last Post message for WordPress post ${post.id}`);
       lastPostMessage = await LastPostMessage.findOneAndUpdate(
         {
@@ -1008,6 +1013,7 @@ async function main() {
         continue;
       }
 
+      stage = 'import-comments';
       const importedComments = await importComments({
         comments,
         lastPostMessage,
@@ -1024,6 +1030,18 @@ async function main() {
 
     if (shouldImportComments) {
       console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} ${summary.comments.length} Last Post comments for ${post.id}`);
+    }
+    } catch (error) {
+      const errorMessage = error?.message || String(error);
+      results.push({
+        wordpressPostId: post.id,
+        title: getPostTitle(post),
+        imported: Boolean(lastPostMessage),
+        skipped: true,
+        failedStage: stage,
+        error: errorMessage
+      });
+      console.error(`[${progressLabel}] Skipping Last Post message ${post.id} after ${stage} failed: ${errorMessage}`);
     }
   }
 
@@ -1045,7 +1063,7 @@ async function main() {
   });
 
   console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportLastPosts ? results.filter(result => !result.error).length : 0} Last Post messages.`);
-  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportComments ? results.reduce((sum, result) => sum + result.comments.length, 0) : 0} Last Post comments.`);
+  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportComments ? results.reduce((sum, result) => sum + (result.comments?.length || 0), 0) : 0} Last Post comments.`);
   console.log(`Wrote manifest: ${manifestPath}`);
 }
 

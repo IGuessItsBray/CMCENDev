@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
+const sharp = require('sharp');
 const {
   DEFAULT_IMAGE_NAME,
   DEFAULT_IMAGE_URL,
@@ -101,4 +102,35 @@ test('uses jimmy crest when downloaded source bytes cannot be decoded', async ()
   assert.equal(sourceImage.fallbackSourceUrl, DEFAULT_IMAGE_URL);
   assert.deepEqual(requestedUrls, [sourceUrl, DEFAULT_IMAGE_URL]);
   assert.deepEqual(validatedBuffers, ['corrupt png', 'jimmy crest']);
+});
+
+test('falls back when PNG metadata is readable but the pixel stream is corrupt', async () => {
+  const sourceUrl = 'https://cmcen-rcmce.ca/wp-content/uploads/truncated.png';
+  const validPng = await sharp({
+    create: {
+      width: 32,
+      height: 32,
+      channels: 4,
+      background: { r: 25, g: 50, b: 75, alpha: 1 }
+    }
+  }).png().toBuffer();
+  const truncatedPng = validPng.subarray(0, validPng.length - 20);
+
+  await sharp(truncatedPng).metadata();
+  await assert.rejects(sharp(truncatedPng).raw().toBuffer(), /libpng read error/u);
+
+  const sourceImage = await downloadSourceImage(sourceUrl, {
+    httpClient: {
+      get: async url => ({
+        data: url === sourceUrl ? truncatedPng : validPng,
+        headers: { 'content-type': 'image/png' }
+      })
+    },
+    validateImage: buffer => sharp(buffer).rotate().raw().toBuffer()
+  });
+
+  assert.equal(sourceImage.usedFallback, true);
+  assert.equal(sourceImage.fallbackReason, 'invalid-image-data');
+  assert.equal(sourceImage.originalName, DEFAULT_IMAGE_NAME);
+  assert.deepEqual(sourceImage.buffer, validPng);
 });

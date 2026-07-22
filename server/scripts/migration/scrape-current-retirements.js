@@ -25,6 +25,7 @@ const { sanitizeImageMetadata } = require('../../services/media-assets');
 const s3Client = require('../../storage');
 
 const WORDPRESS_BASE_URL = 'https://cmcen-rcmce.ca';
+const RETIREMENT_LIST_URL = `${WORDPRESS_BASE_URL}/retirements/retirements-list/`;
 const DEFAULT_CATEGORY_SLUG = 'retirements';
 const WORDPRESS_PAGE_SIZE = 100;
 const IMAGE_VARIANTS = Object.freeze([
@@ -162,6 +163,25 @@ function getFirstContentImageUrl(post) {
 
 function getImageUrl(post) {
   return getEmbeddedImageUrl(post) || getFirstContentImageUrl(post);
+}
+
+function getPostSlugFromLink(value) {
+  try {
+    const url = new URL(decodeHtml(value), WORDPRESS_BASE_URL);
+    const parts = url.pathname.split('/').filter(Boolean);
+
+    if (parts.length !== 1 || parts[0] === 'retirements') {
+      return '';
+    }
+
+    if (!parts[0].toLowerCase().includes('retirement')) {
+      return '';
+    }
+
+    return parts[0];
+  } catch {
+    return '';
+  }
 }
 
 function getLanguage(post) {
@@ -314,7 +334,7 @@ function toPostDocument(post, mediaResult, legacyImportUser = null) {
       importedAt: new Date(),
       sourceImageUrl: mediaResult?.sourceUrl || getImageUrl(post),
       mediaAssetKey: mediaResult?.asset?.key || '',
-      scrapedFrom: `${WORDPRESS_BASE_URL}/retirements/`
+      scrapedFrom: RETIREMENT_LIST_URL
     }
   };
 }
@@ -333,6 +353,18 @@ async function fetchJsonResponse(url) {
 
 async function fetchJson(url) {
   return (await fetchJsonResponse(url)).data;
+}
+
+async function fetchText(url) {
+  const response = await axios.get(url, {
+    responseType: 'text',
+    timeout: 30000,
+    headers: {
+      'User-Agent': 'CMCEN migration test script'
+    }
+  });
+
+  return String(response.data || '');
 }
 
 function getTotalPages(response) {
@@ -385,6 +417,82 @@ async function getLatestPosts(categoryId) {
   }
 
   return Number.isFinite(limit) ? posts.slice(0, limit) : posts;
+}
+
+function getRetirementListSlugs(html) {
+  const slugs = new Set();
+  const linkPattern = /<a\b[^>]*class=["'][^"']*ninja_table_permalink[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>/giu;
+  let match = linkPattern.exec(html);
+
+  while (match) {
+    const slug = getPostSlugFromLink(match[1]);
+
+    if (slug) {
+      slugs.add(slug);
+    }
+
+    match = linkPattern.exec(html);
+  }
+
+  return [...slugs];
+}
+
+async function fetchPostBySlug(slug) {
+  const posts = await fetchJson(
+    `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_embed=1`
+  );
+  const post = Array.isArray(posts) ? posts[0] : null;
+
+  if (!post?.id) {
+    console.log(`Skipping retirement slug ${slug}: WordPress REST post not found`);
+    return null;
+  }
+
+  return post;
+}
+
+async function getLatestPostsFromRetirementList() {
+  const html = await fetchText(RETIREMENT_LIST_URL);
+  const slugs = getRetirementListSlugs(html);
+  const posts = [];
+
+  console.log(`Found ${slugs.length} retirement links on retirement list page`);
+
+  for (const slug of slugs) {
+    if (posts.length >= limit) {
+      break;
+    }
+
+    const post = await fetchPostBySlug(slug);
+
+    if (post) {
+      posts.push(post);
+      console.log(`Collected retirement ${post.id}: ${getPostTitle(post)}`);
+    }
+  }
+
+  return posts;
+}
+
+async function getRetirementPosts() {
+  const listPosts = await getLatestPostsFromRetirementList();
+
+  if (listPosts.length) {
+    return {
+      posts: Number.isFinite(limit) ? listPosts.slice(0, limit) : listPosts,
+      sourceType: 'retirements-list',
+      categoryId: null
+    };
+  }
+
+  console.log('No retirement links found on the list page; falling back to category scan');
+  const categoryId = await getCategoryId();
+
+  return {
+    posts: await getLatestPosts(categoryId),
+    sourceType: 'category',
+    categoryId
+  };
 }
 
 async function getPostComments(postId) {
@@ -668,8 +776,11 @@ async function main() {
     throw new Error('MINIO_BUCKET_NAME is not configured.');
   }
 
-  const categoryId = await getCategoryId();
-  const posts = await getLatestPosts(categoryId);
+  const {
+    posts,
+    sourceType,
+    categoryId
+  } = await getRetirementPosts();
   const results = [];
   let legacyImportUser = null;
 
@@ -762,7 +873,8 @@ async function main() {
 
   console.log(`Writing manifest: ${manifestPath}`);
   writeJson(manifestPath, {
-    source: `${WORDPRESS_BASE_URL}/retirements/`,
+    source: RETIREMENT_LIST_URL,
+    sourceType,
     categoryId,
     limit: Number.isFinite(limit) ? limit : 'all',
     contentMode,

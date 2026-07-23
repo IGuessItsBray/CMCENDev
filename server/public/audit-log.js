@@ -14,6 +14,14 @@ let auditState = {
   isLoading: false
 };
 
+function showAuditToast(message, color = "info") {
+  CMCENUtils.showToast(message, {
+    color,
+    position: "bottom-right",
+    animation: "slide"
+  });
+}
+
 const auditActions = [
   ["", "audit_action_all"],
   ["audit.exported", "audit_action_audit_exported"],
@@ -885,9 +893,12 @@ async function exportAuditLogsCsv() {
       blob,
       filename || `cmcen-audit-log-${new Date().toISOString().slice(0, 10)}.csv`
     );
+    showAuditToast(translate("audit_action_audit_exported"), "success");
   } catch (error) {
-    auditState.message = error.message || translate("audit_log_export_error");
-    renderAuditLog();
+    showAuditToast(
+      error.message || translate("audit_log_export_error"),
+      "error"
+    );
   }
 }
 

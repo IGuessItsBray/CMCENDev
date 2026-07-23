@@ -57,6 +57,14 @@ function clearRetirementFormMessage() {
     retirementFormMessage.hidden = true;
 }
 
+function showRetirementSubmissionToast(message, type = "error") {
+    CMCENUtils.showToast(message, {
+        color: type === "success" ? "success" : "error",
+        position: "bottom-right",
+        animation: "slide"
+    });
+}
+
 function setRetirementSubmitting(isSubmitting) {
     retirementSubmitButton.disabled = isSubmitting;
     retirementSubmitButton.setAttribute("aria-busy", String(isSubmitting));
@@ -465,7 +473,7 @@ retirementSubmitForm.addEventListener(
         try {
             formData = buildRetirementMessageData();
         } catch (error) {
-            showRetirementFormMessage(error.message);
+            showRetirementSubmissionToast(error.message);
 
             return;
         }
@@ -495,7 +503,7 @@ retirementSubmitForm.addEventListener(
                 updateRetirementTradePicker();
             }
 
-            showRetirementFormMessage(
+            showRetirementSubmissionToast(
                 data.status === "published" ||
                     data.retirementMessage?.status === "published"
                     ? translate("retirement_submit_success_published")
@@ -511,7 +519,9 @@ retirementSubmitForm.addEventListener(
                 window.refreshAuthUI();
             }
         } catch (error) {
-            showRetirementFormMessage(error.message || translate("retirement_submit_error"));
+            showRetirementSubmissionToast(
+                error.message || translate("retirement_submit_error")
+            );
         } finally {
             setRetirementSubmitting(false);
         }

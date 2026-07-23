@@ -167,6 +167,14 @@ function setAdminWorkZoneState(nextState, { render = true } = {}) {
   }
 }
 
+function showAdminActionToast(message, color = "info") {
+  CMCENUtils.showToast(message, {
+    color,
+    position: "bottom-right",
+    animation: "slide"
+  });
+}
+
 function scheduleAdminUserSearch(value) {
   const query = String(value || "");
   const requestId = adminUserSearchRequestId + 1;
@@ -374,9 +382,10 @@ async function loadAdminMedia({
 
 async function deleteAdminMedia(mediaItem) {
   if (mediaItem.attachedPostCount) {
-    setAdminWorkZoneState({
-      message: translate("admin_media_delete_attached_error")
-    });
+    showAdminActionToast(
+      translate("admin_media_delete_attached_error"),
+      "error"
+    );
     return;
   }
 
@@ -413,9 +422,12 @@ async function deleteAdminMedia(mediaItem) {
       selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || [])
         .filter(key => key !== mediaItem.key),
       mediaDeletingKeys: [],
-      mediaIsDeleting: false,
-      message: data.message || translate("admin_media_delete_success")
+      mediaIsDeleting: false
     });
+    showAdminActionToast(
+      data.message || translate("admin_media_delete_success"),
+      "success"
+    );
   } catch (error) {
     const attachedCount = error.data?.attachedPosts?.length || 0;
     const fallback = attachedCount
@@ -429,9 +441,12 @@ async function deleteAdminMedia(mediaItem) {
 
     setAdminWorkZoneState({
       mediaDeletingKeys: [],
-      mediaIsDeleting: false,
-      message: attachedCount ? fallback : error.message || fallback
+      mediaIsDeleting: false
     });
+    showAdminActionToast(
+      attachedCount ? fallback : error.message || fallback,
+      "error"
+    );
   }
 }
 
@@ -475,9 +490,7 @@ async function deleteSelectedAdminMedia() {
   const removableItems = selectedItems.filter(item => !Number(item.attachedPostCount || 0));
 
   if (!removableItems.length) {
-    setAdminWorkZoneState({
-      message: translate("admin_media_bulk_delete_none")
-    });
+    showAdminActionToast(translate("admin_media_bulk_delete_none"), "error");
     return;
   }
 
@@ -534,15 +547,18 @@ async function deleteSelectedAdminMedia() {
       selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || [])
         .filter(key => !deletedKeys.has(key)),
       mediaDeletingKeys: [],
-      mediaIsDeleting: false,
-      message: parts.join(" ")
+      mediaIsDeleting: false
     });
+    showAdminActionToast(parts.join(" "), "success");
   } catch (error) {
     setAdminWorkZoneState({
       mediaDeletingKeys: [],
-      mediaIsDeleting: false,
-      message: error.message || translate("admin_media_bulk_delete_error")
+      mediaIsDeleting: false
     });
+    showAdminActionToast(
+      error.message || translate("admin_media_bulk_delete_error"),
+      "error"
+    );
   }
 }
 
@@ -617,7 +633,7 @@ async function uploadAdminMediaFiles(files) {
   const imageFiles = [...(files || [])].filter(file => file.type.startsWith("image/"));
 
   if (!imageFiles.length) {
-    setAdminWorkZoneState({ message: "Choose one or more image files to upload." });
+    showAdminActionToast("Choose one or more image files to upload.", "error");
     return;
   }
 
@@ -764,13 +780,14 @@ async function saveAdminUser(userId, payload) {
         String(user._id) === String(data.user._id)
           ? data.user
           : user
-      ),
-      message: translate("admin_users_save_success")
+      )
     });
+    showAdminActionToast(translate("admin_users_save_success"), "success");
   } catch (error) {
-    setAdminWorkZoneState({
-      message: error.message || translate("admin_users_save_error")
-    });
+    showAdminActionToast(
+      error.message || translate("admin_users_save_error"),
+      "error"
+    );
   }
 }
 
@@ -782,9 +799,7 @@ async function exportAdminUsers(format, options = {}) {
   params.set("includeRoles", (options.includeRoles || []).join(","));
   params.set("includeAccountTypes", (options.includeAccountTypes || []).join(","));
 
-  setAdminWorkZoneState({
-    message: translate("admin_users_export_preparing")
-  });
+  setAdminWorkZoneState({ message: "" });
 
   try {
     const { blob, filename } = await adminApiBlob(
@@ -798,13 +813,12 @@ async function exportAdminUsers(format, options = {}) {
       blob,
       filename || `cmcen-users.${format === "pdf" ? "pdf" : "csv"}`
     );
-    setAdminWorkZoneState({
-      message: translate("admin_users_export_success")
-    });
+    showAdminActionToast(translate("admin_users_export_success"), "success");
   } catch (error) {
-    setAdminWorkZoneState({
-      message: error.message || translate("admin_users_export_error")
-    });
+    showAdminActionToast(
+      error.message || translate("admin_users_export_error"),
+      "error"
+    );
   }
 }
 
@@ -843,13 +857,14 @@ async function resetAdminUserMfa(user) {
         String(existingUser._id) === String(data.user._id)
           ? data.user
           : existingUser
-      ),
-      message: translate("admin_users_mfa_reset_success")
+      )
     });
+    showAdminActionToast(translate("admin_users_mfa_reset_success"), "success");
   } catch (error) {
-    setAdminWorkZoneState({
-      message: error.message || translate("admin_users_mfa_reset_error")
-    });
+    showAdminActionToast(
+      error.message || translate("admin_users_mfa_reset_error"),
+      "error"
+    );
   }
 }
 
@@ -896,13 +911,11 @@ async function createAdminRole(payload) {
           data.roles || adminWorkZoneState.customRoles
         )[0]
         : null,
-      selectedRoleId: data.role?._id || adminWorkZoneState.selectedRoleId,
-      message: data.message || "Role created"
+      selectedRoleId: data.role?._id || adminWorkZoneState.selectedRoleId
     });
+    showAdminActionToast(data.message || "Role created", "success");
   } catch (error) {
-    setAdminWorkZoneState({
-      message: error.message || "Could not create role"
-    });
+    showAdminActionToast(error.message || "Could not create role", "error");
   }
 }
 
@@ -932,13 +945,11 @@ async function saveAdminRole(roleId, payload) {
           data.roles || adminWorkZoneState.customRoles
         )[0]
         : null,
-      selectedRoleId: data.role?._id || roleId,
-      message: data.message || "Role updated"
+      selectedRoleId: data.role?._id || roleId
     });
+    showAdminActionToast(data.message || "Role updated", "success");
   } catch (error) {
-    setAdminWorkZoneState({
-      message: error.message || "Could not save role"
-    });
+    showAdminActionToast(error.message || "Could not save role", "error");
   }
 }
 
@@ -990,12 +1001,11 @@ async function deleteAdminRole(role) {
           )
         }
         : null,
-      message: data.message || "Role deleted"
+      message: ""
     });
+    showAdminActionToast(data.message || "Role deleted", "success");
   } catch (error) {
-    setAdminWorkZoneState({
-      message: error.message || "Could not delete role"
-    });
+    showAdminActionToast(error.message || "Could not delete role", "error");
   }
 }
 
@@ -1037,9 +1047,6 @@ async function promoteAdminUserToDeveloper(user) {
   );
 
   if (confirmation !== "DEVELOPER") {
-    setAdminWorkZoneState({
-      message: translate("admin_users_promote_cancelled")
-    });
     return;
   }
 
@@ -1066,13 +1073,14 @@ async function promoteAdminUserToDeveloper(user) {
         String(existingUser._id) === String(data.user._id)
           ? data.user
           : existingUser
-      ),
-      message: translate("admin_users_promote_success")
+      )
     });
+    showAdminActionToast(translate("admin_users_promote_success"), "success");
   } catch (error) {
-    setAdminWorkZoneState({
-      message: error.message || translate("admin_users_promote_error")
-    });
+    showAdminActionToast(
+      error.message || translate("admin_users_promote_error"),
+      "error"
+    );
   }
 }
 
@@ -1098,9 +1106,7 @@ async function deleteAdminPost(post) {
   const endpoint = getAdminDeleteEndpoint(post);
 
   if (!endpoint) {
-    setAdminWorkZoneState({
-      message: translate("admin_content_delete_type_error")
-    });
+    showAdminActionToast(translate("admin_content_delete_type_error"), "error");
     return;
   }
 
@@ -1130,17 +1136,21 @@ async function deleteAdminPost(post) {
     setAdminWorkZoneState({
       posts: adminWorkZoneState.posts.filter(
         item => String(item._id) !== String(post._id)
-      ),
-      message: data.message || translate("admin_content_delete_success")
+      )
     });
+    showAdminActionToast(
+      data.message || translate("admin_content_delete_success"),
+      "success"
+    );
 
     await loadAdminUsers({
       preserveSelection: true
     });
   } catch (error) {
-    setAdminWorkZoneState({
-      message: error.message || translate("admin_content_delete_error")
-    });
+    showAdminActionToast(
+      error.message || translate("admin_content_delete_error"),
+      "error"
+    );
   }
 }
 

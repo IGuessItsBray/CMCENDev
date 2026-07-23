@@ -35,16 +35,12 @@ function showNotificationsStatus(message, type = "neutral") {
   notificationsList.hidden = true;
 }
 
-function setCardMessage(card, message, type = "neutral") {
-  const messageElement = card.querySelector(".notification-card-message");
-
-  if (!messageElement) {
-    return;
-  }
-
-  messageElement.textContent = message;
-  messageElement.className = `notification-card-message is-${type}`;
-  messageElement.hidden = false;
+function showNotificationToast(message, type = "neutral") {
+  CMCENUtils.showToast(message, {
+    color: type === "success" ? "success" : type === "error" ? "error" : "info",
+    position: "bottom-right",
+    animation: "slide"
+  });
 }
 
 function getNotificationTitle(item) {
@@ -121,13 +117,7 @@ function createNotificationCard(item) {
   reason.textContent =
     `${translate("my_events_rejection_reason")}: ${item.reason || "—"}`;
 
-  const message = document.createElement("p");
-  message.className = "notification-card-message";
-  message.setAttribute("role", "status");
-  message.setAttribute("aria-live", "polite");
-  message.hidden = true;
-
-  card.append(header, reason, message);
+  card.append(header, reason);
 
   if (item.type === "retirementComment") {
     card.appendChild(createCommentEditor(item));
@@ -203,8 +193,7 @@ async function submitCommentEdit(form, item) {
       }
     );
 
-    setCardMessage(
-      card,
+    showNotificationToast(
       data.message || translate("notifications_comment_update_success"),
       "success"
     );
@@ -213,8 +202,7 @@ async function submitCommentEdit(form, item) {
       keepStatusVisible: true
     });
   } catch (error) {
-    setCardMessage(
-      card,
+    showNotificationToast(
       error.message || translate("notifications_comment_update_error"),
       "error"
     );

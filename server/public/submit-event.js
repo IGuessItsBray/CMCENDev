@@ -1,6 +1,5 @@
 const eventForm = document.getElementById("eventForm");
 const eventPageMessage = document.getElementById("eventPageMessage");
-const eventFormMessage = document.getElementById("eventFormMessage");
 const eventEditLoading = document.getElementById("eventEditLoading");
 const eventEditContext = document.getElementById("eventEditContext");
 const eventEditRejection = document.getElementById("eventEditRejection");
@@ -324,17 +323,14 @@ function showPageMessage(
 }
 
 function clearFormMessage() {
-  eventFormMessage.textContent = "";
-  eventFormMessage.className = "event-form-message";
-  eventFormMessage.hidden = true;
+  // Form results are presented as transient toasts.
 }
 
 function showFormMessage(message, type = "error") {
-  eventFormMessage.textContent = message;
-  eventFormMessage.className = `event-form-message is-${type}`;
-  eventFormMessage.hidden = false;
-  eventFormMessage.scrollIntoView({
-    block: "nearest"
+  CMCENUtils.showToast(message, {
+    color: type === "success" ? "success" : type === "info" ? "info" : "error",
+    position: "bottom-right",
+    animation: "slide"
   });
 }
 

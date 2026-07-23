@@ -126,17 +126,19 @@ async function deletePublishedEvent() {
             throw new Error(data.error || "Could not delete event");
         }
 
-        showEventDetailMessage(
+        CMCENUtils.showToast(
             "Event deleted and recorded in the audit log.",
-            "success"
+            { color: "success", position: "bottom-right", animation: "slide" }
         );
 
         setTimeout(() => {
             window.location.href = "/calendar";
         }, 900);
     } catch (error) {
-        await CMCENModal.alert(error.message || "Could not delete event", {
-            title: "Delete event"
+        CMCENUtils.showToast(error.message || "Could not delete event", {
+            color: "error",
+            position: "bottom-right",
+            animation: "slide"
         });
 
         if (button) {

@@ -51,6 +51,14 @@ function showSiteConfigStatus(message, state = "") {
   siteConfigPage.hidden = true;
 }
 
+function showSiteConfigToast(message, color = "info") {
+  CMCENUtils.showToast(message, {
+    color,
+    position: "bottom-right",
+    animation: "slide"
+  });
+}
+
 function showSiteConfigLoading(message = translate("site_config_loading")) {
   CMCENUtils.setStatusLoading(siteConfigStatus, message);
   siteConfigPage.hidden = true;
@@ -441,13 +449,21 @@ async function purgeAnalyticsHistory() {
 
     setSiteConfigState({
       isPurgingAnalytics: false,
-      message: data.message || translate("site_config_analytics_purge_success")
+      message: ""
     });
+    showSiteConfigToast(
+      data.message || translate("site_config_analytics_purge_success"),
+      "success"
+    );
   } catch (error) {
     setSiteConfigState({
       isPurgingAnalytics: false,
-      message: error.message || translate("site_config_analytics_purge_error")
+      message: ""
     });
+    showSiteConfigToast(
+      error.message || translate("site_config_analytics_purge_error"),
+      "error"
+    );
   }
 }
 

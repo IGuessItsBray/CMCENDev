@@ -229,9 +229,9 @@
     const requestHeaders = { ...headers };
     const requestBody =
       json &&
-      body !== undefined &&
-      !(body instanceof FormData) &&
-      typeof body !== "string"
+        body !== undefined &&
+        !(body instanceof FormData) &&
+        typeof body !== "string"
         ? JSON.stringify(body)
         : body;
     const requestToken =
@@ -689,6 +689,131 @@
     element.hidden = false;
   }
 
+  const toastPositions = new Set([
+    "top-right",
+    "top-left",
+    "top-center",
+    "bottom-right",
+    "bottom-left"
+  ]);
+  const toastColors = new Set([
+    "success",
+    "error",
+    "warning",
+    "info",
+    "neutral"
+  ]);
+
+  function getToastRegion(position) {
+    const regionClass = `cmcen-toast-region--${position}`;
+    let region = document.querySelector(`.${regionClass}`);
+
+    if (region) return region;
+
+    region = document.createElement("div");
+    region.className = `cmcen-toast-region ${regionClass}`;
+    region.setAttribute("aria-label", "Notifications");
+    document.body.appendChild(region);
+
+    return region;
+  }
+
+  function getToastDismissLabel(fallback) {
+    if (typeof window.translate !== "function") {
+      return fallback;
+    }
+
+    const translated = window.translate("toast_dismiss");
+    return translated && translated !== "toast_dismiss" ? translated : fallback;
+  }
+
+  /**
+   * Show a transient notification anywhere in the application.
+   *
+   * @param {string} message
+   * @param {{
+   *   color?: "success"|"error"|"warning"|"info"|"neutral",
+   *   position?: "top-right"|"top-left"|"top-center"|"bottom-right"|"bottom-left",
+   *   animation?: "slide"|"fade",
+   *   duration?: number,
+   *   dismissible?: boolean,
+   *   dismissLabel?: string
+   * }} options
+   * @returns {{ element: HTMLElement|null, dismiss: () => void }}
+   */
+  function showToast(message, options = {}) {
+    const text = String(message || "").trim();
+
+    if (!text) {
+      return {
+        element: null,
+        dismiss() { }
+      };
+    }
+
+    const color = toastColors.has(options.color) ? options.color : "info";
+    const position = toastPositions.has(options.position)
+      ? options.position
+      : "bottom-right";
+    const animation = options.animation === "fade" ? "fade" : "slide";
+    const durationValue = Number(options.duration);
+    const duration = Number.isFinite(durationValue)
+      ? Math.max(0, durationValue)
+      : 2750;
+    const region = getToastRegion(position);
+    const toast = document.createElement("article");
+    const toastMessage = document.createElement("p");
+    const dismissButton = document.createElement("button");
+    let dismissTimer = null;
+    let dismissed = false;
+
+    toast.className = `cmcen-toast cmcen-toast--${color} cmcen-toast--${animation}`;
+    toast.setAttribute("role", color === "error" ? "alert" : "status");
+    toast.setAttribute("aria-atomic", "true");
+
+    toastMessage.className = "cmcen-toast-message";
+    toastMessage.textContent = text;
+
+    dismissButton.type = "button";
+    dismissButton.className = "cmcen-toast-dismiss";
+    dismissButton.setAttribute(
+      "aria-label",
+      options.dismissLabel || getToastDismissLabel("Dismiss notification")
+    );
+    dismissButton.textContent = "×";
+
+    function removeToast() {
+      toast.remove();
+
+      if (!region.childElementCount) {
+        region.remove();
+      }
+    }
+
+    function dismiss() {
+      if (dismissed) return;
+
+      dismissed = true;
+      window.clearTimeout(dismissTimer);
+      toast.classList.add("is-dismissing");
+      window.setTimeout(removeToast, 180);
+    }
+
+    dismissButton.addEventListener("click", dismiss);
+    toast.append(toastMessage, dismissButton);
+    region.prepend(toast);
+
+    if (duration > 0) {
+      dismissTimer = window.setTimeout(dismiss, duration);
+    }
+
+    if (options.dismissible === false) {
+      dismissButton.hidden = true;
+    }
+
+    return { element: toast, dismiss };
+  }
+
   let modalOverlay = null;
   let modalDialog = null;
   let modalTitle = null;
@@ -927,7 +1052,7 @@
     });
 
     const queuedRequest = modalQueue.then(request, request);
-    modalQueue = queuedRequest.catch(() => {});
+    modalQueue = queuedRequest.catch(() => { });
     return queuedRequest;
   }
 
@@ -967,7 +1092,7 @@
       headers,
       body: payload,
       keepalive: true
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   function getCompressedImageName(file, mimeType) {
@@ -1073,6 +1198,7 @@
     requireAuthToken,
     serializeAssertionCredential,
     serializeAttestationCredential,
+    showToast,
     signOut,
     setStatusLoading,
     setStatusMessage,

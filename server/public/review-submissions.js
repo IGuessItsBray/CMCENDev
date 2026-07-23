@@ -1,6 +1,5 @@
 const reviewQueue = document.getElementById("reviewQueue");
 const reviewPageMessage = document.getElementById("reviewPageMessage");
-const reviewNotice = document.getElementById("reviewNotice");
 const retirementReviewQueue = document.getElementById("retirementReviewQueue");
 const retirementReviewPageMessage =
   document.getElementById("retirementReviewPageMessage");
@@ -24,7 +23,6 @@ let loadFailed = false;
 let retirementLoadFailed = false;
 let lastPostLoadFailed = false;
 let commentLoadFailed = false;
-let noticeTimer = null;
 
 function getReviewLanguage() {
   return CMCENUtils.getCurrentLanguage();
@@ -1701,15 +1699,11 @@ function showQueueLoading(
 }
 
 function showNotice(message, type = "success") {
-  clearTimeout(noticeTimer);
-
-  reviewNotice.textContent = message;
-  reviewNotice.className = `review-notice is-${type}`;
-  reviewNotice.hidden = false;
-
-  noticeTimer = window.setTimeout(() => {
-    reviewNotice.hidden = true;
-  }, 3500);
+  CMCENUtils.showToast(message, {
+    color: type === "success" ? "success" : type === "error" ? "error" : "info",
+    position: "bottom-right",
+    animation: "slide"
+  });
 }
 
 function renderReviewQueue() {
@@ -1806,22 +1800,17 @@ function renderCommentReviewQueue() {
 function createReviewActionContext(card) {
   const context = {
     card,
-    messageElement: card.querySelector(".review-action-message"),
     buttons: card.querySelectorAll("button"),
     publishButton: card.querySelector(".review-publish-button"),
     rejectButton: card.querySelector(".review-reject-button"),
     reasonInput: card.querySelector(".review-rejection-reason")
   };
 
-  context.messageElement.textContent = "";
-  context.messageElement.hidden = true;
-
   return context;
 }
 
 function showReviewValidationError(context, message, input) {
-  context.messageElement.textContent = message;
-  context.messageElement.hidden = false;
+  showNotice(message, "error");
   input.focus();
 }
 
@@ -1867,8 +1856,7 @@ async function performReviewAction({
 
     showNotice(translate(successMessageKey));
   } catch (error) {
-    context.messageElement.textContent = error.message;
-    context.messageElement.hidden = false;
+    showNotice(error.message || errorMessage, "error");
 
     context.buttons.forEach(button => {
       button.disabled = false;

@@ -95,27 +95,6 @@ function createDetailRow(labelKey, value) {
   return row;
 }
 
-function createProfileMessage() {
-  const message = document.createElement("p");
-  message.className = "dashboard-profile-message";
-  message.setAttribute("role", "status");
-  message.setAttribute("aria-live", "polite");
-  message.hidden = true;
-
-  return message;
-}
-
-function setProfileMessage(messageElement, text, state = "") {
-  messageElement.textContent = text;
-  messageElement.className = "dashboard-profile-message";
-
-  if (state) {
-    messageElement.classList.add(`is-${state}`);
-  }
-
-  messageElement.hidden = false;
-}
-
 function createProfileField({
   name,
   labelKey,
@@ -336,7 +315,6 @@ function createGhostUpgradeForm(user) {
   const form = document.createElement("form");
   form.className = "dashboard-profile-form";
 
-  const message = createProfileMessage();
   const grid = document.createElement("div");
   grid.className = "dashboard-profile-grid";
 
@@ -426,7 +404,7 @@ function createGhostUpgradeForm(user) {
   submit.className = "dashboard-profile-button is-primary";
   submit.textContent = translate("dashboard_upgrade_account");
 
-  form.append(message, grid, submit);
+  form.append(grid, submit);
   form.querySelectorAll("input").forEach(input => {
     input.readOnly = false;
   });
@@ -447,7 +425,7 @@ function createGhostUpgradeForm(user) {
     });
 
     submit.disabled = true;
-    setProfileMessage(message, translate("dashboard_profile_saving"), "info");
+    submit.setAttribute("aria-busy", "true");
 
     try {
       const data = await CMCENUtils.apiJson("/api/ghost/upgrade", {
@@ -460,12 +438,12 @@ function createGhostUpgradeForm(user) {
       CMCENUtils.storeAuthToken(data.token);
       window.location.reload();
     } catch (error) {
-      setProfileMessage(
-        message,
+      CMCENUtils.showToast(
         error.message || translate("dashboard_upgrade_error"),
-        "error"
+        { color: "error", position: "bottom-right", animation: "slide" }
       );
       submit.disabled = false;
+      submit.removeAttribute("aria-busy");
     }
   });
 
@@ -476,8 +454,6 @@ function createProfileForm(user) {
   const form = document.createElement("form");
   form.className = "dashboard-profile-form";
   form.noValidate = false;
-
-  const message = createProfileMessage();
 
   const grid = document.createElement("div");
   grid.className = "dashboard-profile-grid";
@@ -644,14 +620,13 @@ function createProfileForm(user) {
   cancelButton.textContent = translate("dashboard_cancel_profile");
 
   controls.append(editButton, saveButton, cancelButton);
-  form.append(message, grid, readonlyDetails, controls);
+  form.append(grid, readonlyDetails, controls);
 
   form
     .querySelector("[data-profile-field='trade']")
     ?.addEventListener("change", () => syncProfileTradeOtherVisibility(form));
 
   editButton.addEventListener("click", () => {
-    message.hidden = true;
     setProfileFormMode(form, true);
     syncProfileTradeOtherVisibility(form);
     form.querySelector("input, select")?.focus();
@@ -668,7 +643,6 @@ function createProfileForm(user) {
       return;
     }
 
-    message.hidden = true;
     cancelButton.disabled = true;
     setProfileSaveButtonLoading(saveButton);
 
@@ -683,6 +657,11 @@ function createProfileForm(user) {
 
       currentDashboardUser = data;
       cancelButton.hidden = true;
+      CMCENUtils.showToast(translate("dashboard_profile_saved"), {
+        color: "success",
+        position: "bottom-right",
+        animation: "slide"
+      });
       setProfileSaveButtonSaved(saveButton, () => {
         if (
           typeof window.applyLanguage === "function" &&
@@ -699,10 +678,9 @@ function createProfileForm(user) {
       console.error("Profile save failed:", error);
       resetProfileSaveButton(saveButton);
       cancelButton.disabled = false;
-      setProfileMessage(
-        message,
+      CMCENUtils.showToast(
         error.message || translate("dashboard_profile_save_error"),
-        "error"
+        { color: "error", position: "bottom-right", animation: "slide" }
       );
     }
   });

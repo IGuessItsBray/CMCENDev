@@ -648,6 +648,18 @@ function getMultiDayEventSegments(weekDates) {
     };
 }
 
+function setMultiDayEventHighlight(eventId, isHighlighted) {
+    document
+        .querySelectorAll('.calendar-multiday-event')
+        .forEach(eventBar => {
+            eventBar.classList.toggle(
+                'is-related-highlighted',
+                isHighlighted &&
+                eventBar.dataset.eventId === eventId
+            );
+        });
+}
+
 function createMultiDayEventBar(segment, language, locale) {
     const {
         event,
@@ -667,16 +679,20 @@ function createMultiDayEventBar(segment, language, locale) {
                 hour: 'numeric',
                 minute: '2-digit'
             }))
-        : getCalendarTranslation('calendar_continues');
+        : '';
 
     link.className = 'calendar-multiday-event';
     link.href = `/event?id=${encodeURIComponent(event._id)}`;
+    link.dataset.eventId = event._id;
     link.style.gridColumn = `${startIndex + 1} / ${endIndex + 2}`;
     link.style.gridRow = String(lane + 1);
     link.setAttribute(
         'aria-label',
         [
             title,
+            !startsInWeek && getCalendarTranslation(
+                'calendar_continues'
+            ),
             formatEventDateRange(event, locale),
             formatEventTime(event, locale)
         ].filter(Boolean).join(', ')
@@ -694,17 +710,33 @@ function createMultiDayEventBar(segment, language, locale) {
         link.dataset.eventType = event.eventType;
     }
 
-    const timeElement = document.createElement('span');
+    if (timeLabel) {
+        const timeElement = document.createElement('span');
 
-    timeElement.className = 'calendar-multiday-event-time';
-    timeElement.textContent = timeLabel;
+        timeElement.className = 'calendar-multiday-event-time';
+        timeElement.textContent = timeLabel;
+
+        link.appendChild(timeElement);
+    }
 
     const titleElement = document.createElement('span');
 
     titleElement.className = 'calendar-multiday-event-title';
     titleElement.textContent = title;
 
-    link.append(timeElement, titleElement);
+    link.appendChild(titleElement);
+    link.addEventListener('pointerenter', () => {
+        setMultiDayEventHighlight(event._id, true);
+    });
+    link.addEventListener('pointerleave', () => {
+        setMultiDayEventHighlight(event._id, false);
+    });
+    link.addEventListener('focus', () => {
+        setMultiDayEventHighlight(event._id, true);
+    });
+    link.addEventListener('blur', () => {
+        setMultiDayEventHighlight(event._id, false);
+    });
 
     return link;
 }

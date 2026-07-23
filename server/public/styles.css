@@ -1656,6 +1656,7 @@ a.dropdown-toggle {
 }
 
 .calendar-multiday-event {
+  position: relative;
   min-width: 0;
   padding: 4px 7px;
   display: grid;
@@ -1685,6 +1686,17 @@ a.dropdown-toggle {
   transform: translateY(-1px);
 }
 
+.calendar-multiday-event.is-related-highlighted {
+  background: var(--gold-500);
+  box-shadow: 0 0 0 2px rgba(213, 155, 39, 0.42);
+  color: var(--navy-950);
+  transform: translateY(-1px);
+}
+
+.calendar-multiday-event.is-related-highlighted .calendar-multiday-event-time {
+  color: var(--navy-800);
+}
+
 .calendar-multiday-event-time {
   color: var(--gold-200);
   font-size: 9px;
@@ -1699,14 +1711,55 @@ a.dropdown-toggle {
   white-space: nowrap;
 }
 
+.calendar-multiday-event-title:first-child {
+  grid-column: 1 / -1;
+}
+
 .calendar-multiday-event.is-continuing-from-previous-week {
+  padding-left: 25px;
+  border-left: 0;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
 
 .calendar-multiday-event.is-continuing-into-next-week {
+  padding-right: 25px;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+}
+
+.calendar-multiday-event.is-continuing-from-previous-week::before,
+.calendar-multiday-event.is-continuing-into-next-week::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  display: grid;
+  place-items: center;
+  background: rgba(213, 155, 39, 0.20);
+  color: var(--gold-200);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.calendar-multiday-event.is-continuing-from-previous-week::before {
+  left: 0;
+  content: "←";
+  border-right: 1px solid rgba(234, 211, 163, 0.32);
+}
+
+.calendar-multiday-event.is-continuing-into-next-week::after {
+  right: 0;
+  content: "→";
+  border-left: 1px solid rgba(234, 211, 163, 0.32);
+}
+
+.calendar-multiday-event.is-related-highlighted::before,
+.calendar-multiday-event.is-related-highlighted::after {
+  background: rgba(23, 28, 50, 0.12);
+  border-color: rgba(23, 28, 50, 0.28);
+  color: var(--navy-900);
 }
 
 .calendar-event-chip {

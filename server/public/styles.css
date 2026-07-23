@@ -9482,14 +9482,14 @@ a.my-event-card-row:focus-visible {
   padding: 18px 20px 22px;
 }
 
-.review-event-submission-details {
+.review-submission-details {
   margin: 0 14px 14px;
   border: 1px solid var(--branch-grey-200);
   border-radius: 2px;
   background: var(--branch-grey-100);
 }
 
-.review-event-submission-details > summary {
+.review-submission-details > summary {
   padding: 10px 12px;
   color: var(--navy-900);
   font-size: 11px;
@@ -9497,11 +9497,11 @@ a.my-event-card-row:focus-visible {
   cursor: pointer;
 }
 
-.review-event-submission-details[open] > summary {
+.review-submission-details[open] > summary {
   border-bottom: 1px solid var(--branch-grey-200);
 }
 
-.review-event-submission-details .review-submission-record {
+.review-submission-details .review-submission-record {
   padding: 12px;
   gap: 12px;
 }
@@ -9720,6 +9720,11 @@ a.my-event-card-row:focus-visible {
 
 .retirement-review-language-grid {
   padding: 14px 15px 15px;
+}
+
+.retirement-review-message-fields {
+  margin: 0 18px 18px;
+  padding: 14px 0 0;
 }
 
 .retirement-review-message-input {
@@ -15194,16 +15199,16 @@ html[data-theme="dark"] .review-language-body .is-missing {
   color: var(--dark-text-muted);
 }
 
-html[data-theme="dark"] .review-event-submission-details {
+html[data-theme="dark"] .review-submission-details {
   border-color: var(--dark-border);
   background: var(--dark-surface-3);
 }
 
-html[data-theme="dark"] .review-event-submission-details > summary {
+html[data-theme="dark"] .review-submission-details > summary {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] .review-event-submission-details[open] > summary {
+html[data-theme="dark"] .review-submission-details[open] > summary {
   border-bottom-color: var(--dark-border);
 }
 

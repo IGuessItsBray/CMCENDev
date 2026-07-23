@@ -219,6 +219,108 @@ function setTranslatedPlaceholder(element, key) {
   element.placeholder = translate(key);
 }
 
+function createSubmissionDetails(content, summaryKey) {
+  const submissionDetails = document.createElement("details");
+  submissionDetails.className = "review-submission-details";
+
+  const submissionSummary = document.createElement("summary");
+  setTranslatedText(submissionSummary, summaryKey);
+
+  submissionDetails.append(submissionSummary, content);
+  return submissionDetails;
+}
+
+function configureTwoStepDecision({
+  decision,
+  decisionCopy,
+  rejectionField,
+  actionMessage,
+  actions,
+  publishButton,
+  rejectButton,
+  publishLabelKey,
+  rejectLabelKey,
+  publishConfirmationKey,
+  rejectConfirmationKey,
+  confirmPublishLabelKey = "confirm_publish_submission",
+  confirmRejectLabelKey = "confirm_reject_submission",
+  submit
+}) {
+  const decisionPrompt = document.createElement("p");
+  decisionPrompt.className = "review-decision-prompt";
+  decisionPrompt.setAttribute("role", "status");
+  decisionPrompt.hidden = true;
+
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.className = "review-cancel-action";
+  setTranslatedText(cancelButton, "cancel_review_decision");
+  cancelButton.hidden = true;
+
+  let pendingAction = null;
+
+  function resetDecision() {
+    pendingAction = null;
+    decisionPrompt.hidden = true;
+    rejectionField.hidden = true;
+    rejectButton.hidden = false;
+    publishButton.hidden = false;
+    cancelButton.hidden = true;
+    setTranslatedText(rejectButton, rejectLabelKey);
+    setTranslatedText(publishButton, publishLabelKey);
+  }
+
+  function prepareDecision(action) {
+    if (pendingAction === action) {
+      submit(action);
+      return;
+    }
+
+    pendingAction = action;
+    setTranslatedText(
+      decisionPrompt,
+      action === "publish"
+        ? publishConfirmationKey
+        : rejectConfirmationKey
+    );
+    decisionPrompt.hidden = false;
+    rejectionField.hidden = action !== "reject";
+    rejectButton.hidden = action !== "reject";
+    publishButton.hidden = action !== "publish";
+    cancelButton.hidden = false;
+
+    if (action === "publish") {
+      setTranslatedText(publishButton, confirmPublishLabelKey);
+      publishButton.focus();
+      return;
+    }
+
+    setTranslatedText(rejectButton, confirmRejectLabelKey);
+    rejectionField.querySelector("textarea")?.focus();
+  }
+
+  resetDecision();
+
+  publishButton.addEventListener("click", () => {
+    prepareDecision("publish");
+  });
+
+  rejectButton.addEventListener("click", () => {
+    prepareDecision("reject");
+  });
+
+  cancelButton.addEventListener("click", resetDecision);
+
+  actions.append(rejectButton, publishButton, cancelButton);
+  decision.append(
+    decisionCopy,
+    decisionPrompt,
+    rejectionField,
+    actionMessage,
+    actions
+  );
+}
+
 function createReviewRecordSection(titleKey, items, additionalClass = "") {
   const section = document.createElement("section");
   section.className = `review-record-section ${additionalClass}`.trim();
@@ -262,23 +364,6 @@ function createReviewRecordSection(titleKey, items, additionalClass = "") {
   section.append(heading, grid);
 
   return section;
-}
-
-function createMetaItem(labelKey, value) {
-  const item = document.createElement("div");
-  item.className = "review-event-meta-item";
-
-  const label = document.createElement("span");
-  label.className = "review-event-meta-label";
-  setTranslatedText(label, labelKey);
-
-  const content = document.createElement("span");
-  content.className = "review-event-meta-value";
-  content.textContent = value || "—";
-
-  item.append(label, content);
-
-  return item;
 }
 
 function createContentValue(className, value) {
@@ -584,13 +669,10 @@ function createReviewCard(event) {
     authorizationInformation
   );
 
-  const submissionDetails = document.createElement("details");
-  submissionDetails.className = "review-event-submission-details";
-
-  const submissionSummary = document.createElement("summary");
-  setTranslatedText(submissionSummary, "review_submission_details");
-
-  submissionDetails.append(submissionSummary, submissionRecord);
+  const submissionDetails = createSubmissionDetails(
+    submissionRecord,
+    "review_submission_details"
+  );
 
   const decision = document.createElement("section");
   decision.className = "review-decision";
@@ -608,11 +690,6 @@ function createReviewCard(event) {
     decisionHeading,
     decisionHelp
   );
-
-  const decisionPrompt = document.createElement("p");
-  decisionPrompt.className = "review-decision-prompt";
-  decisionPrompt.setAttribute("role", "status");
-  decisionPrompt.hidden = true;
 
   const rejectionField =
     document.createElement("div");
@@ -649,8 +726,6 @@ function createReviewCard(event) {
     rejectionLabel,
     rejectionReason
   );
-
-  rejectionField.hidden = true;
 
   const actionMessage =
     document.createElement("p");
@@ -690,83 +765,24 @@ function createReviewCard(event) {
 
   setTranslatedText(rejectButton, "reject_event");
 
-  const cancelButton = document.createElement("button");
-  cancelButton.type = "button";
-  cancelButton.className = "review-cancel-action";
-  setTranslatedText(cancelButton, "cancel_review_decision");
-  cancelButton.hidden = true;
-
-  let pendingAction = null;
-
-  function resetDecision() {
-    pendingAction = null;
-    decisionPrompt.hidden = true;
-    rejectionField.hidden = true;
-    rejectButton.hidden = false;
-    publishButton.hidden = false;
-    cancelButton.hidden = true;
-    setTranslatedText(rejectButton, "reject_event");
-    setTranslatedText(publishButton, "publish_event");
-  }
-
-  function prepareDecision(action) {
-    if (pendingAction === action) {
-      submitReview(event._id, action, article);
-      return;
-    }
-
-    pendingAction = action;
-    setTranslatedText(
-      decisionPrompt,
-      action === "publish"
-        ? "event_review_publish_confirmation"
-        : "event_review_reject_confirmation"
-    );
-    decisionPrompt.hidden = false;
-    rejectionField.hidden = action !== "reject";
-    rejectButton.hidden = action !== "reject";
-    publishButton.hidden = action !== "publish";
-    cancelButton.hidden = false;
-
-    if (action === "publish") {
-      setTranslatedText(publishButton, "confirm_publish_event");
-      publishButton.focus();
-      return;
-    }
-
-    setTranslatedText(rejectButton, "confirm_reject_event");
-    rejectionReason.focus();
-  }
-
-  publishButton.addEventListener(
-    "click",
-    () => {
-      prepareDecision("publish");
-    }
-  );
-
-  rejectButton.addEventListener(
-    "click",
-    () => {
-      prepareDecision("reject");
-    }
-  );
-
-  cancelButton.addEventListener("click", resetDecision);
-
-  actions.append(
-    rejectButton,
-    publishButton,
-    cancelButton
-  );
-
-  decision.append(
+  configureTwoStepDecision({
+    decision,
     decisionCopy,
-    decisionPrompt,
     rejectionField,
     actionMessage,
-    actions
-  );
+    actions,
+    publishButton,
+    rejectButton,
+    publishLabelKey: "publish_event",
+    rejectLabelKey: "reject_event",
+    publishConfirmationKey: "event_review_publish_confirmation",
+    rejectConfirmationKey: "event_review_reject_confirmation",
+    confirmPublishLabelKey: "confirm_publish_event",
+    confirmRejectLabelKey: "confirm_reject_event",
+    submit(action) {
+      submitReview(event._id, action, article);
+    }
+  });
 
   article.append(
     cardHeader,
@@ -779,18 +795,10 @@ function createReviewCard(event) {
   return article;
 }
 
-function createRetirementMessageSection(retirementMessage) {
-  const section = document.createElement("section");
-  section.className =
-    "review-record-section retirement-review-message-section";
-
-  const heading = document.createElement("h3");
-  heading.textContent =
-    translate("retirement_review_message_record");
-
+function createRetirementMessageFields(retirementMessage) {
   const grid = document.createElement("div");
   grid.className =
-    "review-language-grid retirement-review-language-grid";
+    "review-language-grid retirement-review-language-grid retirement-review-message-fields";
 
   ["en", "fr"].forEach(languageCode => {
     const panel = document.createElement("section");
@@ -862,9 +870,7 @@ function createRetirementMessageSection(retirementMessage) {
     grid.appendChild(panel);
   });
 
-  section.append(heading, grid);
-
-  return section;
+  return grid;
 }
 
 function createRetirementPhotoSection(retirementMessage) {
@@ -933,29 +939,6 @@ function createRetirementReviewCard(retirementMessage) {
     status
   );
 
-  const meta = document.createElement("div");
-  meta.className = "review-event-meta is-two-column";
-
-  meta.append(
-    createMetaItem(
-      "submitted_by",
-      [
-        retirementMessage.submitter?.firstName,
-        retirementMessage.submitter?.lastName
-      ]
-        .filter(Boolean)
-        .join(" ") ||
-        translate("unknown_user")
-    ),
-
-    createMetaItem(
-      "submitted_on",
-      formatSubmittedDate(
-        retirementMessage.createdAt
-      )
-    )
-  );
-
   const retireeInformation =
     createReviewRecordSection(
       "retirement_review_retiree_record",
@@ -995,6 +978,10 @@ function createRetirementReviewCard(retirementMessage) {
       ],
       "review-event-information"
     );
+
+  const messageFields = createRetirementMessageFields(
+    retirementMessage
+  );
 
   const submitterInformation =
     createReviewRecordSection(
@@ -1107,6 +1094,11 @@ function createRetirementReviewCard(retirementMessage) {
     authorizationInformation
   );
 
+  const submissionDetails = createSubmissionDetails(
+    submissionRecord,
+    "review_submission_details"
+  );
+
   const photoSection =
     createRetirementPhotoSection(retirementMessage);
 
@@ -1117,11 +1109,13 @@ function createRetirementReviewCard(retirementMessage) {
   decisionCopy.className = "review-decision-copy";
 
   const decisionHeading = document.createElement("h3");
-  decisionHeading.textContent = translate("review_decision");
+  setTranslatedText(decisionHeading, "review_decision");
 
   const decisionHelp = document.createElement("p");
-  decisionHelp.textContent =
-    translate("retirement_rejection_reason_help");
+  setTranslatedText(
+    decisionHelp,
+    "retirement_rejection_reason_help"
+  );
 
   decisionCopy.append(
     decisionHeading,
@@ -1137,8 +1131,7 @@ function createRetirementReviewCard(retirementMessage) {
   const rejectionLabel =
     document.createElement("label");
 
-  rejectionLabel.textContent =
-    translate("rejection_reason_label");
+  setTranslatedText(rejectionLabel, "rejection_reason_label");
 
   const rejectionReason =
     document.createElement("textarea");
@@ -1148,8 +1141,10 @@ function createRetirementReviewCard(retirementMessage) {
 
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
-  rejectionReason.placeholder =
-    translate("rejection_reason_placeholder");
+  setTranslatedPlaceholder(
+    rejectionReason,
+    "rejection_reason_placeholder"
+  );
 
   rejectionLabel.htmlFor =
     `retirement-rejection-${retirementMessage._id}`;
@@ -1186,8 +1181,10 @@ function createRetirementReviewCard(retirementMessage) {
   publishButton.type = "button";
   publishButton.className =
     "review-publish-button";
-  publishButton.textContent =
-    translate("publish_retirement_message");
+  setTranslatedText(
+    publishButton,
+    "publish_retirement_message"
+  );
 
   const rejectButton =
     document.createElement("button");
@@ -1195,50 +1192,36 @@ function createRetirementReviewCard(retirementMessage) {
   rejectButton.type = "button";
   rejectButton.className =
     "review-reject-button";
-  rejectButton.textContent =
-    translate("reject_retirement_message");
-
-  publishButton.addEventListener(
-    "click",
-    () => {
-      submitRetirementReview(
-        retirementMessage._id,
-        "publish",
-        article
-      );
-    }
-  );
-
-  rejectButton.addEventListener(
-    "click",
-    () => {
-      submitRetirementReview(
-        retirementMessage._id,
-        "reject",
-        article
-      );
-    }
-  );
-
-  actions.append(
+  setTranslatedText(
     rejectButton,
-    publishButton
+    "reject_retirement_message"
   );
 
-  decision.append(
+  configureTwoStepDecision({
+    decision,
     decisionCopy,
     rejectionField,
     actionMessage,
-    actions
-  );
+    actions,
+    publishButton,
+    rejectButton,
+    publishLabelKey: "publish_retirement_message",
+    rejectLabelKey: "reject_retirement_message",
+    publishConfirmationKey: "review_publish_confirmation",
+    rejectConfirmationKey: "review_reject_confirmation",
+    submit(action) {
+      submitRetirementReview(
+        retirementMessage._id,
+        action,
+        article
+      );
+    }
+  });
 
   article.append(
     cardHeader,
-    meta,
     retireeInformation,
-    createRetirementMessageSection(
-      retirementMessage
-    )
+    messageFields
   );
 
   if (photoSection) {
@@ -1246,7 +1229,7 @@ function createRetirementReviewCard(retirementMessage) {
   }
 
   article.append(
-    submissionRecord,
+    submissionDetails,
     decision
   );
 
@@ -1370,18 +1353,6 @@ function createLastPostReviewCard(lastPost) {
   status.textContent = translate("review_status_pending");
   cardHeader.append(headingCopy, status);
 
-  const meta = document.createElement("div");
-  meta.className = "review-event-meta is-two-column";
-  meta.append(
-    createMetaItem(
-      "submitted_by",
-      [lastPost.submitter?.rank, lastPost.submitter?.firstName, lastPost.submitter?.lastName]
-        .filter(Boolean)
-        .join(" ") || translate("unknown_user")
-    ),
-    createMetaItem("submitted_on", formatSubmittedDate(lastPost.createdAt))
-  );
-
   const deceasedInformation = createReviewRecordSection(
     "last_post_review_deceased_record",
     [
@@ -1403,28 +1374,43 @@ function createLastPostReviewCard(lastPost) {
     ]
   );
 
+  const submissionRecord = document.createElement("div");
+  submissionRecord.className = "review-submission-record";
+  submissionRecord.append(submitterInformation);
+
+  const submissionDetails = createSubmissionDetails(
+    submissionRecord,
+    "review_submitter_details"
+  );
+
   const imageSection = createLastPostImageSection(lastPost);
   const decision = document.createElement("section");
   decision.className = "review-decision";
   const decisionCopy = document.createElement("div");
   decisionCopy.className = "review-decision-copy";
   const decisionHeading = document.createElement("h3");
-  decisionHeading.textContent = translate("review_decision");
+  setTranslatedText(decisionHeading, "review_decision");
   const decisionHelp = document.createElement("p");
-  decisionHelp.textContent = translate("last_post_rejection_reason_help");
+  setTranslatedText(
+    decisionHelp,
+    "last_post_rejection_reason_help"
+  );
   decisionCopy.append(decisionHeading, decisionHelp);
 
   const rejectionField = document.createElement("div");
   rejectionField.className = "review-rejection-field";
   const rejectionLabel = document.createElement("label");
-  rejectionLabel.textContent = translate("rejection_reason_label");
+  setTranslatedText(rejectionLabel, "rejection_reason_label");
   rejectionLabel.htmlFor = `last-post-rejection-${lastPost._id}`;
   const rejectionReason = document.createElement("textarea");
   rejectionReason.id = `last-post-rejection-${lastPost._id}`;
   rejectionReason.className = "review-rejection-reason";
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
-  rejectionReason.placeholder = translate("rejection_reason_placeholder");
+  setTranslatedPlaceholder(
+    rejectionReason,
+    "rejection_reason_placeholder"
+  );
   rejectionField.append(rejectionLabel, rejectionReason);
 
   const actionMessage = document.createElement("p");
@@ -1437,19 +1423,32 @@ function createLastPostReviewCard(lastPost) {
   const rejectButton = document.createElement("button");
   rejectButton.type = "button";
   rejectButton.className = "review-reject-button";
-  rejectButton.textContent = translate("reject_last_post");
+  setTranslatedText(rejectButton, "reject_last_post");
   const publishButton = document.createElement("button");
   publishButton.type = "button";
   publishButton.className = "review-publish-button";
-  publishButton.textContent = translate("publish_last_post");
-  rejectButton.addEventListener("click", () => submitLastPostReview(lastPost._id, "reject", article));
-  publishButton.addEventListener("click", () => submitLastPostReview(lastPost._id, "publish", article));
-  actions.append(rejectButton, publishButton);
-  decision.append(decisionCopy, rejectionField, actionMessage, actions);
+  setTranslatedText(publishButton, "publish_last_post");
 
-  article.append(cardHeader, meta, deceasedInformation, createLastPostMessageSection(lastPost));
+  configureTwoStepDecision({
+    decision,
+    decisionCopy,
+    rejectionField,
+    actionMessage,
+    actions,
+    publishButton,
+    rejectButton,
+    publishLabelKey: "publish_last_post",
+    rejectLabelKey: "reject_last_post",
+    publishConfirmationKey: "review_publish_confirmation",
+    rejectConfirmationKey: "review_reject_confirmation",
+    submit(action) {
+      submitLastPostReview(lastPost._id, action, article);
+    }
+  });
+
+  article.append(cardHeader, deceasedInformation, createLastPostMessageSection(lastPost));
   if (imageSection) article.append(imageSection);
-  article.append(submitterInformation, decision);
+  article.append(submissionDetails, decision);
   return article;
 }
 
@@ -1481,21 +1480,6 @@ function createCommentReviewCard(comment) {
   cardHeader.append(
     headingCopy,
     status
-  );
-
-  const meta = document.createElement("div");
-  meta.className = "review-event-meta is-two-column";
-
-  meta.append(
-    createMetaItem(
-      "submitted_by",
-      formatCommentAuthor(comment)
-    ),
-
-    createMetaItem(
-      "submitted_on",
-      formatSubmittedDate(comment.createdAt)
-    )
   );
 
   const commentSection = document.createElement("section");
@@ -1560,6 +1544,35 @@ function createCommentReviewCard(comment) {
     relatedData
   );
 
+  const submitterInformation = createReviewRecordSection(
+    "review_submitter_record",
+    [
+      {
+        labelKey: "submitted_by",
+        value: formatCommentAuthor(comment)
+      },
+      {
+        labelKey: "email",
+        value: comment.author?.email,
+        wide: true
+      },
+      {
+        labelKey: "submitted_on",
+        value: formatSubmittedDate(comment.createdAt),
+        wide: true
+      }
+    ]
+  );
+
+  const submissionRecord = document.createElement("div");
+  submissionRecord.className = "review-submission-record";
+  submissionRecord.append(submitterInformation);
+
+  const submissionDetails = createSubmissionDetails(
+    submissionRecord,
+    "review_submitter_details"
+  );
+
   const decision = document.createElement("section");
   decision.className = "review-decision";
 
@@ -1567,11 +1580,13 @@ function createCommentReviewCard(comment) {
   decisionCopy.className = "review-decision-copy";
 
   const decisionHeading = document.createElement("h3");
-  decisionHeading.textContent = translate("review_decision");
+  setTranslatedText(decisionHeading, "review_decision");
 
   const decisionHelp = document.createElement("p");
-  decisionHelp.textContent =
-    translate("comment_rejection_reason_help");
+  setTranslatedText(
+    decisionHelp,
+    "comment_rejection_reason_help"
+  );
 
   decisionCopy.append(
     decisionHeading,
@@ -1582,15 +1597,16 @@ function createCommentReviewCard(comment) {
   rejectionField.className = "review-rejection-field";
 
   const rejectionLabel = document.createElement("label");
-  rejectionLabel.textContent =
-    translate("rejection_reason_label");
+  setTranslatedText(rejectionLabel, "rejection_reason_label");
 
   const rejectionReason = document.createElement("textarea");
   rejectionReason.className = "review-rejection-reason";
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
-  rejectionReason.placeholder =
-    translate("rejection_reason_placeholder");
+  setTranslatedPlaceholder(
+    rejectionReason,
+    "rejection_reason_placeholder"
+  );
 
   rejectionLabel.htmlFor =
     `comment-rejection-${comment._id}`;
@@ -1613,54 +1629,35 @@ function createCommentReviewCard(comment) {
   const publishButton = document.createElement("button");
   publishButton.type = "button";
   publishButton.className = "review-publish-button";
-  publishButton.textContent =
-    translate("publish_comment");
+  setTranslatedText(publishButton, "publish_comment");
 
   const rejectButton = document.createElement("button");
   rejectButton.type = "button";
   rejectButton.className = "review-reject-button";
-  rejectButton.textContent =
-    translate("reject_comment");
+  setTranslatedText(rejectButton, "reject_comment");
 
-  publishButton.addEventListener(
-    "click",
-    () => {
-      submitCommentReview(
-        comment._id,
-        "publish",
-        article
-      );
-    }
-  );
-
-  rejectButton.addEventListener(
-    "click",
-    () => {
-      submitCommentReview(
-        comment._id,
-        "reject",
-        article
-      );
-    }
-  );
-
-  actions.append(
-    rejectButton,
-    publishButton
-  );
-
-  decision.append(
+  configureTwoStepDecision({
+    decision,
     decisionCopy,
     rejectionField,
     actionMessage,
-    actions
-  );
+    actions,
+    publishButton,
+    rejectButton,
+    publishLabelKey: "publish_comment",
+    rejectLabelKey: "reject_comment",
+    publishConfirmationKey: "review_publish_confirmation",
+    rejectConfirmationKey: "review_reject_confirmation",
+    submit(action) {
+      submitCommentReview(comment._id, action, article);
+    }
+  });
 
   article.append(
     cardHeader,
-    meta,
     commentSection,
     relatedSection,
+    submissionDetails,
     decision
   );
 
@@ -2313,7 +2310,7 @@ function updateEventReviewCardsLanguage() {
 
       card
         .querySelectorAll(
-          ".review-event-submission-details .review-record-section:last-child .review-record-value"
+          ".review-submission-details .review-record-section:last-child .review-record-value"
         )
         .forEach((value, index) => {
           value.textContent = authorizationValues[index] || "—";

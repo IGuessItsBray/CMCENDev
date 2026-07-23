@@ -9316,6 +9316,85 @@ a.my-event-card-row:focus-visible {
   transform: translateY(-5px);
 }
 
+.review-event-card--event {
+  box-shadow:
+    0 5px 14px rgba(15, 18, 31, 0.10),
+    0 1px 3px rgba(15, 18, 31, 0.07);
+}
+
+.review-event-card--event .review-event-card-header {
+  min-height: 70px;
+  padding: 14px 18px;
+}
+
+.review-event-card--event .review-event-information {
+  margin: 14px 14px 0;
+}
+
+.review-event-card--event .review-record-section > h3 {
+  padding: 9px 12px;
+  font-size: 16px;
+}
+
+.review-event-card--event .review-record-data {
+  padding: 10px 12px;
+  gap: 11px 16px;
+}
+
+.review-event-card--event .review-language-grid {
+  padding: 14px;
+  gap: 12px;
+}
+
+.review-event-card--event .review-language-heading {
+  min-height: 42px;
+  padding: 8px 12px;
+}
+
+.review-event-card--event .review-language-body {
+  padding: 12px;
+}
+
+.review-event-card--event .review-event-description {
+  min-height: 48px;
+}
+
+.review-event-card--event .review-decision {
+  padding: 14px;
+}
+
+.review-event-card--event .review-decision-copy {
+  margin-bottom: 9px;
+}
+
+#reviewEventsPanel .review-queue {
+  padding: 18px 20px 22px;
+}
+
+.review-event-submission-details {
+  margin: 0 14px 14px;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 2px;
+  background: var(--branch-grey-100);
+}
+
+.review-event-submission-details > summary {
+  padding: 10px 12px;
+  color: var(--navy-900);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.review-event-submission-details[open] > summary {
+  border-bottom: 1px solid var(--branch-grey-200);
+}
+
+.review-event-submission-details .review-submission-record {
+  padding: 12px;
+  gap: 12px;
+}
+
 .review-event-card-header {
   min-height: 82px;
   padding: 17px 20px;
@@ -9627,6 +9706,16 @@ a.my-event-card-row:focus-visible {
   line-height: 1.45;
 }
 
+.review-decision-prompt {
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  border-left: 3px solid var(--gold-600);
+  background: #fff8e7;
+  color: var(--navy-900);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .review-rejection-field {
   display: flex;
   flex-direction: column;
@@ -9727,6 +9816,24 @@ a.my-event-card-row:focus-visible {
 .review-actions button:disabled {
   cursor: progress;
   opacity: 0.6;
+}
+
+.review-cancel-action {
+  height: 38px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.review-cancel-action:hover,
+.review-cancel-action:focus-visible {
+  color: var(--navy-900);
 }
 
 .event-section-intro {
@@ -14950,6 +15057,28 @@ html[data-theme="dark"] .review-decision {
 html[data-theme="dark"] .review-decision-copy p,
 html[data-theme="dark"] .retirement-review-message-hint,
 html[data-theme="dark"] .review-language-body .is-missing {
+  color: var(--dark-text-muted);
+}
+
+html[data-theme="dark"] .review-event-submission-details {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-3);
+}
+
+html[data-theme="dark"] .review-event-submission-details > summary {
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .review-event-submission-details[open] > summary {
+  border-bottom-color: var(--dark-border);
+}
+
+html[data-theme="dark"] .review-decision-prompt {
+  background: #3b3118;
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] .review-cancel-action {
   color: var(--dark-text-muted);
 }
 

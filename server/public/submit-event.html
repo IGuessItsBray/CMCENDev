@@ -18,23 +18,22 @@
       <section class="event-submit-shell" aria-labelledby="submitEventTitle">
         <header class="event-submit-heading">
           <div class="event-submit-heading-copy">
-            <p class="event-submit-eyebrow" data-i18n="event_submission_eyebrow">
-              Event submission
+            <p class="event-submit-eyebrow" id="eventPageEyebrow" data-i18n="my_events_eyebrow">
+              Event management
             </p>
 
-            <h1 id="submitEventTitle" data-i18n="submit_event_title">
-              Submit an Event
+            <h1 id="submitEventTitle" data-i18n="my_events_heading">
+              My Events
             </h1>
 
-            <p id="submitEventIntro" data-i18n="submit_event_intro">
-              Propose an event for publication in the C&amp;E Calendar.
+            <p id="submitEventIntro" data-i18n="my_events_intro">
+              View and update events you have previously submitted.
             </p>
           </div>
 
-          <button class="event-cancel-editing" id="cancelEventEditing" type="button" hidden
-            data-i18n="cancel_event_editing">
-            Cancel Editing
-          </button>
+          <div class="event-submit-heading-actions">
+            <span class="my-events-count" id="myEventsCount" hidden></span>
+          </div>
         </header>
 
       <div class="event-management-tabs" role="tablist" aria-label="Event management">
@@ -54,20 +53,9 @@
       <div class="event-management-panel is-active" id="myEventsPanel" role="tabpanel" aria-labelledby="myEventsTab"
         data-event-panel="events">
         <section class="my-events-section" id="myEventsSection" aria-labelledby="myEventsHeading" hidden>
-          <header class="my-events-heading">
-            <div>
-              <p class="event-section-eyebrow" data-i18n="my_events_eyebrow">
-                Event management
-              </p>
-              <h2 id="myEventsHeading" data-i18n="my_events_heading">
-                My Events
-              </h2>
-            </div>
-            <span class="my-events-count" id="myEventsCount" hidden></span>
-          </header>
-          <p class="my-events-intro" data-i18n="my_events_intro">
-            View and update events you have previously submitted.
-          </p>
+          <h2 class="visually-hidden" id="myEventsHeading" data-i18n="my_events_heading">
+            My Events
+          </h2>
           <div class="my-events-list" id="myEventsList"></div>
         </section>
       </div>
@@ -83,6 +71,34 @@
           </div>
 
           <form class="event-submit-form" id="eventForm" hidden>
+            <section class="event-edit-context" id="eventEditContext" aria-labelledby="eventEditContextTitle" hidden>
+              <div>
+                <p class="event-edit-context-eyebrow" data-i18n="event_edit_context_eyebrow">
+                  Edit mode
+                </p>
+                <h2 id="eventEditContextTitle" data-i18n="event_edit_context_heading">
+                  You are editing an existing event
+                </h2>
+                <p class="event-edit-context-intro" data-i18n="event_edit_context_intro">
+                  Update the details below, then save your changes for review.
+                </p>
+              </div>
+
+              <div class="event-edit-context-actions">
+                <button class="event-cancel-editing" id="cancelEventEditing" type="button" hidden
+                  data-i18n="cancel_event_editing">
+                  Cancel Editing
+                </button>
+              </div>
+
+              <div class="event-edit-rejection" id="eventEditRejection" hidden>
+                <strong data-i18n="event_edit_rejection_heading">
+                  Rejection reason
+                </strong>
+                <p id="eventEditRejectionReason"></p>
+              </div>
+            </section>
+
             <div class="event-language-grid">
               <section class="event-language-panel" lang="en" aria-labelledby="englishEventDetails">
                 <header class="event-language-heading">

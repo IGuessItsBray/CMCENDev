@@ -79,6 +79,14 @@ function setPagesState(nextState) {
   renderPagesAdmin();
 }
 
+function showPagesActionToast(message, color = "info") {
+  CMCENUtils.showToast(message, {
+    color,
+    position: "bottom-right",
+    animation: "slide"
+  });
+}
+
 function setAutoSaveState(status, message = "") {
   pagesState = {
     ...pagesState,
@@ -1857,18 +1865,23 @@ async function loadPageBuilderMedia({ reset = false } = {}) {
 
 async function createPage() {
   const title = "New page";
-  const data = await pageApi("/api/admin/pages", {
-    method: "POST",
-    body: {
-      title: { en: title, fr: "" },
-      slug: `new-page-${Date.now()}`,
-      blocks: [getNewBlock("text")]
-    },
-    errorMessage: "Could not create page"
-  });
+  try {
+    const data = await pageApi("/api/admin/pages", {
+      method: "POST",
+      body: {
+        title: { en: title, fr: "" },
+        slug: `new-page-${Date.now()}`,
+        blocks: [getNewBlock("text")]
+      },
+      errorMessage: "Could not create page"
+    });
 
-  await loadPages();
-  await loadPageDetail(data.page._id);
+    await loadPages();
+    await loadPageDetail(data.page._id);
+    showPagesActionToast(data.message || "Page created", "success");
+  } catch (error) {
+    showPagesActionToast(error.message || "Could not create page", "error");
+  }
 }
 
 function getAutoSaveLabel() {
@@ -1924,7 +1937,8 @@ async function saveSelectedPage({ auto = false } = {}) {
       return;
     }
 
-    throw error;
+    showPagesActionToast(error.message || "Could not save page", "error");
+    return;
   }
 
   if (requestId !== autoSaveRequestId || String(pagesState.selectedPageId) !== String(pageId)) {
@@ -1944,11 +1958,12 @@ async function saveSelectedPage({ auto = false } = {}) {
 
   setPagesState({
     selectedPage: data.page,
-    message: data.message || "Page saved",
+    message: "",
     autoSaveStatus: "saved",
     autoSaveMessage: "Saved",
     lastSavedAt: data.page.updatedAt || new Date().toISOString()
   });
+  showPagesActionToast(data.message || "Page saved", "success");
 
   const listData = await pageApi("/api/admin/pages", {
     errorMessage: "Could not refresh page list"
@@ -1970,17 +1985,22 @@ async function updatePageStatus(status) {
   if (!pagesState.selectedPage?._id) return;
   cancelAutoSave();
 
-  const data = await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}/status`, {
-    method: "PATCH",
-    body: { status },
-    errorMessage: "Could not update page status"
-  });
+  try {
+    const data = await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}/status`, {
+      method: "PATCH",
+      body: { status },
+      errorMessage: "Could not update page status"
+    });
 
-  setPagesState({
-    selectedPage: data.page,
-    message: data.message || "Page status updated"
-  });
-  await loadPages();
+    setPagesState({
+      selectedPage: data.page,
+      message: ""
+    });
+    await loadPages();
+    showPagesActionToast(data.message || "Page status updated", "success");
+  } catch (error) {
+    showPagesActionToast(error.message || "Could not update page status", "error");
+  }
 }
 
 async function deleteSelectedPage() {
@@ -1992,17 +2012,22 @@ async function deleteSelectedPage() {
   })) return;
   cancelAutoSave();
 
-  await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}`, {
-    method: "DELETE",
-    errorMessage: "Could not delete page"
-  });
+  try {
+    await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}`, {
+      method: "DELETE",
+      errorMessage: "Could not delete page"
+    });
 
-  setPagesState({
-    selectedPageId: "",
-    selectedPage: null,
-    message: "Page deleted"
-  });
-  await loadPages();
+    setPagesState({
+      selectedPageId: "",
+      selectedPage: null,
+      message: ""
+    });
+    await loadPages();
+    showPagesActionToast("Page deleted", "success");
+  } catch (error) {
+    showPagesActionToast(error.message || "Could not delete page", "error");
+  }
 }
 
 function addBlock(type) {
@@ -2171,22 +2196,32 @@ function uploadImageToCdnThroughServer(file, progressKey) {
 }
 
 async function createNavigationItem(payload) {
-  await pageApi("/api/admin/navigation-items", {
-    method: "POST",
-    body: payload,
-    errorMessage: "Could not add navigation item"
-  });
-  await loadPages();
-  await window.reloadSiteNavigation?.();
+  try {
+    await pageApi("/api/admin/navigation-items", {
+      method: "POST",
+      body: payload,
+      errorMessage: "Could not add navigation item"
+    });
+    await loadPages();
+    await window.reloadSiteNavigation?.();
+    showPagesActionToast("Navigation item added", "success");
+  } catch (error) {
+    showPagesActionToast(error.message || "Could not add navigation item", "error");
+  }
 }
 
 async function deleteNavigationItem(itemId) {
-  await pageApi(`/api/admin/navigation-items/${encodeURIComponent(itemId)}`, {
-    method: "DELETE",
-    errorMessage: "Could not remove navigation item"
-  });
-  await loadPages();
-  await window.reloadSiteNavigation?.();
+  try {
+    await pageApi(`/api/admin/navigation-items/${encodeURIComponent(itemId)}`, {
+      method: "DELETE",
+      errorMessage: "Could not remove navigation item"
+    });
+    await loadPages();
+    await window.reloadSiteNavigation?.();
+    showPagesActionToast("Navigation item removed", "success");
+  } catch (error) {
+    showPagesActionToast(error.message || "Could not remove navigation item", "error");
+  }
 }
 
 document.addEventListener("languagechange", renderPagesAdmin);

@@ -45,6 +45,14 @@ function setTranslationsMessage(message, state = "", messageKey = "") {
   translationsList.hidden = true;
 }
 
+function showTranslationToast(message, color = "info") {
+  CMCENUtils.showToast(message, {
+    color,
+    position: "bottom-right",
+    animation: "slide"
+  });
+}
+
 function resetTranslationSaveButton(saveButton) {
   window.clearTimeout(saveButton.translationSaveResetTimeout);
   saveButton.translationSaveResetTimeout = 0;
@@ -289,14 +297,17 @@ async function saveTranslationRow(article, key) {
 
     setTranslationRowStatus(status, row ? row.missing : []);
     setTranslationSaveButtonSaved(saveButton);
+    showTranslationToast(translate("translations_saved"), "success");
     didSave = true;
   } catch (error) {
     console.error("Translation save failed:", error);
-    status.classList.add("is-error");
-    status.textContent =
+    setTranslationRowStatus(status, translationRows.find(item => item.key === key)?.missing || []);
+    showTranslationToast(
       error.status === 403
         ? translate("translations_access_denied")
-        : error.message || translate("translations_save_error");
+        : error.message || translate("translations_save_error"),
+      "error"
+    );
   } finally {
     if (!didSave) {
       setTranslationSaveButtonLoading(saveButton, false);

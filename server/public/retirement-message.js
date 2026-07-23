@@ -386,19 +386,18 @@ async function deleteRetirementMessage() {
             );
         }
 
-        showRetirementDetailMessage(
+        CMCENUtils.showToast(
             "Retirement message deleted and recorded in the audit log.",
-            "success"
+            { color: "success", position: "bottom-right", animation: "slide" }
         );
 
         setTimeout(() => {
             window.location.href = "/retirements";
         }, 900);
     } catch (error) {
-        showRetirementCommentMessage(
-            error.message ||
-            "Could not delete retirement message",
-            "error"
+        CMCENUtils.showToast(
+            error.message || "Could not delete retirement message",
+            { color: "error", position: "bottom-right", animation: "slide" }
         );
 
         if (button) {
@@ -487,16 +486,16 @@ async function deleteRetirementComment(comment) {
             );
 
         renderComments(loadedComments);
-        showRetirementCommentMessage(
+        CMCENUtils.showToast(
             "Comment deleted and recorded in the audit log.",
-            "success"
+            { color: "success", position: "bottom-right", animation: "slide" }
         );
     } catch (error) {
-        showRetirementCommentMessage(
-            error.message ||
-            "Could not delete comment",
-            "error"
-        );
+        CMCENUtils.showToast(error.message || "Could not delete comment", {
+            color: "error",
+            position: "bottom-right",
+            animation: "slide"
+        });
     }
 }
 
@@ -760,21 +759,20 @@ retirementCommentForm.addEventListener(
 
                 loadedComments.push(data.comment);
 
-                showRetirementCommentMessageKey(
-                    "retirement_comment_published",
-                    "success"
+                CMCENUtils.showToast(
+                    translate("retirement_comment_published"),
+                    { color: "success", position: "bottom-right", animation: "slide" }
                 );
             } else {
-                showRetirementCommentMessageKey(
-                    "retirement_comment_submitted",
-                    "success"
+                CMCENUtils.showToast(
+                    translate("retirement_comment_submitted"),
+                    { color: "success", position: "bottom-right", animation: "slide" }
                 );
             }
         } catch (error) {
-            showRetirementCommentMessage(
-                error.message ||
-                translate("retirement_comment_submit_error"),
-                "error"
+            CMCENUtils.showToast(
+                error.message || translate("retirement_comment_submit_error"),
+                { color: "error", position: "bottom-right", animation: "slide" }
             );
         } finally {
             retirementCommentSubmit.disabled = false;

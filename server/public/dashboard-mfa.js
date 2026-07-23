@@ -6,6 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
         ? window.translate(key, replacements)
         : key;
 
+    const showMfaToast = (message, color = 'info') => {
+      CMCENUtils.showToast(message, {
+        color,
+        position: 'bottom-right',
+        animation: 'slide'
+      });
+    };
+
     let currentTotpStatus = null;
     let currentPasskeys = null;
     let currentPasskeyError = '';
@@ -484,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTotpStatus(currentTotpStatus);
         await loadTotpStatus();
       } catch (e) {
-        await CMCENModal.alert(translateMfa('mfa_error', { message: e.message }));
+        showMfaToast(translateMfa('mfa_error', { message: e.message }), 'error');
       }
       finally { totpSetupBtn.disabled = false; }
     });
@@ -501,12 +509,10 @@ document.addEventListener('DOMContentLoaded', () => {
           errorMessage: 'Could not verify TOTP token'
         });
         isTotpSetupInProgress = false;
-        await CMCENModal.alert(translateMfa('mfa_totp_verified'), {
-          title: translateMfa('mfa_totp_title')
-        });
+        showMfaToast(translateMfa('mfa_totp_verified'), 'success');
         await loadTotpStatus();
       } catch (e) {
-        await CMCENModal.alert(translateMfa('mfa_verify_failed', { message: e.message }));
+        showMfaToast(translateMfa('mfa_verify_failed', { message: e.message }), 'error');
       }
       finally { totpVerifyBtn.disabled = false; }
     });
@@ -523,9 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
           await api('/api/mfa/webauthn/register/options', { method: 'POST', json: true })
         );
         if (!options || !options.challenge) {
-          await CMCENModal.alert(translateMfa('mfa_registration_options_missing'), {
-            title: translateMfa('mfa_passkey_title')
-          });
+          showMfaToast(translateMfa('mfa_registration_options_missing'), 'error');
           return;
         }
 
@@ -541,12 +545,10 @@ document.addEventListener('DOMContentLoaded', () => {
           errorMessage: 'Could not verify passkey registration'
         });
 
-        await CMCENModal.alert(translateMfa('mfa_passkey_registered'), {
-          title: translateMfa('mfa_passkey_title')
-        });
+        showMfaToast(translateMfa('mfa_passkey_registered'), 'success');
         await loadPasskeys();
       } catch (e) {
-        await CMCENModal.alert(translateMfa('mfa_error', { message: e.message }));
+        showMfaToast(translateMfa('mfa_error', { message: e.message }), 'error');
       }
       finally { waRegisterBtn.disabled = false; }
     });
@@ -563,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await disableTotp();
           }
         } catch (error) {
-          await CMCENModal.alert(translateMfa('mfa_error', { message: error.message }));
+          showMfaToast(translateMfa('mfa_error', { message: error.message }), 'error');
         } finally {
           button.disabled = false;
         }
@@ -586,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await deletePasskey(button.dataset.credentialId, button.dataset.currentName);
           }
         } catch (error) {
-          await CMCENModal.alert(translateMfa('mfa_error', { message: error.message }));
+          showMfaToast(translateMfa('mfa_error', { message: error.message }), 'error');
         } finally {
           button.disabled = false;
         }

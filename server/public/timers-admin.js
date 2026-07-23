@@ -35,6 +35,14 @@ function setTimersState(nextState) {
   renderTimersAdmin();
 }
 
+function showTimerToast(message, color = "info") {
+  CMCENUtils.showToast(message, {
+    color,
+    position: "bottom-right",
+    animation: "slide"
+  });
+}
+
 function timersApi(path, options = {}) {
   return CMCENUtils.apiJson(path, {
     ...options,
@@ -409,14 +417,14 @@ async function createTimer() {
     reloadVisibleBanners();
     setTimersState({
       selectedTimerId: data.timer?._id || "",
-      isSaving: false,
-      message: t("timers_created")
+      isSaving: false
     });
+    showTimerToast(t("timers_created"), "success");
   } catch (error) {
     setTimersState({
-      isSaving: false,
-      message: error.message || t("timers_create_error")
+      isSaving: false
     });
+    showTimerToast(error.message || t("timers_create_error"), "error");
   }
 }
 
@@ -436,15 +444,15 @@ async function saveTimer(timer, form) {
     setTimersState({
       timers: nextTimers,
       selectedTimerId: data.timer?._id || timer._id,
-      isSaving: false,
-      message: t("timers_saved")
+      isSaving: false
     });
+    showTimerToast(t("timers_saved"), "success");
     reloadVisibleBanners();
   } catch (error) {
     setTimersState({
-      isSaving: false,
-      message: error.message || t("timers_save_error")
+      isSaving: false
     });
+    showTimerToast(error.message || t("timers_save_error"), "error");
   }
 }
 
@@ -471,15 +479,15 @@ async function deleteTimer(timer) {
     setTimersState({
       timers: nextTimers,
       selectedTimerId: nextTimers[0]?._id || "",
-      isSaving: false,
-      message: t("timers_deleted")
+      isSaving: false
     });
+    showTimerToast(t("timers_deleted"), "success");
     reloadVisibleBanners();
   } catch (error) {
     setTimersState({
-      isSaving: false,
-      message: error.message || t("timers_delete_error")
+      isSaving: false
     });
+    showTimerToast(error.message || t("timers_delete_error"), "error");
   }
 }
 

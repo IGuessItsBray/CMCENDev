@@ -1,6 +1,5 @@
 const lastPostSubmitForm = document.getElementById('lastPostSubmitForm');
 const lastPostPageMessage = document.getElementById('lastPostPageMessage');
-const lastPostFormMessage = document.getElementById('lastPostFormMessage');
 const lastPostSubmitButton = document.getElementById('lastPostSubmitButton');
 const lastPostSubmitButtonLabel = lastPostSubmitButton.querySelector('span');
 const lastPostImage = document.getElementById('lastPostImage');
@@ -17,15 +16,15 @@ function showPageMessage(message) {
 }
 
 function showFormMessage(message, type = 'error') {
-  lastPostFormMessage.textContent = message;
-  lastPostFormMessage.className = `event-form-message is-${type}`;
-  lastPostFormMessage.hidden = false;
+  CMCENUtils.showToast(message, {
+    color: type === 'success' ? 'success' : 'error',
+    position: 'bottom-right',
+    animation: 'slide'
+  });
 }
 
 function clearFormMessage() {
-  lastPostFormMessage.textContent = '';
-  lastPostFormMessage.className = 'event-form-message';
-  lastPostFormMessage.hidden = true;
+  // Form results are presented as transient toasts.
 }
 
 function setSubmitting(isSubmitting) {

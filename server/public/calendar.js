@@ -83,23 +83,6 @@ function getEventTypeLabel(value) {
         : '';
 }
 
-function createEventTypeBadge(event) {
-    const eventType = getEventTypeLabel(event.eventType);
-
-    if (!eventType) {
-        return null;
-    }
-
-    const badge = document.createElement('span');
-
-    badge.className = 'calendar-event-type-badge';
-    badge.setAttribute('role', 'img');
-    badge.setAttribute('aria-label', eventType);
-    badge.title = eventType;
-
-    return badge;
-}
-
 function getDateParts(event) {
     const date = new Date(event.startDate);
 
@@ -549,7 +532,6 @@ function createCalendarEventChip(event, date, language, locale) {
 
     if (event.eventType) {
         link.dataset.eventType = event.eventType;
-        link.classList.add('has-event-type');
     }
 
     const timeElement = document.createElement('span');
@@ -562,15 +544,7 @@ function createCalendarEventChip(event, date, language, locale) {
     titleElement.className = 'calendar-event-chip-title';
     titleElement.textContent = title;
 
-    const eventTypeBadge = createEventTypeBadge(event);
-
-    link.append(timeElement);
-
-    if (eventTypeBadge) {
-        link.appendChild(eventTypeBadge);
-    }
-
-    link.appendChild(titleElement);
+    link.append(timeElement, titleElement);
 
     return link;
 }
@@ -732,13 +706,8 @@ function createMultiDayEventBar(segment, language, locale) {
         link.classList.add('is-continuing-into-next-week');
     }
 
-    if (!timeLabel) {
-        link.classList.add('is-without-time');
-    }
-
     if (event.eventType) {
         link.dataset.eventType = event.eventType;
-        link.classList.add('has-event-type');
     }
 
     if (timeLabel) {
@@ -754,12 +723,6 @@ function createMultiDayEventBar(segment, language, locale) {
 
     titleElement.className = 'calendar-multiday-event-title';
     titleElement.textContent = title;
-
-    const eventTypeBadge = createEventTypeBadge(event);
-
-    if (eventTypeBadge) {
-        link.appendChild(eventTypeBadge);
-    }
 
     link.appendChild(titleElement);
     link.addEventListener('pointerenter', () => {

@@ -1765,38 +1765,6 @@ a.dropdown-toggle {
   grid-column: 1 / -1;
 }
 
-.calendar-event-type-badge {
-  width: 7px;
-  height: 7px;
-  padding: 0;
-  border-radius: 999px;
-  background: var(--calendar-event-type-color);
-  box-shadow: 0 0 0 2px var(--calendar-event-type-surface);
-}
-
-.calendar-multiday-event.has-event-type,
-.calendar-event-chip.has-event-type {
-  grid-template-columns: auto 7px minmax(0, 1fr);
-}
-
-.calendar-multiday-event.has-event-type .calendar-event-type-badge,
-.calendar-event-chip.has-event-type .calendar-event-type-badge {
-  grid-column: 2;
-  align-self: center;
-}
-
-.calendar-multiday-event.has-event-type .calendar-multiday-event-title {
-  grid-column: 3;
-}
-
-.calendar-multiday-event.is-without-time.has-event-type .calendar-event-type-badge {
-  grid-column: 1;
-}
-
-.calendar-multiday-event.is-without-time.has-event-type .calendar-multiday-event-title {
-  grid-column: 2 / -1;
-}
-
 .calendar-multiday-event.is-continuing-from-previous-week {
   padding-left: 25px;
   border-left: 0;
@@ -1884,10 +1852,6 @@ a.dropdown-toggle {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.calendar-event-chip.has-event-type .calendar-event-chip-title {
-  grid-column: 3;
 }
 
 .calendar-more-events-button {
@@ -14332,11 +14296,6 @@ html[data-theme="dark"] .calendar-multiday-event.is-related-highlighted {
 html[data-theme="dark"] .calendar-event-chip-time,
 html[data-theme="dark"] .calendar-multiday-event-time {
   color: var(--dark-text-soft);
-}
-
-html[data-theme="dark"] .calendar-event-type-badge {
-  background: var(--calendar-event-type-color);
-  box-shadow: 0 0 0 2px var(--calendar-event-type-surface);
 }
 
 html[data-theme="dark"] .calendar-event {

@@ -6,7 +6,9 @@
 
   --branch-grey-800: #5f6772;
   --branch-grey-700: #757d89;
+  --branch-grey-600: #858d97;
   --branch-grey-500: #969da6;
+  --branch-grey-300: #c4cad1;
   --branch-grey-200: #d9dde2;
   --branch-grey-100: #eef0f2;
 
@@ -22,6 +24,39 @@
   --success-border: #4f7358;
   --border-light: rgba(255, 255, 255, 0.16);
   --shadow: rgba(15, 18, 31, 0.22);
+  --body-text: var(--ink);
+  --heading-color: var(--navy-900);
+  --muted-text: var(--text-muted);
+  --muted-text-color: var(--text-muted);
+  --surface-color: var(--white);
+  --border-color: var(--branch-grey-200);
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-heading: Georgia, "Times New Roman", serif;
+  --control-radius: 7px;
+  --control-height: 42px;
+  --control-border: var(--branch-grey-300);
+  --control-focus-ring: rgba(213, 155, 39, 0.28);
+  --button-primary-bg: var(--navy-900);
+  --button-primary-border: var(--navy-900);
+  --button-primary-text: var(--white);
+  --button-primary-hover-bg: var(--navy-800);
+  --button-primary-hover-text: var(--gold-200);
+  --button-secondary-bg: var(--white);
+  --button-secondary-border: var(--branch-grey-300);
+  --button-secondary-text: var(--navy-900);
+  --button-secondary-hover-bg: var(--branch-grey-100);
+  --button-secondary-hover-text: var(--navy-950);
+  --button-danger-bg: #b42318;
+  --button-danger-border: #b42318;
+  --button-danger-text: var(--white);
+  --button-danger-hover-bg: #8c312d;
+  --tab-bg: rgba(255, 255, 255, 0.68);
+  --tab-border: var(--branch-grey-200);
+  --tab-text: var(--branch-grey-800);
+  --tab-hover-bg: var(--white);
+  --tab-hover-text: var(--navy-900);
+  --tab-active-bg: var(--navy-900);
+  --tab-active-text: var(--white);
 }
 
 * {
@@ -34,6 +69,20 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background: var(--branch-grey-800);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 body.mobile-menu-lock {
@@ -181,7 +230,7 @@ svg {
 .footer-identity strong {
   display: block;
   margin-bottom: 5px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: normal;
   letter-spacing: 0.035em;
@@ -395,7 +444,7 @@ svg {
 }
 
 .identity-acronym {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: 25px;
   line-height: 1;
   letter-spacing: 0.035em;
@@ -541,7 +590,7 @@ svg {
 .cmcen-modal h2 {
   margin: 0;
   color: var(--white);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: 28px;
   font-weight: normal;
   line-height: 1.14;
@@ -1132,10 +1181,7 @@ a.dropdown-toggle {
 .about-family-hero h1 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: clamp(40px, 5.8vw, 64px);
   font-weight: normal;
   line-height: 1;
@@ -1192,10 +1238,7 @@ a.dropdown-toggle {
 .about-family-section h2 {
   margin: 0 0 12px;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: clamp(24px, 3vw, 32px);
   font-weight: normal;
   line-height: 1.12;
@@ -1298,10 +1341,7 @@ a.dropdown-toggle {
 
 .calendar-heading h1 {
   margin: 0;
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: clamp(40px, 6vw, 66px);
   font-weight: normal;
   line-height: 1;
@@ -1936,10 +1976,7 @@ a.dropdown-toggle {
   padding: 0 0 10px;
   border-bottom: 3px solid rgba(234, 211, 163, 0.74);
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 28px;
   font-weight: normal;
   line-height: 1;
@@ -2017,10 +2054,7 @@ a.dropdown-toggle {
 
 .calendar-event-day-number {
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: clamp(42px, 6vw, 58px);
   line-height: 1;
   text-shadow: 0 3px 10px rgba(15, 18, 31, 0.22);
@@ -2065,10 +2099,7 @@ a.dropdown-toggle {
 .calendar-event-title {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: clamp(25px, 3vw, 35px);
   font-weight: normal;
   line-height: 1.05;
@@ -2190,10 +2221,7 @@ a.dropdown-toggle {
 .event-detail-day {
   margin: 3px 0 5px;
   color: var(--gold-700);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 64px;
   line-height: 0.95;
 }
@@ -2219,10 +2247,7 @@ a.dropdown-toggle {
 .event-detail-heading h1 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: clamp(30px, 4.7vw, 48px);
   font-weight: normal;
   line-height: 1.15;
@@ -2322,10 +2347,7 @@ a.dropdown-toggle {
 .event-detail-brief h2 {
   margin: 0 0 14px;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 24px;
   font-weight: normal;
   line-height: 1.2;
@@ -2446,10 +2468,7 @@ a.dropdown-toggle {
 
 .search-heading h1 {
   margin: 0;
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: clamp(29px, 4vw, 38px);
   font-weight: normal;
   line-height: 1.1;
@@ -2559,7 +2578,7 @@ a.dropdown-toggle {
 .sitemap-heading h1 {
   margin: 0;
   color: var(--white);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: clamp(29px, 4vw, 40px);
   font-weight: normal;
   line-height: 1.1;
@@ -2686,10 +2705,7 @@ a.dropdown-toggle {
 .search-result-title {
   margin: 0 0 8px;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 22px;
   font-weight: normal;
   line-height: 1.2;
@@ -2726,12 +2742,7 @@ a.dropdown-toggle {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Arial,
-    sans-serif;
+  font-family: var(--font-body);
 }
 
 /* ─────────────────────────────────────────────
@@ -2743,12 +2754,7 @@ a.dropdown-toggle {
   place-items: center;
   min-height: 510px;
   padding: 48px 24px;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Arial,
-    sans-serif;
+  font-family: var(--font-body);
 }
 
 .error-page {
@@ -2769,7 +2775,7 @@ a.dropdown-toggle {
 .error-page-code {
   margin: 0 0 10px;
   color: var(--gold-200);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: 78px;
   line-height: 0.9;
 }
@@ -2785,7 +2791,7 @@ a.dropdown-toggle {
 
 .error-page h1 {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: 34px;
   font-weight: normal;
   line-height: 1.16;
@@ -2929,7 +2935,7 @@ a.dropdown-toggle {
   max-width: 470px;
   margin: 0;
   color: var(--white);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: clamp(34px, 4vw, 46px);
   font-weight: normal;
   line-height: 1.12;
@@ -2962,10 +2968,7 @@ a.dropdown-toggle {
 .login-panel-heading h2 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 31px;
   font-weight: normal;
   line-height: 1.15;
@@ -3214,7 +3217,7 @@ a.dropdown-toggle {
 .login-mfa-heading h2 {
   margin: 0;
   color: var(--navy-900);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: 28px;
   font-weight: normal;
   line-height: 1.16;
@@ -3428,10 +3431,7 @@ a.dropdown-toggle {
 .register-heading h1 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 31px;
   font-weight: normal;
   line-height: 1.15;
@@ -3692,10 +3692,7 @@ a.dropdown-toggle {
 .register-mfa-heading h2 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 27px;
   font-weight: normal;
   line-height: 1.15;
@@ -3749,10 +3746,7 @@ a.dropdown-toggle {
 
 .register-mfa-option-label {
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: normal;
   line-height: 1.2;
@@ -3842,10 +3836,7 @@ a.dropdown-toggle {
 .dashboard-heading h1 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 31px;
   font-weight: normal;
   line-height: 1.15;
@@ -3962,10 +3953,7 @@ a.dropdown-toggle {
 .dashboard-section-heading h2 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: normal;
   line-height: 1.2;
@@ -7182,7 +7170,7 @@ a.dropdown-toggle {
 .dashboard-review-work h3 {
   margin: 0;
   color: var(--navy-900);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: 17px;
   font-weight: normal;
   line-height: 1.2;
@@ -7224,7 +7212,7 @@ a.dropdown-toggle {
 
 .dashboard-review-queue-link strong {
   color: var(--gold-700);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: 23px;
   font-weight: normal;
   letter-spacing: 0.02em;
@@ -7307,10 +7295,7 @@ a.dropdown-toggle {
 
 .dashboard-action-copy strong {
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 16px;
   font-weight: normal;
   line-height: 1.2;
@@ -7332,7 +7317,7 @@ a.dropdown-toggle {
   border-radius: 999px;
   background: #a63c35;
   color: var(--white);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 900;
   line-height: 1;
@@ -7383,10 +7368,7 @@ a.dropdown-toggle {
 .notifications-heading h1 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 31px;
   font-weight: normal;
   line-height: 1.15;
@@ -7469,10 +7451,7 @@ a.dropdown-toggle {
 .notification-card h2 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 22px;
   font-weight: normal;
   line-height: 1.25;
@@ -7695,10 +7674,7 @@ a.dropdown-toggle {
 .mfa-panel h3 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: 700;
   line-height: 1.2;
@@ -8091,10 +8067,7 @@ a.dropdown-toggle {
 .event-submit-heading h1 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 31px;
   font-weight: normal;
   line-height: 1.15;
@@ -8178,10 +8151,7 @@ a.dropdown-toggle {
 .event-language-heading h2 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: normal;
   line-height: 1.2;
@@ -8370,10 +8340,7 @@ a.dropdown-toggle {
 .event-section-heading h2 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 22px;
   font-weight: normal;
   line-height: 1.2;
@@ -8477,10 +8444,7 @@ a.dropdown-toggle {
       var(--branch-grey-100),
       #e4e7ea);
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 18px;
   font-weight: normal;
 }
@@ -8637,10 +8601,7 @@ a.dropdown-toggle {
 .my-events-heading h2 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 22px;
   font-weight: normal;
   line-height: 1.2;
@@ -8716,10 +8677,7 @@ a.dropdown-toggle {
 .my-event-card-header h3 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 18px;
   font-weight: normal;
   line-height: 1.3;
@@ -9161,10 +9119,7 @@ a.dropdown-toggle {
 .event-review-heading h1 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 31px;
   font-weight: normal;
   line-height: 1.15;
@@ -9275,10 +9230,7 @@ a.dropdown-toggle {
 .review-event-card-heading h2 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 22px;
   font-weight: normal;
   line-height: 1.2;
@@ -9378,10 +9330,7 @@ a.dropdown-toggle {
 .review-language-heading h3 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 19px;
   font-weight: normal;
 }
@@ -9414,10 +9363,7 @@ a.dropdown-toggle {
 
 .review-event-title-value {
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 18px;
 }
 
@@ -9552,10 +9498,7 @@ a.dropdown-toggle {
 .review-decision-copy h3 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 19px;
   font-weight: normal;
 }
@@ -9716,10 +9659,7 @@ a.dropdown-toggle {
 .event-authorization-heading h2 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 21px;
   font-weight: normal;
   line-height: 1.2;
@@ -10183,10 +10123,7 @@ a.dropdown-toggle {
   max-width: 720px;
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: clamp(43px, 6vw, 76px);
   font-weight: normal;
   line-height: 0.98;
@@ -10273,10 +10210,7 @@ a.dropdown-toggle {
 
 .home-hero-identity span {
   display: block;
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 28px;
   letter-spacing: 0.09em;
 }
@@ -10306,10 +10240,7 @@ a.dropdown-toggle {
 .home-feature-panel h2 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-weight: normal;
 }
 
@@ -10371,10 +10302,7 @@ a.dropdown-toggle {
 .home-family-card h3 {
   margin: 0;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 21px;
   font-weight: normal;
   line-height: 1.2;
@@ -10649,10 +10577,7 @@ a.dropdown-toggle {
 
 .home-retirement-initials {
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: normal;
 }
@@ -10665,10 +10590,7 @@ a.dropdown-toggle {
 
 .home-feed-content strong {
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 18px;
   font-weight: normal;
   line-height: 1.2;
@@ -10772,10 +10694,7 @@ a.dropdown-toggle {
   color: var(--ink);
   text-align: center;
   text-decoration: none;
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
@@ -10816,10 +10735,7 @@ a.dropdown-toggle {
 .home-family-card .home-family-number {
   margin: 0 0 18px;
   color: var(--gold-700);
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
+  font-family: var(--font-body);
   font-size: 10px;
   font-weight: 900;
   line-height: 1;
@@ -10834,20 +10750,14 @@ a.dropdown-toggle {
   max-width: 245px;
   margin: 16px auto 24px;
   color: var(--branch-grey-800);
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
 }
 
 .home-family-card .home-family-link {
   padding-top: 17px;
   border-top: 1px solid var(--branch-grey-200);
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
+  font-family: var(--font-body);
 }
 
 .event-edit-loading {
@@ -11038,10 +10948,7 @@ a.dropdown-toggle {
 .retirements-heading h1 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 32px;
   font-weight: normal;
   line-height: 1.15;
@@ -11135,10 +11042,7 @@ a.dropdown-toggle {
 .retirement-card-header h2 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 23px;
   font-weight: normal;
   line-height: 1.2;
@@ -11184,10 +11088,7 @@ a.dropdown-toggle {
   display: grid;
   place-items: center;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 42px;
   background:
     linear-gradient(135deg,
@@ -11308,10 +11209,7 @@ a.dropdown-toggle {
 .retirement-detail-heading h1 {
   margin: 0;
   color: var(--white);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 34px;
   font-weight: normal;
   line-height: 1.15;
@@ -11575,10 +11473,7 @@ a.dropdown-toggle {
 .retirement-detail-comments h2 {
   margin: 0 0 14px;
   color: var(--navy-900);
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
+  font-family: var(--font-heading);
   font-size: 24px;
   font-weight: normal;
   line-height: 1.2;
@@ -11642,7 +11537,7 @@ a.dropdown-toggle {
 .last-post-archive-heading h1,
 .last-post-masthead,
 .last-post-detail-paper h1 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-weight: normal;
 }
 
@@ -11755,7 +11650,7 @@ a.dropdown-toggle {
 .last-post-card h2 {
   margin: 0;
   color: var(--navy-950);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: 25px;
   font-weight: normal;
   line-height: 1.16;
@@ -11947,7 +11842,7 @@ a.dropdown-toggle {
 .last-post-detail-message p {
   margin: 0;
   color: #282b2e;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading);
   font-size: 17px;
   line-height: 1.82;
   white-space: pre-line;
@@ -13664,6 +13559,332 @@ html[data-theme="dark"] .last-post-submit-button {
 }
 
 /* ─────────────────────────────────────────────
+   Unified controls
+   ───────────────────────────────────────────── */
+
+:is(.login-submit,
+  .register-submit,
+  .event-submit-button,
+  .dashboard-profile-button,
+  .admin-work-zone-button,
+  .mfa-button,
+  .review-publish-button,
+  .review-reject-button,
+  .translation-save-button,
+  .notification-edit-link,
+  .notification-comment-form button,
+  .my-event-edit-link,
+  .search-page-form button,
+  .retirements-load-more button,
+  .retirement-comment-form button,
+  .last-post-submit-button,
+  .last-post-load-more button,
+  .cmcen-modal-button) {
+  min-height: var(--control-height);
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--button-secondary-border);
+  border-radius: var(--control-radius);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.1;
+  letter-spacing: 0.025em;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(15, 18, 31, 0.06);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+:is(.login-submit,
+  .register-submit,
+  .event-submit-button,
+  .admin-work-zone-button.is-primary,
+  .dashboard-profile-button.is-primary,
+  .mfa-button-primary,
+  .review-publish-button,
+  .translation-save-button,
+  .notification-edit-link,
+  .notification-comment-form button,
+  .my-event-edit-link,
+  .search-page-form button,
+  .retirement-comment-form button,
+  .last-post-submit-button,
+  .cmcen-modal-button-primary) {
+  border-color: var(--button-primary-border);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+}
+
+:is(.admin-work-zone-button.is-secondary,
+  .dashboard-profile-button.is-secondary,
+  .mfa-button:not(.mfa-button-primary),
+  .review-reject-button,
+  .cmcen-modal-button-secondary,
+  .retirements-load-more button,
+  .last-post-load-more button) {
+  border-color: var(--button-secondary-border);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+}
+
+:is(.admin-work-zone-button.is-danger,
+  .cmcen-modal-button-primary.is-danger) {
+  border-color: var(--button-danger-border);
+  background: var(--button-danger-bg);
+  color: var(--button-danger-text);
+}
+
+.mfa-link-button,
+.login-text-button {
+  border: 0;
+  background: transparent;
+  color: var(--gold-700);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 48%, transparent);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.mfa-link-button-danger {
+  color: var(--danger);
+}
+
+:is(.login-submit,
+  .register-submit,
+  .event-submit-button,
+  .admin-work-zone-button,
+  .dashboard-profile-button,
+  .mfa-button,
+  .review-publish-button,
+  .review-reject-button,
+  .translation-save-button,
+  .notification-edit-link,
+  .notification-comment-form button,
+  .my-event-edit-link,
+  .search-page-form button,
+  .retirements-load-more button,
+  .retirement-comment-form button,
+  .last-post-submit-button,
+  .last-post-load-more button,
+  .cmcen-modal-button):hover:not(:disabled),
+:is(.login-submit,
+  .register-submit,
+  .event-submit-button,
+  .admin-work-zone-button,
+  .dashboard-profile-button,
+  .mfa-button,
+  .review-publish-button,
+  .review-reject-button,
+  .translation-save-button,
+  .notification-edit-link,
+  .notification-comment-form button,
+  .my-event-edit-link,
+  .search-page-form button,
+  .retirements-load-more button,
+  .retirement-comment-form button,
+  .last-post-submit-button,
+  .last-post-load-more button,
+  .cmcen-modal-button):focus-visible:not(:disabled) {
+  border-color: var(--gold-600);
+  background: var(--button-secondary-hover-bg);
+  color: var(--button-secondary-hover-text);
+  box-shadow:
+    0 0 0 3px var(--control-focus-ring),
+    0 8px 18px rgba(15, 18, 31, 0.12);
+  outline: 0;
+  transform: translateY(-1px);
+}
+
+:is(.login-submit,
+  .register-submit,
+  .event-submit-button,
+  .admin-work-zone-button.is-primary,
+  .dashboard-profile-button.is-primary,
+  .mfa-button-primary,
+  .review-publish-button,
+  .translation-save-button,
+  .notification-edit-link,
+  .notification-comment-form button,
+  .my-event-edit-link,
+  .search-page-form button,
+  .retirement-comment-form button,
+  .last-post-submit-button,
+  .cmcen-modal-button-primary):hover:not(:disabled),
+:is(.login-submit,
+  .register-submit,
+  .event-submit-button,
+  .admin-work-zone-button.is-primary,
+  .dashboard-profile-button.is-primary,
+  .mfa-button-primary,
+  .review-publish-button,
+  .translation-save-button,
+  .notification-edit-link,
+  .notification-comment-form button,
+  .my-event-edit-link,
+  .search-page-form button,
+  .retirement-comment-form button,
+  .last-post-submit-button,
+  .cmcen-modal-button-primary):focus-visible:not(:disabled) {
+  border-color: var(--gold-600);
+  background: var(--button-primary-hover-bg);
+  color: var(--button-primary-hover-text);
+}
+
+:is(.admin-work-zone-button.is-danger,
+  .cmcen-modal-button-primary.is-danger):hover:not(:disabled),
+:is(.admin-work-zone-button.is-danger,
+  .cmcen-modal-button-primary.is-danger):focus-visible:not(:disabled) {
+  border-color: var(--button-danger-hover-bg);
+  background: var(--button-danger-hover-bg);
+  color: var(--button-danger-text);
+}
+
+:is(.login-submit,
+  .register-submit,
+  .event-submit-button,
+  .admin-work-zone-button,
+  .dashboard-profile-button,
+  .mfa-button,
+  .review-publish-button,
+  .review-reject-button,
+  .translation-save-button,
+  .notification-comment-form button,
+  .retirements-load-more button,
+  .retirement-comment-form button,
+  .last-post-submit-button,
+  .last-post-load-more button,
+  .cmcen-modal-button):disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  box-shadow: none;
+  transform: none;
+}
+
+:is(.admin-work-zone-tabs,
+  .event-management-tabs) {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 4px;
+  overflow-x: auto;
+  overflow-y: visible;
+  border: 1px solid var(--tab-border);
+  border-radius: var(--control-radius);
+  background: var(--tab-bg);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+  scrollbar-width: none;
+}
+
+:is(.admin-work-zone-tabs,
+  .event-management-tabs)::-webkit-scrollbar {
+  display: none;
+}
+
+:is(.admin-work-zone-tab,
+  .event-management-tab) {
+  position: relative;
+  min-height: 42px;
+  padding: 0 15px;
+  flex: 1 0 max-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: calc(var(--control-radius) - 2px);
+  background: transparent;
+  color: var(--tab-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease;
+}
+
+:is(.admin-work-zone-tab,
+  .event-management-tab):hover,
+:is(.admin-work-zone-tab,
+  .event-management-tab):focus-visible {
+  border-color: color-mix(in srgb, var(--gold-500) 54%, transparent);
+  background: var(--tab-hover-bg);
+  color: var(--tab-hover-text);
+  outline: 0;
+}
+
+:is(.admin-work-zone-tab,
+  .event-management-tab).is-active {
+  border-color: var(--tab-active-bg);
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+  box-shadow: 0 6px 14px rgba(15, 18, 31, 0.14);
+}
+
+:is(.admin-work-zone-tab,
+  .event-management-tab).is-active::after {
+  display: none;
+}
+
+html[data-theme="dark"] :is(.admin-work-zone-tabs,
+  .event-management-tabs) {
+  border-color: var(--tab-border);
+  background: var(--tab-bg);
+}
+
+html[data-theme="dark"] :is(.admin-work-zone-tab,
+  .event-management-tab) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--tab-text);
+}
+
+html[data-theme="dark"] :is(.admin-work-zone-tab,
+  .event-management-tab):hover,
+html[data-theme="dark"] :is(.admin-work-zone-tab,
+  .event-management-tab):focus-visible {
+  border-color: color-mix(in srgb, var(--gold-500) 54%, transparent);
+  background: var(--tab-hover-bg);
+  color: var(--tab-hover-text);
+}
+
+html[data-theme="dark"] :is(.admin-work-zone-tab,
+  .event-management-tab).is-active {
+  border-color: var(--tab-active-bg);
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+}
+
+html[data-theme="dark"] main :is(.admin-work-zone-tab,
+  .event-management-tab).is-active {
+  border-color: var(--tab-active-bg);
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+}
+
+/* ─────────────────────────────────────────────
    Dark theme
    ───────────────────────────────────────────── */
 
@@ -13683,6 +13904,34 @@ html[data-theme="dark"] {
   --dark-danger-text: #ffb4ad;
   --dark-success-bg: #10271a;
   --dark-success-text: #bde8ca;
+  --body-text: var(--dark-text);
+  --heading-color: var(--dark-text);
+  --muted-text: var(--dark-text-muted);
+  --muted-text-color: var(--dark-text-muted);
+  --surface-color: var(--dark-surface);
+  --border-color: var(--dark-border);
+  --control-border: var(--dark-border-strong);
+  --control-focus-ring: rgba(213, 155, 39, 0.24);
+  --button-primary-bg: var(--gold-500);
+  --button-primary-border: var(--gold-500);
+  --button-primary-text: #101522;
+  --button-primary-hover-bg: var(--gold-200);
+  --button-primary-hover-text: #101522;
+  --button-secondary-bg: transparent;
+  --button-secondary-border: var(--dark-border-strong);
+  --button-secondary-text: var(--dark-text);
+  --button-secondary-hover-bg: var(--dark-surface-3);
+  --button-secondary-hover-text: var(--dark-text);
+  --button-danger-bg: #b42318;
+  --button-danger-border: #ef4444;
+  --button-danger-hover-bg: #8f1d14;
+  --tab-bg: rgba(15, 22, 37, 0.72);
+  --tab-border: var(--dark-border);
+  --tab-text: var(--dark-text-muted);
+  --tab-hover-bg: var(--dark-surface-3);
+  --tab-hover-text: var(--dark-text);
+  --tab-active-bg: var(--gold-500);
+  --tab-active-text: #101522;
 }
 
 html[data-theme="dark"] body {
@@ -13987,9 +14236,9 @@ html[data-theme="dark"] main :is(.dashboard-profile-button.is-primary,
 
 html[data-theme="dark"] main :is(.dashboard-profile-button.is-secondary,
   .admin-work-zone-button.is-secondary,
-  .mfa-button,
+  .mfa-button:not(.mfa-button-primary),
   .mfa-link-button,
-  .event-management-tab,
+  .event-management-tab:not(.is-active),
   .review-reject-button) {
   background: transparent;
   color: var(--dark-text);
@@ -15840,7 +16089,7 @@ html[data-theme="dark"] .theme-toggle__icon:last-child {
   padding: 0.55rem clamp(1rem, 4vw, 2rem);
   background: var(--timer-background, var(--navy-900));
   color: var(--timer-text, var(--white));
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   font-size: 1rem;
   font-weight: 800;
 }
@@ -16307,4 +16556,139 @@ html[data-theme="dark"] .analytics-meter::before {
   .analytics-recent-item {
     grid-template-columns: 1fr;
   }
+}
+
+/* Final control normalization. Keep this after page-specific controls. */
+:is(.login-submit,
+  .register-submit,
+  .event-submit-button,
+  .dashboard-profile-button,
+  .admin-work-zone-button,
+  .mfa-button,
+  .review-publish-button,
+  .review-reject-button,
+  .translation-save-button,
+  .notification-edit-link,
+  .notification-comment-form button,
+  .my-event-edit-link,
+  .search-page-form button,
+  .retirements-load-more button,
+  .retirement-comment-form button,
+  .last-post-submit-button,
+  .last-post-load-more button,
+  .cmcen-modal-button) {
+  min-height: var(--control-height);
+  border-radius: var(--control-radius);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.025em;
+}
+
+:is(.login-submit,
+  .register-submit,
+  .event-submit-button,
+  .admin-work-zone-button.is-primary,
+  .dashboard-profile-button.is-primary,
+  .mfa-button-primary,
+  .review-publish-button,
+  .translation-save-button,
+  .notification-edit-link,
+  .notification-comment-form button,
+  .my-event-edit-link,
+  .search-page-form button,
+  .retirement-comment-form button,
+  .last-post-submit-button,
+  .cmcen-modal-button-primary) {
+  border-color: var(--button-primary-border);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+}
+
+:is(.admin-work-zone-button.is-secondary,
+  .dashboard-profile-button.is-secondary,
+  .mfa-button:not(.mfa-button-primary),
+  .review-reject-button,
+  .cmcen-modal-button-secondary,
+  .retirements-load-more button,
+  .last-post-load-more button) {
+  border-color: var(--button-secondary-border);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+}
+
+:is(.admin-work-zone-button.is-danger,
+  .cmcen-modal-button-primary.is-danger) {
+  border-color: var(--button-danger-border);
+  background: var(--button-danger-bg);
+  color: var(--button-danger-text);
+}
+
+:is(.login-submit,
+  .register-submit,
+  .event-submit-button,
+  .admin-work-zone-button,
+  .dashboard-profile-button,
+  .mfa-button,
+  .review-publish-button,
+  .review-reject-button,
+  .translation-save-button,
+  .notification-edit-link,
+  .notification-comment-form button,
+  .my-event-edit-link,
+  .search-page-form button,
+  .retirements-load-more button,
+  .retirement-comment-form button,
+  .last-post-submit-button,
+  .last-post-load-more button,
+  .cmcen-modal-button):focus-visible:not(:disabled) {
+  outline: 0;
+  box-shadow:
+    0 0 0 3px var(--control-focus-ring),
+    0 8px 18px rgba(15, 18, 31, 0.12);
+}
+
+:is(.admin-work-zone-tabs,
+  .event-management-tabs) {
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--tab-border);
+  border-radius: var(--control-radius);
+  background: var(--tab-bg);
+}
+
+:is(.admin-work-zone-tab,
+  .event-management-tab) {
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--control-radius) - 2px);
+  background: transparent;
+  color: var(--tab-text);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:is(.admin-work-zone-tab,
+  .event-management-tab):hover,
+:is(.admin-work-zone-tab,
+  .event-management-tab):focus-visible {
+  border-color: color-mix(in srgb, var(--gold-500) 54%, transparent);
+  background: var(--tab-hover-bg);
+  color: var(--tab-hover-text);
+  outline: 0;
+}
+
+:is(.admin-work-zone-tab,
+  .event-management-tab).is-active {
+  border-color: var(--tab-active-bg);
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+}
+
+:is(.admin-work-zone-tab,
+  .event-management-tab).is-active::after {
+  display: none;
 }

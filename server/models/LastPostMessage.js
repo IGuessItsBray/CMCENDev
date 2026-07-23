@@ -48,9 +48,11 @@ const LastPostMessageSchema = new mongoose.Schema(
     deceased: {
       fullRank: {
         type: String,
-        required: true,
         trim: true,
-        maxlength: 80
+        maxlength: 80,
+        // Legacy notices may not have a rank. New submissions remain validated
+        // by the Last Post route before they are stored.
+        default: ''
       },
       firstName: {
         type: String,

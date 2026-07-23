@@ -88,65 +88,6 @@ function formatSubmittedDate(dateValue) {
   });
 }
 
-function formatEventSchedule(event) {
-  const locale = getReviewLocale();
-
-  const start = new Date(event.startDate);
-
-  const end = event.endDate ? new Date(event.endDate) : null;
-
-  if (event.allDay) {
-    const dateFormatter = new Intl.DateTimeFormat(locale, {
-      dateStyle: "long",
-      timeZone: "UTC"
-    });
-
-    const startLabel = dateFormatter.format(start);
-
-    if (!end || start.getTime() === end.getTime()) {
-      return (`${startLabel} · ` + translate("all_day"));
-    }
-
-    return (`${startLabel} - ` + `${dateFormatter.format(end)} · ` + translate("all_day"));
-  }
-
-  const timeZone = event.timezone || undefined;
-
-  const dateFormatter = new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeZone
-  });
-
-  const timeFormatter = new Intl.DateTimeFormat(locale, {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone
-  });
-
-  const dayFormatter = new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone
-  });
-
-  const startDateLabel = dateFormatter.format(start);
-  const startTimeLabel = timeFormatter.format(start);
-
-  if (!end) {
-    return (`${startDateLabel} · ` + startTimeLabel);
-  }
-
-  const sameDay = dayFormatter.format(start) === dayFormatter.format(end);
-
-  if (sameDay) {
-    return (`${startDateLabel} · ` + `${startTimeLabel}-` + timeFormatter.format(end));
-  }
-
-  return (`${startDateLabel}, ${startTimeLabel} - ` + `${dateFormatter.format(end)}, ` + timeFormatter.format(end));
-}
-
 function formatContentArea(value) {
   return CMCENUtils.formatTitleCaseValue(value, "—");
 }
@@ -270,12 +211,22 @@ function formatDateOnly(dateValue) {
   });
 }
 
+function setTranslatedText(element, key) {
+  element.dataset.i18n = key;
+  element.textContent = translate(key);
+}
+
+function setTranslatedPlaceholder(element, key) {
+  element.dataset.i18nPlaceholder = key;
+  element.placeholder = translate(key);
+}
+
 function createReviewRecordSection(titleKey, items, additionalClass = "") {
   const section = document.createElement("section");
   section.className = `review-record-section ${additionalClass}`.trim();
 
   const heading = document.createElement("h3");
-  heading.textContent = translate(titleKey);
+  setTranslatedText(heading, titleKey);
 
   const grid = document.createElement("div");
   grid.className = "review-record-data";
@@ -292,8 +243,7 @@ function createReviewRecordSection(titleKey, items, additionalClass = "") {
     const label = document.createElement("span");
 
     label.className = "review-record-label";
-
-    label.textContent = translate(item.labelKey);
+    setTranslatedText(label, item.labelKey);
 
     const value = document.createElement("span");
 
@@ -322,7 +272,7 @@ function createMetaItem(labelKey, value) {
 
   const label = document.createElement("span");
   label.className = "review-event-meta-label";
-  label.textContent = translate(labelKey);
+  setTranslatedText(label, labelKey);
 
   const content = document.createElement("span");
   content.className = "review-event-meta-value";
@@ -341,8 +291,7 @@ function createContentValue(className, value) {
   if (value) {
     element.textContent = value;
   } else {
-    element.textContent =
-      translate("translation_missing");
+    setTranslatedText(element, "translation_missing");
 
     element.classList.add("is-missing");
   }
@@ -372,19 +321,19 @@ function createContentSection(event, language, heading) {
 
   const titleLabel = document.createElement("span");
   titleLabel.className = "review-content-label";
-  titleLabel.textContent = translate("review_title_label");
+  setTranslatedText(titleLabel, "review_title_label");
 
   const title = createContentValue("review-event-title-value", getContentValue(event.title, language));
 
   const locationLabel = document.createElement("span");
   locationLabel.className = "review-content-label";
-  locationLabel.textContent = translate("event_location_label");
+  setTranslatedText(locationLabel, "event_location_label");
 
   const location = createContentValue("review-event-location", getContentValue(event.location, language));
 
   const descriptionLabel = document.createElement("span");
   descriptionLabel.className = "review-content-label";
-  descriptionLabel.textContent = translate("review_description_label");
+  setTranslatedText(descriptionLabel, "review_description_label");
 
   const description = createContentValue(
     "review-event-description",
@@ -396,7 +345,7 @@ function createContentSection(event, language, heading) {
 
   const registrationLabel = document.createElement("span");
   registrationLabel.className = "review-content-label";
-  registrationLabel.textContent = translate("event_registration_label");
+  setTranslatedText(registrationLabel, "event_registration_label");
 
   const registration = document.createElement("p");
   registration.className = "review-event-registration";
@@ -420,7 +369,7 @@ function createContentSection(event, language, heading) {
 
 function createReviewCard(event) {
   const article = document.createElement("article");
-  article.className = "review-event-card";
+  article.className = "review-event-card review-event-card--event";
   article.dataset.eventId = event._id;
 
   const cardHeader = document.createElement("header");
@@ -430,7 +379,7 @@ function createReviewCard(event) {
   headingCopy.className = "review-event-card-heading";
 
   const eyebrow = document.createElement("p");
-  eyebrow.textContent = translate("review_pending_submission");
+  setTranslatedText(eyebrow, "review_pending_submission");
 
   const title = document.createElement("h2");
 
@@ -440,43 +389,11 @@ function createReviewCard(event) {
 
   const status = document.createElement("span");
   status.className = "review-status-badge";
-  status.textContent = translate("review_status_pending");
+  setTranslatedText(status, "review_status_pending");
 
   cardHeader.append(
     headingCopy,
     status
-  );
-
-  const submittedBy = event.createdBy?.accountName || event.createdBy?.username || translate("unknown_user");
-
-  const meta = document.createElement("div");
-
-  meta.className = "review-event-meta";
-
-  meta.append(
-    createMetaItem(
-      "submitted_by",
-      submittedBy
-    ),
-
-    createMetaItem(
-      "submitted_on",
-      formatSubmittedDate(
-        event.createdAt
-      )
-    ),
-
-    createMetaItem(
-      "event_date_label",
-      formatEventSchedule(event)
-    ),
-
-    createMetaItem(
-      "review_content_area",
-      formatContentArea(
-        event.contentArea
-      )
-    )
   );
 
   const eventInformation =
@@ -526,9 +443,7 @@ function createReviewCard(event) {
           value:
             formatEventTimezone(
               event.timezone
-            ),
-
-          wide: true
+            )
         }
       ],
       "review-event-information"
@@ -671,6 +586,14 @@ function createReviewCard(event) {
     authorizationInformation
   );
 
+  const submissionDetails = document.createElement("details");
+  submissionDetails.className = "review-event-submission-details";
+
+  const submissionSummary = document.createElement("summary");
+  setTranslatedText(submissionSummary, "review_submission_details");
+
+  submissionDetails.append(submissionSummary, submissionRecord);
+
   const decision = document.createElement("section");
   decision.className = "review-decision";
 
@@ -678,15 +601,20 @@ function createReviewCard(event) {
   decisionCopy.className = "review-decision-copy";
 
   const decisionHeading = document.createElement("h3");
-  decisionHeading.textContent = translate("review_decision");
+  setTranslatedText(decisionHeading, "review_decision");
 
   const decisionHelp = document.createElement("p");
-  decisionHelp.textContent = translate("rejection_reason_help");
+  setTranslatedText(decisionHelp, "rejection_reason_help");
 
   decisionCopy.append(
     decisionHeading,
     decisionHelp
   );
+
+  const decisionPrompt = document.createElement("p");
+  decisionPrompt.className = "review-decision-prompt";
+  decisionPrompt.setAttribute("role", "status");
+  decisionPrompt.hidden = true;
 
   const rejectionField =
     document.createElement("div");
@@ -697,10 +625,7 @@ function createReviewCard(event) {
   const rejectionLabel =
     document.createElement("label");
 
-  rejectionLabel.textContent =
-    translate(
-      "rejection_reason_label"
-    );
+  setTranslatedText(rejectionLabel, "rejection_reason_label");
 
   const rejectionReason =
     document.createElement("textarea");
@@ -711,10 +636,10 @@ function createReviewCard(event) {
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
 
-  rejectionReason.placeholder =
-    translate(
-      "rejection_reason_placeholder"
-    );
+  setTranslatedPlaceholder(
+    rejectionReason,
+    "rejection_reason_placeholder"
+  );
 
   rejectionLabel.htmlFor =
     `rejection-${event._id}`;
@@ -726,6 +651,8 @@ function createReviewCard(event) {
     rejectionLabel,
     rejectionReason
   );
+
+  rejectionField.hidden = true;
 
   const actionMessage =
     document.createElement("p");
@@ -743,7 +670,7 @@ function createReviewCard(event) {
   const actions =
     document.createElement("div");
 
-  actions.className = "review-actions";
+  actions.className = "review-actions review-event-actions";
 
   const publishButton =
     document.createElement("button");
@@ -753,8 +680,7 @@ function createReviewCard(event) {
   publishButton.className =
     "review-publish-button";
 
-  publishButton.textContent =
-    translate("publish_event");
+  setTranslatedText(publishButton, "publish_event");
 
   const rejectButton =
     document.createElement("button");
@@ -764,38 +690,81 @@ function createReviewCard(event) {
   rejectButton.className =
     "review-reject-button";
 
-  rejectButton.textContent =
-    translate("reject_event");
+  setTranslatedText(rejectButton, "reject_event");
+
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.className = "review-cancel-action";
+  setTranslatedText(cancelButton, "cancel_review_decision");
+  cancelButton.hidden = true;
+
+  let pendingAction = null;
+
+  function resetDecision() {
+    pendingAction = null;
+    decisionPrompt.hidden = true;
+    rejectionField.hidden = true;
+    rejectButton.hidden = false;
+    publishButton.hidden = false;
+    cancelButton.hidden = true;
+    setTranslatedText(rejectButton, "reject_event");
+    setTranslatedText(publishButton, "publish_event");
+  }
+
+  function prepareDecision(action) {
+    if (pendingAction === action) {
+      submitReview(event._id, action, article);
+      return;
+    }
+
+    pendingAction = action;
+    setTranslatedText(
+      decisionPrompt,
+      action === "publish"
+        ? "event_review_publish_confirmation"
+        : "event_review_reject_confirmation"
+    );
+    decisionPrompt.hidden = false;
+    rejectionField.hidden = action !== "reject";
+    rejectButton.hidden = action !== "reject";
+    publishButton.hidden = action !== "publish";
+    cancelButton.hidden = false;
+
+    if (action === "publish") {
+      setTranslatedText(publishButton, "confirm_publish_event");
+      publishButton.focus();
+      return;
+    }
+
+    setTranslatedText(rejectButton, "confirm_reject_event");
+    rejectionReason.focus();
+  }
 
   publishButton.addEventListener(
     "click",
     () => {
-      submitReview(
-        event._id,
-        "publish",
-        article
-      );
+      prepareDecision("publish");
     }
   );
 
   rejectButton.addEventListener(
     "click",
     () => {
-      submitReview(
-        event._id,
-        "reject",
-        article
-      );
+      prepareDecision("reject");
     }
   );
 
+  cancelButton.addEventListener("click", resetDecision);
+
   actions.append(
     rejectButton,
-    publishButton
+    publishButton,
+    cancelButton
   );
 
   decision.append(
     decisionCopy,
+    decisionPrompt,
     rejectionField,
     actionMessage,
     actions
@@ -803,10 +772,9 @@ function createReviewCard(event) {
 
   article.append(
     cardHeader,
-    meta,
     eventInformation,
     languages,
-    submissionRecord,
+    submissionDetails,
     decision
   );
 
@@ -2309,103 +2277,63 @@ async function loadReviewQueue() {
   }
 }
 
-document.addEventListener(
-  "languagechange",
-  () => {
-    if (
-      reviewPageMessage.classList.contains("is-loading") ||
-      retirementReviewPageMessage.classList.contains("is-loading") ||
-      lastPostReviewPageMessage.classList.contains("is-loading") ||
-      commentReviewPageMessage.classList.contains("is-loading")
-    ) {
-      if (reviewPageMessage.classList.contains("is-loading")) {
-        showQueueLoading("loading_events");
+function updateEventReviewCardsLanguage() {
+  reviewQueue
+    .querySelectorAll(".review-event-card--event")
+    .forEach(card => {
+      const event = pendingEvents.find(
+        item => item._id === card.dataset.eventId
+      );
+
+      if (!event) {
+        return;
       }
 
-      if (retirementReviewPageMessage.classList.contains("is-loading")) {
-        showQueueLoading(
-          "loading_retirement_messages",
-          retirementReviewPageMessage,
-          retirementReviewQueue
-        );
+      const title = card.querySelector(".review-event-card-heading h2");
+
+      if (title) {
+        title.textContent = getDisplayTitle(event);
       }
 
-      if (commentReviewPageMessage.classList.contains("is-loading")) {
-        showQueueLoading(
-          "loading_retirement_comments",
-          commentReviewPageMessage,
-          commentReviewQueue
-        );
-      }
+      const eventInformationValues = [
+        event.city,
+        formatTranslatedOption("region", event.provinceRegion),
+        formatTranslatedOption("entity", event.organizingEntity),
+        formatTranslatedOption("event_type", event.eventType),
+        formatEventTimezone(event.timezone)
+      ];
 
-      if (lastPostReviewPageMessage.classList.contains("is-loading")) {
-        showQueueLoading(
-          "loading_last_posts",
-          lastPostReviewPageMessage,
-          lastPostReviewQueue
-        );
-      }
+      card
+        .querySelectorAll(
+          ".review-event-information .review-record-value"
+        )
+        .forEach((value, index) => {
+          value.textContent = eventInformationValues[index] || "—";
+        });
 
-      return;
-    }
+      const authorizationValues = [
+        translate(
+          event.publicationPermission?.confirmed === true
+            ? "review_permission_confirmed"
+            : "review_permission_not_recorded"
+        ),
+        formatReviewUser(event.publicationPermission?.confirmedBy),
+        event.publicationPermission?.confirmedAt
+          ? formatSubmittedDate(event.publicationPermission.confirmedAt)
+          : "—"
+      ];
 
-    if (accessDenied) {
-      showPageMessage(translate("review_access_denied"), "error");
-      showPageMessage(
-        translate("review_access_denied"),
-        "error",
-        retirementReviewPageMessage
-      );
-      showPageMessage(
-        translate("review_access_denied"),
-        "error",
-        commentReviewPageMessage
-      );
-      showPageMessage(
-        translate("review_access_denied"),
-        "error",
-        lastPostReviewPageMessage
-      );
-      return;
-    }
+      card
+        .querySelectorAll(
+          ".review-event-submission-details .review-record-section:last-child .review-record-value"
+        )
+        .forEach((value, index) => {
+          value.textContent = authorizationValues[index] || "—";
+        });
+    });
+}
 
-    if (loadFailed) {
-      showPageMessage(translate("review_load_error"), "error");
-    } else {
-      renderReviewQueue();
-    }
-
-    if (retirementLoadFailed) {
-      showPageMessage(
-        translate("retirement_review_load_error"),
-        "error",
-        retirementReviewPageMessage
-      );
-    } else {
-      renderRetirementReviewQueue();
-    }
-
-    if (commentLoadFailed) {
-      showPageMessage(
-        translate("comment_review_load_error"),
-        "error",
-        commentReviewPageMessage
-      );
-    } else {
-      renderCommentReviewQueue();
-    }
-
-    if (lastPostLoadFailed) {
-      showPageMessage(
-        translate("last_post_review_load_error"),
-        "error",
-        lastPostReviewPageMessage
-      );
-    } else {
-      renderLastPostReviewQueue();
-    }
-  }
-);
+document.addEventListener("languagechange", updateEventReviewCardsLanguage);
 
 const reviewTabController = CMCENUtils.bindTabs({
   active: reviewTabNames.includes(requestedReviewTab)

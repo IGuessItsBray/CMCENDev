@@ -1710,7 +1710,7 @@ a.dropdown-toggle {
   min-width: 0;
   padding: 4px 7px;
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 5px;
   border-left: 3px solid var(--calendar-event-type-color);
@@ -1765,35 +1765,36 @@ a.dropdown-toggle {
   grid-column: 1 / -1;
 }
 
-.calendar-multiday-event:not(.has-event-type) .calendar-multiday-event-title {
-  grid-column: 2 / -1;
+.calendar-event-type-badge {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--calendar-event-type-color);
+  box-shadow: 0 0 0 2px var(--calendar-event-type-surface);
+}
+
+.calendar-multiday-event.has-event-type,
+.calendar-event-chip.has-event-type {
+  grid-template-columns: auto 7px minmax(0, 1fr);
+}
+
+.calendar-multiday-event.has-event-type .calendar-event-type-badge,
+.calendar-event-chip.has-event-type .calendar-event-type-badge {
+  grid-column: 2;
+  align-self: center;
 }
 
 .calendar-multiday-event.has-event-type .calendar-multiday-event-title {
   grid-column: 3;
 }
 
-.calendar-multiday-event.is-continuing-from-previous-week.has-event-type .calendar-multiday-event-title {
-  grid-column: 2 / -1;
+.calendar-multiday-event.is-without-time.has-event-type .calendar-event-type-badge {
+  grid-column: 1;
 }
 
-.calendar-event-type-badge {
-  width: fit-content;
-  max-width: 100%;
-  padding: 2px 4px;
-  overflow: hidden;
-  border: 1px solid var(--calendar-event-type-color);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--calendar-event-type-color);
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 0.03em;
-  line-height: 1;
-  text-align: center;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
+.calendar-multiday-event.is-without-time.has-event-type .calendar-multiday-event-title {
+  grid-column: 2 / -1;
 }
 
 .calendar-multiday-event.is-continuing-from-previous-week {
@@ -1885,24 +1886,8 @@ a.dropdown-toggle {
   white-space: nowrap;
 }
 
-.calendar-event-chip.has-event-type {
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-rows: auto auto;
-}
-
-.calendar-event-chip.has-event-type .calendar-event-chip-time {
-  grid-row: 1 / span 2;
-  align-self: center;
-}
-
-.calendar-event-chip.has-event-type .calendar-event-type-badge {
-  grid-column: 2;
-  grid-row: 1;
-}
-
 .calendar-event-chip.has-event-type .calendar-event-chip-title {
-  grid-column: 2;
-  grid-row: 2;
+  grid-column: 3;
 }
 
 .calendar-more-events-button {
@@ -14350,8 +14335,8 @@ html[data-theme="dark"] .calendar-multiday-event-time {
 }
 
 html[data-theme="dark"] .calendar-event-type-badge {
-  background: rgba(13, 20, 34, 0.66);
-  color: var(--dark-text);
+  background: var(--calendar-event-type-color);
+  box-shadow: 0 0 0 2px var(--calendar-event-type-surface);
 }
 
 html[data-theme="dark"] .calendar-event {

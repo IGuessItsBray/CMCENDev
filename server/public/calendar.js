@@ -93,7 +93,9 @@ function createEventTypeBadge(event) {
     const badge = document.createElement('span');
 
     badge.className = 'calendar-event-type-badge';
-    badge.textContent = eventType;
+    badge.setAttribute('role', 'img');
+    badge.setAttribute('aria-label', eventType);
+    badge.title = eventType;
 
     return badge;
 }
@@ -728,6 +730,10 @@ function createMultiDayEventBar(segment, language, locale) {
 
     if (!endsInWeek) {
         link.classList.add('is-continuing-into-next-week');
+    }
+
+    if (!timeLabel) {
+        link.classList.add('is-without-time');
     }
 
     if (event.eventType) {

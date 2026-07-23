@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const {
   resolveCollectionWithFallback,
+  resolveCollectionWithFinalFallback,
   resolvePostWithFallback
 } = require('../scripts/migration/lib/post-resolver');
 
@@ -58,4 +59,32 @@ test('falls back to the category scan when the Last Post archive returns 403', a
   assert.equal(result.usedFallback, true);
   assert.equal(result.items, categoryPosts);
   assert.deepEqual(errors, [archiveFailure]);
+});
+
+test('falls back to the category page scrape when archive and category REST fail', async () => {
+  const archiveFailure = new Error('Request failed with status code 403');
+  archiveFailure.response = { status: 403 };
+  const categoryFailure = new Error('Request failed with status code 403');
+  categoryFailure.response = { status: 403 };
+  const primaryErrors = [];
+  const fallbackErrors = [];
+  const categoryPagePosts = [{ id: 789 }];
+
+  const result = await resolveCollectionWithFinalFallback({
+    fetchPrimary: async () => {
+      throw archiveFailure;
+    },
+    fetchFallback: async () => {
+      throw categoryFailure;
+    },
+    fetchFinalFallback: async () => categoryPagePosts,
+    onPrimaryError: error => primaryErrors.push(error),
+    onFallbackError: error => fallbackErrors.push(error)
+  });
+
+  assert.equal(result.usedFallback, true);
+  assert.equal(result.usedFinalFallback, true);
+  assert.equal(result.items, categoryPagePosts);
+  assert.deepEqual(primaryErrors, [archiveFailure]);
+  assert.deepEqual(fallbackErrors, [categoryFailure]);
 });

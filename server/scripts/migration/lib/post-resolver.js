@@ -49,7 +49,56 @@ async function resolveCollectionWithFallback({
   };
 }
 
+async function resolveCollectionWithFinalFallback({
+  fetchPrimary,
+  fetchFallback,
+  fetchFinalFallback,
+  onPrimaryError = () => {},
+  onPrimaryEmpty = () => {},
+  onFallbackError = () => {},
+  onFallbackEmpty = () => {}
+}) {
+  try {
+    const primaryItems = await fetchPrimary();
+
+    if (primaryItems.length) {
+      return {
+        items: primaryItems,
+        usedFallback: false,
+        usedFinalFallback: false
+      };
+    }
+
+    onPrimaryEmpty();
+  } catch (error) {
+    onPrimaryError(error);
+  }
+
+  try {
+    const fallbackItems = await fetchFallback();
+
+    if (fallbackItems.length) {
+      return {
+        items: fallbackItems,
+        usedFallback: true,
+        usedFinalFallback: false
+      };
+    }
+
+    onFallbackEmpty();
+  } catch (error) {
+    onFallbackError(error);
+  }
+
+  return {
+    items: await fetchFinalFallback(),
+    usedFallback: true,
+    usedFinalFallback: true
+  };
+}
+
 module.exports = {
   resolveCollectionWithFallback,
+  resolveCollectionWithFinalFallback,
   resolvePostWithFallback
 };

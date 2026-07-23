@@ -28,7 +28,84 @@
                 Loading events...
             </p>
 
-            <div id="eventList"></div>
+            <section class="calendar-view" aria-labelledby="calendarMonthLabel">
+                <div class="calendar-controls">
+                    <div class="calendar-month-navigation">
+                        <button
+                            type="button"
+                            class="calendar-navigation-button"
+                            id="calendarPreviousButton"
+                            data-i18n-aria-label="calendar_previous_month"
+                        >
+                            <span aria-hidden="true">←</span>
+                        </button>
+
+                        <h2 id="calendarMonthLabel" class="calendar-display-month" aria-live="polite"></h2>
+
+                        <button
+                            type="button"
+                            class="calendar-navigation-button"
+                            id="calendarNextButton"
+                            data-i18n-aria-label="calendar_next_month"
+                        >
+                            <span aria-hidden="true">→</span>
+                        </button>
+                    </div>
+
+                    <div class="calendar-view-actions">
+                        <button
+                            type="button"
+                            class="calendar-today-button"
+                            id="calendarTodayButton"
+                            data-i18n="calendar_today"
+                        >
+                            Today
+                        </button>
+
+                        <div class="calendar-view-toggle" role="group" data-i18n-aria-label="calendar_view_options">
+                            <button
+                                type="button"
+                                class="calendar-view-toggle-button"
+                                id="calendarMonthViewButton"
+                                data-calendar-view="month"
+                                data-i18n="calendar_view_month"
+                            >
+                                Month
+                            </button>
+
+                            <button
+                                type="button"
+                                class="calendar-view-toggle-button"
+                                id="calendarAgendaViewButton"
+                                data-calendar-view="agenda"
+                                data-i18n="calendar_view_agenda"
+                            >
+                                Agenda
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="calendar-grid-scroll">
+                    <div class="calendar-weekdays" id="calendarWeekdays" aria-hidden="true"></div>
+                    <div
+                        id="calendarGrid"
+                        class="calendar-grid"
+                        aria-live="polite"
+                    ></div>
+                </div>
+
+                <section
+                    id="eventList"
+                    class="calendar-agenda"
+                    aria-labelledby="calendarAgendaHeading"
+                    hidden
+                >
+                    <h2 id="calendarAgendaHeading" class="visually-hidden" data-i18n="calendar_agenda_heading">
+                        Events in this view
+                    </h2>
+                </section>
+            </section>
         </section>
     </main>
 

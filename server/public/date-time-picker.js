@@ -188,6 +188,34 @@
       emitInput();
     }
 
+    function setValue(nextValue = {}) {
+      const nextDate = parseDateParts(nextValue.date || "")
+        ? nextValue.date
+        : "";
+      const nextTime = parseTimeParts(nextValue.time || "")
+        ? nextValue.time
+        : "00:00";
+
+      selectedDate = nextDate;
+      selectedTime = nextTime;
+      dateInput.value = selectedDate;
+      timeInput.value = selectedTime;
+
+      if (selectedDate) {
+        const date = new Date(`${selectedDate}T00:00:00`);
+
+        visibleMonth = date.getMonth();
+        visibleYear = date.getFullYear();
+      }
+
+      updateTrigger();
+      renderCalendar();
+
+      if (nextValue.emit === true) {
+        emitInput();
+      }
+    }
+
     function renderCalendar() {
       popover.replaceChildren();
 
@@ -306,9 +334,12 @@
       picker.append(timeInput);
     }
     picker.append(trigger, popover);
+    picker.setValue = setValue;
 
     return picker;
   }
+
+  const enhancedDatePickers = new WeakMap();
 
   function enhanceDateInput(input, options = {}) {
     if (!input || input.dataset.cmcenDatePickerEnhanced === "true") return null;
@@ -333,7 +364,18 @@
     input.name = "";
     input.classList.add("cmcen-native-date-input-hidden");
     input.insertAdjacentElement("afterend", picker);
+    enhancedDatePickers.set(input, picker);
     return picker;
+  }
+
+  function refreshDateInput(input) {
+    const picker = enhancedDatePickers.get(input);
+
+    if (!picker || typeof picker.setValue !== "function") {
+      return;
+    }
+
+    picker.setValue({ date: input.value });
   }
 
   function enhanceAllDateInputs(root = document) {
@@ -350,6 +392,7 @@
   window.CMCENDateTimePicker = {
     create: createDateTimePicker,
     enhanceDateInput,
-    enhanceAllDateInputs
+    enhanceAllDateInputs,
+    refreshDateInput
   };
 })();

@@ -2,6 +2,9 @@ const eventForm = document.getElementById("eventForm");
 const eventPageMessage = document.getElementById("eventPageMessage");
 const eventFormMessage = document.getElementById("eventFormMessage");
 const eventEditLoading = document.getElementById("eventEditLoading");
+const eventEditContext = document.getElementById("eventEditContext");
+const eventEditRejection = document.getElementById("eventEditRejection");
+const eventEditRejectionReason = document.getElementById("eventEditRejectionReason");
 
 const myEventsSection = document.getElementById("myEventsSection");
 const myEventsList = document.getElementById("myEventsList");
@@ -11,6 +14,7 @@ const eventPanels = document.querySelectorAll("[data-event-panel]");
 const eventFormTabLabel = document.getElementById("eventFormTabLabel");
 const cancelEventEditing = document.getElementById("cancelEventEditing");
 
+const eventPageEyebrow = document.getElementById("eventPageEyebrow");
 const submitEventTitle = document.getElementById("submitEventTitle");
 const submitEventIntro = document.getElementById("submitEventIntro");
 const eventSubmitButtonLabel = document.getElementById("eventSubmitButtonLabel");
@@ -104,9 +108,28 @@ function formatMyEventUpdatedDate(value) {
   });
 }
 
+function formatMyEventType(eventType) {
+  if (!eventType) {
+    return "";
+  }
+
+  const translationKey = `event_type_${eventType}`;
+  const translation = translate(translationKey);
+
+  return translation === translationKey
+    ? CMCENUtils.formatTitleCaseValue(eventType, "")
+    : translation;
+}
+
 function createMyEventCard(submittedEvent) {
   const article = document.createElement("article");
   article.className = "my-event-card";
+
+  const isPublished = submittedEvent.status === "published";
+
+  if (isPublished) {
+    article.classList.add("is-published");
+  }
 
   const header = document.createElement("div");
   header.className = "my-event-card-header";
@@ -118,33 +141,52 @@ function createMyEventCard(submittedEvent) {
   status.className = `my-event-status status-${submittedEvent.status}`;
   status.textContent = translate(`my_events_status_${submittedEvent.status}`);
 
-  header.append(title, status);
-
   const details = document.createElement("div");
   details.className = "my-event-card-details";
 
-  const date = document.createElement("span");
-  date.textContent = formatMyEventDate(submittedEvent);
-
-  const location = document.createElement("span");
-
-  location.textContent = [
+  const location = [
     submittedEvent.city,
     submittedEvent.provinceRegion
   ].filter(Boolean).join(", ");
 
-  const updated = document.createElement("span");
-
-  updated.textContent = `${translate("my_events_last_updated")}: ` + formatMyEventUpdatedDate(submittedEvent.updatedAt);
-
-  details.append(
-    date,
+  [
+    formatMyEventDate(submittedEvent),
     location,
-    updated
-  );
+    formatMyEventType(submittedEvent.eventType),
+    `${translate("my_events_last_updated")}: ` + formatMyEventUpdatedDate(submittedEvent.updatedAt)
+  ].filter(Boolean).forEach(value => {
+    const item = document.createElement("span");
+    item.textContent = value;
+    details.appendChild(item);
+  });
 
-  const footer = document.createElement("div");
-  footer.className = "my-event-card-footer";
+  header.append(status, title, details);
+
+  if (!isPublished) {
+    const editLink = document.createElement("a");
+    editLink.className = "my-event-edit-link";
+    editLink.href = `/submit-event?id=${encodeURIComponent(submittedEvent._id)}`;
+    editLink.textContent = translate("my_events_edit");
+    editLink.addEventListener("click", event => {
+      event.preventDefault();
+      startEditingEvent(submittedEvent._id);
+    });
+
+    header.appendChild(editLink);
+  }
+
+  const row = isPublished
+    ? document.createElement("a")
+    : document.createElement("div");
+
+  row.className = "my-event-card-row";
+
+  if (isPublished) {
+    row.href = `/event?id=${encodeURIComponent(submittedEvent._id)}`;
+  }
+
+  row.appendChild(header);
+  article.appendChild(row);
 
   if (submittedEvent.status === "rejected" && submittedEvent.rejectionReason) {
     const rejection = document.createElement("p");
@@ -153,25 +195,8 @@ function createMyEventCard(submittedEvent) {
 
     rejection.textContent = `${translate("my_events_rejection_reason")}: ` + submittedEvent.rejectionReason;
 
-    footer.appendChild(rejection);
+    article.appendChild(rejection);
   }
-
-  const editLink = document.createElement("a");
-  editLink.className = "my-event-edit-link";
-  editLink.href = `/submit-event?id=${encodeURIComponent(submittedEvent._id)}`;
-  editLink.textContent = submittedEvent.status === "rejected" ? translate("my_events_edit_resubmit") : translate("my_events_edit");
-  editLink.addEventListener("click", event => {
-    event.preventDefault();
-    startEditingEvent(submittedEvent._id);
-  });
-
-  footer.appendChild(editLink);
-
-  article.append(
-    header,
-    details,
-    footer
-  );
 
   return article;
 }
@@ -188,7 +213,7 @@ function renderMyEvents() {
       { count }
     );
 
-  myEventsCount.hidden = false;
+  myEventsCount.hidden = !isEventTabActive("events");
   myEventsSection.hidden = false;
 
   if (!count) {
@@ -465,6 +490,7 @@ function getEventDateValues() {
 }
 
 const eventTabController = CMCENUtils.bindTabs({
+  onActivate: updateEventPageHeader,
   panels: eventPanels,
   panelKey: "eventPanel",
   tabs: eventTabs,
@@ -473,6 +499,50 @@ const eventTabController = CMCENUtils.bindTabs({
 
 function activateEventTab(tabName) {
   eventTabController.activate(tabName);
+  updateEventPageHeader(tabName);
+}
+
+function isEventTabActive(tabName) {
+  return Array.from(eventTabs).some(
+    tab =>
+      tab.dataset.eventTab === tabName &&
+      tab.classList.contains("is-active")
+  );
+}
+
+function updateEventPageHeader(tabName) {
+  if (accessDenied) {
+    return;
+  }
+
+  const isMyEvents = tabName === "events";
+
+  cancelEventEditing.hidden =
+    isMyEvents ||
+    !editingEventId;
+
+  eventPageEyebrow.textContent = translate(
+    isMyEvents
+      ? "my_events_eyebrow"
+      : "event_submission_eyebrow"
+  );
+  submitEventTitle.textContent = translate(
+    isMyEvents
+      ? "my_events_heading"
+      : editingEventId
+        ? "edit_event_heading"
+        : "submit_event_heading"
+  );
+  submitEventIntro.textContent = translate(
+    isMyEvents
+      ? "my_events_intro"
+      : editingEventId
+        ? "edit_event_intro"
+        : "submit_event_intro"
+  );
+  myEventsCount.hidden =
+    !isMyEvents ||
+    !myEventsCount.textContent;
 }
 
 function buildEventData() {
@@ -623,6 +693,40 @@ function resetEventForm() {
 
   syncScheduleFields();
   keepEndDateInRange();
+  refreshEventScheduleControls();
+}
+
+function scrollEventPageToTop() {
+  const resetScrollPosition = () => {
+    window.scrollTo(0, 0);
+    document.scrollingElement?.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  resetScrollPosition();
+  window.requestAnimationFrame(resetScrollPosition);
+}
+
+async function finishEditingEvent(token) {
+  editingEventId = null;
+  editingEvent = null;
+  clearFormMessage();
+  eventPageMessage.hidden = true;
+  setEventEditLoading(false);
+  resetEventForm();
+  autofillSubmitterFromProfile(currentUser);
+  activateEventTab("events");
+  updateEventFormModeText();
+  scrollEventPageToTop();
+
+  const myEventsUrl = "/submit-event";
+
+  if (window.location.pathname + window.location.search !== myEventsUrl) {
+    window.history.replaceState({}, "", myEventsUrl);
+  }
+
+  await loadMyEvents(token);
 }
 
 function cancelEditingEvent() {
@@ -771,13 +875,14 @@ eventForm.addEventListener(
     setSubmitting(true);
 
     try {
+      const wasEditing = Boolean(editingEventId);
       const requestUrl =
-        editingEventId
+        wasEditing
           ? `/api/events/${encodeURIComponent(editingEventId)}`
           : "/api/events";
 
       const requestMethod =
-        editingEventId
+        wasEditing
           ? "PATCH"
           : "POST";
 
@@ -787,22 +892,22 @@ eventForm.addEventListener(
         errorMessage: translate("event_submit_error")
       });
 
-      if (!editingEventId) {
+      if (wasEditing) {
+        await finishEditingEvent(token);
+      } else {
         resetEventForm();
         autofillSubmitterFromProfile(currentUser);
-      }
 
-      showFormMessage(
-        data.message ||
-        translate(
-          editingEventId
-            ? "event_update_success"
-            : eventData.publishNow
+        showFormMessage(
+          data.message ||
+          translate(
+            eventData.publishNow
               ? "event_submit_success_published"
               : "event_submit_success_pending"
-        ),
-        "success"
-      );
+          ),
+          "success"
+        );
+      }
 
       if (typeof window.refreshAuthUI === "function") {
         window.refreshAuthUI();
@@ -918,6 +1023,41 @@ function getEventFormDateParts(
   };
 }
 
+function refreshEventScheduleControls() {
+  window.CMCENDateTimePicker?.refreshDateInput(eventStartDate);
+  window.CMCENDateTimePicker?.refreshDateInput(eventEndDate);
+
+  [
+    eventStartHour,
+    eventStartMinute,
+    eventEndHour,
+    eventEndMinute,
+    document.getElementById("eventTimezone")
+  ].forEach(control => {
+    control?.dispatchEvent(new Event("change"));
+  });
+}
+
+function updateEventEditContext() {
+  const isEditing = Boolean(editingEventId);
+
+  eventEditContext.hidden = !isEditing;
+
+  if (!isEditing) {
+    eventEditRejection.hidden = true;
+    eventEditRejectionReason.textContent = "";
+    return;
+  }
+
+  const rejectionReason =
+    editingEvent?.status === "rejected"
+      ? String(editingEvent.rejectionReason || "").trim()
+      : "";
+
+  eventEditRejection.hidden = !rejectionReason;
+  eventEditRejectionReason.textContent = rejectionReason;
+}
+
 function populateEventForm(event) {
   setEventField("eventTitleEn", event.title?.en);
   setEventField("eventTitleFr", event.title?.fr);
@@ -955,6 +1095,8 @@ function populateEventForm(event) {
   setEventField("eventEndDate", end.date);
   setEventField("eventEndHour", end.hour);
   setEventField("eventEndMinute", end.minute);
+  keepEndDateInRange();
+  refreshEventScheduleControls();
   setEventField("eventSubmitterRank", event.submitter?.rank);
   setEventField("eventSubmitterFirstName", event.submitter?.firstName);
   setEventField("eventSubmitterLastName", event.submitter?.lastName);
@@ -962,6 +1104,7 @@ function populateEventForm(event) {
   setEventField("eventSubmitterEmail", event.submitter?.email);
   setEventField("eventSubmitterPhone", event.submitter?.phone);
   setEventCheckbox("eventPublicationPermission", event.publicationPermission?.confirmed);
+  updateEventEditContext();
 }
 
 async function loadEventForEditing(token, eventId) {
@@ -996,6 +1139,7 @@ async function startEditingEvent(eventId) {
   clearFormMessage();
   eventPageMessage.hidden = true;
   activateEventTab("form");
+  scrollEventPageToTop();
   updateEventFormModeText();
   setEventEditLoading(true);
 
@@ -1025,11 +1169,17 @@ async function startEditingEvent(eventId) {
 function updateEventFormModeText() {
   const isEditing = Boolean(editingEventId);
 
-  cancelEventEditing.hidden = !isEditing;
+  updateEventEditContext();
+  cancelEventEditing.hidden =
+    !isEditing ||
+    isEventTabActive("events");
   cancelEventEditing.disabled = isSubmitting;
   eventFormTabLabel.textContent = translate(isEditing ? "edit_event_tab" : "submit_new_event_tab");
-  submitEventTitle.textContent = translate(isEditing ? "edit_event_heading" : "submit_event_heading");
-  submitEventIntro.textContent = translate(isEditing ? "edit_event_intro" : "submit_event_intro");
+  updateEventPageHeader(
+    isEventTabActive("events")
+      ? "events"
+      : "form"
+  );
   eventSubmitButtonLabel.textContent = translate(isEditing ? "save_event_changes" : "submit_event_button");
   eventSubmitButton.setAttribute(
     "aria-label",

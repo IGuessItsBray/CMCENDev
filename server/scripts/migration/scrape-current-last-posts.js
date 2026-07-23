@@ -20,7 +20,7 @@ const {
   normalizeDeceasedRank
 } = require('./lib/legacy-rank');
 const {
-  resolveCollectionWithFallback,
+  resolveCollectionWithFinalFallback,
   resolvePostWithFallback
 } = require('./lib/post-resolver');
 const {
@@ -407,8 +407,12 @@ async function getCategoryId() {
 
 function getArchivePageLinks(html) {
   return Array.from(String(html || '').matchAll(/href=["']([^"']+)["']/giu))
-    .map(match => decodeHtml(match[1]))
-    .filter(value => /\/last-post\/page\/\d+\/?/iu.test(value))
+    .map(match => decodeHtml(match[1]));
+}
+
+function normalizeInternalLinks(values, pattern) {
+  return values
+    .filter(value => pattern.test(value))
     .map(value => {
       try {
         return new URL(value, WORDPRESS_BASE_URL).href;
@@ -417,6 +421,20 @@ function getArchivePageLinks(html) {
       }
     })
     .filter(Boolean);
+}
+
+function getLastPostArchivePageLinks(html) {
+  return normalizeInternalLinks(
+    getArchivePageLinks(html),
+    /\/last-post\/page\/\d+\/?/iu
+  );
+}
+
+function getCategoryPageLinks(html, slug) {
+  return normalizeInternalLinks(
+    getArchivePageLinks(html),
+    new RegExp(`/category/${slug.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}/page/\\d+/?`, 'iu')
+  );
 }
 
 function getLastPostSlugs(html) {
@@ -575,7 +593,7 @@ async function getLatestPostsFromArchive() {
       }
     }
 
-    getArchivePageLinks(html).forEach(link => {
+    getLastPostArchivePageLinks(html).forEach(link => {
       if (!seenPages.has(link) && !queue.includes(link)) {
         queue.push(link);
       }
@@ -583,6 +601,72 @@ async function getLatestPostsFromArchive() {
   }
 
   return posts;
+}
+
+async function getLatestPostsFromCategoryArchive() {
+  const categorySlugs = Array.from(new Set([
+    categorySlug,
+    ...CATEGORY_SLUG_FALLBACKS
+  ].filter(Boolean)));
+  const seenPages = new Set();
+  const seenSlugs = new Set();
+  const posts = [];
+
+  for (const slug of categorySlugs) {
+    const queue = [`${WORDPRESS_BASE_URL}/category/${encodeURIComponent(slug)}/`];
+
+    while (queue.length && posts.length < limit) {
+      const pageUrl = queue.shift();
+
+      if (seenPages.has(pageUrl)) {
+        continue;
+      }
+
+      seenPages.add(pageUrl);
+      console.log(`Scanning Last Post category page: ${pageUrl}`);
+
+      const html = await fetchText(pageUrl, { allowNotFound: true });
+
+      if (!html) {
+        console.log(`Skipping Last Post category "${slug}": category page returned 404`);
+        break;
+      }
+
+      const slugs = getLastPostSlugs(html);
+      const newSlugs = slugs.filter(postSlug => !seenSlugs.has(postSlug));
+      const totalToCollect = Number.isFinite(limit)
+        ? Math.min(seenSlugs.size + newSlugs.length, limit)
+        : seenSlugs.size + newSlugs.length;
+
+      console.log(`Found ${slugs.length} Last Post links on category page`);
+
+      for (const postSlug of slugs) {
+        if (seenSlugs.has(postSlug) || posts.length >= limit) {
+          continue;
+        }
+
+        seenSlugs.add(postSlug);
+        const post = await fetchPostBySlug(postSlug);
+
+        if (post) {
+          posts.push(post);
+          console.log(`[${posts.length}/${totalToCollect}] Collected Last Post ${post.id}: ${getPostTitle(post)}`);
+        }
+      }
+
+      getCategoryPageLinks(html, slug).forEach(link => {
+        if (!seenPages.has(link) && !queue.includes(link)) {
+          queue.push(link);
+        }
+      });
+    }
+
+    if (posts.length) {
+      break;
+    }
+  }
+
+  return Number.isFinite(limit) ? posts.slice(0, limit) : posts;
 }
 
 async function getLatestPosts(categoryId) {
@@ -660,12 +744,13 @@ async function getPostComments(post) {
 
 async function getLatestLastPostPosts() {
   let categoryId = null;
-  const collection = await resolveCollectionWithFallback({
+  const collection = await resolveCollectionWithFinalFallback({
     fetchPrimary: getLatestPostsFromArchive,
     fetchFallback: async () => {
       categoryId = await getCategoryId();
       return getLatestPosts(categoryId);
     },
+    fetchFinalFallback: getLatestPostsFromCategoryArchive,
     onPrimaryError: error => {
       const status = error.response?.status;
       const detail = status ? `status ${status}` : (error.message || 'request failed');
@@ -673,6 +758,14 @@ async function getLatestLastPostPosts() {
     },
     onPrimaryEmpty: () => {
       console.log('No /lp/ links found on the Last Post archive; falling back to category scan');
+    },
+    onFallbackError: error => {
+      const status = error.response?.status;
+      const detail = status ? `status ${status}` : (error.message || 'request failed');
+      console.log(`Last Post category REST scan failed (${detail}); falling back to category page scrape`);
+    },
+    onFallbackEmpty: () => {
+      console.log('No Last Post notices found through category REST; falling back to category page scrape');
     }
   });
 
@@ -686,7 +779,7 @@ async function getLatestLastPostPosts() {
 
   return {
     posts: collection.items,
-    sourceType: 'category',
+    sourceType: collection.usedFinalFallback ? 'category-pages' : 'category',
     categoryId
   };
 }

@@ -1530,6 +1530,9 @@ a.dropdown-toggle {
 .calendar-weekdays,
 .calendar-grid {
   min-width: 680px;
+}
+
+.calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
 }
@@ -1554,11 +1557,22 @@ a.dropdown-toggle {
 }
 
 .calendar-grid {
-  gap: 1px;
   overflow: hidden;
   border: 1px solid rgba(32, 38, 66, 0.24);
   border-radius: 0 0 7px 7px;
   background: rgba(32, 38, 66, 0.18);
+}
+
+.calendar-week {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  background: rgba(32, 38, 66, 0.18);
+}
+
+.calendar-week + .calendar-week {
+  border-top: 1px solid rgba(32, 38, 66, 0.18);
 }
 
 .calendar-day {
@@ -1620,9 +1634,79 @@ a.dropdown-toggle {
 }
 
 .calendar-day-events {
+  position: relative;
+  z-index: 2;
+  margin-top: var(--calendar-multiday-space, 0px);
   display: grid;
   align-content: start;
   gap: 4px;
+}
+
+.calendar-multiday-events {
+  position: absolute;
+  z-index: 1;
+  top: 39px;
+  right: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: 23px;
+  gap: 4px 1px;
+  pointer-events: none;
+}
+
+.calendar-multiday-event {
+  min-width: 0;
+  padding: 4px 7px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 5px;
+  border-left: 3px solid var(--gold-500);
+  border-radius: 2px;
+  background: var(--navy-800);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: auto;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.calendar-multiday-event:hover,
+.calendar-multiday-event:focus-visible {
+  background: var(--navy-950);
+  box-shadow: 0 0 0 2px rgba(213, 155, 39, 0.38);
+  outline: 0;
+  transform: translateY(-1px);
+}
+
+.calendar-multiday-event-time {
+  color: var(--gold-200);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.calendar-multiday-event-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-multiday-event.is-continuing-from-previous-week {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.calendar-multiday-event.is-continuing-into-next-week {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .calendar-event-chip {

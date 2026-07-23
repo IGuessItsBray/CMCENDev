@@ -467,6 +467,33 @@ function getEventsForDate(date) {
     });
 }
 
+function isMultiDayEvent(event) {
+    if (!event.endDate) {
+        return false;
+    }
+
+    const startDateKey = getDateKey(
+        event.startDate,
+        event.allDay
+    );
+    const endDateKey = getDateKey(
+        event.endDate,
+        event.allDay
+    );
+
+    return Boolean(
+        startDateKey &&
+        endDateKey &&
+        startDateKey < endDateKey
+    );
+}
+
+function getSingleDayEventsForDate(date) {
+    return getEventsForDate(date).filter(
+        event => !isMultiDayEvent(event)
+    );
+}
+
 function getEventChipTime(event, date, locale) {
     if (event.allDay) {
         return getCalendarTranslation('all_day');
@@ -522,6 +549,166 @@ function createCalendarEventChip(event, date, language, locale) {
     return link;
 }
 
+function getMultiDayEventSegments(weekDates) {
+    const weekDateKeys = weekDates.map(getLocalDateKey);
+    const weekStartKey = weekDateKeys[0];
+    const weekEndKey = weekDateKeys[
+        weekDateKeys.length - 1
+    ];
+    const segments = publicEvents
+        .filter(event => {
+            if (!isMultiDayEvent(event)) {
+                return false;
+            }
+
+            const startDateKey = getDateKey(
+                event.startDate,
+                event.allDay
+            );
+            const endDateKey = getDateKey(
+                event.endDate,
+                event.allDay
+            );
+
+            return (
+                startDateKey <= weekEndKey &&
+                endDateKey >= weekStartKey
+            );
+        })
+        .map(event => {
+            const startDateKey = getDateKey(
+                event.startDate,
+                event.allDay
+            );
+            const endDateKey = getDateKey(
+                event.endDate,
+                event.allDay
+            );
+            const startIndex = startDateKey < weekStartKey
+                ? 0
+                : weekDateKeys.indexOf(startDateKey);
+            const endIndex = endDateKey > weekEndKey
+                ? weekDateKeys.length - 1
+                : weekDateKeys.indexOf(endDateKey);
+
+            return {
+                event,
+                startDateKey,
+                endDateKey,
+                startIndex,
+                endIndex,
+                startsInWeek: startDateKey >= weekStartKey,
+                endsInWeek: endDateKey <= weekEndKey
+            };
+        })
+        .sort((firstSegment, secondSegment) => {
+            if (
+                firstSegment.startIndex !==
+                secondSegment.startIndex
+            ) {
+                return (
+                    firstSegment.startIndex -
+                    secondSegment.startIndex
+                );
+            }
+
+            if (
+                firstSegment.endIndex !==
+                secondSegment.endIndex
+            ) {
+                return (
+                    secondSegment.endIndex -
+                    firstSegment.endIndex
+                );
+            }
+
+            return (
+                new Date(firstSegment.event.startDate) -
+                new Date(secondSegment.event.startDate)
+            );
+        });
+    const occupiedUntilByLane = [];
+
+    segments.forEach(segment => {
+        let lane = occupiedUntilByLane.findIndex(
+            occupiedUntil => occupiedUntil < segment.startIndex
+        );
+
+        if (lane < 0) {
+            lane = occupiedUntilByLane.length;
+        }
+
+        occupiedUntilByLane[lane] = segment.endIndex;
+        segment.lane = lane;
+    });
+
+    return {
+        segments,
+        laneCount: occupiedUntilByLane.length
+    };
+}
+
+function createMultiDayEventBar(segment, language, locale) {
+    const {
+        event,
+        startIndex,
+        endIndex,
+        lane,
+        startsInWeek,
+        endsInWeek
+    } = segment;
+    const link = document.createElement('a');
+    const title = getLocalizedText(event.title, language);
+    const timeLabel = startsInWeek
+        ? (event.allDay
+            ? getCalendarTranslation('all_day')
+            : CMCENUtils.formatDate(event.startDate, {
+                locale,
+                hour: 'numeric',
+                minute: '2-digit'
+            }))
+        : getCalendarTranslation('calendar_continues');
+
+    link.className = 'calendar-multiday-event';
+    link.href = `/event?id=${encodeURIComponent(event._id)}`;
+    link.style.gridColumn = `${startIndex + 1} / ${endIndex + 2}`;
+    link.style.gridRow = String(lane + 1);
+    link.setAttribute(
+        'aria-label',
+        [
+            title,
+            formatEventDateRange(event, locale),
+            formatEventTime(event, locale)
+        ].filter(Boolean).join(', ')
+    );
+
+    if (!startsInWeek) {
+        link.classList.add('is-continuing-from-previous-week');
+    }
+
+    if (!endsInWeek) {
+        link.classList.add('is-continuing-into-next-week');
+    }
+
+    if (event.eventType) {
+        link.dataset.eventType = event.eventType;
+    }
+
+    const timeElement = document.createElement('span');
+
+    timeElement.className = 'calendar-multiday-event-time';
+    timeElement.textContent = timeLabel;
+
+    const titleElement = document.createElement('span');
+
+    titleElement.className = 'calendar-multiday-event-title';
+    titleElement.textContent = title;
+
+    link.append(timeElement, titleElement);
+
+    return link;
+}
+
 function createCalendarDayCell(date, language, locale) {
     const day = document.createElement('article');
     const dayKey = getLocalDateKey(date);
@@ -566,7 +753,7 @@ function createCalendarDayCell(date, language, locale) {
 
     heading.append(dateLabel);
 
-    const events = getEventsForDate(date);
+    const events = getSingleDayEventsForDate(date);
     const visibleEvents = events.slice(0, MAX_EVENTS_PER_DAY);
     const eventList = document.createElement('div');
 
@@ -647,13 +834,53 @@ function renderMonthCalendar(language, locale) {
     calendarGridElement.replaceChildren();
     renderWeekdayHeadings(locale);
 
-    for (let index = 0; index < dayCount; index += 1) {
-        const date = new Date(firstGridDay);
+    for (let index = 0; index < dayCount; index += 7) {
+        const week = document.createElement('section');
+        const weekDates = Array.from({ length: 7 }, (_, dayIndex) => {
+            const date = new Date(firstGridDay);
 
-        date.setDate(firstGridDay.getDate() + index);
-        calendarGridElement.appendChild(
-            createCalendarDayCell(date, language, locale)
+            date.setDate(
+                firstGridDay.getDate() + index + dayIndex
+            );
+
+            return date;
+        });
+        const {
+            segments,
+            laneCount
+        } = getMultiDayEventSegments(weekDates);
+
+        week.className = 'calendar-week';
+        week.style.setProperty(
+            '--calendar-multiday-space',
+            `${laneCount * 27}px`
         );
+
+        weekDates.forEach(date => {
+            week.appendChild(
+                createCalendarDayCell(date, language, locale)
+            );
+        });
+
+        if (segments.length) {
+            const eventBars = document.createElement('div');
+
+            eventBars.className = 'calendar-multiday-events';
+
+            segments.forEach(segment => {
+                eventBars.appendChild(
+                    createMultiDayEventBar(
+                        segment,
+                        language,
+                        locale
+                    )
+                );
+            });
+
+            week.appendChild(eventBars);
+        }
+
+        calendarGridElement.appendChild(week);
     }
 }
 

@@ -427,36 +427,170 @@ const PUBLIC_EVENT_FIELDS = [
     'contentArea'
 ].join(' ');
 
-// only published events are returned publically
-router.get('/', async (req, res) => {
-    try {
-        const startOfToday = new Date();
-        startOfToday.setUTCHours(0, 0, 0, 0);
+const MAX_PUBLIC_EVENT_RANGE_DAYS = 370;
 
-        const events = await Event.find({
+function parsePublicEventRangeDate(value, parameterName) {
+    const normalizedValue = String(value || '').trim();
+
+    if (!/^\d{4}-\d{2}-\d{2}$/u.test(normalizedValue)) {
+        const error = new Error(
+            `The ${parameterName} parameter must use YYYY-MM-DD`
+        );
+
+        error.status = 400;
+        throw error;
+    }
+
+    const date = new Date(
+        `${normalizedValue}T00:00:00.000Z`
+    );
+
+    if (
+        Number.isNaN(date.getTime()) ||
+        date.toISOString().slice(0, 10) !== normalizedValue
+    ) {
+        const error = new Error(
+            `The ${parameterName} parameter must be a valid date`
+        );
+
+        error.status = 400;
+        throw error;
+    }
+
+    return date;
+}
+
+function getPublicEventRange(query = {}) {
+    const fromValue = String(query.from || '').trim();
+    const toValue = String(query.to || '').trim();
+
+    if (!fromValue && !toValue) {
+        return null;
+    }
+
+    if (!fromValue || !toValue) {
+        const error = new Error(
+            'The from and to parameters must be used together'
+        );
+
+        error.status = 400;
+        throw error;
+    }
+
+    const startDate = parsePublicEventRangeDate(
+        fromValue,
+        'from'
+    );
+    const endDate = parsePublicEventRangeDate(
+        toValue,
+        'to'
+    );
+
+    if (endDate < startDate) {
+        const error = new Error(
+            'The to parameter must not be earlier than from'
+        );
+
+        error.status = 400;
+        throw error;
+    }
+
+    const rangeDuration =
+        (endDate.getTime() - startDate.getTime()) /
+        (24 * 60 * 60 * 1000);
+
+    if (rangeDuration > MAX_PUBLIC_EVENT_RANGE_DAYS) {
+        const error = new Error(
+            `The requested event range cannot exceed ${MAX_PUBLIC_EVENT_RANGE_DAYS} days`
+        );
+
+        error.status = 400;
+        throw error;
+    }
+
+    const endDateExclusive = new Date(endDate);
+
+    endDateExclusive.setUTCDate(
+        endDateExclusive.getUTCDate() + 1
+    );
+
+    return {
+        startDate,
+        endDateExclusive
+    };
+}
+
+function getPublicEventsQuery(range) {
+    if (range) {
+        return {
             status: 'published',
 
-            // Include future events and multi-day events still underway.
+            // Include events that begin in the requested dates and
+            // multi-day events still underway when the range begins.
             $or: [
                 {
-                    endDate: { $gte: startOfToday }
+                    startDate: {
+                        $gte: range.startDate,
+                        $lt: range.endDateExclusive
+                    }
                 },
                 {
-                    endDate: null,
-                    startDate: { $gte: startOfToday }
+                    startDate: {
+                        $lt: range.startDate
+                    },
+                    endDate: {
+                        $gte: range.startDate
+                    }
                 }
             ]
-        })
+        };
+    }
+
+    const startOfToday = new Date();
+
+    startOfToday.setUTCHours(0, 0, 0, 0);
+
+    return {
+        status: 'published',
+
+        // Preserve the legacy public list: future events and multi-day
+        // events still underway.
+        $or: [
+            {
+                endDate: { $gte: startOfToday }
+            },
+            {
+                endDate: null,
+                startDate: { $gte: startOfToday }
+            }
+        ]
+    };
+}
+
+// Only published events are returned publicly.
+router.get('/', async (req, res) => {
+    try {
+        const range = getPublicEventRange(req.query);
+
+        const events = await Event.find(
+            getPublicEventsQuery(range)
+        )
             .select(PUBLIC_EVENT_FIELDS)
             .sort({
                 startDate: 1,
                 createdAt: 1
             })
-            .limit(100)
+            .limit(range ? 250 : 100)
             .lean();
 
         res.json({ events });
     } catch (error) {
+        if (error.status === 400) {
+            return res.status(400).json({
+                error: error.message
+            });
+        }
+
         console.error('Could not load public events:', error);
 
         res.status(500).json({

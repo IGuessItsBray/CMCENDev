@@ -208,7 +208,7 @@ Mounted at `/api/events`.
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
-| `GET` | `/api/events` | Public | List published events. |
+| `GET` | `/api/events` | Public | List published upcoming events, or published events overlapping a requested `from`/`to` calendar range. |
 | `POST` | `/api/events` | Authenticated + `canCreateDrafts` | Submit an event. Users with review/bypass permissions may publish directly. |
 | `GET` | `/api/events/review` | Authenticated + `canReviewAndPublish` | List event review queue. |
 | `GET` | `/api/events/mine` | Authenticated | List current user's events. |
@@ -216,6 +216,11 @@ Mounted at `/api/events`.
 | `GET` | `/api/events/:id/edit` | Authenticated owner or reviewer | Get full event edit payload. |
 | `PATCH` | `/api/events/:id` | Authenticated owner or reviewer | Update event. |
 | `PATCH` | `/api/events/:eventId/review` | Authenticated + `canReviewAndPublish` | Publish or reject event. |
+
+`GET /api/events` accepts optional `from` and `to` query parameters in
+`YYYY-MM-DD` form. They must be supplied together, define an inclusive range
+of at most 370 days, and return published events that start in or overlap that
+range. Calls without those parameters retain the upcoming-events behaviour.
 
 ## Last Post Notices
 

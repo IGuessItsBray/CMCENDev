@@ -964,9 +964,34 @@ paths:
       tags: [Events]
       summary: List published events.
       security: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          description: >
+            Inclusive range start as YYYY-MM-DD. Must be supplied with `to`;
+            range queries include events that overlap the dates.
+          schema:
+            type: string
+            format: date
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: to
+          in: query
+          required: false
+          description: >
+            Inclusive range end as YYYY-MM-DD. Must be supplied with `from`;
+            requested ranges cannot exceed 370 days.
+          schema:
+            type: string
+            format: date
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
       responses:
         "200":
-          description: Events.
+          description: >
+            Published upcoming events when no range is supplied, or published
+            events overlapping the requested range.
+        "400":
+          $ref: "#/components/responses/Error"
     post:
       tags: [Events]
       summary: Submit event.

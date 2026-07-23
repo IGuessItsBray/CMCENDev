@@ -563,6 +563,53 @@ describe('event, page, and comment workflows', () => {
     assert.equal((await Event.findById(event._id)).status, 'published');
   });
 
+  test('returns published events that overlap a requested calendar range', async () => {
+    const owner = await createUser({ role: 'editor' });
+
+    await Event.create([
+      {
+        title: { en: 'Overlapping event', fr: 'Événement en cours' },
+        startDate: new Date('2040-06-29T12:00:00.000Z'),
+        endDate: new Date('2040-07-02T12:00:00.000Z'),
+        allDay: true,
+        status: 'published',
+        createdBy: owner._id
+      },
+      {
+        title: { en: 'July event', fr: 'Événement de juillet' },
+        startDate: new Date('2040-07-18T12:00:00.000Z'),
+        allDay: true,
+        status: 'published',
+        createdBy: owner._id
+      },
+      {
+        title: { en: 'August event', fr: 'Événement d’août' },
+        startDate: new Date('2040-08-01T12:00:00.000Z'),
+        allDay: true,
+        status: 'published',
+        createdBy: owner._id
+      }
+    ]);
+
+    const response = await request(app)
+      .get('/api/events?from=2040-07-01&to=2040-07-31')
+      .expect(200);
+
+    assert.deepEqual(
+      response.body.events.map(event => event.title.en),
+      ['Overlapping event', 'July event']
+    );
+
+    const incompleteRange = await request(app)
+      .get('/api/events?from=2040-07-01')
+      .expect(400);
+
+    assert.equal(
+      incompleteRange.body.error,
+      'The from and to parameters must be used together'
+    );
+  });
+
   test('prevents unauthorized page management and publishes a bilingual page', async () => {
     const subscriber = await createUser({ role: 'subscriber' });
     const editor = await createUser({ role: 'editor' });

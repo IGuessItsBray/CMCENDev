@@ -727,6 +727,11 @@ paths:
                 sourceName:
                   type: string
                   description: Name inferred from the source content, such as retiree, deceased member, or event title.
+                cdnSlug:
+                  type: string
+                  pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+                  maxLength: 80
+                  description: Optional unique CDN path slug. Creates objects under images/{cdnSlug}/.
       responses:
         "201":
           description: Upload result with variants.

@@ -54,6 +54,14 @@ const MediaAssetSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
+    cdnSlug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: undefined,
+      unique: true,
+      sparse: true
+    },
     mimeType: {
       type: String,
       trim: true,

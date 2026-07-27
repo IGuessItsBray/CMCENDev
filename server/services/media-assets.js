@@ -1,5 +1,8 @@
 const MediaAsset = require('../models/MediaAsset');
-const { buildPublicMediaUrl, getMediaKeyFromValue } = require('./media-library');
+const {
+  buildPublicMediaUrl,
+  getMediaKeyFromValue,
+} = require('./media-library');
 
 const MEDIA_UPLOAD_SOURCE_TYPES = new Set([
   'retirementMessage',
@@ -10,7 +13,7 @@ const MEDIA_UPLOAD_SOURCE_TYPES = new Set([
   'migration',
   'directUpload',
   'legacyStorage',
-  'unknown'
+  'unknown',
 ]);
 
 function cleanString(value, fallback = '') {
@@ -24,16 +27,12 @@ function truncate(value, maxLength = 240) {
 
 function normalizeUploadSourceType(value) {
   const sourceType = cleanString(value);
-  return MEDIA_UPLOAD_SOURCE_TYPES.has(sourceType)
-    ? sourceType
-    : 'unknown';
+  return MEDIA_UPLOAD_SOURCE_TYPES.has(sourceType) ? sourceType : 'unknown';
 }
 
 function buildUploadContext(input = {}) {
   const type = normalizeUploadSourceType(
-    input.uploadSource ||
-    input.type ||
-    input.sourceType
+    input.uploadSource || input.type || input.sourceType,
   );
 
   return {
@@ -45,7 +44,7 @@ function buildUploadContext(input = {}) {
     sourceUrl: truncate(input.sourceUrl, 2000),
     sourceSlug: truncate(input.sourceSlug),
     label: truncate(input.sourceName || input.inferredName || input.label),
-    linkedAt: input.linkedAt || null
+    linkedAt: input.linkedAt || null,
   };
 }
 
@@ -56,20 +55,20 @@ function buildUploadContextFromBody(body = {}) {
 function sanitizeMetadataValue(value) {
   if (Buffer.isBuffer(value)) {
     return {
-      byteLength: value.length
+      byteLength: value.length,
     };
   }
 
   if (Array.isArray(value)) {
-    return value.map(item => sanitizeMetadataValue(item));
+    return value.map((item) => sanitizeMetadataValue(item));
   }
 
   if (value && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value).map(([key, item]) => [
         key,
-        sanitizeMetadataValue(item)
-      ])
+        sanitizeMetadataValue(item),
+      ]),
     );
   }
 
@@ -91,9 +90,7 @@ function sanitizeImageMetadata(metadata = {}) {
 
 function getDisplayName(file, uploadContext = {}) {
   return truncate(
-    uploadContext.label ||
-    file?.originalname ||
-    'Uploaded image'
+    uploadContext.label || file?.originalname || 'Uploaded image',
   );
 }
 
@@ -104,7 +101,7 @@ function buildFileMetadata(file = {}, uploadResult = {}) {
     mimeType: cleanString(file.mimetype || uploadResult.original?.mimeType),
     size: Number(file.size || uploadResult.original?.size || 0),
     storageKey: cleanString(uploadResult.key),
-    originalKey: cleanString(uploadResult.original?.key)
+    originalKey: cleanString(uploadResult.original?.key),
   };
 }
 
@@ -113,7 +110,7 @@ async function createMediaAssetRecord({
   file,
   user,
   uploadContext,
-  imageMetadata
+  imageMetadata,
 }) {
   const cleanUploadContext = buildUploadContext(uploadContext);
   const displayName = getDisplayName(file, cleanUploadContext);
@@ -123,7 +120,9 @@ async function createMediaAssetRecord({
     url: uploadResult.url,
     originalKey: uploadResult.original?.key || uploadResult.key,
     originalUrl: uploadResult.original?.url || uploadResult.url,
-    originalName: truncate(file?.originalname || uploadResult.originalName || displayName),
+    originalName: truncate(
+      file?.originalname || uploadResult.originalName || displayName,
+    ),
     displayName,
     ...(cleanString(uploadResult.cdnSlug)
       ? { cdnSlug: cleanString(uploadResult.cdnSlug) }
@@ -136,8 +135,10 @@ async function createMediaAssetRecord({
     uploadContext: cleanUploadContext,
     inferredName: cleanUploadContext.label,
     fileMetadata: buildFileMetadata(file, uploadResult),
-    imageMetadata: sanitizeImageMetadata(imageMetadata || uploadResult.imageMetadata || {}),
-    uploadedBy: user?._id || null
+    imageMetadata: sanitizeImageMetadata(
+      imageMetadata || uploadResult.imageMetadata || {},
+    ),
+    uploadedBy: user?._id || null,
   });
 
   return asset.toObject();
@@ -149,7 +150,7 @@ async function createDirectUploadMediaAssetRecord({
   contentType,
   size,
   user,
-  uploadContext
+  uploadContext,
 }) {
   const url = buildPublicMediaUrl(key);
   const initialUploadContext = buildUploadContext(uploadContext);
@@ -162,7 +163,7 @@ async function createDirectUploadMediaAssetRecord({
     context:
       initialUploadContext.context === 'unknown'
         ? 'direct-upload'
-        : initialUploadContext.context
+        : initialUploadContext.context,
   });
   const displayName = truncate(cleanUploadContext.label || originalName || key);
 
@@ -182,9 +183,9 @@ async function createDirectUploadMediaAssetRecord({
       mimeType: cleanString(contentType),
       size: Number(size || 0),
       storageKey: cleanString(key),
-      uploadStatus: 'signed-url-issued'
+      uploadStatus: 'signed-url-issued',
     },
-    uploadedBy: user?._id || null
+    uploadedBy: user?._id || null,
   });
 
   return asset.toObject();
@@ -199,7 +200,7 @@ async function linkMediaAssetToSource({
   sourceUrl,
   sourceSlug,
   inferredName,
-  context
+  context,
 }) {
   const key = getMediaKeyFromValue(mediaUrl);
 
@@ -216,12 +217,12 @@ async function linkMediaAssetToSource({
     sourceUrl,
     sourceSlug,
     sourceName: inferredName,
-    linkedAt: new Date()
+    linkedAt: new Date(),
   });
   const cleanInferredName = truncate(inferredName);
   const update = {
     uploadContext,
-    inferredName: cleanInferredName
+    inferredName: cleanInferredName,
   };
 
   if (cleanInferredName) {
@@ -234,11 +235,11 @@ async function linkMediaAssetToSource({
         { key },
         { originalKey: key },
         { url: mediaUrl },
-        { originalUrl: mediaUrl }
-      ].filter(condition => Object.values(condition)[0])
+        { originalUrl: mediaUrl },
+      ].filter((condition) => Object.values(condition)[0]),
     },
     { $set: update },
-    { returnDocument: 'after' }
+    { returnDocument: 'after' },
   );
 }
 
@@ -248,5 +249,5 @@ module.exports = {
   createDirectUploadMediaAssetRecord,
   createMediaAssetRecord,
   linkMediaAssetToSource,
-  sanitizeImageMetadata
+  sanitizeImageMetadata,
 };

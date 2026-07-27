@@ -1,264 +1,407 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
 
-<head>
-  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title data-i18n="login_page_title">
-    Member Login | CMCEN / RCMCE
-  </title>
-    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <title data-i18n="login_page_title">Member Login | CMCEN / RCMCE</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
     <link rel="stylesheet" href="/styles.css" />
-</head>
+  </head>
 
-<body>
-  <header id="header"></header>
+  <body>
+    <header id="header"></header>
 
-  <main class="login-main">
-    <section class="login-shell" aria-labelledby="loginTitle">
-      <div class="login-introduction">
-        <div class="login-introduction-content">
+    <main class="login-main">
+      <section class="login-shell" aria-labelledby="loginTitle">
+        <div class="login-introduction">
+          <div class="login-introduction-content">
+            <p class="login-eyebrow">CMCEN / RCMCE</p>
 
+            <h1 data-i18n="member_login_heading">Member Access</h1>
 
-          <p class="login-eyebrow">
-            CMCEN / RCMCE
-          </p>
-
-          <h1 data-i18n="member_login_heading">
-            Member Access
-          </h1>
-
-          <p class="login-intro-copy" data-i18n="member_login_intro">
-            For Association members, contributors and staff.
-          </p>
-
-
-        </div>
-      </div>
-
-      <div class="login-panel">
-        <div class="login-panel-heading">
-
-
-          <h2 id="loginTitle" data-i18n="login_title">
-            Sign in
-          </h2>
-
-          <p data-i18n="login_instruction">
-            Enter your registered email and password.
-          </p>
+            <p class="login-intro-copy" data-i18n="member_login_intro">
+              For Association members, contributors and staff.
+            </p>
+          </div>
         </div>
 
-        <form class="login-form" id="loginForm">
-          <p class="login-error" id="loginError" role="alert" aria-live="polite" hidden></p>
+        <div class="login-panel">
+          <div class="login-panel-heading">
+            <h2 id="loginTitle" data-i18n="login_title">Sign in</h2>
 
-          <div class="login-field">
-            <label for="loginUsername" data-i18n="email">
-              Email
-            </label>
-
-            <input type="text" id="loginUsername" name="username" autocomplete="email"
-              data-i18n-placeholder="email_placeholder" placeholder="Enter your email" required />
+            <p data-i18n="login_instruction">
+              Enter your registered email and password.
+            </p>
           </div>
 
-          <div class="login-field">
-            <label for="loginPassword" data-i18n="password">
-              Password
-            </label>
+          <form class="login-form" id="loginForm">
+            <p
+              class="login-error"
+              id="loginError"
+              role="alert"
+              aria-live="polite"
+              hidden
+            ></p>
 
-            <input type="password" id="loginPassword" name="password" autocomplete="current-password"
-              data-i18n-placeholder="password_placeholder" placeholder="Enter your password" required />
-          </div>
+            <div class="login-field">
+              <label for="loginUsername" data-i18n="email"> Email </label>
 
-          <div class="login-secondary-actions">
-            <button type="button" class="login-text-button" id="forgotPasswordLink" data-i18n="forgot_password">
-              Forgot your password?
+              <input
+                type="text"
+                id="loginUsername"
+                name="username"
+                autocomplete="email"
+                data-i18n-placeholder="email_placeholder"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+
+            <div class="login-field">
+              <label for="loginPassword" data-i18n="password"> Password </label>
+
+              <input
+                type="password"
+                id="loginPassword"
+                name="password"
+                autocomplete="current-password"
+                data-i18n-placeholder="password_placeholder"
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+
+            <div class="login-secondary-actions">
+              <button
+                type="button"
+                class="login-text-button"
+                id="forgotPasswordLink"
+                data-i18n="forgot_password"
+              >
+                Forgot your password?
+              </button>
+
+              <button
+                type="button"
+                class="login-text-button"
+                id="guestAccessLink"
+              >
+                Continue as guest
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              class="login-submit"
+              id="loginBtn"
+              data-i18n="login_btn"
+            >
+              Sign in
             </button>
 
-            <button type="button" class="login-text-button" id="guestAccessLink">
-              Continue as guest
+            <div class="login-assistance">
+              <span data-i18n="account_help">
+                Need help accessing your account?
+              </span>
+
+              <a href="/contact.html" data-i18n="menu_contact"> Contact us </a>
+            </div>
+
+            <div class="login-divider" aria-hidden="true"></div>
+
+            <p class="login-register">
+              <span data-i18n="no_account"> Don't have an account? </span>
+
+              <a href="/register" data-i18n="register_title"> Register </a>
+            </p>
+          </form>
+
+          <form
+            class="login-form login-secondary-form"
+            id="forgotPasswordForm"
+            hidden
+          >
+            <p
+              class="login-error"
+              id="forgotPasswordMessage"
+              role="alert"
+              aria-live="polite"
+              hidden
+            ></p>
+
+            <div class="login-field">
+              <label for="resetEmail" data-i18n="email"> Email </label>
+
+              <input
+                type="email"
+                id="resetEmail"
+                name="email"
+                autocomplete="email"
+                data-i18n-placeholder="email_placeholder"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="login-submit"
+              id="forgotPasswordBtn"
+              data-i18n="send_reset_link"
+            >
+              Send reset link
             </button>
-          </div>
 
-          <button type="submit" class="login-submit" id="loginBtn" data-i18n="login_btn">
-            Sign in
-          </button>
+            <button
+              type="button"
+              class="login-text-button"
+              id="forgotPasswordBack"
+              data-i18n="back_to_sign_in"
+            >
+              Back to sign in
+            </button>
+          </form>
 
-          <div class="login-assistance">
-            <span data-i18n="account_help">
-              Need help accessing your account?
-            </span>
+          <form
+            class="login-form login-secondary-form"
+            id="resetPasswordForm"
+            hidden
+          >
+            <p
+              class="login-error"
+              id="resetPasswordMessage"
+              role="alert"
+              aria-live="polite"
+              hidden
+            ></p>
 
-            <a href="/contact.html" data-i18n="menu_contact">
-              Contact us
-            </a>
-          </div>
+            <div class="login-field">
+              <label for="newPassword" data-i18n="password"> Password </label>
 
-          <div class="login-divider" aria-hidden="true"></div>
+              <input
+                type="password"
+                id="newPassword"
+                name="password"
+                autocomplete="new-password"
+                data-i18n-placeholder="password_create_placeholder"
+                placeholder="Create a password"
+                required
+              />
+            </div>
 
-          <p class="login-register">
-            <span data-i18n="no_account">
-              Don't have an account?
-            </span>
+            <div class="login-field">
+              <label
+                for="newPasswordConfirmation"
+                data-i18n="password_confirmation"
+              >
+                Password confirmation
+              </label>
 
-            <a href="/register" data-i18n="register_title">
-              Register
-            </a>
-          </p>
-        </form>
+              <input
+                type="password"
+                id="newPasswordConfirmation"
+                name="passwordConfirmation"
+                autocomplete="new-password"
+                data-i18n-placeholder="password_confirm_placeholder"
+                placeholder="Confirm your password"
+                required
+              />
+            </div>
 
-        <form class="login-form login-secondary-form" id="forgotPasswordForm" hidden>
-          <p class="login-error" id="forgotPasswordMessage" role="alert" aria-live="polite" hidden></p>
+            <button
+              type="submit"
+              class="login-submit"
+              id="resetPasswordBtn"
+              data-i18n="reset_password_btn"
+            >
+              Reset password
+            </button>
 
-          <div class="login-field">
-            <label for="resetEmail" data-i18n="email">
-              Email
-            </label>
+            <button
+              type="button"
+              class="login-text-button"
+              id="resetPasswordBack"
+              data-i18n="back_to_sign_in"
+            >
+              Back to sign in
+            </button>
+          </form>
 
-            <input type="email" id="resetEmail" name="email" autocomplete="email"
-              data-i18n-placeholder="email_placeholder" placeholder="Enter your email" required />
-          </div>
+          <form
+            class="login-form login-secondary-form"
+            id="emailVerificationForm"
+            hidden
+          >
+            <p
+              class="login-error"
+              id="emailVerificationMessage"
+              role="alert"
+              aria-live="polite"
+              hidden
+            ></p>
 
-          <button type="submit" class="login-submit" id="forgotPasswordBtn" data-i18n="send_reset_link">
-            Send reset link
-          </button>
+            <div class="login-field">
+              <label for="emailVerificationCode">
+                Email verification code
+              </label>
 
-          <button type="button" class="login-text-button" id="forgotPasswordBack" data-i18n="back_to_sign_in">
-            Back to sign in
-          </button>
-        </form>
+              <input
+                id="emailVerificationCode"
+                name="emailVerificationCode"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                placeholder="000000"
+                maxlength="6"
+                required
+              />
+            </div>
 
-        <form class="login-form login-secondary-form" id="resetPasswordForm" hidden>
-          <p class="login-error" id="resetPasswordMessage" role="alert" aria-live="polite" hidden></p>
+            <button
+              type="submit"
+              class="login-submit"
+              id="emailVerificationBtn"
+            >
+              Verify email
+            </button>
 
-          <div class="login-field">
-            <label for="newPassword" data-i18n="password">
-              Password
-            </label>
+            <button
+              type="button"
+              class="login-text-button"
+              id="emailVerificationBack"
+              data-i18n="back_to_sign_in"
+            >
+              Back to sign in
+            </button>
+          </form>
 
-            <input type="password" id="newPassword" name="password" autocomplete="new-password"
-              data-i18n-placeholder="password_create_placeholder" placeholder="Create a password" required />
-          </div>
+          <form
+            class="login-form login-secondary-form"
+            id="guestAccessForm"
+            hidden
+          >
+            <p
+              class="login-error"
+              id="guestAccessMessage"
+              role="alert"
+              aria-live="polite"
+              hidden
+            ></p>
 
-          <div class="login-field">
-            <label for="newPasswordConfirmation" data-i18n="password_confirmation">
-              Password confirmation
-            </label>
+            <div class="login-field" id="guestEmailField">
+              <label for="guestEmail" data-i18n="email"> Email </label>
 
-            <input type="password" id="newPasswordConfirmation" name="passwordConfirmation" autocomplete="new-password"
-              data-i18n-placeholder="password_confirm_placeholder" placeholder="Confirm your password" required />
-          </div>
+              <input
+                type="email"
+                id="guestEmail"
+                autocomplete="email"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
 
-          <button type="submit" class="login-submit" id="resetPasswordBtn" data-i18n="reset_password_btn">
-            Reset password
-          </button>
+            <div class="login-field" id="guestFirstNameField" hidden>
+              <label for="guestFirstName" data-i18n="first_name">
+                First name
+              </label>
 
-          <button type="button" class="login-text-button" id="resetPasswordBack" data-i18n="back_to_sign_in">
-            Back to sign in
-          </button>
-        </form>
+              <input
+                type="text"
+                id="guestFirstName"
+                autocomplete="given-name"
+                placeholder="First name"
+              />
+            </div>
 
-        <form class="login-form login-secondary-form" id="emailVerificationForm" hidden>
-          <p class="login-error" id="emailVerificationMessage" role="alert" aria-live="polite" hidden></p>
+            <div class="login-field" id="guestCodeField" hidden>
+              <label for="guestCode"> Guest access code </label>
 
-          <div class="login-field">
-            <label for="emailVerificationCode">
-              Email verification code
-            </label>
+              <input
+                id="guestCode"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                placeholder="000000"
+                maxlength="6"
+              />
+            </div>
 
-            <input id="emailVerificationCode" name="emailVerificationCode" inputmode="numeric"
-              autocomplete="one-time-code" placeholder="000000" maxlength="6" required />
-          </div>
+            <button type="submit" class="login-submit" id="guestAccessBtn">
+              Send code
+            </button>
 
-          <button type="submit" class="login-submit" id="emailVerificationBtn">
-            Verify email
-          </button>
-
-          <button type="button" class="login-text-button" id="emailVerificationBack" data-i18n="back_to_sign_in">
-            Back to sign in
-          </button>
-        </form>
-
-        <form class="login-form login-secondary-form" id="guestAccessForm" hidden>
-          <p class="login-error" id="guestAccessMessage" role="alert" aria-live="polite" hidden></p>
-
-          <div class="login-field" id="guestEmailField">
-            <label for="guestEmail" data-i18n="email">
-              Email
-            </label>
-
-            <input type="email" id="guestEmail" autocomplete="email" placeholder="Enter your email" required />
-          </div>
-
-          <div class="login-field" id="guestFirstNameField" hidden>
-            <label for="guestFirstName" data-i18n="first_name">
-              First name
-            </label>
-
-            <input type="text" id="guestFirstName" autocomplete="given-name" placeholder="First name" />
-          </div>
-
-          <div class="login-field" id="guestCodeField" hidden>
-            <label for="guestCode">
-              Guest access code
-            </label>
-
-            <input id="guestCode" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="6" />
-          </div>
-
-          <button type="submit" class="login-submit" id="guestAccessBtn">
-            Send code
-          </button>
-
-          <button type="button" class="login-text-button" id="guestAccessBack" data-i18n="back_to_sign_in">
-            Back to sign in
-          </button>
-        </form>
-      </div>
-    </section>
-  </main>
-
-  <div class="login-mfa-overlay" id="mfaOverlay" hidden>
-    <section class="login-mfa-dialog" role="dialog" aria-modal="true" aria-labelledby="mfaDialogTitle">
-      <div class="login-mfa-heading">
-        <p>Multi-factor authentication</p>
-        <h2 id="mfaDialogTitle">Finish signing in</h2>
-      </div>
-
-      <p class="login-mfa-copy">
-        Choose how you would like to verify this sign-in.
-      </p>
-
-      <div class="login-mfa-options" id="mfaOptions"></div>
-
-      <form class="login-mfa-totp" id="mfaTotpForm" hidden>
-        <label for="mfaTotpCode">Authenticator code</label>
-
-        <div class="login-mfa-code-row">
-          <input id="mfaTotpCode" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="8" />
-
-          <button type="submit">Verify</button>
+            <button
+              type="button"
+              class="login-text-button"
+              id="guestAccessBack"
+              data-i18n="back_to_sign_in"
+            >
+              Back to sign in
+            </button>
+          </form>
         </div>
-      </form>
+      </section>
+    </main>
 
-      <p class="login-error" id="mfaError" role="alert" aria-live="polite" hidden></p>
+    <div class="login-mfa-overlay" id="mfaOverlay" hidden>
+      <section
+        class="login-mfa-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mfaDialogTitle"
+      >
+        <div class="login-mfa-heading">
+          <p>Multi-factor authentication</p>
+          <h2 id="mfaDialogTitle">Finish signing in</h2>
+        </div>
 
-      <button class="login-mfa-cancel" id="mfaCancel" type="button">
-        Cancel
-      </button>
-    </section>
-  </div>
+        <p class="login-mfa-copy">
+          Choose how you would like to verify this sign-in.
+        </p>
 
-  <footer id="footer"></footer>
+        <div class="login-mfa-options" id="mfaOptions"></div>
 
-  <script src="/app-utils.js"></script>
+        <form class="login-mfa-totp" id="mfaTotpForm" hidden>
+          <label for="mfaTotpCode">Authenticator code</label>
+
+          <div class="login-mfa-code-row">
+            <input
+              id="mfaTotpCode"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              placeholder="000000"
+              maxlength="8"
+            />
+
+            <button type="submit">Verify</button>
+          </div>
+        </form>
+
+        <p
+          class="login-error"
+          id="mfaError"
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></p>
+
+        <button class="login-mfa-cancel" id="mfaCancel" type="button">
+          Cancel
+        </button>
+      </section>
+    </div>
+
+    <footer id="footer"></footer>
+
+    <script src="/app-utils.js"></script>
     <script src="/timers.js"></script>
-  <script src="/index.js"></script>
-  <script src="/translations.js"></script>
-  <script src="/validation-i18n.js"></script>
-  <script src="/login.js"></script>
-</body>
-
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/validation-i18n.js"></script>
+    <script src="/login.js"></script>
+  </body>
 </html>

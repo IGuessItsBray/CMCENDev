@@ -1,10 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const LastPostMessage = require('../models/LastPostMessage');
-const {
-  authMiddleware,
-  requirePermission
-} = require('../middleware/auth');
+const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { cleanString } = require('../services/content-utils');
 const { linkMediaAssetToSource } = require('../services/media-assets');
 
@@ -34,12 +31,14 @@ function isValidImageUrl(value) {
 }
 
 function encodeCursor(lastPost) {
-  return Buffer.from(JSON.stringify({
-    id: String(lastPost._id),
-    publishedAt: lastPost.publishedAt
-      ? new Date(lastPost.publishedAt).toISOString()
-      : null
-  })).toString('base64url');
+  return Buffer.from(
+    JSON.stringify({
+      id: String(lastPost._id),
+      publishedAt: lastPost.publishedAt
+        ? new Date(lastPost.publishedAt).toISOString()
+        : null,
+    }),
+  ).toString('base64url');
 }
 
 function decodeCursor(value) {
@@ -51,7 +50,7 @@ function decodeCursor(value) {
 
   try {
     const decoded = JSON.parse(
-      Buffer.from(cursor, 'base64url').toString('utf8')
+      Buffer.from(cursor, 'base64url').toString('utf8'),
     );
 
     if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
@@ -68,7 +67,7 @@ function decodeCursor(value) {
 
     return {
       id: new mongoose.Types.ObjectId(decoded.id),
-      publishedAt
+      publishedAt,
     };
   } catch (error) {
     return undefined;
@@ -83,7 +82,7 @@ function getCursorFilter(cursor) {
   if (!cursor.publishedAt) {
     return {
       publishedAt: null,
-      _id: { $lt: cursor.id }
+      _id: { $lt: cursor.id },
     };
   }
 
@@ -91,8 +90,8 @@ function getCursorFilter(cursor) {
     $or: [
       { publishedAt: { $lt: cursor.publishedAt } },
       { publishedAt: cursor.publishedAt, _id: { $lt: cursor.id } },
-      { publishedAt: null }
-    ]
+      { publishedAt: null },
+    ],
   };
 }
 
@@ -101,26 +100,27 @@ function getDeceasedName(lastPost) {
   const name = [
     cleanString(deceased.fullRank),
     cleanString(deceased.firstName),
-    cleanString(deceased.surname)
-  ].filter(Boolean).join(' ');
+    cleanString(deceased.surname),
+  ]
+    .filter(Boolean)
+    .join(' ');
   const postNominal = cleanString(deceased.postNominal);
 
   return [name, postNominal].filter(Boolean).join(', ') || 'In Memoriam';
 }
 
 function getLocalizedMessages(lastPost) {
-  const storedMessages = lastPost.messages?.toObject?.() ||
-    lastPost.messages || {};
+  const storedMessages =
+    lastPost.messages?.toObject?.() || lastPost.messages || {};
   const messages = {
     en: cleanString(storedMessages.en),
-    fr: cleanString(storedMessages.fr)
+    fr: cleanString(storedMessages.fr),
   };
   return messages;
 }
 
 function serializeLastPost(lastPost) {
-  const deceased = lastPost.deceased?.toObject?.() ||
-    lastPost.deceased || {};
+  const deceased = lastPost.deceased?.toObject?.() || lastPost.deceased || {};
 
   return {
     _id: lastPost._id,
@@ -128,12 +128,12 @@ function serializeLastPost(lastPost) {
       fullRank: cleanString(deceased.fullRank),
       firstName: cleanString(deceased.firstName),
       surname: cleanString(deceased.surname),
-      postNominal: cleanString(deceased.postNominal)
+      postNominal: cleanString(deceased.postNominal),
     },
     displayName: getDeceasedName(lastPost),
     messages: getLocalizedMessages(lastPost),
     imageUrl: cleanString(lastPost.imageUrl),
-    publishedAt: lastPost.publishedAt || null
+    publishedAt: lastPost.publishedAt || null,
   };
 }
 
@@ -146,7 +146,7 @@ async function linkLastPostImageToMediaAsset(lastPost) {
     sourceId: lastPost._id,
     sourceField: 'imageUrl',
     sourceUrl: `/last-post-message?id=${encodeURIComponent(String(lastPost._id))}`,
-    inferredName: getDeceasedName(lastPost)
+    inferredName: getDeceasedName(lastPost),
   });
 }
 
@@ -164,18 +164,19 @@ router.post(
         rank: cleanString(req.user.rank),
         firstName: cleanString(req.user.firstName),
         lastName: cleanString(req.user.lastName),
-        email: cleanString(req.user.email).toLowerCase()
+        email: cleanString(req.user.email).toLowerCase(),
       };
       const cleanDeceased = {
         fullRank: cleanString(deceased.fullRank),
         firstName: cleanString(deceased.firstName),
         surname: cleanString(deceased.surname),
-        postNominal: cleanString(deceased.postNominal)
+        postNominal: cleanString(deceased.postNominal),
       };
 
-      if (Object.values(submitter).some(value => !value)) {
+      if (Object.values(submitter).some((value) => !value)) {
         return res.status(400).json({
-          error: 'Complete your profile rank, name, and email before submitting a Last Post notice'
+          error:
+            'Complete your profile rank, name, and email before submitting a Last Post notice',
         });
       }
 
@@ -185,23 +186,26 @@ router.post(
         !cleanDeceased.surname
       ) {
         return res.status(400).json({
-          error: 'Full rank, first name, and surname are required for the deceased member'
+          error:
+            'Full rank, first name, and surname are required for the deceased member',
         });
       }
 
       if (!['en', 'fr'].includes(messageLanguage)) {
         return res.status(400).json({
-          error: 'Choose whether the notice was submitted in English or French'
+          error: 'Choose whether the notice was submitted in English or French',
         });
       }
 
       if (!message) {
-        return res.status(400).json({ error: 'A Last Post notice is required' });
+        return res
+          .status(400)
+          .json({ error: 'A Last Post notice is required' });
       }
 
       if (!isValidImageUrl(imageUrl)) {
         return res.status(400).json({
-          error: 'The image URL must begin with http:// or https://'
+          error: 'The image URL must begin with http:// or https://',
         });
       }
 
@@ -210,11 +214,11 @@ router.post(
         deceased: cleanDeceased,
         messageLanguage,
         messages: {
-          [messageLanguage]: message
+          [messageLanguage]: message,
         },
         imageUrl,
         status: 'pending',
-        createdBy: req.user._id
+        createdBy: req.user._id,
       });
 
       await linkLastPostImageToMediaAsset(lastPost);
@@ -222,15 +226,17 @@ router.post(
       return res.status(201).json({
         lastPost: {
           _id: lastPost._id,
-          status: lastPost.status
+          status: lastPost.status,
         },
-        message: 'Last Post notice submitted for review'
+        message: 'Last Post notice submitted for review',
       });
     } catch (error) {
       console.error('Could not submit Last Post notice:', error);
-      return res.status(500).json({ error: 'Could not submit Last Post notice' });
+      return res
+        .status(500)
+        .json({ error: 'Could not submit Last Post notice' });
     }
-  }
+  },
 );
 
 router.get(
@@ -246,9 +252,11 @@ router.get(
       return res.json({ lastPosts });
     } catch (error) {
       console.error('Could not load Last Post review queue:', error);
-      return res.status(500).json({ error: 'Could not load Last Post review queue' });
+      return res
+        .status(500)
+        .json({ error: 'Could not load Last Post review queue' });
     }
-  }
+  },
 );
 
 router.patch(
@@ -267,22 +275,26 @@ router.patch(
 
       if (!['publish', 'reject'].includes(action)) {
         return res.status(400).json({
-          error: 'Review action must be publish or reject'
+          error: 'Review action must be publish or reject',
         });
       }
 
       const lastPost = await LastPostMessage.findOne({
         _id: messageId,
-        status: 'pending'
+        status: 'pending',
       });
 
       if (!lastPost) {
-        return res.status(404).json({ error: 'Pending Last Post notice not found' });
+        return res
+          .status(404)
+          .json({ error: 'Pending Last Post notice not found' });
       }
 
       if (action === 'reject') {
         if (!rejectionReason) {
-          return res.status(400).json({ error: 'A rejection reason is required' });
+          return res
+            .status(400)
+            .json({ error: 'A rejection reason is required' });
         }
 
         lastPost.status = 'rejected';
@@ -294,12 +306,12 @@ router.patch(
 
       const messages = {
         en: cleanString(req.body?.messages?.en),
-        fr: cleanString(req.body?.messages?.fr)
+        fr: cleanString(req.body?.messages?.fr),
       };
 
       if (!messages.en || !messages.fr) {
         return res.status(400).json({
-          error: 'English and French notices are required before publication'
+          error: 'English and French notices are required before publication',
         });
       }
 
@@ -312,9 +324,11 @@ router.patch(
       return res.json({ lastPost });
     } catch (error) {
       console.error('Could not review Last Post notice:', error);
-      return res.status(500).json({ error: 'Could not review Last Post notice' });
+      return res
+        .status(500)
+        .json({ error: 'Could not review Last Post notice' });
     }
-  }
+  },
 );
 
 router.get('/', async (req, res) => {
@@ -322,28 +336,28 @@ router.get('/', async (req, res) => {
     const cursor = decodeCursor(req.query.cursor);
 
     if (cursor === undefined) {
-      return res.status(400).json({ error: 'The pagination cursor is invalid' });
+      return res
+        .status(400)
+        .json({ error: 'The pagination cursor is invalid' });
     }
 
     const pageSize = getPageSize(req.query.limit);
     const lastPosts = await LastPostMessage.find({
       status: 'published',
-      ...getCursorFilter(cursor)
+      ...getCursorFilter(cursor),
     })
       .sort({ publishedAt: -1, _id: -1 })
       .limit(pageSize + 1)
       .lean();
     const hasMore = lastPosts.length > pageSize;
-    const visibleLastPosts = hasMore
-      ? lastPosts.slice(0, pageSize)
-      : lastPosts;
+    const visibleLastPosts = hasMore ? lastPosts.slice(0, pageSize) : lastPosts;
 
     return res.json({
       lastPosts: visibleLastPosts.map(serializeLastPost),
       hasMore,
       nextCursor: hasMore
         ? encodeCursor(visibleLastPosts[visibleLastPosts.length - 1])
-        : ''
+        : '',
     });
   } catch (error) {
     console.error('Could not load Last Post notices:', error);
@@ -361,7 +375,7 @@ router.get('/:messageId', async (req, res) => {
 
     const lastPost = await LastPostMessage.findOne({
       _id: messageId,
-      status: 'published'
+      status: 'published',
     }).lean();
 
     if (!lastPost) {

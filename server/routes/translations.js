@@ -1,14 +1,11 @@
 const express = require('express');
-const {
-  authMiddleware,
-  requirePermission
-} = require('../middleware/auth');
+const { authMiddleware, requirePermission } = require('../middleware/auth');
 const {
   SUPPORTED_LANGUAGES,
   createTranslationsRuntime,
   getTranslationRows,
   readTranslations,
-  writeTranslations
+  writeTranslations,
 } = require('../services/translation-store');
 const { writeAuditLog } = require('../services/audit-log');
 
@@ -17,7 +14,7 @@ const router = express.Router();
 function getEditableValues(body) {
   const values = {};
 
-  SUPPORTED_LANGUAGES.forEach(language => {
+  SUPPORTED_LANGUAGES.forEach((language) => {
     if (Object.prototype.hasOwnProperty.call(body, language)) {
       values[language] = body[language];
     }
@@ -51,9 +48,10 @@ router.get('/translations.js', async (req, res) => {
     res.send(createTranslationsRuntime(translations));
   } catch (error) {
     console.error('Translation runtime generation failed:', error);
-    res.status(500).type('application/javascript').send(
-      'console.error("Could not load translations.");'
-    );
+    res
+      .status(500)
+      .type('application/javascript')
+      .send('console.error("Could not load translations.");');
   }
 });
 
@@ -67,12 +65,12 @@ router.get(
 
       res.json({
         translations,
-        rows: getTranslationRows(translations)
+        rows: getTranslationRows(translations),
       });
     } catch (error) {
       sendReadError(res, error);
     }
-  }
+  },
 );
 
 router.patch(
@@ -88,8 +86,8 @@ router.patch(
       }
 
       const translations = await readTranslations();
-      const existingKey = SUPPORTED_LANGUAGES.some(language =>
-        Object.prototype.hasOwnProperty.call(translations[language], key)
+      const existingKey = SUPPORTED_LANGUAGES.some((language) =>
+        Object.prototype.hasOwnProperty.call(translations[language], key),
       );
 
       if (!existingKey) {
@@ -101,14 +99,14 @@ router.patch(
 
       if (!languages.length) {
         return res.status(400).json({
-          error: 'At least one translation value is required'
+          error: 'At least one translation value is required',
         });
       }
 
       for (const language of languages) {
         if (typeof values[language] !== 'string') {
           return res.status(400).json({
-            error: `${language} translation must be text`
+            error: `${language} translation must be text`,
           });
         }
       }
@@ -117,7 +115,7 @@ router.patch(
       const newValues = {};
       const changedLanguages = [];
 
-      languages.forEach(language => {
+      languages.forEach((language) => {
         const previousValue = translations[language][key] || '';
         const nextValue = values[language].trim();
 
@@ -148,8 +146,8 @@ router.patch(
             newValues: changedLanguages.reduce((result, language) => {
               result[language] = newValues[language];
               return result;
-            }, {})
-          }
+            }, {}),
+          },
         });
       }
 
@@ -158,13 +156,13 @@ router.patch(
         values: SUPPORTED_LANGUAGES.reduce((result, language) => {
           result[language] = translations[language][key] || '';
           return result;
-        }, {})
+        }, {}),
       });
     } catch (error) {
       console.error('Translation update failed:', error);
       res.status(500).json({ error: 'Could not update translation' });
     }
-  }
+  },
 );
 
 module.exports = router;

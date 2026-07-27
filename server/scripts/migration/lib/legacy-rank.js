@@ -9,5 +9,5 @@ function normalizeDeceasedRank(value) {
 module.exports = {
   LEGACY_SUBMITTER_RANK,
   MISSING_DECEASED_RANK,
-  normalizeDeceasedRank
+  normalizeDeceasedRank,
 };

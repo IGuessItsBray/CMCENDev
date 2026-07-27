@@ -2,13 +2,25 @@ const registerForm = document.getElementById("registerForm");
 const registerButton = document.getElementById("registerBtn");
 const registerError = document.getElementById("registerError");
 const passwordInput = document.getElementById("regPassword");
-const passwordConfirmationInput = document.getElementById("regPasswordConfirmation");
+const passwordConfirmationInput = document.getElementById(
+  "regPasswordConfirmation",
+);
 const passwordStrength = document.getElementById("passwordStrength");
-const registerEmailVerification = document.getElementById("registerEmailVerification");
-const registerEmailVerificationError = document.getElementById("registerEmailVerificationError");
-const registerEmailVerificationCode = document.getElementById("registerEmailVerificationCode");
-const registerEmailVerificationVerify = document.getElementById("registerEmailVerificationVerify");
-const invitationToken = new URLSearchParams(window.location.search).get("inviteToken");
+const registerEmailVerification = document.getElementById(
+  "registerEmailVerification",
+);
+const registerEmailVerificationError = document.getElementById(
+  "registerEmailVerificationError",
+);
+const registerEmailVerificationCode = document.getElementById(
+  "registerEmailVerificationCode",
+);
+const registerEmailVerificationVerify = document.getElementById(
+  "registerEmailVerificationVerify",
+);
+const invitationToken = new URLSearchParams(window.location.search).get(
+  "inviteToken",
+);
 const registerMfa = document.getElementById("registerMfa");
 const registerMfaError = document.getElementById("registerMfaError");
 const registerMfaOptions = document.getElementById("registerMfaOptions");
@@ -21,7 +33,9 @@ const registerTotpVerify = document.getElementById("registerTotpVerify");
 const registerTrade = document.getElementById("regTrade");
 const registerTradeOtherField = document.getElementById("regTradeOtherField");
 const registerTradeOther = document.getElementById("regTradeOther");
-const registerPreferredLanguage = document.getElementById("regPreferredLanguage");
+const registerPreferredLanguage = document.getElementById(
+  "regPreferredLanguage",
+);
 
 let registrationToken = "";
 let emailVerificationToken = "";
@@ -30,7 +44,9 @@ function setStoredToken(token) {
   registrationToken = CMCENUtils.storeAuthToken(token);
 
   if (!registrationToken) {
-    throw new Error("Account created, but no setup session token was returned.");
+    throw new Error(
+      "Account created, but no setup session token was returned.",
+    );
   }
 
   if (typeof window.refreshAuthUI === "function") {
@@ -59,7 +75,9 @@ function getMfaToken() {
   const token = registrationToken || CMCENUtils.getStoredAuthToken();
 
   if (!token) {
-    throw new Error("Your account was created, but the setup session was not available. Please sign in to finish MFA setup.");
+    throw new Error(
+      "Your account was created, but the setup session was not available. Please sign in to finish MFA setup.",
+    );
   }
 
   return token;
@@ -67,7 +85,7 @@ function getMfaToken() {
 
 function ensureWebAuthnAvailable() {
   CMCENUtils.ensureWebAuthnAvailable(
-    "Passkeys are not available in this browser context. Choose authenticator app instead."
+    "Passkeys are not available in this browser context. Choose authenticator app instead.",
   );
 }
 
@@ -75,7 +93,7 @@ async function mfaApi(path, options = {}) {
   return CMCENUtils.apiJson(path, {
     ...options,
     token: getMfaToken(),
-    errorMessage: options.errorMessage || "Could not complete MFA setup"
+    errorMessage: options.errorMessage || "Could not complete MFA setup",
   });
 }
 
@@ -120,9 +138,9 @@ async function verifyEmailCode() {
       method: "POST",
       body: {
         verificationToken: emailVerificationToken,
-        code
+        code,
       },
-      errorMessage: "Could not verify email"
+      errorMessage: "Could not verify email",
     });
 
     setStoredToken(data.token);
@@ -143,18 +161,20 @@ async function setupPasskey() {
     ensureWebAuthnAvailable();
     setMfaError("Use your passkey to secure this account.", "info");
 
-    const options = CMCENUtils.preparePublicKeyCreationOptions(await mfaApi("/api/mfa/webauthn/register/options", {
-      method: "POST",
-      body: {}
-    }));
+    const options = CMCENUtils.preparePublicKeyCreationOptions(
+      await mfaApi("/api/mfa/webauthn/register/options", {
+        method: "POST",
+        body: {},
+      }),
+    );
 
     const credential = await navigator.credentials.create({
-      publicKey: options
+      publicKey: options,
     });
 
     await mfaApi("/api/mfa/webauthn/register/verify", {
       method: "POST",
-      body: CMCENUtils.serializeAttestationCredential(credential)
+      body: CMCENUtils.serializeAttestationCredential(credential),
     });
 
     finishRegistration();
@@ -172,7 +192,7 @@ async function setupTotp() {
 
   try {
     const setup = await mfaApi("/api/mfa/totp/setup", {
-      method: "POST"
+      method: "POST",
     });
 
     registerMfaOptions.hidden = true;
@@ -217,7 +237,7 @@ async function verifyTotp() {
   try {
     await mfaApi("/api/mfa/totp/verify", {
       method: "POST",
-      body: { token: code }
+      body: { token: code },
     });
 
     finishRegistration();
@@ -250,7 +270,7 @@ function updatePasswordStrength() {
     "is-weak",
     "is-fair",
     "is-good",
-    "is-strong"
+    "is-strong",
   ];
 
   passwordStrength.className = `password-strength ${password ? levels[score] : "is-empty"}`;
@@ -289,12 +309,12 @@ async function prepareInvitationRegistration() {
   try {
     const invitation = await CMCENUtils.apiJson(
       `/api/invitations/activate?token=${encodeURIComponent(invitationToken)}`,
-      { errorMessage: "Invitation link is invalid or has expired" }
+      { errorMessage: "Invitation link is invalid or has expired" },
     );
     const fields = {
       firstName: invitation.firstName,
       lastName: invitation.lastName,
-      email: invitation.email
+      email: invitation.email,
     };
 
     Object.entries(fields).forEach(([name, value]) => {
@@ -305,22 +325,34 @@ async function prepareInvitationRegistration() {
       input.readOnly = true;
     });
 
-    document.querySelectorAll(".register-field").forEach(field => {
-      const keepField = Array.from(field.querySelectorAll("input, select"))
-        .some(input => ["firstName", "lastName", "email", "password", "passwordConfirmation"].includes(input.name));
+    document.querySelectorAll(".register-field").forEach((field) => {
+      const keepField = Array.from(
+        field.querySelectorAll("input, select"),
+      ).some((input) =>
+        [
+          "firstName",
+          "lastName",
+          "email",
+          "password",
+          "passwordConfirmation",
+        ].includes(input.name),
+      );
 
       if (keepField) return;
 
       field.hidden = true;
-      field.querySelectorAll("input, select").forEach(input => {
+      field.querySelectorAll("input, select").forEach((input) => {
         input.required = false;
         input.disabled = true;
       });
     });
 
-    document.getElementById("registerTitle").textContent = "Activate your account";
+    document.getElementById("registerTitle").textContent =
+      "Activate your account";
   } catch (error) {
-    setRegisterError(error.message || "Invitation link is invalid or has expired");
+    setRegisterError(
+      error.message || "Invitation link is invalid or has expired",
+    );
     registerButton.disabled = true;
   }
 }
@@ -337,7 +369,9 @@ registerForm.addEventListener("submit", async (event) => {
   const formData = new FormData(registerForm);
 
   const password = String(formData.get("password") || "");
-  const passwordConfirmation = String(formData.get("passwordConfirmation") || "");
+  const passwordConfirmation = String(
+    formData.get("passwordConfirmation") || "",
+  );
 
   if (password !== passwordConfirmation) {
     setRegisterError(translate("passwords_do_not_match"));
@@ -366,7 +400,7 @@ registerForm.addEventListener("submit", async (event) => {
     preferredLanguage: String(formData.get("preferredLanguage") || "en").trim(),
     email: String(formData.get("email") || "").trim(),
     password,
-    passwordConfirmation
+    passwordConfirmation,
   };
 
   if (invitationToken) {
@@ -377,7 +411,7 @@ registerForm.addEventListener("submit", async (event) => {
     const data = await CMCENUtils.apiJson("/api/register", {
       method: "POST",
       body: registration,
-      errorMessage: "Could not create account"
+      errorMessage: "Could not create account",
     });
 
     if (data.emailVerificationRequired) {
@@ -391,7 +425,6 @@ registerForm.addEventListener("submit", async (event) => {
       window.applyLanguage(registration.preferredLanguage);
     }
     showMfaSetup();
-
   } catch (error) {
     setRegisterError(error.message);
     registerError.focus?.();
@@ -405,13 +438,13 @@ registerPasskeyOption.addEventListener("click", setupPasskey);
 registerTotpOption.addEventListener("click", setupTotp);
 registerTotpVerify.addEventListener("click", verifyTotp);
 registerEmailVerificationVerify.addEventListener("click", verifyEmailCode);
-registerEmailVerificationCode.addEventListener("keydown", event => {
+registerEmailVerificationCode.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
     verifyEmailCode();
   }
 });
-registerTotpCode.addEventListener("keydown", event => {
+registerTotpCode.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
     verifyTotp();

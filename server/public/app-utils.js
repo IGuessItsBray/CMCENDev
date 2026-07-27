@@ -1,6 +1,8 @@
 (function () {
   function normalizeToken(value) {
-    return String(value || "").trim().replace(/^Bearer\s+/i, "");
+    return String(value || "")
+      .trim()
+      .replace(/^Bearer\s+/i, "");
   }
 
   function escapeRegExp(value) {
@@ -8,12 +10,8 @@
   }
 
   function getRetireeNameParts(retiree = {}) {
-    let name = [
-      retiree.rank,
-      retiree.firstName,
-      retiree.lastName
-    ]
-      .map(value => String(value || "").trim())
+    let name = [retiree.rank, retiree.firstName, retiree.lastName]
+      .map((value) => String(value || "").trim())
       .filter(Boolean)
       .join(" ");
     const postNominals = String(retiree.postNominals || "").trim();
@@ -25,13 +23,13 @@
      */
     postNominals
       .split(",")
-      .map(value => value.trim())
+      .map((value) => value.trim())
       .filter(Boolean)
       .reverse()
-      .forEach(postNominal => {
+      .forEach((postNominal) => {
         const trailingPostNominal = new RegExp(
           `(?:,\\s*|\\s+)${escapeRegExp(postNominal)}$`,
-          "i"
+          "i",
         );
 
         if (trailingPostNominal.test(name)) {
@@ -58,9 +56,7 @@
 
   function getStoredAuthToken() {
     const token = normalizeToken(
-      localStorage.getItem("token") ||
-      localStorage.getItem("api_token") ||
-      ""
+      localStorage.getItem("token") || localStorage.getItem("api_token") || "",
     );
 
     if (token) {
@@ -88,7 +84,9 @@
     if (parts.length !== 3) return 0;
 
     try {
-      const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+      const payload = JSON.parse(
+        atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")),
+      );
       return Number(payload.exp || 0) * 1000;
     } catch {
       return 0;
@@ -117,9 +115,9 @@
 
     tokenRefreshPromise = fetch("/api/session/refresh", {
       method: "POST",
-      credentials: "same-origin"
+      credentials: "same-origin",
     })
-      .then(async response => {
+      .then(async (response) => {
         const data = await readJsonResponse(response);
 
         if (!response.ok || !data.token) {
@@ -141,7 +139,7 @@
     try {
       await fetch("/api/session/logout", {
         method: "POST",
-        credentials: "same-origin"
+        credentials: "same-origin",
       });
     } finally {
       clearAuthToken();
@@ -168,13 +166,14 @@
     const suppliedToken = normalizeToken(token);
     const storedToken = getStoredAuthToken();
     const cleanToken =
-      storedToken && getTokenExpiryMs(storedToken) > getTokenExpiryMs(suppliedToken)
+      storedToken &&
+      getTokenExpiryMs(storedToken) > getTokenExpiryMs(suppliedToken)
         ? storedToken
         : suppliedToken;
 
     return {
       ...headers,
-      ...(cleanToken ? { Authorization: `Bearer ${cleanToken}` } : {})
+      ...(cleanToken ? { Authorization: `Bearer ${cleanToken}` } : {}),
     };
   }
 
@@ -182,7 +181,7 @@
     const normalizedName = name.toLowerCase();
 
     return Object.keys(headers).some(
-      key => key.toLowerCase() === normalizedName
+      (key) => key.toLowerCase() === normalizedName,
     );
   }
 
@@ -229,17 +228,13 @@
     const requestHeaders = { ...headers };
     const requestBody =
       json &&
-        body !== undefined &&
-        !(body instanceof FormData) &&
-        typeof body !== "string"
+      body !== undefined &&
+      !(body instanceof FormData) &&
+      typeof body !== "string"
         ? JSON.stringify(body)
         : body;
     const requestToken =
-      token !== undefined
-        ? token
-        : auth
-          ? getStoredAuthToken()
-          : undefined;
+      token !== undefined ? token : auth ? getStoredAuthToken() : undefined;
 
     if (
       json &&
@@ -256,9 +251,10 @@
     const response = await fetch(path, {
       ...fetchOptions,
       body: requestBody,
-      headers: requestToken !== undefined
-        ? authHeaders(requestToken, requestHeaders)
-        : requestHeaders
+      headers:
+        requestToken !== undefined
+          ? authHeaders(requestToken, requestHeaders)
+          : requestHeaders,
     });
 
     if (
@@ -273,7 +269,7 @@
         return apiFetch(path, {
           ...options,
           token: refreshedToken,
-          _retriedAfterRefresh: true
+          _retriedAfterRefresh: true,
         });
       }
     }
@@ -282,9 +278,7 @@
 
     if (response.status === 401 && redirectOnUnauthorized) {
       redirectToLogin(
-        redirectOnUnauthorized === true
-          ? "/login"
-          : redirectOnUnauthorized
+        redirectOnUnauthorized === true ? "/login" : redirectOnUnauthorized,
       );
       throw createApiError(unauthorizedMessage, response, data);
     }
@@ -293,9 +287,9 @@
       throw createApiError(
         parseJson
           ? extractErrorMessage(data, response, errorMessage)
-          : (errorMessage || `HTTP ${response.status} ${response.statusText}`),
+          : errorMessage || `HTTP ${response.status} ${response.statusText}`,
         response,
-        data
+        data,
       );
     }
 
@@ -306,7 +300,7 @@
     return apiFetch(path, {
       ...options,
       json: true,
-      parseJson: true
+      parseJson: true,
     });
   }
 
@@ -315,7 +309,9 @@
     sessionStorage.removeItem("twoFactorMethods");
   }
 
-  function ensureWebAuthnAvailable(message = "Passkeys are not available in this browser context.") {
+  function ensureWebAuthnAvailable(
+    message = "Passkeys are not available in this browser context.",
+  ) {
     if (!window.PublicKeyCredential || !navigator.credentials) {
       throw new Error(message);
     }
@@ -325,7 +321,7 @@
     const base64 = String(value || "")
       .replace(/-/g, "+")
       .replace(/_/g, "/");
-    const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
+    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
     const binary = atob(padded);
     const bytes = new Uint8Array(binary.length);
 
@@ -355,9 +351,9 @@
       return credentials;
     }
 
-    return credentials.map(credential => ({
+    return credentials.map((credential) => ({
       ...credential,
-      id: base64urlToArrayBuffer(credential.id)
+      id: base64urlToArrayBuffer(credential.id),
     }));
   }
 
@@ -371,13 +367,14 @@
     if (publicKey.user?.id) {
       publicKey.user = {
         ...publicKey.user,
-        id: base64urlToArrayBuffer(publicKey.user.id)
+        id: base64urlToArrayBuffer(publicKey.user.id),
       };
     }
 
     if (publicKey.excludeCredentials) {
-      publicKey.excludeCredentials =
-        convertPublicKeyCredentialDescriptors(publicKey.excludeCredentials);
+      publicKey.excludeCredentials = convertPublicKeyCredentialDescriptors(
+        publicKey.excludeCredentials,
+      );
     }
 
     return publicKey;
@@ -391,8 +388,9 @@
     }
 
     if (publicKey.allowCredentials) {
-      publicKey.allowCredentials =
-        convertPublicKeyCredentialDescriptors(publicKey.allowCredentials);
+      publicKey.allowCredentials = convertPublicKeyCredentialDescriptors(
+        publicKey.allowCredentials,
+      );
     }
 
     return publicKey;
@@ -405,14 +403,16 @@
       type: credential.type,
       authenticatorAttachment: credential.authenticatorAttachment || "",
       response: {
-        clientDataJSON:
-          arrayBufferToBase64url(credential.response.clientDataJSON),
-        attestationObject:
-          arrayBufferToBase64url(credential.response.attestationObject)
+        clientDataJSON: arrayBufferToBase64url(
+          credential.response.clientDataJSON,
+        ),
+        attestationObject: arrayBufferToBase64url(
+          credential.response.attestationObject,
+        ),
       },
       transports: credential.response.getTransports
         ? credential.response.getTransports()
-        : []
+        : [],
     };
   }
 
@@ -422,16 +422,17 @@
       rawId: arrayBufferToBase64url(assertion.rawId),
       type: assertion.type,
       response: {
-        authenticatorData:
-          arrayBufferToBase64url(assertion.response.authenticatorData),
-        clientDataJSON:
-          arrayBufferToBase64url(assertion.response.clientDataJSON),
-        signature:
-          arrayBufferToBase64url(assertion.response.signature),
+        authenticatorData: arrayBufferToBase64url(
+          assertion.response.authenticatorData,
+        ),
+        clientDataJSON: arrayBufferToBase64url(
+          assertion.response.clientDataJSON,
+        ),
+        signature: arrayBufferToBase64url(assertion.response.signature),
         userHandle: assertion.response.userHandle
           ? arrayBufferToBase64url(assertion.response.userHandle)
-          : null
-      }
+          : null,
+      },
     };
   }
 
@@ -457,7 +458,9 @@
       return "";
     }
 
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    const localDate = new Date(
+      date.getTime() - date.getTimezoneOffset() * 60000,
+    );
     return localDate.toISOString().slice(0, 16);
   }
 
@@ -483,37 +486,30 @@
       return options.fallback || "-";
     }
 
-    const {
-      fallback,
-      locale,
-      ...formatOptions
-    } = options;
+    const { fallback, locale, ...formatOptions } = options;
     const hasDateOption = [
       "dateStyle",
       "weekday",
       "era",
       "year",
       "month",
-      "day"
-    ].some(option => Object.prototype.hasOwnProperty.call(
-      formatOptions,
-      option
-    ));
+      "day",
+    ].some((option) =>
+      Object.prototype.hasOwnProperty.call(formatOptions, option),
+    );
     const hasTimeStyle = Object.prototype.hasOwnProperty.call(
       formatOptions,
-      "timeStyle"
+      "timeStyle",
     );
     const displayOptionKeys = Object.keys(formatOptions).filter(
-      option => ![
-        "calendar",
-        "hourCycle",
-        "numberingSystem",
-        "timeZone"
-      ].includes(option)
+      (option) =>
+        !["calendar", "hourCycle", "numberingSystem", "timeZone"].includes(
+          option,
+        ),
     );
     const hasAnyDisplayOption = displayOptionKeys.length > 0;
     const intlOptions = {
-      ...formatOptions
+      ...formatOptions,
     };
 
     if (!hasAnyDisplayOption) {
@@ -526,7 +522,7 @@
 
     return new Intl.DateTimeFormat(
       locale || getCurrentLocale(),
-      intlOptions
+      intlOptions,
     ).format(new Date(value));
   }
 
@@ -549,16 +545,11 @@
 
     return text
       .replace(/[_-]+/g, " ")
-      .replace(/\b\w/g, character => character.toUpperCase());
+      .replace(/\b\w/g, (character) => character.toUpperCase());
   }
 
   function getUserDisplayName(user, fallback = "") {
-    return (
-      user?.accountName ||
-      user?.username ||
-      user?.email ||
-      fallback
-    );
+    return user?.accountName || user?.username || user?.email || fallback;
   }
 
   function createLoadingSpinner(label) {
@@ -599,10 +590,10 @@
       panels,
       panelKey = "panel",
       tabs,
-      tabKey = "tab"
+      tabKey = "tab",
     } = options;
 
-    getElementList(tabs).forEach(tab => {
+    getElementList(tabs).forEach((tab) => {
       const isActive = tab.dataset[tabKey] === active;
 
       tab.classList.toggle(activeClass, isActive);
@@ -615,7 +606,7 @@
       }
     });
 
-    getElementList(panels).forEach(panel => {
+    getElementList(panels).forEach((panel) => {
       const isActive = panel.dataset[panelKey] === active;
 
       panel.classList.toggle(activeClass, isActive);
@@ -631,12 +622,12 @@
       activateTabs({
         ...options,
         active,
-        tabs
+        tabs,
       });
     }
 
-    tabs.forEach(tab => {
-      tab.addEventListener("click", event => {
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", (event) => {
         const active = tab.dataset[tabKey];
 
         if (options.preventDefault) {
@@ -694,14 +685,14 @@
     "top-left",
     "top-center",
     "bottom-right",
-    "bottom-left"
+    "bottom-left",
   ]);
   const toastColors = new Set([
     "success",
     "error",
     "warning",
     "info",
-    "neutral"
+    "neutral",
   ]);
 
   function getToastRegion(position) {
@@ -747,7 +738,7 @@
     if (!text) {
       return {
         element: null,
-        dismiss() { }
+        dismiss() {},
       };
     }
 
@@ -778,7 +769,7 @@
     dismissButton.className = "cmcen-toast-dismiss";
     dismissButton.setAttribute(
       "aria-label",
-      options.dismissLabel || getToastDismissLabel("Dismiss notification")
+      options.dismissLabel || getToastDismissLabel("Dismiss notification"),
     );
     dismissButton.textContent = "×";
 
@@ -843,9 +834,11 @@
 
     return Array.from(
       modalDialog.querySelectorAll(
-        'button:not([disabled]), input:not([disabled]), [href], select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )
-    ).filter(element => !element.hidden && element.getClientRects().length > 0);
+        'button:not([disabled]), input:not([disabled]), [href], select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter(
+      (element) => !element.hidden && element.getClientRects().length > 0,
+    );
   }
 
   function closeModal(value) {
@@ -924,19 +917,29 @@
 
     modalCancelButton = document.createElement("button");
     modalCancelButton.type = "button";
-    modalCancelButton.className = "cmcen-modal-button cmcen-modal-button-secondary";
+    modalCancelButton.className =
+      "cmcen-modal-button cmcen-modal-button-secondary";
 
     modalConfirmButton = document.createElement("button");
     modalConfirmButton.type = "button";
-    modalConfirmButton.className = "cmcen-modal-button cmcen-modal-button-primary";
+    modalConfirmButton.className =
+      "cmcen-modal-button cmcen-modal-button-primary";
 
     modalActions.append(modalCancelButton, modalConfirmButton);
-    body.append(modalMessage, modalInputGroup, modalChoiceActions, modalActions);
+    body.append(
+      modalMessage,
+      modalInputGroup,
+      modalChoiceActions,
+      modalActions,
+    );
     modalDialog.append(header, body);
     modalOverlay.append(modalDialog);
 
-    modalOverlay.addEventListener("click", event => {
-      if (event.target === modalOverlay && modalActiveRequest?.closeOnBackdrop) {
+    modalOverlay.addEventListener("click", (event) => {
+      if (
+        event.target === modalOverlay &&
+        modalActiveRequest?.closeOnBackdrop
+      ) {
         closeModal(modalActiveRequest.cancelValue);
       }
     });
@@ -956,11 +959,13 @@
     modalConfirmButton.addEventListener("click", () => {
       if (!modalActiveRequest) return;
       closeModal(
-        modalActiveRequest.type === "prompt" ? modalInput.value : modalActiveRequest.confirmValue
+        modalActiveRequest.type === "prompt"
+          ? modalInput.value
+          : modalActiveRequest.confirmValue,
       );
     });
 
-    modalOverlay.addEventListener("keydown", event => {
+    modalOverlay.addEventListener("keydown", (event) => {
       if (!modalActiveRequest) return;
 
       if (event.key === "Escape") {
@@ -997,93 +1002,106 @@
   }
 
   function showModal(type, message, options = {}) {
-    const request = () => new Promise(resolve => {
-      createModal();
+    const request = () =>
+      new Promise((resolve) => {
+        createModal();
 
-      const isPrompt = type === "prompt";
-      const isChoice = type === "choice";
-      const isAlert = type === "alert";
-      const titleKey = isPrompt
-        ? "modal_input_title"
-        : isAlert
-          ? "modal_notice_title"
-          : "modal_confirm_title";
-      const defaultTitle = isPrompt
-        ? "Enter a value"
-        : isAlert
-          ? "Notice"
-          : "Confirm action";
+        const isPrompt = type === "prompt";
+        const isChoice = type === "choice";
+        const isAlert = type === "alert";
+        const titleKey = isPrompt
+          ? "modal_input_title"
+          : isAlert
+            ? "modal_notice_title"
+            : "modal_confirm_title";
+        const defaultTitle = isPrompt
+          ? "Enter a value"
+          : isAlert
+            ? "Notice"
+            : "Confirm action";
 
-      modalActiveRequest = {
-        type,
-        resolve,
-        restoreFocus: document.activeElement instanceof HTMLElement
-          ? document.activeElement
-          : null,
-        cancelValue: isPrompt ? null : false,
-        confirmValue: isAlert ? undefined : true,
-        closeOnBackdrop: options.closeOnBackdrop !== false
-      };
+        modalActiveRequest = {
+          type,
+          resolve,
+          restoreFocus:
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null,
+          cancelValue: isPrompt ? null : false,
+          confirmValue: isAlert ? undefined : true,
+          closeOnBackdrop: options.closeOnBackdrop !== false,
+        };
 
-      modalDialog.setAttribute("role", isAlert ? "alertdialog" : "dialog");
-      modalTitle.textContent = options.title || getModalTranslation(titleKey, defaultTitle);
-      modalMessage.textContent = String(message || "");
-      modalCloseButton.setAttribute(
-        "aria-label",
-        options.closeLabel || getModalTranslation("modal_close", "Close")
-      );
-      modalInputGroup.hidden = !isPrompt;
-      modalChoiceActions.hidden = !isChoice;
-      modalChoiceActions.replaceChildren();
+        modalDialog.setAttribute("role", isAlert ? "alertdialog" : "dialog");
+        modalTitle.textContent =
+          options.title || getModalTranslation(titleKey, defaultTitle);
+        modalMessage.textContent = String(message || "");
+        modalCloseButton.setAttribute(
+          "aria-label",
+          options.closeLabel || getModalTranslation("modal_close", "Close"),
+        );
+        modalInputGroup.hidden = !isPrompt;
+        modalChoiceActions.hidden = !isChoice;
+        modalChoiceActions.replaceChildren();
 
-      if (isChoice) {
-        (options.choices || []).forEach(choice => {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "cmcen-modal-choice";
-          button.classList.toggle("is-danger", choice.destructive === true);
+        if (isChoice) {
+          (options.choices || []).forEach((choice) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "cmcen-modal-choice";
+            button.classList.toggle("is-danger", choice.destructive === true);
 
-          const label = document.createElement("strong");
-          label.textContent = choice.label || choice.value;
-          const description = document.createElement("span");
-          description.textContent = choice.description || "";
-          button.append(label, description);
-          button.addEventListener("click", () => closeModal(choice.value));
-          modalChoiceActions.append(button);
+            const label = document.createElement("strong");
+            label.textContent = choice.label || choice.value;
+            const description = document.createElement("span");
+            description.textContent = choice.description || "";
+            button.append(label, description);
+            button.addEventListener("click", () => closeModal(choice.value));
+            modalChoiceActions.append(button);
+          });
+        }
+        modalInput.type = isPrompt ? options.inputType || "text" : "text";
+        modalInput.value = isPrompt ? String(options.defaultValue || "") : "";
+        modalInput.placeholder = isPrompt ? options.placeholder || "" : "";
+        modalInput.autocomplete = isPrompt
+          ? options.autocomplete || "off"
+          : "off";
+        modalInputLabel.textContent =
+          options.inputLabel ||
+          getModalTranslation("modal_input_label", "Value");
+        modalCancelButton.hidden = isAlert;
+        modalActions.hidden = isChoice;
+        modalCancelButton.textContent =
+          options.cancelText || getModalTranslation("modal_cancel", "Cancel");
+        modalConfirmButton.textContent =
+          options.confirmText ||
+          getModalTranslation(
+            isAlert ? "modal_close" : "modal_confirm",
+            isAlert ? "Close" : "Confirm",
+          );
+        modalConfirmButton.classList.toggle(
+          "is-danger",
+          Boolean(options.destructive),
+        );
+
+        modalOverlay.hidden = false;
+        document.body.classList.add("cmcen-modal-lock");
+
+        window.requestAnimationFrame(() => {
+          if (modalActiveRequest?.resolve !== resolve) return;
+
+          const focusTarget = isPrompt
+            ? modalInput
+            : isChoice
+              ? modalChoiceActions.querySelector("button")
+              : modalConfirmButton;
+          focusTarget.focus();
+          if (isPrompt) modalInput.select();
         });
-      }
-      modalInput.type = isPrompt ? options.inputType || "text" : "text";
-      modalInput.value = isPrompt ? String(options.defaultValue || "") : "";
-      modalInput.placeholder = isPrompt ? options.placeholder || "" : "";
-      modalInput.autocomplete = isPrompt ? options.autocomplete || "off" : "off";
-      modalInputLabel.textContent = options.inputLabel || getModalTranslation("modal_input_label", "Value");
-      modalCancelButton.hidden = isAlert;
-      modalActions.hidden = isChoice;
-      modalCancelButton.textContent = options.cancelText || getModalTranslation("modal_cancel", "Cancel");
-      modalConfirmButton.textContent = options.confirmText || getModalTranslation(
-        isAlert ? "modal_close" : "modal_confirm",
-        isAlert ? "Close" : "Confirm"
-      );
-      modalConfirmButton.classList.toggle("is-danger", Boolean(options.destructive));
-
-      modalOverlay.hidden = false;
-      document.body.classList.add("cmcen-modal-lock");
-
-      window.requestAnimationFrame(() => {
-        if (modalActiveRequest?.resolve !== resolve) return;
-
-        const focusTarget = isPrompt
-          ? modalInput
-          : isChoice
-            ? modalChoiceActions.querySelector("button")
-            : modalConfirmButton;
-        focusTarget.focus();
-        if (isPrompt) modalInput.select();
       });
-    });
 
     const queuedRequest = modalQueue.then(request, request);
-    modalQueue = queuedRequest.catch(() => { });
+    modalQueue = queuedRequest.catch(() => {});
     return queuedRequest;
   }
 
@@ -1099,7 +1117,7 @@
     },
     choose(message, options) {
       return showModal("choice", message, options);
-    }
+    },
   };
 
   function trackPageVisit() {
@@ -1113,28 +1131,29 @@
       title: document.title || "",
       referrer: document.referrer || "",
       locale: navigator.language || "",
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || ""
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
     });
     const token = getStoredAuthToken();
     const headers = {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
     fetch("/api/analytics/visit", {
       method: "POST",
       headers,
       body: payload,
-      keepalive: true
-    }).catch(() => { });
+      keepalive: true,
+    }).catch(() => {});
   }
 
   function getCompressedImageName(file, mimeType) {
     const extension = mimeType === "image/png" ? "png" : "jpg";
-    const baseName = String(file?.name || "image")
-      .replace(/\.[^.]+$/, "")
-      .replace(/[^\w.-]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "image";
+    const baseName =
+      String(file?.name || "image")
+        .replace(/\.[^.]+$/, "")
+        .replace(/[^\w.-]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "image";
 
     return `${baseName}.${extension}`;
   }
@@ -1143,7 +1162,7 @@
     const {
       maxDimension = 2200,
       jpegQuality = 0.82,
-      minSavingsRatio = 0.92
+      minSavingsRatio = 0.92,
     } = options;
     const imageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -1171,7 +1190,8 @@
     const scale = Math.min(1, maxDimension / Math.max(width, height));
     const targetWidth = Math.max(1, Math.round(width * scale));
     const targetHeight = Math.max(1, Math.round(height * scale));
-    const mimeType = file.type === "image/png" && scale === 1 ? "image/png" : "image/jpeg";
+    const mimeType =
+      file.type === "image/png" && scale === 1 ? "image/png" : "image/jpeg";
     const canvas = document.createElement("canvas");
     canvas.width = targetWidth;
     canvas.height = targetHeight;
@@ -1188,8 +1208,12 @@
 
     context.drawImage(image, 0, 0, targetWidth, targetHeight);
 
-    const blob = await new Promise(resolve => {
-      canvas.toBlob(resolve, mimeType, mimeType === "image/jpeg" ? jpegQuality : undefined);
+    const blob = await new Promise((resolve) => {
+      canvas.toBlob(
+        resolve,
+        mimeType,
+        mimeType === "image/jpeg" ? jpegQuality : undefined,
+      );
     });
 
     if (!blob || blob.size >= file.size * minSavingsRatio) {
@@ -1198,7 +1222,7 @@
 
     return new File([blob], getCompressedImageName(file, mimeType), {
       type: mimeType,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 
@@ -1240,7 +1264,7 @@
     toLocalDateInput,
     toLocalDateTimeInput,
     toLocalTimeInput,
-    trackPageVisit
+    trackPageVisit,
   };
 
   window.addEventListener("load", trackPageVisit, { once: true });

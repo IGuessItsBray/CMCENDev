@@ -3,14 +3,14 @@ const CONTENT_STATUSES = Object.freeze([
   'draft',
   'pending',
   'published',
-  'rejected'
+  'rejected',
 ]);
 
 const EVENT_ORGANIZING_ENTITIES = Object.freeze([
   'branch',
   'association',
   'foundation',
-  'museum'
+  'museum',
 ]);
 
 const EVENT_TYPES = Object.freeze([
@@ -19,7 +19,7 @@ const EVENT_TYPES = Object.freeze([
   'ceremony',
   'training',
   'social',
-  'other'
+  'other',
 ]);
 
 const CANADIAN_REGIONS = Object.freeze([
@@ -36,7 +36,7 @@ const CANADIAN_REGIONS = Object.freeze([
   'QC',
   'SK',
   'YT',
-  'International'
+  'International',
 ]);
 
 const CANADIAN_TIMEZONES = Object.freeze([
@@ -45,14 +45,14 @@ const CANADIAN_TIMEZONES = Object.freeze([
   'America/Toronto',
   'America/Winnipeg',
   'America/Edmonton',
-  'America/Vancouver'
+  'America/Vancouver',
 ]);
 
 const RETIREMENT_TRADE_ROLE_GROUPS = Object.freeze({
   officer: Object.freeze([
     '00172-07 - GENERAL OFFICER LIST (BGEN+)',
     '00340 - CELE',
-    '00341 - SIGS'
+    '00341 - SIGS',
   ]),
 
   ncm: Object.freeze([
@@ -64,23 +64,20 @@ const RETIREMENT_TRADE_ROLE_GROUPS = Object.freeze({
     '00383 - SIG OP',
     '00384 - LINE TECH',
     '00385 - SIG TECH',
-    '00394 - IS TECH'
-  ])
+    '00394 - IS TECH',
+  ]),
 });
 
 const MILITARY_TRADE_ROLES = Object.freeze([
   ...RETIREMENT_TRADE_ROLE_GROUPS.officer,
-  ...RETIREMENT_TRADE_ROLE_GROUPS.ncm
+  ...RETIREMENT_TRADE_ROLE_GROUPS.ncm,
 ]);
 
-const ACCOUNT_TRADE_OPTIONS = Object.freeze([
-  ...MILITARY_TRADE_ROLES,
-  'other'
-]);
+const ACCOUNT_TRADE_OPTIONS = Object.freeze([...MILITARY_TRADE_ROLES, 'other']);
 
 const RETIREMENT_TRADE_ROLES = Object.freeze([
   ...MILITARY_TRADE_ROLES,
-  'Civilian'
+  'Civilian',
 ]);
 
 module.exports = {
@@ -92,5 +89,5 @@ module.exports = {
   ACCOUNT_TRADE_OPTIONS,
   MILITARY_TRADE_ROLES,
   RETIREMENT_TRADE_ROLE_GROUPS,
-  RETIREMENT_TRADE_ROLES
+  RETIREMENT_TRADE_ROLES,
 };

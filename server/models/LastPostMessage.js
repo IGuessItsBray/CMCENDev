@@ -6,7 +6,7 @@ const LastPostMessageSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: 240,
-      default: ''
+      default: '',
     },
 
     slug: {
@@ -14,7 +14,7 @@ const LastPostMessageSchema = new mongoose.Schema(
       trim: true,
       maxlength: 240,
       default: '',
-      index: true
+      index: true,
     },
 
     submitter: {
@@ -22,27 +22,27 @@ const LastPostMessageSchema = new mongoose.Schema(
         type: String,
         required: true,
         trim: true,
-        maxlength: 80
+        maxlength: 80,
       },
       firstName: {
         type: String,
         required: true,
         trim: true,
-        maxlength: 80
+        maxlength: 80,
       },
       lastName: {
         type: String,
         required: true,
         trim: true,
-        maxlength: 80
+        maxlength: 80,
       },
       email: {
         type: String,
         required: true,
         trim: true,
         lowercase: true,
-        maxlength: 254
-      }
+        maxlength: 254,
+      },
     },
 
     deceased: {
@@ -52,60 +52,60 @@ const LastPostMessageSchema = new mongoose.Schema(
         maxlength: 80,
         // Legacy notices may not have a rank. New submissions remain validated
         // by the Last Post route before they are stored.
-        default: ''
+        default: '',
       },
       firstName: {
         type: String,
         required: true,
         trim: true,
-        maxlength: 80
+        maxlength: 80,
       },
       surname: {
         type: String,
         required: true,
         trim: true,
-        maxlength: 80
+        maxlength: 80,
       },
       postNominal: {
         type: String,
         trim: true,
         maxlength: 120,
-        default: ''
-      }
+        default: '',
+      },
     },
 
     // The language selected by the submitter before the other version is translated.
     messageLanguage: {
       type: String,
       enum: ['en', 'fr'],
-      required: true
+      required: true,
     },
 
     messages: {
       en: {
         type: String,
         trim: true,
-        default: ''
+        default: '',
       },
       fr: {
         type: String,
         trim: true,
-        default: ''
-      }
+        default: '',
+      },
     },
 
     imageUrl: {
       type: String,
       trim: true,
       maxlength: 2000,
-      default: ''
+      default: '',
     },
 
     photoUrl: {
       type: String,
       trim: true,
       maxlength: 2000,
-      default: ''
+      default: '',
     },
 
     // Publication metadata is needed for review and for the public archive.
@@ -113,45 +113,45 @@ const LastPostMessageSchema = new mongoose.Schema(
       type: String,
       enum: ['pending', 'published', 'rejected'],
       default: 'pending',
-      index: true
+      index: true,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
-      index: true
+      index: true,
     },
     publishedAt: {
       type: Date,
       default: null,
-      index: true
+      index: true,
     },
     rejectionReason: {
       type: String,
       trim: true,
       maxlength: 2000,
-      default: ''
+      default: '',
     },
 
     legacy: {
       type: mongoose.Schema.Types.Mixed,
-      default: null
-    }
+      default: null,
+    },
   },
   {
-    timestamps: true
-  }
+    timestamps: true,
+  },
 );
 
 LastPostMessageSchema.index({
   status: 1,
   publishedAt: -1,
-  _id: -1
+  _id: -1,
 });
 
 LastPostMessageSchema.index({
   'legacy.source': 1,
-  'legacy.postId': 1
+  'legacy.postId': 1,
 });
 
 module.exports = mongoose.model('LastPostMessage', LastPostMessageSchema);

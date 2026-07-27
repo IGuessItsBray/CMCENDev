@@ -6,190 +6,197 @@ const PERMISSION_CATALOG = Object.freeze([
     label: 'Read connections',
     group: 'Connections',
     action: 'read',
-    description: 'View member-only connection areas.'
+    description: 'View member-only connection areas.',
   },
   {
     key: 'content.create',
     label: 'Create content',
     group: 'Content',
     action: 'write',
-    description: 'Create draft events and other site content.'
+    description: 'Create draft events and other site content.',
   },
   {
     key: 'retirements.submit',
     label: 'Submit retirement messages',
     group: 'Retirements',
     action: 'write',
-    description: 'Submit retirement messages for review.'
+    description: 'Submit retirement messages for review.',
   },
   {
     key: 'content.publish_own',
     label: 'Publish own content',
     group: 'Content',
     action: 'write',
-    description: 'Publish content owned by the member.'
+    description: 'Publish content owned by the member.',
   },
   {
     key: 'content.review',
     label: 'Review and publish content',
     group: 'Content',
     action: 'edit',
-    description: 'Review, edit, approve, and publish content.'
+    description: 'Review, edit, approve, and publish content.',
   },
   {
     key: 'content.delete',
     label: 'Delete content',
     group: 'Content',
     action: 'delete',
-    description: 'Delete events, retirement messages, and comments.'
+    description: 'Delete events, retirement messages, and comments.',
   },
   {
     key: 'content.delete_own',
     label: 'Delete own content',
     group: 'Content',
     action: 'delete',
-    description: 'Delete content and comments submitted by the current member.'
+    description: 'Delete content and comments submitted by the current member.',
   },
   {
     key: 'content_areas.manage',
     label: 'Manage content areas',
     group: 'Content',
     action: 'admin',
-    description: 'Assign or change content-area access for members.'
+    description: 'Assign or change content-area access for members.',
   },
   {
     key: 'translations.manage',
     label: 'Manage translations',
     group: 'Translations',
     action: 'edit',
-    description: 'Edit site translation strings.'
+    description: 'Edit site translation strings.',
   },
   {
     key: 'pages.manage',
     label: 'Manage pages',
     group: 'Pages',
     action: 'edit',
-    description: 'Create, edit, publish, archive, and delete custom pages.'
+    description: 'Create, edit, publish, archive, and delete custom pages.',
   },
   {
     key: 'navigation.manage',
     label: 'Manage navigation',
     group: 'Pages',
     action: 'edit',
-    description: 'Add custom pages to the main navigation and reorder custom links.'
+    description:
+      'Add custom pages to the main navigation and reorder custom links.',
   },
   {
     key: 'users.read',
     label: 'View users',
     group: 'Users',
     action: 'read',
-    description: 'View the member list and member details in the admin work zone.'
+    description:
+      'View the member list and member details in the admin work zone.',
   },
   {
     key: 'users.manage',
     label: 'Manage users',
     group: 'Users',
     action: 'edit',
-    description: 'Edit member roles, content areas, and role assignments.'
+    description: 'Edit member roles, content areas, and role assignments.',
   },
   {
     key: 'users.delete_self',
     label: 'Delete own account',
     group: 'Users',
     action: 'delete',
-    description: 'Delete the current account after MFA confirmation.'
+    description: 'Delete the current account after MFA confirmation.',
   },
   {
     key: 'users.delete_any',
     label: 'Delete user accounts',
     group: 'Users',
     action: 'delete',
-    description: 'Delete other accounts after MFA confirmation.'
+    description: 'Delete other accounts after MFA confirmation.',
   },
   {
     key: 'users.provision',
     label: 'Provision user accounts',
     group: 'Users',
     action: 'create',
-    description: 'Create invited accounts and send activation links.'
+    description: 'Create invited accounts and send activation links.',
   },
   {
     key: 'users.mfa_reset',
     label: 'Reset user MFA',
     group: 'Users',
     action: 'admin',
-    description: 'Reset another user\'s authenticator app and passkeys from the admin work zone.'
+    description:
+      "Reset another user's authenticator app and passkeys from the admin work zone.",
   },
   {
     key: 'roles.manage',
     label: 'Manage roles',
     group: 'Roles',
     action: 'edit',
-    description: 'Create, edit, and delete custom roles.'
+    description: 'Create, edit, and delete custom roles.',
   },
   {
     key: 'audit.view',
     label: 'View audit log',
     group: 'Audit log',
     action: 'read',
-    description: 'Review security, login, publishing, deletion, and role-change logs.'
+    description:
+      'Review security, login, publishing, deletion, and role-change logs.',
   },
   {
     key: 'analytics.view',
     label: 'View analytics',
     group: 'Analytics',
     action: 'read',
-    description: 'Review page visits, traffic sources, device types, operating systems, and guest/member usage.'
+    description:
+      'Review page visits, traffic sources, device types, operating systems, and guest/member usage.',
   },
   {
     key: 'timers.manage',
     label: 'Manage banners',
     group: 'Banners',
     action: 'edit',
-    description: 'Create, update, schedule, and delete public site banners.'
+    description: 'Create, update, schedule, and delete public site banners.',
   },
   {
     key: 'site_config.access',
     label: 'Access site config',
     group: 'Site config',
     action: 'read',
-    description: 'Open the site configuration work zone after token verification.'
+    description:
+      'Open the site configuration work zone after token verification.',
   },
   {
     key: 'site_config.manage',
     label: 'Manage site config',
     group: 'Site config',
     action: 'admin',
-    description: 'Edit environment-backed site configuration values after token verification.'
+    description:
+      'Edit environment-backed site configuration values after token verification.',
   },
   {
     key: 'media.read',
     label: 'View media library',
     group: 'Media',
     action: 'read',
-    description: 'View uploaded media and attachment usage.'
+    description: 'View uploaded media and attachment usage.',
   },
   {
     key: 'media.upload',
     label: 'Upload media',
     group: 'Media',
     action: 'write',
-    description: 'Upload authenticated image assets for content.'
+    description: 'Upload authenticated image assets for content.',
   },
   {
     key: 'media.delete',
     label: 'Delete media',
     group: 'Media',
     action: 'delete',
-    description: 'Delete unattached media from storage.'
+    description: 'Delete unattached media from storage.',
   },
   {
     key: 'review.bypass',
     label: 'Bypass review stages',
     group: 'Moderation',
     action: 'admin',
-    description: 'Skip review-only workflow gates.'
-  }
+    description: 'Skip review-only workflow gates.',
+  },
 ]);
 
 const LEGACY_PERMISSION_KEYS = Object.freeze({
@@ -219,17 +226,17 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canViewMediaLibrary: 'media.read',
   canUploadMedia: 'media.upload',
   canDeleteMedia: 'media.delete',
-  canBypassReviewStages: 'review.bypass'
+  canBypassReviewStages: 'review.bypass',
 });
 
 const CUSTOM_ROLE_DENYLIST = Object.freeze([
   'review.bypass',
   'site_config.access',
-  'site_config.manage'
+  'site_config.manage',
 ]);
 
 function getAllPermissionKeys() {
-  return PERMISSION_CATALOG.map(permission => permission.key);
+  return PERMISSION_CATALOG.map((permission) => permission.key);
 }
 
 function hasMinimumRole(userRole, minimumRole) {
@@ -248,98 +255,73 @@ function getBuiltInPermissionFlags(user) {
   const isGhost = role === 'ghost';
 
   return {
-    canAccessConnections:
-      hasMinimumRole(role, 'subscriber'),
+    canAccessConnections: hasMinimumRole(role, 'subscriber'),
 
-    canCreateDrafts:
-      isGhost || hasMinimumRole(role, 'contributor'),
+    canCreateDrafts: isGhost || hasMinimumRole(role, 'contributor'),
 
-    canSubmitRetirementMessages:
-      isGhost || hasMinimumRole(role, 'contributor'),
+    canSubmitRetirementMessages: isGhost || hasMinimumRole(role, 'contributor'),
 
-    canPublishOwnContent:
-      hasMinimumRole(role, 'author'),
+    canPublishOwnContent: hasMinimumRole(role, 'author'),
 
-    canReviewAndPublish:
-      hasMinimumRole(role, 'editor'),
+    canReviewAndPublish: hasMinimumRole(role, 'editor'),
 
-    canDeleteContent:
-      hasMinimumRole(role, 'administrator'),
+    canDeleteContent: hasMinimumRole(role, 'administrator'),
 
-    canDeleteOwnContent:
-      hasMinimumRole(role, 'subscriber'),
+    canDeleteOwnContent: hasMinimumRole(role, 'subscriber'),
 
-    canManageContentAreas:
-      hasMinimumRole(role, 'administrator'),
+    canManageContentAreas: hasMinimumRole(role, 'administrator'),
 
-    canManageTranslations:
-      hasMinimumRole(role, 'editor'),
+    canManageTranslations: hasMinimumRole(role, 'editor'),
 
-    canManagePages:
-      hasMinimumRole(role, 'editor'),
+    canManagePages: hasMinimumRole(role, 'editor'),
 
-    canManageNavigation:
-      hasMinimumRole(role, 'administrator'),
+    canManageNavigation: hasMinimumRole(role, 'administrator'),
 
-    canReadUsers:
-      hasMinimumRole(role, 'administrator'),
+    canReadUsers: hasMinimumRole(role, 'administrator'),
 
-    canManageUsers:
-      hasMinimumRole(role, 'administrator'),
+    canManageUsers: hasMinimumRole(role, 'administrator'),
 
-    canDeleteOwnAccount:
-      hasMinimumRole(role, 'subscriber'),
+    canDeleteOwnAccount: hasMinimumRole(role, 'subscriber'),
 
-    canProvisionUsers:
-      hasMinimumRole(role, 'administrator'),
+    canProvisionUsers: hasMinimumRole(role, 'administrator'),
 
-    canDeleteAnyUser:
-      hasMinimumRole(role, 'administrator'),
+    canDeleteAnyUser: hasMinimumRole(role, 'administrator'),
 
-    canResetUserMfa:
-      hasMinimumRole(role, 'administrator'),
+    canResetUserMfa: hasMinimumRole(role, 'administrator'),
 
-    canManageRoles:
-      hasMinimumRole(role, 'administrator'),
+    canManageRoles: hasMinimumRole(role, 'administrator'),
 
-    canViewAuditLog:
-      hasMinimumRole(role, 'administrator'),
+    canViewAuditLog: hasMinimumRole(role, 'administrator'),
 
-    canViewAnalytics:
-      hasMinimumRole(role, 'administrator'),
+    canViewAnalytics: hasMinimumRole(role, 'administrator'),
 
-    canManageTimers:
-      hasMinimumRole(role, 'editor'),
+    canManageTimers: hasMinimumRole(role, 'editor'),
 
-    canAccessSiteConfig:
-      role === 'developer',
+    canAccessSiteConfig: role === 'developer',
 
-    canManageSiteConfig:
-      role === 'developer',
+    canManageSiteConfig: role === 'developer',
 
-    canViewMediaLibrary:
-      hasMinimumRole(role, 'administrator'),
+    canViewMediaLibrary: hasMinimumRole(role, 'administrator'),
 
-    canUploadMedia:
-      hasMinimumRole(role, 'contributor'),
+    canUploadMedia: hasMinimumRole(role, 'contributor'),
 
-    canDeleteMedia:
-      hasMinimumRole(role, 'administrator'),
+    canDeleteMedia: hasMinimumRole(role, 'administrator'),
 
-    canBypassReviewStages:
-      role === 'developer'
+    canBypassReviewStages: role === 'developer',
   };
 }
 
 function normalizePermissionKeys(value) {
-  const catalogKeys = new Set(PERMISSION_CATALOG.map(permission => permission.key));
+  const catalogKeys = new Set(
+    PERMISSION_CATALOG.map((permission) => permission.key),
+  );
 
   return [
     ...new Set(
       (Array.isArray(value) ? value : [])
-        .map(permission => String(permission || '').trim())
-        .filter(permission => catalogKeys.has(permission))
-    )
+        .map((permission) => String(permission || '').trim())
+        .filter((permission) => catalogKeys.has(permission)),
+    ),
   ];
 }
 
@@ -349,8 +331,8 @@ function getCustomPermissionSet(user) {
     : [];
   const permissions = new Set();
 
-  assignedRoles.forEach(role => {
-    normalizePermissionKeys(role?.permissions).forEach(permission => {
+  assignedRoles.forEach((role) => {
+    normalizePermissionKeys(role?.permissions).forEach((permission) => {
       permissions.add(permission);
     });
   });
@@ -364,11 +346,11 @@ function getUserPermissions(user) {
   const isDeveloper = user?.role === 'developer';
 
   if (isDeveloper) {
-    Object.keys(flags).forEach(permissionName => {
+    Object.keys(flags).forEach((permissionName) => {
       flags[permissionName] = true;
     });
 
-    getAllPermissionKeys().forEach(permission => {
+    getAllPermissionKeys().forEach((permission) => {
       explicitPermissions.add(permission);
     });
   }
@@ -379,19 +361,20 @@ function getUserPermissions(user) {
     }
   });
 
-  getCustomPermissionSet(user).forEach(permission => {
+  getCustomPermissionSet(user).forEach((permission) => {
     if (!CUSTOM_ROLE_DENYLIST.includes(permission)) {
       explicitPermissions.add(permission);
     }
   });
 
   Object.entries(LEGACY_PERMISSION_KEYS).forEach(([legacyName, permission]) => {
-    flags[legacyName] = flags[legacyName] || explicitPermissions.has(permission);
+    flags[legacyName] =
+      flags[legacyName] || explicitPermissions.has(permission);
   });
 
   return {
     ...flags,
-    keys: [...explicitPermissions].sort()
+    keys: [...explicitPermissions].sort(),
   };
 }
 
@@ -402,5 +385,5 @@ module.exports = {
   hasMinimumRole,
   getUserPermissions,
   normalizePermissionKeys,
-  CUSTOM_ROLE_DENYLIST
+  CUSTOM_ROLE_DENYLIST,
 };

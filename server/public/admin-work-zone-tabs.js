@@ -9,15 +9,12 @@
       admin_tab_audit_log: "Audit Log",
       admin_tab_analytics: "Analytics",
       admin_tab_timers: "Banners",
-      admin_tab_site_config: "Site Config"
+      admin_tab_site_config: "Site Config",
     };
-    const translated = typeof window.translate === "function"
-      ? window.translate(key)
-      : key;
+    const translated =
+      typeof window.translate === "function" ? window.translate(key) : key;
 
-    return translated === key
-      ? fallbacks[key] || key
-      : translated;
+    return translated === key ? fallbacks[key] || key : translated;
   }
 
   const tabItems = [
@@ -25,56 +22,56 @@
       key: "users",
       href: "/admin-users",
       labelKey: "admin_tab_users",
-      permission: "canReadUsers"
+      permission: "canReadUsers",
     },
     {
       key: "roles",
       href: "/admin-users?view=roles",
       labelKey: "admin_tab_roles",
-      permission: "canManageRoles"
+      permission: "canManageRoles",
     },
     {
       key: "pages",
       href: "/pages-admin",
       labelKey: "admin_tab_pages",
-      permission: "canManagePages"
+      permission: "canManagePages",
     },
     {
       key: "media",
       href: "/admin-users?view=media",
       labelKey: "admin_tab_media",
-      permission: "canViewMediaLibrary"
+      permission: "canViewMediaLibrary",
     },
     {
       key: "translations",
       href: "/translations-admin",
       labelKey: "admin_tab_translations",
-      permission: "canManageTranslations"
+      permission: "canManageTranslations",
     },
     {
       key: "audit-log",
       href: "/audit-log",
       labelKey: "admin_tab_audit_log",
-      permission: "canViewAuditLog"
+      permission: "canViewAuditLog",
     },
     {
       key: "analytics",
       href: "/analytics",
       labelKey: "admin_tab_analytics",
-      permission: "canViewAnalytics"
+      permission: "canViewAnalytics",
     },
     {
       key: "timers",
       href: "/timers-admin",
       labelKey: "admin_tab_timers",
-      permission: "canManageTimers"
+      permission: "canManageTimers",
     },
     {
       key: "site-config",
       href: "/site-config",
       labelKey: "admin_tab_site_config",
-      permission: "canAccessSiteConfig"
-    }
+      permission: "canAccessSiteConfig",
+    },
   ];
 
   let currentPermissions = null;
@@ -97,10 +94,13 @@
 
     const triggerRect = trigger.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
-    const left = Math.max(12, Math.min(
-      triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2),
-      window.innerWidth - tooltipRect.width - 12
-    ));
+    const left = Math.max(
+      12,
+      Math.min(
+        triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2,
+        window.innerWidth - tooltipRect.width - 12,
+      ),
+    );
     const top = Math.max(12, triggerRect.bottom + 10);
 
     tooltip.style.left = `${left}px`;
@@ -152,7 +152,8 @@
   }
 
   function renderAdminWorkZoneTabs(options = {}) {
-    const tabs = document.getElementById("adminWorkZoneTabs") ||
+    const tabs =
+      document.getElementById("adminWorkZoneTabs") ||
       document.querySelector(".admin-work-zone-tabs");
 
     if (!tabs) return;
@@ -162,7 +163,10 @@
     }
 
     const active = options.active || getActiveAdminWorkZoneTab();
-    const permissions = Object.prototype.hasOwnProperty.call(options, "permissions")
+    const permissions = Object.prototype.hasOwnProperty.call(
+      options,
+      "permissions",
+    )
       ? options.permissions
       : currentPermissions;
     const includeSiteConfig = permissions
@@ -176,9 +180,14 @@
     tabs.replaceChildren();
 
     tabItems
-      .filter(item => !item.permission || !permissions || permissions[item.permission] === true)
-      .filter(item => item.key !== "site-config" || includeSiteConfig)
-      .forEach(item => {
+      .filter(
+        (item) =>
+          !item.permission ||
+          !permissions ||
+          permissions[item.permission] === true,
+      )
+      .filter((item) => item.key !== "site-config" || includeSiteConfig)
+      .forEach((item) => {
         const link = document.createElement("a");
         const isActive = item.key === active;
 
@@ -200,7 +209,7 @@
           help.addEventListener("mouseleave", removeTooltip);
           help.addEventListener("focus", () => showTooltip(help));
           help.addEventListener("blur", removeTooltip);
-          help.addEventListener("click", event => {
+          help.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
             showTooltip(help);
@@ -218,20 +227,21 @@
     CMCENUtils.activateTabs({
       active,
       tabs: tabs.querySelectorAll("[data-admin-tab]"),
-      tabKey: "adminTab"
+      tabKey: "adminTab",
     });
   }
 
   window.renderAdminWorkZoneTabs = renderAdminWorkZoneTabs;
-  window.updateAdminWorkZoneTabsForUser = function updateAdminWorkZoneTabsForUser(user) {
-    renderAdminWorkZoneTabs({
-      permissions: user?.permissions || null
-    });
-  };
+  window.updateAdminWorkZoneTabsForUser =
+    function updateAdminWorkZoneTabsForUser(user) {
+      renderAdminWorkZoneTabs({
+        permissions: user?.permissions || null,
+      });
+    };
 
   document.addEventListener("languagechange", () => {
     renderAdminWorkZoneTabs({ permissions: currentPermissions });
   });
 
   renderAdminWorkZoneTabs();
-}());
+})();

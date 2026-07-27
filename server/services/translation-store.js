@@ -5,7 +5,7 @@ const TRANSLATION_FILE = path.join(
   __dirname,
   '..',
   'data',
-  'translations.json'
+  'translations.json',
 );
 
 const SUPPORTED_LANGUAGES = Object.freeze(['en', 'fr']);
@@ -21,7 +21,7 @@ function assertTranslationShape(translations) {
     throw new Error('Translations must be an object');
   }
 
-  SUPPORTED_LANGUAGES.forEach(language => {
+  SUPPORTED_LANGUAGES.forEach((language) => {
     if (
       !translations[language] ||
       typeof translations[language] !== 'object' ||
@@ -47,10 +47,12 @@ async function writeTranslations(translations) {
   const tempFile = `${TRANSLATION_FILE}.tmp`;
   const body = `${JSON.stringify(translations, null, 2)}\n`;
 
-  writeQueue = writeQueue.catch(() => {}).then(async () => {
-    await fs.writeFile(tempFile, body, 'utf8');
-    await fs.rename(tempFile, TRANSLATION_FILE);
-  });
+  writeQueue = writeQueue
+    .catch(() => {})
+    .then(async () => {
+      await fs.writeFile(tempFile, body, 'utf8');
+      await fs.rename(tempFile, TRANSLATION_FILE);
+    });
 
   return writeQueue;
 }
@@ -58,8 +60,8 @@ async function writeTranslations(translations) {
 function getTranslationKeys(translations) {
   const keys = new Set();
 
-  SUPPORTED_LANGUAGES.forEach(language => {
-    Object.keys(translations[language] || {}).forEach(key => {
+  SUPPORTED_LANGUAGES.forEach((language) => {
+    Object.keys(translations[language] || {}).forEach((key) => {
       keys.add(key);
     });
   });
@@ -68,10 +70,10 @@ function getTranslationKeys(translations) {
 }
 
 function getTranslationRows(translations) {
-  return getTranslationKeys(translations).map(key => {
+  return getTranslationKeys(translations).map((key) => {
     const values = {};
 
-    SUPPORTED_LANGUAGES.forEach(language => {
+    SUPPORTED_LANGUAGES.forEach((language) => {
       values[language] =
         typeof translations[language]?.[key] === 'string'
           ? translations[language][key]
@@ -82,15 +84,17 @@ function getTranslationRows(translations) {
       key,
       values,
       missing: SUPPORTED_LANGUAGES.filter(
-        language => !values[language].trim()
-      )
+        (language) => !values[language].trim(),
+      ),
     };
   });
 }
 
 function createTranslationsRuntime(translations) {
-  const serializedTranslations =
-    JSON.stringify(translations).replace(/</g, '\\u003c');
+  const serializedTranslations = JSON.stringify(translations).replace(
+    /</g,
+    '\\u003c',
+  );
 
   return `"use strict";
 
@@ -184,5 +188,5 @@ module.exports = {
   createTranslationsRuntime,
   getTranslationRows,
   readTranslations,
-  writeTranslations
+  writeTranslations,
 };

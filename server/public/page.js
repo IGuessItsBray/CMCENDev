@@ -14,9 +14,9 @@
   function createParagraphs(text) {
     return String(text || "")
       .split(/\n{2,}/u)
-      .map(paragraph => paragraph.trim())
+      .map((paragraph) => paragraph.trim())
       .filter(Boolean)
-      .map(paragraph => {
+      .map((paragraph) => {
         const element = document.createElement("p");
         element.textContent = paragraph;
         return element;
@@ -29,7 +29,7 @@
       y: 50,
       zoom: 1,
       rotate: 0,
-      ...(value || {})
+      ...(value || {}),
     };
   }
 
@@ -42,25 +42,32 @@
   function getImageVariants(media = {}) {
     const variants = media.mediaVariants || {};
     return ["thumb", "medium", "large", "hero"]
-      .map(name => variants[name])
-      .filter(variant => variant?.url && variant?.width);
+      .map((name) => variants[name])
+      .filter((variant) => variant?.url && variant?.width);
   }
 
   function getBestImageUrl(media = {}) {
     const variants = getImageVariants(media);
-    return variants.find(variant => variant.width >= 900)?.url ||
+    return (
+      variants.find((variant) => variant.width >= 900)?.url ||
       variants.at(-1)?.url ||
       media.mediaUrl ||
-      "";
+      ""
+    );
   }
 
   function getImageSrcSet(media = {}) {
     return getImageVariants(media)
-      .map(variant => `${variant.url} ${variant.width}w`)
+      .map((variant) => `${variant.url} ${variant.width}w`)
       .join(", ");
   }
 
-  function createCroppedImage({ media, alt, crop, sizes = "(max-width: 720px) 100vw, 900px" }) {
+  function createCroppedImage({
+    media,
+    alt,
+    crop,
+    sizes = "(max-width: 720px) 100vw, 900px",
+  }) {
     const frame = document.createElement("span");
     frame.className = "cms-image-frame";
     const image = document.createElement("img");
@@ -89,12 +96,14 @@
     }
 
     if (block.type === "image") {
-      section.append(createCroppedImage({
-        media: block,
-        alt: localized(block.alt),
-        crop: block.crop,
-        sizes: "(max-width: 920px) 100vw, 1100px"
-      }));
+      section.append(
+        createCroppedImage({
+          media: block,
+          alt: localized(block.alt),
+          crop: block.crop,
+          sizes: "(max-width: 920px) 100vw, 1100px",
+        }),
+      );
 
       const caption = localized(block.caption);
       if (caption) {
@@ -109,7 +118,7 @@
 
     if (block.type === "callout") {
       section.classList.toggle("is-important", block.variant === "important");
-      createParagraphs(localized(block.body)).forEach(paragraph => {
+      createParagraphs(localized(block.body)).forEach((paragraph) => {
         section.append(paragraph);
       });
       return section;
@@ -119,17 +128,19 @@
       const grid = document.createElement("div");
       grid.className = "cms-columns";
 
-      (block.columns || []).forEach(column => {
+      (block.columns || []).forEach((column) => {
         const card = document.createElement("article");
         card.className = "cms-column";
 
         if (column.mediaUrl) {
-          card.append(createCroppedImage({
-            media: column,
-            alt: localized(column.alt),
-            crop: column.crop,
-            sizes: "(max-width: 620px) 100vw, 50vw"
-          }));
+          card.append(
+            createCroppedImage({
+              media: column,
+              alt: localized(column.alt),
+              crop: column.crop,
+              sizes: "(max-width: 620px) 100vw, 50vw",
+            }),
+          );
         }
 
         const title = localized(column.title);
@@ -139,7 +150,7 @@
           card.append(heading);
         }
 
-        createParagraphs(localized(column.body)).forEach(paragraph => {
+        createParagraphs(localized(column.body)).forEach((paragraph) => {
           card.append(paragraph);
         });
 
@@ -162,17 +173,19 @@
       const carousel = document.createElement("div");
       carousel.className = "cms-carousel";
 
-      (block.items || []).forEach(item => {
+      (block.items || []).forEach((item) => {
         const slide = document.createElement("figure");
         slide.className = "cms-carousel-slide";
 
         if (item.mediaUrl) {
-          slide.append(createCroppedImage({
-            media: item,
-            alt: localized(item.alt),
-            crop: item.crop,
-            sizes: "(max-width: 620px) 88vw, 78vw"
-          }));
+          slide.append(
+            createCroppedImage({
+              media: item,
+              alt: localized(item.alt),
+              crop: item.crop,
+              sizes: "(max-width: 620px) 88vw, 78vw",
+            }),
+          );
         }
 
         const caption = localized(item.caption);
@@ -203,7 +216,7 @@
       return section;
     }
 
-    createParagraphs(localized(block.body)).forEach(paragraph => {
+    createParagraphs(localized(block.body)).forEach((paragraph) => {
       section.append(paragraph);
     });
 
@@ -237,7 +250,7 @@
     const body = document.createElement("div");
     body.className = "cms-page-body";
 
-    (page.blocks || []).forEach(block => {
+    (page.blocks || []).forEach((block) => {
       body.append(createBlock(block));
     });
 
@@ -251,17 +264,14 @@
       const previewPageId = params.get("preview");
       const response = previewPageId
         ? await fetch(
-          `/api/admin/pages/${encodeURIComponent(previewPageId)}/preview`,
-          {
-            headers: CMCENUtils.authHeaders()
-          }
-        )
-        : await fetch(
-          `/api/pages/${encodeURIComponent(slug)}`,
-          {
-            headers: CMCENUtils.authHeaders()
-          }
-        );
+            `/api/admin/pages/${encodeURIComponent(previewPageId)}/preview`,
+            {
+              headers: CMCENUtils.authHeaders(),
+            },
+          )
+        : await fetch(`/api/pages/${encodeURIComponent(slug)}`, {
+            headers: CMCENUtils.authHeaders(),
+          });
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
@@ -279,4 +289,4 @@
 
   document.addEventListener("languagechange", loadPage);
   loadPage();
-}());
+})();

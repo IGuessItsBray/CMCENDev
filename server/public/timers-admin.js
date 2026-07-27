@@ -8,7 +8,7 @@ let timersState = {
   timers: [],
   selectedTimerId: "",
   message: "",
-  isSaving: false
+  isSaving: false,
 };
 
 function setTimersStatus(message, state = "") {
@@ -30,7 +30,7 @@ function showTimersPage() {
 function setTimersState(nextState) {
   timersState = {
     ...timersState,
-    ...nextState
+    ...nextState,
   };
   renderTimersAdmin();
 }
@@ -39,7 +39,7 @@ function showTimerToast(message, color = "info") {
   CMCENUtils.showToast(message, {
     color,
     position: "bottom-right",
-    animation: "slide"
+    animation: "slide",
   });
 }
 
@@ -48,14 +48,18 @@ function timersApi(path, options = {}) {
     ...options,
     token: timersAdminToken,
     redirectOnUnauthorized: true,
-    unauthorizedMessage: t("timers_sign_in_again")
+    unauthorizedMessage: t("timers_sign_in_again"),
   });
 }
 
 function getSelectedTimer() {
-  return timersState.timers.find(timer => String(timer._id) === String(timersState.selectedTimerId)) ||
+  return (
+    timersState.timers.find(
+      (timer) => String(timer._id) === String(timersState.selectedTimerId),
+    ) ||
     timersState.timers[0] ||
-    null;
+    null
+  );
 }
 
 function createMessage() {
@@ -93,11 +97,14 @@ function createTimerList() {
     empty.textContent = t("timers_empty");
     list.append(empty);
   } else {
-    timersState.timers.forEach(timer => {
+    timersState.timers.forEach((timer) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "timers-admin-row";
-      button.classList.toggle("is-selected", String(timer._id) === String(getSelectedTimer()?._id));
+      button.classList.toggle(
+        "is-selected",
+        String(timer._id) === String(getSelectedTimer()?._id),
+      );
       button.addEventListener("click", () => {
         setTimersState({ selectedTimerId: timer._id, message: "" });
       });
@@ -107,11 +114,15 @@ function createTimerList() {
 
       const meta = document.createElement("span");
       meta.textContent = [
-        timer.enabled ? t("timers_status_enabled") : t("timers_status_disabled"),
-        timer.placement === "home" ? t("timers_placement_home") : t("timers_placement_global"),
+        timer.enabled
+          ? t("timers_status_enabled")
+          : t("timers_status_disabled"),
+        timer.placement === "home"
+          ? t("timers_placement_home")
+          : t("timers_placement_global"),
         timer.screenPosition === "below-header"
           ? t("timers_position_below_header")
-          : t("timers_position_top")
+          : t("timers_position_top"),
       ].join(" · ");
 
       button.append(title, meta);
@@ -156,14 +167,15 @@ function createDateInput(name, value = "") {
       name,
       date: CMCENUtils.toLocalDateInput(value),
       time: CMCENUtils.toLocalTimeInput(value),
-      label: name === "countdownAt"
-        ? t("timers_field_countdown_target")
-        : t("timers_date_time_label"),
+      label:
+        name === "countdownAt"
+          ? t("timers_field_countdown_target")
+          : t("timers_date_time_label"),
       placeholder: t("timers_date_time_placeholder"),
       timeLabel: t("timers_picker_time"),
       clearLabel: t("timers_picker_clear"),
       doneLabel: t("timers_picker_done"),
-      locale: CMCENUtils.getCurrentLocale()
+      locale: CMCENUtils.getCurrentLocale(),
     });
   }
 
@@ -179,14 +191,15 @@ function createColorInput(name, value, fallback) {
     name,
     value,
     fallback,
-    label: name === "textColor"
-      ? t("timers_field_text_color")
-      : t("timers_field_background_color"),
+    label:
+      name === "textColor"
+        ? t("timers_field_text_color")
+        : t("timers_field_background_color"),
     sectionLabels: {
       light: t("timers_picker_light_theme"),
       dark: t("timers_picker_dark_theme"),
-      rgb: t("timers_picker_rgb")
-    }
+      rgb: t("timers_picker_rgb"),
+    },
   });
 }
 
@@ -204,7 +217,10 @@ function formatPreviewCountdown(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
 
-  const totalSeconds = Math.max(Math.floor((date.getTime() - Date.now()) / 1000), 0);
+  const totalSeconds = Math.max(
+    Math.floor((date.getTime() - Date.now()) / 1000),
+    0,
+  );
   const days = Math.floor(totalSeconds / 86400);
   const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -219,7 +235,10 @@ function createTimerPreview(timer) {
   preview.style.setProperty("--timer-text", timer.textColor || "#ffffff");
 
   const text = document.createElement("span");
-  text.textContent = CMCENUtils.getLocalizedText(timer.text) || timer.title || t("timers_preview_fallback");
+  text.textContent =
+    CMCENUtils.getLocalizedText(timer.text) ||
+    timer.title ||
+    t("timers_preview_fallback");
   preview.append(text);
 
   const countdown = formatPreviewCountdown(timer.countdownAt);
@@ -251,21 +270,45 @@ function createTimerEditor() {
 
   form.append(
     previewSlot,
-    createField(t("timers_field_admin_title"), createTextInput("title", timer.title)),
-    createField(t("timers_field_english_text"), createTextarea("textEn", timer.text?.en || "")),
-    createField(t("timers_field_french_text"), createTextarea("textFr", timer.text?.fr || "")),
-    createField(t("timers_field_background_color"), createColorInput("color", timer.color, "#1d4ed8")),
-    createField(t("timers_field_text_color"), createColorInput("textColor", timer.textColor, "#ffffff")),
-    createField(t("timers_field_start_date"), createDateInput("startsAt", timer.startsAt)),
-    createField(t("timers_field_end_date"), createDateInput("endsAt", timer.endsAt)),
-    createField(t("timers_field_countdown_target"), createDateInput("countdownAt", timer.countdownAt))
+    createField(
+      t("timers_field_admin_title"),
+      createTextInput("title", timer.title),
+    ),
+    createField(
+      t("timers_field_english_text"),
+      createTextarea("textEn", timer.text?.en || ""),
+    ),
+    createField(
+      t("timers_field_french_text"),
+      createTextarea("textFr", timer.text?.fr || ""),
+    ),
+    createField(
+      t("timers_field_background_color"),
+      createColorInput("color", timer.color, "#1d4ed8"),
+    ),
+    createField(
+      t("timers_field_text_color"),
+      createColorInput("textColor", timer.textColor, "#ffffff"),
+    ),
+    createField(
+      t("timers_field_start_date"),
+      createDateInput("startsAt", timer.startsAt),
+    ),
+    createField(
+      t("timers_field_end_date"),
+      createDateInput("endsAt", timer.endsAt),
+    ),
+    createField(
+      t("timers_field_countdown_target"),
+      createDateInput("countdownAt", timer.countdownAt),
+    ),
   );
 
   const placement = document.createElement("select");
   placement.name = "placement";
   [
     ["global", t("timers_placement_global")],
-    ["home", t("timers_placement_home_only")]
+    ["home", t("timers_placement_home_only")],
   ].forEach(([value, text]) => {
     const option = document.createElement("option");
     option.value = value;
@@ -275,12 +318,19 @@ function createTimerEditor() {
   placement.value = timer.placement || "global";
   form.append(createField(t("timers_field_placement"), placement));
 
-  form.append(createField(
-    t("timers_field_below_sticky_header"),
-    createToggle("belowHeader", timer.screenPosition === "below-header")
-  ));
+  form.append(
+    createField(
+      t("timers_field_below_sticky_header"),
+      createToggle("belowHeader", timer.screenPosition === "below-header"),
+    ),
+  );
 
-  form.append(createField(t("timers_field_enabled"), createToggle("enabled", timer.enabled !== false)));
+  form.append(
+    createField(
+      t("timers_field_enabled"),
+      createToggle("enabled", timer.enabled !== false),
+    ),
+  );
 
   const order = document.createElement("input");
   order.name = "order";
@@ -294,15 +344,21 @@ function createTimerEditor() {
       ...timer,
       text: {
         en: form.elements.textEn?.value || "",
-        fr: form.elements.textFr?.value || ""
+        fr: form.elements.textFr?.value || "",
       },
       title: form.elements.title?.value || "",
-      color: window.CMCENColorPicker.normalize(form.elements.color?.value, "#1d4ed8"),
-      textColor: window.CMCENColorPicker.normalize(form.elements.textColor?.value, "#ffffff"),
+      color: window.CMCENColorPicker.normalize(
+        form.elements.color?.value,
+        "#1d4ed8",
+      ),
+      textColor: window.CMCENColorPicker.normalize(
+        form.elements.textColor?.value,
+        "#ffffff",
+      ),
       countdownAt: CMCENUtils.fromLocalDateAndTime(
         form.elements.countdownAtDate?.value,
-        form.elements.countdownAtTime?.value
-      )
+        form.elements.countdownAtTime?.value,
+      ),
     };
 
     previewSlot.replaceChildren(createTimerPreview(previewTimer));
@@ -314,7 +370,9 @@ function createTimerEditor() {
   const save = document.createElement("button");
   save.type = "submit";
   save.className = "admin-work-zone-button is-primary";
-  save.textContent = timersState.isSaving ? t("timers_saving") : t("timers_save");
+  save.textContent = timersState.isSaving
+    ? t("timers_saving")
+    : t("timers_save");
   save.disabled = timersState.isSaving;
 
   const remove = document.createElement("button");
@@ -327,7 +385,7 @@ function createTimerEditor() {
   actions.append(save, remove);
   form.append(actions);
 
-  form.addEventListener("submit", event => {
+  form.addEventListener("submit", (event) => {
     event.preventDefault();
     saveTimer(timer, form);
   });
@@ -342,26 +400,27 @@ function getTimerPayload(form) {
     title: formData.get("title"),
     text: {
       en: formData.get("textEn"),
-      fr: formData.get("textFr")
+      fr: formData.get("textFr"),
     },
     color: formData.get("color"),
     textColor: formData.get("textColor"),
     startsAt: CMCENUtils.fromLocalDateAndTime(
       formData.get("startsAtDate"),
-      formData.get("startsAtTime")
+      formData.get("startsAtTime"),
     ),
     endsAt: CMCENUtils.fromLocalDateAndTime(
       formData.get("endsAtDate"),
-      formData.get("endsAtTime")
+      formData.get("endsAtTime"),
     ),
     countdownAt: CMCENUtils.fromLocalDateAndTime(
       formData.get("countdownAtDate"),
-      formData.get("countdownAtTime")
+      formData.get("countdownAtTime"),
     ),
     placement: formData.get("placement"),
-    screenPosition: formData.get("belowHeader") === "on" ? "below-header" : "header",
+    screenPosition:
+      formData.get("belowHeader") === "on" ? "below-header" : "header",
     enabled: formData.get("enabled") === "on",
-    order: Number(formData.get("order") || 0)
+    order: Number(formData.get("order") || 0),
   };
 }
 
@@ -382,14 +441,14 @@ function reloadVisibleBanners() {
 async function loadTimers() {
   try {
     const data = await timersApi("/api/admin/timers", {
-      errorMessage: t("timers_load_error")
+      errorMessage: t("timers_load_error"),
     });
     const timers = data.timers || [];
 
     setTimersState({
       timers,
       selectedTimerId: timersState.selectedTimerId || timers[0]?._id || "",
-      message: ""
+      message: "",
     });
     showTimersPage();
   } catch (error) {
@@ -407,22 +466,22 @@ async function createTimer() {
         title: t("timers_new_title"),
         text: {
           en: t("timers_default_text_en"),
-          fr: t("timers_default_text_fr")
-        }
+          fr: t("timers_default_text_fr"),
+        },
       },
-      errorMessage: t("timers_create_error")
+      errorMessage: t("timers_create_error"),
     });
 
     await loadTimers();
     reloadVisibleBanners();
     setTimersState({
       selectedTimerId: data.timer?._id || "",
-      isSaving: false
+      isSaving: false,
     });
     showTimerToast(t("timers_created"), "success");
   } catch (error) {
     setTimersState({
-      isSaving: false
+      isSaving: false,
     });
     showTimerToast(error.message || t("timers_create_error"), "error");
   }
@@ -432,38 +491,46 @@ async function saveTimer(timer, form) {
   setTimersState({ isSaving: true, message: "" });
 
   try {
-    const data = await timersApi(`/api/admin/timers/${encodeURIComponent(timer._id)}`, {
-      method: "PATCH",
-      body: getTimerPayload(form),
-      errorMessage: t("timers_save_error")
-    });
-    const nextTimers = timersState.timers.map(item =>
-      String(item._id) === String(timer._id) ? data.timer : item
+    const data = await timersApi(
+      `/api/admin/timers/${encodeURIComponent(timer._id)}`,
+      {
+        method: "PATCH",
+        body: getTimerPayload(form),
+        errorMessage: t("timers_save_error"),
+      },
+    );
+    const nextTimers = timersState.timers.map((item) =>
+      String(item._id) === String(timer._id) ? data.timer : item,
     );
 
     setTimersState({
       timers: nextTimers,
       selectedTimerId: data.timer?._id || timer._id,
-      isSaving: false
+      isSaving: false,
     });
     showTimerToast(t("timers_saved"), "success");
     reloadVisibleBanners();
   } catch (error) {
     setTimersState({
-      isSaving: false
+      isSaving: false,
     });
     showTimerToast(error.message || t("timers_save_error"), "error");
   }
 }
 
 async function deleteTimer(timer) {
-  if (!await CMCENModal.confirm(t("timers_delete_confirm", {
-    title: timer.title || t("timers_untitled")
-  }), {
-    title: t("mfa_delete"),
-    confirmText: t("mfa_delete"),
-    destructive: true
-  })) {
+  if (
+    !(await CMCENModal.confirm(
+      t("timers_delete_confirm", {
+        title: timer.title || t("timers_untitled"),
+      }),
+      {
+        title: t("mfa_delete"),
+        confirmText: t("mfa_delete"),
+        destructive: true,
+      },
+    ))
+  ) {
     return;
   }
 
@@ -472,20 +539,22 @@ async function deleteTimer(timer) {
   try {
     await timersApi(`/api/admin/timers/${encodeURIComponent(timer._id)}`, {
       method: "DELETE",
-      errorMessage: t("timers_delete_error")
+      errorMessage: t("timers_delete_error"),
     });
 
-    const nextTimers = timersState.timers.filter(item => String(item._id) !== String(timer._id));
+    const nextTimers = timersState.timers.filter(
+      (item) => String(item._id) !== String(timer._id),
+    );
     setTimersState({
       timers: nextTimers,
       selectedTimerId: nextTimers[0]?._id || "",
-      isSaving: false
+      isSaving: false,
     });
     showTimerToast(t("timers_deleted"), "success");
     reloadVisibleBanners();
   } catch (error) {
     setTimersState({
-      isSaving: false
+      isSaving: false,
     });
     showTimerToast(error.message || t("timers_delete_error"), "error");
   }
@@ -496,7 +565,7 @@ async function initializeTimersAdmin() {
 
   try {
     const user = await timersApi("/api/me", {
-      errorMessage: t("timers_verify_error")
+      errorMessage: t("timers_verify_error"),
     });
 
     if (user.permissions?.canManageTimers !== true) {

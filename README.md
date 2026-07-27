@@ -11,7 +11,7 @@ media is stored in MinIO or another S3-compatible object store.
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js 24.x (run `nvm install` once, then `nvm use`, from the repository root)
 - npm 10 or newer
 - MongoDB 7 or newer, or a compatible managed MongoDB service
 - MinIO, or another S3-compatible object store with an existing writable bucket
@@ -40,6 +40,8 @@ from that directory.
 1. Install dependencies:
 
    ```sh
+   nvm install
+   nvm use
    cd server
    npm ci
    ```
@@ -103,7 +105,10 @@ Run these from `server/`:
 ```sh
 npm start          # production-style local start
 npm run start:dev  # restart automatically when source files change
-npm run check      # syntax-check server, browser, and migration JavaScript
+npm run check      # runtime, syntax, and lint checks across all JavaScript
+npm run lint       # lint all JavaScript
+npm run format:check # report formatting differences without changing files
+npm run format     # apply formatting deliberately
 npm test           # syntax checks plus Mongo-backed API integration tests
 npm run test:integration       # integration tests only
 npm run test:integration:watch # rerun integration tests while editing

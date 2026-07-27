@@ -12,7 +12,7 @@
     ["Gold 200", "#ead3a3"],
     ["Ink", "#23252b"],
     ["Danger", "#a63c35"],
-    ["Success", "#4f7358"]
+    ["Success", "#4f7358"],
   ]);
 
   const DARK_THEME_COLORS = Object.freeze([
@@ -27,7 +27,7 @@
     ["Link", "#93c5fd"],
     ["Gold", "#facc15"],
     ["Teal", "#2dd4bf"],
-    ["Red", "#ef4444"]
+    ["Red", "#ef4444"],
   ]);
 
   const RGB_COLORS = Object.freeze([
@@ -48,12 +48,14 @@
     ["Fuchsia", "#d946ef"],
     ["Pink", "#ec4899"],
     ["Rose", "#f43f5e"],
-    ["Slate", "#64748b"]
+    ["Slate", "#64748b"],
   ]);
 
   function normalizeColor(value, fallback = "#1d4ed8") {
     const color = String(value || "").trim();
-    return /^#[0-9a-f]{6}$/iu.test(color) ? color.toLowerCase() : fallback.toLowerCase();
+    return /^#[0-9a-f]{6}$/iu.test(color)
+      ? color.toLowerCase()
+      : fallback.toLowerCase();
   }
 
   function createSwatch({ label, value, input, textInput, closePicker }) {
@@ -85,13 +87,15 @@
     const swatches = document.createElement("div");
     swatches.className = "cmcen-color-picker-swatches";
     colors.forEach(([colorLabel, value]) => {
-      swatches.append(createSwatch({
-        label: colorLabel,
-        value: normalizeColor(value),
-        input,
-        textInput,
-        closePicker
-      }));
+      swatches.append(
+        createSwatch({
+          label: colorLabel,
+          value: normalizeColor(value),
+          input,
+          textInput,
+          closePicker,
+        }),
+      );
     });
 
     row.append(label, swatches);
@@ -136,18 +140,26 @@
 
     function setPickerOpen(isOpen) {
       if (isOpen) {
-        window.dispatchEvent(new CustomEvent("cmcen:picker-open", {
-          detail: { picker }
-        }));
+        window.dispatchEvent(
+          new CustomEvent("cmcen:picker-open", {
+            detail: { picker },
+          }),
+        );
       }
       picker.classList.toggle("is-open", isOpen);
       preview.setAttribute("aria-expanded", String(isOpen));
       if (isOpen) {
         const previewRect = preview.getBoundingClientRect();
         const width = Math.min(540, window.innerWidth - 24);
-        const left = Math.max(12, Math.min(previewRect.left, window.innerWidth - width - 12));
+        const left = Math.max(
+          12,
+          Math.min(previewRect.left, window.innerWidth - width - 12),
+        );
         popover.style.setProperty("--picker-popover-left", `${left}px`);
-        popover.style.setProperty("--picker-popover-top", `${previewRect.bottom + 4}px`);
+        popover.style.setProperty(
+          "--picker-popover-top",
+          `${previewRect.bottom + 4}px`,
+        );
         popover.style.setProperty("--picker-popover-width", `${width}px`);
       }
     }
@@ -166,13 +178,37 @@
     const popover = document.createElement("div");
     popover.className = "cmcen-color-picker-popover";
     popover.append(
-      createRow(sectionLabels.light || "Light theme", LIGHT_THEME_COLORS, input, textInput, () => setPickerOpen(false)),
-      createRow(sectionLabels.dark || "Dark theme", DARK_THEME_COLORS, input, textInput, () => setPickerOpen(false)),
-      createRow(sectionLabels.rgb || "RGB", RGB_COLORS.slice(0, 9), input, textInput, () => setPickerOpen(false)),
-      createRow(sectionLabels.rgb || "RGB", RGB_COLORS.slice(9), input, textInput, () => setPickerOpen(false))
+      createRow(
+        sectionLabels.light || "Light theme",
+        LIGHT_THEME_COLORS,
+        input,
+        textInput,
+        () => setPickerOpen(false),
+      ),
+      createRow(
+        sectionLabels.dark || "Dark theme",
+        DARK_THEME_COLORS,
+        input,
+        textInput,
+        () => setPickerOpen(false),
+      ),
+      createRow(
+        sectionLabels.rgb || "RGB",
+        RGB_COLORS.slice(0, 9),
+        input,
+        textInput,
+        () => setPickerOpen(false),
+      ),
+      createRow(
+        sectionLabels.rgb || "RGB",
+        RGB_COLORS.slice(9),
+        input,
+        textInput,
+        () => setPickerOpen(false),
+      ),
     );
 
-    preview.addEventListener("click", event => {
+    preview.addEventListener("click", (event) => {
       event.stopPropagation();
       setPickerOpen(!picker.classList.contains("is-open"));
     });
@@ -183,13 +219,17 @@
       }
     });
 
-    window.addEventListener("scroll", () => {
-      if (picker.classList.contains("is-open")) {
-        setPickerOpen(true);
-      }
-    }, true);
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (picker.classList.contains("is-open")) {
+          setPickerOpen(true);
+        }
+      },
+      true,
+    );
 
-    picker.addEventListener("click", event => {
+    picker.addEventListener("click", (event) => {
       event.stopPropagation();
     });
 
@@ -197,17 +237,13 @@
       setPickerOpen(false);
     });
 
-    window.addEventListener("cmcen:picker-open", event => {
+    window.addEventListener("cmcen:picker-open", (event) => {
       if (event.detail?.picker !== picker) {
         setPickerOpen(false);
       }
     });
 
-    picker.append(
-      input,
-      custom,
-      popover
-    );
+    picker.append(input, custom, popover);
 
     input.addEventListener("input", () => {
       setColor(input.value);
@@ -218,6 +254,6 @@
 
   window.CMCENColorPicker = {
     create: createColorPicker,
-    normalize: normalizeColor
+    normalize: normalizeColor,
   };
 })();

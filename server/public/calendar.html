@@ -1,112 +1,138 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title data-i18n="calendar_title"></title>
-    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
     <link rel="stylesheet" href="/styles.css" />
-</head>
+  </head>
 
-<body>
+  <body>
     <header id="header"></header>
     <main class="calendar-main">
-        <section class="calendar-container">
-            <header class="calendar-heading">
-                <div class="calendar-heading-copy">
-                    <p class="calendar-kicker" data-i18n="calendar_kicker"></p>
-                    <h1 data-i18n="calendar_title"></h1>
-                </div>
-                <div class="calendar-submit-callout">
-                    <p data-i18n="calendar_submit_prompt"></p>
-                    <a href="/submit-event?panel=form" data-i18n="calendar_submit_button"></a>
-                </div>
-            </header>
+      <section class="calendar-container">
+        <header class="calendar-heading">
+          <div class="calendar-heading-copy">
+            <p class="calendar-kicker" data-i18n="calendar_kicker"></p>
+            <h1 data-i18n="calendar_title"></h1>
+          </div>
+          <div class="calendar-submit-callout">
+            <p data-i18n="calendar_submit_prompt"></p>
+            <a
+              href="/submit-event?panel=form"
+              data-i18n="calendar_submit_button"
+            ></a>
+          </div>
+        </header>
 
-            <p id="calendarMessage" class="calendar-message" data-i18n="loading_events">
-                Loading events...
-            </p>
+        <p
+          id="calendarMessage"
+          class="calendar-message"
+          data-i18n="loading_events"
+        >
+          Loading events...
+        </p>
 
-            <section class="calendar-view" aria-labelledby="calendarMonthLabel">
-                <div class="calendar-controls">
-                    <div class="calendar-month-navigation">
-                        <button
-                            type="button"
-                            class="calendar-navigation-button"
-                            id="calendarPreviousButton"
-                            data-i18n-aria-label="calendar_previous_month"
-                        >
-                            <span aria-hidden="true">←</span>
-                        </button>
+        <section class="calendar-view" aria-labelledby="calendarMonthLabel">
+          <div class="calendar-controls">
+            <div class="calendar-month-navigation">
+              <button
+                type="button"
+                class="calendar-navigation-button"
+                id="calendarPreviousButton"
+                data-i18n-aria-label="calendar_previous_month"
+              >
+                <span aria-hidden="true">←</span>
+              </button>
 
-                        <h2 id="calendarMonthLabel" class="calendar-display-month" aria-live="polite"></h2>
+              <h2
+                id="calendarMonthLabel"
+                class="calendar-display-month"
+                aria-live="polite"
+              ></h2>
 
-                        <button
-                            type="button"
-                            class="calendar-navigation-button"
-                            id="calendarNextButton"
-                            data-i18n-aria-label="calendar_next_month"
-                        >
-                            <span aria-hidden="true">→</span>
-                        </button>
-                    </div>
+              <button
+                type="button"
+                class="calendar-navigation-button"
+                id="calendarNextButton"
+                data-i18n-aria-label="calendar_next_month"
+              >
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
 
-                    <div class="calendar-view-actions">
-                        <button
-                            type="button"
-                            class="calendar-today-button"
-                            id="calendarTodayButton"
-                            data-i18n="calendar_today"
-                        >
-                            Today
-                        </button>
+            <div class="calendar-view-actions">
+              <button
+                type="button"
+                class="calendar-today-button"
+                id="calendarTodayButton"
+                data-i18n="calendar_today"
+              >
+                Today
+              </button>
 
-                        <div class="calendar-view-toggle" role="group" data-i18n-aria-label="calendar_view_options">
-                            <button
-                                type="button"
-                                class="calendar-view-toggle-button"
-                                id="calendarMonthViewButton"
-                                data-calendar-view="month"
-                                data-i18n="calendar_view_month"
-                            >
-                                Month
-                            </button>
-
-                            <button
-                                type="button"
-                                class="calendar-view-toggle-button"
-                                id="calendarAgendaViewButton"
-                                data-calendar-view="agenda"
-                                data-i18n="calendar_view_agenda"
-                            >
-                                Agenda
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="calendar-grid-scroll">
-                    <div class="calendar-weekdays" id="calendarWeekdays" aria-hidden="true"></div>
-                    <div
-                        id="calendarGrid"
-                        class="calendar-grid"
-                        aria-live="polite"
-                    ></div>
-                </div>
-
-                <section
-                    id="eventList"
-                    class="calendar-agenda"
-                    aria-labelledby="calendarAgendaHeading"
-                    hidden
+              <div
+                class="calendar-view-toggle"
+                role="group"
+                data-i18n-aria-label="calendar_view_options"
+              >
+                <button
+                  type="button"
+                  class="calendar-view-toggle-button"
+                  id="calendarMonthViewButton"
+                  data-calendar-view="month"
+                  data-i18n="calendar_view_month"
                 >
-                    <h2 id="calendarAgendaHeading" class="visually-hidden" data-i18n="calendar_agenda_heading">
-                        Events in this view
-                    </h2>
-                </section>
-            </section>
+                  Month
+                </button>
+
+                <button
+                  type="button"
+                  class="calendar-view-toggle-button"
+                  id="calendarAgendaViewButton"
+                  data-calendar-view="agenda"
+                  data-i18n="calendar_view_agenda"
+                >
+                  Agenda
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="calendar-grid-scroll">
+            <div
+              class="calendar-weekdays"
+              id="calendarWeekdays"
+              aria-hidden="true"
+            ></div>
+            <div
+              id="calendarGrid"
+              class="calendar-grid"
+              aria-live="polite"
+            ></div>
+          </div>
+
+          <section
+            id="eventList"
+            class="calendar-agenda"
+            aria-labelledby="calendarAgendaHeading"
+            hidden
+          >
+            <h2
+              id="calendarAgendaHeading"
+              class="visually-hidden"
+              data-i18n="calendar_agenda_heading"
+            >
+              Events in this view
+            </h2>
+          </section>
         </section>
+      </section>
     </main>
 
     <footer id="footer"></footer>
@@ -116,6 +142,5 @@
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
     <script src="/calendar.js"></script>
-</body>
-
+  </body>
 </html>

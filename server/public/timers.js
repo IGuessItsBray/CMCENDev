@@ -25,7 +25,8 @@
   }
 
   function getScope() {
-    return window.location.pathname === "/" || window.location.pathname === "/index"
+    return window.location.pathname === "/" ||
+      window.location.pathname === "/index"
       ? "home"
       : "global";
   }
@@ -36,7 +37,9 @@
 
   function readCachedTimers(scope = getScope()) {
     try {
-      const cached = JSON.parse(sessionStorage.getItem(getCacheKey(scope)) || "null");
+      const cached = JSON.parse(
+        sessionStorage.getItem(getCacheKey(scope)) || "null",
+      );
 
       if (
         !cached ||
@@ -54,10 +57,13 @@
 
   function writeTimerCache(scope, timers) {
     try {
-      sessionStorage.setItem(getCacheKey(scope), JSON.stringify({
-        savedAt: Date.now(),
-        timers
-      }));
+      sessionStorage.setItem(
+        getCacheKey(scope),
+        JSON.stringify({
+          savedAt: Date.now(),
+          timers,
+        }),
+      );
     } catch (error) {
       // Browsers can disable session storage; banners still load normally.
     }
@@ -68,7 +74,10 @@
     writeTimerCache(scope, timers);
 
     if (scope === "home") {
-      writeTimerCache("global", timers.filter(timer => timer.placement === "global"));
+      writeTimerCache(
+        "global",
+        timers.filter((timer) => timer.placement === "global"),
+      );
     }
   }
 
@@ -87,7 +96,7 @@
       return [];
     }
 
-    return sharedTimers.filter(timer => timer.placement === "global");
+    return sharedTimers.filter((timer) => timer.placement === "global");
   }
 
   function timersMatch(first, second) {
@@ -123,14 +132,17 @@
     banner.append(track);
 
     requestAnimationFrame(() => {
-      banner.classList.toggle("is-marquee", text.scrollWidth > track.clientWidth);
+      banner.classList.toggle(
+        "is-marquee",
+        text.scrollWidth > track.clientWidth,
+      );
     });
 
     return banner;
   }
 
   function updateCountdowns(root) {
-    root.querySelectorAll("[data-countdown-at]").forEach(element => {
+    root.querySelectorAll("[data-countdown-at]").forEach((element) => {
       const target = new Date(element.dataset.countdownAt || "");
 
       if (!Number.isNaN(target.getTime())) {
@@ -145,7 +157,7 @@
       countdownInterval = 0;
     }
 
-    timersRoots.forEach(root => root.remove());
+    timersRoots.forEach((root) => root.remove());
     timersRoots = [];
   }
 
@@ -160,7 +172,7 @@
     if (header) {
       document.documentElement.style.setProperty(
         "--site-header-height",
-        `${header.offsetHeight}px`
+        `${header.offsetHeight}px`,
       );
     }
   }
@@ -168,8 +180,11 @@
   function appendTimers(timers, screenPosition, header) {
     const root = document.createElement("div");
     root.className = "site-timers";
-    root.classList.toggle("site-timers-below-header", screenPosition === "below-header");
-    timers.forEach(timer => root.append(createTimerElement(timer)));
+    root.classList.toggle(
+      "site-timers-below-header",
+      screenPosition === "below-header",
+    );
+    timers.forEach((timer) => root.append(createTimerElement(timer)));
 
     if (!header) {
       document.body.prepend(root);
@@ -189,10 +204,10 @@
 
     const header = getHeader();
     const headerTimers = activeTimers.filter(
-      timer => timer.screenPosition !== "below-header"
+      (timer) => timer.screenPosition !== "below-header",
     );
     const belowHeaderTimers = activeTimers.filter(
-      timer => timer.screenPosition === "below-header"
+      (timer) => timer.screenPosition === "below-header",
     );
 
     if (headerTimers.length) {
@@ -207,7 +222,7 @@
     timersRoots.forEach(updateCountdowns);
     countdownInterval = window.setInterval(
       () => timersRoots.forEach(updateCountdowns),
-      COUNTDOWN_INTERVAL_MS
+      COUNTDOWN_INTERVAL_MS,
     );
   }
 
@@ -215,7 +230,7 @@
     try {
       const data = await CMCENUtils.apiJson(
         `/api/timers/active?scope=${encodeURIComponent(getScope())}`,
-        { errorMessage: "Banners unavailable" }
+        { errorMessage: "Banners unavailable" },
       );
       const nextTimers = Array.isArray(data.timers) ? data.timers : [];
       cacheTimers(nextTimers);
@@ -230,7 +245,7 @@
   }
 
   window.CMCENTimers = {
-    reload: loadTimers
+    reload: loadTimers,
   };
 
   activeTimers = getCachedTimersForCurrentScope();
@@ -239,7 +254,9 @@
     if (document.body) {
       renderTimers();
     } else {
-      document.addEventListener("DOMContentLoaded", renderTimers, { once: true });
+      document.addEventListener("DOMContentLoaded", renderTimers, {
+        once: true,
+      });
     }
   }
 

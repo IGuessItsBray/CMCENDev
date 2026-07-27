@@ -2,7 +2,7 @@ const path = require('path');
 
 function parseArgs(argv = process.argv.slice(2)) {
   const args = {
-    _: []
+    _: [],
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -17,8 +17,9 @@ function parseArgs(argv = process.argv.slice(2)) {
     const equalsIndex = withoutPrefix.indexOf('=');
 
     if (equalsIndex !== -1) {
-      args[withoutPrefix.slice(0, equalsIndex)] =
-        withoutPrefix.slice(equalsIndex + 1);
+      args[withoutPrefix.slice(0, equalsIndex)] = withoutPrefix.slice(
+        equalsIndex + 1,
+      );
       continue;
     }
 
@@ -41,5 +42,5 @@ function resolvePath(value, fallback) {
 
 module.exports = {
   parseArgs,
-  resolvePath
+  resolvePath,
 };

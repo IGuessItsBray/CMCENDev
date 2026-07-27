@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { afterEach, test } = require('node:test');
 const {
   buildPublicMediaUrl,
-  getCdnBaseUrl
+  getCdnBaseUrl,
 } = require('../services/media-library');
 
 const ENV_KEYS = [
@@ -10,10 +10,10 @@ const ENV_KEYS = [
   'CDN_PUBLIC_BASE_URL',
   'MINIO_BUCKET_NAME',
   'MINIO_ENDPOINT',
-  'MINIO_PUBLIC_ENDPOINT'
+  'MINIO_PUBLIC_ENDPOINT',
 ];
 const originalEnvironment = Object.fromEntries(
-  ENV_KEYS.map(key => [key, process.env[key]])
+  ENV_KEYS.map((key) => [key, process.env[key]]),
 );
 
 afterEach(() => {
@@ -33,12 +33,13 @@ test('builds migrated media URLs from the public endpoint, not internal MinIO', 
   process.env.MINIO_PUBLIC_ENDPOINT = 'http://cdn.corebot.ca';
   process.env.MINIO_BUCKET_NAME = 'cmcen-demo';
 
-  const key = 'legacy/current-site/retirements/357901-retirement-lieutenant-colonel-jeff-zoomer-szumlanski-00340-cele/large.webp';
+  const key =
+    'legacy/current-site/retirements/357901-retirement-lieutenant-colonel-jeff-zoomer-szumlanski-00340-cele/large.webp';
 
   assert.equal(getCdnBaseUrl(), 'http://cdn.corebot.ca/cmcen-demo');
   assert.equal(
     buildPublicMediaUrl(key),
-    `http://cdn.corebot.ca/cmcen-demo/${key}`
+    `http://cdn.corebot.ca/cmcen-demo/${key}`,
   );
 });
 
@@ -51,6 +52,6 @@ test('prefers an explicit CDN base URL', () => {
   assert.equal(getCdnBaseUrl(), 'https://cdn.example.ca/media');
   assert.equal(
     buildPublicMediaUrl('images/example photo.jpg'),
-    'https://cdn.example.ca/media/images/example%20photo.jpg'
+    'https://cdn.example.ca/media/images/example%20photo.jpg',
   );
 });

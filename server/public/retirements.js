@@ -1,20 +1,20 @@
-const retirementsGrid =
-    document.getElementById("retirementsGrid");
+const retirementsGrid = document.getElementById("retirementsGrid");
 
-const retirementsMessage =
-    document.getElementById("retirementsMessage");
+const retirementsMessage = document.getElementById("retirementsMessage");
 
-const retirementsLoadMore =
-    document.getElementById("retirementsLoadMore");
+const retirementsLoadMore = document.getElementById("retirementsLoadMore");
 
-const retirementsLoadMoreButton =
-    document.getElementById("retirementsLoadMoreButton");
+const retirementsLoadMoreButton = document.getElementById(
+  "retirementsLoadMoreButton",
+);
 
-const retirementsLoadMoreLabel =
-    document.getElementById("retirementsLoadMoreLabel");
+const retirementsLoadMoreLabel = document.getElementById(
+  "retirementsLoadMoreLabel",
+);
 
-const retirementsLoadMoreMessage =
-    document.getElementById("retirementsLoadMoreMessage");
+const retirementsLoadMoreMessage = document.getElementById(
+  "retirementsLoadMoreMessage",
+);
 
 const RETIREMENT_PLACEHOLDER_PHOTO_URL = "/images/logo.png";
 const RETIREMENT_PAGE_SIZE = 24;
@@ -25,366 +25,312 @@ let retirementHasMore = false;
 let isLoadingMoreRetirements = false;
 
 function createRetirementLoadingContent(message) {
-    const loading = CMCENUtils.createLoadingSpinner(message);
+  const loading = CMCENUtils.createLoadingSpinner(message);
 
-    return Array.from(loading.childNodes);
+  return Array.from(loading.childNodes);
 }
 
 function showRetirementsMessage(message, type = "neutral") {
-    retirementsMessage.textContent = message;
-    retirementsMessage.className =
-        `retirements-message is-${type}`;
-    retirementsMessage.removeAttribute("aria-label");
-    retirementsMessage.hidden = false;
-    retirementsGrid.hidden = true;
-    retirementsLoadMore.hidden = true;
+  retirementsMessage.textContent = message;
+  retirementsMessage.className = `retirements-message is-${type}`;
+  retirementsMessage.removeAttribute("aria-label");
+  retirementsMessage.hidden = false;
+  retirementsGrid.hidden = true;
+  retirementsLoadMore.hidden = true;
 }
 
 function showRetirementsLoading() {
-    const message = translate("retirements_loading");
+  const message = translate("retirements_loading");
 
-    retirementsMessage.replaceChildren(
-        ...createRetirementLoadingContent(message)
-    );
-    retirementsMessage.className =
-        "retirements-message is-loading";
-    retirementsMessage.setAttribute("aria-label", message);
-    retirementsMessage.hidden = false;
-    retirementsGrid.hidden = true;
-    retirementsLoadMore.hidden = true;
+  retirementsMessage.replaceChildren(
+    ...createRetirementLoadingContent(message),
+  );
+  retirementsMessage.className = "retirements-message is-loading";
+  retirementsMessage.setAttribute("aria-label", message);
+  retirementsMessage.hidden = false;
+  retirementsGrid.hidden = true;
+  retirementsLoadMore.hidden = true;
 }
 
 function updateRetirementsLoadMore() {
-    const showLoadMore =
-        retirementHasMore && loadedRetirementMessages.length;
+  const showLoadMore = retirementHasMore && loadedRetirementMessages.length;
 
-    retirementsLoadMore.hidden = !showLoadMore;
-    retirementsLoadMoreButton.disabled =
-        isLoadingMoreRetirements;
-    retirementsLoadMoreButton.setAttribute(
-        "aria-busy",
-        String(isLoadingMoreRetirements)
-    );
-    retirementsLoadMoreLabel.textContent = translate(
-        isLoadingMoreRetirements
-            ? "retirements_loading_more"
-            : "retirements_load_more"
-    );
+  retirementsLoadMore.hidden = !showLoadMore;
+  retirementsLoadMoreButton.disabled = isLoadingMoreRetirements;
+  retirementsLoadMoreButton.setAttribute(
+    "aria-busy",
+    String(isLoadingMoreRetirements),
+  );
+  retirementsLoadMoreLabel.textContent = translate(
+    isLoadingMoreRetirements
+      ? "retirements_loading_more"
+      : "retirements_load_more",
+  );
 }
 
 function showRetirementsLoadMoreMessage(message = "") {
-    retirementsLoadMoreMessage.textContent = message;
-    retirementsLoadMoreMessage.hidden = !message;
+  retirementsLoadMoreMessage.textContent = message;
+  retirementsLoadMoreMessage.hidden = !message;
 }
 
 function formatRetireeName(retirementMessage) {
-    const { name, postNominals } =
-        CMCENUtils.getRetireeNameParts(
-            retirementMessage.retiree
-        );
+  const { name, postNominals } = CMCENUtils.getRetireeNameParts(
+    retirementMessage.retiree,
+  );
 
-    return [
-        name,
-        postNominals
-    ]
-        .filter(Boolean)
-        .join(", ") ||
-        translate("retirement_card_default_name");
+  return (
+    [name, postNominals].filter(Boolean).join(", ") ||
+    translate("retirement_card_default_name")
+  );
 }
 
 function getMosid(retirementMessage) {
-    return retirementMessage.retiree?.tradeRole ||
-        translate("retirement_mosid_pending");
+  return (
+    retirementMessage.retiree?.tradeRole ||
+    translate("retirement_mosid_pending")
+  );
 }
 
 function getCommentCount(retirementMessage) {
-    if (typeof retirementMessage.commentCount === "number") {
-        return retirementMessage.commentCount;
-    }
+  if (typeof retirementMessage.commentCount === "number") {
+    return retirementMessage.commentCount;
+  }
 
-    if (Array.isArray(retirementMessage.comments)) {
-        return retirementMessage.comments.length;
-    }
+  if (Array.isArray(retirementMessage.comments)) {
+    return retirementMessage.comments.length;
+  }
 
-    return 0;
+  return 0;
 }
 
 function formatCommentCount(count) {
-    return translate(
-        count === 1
-            ? "retirement_comment_singular"
-            : "retirement_comment_plural",
-        { count }
-    );
+  return translate(
+    count === 1 ? "retirement_comment_singular" : "retirement_comment_plural",
+    { count },
+  );
 }
 
 function isRetirementPlaceholderPhoto(photoUrl) {
-    if (!photoUrl) {
-        return false;
-    }
+  if (!photoUrl) {
+    return false;
+  }
 
-    try {
-        const url =
-            new URL(photoUrl, window.location.origin);
-        const pathname =
-            url.pathname.toLowerCase();
-        const fileName =
-            pathname.split("/").pop();
+  try {
+    const url = new URL(photoUrl, window.location.origin);
+    const pathname = url.pathname.toLowerCase();
+    const fileName = pathname.split("/").pop();
 
-        return fileName === "logo.png" ||
-            fileName.includes("cmcen-crest") ||
-            pathname.includes("/legacy/wordpress/348036/");
-    } catch (error) {
-        const pathname =
-            String(photoUrl)
-                .toLowerCase()
-                .split(/[?#]/)[0];
-        const fileName =
-            pathname.split("/").pop();
+    return (
+      fileName === "logo.png" ||
+      fileName.includes("cmcen-crest") ||
+      pathname.includes("/legacy/wordpress/348036/")
+    );
+  } catch (error) {
+    const pathname = String(photoUrl).toLowerCase().split(/[?#]/)[0];
+    const fileName = pathname.split("/").pop();
 
-        return fileName === "logo.png" ||
-            fileName.includes("cmcen-crest") ||
-            pathname.includes("/legacy/wordpress/348036/");
-    }
+    return (
+      fileName === "logo.png" ||
+      fileName.includes("cmcen-crest") ||
+      pathname.includes("/legacy/wordpress/348036/")
+    );
+  }
 }
 
 function createRetirementPlaceholderImage(className) {
-    const image = document.createElement("img");
+  const image = document.createElement("img");
 
-    image.className = className;
-    image.src = RETIREMENT_PLACEHOLDER_PHOTO_URL;
-    image.alt = "";
-    image.loading = "lazy";
-    image.setAttribute("aria-hidden", "true");
+  image.className = className;
+  image.src = RETIREMENT_PLACEHOLDER_PHOTO_URL;
+  image.alt = "";
+  image.loading = "lazy";
+  image.setAttribute("aria-hidden", "true");
 
-    return image;
+  return image;
 }
 
 function createPhotoElement(retirementMessage, name) {
-    if (retirementMessage.photoUrl) {
-        const image = document.createElement("img");
-        const isPlaceholderPhoto =
-            isRetirementPlaceholderPhoto(
-                retirementMessage.photoUrl
-            );
+  if (retirementMessage.photoUrl) {
+    const image = document.createElement("img");
+    const isPlaceholderPhoto = isRetirementPlaceholderPhoto(
+      retirementMessage.photoUrl,
+    );
 
-        image.src = isPlaceholderPhoto
-            ? RETIREMENT_PLACEHOLDER_PHOTO_URL
-            : retirementMessage.photoUrl;
-        image.alt = isPlaceholderPhoto
-            ? ""
-            : translate(
-                "retirement_photo_alt",
-                { name }
-            );
-        image.loading = "lazy";
+    image.src = isPlaceholderPhoto
+      ? RETIREMENT_PLACEHOLDER_PHOTO_URL
+      : retirementMessage.photoUrl;
+    image.alt = isPlaceholderPhoto
+      ? ""
+      : translate("retirement_photo_alt", { name });
+    image.loading = "lazy";
 
-        if (isPlaceholderPhoto) {
-            image.className =
-                "retirement-card-photo-placeholder retirement-card-photo-logo";
-            image.setAttribute("aria-hidden", "true");
-        }
-
-        return image;
+    if (isPlaceholderPhoto) {
+      image.className =
+        "retirement-card-photo-placeholder retirement-card-photo-logo";
+      image.setAttribute("aria-hidden", "true");
     }
 
-    return createRetirementPlaceholderImage(
-        "retirement-card-photo-placeholder retirement-card-photo-logo"
-    );
+    return image;
+  }
+
+  return createRetirementPlaceholderImage(
+    "retirement-card-photo-placeholder retirement-card-photo-logo",
+  );
 }
 
 function createRetirementCard(retirementMessage) {
-    const card = document.createElement("a");
-    const name = formatRetireeName(retirementMessage);
-    const commentCount = getCommentCount(retirementMessage);
+  const card = document.createElement("a");
+  const name = formatRetireeName(retirementMessage);
+  const commentCount = getCommentCount(retirementMessage);
 
-    card.className = "retirement-card";
-    card.href =
-        `/retirement-message?id=${encodeURIComponent(
-            retirementMessage._id
-        )}`;
-    card.setAttribute(
-        "aria-label",
-        translate(
-            "retirement_card_aria",
-            { name }
-        )
-    );
+  card.className = "retirement-card";
+  card.href = `/retirement-message?id=${encodeURIComponent(
+    retirementMessage._id,
+  )}`;
+  card.setAttribute("aria-label", translate("retirement_card_aria", { name }));
 
-    const header = document.createElement("header");
-    header.className = "retirement-card-header";
+  const header = document.createElement("header");
+  header.className = "retirement-card-header";
 
-    const title = document.createElement("h2");
-    title.textContent = name;
+  const title = document.createElement("h2");
+  title.textContent = name;
 
-    const mosid = document.createElement("p");
-    mosid.textContent = getMosid(retirementMessage);
+  const mosid = document.createElement("p");
+  mosid.textContent = getMosid(retirementMessage);
 
-    header.append(title, mosid);
+  header.append(title, mosid);
 
-    const photo = document.createElement("div");
-    photo.className = "retirement-card-photo";
-    photo.appendChild(
-        createPhotoElement(retirementMessage, name)
-    );
+  const photo = document.createElement("div");
+  photo.className = "retirement-card-photo";
+  photo.appendChild(createPhotoElement(retirementMessage, name));
 
-    const footer = document.createElement("footer");
-    footer.className = "retirement-card-footer";
-    footer.textContent = formatCommentCount(commentCount);
+  const footer = document.createElement("footer");
+  footer.className = "retirement-card-footer";
+  footer.textContent = formatCommentCount(commentCount);
 
-    card.append(header, photo, footer);
+  card.append(header, photo, footer);
 
-    return card;
+  return card;
 }
 
 function renderRetirements(retirementMessages) {
-    retirementsGrid.replaceChildren();
+  retirementsGrid.replaceChildren();
 
-    if (!retirementMessages.length) {
-        showRetirementsMessage(
-            translate("retirements_empty"),
-            "empty"
-        );
-        return;
-    }
+  if (!retirementMessages.length) {
+    showRetirementsMessage(translate("retirements_empty"), "empty");
+    return;
+  }
 
-    retirementMessages.forEach(retirementMessage => {
-        retirementsGrid.appendChild(
-            createRetirementCard(retirementMessage)
-        );
-    });
+  retirementMessages.forEach((retirementMessage) => {
+    retirementsGrid.appendChild(createRetirementCard(retirementMessage));
+  });
 
-    retirementsMessage.hidden = true;
-    retirementsGrid.hidden = false;
-    updateRetirementsLoadMore();
+  retirementsMessage.hidden = true;
+  retirementsGrid.hidden = false;
+  updateRetirementsLoadMore();
 }
 
 function appendRetirements(retirementMessages) {
-    retirementMessages.forEach(retirementMessage => {
-        retirementsGrid.appendChild(
-            createRetirementCard(retirementMessage)
-        );
-    });
+  retirementMessages.forEach((retirementMessage) => {
+    retirementsGrid.appendChild(createRetirementCard(retirementMessage));
+  });
 
-    updateRetirementsLoadMore();
+  updateRetirementsLoadMore();
 }
 
 async function loadRetirements({ append = false } = {}) {
+  if (append) {
+    isLoadingMoreRetirements = true;
+    showRetirementsLoadMoreMessage();
+    updateRetirementsLoadMore();
+  } else {
+    showRetirementsLoading();
+  }
+
+  try {
+    const params = new URLSearchParams({
+      limit: String(RETIREMENT_PAGE_SIZE),
+    });
+
+    if (append && retirementNextCursor) {
+      params.set("cursor", retirementNextCursor);
+    }
+
+    const response = await fetch(`/api/retirement-messages?${params}`);
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || translate("retirements_load_error"));
+    }
+
+    const retirementMessages = Array.isArray(data.retirementMessages)
+      ? data.retirementMessages
+      : [];
+
+    retirementHasMore = data.hasMore === true;
+    retirementNextCursor =
+      typeof data.nextCursor === "string" ? data.nextCursor : "";
+
     if (append) {
-        isLoadingMoreRetirements = true;
-        showRetirementsLoadMoreMessage();
-        updateRetirementsLoadMore();
-    } else {
-        showRetirementsLoading();
+      loadedRetirementMessages.push(...retirementMessages);
+      appendRetirements(retirementMessages);
+      return;
     }
 
-    try {
-        const params = new URLSearchParams({
-            limit: String(RETIREMENT_PAGE_SIZE)
-        });
-
-        if (append && retirementNextCursor) {
-            params.set("cursor", retirementNextCursor);
-        }
-
-        const response = await fetch(
-            `/api/retirement-messages?${params}`
-        );
-
-        const data =
-            await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            throw new Error(
-                data.error ||
-                    translate("retirements_load_error")
-            );
-        }
-
-        const retirementMessages =
-            Array.isArray(data.retirementMessages)
-                ? data.retirementMessages
-                : [];
-
-        retirementHasMore = data.hasMore === true;
-        retirementNextCursor =
-            typeof data.nextCursor === "string"
-                ? data.nextCursor
-                : "";
-
-        if (append) {
-            loadedRetirementMessages.push(
-                ...retirementMessages
-            );
-            appendRetirements(retirementMessages);
-            return;
-        }
-
-        loadedRetirementMessages = retirementMessages;
-        renderRetirements(loadedRetirementMessages);
-    } catch (error) {
-        if (append) {
-            showRetirementsLoadMoreMessage(
-                error.message ||
-                    translate("retirements_load_more_error")
-            );
-            return;
-        }
-
-        showRetirementsMessage(
-            error.message ||
-                translate("retirements_load_error"),
-            "error"
-        );
-    } finally {
-        if (append) {
-            isLoadingMoreRetirements = false;
-            updateRetirementsLoadMore();
-        }
+    loadedRetirementMessages = retirementMessages;
+    renderRetirements(loadedRetirementMessages);
+  } catch (error) {
+    if (append) {
+      showRetirementsLoadMoreMessage(
+        error.message || translate("retirements_load_more_error"),
+      );
+      return;
     }
+
+    showRetirementsMessage(
+      error.message || translate("retirements_load_error"),
+      "error",
+    );
+  } finally {
+    if (append) {
+      isLoadingMoreRetirements = false;
+      updateRetirementsLoadMore();
+    }
+  }
 }
 
-retirementsLoadMoreButton.addEventListener(
-    "click",
-    () => loadRetirements({ append: true })
+retirementsLoadMoreButton.addEventListener("click", () =>
+  loadRetirements({ append: true }),
 );
 
-document.addEventListener(
-    "languagechange",
-    () => {
-        if (loadedRetirementMessages.length) {
-            renderRetirements(loadedRetirementMessages);
-            showRetirementsLoadMoreMessage();
-            return;
-        }
+document.addEventListener("languagechange", () => {
+  if (loadedRetirementMessages.length) {
+    renderRetirements(loadedRetirementMessages);
+    showRetirementsLoadMoreMessage();
+    return;
+  }
 
-        if (!retirementsMessage.hidden) {
-            const isError =
-                retirementsMessage.classList.contains("is-error");
-            const isEmpty =
-                retirementsMessage.classList.contains("is-empty");
+  if (!retirementsMessage.hidden) {
+    const isError = retirementsMessage.classList.contains("is-error");
+    const isEmpty = retirementsMessage.classList.contains("is-empty");
 
-            if (!isError && !isEmpty) {
-                showRetirementsLoading();
-                return;
-            }
-
-            showRetirementsMessage(
-                translate(
-                    isError
-                        ? "retirements_load_error"
-                        : isEmpty
-                            ? "retirements_empty"
-                            : "retirements_loading"
-                ),
-                isError
-                    ? "error"
-                    : isEmpty
-                        ? "empty"
-                        : "neutral"
-            );
-        }
+    if (!isError && !isEmpty) {
+      showRetirementsLoading();
+      return;
     }
-);
+
+    showRetirementsMessage(
+      translate(
+        isError
+          ? "retirements_load_error"
+          : isEmpty
+            ? "retirements_empty"
+            : "retirements_loading",
+      ),
+      isError ? "error" : isEmpty ? "empty" : "neutral",
+    );
+  }
+});
 
 loadRetirements();

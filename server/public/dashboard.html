@@ -1,17 +1,18 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
 
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title data-i18n="dashboard_page_title">
       Account Dashboard | CMCEN / RCMCE
     </title>
-    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
 
@@ -19,23 +20,14 @@
     <header id="header"></header>
 
     <main class="dashboard-main account-dashboard-main">
-      <section
-        class="dashboard-shell"
-        aria-labelledby="dashboardTitle"
-      >
+      <section class="dashboard-shell" aria-labelledby="dashboardTitle">
         <header class="dashboard-heading">
           <div class="dashboard-heading-copy">
-            <p
-              class="dashboard-eyebrow"
-              data-i18n="dashboard_member_account"
-            >
+            <p class="dashboard-eyebrow" data-i18n="dashboard_member_account">
               Member account
             </p>
 
-            <h1
-              id="dashboardTitle"
-              data-i18n="dashboard_title"
-            >
+            <h1 id="dashboardTitle" data-i18n="dashboard_title">
               Account Dashboard
             </h1>
 
@@ -46,15 +38,8 @@
             ></p>
           </div>
 
-          <div
-            class="dashboard-role-summary"
-            id="dashboardRoleSummary"
-            hidden
-          >
-            <span
-              class="dashboard-role-badge"
-              id="dashboardRoleBadge"
-            ></span>
+          <div class="dashboard-role-summary" id="dashboardRoleSummary" hidden>
+            <span class="dashboard-role-badge" id="dashboardRoleBadge"></span>
 
             <p id="dashboardRoleDescription"></p>
           </div>
@@ -73,11 +58,7 @@
           </span>
         </div>
 
-        <div
-          class="dashboard-content"
-          id="dashboardContent"
-          hidden
-        >
+        <div class="dashboard-content" id="dashboardContent" hidden>
           <section
             class="dashboard-section"
             aria-labelledby="accountDetailsTitle"
@@ -91,10 +72,7 @@
               </h2>
             </header>
 
-            <div
-              class="dashboard-details"
-              id="dashboardDetails"
-            ></div>
+            <div class="dashboard-details" id="dashboardDetails"></div>
           </section>
 
           <aside
@@ -142,10 +120,7 @@
             aria-labelledby="mfaTitle"
           >
             <header class="dashboard-section-heading">
-              <h2
-                id="mfaTitle"
-                data-i18n="dashboard_mfa_title"
-              >
+              <h2 id="mfaTitle" data-i18n="dashboard_mfa_title">
                 Multi-factor authentication
               </h2>
               <p class="dashboard-mfa-intro" data-i18n="mfa_intro">
@@ -153,10 +128,7 @@
               </p>
             </header>
 
-            <div
-              class="dashboard-mfa-grid"
-              id="mfa-config"
-            >
+            <div class="dashboard-mfa-grid" id="mfa-config">
               <article class="mfa-panel mfa-panel-totp">
                 <header class="mfa-panel-header">
                   <div class="mfa-panel-copy">
@@ -218,13 +190,9 @@
                   hidden
                 >
                   <div class="passkey-manager-heading">
-                    <h4
-                      id="totpStatusTitle"
-                      data-i18n="mfa_totp_status_title"
-                    >
+                    <h4 id="totpStatusTitle" data-i18n="mfa_totp_status_title">
                       Authenticator app status
                     </h4>
-
                   </div>
 
                   <div
@@ -249,7 +217,11 @@
                         ?
                       </button>
                     </div>
-                    <span class="mfa-recommended mfa-passkey-recommended" data-i18n="mfa_recommended">Recommended</span>
+                    <span
+                      class="mfa-recommended mfa-passkey-recommended"
+                      data-i18n="mfa_recommended"
+                      >Recommended</span
+                    >
                   </div>
                   <div class="mfa-actions">
                     <button
@@ -275,7 +247,6 @@
                     >
                       Registered passkeys
                     </h4>
-
                   </div>
 
                   <div

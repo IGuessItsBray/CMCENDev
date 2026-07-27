@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 const {
   PERMISSION_CATALOG,
-  normalizePermissionKeys
+  normalizePermissionKeys,
 } = require('../config/permissions');
 
-const PERMISSION_KEYS = PERMISSION_CATALOG.map(permission => permission.key);
+const PERMISSION_KEYS = PERMISSION_CATALOG.map((permission) => permission.key);
 
 function normalizeSlug(value) {
   return String(value || '')
@@ -22,58 +22,61 @@ function normalizeColor(value) {
     : '#4F46E5';
 }
 
-const RoleSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 80
-  },
+const RoleSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 80,
+    },
 
-  slug: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true,
-    maxlength: 100,
-    set: normalizeSlug
-  },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      maxlength: 100,
+      set: normalizeSlug,
+    },
 
-  description: {
-    type: String,
-    trim: true,
-    maxlength: 240,
-    default: ''
-  },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 240,
+      default: '',
+    },
 
-  color: {
-    type: String,
-    default: '#4F46E5',
-    set: normalizeColor
-  },
+    color: {
+      type: String,
+      default: '#4F46E5',
+      set: normalizeColor,
+    },
 
-  permissions: {
-    type: [String],
-    enum: PERMISSION_KEYS,
-    default: [],
-    set: normalizePermissionKeys
-  },
+    permissions: {
+      type: [String],
+      enum: PERMISSION_KEYS,
+      default: [],
+      set: normalizePermissionKeys,
+    },
 
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    default: null
-  },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
 
-  updatedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    default: null
-  }
-}, {
-  timestamps: true
-});
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
 
 RoleSchema.pre('validate', function () {
   if (!this.slug) {

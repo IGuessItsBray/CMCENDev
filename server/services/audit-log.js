@@ -13,7 +13,7 @@ function snapshotUser(user) {
     username: cleanString(user.username),
     email: cleanString(user.email),
     accountName: cleanString(user.accountName),
-    role: cleanString(user.role)
+    role: cleanString(user.role),
   };
 }
 
@@ -28,7 +28,7 @@ function splitIpCandidates(value) {
 
   return String(value)
     .split(',')
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
 }
 
@@ -57,26 +57,29 @@ function getRequestIpDetails(req) {
     req?.headers?.['x-forwarded-for'],
     req?.ips,
     req?.ip,
-    req?.socket?.remoteAddress
+    req?.socket?.remoteAddress,
   ].flatMap(splitIpCandidates);
 
   const addresses = [];
 
-  candidates.forEach(candidate => {
+  candidates.forEach((candidate) => {
     const normalized = normalizeIpAddress(candidate);
 
     if (normalized && !addresses.includes(normalized)) {
       addresses.push(normalized);
     }
 
-    if (String(candidate || '').trim() === '::1' && !addresses.includes('::1')) {
+    if (
+      String(candidate || '').trim() === '::1' &&
+      !addresses.includes('::1')
+    ) {
       addresses.push('::1');
     }
   });
 
   return {
     ipAddress: addresses.find(isIpv4Address) || addresses[0] || '',
-    ipAddresses: addresses
+    ipAddresses: addresses,
   };
 }
 
@@ -106,7 +109,7 @@ async function writeAuditLog({
   targetType,
   target = null,
   targetSnapshot = {},
-  metadata = {}
+  metadata = {},
 }) {
   try {
     const requestIpDetails = getRequestIpDetails(req);
@@ -115,9 +118,9 @@ async function writeAuditLog({
       ...(shouldCaptureRequestIp(action) && requestIpDetails.ipAddress
         ? {
             ipAddress: requestIpDetails.ipAddress,
-            ipAddresses: requestIpDetails.ipAddresses
+            ipAddresses: requestIpDetails.ipAddresses,
           }
-        : {})
+        : {}),
     };
 
     await AuditLog.create({
@@ -127,7 +130,7 @@ async function writeAuditLog({
       targetType,
       target,
       targetSnapshot,
-      metadata: auditMetadata
+      metadata: auditMetadata,
     });
   } catch (error) {
     console.error('Audit log write failed:', error);
@@ -140,16 +143,16 @@ async function updateAccountCreationMfaMethod(user, method) {
       {
         action: 'user.created',
         target: user?._id || user,
-        'metadata.mfaMethod': 'pending'
+        'metadata.mfaMethod': 'pending',
       },
       {
         $set: {
-          'metadata.mfaMethod': cleanString(method)
-        }
+          'metadata.mfaMethod': cleanString(method),
+        },
       },
       {
-        sort: { createdAt: -1 }
-      }
+        sort: { createdAt: -1 },
+      },
     );
   } catch (error) {
     console.error('Audit log MFA method update failed:', error);
@@ -159,5 +162,5 @@ async function updateAccountCreationMfaMethod(user, method) {
 module.exports = {
   writeAuditLog,
   updateAccountCreationMfaMethod,
-  snapshotUser
+  snapshotUser,
 };

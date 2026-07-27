@@ -48,17 +48,17 @@
     const dateLabel = date.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
-      year: "numeric"
+      year: "numeric",
     });
     const timeLabel = new Date(
       dateParts.year,
       dateParts.month,
       dateParts.day,
       timeParts.hour,
-      timeParts.minute
+      timeParts.minute,
     ).toLocaleTimeString(undefined, {
       hour: "numeric",
-      minute: "2-digit"
+      minute: "2-digit",
     });
 
     return `${dateLabel}, ${timeLabel}`;
@@ -68,10 +68,14 @@
     const dateParts = parseDateParts(dateValue);
     if (!dateParts) return placeholder;
 
-    return new Date(dateParts.year, dateParts.month, dateParts.day).toLocaleDateString(undefined, {
+    return new Date(
+      dateParts.year,
+      dateParts.month,
+      dateParts.day,
+    ).toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
-      year: "numeric"
+      year: "numeric",
     });
   }
 
@@ -80,7 +84,7 @@
     button.type = "button";
     button.className = className;
     button.textContent = text;
-    button.addEventListener("click", event => {
+    button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
       onClick(event);
@@ -95,11 +99,11 @@
     const locale = options.locale || document.documentElement.lang || undefined;
     const monthFormatter = new Intl.DateTimeFormat(locale, {
       month: "long",
-      year: "numeric"
+      year: "numeric",
     });
     const weekdayFormatter = new Intl.DateTimeFormat(locale, {
       weekday: "short",
-      timeZone: "UTC"
+      timeZone: "UTC",
     });
     const valueDate = parseDateParts(options.date || "") ? options.date : "";
     const valueTime = parseTimeParts(options.time || "") ? options.time : "";
@@ -143,7 +147,7 @@
           date: selectedDate,
           time: includeTime ? selectedTime : "",
           dateInput,
-          timeInput
+          timeInput,
         });
       }
     }
@@ -157,9 +161,11 @@
 
     function setOpen(isOpen) {
       if (isOpen) {
-        window.dispatchEvent(new CustomEvent("cmcen:picker-open", {
-          detail: { picker }
-        }));
+        window.dispatchEvent(
+          new CustomEvent("cmcen:picker-open", {
+            detail: { picker },
+          }),
+        );
       }
       picker.classList.toggle("is-open", isOpen);
       trigger.setAttribute("aria-expanded", String(isOpen));
@@ -167,9 +173,15 @@
 
       const triggerRect = trigger.getBoundingClientRect();
       const width = Math.min(360, window.innerWidth - 24);
-      const left = Math.max(12, Math.min(triggerRect.left, window.innerWidth - width - 12));
+      const left = Math.max(
+        12,
+        Math.min(triggerRect.left, window.innerWidth - width - 12),
+      );
       popover.style.setProperty("--date-popover-left", `${left}px`);
-      popover.style.setProperty("--date-popover-top", `${triggerRect.bottom + 4}px`);
+      popover.style.setProperty(
+        "--date-popover-top",
+        `${triggerRect.bottom + 4}px`,
+      );
       popover.style.setProperty("--date-popover-width", `${width}px`);
     }
 
@@ -232,7 +244,9 @@
       });
 
       const title = document.createElement("strong");
-      title.textContent = monthFormatter.format(new Date(visibleYear, visibleMonth, 1));
+      title.textContent = monthFormatter.format(
+        new Date(visibleYear, visibleMonth, 1),
+      );
 
       const next = createButton("cmcen-date-time-nav", ">", () => {
         visibleMonth += 1;
@@ -247,9 +261,9 @@
 
       const grid = document.createElement("div");
       grid.className = "cmcen-date-time-grid";
-      Array.from({ length: 7 }, (_, day) => weekdayFormatter.format(
-        new Date(Date.UTC(2023, 0, day + 1))
-      )).forEach(day => {
+      Array.from({ length: 7 }, (_, day) =>
+        weekdayFormatter.format(new Date(Date.UTC(2023, 0, day + 1))),
+      ).forEach((day) => {
         const label = document.createElement("span");
         label.className = "cmcen-date-time-weekday";
         label.textContent = day;
@@ -267,7 +281,9 @@
       for (let day = 1; day <= daysInMonth; day += 1) {
         const date = new Date(visibleYear, visibleMonth, day);
         const dateValue = getDateValue(date);
-        const button = createButton("cmcen-date-time-day", String(day), () => selectDate(dateValue));
+        const button = createButton("cmcen-date-time-day", String(day), () =>
+          selectDate(dateValue),
+        );
         button.classList.toggle("is-selected", dateValue === selectedDate);
         button.classList.toggle("is-today", dateValue === getDateValue(now));
         grid.append(button);
@@ -292,23 +308,31 @@
       const actions = document.createElement("div");
       actions.className = "cmcen-date-time-actions";
       actions.append(
-        createButton("cmcen-date-time-action", options.clearLabel || "Clear", () => {
-          selectedDate = "";
-          selectedTime = "00:00";
-          dateInput.value = "";
-          timeInput.value = selectedTime;
-          updateTrigger();
-          renderCalendar();
-          emitInput();
-        }),
-        createButton("cmcen-date-time-action is-primary", options.doneLabel || "Done", () => setOpen(false))
+        createButton(
+          "cmcen-date-time-action",
+          options.clearLabel || "Clear",
+          () => {
+            selectedDate = "";
+            selectedTime = "00:00";
+            dateInput.value = "";
+            timeInput.value = selectedTime;
+            updateTrigger();
+            renderCalendar();
+            emitInput();
+          },
+        ),
+        createButton(
+          "cmcen-date-time-action is-primary",
+          options.doneLabel || "Done",
+          () => setOpen(false),
+        ),
       );
 
       popover.prepend(header, grid);
       popover.append(actions);
     }
 
-    trigger.addEventListener("click", event => {
+    trigger.addEventListener("click", (event) => {
       event.stopPropagation();
       setOpen(!picker.classList.contains("is-open"));
     });
@@ -374,7 +398,7 @@
         input.value = date;
         input.dispatchEvent(new Event("input", { bubbles: true }));
         input.dispatchEvent(new Event("change", { bubbles: true }));
-      }
+      },
     });
 
     input.dataset.cmcenDatePickerEnhanced = "true";
@@ -397,8 +421,9 @@
   }
 
   function enhanceAllDateInputs(root = document) {
-    root.querySelectorAll('input[type="date"]:not([data-cmcen-picker="native"])')
-      .forEach(input => enhanceDateInput(input));
+    root
+      .querySelectorAll('input[type="date"]:not([data-cmcen-picker="native"])')
+      .forEach((input) => enhanceDateInput(input));
   }
 
   if (document.readyState === "loading") {
@@ -411,6 +436,6 @@
     create: createDateTimePicker,
     enhanceDateInput,
     enhanceAllDateInputs,
-    refreshDateInput
+    refreshDateInput,
   };
 })();

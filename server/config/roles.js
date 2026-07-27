@@ -6,7 +6,7 @@ const USER_ROLES = Object.freeze([
   'author',
   'editor',
   'administrator',
-  'developer'
+  'developer',
 ]);
 
 const ROLE_LEVELS = Object.freeze({
@@ -16,10 +16,10 @@ const ROLE_LEVELS = Object.freeze({
   author: 2,
   editor: 3,
   administrator: 4,
-  developer: 5
+  developer: 5,
 });
 
 module.exports = {
   USER_ROLES,
-  ROLE_LEVELS
+  ROLE_LEVELS,
 };

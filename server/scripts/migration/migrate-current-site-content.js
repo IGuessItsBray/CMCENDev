@@ -1,5 +1,5 @@
 require('dotenv').config({
-  path: require('path').join(__dirname, '..', '..', '.env')
+  path: require('path').join(__dirname, '..', '..', '.env'),
 });
 
 const path = require('path');
@@ -7,7 +7,7 @@ const { spawnSync } = require('child_process');
 const { parseArgs, resolvePath } = require('./lib/args');
 const {
   assertPublicMediaBaseUrl,
-  configurePublicMediaBaseUrl
+  configurePublicMediaBaseUrl,
 } = require('./lib/public-media');
 
 const args = parseArgs();
@@ -19,13 +19,18 @@ const allowedContentModes = new Set([
   'messages',
   'comments',
   'retirements',
-  'last-posts'
+  'last-posts',
 ]);
 const contentMode = allowedContentModes.has(content) ? content : 'all';
 const publicMediaBaseUrl = configurePublicMediaBaseUrl(args);
 
 function addFlag(argv, name, value) {
-  if (value === undefined || value === null || value === false || value === '') {
+  if (
+    value === undefined ||
+    value === null ||
+    value === false ||
+    value === ''
+  ) {
     return;
   }
 
@@ -34,12 +39,9 @@ function addFlag(argv, name, value) {
 
 function runMigration(scriptName, scriptArgs) {
   const scriptPath = path.join(__dirname, scriptName);
-  const result = spawnSync(process.execPath, [
-    scriptPath,
-    ...scriptArgs
-  ], {
+  const result = spawnSync(process.execPath, [scriptPath, ...scriptArgs], {
     stdio: 'inherit',
-    env: process.env
+    env: process.env,
   });
 
   if (result.error) {
@@ -54,7 +56,7 @@ function runMigration(scriptName, scriptArgs) {
 function buildSharedArgs(manifestName, limitValue) {
   const sharedArgs = [
     `--output=${outputDir}`,
-    `--manifest=${path.join(outputDir, manifestName)}`
+    `--manifest=${path.join(outputDir, manifestName)}`,
   ];
 
   if (apply) {
@@ -109,7 +111,7 @@ function main() {
   if (retirementContent) {
     const retirementArgs = buildSharedArgs(
       'current-retirement-scrape-manifest.json',
-      args['retirement-limit'] || args.limit
+      args['retirement-limit'] || args.limit,
     );
     retirementArgs.push(`--content=${retirementContent}`);
 
@@ -120,7 +122,7 @@ function main() {
   if (lastPostContent) {
     const lastPostArgs = buildSharedArgs(
       'current-last-post-scrape-manifest.json',
-      args['last-post-limit'] || args.limit
+      args['last-post-limit'] || args.limit,
     );
     lastPostArgs.push(`--content=${lastPostContent}`);
 

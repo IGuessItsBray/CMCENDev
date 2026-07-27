@@ -1,17 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
 
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title data-i18n="event_detail_page_title">
-      Event | CMCEN / RCMCE
-    </title>
-    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <title data-i18n="event_detail_page_title">Event | CMCEN / RCMCE</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
 
@@ -19,10 +18,7 @@
     <header id="header"></header>
 
     <main class="event-detail-main">
-      <article
-        class="event-detail-shell"
-        aria-labelledby="eventDetailTitle"
-      >
+      <article class="event-detail-shell" aria-labelledby="eventDetailTitle">
         <p
           class="calendar-message is-loading"
           id="eventDetailMessage"
@@ -31,43 +27,26 @@
           aria-label="Loading event..."
         >
           <span class="loading-state-spinner" aria-hidden="true"></span>
-          <span class="visually-hidden">
-            Loading event...
-          </span>
+          <span class="visually-hidden"> Loading event... </span>
         </p>
 
         <div id="eventDetailContent" hidden>
           <header class="event-detail-hero">
             <div class="event-detail-hero-grid">
               <div class="event-detail-date-card">
-                <span
-                  class="event-detail-month"
-                  id="eventDetailMonth"
-                ></span>
+                <span class="event-detail-month" id="eventDetailMonth"></span>
 
-                <span
-                  class="event-detail-day"
-                  id="eventDetailDay"
-                ></span>
+                <span class="event-detail-day" id="eventDetailDay"></span>
 
-                <span
-                  class="event-detail-year"
-                  id="eventDetailYear"
-                ></span>
+                <span class="event-detail-year" id="eventDetailYear"></span>
               </div>
 
               <div class="event-detail-heading">
-                <p
-                  class="event-detail-eyebrow"
-                  id="eventDetailEyebrow"
-                ></p>
+                <p class="event-detail-eyebrow" id="eventDetailEyebrow"></p>
 
                 <h1 id="eventDetailTitle"></h1>
 
-                <p
-                  class="event-detail-summary"
-                  id="eventDetailSummary"
-                ></p>
+                <p class="event-detail-summary" id="eventDetailSummary"></p>
               </div>
             </div>
           </header>
@@ -93,17 +72,11 @@
               class="event-detail-brief"
               aria-labelledby="eventBriefHeading"
             >
-              <h2
-                id="eventBriefHeading"
-                data-i18n="event_detail_brief_heading"
-              >
+              <h2 id="eventBriefHeading" data-i18n="event_detail_brief_heading">
                 Event brief
               </h2>
 
-              <dl
-                class="event-detail-list"
-                id="eventDetailBrief"
-              ></dl>
+              <dl class="event-detail-list" id="eventDetailBrief"></dl>
 
               <div
                 class="event-detail-registration"

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
@@ -7,8 +7,8 @@
   <title data-i18n="submit_event_page_title">
     Submit an Event | CMCEN / RCMCE
   </title>
-    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
-    <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 
 <body>
@@ -36,31 +36,29 @@
           </div>
         </header>
 
-      <div class="event-management-tabs" role="tablist" aria-label="Event management">
-        <button class="event-management-tab is-active" id="myEventsTab" type="button" role="tab" aria-selected="true"
-          aria-controls="myEventsPanel" data-event-tab="events">
-          <span data-i18n="my_events_heading">
-            My Events
-          </span>
-        </button>
-        <button class="event-management-tab" id="eventFormTab" type="button" role="tab" aria-selected="false"
-          aria-controls="eventFormPanel" data-event-tab="form">
-          <span id="eventFormTabLabel" data-i18n="submit_new_event_tab">
-            Submit New Event
-          </span>
-        </button>
-      </div>
-      <div class="event-management-panel is-active" id="myEventsPanel" role="tabpanel" aria-labelledby="myEventsTab"
-        data-event-panel="events">
-        <section class="my-events-section" id="myEventsSection" aria-labelledby="myEventsHeading" hidden>
-          <h2 class="visually-hidden" id="myEventsHeading" data-i18n="my_events_heading">
-            My Events
-          </h2>
-          <div class="my-events-list" id="myEventsList"></div>
-        </section>
-      </div>
-      <div class="event-management-panel" id="eventFormPanel" role="tabpanel" aria-labelledby="eventFormTab"
-        data-event-panel="form" hidden>
+        <div class="event-management-tabs" role="tablist" aria-label="Event management">
+          <button class="event-management-tab is-active" id="myEventsTab" type="button" role="tab" aria-selected="true"
+            aria-controls="myEventsPanel" data-event-tab="events">
+            <span data-i18n="my_events_heading"> My Events </span>
+          </button>
+          <button class="event-management-tab" id="eventFormTab" type="button" role="tab" aria-selected="false"
+            aria-controls="eventFormPanel" data-event-tab="form">
+            <span id="eventFormTabLabel" data-i18n="submit_new_event_tab">
+              Submit New Event
+            </span>
+          </button>
+        </div>
+        <div class="event-management-panel is-active" id="myEventsPanel" role="tabpanel" aria-labelledby="myEventsTab"
+          data-event-panel="events">
+          <section class="my-events-section" id="myEventsSection" aria-labelledby="myEventsHeading" hidden>
+            <h2 class="visually-hidden" id="myEventsHeading" data-i18n="my_events_heading">
+              My Events
+            </h2>
+            <div class="my-events-list" id="myEventsList"></div>
+          </section>
+        </div>
+        <div class="event-management-panel" id="eventFormPanel" role="tabpanel" aria-labelledby="eventFormTab"
+          data-event-panel="form" hidden>
           <p class="event-page-message" id="eventPageMessage" role="alert" aria-live="polite" hidden></p>
 
           <div class="event-edit-loading" id="eventEditLoading" role="status" aria-live="polite" hidden>
@@ -103,36 +101,26 @@
               <section class="event-language-panel" lang="en" aria-labelledby="englishEventDetails">
                 <header class="event-language-heading">
                   <div>
-                    <span class="event-language-code">
-                      EN
-                    </span>
+                    <span class="event-language-code"> EN </span>
 
-                    <h2 id="englishEventDetails">
-                      English
-                    </h2>
+                    <h2 id="englishEventDetails">English</h2>
                   </div>
                 </header>
 
                 <div class="event-field">
-                  <label for="eventTitleEn">
-                    Event title
-                  </label>
+                  <label for="eventTitleEn"> Event title </label>
 
                   <input type="text" id="eventTitleEn" name="titleEn" maxlength="500" autocomplete="off" />
                 </div>
 
                 <div class="event-field">
-                  <label for="eventLocationEn">
-                    Location
-                  </label>
+                  <label for="eventLocationEn"> Location </label>
 
                   <input type="text" id="eventLocationEn" name="locationEn" maxlength="500" autocomplete="off" />
                 </div>
 
                 <div class="event-field">
-                  <label for="eventDescriptionEn">
-                    Description
-                  </label>
+                  <label for="eventDescriptionEn"> Description </label>
 
                   <textarea id="eventDescriptionEn" name="descriptionEn" rows="6" maxlength="10000"></textarea>
                 </div>
@@ -155,36 +143,26 @@
               <section class="event-language-panel" lang="fr" aria-labelledby="frenchEventDetails">
                 <header class="event-language-heading">
                   <div>
-                    <span class="event-language-code">
-                      FR
-                    </span>
+                    <span class="event-language-code"> FR </span>
 
-                    <h2 id="frenchEventDetails">
-                      Français
-                    </h2>
+                    <h2 id="frenchEventDetails">Français</h2>
                   </div>
                 </header>
 
                 <div class="event-field">
-                  <label for="eventTitleFr">
-                    Titre de l'événement
-                  </label>
+                  <label for="eventTitleFr"> Titre de l'événement </label>
 
                   <input type="text" id="eventTitleFr" name="titleFr" maxlength="500" autocomplete="off" />
                 </div>
 
                 <div class="event-field">
-                  <label for="eventLocationFr">
-                    Lieu
-                  </label>
+                  <label for="eventLocationFr"> Lieu </label>
 
                   <input type="text" id="eventLocationFr" name="locationFr" maxlength="500" autocomplete="off" />
                 </div>
 
                 <div class="event-field">
-                  <label for="eventDescriptionFr">
-                    Description
-                  </label>
+                  <label for="eventDescriptionFr"> Description </label>
 
                   <textarea id="eventDescriptionFr" name="descriptionFr" rows="6" maxlength="10000"></textarea>
                 </div>
@@ -205,10 +183,11 @@
             </div>
 
             <p class="event-language-note" data-i18n="event_language_note">
-              At least one event title is required. Add both
-              language versions whenever possible.
+              At least one event title is required. Add both language versions
+              whenever possible.
             </p>
-            <section class="event-details-section event-section--full-bleed-heading" aria-labelledby="eventDetailsHeading">
+            <section class="event-details-section event-section--full-bleed-heading"
+              aria-labelledby="eventDetailsHeading">
               <header class="event-section-heading">
                 <div>
                   <p class="event-section-eyebrow" data-i18n="event_details_eyebrow">
@@ -223,150 +202,147 @@
 
               <div class="event-section-content">
                 <div class="event-details-grid">
-                <div class="event-field">
-                  <label for="eventCity" data-i18n="event_city">
-                    City
-                  </label>
+                  <div class="event-field">
+                    <label for="eventCity" data-i18n="event_city">
+                      City
+                    </label>
 
-                  <input type="text" id="eventCity" name="city" maxlength="200" autocomplete="address-level2" required
-                    data-i18n-placeholder="event_city_placeholder" placeholder="Kingston" />
-                </div>
+                    <input type="text" id="eventCity" name="city" maxlength="200" autocomplete="address-level2" required
+                      data-i18n-placeholder="event_city_placeholder" placeholder="Kingston" />
+                  </div>
 
-                <div class="event-field">
-                  <label for="eventProvinceRegion" data-i18n="event_province_region">
-                    Province or region
-                  </label>
+                  <div class="event-field">
+                    <label for="eventProvinceRegion" data-i18n="event_province_region">
+                      Province or region
+                    </label>
 
-                  <select id="eventProvinceRegion" name="provinceRegion" required>
-                    <option value="" selected disabled data-i18n="event_select_option">
-                      Select an option
-                    </option>
+                    <select id="eventProvinceRegion" name="provinceRegion" required>
+                      <option value="" selected disabled data-i18n="event_select_option">
+                        Select an option
+                      </option>
 
-                    <option value="AB" data-i18n="region_ab">
-                      Alberta
-                    </option>
+                      <option value="AB" data-i18n="region_ab">
+                        Alberta
+                      </option>
 
-                    <option value="BC" data-i18n="region_bc">
-                      British Columbia
-                    </option>
+                      <option value="BC" data-i18n="region_bc">
+                        British Columbia
+                      </option>
 
-                    <option value="MB" data-i18n="region_mb">
-                      Manitoba
-                    </option>
+                      <option value="MB" data-i18n="region_mb">
+                        Manitoba
+                      </option>
 
-                    <option value="NB" data-i18n="region_nb">
-                      New Brunswick
-                    </option>
+                      <option value="NB" data-i18n="region_nb">
+                        New Brunswick
+                      </option>
 
-                    <option value="NL" data-i18n="region_nl">
-                      Newfoundland and Labrador
-                    </option>
+                      <option value="NL" data-i18n="region_nl">
+                        Newfoundland and Labrador
+                      </option>
 
-                    <option value="NS" data-i18n="region_ns">
-                      Nova Scotia
-                    </option>
+                      <option value="NS" data-i18n="region_ns">
+                        Nova Scotia
+                      </option>
 
-                    <option value="NT" data-i18n="region_nt">
-                      Northwest Territories
-                    </option>
+                      <option value="NT" data-i18n="region_nt">
+                        Northwest Territories
+                      </option>
 
-                    <option value="NU" data-i18n="region_nu">
-                      Nunavut
-                    </option>
+                      <option value="NU" data-i18n="region_nu">
+                        Nunavut
+                      </option>
 
-                    <option value="ON" data-i18n="region_on">
-                      Ontario
-                    </option>
+                      <option value="ON" data-i18n="region_on">
+                        Ontario
+                      </option>
 
-                    <option value="PE" data-i18n="region_pe">
-                      Prince Edward Island
-                    </option>
+                      <option value="PE" data-i18n="region_pe">
+                        Prince Edward Island
+                      </option>
 
-                    <option value="QC" data-i18n="region_qc">
-                      Quebec
-                    </option>
+                      <option value="QC" data-i18n="region_qc">Quebec</option>
 
-                    <option value="SK" data-i18n="region_sk">
-                      Saskatchewan
-                    </option>
+                      <option value="SK" data-i18n="region_sk">
+                        Saskatchewan
+                      </option>
 
-                    <option value="YT" data-i18n="region_yt">
-                      Yukon
-                    </option>
+                      <option value="YT" data-i18n="region_yt">Yukon</option>
 
-                    <option value="International" data-i18n="region_international">
-                      International
-                    </option>
-                  </select>
-                </div>
+                      <option value="International" data-i18n="region_international">
+                        International
+                      </option>
+                    </select>
+                  </div>
 
-                <div class="event-field">
-                  <label for="eventOrganizingEntity" data-i18n="event_organizing_entity">
-                    Organizing entity
-                  </label>
+                  <div class="event-field">
+                    <label for="eventOrganizingEntity" data-i18n="event_organizing_entity">
+                      Organizing entity
+                    </label>
 
-                  <select id="eventOrganizingEntity" name="organizingEntity" required>
-                    <option value="" selected disabled data-i18n="event_select_option">
-                      Select an option
-                    </option>
+                    <select id="eventOrganizingEntity" name="organizingEntity" required>
+                      <option value="" selected disabled data-i18n="event_select_option">
+                        Select an option
+                      </option>
 
-                    <option value="branch" data-i18n="entity_branch">
-                      C&amp;E Branch
-                    </option>
+                      <option value="branch" data-i18n="entity_branch">
+                        C&amp;E Branch
+                      </option>
 
-                    <option value="association" data-i18n="entity_association">
-                      C&amp;E Association
-                    </option>
+                      <option value="association" data-i18n="entity_association">
+                        C&amp;E Association
+                      </option>
 
-                    <option value="foundation" data-i18n="entity_foundation">
-                      C&amp;E Foundation
-                    </option>
+                      <option value="foundation" data-i18n="entity_foundation">
+                        C&amp;E Foundation
+                      </option>
 
-                    <option value="museum" data-i18n="entity_museum">
-                      C&amp;E Museum
-                    </option>
-                  </select>
-                </div>
+                      <option value="museum" data-i18n="entity_museum">
+                        C&amp;E Museum
+                      </option>
+                    </select>
+                  </div>
 
-                <div class="event-field">
-                  <label for="eventType" data-i18n="event_type">
-                    Event type
-                  </label>
+                  <div class="event-field">
+                    <label for="eventType" data-i18n="event_type">
+                      Event type
+                    </label>
 
-                  <select id="eventType" name="eventType" required>
-                    <option value="" selected disabled data-i18n="event_select_option">
-                      Select an option
-                    </option>
+                    <select id="eventType" name="eventType" required>
+                      <option value="" selected disabled data-i18n="event_select_option">
+                        Select an option
+                      </option>
 
-                    <option value="conference" data-i18n="event_type_conference">
-                      Conference
-                    </option>
+                      <option value="conference" data-i18n="event_type_conference">
+                        Conference
+                      </option>
 
-                    <option value="mess-function" data-i18n="event_type_mess_function">
-                      Mess function
-                    </option>
+                      <option value="mess-function" data-i18n="event_type_mess_function">
+                        Mess function
+                      </option>
 
-                    <option value="ceremony" data-i18n="event_type_ceremony">
-                      Ceremony
-                    </option>
+                      <option value="ceremony" data-i18n="event_type_ceremony">
+                        Ceremony
+                      </option>
 
-                    <option value="training" data-i18n="event_type_training">
-                      Training
-                    </option>
+                      <option value="training" data-i18n="event_type_training">
+                        Training
+                      </option>
 
-                    <option value="social" data-i18n="event_type_social">
-                      Social
-                    </option>
+                      <option value="social" data-i18n="event_type_social">
+                        Social
+                      </option>
 
-                    <option value="other" data-i18n="event_type_other">
-                      Other
-                    </option>
-                  </select>
-                </div>
+                      <option value="other" data-i18n="event_type_other">
+                        Other
+                      </option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </section>
-            <section class="event-schedule-section event-section--full-bleed-heading" aria-labelledby="eventScheduleHeading">
+            <section class="event-schedule-section event-section--full-bleed-heading"
+              aria-labelledby="eventScheduleHeading">
               <header class="event-section-heading">
                 <div>
                   <p class="event-section-eyebrow" data-i18n="event_shared_details">
@@ -381,9 +357,7 @@
                 <label class="event-toggle" for="eventAllDay">
                   <input type="checkbox" id="eventAllDay" checked />
 
-                  <span data-i18n="event_all_day">
-                    All-day event
-                  </span>
+                  <span data-i18n="event_all_day"> All-day event </span>
                 </label>
               </header>
 
@@ -478,8 +452,8 @@
 
                 <span>
                   <strong data-i18n="event_permission_confirmation">
-                    I confirm I have permission from the chain of command
-                    to publish this event.
+                    I confirm I have permission from the chain of command to
+                    publish this event.
                   </strong>
 
                   <small data-i18n="event_permission_confirmation_hint">
@@ -501,22 +475,18 @@
                     </strong>
 
                     <small data-i18n="event_publish_now_hint">
-                      Skip the review queue and publish this
-                      event now.
+                      Skip the review queue and publish this event now.
                     </small>
                   </span>
                 </label>
 
                 <p class="event-review-note" id="eventReviewNote" data-i18n="event_review_note">
-                  Your event will be sent to an editor for
-                  review.
+                  Your event will be sent to an editor for review.
                 </p>
               </div>
 
               <button type="submit" class="event-submit-button" id="eventSubmitButton">
-                <span id="eventSubmitButtonLabel">
-                  Submit Event
-                </span>
+                <span id="eventSubmitButtonLabel"> Submit Event </span>
               </button>
             </section>
           </form>
@@ -528,7 +498,7 @@
   <footer id="footer"></footer>
 
   <script src="/app-utils.js"></script>
-    <script src="/timers.js"></script>
+  <script src="/timers.js"></script>
   <script src="/index.js"></script>
   <script src="/translations.js"></script>
   <script src="/date-time-picker.js"></script>

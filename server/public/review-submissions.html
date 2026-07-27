@@ -1,17 +1,18 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
 
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title data-i18n="review_events_page_title">
       Review Submissions | CMCEN / RCMCE
     </title>
-    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
 
@@ -19,13 +20,9 @@
     <header id="header"></header>
 
     <main class="event-review-main">
-      <section
-        class="event-review-shell"
-        aria-labelledby="reviewEventsTitle"
-      >
+      <section class="event-review-shell" aria-labelledby="reviewEventsTitle">
         <header class="event-review-heading">
           <div class="event-review-heading-main">
-
             <div class="event-review-heading-copy">
               <p
                 class="event-review-eyebrow"
@@ -34,15 +31,13 @@
                 Editorial workflow
               </p>
 
-              <h1
-                id="reviewEventsTitle"
-                data-i18n="review_events_title"
-              >
+              <h1 id="reviewEventsTitle" data-i18n="review_events_title">
                 Review Submissions
               </h1>
 
               <p data-i18n="review_events_intro">
-                Review pending event, retirement message, Last Post, and comment submissions.
+                Review pending event, retirement message, Last Post, and comment
+                submissions.
               </p>
             </div>
           </div>
@@ -63,9 +58,7 @@
             aria-controls="reviewEventsPanel"
             data-review-tab="events"
           >
-            <span data-i18n="review_events_tab">
-              Events
-            </span>
+            <span data-i18n="review_events_tab"> Events </span>
           </button>
 
           <button
@@ -91,9 +84,7 @@
             aria-controls="reviewCommentsPanel"
             data-review-tab="comments"
           >
-            <span data-i18n="review_comments_tab">
-              Comments
-            </span>
+            <span data-i18n="review_comments_tab"> Comments </span>
           </button>
 
           <button
@@ -105,9 +96,7 @@
             aria-controls="reviewLastPostsPanel"
             data-review-tab="last-posts"
           >
-            <span data-i18n="review_last_posts_tab">
-              Last Post
-            </span>
+            <span data-i18n="review_last_posts_tab"> Last Post </span>
           </button>
         </div>
 
@@ -126,16 +115,10 @@
             aria-label="Loading events..."
           >
             <span class="loading-state-spinner" aria-hidden="true"></span>
-            <span class="visually-hidden">
-              Loading events...
-            </span>
+            <span class="visually-hidden"> Loading events... </span>
           </p>
 
-          <div
-            class="review-queue"
-            id="reviewQueue"
-            hidden
-          ></div>
+          <div class="review-queue" id="reviewQueue" hidden></div>
         </div>
 
         <div
@@ -159,11 +142,7 @@
             </span>
           </p>
 
-          <div
-            class="review-queue"
-            id="retirementReviewQueue"
-            hidden
-          ></div>
+          <div class="review-queue" id="retirementReviewQueue" hidden></div>
         </div>
 
         <div
@@ -182,16 +161,10 @@
             aria-label="Loading Last Post notices..."
           >
             <span class="loading-state-spinner" aria-hidden="true"></span>
-            <span class="visually-hidden">
-              Loading Last Post notices...
-            </span>
+            <span class="visually-hidden"> Loading Last Post notices... </span>
           </p>
 
-          <div
-            class="review-queue"
-            id="lastPostReviewQueue"
-            hidden
-          ></div>
+          <div class="review-queue" id="lastPostReviewQueue" hidden></div>
         </div>
 
         <div
@@ -210,16 +183,10 @@
             aria-label="Loading comments..."
           >
             <span class="loading-state-spinner" aria-hidden="true"></span>
-            <span class="visually-hidden">
-              Loading comments...
-            </span>
+            <span class="visually-hidden"> Loading comments... </span>
           </p>
 
-          <div
-            class="review-queue"
-            id="commentReviewQueue"
-            hidden
-          ></div>
+          <div class="review-queue" id="commentReviewQueue" hidden></div>
         </div>
       </section>
     </main>

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { afterEach, test } = require('node:test');
 const {
   assertPublicMediaBaseUrl,
-  configurePublicMediaBaseUrl
+  configurePublicMediaBaseUrl,
 } = require('../scripts/migration/lib/public-media');
 
 const ENV_KEYS = [
@@ -10,10 +10,10 @@ const ENV_KEYS = [
   'CDN_PUBLIC_BASE_URL',
   'MINIO_BUCKET_NAME',
   'MINIO_ENDPOINT',
-  'MINIO_PUBLIC_ENDPOINT'
+  'MINIO_PUBLIC_ENDPOINT',
 ];
 const originalEnvironment = Object.fromEntries(
-  ENV_KEYS.map(key => [key, process.env[key]])
+  ENV_KEYS.map((key) => [key, process.env[key]]),
 );
 
 afterEach(() => {
@@ -34,7 +34,7 @@ test('migration override replaces an internal container endpoint', () => {
   process.env.MINIO_BUCKET_NAME = 'cmcen-demo';
 
   const publicBaseUrl = configurePublicMediaBaseUrl({
-    'public-media-base-url': 'http://cdn.corebot.ca/cmcen-demo/'
+    'public-media-base-url': 'http://cdn.corebot.ca/cmcen-demo/',
   });
 
   assert.equal(publicBaseUrl, 'http://cdn.corebot.ca/cmcen-demo');
@@ -52,6 +52,6 @@ test('apply validation rejects an internal-only public URL', () => {
 
   assert.throws(
     () => assertPublicMediaBaseUrl(publicBaseUrl),
-    /Public media URL resolves through the internal MinIO endpoint/u
+    /Public media URL resolves through the internal MinIO endpoint/u,
   );
 });

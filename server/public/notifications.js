@@ -11,7 +11,7 @@ function notificationsApiJson(path, options = {}) {
     ...options,
     token: notificationsToken,
     redirectOnUnauthorized: true,
-    unauthorizedMessage: translate("notifications_load_error")
+    unauthorizedMessage: translate("notifications_load_error"),
   });
 }
 
@@ -19,7 +19,7 @@ function showNotificationsLoading() {
   const message = translate("notifications_loading");
 
   notificationsStatus.replaceChildren(
-    ...Array.from(CMCENUtils.createLoadingSpinner(message).childNodes)
+    ...Array.from(CMCENUtils.createLoadingSpinner(message).childNodes),
   );
   notificationsStatus.className = "notifications-status is-loading";
   notificationsStatus.setAttribute("aria-label", message);
@@ -39,14 +39,16 @@ function showNotificationToast(message, type = "neutral") {
   CMCENUtils.showToast(message, {
     color: type === "success" ? "success" : type === "error" ? "error" : "info",
     position: "bottom-right",
-    animation: "slide"
+    animation: "slide",
   });
 }
 
 function getNotificationTitle(item) {
   if (item.type === "event") {
-    return CMCENUtils.getLocalizedText(item.title) ||
-      translate("notifications_type_event");
+    return (
+      CMCENUtils.getLocalizedText(item.title) ||
+      translate("notifications_type_event")
+    );
   }
 
   return item.title || translate(`notifications_type_${item.type}`);
@@ -71,7 +73,7 @@ function getNotificationEditLabel(item) {
 function formatNotificationDate(value) {
   return CMCENUtils.formatDate(value, {
     timeStyle: "short",
-    fallback: ""
+    fallback: "",
   });
 }
 
@@ -114,8 +116,7 @@ function createNotificationCard(item) {
 
   const reason = document.createElement("p");
   reason.className = "notification-reason";
-  reason.textContent =
-    `${translate("my_events_rejection_reason")}: ${item.reason || "—"}`;
+  reason.textContent = `${translate("my_events_rejection_reason")}: ${item.reason || "—"}`;
 
   card.append(header, reason);
 
@@ -162,7 +163,7 @@ function createCommentEditor(item) {
   footer.appendChild(submit);
   form.append(label, textarea, footer);
 
-  form.addEventListener("submit", event => {
+  form.addEventListener("submit", (event) => {
     event.preventDefault();
     submitCommentEdit(form, item);
   });
@@ -187,24 +188,24 @@ async function submitCommentEdit(form, item) {
       {
         method: "PATCH",
         body: {
-          body: textarea.value.trim()
+          body: textarea.value.trim(),
         },
-        errorMessage: translate("notifications_comment_update_error")
-      }
+        errorMessage: translate("notifications_comment_update_error"),
+      },
     );
 
     showNotificationToast(
       data.message || translate("notifications_comment_update_success"),
-      "success"
+      "success",
     );
 
     await loadNotifications({
-      keepStatusVisible: true
+      keepStatusVisible: true,
     });
   } catch (error) {
     showNotificationToast(
       error.message || translate("notifications_comment_update_error"),
-      "error"
+      "error",
     );
   } finally {
     button.disabled = false;
@@ -215,17 +216,12 @@ function renderNotifications(items) {
   notificationsList.replaceChildren();
 
   if (!items.length) {
-    showNotificationsStatus(
-      translate("notifications_empty"),
-      "empty"
-    );
+    showNotificationsStatus(translate("notifications_empty"), "empty");
     return;
   }
 
-  items.forEach(item => {
-    notificationsList.appendChild(
-      createNotificationCard(item)
-    );
+  items.forEach((item) => {
+    notificationsList.appendChild(createNotificationCard(item));
   });
 
   notificationsStatus.hidden = true;
@@ -236,7 +232,7 @@ function renderNotifications(items) {
   if (highlighted) {
     highlighted.scrollIntoView({
       behavior: "smooth",
-      block: "center"
+      block: "center",
     });
   }
 }
@@ -248,13 +244,12 @@ async function loadNotifications({ keepStatusVisible = false } = {}) {
 
   try {
     const data = await notificationsApiJson("/api/notifications", {
-      errorMessage: translate("notifications_load_error")
+      errorMessage: translate("notifications_load_error"),
     });
 
-    loadedNotifications =
-      Array.isArray(data.notifications?.items)
-        ? data.notifications.items
-        : [];
+    loadedNotifications = Array.isArray(data.notifications?.items)
+      ? data.notifications.items
+      : [];
 
     renderNotifications(loadedNotifications);
 
@@ -264,7 +259,7 @@ async function loadNotifications({ keepStatusVisible = false } = {}) {
   } catch (error) {
     showNotificationsStatus(
       error.message || translate("notifications_load_error"),
-      "error"
+      "error",
     );
   }
 }

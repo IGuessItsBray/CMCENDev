@@ -9,7 +9,7 @@ test('allows an invited account before the member profile is complete', async ()
     email: 'invitee@example.test',
     password: 'temporary-password',
     firstName: 'Invitee',
-    lastName: 'Example'
+    lastName: 'Example',
   });
 
   await assert.doesNotReject(user.validate());
@@ -20,10 +20,10 @@ test('continues to require a completed profile for member accounts', async () =>
     accountType: 'member',
     username: 'member@example.test',
     email: 'member@example.test',
-    password: 'member-password'
+    password: 'member-password',
   });
 
-  await assert.rejects(user.validate(), error => {
+  await assert.rejects(user.validate(), (error) => {
     assert.ok(error?.errors.firstName);
     assert.ok(error?.errors['address.line1']);
     return true;
@@ -38,7 +38,7 @@ test('allows an activated invite to complete its profile later', async () => {
     email: 'activated@example.test',
     password: 'member-password',
     firstName: 'Activated',
-    lastName: 'Invitee'
+    lastName: 'Invitee',
   });
 
   await assert.doesNotReject(user.validate());

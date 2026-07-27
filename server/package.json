@@ -3,10 +3,22 @@
   "version": "1.0.0",
   "description": "Canadian Military Communications and Electronics Network web application",
   "main": "server.js",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=10"
+  },
   "scripts": {
+    "check:runtime": "node scripts/quality/check-runtime.js",
+    "check:syntax": "node scripts/quality/check-syntax.js",
+    "lint": "eslint .",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write . --ignore-path .prettierignore",
+    "format:check": "prettier --check . --ignore-path .prettierignore",
+    "prestart": "npm run check:runtime",
+    "prestart:dev": "npm run check:runtime",
     "start": "node server.js",
     "start:dev": "nodemon server.js",
-    "check": "node --check server.js && node --check routes/last-posts.js && node --check public/app-utils.js && node --check public/color-picker.js && node --check public/date-time-picker.js && node --check public/index.js && node --check public/admin-users.js && node --check public/audit-log.js && node --check public/site-config.js && node --check public/timers-admin.js && node --check public/timers.js && node --check public/translations-admin.js && node --check public/dashboard.js && node --check public/dashboard-mfa.js && node --check public/register.js && node --check public/submit-event.js && node --check public/submit-retirement.js && node --check public/event.js && node --check public/retirement-message.js && node --check public/review-submissions.js && node --check public/home.js && node --check public/calendar.js && node --check public/search.js && node --check public/retirements.js && node --check public/last-post.js && node --check public/last-post-message.js && node --check public/submit-last-post.js && node --check scripts/migration/lib/public-media.js && node --check scripts/migration/lib/source-image.js && node --check scripts/migration/lib/bilingual-inventory.js && node --check scripts/migration/lib/bilingual-import.js && node --check scripts/migration/lib/placeholder-image.js && node --check scripts/migration/build-bilingual-source-inventory.js && node --check scripts/migration/dry-run-bilingual-import.js && node --check scripts/migration/replace-placeholder-images.js && node --check scripts/migration/migrate-current-site-content.js && node --check scripts/migration/scrape-current-retirements.js && node --check scripts/migration/scrape-current-last-posts.js",
+    "check": "npm run check:runtime && npm run check:syntax && npm run lint",
     "test": "npm run check && npm run test:unit && npm run test:contract && npm run test:integration",
     "test:unit": "node --test test/*.test.js",
     "test:contract": "node --test test/contract/*.test.js",
@@ -35,9 +47,15 @@
     "speakeasy": "^2.0.0"
   },
   "devDependencies": {
+    "eslint": "^10.8.0",
     "mongodb-memory-server": "^11.2.0",
     "nodemon": "^3.1.10",
+    "prettier": "^3.9.6",
     "supertest": "^7.2.2",
     "yaml": "^2.9.0"
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true,
+    "mongodb-memory-server@11.2.0": true
   }
 }

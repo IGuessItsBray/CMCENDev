@@ -14,7 +14,9 @@ const resetPasswordMessage = document.getElementById("resetPasswordMessage");
 const emailVerificationForm = document.getElementById("emailVerificationForm");
 const emailVerificationButton = document.getElementById("emailVerificationBtn");
 const emailVerificationBack = document.getElementById("emailVerificationBack");
-const emailVerificationMessage = document.getElementById("emailVerificationMessage");
+const emailVerificationMessage = document.getElementById(
+  "emailVerificationMessage",
+);
 const emailVerificationCode = document.getElementById("emailVerificationCode");
 const guestAccessForm = document.getElementById("guestAccessForm");
 const guestAccessButton = document.getElementById("guestAccessBtn");
@@ -35,7 +37,8 @@ const mfaCancel = document.getElementById("mfaCancel");
 let pendingMfa = null;
 let emailVerificationToken = "";
 let guestVerificationToken = "";
-const resetToken = new URLSearchParams(window.location.search).get("resetToken") || "";
+const resetToken =
+  new URLSearchParams(window.location.search).get("resetToken") || "";
 
 function setLoginMessage(message, type = "error") {
   errorElement.textContent = message;
@@ -151,7 +154,7 @@ async function applyAccountLanguage(token) {
   try {
     const user = await CMCENUtils.apiJson("/api/me", {
       token,
-      errorMessage: "Could not load account language"
+      errorMessage: "Could not load account language",
     });
 
     if (
@@ -184,7 +187,7 @@ async function completeLogin(token) {
 
 function ensureWebAuthnAvailable() {
   CMCENUtils.ensureWebAuthnAvailable(
-    "Passkeys are not available in this browser context. Use HTTPS or localhost in a supported browser."
+    "Passkeys are not available in this browser context. Use HTTPS or localhost in a supported browser.",
   );
 }
 
@@ -239,11 +242,14 @@ async function passkeyMfaLogin(tempToken) {
     {
       method: "POST",
       tempToken,
-      errorMessage: "Could not start passkey authentication"
-    }
+      errorMessage: "Could not start passkey authentication",
+    },
   );
 
-  if (!Array.isArray(options.allowCredentials) || !options.allowCredentials.length) {
+  if (
+    !Array.isArray(options.allowCredentials) ||
+    !options.allowCredentials.length
+  ) {
     throw new Error("No passkeys are registered for this account.");
   }
 
@@ -254,7 +260,7 @@ async function passkeyMfaLogin(tempToken) {
     assertion = await navigator.credentials.get({ publicKey });
   } catch {
     throw new Error(
-      "This passkey is not available for this site. Passkeys registered on localhost cannot be used on staging; register a passkey on this domain or use an authenticator app."
+      "This passkey is not available for this site. Passkeys registered on localhost cannot be used on staging; register a passkey on this domain or use an authenticator app.",
     );
   }
 
@@ -264,8 +270,8 @@ async function passkeyMfaLogin(tempToken) {
       method: "POST",
       tempToken,
       body: CMCENUtils.serializeAssertionCredential(assertion),
-      errorMessage: "Passkey authentication failed"
-    }
+      errorMessage: "Passkey authentication failed",
+    },
   );
 
   if (!result.token) {
@@ -280,7 +286,7 @@ async function totpMfaLogin(tempToken, code) {
     method: "POST",
     tempToken,
     body: { token: code },
-    errorMessage: "Authenticator code was not accepted"
+    errorMessage: "Authenticator code was not accepted",
   });
 
   if (!result.token) {
@@ -290,7 +296,7 @@ async function totpMfaLogin(tempToken, code) {
   return result.token;
 }
 
-mfaOptions.addEventListener("click", async event => {
+mfaOptions.addEventListener("click", async (event) => {
   const button = event.target.closest("button[data-method]");
   if (!button || !pendingMfa) return;
 
@@ -313,7 +319,7 @@ mfaOptions.addEventListener("click", async event => {
   }
 });
 
-mfaTotpForm.addEventListener("submit", async event => {
+mfaTotpForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!pendingMfa) return;
 
@@ -350,7 +356,7 @@ resetPasswordBack.addEventListener("click", () => {
 emailVerificationBack.addEventListener("click", () => showLoginForm(""));
 guestAccessBack.addEventListener("click", () => showLoginForm(""));
 
-forgotPasswordForm.addEventListener("submit", async event => {
+forgotPasswordForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const email = document.getElementById("resetEmail").value.trim();
@@ -362,12 +368,13 @@ forgotPasswordForm.addEventListener("submit", async event => {
     const data = await CMCENUtils.apiJson("/api/password-reset/request", {
       method: "POST",
       body: { email },
-      errorMessage: "Could not request password reset"
+      errorMessage: "Could not request password reset",
     });
 
     setForgotPasswordMessage(
-      data.message || "If an account exists for that email address, a password reset link has been sent.",
-      "info"
+      data.message ||
+        "If an account exists for that email address, a password reset link has been sent.",
+      "info",
     );
   } catch (error) {
     setForgotPasswordMessage(error.message);
@@ -377,11 +384,13 @@ forgotPasswordForm.addEventListener("submit", async event => {
   }
 });
 
-resetPasswordForm.addEventListener("submit", async event => {
+resetPasswordForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const password = document.getElementById("newPassword").value;
-  const passwordConfirmation = document.getElementById("newPasswordConfirmation").value;
+  const passwordConfirmation = document.getElementById(
+    "newPasswordConfirmation",
+  ).value;
 
   if (password !== passwordConfirmation) {
     setResetPasswordMessage("Passwords do not match.");
@@ -398,14 +407,17 @@ resetPasswordForm.addEventListener("submit", async event => {
       body: {
         token: resetToken,
         password,
-        passwordConfirmation
+        passwordConfirmation,
       },
-      errorMessage: "Could not reset password"
+      errorMessage: "Could not reset password",
     });
 
     resetPasswordForm.reset();
     window.history.replaceState({}, document.title, "/login");
-    showLoginForm(data.message || "Password has been reset. You can now sign in.", "info");
+    showLoginForm(
+      data.message || "Password has been reset. You can now sign in.",
+      "info",
+    );
   } catch (error) {
     setResetPasswordMessage(error.message);
   } finally {
@@ -414,7 +426,7 @@ resetPasswordForm.addEventListener("submit", async event => {
   }
 });
 
-emailVerificationForm.addEventListener("submit", async event => {
+emailVerificationForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const code = emailVerificationCode.value.trim();
@@ -434,9 +446,9 @@ emailVerificationForm.addEventListener("submit", async event => {
       method: "POST",
       body: {
         verificationToken: emailVerificationToken,
-        code
+        code,
       },
-      errorMessage: "Could not verify email"
+      errorMessage: "Could not verify email",
     });
 
     await completeLogin(data.token);
@@ -448,7 +460,7 @@ emailVerificationForm.addEventListener("submit", async event => {
   }
 });
 
-guestAccessForm.addEventListener("submit", async event => {
+guestAccessForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   guestAccessButton.disabled = true;
@@ -460,9 +472,9 @@ guestAccessForm.addEventListener("submit", async event => {
       const data = await CMCENUtils.apiJson("/api/ghost/request", {
         method: "POST",
         body: {
-          email: guestEmail.value.trim()
+          email: guestEmail.value.trim(),
         },
-        errorMessage: "Could not request guest access"
+        errorMessage: "Could not request guest access",
       });
 
       guestVerificationToken = data.verificationToken || "";
@@ -473,7 +485,7 @@ guestAccessForm.addEventListener("submit", async event => {
       guestAccessButton.textContent = "Verify";
       setGuestAccessMessage(
         data.message || "Check your email for a guest access code.",
-        "info"
+        "info",
       );
       guestFirstName.focus();
       return;
@@ -484,9 +496,9 @@ guestAccessForm.addEventListener("submit", async event => {
       body: {
         verificationToken: guestVerificationToken,
         firstName: guestFirstName.value.trim(),
-        code: guestCode.value.trim()
+        code: guestCode.value.trim(),
       },
-      errorMessage: "Could not confirm guest access"
+      errorMessage: "Could not confirm guest access",
     });
 
     await completeLogin(data.token);
@@ -498,7 +510,7 @@ guestAccessForm.addEventListener("submit", async event => {
   }
 });
 
-loginForm.addEventListener("submit", async event => {
+loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const username = document.getElementById("loginUsername").value.trim();
@@ -513,24 +525,23 @@ loginForm.addEventListener("submit", async event => {
       method: "POST",
       body: {
         username,
-        password
+        password,
       },
-      errorMessage: "Login failed"
+      errorMessage: "Login failed",
     });
 
     if (data.emailVerificationRequired) {
       emailVerificationToken = data.verificationToken || "";
       showEmailVerificationForm(
-        data.message || "Check your email for a verification code before signing in.",
-        "info"
+        data.message ||
+          "Check your email for a verification code before signing in.",
+        "info",
       );
       return;
     }
 
     if (data.twoFactorRequired) {
-      const methods = Array.isArray(data.methods)
-        ? data.methods
-        : [];
+      const methods = Array.isArray(data.methods) ? data.methods : [];
 
       sessionStorage.setItem("tempToken", data.tempToken);
       sessionStorage.setItem("twoFactorMethods", JSON.stringify(methods));

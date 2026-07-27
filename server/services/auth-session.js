@@ -12,11 +12,9 @@ function getRefreshTokenTtlDays() {
 }
 
 function createSessionToken(user) {
-  return jwt.sign(
-    { userId: user._id },
-    process.env.JWT_SECRET,
-    { expiresIn: ACCESS_TOKEN_TTL }
-  );
+  return jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    expiresIn: ACCESS_TOKEN_TTL,
+  });
 }
 
 function createRefreshToken(user) {
@@ -24,10 +22,10 @@ function createRefreshToken(user) {
     {
       userId: user._id,
       sessionVersion: Number(user.sessionVersion || 0),
-      tokenType: 'refresh'
+      tokenType: 'refresh',
     },
     process.env.JWT_SECRET,
-    { expiresIn: `${getRefreshTokenTtlDays()}d` }
+    { expiresIn: `${getRefreshTokenTtlDays()}d` },
   );
 }
 
@@ -37,7 +35,7 @@ function getRefreshCookieOptions(req, options = {}) {
     sameSite: 'lax',
     secure: Boolean(req.secure || process.env.NODE_ENV === 'production'),
     path: '/api',
-    ...options
+    ...options,
   };
 }
 
@@ -48,8 +46,8 @@ function setRefreshTokenCookie(req, res, user) {
     REFRESH_COOKIE_NAME,
     refreshToken,
     getRefreshCookieOptions(req, {
-      maxAge: getRefreshTokenTtlDays() * 24 * 60 * 60 * 1000
-    })
+      maxAge: getRefreshTokenTtlDays() * 24 * 60 * 60 * 1000,
+    }),
   );
 }
 
@@ -84,5 +82,5 @@ module.exports = {
   clearRefreshTokenCookie,
   createSessionToken,
   readCookie,
-  setRefreshTokenCookie
+  setRefreshTokenCookie,
 };

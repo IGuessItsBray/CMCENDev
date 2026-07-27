@@ -1,10 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title data-i18n="last_post_submit_page_title">Submit a Last Post | CMCEN / RCMCE</title>
-    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <title data-i18n="last_post_submit_page_title">
+      Submit a Last Post | CMCEN / RCMCE
+    </title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -14,82 +20,175 @@
       <section class="event-submit-shell" aria-labelledby="lastPostSubmitTitle">
         <header class="event-submit-heading">
           <div class="event-submit-heading-copy">
-            <p class="event-submit-eyebrow" data-i18n="last_post_submit_eyebrow">Last Post</p>
-            <h1 id="lastPostSubmitTitle" data-i18n="last_post_submit_title">Submit a Last Post</h1>
+            <p
+              class="event-submit-eyebrow"
+              data-i18n="last_post_submit_eyebrow"
+            >
+              Last Post
+            </p>
+            <h1 id="lastPostSubmitTitle" data-i18n="last_post_submit_title">
+              Submit a Last Post
+            </h1>
             <p data-i18n="last_post_submit_intro">
               Submit a memorial notice for review before publication.
             </p>
           </div>
         </header>
 
-        <p class="event-page-message" id="lastPostPageMessage" role="alert" aria-live="polite" hidden></p>
+        <p
+          class="event-page-message"
+          id="lastPostPageMessage"
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></p>
 
-        <form class="event-submit-form" id="lastPostSubmitForm" novalidate hidden>
-
-          <section class="event-form-section event-section--full-bleed-heading" aria-labelledby="deceasedMemberHeading">
+        <form
+          class="event-submit-form"
+          id="lastPostSubmitForm"
+          novalidate
+          hidden
+        >
+          <section
+            class="event-form-section event-section--full-bleed-heading"
+            aria-labelledby="deceasedMemberHeading"
+          >
             <header class="event-section-heading">
               <span class="event-section-index">01</span>
               <div>
-                <h2 id="deceasedMemberHeading" data-i18n="last_post_deceased_heading">Deceased member</h2>
-                <p data-i18n="last_post_deceased_intro">Enter the member’s name as it should appear publicly.</p>
+                <h2
+                  id="deceasedMemberHeading"
+                  data-i18n="last_post_deceased_heading"
+                >
+                  Deceased member
+                </h2>
+                <p data-i18n="last_post_deceased_intro">
+                  Enter the member’s name as it should appear publicly.
+                </p>
               </div>
             </header>
 
             <div class="event-section-content">
               <div class="event-form-grid">
                 <div class="event-field">
-                  <label for="lastPostDeceasedRank" data-i18n="last_post_full_rank">Full rank</label>
-                  <input id="lastPostDeceasedRank" type="text" maxlength="80" required />
+                  <label
+                    for="lastPostDeceasedRank"
+                    data-i18n="last_post_full_rank"
+                    >Full rank</label
+                  >
+                  <input
+                    id="lastPostDeceasedRank"
+                    type="text"
+                    maxlength="80"
+                    required
+                  />
                 </div>
                 <div class="event-field">
-                  <label for="lastPostDeceasedFirstName" data-i18n="last_post_first_name">First name</label>
-                  <input id="lastPostDeceasedFirstName" type="text" maxlength="80" required />
+                  <label
+                    for="lastPostDeceasedFirstName"
+                    data-i18n="last_post_first_name"
+                    >First name</label
+                  >
+                  <input
+                    id="lastPostDeceasedFirstName"
+                    type="text"
+                    maxlength="80"
+                    required
+                  />
                 </div>
                 <div class="event-field">
-                  <label for="lastPostDeceasedSurname" data-i18n="last_post_surname">Surname</label>
-                  <input id="lastPostDeceasedSurname" type="text" maxlength="80" required />
+                  <label
+                    for="lastPostDeceasedSurname"
+                    data-i18n="last_post_surname"
+                    >Surname</label
+                  >
+                  <input
+                    id="lastPostDeceasedSurname"
+                    type="text"
+                    maxlength="80"
+                    required
+                  />
                 </div>
                 <div class="event-field">
-                  <label for="lastPostDeceasedPostNominal" data-i18n="last_post_post_nominal">Post-nominal</label>
-                  <input id="lastPostDeceasedPostNominal" type="text" maxlength="120" />
+                  <label
+                    for="lastPostDeceasedPostNominal"
+                    data-i18n="last_post_post_nominal"
+                    >Post-nominal</label
+                  >
+                  <input
+                    id="lastPostDeceasedPostNominal"
+                    type="text"
+                    maxlength="120"
+                  />
                 </div>
               </div>
             </div>
           </section>
 
-          <section class="event-form-section event-section--full-bleed-heading" aria-labelledby="lastPostNoticeHeading">
+          <section
+            class="event-form-section event-section--full-bleed-heading"
+            aria-labelledby="lastPostNoticeHeading"
+          >
             <header class="event-section-heading">
               <span class="event-section-index">02</span>
               <div>
-                <h2 id="lastPostNoticeHeading" data-i18n="last_post_notice_heading">Memorial notice</h2>
-                <p data-i18n="last_post_notice_intro">The translation and publication review are completed after submission.</p>
+                <h2
+                  id="lastPostNoticeHeading"
+                  data-i18n="last_post_notice_heading"
+                >
+                  Memorial notice
+                </h2>
+                <p data-i18n="last_post_notice_intro">
+                  The translation and publication review are completed after
+                  submission.
+                </p>
               </div>
             </header>
 
             <div class="event-section-content">
               <div class="event-form-grid">
                 <div class="event-field">
-                  <label for="lastPostMessageLanguage" data-i18n="last_post_message_language">Notice language</label>
+                  <label
+                    for="lastPostMessageLanguage"
+                    data-i18n="last_post_message_language"
+                    >Notice language</label
+                  >
                   <select id="lastPostMessageLanguage" required>
                     <option value="en" data-i18n="language_en">English</option>
                     <option value="fr" data-i18n="language_fr">French</option>
                   </select>
                 </div>
                 <div class="event-field">
-                  <label for="lastPostImage" data-i18n="last_post_image">Image</label>
+                  <label for="lastPostImage" data-i18n="last_post_image"
+                    >Image</label
+                  >
                   <input id="lastPostImage" type="file" accept="image/*" />
-                  <small data-i18n="last_post_image_hint">Optional. Upload a memorial image to include with the notice.</small>
+                  <small data-i18n="last_post_image_hint"
+                    >Optional. Upload a memorial image to include with the
+                    notice.</small
+                  >
                 </div>
                 <div class="event-field event-field-wide">
-                  <label for="lastPostMessage" data-i18n="last_post_message">Notice</label>
-                  <textarea id="lastPostMessage" rows="12" maxlength="10000" required></textarea>
+                  <label for="lastPostMessage" data-i18n="last_post_message"
+                    >Notice</label
+                  >
+                  <textarea
+                    id="lastPostMessage"
+                    rows="12"
+                    maxlength="10000"
+                    required
+                  ></textarea>
                 </div>
               </div>
             </div>
           </section>
 
           <footer class="event-form-actions">
-            <button class="event-submit-button" id="lastPostSubmitButton" type="submit">
+            <button
+              class="event-submit-button"
+              id="lastPostSubmitButton"
+              type="submit"
+            >
               <span data-i18n="last_post_submit_button">Submit for review</span>
             </button>
           </footer>

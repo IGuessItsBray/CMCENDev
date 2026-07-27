@@ -4,7 +4,6 @@ const lastPostSubmitButton = document.getElementById('lastPostSubmitButton');
 const lastPostSubmitButtonLabel = lastPostSubmitButton.querySelector('span');
 const lastPostImage = document.getElementById('lastPostImage');
 const LAST_POST_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
-let currentUser = null;
 
 function getFieldValue(id) {
   return String(document.getElementById(id)?.value || '').trim();
@@ -33,18 +32,6 @@ function setSubmitting(isSubmitting) {
   lastPostSubmitButtonLabel.textContent = translate(
     isSubmitting ? 'last_post_submitting' : 'last_post_submit_button'
   );
-}
-
-function setProfileField(id, value) {
-  const field = document.getElementById(id);
-  if (field) field.value = String(value || '').trim();
-}
-
-function populateSubmitter(user) {
-  setProfileField('lastPostSubmitterRank', user.rank);
-  setProfileField('lastPostSubmitterFirstName', user.firstName);
-  setProfileField('lastPostSubmitterLastName', user.lastName);
-  setProfileField('lastPostSubmitterEmail', user.email);
 }
 
 function getSubmissionPayload(imageUrl = '') {
@@ -116,7 +103,7 @@ async function initializeLastPostSubmission() {
   if (!token) return;
 
   try {
-    currentUser = await CMCENUtils.apiJson('/api/me', {
+    const currentUser = await CMCENUtils.apiJson('/api/me', {
       token,
       redirectOnUnauthorized: true,
       unauthorizedMessage: translate('last_post_permission_error')
@@ -127,7 +114,6 @@ async function initializeLastPostSubmission() {
       return;
     }
 
-    populateSubmitter(currentUser);
     document.getElementById('lastPostMessageLanguage').value =
       CMCENUtils.getCurrentLanguage();
     lastPostSubmitForm.hidden = false;
@@ -159,7 +145,6 @@ lastPostSubmitForm.addEventListener('submit', async event => {
       unauthorizedMessage: translate('last_post_permission_error')
     });
     lastPostSubmitForm.reset();
-    populateSubmitter(currentUser);
     document.getElementById('lastPostMessageLanguage').value =
       CMCENUtils.getCurrentLanguage();
     showFormMessage(data.message || translate('last_post_submit_success'), 'success');

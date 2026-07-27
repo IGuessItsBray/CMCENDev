@@ -107,6 +107,13 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Delete other accounts after MFA confirmation.'
   },
   {
+    key: 'users.provision',
+    label: 'Provision user accounts',
+    group: 'Users',
+    action: 'create',
+    description: 'Create invited accounts and send activation links.'
+  },
+  {
     key: 'users.mfa_reset',
     label: 'Reset user MFA',
     group: 'Users',
@@ -201,6 +208,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canManageUsers: 'users.manage',
   canDeleteOwnAccount: 'users.delete_self',
   canDeleteAnyUser: 'users.delete_any',
+  canProvisionUsers: 'users.provision',
   canResetUserMfa: 'users.mfa_reset',
   canManageRoles: 'roles.manage',
   canViewAuditLog: 'audit.view',
@@ -281,6 +289,9 @@ function getBuiltInPermissionFlags(user) {
 
     canDeleteOwnAccount:
       hasMinimumRole(role, 'subscriber'),
+
+    canProvisionUsers:
+      hasMinimumRole(role, 'administrator'),
 
     canDeleteAnyUser:
       hasMinimumRole(role, 'administrator'),

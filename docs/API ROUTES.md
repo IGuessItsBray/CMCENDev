@@ -54,6 +54,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | --- | --- | --- | --- |
 | `POST` | `/api/ghost/request` | Public | Start ghost-account claim flow. |
 | `POST` | `/api/ghost/confirm` | Public | Confirm ghost-account claim token. |
+| `GET` | `/api/invitations/activate?token=...` | Public | Validate an invitation link and return the prefilled invited name and email. |
 | `POST` | `/api/register` | Public | Register a new user account. |
 | `POST` | `/api/login` | Public | Login with username/password; may return MFA temp-token flow. |
 | `POST` | `/api/session/refresh` | Refresh-token cookie | Exchange a valid refresh cookie for a new access token. |
@@ -122,6 +123,7 @@ Mounted at `/api/admin`.
 | `POST` | `/api/admin/media/bulk-delete` | Authenticated + `canDeleteMedia` | Delete selected unattached media assets by JSON body `keys`; attached assets are skipped and reported. |
 | `DELETE` | `/api/admin/media/:key` | Authenticated + `canDeleteMedia` | Delete unattached media by key. |
 | `GET` | `/api/admin/users` | Authenticated + `canReadUsers` | List lightweight user rows. Query: `query`, `limit` from 1-100. Post summaries and editable detail load from the user detail endpoint. |
+| `POST` | `/api/admin/users` | Authenticated + `canProvisionUsers` | Provision an invited account and email a seven-day activation link. Body: `firstName`, `lastName`, `email`, and optional non-developer `role`, `customRoleIds`, `contentAreas`. |
 | `GET` | `/api/admin/users/:userId` | Authenticated + `canReadUsers` | Get one user admin detail. |
 | `PATCH` | `/api/admin/users/:userId` | Authenticated + `canManageUsers` | Update role, custom roles, and content areas. |
 | `DELETE` | `/api/admin/users/:userId` | Authenticated + `canDeleteAnyUser` + current MFA confirmation | Delete another account. Body must choose `keep_and_anonymize` (preserve events, retirement messages, comments, and Last Post notices without account attribution) or `delete_all`. Accepts a current TOTP code or a passkey assertion verified within the prior five minutes. |

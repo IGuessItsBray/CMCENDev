@@ -1,8 +1,8 @@
 const path = require('path');
 const axios = require('axios');
 
-const DEFAULT_IMAGE_URL = 'https://cdn.corebot.ca/cmcen-demo/images/064b615c-38c3-4946-a82f-48116a9d9a55/large.webp';
-const DEFAULT_IMAGE_NAME = 'jimmy-crest.webp';
+const DEFAULT_IMAGE_URL = 'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp';
+const DEFAULT_IMAGE_NAME = 'cmcen-crest.webp';
 
 function getUrlFileName(sourceUrl) {
   try {

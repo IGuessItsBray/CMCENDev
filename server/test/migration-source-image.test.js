@@ -7,7 +7,7 @@ const {
   downloadSourceImage
 } = require('../scripts/migration/lib/source-image');
 
-test('uses jimmy crest when a legacy source image returns 404', async () => {
+test('uses the canonical CMCEN crest when a legacy source image returns 404', async () => {
   const sourceUrl = 'https://cmcen-rcmce.ca/wp-content/uploads/missing.jpeg';
   const requestedUrls = [];
   const sourceImage = await downloadSourceImage(sourceUrl, {
@@ -22,7 +22,7 @@ test('uses jimmy crest when a legacy source image returns 404', async () => {
         }
 
         return {
-          data: Buffer.from('jimmy crest'),
+          data: Buffer.from('cmcen crest'),
           headers: { 'content-type': 'image/webp' }
         };
       }
@@ -38,13 +38,13 @@ test('uses jimmy crest when a legacy source image returns 404', async () => {
   assert.deepEqual(requestedUrls, [sourceUrl, DEFAULT_IMAGE_URL]);
 });
 
-test('uses jimmy crest when a legacy post has no source image', async () => {
+test('uses the canonical CMCEN crest when a legacy post has no source image', async () => {
   const sourceImage = await downloadSourceImage('', {
     httpClient: {
       get: async url => {
         assert.equal(url, DEFAULT_IMAGE_URL);
         return {
-          data: Buffer.from('jimmy crest'),
+          data: Buffer.from('cmcen crest'),
           headers: { 'content-type': 'image/webp' }
         };
       }
@@ -73,7 +73,7 @@ test('does not hide non-404 source download failures', async () => {
   );
 });
 
-test('uses jimmy crest when downloaded source bytes cannot be decoded', async () => {
+test('uses the canonical CMCEN crest when downloaded source bytes cannot be decoded', async () => {
   const sourceUrl = 'https://cmcen-rcmce.ca/wp-content/uploads/corrupt.png';
   const requestedUrls = [];
   const validatedBuffers = [];
@@ -82,7 +82,7 @@ test('uses jimmy crest when downloaded source bytes cannot be decoded', async ()
       get: async url => {
         requestedUrls.push(url);
         return {
-          data: Buffer.from(url === sourceUrl ? 'corrupt png' : 'jimmy crest'),
+          data: Buffer.from(url === sourceUrl ? 'corrupt png' : 'cmcen crest'),
           headers: { 'content-type': url === sourceUrl ? 'image/png' : 'image/webp' }
         };
       }
@@ -101,7 +101,7 @@ test('uses jimmy crest when downloaded source bytes cannot be decoded', async ()
   assert.equal(sourceImage.sourceUrl, sourceUrl);
   assert.equal(sourceImage.fallbackSourceUrl, DEFAULT_IMAGE_URL);
   assert.deepEqual(requestedUrls, [sourceUrl, DEFAULT_IMAGE_URL]);
-  assert.deepEqual(validatedBuffers, ['corrupt png', 'jimmy crest']);
+  assert.deepEqual(validatedBuffers, ['corrupt png', 'cmcen crest']);
 });
 
 test('falls back when PNG metadata is readable but the pixel stream is corrupt', async () => {

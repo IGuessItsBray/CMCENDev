@@ -19,12 +19,55 @@ It runs these workers in order:
 ## Sources
 
 - Retirement list: `https://cmcen-rcmce.ca/retirements/retirements-list/`
+- French retirement list: `https://cmcen-rcmce.ca/fr/departs-a-la-retraite/liste-des-departs-a-la-retraite/`
 - Last Post archive: `https://cmcen-rcmce.ca/last-post-years-archive/`
+- French Last Post archive: `https://cmcen-rcmce.ca/fr/dernier-appel-archives-des-annees/`
 - WordPress REST API and the linked public detail pages
 
 The retirement worker follows the public table links and resolves their
 WordPress records. The Last Post worker follows `/lp/...` archive links,
 preferring REST records and falling back to public page HTML where necessary.
+
+## Bilingual Source Inventory
+
+Build the read-only inventory before importing content. It follows both English
+and French archive pages, records each source detail page, pairs translations
+from alternate-language links when available, and uses the documented Last Post
+URL convention as a verified fallback. Records without a confident partner are
+left in `unpaired` for review; the import must not guess a translation.
+
+```sh
+node server/scripts/migration/build-bilingual-source-inventory.js --limit=3
+node server/scripts/migration/build-bilingual-source-inventory.js
+```
+
+The full manifest is written to
+`server/scripts/migration/output/bilingual-source-inventory.json`. Review the
+`summary`, `pairs`, and `unpaired` sections before an apply run. The inventory
+does not write to MongoDB or MinIO.
+
+### Resumable Batches
+
+Use batches for the full public crawl. Each batch checkpoints source records to
+disk, retries transient source failures with backoff, and spaces requests to
+avoid throttling. Repeat the resume command until the manifest reports
+`complete: true`.
+
+```sh
+node server/scripts/migration/build-bilingual-source-inventory.js \
+  --batch-size=25 \
+  --checkpoint-every=5 \
+  --delay-ms=350
+
+node server/scripts/migration/build-bilingual-source-inventory.js \
+  --batch-size=25 \
+  --checkpoint-every=5 \
+  --delay-ms=350 \
+  --resume
+```
+
+The checkpoint is stored beside the inventory manifest by default. Do not
+discard it until the completed manifest has been reviewed.
 
 ## Requirements
 
@@ -145,8 +188,8 @@ The migration creates or updates:
 Original comment timestamps are preserved when WordPress provides them.
 
 When a legacy post has no source image, returns HTTP 404, or contains image data
-that cannot be fully decoded, the importer downloads the `jimmy-crest.webp`
-fallback from the configured CMCEN CDN and continues. The broken legacy URL,
+that cannot be fully decoded, the importer downloads the canonical CMCEN crest
+fallback from the configured CDN and continues. The broken legacy URL,
 fallback CDN URL, and fallback reason remain in the media asset metadata.
 
 Other failures are isolated to the affected post. The importer records the post
@@ -164,6 +207,19 @@ ignored by Git:
 
 Review the manifests for skipped records, missing images, comment access errors,
 and mapped source identifiers before and after apply runs.
+
+## Placeholder Image Replacement
+
+The cleanup command finds known legacy crest, Canada flag/statue, TD Insurance,
+and Jimmy placeholder images. It defaults to a read-only manifest and changes
+all matching published retirement and Last Post image fields to
+`https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp` only when run with
+`--apply`. Every applied replacement is audit logged.
+
+```sh
+node server/scripts/migration/replace-placeholder-images.js
+node server/scripts/migration/replace-placeholder-images.js --apply
+```
 
 ## Individual Workers
 

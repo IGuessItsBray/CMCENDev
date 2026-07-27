@@ -160,21 +160,11 @@ async function notifyEventPublished(event, req, options = {}) {
 function cleanSubmitter(submitter = {}) {
   return {
     rank: cleanString(submitter.rank),
-    firstName: cleanString(
-      submitter.firstName
-    ),
-    lastName: cleanString(
-      submitter.lastName
-    ),
-    unitRole: cleanString(
-      submitter.unitRole
-    ),
-    email: cleanString(
-      submitter.email
-    ).toLowerCase(),
-    phone: cleanString(
-      submitter.phone
-    )
+    firstName: cleanString(submitter.firstName),
+    lastName: cleanString(submitter.lastName),
+    unitRole: cleanString(submitter.unitRole),
+    email: cleanString(submitter.email).toLowerCase(),
+    phone: cleanString(submitter.phone),
   };
 }
 
@@ -184,7 +174,7 @@ function getSubmitterFromUser(user = {}) {
     firstName: user.firstName,
     lastName: user.lastName,
     unitRole: user.currentUnit || user.company,
-    email: user.email
+    email: user.email,
   });
 }
 
@@ -516,7 +506,7 @@ router.post(
         imagePath,
         publicationPermissionConfirmed = false,
         contentArea = 'general',
-        publishNow = false
+        publishNow = false,
       } = req.body;
 
       const cleanTitle = cleanLocalizedText(title);
@@ -539,8 +529,7 @@ router.post(
 
       const cleanImagePath = cleanString(imagePath);
 
-      const cleanSubmitterData =
-        getSubmitterFromUser(req.user);
+      const cleanSubmitterData = getSubmitterFromUser(req.user);
 
       const requiredSubmitterFields = [
         ['rank', 'Submitter rank'],
@@ -550,16 +539,10 @@ router.post(
         ['email', 'Submitter email'],
       ];
 
-      for (
-        const [
-          field,
-          label
-        ] of requiredSubmitterFields
-      ) {
+      for (const [field, label] of requiredSubmitterFields) {
         if (!cleanSubmitterData[field]) {
           return res.status(400).json({
-            error:
-              `Complete your profile before submitting an event: ${label} is required`
+            error: `Complete your profile before submitting an event: ${label} is required`,
           });
         }
       }
@@ -1008,7 +991,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
       endDate,
       allDay,
       imagePath,
-      publicationPermissionConfirmed
+      publicationPermissionConfirmed,
     } = req.body;
 
     const isAllDay = parseBoolean(allDay);
@@ -1052,14 +1035,9 @@ router.patch('/:id', authMiddleware, async (req, res) => {
       });
     }
 
-    if (
-      !isAllDay &&
-      parsedEndDate &&
-      parsedEndDate <= parsedStartDate
-    ) {
+    if (!isAllDay && parsedEndDate && parsedEndDate <= parsedStartDate) {
       return res.status(400).json({
-        error:
-          "A timed event must end after it starts"
+        error: 'A timed event must end after it starts',
       });
     }
 
@@ -1098,14 +1076,8 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     event.startDate = parsedStartDate;
     event.endDate = parsedEndDate;
     event.allDay = isAllDay;
-    if (
-      Object.prototype.hasOwnProperty.call(
-        req.body,
-        'imagePath'
-      )
-    ) {
-      event.imagePath =
-        cleanString(imagePath);
+    if (Object.prototype.hasOwnProperty.call(req.body, 'imagePath')) {
+      event.imagePath = cleanString(imagePath);
     }
 
     event.publicationPermission = {

@@ -405,7 +405,7 @@ describe('retirement message lifecycle', () => {
 
     await RetirementMessage.updateOne(
       { _id: message._id },
-      { $set: { 'submitter.unit': '' } }
+      { $set: { 'submitter.unit': '' } },
     );
 
     await request(app)

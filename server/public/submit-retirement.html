@@ -1,316 +1,486 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
 
-<head>
-  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="submit_event_page_title">
+      Submit Retirement Message | CMCEN / RCMCE
+    </title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
 
-  <title data-i18n="submit_event_page_title">
-    Submit Retirement Message | CMCEN / RCMCE
-  </title>
-  <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
-  <link rel="stylesheet" href="/styles.css" />
-</head>
+  <body>
+    <header id="header"></header>
 
-<body>
-  <header id="header"></header>
+    <main class="event-submit-main retirement-submit-main">
+      <section
+        class="event-submit-shell"
+        aria-labelledby="retirementSubmitTitle"
+      >
+        <header class="event-submit-heading">
+          <div class="event-submit-heading-copy">
+            <p
+              class="event-submit-eyebrow"
+              data-i18n="retirement_submit_eyebrow"
+            >
+              Retirement Messages
+            </p>
 
-  <main class="event-submit-main retirement-submit-main">
-    <section class="event-submit-shell" aria-labelledby="retirementSubmitTitle">
-      <header class="event-submit-heading">
-        <div class="event-submit-heading-copy">
-          <p class="event-submit-eyebrow" data-i18n="retirement_submit_eyebrow">
-            Retirement Messages
-          </p>
+            <h1 id="submitEventTitle" data-i18n="retirement_submit_title">
+              Submit a Retirement Message
+            </h1>
 
-          <h1 id="submitEventTitle" data-i18n="retirement_submit_title">
-            Submit a Retirement Message
-          </h1>
+            <p id="submitEventIntro" data-i18n="retirement_submit_intro">
+              Recognize the career and service of a retiring member. All
+              submissions are reviewed before publication.
+            </p>
+          </div>
+        </header>
 
-          <p id="submitEventIntro" data-i18n="retirement_submit_intro">
-            Recognize the career and service of a retiring member. All
-            submissions are reviewed before publication.
-          </p>
+        <div
+          class="retirement-page-loading loading-state"
+          id="retirementPageLoading"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading..."
+          data-i18n-aria-label="loading_text"
+        >
+          <span class="loading-state-spinner" aria-hidden="true"></span>
+          <span class="visually-hidden" data-i18n="loading_text"
+            >Loading...</span
+          >
         </div>
-      </header>
 
-      <div class="retirement-page-loading loading-state" id="retirementPageLoading" role="status" aria-live="polite"
-        aria-label="Loading..." data-i18n-aria-label="loading_text">
-        <span class="loading-state-spinner" aria-hidden="true"></span>
-        <span class="visually-hidden" data-i18n="loading_text">Loading...</span>
-      </div>
+        <p
+          class="event-page-message"
+          id="retirementFormMessage"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></p>
 
-      <p class="event-page-message" id="retirementFormMessage" role="status" aria-live="polite" hidden></p>
+        <form
+          class="event-submit-form"
+          id="retirementSubmitForm"
+          novalidate
+          hidden
+        >
+          <section class="event-form-section event-section--full-bleed-heading">
+            <header class="event-section-heading">
+              <span class="event-section-index">01</span>
 
-      <form class="event-submit-form" id="retirementSubmitForm" novalidate hidden>
-        <section class="event-form-section event-section--full-bleed-heading">
-          <header class="event-section-heading">
-            <span class="event-section-index">01</span>
+              <div>
+                <h2 data-i18n="retirement_retiree_heading">
+                  Retiree Information
+                </h2>
 
-            <div>
-              <h2 data-i18n="retirement_retiree_heading">
-                Retiree Information
-              </h2>
-
-              <p data-i18n="retirement_retiree_intro">
-                Enter the member's information as it should appear in the
-                published message.
-              </p>
-            </div>
-          </header>
-
-          <div class="event-section-content">
-            <div class="event-details-grid">
-              <div class="event-field">
-                <label for="retireeRank" data-i18n="retirement_rank"></label>
-                <input id="retireeRank" name="retireeRank" type="text" maxlength="40" required />
+                <p data-i18n="retirement_retiree_intro">
+                  Enter the member's information as it should appear in the
+                  published message.
+                </p>
               </div>
+            </header>
 
-              <div class="event-field">
-                <label for="retireeFirstName" data-i18n="retirement_first_name"></label>
-                <input id="retireeFirstName" name="retireeFirstName" type="text" maxlength="80" required />
-              </div>
-
-              <div class="event-field">
-                <label for="retireeLastName" data-i18n="retirement_last_name"></label>
-                <input id="retireeLastName" name="retireeLastName" type="text" maxlength="80" required />
-              </div>
-
-              <div class="event-field">
-                <label for="retireePostNominals" data-i18n="retirement_post_nominals"></label>
-                <input id="retireePostNominals" name="retireePostNominals" type="text" maxlength="120" />
-              </div>
-
-              <div class="event-field event-field-wide retirement-trade-field">
-                <label for="retireeTradeCategory" data-i18n="retirement_trade_role"></label>
-
-                <select id="retireeTradeCategory" name="retireeTradeCategory" required>
-                  <option value="" data-i18n="select_option">
-                    Select an option
-                  </option>
-
-                  <option value="officer" data-i18n="retirement_trade_category_officer">
-                    Officer
-                  </option>
-
-                  <option value="ncm" data-i18n="retirement_trade_category_ncm">
-                    NCM
-                  </option>
-
-                  <option value="civilian" data-i18n="retirement_trade_category_civilian">
-                    Civilian
-                  </option>
-                </select>
-
-                <div class="retirement-trade-panel" id="retireeOfficerTradePanel" hidden>
-                  <p data-i18n="retirement_trade_officer_heading">
-                    Select the officer MOSID:
-                  </p>
-
-                  <div class="retirement-trade-options" data-retirement-trade-options="officer"></div>
+            <div class="event-section-content">
+              <div class="event-details-grid">
+                <div class="event-field">
+                  <label for="retireeRank" data-i18n="retirement_rank"></label>
+                  <input
+                    id="retireeRank"
+                    name="retireeRank"
+                    type="text"
+                    maxlength="40"
+                    required
+                  />
                 </div>
 
-                <div class="retirement-trade-panel" id="retireeNcmTradePanel" hidden>
-                  <p data-i18n="retirement_trade_ncm_heading">
-                    Select the NCM MOSID:
-                  </p>
-
-                  <div class="retirement-trade-options" data-retirement-trade-options="ncm"></div>
+                <div class="event-field">
+                  <label
+                    for="retireeFirstName"
+                    data-i18n="retirement_first_name"
+                  ></label>
+                  <input
+                    id="retireeFirstName"
+                    name="retireeFirstName"
+                    type="text"
+                    maxlength="80"
+                    required
+                  />
                 </div>
 
-                <input id="retireeTradeRole" name="retireeTradeRole" type="hidden" />
-              </div>
+                <div class="event-field">
+                  <label
+                    for="retireeLastName"
+                    data-i18n="retirement_last_name"
+                  ></label>
+                  <input
+                    id="retireeLastName"
+                    name="retireeLastName"
+                    type="text"
+                    maxlength="80"
+                    required
+                  />
+                </div>
 
-              <div class="event-field">
-                <label for="retireeRetirementDate" data-i18n="retirement_date"></label>
-                <input id="retireeRetirementDate" name="retireeRetirementDate" type="date" maxlength="60" required />
+                <div class="event-field">
+                  <label
+                    for="retireePostNominals"
+                    data-i18n="retirement_post_nominals"
+                  ></label>
+                  <input
+                    id="retireePostNominals"
+                    name="retireePostNominals"
+                    type="text"
+                    maxlength="120"
+                  />
+                </div>
+
+                <div
+                  class="event-field event-field-wide retirement-trade-field"
+                >
+                  <label
+                    for="retireeTradeCategory"
+                    data-i18n="retirement_trade_role"
+                  ></label>
+
+                  <select
+                    id="retireeTradeCategory"
+                    name="retireeTradeCategory"
+                    required
+                  >
+                    <option value="" data-i18n="select_option">
+                      Select an option
+                    </option>
+
+                    <option
+                      value="officer"
+                      data-i18n="retirement_trade_category_officer"
+                    >
+                      Officer
+                    </option>
+
+                    <option
+                      value="ncm"
+                      data-i18n="retirement_trade_category_ncm"
+                    >
+                      NCM
+                    </option>
+
+                    <option
+                      value="civilian"
+                      data-i18n="retirement_trade_category_civilian"
+                    >
+                      Civilian
+                    </option>
+                  </select>
+
+                  <div
+                    class="retirement-trade-panel"
+                    id="retireeOfficerTradePanel"
+                    hidden
+                  >
+                    <p data-i18n="retirement_trade_officer_heading">
+                      Select the officer MOSID:
+                    </p>
+
+                    <div
+                      class="retirement-trade-options"
+                      data-retirement-trade-options="officer"
+                    ></div>
+                  </div>
+
+                  <div
+                    class="retirement-trade-panel"
+                    id="retireeNcmTradePanel"
+                    hidden
+                  >
+                    <p data-i18n="retirement_trade_ncm_heading">
+                      Select the NCM MOSID:
+                    </p>
+
+                    <div
+                      class="retirement-trade-options"
+                      data-retirement-trade-options="ncm"
+                    ></div>
+                  </div>
+
+                  <input
+                    id="retireeTradeRole"
+                    name="retireeTradeRole"
+                    type="hidden"
+                  />
+                </div>
+
+                <div class="event-field">
+                  <label
+                    for="retireeRetirementDate"
+                    data-i18n="retirement_date"
+                  ></label>
+                  <input
+                    id="retireeRetirementDate"
+                    name="retireeRetirementDate"
+                    type="date"
+                    maxlength="60"
+                    required
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section class="event-form-section event-section--full-bleed-heading">
-          <header class="event-section-heading">
-            <span class="event-section-index">02</span>
+          <section class="event-form-section event-section--full-bleed-heading">
+            <header class="event-section-heading">
+              <span class="event-section-index">02</span>
 
-            <div>
-              <h2 data-i18n="retirement_message_heading">
-                Retirement Message
-              </h2>
+              <div>
+                <h2 data-i18n="retirement_message_heading">
+                  Retirement Message
+                </h2>
 
-              <p data-i18n="retirement_message_intro">
-                Share a message recognizing the member's career, service, and
-                contributions.
-              </p>
-            </div>
-          </header>
-
-          <div class="event-section-content">
-            <div class="event-details-grid">
-              <div class="event-field">
-                <label for="retirementMessageLanguage" data-i18n="retirement_message_language">
-                  Message language
-                </label>
-                <select id="retirementMessageLanguage" name="retirementMessageLanguage" required>
-                  <option value="en">English</option>
-
-                  <option value="fr">Français</option>
-                </select>
+                <p data-i18n="retirement_message_intro">
+                  Share a message recognizing the member's career, service, and
+                  contributions.
+                </p>
               </div>
+            </header>
 
-              <div class="event-field event-field-wide">
-                <label for="retirementPhoto" data-i18n="retirement_photo">
-                  Photo
-                </label>
+            <div class="event-section-content">
+              <div class="event-details-grid">
+                <div class="event-field">
+                  <label
+                    for="retirementMessageLanguage"
+                    data-i18n="retirement_message_language"
+                  >
+                    Message language
+                  </label>
+                  <select
+                    id="retirementMessageLanguage"
+                    name="retirementMessageLanguage"
+                    required
+                  >
+                    <option value="en">English</option>
 
-                <input id="retirementPhoto" name="retirementPhoto" type="file" accept="image/*" />
+                    <option value="fr">Français</option>
+                  </select>
+                </div>
 
-                <small data-i18n="retirement_photo_hint">
-                  Optional. Upload a photo to include with the retirement
-                  message.
+                <div class="event-field event-field-wide">
+                  <label for="retirementPhoto" data-i18n="retirement_photo">
+                    Photo
+                  </label>
+
+                  <input
+                    id="retirementPhoto"
+                    name="retirementPhoto"
+                    type="file"
+                    accept="image/*"
+                  />
+
+                  <small data-i18n="retirement_photo_hint">
+                    Optional. Upload a photo to include with the retirement
+                    message.
+                  </small>
+                </div>
+
+                <div class="event-field event-field-wide">
+                  <label
+                    for="retirementMessageText"
+                    data-i18n="retirement_message_text"
+                  >
+                    Message
+                  </label>
+
+                  <textarea
+                    id="retirementMessageText"
+                    name="retirementMessageText"
+                    rows="10"
+                    minlength="100"
+                    maxlength="10000"
+                    required
+                  ></textarea>
+
+                  <small data-i18n="retirement_message_minimum">
+                    Minimum 100 characters.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="event-form-section event-section--full-bleed-heading">
+            <header class="event-section-heading">
+              <span class="event-section-index">03</span>
+
+              <div>
+                <h2 data-i18n="retirement_submitter_heading">
+                  Submitter Information
+                </h2>
+
+                <p data-i18n="retirement_submitter_intro">
+                  This information is used for confirmation and review. It will
+                  not be published.
+                </p>
+              </div>
+            </header>
+
+            <div class="event-section-content">
+              <div class="event-form-grid">
+                <div class="event-field event-field-wide">
+                  <label
+                    for="retirementSubmitterRelationship"
+                    data-i18n="retirement_submitter_relationship"
+                  >
+                    Relationship to retiree
+                  </label>
+
+                  <select
+                    id="retirementSubmitterRelationship"
+                    name="retirementSubmitterRelationship"
+                    required
+                  >
+                    <option value="" data-i18n="select_option">
+                      Select an option
+                    </option>
+
+                    <option value="self" data-i18n="relationship_self">
+                      Self
+                    </option>
+
+                    <option
+                      value="colleague"
+                      data-i18n="relationship_colleague"
+                    >
+                      Colleague
+                    </option>
+
+                    <option value="family" data-i18n="relationship_family">
+                      Family
+                    </option>
+
+                    <option value="other" data-i18n="relationship_other">
+                      Other
+                    </option>
+                  </select>
+                </div>
+
+                <input
+                  id="retirementSubmitterFirstName"
+                  name="retirementSubmitterFirstName"
+                  type="hidden"
+                />
+                <input
+                  id="retirementSubmitterLastName"
+                  name="retirementSubmitterLastName"
+                  type="hidden"
+                />
+                <input
+                  id="retirementSubmitterEmail"
+                  name="retirementSubmitterEmail"
+                  type="hidden"
+                />
+                <input
+                  id="retirementSubmitterUnit"
+                  name="retirementSubmitterUnit"
+                  type="hidden"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section class="event-form-section retirement-consent-section">
+            <label class="retirement-consent-field">
+              <input
+                id="retirementMemberReviewConfirmed"
+                name="retirementMemberReviewConfirmed"
+                type="checkbox"
+                required
+              />
+
+              <span>
+                <strong data-i18n="retirement_member_review_confirmed">
+                  I acknowledge the submitted information was reviewed by the
+                  releasing member.
+                </strong>
+
+                <small data-i18n="retirement_member_review_confirmed_hint">
+                  The releasing member must review the information being
+                  submitted to us to ensure it is accurate. This will eliminate
+                  the delays of reprints and mailing costs to fix mistakes.
                 </small>
-              </div>
+              </span>
+            </label>
 
-              <div class="event-field event-field-wide">
-                <label for="retirementMessageText" data-i18n="retirement_message_text">
-                  Message
-                </label>
+            <label class="retirement-consent-field">
+              <input
+                id="retirementPublicationConsent"
+                name="retirementPublicationConsent"
+                type="checkbox"
+                required
+              />
 
-                <textarea id="retirementMessageText" name="retirementMessageText" rows="10" minlength="100"
-                  maxlength="10000" required></textarea>
+              <span>
+                <strong data-i18n="retirement_consent">
+                  The releasing member understands the submitted information
+                  will be posted to a public-facing, civilian website as well as
+                  posts to social media platforms like Facebook, Twitter and
+                  Instagram.
+                </strong>
 
-                <small data-i18n="retirement_message_minimum">
-                  Minimum 100 characters.
+                <small data-i18n="retirement_consent_hint">
+                  To protect the privacy of the member and their families it is
+                  important the member is aware of where the information is
+                  being posted. The retirement messages are posted while the
+                  member is still serving so to preserve OPSEC, details about
+                  their current job and deployments/assignments should be kept
+                  to a minimum. Lastly, we will only post the member's rank,
+                  initial, and last name.
                 </small>
-              </div>
-            </div>
-          </div>
-        </section>
+              </span>
+            </label>
 
-        <section class="event-form-section event-section--full-bleed-heading">
-          <header class="event-section-heading">
-            <span class="event-section-index">03</span>
+            <label class="retirement-honeypot" aria-hidden="true">
+              Website
+              <input
+                id="retirementWebsite"
+                name="website"
+                type="text"
+                tabindex="-1"
+                autocomplete="off"
+              />
+            </label>
+          </section>
 
-            <div>
-              <h2 data-i18n="retirement_submitter_heading">
-                Submitter Information
-              </h2>
+          <footer class="event-form-actions">
+            <button
+              class="event-submit-button"
+              id="retirementSubmitButton"
+              type="submit"
+            >
+              <span data-i18n="retirement_submit_button">
+                Submit for Review
+              </span>
+            </button>
+          </footer>
+        </form>
+      </section>
+    </main>
 
-              <p data-i18n="retirement_submitter_intro">
-                This information is used for confirmation and review. It will
-                not be published.
-              </p>
-            </div>
-          </header>
+    <footer id="footer"></footer>
 
-          <div class="event-section-content">
-            <div class="event-form-grid">
-              <div class="event-field event-field-wide">
-                <label for="retirementSubmitterRelationship" data-i18n="retirement_submitter_relationship">
-                  Relationship to retiree
-                </label>
-
-                <select id="retirementSubmitterRelationship" name="retirementSubmitterRelationship" required>
-                  <option value="" data-i18n="select_option">
-                    Select an option
-                  </option>
-
-                  <option value="self" data-i18n="relationship_self">
-                    Self
-                  </option>
-
-                  <option value="colleague" data-i18n="relationship_colleague">
-                    Colleague
-                  </option>
-
-                  <option value="family" data-i18n="relationship_family">
-                    Family
-                  </option>
-
-                  <option value="other" data-i18n="relationship_other">
-                    Other
-                  </option>
-                </select>
-              </div>
-
-              <input id="retirementSubmitterFirstName" name="retirementSubmitterFirstName" type="hidden" />
-              <input id="retirementSubmitterLastName" name="retirementSubmitterLastName" type="hidden" />
-              <input id="retirementSubmitterEmail" name="retirementSubmitterEmail" type="hidden" />
-              <input id="retirementSubmitterUnit" name="retirementSubmitterUnit" type="hidden" />
-            </div>
-          </div>
-        </section>
-
-        <section class="event-form-section retirement-consent-section">
-          <label class="retirement-consent-field">
-            <input id="retirementMemberReviewConfirmed" name="retirementMemberReviewConfirmed" type="checkbox"
-              required />
-
-            <span>
-              <strong data-i18n="retirement_member_review_confirmed">
-                I acknowledge the submitted information was reviewed by the
-                releasing member.
-              </strong>
-
-              <small data-i18n="retirement_member_review_confirmed_hint">
-                The releasing member must review the information being
-                submitted to us to ensure it is accurate. This will eliminate
-                the delays of reprints and mailing costs to fix mistakes.
-              </small>
-            </span>
-          </label>
-
-          <label class="retirement-consent-field">
-            <input id="retirementPublicationConsent" name="retirementPublicationConsent" type="checkbox" required />
-
-            <span>
-              <strong data-i18n="retirement_consent">
-                The releasing member understands the submitted information
-                will be posted to a public-facing, civilian website as well as
-                posts to social media platforms like Facebook, Twitter and
-                Instagram.
-              </strong>
-
-              <small data-i18n="retirement_consent_hint">
-                To protect the privacy of the member and their families it is
-                important the member is aware of where the information is
-                being posted. The retirement messages are posted while the
-                member is still serving so to preserve OPSEC, details about
-                their current job and deployments/assignments should be kept
-                to a minimum. Lastly, we will only post the member's rank,
-                initial, and last name.
-              </small>
-            </span>
-          </label>
-
-          <label class="retirement-honeypot" aria-hidden="true">
-            Website
-            <input id="retirementWebsite" name="website" type="text" tabindex="-1" autocomplete="off" />
-          </label>
-        </section>
-
-        <footer class="event-form-actions">
-          <button class="event-submit-button" id="retirementSubmitButton" type="submit">
-            <span data-i18n="retirement_submit_button">
-              Submit for Review
-            </span>
-          </button>
-        </footer>
-      </form>
-    </section>
-  </main>
-
-  <footer id="footer"></footer>
-
-  <script src="/app-utils.js"></script>
-  <script src="/timers.js"></script>
-  <script src="/index.js"></script>
-  <script src="/translations.js"></script>
-  <script src="/date-time-picker.js"></script>
-  <script src="/validation-i18n.js"></script>
-  <script src="/trade-options.js"></script>
-  <script src="/submit-retirement.js"></script>
-</body>
-
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/date-time-picker.js"></script>
+    <script src="/validation-i18n.js"></script>
+    <script src="/trade-options.js"></script>
+    <script src="/submit-retirement.js"></script>
+  </body>
 </html>

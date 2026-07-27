@@ -426,7 +426,7 @@ function populateRetirementSubmitterFromProfile(user = {}) {
   setRetirementField("retirementSubmitterEmail", user.email);
   setRetirementField(
     "retirementSubmitterUnit",
-    user.currentUnit || user.company
+    user.currentUnit || user.company,
   );
 }
 
@@ -474,16 +474,16 @@ function populateRetirementForm(retirementMessage) {
   setRetirementField("retireePostNominals", retiree.postNominals);
   setRetirementField(
     "retireeRetirementDate",
-    formatDateInputValue(retiree.retirementDate)
+    formatDateInputValue(retiree.retirementDate),
   );
   selectRetirementTradeRole(retiree.tradeRole);
   setRetirementField(
     "retirementMessageLanguage",
-    retirementMessage.messageLanguage || getRetirementLanguage()
+    retirementMessage.messageLanguage || getRetirementLanguage(),
   );
   setRetirementField(
     "retirementMessageText",
-    getRetirementMessageText(retirementMessage)
+    getRetirementMessageText(retirementMessage),
   );
   setRetirementField("retirementSubmitterRelationship", submitter.relationship);
   setRetirementCheckbox("retirementMemberReviewConfirmed", true);
@@ -562,11 +562,11 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
         data.retirementMessage?.status === "published"
         ? translate("retirement_submit_success_published")
         : data.message ||
-        translate(
-          editingRetirementMessageId
-            ? "retirement_update_success"
-            : "retirement_submit_success",
-        ),
+            translate(
+              editingRetirementMessageId
+                ? "retirement_update_success"
+                : "retirement_submit_success",
+            ),
       "success",
     );
 

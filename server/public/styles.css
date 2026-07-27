@@ -2809,29 +2809,33 @@ a.dropdown-toggle {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 34px;
 }
 
 .error-page-primary-action,
 .error-page-secondary-action {
-  min-height: 44px;
+  min-height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 18px;
+  padding: 0 19px;
   border: 1px solid transparent;
-  color: var(--white);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.055em;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
   text-decoration: none;
   text-transform: uppercase;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
 .error-page-primary-action {
   border-color: var(--gold-500);
   background: var(--gold-500);
-  color: var(--navy-950);
+  color: var(--navy-900);
 }
 
 .error-page-primary-action:hover,
@@ -2841,13 +2845,22 @@ a.dropdown-toggle {
 }
 
 .error-page-secondary-action {
-  border-color: var(--branch-grey-500);
+  border-color: rgba(255, 255, 255, 0.55);
+  background: transparent;
+  color: var(--white);
 }
 
 .error-page-secondary-action:hover,
 .error-page-secondary-action:focus-visible {
-  border-color: var(--gold-500);
-  color: var(--gold-200);
+  border-color: var(--white);
+  background: var(--white);
+  color: var(--navy-900);
+}
+
+.error-page-primary-action:focus-visible,
+.error-page-secondary-action:focus-visible {
+  outline: 3px solid rgba(244, 211, 139, 0.38);
+  outline-offset: 3px;
 }
 
 .login-main {
@@ -14588,6 +14601,22 @@ html[data-theme="dark"] .home-button-primary:focus-visible {
   color: var(--navy-900);
 }
 
+/* Keep error-page actions from inheriting the generic dark-mode link colour. */
+html[data-theme="dark"] .error-page-primary-action,
+html[data-theme="dark"] .error-page-primary-action:hover,
+html[data-theme="dark"] .error-page-primary-action:focus-visible {
+  color: var(--navy-900);
+}
+
+html[data-theme="dark"] .error-page-secondary-action {
+  color: var(--white);
+}
+
+html[data-theme="dark"] .error-page-secondary-action:hover,
+html[data-theme="dark"] .error-page-secondary-action:focus-visible {
+  color: var(--navy-900);
+}
+
 html[data-theme="dark"] main :is(input, textarea, select) {
   border-color: var(--dark-border-strong);
   background: #0d1422;
@@ -16523,7 +16552,9 @@ html[data-theme="dark"] .theme-toggle__icon:last-child {
 @media (prefers-reduced-motion: reduce) {
 
   .theme-toggle,
-  .theme-toggle::before {
+  .theme-toggle::before,
+  .error-page-primary-action,
+  .error-page-secondary-action {
     transition: none;
   }
 }

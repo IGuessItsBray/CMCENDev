@@ -8,6 +8,7 @@ const registerEmailVerification = document.getElementById("registerEmailVerifica
 const registerEmailVerificationError = document.getElementById("registerEmailVerificationError");
 const registerEmailVerificationCode = document.getElementById("registerEmailVerificationCode");
 const registerEmailVerificationVerify = document.getElementById("registerEmailVerificationVerify");
+const invitationToken = new URLSearchParams(window.location.search).get("inviteToken");
 const registerMfa = document.getElementById("registerMfa");
 const registerMfaError = document.getElementById("registerMfaError");
 const registerMfaOptions = document.getElementById("registerMfaOptions");
@@ -282,6 +283,50 @@ if (registerPreferredLanguage) {
   registerPreferredLanguage.value = CMCENUtils.getCurrentLanguage();
 }
 
+async function prepareInvitationRegistration() {
+  if (!invitationToken) return;
+
+  try {
+    const invitation = await CMCENUtils.apiJson(
+      `/api/invitations/activate?token=${encodeURIComponent(invitationToken)}`,
+      { errorMessage: "Invitation link is invalid or has expired" }
+    );
+    const fields = {
+      firstName: invitation.firstName,
+      lastName: invitation.lastName,
+      email: invitation.email
+    };
+
+    Object.entries(fields).forEach(([name, value]) => {
+      const input = registerForm.elements[name];
+      if (!input) return;
+
+      input.value = value || "";
+      input.readOnly = true;
+    });
+
+    document.querySelectorAll(".register-field").forEach(field => {
+      const keepField = Array.from(field.querySelectorAll("input, select"))
+        .some(input => ["firstName", "lastName", "email", "password", "passwordConfirmation"].includes(input.name));
+
+      if (keepField) return;
+
+      field.hidden = true;
+      field.querySelectorAll("input, select").forEach(input => {
+        input.required = false;
+        input.disabled = true;
+      });
+    });
+
+    document.getElementById("registerTitle").textContent = "Activate your account";
+  } catch (error) {
+    setRegisterError(error.message || "Invitation link is invalid or has expired");
+    registerButton.disabled = true;
+  }
+}
+
+prepareInvitationRegistration();
+
 registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -323,6 +368,10 @@ registerForm.addEventListener("submit", async (event) => {
     password,
     passwordConfirmation
   };
+
+  if (invitationToken) {
+    registration.invitationToken = invitationToken;
+  }
 
   try {
     const data = await CMCENUtils.apiJson("/api/register", {

@@ -2,10 +2,12 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const speakeasy = require('speakeasy');
 const User = require('../models/User');
 const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
+const LastPostMessage = require('../models/LastPostMessage');
 const {
   authMiddleware,
   requirePermission
@@ -24,7 +26,7 @@ const {
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt';
+  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -37,6 +39,7 @@ const EDITABLE_PROFILE_FIELDS = [
   'trade',
   'tradeOther',
   'currentUnit',
+  'phone',
   'preferredLanguage'
 ];
 
@@ -88,6 +91,23 @@ const PASSWORD_RESET_GENERIC_MESSAGE =
 const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
 const EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS = 30 * 60 * 1000;
 const GHOST_PASSWORD_BYTES = 32;
+
+function verifyDestructiveTotp(user, code) {
+  if (!user?.totp?.secret || user.totp.enabled !== true) return false;
+
+  return speakeasy.totp.verify({
+    secret: user.totp.secret,
+    encoding: 'base32',
+    token: String(code || '').replace(/\D/gu, ''),
+    window: Number(process.env.TOTP_WINDOW || 2)
+  });
+}
+
+function hasFreshDestructivePasskeyVerification(user) {
+  const verifiedAt = user?.twoFactor?.destructiveVerifiedAt;
+  return verifiedAt &&
+    Date.now() - new Date(verifiedAt).getTime() <= 5 * 60 * 1000;
+}
 
 function hasOwnValue(source, key) {
   return Object.prototype.hasOwnProperty.call(source, key);
@@ -344,6 +364,15 @@ async function getNotificationSummary(user) {
 
 async function getProfileResponse(user) {
   const profile = user.toObject ? user.toObject() : user;
+  const mfa = {
+    hasTotp: profile.totp?.enabled === true && Boolean(profile.totp?.secret),
+    hasPasskey: Array.isArray(profile.webauthn) && profile.webauthn.some(
+      credential => credential?.credentialID && credential?.publicKey
+    )
+  };
+  delete profile.totp;
+  delete profile.webauthn;
+  delete profile.twoFactor;
   const permissions = getUserPermissions(profile);
   let notifications = {
     count: 0,
@@ -359,6 +388,7 @@ async function getProfileResponse(user) {
 
   return {
     ...profile,
+    mfa,
     permissions,
     notifications
   };
@@ -557,6 +587,37 @@ router.post('/ghost/confirm', async (req, res) => {
   }
 });
 
+// GET /api/invitations/activate?token=...
+// Return the prefilled identity for a valid invitation without exposing profile data.
+router.get('/invitations/activate', async (req, res) => {
+  const token = String(req.query?.token || '').trim();
+
+  if (!token) {
+    return res.status(400).json({ error: 'Invitation token is required' });
+  }
+
+  try {
+    const user = await User.findOne({
+      accountType: 'invited',
+      'invitation.tokenHash': hashToken(token),
+      'invitation.expiresAt': { $gt: new Date() }
+    }).select('firstName lastName email');
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invitation link is invalid or has expired' });
+    }
+
+    return res.json({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email
+    });
+  } catch (error) {
+    console.error('Invitation lookup failed:', error);
+    return res.status(500).json({ error: 'Could not load invitation' });
+  }
+});
+
 // POST /api/register
 // Create a subscriber account from the public registration form.
 router.post('/register', async (req, res) => {
@@ -581,7 +642,8 @@ router.post('/register', async (req, res) => {
       preferredLanguage,
       email,
       password,
-      passwordConfirmation
+      passwordConfirmation,
+      invitationToken
     } = req.body;
 
     if (password !== passwordConfirmation) {
@@ -609,20 +671,39 @@ router.post('/register', async (req, res) => {
       VALID_PREFERRED_LANGUAGES.has(incomingPreferredLanguage)
         ? incomingPreferredLanguage
         : 'en';
-    const requiredFields = [
-      cleanFirstName,
-      cleanLastName,
-      String(addressLine1 || '').trim(),
-      String(city || '').trim(),
-      String(country || '').trim(),
-      String(stateProvince || '').trim(),
-      String(postalCode || '').trim(),
-      String(status || '').trim(),
-      String(affiliationElement || '').trim(),
-      cleanEmail,
-      String(password || ''),
-      String(passwordConfirmation || '')
-    ];
+    const cleanInvitationToken = String(invitationToken || '').trim();
+    const invitedUser = cleanInvitationToken
+      ? await User.findOne({
+        accountType: 'invited',
+        'invitation.tokenHash': hashToken(cleanInvitationToken),
+        'invitation.expiresAt': { $gt: new Date() }
+      }).select('+password +invitation.tokenHash +invitation.expiresAt')
+      : null;
+
+    if (cleanInvitationToken && !invitedUser) {
+      return res.status(400).json({ error: 'Invitation link is invalid or has expired' });
+    }
+
+    if (invitedUser && invitedUser.email !== cleanEmail) {
+      return res.status(400).json({ error: 'Use the email address that received the invitation' });
+    }
+
+    const requiredFields = invitedUser
+      ? [cleanEmail, String(password || ''), String(passwordConfirmation || '')]
+      : [
+        cleanFirstName,
+        cleanLastName,
+        String(addressLine1 || '').trim(),
+        String(city || '').trim(),
+        String(country || '').trim(),
+        String(stateProvince || '').trim(),
+        String(postalCode || '').trim(),
+        String(status || '').trim(),
+        String(affiliationElement || '').trim(),
+        cleanEmail,
+        String(password || ''),
+        String(passwordConfirmation || '')
+      ];
 
     if (requiredFields.some(value => !value)) {
       return res.status(400).json({
@@ -630,7 +711,7 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const user = new User({
+    const user = invitedUser || new User({
       username: cleanEmail,
       email: cleanEmail,
       accountName: [cleanFirstName, cleanLastName]
@@ -659,14 +740,29 @@ router.post('/register', async (req, res) => {
       role: 'subscriber'
     });
 
-    const verification = await prepareEmailVerification(user);
+    if (invitedUser) {
+      user.username = cleanEmail;
+      user.email = cleanEmail;
+      user.accountType = 'member';
+      user.profileComplete = false;
+      user.password = password;
+      user.invitation.tokenHash = '';
+      user.invitation.expiresAt = null;
+      user.emailVerification.required = true;
+      user.emailVerification.verified = true;
+      user.emailVerification.verifiedAt = new Date();
+    }
+
+    const verification = invitedUser ? null : await prepareEmailVerification(user);
 
     await user.save();
-    await sendEmailVerificationCode(user, verification.code);
+    if (verification) {
+      await sendEmailVerificationCode(user, verification.code);
+    }
 
     await writeAuditLog({
       req,
-      action: 'user.created',
+      action: invitedUser ? 'user.invitation_activated' : 'user.created',
       actor: user,
       targetType: 'user',
       target: user._id,
@@ -681,10 +777,20 @@ router.post('/register', async (req, res) => {
       metadata: {
         accountName: user.accountName,
         email: user.email,
-        emailVerification: 'pending',
-        mfaMethod: 'pending'
+        emailVerification: invitedUser ? 'verified' : 'pending',
+        mfaMethod: 'pending',
+        invitation: invitedUser ? 'activated' : undefined
       }
     });
+
+    if (invitedUser) {
+      setRefreshTokenCookie(req, res, user);
+      return res.status(201).json({
+        message: 'Account activated. Complete your profile from your account page.',
+        token: createSessionToken(user),
+        user: await getProfileResponse(user)
+      });
+    }
 
     res.status(201).json({
       message: 'User created. Check your email for a verification code.',
@@ -1159,6 +1265,49 @@ router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
     res.status(500).json({
       error: 'Could not upgrade account'
     });
+  }
+});
+
+// DELETE /api/profile
+// Delete the current account after a fresh authenticator-app confirmation.
+router.delete('/profile', authMiddleware, requirePermission('canDeleteOwnAccount'), async (req, res) => {
+  const mfaCode = req.body?.mfaCode;
+  const mfaMethod = String(req.body?.mfaMethod || 'totp').trim();
+
+  const mfaVerified = mfaMethod === 'webauthn'
+    ? hasFreshDestructivePasskeyVerification(req.user)
+    : verifyDestructiveTotp(req.user, mfaCode);
+
+  if (!mfaVerified) {
+    return res.status(403).json({ error: 'A recent MFA confirmation is required to delete your account' });
+  }
+
+  try {
+    const userId = req.user._id;
+    const snapshot = getUserSnapshot(req.user);
+
+    await Promise.all([
+      Event.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
+      RetirementMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
+      RetirementComment.updateMany({ author: userId }, { $set: { author: null } }),
+      LastPostMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } })
+    ]);
+    await User.deleteOne({ _id: userId });
+    await writeAuditLog({
+      req,
+      action: 'user.self_deleted',
+      actor: req.user,
+      targetType: 'user',
+      target: userId,
+      targetSnapshot: snapshot,
+      metadata: { contentDisposition: 'keep_and_anonymize', mfaMethod }
+    });
+
+    clearRefreshTokenCookie(req, res);
+    return res.json({ message: 'Account deleted' });
+  } catch (error) {
+    console.error('Self account deletion failed:', error);
+    return res.status(500).json({ error: 'Could not delete account' });
   }
 });
 

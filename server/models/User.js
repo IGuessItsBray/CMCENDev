@@ -29,14 +29,19 @@ function requiresMemberProfileFields(context) {
       ? context.get('accountType')
       : undefined);
 
-  return accountType !== 'ghost';
+  return accountType === 'member' && document?.profileComplete !== false;
 }
 
 const UserSchema = new mongoose.Schema({
   accountType: {
     type: String,
-    enum: ['member', 'ghost'],
+    enum: ['member', 'ghost', 'invited'],
     default: 'member'
+  },
+
+  profileComplete: {
+    type: Boolean,
+    default: true
   },
 
   username: {
@@ -217,6 +222,13 @@ const UserSchema = new mongoose.Schema({
     default: ''
   },
 
+  phone: {
+    type: String,
+    trim: true,
+    maxlength: 40,
+    default: ''
+  },
+
   preferredLanguage: {
     type: String,
     enum: ['en', 'fr'],
@@ -275,7 +287,8 @@ const UserSchema = new mongoose.Schema({
 
   twoFactor: {
     tempToken: { type: String, default: '' },
-    tempExpires: { type: Date, default: null }
+    tempExpires: { type: Date, default: null },
+    destructiveVerifiedAt: { type: Date, default: null }
   },
 
   emailVerification: {
@@ -291,6 +304,13 @@ const UserSchema = new mongoose.Schema({
   passwordReset: {
     tokenHash: { type: String, default: '', select: false },
     expiresAt: { type: Date, default: null, select: false }
+  },
+
+  invitation: {
+    tokenHash: { type: String, default: '', select: false },
+    expiresAt: { type: Date, default: null, select: false },
+    invitedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    sentAt: { type: Date, default: null }
   },
 
   // Incrementing this invalidates all browser refresh sessions for the user.

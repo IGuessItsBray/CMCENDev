@@ -36,6 +36,7 @@ const DEFAULT_MEDIA_PAGE_SIZE = 60;
 const MAX_MEDIA_PAGE_SIZE = 120;
 const MAX_MEDIA_LIST_OBJECTS = 5000;
 const SITEMAP_EXCLUDED_HTML = new Set([
+  '400.html',
   '401.html',
   '403.html',
   '404.html',

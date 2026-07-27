@@ -54,6 +54,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | --- | --- | --- | --- |
 | `POST` | `/api/ghost/request` | Public | Start ghost-account claim flow. |
 | `POST` | `/api/ghost/confirm` | Public | Confirm ghost-account claim token. |
+| `GET` | `/api/invitations/activate?token=...` | Public | Validate an invitation link and return the prefilled invited name and email. |
 | `POST` | `/api/register` | Public | Register a new user account. |
 | `POST` | `/api/login` | Public | Login with username/password; may return MFA temp-token flow. |
 | `POST` | `/api/session/refresh` | Refresh-token cookie | Exchange a valid refresh cookie for a new access token. |
@@ -65,6 +66,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `GET` | `/api/notifications` | Authenticated | Return compact notification list. |
 | `POST` | `/api/ghost/upgrade` | Authenticated | Upgrade/merge a ghost account into the current authenticated account. |
 | `PATCH` | `/api/profile` | Authenticated | Update editable profile fields. |
+| `DELETE` | `/api/profile` | Authenticated + `canDeleteOwnAccount` + current MFA confirmation | Delete the current account; associated content is retained and anonymized. Accepts a current TOTP code or a passkey assertion verified within the prior five minutes. |
 | `GET` | `/api/contributor-check` | Authenticated + `canCreateDrafts` | Confirm contributor content access. |
 | `GET` | `/api/admin-check` | Authenticated + user admin access | Confirm admin user-management access. |
 
@@ -121,13 +123,16 @@ Mounted at `/api/admin`.
 | `POST` | `/api/admin/media/bulk-delete` | Authenticated + `canDeleteMedia` | Delete selected unattached media assets by JSON body `keys`; attached assets are skipped and reported. |
 | `DELETE` | `/api/admin/media/:key` | Authenticated + `canDeleteMedia` | Delete unattached media by key. |
 | `GET` | `/api/admin/users` | Authenticated + `canReadUsers` | List lightweight user rows. Query: `query`, `limit` from 1-100. Post summaries and editable detail load from the user detail endpoint. |
+| `POST` | `/api/admin/users` | Authenticated + `canProvisionUsers` | Provision an invited account and email a seven-day activation link. Body: `firstName`, `lastName`, `email`, and optional non-developer `role`, `customRoleIds`, `contentAreas`. |
 | `GET` | `/api/admin/users/:userId` | Authenticated + `canReadUsers` | Get one user admin detail. |
 | `PATCH` | `/api/admin/users/:userId` | Authenticated + `canManageUsers` | Update role, custom roles, and content areas. |
+| `DELETE` | `/api/admin/users/:userId` | Authenticated + `canDeleteAnyUser` + current MFA confirmation | Delete another account. Body must choose `keep_and_anonymize` (preserve events, retirement messages, comments, and Last Post notices without account attribution) or `delete_all`. Accepts a current TOTP code or a passkey assertion verified within the prior five minutes. |
 | `PATCH` | `/api/admin/users/:userId/role` | Authenticated + `canManageUsers` | Update built-in role only. |
 | `PATCH` | `/api/admin/users/:userId/developer` | Authenticated + `canManageUsers` + current user must be `developer` | Promote an `administrator` account to developer after explicit `DEVELOPER` confirmation. Subscriber and other non-administrator accounts cannot be promoted directly. |
-| `DELETE` | `/api/admin/events/:eventId` | Authenticated + `canDeleteContent` | Delete any event. |
-| `DELETE` | `/api/admin/retirement-messages/:messageId` | Authenticated + `canDeleteContent` | Delete any retirement message. |
-| `DELETE` | `/api/admin/retirement-comments/:commentId` | Authenticated + `canDeleteContent` | Delete any retirement comment. |
+| `DELETE` | `/api/admin/events/:eventId` | Authenticated + `canDeleteContent`, or original owner + `canDeleteOwnContent` | Delete an event. |
+| `DELETE` | `/api/admin/retirement-messages/:messageId` | Authenticated + `canDeleteContent`, or original owner + `canDeleteOwnContent` | Delete a retirement message. |
+| `DELETE` | `/api/admin/last-posts/:lastPostId` | Authenticated + `canDeleteContent`, or original owner + `canDeleteOwnContent` | Delete a Last Post notice. |
+| `DELETE` | `/api/admin/retirement-comments/:commentId` | Authenticated + `canDeleteContent`, or original owner + `canDeleteOwnContent` | Delete a retirement comment. |
 
 ## Site Config
 

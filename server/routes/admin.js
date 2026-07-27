@@ -1,4 +1,6 @@
 const express = require('express');
+const speakeasy = require('speakeasy');
+const crypto = require('crypto');
 const {
   DeleteObjectCommand,
   ListObjectsV2Command
@@ -13,7 +15,8 @@ const RetirementComment = require('../models/RetirementComment');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
-  normalizePermissionKeys
+  normalizePermissionKeys,
+  getUserPermissions
 } = require('../config/permissions');
 const {
   authMiddleware,
@@ -23,6 +26,7 @@ const {
   writeAuditLog,
   snapshotUser
 } = require('../services/audit-log');
+const { sendMail } = require('../services/mailer');
 const {
   buildPublicMediaUrl,
   getMediaKeyFromValue
@@ -53,10 +57,11 @@ const MAX_MEDIA_PAGE_SIZE = 500;
 const MAX_MEDIA_LIST_OBJECTS = 5000;
 const DEFAULT_USER_PAGE_SIZE = 50;
 const MAX_USER_PAGE_SIZE = 100;
+const INVITATION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const USER_EXPORT_FORMATS = Object.freeze(['csv', 'pdf']);
 const USER_EXPORT_FILTER_OPTIONS = Object.freeze({
   roles: USER_ROLES,
-  accountTypes: ['member', 'ghost']
+  accountTypes: ['member', 'ghost', 'invited']
 });
 const USER_EXPORT_FIELDS = Object.freeze([
   ['id', 'User ID'],
@@ -96,6 +101,23 @@ const USER_EXPORT_FIELDS = Object.freeze([
   ['createdAt', 'Created at'],
   ['updatedAt', 'Updated at']
 ]);
+
+function verifyDestructiveTotp(user, code) {
+  if (!user?.totp?.secret || user.totp.enabled !== true) return false;
+
+  return speakeasy.totp.verify({
+    secret: user.totp.secret,
+    encoding: 'base32',
+    token: String(code || '').replace(/\D/gu, ''),
+    window: Number(process.env.TOTP_WINDOW || 2)
+  });
+}
+
+function hasFreshDestructivePasskeyVerification(user) {
+  const verifiedAt = user?.twoFactor?.destructiveVerifiedAt;
+  return verifiedAt &&
+    Date.now() - new Date(verifiedAt).getTime() <= 5 * 60 * 1000;
+}
 
 // GET /api/admin/review-counts
 // Return the current moderation workload without loading each submission.
@@ -708,7 +730,7 @@ function getRetirementMessageUserFilter(user) {
 
 async function getUserPostSummary(user) {
   const userId = user._id || user;
-  const [eventCount, retirementMessageCount, retirementCommentCount] = await Promise.all([
+  const [eventCount, retirementMessageCount, retirementCommentCount, lastPostCount] = await Promise.all([
     Event.countDocuments({
       $or: [
         { createdBy: userId },
@@ -721,14 +743,16 @@ async function getUserPostSummary(user) {
         { author: userId },
         { publishedBy: userId }
       ]
-    })
+    }),
+    LastPostMessage.countDocuments({ createdBy: userId })
   ]);
 
   return {
     events: eventCount,
     retirementMessages: retirementMessageCount,
     retirementComments: retirementCommentCount,
-    total: eventCount + retirementMessageCount + retirementCommentCount
+    lastPosts: lastPostCount,
+    total: eventCount + retirementMessageCount + retirementCommentCount + lastPostCount
   };
 }
 
@@ -760,6 +784,10 @@ function toAdminUser(user, postSummary = null) {
     lastName: plainUser.lastName,
     role: plainUser.role,
     accountType: plainUser.accountType || 'member',
+    invitation: plainUser.accountType === 'invited' ? {
+      sentAt: plainUser.invitation?.sentAt || null,
+      expiresAt: plainUser.invitation?.expiresAt || null
+    } : null,
     emailVerification: {
       required: plainUser.emailVerification?.required === true,
       verified: plainUser.emailVerification?.verified === true,
@@ -781,6 +809,37 @@ function toAdminUser(user, postSummary = null) {
     updatedAt: plainUser.updatedAt,
     postSummary
   };
+}
+
+function hashInvitationToken(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+}
+
+function getBaseUrl(req) {
+  const configuredBaseUrl = String(process.env.APP_BASE_URL || '').trim();
+
+  return configuredBaseUrl
+    ? configuredBaseUrl.replace(/\/+$/u, '')
+    : `${req.protocol}://${req.get('host')}`;
+}
+
+async function sendInvitationEmail(req, user, token) {
+  const activationUrl = `${getBaseUrl(req)}/register?inviteToken=${encodeURIComponent(token)}`;
+  const accountName = String(user.accountName || user.firstName || 'there')
+    .replace(/&/gu, '&amp;')
+    .replace(/</gu, '&lt;')
+    .replace(/>/gu, '&gt;');
+
+  await sendMail({
+    to: user.email,
+    subject: 'Activate your CMCEN / RCMCE account',
+    html: `
+      <p>Hello ${accountName},</p>
+      <p>An administrator has created a CMCEN / RCMCE account for you.</p>
+      <p><a href="${activationUrl}">Activate your account</a></p>
+      <p>This link expires in 7 days. You will set your own password and complete your profile.</p>
+    `
+  });
 }
 
 function getMfaAuditSnapshot(user) {
@@ -855,6 +914,10 @@ function getUserExportCriteria(query = {}) {
 
     if (includedAccountTypes.includes('ghost')) {
       accountTypeConditions.push({ accountType: 'ghost' });
+    }
+
+    if (includedAccountTypes.includes('invited')) {
+      accountTypeConditions.push({ accountType: 'invited' });
     }
 
     filter.$and = [
@@ -1334,7 +1397,91 @@ router.patch(
 );
 
 // DELETE /api/admin/roles/:roleId
-// Delete a custom role and remove it from users.
+// DELETE /api/admin/users/:userId
+// Delete a user after the acting administrator confirms with MFA.
+router.delete(
+  '/users/:userId',
+  authMiddleware,
+  requirePermission('canDeleteAnyUser'),
+  async (req, res) => {
+    const disposition = String(req.body?.contentDisposition || '').trim();
+    const mfaMethod = String(req.body?.mfaMethod || 'totp').trim();
+
+    if (!['keep_and_anonymize', 'delete_all'].includes(disposition)) {
+      return res.status(400).json({ error: 'Choose whether to keep or delete associated content' });
+    }
+
+    const mfaVerified = mfaMethod === 'webauthn'
+      ? hasFreshDestructivePasskeyVerification(req.user)
+      : verifyDestructiveTotp(req.user, req.body?.mfaCode);
+
+    if (!mfaVerified) {
+      return res.status(403).json({ error: 'A recent MFA confirmation is required to delete an account' });
+    }
+
+    try {
+      if (String(req.user._id) === String(req.params.userId)) {
+        return res.status(400).json({ error: 'Use the self-service account deletion flow for your own account' });
+      }
+
+      const user = await User.findById(req.params.userId);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const targetSnapshot = snapshotUser(user);
+      const userId = user._id;
+      let deleted = {
+        events: 0,
+        retirementMessages: 0,
+        retirementComments: 0,
+        lastPosts: 0
+      };
+
+      if (disposition === 'delete_all') {
+        const messages = await RetirementMessage.find({ createdBy: userId }).select('_id');
+        const messageIds = messages.map(message => message._id);
+        const [events, comments, lastPosts] = await Promise.all([
+          Event.deleteMany({ createdBy: userId }),
+          RetirementComment.deleteMany({ author: userId }),
+          LastPostMessage.deleteMany({ createdBy: userId })
+        ]);
+        const messageComments = messageIds.length
+          ? await RetirementComment.deleteMany({ retirementMessage: { $in: messageIds } })
+          : { deletedCount: 0 };
+        const messagesResult = await RetirementMessage.deleteMany({ _id: { $in: messageIds } });
+        deleted = {
+          events: events.deletedCount || 0,
+          retirementMessages: messagesResult.deletedCount || 0,
+          retirementComments: (comments.deletedCount || 0) + (messageComments.deletedCount || 0),
+          lastPosts: lastPosts.deletedCount || 0
+        };
+      } else {
+        await Promise.all([
+          Event.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
+          RetirementMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
+          RetirementComment.updateMany({ author: userId }, { $set: { author: null } }),
+          LastPostMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } })
+        ]);
+      }
+
+      await user.deleteOne();
+      await writeAuditLog({
+        req,
+        action: 'user.deleted',
+        actor: req.user,
+        targetType: 'user',
+        target: userId,
+        targetSnapshot,
+        metadata: { contentDisposition: disposition, mfaMethod, deleted }
+      });
+
+      return res.json({ message: 'Account deleted', contentDisposition: disposition, deleted });
+    } catch (error) {
+      console.error('Admin account deletion failed:', error);
+      return res.status(500).json({ error: 'Could not delete account' });
+    }
+  }
+);
+
 router.delete(
   '/roles/:roleId',
   authMiddleware,
@@ -1571,6 +1718,91 @@ router.delete(
   }
 );
 
+// POST /api/admin/users
+// Provision an invited member account and email the activation link.
+router.post(
+  '/users',
+  authMiddleware,
+  requirePermission('canProvisionUsers'),
+  async (req, res) => {
+    try {
+      const firstName = String(req.body?.firstName || '').trim();
+      const lastName = String(req.body?.lastName || '').trim();
+      const email = String(req.body?.email || '').trim().toLowerCase();
+      const role = String(req.body?.role || 'subscriber').trim();
+      const contentAreas = cleanContentAreas(req.body?.contentAreas);
+
+      if (!firstName || !lastName || !email) {
+        return res.status(400).json({ error: 'First name, last name, and email are required' });
+      }
+
+      if (!/^\S+@\S+\.\S+$/u.test(email)) {
+        return res.status(400).json({ error: 'Enter a valid email address' });
+      }
+
+      if (!USER_ROLES.includes(role) || ['ghost', 'developer'].includes(role)) {
+        return res.status(400).json({ error: 'Choose a valid initial role' });
+      }
+
+      if (!validateContentAreas(contentAreas)) {
+        return res.status(400).json({ error: 'Invalid content area provided' });
+      }
+
+      const customRoleValidation = await validateCustomRoleIds(req.body?.customRoleIds);
+      if (customRoleValidation.error) {
+        return res.status(400).json({ error: customRoleValidation.error });
+      }
+
+      if (await User.exists({ email })) {
+        return res.status(409).json({ error: 'An account already exists for this email' });
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const now = new Date();
+      const user = new User({
+        accountType: 'invited',
+        username: email,
+        email,
+        accountName: `${firstName} ${lastName}`,
+        firstName,
+        lastName,
+        password: crypto.randomBytes(32).toString('hex'),
+        role,
+        customRoles: customRoleValidation.roleIds,
+        contentAreas,
+        emailVerification: { required: true, verified: false },
+        invitation: {
+          tokenHash: hashInvitationToken(token),
+          expiresAt: new Date(now.getTime() + INVITATION_TOKEN_TTL_MS),
+          invitedBy: req.user._id,
+          sentAt: now
+        }
+      });
+
+      await user.save();
+      await sendInvitationEmail(req, user, token);
+
+      await writeAuditLog({
+        req,
+        action: 'user.invited',
+        actor: req.user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: toAdminUser(user),
+        metadata: { role, customRoleIds: customRoleValidation.roleIds, contentAreas }
+      });
+
+      res.status(201).json({
+        message: 'Invitation sent',
+        user: toAdminUser(user)
+      });
+    } catch (error) {
+      console.error('User invitation failed:', error);
+      res.status(500).json({ error: 'Could not send invitation' });
+    }
+  }
+);
+
 // GET /api/admin/users?query=name&limit=50
 // List users, optionally filtering by username or account name.
 router.get(
@@ -1595,7 +1827,7 @@ router.get(
         : {};
 
       const users = await User.find(filter)
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt')
         .sort({ accountName: 1, username: 1 })
         .limit(limit + 1)
         .populate('customRoles', 'name slug color permissions');
@@ -1694,14 +1926,14 @@ router.get(
       const { userId } = req.params;
 
       const user = await User.findById(userId)
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      const [events, retirementMessages, retirementComments] = await Promise.all([
+      const [events, retirementMessages, retirementComments, lastPosts] = await Promise.all([
         Event.find({
           $or: [
             { createdBy: userId },
@@ -1727,6 +1959,11 @@ router.get(
         })
           .select('body status retirementMessage author publishedBy createdAt updatedAt publishedAt')
           .populate('retirementMessage', 'retiree status')
+          .sort({ updatedAt: -1 })
+          .limit(100)
+          .lean(),
+        LastPostMessage.find({ createdBy: userId })
+          .select('deceased status createdBy publishedAt updatedAt createdAt')
           .sort({ updatedAt: -1 })
           .limit(100)
           .lean()
@@ -1768,6 +2005,18 @@ router.get(
           href: comment.retirementMessage?._id
             ? `/retirement-message?id=${encodeURIComponent(comment.retirementMessage._id)}`
             : ''
+        })),
+        ...lastPosts.map(lastPost => ({
+          _id: lastPost._id,
+          type: 'lastPost',
+          title: getLastPostMessageTitle(lastPost),
+          status: lastPost.status,
+          action: 'submitted',
+          updatedAt: lastPost.updatedAt,
+          createdAt: lastPost.createdAt,
+          href: lastPost.status === 'published'
+            ? `/last-post-message?id=${encodeURIComponent(lastPost._id)}`
+            : ''
         }))
       ].sort((a, b) =>
         new Date(b.updatedAt || b.createdAt || 0) -
@@ -1783,7 +2032,8 @@ router.get(
           events: events.length,
           retirementMessages: retirementMessages.length,
           retirementComments: retirementComments.length,
-          total: events.length + retirementMessages.length + retirementComments.length
+          lastPosts: lastPosts.length,
+          total: events.length + retirementMessages.length + retirementComments.length + lastPosts.length
         }),
         posts
       });
@@ -2222,13 +2472,18 @@ router.patch(
 router.delete(
   '/events/:eventId',
   authMiddleware,
-  requirePermission('canDeleteContent'),
   async (req, res) => {
     try {
       const event = await Event.findById(req.params.eventId);
 
       if (!event) {
         return res.status(404).json({ error: 'Event not found' });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const isOwner = String(event.createdBy || '') === String(req.user._id);
+      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
+        return res.status(403).json({ error: 'You do not have permission to delete this event' });
       }
 
       const snapshot = getEventSnapshot(event);
@@ -2259,13 +2514,18 @@ router.delete(
 router.delete(
   '/retirement-messages/:messageId',
   authMiddleware,
-  requirePermission('canDeleteContent'),
   async (req, res) => {
     try {
       const message = await RetirementMessage.findById(req.params.messageId);
 
       if (!message) {
         return res.status(404).json({ error: 'Retirement message not found' });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const isOwner = String(message.createdBy || '') === String(req.user._id);
+      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
+        return res.status(403).json({ error: 'You do not have permission to delete this retirement message' });
       }
 
       const snapshot = getRetirementMessageSnapshot(message);
@@ -2303,7 +2563,6 @@ router.delete(
 router.delete(
   '/retirement-comments/:commentId',
   authMiddleware,
-  requirePermission('canDeleteContent'),
   async (req, res) => {
     try {
       const comment = await RetirementComment.findById(req.params.commentId)
@@ -2311,6 +2570,12 @@ router.delete(
 
       if (!comment) {
         return res.status(404).json({ error: 'Retirement comment not found' });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const isOwner = String(comment.author || '') === String(req.user._id);
+      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
+        return res.status(403).json({ error: 'You do not have permission to delete this comment' });
       }
 
       const snapshot = getRetirementCommentSnapshot(comment, {
@@ -2345,6 +2610,52 @@ router.delete(
       }
 
       res.status(500).json({ error: 'Failed to delete retirement comment' });
+    }
+  }
+);
+
+router.delete(
+  '/last-posts/:lastPostId',
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const lastPost = await LastPostMessage.findById(req.params.lastPostId);
+
+      if (!lastPost) {
+        return res.status(404).json({ error: 'Last Post notice not found' });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const isOwner = String(lastPost.createdBy || '') === String(req.user._id);
+      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
+        return res.status(403).json({ error: 'You do not have permission to delete this Last Post notice' });
+      }
+
+      const snapshot = {
+        title: lastPost.title,
+        status: lastPost.status,
+        deceased: lastPost.deceased,
+        submitter: lastPost.submitter
+      };
+      await lastPost.deleteOne();
+      await writeAuditLog({
+        req,
+        action: 'content.deleted',
+        actor: req.user,
+        targetType: 'lastPost',
+        target: lastPost._id,
+        targetSnapshot: snapshot,
+        metadata: { deletedByOwner: isOwner }
+      });
+
+      return res.json({ message: 'Last Post notice deleted' });
+    } catch (error) {
+      if (error.name === 'CastError') {
+        return res.status(400).json({ error: 'Invalid Last Post notice ID' });
+      }
+
+      console.error('Last Post deletion failed:', error);
+      return res.status(500).json({ error: 'Could not delete Last Post notice' });
     }
   }
 );

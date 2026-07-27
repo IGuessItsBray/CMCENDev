@@ -30,7 +30,7 @@ async function authMiddleware(req, res, next) {
     try {
         const user = await User.findById(decoded.userId)
             .select(
-                'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt'
+                'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas totp webauthn twoFactor createdAt updatedAt'
             )
             .populate('customRoles', 'name slug color permissions');
 

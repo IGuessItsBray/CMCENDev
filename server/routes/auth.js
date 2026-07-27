@@ -2,10 +2,12 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const speakeasy = require('speakeasy');
 const User = require('../models/User');
 const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
+const LastPostMessage = require('../models/LastPostMessage');
 const {
   authMiddleware,
   requirePermission
@@ -88,6 +90,23 @@ const PASSWORD_RESET_GENERIC_MESSAGE =
 const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
 const EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS = 30 * 60 * 1000;
 const GHOST_PASSWORD_BYTES = 32;
+
+function verifyDestructiveTotp(user, code) {
+  if (!user?.totp?.secret || user.totp.enabled !== true) return false;
+
+  return speakeasy.totp.verify({
+    secret: user.totp.secret,
+    encoding: 'base32',
+    token: String(code || '').replace(/\D/gu, ''),
+    window: Number(process.env.TOTP_WINDOW || 2)
+  });
+}
+
+function hasFreshDestructivePasskeyVerification(user) {
+  const verifiedAt = user?.twoFactor?.destructiveVerifiedAt;
+  return verifiedAt &&
+    Date.now() - new Date(verifiedAt).getTime() <= 5 * 60 * 1000;
+}
 
 function hasOwnValue(source, key) {
   return Object.prototype.hasOwnProperty.call(source, key);
@@ -344,6 +363,15 @@ async function getNotificationSummary(user) {
 
 async function getProfileResponse(user) {
   const profile = user.toObject ? user.toObject() : user;
+  const mfa = {
+    hasTotp: profile.totp?.enabled === true && Boolean(profile.totp?.secret),
+    hasPasskey: Array.isArray(profile.webauthn) && profile.webauthn.some(
+      credential => credential?.credentialID && credential?.publicKey
+    )
+  };
+  delete profile.totp;
+  delete profile.webauthn;
+  delete profile.twoFactor;
   const permissions = getUserPermissions(profile);
   let notifications = {
     count: 0,
@@ -359,6 +387,7 @@ async function getProfileResponse(user) {
 
   return {
     ...profile,
+    mfa,
     permissions,
     notifications
   };
@@ -1159,6 +1188,49 @@ router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
     res.status(500).json({
       error: 'Could not upgrade account'
     });
+  }
+});
+
+// DELETE /api/profile
+// Delete the current account after a fresh authenticator-app confirmation.
+router.delete('/profile', authMiddleware, requirePermission('canDeleteOwnAccount'), async (req, res) => {
+  const mfaCode = req.body?.mfaCode;
+  const mfaMethod = String(req.body?.mfaMethod || 'totp').trim();
+
+  const mfaVerified = mfaMethod === 'webauthn'
+    ? hasFreshDestructivePasskeyVerification(req.user)
+    : verifyDestructiveTotp(req.user, mfaCode);
+
+  if (!mfaVerified) {
+    return res.status(403).json({ error: 'A recent MFA confirmation is required to delete your account' });
+  }
+
+  try {
+    const userId = req.user._id;
+    const snapshot = getUserSnapshot(req.user);
+
+    await Promise.all([
+      Event.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
+      RetirementMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
+      RetirementComment.updateMany({ author: userId }, { $set: { author: null } }),
+      LastPostMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } })
+    ]);
+    await User.deleteOne({ _id: userId });
+    await writeAuditLog({
+      req,
+      action: 'user.self_deleted',
+      actor: req.user,
+      targetType: 'user',
+      target: userId,
+      targetSnapshot: snapshot,
+      metadata: { contentDisposition: 'keep_and_anonymize', mfaMethod }
+    });
+
+    clearRefreshTokenCookie(req, res);
+    return res.json({ message: 'Account deleted' });
+  } catch (error) {
+    console.error('Self account deletion failed:', error);
+    return res.status(500).json({ error: 'Could not delete account' });
   }
 });
 

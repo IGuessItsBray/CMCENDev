@@ -238,6 +238,17 @@ paths:
         "200":
           description: Upgrade result.
   /api/profile:
+    delete:
+      tags: [Auth]
+      summary: Delete the current account after a current TOTP or passkey MFA confirmation.
+      x-permission: canDeleteOwnAccount
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Account deleted and content anonymized.
+        "403":
+          $ref: "#/components/responses/Error"
     patch:
       tags: [Auth]
       summary: Update current user profile.
@@ -559,6 +570,19 @@ paths:
         "200":
           description: Users.
   /api/admin/users/{userId}:
+    delete:
+      tags: [Admin]
+      summary: Delete a user account after a current TOTP or passkey MFA confirmation.
+      x-permission: canDeleteAnyUser
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Account deleted with the selected content disposition.
+        "403":
+          $ref: "#/components/responses/Error"
     get:
       tags: [Admin]
       summary: Get user detail.
@@ -604,6 +628,21 @@ paths:
       responses:
         "200":
           description: Promotion result.
+  /api/admin/last-posts/{lastPostId}:
+    delete:
+      tags: [Admin, LastPost]
+      summary: Delete a Last Post notice.
+      description: Allowed for administrators/developers or the original submitter with own-content deletion permission.
+      parameters:
+        - name: lastPostId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Last Post notice deleted.
+        "403":
+          $ref: "#/components/responses/Error"
   /api/admin/events/{eventId}:
     delete:
       tags: [Admin, Events]

@@ -47,6 +47,8 @@ let currentRetirementMessage = null;
 let loadedComments = [];
 let canManageRetirementComments = false;
 let canManageRetirementMessages = false;
+let canDeleteOwnRetirementComments = false;
+let currentRetirementViewerId = "";
 let visibleDetailMessageKey = "";
 let visibleDetailMessageType = "neutral";
 let visibleCommentMessageKey = "";
@@ -469,6 +471,7 @@ async function deleteRetirementComment(comment) {
 
         if (response.status === 403) {
             canManageRetirementComments = false;
+            canDeleteOwnRetirementComments = false;
             renderComments(loadedComments);
             throw new Error("You do not have permission to delete comments.");
         }
@@ -522,7 +525,13 @@ function createCommentElement(comment) {
 
     header.append(author, date);
 
-    if (canManageRetirementComments) {
+    const commentAuthorId = comment.author?._id || comment.author || "";
+    const canDeleteComment = canManageRetirementComments || (
+        canDeleteOwnRetirementComments &&
+        String(commentAuthorId) === String(currentRetirementViewerId)
+    );
+
+    if (canDeleteComment) {
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
         deleteButton.className = "retirement-comment-delete";
@@ -611,14 +620,39 @@ async function setupCommentAccess() {
                 errorMessage: "Could not verify retirement permissions"
             });
 
-            canManageRetirementComments =
-                user.permissions?.canManageUsers === true;
-            canManageRetirementMessages =
-                user.permissions?.canManageUsers === true;
+            const canDeleteAnyContent =
+                user.permissions?.canDeleteContent === true;
+            const canDeleteOwnContent =
+                user.permissions?.canDeleteOwnContent === true;
+            currentRetirementViewerId = user._id || "";
+
+            canManageRetirementMessages = canDeleteAnyContent;
+
+            if (
+                !canManageRetirementMessages &&
+                canDeleteOwnContent &&
+                currentRetirementMessageId
+            ) {
+                const detail = await CMCENUtils.apiJson(
+                    `/api/retirement-messages/${encodeURIComponent(currentRetirementMessageId)}/edit`,
+                    {
+                        token,
+                        errorMessage: "Could not verify retirement message ownership"
+                    }
+                );
+                canManageRetirementMessages =
+                    String(detail.retirementMessage?.createdBy || "") ===
+                    String(user._id);
+            }
+
+            canManageRetirementComments = canDeleteAnyContent;
+            canDeleteOwnRetirementComments = canDeleteOwnContent;
             renderRetirementAdminActions();
         } catch (error) {
             canManageRetirementComments = false;
             canManageRetirementMessages = false;
+            canDeleteOwnRetirementComments = false;
+            currentRetirementViewerId = "";
             removeRetirementAdminActions();
         }
 
@@ -627,6 +661,8 @@ async function setupCommentAccess() {
 
     canManageRetirementComments = false;
     canManageRetirementMessages = false;
+    canDeleteOwnRetirementComments = false;
+    currentRetirementViewerId = "";
     removeRetirementAdminActions();
     retirementCommentForm.hidden = true;
     retirementCommentLogin.hidden = false;

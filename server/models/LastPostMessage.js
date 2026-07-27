@@ -115,6 +115,12 @@ const LastPostMessageSchema = new mongoose.Schema(
       default: 'pending',
       index: true
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true
+    },
     publishedAt: {
       type: Date,
       default: null,

@@ -821,6 +821,8 @@
   let modalInputGroup = null;
   let modalInputLabel = null;
   let modalInput = null;
+  let modalChoiceActions = null;
+  let modalActions = null;
   let modalCancelButton = null;
   let modalConfirmButton = null;
   let modalCloseButton = null;
@@ -913,8 +915,12 @@
 
     modalInputGroup.append(modalInputLabel, modalInput);
 
-    const actions = document.createElement("div");
-    actions.className = "cmcen-modal-actions";
+    modalChoiceActions = document.createElement("div");
+    modalChoiceActions.className = "cmcen-modal-choices";
+    modalChoiceActions.hidden = true;
+
+    modalActions = document.createElement("div");
+    modalActions.className = "cmcen-modal-actions";
 
     modalCancelButton = document.createElement("button");
     modalCancelButton.type = "button";
@@ -924,8 +930,8 @@
     modalConfirmButton.type = "button";
     modalConfirmButton.className = "cmcen-modal-button cmcen-modal-button-primary";
 
-    actions.append(modalCancelButton, modalConfirmButton);
-    body.append(modalMessage, modalInputGroup, actions);
+    modalActions.append(modalCancelButton, modalConfirmButton);
+    body.append(modalMessage, modalInputGroup, modalChoiceActions, modalActions);
     modalDialog.append(header, body);
     modalOverlay.append(modalDialog);
 
@@ -995,6 +1001,7 @@
       createModal();
 
       const isPrompt = type === "prompt";
+      const isChoice = type === "choice";
       const isAlert = type === "alert";
       const titleKey = isPrompt
         ? "modal_input_title"
@@ -1026,12 +1033,32 @@
         options.closeLabel || getModalTranslation("modal_close", "Close")
       );
       modalInputGroup.hidden = !isPrompt;
+      modalChoiceActions.hidden = !isChoice;
+      modalChoiceActions.replaceChildren();
+
+      if (isChoice) {
+        (options.choices || []).forEach(choice => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "cmcen-modal-choice";
+          button.classList.toggle("is-danger", choice.destructive === true);
+
+          const label = document.createElement("strong");
+          label.textContent = choice.label || choice.value;
+          const description = document.createElement("span");
+          description.textContent = choice.description || "";
+          button.append(label, description);
+          button.addEventListener("click", () => closeModal(choice.value));
+          modalChoiceActions.append(button);
+        });
+      }
       modalInput.type = isPrompt ? options.inputType || "text" : "text";
       modalInput.value = isPrompt ? String(options.defaultValue || "") : "";
       modalInput.placeholder = isPrompt ? options.placeholder || "" : "";
       modalInput.autocomplete = isPrompt ? options.autocomplete || "off" : "off";
       modalInputLabel.textContent = options.inputLabel || getModalTranslation("modal_input_label", "Value");
       modalCancelButton.hidden = isAlert;
+      modalActions.hidden = isChoice;
       modalCancelButton.textContent = options.cancelText || getModalTranslation("modal_cancel", "Cancel");
       modalConfirmButton.textContent = options.confirmText || getModalTranslation(
         isAlert ? "modal_close" : "modal_confirm",
@@ -1045,7 +1072,11 @@
       window.requestAnimationFrame(() => {
         if (modalActiveRequest?.resolve !== resolve) return;
 
-        const focusTarget = isPrompt ? modalInput : modalConfirmButton;
+        const focusTarget = isPrompt
+          ? modalInput
+          : isChoice
+            ? modalChoiceActions.querySelector("button")
+            : modalConfirmButton;
         focusTarget.focus();
         if (isPrompt) modalInput.select();
       });
@@ -1065,6 +1096,9 @@
     },
     prompt(message, options) {
       return showModal("prompt", message, options);
+    },
+    choose(message, options) {
+      return showModal("choice", message, options);
     }
   };
 

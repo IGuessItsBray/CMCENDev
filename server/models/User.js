@@ -275,7 +275,8 @@ const UserSchema = new mongoose.Schema({
 
   twoFactor: {
     tempToken: { type: String, default: '' },
-    tempExpires: { type: Date, default: null }
+    tempExpires: { type: Date, default: null },
+    destructiveVerifiedAt: { type: Date, default: null }
   },
 
   emailVerification: {

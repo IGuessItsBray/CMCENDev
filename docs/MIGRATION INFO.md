@@ -69,6 +69,36 @@ node server/scripts/migration/build-bilingual-source-inventory.js \
 The checkpoint is stored beside the inventory manifest by default. Do not
 discard it until the completed manifest has been reviewed.
 
+## Bilingual Import Dry Run
+
+The manifest-driven import dry run turns completed inventory pairs into unified
+English/French import candidates without writing to MongoDB, MinIO, or the CDN.
+It also collects approved legacy comments, flags English-only records, identity
+fields requiring review, empty page content, missing image URLs, source fetch
+failures, and comment-fetch failures.
+
+```sh
+node server/scripts/migration/dry-run-bilingual-import.js \
+  --input=server/scripts/migration/output/production-bilingual-source-inventory.json \
+  --limit=3
+```
+
+The dry run writes both a final manifest and a checkpoint after every candidate.
+Resume an interrupted batch with the same input and limit:
+
+```sh
+node server/scripts/migration/dry-run-bilingual-import.js \
+  --input=server/scripts/migration/output/production-bilingual-source-inventory.json \
+  --limit=3 \
+  --resume
+```
+
+The resulting manifest is still read-only. Do not use an apply step until its
+content, comment, identity, and placeholder-image reports have been reviewed.
+
+`--apply` is intentionally rejected until the dry-run importer and its manifest
+have been fully reviewed.
+
 ## Requirements
 
 Install the application dependencies first:

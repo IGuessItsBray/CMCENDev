@@ -128,6 +128,16 @@
       );
     }
 
+    function canDeleteUser(user) {
+      const state = getState();
+
+      return Boolean(
+        state.currentUserPermissions?.canDeleteAnyUser === true &&
+        user?._id &&
+        !isSelectedSelf(user)
+      );
+    }
+
     function getStandardRoles() {
       return getState().roles.filter(role => role !== "developer");
     }
@@ -529,6 +539,32 @@
       return panel;
     }
 
+    function createDangerZone(user) {
+      if (!canDeleteUser(user)) {
+        return null;
+      }
+
+      const panel = document.createElement("section");
+      panel.className = "admin-user-danger-zone";
+
+      const copy = document.createElement("div");
+      const title = document.createElement("h4");
+      title.textContent = "Danger Zone";
+      const description = document.createElement("p");
+      description.textContent =
+        "Delete this account after choosing how to handle its submitted content and confirming with MFA.";
+      copy.append(title, description);
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "admin-work-zone-button is-danger";
+      remove.textContent = "Delete account";
+      remove.addEventListener("click", () => actions.deleteUser(user));
+
+      panel.append(copy, remove);
+      return panel;
+    }
+
     function getSelectedContentAreas(form) {
       return Array
         .from(form.querySelectorAll(".admin-content-area-option input:checked"))
@@ -564,7 +600,8 @@
       const typeLabel = {
         event: translate("admin_content_type_event"),
         retirementMessage: translate("admin_content_type_post"),
-        retirementComment: translate("admin_content_type_comment")
+        retirementComment: translate("admin_content_type_comment"),
+        lastPost: getText("admin_content_type_last_post", "Last Post notice")
       }[post.type] || translate("admin_content_type_content");
 
       const badges = document.createElement("div");
@@ -1021,7 +1058,10 @@
         });
       }
 
-      panel.append(header, form, createMfaPanel(user), postsPanel);
+      panel.append(header, form, createMfaPanel(user));
+      const dangerZone = createDangerZone(user);
+      if (dangerZone) panel.append(dangerZone);
+      panel.append(postsPanel);
 
       return panel;
     }

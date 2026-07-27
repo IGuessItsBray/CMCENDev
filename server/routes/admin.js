@@ -1,4 +1,5 @@
 const express = require('express');
+const speakeasy = require('speakeasy');
 const crypto = require('crypto');
 const {
   DeleteObjectCommand,
@@ -14,7 +15,8 @@ const RetirementComment = require('../models/RetirementComment');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
-  normalizePermissionKeys
+  normalizePermissionKeys,
+  getUserPermissions
 } = require('../config/permissions');
 const {
   authMiddleware,
@@ -99,6 +101,23 @@ const USER_EXPORT_FIELDS = Object.freeze([
   ['createdAt', 'Created at'],
   ['updatedAt', 'Updated at']
 ]);
+
+function verifyDestructiveTotp(user, code) {
+  if (!user?.totp?.secret || user.totp.enabled !== true) return false;
+
+  return speakeasy.totp.verify({
+    secret: user.totp.secret,
+    encoding: 'base32',
+    token: String(code || '').replace(/\D/gu, ''),
+    window: Number(process.env.TOTP_WINDOW || 2)
+  });
+}
+
+function hasFreshDestructivePasskeyVerification(user) {
+  const verifiedAt = user?.twoFactor?.destructiveVerifiedAt;
+  return verifiedAt &&
+    Date.now() - new Date(verifiedAt).getTime() <= 5 * 60 * 1000;
+}
 
 // GET /api/admin/review-counts
 // Return the current moderation workload without loading each submission.
@@ -711,7 +730,7 @@ function getRetirementMessageUserFilter(user) {
 
 async function getUserPostSummary(user) {
   const userId = user._id || user;
-  const [eventCount, retirementMessageCount, retirementCommentCount] = await Promise.all([
+  const [eventCount, retirementMessageCount, retirementCommentCount, lastPostCount] = await Promise.all([
     Event.countDocuments({
       $or: [
         { createdBy: userId },
@@ -724,14 +743,16 @@ async function getUserPostSummary(user) {
         { author: userId },
         { publishedBy: userId }
       ]
-    })
+    }),
+    LastPostMessage.countDocuments({ createdBy: userId })
   ]);
 
   return {
     events: eventCount,
     retirementMessages: retirementMessageCount,
     retirementComments: retirementCommentCount,
-    total: eventCount + retirementMessageCount + retirementCommentCount
+    lastPosts: lastPostCount,
+    total: eventCount + retirementMessageCount + retirementCommentCount + lastPostCount
   };
 }
 
@@ -1376,7 +1397,91 @@ router.patch(
 );
 
 // DELETE /api/admin/roles/:roleId
-// Delete a custom role and remove it from users.
+// DELETE /api/admin/users/:userId
+// Delete a user after the acting administrator confirms with MFA.
+router.delete(
+  '/users/:userId',
+  authMiddleware,
+  requirePermission('canDeleteAnyUser'),
+  async (req, res) => {
+    const disposition = String(req.body?.contentDisposition || '').trim();
+    const mfaMethod = String(req.body?.mfaMethod || 'totp').trim();
+
+    if (!['keep_and_anonymize', 'delete_all'].includes(disposition)) {
+      return res.status(400).json({ error: 'Choose whether to keep or delete associated content' });
+    }
+
+    const mfaVerified = mfaMethod === 'webauthn'
+      ? hasFreshDestructivePasskeyVerification(req.user)
+      : verifyDestructiveTotp(req.user, req.body?.mfaCode);
+
+    if (!mfaVerified) {
+      return res.status(403).json({ error: 'A recent MFA confirmation is required to delete an account' });
+    }
+
+    try {
+      if (String(req.user._id) === String(req.params.userId)) {
+        return res.status(400).json({ error: 'Use the self-service account deletion flow for your own account' });
+      }
+
+      const user = await User.findById(req.params.userId);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const targetSnapshot = snapshotUser(user);
+      const userId = user._id;
+      let deleted = {
+        events: 0,
+        retirementMessages: 0,
+        retirementComments: 0,
+        lastPosts: 0
+      };
+
+      if (disposition === 'delete_all') {
+        const messages = await RetirementMessage.find({ createdBy: userId }).select('_id');
+        const messageIds = messages.map(message => message._id);
+        const [events, comments, lastPosts] = await Promise.all([
+          Event.deleteMany({ createdBy: userId }),
+          RetirementComment.deleteMany({ author: userId }),
+          LastPostMessage.deleteMany({ createdBy: userId })
+        ]);
+        const messageComments = messageIds.length
+          ? await RetirementComment.deleteMany({ retirementMessage: { $in: messageIds } })
+          : { deletedCount: 0 };
+        const messagesResult = await RetirementMessage.deleteMany({ _id: { $in: messageIds } });
+        deleted = {
+          events: events.deletedCount || 0,
+          retirementMessages: messagesResult.deletedCount || 0,
+          retirementComments: (comments.deletedCount || 0) + (messageComments.deletedCount || 0),
+          lastPosts: lastPosts.deletedCount || 0
+        };
+      } else {
+        await Promise.all([
+          Event.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
+          RetirementMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
+          RetirementComment.updateMany({ author: userId }, { $set: { author: null } }),
+          LastPostMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } })
+        ]);
+      }
+
+      await user.deleteOne();
+      await writeAuditLog({
+        req,
+        action: 'user.deleted',
+        actor: req.user,
+        targetType: 'user',
+        target: userId,
+        targetSnapshot,
+        metadata: { contentDisposition: disposition, mfaMethod, deleted }
+      });
+
+      return res.json({ message: 'Account deleted', contentDisposition: disposition, deleted });
+    } catch (error) {
+      console.error('Admin account deletion failed:', error);
+      return res.status(500).json({ error: 'Could not delete account' });
+    }
+  }
+);
+
 router.delete(
   '/roles/:roleId',
   authMiddleware,
@@ -1828,7 +1933,7 @@ router.get(
         return res.status(404).json({ error: 'User not found' });
       }
 
-      const [events, retirementMessages, retirementComments] = await Promise.all([
+      const [events, retirementMessages, retirementComments, lastPosts] = await Promise.all([
         Event.find({
           $or: [
             { createdBy: userId },
@@ -1854,6 +1959,11 @@ router.get(
         })
           .select('body status retirementMessage author publishedBy createdAt updatedAt publishedAt')
           .populate('retirementMessage', 'retiree status')
+          .sort({ updatedAt: -1 })
+          .limit(100)
+          .lean(),
+        LastPostMessage.find({ createdBy: userId })
+          .select('deceased status createdBy publishedAt updatedAt createdAt')
           .sort({ updatedAt: -1 })
           .limit(100)
           .lean()
@@ -1895,6 +2005,18 @@ router.get(
           href: comment.retirementMessage?._id
             ? `/retirement-message?id=${encodeURIComponent(comment.retirementMessage._id)}`
             : ''
+        })),
+        ...lastPosts.map(lastPost => ({
+          _id: lastPost._id,
+          type: 'lastPost',
+          title: getLastPostMessageTitle(lastPost),
+          status: lastPost.status,
+          action: 'submitted',
+          updatedAt: lastPost.updatedAt,
+          createdAt: lastPost.createdAt,
+          href: lastPost.status === 'published'
+            ? `/last-post-message?id=${encodeURIComponent(lastPost._id)}`
+            : ''
         }))
       ].sort((a, b) =>
         new Date(b.updatedAt || b.createdAt || 0) -
@@ -1910,7 +2032,8 @@ router.get(
           events: events.length,
           retirementMessages: retirementMessages.length,
           retirementComments: retirementComments.length,
-          total: events.length + retirementMessages.length + retirementComments.length
+          lastPosts: lastPosts.length,
+          total: events.length + retirementMessages.length + retirementComments.length + lastPosts.length
         }),
         posts
       });
@@ -2349,13 +2472,18 @@ router.patch(
 router.delete(
   '/events/:eventId',
   authMiddleware,
-  requirePermission('canDeleteContent'),
   async (req, res) => {
     try {
       const event = await Event.findById(req.params.eventId);
 
       if (!event) {
         return res.status(404).json({ error: 'Event not found' });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const isOwner = String(event.createdBy || '') === String(req.user._id);
+      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
+        return res.status(403).json({ error: 'You do not have permission to delete this event' });
       }
 
       const snapshot = getEventSnapshot(event);
@@ -2386,13 +2514,18 @@ router.delete(
 router.delete(
   '/retirement-messages/:messageId',
   authMiddleware,
-  requirePermission('canDeleteContent'),
   async (req, res) => {
     try {
       const message = await RetirementMessage.findById(req.params.messageId);
 
       if (!message) {
         return res.status(404).json({ error: 'Retirement message not found' });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const isOwner = String(message.createdBy || '') === String(req.user._id);
+      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
+        return res.status(403).json({ error: 'You do not have permission to delete this retirement message' });
       }
 
       const snapshot = getRetirementMessageSnapshot(message);
@@ -2430,7 +2563,6 @@ router.delete(
 router.delete(
   '/retirement-comments/:commentId',
   authMiddleware,
-  requirePermission('canDeleteContent'),
   async (req, res) => {
     try {
       const comment = await RetirementComment.findById(req.params.commentId)
@@ -2438,6 +2570,12 @@ router.delete(
 
       if (!comment) {
         return res.status(404).json({ error: 'Retirement comment not found' });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const isOwner = String(comment.author || '') === String(req.user._id);
+      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
+        return res.status(403).json({ error: 'You do not have permission to delete this comment' });
       }
 
       const snapshot = getRetirementCommentSnapshot(comment, {
@@ -2472,6 +2610,52 @@ router.delete(
       }
 
       res.status(500).json({ error: 'Failed to delete retirement comment' });
+    }
+  }
+);
+
+router.delete(
+  '/last-posts/:lastPostId',
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const lastPost = await LastPostMessage.findById(req.params.lastPostId);
+
+      if (!lastPost) {
+        return res.status(404).json({ error: 'Last Post notice not found' });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const isOwner = String(lastPost.createdBy || '') === String(req.user._id);
+      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
+        return res.status(403).json({ error: 'You do not have permission to delete this Last Post notice' });
+      }
+
+      const snapshot = {
+        title: lastPost.title,
+        status: lastPost.status,
+        deceased: lastPost.deceased,
+        submitter: lastPost.submitter
+      };
+      await lastPost.deleteOne();
+      await writeAuditLog({
+        req,
+        action: 'content.deleted',
+        actor: req.user,
+        targetType: 'lastPost',
+        target: lastPost._id,
+        targetSnapshot: snapshot,
+        metadata: { deletedByOwner: isOwner }
+      });
+
+      return res.json({ message: 'Last Post notice deleted' });
+    } catch (error) {
+      if (error.name === 'CastError') {
+        return res.status(400).json({ error: 'Invalid Last Post notice ID' });
+      }
+
+      console.error('Last Post deletion failed:', error);
+      return res.status(500).json({ error: 'Could not delete Last Post notice' });
     }
   }
 );

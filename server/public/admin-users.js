@@ -8,6 +8,7 @@ let adminWorkZoneState = {
     : "users",
   currentUserId: "",
   currentUserPermissions: {},
+  currentUserMfa: {},
   users: [],
   roles: [],
   customRoles: [],
@@ -52,6 +53,7 @@ const adminUsersView = CMCENAdminUsersView.create({
     provisionUser: provisionAdminUser,
     saveUser: saveAdminUser,
     resetMfa: resetAdminUserMfa,
+    deleteUser: deleteAdminUser,
     promoteDeveloper: promoteAdminUserToDeveloper,
     selectRole: selectAdminRole,
     createRole: createAdminRole,
@@ -706,7 +708,8 @@ async function loadCurrentAdmin() {
 
   setAdminWorkZoneState({
     currentUserId: user._id || user.id || "",
-    currentUserPermissions: user.permissions || {}
+    currentUserPermissions: user.permissions || {},
+    currentUserMfa: user.mfa || {}
   });
 
   window.updateAdminWorkZoneTabsForUser(user);
@@ -907,6 +910,160 @@ async function resetAdminUserMfa(user) {
       error.message || translate("admin_users_mfa_reset_error"),
       "error"
     );
+  }
+}
+
+async function loadCurrentAdminMfaCapabilities() {
+  const [totpStatus, passkeys] = await Promise.all([
+    adminApiJson("/api/mfa/totp/status", {
+      errorMessage: "Could not check authenticator status"
+    }),
+    adminApiJson("/api/mfa/webauthn/credentials", {
+      errorMessage: "Could not check passkey status"
+    })
+  ]);
+
+  const mfa = {
+    hasTotp: totpStatus?.enabled === true,
+    hasPasskey: Array.isArray(passkeys) && passkeys.length > 0
+  };
+
+  setAdminWorkZoneState({ currentUserMfa: mfa });
+  return mfa;
+}
+
+async function deleteAdminUser(user) {
+  if (!user?._id) return;
+
+  const displayName = CMCENUtils.getUserDisplayName(
+    user,
+    translate("unknown_user")
+  );
+  const dispositionChoice = await CMCENModal.choose(
+    `Choose what should happen to ${displayName}'s submitted content.`,
+    {
+      title: "Delete account",
+      choices: [
+        {
+          value: "keep_and_anonymize",
+          label: "Keep content",
+          description: "Retain all submitted content without account attribution."
+        },
+        {
+          value: "delete_all",
+          label: "Delete all content",
+          description: "Permanently remove all submitted content with the account.",
+          destructive: true
+        }
+      ]
+    }
+  );
+  const contentDisposition = dispositionChoice;
+
+  if (!contentDisposition) return;
+
+  let mfaCapabilities;
+  try {
+    mfaCapabilities = await loadCurrentAdminMfaCapabilities();
+  } catch (error) {
+    showAdminActionToast(
+      error.message || "Could not check your MFA methods.",
+      "error"
+    );
+    return;
+  }
+
+  const hasTotp = mfaCapabilities.hasTotp;
+  const hasPasskey = mfaCapabilities.hasPasskey;
+
+  if (!hasTotp && !hasPasskey) {
+    showAdminActionToast("Set up an authenticator app or passkey before deleting an account.", "error");
+    return;
+  }
+
+  let mfaMethod = hasPasskey && !hasTotp ? "webauthn" : "totp";
+  let mfaCode = "";
+
+  if (hasTotp && hasPasskey) {
+    const choice = await CMCENModal.choose(
+      "Choose how you want to confirm this deletion.",
+      {
+        title: "Choose MFA method",
+        choices: [
+          {
+            value: "totp",
+            label: "Authenticator app",
+            description: "Enter a current verification code."
+          },
+          {
+            value: "webauthn",
+            label: "Passkey",
+            description: "Confirm with a registered device passkey."
+          }
+        ]
+      }
+    );
+
+    if (!choice) return;
+    mfaMethod = choice;
+  }
+
+  if (mfaMethod === "totp") {
+    mfaCode = await CMCENModal.prompt(
+      "Enter the current code from your authenticator app.",
+      {
+        title: "Confirm account deletion",
+        inputLabel: "Authenticator code",
+        confirmText: "Delete account"
+      }
+    );
+    if (!mfaCode) return;
+  }
+
+  setAdminWorkZoneState({ message: "" });
+
+  try {
+    if (mfaMethod === "webauthn") {
+      if (!window.PublicKeyCredential) {
+        throw new Error("An authenticator code is required because passkeys are unavailable in this browser");
+      }
+
+      const options = CMCENUtils.preparePublicKeyRequestOptions(
+        await adminApiJson("/api/mfa/webauthn/authenticate/options", {
+          method: "POST",
+          errorMessage: "Could not start passkey confirmation"
+        })
+      );
+      const assertion = await navigator.credentials.get({ publicKey: options });
+
+      await adminApiJson("/api/mfa/webauthn/authenticate/verify", {
+        method: "POST",
+        body: CMCENUtils.serializeAssertionCredential(assertion),
+        errorMessage: "Could not verify passkey confirmation"
+      });
+      mfaMethod = "webauthn";
+    }
+
+    const data = await adminApiJson(
+      `/api/admin/users/${encodeURIComponent(user._id)}`,
+      {
+        method: "DELETE",
+        body: { contentDisposition, mfaCode, mfaMethod },
+        errorMessage: "Could not delete account"
+      }
+    );
+
+    setAdminWorkZoneState({
+      selectedUserId: "",
+      selectedUser: null,
+      posts: [],
+      users: adminWorkZoneState.users.filter(existingUser =>
+        String(existingUser._id) !== String(user._id)
+      )
+    });
+    showAdminActionToast(data.message || "Account deleted", "success");
+  } catch (error) {
+    showAdminActionToast(error.message || "Could not delete account", "error");
   }
 }
 
@@ -1139,6 +1296,10 @@ function getAdminDeleteEndpoint(post) {
 
   if (post.type === "retirementComment") {
     return `/api/admin/retirement-comments/${encodedId}`;
+  }
+
+  if (post.type === "lastPost") {
+    return `/api/admin/last-posts/${encodedId}`;
   }
 
   return "";

@@ -11,6 +11,10 @@ const dashboardRoleBadge = document.getElementById("dashboardRoleBadge");
 const dashboardRoleDescription = document.getElementById("dashboardRoleDescription");
 const dashboardReviewWork = document.getElementById("dashboardReviewWork");
 const dashboardReviewQueues = document.getElementById("dashboardReviewQueues");
+const dashboardDangerZone = document.getElementById("dashboardDangerZone");
+const dashboardDangerZoneContent = dashboardDangerZone?.querySelector(
+  ".dashboard-danger-zone-content"
+);
 
 let currentDashboardUser = null;
 let currentReviewCounts = null;
@@ -697,6 +701,127 @@ function createProfileForm(user) {
   return form;
 }
 
+function createDangerZone(user) {
+  if (user.permissions?.canDeleteOwnAccount !== true) {
+    return null;
+  }
+
+  const action = document.createElement("div");
+  action.className = "dashboard-danger-action";
+
+  const copy = document.createElement("div");
+  copy.className = "dashboard-danger-copy";
+
+  const title = document.createElement("h3");
+  title.textContent = "Delete account";
+
+  const description = document.createElement("p");
+  description.textContent =
+    "Your account will be removed. Submitted content will remain anonymously.";
+
+  copy.append(title, description);
+
+  const deleteAccount = document.createElement("button");
+  deleteAccount.type = "button";
+  deleteAccount.className = "dashboard-profile-button is-danger";
+  deleteAccount.textContent = "Delete account";
+  deleteAccount.addEventListener("click", async () => {
+    if (!await CMCENModal.confirm(
+      "Your account will be deleted. Your submitted content will remain, but its attribution will be anonymized.",
+      { title: "Delete account", confirmText: "Delete account", destructive: true }
+    )) return;
+
+    const hasTotp = user.mfa?.hasTotp === true;
+    const hasPasskey = user.mfa?.hasPasskey === true;
+
+    if (!hasTotp && !hasPasskey) {
+      CMCENUtils.showToast("Set up an authenticator app or passkey before deleting your account", {
+        color: "error", position: "bottom-right", animation: "slide"
+      });
+      return;
+    }
+
+    let mfaMethod = hasPasskey && !hasTotp ? "webauthn" : "totp";
+    let mfaCode = "";
+
+    if (hasTotp && hasPasskey) {
+      const choice = await CMCENModal.choose(
+        "Choose how you want to confirm this deletion.",
+        {
+          title: "Choose MFA method",
+          choices: [
+            {
+              value: "totp",
+              label: "Authenticator app",
+              description: "Enter a current verification code."
+            },
+            {
+              value: "webauthn",
+              label: "Passkey",
+              description: "Confirm with a registered device passkey."
+            }
+          ]
+        }
+      );
+
+      if (!choice) return;
+      mfaMethod = choice;
+    }
+
+    if (mfaMethod === "totp") {
+      mfaCode = await CMCENModal.prompt(
+        "Enter the current code from your authenticator app.",
+        { title: "Confirm account deletion", inputLabel: "Authenticator code", confirmText: "Delete account" }
+      );
+      if (!mfaCode) return;
+    }
+
+    deleteAccount.disabled = true;
+    try {
+      if (mfaMethod === "webauthn") {
+        if (!window.PublicKeyCredential) {
+          throw new Error("An authenticator code is required because passkeys are unavailable in this browser");
+        }
+
+        const options = CMCENUtils.preparePublicKeyRequestOptions(
+          await CMCENUtils.apiJson("/api/mfa/webauthn/authenticate/options", {
+            method: "POST",
+            token,
+            errorMessage: "Could not start passkey confirmation"
+          })
+        );
+        const assertion = await navigator.credentials.get({ publicKey: options });
+
+        await CMCENUtils.apiJson("/api/mfa/webauthn/authenticate/verify", {
+          method: "POST",
+          token,
+          body: CMCENUtils.serializeAssertionCredential(assertion),
+          errorMessage: "Could not verify passkey confirmation"
+        });
+        mfaMethod = "webauthn";
+      }
+
+      await CMCENUtils.apiJson("/api/profile", {
+        method: "DELETE",
+        token,
+        body: { mfaCode, mfaMethod },
+        errorMessage: "Could not delete account"
+      });
+      CMCENUtils.clearAuthToken();
+      window.location.href = "/index";
+    } catch (error) {
+      deleteAccount.disabled = false;
+      CMCENUtils.showToast(error.message || "Could not delete account", {
+        color: "error", position: "bottom-right", animation: "slide"
+      });
+    }
+  });
+
+  action.append(copy, deleteAccount);
+
+  return action;
+}
+
 function createActionLink({
   href,
   titleKey,
@@ -819,6 +944,10 @@ function renderDashboard(user) {
   document
     .querySelector(".dashboard-mfa-section")
     ?.toggleAttribute("hidden", isGhost);
+
+  const dangerZone = isGhost ? null : createDangerZone(user);
+  dashboardDangerZone?.toggleAttribute("hidden", !dangerZone);
+  dashboardDangerZoneContent?.replaceChildren(...(dangerZone ? [dangerZone] : []));
 
   dashboardDetails.replaceChildren(
     isGhost

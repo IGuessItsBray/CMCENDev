@@ -187,8 +187,22 @@ async function setupEventAdminAccess() {
             errorMessage: "Could not verify event permissions"
         });
 
-        canManageEvents =
-            user.permissions?.canManageUsers === true;
+        const canDeleteAnyEvent = user.permissions?.canDeleteContent === true;
+        const canDeleteOwnEvent = user.permissions?.canDeleteOwnContent === true;
+
+        canManageEvents = canDeleteAnyEvent;
+
+        if (!canManageEvents && canDeleteOwnEvent && currentEventId) {
+            const detail = await CMCENUtils.apiJson(
+                `/api/events/${encodeURIComponent(currentEventId)}/edit`,
+                {
+                    token,
+                    errorMessage: "Could not verify event ownership"
+                }
+            );
+            canManageEvents =
+                String(detail.event?.createdBy || "") === String(user._id);
+        }
         renderEventAdminActions();
     } catch (error) {
         canManageEvents = false;

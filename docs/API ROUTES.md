@@ -66,6 +66,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `GET` | `/api/notifications` | Authenticated | Return compact notification list. |
 | `POST` | `/api/ghost/upgrade` | Authenticated | Upgrade/merge a ghost account into the current authenticated account. |
 | `PATCH` | `/api/profile` | Authenticated | Update editable profile fields. |
+| `DELETE` | `/api/profile` | Authenticated + `canDeleteOwnAccount` + current MFA confirmation | Delete the current account; associated content is retained and anonymized. Accepts a current TOTP code or a passkey assertion verified within the prior five minutes. |
 | `GET` | `/api/contributor-check` | Authenticated + `canCreateDrafts` | Confirm contributor content access. |
 | `GET` | `/api/admin-check` | Authenticated + user admin access | Confirm admin user-management access. |
 
@@ -125,11 +126,13 @@ Mounted at `/api/admin`.
 | `POST` | `/api/admin/users` | Authenticated + `canProvisionUsers` | Provision an invited account and email a seven-day activation link. Body: `firstName`, `lastName`, `email`, and optional non-developer `role`, `customRoleIds`, `contentAreas`. |
 | `GET` | `/api/admin/users/:userId` | Authenticated + `canReadUsers` | Get one user admin detail. |
 | `PATCH` | `/api/admin/users/:userId` | Authenticated + `canManageUsers` | Update role, custom roles, and content areas. |
+| `DELETE` | `/api/admin/users/:userId` | Authenticated + `canDeleteAnyUser` + current MFA confirmation | Delete another account. Body must choose `keep_and_anonymize` (preserve events, retirement messages, comments, and Last Post notices without account attribution) or `delete_all`. Accepts a current TOTP code or a passkey assertion verified within the prior five minutes. |
 | `PATCH` | `/api/admin/users/:userId/role` | Authenticated + `canManageUsers` | Update built-in role only. |
 | `PATCH` | `/api/admin/users/:userId/developer` | Authenticated + `canManageUsers` + current user must be `developer` | Promote an `administrator` account to developer after explicit `DEVELOPER` confirmation. Subscriber and other non-administrator accounts cannot be promoted directly. |
-| `DELETE` | `/api/admin/events/:eventId` | Authenticated + `canDeleteContent` | Delete any event. |
-| `DELETE` | `/api/admin/retirement-messages/:messageId` | Authenticated + `canDeleteContent` | Delete any retirement message. |
-| `DELETE` | `/api/admin/retirement-comments/:commentId` | Authenticated + `canDeleteContent` | Delete any retirement comment. |
+| `DELETE` | `/api/admin/events/:eventId` | Authenticated + `canDeleteContent`, or original owner + `canDeleteOwnContent` | Delete an event. |
+| `DELETE` | `/api/admin/retirement-messages/:messageId` | Authenticated + `canDeleteContent`, or original owner + `canDeleteOwnContent` | Delete a retirement message. |
+| `DELETE` | `/api/admin/last-posts/:lastPostId` | Authenticated + `canDeleteContent`, or original owner + `canDeleteOwnContent` | Delete a Last Post notice. |
+| `DELETE` | `/api/admin/retirement-comments/:commentId` | Authenticated + `canDeleteContent`, or original owner + `canDeleteOwnContent` | Delete a retirement comment. |
 
 ## Site Config
 

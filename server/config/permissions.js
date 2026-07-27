@@ -44,6 +44,13 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Delete events, retirement messages, and comments.'
   },
   {
+    key: 'content.delete_own',
+    label: 'Delete own content',
+    group: 'Content',
+    action: 'delete',
+    description: 'Delete content and comments submitted by the current member.'
+  },
+  {
     key: 'content_areas.manage',
     label: 'Manage content areas',
     group: 'Content',
@@ -84,6 +91,20 @@ const PERMISSION_CATALOG = Object.freeze([
     group: 'Users',
     action: 'edit',
     description: 'Edit member roles, content areas, and role assignments.'
+  },
+  {
+    key: 'users.delete_self',
+    label: 'Delete own account',
+    group: 'Users',
+    action: 'delete',
+    description: 'Delete the current account after MFA confirmation.'
+  },
+  {
+    key: 'users.delete_any',
+    label: 'Delete user accounts',
+    group: 'Users',
+    action: 'delete',
+    description: 'Delete other accounts after MFA confirmation.'
   },
   {
     key: 'users.provision',
@@ -178,12 +199,15 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canPublishOwnContent: 'content.publish_own',
   canReviewAndPublish: 'content.review',
   canDeleteContent: 'content.delete',
+  canDeleteOwnContent: 'content.delete_own',
   canManageContentAreas: 'content_areas.manage',
   canManageTranslations: 'translations.manage',
   canManagePages: 'pages.manage',
   canManageNavigation: 'navigation.manage',
   canReadUsers: 'users.read',
   canManageUsers: 'users.manage',
+  canDeleteOwnAccount: 'users.delete_self',
+  canDeleteAnyUser: 'users.delete_any',
   canProvisionUsers: 'users.provision',
   canResetUserMfa: 'users.mfa_reset',
   canManageRoles: 'roles.manage',
@@ -242,6 +266,9 @@ function getBuiltInPermissionFlags(user) {
     canDeleteContent:
       hasMinimumRole(role, 'administrator'),
 
+    canDeleteOwnContent:
+      hasMinimumRole(role, 'subscriber'),
+
     canManageContentAreas:
       hasMinimumRole(role, 'administrator'),
 
@@ -260,7 +287,13 @@ function getBuiltInPermissionFlags(user) {
     canManageUsers:
       hasMinimumRole(role, 'administrator'),
 
+    canDeleteOwnAccount:
+      hasMinimumRole(role, 'subscriber'),
+
     canProvisionUsers:
+      hasMinimumRole(role, 'administrator'),
+
+    canDeleteAnyUser:
       hasMinimumRole(role, 'administrator'),
 
     canResetUserMfa:

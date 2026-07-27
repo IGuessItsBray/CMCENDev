@@ -3,6 +3,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const {
   GetObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client
 } = require('@aws-sdk/client-s3');
@@ -10,12 +11,14 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { randomUUID } = require('crypto');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { buildPublicMediaUrl, getCdnBaseUrl } = require('../services/media-library');
+const MediaAsset = require('../models/MediaAsset');
 const {
   buildUploadContextFromBody,
   createDirectUploadMediaAssetRecord,
   createMediaAssetRecord,
   sanitizeImageMetadata
 } = require('../services/media-assets');
+const { writeAuditLog } = require('../services/audit-log');
 const s3Client = require('../storage');
 
 const router = express.Router();
@@ -26,6 +29,8 @@ const IMAGE_VARIANTS = Object.freeze([
   { name: 'large', width: 1600 },
   { name: 'hero', width: 2200 }
 ]);
+const CDN_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_CDN_SLUG_LENGTH = 80;
 
 function getPublicUploadEndpoint() {
   if (process.env.MINIO_PUBLIC_ENDPOINT) {
@@ -66,8 +71,48 @@ function getOriginalExtension(file) {
   return getCleanExtension(rawExtension, 'bin');
 }
 
-function getImageBaseKey() {
-  return `images/${randomUUID()}`;
+function cleanCdnSlug(value) {
+  const slug = String(value || '').trim().toLowerCase();
+
+  if (!slug) return '';
+
+  if (slug.length > MAX_CDN_SLUG_LENGTH || !CDN_SLUG_PATTERN.test(slug)) {
+    const error = new Error(
+      'CDN slug must use lowercase letters, numbers, and single hyphens only'
+    );
+    error.status = 400;
+    throw error;
+  }
+
+  return slug;
+}
+
+function getImageBaseKey(cdnSlug = '') {
+  return cdnSlug ? `images/${cdnSlug}` : `images/${randomUUID()}`;
+}
+
+async function assertCdnSlugAvailable(cdnSlug) {
+  if (!cdnSlug) return;
+
+  const existingAsset = await MediaAsset.exists({ cdnSlug });
+
+  if (existingAsset) {
+    const error = new Error('That CDN slug is already in use');
+    error.status = 409;
+    throw error;
+  }
+
+  const listed = await s3Client.send(new ListObjectsV2Command({
+    Bucket: process.env.MINIO_BUCKET_NAME,
+    Prefix: `images/${cdnSlug}/`,
+    MaxKeys: 1
+  }));
+
+  if (listed.Contents?.length) {
+    const error = new Error('That CDN slug is already in use');
+    error.status = 409;
+    throw error;
+  }
 }
 
 async function putObject({ key, body, contentType }) {
@@ -95,8 +140,8 @@ function toVariantResponse(variants) {
   );
 }
 
-async function processImageUpload(file) {
-  const baseKey = getImageBaseKey();
+async function processImageUpload(file, cdnSlug = '') {
+  const baseKey = getImageBaseKey(cdnSlug);
   const originalKey = `${baseKey}/original.${getOriginalExtension(file)}`;
   const metadata = await sharp(file.buffer).metadata();
   const sourceWidth = metadata.width || 0;
@@ -147,7 +192,8 @@ async function processImageUpload(file) {
       mimeType: file.mimetype
     },
     variants: toVariantResponse(variants),
-    imageMetadata: sanitizeImageMetadata(metadata)
+    imageMetadata: sanitizeImageMetadata(metadata),
+    cdnSlug
   };
 }
 
@@ -164,13 +210,31 @@ router.post(
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const uploadResult = await processImageUpload(req.file);
+    const cdnSlug = cleanCdnSlug(req.body?.cdnSlug);
+    await assertCdnSlugAvailable(cdnSlug);
+    const uploadResult = await processImageUpload(req.file, cdnSlug);
     const mediaAsset = await createMediaAssetRecord({
       uploadResult,
       file: req.file,
       user: req.user,
       uploadContext: buildUploadContextFromBody(req.body),
       imageMetadata: uploadResult.imageMetadata
+    });
+
+    await writeAuditLog({
+      req,
+      action: 'media.uploaded',
+      actor: req.user,
+      targetType: 'media',
+      target: mediaAsset._id,
+      targetSnapshot: {
+        title: mediaAsset.displayName,
+        key: mediaAsset.key
+      },
+      metadata: {
+        cdnSlug: mediaAsset.cdnSlug,
+        uploadSource: mediaAsset.uploadContext?.type || 'unknown'
+      }
     });
 
     res.status(201).json({
@@ -182,8 +246,12 @@ router.post(
       }
     });
   } catch (err) {
-    console.error('Upload Error:', err);
-    res.status(500).json({ error: 'Could not upload file' });
+    if (!err.status || err.status >= 500) {
+      console.error('Upload Error:', err);
+    }
+    res.status(err.status || 500).json({
+      error: err.status ? err.message : 'Could not upload file'
+    });
   }
   }
 );

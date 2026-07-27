@@ -561,6 +561,7 @@ function toAdminMediaAssetItem(asset, attachmentMap) {
     mimeType: asset.mimeType || '',
     name: asset.displayName || asset.originalName || key,
     originalName: asset.originalName || '',
+    cdnSlug: asset.cdnSlug || '',
     uuid: asset.uuid || '',
     uploadContext: asset.uploadContext || {},
     inferredName: asset.inferredName || '',

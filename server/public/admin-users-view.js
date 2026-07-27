@@ -1319,6 +1319,19 @@
         sortLabel.append(sortLoading);
       }
 
+      const slugLabel = document.createElement("label");
+      slugLabel.className = "admin-media-slug-field";
+      const slugText = document.createElement("span");
+      slugText.textContent = "CDN slug";
+      const slugInput = document.createElement("input");
+      slugInput.type = "text";
+      slugInput.placeholder = "branch-crest";
+      slugInput.pattern = "[a-z0-9]+(?:-[a-z0-9]+)*";
+      slugInput.maxLength = 80;
+      slugInput.autocomplete = "off";
+      slugInput.disabled = state.mediaIsUploading || state.mediaIsDeleting;
+      slugLabel.append(slugText, slugInput);
+
       const uploadLabel = document.createElement("label");
       uploadLabel.className = "admin-work-zone-button is-primary admin-media-upload-button";
       uploadLabel.textContent = state.mediaIsUploading ? "Uploading..." : "Upload images";
@@ -1330,7 +1343,7 @@
       uploadInput.hidden = true;
       uploadInput.disabled = state.mediaIsUploading || state.mediaIsDeleting;
       uploadInput.addEventListener("change", () => {
-        actions.uploadMediaFiles(uploadInput.files);
+        actions.uploadMediaFiles(uploadInput.files, slugInput.value);
         uploadInput.value = "";
       });
       uploadLabel.append(uploadInput);
@@ -1342,7 +1355,7 @@
       refresh.disabled = state.mediaIsLoading || state.mediaIsUploading || state.mediaIsDeleting;
       refresh.addEventListener("click", actions.refreshMedia);
 
-      headerActions.append(sortLabel, uploadLabel, refresh);
+      headerActions.append(sortLabel, slugLabel, uploadLabel, refresh);
       header.append(copy, headerActions);
       header.addEventListener("dragover", event => {
         event.preventDefault();
@@ -1354,7 +1367,7 @@
       header.addEventListener("drop", event => {
         event.preventDefault();
         header.classList.remove("is-dragging");
-        actions.uploadMediaFiles(event.dataTransfer?.files || []);
+        actions.uploadMediaFiles(event.dataTransfer?.files || [], slugInput.value);
       });
       panel.append(header);
 

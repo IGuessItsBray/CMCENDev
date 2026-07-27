@@ -575,13 +575,16 @@ function updateMediaUploadItem(id, update) {
   });
 }
 
-function uploadSingleAdminMediaFile(file, id) {
+function uploadSingleAdminMediaFile(file, id, cdnSlug = "") {
   const formData = new FormData();
   formData.append("image", file);
   formData.append("uploadSource", "mediaManager");
   formData.append("uploadContext", "media-manager");
   formData.append("sourceField", "mediaLibrary");
   formData.append("sourceName", file.name || "Media manager upload");
+  if (cdnSlug) {
+    formData.append("cdnSlug", cdnSlug);
+  }
 
   return new Promise(resolve => {
     const request = new XMLHttpRequest();
@@ -632,11 +635,18 @@ function uploadSingleAdminMediaFile(file, id) {
   });
 }
 
-async function uploadAdminMediaFiles(files) {
+async function uploadAdminMediaFiles(files, cdnSlug = "") {
   const imageFiles = [...(files || [])].filter(file => file.type.startsWith("image/"));
 
   if (!imageFiles.length) {
     showAdminActionToast("Choose one or more image files to upload.", "error");
+    return;
+  }
+
+  const cleanCdnSlug = String(cdnSlug || "").trim();
+
+  if (cleanCdnSlug && imageFiles.length !== 1) {
+    showAdminActionToast("Use a custom CDN slug with one image at a time.", "error");
     return;
   }
 
@@ -674,7 +684,7 @@ async function uploadAdminMediaFiles(files) {
         size: file.size,
         message: "Processing variants"
       });
-      await uploadSingleAdminMediaFile(file, item.id);
+      await uploadSingleAdminMediaFile(file, item.id, cleanCdnSlug);
     }
   };
 

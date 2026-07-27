@@ -125,6 +125,9 @@ async function createMediaAssetRecord({
     originalUrl: uploadResult.original?.url || uploadResult.url,
     originalName: truncate(file?.originalname || uploadResult.originalName || displayName),
     displayName,
+    ...(cleanString(uploadResult.cdnSlug)
+      ? { cdnSlug: cleanString(uploadResult.cdnSlug) }
+      : {}),
     mimeType: uploadResult.original?.mimeType || file?.mimetype || '',
     width: uploadResult.original?.width || 0,
     height: uploadResult.original?.height || 0,

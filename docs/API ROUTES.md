@@ -152,7 +152,7 @@ Mounted at `/api`.
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
-| `POST` | `/api/upload` | Authenticated + `canUploadMedia` | Multipart image upload using field `image`; creates variants and a media asset with UUID, upload source context, inferred source name, file metadata, and image metadata. Optional fields: `uploadSource`, `uploadContext`, `sourceId`, `sourceModel`, `sourceField`, `sourceUrl`, `sourceSlug`, `sourceName`. |
+| `POST` | `/api/upload` | Authenticated + `canUploadMedia` | Multipart image upload using field `image`; creates variants and a media asset with UUID, upload source context, inferred source name, file metadata, and image metadata. Optional `cdnSlug` creates a stable destination such as `images/branch-crest/large.webp`; it must be unique, lowercase, and use letters, numbers, and single hyphens. Other optional fields: `uploadSource`, `uploadContext`, `sourceId`, `sourceModel`, `sourceField`, `sourceUrl`, `sourceSlug`, `sourceName`. |
 | `POST` | `/api/upload-url` | Authenticated + `canUploadMedia` | Create short-lived signed direct-upload URL and a media asset metadata record. Body: `filename`, `contentType`, optional `size`, `uploadSource`, `uploadContext`, `sourceId`, `sourceModel`, `sourceField`, `sourceUrl`, `sourceSlug`, `sourceName`. |
 | `GET` | `/api/image/:key` | Authenticated + `canViewMediaLibrary` | Create short-lived signed download URL for an object key. |
 

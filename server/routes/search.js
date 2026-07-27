@@ -255,7 +255,7 @@ async function searchRetirementMessages(query, queryTerms) {
       sourceId: String(message._id),
       title,
       summary,
-      url: null,
+      url: `/retirement-message?id=${encodeURIComponent(String(message._id))}`,
       date: message.publishedAt || message.createdAt || null,
       score: scoreText(queryTerms, [
         title,

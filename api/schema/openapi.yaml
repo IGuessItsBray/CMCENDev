@@ -883,6 +883,37 @@ paths:
       responses:
         "200":
           description: Search results.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [query, total, results]
+                properties:
+                  query:
+                    type: string
+                  total:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      required: [type, sourceId, title, summary, url]
+                      properties:
+                        type:
+                          type: string
+                          enum: [event, retirement-message, page]
+                        sourceId:
+                          type: string
+                        title:
+                          type: string
+                        summary:
+                          type: string
+                        url:
+                          type: string
+                          description: Canonical relative URL for the public result destination.
+                        date:
+                          type: [string, "null"]
+                          format: date-time
   /pages/{slug}:
     get:
       tags: [Pages]

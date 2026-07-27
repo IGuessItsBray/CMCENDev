@@ -9727,7 +9727,9 @@ a.my-event-card-row:focus-visible {
   padding: 14px 0 0;
 }
 
-.retirement-review-message-input {
+.retirement-review-message-input,
+.last-post-review-message-input {
+  box-sizing: border-box;
   width: 100%;
   min-height: 168px;
   padding: 11px 12px;
@@ -9745,11 +9747,13 @@ a.my-event-card-row:focus-visible {
     box-shadow 150ms ease;
 }
 
-.retirement-review-message-input:hover {
+.retirement-review-message-input:hover,
+.last-post-review-message-input:hover {
   border-color: var(--branch-grey-500);
 }
 
-.retirement-review-message-input:focus {
+.retirement-review-message-input:focus,
+.last-post-review-message-input:focus {
   border-color: var(--gold-600);
   box-shadow:
     0 0 0 3px rgba(197, 141, 35, 0.14);
@@ -15222,14 +15226,16 @@ html[data-theme="dark"] .review-cancel-action {
 }
 
 html[data-theme="dark"] .review-rejection-reason,
-html[data-theme="dark"] .retirement-review-message-input {
+html[data-theme="dark"] .retirement-review-message-input,
+html[data-theme="dark"] .last-post-review-message-input {
   border-color: var(--dark-border-strong);
   background: var(--dark-bg-elevated);
   color: var(--dark-text);
 }
 
 html[data-theme="dark"] .review-rejection-reason:hover,
-html[data-theme="dark"] .retirement-review-message-input:hover {
+html[data-theme="dark"] .retirement-review-message-input:hover,
+html[data-theme="dark"] .last-post-review-message-input:hover {
   border-color: rgba(240, 199, 108, 0.58);
 }
 

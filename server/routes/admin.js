@@ -1490,21 +1490,17 @@ router.delete(
         : verifyDestructiveTotp(req.user, req.body?.mfaCode);
 
     if (!mfaVerified) {
-      return res
-        .status(403)
-        .json({
-          error: 'A recent MFA confirmation is required to delete an account',
-        });
+      return res.status(403).json({
+        error: 'A recent MFA confirmation is required to delete an account',
+      });
     }
 
     try {
       if (String(req.user._id) === String(req.params.userId)) {
-        return res
-          .status(400)
-          .json({
-            error:
-              'Use the self-service account deletion flow for your own account',
-          });
+        return res.status(400).json({
+          error:
+            'Use the self-service account deletion flow for your own account',
+        });
       }
 
       const user = await User.findById(req.params.userId);
@@ -2714,12 +2710,9 @@ router.delete(
         !permissions.canDeleteContent &&
         !(permissions.canDeleteOwnContent && isOwner)
       ) {
-        return res
-          .status(403)
-          .json({
-            error:
-              'You do not have permission to delete this retirement message',
-          });
+        return res.status(403).json({
+          error: 'You do not have permission to delete this retirement message',
+        });
       }
 
       const snapshot = getRetirementMessageSnapshot(message);
@@ -2829,11 +2822,9 @@ router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
       !permissions.canDeleteContent &&
       !(permissions.canDeleteOwnContent && isOwner)
     ) {
-      return res
-        .status(403)
-        .json({
-          error: 'You do not have permission to delete this Last Post notice',
-        });
+      return res.status(403).json({
+        error: 'You do not have permission to delete this Last Post notice',
+      });
     }
 
     const snapshot = {

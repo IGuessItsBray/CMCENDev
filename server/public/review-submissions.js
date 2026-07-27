@@ -142,8 +142,7 @@ function formatEventTimezone(value) {
     return value;
   }
 
-  return (`${translate(translationKey)} ` + `(${value})`
-  );
+  return `${translate(translationKey)} ` + `(${value})`;
 }
 
 function getEventDateTimeFormatOptions(event) {
@@ -151,9 +150,7 @@ function getEventDateTimeFormatOptions(event) {
     return { timeZone: "UTC" };
   }
 
-  return event.timezone
-    ? { timeZone: event.timezone }
-    : {};
+  return event.timezone ? { timeZone: event.timezone } : {};
 }
 
 function formatEventReviewDate(event, value) {
@@ -164,7 +161,7 @@ function formatEventReviewDate(event, value) {
   return CMCENUtils.formatDate(value, {
     locale: getReviewLocale(),
     dateStyle: "medium",
-    ...getEventDateTimeFormatOptions(event)
+    ...getEventDateTimeFormatOptions(event),
   });
 }
 
@@ -181,7 +178,7 @@ function formatEventReviewTime(event, value) {
     locale: getReviewLocale(),
     hour: "numeric",
     minute: "2-digit",
-    ...getEventDateTimeFormatOptions(event)
+    ...getEventDateTimeFormatOptions(event),
   });
 }
 
@@ -524,51 +521,31 @@ function createReviewCard(event) {
       {
         labelKey: "event_type",
 
-        value:
-          formatTranslatedOption(
-            "event_type",
-            event.eventType
-          )
+        value: formatTranslatedOption("event_type", event.eventType),
       },
 
       {
         labelKey: "event_start_date",
 
-        value:
-          formatEventReviewDate(
-            event,
-            event.startDate
-          )
+        value: formatEventReviewDate(event, event.startDate),
       },
 
       {
         labelKey: "event_start_time",
 
-        value:
-          formatEventReviewTime(
-            event,
-            event.startDate
-          )
+        value: formatEventReviewTime(event, event.startDate),
       },
 
       {
         labelKey: "event_end_date",
 
-        value:
-          formatEventReviewDate(
-            event,
-            event.endDate
-          )
+        value: formatEventReviewDate(event, event.endDate),
       },
 
       {
         labelKey: "event_end_time",
 
-        value:
-          formatEventReviewTime(
-            event,
-            event.endDate
-          )
+        value: formatEventReviewTime(event, event.endDate),
       },
 
       {
@@ -1002,8 +979,8 @@ function createRetirementReviewCard(retirementMessage) {
         labelKey: "review_confirmed_on",
         value: retirementMessage.memberReviewConfirmation?.confirmedAt
           ? formatSubmittedDate(
-            retirementMessage.memberReviewConfirmation.confirmedAt,
-          )
+              retirementMessage.memberReviewConfirmation.confirmedAt,
+            )
           : "—",
       },
 
@@ -1021,8 +998,8 @@ function createRetirementReviewCard(retirementMessage) {
         labelKey: "review_confirmed_on",
         value: retirementMessage.publicationConsent?.confirmedAt
           ? formatSubmittedDate(
-            retirementMessage.publicationConsent.confirmedAt,
-          )
+              retirementMessage.publicationConsent.confirmedAt,
+            )
           : "—",
         wide: true,
       },
@@ -2001,7 +1978,7 @@ async function loadReviewQueue() {
 
       showPageMessage(
         retirementResult.reason?.message ||
-        translate("retirement_review_load_error"),
+          translate("retirement_review_load_error"),
         "error",
         retirementReviewPageMessage,
       );
@@ -2037,7 +2014,7 @@ async function loadReviewQueue() {
       lastPostLoadFailed = true;
       showPageMessage(
         lastPostResult.reason?.message ||
-        translate("last_post_review_load_error"),
+          translate("last_post_review_load_error"),
         "error",
         lastPostReviewPageMessage,
       );
@@ -2099,7 +2076,7 @@ function updateEventReviewCardsLanguage() {
       formatEventReviewTime(event, event.startDate),
       formatEventReviewDate(event, event.endDate),
       formatEventReviewTime(event, event.endDate),
-      formatEventTimezone(event.timezone)
+      formatEventTimezone(event.timezone),
     ];
 
     card

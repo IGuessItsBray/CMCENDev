@@ -1314,11 +1314,9 @@ router.delete(
         : verifyDestructiveTotp(req.user, mfaCode);
 
     if (!mfaVerified) {
-      return res
-        .status(403)
-        .json({
-          error: 'A recent MFA confirmation is required to delete your account',
-        });
+      return res.status(403).json({
+        error: 'A recent MFA confirmation is required to delete your account',
+      });
     }
 
     try {

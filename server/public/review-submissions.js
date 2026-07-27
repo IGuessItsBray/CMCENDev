@@ -151,6 +151,45 @@ function formatEventTimezone(value) {
   );
 }
 
+function getEventDateTimeFormatOptions(event) {
+  if (event.allDay) {
+    return { timeZone: "UTC" };
+  }
+
+  return event.timezone
+    ? { timeZone: event.timezone }
+    : {};
+}
+
+function formatEventReviewDate(event, value) {
+  if (!value) {
+    return "—";
+  }
+
+  return CMCENUtils.formatDate(value, {
+    locale: getReviewLocale(),
+    dateStyle: "medium",
+    ...getEventDateTimeFormatOptions(event)
+  });
+}
+
+function formatEventReviewTime(event, value) {
+  if (!value) {
+    return "—";
+  }
+
+  if (event.allDay) {
+    return translate("all_day");
+  }
+
+  return CMCENUtils.formatDate(value, {
+    locale: getReviewLocale(),
+    hour: "numeric",
+    minute: "2-digit",
+    ...getEventDateTimeFormatOptions(event)
+  });
+}
+
 function formatReviewUser(user) {
   return CMCENUtils.getUserDisplayName(user, "—");
 }
@@ -517,6 +556,46 @@ function createReviewCard(event) {
             formatTranslatedOption(
               "event_type",
               event.eventType
+            )
+        },
+
+        {
+          labelKey: "event_start_date",
+
+          value:
+            formatEventReviewDate(
+              event,
+              event.startDate
+            )
+        },
+
+        {
+          labelKey: "event_start_time",
+
+          value:
+            formatEventReviewTime(
+              event,
+              event.startDate
+            )
+        },
+
+        {
+          labelKey: "event_end_date",
+
+          value:
+            formatEventReviewDate(
+              event,
+              event.endDate
+            )
+        },
+
+        {
+          labelKey: "event_end_time",
+
+          value:
+            formatEventReviewTime(
+              event,
+              event.endDate
             )
         },
 
@@ -2278,6 +2357,10 @@ function updateEventReviewCardsLanguage() {
         formatTranslatedOption("region", event.provinceRegion),
         formatTranslatedOption("entity", event.organizingEntity),
         formatTranslatedOption("event_type", event.eventType),
+        formatEventReviewDate(event, event.startDate),
+        formatEventReviewTime(event, event.startDate),
+        formatEventReviewDate(event, event.endDate),
+        formatEventReviewTime(event, event.endDate),
         formatEventTimezone(event.timezone)
       ];
 

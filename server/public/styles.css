@@ -8587,8 +8587,14 @@ a.dropdown-toggle {
 .event-schedule-grid {
   display: grid;
   grid-template-columns:
-    repeat(4, minmax(0, 1fr));
+    repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.event-schedule-picker .cmcen-date-time-trigger {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: normal;
 }
 
 .event-time-zone-note {

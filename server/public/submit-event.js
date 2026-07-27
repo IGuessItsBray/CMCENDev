@@ -21,13 +21,14 @@ const eventSubmitButton = document.getElementById("eventSubmitButton");
 
 const eventAllDay = document.getElementById("eventAllDay");
 const eventStartDate = document.getElementById("eventStartDate");
-const eventStartHour = document.getElementById("eventStartHour");
-const eventStartMinute = document.getElementById("eventStartMinute");
-const eventEndHour = document.getElementById("eventEndHour");
-const eventEndMinute = document.getElementById("eventEndMinute");
+const eventStartTime = document.getElementById("eventStartTime");
 const eventEndDate = document.getElementById("eventEndDate");
-const startTimeField = document.getElementById("eventStartTimeField");
-const endTimeField = document.getElementById("eventEndTimeField");
+const eventEndTime = document.getElementById("eventEndTime");
+const eventStartPickerMount = document.getElementById("eventStartPicker");
+const eventEndPickerMount = document.getElementById("eventEndPicker");
+const eventStartPickerLabel = document.getElementById("eventStartPickerLabel");
+const eventEndPickerLabel = document.getElementById("eventEndPickerLabel");
+const eventEndDateHint = document.getElementById("eventEndDateHint");
 const timeZoneNote = document.getElementById("eventTimeZoneNote");
 const publishNowContainer = document.getElementById("publishNowContainer");
 const eventPublishNow = document.getElementById("eventPublishNow");
@@ -41,6 +42,8 @@ let isSubmitting = false;
 let accessDenied = false;
 let myEvents = [];
 let editingEvent = null;
+let eventStartPicker = null;
+let eventEndPicker = null;
 
 const eventPageParams = new URLSearchParams(window.location.search);
 let editingEventId = eventPageParams.get("id");
@@ -257,59 +260,6 @@ async function loadMyEvents(token) {
   }
 }
 
-function populateTimeSelect(select, values) {
-  const placeholder = document.createElement("option");
-
-  placeholder.value = "";
-  placeholder.textContent = "--";
-  placeholder.selected = true;
-
-  select.appendChild(placeholder);
-
-  values.forEach(value => {
-    const option = document.createElement("option");
-
-    option.value = value;
-    option.textContent = value;
-
-    select.appendChild(option);
-  });
-}
-
-function initializeTimeControls() {
-  const hours = Array.from(
-    { length: 24 },
-    (_, index) =>
-      String(index).padStart(2, "0")
-  );
-
-  const minutes = Array.from(
-    { length: 12 },
-    (_, index) =>
-      String(index * 5).padStart(2, "0")
-  );
-
-  populateTimeSelect(
-    eventStartHour,
-    hours
-  );
-
-  populateTimeSelect(
-    eventStartMinute,
-    minutes
-  );
-
-  populateTimeSelect(
-    eventEndHour,
-    hours
-  );
-
-  populateTimeSelect(
-    eventEndMinute,
-    minutes
-  );
-}
-
 function showPageMessage(
   message,
   type = "error"
@@ -355,23 +305,9 @@ function setSubmitting(submitting) {
 function syncScheduleFields() {
   const isAllDay = eventAllDay.checked;
 
-  startTimeField.hidden = isAllDay;
-  endTimeField.hidden = isAllDay;
   timeZoneNote.hidden = isAllDay;
-
-  const timeControls = [
-    eventStartHour,
-    eventStartMinute,
-    eventEndHour,
-    eventEndMinute
-  ];
-
-  timeControls.forEach(control => {
-    control.disabled = isAllDay;
-    control.required = !isAllDay;
-  });
-
   eventEndDate.required = !isAllDay;
+  eventEndDateHint.hidden = !isAllDay;
 
   if (
     !isAllDay &&
@@ -381,6 +317,8 @@ function syncScheduleFields() {
     eventEndDate.value =
       eventStartDate.value;
   }
+
+  refreshEventSchedulePickers();
 }
 
 function getTodayDateValue() {
@@ -392,13 +330,8 @@ function getTodayDateValue() {
   return `${year}-${month}-${day}`;
 }
 
-function syncStartDateMinimum() {
-  eventStartDate.min = getTodayDateValue();
-}
-
 function keepEndDateInRange() {
-  eventEndDate.min =
-    eventStartDate.value;
+  const previousEndDate = eventEndDate.value;
 
   if (
     eventStartDate.value &&
@@ -416,9 +349,45 @@ function keepEndDateInRange() {
     eventEndDate.value =
       eventStartDate.value;
   }
+
+  if (
+    eventEndDate.value !== previousEndDate &&
+    eventEndPicker?.setValue
+  ) {
+    eventEndPicker.setValue({
+      date: eventEndDate.value,
+      time: eventEndTime.value
+    });
+  }
+}
+
+function syncSchedulePickerValues() {
+  [
+    {
+      picker: eventStartPicker,
+      dateInput: eventStartDate,
+      timeInput: eventStartTime
+    },
+    {
+      picker: eventEndPicker,
+      dateInput: eventEndDate,
+      timeInput: eventEndTime
+    }
+  ].forEach(({ picker, dateInput, timeInput }) => {
+    const value = picker?.getValue?.();
+
+    if (!value) {
+      return;
+    }
+
+    dateInput.value = value.date || "";
+    timeInput.value = value.time || "";
+  });
 }
 
 function getEventDateValues() {
+  syncSchedulePickerValues();
+
   if (!eventStartDate.value) {
     throw new Error(
       translate("event_start_required")
@@ -450,11 +419,9 @@ function getEventDateValues() {
   }
 
   if (
-    !eventStartHour.value ||
-    !eventStartMinute.value ||
+    !eventStartTime.value ||
     !eventEndDate.value ||
-    !eventEndHour.value ||
-    !eventEndMinute.value
+    !eventEndTime.value
   ) {
     throw new Error(
       translate(
@@ -465,13 +432,11 @@ function getEventDateValues() {
 
   const startDateTime =
     `${eventStartDate.value}T` +
-    `${eventStartHour.value}:` +
-    `${eventStartMinute.value}:00`;
+    `${eventStartTime.value}:00`;
 
   const endDateTime =
     `${eventEndDate.value}T` +
-    `${eventEndHour.value}:` +
-    `${eventEndMinute.value}:00`;
+    `${eventEndTime.value}:00`;
 
   if (endDateTime <= startDateTime) {
     throw new Error(
@@ -620,38 +585,6 @@ function buildEventData() {
     allDay:
       eventAllDay.checked,
 
-    submitter: {
-      rank: document
-        .getElementById("eventSubmitterRank")
-        .value
-        .trim(),
-
-      firstName: document
-        .getElementById("eventSubmitterFirstName")
-        .value
-        .trim(),
-
-      lastName: document
-        .getElementById("eventSubmitterLastName")
-        .value
-        .trim(),
-
-      unitRole: document
-        .getElementById("eventSubmitterUnitRole")
-        .value
-        .trim(),
-
-      email: document
-        .getElementById("eventSubmitterEmail")
-        .value
-        .trim(),
-
-      phone: document
-        .getElementById("eventSubmitterPhone")
-        .value
-        .trim()
-    },
-
     publicationPermissionConfirmed: permissionConfirmed,
 
     contentArea:
@@ -711,7 +644,6 @@ async function finishEditingEvent(token) {
   eventPageMessage.hidden = true;
   setEventEditLoading(false);
   resetEventForm();
-  autofillSubmitterFromProfile(currentUser);
   activateEventTab("events");
   updateEventFormModeText();
   scrollEventPageToTop();
@@ -736,7 +668,6 @@ function cancelEditingEvent() {
   eventPageMessage.hidden = true;
   setEventEditLoading(false);
   resetEventForm();
-  autofillSubmitterFromProfile(currentUser);
   eventForm.hidden = false;
   activateEventTab("form");
   updateEventFormModeText();
@@ -746,30 +677,6 @@ function cancelEditingEvent() {
   if (window.location.pathname + window.location.search !== createUrl) {
     window.history.pushState({}, "", createUrl);
   }
-}
-
-function setEventFieldIfEmpty(id, value = "") {
-  const field = document.getElementById(id);
-  const cleanValue = String(value || "").trim();
-
-  if (field && !field.value && cleanValue) {
-    field.value = cleanValue;
-  }
-}
-
-function autofillSubmitterFromProfile(user) {
-  if (!user) {
-    return;
-  }
-
-  setEventFieldIfEmpty("eventSubmitterRank", user.rank);
-  setEventFieldIfEmpty("eventSubmitterFirstName", user.firstName);
-  setEventFieldIfEmpty("eventSubmitterLastName", user.lastName);
-  setEventFieldIfEmpty(
-    "eventSubmitterUnitRole",
-    user.currentUnit || user.company
-  );
-  setEventFieldIfEmpty("eventSubmitterEmail", user.email);
 }
 
 async function initializeEventPage() {
@@ -784,8 +691,6 @@ async function initializeEventPage() {
     currentUser = await eventApiJson("/api/me", token, {
       errorMessage: translate("event_permission_error")
     });
-
-    autofillSubmitterFromProfile(currentUser);
 
     if (!currentUser.permissions?.canCreateDrafts) {
       accessDenied = true;
@@ -841,9 +746,7 @@ async function initializeEventPage() {
 }
 
 eventAllDay.addEventListener("change", syncScheduleFields);
-eventStartDate.addEventListener("change", keepEndDateInRange);
 cancelEventEditing.addEventListener("click", cancelEditingEvent);
-syncStartDateMinimum();
 eventForm.addEventListener(
   "submit",
   async event => {
@@ -892,7 +795,6 @@ eventForm.addEventListener(
         await finishEditingEvent(token);
       } else {
         resetEventForm();
-        autofillSubmitterFromProfile(currentUser);
 
         showFormMessage(
           data.message ||
@@ -947,6 +849,7 @@ document.addEventListener(
       }
     }
     updateEventFormModeText();
+    refreshEventSchedulePickers();
   }
 );
 
@@ -982,8 +885,7 @@ function getEventFormDateParts(
   if (!dateValue) {
     return {
       date: "",
-      hour: "",
-      minute: ""
+      time: ""
     };
   }
 
@@ -1014,20 +916,102 @@ function getEventFormDateParts(
   return {
     date:
       `${parts.year}-${parts.month}-${parts.day}`,
-    hour: parts.hour || "",
-    minute: parts.minute || ""
+    time:
+      parts.hour && parts.minute
+        ? `${parts.hour}:${parts.minute}`
+        : ""
   };
 }
 
+function createEventSchedulePicker({
+  dateInput,
+  timeInput,
+  labelElement,
+  mount,
+  dateLabelKey,
+  dateTimeLabelKey,
+  name
+}) {
+  const includeTime = !eventAllDay.checked;
+  const labelKey = includeTime
+    ? dateTimeLabelKey
+    : dateLabelKey;
+  const label = translate(labelKey);
+
+  labelElement.textContent = label;
+
+  const picker = window.CMCENDateTimePicker?.create({
+    name,
+    dateName: `${name}PickerDate`,
+    timeName: `${name}PickerTime`,
+    date: dateInput.value,
+    time: timeInput.value,
+    includeTime,
+    label,
+    placeholder: includeTime
+      ? translate("timers_date_time_placeholder")
+      : label,
+    timeLabel: translate("timers_picker_time"),
+    clearLabel: translate("timers_picker_clear"),
+    doneLabel: translate("timers_picker_done"),
+    locale: CMCENUtils.getCurrentLocale(),
+    onInput: ({ date, time }) => {
+      dateInput.value = date;
+      timeInput.value = time;
+
+      if (dateInput === eventStartDate) {
+        keepEndDateInRange();
+      }
+    }
+  });
+
+  if (picker) {
+    mount.replaceChildren(picker);
+  }
+
+  return picker;
+}
+
+function refreshEventSchedulePickers() {
+  eventStartPicker?.destroy?.();
+  eventEndPicker?.destroy?.();
+
+  eventStartPicker = createEventSchedulePicker({
+    dateInput: eventStartDate,
+    timeInput: eventStartTime,
+    labelElement: eventStartPickerLabel,
+    mount: eventStartPickerMount,
+    dateLabelKey: "event_start_date",
+    dateTimeLabelKey: "event_start_date_time",
+    name: "eventStart"
+  });
+
+  eventEndPicker = createEventSchedulePicker({
+    dateInput: eventEndDate,
+    timeInput: eventEndTime,
+    labelElement: eventEndPickerLabel,
+    mount: eventEndPickerMount,
+    dateLabelKey: "event_end_date",
+    dateTimeLabelKey: "event_end_date_time",
+    name: "eventEnd"
+  });
+}
+
 function refreshEventScheduleControls() {
-  window.CMCENDateTimePicker?.refreshDateInput(eventStartDate);
-  window.CMCENDateTimePicker?.refreshDateInput(eventEndDate);
+  if (eventStartPicker && eventEndPicker) {
+    eventStartPicker.setValue({
+      date: eventStartDate.value,
+      time: eventStartTime.value
+    });
+    eventEndPicker.setValue({
+      date: eventEndDate.value,
+      time: eventEndTime.value
+    });
+  } else {
+    refreshEventSchedulePickers();
+  }
 
   [
-    eventStartHour,
-    eventStartMinute,
-    eventEndHour,
-    eventEndMinute,
     document.getElementById("eventTimezone")
   ].forEach(control => {
     control?.dispatchEvent(new Event("change"));
@@ -1086,19 +1070,11 @@ function populateEventForm(event) {
   );
 
   setEventField("eventStartDate", start.date);
-  setEventField("eventStartHour", start.hour);
-  setEventField("eventStartMinute", start.minute);
+  setEventField("eventStartTime", start.time);
   setEventField("eventEndDate", end.date);
-  setEventField("eventEndHour", end.hour);
-  setEventField("eventEndMinute", end.minute);
+  setEventField("eventEndTime", end.time);
   keepEndDateInRange();
   refreshEventScheduleControls();
-  setEventField("eventSubmitterRank", event.submitter?.rank);
-  setEventField("eventSubmitterFirstName", event.submitter?.firstName);
-  setEventField("eventSubmitterLastName", event.submitter?.lastName);
-  setEventField("eventSubmitterUnitRole", event.submitter?.unitRole);
-  setEventField("eventSubmitterEmail", event.submitter?.email);
-  setEventField("eventSubmitterPhone", event.submitter?.phone);
   setEventCheckbox("eventPublicationPermission", event.publicationPermission?.confirmed);
   updateEventEditContext();
 }
@@ -1191,6 +1167,5 @@ if (editingEventId) {
   setEventEditLoading(true);
 }
 
-initializeTimeControls();
 syncScheduleFields();
 initializeEventPage();

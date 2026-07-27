@@ -51,6 +51,7 @@ function createMemberData(overrides = {}) {
       postalCode: 'K1A 0A1'
     },
     rank: 'Captain',
+    currentUnit: 'Integration Test Unit',
     status: 'regular',
     affiliationElement: 'army',
     preferredLanguage: 'en',
@@ -106,11 +107,7 @@ function retirementPayload() {
     messageLanguage: 'en',
     photoUrl: '',
     submitter: {
-      firstName: 'Integration',
-      lastName: 'Submitter',
-      relationship: 'colleague',
-      email: 'submitter@example.test',
-      unit: 'Integration Test Unit'
+      relationship: 'colleague'
     },
     publicationConsentConfirmed: true,
     memberReviewConfirmed: true
@@ -141,13 +138,6 @@ function eventPayload(overrides = {}) {
     timezone: 'America/Toronto',
     startDate: startDate.toISOString().slice(0, 10),
     allDay: true,
-    submitter: {
-      rank: 'Captain',
-      firstName: 'Integration',
-      lastName: 'Submitter',
-      unitRole: 'Test Unit',
-      email: 'events@example.test'
-    },
     publicationPermissionConfirmed: true,
     contentArea: 'general',
     ...overrides
@@ -347,6 +337,33 @@ describe('retirement message lifecycle', () => {
     assert.equal(submitted.body.status, 'pending');
 
     const message = await RetirementMessage.findOne().lean();
+    assert.equal(message.submitter.firstName, contributor.firstName);
+    assert.equal(message.submitter.lastName, contributor.lastName);
+    assert.equal(message.submitter.email, contributor.email);
+    assert.equal(message.submitter.unit, contributor.currentUnit);
+    assert.equal(message.submitter.relationship, 'colleague');
+
+    const updatePayload = retirementPayload();
+    updatePayload.submitter.relationship = 'family';
+
+    await RetirementMessage.updateOne(
+      { _id: message._id },
+      { $set: { 'submitter.unit': '' } }
+    );
+
+    await request(app)
+      .patch(`/api/retirement-messages/${message._id}`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(updatePayload)
+      .expect(200);
+
+    const updatedMessage = await RetirementMessage.findById(message._id).lean();
+    assert.equal(updatedMessage.submitter.firstName, contributor.firstName);
+    assert.equal(updatedMessage.submitter.lastName, contributor.lastName);
+    assert.equal(updatedMessage.submitter.email, contributor.email);
+    assert.equal(updatedMessage.submitter.unit, contributor.currentUnit);
+    assert.equal(updatedMessage.submitter.relationship, 'family');
+
     await request(app)
       .patch(`/api/retirement-messages/${message._id}/review`)
       .set('Authorization', bearer(contributorLogin.body.token))
@@ -549,6 +566,25 @@ describe('event, page, and comment workflows', () => {
     assert.equal(submitted.body.event.status, 'pending');
 
     const event = await Event.findOne();
+    assert.equal(event.submitter.rank, contributor.rank);
+    assert.equal(event.submitter.firstName, contributor.firstName);
+    assert.equal(event.submitter.lastName, contributor.lastName);
+    assert.equal(event.submitter.unitRole, contributor.currentUnit);
+    assert.equal(event.submitter.email, contributor.email);
+
+    await request(app)
+      .patch(`/api/events/${event._id}`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(200);
+
+    const updatedEvent = await Event.findById(event._id);
+    assert.equal(updatedEvent.submitter.rank, contributor.rank);
+    assert.equal(updatedEvent.submitter.firstName, contributor.firstName);
+    assert.equal(updatedEvent.submitter.lastName, contributor.lastName);
+    assert.equal(updatedEvent.submitter.unitRole, contributor.currentUnit);
+    assert.equal(updatedEvent.submitter.email, contributor.email);
+
     await request(app)
       .patch(`/api/events/${event._id}/review`)
       .set('Authorization', bearer(editorSession.body.token))

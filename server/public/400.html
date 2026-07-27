@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bad request | CMCEN / RCMCE</title>
+    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main class="error-page-main">
+      <section class="error-page" aria-labelledby="errorPageTitle">
+        <p class="error-page-code" aria-hidden="true">400</p>
+        <p class="error-page-eyebrow">Bad request</p>
+        <h1 id="errorPageTitle">We could not process that request.</h1>
+        <p>Check the information provided and try again, or return home to continue browsing.</p>
+        <div class="error-page-actions">
+          <a class="error-page-primary-action" href="/index">Return home</a>
+          <a class="error-page-secondary-action" href="/search">Search the site</a>
+        </div>
+      </section>
+    </main>
+    <footer id="footer"></footer>
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+  </body>
+</html>

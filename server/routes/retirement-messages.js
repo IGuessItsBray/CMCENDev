@@ -185,36 +185,22 @@ function getSubmitterFromUser(user = {}) {
     firstName: cleanString(user.firstName),
     lastName: cleanString(user.lastName),
     email: cleanString(user.email).toLowerCase(),
-    unit: cleanString(user.currentUnit || user.company)
+    unit: cleanString(user.currentUnit || user.company),
   };
 }
 
-function fillSubmitterDetailsFromProfile(
-  submitter = {},
-  user = {}
-) {
+function fillSubmitterDetailsFromProfile(submitter = {}, user = {}) {
   const profileSubmitter = getSubmitterFromUser(user);
 
   return {
-    firstName:
-      cleanString(submitter.firstName) ||
-      profileSubmitter.firstName,
-    lastName:
-      cleanString(submitter.lastName) ||
-      profileSubmitter.lastName,
-    email:
-      cleanString(submitter.email).toLowerCase() ||
-      profileSubmitter.email,
-    unit:
-      cleanString(submitter.unit) ||
-      profileSubmitter.unit
+    firstName: cleanString(submitter.firstName) || profileSubmitter.firstName,
+    lastName: cleanString(submitter.lastName) || profileSubmitter.lastName,
+    email: cleanString(submitter.email).toLowerCase() || profileSubmitter.email,
+    unit: cleanString(submitter.unit) || profileSubmitter.unit,
   };
 }
 
-function getCleanRetirementMessagePayload(
-  body = {},
-  submitterDetails = {}
-) {
+function getCleanRetirementMessagePayload(body = {}, submitterDetails = {}) {
   const {
     retiree = {},
     message,
@@ -222,7 +208,7 @@ function getCleanRetirementMessagePayload(
     photoUrl,
     submitter = {},
     publicationConsentConfirmed,
-    memberReviewConfirmed
+    memberReviewConfirmed,
   } = body;
 
   const cleanRetiree = {
@@ -240,7 +226,7 @@ function getCleanRetirementMessagePayload(
     lastName: cleanString(submitterDetails.lastName),
     relationship: cleanString(submitter.relationship),
     email: cleanString(submitterDetails.email).toLowerCase(),
-    unit: cleanString(submitterDetails.unit)
+    unit: cleanString(submitterDetails.unit),
   };
 
   return {
@@ -336,8 +322,7 @@ router.post(
        */
       if (cleanString(website)) {
         return res.status(201).json({
-          message:
-            'Retirement message submitted for review'
+          message: 'Retirement message submitted for review',
         });
       }
 
@@ -346,25 +331,22 @@ router.post(
         ['firstName', 'Submitter first name'],
         ['lastName', 'Submitter last name'],
         ['email', 'Submitter email'],
-        ['unit', 'Submitter unit or organization']
+        ['unit', 'Submitter unit or organization'],
       ];
 
       for (const [field, label] of missingProfileFields) {
         if (!profileSubmitter[field]) {
           return res.status(400).json({
-            error:
-              `Complete your profile before submitting a retirement message: ${label} is required`
+            error: `Complete your profile before submitting a retirement message: ${label} is required`,
           });
         }
       }
 
-      const payload =
-        getCleanRetirementMessagePayload(
-          req.body,
-          profileSubmitter
-        );
-      const validationError =
-        validateRetirementMessagePayload(payload);
+      const payload = getCleanRetirementMessagePayload(
+        req.body,
+        profileSubmitter,
+      );
+      const validationError = validateRetirementMessagePayload(payload);
 
       if (validationError) {
         return res.status(400).json({
@@ -532,8 +514,8 @@ router.get('/', async (req, res) => {
       nextCursor:
         hasMore && retirementMessages.length
           ? encodeRetirementCursor(
-            retirementMessages[retirementMessages.length - 1],
-          )
+              retirementMessages[retirementMessages.length - 1],
+            )
           : '',
     });
   } catch (error) {
@@ -949,18 +931,15 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
-    const submitterDetails =
-      fillSubmitterDetailsFromProfile(
-        retirementMessage.submitter,
-        req.user
-      );
-    const payload =
-      getCleanRetirementMessagePayload(
-        req.body,
-        submitterDetails
-      );
-    const validationError =
-      validateRetirementMessagePayload(payload);
+    const submitterDetails = fillSubmitterDetailsFromProfile(
+      retirementMessage.submitter,
+      req.user,
+    );
+    const payload = getCleanRetirementMessagePayload(
+      req.body,
+      submitterDetails,
+    );
+    const validationError = validateRetirementMessagePayload(payload);
 
     if (validationError) {
       return res.status(400).json({

@@ -154,7 +154,7 @@ function createMyEventCard(submittedEvent) {
     location,
     formatMyEventType(submittedEvent.eventType),
     `${translate("my_events_last_updated")}: ` +
-    formatMyEventUpdatedDate(submittedEvent.updatedAt),
+      formatMyEventUpdatedDate(submittedEvent.updatedAt),
   ]
     .filter(Boolean)
     .forEach((value) => {
@@ -364,21 +364,14 @@ function keepEndDateInRange() {
     eventEndDate.value = eventStartDate.value;
   }
 
-  if (
-    !eventAllDay.checked &&
-    !eventEndDate.value
-  ) {
-    eventEndDate.value =
-      eventStartDate.value;
+  if (!eventAllDay.checked && !eventEndDate.value) {
+    eventEndDate.value = eventStartDate.value;
   }
 
-  if (
-    eventEndDate.value !== previousEndDate &&
-    eventEndPicker?.setValue
-  ) {
+  if (eventEndDate.value !== previousEndDate && eventEndPicker?.setValue) {
     eventEndPicker.setValue({
       date: eventEndDate.value,
-      time: eventEndTime.value
+      time: eventEndTime.value,
     });
   }
 }
@@ -388,13 +381,13 @@ function syncSchedulePickerValues() {
     {
       picker: eventStartPicker,
       dateInput: eventStartDate,
-      timeInput: eventStartTime
+      timeInput: eventStartTime,
     },
     {
       picker: eventEndPicker,
       dateInput: eventEndDate,
-      timeInput: eventEndTime
-    }
+      timeInput: eventEndTime,
+    },
   ].forEach(({ picker, dateInput, timeInput }) => {
     const value = picker?.getValue?.();
 
@@ -429,21 +422,14 @@ function getEventDateValues() {
     };
   }
 
-  if (
-    !eventStartTime.value ||
-    !eventEndDate.value ||
-    !eventEndTime.value
-  ) {
+  if (!eventStartTime.value || !eventEndDate.value || !eventEndTime.value) {
     throw new Error(translate("event_timed_fields_required"));
   }
 
   const startDateTime =
-    `${eventStartDate.value}T` +
-    `${eventStartTime.value}:00`;
+    `${eventStartDate.value}T` + `${eventStartTime.value}:00`;
 
-  const endDateTime =
-    `${eventEndDate.value}T` +
-    `${eventEndTime.value}:00`;
+  const endDateTime = `${eventEndDate.value}T` + `${eventEndTime.value}:00`;
 
   if (endDateTime <= startDateTime) {
     throw new Error(translate("event_end_after_start"));
@@ -688,70 +674,68 @@ async function initializeEventPage() {
 
 eventAllDay.addEventListener("change", syncScheduleFields);
 cancelEventEditing.addEventListener("click", cancelEditingEvent);
-eventForm.addEventListener(
-  "submit",
-  async event => {
-    event.preventDefault();
+eventForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-    clearFormMessage();
+  clearFormMessage();
 
-    const token = CMCENUtils.requireAuthToken();
+  const token = CMCENUtils.requireAuthToken();
 
-    if (!token) {
-      redirectToLogin();
-      return;
-    }
+  if (!token) {
+    redirectToLogin();
+    return;
+  }
 
-    let eventData;
+  let eventData;
 
-    try {
-      eventData = buildEventData();
-    } catch (error) {
-      showFormMessage(error.message);
-      return;
-    }
+  try {
+    eventData = buildEventData();
+  } catch (error) {
+    showFormMessage(error.message);
+    return;
+  }
 
-    setSubmitting(true);
+  setSubmitting(true);
 
-    try {
-      const wasEditing = Boolean(editingEventId);
-      const requestUrl = wasEditing
-        ? `/api/events/${encodeURIComponent(editingEventId)}`
-        : "/api/events";
+  try {
+    const wasEditing = Boolean(editingEventId);
+    const requestUrl = wasEditing
+      ? `/api/events/${encodeURIComponent(editingEventId)}`
+      : "/api/events";
 
-      const requestMethod = wasEditing ? "PATCH" : "POST";
+    const requestMethod = wasEditing ? "PATCH" : "POST";
 
-      const data = await eventApiJson(requestUrl, token, {
-        method: requestMethod,
-        body: eventData,
-        errorMessage: translate("event_submit_error"),
-      });
+    const data = await eventApiJson(requestUrl, token, {
+      method: requestMethod,
+      body: eventData,
+      errorMessage: translate("event_submit_error"),
+    });
 
-      if (wasEditing) {
-        await finishEditingEvent(token);
-      } else {
-        resetEventForm();
+    if (wasEditing) {
+      await finishEditingEvent(token);
+    } else {
+      resetEventForm();
 
-        showFormMessage(
-          data.message ||
+      showFormMessage(
+        data.message ||
           translate(
             eventData.publishNow
               ? "event_submit_success_published"
               : "event_submit_success_pending",
           ),
-          "success",
-        );
-      }
-
-      if (typeof window.refreshAuthUI === "function") {
-        window.refreshAuthUI();
-      }
-    } catch (error) {
-      showFormMessage(error.message || translate("event_submit_error"));
-    } finally {
-      setSubmitting(false);
+        "success",
+      );
     }
-  });
+
+    if (typeof window.refreshAuthUI === "function") {
+      window.refreshAuthUI();
+    }
+  } catch (error) {
+    showFormMessage(error.message || translate("event_submit_error"));
+  } finally {
+    setSubmitting(false);
+  }
+});
 
 document.addEventListener("languagechange", () => {
   setSubmitting(isSubmitting);
@@ -772,8 +756,7 @@ document.addEventListener("languagechange", () => {
   }
   updateEventFormModeText();
   refreshEventSchedulePickers();
-}
-);
+});
 
 window.addEventListener("pageshow", () => {
   if (!CMCENUtils.requireAuthToken()) {
@@ -801,7 +784,7 @@ function getEventFormDateParts(dateValue, timezone, allDay) {
   if (!dateValue) {
     return {
       date: "",
-      time: ""
+      time: "",
     };
   }
 
@@ -824,12 +807,8 @@ function getEventFormDateParts(dateValue, timezone, allDay) {
   });
 
   return {
-    date:
-      `${parts.year}-${parts.month}-${parts.day}`,
-    time:
-      parts.hour && parts.minute
-        ? `${parts.hour}:${parts.minute}`
-        : ""
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: parts.hour && parts.minute ? `${parts.hour}:${parts.minute}` : "",
   };
 }
 
@@ -840,12 +819,10 @@ function createEventSchedulePicker({
   mount,
   dateLabelKey,
   dateTimeLabelKey,
-  name
+  name,
 }) {
   const includeTime = !eventAllDay.checked;
-  const labelKey = includeTime
-    ? dateTimeLabelKey
-    : dateLabelKey;
+  const labelKey = includeTime ? dateTimeLabelKey : dateLabelKey;
   const label = translate(labelKey);
 
   labelElement.textContent = label;
@@ -872,7 +849,7 @@ function createEventSchedulePicker({
       if (dateInput === eventStartDate) {
         keepEndDateInRange();
       }
-    }
+    },
   });
 
   if (picker) {
@@ -893,7 +870,7 @@ function refreshEventSchedulePickers() {
     mount: eventStartPickerMount,
     dateLabelKey: "event_start_date",
     dateTimeLabelKey: "event_start_date_time",
-    name: "eventStart"
+    name: "eventStart",
   });
 
   eventEndPicker = createEventSchedulePicker({
@@ -903,7 +880,7 @@ function refreshEventSchedulePickers() {
     mount: eventEndPickerMount,
     dateLabelKey: "event_end_date",
     dateTimeLabelKey: "event_end_date_time",
-    name: "eventEnd"
+    name: "eventEnd",
   });
 }
 
@@ -911,19 +888,17 @@ function refreshEventScheduleControls() {
   if (eventStartPicker && eventEndPicker) {
     eventStartPicker.setValue({
       date: eventStartDate.value,
-      time: eventStartTime.value
+      time: eventStartTime.value,
     });
     eventEndPicker.setValue({
       date: eventEndDate.value,
-      time: eventEndTime.value
+      time: eventEndTime.value,
     });
   } else {
     refreshEventSchedulePickers();
   }
 
-  [
-    document.getElementById("eventTimezone")
-  ].forEach(control => {
+  [document.getElementById("eventTimezone")].forEach((control) => {
     control?.dispatchEvent(new Event("change"));
   });
 }
@@ -985,7 +960,10 @@ function populateEventForm(event) {
   setEventField("eventEndTime", end.time);
   keepEndDateInRange();
   refreshEventScheduleControls();
-  setEventCheckbox("eventPublicationPermission", event.publicationPermission?.confirmed);
+  setEventCheckbox(
+    "eventPublicationPermission",
+    event.publicationPermission?.confirmed,
+  );
   updateEventEditContext();
 }
 

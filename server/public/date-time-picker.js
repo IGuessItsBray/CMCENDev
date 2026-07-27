@@ -337,9 +337,9 @@
       setOpen(!picker.classList.contains("is-open"));
     });
 
-    const stopPickerPropagation = event => event.stopPropagation();
+    const stopPickerPropagation = (event) => event.stopPropagation();
     const closeOnDocumentClick = () => setOpen(false);
-    const closeWhenAnotherPickerOpens = event => {
+    const closeWhenAnotherPickerOpens = (event) => {
       if (event.detail?.picker !== picker) {
         setOpen(false);
       }
@@ -367,11 +367,14 @@
     picker.setValue = setValue;
     picker.getValue = () => ({
       date: selectedDate,
-      time: includeTime ? selectedTime : ""
+      time: includeTime ? selectedTime : "",
     });
     picker.destroy = () => {
       document.removeEventListener("click", closeOnDocumentClick);
-      window.removeEventListener("cmcen:picker-open", closeWhenAnotherPickerOpens);
+      window.removeEventListener(
+        "cmcen:picker-open",
+        closeWhenAnotherPickerOpens,
+      );
       window.removeEventListener("resize", positionOnResize);
       window.removeEventListener("scroll", positionOnScroll, true);
       picker.removeEventListener("click", stopPickerPropagation);

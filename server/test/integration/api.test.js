@@ -252,6 +252,43 @@ describe('system and authentication', () => {
   });
 });
 
+describe('public search', () => {
+  test('returns canonical destinations for event, retirement, and static page results', async () => {
+    const owner = await createUser({ role: 'editor' });
+    const event = await Event.create({
+      title: { en: 'Searchable signal exercise', fr: 'Exercice de transmissions' },
+      description: { en: 'Search result destination check.', fr: '' },
+      startDate: new Date('2040-07-18T12:00:00.000Z'),
+      allDay: true,
+      status: 'published',
+      createdBy: owner._id
+    });
+    const retirement = await submitAndPublishRetirement();
+
+    const eventSearch = await request(app)
+      .get('/api/search?q=signal%20exercise')
+      .expect(200);
+    const eventResult = eventSearch.body.results.find(result => result.type === 'event');
+    assert.equal(eventResult.url, `/event?id=${event._id}`);
+
+    const retirementSearch = await request(app)
+      .get('/api/search?q=alex%20example')
+      .expect(200);
+    const retirementResult = retirementSearch.body.results.find(
+      result => result.type === 'retirement-message'
+    );
+    assert.equal(retirementResult.url, `/retirement-message?id=${retirement._id}`);
+
+    const pageSearch = await request(app)
+      .get('/api/search?q=calendar')
+      .expect(200);
+    const pageResult = pageSearch.body.results.find(
+      result => result.sourceId === '/calendar'
+    );
+    assert.equal(pageResult.url, '/calendar');
+  });
+});
+
 describe('permissions and audit logs', () => {
   test('prevents a subscriber from reading the audit log', async () => {
     const user = await createUser({ role: 'subscriber' });
@@ -777,7 +814,7 @@ describe('MFA and audit behavior', () => {
 });
 
 describe('media lifecycle', () => {
-  test('uploads image variants with source metadata and deletes an orphan', async () => {
+  test('uploads image variants with a custom CDN slug and prevents reuse', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const admin = await createUser({ role: 'administrator' });
     const contributorSession = await login(contributor);
@@ -803,6 +840,7 @@ describe('media lifecycle', () => {
         .set('Authorization', bearer(contributorSession.body.token))
         .field('uploadSource', 'mediaManager')
         .field('sourceName', 'Integration portrait')
+        .field('cdnSlug', 'integration-portrait')
         .attach('image', image, {
           filename: 'portrait.png',
           contentType: 'image/png'
@@ -813,9 +851,28 @@ describe('media lifecycle', () => {
       assert.equal(asset.uploadContext.type, 'mediaManager');
       assert.equal(asset.displayName, 'Integration portrait');
       assert.equal(asset.originalName, 'portrait.png');
-      assert.match(asset.url, /\/integration-test\/images\//);
+      assert.equal(asset.cdnSlug, 'integration-portrait');
+      assert.match(asset.url, /\/integration-test\/images\/integration-portrait\/large\.webp$/);
       assert.equal(Object.keys(asset.variants).length, 4);
       assert.equal(sentCommands.filter(command => command.constructor.name === 'PutObjectCommand').length, 5);
+
+      const uploadAudit = await AuditLog.findOne({
+        action: 'media.uploaded',
+        target: asset._id
+      }).lean();
+      assert.equal(uploadAudit.metadata.cdnSlug, 'integration-portrait');
+
+      const duplicate = await request(app)
+        .post('/api/upload')
+        .set('Authorization', bearer(contributorSession.body.token))
+        .field('uploadSource', 'mediaManager')
+        .field('cdnSlug', 'integration-portrait')
+        .attach('image', image, {
+          filename: 'portrait.png',
+          contentType: 'image/png'
+        })
+        .expect(409);
+      assert.equal(duplicate.body.error, 'That CDN slug is already in use');
 
       await request(app)
         .delete(`/api/admin/media/${encodeURIComponent(asset.key)}`)

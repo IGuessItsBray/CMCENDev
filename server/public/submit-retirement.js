@@ -24,6 +24,47 @@ const editingRetirementMessageId = retirementPageParams.get("id");
 let editingRetirementMessage = null;
 let currentRetirementUser = null;
 
+function renderRetirementDeleteAction() {
+    retirementSubmitForm
+        .querySelector("[data-action='delete-retirement-submission']")
+        ?.remove();
+
+    if (
+        !editingRetirementMessageId ||
+        editingRetirementMessage?.status !== "pending"
+    ) {
+        return;
+    }
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "event-submit-button is-danger";
+    deleteButton.dataset.action = "delete-retirement-submission";
+    deleteButton.textContent = "Delete submission";
+    deleteButton.addEventListener("click", async () => {
+        if (!await CMCENModal.confirm(
+            "Delete this submitted retirement message? This cannot be undone.",
+            { title: "Delete retirement message", confirmText: "Delete", destructive: true }
+        )) return;
+
+        deleteButton.disabled = true;
+        try {
+            await retirementApiJson(
+                `/api/admin/retirement-messages/${encodeURIComponent(editingRetirementMessageId)}`,
+                { method: "DELETE", errorMessage: "Could not delete retirement message" }
+            );
+            window.location.href = "/retirements";
+        } catch (error) {
+            deleteButton.disabled = false;
+            showRetirementSubmissionToast(
+                error.message || "Could not delete retirement message"
+            );
+        }
+    });
+
+    retirementSubmitForm.append(deleteButton);
+}
+
 function retirementApiJson(path, options = {}) {
     return CMCENUtils.apiJson(path, {
         ...options,
@@ -449,6 +490,7 @@ async function loadRetirementMessageForEditing() {
 
     editingRetirementMessage = data.retirementMessage;
     populateRetirementForm(editingRetirementMessage);
+    renderRetirementDeleteAction();
 
     if (editingRetirementMessage.rejectionReason) {
         showRetirementFormMessage(

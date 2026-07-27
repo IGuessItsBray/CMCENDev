@@ -82,6 +82,13 @@
     }
 
     function createAccountTypeBadge(user) {
+      if (user?.accountType === "invited") {
+        const badge = document.createElement("span");
+        badge.className = "admin-user-role-badge account-ghost";
+        badge.textContent = "Invited";
+        return badge;
+      }
+
       if (user?.accountType !== "ghost" && user?.role !== "ghost") {
         return null;
       }
@@ -116,6 +123,16 @@
 
       return Boolean(
         state.currentUserPermissions?.canResetUserMfa === true &&
+        user?._id &&
+        !isSelectedSelf(user)
+      );
+    }
+
+    function canDeleteUser(user) {
+      const state = getState();
+
+      return Boolean(
+        state.currentUserPermissions?.canDeleteAnyUser === true &&
         user?._id &&
         !isSelectedSelf(user)
       );
@@ -247,7 +264,8 @@
       accountTypeGroup.append(accountTypeTitle);
       [
         ["member", getText("admin_users_account_member", "Member")],
-        ["ghost", getText("admin_users_account_ghost", "Ghost")]
+        ["ghost", getText("admin_users_account_ghost", "Ghost")],
+        ["invited", "Invited"]
       ].forEach(([value, label]) => {
         accountTypeGroup.append(createExportCheckbox(
           "includeAccountTypes",
@@ -318,8 +336,15 @@
       refresh.textContent = translate("admin_refresh");
       refresh.addEventListener("click", actions.refreshUsers);
 
+      const invite = document.createElement("button");
+      invite.type = "button";
+      invite.className = "admin-work-zone-button is-primary";
+      invite.textContent = "Create account";
+      invite.disabled = state.currentUserPermissions?.canProvisionUsers !== true;
+      invite.addEventListener("click", actions.provisionUser);
+
       search.append(searchLabel, searchInput);
-      header.append(title, refresh);
+      header.append(title, invite, refresh);
       panel.append(header, search, createUsersExportPanel());
 
       const list = document.createElement("div");
@@ -514,6 +539,32 @@
       return panel;
     }
 
+    function createDangerZone(user) {
+      if (!canDeleteUser(user)) {
+        return null;
+      }
+
+      const panel = document.createElement("section");
+      panel.className = "admin-user-danger-zone";
+
+      const copy = document.createElement("div");
+      const title = document.createElement("h4");
+      title.textContent = "Danger Zone";
+      const description = document.createElement("p");
+      description.textContent =
+        "Delete this account after choosing how to handle its submitted content and confirming with MFA.";
+      copy.append(title, description);
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "admin-work-zone-button is-danger";
+      remove.textContent = "Delete account";
+      remove.addEventListener("click", () => actions.deleteUser(user));
+
+      panel.append(copy, remove);
+      return panel;
+    }
+
     function getSelectedContentAreas(form) {
       return Array
         .from(form.querySelectorAll(".admin-content-area-option input:checked"))
@@ -549,7 +600,8 @@
       const typeLabel = {
         event: translate("admin_content_type_event"),
         retirementMessage: translate("admin_content_type_post"),
-        retirementComment: translate("admin_content_type_comment")
+        retirementComment: translate("admin_content_type_comment"),
+        lastPost: getText("admin_content_type_last_post", "Last Post notice")
       }[post.type] || translate("admin_content_type_content");
 
       const badges = document.createElement("div");
@@ -1006,7 +1058,10 @@
         });
       }
 
-      panel.append(header, form, createMfaPanel(user), postsPanel);
+      panel.append(header, form, createMfaPanel(user));
+      const dangerZone = createDangerZone(user);
+      if (dangerZone) panel.append(dangerZone);
+      panel.append(postsPanel);
 
       return panel;
     }
@@ -1264,6 +1319,19 @@
         sortLabel.append(sortLoading);
       }
 
+      const slugLabel = document.createElement("label");
+      slugLabel.className = "admin-media-slug-field";
+      const slugText = document.createElement("span");
+      slugText.textContent = "CDN slug";
+      const slugInput = document.createElement("input");
+      slugInput.type = "text";
+      slugInput.placeholder = "branch-crest";
+      slugInput.pattern = "[a-z0-9]+(?:-[a-z0-9]+)*";
+      slugInput.maxLength = 80;
+      slugInput.autocomplete = "off";
+      slugInput.disabled = state.mediaIsUploading || state.mediaIsDeleting;
+      slugLabel.append(slugText, slugInput);
+
       const uploadLabel = document.createElement("label");
       uploadLabel.className = "admin-work-zone-button is-primary admin-media-upload-button";
       uploadLabel.textContent = state.mediaIsUploading ? "Uploading..." : "Upload images";
@@ -1275,7 +1343,7 @@
       uploadInput.hidden = true;
       uploadInput.disabled = state.mediaIsUploading || state.mediaIsDeleting;
       uploadInput.addEventListener("change", () => {
-        actions.uploadMediaFiles(uploadInput.files);
+        actions.uploadMediaFiles(uploadInput.files, slugInput.value);
         uploadInput.value = "";
       });
       uploadLabel.append(uploadInput);
@@ -1287,7 +1355,7 @@
       refresh.disabled = state.mediaIsLoading || state.mediaIsUploading || state.mediaIsDeleting;
       refresh.addEventListener("click", actions.refreshMedia);
 
-      headerActions.append(sortLabel, uploadLabel, refresh);
+      headerActions.append(sortLabel, slugLabel, uploadLabel, refresh);
       header.append(copy, headerActions);
       header.addEventListener("dragover", event => {
         event.preventDefault();
@@ -1299,7 +1367,7 @@
       header.addEventListener("drop", event => {
         event.preventDefault();
         header.classList.remove("is-dragging");
-        actions.uploadMediaFiles(event.dataTransfer?.files || []);
+        actions.uploadMediaFiles(event.dataTransfer?.files || [], slugInput.value);
       });
       panel.append(header);
 

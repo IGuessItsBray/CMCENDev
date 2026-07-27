@@ -213,7 +213,8 @@ router.post(
           [messageLanguage]: message
         },
         imageUrl,
-        status: 'pending'
+        status: 'pending',
+        createdBy: req.user._id
       });
 
       await linkLastPostImageToMediaAsset(lastPost);

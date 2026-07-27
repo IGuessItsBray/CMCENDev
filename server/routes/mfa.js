@@ -372,7 +372,13 @@ router.post('/webauthn/authenticate/verify', authOrTempMiddleware, async (req, r
     // update counter
     await User.updateOne(
       { _id: user._id, 'webauthn.credentialID': dbCred.credentialID },
-      { $set: { 'webauthn.$.counter': verification.authenticationInfo.newCounter, webauthnAuthenticationChallenge: '' } }
+      {
+        $set: {
+          'webauthn.$.counter': verification.authenticationInfo.newCounter,
+          webauthnAuthenticationChallenge: '',
+          'twoFactor.destructiveVerifiedAt': new Date()
+        }
+      }
     );
 
     const responsePayload = { verified: true };
@@ -506,7 +512,12 @@ router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
       console.warn('totp/verify -> accepted token with time-step delta:', verification.delta, 'user:', String(user._id));
     }
 
-    await User.findByIdAndUpdate(user._id, { $set: { 'totp.enabled': true } });
+    await User.findByIdAndUpdate(user._id, {
+      $set: {
+        'totp.enabled': true,
+        'twoFactor.destructiveVerifiedAt': new Date()
+      }
+    });
     await updateAccountCreationMfaMethod(user, 'totp');
 
     const responsePayload = { verified: true };

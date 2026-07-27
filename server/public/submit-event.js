@@ -175,6 +175,38 @@ function createMyEventCard(submittedEvent) {
     });
 
     header.appendChild(editLink);
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "my-event-edit-link is-danger";
+    deleteButton.textContent = "Delete";
+    deleteButton.addEventListener("click", async event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (!await CMCENModal.confirm(
+        "Delete this submitted event? This cannot be undone.",
+        { title: "Delete event", confirmText: "Delete", destructive: true }
+      )) return;
+
+      try {
+        await eventApiJson(
+          `/api/admin/events/${encodeURIComponent(submittedEvent._id)}`,
+          token,
+          { method: "DELETE", errorMessage: "Could not delete event" }
+        );
+        await loadMyEvents(token);
+        CMCENUtils.showToast("Event deleted", {
+          color: "success", position: "bottom-right", animation: "slide"
+        });
+      } catch (error) {
+        CMCENUtils.showToast(error.message || "Could not delete event", {
+          color: "error", position: "bottom-right", animation: "slide"
+        });
+      }
+    });
+
+    header.appendChild(deleteButton);
   }
 
   const row = isPublished

@@ -262,6 +262,43 @@ describe('system and authentication', () => {
   });
 });
 
+describe('public search', () => {
+  test('returns canonical destinations for event, retirement, and static page results', async () => {
+    const owner = await createUser({ role: 'editor' });
+    const event = await Event.create({
+      title: { en: 'Searchable signal exercise', fr: 'Exercice de transmissions' },
+      description: { en: 'Search result destination check.', fr: '' },
+      startDate: new Date('2040-07-18T12:00:00.000Z'),
+      allDay: true,
+      status: 'published',
+      createdBy: owner._id
+    });
+    const retirement = await submitAndPublishRetirement();
+
+    const eventSearch = await request(app)
+      .get('/api/search?q=signal%20exercise')
+      .expect(200);
+    const eventResult = eventSearch.body.results.find(result => result.type === 'event');
+    assert.equal(eventResult.url, `/event?id=${event._id}`);
+
+    const retirementSearch = await request(app)
+      .get('/api/search?q=alex%20example')
+      .expect(200);
+    const retirementResult = retirementSearch.body.results.find(
+      result => result.type === 'retirement-message'
+    );
+    assert.equal(retirementResult.url, `/retirement-message?id=${retirement._id}`);
+
+    const pageSearch = await request(app)
+      .get('/api/search?q=calendar')
+      .expect(200);
+    const pageResult = pageSearch.body.results.find(
+      result => result.sourceId === '/calendar'
+    );
+    assert.equal(pageResult.url, '/calendar');
+  });
+});
+
 describe('permissions and audit logs', () => {
   test('prevents a subscriber from reading the audit log', async () => {
     const user = await createUser({ role: 'subscriber' });

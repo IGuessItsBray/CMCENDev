@@ -86,6 +86,13 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Edit member roles, content areas, and role assignments.'
   },
   {
+    key: 'users.provision',
+    label: 'Provision user accounts',
+    group: 'Users',
+    action: 'create',
+    description: 'Create invited accounts and send activation links.'
+  },
+  {
     key: 'users.mfa_reset',
     label: 'Reset user MFA',
     group: 'Users',
@@ -177,6 +184,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canManageNavigation: 'navigation.manage',
   canReadUsers: 'users.read',
   canManageUsers: 'users.manage',
+  canProvisionUsers: 'users.provision',
   canResetUserMfa: 'users.mfa_reset',
   canManageRoles: 'roles.manage',
   canViewAuditLog: 'audit.view',
@@ -250,6 +258,9 @@ function getBuiltInPermissionFlags(user) {
       hasMinimumRole(role, 'administrator'),
 
     canManageUsers:
+      hasMinimumRole(role, 'administrator'),
+
+    canProvisionUsers:
       hasMinimumRole(role, 'administrator'),
 
     canResetUserMfa:

@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const {
   DeleteObjectCommand,
   ListObjectsV2Command
@@ -23,6 +24,7 @@ const {
   writeAuditLog,
   snapshotUser
 } = require('../services/audit-log');
+const { sendMail } = require('../services/mailer');
 const {
   buildPublicMediaUrl,
   getMediaKeyFromValue
@@ -53,10 +55,11 @@ const MAX_MEDIA_PAGE_SIZE = 500;
 const MAX_MEDIA_LIST_OBJECTS = 5000;
 const DEFAULT_USER_PAGE_SIZE = 50;
 const MAX_USER_PAGE_SIZE = 100;
+const INVITATION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const USER_EXPORT_FORMATS = Object.freeze(['csv', 'pdf']);
 const USER_EXPORT_FILTER_OPTIONS = Object.freeze({
   roles: USER_ROLES,
-  accountTypes: ['member', 'ghost']
+  accountTypes: ['member', 'ghost', 'invited']
 });
 const USER_EXPORT_FIELDS = Object.freeze([
   ['id', 'User ID'],
@@ -760,6 +763,10 @@ function toAdminUser(user, postSummary = null) {
     lastName: plainUser.lastName,
     role: plainUser.role,
     accountType: plainUser.accountType || 'member',
+    invitation: plainUser.accountType === 'invited' ? {
+      sentAt: plainUser.invitation?.sentAt || null,
+      expiresAt: plainUser.invitation?.expiresAt || null
+    } : null,
     emailVerification: {
       required: plainUser.emailVerification?.required === true,
       verified: plainUser.emailVerification?.verified === true,
@@ -781,6 +788,37 @@ function toAdminUser(user, postSummary = null) {
     updatedAt: plainUser.updatedAt,
     postSummary
   };
+}
+
+function hashInvitationToken(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+}
+
+function getBaseUrl(req) {
+  const configuredBaseUrl = String(process.env.APP_BASE_URL || '').trim();
+
+  return configuredBaseUrl
+    ? configuredBaseUrl.replace(/\/+$/u, '')
+    : `${req.protocol}://${req.get('host')}`;
+}
+
+async function sendInvitationEmail(req, user, token) {
+  const activationUrl = `${getBaseUrl(req)}/register?inviteToken=${encodeURIComponent(token)}`;
+  const accountName = String(user.accountName || user.firstName || 'there')
+    .replace(/&/gu, '&amp;')
+    .replace(/</gu, '&lt;')
+    .replace(/>/gu, '&gt;');
+
+  await sendMail({
+    to: user.email,
+    subject: 'Activate your CMCEN / RCMCE account',
+    html: `
+      <p>Hello ${accountName},</p>
+      <p>An administrator has created a CMCEN / RCMCE account for you.</p>
+      <p><a href="${activationUrl}">Activate your account</a></p>
+      <p>This link expires in 7 days. You will set your own password and complete your profile.</p>
+    `
+  });
 }
 
 function getMfaAuditSnapshot(user) {
@@ -855,6 +893,10 @@ function getUserExportCriteria(query = {}) {
 
     if (includedAccountTypes.includes('ghost')) {
       accountTypeConditions.push({ accountType: 'ghost' });
+    }
+
+    if (includedAccountTypes.includes('invited')) {
+      accountTypeConditions.push({ accountType: 'invited' });
     }
 
     filter.$and = [
@@ -1571,6 +1613,91 @@ router.delete(
   }
 );
 
+// POST /api/admin/users
+// Provision an invited member account and email the activation link.
+router.post(
+  '/users',
+  authMiddleware,
+  requirePermission('canProvisionUsers'),
+  async (req, res) => {
+    try {
+      const firstName = String(req.body?.firstName || '').trim();
+      const lastName = String(req.body?.lastName || '').trim();
+      const email = String(req.body?.email || '').trim().toLowerCase();
+      const role = String(req.body?.role || 'subscriber').trim();
+      const contentAreas = cleanContentAreas(req.body?.contentAreas);
+
+      if (!firstName || !lastName || !email) {
+        return res.status(400).json({ error: 'First name, last name, and email are required' });
+      }
+
+      if (!/^\S+@\S+\.\S+$/u.test(email)) {
+        return res.status(400).json({ error: 'Enter a valid email address' });
+      }
+
+      if (!USER_ROLES.includes(role) || ['ghost', 'developer'].includes(role)) {
+        return res.status(400).json({ error: 'Choose a valid initial role' });
+      }
+
+      if (!validateContentAreas(contentAreas)) {
+        return res.status(400).json({ error: 'Invalid content area provided' });
+      }
+
+      const customRoleValidation = await validateCustomRoleIds(req.body?.customRoleIds);
+      if (customRoleValidation.error) {
+        return res.status(400).json({ error: customRoleValidation.error });
+      }
+
+      if (await User.exists({ email })) {
+        return res.status(409).json({ error: 'An account already exists for this email' });
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const now = new Date();
+      const user = new User({
+        accountType: 'invited',
+        username: email,
+        email,
+        accountName: `${firstName} ${lastName}`,
+        firstName,
+        lastName,
+        password: crypto.randomBytes(32).toString('hex'),
+        role,
+        customRoles: customRoleValidation.roleIds,
+        contentAreas,
+        emailVerification: { required: true, verified: false },
+        invitation: {
+          tokenHash: hashInvitationToken(token),
+          expiresAt: new Date(now.getTime() + INVITATION_TOKEN_TTL_MS),
+          invitedBy: req.user._id,
+          sentAt: now
+        }
+      });
+
+      await user.save();
+      await sendInvitationEmail(req, user, token);
+
+      await writeAuditLog({
+        req,
+        action: 'user.invited',
+        actor: req.user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: toAdminUser(user),
+        metadata: { role, customRoleIds: customRoleValidation.roleIds, contentAreas }
+      });
+
+      res.status(201).json({
+        message: 'Invitation sent',
+        user: toAdminUser(user)
+      });
+    } catch (error) {
+      console.error('User invitation failed:', error);
+      res.status(500).json({ error: 'Could not send invitation' });
+    }
+  }
+);
+
 // GET /api/admin/users?query=name&limit=50
 // List users, optionally filtering by username or account name.
 router.get(
@@ -1595,7 +1722,7 @@ router.get(
         : {};
 
       const users = await User.find(filter)
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt')
         .sort({ accountName: 1, username: 1 })
         .limit(limit + 1)
         .populate('customRoles', 'name slug color permissions');
@@ -1694,7 +1821,7 @@ router.get(
       const { userId } = req.params;
 
       const user = await User.findById(userId)
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
+        .select('accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {

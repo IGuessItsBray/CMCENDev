@@ -201,7 +201,41 @@ async function linkRetirementPhotoToMediaAsset(retirementMessage) {
     });
 }
 
-function getCleanRetirementMessagePayload(body = {}) {
+function getSubmitterFromUser(user = {}) {
+    return {
+        firstName: cleanString(user.firstName),
+        lastName: cleanString(user.lastName),
+        email: cleanString(user.email).toLowerCase(),
+        unit: cleanString(user.currentUnit || user.company)
+    };
+}
+
+function fillSubmitterDetailsFromProfile(
+    submitter = {},
+    user = {}
+) {
+    const profileSubmitter = getSubmitterFromUser(user);
+
+    return {
+        firstName:
+            cleanString(submitter.firstName) ||
+            profileSubmitter.firstName,
+        lastName:
+            cleanString(submitter.lastName) ||
+            profileSubmitter.lastName,
+        email:
+            cleanString(submitter.email).toLowerCase() ||
+            profileSubmitter.email,
+        unit:
+            cleanString(submitter.unit) ||
+            profileSubmitter.unit
+    };
+}
+
+function getCleanRetirementMessagePayload(
+    body = {},
+    submitterDetails = {}
+) {
     const {
         retiree = {},
         message,
@@ -223,11 +257,11 @@ function getCleanRetirementMessagePayload(body = {}) {
 
     const cleanMessage = cleanString(message);
     const cleanSubmitter = {
-        firstName: cleanString(submitter.firstName),
-        lastName: cleanString(submitter.lastName),
+        firstName: cleanString(submitterDetails.firstName),
+        lastName: cleanString(submitterDetails.lastName),
         relationship: cleanString(submitter.relationship),
-        email: cleanString(submitter.email).toLowerCase(),
-        unit: cleanString(submitter.unit)
+        email: cleanString(submitterDetails.email).toLowerCase(),
+        unit: cleanString(submitterDetails.unit)
     };
 
     return {
@@ -330,8 +364,28 @@ router.post(
             });
         }
 
+        const profileSubmitter = getSubmitterFromUser(req.user);
+        const missingProfileFields = [
+            ['firstName', 'Submitter first name'],
+            ['lastName', 'Submitter last name'],
+            ['email', 'Submitter email'],
+            ['unit', 'Submitter unit or organization']
+        ];
+
+        for (const [field, label] of missingProfileFields) {
+            if (!profileSubmitter[field]) {
+                return res.status(400).json({
+                    error:
+                        `Complete your profile before submitting a retirement message: ${label} is required`
+                });
+            }
+        }
+
         const payload =
-            getCleanRetirementMessagePayload(req.body);
+            getCleanRetirementMessagePayload(
+                req.body,
+                profileSubmitter
+            );
         const validationError =
             validateRetirementMessagePayload(payload);
 
@@ -1095,8 +1149,16 @@ router.patch(
                 });
             }
 
+            const submitterDetails =
+                fillSubmitterDetailsFromProfile(
+                    retirementMessage.submitter,
+                    req.user
+                );
             const payload =
-                getCleanRetirementMessagePayload(req.body);
+                getCleanRetirementMessagePayload(
+                    req.body,
+                    submitterDetails
+                );
             const validationError =
                 validateRetirementMessagePayload(payload);
 

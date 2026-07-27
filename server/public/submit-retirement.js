@@ -22,6 +22,7 @@ const retirementPageParams = new URLSearchParams(window.location.search);
 const editingRetirementMessageId = retirementPageParams.get("id");
 
 let editingRetirementMessage = null;
+let currentRetirementUser = null;
 
 function renderRetirementDeleteAction() {
     retirementSubmitForm
@@ -362,11 +363,8 @@ async function verifyRetirementAccess() {
             return;
         }
 
-        const submitterEmail = document.getElementById("retirementSubmitterEmail");
-
-        if (submitterEmail && !submitterEmail.value) {
-            submitterEmail.value = user.email || "";
-        }
+        currentRetirementUser = user;
+        populateRetirementSubmitterFromProfile(user);
 
         if (editingRetirementMessageId) {
             await loadRetirementMessageForEditing();
@@ -408,6 +406,16 @@ function setRetirementCheckbox(id, value = false) {
     if (field) {
         field.checked = Boolean(value);
     }
+}
+
+function populateRetirementSubmitterFromProfile(user = {}) {
+    setRetirementField("retirementSubmitterFirstName", user.firstName);
+    setRetirementField("retirementSubmitterLastName", user.lastName);
+    setRetirementField("retirementSubmitterEmail", user.email);
+    setRetirementField(
+        "retirementSubmitterUnit",
+        user.currentUnit || user.company
+    );
 }
 
 function selectRetirementTradeRole(tradeRole) {
@@ -465,11 +473,7 @@ function populateRetirementForm(retirementMessage) {
         "retirementMessageText",
         getRetirementMessageText(retirementMessage)
     );
-    setRetirementField("retirementSubmitterFirstName", submitter.firstName);
-    setRetirementField("retirementSubmitterLastName", submitter.lastName);
     setRetirementField("retirementSubmitterRelationship", submitter.relationship);
-    setRetirementField("retirementSubmitterEmail", submitter.email);
-    setRetirementField("retirementSubmitterUnit", submitter.unit);
     setRetirementCheckbox("retirementMemberReviewConfirmed", true);
     setRetirementCheckbox("retirementPublicationConsent", true);
 }
@@ -543,6 +547,7 @@ retirementSubmitForm.addEventListener(
                 retirementSubmitForm.reset();
                 setDefaultMessageLanguage();
                 updateRetirementTradePicker();
+                populateRetirementSubmitterFromProfile(currentRetirementUser);
             }
 
             showRetirementSubmissionToast(

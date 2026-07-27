@@ -224,70 +224,39 @@
 
                     <div class="event-section-content">
                         <div class="event-form-grid">
-                        <div class="event-field">
-                            <label for="retirementSubmitterFirstName" data-i18n="retirement_submitter_first_name">
-                                First name
-                            </label>
+                            <div class="event-field event-field-wide">
+                                <label for="retirementSubmitterRelationship" data-i18n="retirement_submitter_relationship">
+                                    Relationship to retiree
+                                </label>
 
-                            <input id="retirementSubmitterFirstName" name="retirementSubmitterFirstName" type="text"
-                                maxlength="80" required />
-                        </div>
+                                <select id="retirementSubmitterRelationship" name="retirementSubmitterRelationship"
+                                    required>
+                                    <option value="" data-i18n="select_option">
+                                        Select an option
+                                    </option>
 
-                        <div class="event-field">
-                            <label for="retirementSubmitterLastName" data-i18n="retirement_submitter_last_name">
-                                Last name
-                            </label>
+                                    <option value="self" data-i18n="relationship_self">
+                                        Self
+                                    </option>
 
-                            <input id="retirementSubmitterLastName" name="retirementSubmitterLastName" type="text"
-                                maxlength="80" required />
-                        </div>
+                                    <option value="colleague" data-i18n="relationship_colleague">
+                                        Colleague
+                                    </option>
 
-                        <div class="event-field">
-                            <label for="retirementSubmitterRelationship" data-i18n="retirement_submitter_relationship">
-                                Relationship to retiree
-                            </label>
+                                    <option value="family" data-i18n="relationship_family">
+                                        Family
+                                    </option>
 
-                            <select id="retirementSubmitterRelationship" name="retirementSubmitterRelationship"
-                                required>
-                                <option value="" data-i18n="select_option">
-                                    Select an option
-                                </option>
+                                    <option value="other" data-i18n="relationship_other">
+                                        Other
+                                    </option>
+                                </select>
+                            </div>
 
-                                <option value="self" data-i18n="relationship_self">
-                                    Self
-                                </option>
-
-                                <option value="colleague" data-i18n="relationship_colleague">
-                                    Colleague
-                                </option>
-
-                                <option value="family" data-i18n="relationship_family">
-                                    Family
-                                </option>
-
-                                <option value="other" data-i18n="relationship_other">
-                                    Other
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="event-field">
-                            <label for="retirementSubmitterEmail" data-i18n="retirement_submitter_email">
-                                Email
-                            </label>
-
-                            <input id="retirementSubmitterEmail" name="retirementSubmitterEmail" type="email"
-                                maxlength="254" required />
-                        </div>
-
-                        <div class="event-field event-field-wide">
-                            <label for="retirementSubmitterUnit" data-i18n="retirement_submitter_unit">
-                                Unit or organization
-                            </label>
-
-                            <input id="retirementSubmitterUnit" name="retirementSubmitterUnit" type="text"
-                                maxlength="160" required />
-                        </div>
+                            <input id="retirementSubmitterFirstName" name="retirementSubmitterFirstName" type="hidden" />
+                            <input id="retirementSubmitterLastName" name="retirementSubmitterLastName" type="hidden" />
+                            <input id="retirementSubmitterEmail" name="retirementSubmitterEmail" type="hidden" />
+                            <input id="retirementSubmitterUnit" name="retirementSubmitterUnit" type="hidden" />
                         </div>
                     </div>
                 </section>

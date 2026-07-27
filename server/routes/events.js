@@ -209,6 +209,16 @@ function cleanSubmitter(submitter = {}) {
     };
 }
 
+function getSubmitterFromUser(user = {}) {
+    return cleanSubmitter({
+        rank: user.rank,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        unitRole: user.currentUnit || user.company,
+        email: user.email
+    });
+}
+
 function isAllowedOption(
     value,
     allowedValues
@@ -619,7 +629,6 @@ router.post(
                 endDate,
                 allDay = true,
                 imagePath,
-                submitter,
                 publicationPermissionConfirmed = false,
                 contentArea = 'general',
                 publishNow = false
@@ -656,10 +665,7 @@ router.post(
                 cleanString(imagePath);
 
             const cleanSubmitterData =
-                cleanSubmitter(
-                    submitter,
-                    req.user
-                );
+                getSubmitterFromUser(req.user);
 
             const requiredSubmitterFields = [
                 ['rank', 'Submitter rank'],
@@ -678,7 +684,7 @@ router.post(
                 if (!cleanSubmitterData[field]) {
                     return res.status(400).json({
                         error:
-                            `${label} is required`
+                            `Complete your profile before submitting an event: ${label} is required`
                     });
                 }
             }
@@ -1328,7 +1334,6 @@ router.patch(
                 endDate,
                 allDay,
                 imagePath,
-                submitter,
                 publicationPermissionConfirmed
             } = req.body;
 
@@ -1429,22 +1434,6 @@ router.patch(
                 });
             }
 
-            const cleanedSubmitter =
-                cleanSubmitter(submitter);
-
-            if (
-                !cleanedSubmitter.rank ||
-                !cleanedSubmitter.firstName ||
-                !cleanedSubmitter.lastName ||
-                !cleanedSubmitter.unitRole ||
-                !cleanedSubmitter.email
-            ) {
-                return res.status(400).json({
-                    error:
-                        "Required submitter information is missing"
-                });
-            }
-
             if (
                 parseBoolean(
                     publicationPermissionConfirmed
@@ -1496,8 +1485,6 @@ router.patch(
                 event.imagePath =
                     cleanString(imagePath);
             }
-
-            event.submitter = cleanedSubmitter;
 
             event.publicationPermission = {
                 confirmed: true,

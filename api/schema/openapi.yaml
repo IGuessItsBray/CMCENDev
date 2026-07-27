@@ -1099,6 +1099,7 @@ paths:
     post:
       tags: [Events]
       summary: Submit event.
+      description: Submitter details are copied from the authenticated user's profile.
       x-permission: canCreateDrafts
       requestBody:
         $ref: "#/components/requestBodies/Event"
@@ -1133,6 +1134,7 @@ paths:
     patch:
       tags: [Events]
       summary: Update event.
+      description: Updates event content while preserving the original submitter record.
       parameters:
         - $ref: "#/components/parameters/Id"
       requestBody:
@@ -1214,6 +1216,7 @@ paths:
     post:
       tags: [Retirements]
       summary: Submit retirement message.
+      description: Submitter name, email, and unit are copied from the authenticated profile; the request supplies only `submitter.relationship`.
       x-permission: canSubmitRetirementMessages
       requestBody:
         $ref: "#/components/requestBodies/RetirementMessage"
@@ -1297,6 +1300,7 @@ paths:
     patch:
       tags: [Retirements]
       summary: Update retirement message.
+      description: Updates retirement content while preserving the original submitter contact record; missing legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`.
       parameters:
         - $ref: "#/components/parameters/MessageId"
       requestBody:
@@ -1558,6 +1562,7 @@ components:
             type: object
             additionalProperties: true
     RetirementMessage:
+      description: The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates.
       required: true
       content:
         application/json:

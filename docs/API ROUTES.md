@@ -214,12 +214,12 @@ Mounted at `/api/events`.
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
 | `GET` | `/api/events` | Public | List published upcoming events, or published events overlapping a requested `from`/`to` calendar range. |
-| `POST` | `/api/events` | Authenticated + `canCreateDrafts` | Submit an event. Users with review/bypass permissions may publish directly. |
+| `POST` | `/api/events` | Authenticated + `canCreateDrafts` | Submit an event. Submitter details are copied from the authenticated profile; users with review/bypass permissions may publish directly. |
 | `GET` | `/api/events/review` | Authenticated + `canReviewAndPublish` | List event review queue. |
 | `GET` | `/api/events/mine` | Authenticated | List current user's events. |
 | `GET` | `/api/events/:id` | Public | Get one published event. |
 | `GET` | `/api/events/:id/edit` | Authenticated owner or reviewer | Get full event edit payload. |
-| `PATCH` | `/api/events/:id` | Authenticated owner or reviewer | Update event. |
+| `PATCH` | `/api/events/:id` | Authenticated owner or reviewer | Update event while preserving its original submitter record. |
 | `PATCH` | `/api/events/:eventId/review` | Authenticated + `canReviewAndPublish` | Publish or reject event. |
 
 `GET /api/events` accepts optional `from` and `to` query parameters in
@@ -245,7 +245,7 @@ Mounted at `/api/retirement-messages`.
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
-| `POST` | `/api/retirement-messages` | Authenticated + `canSubmitRetirementMessages` | Submit retirement message. |
+| `POST` | `/api/retirement-messages` | Authenticated + `canSubmitRetirementMessages` | Submit retirement message. Submitter contact details are copied from the authenticated profile; the request supplies only the submitter relationship. |
 | `GET` | `/api/retirement-messages` | Public | List published retirement messages. |
 | `GET` | `/api/retirement-messages/review` | Authenticated + `canReviewAndPublish` | List retirement-message review queue. |
 | `GET` | `/api/retirement-messages/comments/review` | Authenticated + `canReviewAndPublish` | List comment review queue. |
@@ -253,7 +253,7 @@ Mounted at `/api/retirement-messages`.
 | `GET` | `/api/retirement-messages/comments/:commentId/edit` | Authenticated owner or reviewer | Get comment edit payload. |
 | `PATCH` | `/api/retirement-messages/comments/:commentId` | Authenticated owner or reviewer | Update comment. |
 | `GET` | `/api/retirement-messages/:messageId/edit` | Authenticated owner or reviewer | Get full retirement-message edit payload. |
-| `PATCH` | `/api/retirement-messages/:messageId` | Authenticated owner or reviewer | Update retirement message. |
+| `PATCH` | `/api/retirement-messages/:messageId` | Authenticated owner or reviewer | Update retirement message while preserving its original submitter contact record; missing legacy contact fields are filled from the authenticated profile, and the request may update the relationship. |
 | `GET` | `/api/retirement-messages/:messageId/comments` | Public | List published comments for a message. |
 | `POST` | `/api/retirement-messages/:messageId/comments` | Authenticated | Create comment. |
 | `GET` | `/api/retirement-messages/:messageId` | Public | Get one published retirement message. |

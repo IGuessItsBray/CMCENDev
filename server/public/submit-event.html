@@ -389,215 +389,74 @@
 
               <div class="event-section-content">
                 <div class="event-schedule-grid">
-                <div class="event-field">
-                  <label for="eventStartDate" data-i18n="event_start_date">
-                    Start date
-                  </label>
-
-                  <input type="date" id="eventStartDate" name="startDate" required />
-                </div>
-
-
-                <div class="event-field" id="eventStartTimeField" hidden>
-                  <span class="event-field-title" data-i18n="event_start_time">
-                    Start time
-                  </span>
-
-                  <div class="event-time-selects">
-                    <label class="event-time-part" for="eventStartHour">
-                      <span data-i18n="event_hour">
-                        Hour
-                      </span>
-
-                      <select id="eventStartHour" name="startHour"></select>
-                    </label>
-
-                    <span class="event-time-separator" aria-hidden="true">
-                      :
+                  <div class="event-field">
+                    <span class="event-field-title" id="eventStartPickerLabel" data-i18n="event_start_date">
+                      Start date
                     </span>
 
-                    <label class="event-time-part" for="eventStartMinute">
-                      <span data-i18n="event_minute">
-                        Minute
-                      </span>
-
-                      <select id="eventStartMinute" name="startMinute"></select>
-                    </label>
+                    <input type="hidden" id="eventStartDate" name="startDate" />
+                    <input type="hidden" id="eventStartTime" name="startTime" />
+                    <div class="event-schedule-picker" id="eventStartPicker"></div>
                   </div>
-                </div>
 
-
-
-
-                <div class="event-field">
-                  <label for="eventEndDate" data-i18n="event_end_date">
-                    End date
-                  </label>
-
-                  <input type="date" id="eventEndDate" name="endDate" />
-
-                  <small data-i18n="event_end_date_hint">
-                    Optional for an all-day event.
-                  </small>
-                </div>
-                <div class="event-field" id="eventEndTimeField" hidden>
-                  <span class="event-field-title" data-i18n="event_end_time">
-                    End time
-                  </span>
-
-                  <div class="event-time-selects">
-                    <label class="event-time-part" for="eventEndHour">
-                      <span data-i18n="event_hour">
-                        Hour
-                      </span>
-
-                      <select id="eventEndHour" name="endHour"></select>
-                    </label>
-
-                    <span class="event-time-separator" aria-hidden="true">
-                      :
+                  <div class="event-field">
+                    <span class="event-field-title" id="eventEndPickerLabel" data-i18n="event_end_date">
+                      End date
                     </span>
 
-                    <label class="event-time-part" for="eventEndMinute">
-                      <span data-i18n="event_minute">
-                        Minute
-                      </span>
+                    <input type="hidden" id="eventEndDate" name="endDate" />
+                    <input type="hidden" id="eventEndTime" name="endTime" />
+                    <div class="event-schedule-picker" id="eventEndPicker"></div>
 
-                      <select id="eventEndMinute" name="endMinute"></select>
-                    </label>
+                    <small id="eventEndDateHint" data-i18n="event_end_date_hint">
+                      Optional for an all-day event.
+                    </small>
                   </div>
-                </div>
 
-                <div class="event-field">
-                  <label for="eventTimezone" data-i18n="event_timezone">
-                    Event timezone
-                  </label>
+                  <div class="event-field">
+                    <label for="eventTimezone" data-i18n="event_timezone">
+                      Event timezone
+                    </label>
 
-                  <select id="eventTimezone" name="timezone" required>
-                    <option value="" selected disabled data-i18n="event_select_timezone">
-                      Select a timezone
-                    </option>
+                    <select id="eventTimezone" name="timezone" required>
+                      <option value="" selected disabled data-i18n="event_select_timezone">
+                        Select a timezone
+                      </option>
 
-                    <option value="America/St_Johns" data-i18n="timezone_newfoundland">
-                      Newfoundland Time
-                    </option>
+                      <option value="America/St_Johns" data-i18n="timezone_newfoundland">
+                        Newfoundland Time
+                      </option>
 
-                    <option value="America/Halifax" data-i18n="timezone_atlantic">
-                      Atlantic Time
-                    </option>
+                      <option value="America/Halifax" data-i18n="timezone_atlantic">
+                        Atlantic Time
+                      </option>
 
-                    <option value="America/Toronto" data-i18n="timezone_eastern">
-                      Eastern Time
-                    </option>
+                      <option value="America/Toronto" data-i18n="timezone_eastern">
+                        Eastern Time
+                      </option>
 
-                    <option value="America/Winnipeg" data-i18n="timezone_central">
-                      Central Time
-                    </option>
+                      <option value="America/Winnipeg" data-i18n="timezone_central">
+                        Central Time
+                      </option>
 
-                    <option value="America/Edmonton" data-i18n="timezone_mountain">
-                      Mountain Time
-                    </option>
+                      <option value="America/Edmonton" data-i18n="timezone_mountain">
+                        Mountain Time
+                      </option>
 
-                    <option value="America/Vancouver" data-i18n="timezone_pacific">
-                      Pacific Time
-                    </option>
-                  </select>
+                      <option value="America/Vancouver" data-i18n="timezone_pacific">
+                        Pacific Time
+                      </option>
+                    </select>
 
-                  <small data-i18n="event_timezone_hint">
-                    Choose the timezone where the event takes place.
-                  </small>
-                </div>
+                    <small data-i18n="event_timezone_hint">
+                      Choose the timezone where the event takes place.
+                    </small>
+                  </div>
                 </div>
 
                 <p class="event-time-zone-note" id="eventTimeZoneNote" data-i18n="event_local_time_note" hidden>
                   Please use the local time of the event.
                 </p>
-              </div>
-            </section>
-
-            <section class="event-submitter-section event-section--full-bleed-heading" aria-labelledby="eventSubmitterHeading">
-              <header class="event-section-heading">
-                <div>
-                  <p class="event-section-eyebrow" data-i18n="event_submitter_eyebrow">
-                    Submission contact
-                  </p>
-
-                  <h2 id="eventSubmitterHeading" data-i18n="event_submitter_heading">
-                    Submitter information
-                  </h2>
-                </div>
-              </header>
-
-              <div class="event-section-content">
-                <p class="event-section-intro" data-i18n="event_submitter_intro">
-                  Enter the contact information for the person responsible
-                  for this event submission.
-                </p>
-
-                <div class="event-submitter-grid">
-                <div class="event-field event-field-rank">
-                  <label for="eventSubmitterRank" data-i18n="event_submitter_rank">
-                    Rank
-                  </label>
-
-                  <input type="text" id="eventSubmitterRank" name="submitterRank" maxlength="100"
-                    autocomplete="organization-title" required data-i18n-placeholder="event_submitter_rank_placeholder"
-                    placeholder="Capt" />
-                </div>
-
-                <div class="event-field">
-                  <label for="eventSubmitterFirstName" data-i18n="event_submitter_first_name">
-                    First name
-                  </label>
-
-                  <input type="text" id="eventSubmitterFirstName" name="submitterFirstName" maxlength="150"
-                    autocomplete="given-name" required />
-                </div>
-
-                <div class="event-field">
-                  <label for="eventSubmitterLastName" data-i18n="event_submitter_last_name">
-                    Last name
-                  </label>
-
-                  <input type="text" id="eventSubmitterLastName" name="submitterLastName" maxlength="150"
-                    autocomplete="family-name" required />
-                </div>
-
-                <div class="event-field event-field-unit">
-                  <label for="eventSubmitterUnitRole" data-i18n="event_submitter_unit_role">
-                    Unit or role
-                  </label>
-
-                  <input type="text" id="eventSubmitterUnitRole" name="submitterUnitRole" maxlength="300"
-                    autocomplete="organization" required data-i18n-placeholder="event_submitter_unit_role_placeholder"
-                    placeholder="2 CMBG HQ & Sig Sqn" />
-                </div>
-
-                <div class="event-field event-field-email">
-                  <label for="eventSubmitterEmail" data-i18n="event_submitter_email">
-                    Contact email
-                  </label>
-
-                  <input type="email" id="eventSubmitterEmail" name="submitterEmail" maxlength="320"
-                    autocomplete="email" required />
-
-                  <small data-i18n="event_submitter_email_hint">
-                    Submission and status confirmations will be sent here.
-                  </small>
-                </div>
-
-                <div class="event-field event-field-phone">
-                  <label for="eventSubmitterPhone" data-i18n="event_submitter_phone">
-                    Phone number
-                  </label>
-
-                  <input type="tel" id="eventSubmitterPhone" name="submitterPhone" maxlength="50" autocomplete="tel" />
-
-                  <small data-i18n="event_optional">
-                    Optional
-                  </small>
-                </div>
-                </div>
               </div>
             </section>
 

@@ -313,19 +313,25 @@
       setOpen(!picker.classList.contains("is-open"));
     });
 
-    picker.addEventListener("click", event => event.stopPropagation());
-    document.addEventListener("click", () => setOpen(false));
-    window.addEventListener("cmcen:picker-open", event => {
+    const stopPickerPropagation = event => event.stopPropagation();
+    const closeOnDocumentClick = () => setOpen(false);
+    const closeWhenAnotherPickerOpens = event => {
       if (event.detail?.picker !== picker) {
         setOpen(false);
       }
-    });
-    window.addEventListener("resize", () => {
+    };
+    const positionOnResize = () => {
       if (picker.classList.contains("is-open")) setOpen(true);
-    });
-    window.addEventListener("scroll", () => {
+    };
+    const positionOnScroll = () => {
       if (picker.classList.contains("is-open")) setOpen(true);
-    }, true);
+    };
+
+    picker.addEventListener("click", stopPickerPropagation);
+    document.addEventListener("click", closeOnDocumentClick);
+    window.addEventListener("cmcen:picker-open", closeWhenAnotherPickerOpens);
+    window.addEventListener("resize", positionOnResize);
+    window.addEventListener("scroll", positionOnScroll, true);
 
     updateTrigger();
     renderCalendar();
@@ -335,6 +341,18 @@
     }
     picker.append(trigger, popover);
     picker.setValue = setValue;
+    picker.getValue = () => ({
+      date: selectedDate,
+      time: includeTime ? selectedTime : ""
+    });
+    picker.destroy = () => {
+      document.removeEventListener("click", closeOnDocumentClick);
+      window.removeEventListener("cmcen:picker-open", closeWhenAnotherPickerOpens);
+      window.removeEventListener("resize", positionOnResize);
+      window.removeEventListener("scroll", positionOnScroll, true);
+      picker.removeEventListener("click", stopPickerPropagation);
+      picker.remove();
+    };
 
     return picker;
   }

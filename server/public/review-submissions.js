@@ -1237,14 +1237,8 @@ function createRetirementReviewCard(retirementMessage) {
 }
 
 function createLastPostMessageSection(lastPost) {
-  const section = document.createElement("section");
-  section.className = "review-record-section retirement-review-message-section";
-
-  const heading = document.createElement("h3");
-  heading.textContent = translate("last_post_review_message_record");
-
   const grid = document.createElement("div");
-  grid.className = "review-language-grid retirement-review-language-grid";
+  grid.className = "review-language-grid";
 
   ["en", "fr"].forEach(languageCode => {
     const panel = document.createElement("section");
@@ -1299,8 +1293,7 @@ function createLastPostMessageSection(lastPost) {
     grid.appendChild(panel);
   });
 
-  section.append(heading, grid);
-  return section;
+  return grid;
 }
 
 function createLastPostImageSection(lastPost) {

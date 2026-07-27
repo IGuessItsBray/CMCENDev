@@ -575,6 +575,12 @@ function createProfileForm(user) {
       value: user.currentUnit,
       wide: true
     }),
+    createProfileField({
+      name: "phone",
+      labelKey: "phone",
+      value: user.phone,
+      autocomplete: "tel"
+    }),
     createProfileSelect({
       name: "preferredLanguage",
       labelKey: "preferred_language",

@@ -82,6 +82,13 @@
     }
 
     function createAccountTypeBadge(user) {
+      if (user?.accountType === "invited") {
+        const badge = document.createElement("span");
+        badge.className = "admin-user-role-badge account-ghost";
+        badge.textContent = "Invited";
+        return badge;
+      }
+
       if (user?.accountType !== "ghost" && user?.role !== "ghost") {
         return null;
       }
@@ -247,7 +254,8 @@
       accountTypeGroup.append(accountTypeTitle);
       [
         ["member", getText("admin_users_account_member", "Member")],
-        ["ghost", getText("admin_users_account_ghost", "Ghost")]
+        ["ghost", getText("admin_users_account_ghost", "Ghost")],
+        ["invited", "Invited"]
       ].forEach(([value, label]) => {
         accountTypeGroup.append(createExportCheckbox(
           "includeAccountTypes",
@@ -318,8 +326,15 @@
       refresh.textContent = translate("admin_refresh");
       refresh.addEventListener("click", actions.refreshUsers);
 
+      const invite = document.createElement("button");
+      invite.type = "button";
+      invite.className = "admin-work-zone-button is-primary";
+      invite.textContent = "Create account";
+      invite.disabled = state.currentUserPermissions?.canProvisionUsers !== true;
+      invite.addEventListener("click", actions.provisionUser);
+
       search.append(searchLabel, searchInput);
-      header.append(title, refresh);
+      header.append(title, invite, refresh);
       panel.append(header, search, createUsersExportPanel());
 
       const list = document.createElement("div");

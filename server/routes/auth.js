@@ -24,7 +24,7 @@ const {
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt';
+  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -37,6 +37,7 @@ const EDITABLE_PROFILE_FIELDS = [
   'trade',
   'tradeOther',
   'currentUnit',
+  'phone',
   'preferredLanguage'
 ];
 
@@ -557,6 +558,37 @@ router.post('/ghost/confirm', async (req, res) => {
   }
 });
 
+// GET /api/invitations/activate?token=...
+// Return the prefilled identity for a valid invitation without exposing profile data.
+router.get('/invitations/activate', async (req, res) => {
+  const token = String(req.query?.token || '').trim();
+
+  if (!token) {
+    return res.status(400).json({ error: 'Invitation token is required' });
+  }
+
+  try {
+    const user = await User.findOne({
+      accountType: 'invited',
+      'invitation.tokenHash': hashToken(token),
+      'invitation.expiresAt': { $gt: new Date() }
+    }).select('firstName lastName email');
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invitation link is invalid or has expired' });
+    }
+
+    return res.json({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email
+    });
+  } catch (error) {
+    console.error('Invitation lookup failed:', error);
+    return res.status(500).json({ error: 'Could not load invitation' });
+  }
+});
+
 // POST /api/register
 // Create a subscriber account from the public registration form.
 router.post('/register', async (req, res) => {
@@ -581,7 +613,8 @@ router.post('/register', async (req, res) => {
       preferredLanguage,
       email,
       password,
-      passwordConfirmation
+      passwordConfirmation,
+      invitationToken
     } = req.body;
 
     if (password !== passwordConfirmation) {
@@ -609,20 +642,39 @@ router.post('/register', async (req, res) => {
       VALID_PREFERRED_LANGUAGES.has(incomingPreferredLanguage)
         ? incomingPreferredLanguage
         : 'en';
-    const requiredFields = [
-      cleanFirstName,
-      cleanLastName,
-      String(addressLine1 || '').trim(),
-      String(city || '').trim(),
-      String(country || '').trim(),
-      String(stateProvince || '').trim(),
-      String(postalCode || '').trim(),
-      String(status || '').trim(),
-      String(affiliationElement || '').trim(),
-      cleanEmail,
-      String(password || ''),
-      String(passwordConfirmation || '')
-    ];
+    const cleanInvitationToken = String(invitationToken || '').trim();
+    const invitedUser = cleanInvitationToken
+      ? await User.findOne({
+        accountType: 'invited',
+        'invitation.tokenHash': hashToken(cleanInvitationToken),
+        'invitation.expiresAt': { $gt: new Date() }
+      }).select('+password +invitation.tokenHash +invitation.expiresAt')
+      : null;
+
+    if (cleanInvitationToken && !invitedUser) {
+      return res.status(400).json({ error: 'Invitation link is invalid or has expired' });
+    }
+
+    if (invitedUser && invitedUser.email !== cleanEmail) {
+      return res.status(400).json({ error: 'Use the email address that received the invitation' });
+    }
+
+    const requiredFields = invitedUser
+      ? [cleanEmail, String(password || ''), String(passwordConfirmation || '')]
+      : [
+        cleanFirstName,
+        cleanLastName,
+        String(addressLine1 || '').trim(),
+        String(city || '').trim(),
+        String(country || '').trim(),
+        String(stateProvince || '').trim(),
+        String(postalCode || '').trim(),
+        String(status || '').trim(),
+        String(affiliationElement || '').trim(),
+        cleanEmail,
+        String(password || ''),
+        String(passwordConfirmation || '')
+      ];
 
     if (requiredFields.some(value => !value)) {
       return res.status(400).json({
@@ -630,7 +682,7 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const user = new User({
+    const user = invitedUser || new User({
       username: cleanEmail,
       email: cleanEmail,
       accountName: [cleanFirstName, cleanLastName]
@@ -659,14 +711,29 @@ router.post('/register', async (req, res) => {
       role: 'subscriber'
     });
 
-    const verification = await prepareEmailVerification(user);
+    if (invitedUser) {
+      user.username = cleanEmail;
+      user.email = cleanEmail;
+      user.accountType = 'member';
+      user.profileComplete = false;
+      user.password = password;
+      user.invitation.tokenHash = '';
+      user.invitation.expiresAt = null;
+      user.emailVerification.required = true;
+      user.emailVerification.verified = true;
+      user.emailVerification.verifiedAt = new Date();
+    }
+
+    const verification = invitedUser ? null : await prepareEmailVerification(user);
 
     await user.save();
-    await sendEmailVerificationCode(user, verification.code);
+    if (verification) {
+      await sendEmailVerificationCode(user, verification.code);
+    }
 
     await writeAuditLog({
       req,
-      action: 'user.created',
+      action: invitedUser ? 'user.invitation_activated' : 'user.created',
       actor: user,
       targetType: 'user',
       target: user._id,
@@ -681,10 +748,20 @@ router.post('/register', async (req, res) => {
       metadata: {
         accountName: user.accountName,
         email: user.email,
-        emailVerification: 'pending',
-        mfaMethod: 'pending'
+        emailVerification: invitedUser ? 'verified' : 'pending',
+        mfaMethod: 'pending',
+        invitation: invitedUser ? 'activated' : undefined
       }
     });
+
+    if (invitedUser) {
+      setRefreshTokenCookie(req, res, user);
+      return res.status(201).json({
+        message: 'Account activated. Complete your profile from your account page.',
+        token: createSessionToken(user),
+        user: await getProfileResponse(user)
+      });
+    }
 
     res.status(201).json({
       message: 'User created. Check your email for a verification code.',

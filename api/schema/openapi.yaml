@@ -156,6 +156,21 @@ paths:
           description: Registered user and token/verification state.
         "400":
           $ref: "#/components/responses/Error"
+  /api/invitations/activate:
+    get:
+      tags: [Auth]
+      summary: Load a valid invitation's prefilled identity.
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Invited name and email.
+        "400":
+          $ref: "#/components/responses/Error"
   /api/login:
     post:
       tags: [Auth]
@@ -540,6 +555,20 @@ paths:
         "409":
           $ref: "#/components/responses/Error"
   /api/admin/users:
+    post:
+      tags: [Admin]
+      summary: Provision an invited user account.
+      description: Creates an invited account and emails a seven-day activation link. The recipient sets their own password and completes their profile. Developer accounts cannot be provisioned through this endpoint.
+      x-permission: canProvisionUsers
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "201":
+          description: Invitation sent.
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
     get:
       tags: [Admin]
       summary: List users.

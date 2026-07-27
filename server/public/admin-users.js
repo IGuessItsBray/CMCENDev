@@ -49,6 +49,7 @@ const adminUsersView = CMCENAdminUsersView.create({
       preserveSelection: true
     }),
     exportUsers: exportAdminUsers,
+    provisionUser: provisionAdminUser,
     saveUser: saveAdminUser,
     resetMfa: resetAdminUserMfa,
     promoteDeveloper: promoteAdminUserToDeveloper,
@@ -788,6 +789,47 @@ async function saveAdminUser(userId, payload) {
       error.message || translate("admin_users_save_error"),
       "error"
     );
+  }
+}
+
+async function provisionAdminUser() {
+  const firstName = await CMCENModal.prompt("Enter the member's first name.", {
+    title: "Create account",
+    inputLabel: "First name",
+    confirmText: "Continue"
+  });
+  if (!firstName) return;
+
+  const lastName = await CMCENModal.prompt("Enter the member's last name.", {
+    title: "Create account",
+    inputLabel: "Last name",
+    confirmText: "Continue"
+  });
+  if (!lastName) return;
+
+  const email = await CMCENModal.prompt("Enter the email address that will receive the activation link.", {
+    title: "Create account",
+    inputLabel: "Email address",
+    confirmText: "Send invitation"
+  });
+  if (!email) return;
+
+  try {
+    const data = await adminApiJson("/api/admin/users", {
+      method: "POST",
+      body: { firstName, lastName, email },
+      errorMessage: "Could not send invitation"
+    });
+
+    setAdminWorkZoneState({
+      users: [data.user, ...adminWorkZoneState.users],
+      selectedUserId: String(data.user._id),
+      selectedUser: data.user,
+      posts: []
+    });
+    showAdminActionToast("Invitation sent", "success");
+  } catch (error) {
+    showAdminActionToast(error.message || "Could not send invitation", "error");
   }
 }
 

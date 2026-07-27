@@ -159,7 +159,7 @@ function wantsHtmlResponse(req) {
 }
 
 function sendErrorPage(res, statusCode) {
-  const page = [401, 403, 404].includes(statusCode)
+  const page = [400, 401, 403, 404].includes(statusCode)
     ? `${statusCode}.html`
     : '500.html';
 

@@ -156,6 +156,21 @@ paths:
           description: Registered user and token/verification state.
         "400":
           $ref: "#/components/responses/Error"
+  /api/invitations/activate:
+    get:
+      tags: [Auth]
+      summary: Load a valid invitation's prefilled identity.
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Invited name and email.
+        "400":
+          $ref: "#/components/responses/Error"
   /api/login:
     post:
       tags: [Auth]
@@ -238,6 +253,17 @@ paths:
         "200":
           description: Upgrade result.
   /api/profile:
+    delete:
+      tags: [Auth]
+      summary: Delete the current account after a current TOTP or passkey MFA confirmation.
+      x-permission: canDeleteOwnAccount
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Account deleted and content anonymized.
+        "403":
+          $ref: "#/components/responses/Error"
     patch:
       tags: [Auth]
       summary: Update current user profile.
@@ -540,6 +566,20 @@ paths:
         "409":
           $ref: "#/components/responses/Error"
   /api/admin/users:
+    post:
+      tags: [Admin]
+      summary: Provision an invited user account.
+      description: Creates an invited account and emails a seven-day activation link. The recipient sets their own password and completes their profile. Developer accounts cannot be provisioned through this endpoint.
+      x-permission: canProvisionUsers
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "201":
+          description: Invitation sent.
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
     get:
       tags: [Admin]
       summary: List users.
@@ -559,6 +599,19 @@ paths:
         "200":
           description: Users.
   /api/admin/users/{userId}:
+    delete:
+      tags: [Admin]
+      summary: Delete a user account after a current TOTP or passkey MFA confirmation.
+      x-permission: canDeleteAnyUser
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Account deleted with the selected content disposition.
+        "403":
+          $ref: "#/components/responses/Error"
     get:
       tags: [Admin]
       summary: Get user detail.
@@ -604,6 +657,21 @@ paths:
       responses:
         "200":
           description: Promotion result.
+  /api/admin/last-posts/{lastPostId}:
+    delete:
+      tags: [Admin, LastPost]
+      summary: Delete a Last Post notice.
+      description: Allowed for administrators/developers or the original submitter with own-content deletion permission.
+      parameters:
+        - name: lastPostId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Last Post notice deleted.
+        "403":
+          $ref: "#/components/responses/Error"
   /api/admin/events/{eventId}:
     delete:
       tags: [Admin, Events]
@@ -820,6 +888,37 @@ paths:
       responses:
         "200":
           description: Search results.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [query, total, results]
+                properties:
+                  query:
+                    type: string
+                  total:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      required: [type, sourceId, title, summary, url]
+                      properties:
+                        type:
+                          type: string
+                          enum: [event, retirement-message, page]
+                        sourceId:
+                          type: string
+                        title:
+                          type: string
+                        summary:
+                          type: string
+                        url:
+                          type: string
+                          description: Canonical relative URL for the public result destination.
+                        date:
+                          type: [string, "null"]
+                          format: date-time
   /pages/{slug}:
     get:
       tags: [Pages]

@@ -11,7 +11,7 @@ media is stored in MinIO or another S3-compatible object store.
 
 ## Requirements
 
-- Node.js 20.19.0 through 22.x (run `nvm install` once, then `nvm use`, from the repository root)
+- Node.js 24.x (run `nvm install` once, then `nvm use`, from the repository root)
 - npm 10 or newer
 - MongoDB 7 or newer, or a compatible managed MongoDB service
 - MinIO, or another S3-compatible object store with an existing writable bucket

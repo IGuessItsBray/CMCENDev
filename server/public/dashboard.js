@@ -8,12 +8,14 @@ const dashboardTitle = document.getElementById("dashboardTitle");
 const dashboardMemberName = document.getElementById("dashboardMemberName");
 const dashboardRoleSummary = document.getElementById("dashboardRoleSummary");
 const dashboardRoleBadge = document.getElementById("dashboardRoleBadge");
-const dashboardRoleDescription = document.getElementById("dashboardRoleDescription");
+const dashboardRoleDescription = document.getElementById(
+  "dashboardRoleDescription",
+);
 const dashboardReviewWork = document.getElementById("dashboardReviewWork");
 const dashboardReviewQueues = document.getElementById("dashboardReviewQueues");
 const dashboardDangerZone = document.getElementById("dashboardDangerZone");
 const dashboardDangerZoneContent = dashboardDangerZone?.querySelector(
-  ".dashboard-danger-zone-content"
+  ".dashboard-danger-zone-content",
 );
 
 let currentDashboardUser = null;
@@ -28,18 +30,10 @@ const profileSelectOptions = {
     "civilian",
     "retired",
     "released",
-    "other"
+    "other",
   ],
-  affiliationElement: [
-    "army",
-    "navy",
-    "air_force",
-    "other"
-  ],
-  preferredLanguage: [
-    "en",
-    "fr"
-  ]
+  affiliationElement: ["army", "navy", "air_force", "other"],
+  preferredLanguage: ["en", "fr"],
 };
 
 function showDashboardLoading() {
@@ -57,12 +51,10 @@ function getRoleKey(role) {
     "author",
     "editor",
     "administrator",
-    "developer"
+    "developer",
   ];
 
-  return knownRoles.includes(role)
-    ? role
-    : "subscriber";
+  return knownRoles.includes(role) ? role : "subscriber";
 }
 
 function formatContentArea(contentArea) {
@@ -70,16 +62,11 @@ function formatContentArea(contentArea) {
 }
 
 function formatContentAreas(contentAreas) {
-  if (
-    !Array.isArray(contentAreas) ||
-    contentAreas.length === 0
-  ) {
+  if (!Array.isArray(contentAreas) || contentAreas.length === 0) {
     return translate("no_content_areas");
   }
 
-  return contentAreas
-    .map(formatContentArea)
-    .join(", ");
+  return contentAreas.map(formatContentArea).join(", ");
 }
 
 function createDetailRow(labelKey, value) {
@@ -107,7 +94,7 @@ function createProfileField({
   required = false,
   wide = false,
   addressField = "",
-  fieldDataset = {}
+  fieldDataset = {},
 }) {
   const field = document.createElement("div");
   field.className = wide
@@ -157,7 +144,7 @@ function createProfileSelect({
   options,
   optionPrefix,
   required = false,
-  preserveUnknownValue = false
+  preserveUnknownValue = false,
 }) {
   const field = document.createElement("div");
   field.className = "dashboard-profile-field";
@@ -185,7 +172,7 @@ function createProfileSelect({
   emptyOption.disabled = true;
   select.appendChild(emptyOption);
 
-  options.forEach(optionValue => {
+  options.forEach((optionValue) => {
     const option = document.createElement("option");
     option.value = optionValue;
     option.textContent = optionPrefix
@@ -194,11 +181,7 @@ function createProfileSelect({
     select.appendChild(option);
   });
 
-  if (
-    preserveUnknownValue &&
-    value &&
-    !options.includes(value)
-  ) {
+  if (preserveUnknownValue && value && !options.includes(value)) {
     const option = document.createElement("option");
     option.value = value;
     option.textContent = value;
@@ -219,12 +202,12 @@ function setProfileFormMode(form, isEditing) {
 
   form.dataset.editing = isEditing ? "true" : "false";
 
-  form.querySelectorAll("input").forEach(input => {
+  form.querySelectorAll("input").forEach((input) => {
     input.readOnly = !isEditing;
     input.tabIndex = isEditing ? 0 : -1;
   });
 
-  form.querySelectorAll("select").forEach(select => {
+  form.querySelectorAll("select").forEach((select) => {
     select.disabled = !isEditing;
     select.tabIndex = isEditing ? 0 : -1;
   });
@@ -281,14 +264,14 @@ function setProfileSaveButtonSaved(saveButton, onDone) {
 
 function getProfilePayload(form) {
   const payload = {
-    address: {}
+    address: {},
   };
 
-  form.querySelectorAll("[data-profile-field]").forEach(field => {
+  form.querySelectorAll("[data-profile-field]").forEach((field) => {
     payload[field.dataset.profileField] = field.value;
   });
 
-  form.querySelectorAll("[data-address-field]").forEach(field => {
+  form.querySelectorAll("[data-address-field]").forEach((field) => {
     payload.address[field.dataset.addressField] = field.value;
   });
 
@@ -298,7 +281,9 @@ function getProfilePayload(form) {
 function syncProfileTradeOtherVisibility(form) {
   const trade = form.querySelector("[data-profile-field='trade']");
   const tradeOther = form.querySelector("[data-profile-field='tradeOther']");
-  const tradeOtherField = form.querySelector("[data-profile-extra='tradeOther']");
+  const tradeOtherField = form.querySelector(
+    "[data-profile-extra='tradeOther']",
+  );
   const showOther = trade?.value === "other";
 
   if (tradeOtherField) {
@@ -328,58 +313,58 @@ function createGhostUpgradeForm(user) {
       labelKey: "first_name",
       value: user.firstName,
       autocomplete: "given-name",
-      required: true
+      required: true,
     }),
     createProfileField({
       name: "lastName",
       labelKey: "last_name",
       autocomplete: "family-name",
-      required: true
+      required: true,
     }),
     createProfileField({
       name: "addressLine1",
       labelKey: "address_line_1",
       autocomplete: "address-line1",
       required: true,
-      wide: true
+      wide: true,
     }),
     createProfileField({
       name: "city",
       labelKey: "city",
       autocomplete: "address-level2",
-      required: true
+      required: true,
     }),
     createProfileField({
       name: "country",
       labelKey: "country",
       autocomplete: "country-name",
-      required: true
+      required: true,
     }),
     createProfileField({
       name: "stateProvince",
       labelKey: "state_province",
       autocomplete: "address-level1",
-      required: true
+      required: true,
     }),
     createProfileField({
       name: "postalCode",
       labelKey: "postal_code",
       autocomplete: "postal-code",
-      required: true
+      required: true,
     }),
     createProfileSelect({
       name: "status",
       labelKey: "status",
       options: profileSelectOptions.status,
       optionPrefix: "status",
-      required: true
+      required: true,
     }),
     createProfileSelect({
       name: "affiliationElement",
       labelKey: "affiliation_element",
       options: profileSelectOptions.affiliationElement,
       optionPrefix: "element",
-      required: true
+      required: true,
     }),
     createProfileSelect({
       name: "preferredLanguage",
@@ -387,15 +372,15 @@ function createGhostUpgradeForm(user) {
       value: CMCENUtils.getCurrentLanguage(),
       options: profileSelectOptions.preferredLanguage,
       optionPrefix: "language",
-      required: true
-    })
+      required: true,
+    }),
   );
 
-  ["password", "passwordConfirmation"].forEach(name => {
+  ["password", "passwordConfirmation"].forEach((name) => {
     const field = createProfileField({
       name,
       labelKey: name === "password" ? "password" : "password_confirmation",
-      required: true
+      required: true,
     });
     const input = field.querySelector("input");
     input.type = "password";
@@ -409,14 +394,14 @@ function createGhostUpgradeForm(user) {
   submit.textContent = translate("dashboard_upgrade_account");
 
   form.append(grid, submit);
-  form.querySelectorAll("input").forEach(input => {
+  form.querySelectorAll("input").forEach((input) => {
     input.readOnly = false;
   });
-  form.querySelectorAll("select").forEach(select => {
+  form.querySelectorAll("select").forEach((select) => {
     select.disabled = false;
   });
 
-  form.addEventListener("submit", async event => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     if (!form.reportValidity()) {
@@ -424,7 +409,7 @@ function createGhostUpgradeForm(user) {
     }
 
     const payload = {};
-    form.querySelectorAll("[data-profile-field]").forEach(field => {
+    form.querySelectorAll("[data-profile-field]").forEach((field) => {
       payload[field.dataset.profileField] = field.value;
     });
 
@@ -436,7 +421,7 @@ function createGhostUpgradeForm(user) {
         method: "POST",
         token,
         body: payload,
-        errorMessage: translate("dashboard_upgrade_error")
+        errorMessage: translate("dashboard_upgrade_error"),
       });
 
       CMCENUtils.storeAuthToken(data.token);
@@ -444,7 +429,7 @@ function createGhostUpgradeForm(user) {
     } catch (error) {
       CMCENUtils.showToast(
         error.message || translate("dashboard_upgrade_error"),
-        { color: "error", position: "bottom-right", animation: "slide" }
+        { color: "error", position: "bottom-right", animation: "slide" },
       );
       submit.disabled = false;
       submit.removeAttribute("aria-busy");
@@ -468,14 +453,14 @@ function createProfileForm(user) {
       labelKey: "first_name",
       value: user.firstName,
       autocomplete: "given-name",
-      required: true
+      required: true,
     }),
     createProfileField({
       name: "lastName",
       labelKey: "last_name",
       value: user.lastName,
       autocomplete: "family-name",
-      required: true
+      required: true,
     }),
     createProfileField({
       name: "address.line1",
@@ -484,7 +469,7 @@ function createProfileForm(user) {
       autocomplete: "address-line1",
       required: true,
       wide: true,
-      addressField: "line1"
+      addressField: "line1",
     }),
     createProfileField({
       name: "address.line2",
@@ -492,7 +477,7 @@ function createProfileForm(user) {
       value: user.address?.line2,
       autocomplete: "address-line2",
       wide: true,
-      addressField: "line2"
+      addressField: "line2",
     }),
     createProfileField({
       name: "address.city",
@@ -500,7 +485,7 @@ function createProfileForm(user) {
       value: user.address?.city,
       autocomplete: "address-level2",
       required: true,
-      addressField: "city"
+      addressField: "city",
     }),
     createProfileField({
       name: "address.country",
@@ -508,7 +493,7 @@ function createProfileForm(user) {
       value: user.address?.country,
       autocomplete: "country-name",
       required: true,
-      addressField: "country"
+      addressField: "country",
     }),
     createProfileField({
       name: "address.stateProvince",
@@ -516,7 +501,7 @@ function createProfileForm(user) {
       value: user.address?.stateProvince,
       autocomplete: "address-level1",
       required: true,
-      addressField: "stateProvince"
+      addressField: "stateProvince",
     }),
     createProfileField({
       name: "address.postalCode",
@@ -524,23 +509,23 @@ function createProfileForm(user) {
       value: user.address?.postalCode,
       autocomplete: "postal-code",
       required: true,
-      addressField: "postalCode"
+      addressField: "postalCode",
     }),
     createProfileField({
       name: "rank",
       labelKey: "rank",
-      value: user.rank
+      value: user.rank,
     }),
     createProfileField({
       name: "postNominals",
       labelKey: "post_nominals",
-      value: user.postNominals
+      value: user.postNominals,
     }),
     createProfileField({
       name: "company",
       labelKey: "company",
       value: user.company,
-      autocomplete: "organization"
+      autocomplete: "organization",
     }),
     createProfileSelect({
       name: "status",
@@ -548,7 +533,7 @@ function createProfileForm(user) {
       value: user.status,
       options: profileSelectOptions.status,
       optionPrefix: "status",
-      required: true
+      required: true,
     }),
     createProfileSelect({
       name: "affiliationElement",
@@ -556,34 +541,34 @@ function createProfileForm(user) {
       value: user.affiliationElement,
       options: profileSelectOptions.affiliationElement,
       optionPrefix: "element",
-      required: true
+      required: true,
     }),
     createProfileSelect({
       name: "trade",
       labelKey: "trade",
       value: user.trade,
       options: window.cmcenTradeOptions || [],
-      preserveUnknownValue: true
+      preserveUnknownValue: true,
     }),
     createProfileField({
       name: "tradeOther",
       labelKey: "trade_other",
       value: user.tradeOther,
       fieldDataset: {
-        profileExtra: "tradeOther"
-      }
+        profileExtra: "tradeOther",
+      },
     }),
     createProfileField({
       name: "currentUnit",
       labelKey: "current_unit",
       value: user.currentUnit,
-      wide: true
+      wide: true,
     }),
     createProfileField({
       name: "phone",
       labelKey: "phone",
       value: user.phone,
-      autocomplete: "tel"
+      autocomplete: "tel",
     }),
     createProfileSelect({
       name: "preferredLanguage",
@@ -591,21 +576,18 @@ function createProfileForm(user) {
       value: user.preferredLanguage || "en",
       options: profileSelectOptions.preferredLanguage,
       optionPrefix: "language",
-      required: true
-    })
+      required: true,
+    }),
   );
 
   const readonlyDetails = document.createElement("div");
   readonlyDetails.className = "dashboard-profile-readonly";
   readonlyDetails.append(
-    createDetailRow(
-      "field_email",
-      user.email
-    ),
+    createDetailRow("field_email", user.email),
     createDetailRow(
       "field_content_areas",
-      formatContentAreas(user.contentAreas)
-    )
+      formatContentAreas(user.contentAreas),
+    ),
   );
 
   const controls = document.createElement("div");
@@ -646,7 +628,7 @@ function createProfileForm(user) {
     renderDashboard(currentDashboardUser);
   });
 
-  form.addEventListener("submit", async event => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     if (!form.reportValidity()) {
@@ -662,7 +644,7 @@ function createProfileForm(user) {
         token,
         body: getProfilePayload(form),
         redirectOnUnauthorized: true,
-        errorMessage: translate("dashboard_profile_save_error")
+        errorMessage: translate("dashboard_profile_save_error"),
       });
 
       currentDashboardUser = data;
@@ -670,13 +652,14 @@ function createProfileForm(user) {
       CMCENUtils.showToast(translate("dashboard_profile_saved"), {
         color: "success",
         position: "bottom-right",
-        animation: "slide"
+        animation: "slide",
       });
       setProfileSaveButtonSaved(saveButton, () => {
         if (
           typeof window.applyLanguage === "function" &&
           ["en", "fr"].includes(currentDashboardUser.preferredLanguage) &&
-          CMCENUtils.getCurrentLanguage() !== currentDashboardUser.preferredLanguage
+          CMCENUtils.getCurrentLanguage() !==
+            currentDashboardUser.preferredLanguage
         ) {
           window.applyLanguage(currentDashboardUser.preferredLanguage);
           return;
@@ -690,7 +673,7 @@ function createProfileForm(user) {
       cancelButton.disabled = false;
       CMCENUtils.showToast(
         error.message || translate("dashboard_profile_save_error"),
-        { color: "error", position: "bottom-right", animation: "slide" }
+        { color: "error", position: "bottom-right", animation: "slide" },
       );
     }
   });
@@ -726,18 +709,30 @@ function createDangerZone(user) {
   deleteAccount.className = "dashboard-profile-button is-danger";
   deleteAccount.textContent = "Delete account";
   deleteAccount.addEventListener("click", async () => {
-    if (!await CMCENModal.confirm(
-      "Your account will be deleted. Your submitted content will remain, but its attribution will be anonymized.",
-      { title: "Delete account", confirmText: "Delete account", destructive: true }
-    )) return;
+    if (
+      !(await CMCENModal.confirm(
+        "Your account will be deleted. Your submitted content will remain, but its attribution will be anonymized.",
+        {
+          title: "Delete account",
+          confirmText: "Delete account",
+          destructive: true,
+        },
+      ))
+    )
+      return;
 
     const hasTotp = user.mfa?.hasTotp === true;
     const hasPasskey = user.mfa?.hasPasskey === true;
 
     if (!hasTotp && !hasPasskey) {
-      CMCENUtils.showToast("Set up an authenticator app or passkey before deleting your account", {
-        color: "error", position: "bottom-right", animation: "slide"
-      });
+      CMCENUtils.showToast(
+        "Set up an authenticator app or passkey before deleting your account",
+        {
+          color: "error",
+          position: "bottom-right",
+          animation: "slide",
+        },
+      );
       return;
     }
 
@@ -753,15 +748,15 @@ function createDangerZone(user) {
             {
               value: "totp",
               label: "Authenticator app",
-              description: "Enter a current verification code."
+              description: "Enter a current verification code.",
             },
             {
               value: "webauthn",
               label: "Passkey",
-              description: "Confirm with a registered device passkey."
-            }
-          ]
-        }
+              description: "Confirm with a registered device passkey.",
+            },
+          ],
+        },
       );
 
       if (!choice) return;
@@ -771,7 +766,11 @@ function createDangerZone(user) {
     if (mfaMethod === "totp") {
       mfaCode = await CMCENModal.prompt(
         "Enter the current code from your authenticator app.",
-        { title: "Confirm account deletion", inputLabel: "Authenticator code", confirmText: "Delete account" }
+        {
+          title: "Confirm account deletion",
+          inputLabel: "Authenticator code",
+          confirmText: "Delete account",
+        },
       );
       if (!mfaCode) return;
     }
@@ -780,23 +779,27 @@ function createDangerZone(user) {
     try {
       if (mfaMethod === "webauthn") {
         if (!window.PublicKeyCredential) {
-          throw new Error("An authenticator code is required because passkeys are unavailable in this browser");
+          throw new Error(
+            "An authenticator code is required because passkeys are unavailable in this browser",
+          );
         }
 
         const options = CMCENUtils.preparePublicKeyRequestOptions(
           await CMCENUtils.apiJson("/api/mfa/webauthn/authenticate/options", {
             method: "POST",
             token,
-            errorMessage: "Could not start passkey confirmation"
-          })
+            errorMessage: "Could not start passkey confirmation",
+          }),
         );
-        const assertion = await navigator.credentials.get({ publicKey: options });
+        const assertion = await navigator.credentials.get({
+          publicKey: options,
+        });
 
         await CMCENUtils.apiJson("/api/mfa/webauthn/authenticate/verify", {
           method: "POST",
           token,
           body: CMCENUtils.serializeAssertionCredential(assertion),
-          errorMessage: "Could not verify passkey confirmation"
+          errorMessage: "Could not verify passkey confirmation",
         });
         mfaMethod = "webauthn";
       }
@@ -805,14 +808,16 @@ function createDangerZone(user) {
         method: "DELETE",
         token,
         body: { mfaCode, mfaMethod },
-        errorMessage: "Could not delete account"
+        errorMessage: "Could not delete account",
       });
       CMCENUtils.clearAuthToken();
       window.location.href = "/index";
     } catch (error) {
       deleteAccount.disabled = false;
       CMCENUtils.showToast(error.message || "Could not delete account", {
-        color: "error", position: "bottom-right", animation: "slide"
+        color: "error",
+        position: "bottom-right",
+        animation: "slide",
       });
     }
   });
@@ -827,7 +832,7 @@ function createActionLink({
   titleKey,
   descriptionKey,
   count = 0,
-  variant = ""
+  variant = "",
 }) {
   const link = document.createElement("a");
   link.className = "dashboard-action";
@@ -885,8 +890,8 @@ function createReviewQueueLink({ tab, type, labelKey, count }) {
   link.setAttribute(
     "aria-label",
     translate("dashboard_review_open_queue", {
-      count: getReviewCountLabel(type, reviewCount)
-    })
+      count: getReviewCountLabel(type, reviewCount),
+    }),
   );
 
   const countElement = document.createElement("strong");
@@ -928,10 +933,9 @@ function renderDashboard(user) {
   //   "";
   const displayName = user.firstName || user.email || "";
 
-  dashboardTitle.textContent =
-    translate("dashboard_welcome", {
-      name: displayName
-    });
+  dashboardTitle.textContent = translate("dashboard_welcome", {
+    name: displayName,
+  });
 
   dashboardMemberName.textContent = displayName;
 
@@ -947,12 +951,12 @@ function renderDashboard(user) {
 
   const dangerZone = isGhost ? null : createDangerZone(user);
   dashboardDangerZone?.toggleAttribute("hidden", !dangerZone);
-  dashboardDangerZoneContent?.replaceChildren(...(dangerZone ? [dangerZone] : []));
+  dashboardDangerZoneContent?.replaceChildren(
+    ...(dangerZone ? [dangerZone] : []),
+  );
 
   dashboardDetails.replaceChildren(
-    isGhost
-      ? createGhostUpgradeForm(user)
-      : createProfileForm(user)
+    isGhost ? createGhostUpgradeForm(user) : createProfileForm(user),
   );
 
   const actions = [];
@@ -962,7 +966,7 @@ function renderDashboard(user) {
     actions.push({
       href: "/submit-event",
       titleKey: "dashboard_action_my_submissions",
-      descriptionKey: "dashboard_action_my_submissions_description"
+      descriptionKey: "dashboard_action_my_submissions_description",
     });
   } else {
     if (notificationCount > 0) {
@@ -971,7 +975,7 @@ function renderDashboard(user) {
         titleKey: "dashboard_action_notifications",
         descriptionKey: "dashboard_action_notifications_description",
         count: notificationCount,
-        variant: "notification"
+        variant: "notification",
       });
     }
 
@@ -979,7 +983,7 @@ function renderDashboard(user) {
       actions.push({
         href: "/submit-retirement",
         titleKey: "dashboard_action_submit_retirement",
-        descriptionKey: "dashboard_action_submit_retirement_description"
+        descriptionKey: "dashboard_action_submit_retirement_description",
       });
     }
 
@@ -987,7 +991,7 @@ function renderDashboard(user) {
       actions.push({
         href: "/submit-event",
         titleKey: "dashboard_action_submit_event",
-        descriptionKey: "dashboard_action_submit_event_description"
+        descriptionKey: "dashboard_action_submit_event_description",
       });
     }
 
@@ -999,8 +1003,8 @@ function renderDashboard(user) {
       "canManageTimers",
       "canViewMediaLibrary",
       "canViewAuditLog",
-      "canAccessSiteConfig"
-    ].some(permission => user.permissions?.[permission] === true);
+      "canAccessSiteConfig",
+    ].some((permission) => user.permissions?.[permission] === true);
 
     if (
       user.permissions?.canManageTranslations === true &&
@@ -1009,35 +1013,34 @@ function renderDashboard(user) {
       actions.push({
         href: "/translations-admin",
         titleKey: "dashboard_action_manage_translations",
-        descriptionKey: "dashboard_action_manage_translations_description"
+        descriptionKey: "dashboard_action_manage_translations_description",
       });
     }
 
     if (hasAdminWorkZoneAccess) {
       actions.push({
-        href: user.permissions?.canReadUsers === true || user.permissions?.canManageUsers === true
-          ? "/admin-users"
-          : user.permissions?.canManageRoles === true
-            ? "/admin-users?view=roles"
-            : user.permissions?.canManagePages === true
-              ? "/pages-admin"
-              : user.permissions?.canViewMediaLibrary === true
-                ? "/admin-users?view=media"
-                : user.permissions?.canViewAuditLog === true
-                  ? "/audit-log"
-                  : "/site-config",
+        href:
+          user.permissions?.canReadUsers === true ||
+          user.permissions?.canManageUsers === true
+            ? "/admin-users"
+            : user.permissions?.canManageRoles === true
+              ? "/admin-users?view=roles"
+              : user.permissions?.canManagePages === true
+                ? "/pages-admin"
+                : user.permissions?.canViewMediaLibrary === true
+                  ? "/admin-users?view=media"
+                  : user.permissions?.canViewAuditLog === true
+                    ? "/audit-log"
+                    : "/site-config",
         titleKey: "dashboard_action_admin_work_zone",
-        descriptionKey: "dashboard_action_admin_work_zone_description"
+        descriptionKey: "dashboard_action_admin_work_zone_description",
       });
     }
   }
 
-  dashboardActions.replaceChildren(
-    ...actions.map(createActionLink)
-  );
+  dashboardActions.replaceChildren(...actions.map(createActionLink));
 
-  const canReviewSubmissions =
-    user.permissions?.canReviewAndPublish === true;
+  const canReviewSubmissions = user.permissions?.canReviewAndPublish === true;
 
   dashboardReviewWork.hidden = !canReviewSubmissions;
 
@@ -1048,31 +1051,29 @@ function renderDashboard(user) {
           tab: "events",
           type: "events",
           labelKey: "review_events_tab",
-          count: currentReviewCounts.events
+          count: currentReviewCounts.events,
         }),
         createReviewQueueLink({
           tab: "retirements",
           type: "retirement_messages",
           labelKey: "review_retirements_tab",
-          count: currentReviewCounts.retirementMessages
+          count: currentReviewCounts.retirementMessages,
         }),
         createReviewQueueLink({
           tab: "last-posts",
           type: "last_posts",
           labelKey: "review_last_posts_tab",
-          count: currentReviewCounts.lastPosts
+          count: currentReviewCounts.lastPosts,
         }),
         createReviewQueueLink({
           tab: "comments",
           type: "comments",
           labelKey: "review_comments_tab",
-          count: currentReviewCounts.comments
-        })
+          count: currentReviewCounts.comments,
+        }),
       );
     } else {
-      dashboardReviewQueues.replaceChildren(
-        ...createReviewQueuesUnavailable()
-      );
+      dashboardReviewQueues.replaceChildren(...createReviewQueuesUnavailable());
     }
   } else {
     dashboardReviewQueues.replaceChildren();
@@ -1103,15 +1104,18 @@ async function loadDashboard() {
     const user = await CMCENUtils.apiJson("/api/me", {
       token,
       redirectOnUnauthorized: true,
-      errorMessage: "Could not load account data"
+      errorMessage: "Could not load account data",
     });
 
     if (user.permissions?.canReviewAndPublish === true) {
       try {
-        currentReviewCounts = await CMCENUtils.apiJson("/api/admin/review-counts", {
-          token,
-          errorMessage: "Could not load review submission counts"
-        });
+        currentReviewCounts = await CMCENUtils.apiJson(
+          "/api/admin/review-counts",
+          {
+            token,
+            errorMessage: "Could not load review submission counts",
+          },
+        );
       } catch (error) {
         console.error("Review submission counts could not be loaded:", error);
       }
@@ -1121,36 +1125,30 @@ async function loadDashboard() {
 
     renderDashboard(user);
   } catch (error) {
-    console.error(
-      "Dashboard load failed:",
-      error
-    );
+    console.error("Dashboard load failed:", error);
 
     showDashboardError(translate("dashboard_load_error"));
   }
 }
 
-document.addEventListener(
-  "languagechange",
-  () => {
-    if (currentDashboardUser) {
-      renderDashboard(currentDashboardUser);
-      return;
-    }
-
-    if (dashboardStatus.classList.contains("is-loading")) {
-      showDashboardLoading();
-      dashboardTitle.textContent = translate("dashboard_title");
-      return;
-    }
-
-    const error = dashboardStatus.querySelector(".dashboard-error");
-
-    if (error) {
-      error.textContent = translate("dashboard_load_error");
-    }
+document.addEventListener("languagechange", () => {
+  if (currentDashboardUser) {
+    renderDashboard(currentDashboardUser);
+    return;
   }
-);
+
+  if (dashboardStatus.classList.contains("is-loading")) {
+    showDashboardLoading();
+    dashboardTitle.textContent = translate("dashboard_title");
+    return;
+  }
+
+  const error = dashboardStatus.querySelector(".dashboard-error");
+
+  if (error) {
+    error.textContent = translate("dashboard_load_error");
+  }
+});
 
 window.addEventListener("pageshow", () => {
   if (!CMCENUtils.requireAuthToken()) {

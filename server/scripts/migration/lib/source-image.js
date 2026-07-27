@@ -1,7 +1,8 @@
 const path = require('path');
 const axios = require('axios');
 
-const DEFAULT_IMAGE_URL = 'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp';
+const DEFAULT_IMAGE_URL =
+  'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp';
 const DEFAULT_IMAGE_NAME = 'cmcen-crest.webp';
 
 function getUrlFileName(sourceUrl) {
@@ -17,8 +18,8 @@ async function requestImage(httpClient, sourceUrl, userAgent) {
     responseType: 'arraybuffer',
     timeout: 30000,
     headers: {
-      'User-Agent': userAgent
-    }
+      'User-Agent': userAgent,
+    },
   });
 }
 
@@ -30,18 +31,27 @@ async function validateImage(image, validate) {
   return image;
 }
 
-async function loadDefaultImage({ httpClient, sourceUrl = '', fallbackReason, userAgent, validate }) {
+async function loadDefaultImage({
+  httpClient,
+  sourceUrl = '',
+  fallbackReason,
+  userAgent,
+  validate,
+}) {
   const response = await requestImage(httpClient, DEFAULT_IMAGE_URL, userAgent);
 
-  return validateImage({
-    buffer: Buffer.from(response.data),
-    contentType: response.headers['content-type'] || 'image/webp',
-    originalName: DEFAULT_IMAGE_NAME,
-    sourceUrl,
-    fallbackSourceUrl: DEFAULT_IMAGE_URL,
-    usedFallback: true,
-    fallbackReason
-  }, validate);
+  return validateImage(
+    {
+      buffer: Buffer.from(response.data),
+      contentType: response.headers['content-type'] || 'image/webp',
+      originalName: DEFAULT_IMAGE_NAME,
+      sourceUrl,
+      fallbackSourceUrl: DEFAULT_IMAGE_URL,
+      usedFallback: true,
+      fallbackReason,
+    },
+    validate,
+  );
 }
 
 async function downloadSourceImage(sourceUrl, options = {}) {
@@ -54,7 +64,7 @@ async function downloadSourceImage(sourceUrl, options = {}) {
       httpClient,
       fallbackReason: 'missing-source-url',
       userAgent,
-      validate
+      validate,
     });
   }
 
@@ -71,7 +81,7 @@ async function downloadSourceImage(sourceUrl, options = {}) {
       sourceUrl,
       fallbackReason: 'http-404',
       userAgent,
-      validate
+      validate,
     });
   }
 
@@ -82,7 +92,7 @@ async function downloadSourceImage(sourceUrl, options = {}) {
     sourceUrl,
     fallbackSourceUrl: '',
     usedFallback: false,
-    fallbackReason: ''
+    fallbackReason: '',
   };
 
   try {
@@ -93,7 +103,7 @@ async function downloadSourceImage(sourceUrl, options = {}) {
       sourceUrl,
       fallbackReason: 'invalid-image-data',
       userAgent,
-      validate
+      validate,
     });
   }
 }
@@ -101,5 +111,5 @@ async function downloadSourceImage(sourceUrl, options = {}) {
 module.exports = {
   DEFAULT_IMAGE_NAME,
   DEFAULT_IMAGE_URL,
-  downloadSourceImage
+  downloadSourceImage,
 };

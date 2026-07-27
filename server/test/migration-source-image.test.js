@@ -4,7 +4,7 @@ const sharp = require('sharp');
 const {
   DEFAULT_IMAGE_NAME,
   DEFAULT_IMAGE_URL,
-  downloadSourceImage
+  downloadSourceImage,
 } = require('../scripts/migration/lib/source-image');
 
 test('uses the canonical CMCEN crest when a legacy source image returns 404', async () => {
@@ -12,7 +12,7 @@ test('uses the canonical CMCEN crest when a legacy source image returns 404', as
   const requestedUrls = [];
   const sourceImage = await downloadSourceImage(sourceUrl, {
     httpClient: {
-      get: async url => {
+      get: async (url) => {
         requestedUrls.push(url);
 
         if (url === sourceUrl) {
@@ -23,10 +23,10 @@ test('uses the canonical CMCEN crest when a legacy source image returns 404', as
 
         return {
           data: Buffer.from('cmcen crest'),
-          headers: { 'content-type': 'image/webp' }
+          headers: { 'content-type': 'image/webp' },
         };
-      }
-    }
+      },
+    },
   });
 
   assert.equal(sourceImage.usedFallback, true);
@@ -41,14 +41,14 @@ test('uses the canonical CMCEN crest when a legacy source image returns 404', as
 test('uses the canonical CMCEN crest when a legacy post has no source image', async () => {
   const sourceImage = await downloadSourceImage('', {
     httpClient: {
-      get: async url => {
+      get: async (url) => {
         assert.equal(url, DEFAULT_IMAGE_URL);
         return {
           data: Buffer.from('cmcen crest'),
-          headers: { 'content-type': 'image/webp' }
+          headers: { 'content-type': 'image/webp' },
         };
-      }
-    }
+      },
+    },
   });
 
   assert.equal(sourceImage.usedFallback, true);
@@ -66,10 +66,10 @@ test('does not hide non-404 source download failures', async () => {
       httpClient: {
         get: async () => {
           throw failure;
-        }
-      }
+        },
+      },
     }),
-    failure
+    failure,
   );
 });
 
@@ -79,20 +79,22 @@ test('uses the canonical CMCEN crest when downloaded source bytes cannot be deco
   const validatedBuffers = [];
   const sourceImage = await downloadSourceImage(sourceUrl, {
     httpClient: {
-      get: async url => {
+      get: async (url) => {
         requestedUrls.push(url);
         return {
           data: Buffer.from(url === sourceUrl ? 'corrupt png' : 'cmcen crest'),
-          headers: { 'content-type': url === sourceUrl ? 'image/png' : 'image/webp' }
+          headers: {
+            'content-type': url === sourceUrl ? 'image/png' : 'image/webp',
+          },
         };
-      }
+      },
     },
-    validateImage: async buffer => {
+    validateImage: async (buffer) => {
       validatedBuffers.push(buffer.toString());
       if (buffer.toString() === 'corrupt png') {
         throw new Error('libpng read error');
       }
-    }
+    },
   });
 
   assert.equal(sourceImage.usedFallback, true);
@@ -111,22 +113,27 @@ test('falls back when PNG metadata is readable but the pixel stream is corrupt',
       width: 32,
       height: 32,
       channels: 4,
-      background: { r: 25, g: 50, b: 75, alpha: 1 }
-    }
-  }).png().toBuffer();
+      background: { r: 25, g: 50, b: 75, alpha: 1 },
+    },
+  })
+    .png()
+    .toBuffer();
   const truncatedPng = validPng.subarray(0, validPng.length - 20);
 
   await sharp(truncatedPng).metadata();
-  await assert.rejects(sharp(truncatedPng).raw().toBuffer(), /libpng read error/u);
+  await assert.rejects(
+    sharp(truncatedPng).raw().toBuffer(),
+    /libpng read error/u,
+  );
 
   const sourceImage = await downloadSourceImage(sourceUrl, {
     httpClient: {
-      get: async url => ({
+      get: async (url) => ({
         data: url === sourceUrl ? truncatedPng : validPng,
-        headers: { 'content-type': 'image/png' }
-      })
+        headers: { 'content-type': 'image/png' },
+      }),
     },
-    validateImage: buffer => sharp(buffer).rotate().raw().toBuffer()
+    validateImage: (buffer) => sharp(buffer).rotate().raw().toBuffer(),
   });
 
   assert.equal(sourceImage.usedFallback, true);

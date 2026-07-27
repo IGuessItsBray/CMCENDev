@@ -35,13 +35,11 @@ function isRetirementPost(post, meta = {}) {
 
   return (
     postType === 'post' &&
-    (
-      title.includes('retirement') ||
+    (title.includes('retirement') ||
       title.includes('retire') ||
       slug.includes('retirement') ||
       slug.includes('retire') ||
-      Boolean(meta.retirement_date)
-    )
+      Boolean(meta.retirement_date))
   );
 }
 
@@ -88,7 +86,7 @@ function getAttachmentUrl(attachment) {
 function buildMetaMap(rows) {
   const byPost = new Map();
 
-  rows.forEach(row => {
+  rows.forEach((row) => {
     const postId = Number(row.post_id);
 
     if (!byPost.has(postId)) {
@@ -104,7 +102,7 @@ function buildMetaMap(rows) {
 function buildCommentsMap(rows) {
   const byPost = new Map();
 
-  rows.forEach(row => {
+  rows.forEach((row) => {
     const postId = Number(row.comment_post_ID);
 
     if (!byPost.has(postId)) {
@@ -117,7 +115,7 @@ function buildCommentsMap(rows) {
       authorEmail: cleanString(row.comment_author_email).toLowerCase(),
       body: cleanString(row.comment_content),
       status: cleanString(row.comment_approved),
-      publishedAt: parseDate(row.comment_date_gmt || row.comment_date)
+      publishedAt: parseDate(row.comment_date_gmt || row.comment_date),
     });
   });
 
@@ -127,7 +125,7 @@ function buildCommentsMap(rows) {
 function buildAttachmentMap(rows) {
   const attachments = new Map();
 
-  rows.forEach(row => {
+  rows.forEach((row) => {
     attachments.set(Number(row.ID), {
       id: Number(row.ID),
       title: cleanString(row.post_title),
@@ -137,8 +135,8 @@ function buildAttachmentMap(rows) {
       attachedFile: cleanString(row.attached_file),
       sourceUrl: getAttachmentUrl({
         guid: cleanString(row.guid),
-        attached_file: cleanString(row.attached_file)
-      })
+        attached_file: cleanString(row.attached_file),
+      }),
     });
   });
 
@@ -155,22 +153,19 @@ function summarizeRecord(record) {
     retirementDate: record.retirementDate || '',
     thumbnailId: record.thumbnailId || null,
     imageSourceUrl: record.image?.sourceUrl || '',
-    commentCount: record.comments.length
+    commentCount: record.comments.length,
   };
 }
 
 function ensureDirectory(directory) {
   fs.mkdirSync(directory, {
-    recursive: true
+    recursive: true,
   });
 }
 
 function writeJson(filePath, value) {
   ensureDirectory(path.dirname(filePath));
-  fs.writeFileSync(
-    filePath,
-    `${JSON.stringify(value, null, 2)}\n`
-  );
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 module.exports = {
@@ -185,5 +180,5 @@ module.exports = {
   parseDate,
   stripHtml,
   summarizeRecord,
-  writeJson
+  writeJson,
 };

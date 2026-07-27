@@ -1,17 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
 
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title data-i18n="search_page_title">
-      Search | CMCEN / RCMCE
-    </title>
-    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <title data-i18n="search_page_title">Search | CMCEN / RCMCE</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
 
@@ -19,23 +18,14 @@
     <header id="header"></header>
 
     <main class="search-main">
-      <section
-        class="search-shell"
-        aria-labelledby="searchTitle"
-      >
+      <section class="search-shell" aria-labelledby="searchTitle">
         <header class="search-heading">
           <div>
-            <p
-              class="search-eyebrow"
-              data-i18n="search_page_eyebrow"
-            >
+            <p class="search-eyebrow" data-i18n="search_page_eyebrow">
               Site search
             </p>
 
-            <h1
-              id="searchTitle"
-              data-i18n="search_page_heading"
-            >
+            <h1 id="searchTitle" data-i18n="search_page_heading">
               Search CMCEN
             </h1>
           </div>
@@ -45,11 +35,7 @@
           </p>
         </header>
 
-        <form
-          class="search-page-form"
-          id="searchPageForm"
-          role="search"
-        >
+        <form class="search-page-form" id="searchPageForm" role="search">
           <label
             for="searchPageInput"
             class="visually-hidden"
@@ -67,24 +53,12 @@
             autocomplete="off"
           />
 
-          <button
-            type="submit"
-            data-i18n="search_submit"
-          >
-            Search
-          </button>
+          <button type="submit" data-i18n="search_submit">Search</button>
         </form>
 
-        <p
-          class="search-status"
-          id="searchStatus"
-          aria-live="polite"
-        ></p>
+        <p class="search-status" id="searchStatus" aria-live="polite"></p>
 
-        <div
-          class="search-results"
-          id="searchResults"
-        ></div>
+        <div class="search-results" id="searchResults"></div>
       </section>
     </main>
 

@@ -1,8 +1,9 @@
 const homeEventsList = document.getElementById("homeEventsList");
 const homeEventsMessage = document.getElementById("homeEventsMessage");
 const homeRetirementsList = document.getElementById("homeRetirementsList");
-const homeRetirementsMessage =
-  document.getElementById("homeRetirementsMessage");
+const homeRetirementsMessage = document.getElementById(
+  "homeRetirementsMessage",
+);
 
 let homeEvents = [];
 let homeRetirementMessages = [];
@@ -54,7 +55,7 @@ function formatHomeEventDate(event, language) {
     locale: getHomeLocale(language),
     month: "short",
     day: "numeric",
-    ...(event.allDay ? { timeZone: "UTC" } : {})
+    ...(event.allDay ? { timeZone: "UTC" } : {}),
   });
 }
 
@@ -72,17 +73,14 @@ function formatHomeEventTime(event, language) {
   return CMCENUtils.formatDate(event.startDate, {
     locale: getHomeLocale(language),
     hour: "numeric",
-    minute: "2-digit"
+    minute: "2-digit",
   });
 }
 
 function formatRetireeName(retirementMessage) {
-  const { name } = CMCENUtils.getRetireeNameParts(
-    retirementMessage.retiree
-  );
+  const { name } = CMCENUtils.getRetireeNameParts(retirementMessage.retiree);
 
-  return name ||
-    getHomeTranslation("retirement_card_default_name");
+  return name || getHomeTranslation("retirement_card_default_name");
 }
 
 function formatRetirementMeta(retirementMessage, language) {
@@ -103,8 +101,8 @@ function formatRetirementMeta(retirementMessage, language) {
           month: "short",
           day: "numeric",
           year: "numeric",
-          timeZone: "UTC"
-        })
+          timeZone: "UTC",
+        }),
       );
     }
   }
@@ -120,10 +118,8 @@ function getHomeCommentCount(retirementMessage) {
 
 function formatHomeCommentCount(count) {
   return getHomeTranslation(
-    count === 1
-      ? "retirement_comment_singular"
-      : "retirement_comment_plural",
-    { count }
+    count === 1 ? "retirement_comment_singular" : "retirement_comment_plural",
+    { count },
   );
 }
 
@@ -133,27 +129,24 @@ function isHomeRetirementPlaceholderPhoto(photoUrl) {
   }
 
   try {
-    const url =
-      new URL(photoUrl, window.location.origin);
-    const pathname =
-      url.pathname.toLowerCase();
-    const fileName =
-      pathname.split("/").pop();
+    const url = new URL(photoUrl, window.location.origin);
+    const pathname = url.pathname.toLowerCase();
+    const fileName = pathname.split("/").pop();
 
-    return fileName === "logo.png" ||
+    return (
+      fileName === "logo.png" ||
       fileName.includes("cmcen-crest") ||
-      pathname.includes("/legacy/wordpress/348036/");
+      pathname.includes("/legacy/wordpress/348036/")
+    );
   } catch (error) {
-    const pathname =
-      String(photoUrl)
-        .toLowerCase()
-        .split(/[?#]/)[0];
-    const fileName =
-      pathname.split("/").pop();
+    const pathname = String(photoUrl).toLowerCase().split(/[?#]/)[0];
+    const fileName = pathname.split("/").pop();
 
-    return fileName === "logo.png" ||
+    return (
+      fileName === "logo.png" ||
       fileName.includes("cmcen-crest") ||
-      pathname.includes("/legacy/wordpress/348036/");
+      pathname.includes("/legacy/wordpress/348036/")
+    );
   }
 }
 
@@ -175,25 +168,20 @@ function createHomeRetirementMedia(retirementMessage, name) {
 
   if (retirementMessage.photoUrl) {
     const image = document.createElement("img");
-    const isPlaceholderPhoto =
-      isHomeRetirementPlaceholderPhoto(
-        retirementMessage.photoUrl
-      );
+    const isPlaceholderPhoto = isHomeRetirementPlaceholderPhoto(
+      retirementMessage.photoUrl,
+    );
 
     image.src = isPlaceholderPhoto
       ? "/images/logo.png"
       : retirementMessage.photoUrl;
     image.alt = isPlaceholderPhoto
       ? ""
-      : getHomeTranslation(
-        "retirement_photo_alt",
-        { name }
-      );
+      : getHomeTranslation("retirement_photo_alt", { name });
     image.loading = "lazy";
 
     if (isPlaceholderPhoto) {
-      image.className =
-        "home-retirement-photo-placeholder";
+      image.className = "home-retirement-photo-placeholder";
       image.setAttribute("aria-hidden", "true");
     }
 
@@ -208,8 +196,7 @@ function createHomeRetirementMedia(retirementMessage, name) {
 function createHomeEventItem(event, language) {
   const item = document.createElement("a");
   item.className = "home-feed-item home-event-item";
-  item.href =
-    `/event?id=${encodeURIComponent(event._id)}`;
+  item.href = `/event?id=${encodeURIComponent(event._id)}`;
 
   const date = document.createElement("span");
   date.className = "home-feed-date";
@@ -232,7 +219,7 @@ function createHomeEventItem(event, language) {
 
   meta.textContent = [
     formatHomeEventTime(event, language),
-    location || getHomeTranslation("home_event_location_pending")
+    location || getHomeTranslation("home_event_location_pending"),
   ]
     .filter(Boolean)
     .join(" / ");
@@ -248,15 +235,11 @@ function createHomeRetirementItem(retirementMessage, language) {
   const name = formatRetireeName(retirementMessage);
 
   item.className = "home-feed-item home-retirement-item";
-  item.href =
-    `/retirement-message?id=${encodeURIComponent(
-      retirementMessage._id
-    )}`;
+  item.href = `/retirement-message?id=${encodeURIComponent(
+    retirementMessage._id,
+  )}`;
 
-  const media = createHomeRetirementMedia(
-    retirementMessage,
-    name
-  );
+  const media = createHomeRetirementMedia(retirementMessage, name);
 
   const content = document.createElement("span");
   content.className = "home-feed-content";
@@ -267,18 +250,15 @@ function createHomeRetirementItem(retirementMessage, language) {
   const meta = document.createElement("span");
   meta.className = "home-feed-meta";
 
-  const retirementMeta = formatRetirementMeta(
-    retirementMessage,
-    language
-  );
+  const retirementMeta = formatRetirementMeta(retirementMessage, language);
 
-  meta.textContent = retirementMeta ||
-    getHomeTranslation("retirement_mosid_pending");
+  meta.textContent =
+    retirementMeta || getHomeTranslation("retirement_mosid_pending");
 
   const comments = document.createElement("span");
   comments.className = "home-feed-note";
   comments.textContent = formatHomeCommentCount(
-    getHomeCommentCount(retirementMessage)
+    getHomeCommentCount(retirementMessage),
   );
 
   content.append(title, meta, comments);
@@ -295,7 +275,7 @@ function renderHomeEvents() {
   if (homeEventsState === "loading") {
     setHomeMessage(
       homeEventsMessage,
-      getHomeTranslation("home_events_loading")
+      getHomeTranslation("home_events_loading"),
     );
     return;
   }
@@ -304,7 +284,7 @@ function renderHomeEvents() {
     setHomeMessage(
       homeEventsMessage,
       getHomeTranslation("events_load_error"),
-      "error"
+      "error",
     );
     return;
   }
@@ -313,20 +293,16 @@ function renderHomeEvents() {
     setHomeMessage(
       homeEventsMessage,
       getHomeTranslation("no_upcoming_events"),
-      "empty"
+      "empty",
     );
     return;
   }
 
   clearHomeMessage(homeEventsMessage);
 
-  homeEvents
-    .slice(0, 3)
-    .forEach(event => {
-      homeEventsList?.appendChild(
-        createHomeEventItem(event, language)
-      );
-    });
+  homeEvents.slice(0, 3).forEach((event) => {
+    homeEventsList?.appendChild(createHomeEventItem(event, language));
+  });
 }
 
 function renderHomeRetirements() {
@@ -337,7 +313,7 @@ function renderHomeRetirements() {
   if (homeRetirementsState === "loading") {
     setHomeMessage(
       homeRetirementsMessage,
-      getHomeTranslation("home_retirements_loading")
+      getHomeTranslation("home_retirements_loading"),
     );
     return;
   }
@@ -346,7 +322,7 @@ function renderHomeRetirements() {
     setHomeMessage(
       homeRetirementsMessage,
       getHomeTranslation("retirements_load_error"),
-      "error"
+      "error",
     );
     return;
   }
@@ -355,23 +331,18 @@ function renderHomeRetirements() {
     setHomeMessage(
       homeRetirementsMessage,
       getHomeTranslation("retirements_empty"),
-      "empty"
+      "empty",
     );
     return;
   }
 
   clearHomeMessage(homeRetirementsMessage);
 
-  homeRetirementMessages
-    .slice(0, 3)
-    .forEach(retirementMessage => {
-      homeRetirementsList?.appendChild(
-        createHomeRetirementItem(
-          retirementMessage,
-          language
-        )
-      );
-    });
+  homeRetirementMessages.slice(0, 3).forEach((retirementMessage) => {
+    homeRetirementsList?.appendChild(
+      createHomeRetirementItem(retirementMessage, language),
+    );
+  });
 }
 
 async function loadHomeEvents() {
@@ -386,8 +357,7 @@ async function loadHomeEvents() {
     homeEvents = Array.isArray(data.events)
       ? data.events.sort(
           (firstEvent, secondEvent) =>
-            new Date(firstEvent.startDate) -
-            new Date(secondEvent.startDate)
+            new Date(firstEvent.startDate) - new Date(secondEvent.startDate),
         )
       : [];
     homeEventsState = "ready";
@@ -401,28 +371,19 @@ async function loadHomeEvents() {
 
 async function loadHomeRetirements() {
   try {
-    const response = await fetch(
-      "/api/retirement-messages?limit=3"
-    );
+    const response = await fetch("/api/retirement-messages?limit=3");
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(
-        data.error ||
-          "Could not load retirement messages"
-      );
+      throw new Error(data.error || "Could not load retirement messages");
     }
 
-    homeRetirementMessages =
-      Array.isArray(data.retirementMessages)
-        ? data.retirementMessages
-        : [];
+    homeRetirementMessages = Array.isArray(data.retirementMessages)
+      ? data.retirementMessages
+      : [];
     homeRetirementsState = "ready";
   } catch (error) {
-    console.error(
-      "Homepage retirement messages failed to load:",
-      error
-    );
+    console.error("Homepage retirement messages failed to load:", error);
     homeRetirementsState = "error";
   }
 

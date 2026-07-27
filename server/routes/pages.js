@@ -10,12 +10,12 @@ const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
   getUserPermissions,
-  normalizePermissionKeys
+  normalizePermissionKeys,
 } = require('../config/permissions');
 const {
   authMiddleware,
   optionalAuthMiddleware,
-  requirePermission
+  requirePermission,
 } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
 const { buildPublicMediaUrl } = require('../services/media-library');
@@ -29,9 +29,18 @@ const NAV_GROUP_LABELS = Object.freeze({
   about: { en: 'About', fr: 'À propos' },
   doctrine: { en: 'Doctrine', fr: 'Doctrine' },
   news: { en: 'News', fr: 'Nouvelles' },
-  benefits: { en: 'Benefits', fr: 'Avantages' }
+  benefits: { en: 'Benefits', fr: 'Avantages' },
 });
-const BLOCK_TYPES = new Set(['heading', 'text', 'image', 'callout', 'button', 'divider', 'columns', 'carousel']);
+const BLOCK_TYPES = new Set([
+  'heading',
+  'text',
+  'image',
+  'callout',
+  'button',
+  'divider',
+  'columns',
+  'carousel',
+]);
 const DEFAULT_MEDIA_PAGE_SIZE = 60;
 const MAX_MEDIA_PAGE_SIZE = 120;
 const MAX_MEDIA_LIST_OBJECTS = 5000;
@@ -51,46 +60,62 @@ const SITEMAP_EXCLUDED_HTML = new Set([
   'retirement-message.html',
   'site-config.html',
   'timers-admin.html',
-  'translations-admin.html'
+  'translations-admin.html',
 ]);
 const SITEMAP_ACCOUNT_HTML = new Set([
   'dashboard.html',
   'login.html',
   'notifications.html',
-  'register.html'
+  'register.html',
 ]);
 const SITEMAP_STATIC_LABELS = Object.freeze({
   'about-family.html': { en: 'About the C&E Family', fr: 'Famille des C et E' },
   'calendar.html': { en: 'Events Calendar', fr: 'Calendrier des événements' },
-  'dashboard.html': { en: 'Account dashboard', fr: 'Tableau de bord du compte' },
+  'dashboard.html': {
+    en: 'Account dashboard',
+    fr: 'Tableau de bord du compte',
+  },
   'event.html': { en: 'Event details', fr: 'Détails de l’événement' },
   'index.html': { en: 'Home', fr: 'Accueil' },
   'last-post.html': { en: 'Last Post', fr: 'Dernière sonnerie' },
-  'last-post-message.html': { en: 'Last Post message', fr: 'Message de dernière sonnerie' },
+  'last-post-message.html': {
+    en: 'Last Post message',
+    fr: 'Message de dernière sonnerie',
+  },
   'login.html': { en: 'Sign in', fr: 'Connexion' },
   'notifications.html': { en: 'Notifications', fr: 'Notifications' },
   'register.html': { en: 'Create account', fr: 'Créer un compte' },
-  'retirement-message.html': { en: 'Retirement message', fr: 'Message de retraite' },
+  'retirement-message.html': {
+    en: 'Retirement message',
+    fr: 'Message de retraite',
+  },
   'retirements.html': { en: 'Retirements', fr: 'Retraites' },
-  'review-submissions.html': { en: 'Review submissions', fr: 'Réviser les soumissions' },
+  'review-submissions.html': {
+    en: 'Review submissions',
+    fr: 'Réviser les soumissions',
+  },
   'search.html': { en: 'Search', fr: 'Recherche' },
   'sitemap.html': { en: 'Site map', fr: 'Plan du site' },
   'submit-event.html': { en: 'Submit an event', fr: 'Soumettre un événement' },
-  'submit-retirement.html': { en: 'Submit a retirement message', fr: 'Soumettre un message de retraite' }
+  'submit-retirement.html': {
+    en: 'Submit a retirement message',
+    fr: 'Soumettre un message de retraite',
+  },
 });
 
 function cleanText(value, maxLength = 10000) {
-  return String(value || '').trim().slice(0, maxLength);
+  return String(value || '')
+    .trim()
+    .slice(0, maxLength);
 }
 
 function cleanLocalizedText(value, maxLength = 10000) {
-  const source = value && typeof value === 'object' && !Array.isArray(value)
-    ? value
-    : {};
+  const source =
+    value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 
   return {
     en: cleanText(source.en, maxLength),
-    fr: cleanText(source.fr, maxLength)
+    fr: cleanText(source.fr, maxLength),
   };
 }
 
@@ -123,9 +148,8 @@ function cleanUrl(value) {
 }
 
 function cleanCrop(value) {
-  const source = value && typeof value === 'object' && !Array.isArray(value)
-    ? value
-    : {};
+  const source =
+    value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   const cleanNumber = (numberValue, fallback, min, max) => {
     const parsedValue = Number(numberValue);
 
@@ -143,15 +167,14 @@ function cleanCrop(value) {
     x: cleanNumber(source.x, 50, 0, 100),
     y: cleanNumber(source.y, 50, 0, 100),
     zoom: cleanNumber(source.zoom, 1, 1, 3),
-    rotate
+    rotate,
   };
 }
 
 function cleanImageVariant(value) {
-  const source = value && typeof value === 'object' && !Array.isArray(value)
-    ? value
-    : {};
-  const cleanPositiveNumber = numberValue => {
+  const source =
+    value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const cleanPositiveNumber = (numberValue) => {
     const parsedValue = Number(numberValue);
     return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0;
   };
@@ -162,33 +185,30 @@ function cleanImageVariant(value) {
     width: cleanPositiveNumber(source.width),
     height: cleanPositiveNumber(source.height),
     size: cleanPositiveNumber(source.size),
-    mimeType: cleanText(source.mimeType || 'image/webp', 100)
+    mimeType: cleanText(source.mimeType || 'image/webp', 100),
   };
 }
 
 function cleanImageVariants(value) {
-  const source = value && typeof value === 'object' && !Array.isArray(value)
-    ? value
-    : {};
+  const source =
+    value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 
   return {
     thumb: cleanImageVariant(source.thumb),
     medium: cleanImageVariant(source.medium),
     large: cleanImageVariant(source.large),
-    hero: cleanImageVariant(source.hero)
+    hero: cleanImageVariant(source.hero),
   };
 }
 
 function cleanBlock(block) {
-  const source = block && typeof block === 'object' && !Array.isArray(block)
-    ? block
-    : {};
+  const source =
+    block && typeof block === 'object' && !Array.isArray(block) ? block : {};
   const type = BLOCK_TYPES.has(source.type) ? source.type : 'text';
 
-  const cleanMediaItem = item => {
-    const itemSource = item && typeof item === 'object' && !Array.isArray(item)
-      ? item
-      : {};
+  const cleanMediaItem = (item) => {
+    const itemSource =
+      item && typeof item === 'object' && !Array.isArray(item) ? item : {};
 
     return {
       mediaKey: cleanText(itemSource.mediaKey, 500),
@@ -196,13 +216,14 @@ function cleanBlock(block) {
       mediaVariants: cleanImageVariants(itemSource.mediaVariants),
       alt: cleanLocalizedText(itemSource.alt, 500),
       caption: cleanLocalizedText(itemSource.caption, 500),
-      crop: cleanCrop(itemSource.crop)
+      crop: cleanCrop(itemSource.crop),
     };
   };
-  const cleanColumn = column => {
-    const columnSource = column && typeof column === 'object' && !Array.isArray(column)
-      ? column
-      : {};
+  const cleanColumn = (column) => {
+    const columnSource =
+      column && typeof column === 'object' && !Array.isArray(column)
+        ? column
+        : {};
 
     return {
       title: cleanLocalizedText(columnSource.title, 500),
@@ -211,7 +232,7 @@ function cleanBlock(block) {
       mediaUrl: cleanUrl(columnSource.mediaUrl),
       mediaVariants: cleanImageVariants(columnSource.mediaVariants),
       alt: cleanLocalizedText(columnSource.alt, 500),
-      crop: cleanCrop(columnSource.crop)
+      crop: cleanCrop(columnSource.crop),
     };
   };
 
@@ -233,7 +254,7 @@ function cleanBlock(block) {
       .map(cleanColumn),
     items: (Array.isArray(source.items) ? source.items : [])
       .slice(0, 12)
-      .map(cleanMediaItem)
+      .map(cleanMediaItem),
   };
 }
 
@@ -260,11 +281,27 @@ function toPageBuilderMediaItem(object) {
   const processedMatch = key.match(/^(images\/[^/]+)\/original\.[a-z0-9]+$/iu);
   const variants = processedMatch
     ? {
-      thumb: { key: `${processedMatch[1]}/thumb.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`), width: 400 },
-      medium: { key: `${processedMatch[1]}/medium.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`), width: 900 },
-      large: { key: `${processedMatch[1]}/large.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`), width: 1600 },
-      hero: { key: `${processedMatch[1]}/hero.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`), width: 2200 }
-    }
+        thumb: {
+          key: `${processedMatch[1]}/thumb.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`),
+          width: 400,
+        },
+        medium: {
+          key: `${processedMatch[1]}/medium.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`),
+          width: 900,
+        },
+        large: {
+          key: `${processedMatch[1]}/large.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`),
+          width: 1600,
+        },
+        hero: {
+          key: `${processedMatch[1]}/hero.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`),
+          width: 2200,
+        },
+      }
     : {};
 
   return {
@@ -272,7 +309,7 @@ function toPageBuilderMediaItem(object) {
     url: buildPublicMediaUrl(key),
     variants,
     size: object.Size || 0,
-    lastModified: object.LastModified || null
+    lastModified: object.LastModified || null,
   };
 }
 
@@ -290,7 +327,7 @@ function toPageBuilderMediaAssetItem(asset) {
     uuid: asset.uuid || '',
     uploadContext: asset.uploadContext || {},
     inferredName: asset.inferredName || '',
-    lastModified: asset.createdAt || asset.updatedAt || null
+    lastModified: asset.createdAt || asset.updatedAt || null,
   };
 }
 
@@ -302,21 +339,32 @@ function getMediaSort(value) {
 }
 
 function getMediaSortKey(value) {
-  return ['newest', 'oldest', 'name', 'size'].includes(value) ? value : 'newest';
+  return ['newest', 'oldest', 'name', 'size'].includes(value)
+    ? value
+    : 'newest';
 }
 
 function sortStorageObjectsNewestFirst(objects = []) {
   return [...objects].sort((first, second) => {
-    const firstTime = first.LastModified ? new Date(first.LastModified).getTime() : 0;
-    const secondTime = second.LastModified ? new Date(second.LastModified).getTime() : 0;
+    const firstTime = first.LastModified
+      ? new Date(first.LastModified).getTime()
+      : 0;
+    const secondTime = second.LastModified
+      ? new Date(second.LastModified).getTime()
+      : 0;
 
-    return secondTime - firstTime || String(second.Key || '').localeCompare(String(first.Key || ''));
+    return (
+      secondTime - firstTime ||
+      String(second.Key || '').localeCompare(String(first.Key || ''))
+    );
   });
 }
 
 function isVisibleMediaObject(object) {
   const key = String(object?.Key || '');
-  return key && (!key.startsWith('images/') || /\/original\.[a-z0-9]+$/iu.test(key));
+  return (
+    key && (!key.startsWith('images/') || /\/original\.[a-z0-9]+$/iu.test(key))
+  );
 }
 
 function cleanMediaCursor(value) {
@@ -329,11 +377,13 @@ async function listVisibleMediaObjectsNewestFirst() {
   let continuationToken;
 
   do {
-    const result = await s3Client.send(new ListObjectsV2Command({
-      Bucket: process.env.MINIO_BUCKET_NAME,
-      MaxKeys: 1000,
-      ContinuationToken: continuationToken
-    }));
+    const result = await s3Client.send(
+      new ListObjectsV2Command({
+        Bucket: process.env.MINIO_BUCKET_NAME,
+        MaxKeys: 1000,
+        ContinuationToken: continuationToken,
+      }),
+    );
 
     objects.push(...(result.Contents || []).filter(isVisibleMediaObject));
     continuationToken = result.NextContinuationToken;
@@ -346,11 +396,27 @@ function inferVariantsFromStorageKey(key) {
   const processedMatch = key.match(/^(images\/[^/]+)\/original\.[a-z0-9]+$/iu);
   return processedMatch
     ? {
-      thumb: { key: `${processedMatch[1]}/thumb.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`), width: 400 },
-      medium: { key: `${processedMatch[1]}/medium.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`), width: 900 },
-      large: { key: `${processedMatch[1]}/large.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`), width: 1600 },
-      hero: { key: `${processedMatch[1]}/hero.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`), width: 2200 }
-    }
+        thumb: {
+          key: `${processedMatch[1]}/thumb.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`),
+          width: 400,
+        },
+        medium: {
+          key: `${processedMatch[1]}/medium.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`),
+          width: 900,
+        },
+        large: {
+          key: `${processedMatch[1]}/large.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`),
+          width: 1600,
+        },
+        hero: {
+          key: `${processedMatch[1]}/hero.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`),
+          width: 2200,
+        },
+      }
     : {};
 }
 
@@ -361,33 +427,36 @@ async function seedMediaAssetsFromStorageIfEmpty() {
   const objects = await listVisibleMediaObjectsNewestFirst();
   if (!objects.length) return;
 
-  await MediaAsset.insertMany(objects.map(object => {
-    const key = object.Key;
-    return {
-      key,
-      url: buildPublicMediaUrl(key),
-      originalKey: key,
-      originalUrl: buildPublicMediaUrl(key),
-      originalName: key.split('/').pop() || key,
-      displayName: key.split('/').pop() || key,
-      size: object.Size || 0,
-      uploadContext: {
-        type: 'legacyStorage',
-        context: 'storage-seed',
-        label: key.split('/').pop() || key
-      },
-      inferredName: key.split('/').pop() || key,
-      fileMetadata: {
+  await MediaAsset.insertMany(
+    objects.map((object) => {
+      const key = object.Key;
+      return {
+        key,
+        url: buildPublicMediaUrl(key),
+        originalKey: key,
+        originalUrl: buildPublicMediaUrl(key),
         originalName: key.split('/').pop() || key,
+        displayName: key.split('/').pop() || key,
         size: object.Size || 0,
-        storageKey: key,
-        lastModified: object.LastModified || null
-      },
-      variants: inferVariantsFromStorageKey(key),
-      createdAt: object.LastModified || new Date(),
-      updatedAt: object.LastModified || new Date()
-    };
-  }), { ordered: false }).catch(error => {
+        uploadContext: {
+          type: 'legacyStorage',
+          context: 'storage-seed',
+          label: key.split('/').pop() || key,
+        },
+        inferredName: key.split('/').pop() || key,
+        fileMetadata: {
+          originalName: key.split('/').pop() || key,
+          size: object.Size || 0,
+          storageKey: key,
+          lastModified: object.LastModified || null,
+        },
+        variants: inferVariantsFromStorageKey(key),
+        createdAt: object.LastModified || new Date(),
+        updatedAt: object.LastModified || new Date(),
+      };
+    }),
+    { ordered: false },
+  ).catch((error) => {
     if (error.code !== 11000) throw error;
   });
 }
@@ -400,17 +469,18 @@ function cleanObjectIdList(value) {
   return [
     ...new Set(
       value
-        .map(item => String(item || '').trim())
-        .filter(item => /^[0-9a-f]{24}$/iu.test(item))
-    )
+        .map((item) => String(item || '').trim())
+        .filter((item) => /^[0-9a-f]{24}$/iu.test(item)),
+    ),
   ];
 }
 
 function cleanPageAccess(value) {
-  const source = value && typeof value === 'object' && !Array.isArray(value)
-    ? value
-    : {};
-  const audience = ['public', 'authenticated', 'restricted'].includes(source.audience)
+  const source =
+    value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const audience = ['public', 'authenticated', 'restricted'].includes(
+    source.audience,
+  )
     ? source.audience
     : 'public';
 
@@ -419,12 +489,12 @@ function cleanPageAccess(value) {
     roles: [
       ...new Set(
         (Array.isArray(source.roles) ? source.roles : [])
-          .map(role => String(role || '').trim())
-          .filter(role => USER_ROLES.includes(role))
-      )
+          .map((role) => String(role || '').trim())
+          .filter((role) => USER_ROLES.includes(role)),
+      ),
     ],
     customRoles: cleanObjectIdList(source.customRoles),
-    permissions: normalizePermissionKeys(source.permissions)
+    permissions: normalizePermissionKeys(source.permissions),
   };
 }
 
@@ -440,7 +510,7 @@ function getPageSnapshot(page) {
     status: page.status,
     access: getPageAccess(page),
     updatedAt: page.updatedAt,
-    publishedAt: page.publishedAt
+    publishedAt: page.publishedAt,
   };
 }
 
@@ -458,7 +528,7 @@ function toPageResponse(page, { includeBlocks = true } = {}) {
     blocks: includeBlocks ? plainPage.blocks || [] : undefined,
     createdAt: plainPage.createdAt,
     updatedAt: plainPage.updatedAt,
-    publishedAt: plainPage.publishedAt
+    publishedAt: plainPage.publishedAt,
   };
 }
 
@@ -466,7 +536,7 @@ function titleCaseRouteSegment(value) {
   return String(value || '')
     .replace(/\.html$/iu, '')
     .replace(/[-_]+/gu, ' ')
-    .replace(/\b\w/gu, character => character.toUpperCase());
+    .replace(/\b\w/gu, (character) => character.toUpperCase());
 }
 
 function routeFromHtmlFile(fileName) {
@@ -478,10 +548,12 @@ function routeFromHtmlFile(fileName) {
 }
 
 function getSitemapStaticLabel(fileName) {
-  return SITEMAP_STATIC_LABELS[fileName] || {
-    en: titleCaseRouteSegment(fileName),
-    fr: titleCaseRouteSegment(fileName)
-  };
+  return (
+    SITEMAP_STATIC_LABELS[fileName] || {
+      en: titleCaseRouteSegment(fileName),
+      fr: titleCaseRouteSegment(fileName),
+    }
+  );
 }
 
 function getSitemapSection(fileName) {
@@ -503,7 +575,7 @@ function toSitemapItem({ title, route, summary, updatedAt, section, type }) {
     summary: summary || {},
     updatedAt: updatedAt || null,
     section,
-    type
+    type,
   };
 }
 
@@ -511,17 +583,19 @@ async function getStaticSitemapItems() {
   const files = await fs.readdir(PUBLIC_DIRECTORY);
 
   return files
-    .filter(fileName =>
-      fileName.endsWith('.html') &&
-      !SITEMAP_EXCLUDED_HTML.has(fileName)
+    .filter(
+      (fileName) =>
+        fileName.endsWith('.html') && !SITEMAP_EXCLUDED_HTML.has(fileName),
     )
-    .map(fileName => toSitemapItem({
-      title: getSitemapStaticLabel(fileName),
-      route: routeFromHtmlFile(fileName),
-      updatedAt: null,
-      section: getSitemapSection(fileName),
-      type: 'static'
-    }))
+    .map((fileName) =>
+      toSitemapItem({
+        title: getSitemapStaticLabel(fileName),
+        route: routeFromHtmlFile(fileName),
+        updatedAt: null,
+        section: getSitemapSection(fileName),
+        type: 'static',
+      }),
+    )
     .sort((first, second) => {
       if (first.route === '/') return -1;
       if (second.route === '/') return 1;
@@ -536,7 +610,7 @@ function toSitemapPageItem(page) {
     summary: page.summary,
     updatedAt: page.updatedAt,
     section: 'pages',
-    type: 'page'
+    type: 'page',
   });
 }
 
@@ -555,7 +629,9 @@ function cleanPageUpdate(body, actor, { requireTitle = false } = {}) {
   }
 
   if (requireTitle || Object.prototype.hasOwnProperty.call(source, 'slug')) {
-    const slug = normalizeSlug(source.slug || source.title?.en || source.title?.fr);
+    const slug = normalizeSlug(
+      source.slug || source.title?.en || source.title?.fr,
+    );
 
     if (!slug) {
       return { error: 'Page slug is required' };
@@ -584,9 +660,9 @@ function cleanPageUpdate(body, actor, { requireTitle = false } = {}) {
 function getCustomRoleIds(user) {
   return new Set(
     (Array.isArray(user?.customRoles) ? user.customRoles : [])
-      .map(role => role?._id || role)
+      .map((role) => role?._id || role)
       .filter(Boolean)
-      .map(roleId => String(roleId))
+      .map((roleId) => String(roleId)),
   );
 }
 
@@ -611,7 +687,7 @@ function canViewPage(page, user) {
 
   const allowedRoles = new Set(access.roles || []);
   const allowedCustomRoles = new Set(
-    (access.customRoles || []).map(roleId => String(roleId))
+    (access.customRoles || []).map((roleId) => String(roleId)),
   );
   const requiredPermissions = new Set(access.permissions || []);
   const userCustomRoleIds = getCustomRoleIds(user);
@@ -658,7 +734,7 @@ function toAdminRole(role) {
     name: role.name,
     slug: role.slug,
     color: role.color,
-    permissions: role.permissions || []
+    permissions: role.permissions || [],
   };
 }
 
@@ -676,7 +752,7 @@ function toNavigationItem(item) {
     visible: plainItem.visible !== false,
     order: plainItem.order || 0,
     createdAt: plainItem.createdAt,
-    updatedAt: plainItem.updatedAt
+    updatedAt: plainItem.updatedAt,
   };
 }
 
@@ -740,17 +816,17 @@ function cleanNavigationUpdate(body, actor, { requireLabel = false } = {}) {
 }
 
 function getNavigationGroups(items = []) {
-  const groups = NAV_GROUPS.map(group => ({
+  const groups = NAV_GROUPS.map((group) => ({
     key: group,
     label: NAV_GROUP_LABELS[group],
     builtIn: true,
-    order: NAV_GROUPS.indexOf(group)
+    order: NAV_GROUPS.indexOf(group),
   }));
-  const existing = new Set(groups.map(group => group.key));
+  const existing = new Set(groups.map((group) => group.key));
 
   items
-    .filter(item => item.type === 'group')
-    .forEach(item => {
+    .filter((item) => item.type === 'group')
+    .forEach((item) => {
       if (existing.has(item.group)) return;
 
       existing.add(item.group);
@@ -759,12 +835,12 @@ function getNavigationGroups(items = []) {
         label: item.label || {},
         builtIn: false,
         order: item.order || 0,
-        _id: item._id
+        _id: item._id,
       });
     });
 
-  return groups.sort((first, second) =>
-    Number(first.order || 0) - Number(second.order || 0)
+  return groups.sort(
+    (first, second) => Number(first.order || 0) - Number(second.order || 0),
   );
 }
 
@@ -778,11 +854,13 @@ router.get('/api/navigation', optionalAuthMiddleware, async (req, res) => {
     res.json({
       groups: getNavigationGroups(items),
       items: items
-        .filter(item =>
-          item.type === 'group' ||
-          ((!item.page || item.page.status === 'published') && canViewNavigationItem(item, req.user))
+        .filter(
+          (item) =>
+            item.type === 'group' ||
+            ((!item.page || item.page.status === 'published') &&
+              canViewNavigationItem(item, req.user)),
         )
-        .map(toNavigationItem)
+        .map(toNavigationItem),
     });
   } catch (error) {
     console.error('Navigation list failed:', error);
@@ -797,10 +875,10 @@ router.get('/api/sitemap', optionalAuthMiddleware, async (req, res) => {
       Page.find({ status: 'published' })
         .select('title slug summary access updatedAt publishedAt')
         .sort({ 'title.en': 1, slug: 1 })
-        .lean()
+        .lean(),
     ]);
     const pageItems = pages
-      .filter(page => canViewPage(page, req.user))
+      .filter((page) => canViewPage(page, req.user))
       .map(toSitemapPageItem);
 
     res.json({
@@ -808,10 +886,13 @@ router.get('/api/sitemap', optionalAuthMiddleware, async (req, res) => {
       sections: [
         { key: 'main', title: { en: 'Main', fr: 'Principal' } },
         { key: 'site', title: { en: 'Site pages', fr: 'Pages du site' } },
-        { key: 'pages', title: { en: 'Published pages', fr: 'Pages publiées' } },
-        { key: 'account', title: { en: 'Account', fr: 'Compte' } }
+        {
+          key: 'pages',
+          title: { en: 'Published pages', fr: 'Pages publiées' },
+        },
+        { key: 'account', title: { en: 'Account', fr: 'Compte' } },
       ],
-      items: [...staticItems, ...pageItems]
+      items: [...staticItems, ...pageItems],
     });
   } catch (error) {
     console.error('Sitemap generation failed:', error);
@@ -828,7 +909,7 @@ router.get('/api/pages/:slug', optionalAuthMiddleware, async (req, res) => {
     const slug = normalizeSlug(req.params.slug);
     const page = await Page.findOne({
       slug,
-      status: 'published'
+      status: 'published',
     }).lean();
 
     if (!page) {
@@ -837,7 +918,7 @@ router.get('/api/pages/:slug', optionalAuthMiddleware, async (req, res) => {
 
     if (!canViewPage(page, req.user)) {
       return res.status(req.user ? 403 : 401).json({
-        error: req.user ? 'Page access denied' : 'Authentication required'
+        error: req.user ? 'Page access denied' : 'Authentication required',
       });
     }
 
@@ -865,7 +946,7 @@ router.get(
       console.error('Admin page preview failed:', error);
       res.status(500).json({ error: 'Could not load page preview' });
     }
-  }
+  },
 );
 
 router.get(
@@ -875,30 +956,28 @@ router.get(
   async (req, res) => {
     try {
       const [pages, navItems, customRoles] = await Promise.all([
-        Page.find({})
-          .sort({ updatedAt: -1, createdAt: -1 })
-          .lean(),
+        Page.find({}).sort({ updatedAt: -1, createdAt: -1 }).lean(),
         NavigationItem.find({})
           .sort({ group: 1, order: 1, createdAt: 1 })
           .lean(),
-        Role.find({})
-          .sort({ name: 1, createdAt: 1 })
-          .lean()
+        Role.find({}).sort({ name: 1, createdAt: 1 }).lean(),
       ]);
 
       res.json({
-        pages: pages.map(page => toPageResponse(page, { includeBlocks: false })),
+        pages: pages.map((page) =>
+          toPageResponse(page, { includeBlocks: false }),
+        ),
         navigationItems: navItems.map(toNavigationItem),
         navigationGroups: getNavigationGroups(navItems),
         roles: USER_ROLES,
         customRoles: customRoles.map(toAdminRole),
-        permissionCatalog: PERMISSION_CATALOG
+        permissionCatalog: PERMISSION_CATALOG,
       });
     } catch (error) {
       console.error('Admin page list failed:', error);
       res.status(500).json({ error: 'Could not load pages' });
     }
-  }
+  },
 );
 
 router.get(
@@ -915,12 +994,8 @@ router.get(
       await seedMediaAssetsFromStorageIfEmpty();
 
       const [mediaAssets, totalMedia] = await Promise.all([
-        MediaAsset.find({})
-          .sort(sort)
-          .skip(offset)
-          .limit(maxKeys)
-          .lean(),
-        MediaAsset.countDocuments({})
+        MediaAsset.find({}).sort(sort).skip(offset).limit(maxKeys).lean(),
+        MediaAsset.countDocuments({}),
       ]);
       const nextOffset = offset + mediaAssets.length;
 
@@ -928,13 +1003,13 @@ router.get(
         sort: sortKey,
         media: mediaAssets.map(toPageBuilderMediaAssetItem),
         nextCursor: nextOffset < totalMedia ? String(nextOffset) : '',
-        isTruncated: nextOffset < totalMedia
+        isTruncated: nextOffset < totalMedia,
       });
     } catch (error) {
       console.error('Page builder media list failed:', error);
       res.status(500).json({ error: 'Could not load media library' });
     }
-  }
+  },
 );
 
 router.post(
@@ -944,7 +1019,7 @@ router.post(
   async (req, res) => {
     try {
       const result = cleanPageUpdate(req.body, req.user, {
-        requireTitle: true
+        requireTitle: true,
       });
 
       if (result.error) {
@@ -953,7 +1028,7 @@ router.post(
 
       const page = await Page.create({
         ...result.update,
-        createdBy: req.user?._id || null
+        createdBy: req.user?._id || null,
       });
 
       await writeAuditLog({
@@ -962,22 +1037,24 @@ router.post(
         actor: req.user,
         targetType: 'page',
         target: page._id,
-        targetSnapshot: getPageSnapshot(page)
+        targetSnapshot: getPageSnapshot(page),
       });
 
       res.status(201).json({
         message: 'Page created',
-        page: toPageResponse(page)
+        page: toPageResponse(page),
       });
     } catch (error) {
       if (error.code === 11000) {
-        return res.status(409).json({ error: 'A page with that slug already exists' });
+        return res
+          .status(409)
+          .json({ error: 'A page with that slug already exists' });
       }
 
       console.error('Admin page create failed:', error);
       res.status(500).json({ error: 'Could not create page' });
     }
-  }
+  },
 );
 
 router.get(
@@ -997,7 +1074,7 @@ router.get(
       console.error('Admin page detail failed:', error);
       res.status(500).json({ error: 'Could not load page' });
     }
-  }
+  },
 );
 
 router.patch(
@@ -1021,7 +1098,7 @@ router.patch(
       const page = await Page.findByIdAndUpdate(
         req.params.pageId,
         { $set: result.update },
-        { returnDocument: 'after', runValidators: true }
+        { returnDocument: 'after', runValidators: true },
       );
 
       await writeAuditLog({
@@ -1033,23 +1110,25 @@ router.patch(
         targetSnapshot: getPageSnapshot(page),
         metadata: {
           previousPage: getPageSnapshot(previousPage),
-          newPage: getPageSnapshot(page)
-        }
+          newPage: getPageSnapshot(page),
+        },
       });
 
       res.json({
         message: 'Page saved',
-        page: toPageResponse(page)
+        page: toPageResponse(page),
       });
     } catch (error) {
       if (error.code === 11000) {
-        return res.status(409).json({ error: 'A page with that slug already exists' });
+        return res
+          .status(409)
+          .json({ error: 'A page with that slug already exists' });
       }
 
       console.error('Admin page update failed:', error);
       res.status(500).json({ error: 'Could not save page' });
     }
-  }
+  },
 );
 
 router.patch(
@@ -1058,7 +1137,9 @@ router.patch(
   requirePermission('canManagePages'),
   async (req, res) => {
     try {
-      const status = ['draft', 'published', 'archived'].includes(req.body?.status)
+      const status = ['draft', 'published', 'archived'].includes(
+        req.body?.status,
+      )
         ? req.body.status
         : '';
 
@@ -1071,15 +1152,15 @@ router.patch(
         updatedBy: req.user?._id || null,
         ...(status === 'published'
           ? {
-            publishedBy: req.user?._id || null,
-            publishedAt: new Date()
-          }
-          : {})
+              publishedBy: req.user?._id || null,
+              publishedAt: new Date(),
+            }
+          : {}),
       };
       const page = await Page.findByIdAndUpdate(
         req.params.pageId,
         { $set: updates },
-        { returnDocument: 'after', runValidators: true }
+        { returnDocument: 'after', runValidators: true },
       );
 
       if (!page) {
@@ -1088,23 +1169,24 @@ router.patch(
 
       await writeAuditLog({
         req,
-        action: status === 'published' ? 'page.published' : 'page.status_changed',
+        action:
+          status === 'published' ? 'page.published' : 'page.status_changed',
         actor: req.user,
         targetType: 'page',
         target: page._id,
         targetSnapshot: getPageSnapshot(page),
-        metadata: { status }
+        metadata: { status },
       });
 
       res.json({
         message: 'Page status updated',
-        page: toPageResponse(page)
+        page: toPageResponse(page),
       });
     } catch (error) {
       console.error('Admin page status update failed:', error);
       res.status(500).json({ error: 'Could not update page status' });
     }
-  }
+  },
 );
 
 router.delete(
@@ -1128,7 +1210,7 @@ router.delete(
         actor: req.user,
         targetType: 'page',
         target: page._id,
-        targetSnapshot: getPageSnapshot(page)
+        targetSnapshot: getPageSnapshot(page),
       });
 
       res.json({ message: 'Page deleted' });
@@ -1136,7 +1218,7 @@ router.delete(
       console.error('Admin page delete failed:', error);
       res.status(500).json({ error: 'Could not delete page' });
     }
-  }
+  },
 );
 
 router.post(
@@ -1146,7 +1228,7 @@ router.post(
   async (req, res) => {
     try {
       const result = cleanNavigationUpdate(req.body, req.user, {
-        requireLabel: true
+        requireLabel: true,
       });
 
       if (result.error) {
@@ -1155,7 +1237,7 @@ router.post(
 
       const item = await NavigationItem.create({
         ...result.update,
-        createdBy: req.user?._id || null
+        createdBy: req.user?._id || null,
       });
 
       await writeAuditLog({
@@ -1164,18 +1246,18 @@ router.post(
         actor: req.user,
         targetType: 'navigation',
         target: item._id,
-        targetSnapshot: toNavigationItem(item)
+        targetSnapshot: toNavigationItem(item),
       });
 
       res.status(201).json({
         message: 'Navigation item created',
-        item: toNavigationItem(item)
+        item: toNavigationItem(item),
       });
     } catch (error) {
       console.error('Navigation item create failed:', error);
       res.status(500).json({ error: 'Could not create navigation item' });
     }
-  }
+  },
 );
 
 router.patch(
@@ -1193,7 +1275,7 @@ router.patch(
       const item = await NavigationItem.findByIdAndUpdate(
         req.params.itemId,
         { $set: result.update },
-        { returnDocument: 'after', runValidators: true }
+        { returnDocument: 'after', runValidators: true },
       );
 
       if (!item) {
@@ -1206,18 +1288,18 @@ router.patch(
         actor: req.user,
         targetType: 'navigation',
         target: item._id,
-        targetSnapshot: toNavigationItem(item)
+        targetSnapshot: toNavigationItem(item),
       });
 
       res.json({
         message: 'Navigation item updated',
-        item: toNavigationItem(item)
+        item: toNavigationItem(item),
       });
     } catch (error) {
       console.error('Navigation item update failed:', error);
       res.status(500).json({ error: 'Could not update navigation item' });
     }
-  }
+  },
 );
 
 router.delete(
@@ -1235,7 +1317,7 @@ router.delete(
       if (item.type === 'group') {
         await NavigationItem.deleteMany({
           type: 'link',
-          group: item.group
+          group: item.group,
         });
       }
 
@@ -1247,7 +1329,7 @@ router.delete(
         actor: req.user,
         targetType: 'navigation',
         target: item._id,
-        targetSnapshot: toNavigationItem(item)
+        targetSnapshot: toNavigationItem(item),
       });
 
       res.json({ message: 'Navigation item deleted' });
@@ -1255,7 +1337,7 @@ router.delete(
       console.error('Navigation item delete failed:', error);
       res.status(500).json({ error: 'Could not delete navigation item' });
     }
-  }
+  },
 );
 
 module.exports = router;

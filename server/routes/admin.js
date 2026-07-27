@@ -3,7 +3,7 @@ const speakeasy = require('speakeasy');
 const crypto = require('crypto');
 const {
   DeleteObjectCommand,
-  ListObjectsV2Command
+  ListObjectsV2Command,
 } = require('@aws-sdk/client-s3');
 const User = require('../models/User');
 const Role = require('../models/Role');
@@ -16,20 +16,14 @@ const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
   normalizePermissionKeys,
-  getUserPermissions
+  getUserPermissions,
 } = require('../config/permissions');
-const {
-  authMiddleware,
-  requirePermission
-} = require('../middleware/auth');
-const {
-  writeAuditLog,
-  snapshotUser
-} = require('../services/audit-log');
+const { authMiddleware, requirePermission } = require('../middleware/auth');
+const { writeAuditLog, snapshotUser } = require('../services/audit-log');
 const { sendMail } = require('../services/mailer');
 const {
   buildPublicMediaUrl,
-  getMediaKeyFromValue
+  getMediaKeyFromValue,
 } = require('../services/media-library');
 const {
   getEventSnapshot,
@@ -37,7 +31,7 @@ const {
   getRetirementCommentSnapshot,
   getRetirementCommentTitle,
   getRetirementMessageSnapshot,
-  getRetirementMessageTitle
+  getRetirementMessageTitle,
 } = require('../services/content-snapshots');
 const s3Client = require('../storage');
 
@@ -48,7 +42,7 @@ const CONTENT_AREAS = Object.freeze([
   'branch',
   'association',
   'foundation',
-  'museum'
+  'museum',
 ]);
 
 const DEVELOPER_CONFIRMATION = 'DEVELOPER';
@@ -61,7 +55,7 @@ const INVITATION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const USER_EXPORT_FORMATS = Object.freeze(['csv', 'pdf']);
 const USER_EXPORT_FILTER_OPTIONS = Object.freeze({
   roles: USER_ROLES,
-  accountTypes: ['member', 'ghost', 'invited']
+  accountTypes: ['member', 'ghost', 'invited'],
 });
 const USER_EXPORT_FIELDS = Object.freeze([
   ['id', 'User ID'],
@@ -99,7 +93,7 @@ const USER_EXPORT_FIELDS = Object.freeze([
   ['passkeyLabels', 'Passkey labels'],
   ['passkeyMetadata', 'Passkey metadata'],
   ['createdAt', 'Created at'],
-  ['updatedAt', 'Updated at']
+  ['updatedAt', 'Updated at'],
 ]);
 
 function verifyDestructiveTotp(user, code) {
@@ -109,14 +103,15 @@ function verifyDestructiveTotp(user, code) {
     secret: user.totp.secret,
     encoding: 'base32',
     token: String(code || '').replace(/\D/gu, ''),
-    window: Number(process.env.TOTP_WINDOW || 2)
+    window: Number(process.env.TOTP_WINDOW || 2),
   });
 }
 
 function hasFreshDestructivePasskeyVerification(user) {
   const verifiedAt = user?.twoFactor?.destructiveVerifiedAt;
-  return verifiedAt &&
-    Date.now() - new Date(verifiedAt).getTime() <= 5 * 60 * 1000;
+  return (
+    verifiedAt && Date.now() - new Date(verifiedAt).getTime() <= 5 * 60 * 1000
+  );
 }
 
 // GET /api/admin/review-counts
@@ -127,26 +122,27 @@ router.get(
   requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
-      const [events, retirementMessages, lastPosts, comments] = await Promise.all([
-        Event.countDocuments({ status: 'pending' }),
-        RetirementMessage.countDocuments({ status: 'pending' }),
-        LastPostMessage.countDocuments({ status: 'pending' }),
-        RetirementComment.countDocuments({ status: 'pending' })
-      ]);
+      const [events, retirementMessages, lastPosts, comments] =
+        await Promise.all([
+          Event.countDocuments({ status: 'pending' }),
+          RetirementMessage.countDocuments({ status: 'pending' }),
+          LastPostMessage.countDocuments({ status: 'pending' }),
+          RetirementComment.countDocuments({ status: 'pending' }),
+        ]);
 
       res.json({
         events,
         retirementMessages,
         lastPosts,
-        comments
+        comments,
       });
     } catch (error) {
       console.error('Could not load review submission counts:', error);
       res.status(500).json({
-        error: 'Could not load review submission counts'
+        error: 'Could not load review submission counts',
       });
     }
-  }
+  },
 );
 
 function cleanContentAreas(value) {
@@ -155,11 +151,7 @@ function cleanContentAreas(value) {
   }
 
   return [
-    ...new Set(
-      value
-        .map(area => String(area || '').trim())
-        .filter(Boolean)
-    )
+    ...new Set(value.map((area) => String(area || '').trim()).filter(Boolean)),
   ];
 }
 
@@ -172,15 +164,15 @@ function normalizeRoleSlug(value) {
 }
 
 function cleanRoleName(value) {
-  return String(value || '').trim().replace(/\s+/g, ' ');
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ');
 }
 
 function cleanRoleColor(value) {
   const cleanValue = String(value || '').trim();
 
-  return /^#[0-9a-f]{6}$/iu.test(cleanValue)
-    ? cleanValue.toUpperCase()
-    : '';
+  return /^#[0-9a-f]{6}$/iu.test(cleanValue) ? cleanValue.toUpperCase() : '';
 }
 
 function cleanRoleIds(value) {
@@ -190,10 +182,8 @@ function cleanRoleIds(value) {
 
   return [
     ...new Set(
-      value
-        .map(roleId => String(roleId || '').trim())
-        .filter(Boolean)
-    )
+      value.map((roleId) => String(roleId || '').trim()).filter(Boolean),
+    ),
   ];
 }
 
@@ -203,23 +193,23 @@ async function validateCustomRoleIds(roleIds) {
   if (!cleanIds.length) {
     return {
       roleIds: [],
-      roles: []
+      roles: [],
     };
   }
 
   const roles = await Role.find({
-    _id: { $in: cleanIds }
+    _id: { $in: cleanIds },
   }).select('_id name slug color permissions');
 
   if (roles.length !== cleanIds.length) {
     return {
-      error: 'Invalid custom role provided'
+      error: 'Invalid custom role provided',
     };
   }
 
   return {
     roleIds: cleanIds,
-    roles
+    roles,
   };
 }
 
@@ -234,7 +224,7 @@ function toAdminRole(role) {
     color: plainRole.color || '#4F46E5',
     permissions: plainRole.permissions || [],
     createdAt: plainRole.createdAt,
-    updatedAt: plainRole.updatedAt
+    updatedAt: plainRole.updatedAt,
   };
 }
 
@@ -252,10 +242,7 @@ async function createRoleUpdate(body, actor, { requireName = false } = {}) {
   const update = {};
   let hasEditableUpdate = false;
 
-  if (
-    requireName ||
-    Object.prototype.hasOwnProperty.call(source, 'name')
-  ) {
+  if (requireName || Object.prototype.hasOwnProperty.call(source, 'name')) {
     const name = cleanRoleName(source.name);
 
     if (!name) {
@@ -266,10 +253,7 @@ async function createRoleUpdate(body, actor, { requireName = false } = {}) {
     hasEditableUpdate = true;
   }
 
-  if (
-    requireName ||
-    Object.prototype.hasOwnProperty.call(source, 'slug')
-  ) {
+  if (requireName || Object.prototype.hasOwnProperty.call(source, 'slug')) {
     const slug = normalizeRoleSlug(source.slug || source.name);
 
     if (!slug) {
@@ -313,12 +297,12 @@ async function createRoleUpdate(body, actor, { requireName = false } = {}) {
 
   return {
     update,
-    hasEditableUpdate
+    hasEditableUpdate,
   };
 }
 
 function validateContentAreas(contentAreas) {
-  return contentAreas.every(area => CONTENT_AREAS.includes(area));
+  return contentAreas.every((area) => CONTENT_AREAS.includes(area));
 }
 
 function areStringArraysEqual(first = [], second = []) {
@@ -329,7 +313,9 @@ function areStringArraysEqual(first = [], second = []) {
     return false;
   }
 
-  return normalizedFirst.every((value, index) => value === normalizedSecond[index]);
+  return normalizedFirst.every(
+    (value, index) => value === normalizedSecond[index],
+  );
 }
 
 function getStringArrayDiff(previousValues = [], nextValues = []) {
@@ -337,24 +323,24 @@ function getStringArrayDiff(previousValues = [], nextValues = []) {
   const nextSet = new Set((nextValues || []).map(String));
 
   return {
-    added: [...nextSet].filter(value => !previousSet.has(value)).sort(),
-    removed: [...previousSet].filter(value => !nextSet.has(value)).sort()
+    added: [...nextSet].filter((value) => !previousSet.has(value)).sort(),
+    removed: [...previousSet].filter((value) => !nextSet.has(value)).sort(),
   };
 }
 
 function getPermissionDetails(permissionKeys = []) {
   const permissionsByKey = new Map(
-    PERMISSION_CATALOG.map(permission => [permission.key, permission])
+    PERMISSION_CATALOG.map((permission) => [permission.key, permission]),
   );
 
-  return (permissionKeys || []).map(permissionKey => {
+  return (permissionKeys || []).map((permissionKey) => {
     const permission = permissionsByKey.get(permissionKey);
 
     return {
       key: permissionKey,
       label: permission?.label || permissionKey,
       group: permission?.group || '',
-      action: permission?.action || ''
+      action: permission?.action || '',
     };
   });
 }
@@ -362,7 +348,7 @@ function getPermissionDetails(permissionKeys = []) {
 function getRoleDetailsById(roles = []) {
   const details = new Map();
 
-  roles.forEach(role => {
+  roles.forEach((role) => {
     const adminRole = toAdminRole(role);
     details.set(String(adminRole._id), adminRole);
   });
@@ -372,7 +358,7 @@ function getRoleDetailsById(roles = []) {
 
 function getRoleDetails(roleMap, roleIds = []) {
   return (roleIds || [])
-    .map(roleId => roleMap.get(String(roleId)))
+    .map((roleId) => roleMap.get(String(roleId)))
     .filter(Boolean);
 }
 
@@ -397,15 +383,19 @@ function cleanUserPageSize(value) {
 }
 
 function getLastPostMessageTitle(message) {
-  return message.displayName ||
+  return (
+    message.displayName ||
     message.title ||
     [
       message.deceased?.fullRank,
       message.deceased?.firstName,
       message.deceased?.surname,
-      message.deceased?.postNominal
-    ].filter(Boolean).join(' ') ||
-    'Last Post notice';
+      message.deceased?.postNominal,
+    ]
+      .filter(Boolean)
+      .join(' ') ||
+    'Last Post notice'
+  );
 }
 
 function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
@@ -421,42 +411,42 @@ function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
     attachmentMap.get(key).push(attachment);
   }
 
-  events.forEach(event => {
+  events.forEach((event) => {
     addAttachment(getMediaKeyFromValue(event.imagePath), {
       _id: event._id,
       type: 'event',
       title: getEventTitle(event),
       status: event.status,
       field: 'imagePath',
-      href: `/submit-event?id=${encodeURIComponent(event._id)}`
+      href: `/submit-event?id=${encodeURIComponent(event._id)}`,
     });
   });
 
-  retirementMessages.forEach(message => {
+  retirementMessages.forEach((message) => {
     addAttachment(getMediaKeyFromValue(message.photoUrl), {
       _id: message._id,
       type: 'retirementMessage',
       title: getRetirementMessageTitle(message),
       status: message.status,
       field: 'photoUrl',
-      href: `/retirement-message?id=${encodeURIComponent(message._id)}`
+      href: `/retirement-message?id=${encodeURIComponent(message._id)}`,
     });
   });
 
-  lastPostMessages.forEach(message => {
+  lastPostMessages.forEach((message) => {
     const attachment = {
       _id: message._id,
       type: 'lastPostMessage',
       title: getLastPostMessageTitle(message),
       status: message.status,
       field: 'imageUrl',
-      href: `/last-post-message?id=${encodeURIComponent(message._id)}`
+      href: `/last-post-message?id=${encodeURIComponent(message._id)}`,
     };
 
     addAttachment(getMediaKeyFromValue(message.imageUrl), attachment);
     addAttachment(getMediaKeyFromValue(message.photoUrl), {
       ...attachment,
-      field: 'photoUrl'
+      field: 'photoUrl',
     });
   });
 
@@ -464,16 +454,17 @@ function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
 }
 
 function addAttachmentAliases(attachmentMap, aliasKeys) {
-  const attachments = aliasKeys
-    .flatMap(key => attachmentMap.get(key) || []);
+  const attachments = aliasKeys.flatMap((key) => attachmentMap.get(key) || []);
   const uniqueAttachments = Array.from(
-    new Map(attachments.map(attachment => [
-      `${attachment.type}:${attachment._id}:${attachment.field}`,
-      attachment
-    ])).values()
+    new Map(
+      attachments.map((attachment) => [
+        `${attachment.type}:${attachment._id}:${attachment.field}`,
+        attachment,
+      ]),
+    ).values(),
   );
 
-  aliasKeys.forEach(key => {
+  aliasKeys.forEach((key) => {
     if (key && uniqueAttachments.length && !attachmentMap.has(key)) {
       attachmentMap.set(key, uniqueAttachments);
     }
@@ -481,36 +472,40 @@ function addAttachmentAliases(attachmentMap, aliasKeys) {
 }
 
 function getMediaAssetAttachmentKeys(asset) {
-  return [...new Set([
-    asset?.key,
-    asset?.originalKey,
-    getMediaVariantKey(asset, 'thumb'),
-    getMediaVariantKey(asset, 'medium'),
-    getMediaVariantKey(asset, 'large'),
-    getMediaVariantKey(asset, 'hero')
-  ].filter(Boolean))];
+  return [
+    ...new Set(
+      [
+        asset?.key,
+        asset?.originalKey,
+        getMediaVariantKey(asset, 'thumb'),
+        getMediaVariantKey(asset, 'medium'),
+        getMediaVariantKey(asset, 'large'),
+        getMediaVariantKey(asset, 'hero'),
+      ].filter(Boolean),
+    ),
+  ];
 }
 
 async function getMediaAttachments() {
   const [events, retirementMessages, lastPostMessages] = await Promise.all([
     Event.find({
-      imagePath: { $nin: [null, ''] }
+      imagePath: { $nin: [null, ''] },
     })
       .select('title status imagePath updatedAt createdAt')
       .lean(),
     RetirementMessage.find({
-      photoUrl: { $nin: [null, ''] }
+      photoUrl: { $nin: [null, ''] },
     })
       .select('retiree status photoUrl updatedAt createdAt')
       .lean(),
     LastPostMessage.find({
       $or: [
         { imageUrl: { $nin: [null, ''] } },
-        { photoUrl: { $nin: [null, ''] } }
-      ]
+        { photoUrl: { $nin: [null, ''] } },
+      ],
     })
       .select('title deceased status imageUrl photoUrl updatedAt createdAt')
-      .lean()
+      .lean(),
   ]);
 
   return getMediaAttachmentMap(events, retirementMessages, lastPostMessages);
@@ -521,11 +516,11 @@ function toAdminMediaItem(object, attachmentMap) {
   const processedMatch = key.match(/^(images\/[^/]+)\/original\.[a-z0-9]+$/iu);
   const variants = processedMatch
     ? {
-      thumb: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`),
-      medium: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`),
-      large: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`),
-      hero: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`)
-    }
+        thumb: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`),
+        medium: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`),
+        large: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`),
+        hero: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`),
+      }
     : {};
   const attachments = attachmentMap.get(key) || [];
 
@@ -537,7 +532,7 @@ function toAdminMediaItem(object, attachmentMap) {
     lastModified: object.LastModified || null,
     eTag: object.ETag ? String(object.ETag).replace(/^"|"$/gu, '') : '',
     attachedPosts: attachments,
-    attachedPostCount: attachments.length
+    attachedPostCount: attachments.length,
   };
 }
 
@@ -572,16 +567,20 @@ function toAdminMediaAssetItem(asset, attachmentMap) {
     updatedAt: asset.updatedAt || null,
     attachedPosts: attachments,
     attachedPostCount: attachments.length,
-    objectKeys
+    objectKeys,
   };
 }
 
 function sortAdminMediaItems(items, sortKey) {
   if (sortKey === 'orphaned') {
-    return [...items].sort((first, second) =>
-      Number(first.attachedPostCount || 0) - Number(second.attachedPostCount || 0) ||
-      String(first.name || first.key || '').localeCompare(String(second.name || second.key || '')) ||
-      String(first.key || '').localeCompare(String(second.key || ''))
+    return [...items].sort(
+      (first, second) =>
+        Number(first.attachedPostCount || 0) -
+          Number(second.attachedPostCount || 0) ||
+        String(first.name || first.key || '').localeCompare(
+          String(second.name || second.key || ''),
+        ) ||
+        String(first.key || '').localeCompare(String(second.key || '')),
     );
   }
 
@@ -597,21 +596,32 @@ function getMediaSort(value) {
 }
 
 function getMediaSortKey(value) {
-  return ['newest', 'oldest', 'name', 'size', 'orphaned'].includes(value) ? value : 'newest';
+  return ['newest', 'oldest', 'name', 'size', 'orphaned'].includes(value)
+    ? value
+    : 'newest';
 }
 
 function sortStorageObjectsNewestFirst(objects = []) {
   return [...objects].sort((first, second) => {
-    const firstTime = first.LastModified ? new Date(first.LastModified).getTime() : 0;
-    const secondTime = second.LastModified ? new Date(second.LastModified).getTime() : 0;
+    const firstTime = first.LastModified
+      ? new Date(first.LastModified).getTime()
+      : 0;
+    const secondTime = second.LastModified
+      ? new Date(second.LastModified).getTime()
+      : 0;
 
-    return secondTime - firstTime || String(second.Key || '').localeCompare(String(first.Key || ''));
+    return (
+      secondTime - firstTime ||
+      String(second.Key || '').localeCompare(String(first.Key || ''))
+    );
   });
 }
 
 function isVisibleMediaObject(object) {
   const key = String(object?.Key || '');
-  return key && (!key.startsWith('images/') || /\/original\.[a-z0-9]+$/iu.test(key));
+  return (
+    key && (!key.startsWith('images/') || /\/original\.[a-z0-9]+$/iu.test(key))
+  );
 }
 
 function cleanMediaCursor(value) {
@@ -625,11 +635,7 @@ function cleanMediaKeyList(value) {
   }
 
   return [
-    ...new Set(
-      value
-        .map(key => String(key || '').trim())
-        .filter(Boolean)
-    )
+    ...new Set(value.map((key) => String(key || '').trim()).filter(Boolean)),
   ].slice(0, 200);
 }
 
@@ -638,11 +644,13 @@ async function listVisibleMediaObjectsNewestFirst() {
   let continuationToken;
 
   do {
-    const result = await s3Client.send(new ListObjectsV2Command({
-      Bucket: process.env.MINIO_BUCKET_NAME,
-      MaxKeys: 1000,
-      ContinuationToken: continuationToken
-    }));
+    const result = await s3Client.send(
+      new ListObjectsV2Command({
+        Bucket: process.env.MINIO_BUCKET_NAME,
+        MaxKeys: 1000,
+        ContinuationToken: continuationToken,
+      }),
+    );
 
     objects.push(...(result.Contents || []).filter(isVisibleMediaObject));
     continuationToken = result.NextContinuationToken;
@@ -655,11 +663,27 @@ function inferVariantsFromStorageKey(key) {
   const processedMatch = key.match(/^(images\/[^/]+)\/original\.[a-z0-9]+$/iu);
   return processedMatch
     ? {
-      thumb: { key: `${processedMatch[1]}/thumb.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`), width: 400 },
-      medium: { key: `${processedMatch[1]}/medium.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`), width: 900 },
-      large: { key: `${processedMatch[1]}/large.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`), width: 1600 },
-      hero: { key: `${processedMatch[1]}/hero.webp`, url: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`), width: 2200 }
-    }
+        thumb: {
+          key: `${processedMatch[1]}/thumb.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/thumb.webp`),
+          width: 400,
+        },
+        medium: {
+          key: `${processedMatch[1]}/medium.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/medium.webp`),
+          width: 900,
+        },
+        large: {
+          key: `${processedMatch[1]}/large.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/large.webp`),
+          width: 1600,
+        },
+        hero: {
+          key: `${processedMatch[1]}/hero.webp`,
+          url: buildPublicMediaUrl(`${processedMatch[1]}/hero.webp`),
+          width: 2200,
+        },
+      }
     : {};
 }
 
@@ -670,33 +694,36 @@ async function seedMediaAssetsFromStorageIfEmpty() {
   const objects = await listVisibleMediaObjectsNewestFirst();
   if (!objects.length) return;
 
-  await MediaAsset.insertMany(objects.map(object => {
-    const key = object.Key;
-    return {
-      key,
-      url: buildPublicMediaUrl(key),
-      originalKey: key,
-      originalUrl: buildPublicMediaUrl(key),
-      originalName: key.split('/').pop() || key,
-      displayName: key.split('/').pop() || key,
-      size: object.Size || 0,
-      uploadContext: {
-        type: 'legacyStorage',
-        context: 'storage-seed',
-        label: key.split('/').pop() || key
-      },
-      inferredName: key.split('/').pop() || key,
-      fileMetadata: {
+  await MediaAsset.insertMany(
+    objects.map((object) => {
+      const key = object.Key;
+      return {
+        key,
+        url: buildPublicMediaUrl(key),
+        originalKey: key,
+        originalUrl: buildPublicMediaUrl(key),
         originalName: key.split('/').pop() || key,
+        displayName: key.split('/').pop() || key,
         size: object.Size || 0,
-        storageKey: key,
-        lastModified: object.LastModified || null
-      },
-      variants: inferVariantsFromStorageKey(key),
-      createdAt: object.LastModified || new Date(),
-      updatedAt: object.LastModified || new Date()
-    };
-  }), { ordered: false }).catch(error => {
+        uploadContext: {
+          type: 'legacyStorage',
+          context: 'storage-seed',
+          label: key.split('/').pop() || key,
+        },
+        inferredName: key.split('/').pop() || key,
+        fileMetadata: {
+          originalName: key.split('/').pop() || key,
+          size: object.Size || 0,
+          storageKey: key,
+          lastModified: object.LastModified || null,
+        },
+        variants: inferVariantsFromStorageKey(key),
+        createdAt: object.LastModified || new Date(),
+        updatedAt: object.LastModified || new Date(),
+      };
+    }),
+    { ordered: false },
+  ).catch((error) => {
     if (error.code !== 11000) throw error;
   });
 }
@@ -716,11 +743,10 @@ function getUserContentAction(item, userId, createdField = 'createdBy') {
 
 function getRetirementMessageUserFilter(user) {
   const userId = user._id || user;
-  const email = String(user.email || '').trim().toLowerCase();
-  const conditions = [
-    { createdBy: userId },
-    { publishedBy: userId }
-  ];
+  const email = String(user.email || '')
+    .trim()
+    .toLowerCase();
+  const conditions = [{ createdBy: userId }, { publishedBy: userId }];
 
   if (email) {
     conditions.push({ 'submitter.email': email });
@@ -731,21 +757,20 @@ function getRetirementMessageUserFilter(user) {
 
 async function getUserPostSummary(user) {
   const userId = user._id || user;
-  const [eventCount, retirementMessageCount, retirementCommentCount, lastPostCount] = await Promise.all([
+  const [
+    eventCount,
+    retirementMessageCount,
+    retirementCommentCount,
+    lastPostCount,
+  ] = await Promise.all([
     Event.countDocuments({
-      $or: [
-        { createdBy: userId },
-        { publishedBy: userId }
-      ]
+      $or: [{ createdBy: userId }, { publishedBy: userId }],
     }),
     RetirementMessage.countDocuments(getRetirementMessageUserFilter(user)),
     RetirementComment.countDocuments({
-      $or: [
-        { author: userId },
-        { publishedBy: userId }
-      ]
+      $or: [{ author: userId }, { publishedBy: userId }],
     }),
-    LastPostMessage.countDocuments({ createdBy: userId })
+    LastPostMessage.countDocuments({ createdBy: userId }),
   ]);
 
   return {
@@ -753,28 +778,32 @@ async function getUserPostSummary(user) {
     retirementMessages: retirementMessageCount,
     retirementComments: retirementCommentCount,
     lastPosts: lastPostCount,
-    total: eventCount + retirementMessageCount + retirementCommentCount + lastPostCount
+    total:
+      eventCount +
+      retirementMessageCount +
+      retirementCommentCount +
+      lastPostCount,
   };
 }
 
 function toAdminUser(user, postSummary = null) {
   const plainUser = user.toObject ? user.toObject() : user;
   const customRoles = Array.isArray(plainUser.customRoles)
-    ? plainUser.customRoles.map(role => {
-      if (role && typeof role === 'object' && role.name) {
-        return toAdminRole(role);
-      }
+    ? plainUser.customRoles.map((role) => {
+        if (role && typeof role === 'object' && role.name) {
+          return toAdminRole(role);
+        }
 
-      return role;
-    })
+        return role;
+      })
     : [];
   const passkeyCount = Array.isArray(plainUser.webauthn)
-    ? plainUser.webauthn.filter(credential =>
-      credential?.credentialID && credential?.publicKey
-    ).length
+    ? plainUser.webauthn.filter(
+        (credential) => credential?.credentialID && credential?.publicKey,
+      ).length
     : 0;
-  const hasTotp = plainUser.totp?.enabled === true &&
-    Boolean(plainUser.totp?.secret);
+  const hasTotp =
+    plainUser.totp?.enabled === true && Boolean(plainUser.totp?.secret);
 
   return {
     _id: plainUser._id,
@@ -785,35 +814,41 @@ function toAdminUser(user, postSummary = null) {
     lastName: plainUser.lastName,
     role: plainUser.role,
     accountType: plainUser.accountType || 'member',
-    invitation: plainUser.accountType === 'invited' ? {
-      sentAt: plainUser.invitation?.sentAt || null,
-      expiresAt: plainUser.invitation?.expiresAt || null
-    } : null,
+    invitation:
+      plainUser.accountType === 'invited'
+        ? {
+            sentAt: plainUser.invitation?.sentAt || null,
+            expiresAt: plainUser.invitation?.expiresAt || null,
+          }
+        : null,
     emailVerification: {
       required: plainUser.emailVerification?.required === true,
       verified: plainUser.emailVerification?.verified === true,
-      verifiedAt: plainUser.emailVerification?.verifiedAt || null
+      verifiedAt: plainUser.emailVerification?.verifiedAt || null,
     },
     mfa: {
       hasTotp,
       totpAppName: plainUser.totp?.appName || '',
       passkeyCount,
       methodCount: passkeyCount + (hasTotp ? 1 : 0),
-      enabled: hasTotp || passkeyCount > 0
+      enabled: hasTotp || passkeyCount > 0,
     },
     customRoles,
-    customRoleIds: customRoles.map(role =>
-      typeof role === 'object' ? String(role._id) : String(role)
+    customRoleIds: customRoles.map((role) =>
+      typeof role === 'object' ? String(role._id) : String(role),
     ),
     contentAreas: plainUser.contentAreas || [],
     createdAt: plainUser.createdAt,
     updatedAt: plainUser.updatedAt,
-    postSummary
+    postSummary,
   };
 }
 
 function hashInvitationToken(token) {
-  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+  return crypto
+    .createHash('sha256')
+    .update(String(token || ''))
+    .digest('hex');
 }
 
 function getBaseUrl(req) {
@@ -839,37 +874,36 @@ async function sendInvitationEmail(req, user, token) {
       <p>An administrator has created a CMCEN / RCMCE account for you.</p>
       <p><a href="${activationUrl}">Activate your account</a></p>
       <p>This link expires in 7 days. You will set your own password and complete your profile.</p>
-    `
+    `,
   });
 }
 
 function getMfaAuditSnapshot(user) {
   const plainUser = user.toObject ? user.toObject() : user;
   const passkeyCount = Array.isArray(plainUser.webauthn)
-    ? plainUser.webauthn.filter(credential =>
-      credential?.credentialID && credential?.publicKey
-    ).length
+    ? plainUser.webauthn.filter(
+        (credential) => credential?.credentialID && credential?.publicKey,
+      ).length
     : 0;
-  const hasTotp = plainUser.totp?.enabled === true &&
-    Boolean(plainUser.totp?.secret);
-  const methods = [
-    hasTotp ? 'totp' : '',
-    passkeyCount ? 'passkey' : ''
-  ].filter(Boolean);
+  const hasTotp =
+    plainUser.totp?.enabled === true && Boolean(plainUser.totp?.secret);
+  const methods = [hasTotp ? 'totp' : '', passkeyCount ? 'passkey' : ''].filter(
+    Boolean,
+  );
 
   return {
     hadTotp: hasTotp,
     totpAppName: plainUser.totp?.appName || '',
     passkeyCount,
     methodCount: passkeyCount + (hasTotp ? 1 : 0),
-    methods
+    methods,
   };
 }
 
 function splitExportFilter(value) {
   return String(value || '')
     .split(',')
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
 }
 
@@ -877,23 +911,26 @@ function cleanExportFilter(value, allowedValues) {
   const allowed = new Set(allowedValues);
 
   return [
-    ...new Set(
-      splitExportFilter(value)
-        .filter(item => allowed.has(item))
-    )
+    ...new Set(splitExportFilter(value).filter((item) => allowed.has(item))),
   ];
 }
 
 function getUserExportCriteria(query = {}) {
-  const hasIncludeRoles = Object.prototype.hasOwnProperty.call(query, 'includeRoles');
-  const hasIncludeAccountTypes = Object.prototype.hasOwnProperty.call(query, 'includeAccountTypes');
+  const hasIncludeRoles = Object.prototype.hasOwnProperty.call(
+    query,
+    'includeRoles',
+  );
+  const hasIncludeAccountTypes = Object.prototype.hasOwnProperty.call(
+    query,
+    'includeAccountTypes',
+  );
   const includedRoles = cleanExportFilter(
     query.includeRoles,
-    USER_EXPORT_FILTER_OPTIONS.roles
+    USER_EXPORT_FILTER_OPTIONS.roles,
   );
   const includedAccountTypes = cleanExportFilter(
     query.includeAccountTypes,
-    USER_EXPORT_FILTER_OPTIONS.accountTypes
+    USER_EXPORT_FILTER_OPTIONS.accountTypes,
   );
   const filter = {};
 
@@ -909,7 +946,7 @@ function getUserExportCriteria(query = {}) {
         { accountType: 'member' },
         { accountType: { $exists: false } },
         { accountType: null },
-        { accountType: '' }
+        { accountType: '' },
       );
     }
 
@@ -925,14 +962,14 @@ function getUserExportCriteria(query = {}) {
       ...(filter.$and || []),
       accountTypeConditions.length
         ? { $or: accountTypeConditions }
-        : { accountType: { $in: [] } }
+        : { accountType: { $in: [] } },
     ];
   }
 
   return {
     filter,
     includedRoles,
-    includedAccountTypes
+    includedAccountTypes,
   };
 }
 
@@ -949,26 +986,28 @@ function formatExportBoolean(value) {
 }
 
 function getExportPasskeyLabel(credential, index) {
-  return credential?.nickname ||
+  return (
+    credential?.nickname ||
     credential?.providerName ||
     credential?.credentialDeviceType ||
-    `Passkey ${index + 1}`;
+    `Passkey ${index + 1}`
+  );
 }
 
 function toUserExportRow(user) {
   const plainUser = user.toObject ? user.toObject() : user;
   const customRoles = Array.isArray(plainUser.customRoles)
     ? plainUser.customRoles
-      .map(role => role?.name || role?.slug || String(role || ''))
-      .filter(Boolean)
+        .map((role) => role?.name || role?.slug || String(role || ''))
+        .filter(Boolean)
     : [];
   const passkeys = Array.isArray(plainUser.webauthn)
-    ? plainUser.webauthn.filter(credential =>
-      credential?.credentialID && credential?.publicKey
-    )
+    ? plainUser.webauthn.filter(
+        (credential) => credential?.credentialID && credential?.publicKey,
+      )
     : [];
-  const totpEnabled = plainUser.totp?.enabled === true &&
-    Boolean(plainUser.totp?.secret);
+  const totpEnabled =
+    plainUser.totp?.enabled === true && Boolean(plainUser.totp?.secret);
   const address = plainUser.address || {};
 
   return {
@@ -998,30 +1037,38 @@ function toUserExportRow(user) {
     addressPostalCode: address.postalCode || '',
     addressCountry: address.country || '',
     emailVerificationRequired: formatExportBoolean(
-      plainUser.emailVerification?.required === true
+      plainUser.emailVerification?.required === true,
     ),
     emailVerified: formatExportBoolean(
-      plainUser.emailVerification?.verified === true
+      plainUser.emailVerification?.verified === true,
     ),
     emailVerifiedAt: formatExportDate(plainUser.emailVerification?.verifiedAt),
     mfaEnabled: formatExportBoolean(totpEnabled || passkeys.length > 0),
     totpEnabled: formatExportBoolean(totpEnabled),
     totpAppName: plainUser.totp?.appName || '',
     passkeyCount: String(passkeys.length),
-    passkeyLabels: passkeys
-      .map(getExportPasskeyLabel)
-      .join('; '),
+    passkeyLabels: passkeys.map(getExportPasskeyLabel).join('; '),
     passkeyMetadata: passkeys
-      .map((credential, index) => [
-        getExportPasskeyLabel(credential, index),
-        credential.transports?.length ? `transports=${credential.transports.join('|')}` : '',
-        credential.credentialDeviceType ? `device=${credential.credentialDeviceType}` : '',
-        credential.authenticatorAttachment ? `attachment=${credential.authenticatorAttachment}` : '',
-        credential.credentialBackedUp === true ? 'backedUp=yes' : ''
-      ].filter(Boolean).join(' '))
+      .map((credential, index) =>
+        [
+          getExportPasskeyLabel(credential, index),
+          credential.transports?.length
+            ? `transports=${credential.transports.join('|')}`
+            : '',
+          credential.credentialDeviceType
+            ? `device=${credential.credentialDeviceType}`
+            : '',
+          credential.authenticatorAttachment
+            ? `attachment=${credential.authenticatorAttachment}`
+            : '',
+          credential.credentialBackedUp === true ? 'backedUp=yes' : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+      )
       .join('; '),
     createdAt: formatExportDate(plainUser.createdAt),
-    updatedAt: formatExportDate(plainUser.updatedAt)
+    updatedAt: formatExportDate(plainUser.updatedAt),
   };
 }
 
@@ -1039,11 +1086,9 @@ function buildUsersCsv(rows) {
   const header = USER_EXPORT_FIELDS.map(([, label]) => label);
   const lines = [
     header.map(escapeCsvValue).join(','),
-    ...rows.map(row =>
-      USER_EXPORT_FIELDS
-        .map(([key]) => escapeCsvValue(row[key]))
-        .join(',')
-    )
+    ...rows.map((row) =>
+      USER_EXPORT_FIELDS.map(([key]) => escapeCsvValue(row[key])).join(','),
+    ),
   ];
 
   return `${lines.join('\r\n')}\r\n`;
@@ -1058,14 +1103,17 @@ function escapePdfText(value) {
 }
 
 function wrapPdfText(value, maxLength = 96) {
-  const words = String(value || '').replace(/\s+/gu, ' ').trim().split(' ');
+  const words = String(value || '')
+    .replace(/\s+/gu, ' ')
+    .trim()
+    .split(' ');
   const lines = [];
   let line = '';
 
-  words.forEach(word => {
+  words.forEach((word) => {
     if (!word) return;
 
-    if ((line.length + word.length + 1) > maxLength) {
+    if (line.length + word.length + 1 > maxLength) {
       if (line) lines.push(line);
       line = word;
       return;
@@ -1089,33 +1137,38 @@ function buildSimplePdf(pages) {
   const objects = [];
   const catalogId = addPdfObject(objects, '<< /Type /Catalog /Pages 2 0 R >>');
   const pagesId = addPdfObject(objects, '');
-  const fontId = addPdfObject(objects, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  const fontId = addPdfObject(
+    objects,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  );
   const pageIds = [];
 
-  pages.forEach(pageLines => {
+  pages.forEach((pageLines) => {
     const streamLines = [
       'BT',
       '/F1 8 Tf',
       '50 760 Td',
       '10 TL',
-      ...pageLines.map((line, index) =>
-        `${index === 0 ? '' : 'T* '}(${escapePdfText(line)}) Tj`
+      ...pageLines.map(
+        (line, index) =>
+          `${index === 0 ? '' : 'T* '}(${escapePdfText(line)}) Tj`,
       ),
-      'ET'
+      'ET',
     ];
     const stream = streamLines.join('\n');
     const contentId = addPdfObject(
       objects,
-      `<< /Length ${Buffer.byteLength(stream, 'utf8')} >>\nstream\n${stream}\nendstream`
+      `<< /Length ${Buffer.byteLength(stream, 'utf8')} >>\nstream\n${stream}\nendstream`,
     );
     const pageId = addPdfObject(
       objects,
-      `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentId} 0 R >>`
+      `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentId} 0 R >>`,
     );
     pageIds.push(pageId);
   });
 
-  objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map(id => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
+  objects[pagesId - 1] =
+    `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
 
   const chunks = ['%PDF-1.4\n'];
   const offsets = [0];
@@ -1128,18 +1181,20 @@ function buildSimplePdf(pages) {
   const xrefOffset = Buffer.byteLength(chunks.join(''), 'utf8');
   chunks.push(`xref\n0 ${objects.length + 1}\n`);
   chunks.push('0000000000 65535 f \n');
-  offsets.slice(1).forEach(offset => {
+  offsets.slice(1).forEach((offset) => {
     chunks.push(`${String(offset).padStart(10, '0')} 00000 n \n`);
   });
-  chunks.push(`trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`);
+  chunks.push(
+    `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`,
+  );
 
   return Buffer.from(chunks.join(''), 'utf8');
 }
 
-function buildUsersPdf(rows, {
-  includedRoles = [],
-  includedAccountTypes = []
-} = {}) {
+function buildUsersPdf(
+  rows,
+  { includedRoles = [], includedAccountTypes = [] } = {},
+) {
   const pages = [];
   let lines = [
     'CMCEN User Export',
@@ -1147,7 +1202,7 @@ function buildUsersPdf(rows, {
     `Users included: ${rows.length}`,
     `Included roles: ${includedRoles.join(', ') || 'All'}`,
     `Included account types: ${includedAccountTypes.join(', ') || 'All'}`,
-    ''
+    '',
   ];
 
   function pushLine(line = '') {
@@ -1160,7 +1215,9 @@ function buildUsersPdf(rows, {
   }
 
   rows.forEach((row, index) => {
-    pushLine(`${index + 1}. ${row.accountName || row.username || row.email || 'Unknown user'}`);
+    pushLine(
+      `${index + 1}. ${row.accountName || row.username || row.email || 'Unknown user'}`,
+    );
     USER_EXPORT_FIELDS.forEach(([key, label]) => {
       const value = row[key];
       wrapPdfText(`${label}: ${value || ''}`, 100).forEach(pushLine);
@@ -1172,7 +1229,11 @@ function buildUsersPdf(rows, {
     pages.push(lines);
   }
 
-  return buildSimplePdf(pages.length ? pages : [['CMCEN User Export', 'No users matched the selected filters.']]);
+  return buildSimplePdf(
+    pages.length
+      ? pages
+      : [['CMCEN User Export', 'No users matched the selected filters.']],
+  );
 }
 
 function isSelf(userId, currentUser) {
@@ -1182,7 +1243,7 @@ function isSelf(userId, currentUser) {
 function requireDeveloperRole(req, res, next) {
   if (req.user?.role !== 'developer') {
     return res.status(403).json({
-      error: 'Developer access required to promote administrators to developer'
+      error: 'Developer access required to promote administrators to developer',
     });
   }
 
@@ -1197,7 +1258,7 @@ async function validateStandardRoleChange(userId, currentUser, role) {
   if (role === 'developer') {
     return {
       status: 400,
-      error: 'Use the developer promotion flow to assign the developer role'
+      error: 'Use the developer promotion flow to assign the developer role',
     };
   }
 
@@ -1210,7 +1271,8 @@ async function validateStandardRoleChange(userId, currentUser, role) {
   if (targetUser.role === 'developer') {
     return {
       status: 400,
-      error: 'Developer accounts cannot be changed from the standard role control'
+      error:
+        'Developer accounts cannot be changed from the standard role control',
     };
   }
 
@@ -1220,7 +1282,7 @@ async function validateStandardRoleChange(userId, currentUser, role) {
   ) {
     return {
       status: 400,
-      error: 'You cannot remove your own administrator access'
+      error: 'You cannot remove your own administrator access',
     };
   }
 
@@ -1237,13 +1299,13 @@ router.get(
     try {
       res.json({
         permissionCatalog: PERMISSION_CATALOG,
-        roles: await getAdminRoles()
+        roles: await getAdminRoles(),
       });
     } catch (err) {
       console.error('Admin role list failed:', err);
       res.status(500).json({ error: 'Failed to fetch roles' });
     }
-  }
+  },
 );
 
 // POST /api/admin/roles
@@ -1255,7 +1317,7 @@ router.post(
   async (req, res) => {
     try {
       const result = await createRoleUpdate(req.body, req.user, {
-        requireName: true
+        requireName: true,
       });
 
       if (result.error) {
@@ -1264,7 +1326,7 @@ router.post(
 
       const role = await Role.create({
         ...result.update,
-        createdBy: req.user?._id || null
+        createdBy: req.user?._id || null,
       });
 
       await writeAuditLog({
@@ -1275,8 +1337,8 @@ router.post(
         target: role._id,
         targetSnapshot: toAdminRole(role),
         metadata: {
-          permissions: getPermissionDetails(role.permissions || [])
-        }
+          permissions: getPermissionDetails(role.permissions || []),
+        },
       });
 
       if ((role.permissions || []).length) {
@@ -1291,25 +1353,27 @@ router.post(
             previousPermissions: [],
             newPermissions: getPermissionDetails(role.permissions || []),
             addedPermissions: getPermissionDetails(role.permissions || []),
-            removedPermissions: []
-          }
+            removedPermissions: [],
+          },
         });
       }
 
       res.status(201).json({
         message: 'Role created',
         role: toAdminRole(role),
-        roles: await getAdminRoles()
+        roles: await getAdminRoles(),
       });
     } catch (err) {
       if (err.code === 11000) {
-        return res.status(409).json({ error: 'A role with that slug already exists' });
+        return res
+          .status(409)
+          .json({ error: 'A role with that slug already exists' });
       }
 
       console.error('Admin role create failed:', err);
       res.status(500).json({ error: 'Failed to create role' });
     }
-  }
+  },
 );
 
 // PATCH /api/admin/roles/:roleId
@@ -1341,14 +1405,14 @@ router.patch(
         { $set: result.update },
         {
           returnDocument: 'after',
-          runValidators: true
-        }
+          runValidators: true,
+        },
       );
       const previousAdminRole = toAdminRole(previousRole);
       const nextAdminRole = toAdminRole(role);
       const permissionDiff = getStringArrayDiff(
         previousAdminRole.permissions || [],
-        nextAdminRole.permissions || []
+        nextAdminRole.permissions || [],
       );
 
       await writeAuditLog({
@@ -1360,8 +1424,8 @@ router.patch(
         targetSnapshot: nextAdminRole,
         metadata: {
           previousRole: previousAdminRole,
-          newRole: nextAdminRole
-        }
+          newRole: nextAdminRole,
+        },
       });
 
       if (permissionDiff.added.length || permissionDiff.removed.length) {
@@ -1373,28 +1437,34 @@ router.patch(
           target: role._id,
           targetSnapshot: nextAdminRole,
           metadata: {
-            previousPermissions: getPermissionDetails(previousAdminRole.permissions || []),
-            newPermissions: getPermissionDetails(nextAdminRole.permissions || []),
+            previousPermissions: getPermissionDetails(
+              previousAdminRole.permissions || [],
+            ),
+            newPermissions: getPermissionDetails(
+              nextAdminRole.permissions || [],
+            ),
             addedPermissions: getPermissionDetails(permissionDiff.added),
-            removedPermissions: getPermissionDetails(permissionDiff.removed)
-          }
+            removedPermissions: getPermissionDetails(permissionDiff.removed),
+          },
         });
       }
 
       res.json({
         message: 'Role updated',
         role: nextAdminRole,
-        roles: await getAdminRoles()
+        roles: await getAdminRoles(),
       });
     } catch (err) {
       if (err.code === 11000) {
-        return res.status(409).json({ error: 'A role with that slug already exists' });
+        return res
+          .status(409)
+          .json({ error: 'A role with that slug already exists' });
       }
 
       console.error('Admin role update failed:', err);
       res.status(500).json({ error: 'Failed to update role' });
     }
-  }
+  },
 );
 
 // DELETE /api/admin/roles/:roleId
@@ -1409,20 +1479,32 @@ router.delete(
     const mfaMethod = String(req.body?.mfaMethod || 'totp').trim();
 
     if (!['keep_and_anonymize', 'delete_all'].includes(disposition)) {
-      return res.status(400).json({ error: 'Choose whether to keep or delete associated content' });
+      return res
+        .status(400)
+        .json({ error: 'Choose whether to keep or delete associated content' });
     }
 
-    const mfaVerified = mfaMethod === 'webauthn'
-      ? hasFreshDestructivePasskeyVerification(req.user)
-      : verifyDestructiveTotp(req.user, req.body?.mfaCode);
+    const mfaVerified =
+      mfaMethod === 'webauthn'
+        ? hasFreshDestructivePasskeyVerification(req.user)
+        : verifyDestructiveTotp(req.user, req.body?.mfaCode);
 
     if (!mfaVerified) {
-      return res.status(403).json({ error: 'A recent MFA confirmation is required to delete an account' });
+      return res
+        .status(403)
+        .json({
+          error: 'A recent MFA confirmation is required to delete an account',
+        });
     }
 
     try {
       if (String(req.user._id) === String(req.params.userId)) {
-        return res.status(400).json({ error: 'Use the self-service account deletion flow for your own account' });
+        return res
+          .status(400)
+          .json({
+            error:
+              'Use the self-service account deletion flow for your own account',
+          });
       }
 
       const user = await User.findById(req.params.userId);
@@ -1434,33 +1516,52 @@ router.delete(
         events: 0,
         retirementMessages: 0,
         retirementComments: 0,
-        lastPosts: 0
+        lastPosts: 0,
       };
 
       if (disposition === 'delete_all') {
-        const messages = await RetirementMessage.find({ createdBy: userId }).select('_id');
-        const messageIds = messages.map(message => message._id);
+        const messages = await RetirementMessage.find({
+          createdBy: userId,
+        }).select('_id');
+        const messageIds = messages.map((message) => message._id);
         const [events, comments, lastPosts] = await Promise.all([
           Event.deleteMany({ createdBy: userId }),
           RetirementComment.deleteMany({ author: userId }),
-          LastPostMessage.deleteMany({ createdBy: userId })
+          LastPostMessage.deleteMany({ createdBy: userId }),
         ]);
         const messageComments = messageIds.length
-          ? await RetirementComment.deleteMany({ retirementMessage: { $in: messageIds } })
+          ? await RetirementComment.deleteMany({
+              retirementMessage: { $in: messageIds },
+            })
           : { deletedCount: 0 };
-        const messagesResult = await RetirementMessage.deleteMany({ _id: { $in: messageIds } });
+        const messagesResult = await RetirementMessage.deleteMany({
+          _id: { $in: messageIds },
+        });
         deleted = {
           events: events.deletedCount || 0,
           retirementMessages: messagesResult.deletedCount || 0,
-          retirementComments: (comments.deletedCount || 0) + (messageComments.deletedCount || 0),
-          lastPosts: lastPosts.deletedCount || 0
+          retirementComments:
+            (comments.deletedCount || 0) + (messageComments.deletedCount || 0),
+          lastPosts: lastPosts.deletedCount || 0,
         };
       } else {
         await Promise.all([
-          Event.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
-          RetirementMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
-          RetirementComment.updateMany({ author: userId }, { $set: { author: null } }),
-          LastPostMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } })
+          Event.updateMany(
+            { createdBy: userId },
+            { $set: { createdBy: null } },
+          ),
+          RetirementMessage.updateMany(
+            { createdBy: userId },
+            { $set: { createdBy: null } },
+          ),
+          RetirementComment.updateMany(
+            { author: userId },
+            { $set: { author: null } },
+          ),
+          LastPostMessage.updateMany(
+            { createdBy: userId },
+            { $set: { createdBy: null } },
+          ),
         ]);
       }
 
@@ -1472,15 +1573,19 @@ router.delete(
         targetType: 'user',
         target: userId,
         targetSnapshot,
-        metadata: { contentDisposition: disposition, mfaMethod, deleted }
+        metadata: { contentDisposition: disposition, mfaMethod, deleted },
       });
 
-      return res.json({ message: 'Account deleted', contentDisposition: disposition, deleted });
+      return res.json({
+        message: 'Account deleted',
+        contentDisposition: disposition,
+        deleted,
+      });
     } catch (error) {
       console.error('Admin account deletion failed:', error);
       return res.status(500).json({ error: 'Could not delete account' });
     }
-  }
+  },
 );
 
 router.delete(
@@ -1497,7 +1602,7 @@ router.delete(
 
       const updateResult = await User.updateMany(
         { customRoles: role._id },
-        { $pull: { customRoles: role._id } }
+        { $pull: { customRoles: role._id } },
       );
 
       await role.deleteOne();
@@ -1511,19 +1616,19 @@ router.delete(
         targetSnapshot: toAdminRole(role),
         metadata: {
           removedFromUserCount: updateResult.modifiedCount || 0,
-          permissions: getPermissionDetails(role.permissions || [])
-        }
+          permissions: getPermissionDetails(role.permissions || []),
+        },
       });
 
       res.json({
         message: 'Role deleted',
-        roles: await getAdminRoles()
+        roles: await getAdminRoles(),
       });
     } catch (err) {
       console.error('Admin role delete failed:', err);
       res.status(500).json({ error: 'Failed to delete role' });
     }
-  }
+  },
 );
 
 // GET /api/admin/media
@@ -1543,19 +1648,22 @@ router.get(
 
       const attachmentMap = await getMediaAttachments();
       const mediaQuery = MediaAsset.find({}).sort(sort);
-      const mediaAssets = sortKey === 'orphaned'
-        ? await mediaQuery.lean()
-        : await mediaQuery.skip(offset).limit(maxKeys).lean();
-      const totalMedia = sortKey === 'orphaned'
-        ? mediaAssets.length
-        : await MediaAsset.countDocuments({});
+      const mediaAssets =
+        sortKey === 'orphaned'
+          ? await mediaQuery.lean()
+          : await mediaQuery.skip(offset).limit(maxKeys).lean();
+      const totalMedia =
+        sortKey === 'orphaned'
+          ? mediaAssets.length
+          : await MediaAsset.countDocuments({});
       const sortedMedia = sortAdminMediaItems(
-        mediaAssets.map(asset => toAdminMediaAssetItem(asset, attachmentMap)),
-        sortKey
+        mediaAssets.map((asset) => toAdminMediaAssetItem(asset, attachmentMap)),
+        sortKey,
       );
-      const media = sortKey === 'orphaned'
-        ? sortedMedia.slice(offset, offset + maxKeys)
-        : sortedMedia;
+      const media =
+        sortKey === 'orphaned'
+          ? sortedMedia.slice(offset, offset + maxKeys)
+          : sortedMedia;
       const nextOffset = offset + media.length;
 
       res.json({
@@ -1563,13 +1671,13 @@ router.get(
         sort: sortKey,
         media,
         nextCursor: nextOffset < totalMedia ? String(nextOffset) : '',
-        isTruncated: nextOffset < totalMedia
+        isTruncated: nextOffset < totalMedia,
       });
     } catch (err) {
       console.error('Admin media list failed:', err);
       res.status(500).json({ error: 'Failed to fetch media library' });
     }
-  }
+  },
 );
 
 // POST /api/admin/media/bulk-delete
@@ -1583,7 +1691,9 @@ router.post(
       const keys = cleanMediaKeyList(req.body?.keys);
 
       if (!keys.length) {
-        return res.status(400).json({ error: 'At least one image key is required' });
+        return res
+          .status(400)
+          .json({ error: 'At least one image key is required' });
       }
 
       const attachmentMap = await getMediaAttachments();
@@ -1600,7 +1710,7 @@ router.post(
         }
 
         const mediaAsset = await MediaAsset.findOne({
-          $or: [{ key }, { originalKey: key }]
+          $or: [{ key }, { originalKey: key }],
         }).lean();
 
         if (!mediaAsset) {
@@ -1608,14 +1718,21 @@ router.post(
           continue;
         }
 
-        const objectKeys = toAdminMediaAssetItem(mediaAsset, attachmentMap).objectKeys;
+        const objectKeys = toAdminMediaAssetItem(
+          mediaAsset,
+          attachmentMap,
+        ).objectKeys;
 
-        await Promise.all(objectKeys.map(objectKey =>
-          s3Client.send(new DeleteObjectCommand({
-            Bucket: process.env.MINIO_BUCKET_NAME,
-            Key: objectKey
-          }))
-        ));
+        await Promise.all(
+          objectKeys.map((objectKey) =>
+            s3Client.send(
+              new DeleteObjectCommand({
+                Bucket: process.env.MINIO_BUCKET_NAME,
+                Key: objectKey,
+              }),
+            ),
+          ),
+        );
         await MediaAsset.deleteOne({ $or: [{ key }, { originalKey: key }] });
         deleted.push(key);
       }
@@ -1629,33 +1746,34 @@ router.post(
           targetSnapshot: {
             name: `${deleted.length} media image${deleted.length === 1 ? '' : 's'}`,
             deletedKeys: deleted,
-            skippedKeys: skipped.map(item => item.key),
-            missingKeys: missing
+            skippedKeys: skipped.map((item) => item.key),
+            missingKeys: missing,
           },
           metadata: {
             deletedCount: deleted.length,
             skippedCount: skipped.length,
             missingCount: missing.length,
             deletedKeys: deleted,
-            skippedKeys: skipped.map(item => item.key),
-            missingKeys: missing
-          }
+            skippedKeys: skipped.map((item) => item.key),
+            missingKeys: missing,
+          },
         });
       }
 
       res.json({
-        message: deleted.length === 1
-          ? '1 image deleted'
-          : `${deleted.length} images deleted`,
+        message:
+          deleted.length === 1
+            ? '1 image deleted'
+            : `${deleted.length} images deleted`,
         deleted,
         skipped,
-        missing
+        missing,
       });
     } catch (err) {
       console.error('Admin media bulk delete failed:', err);
       res.status(500).json({ error: 'Failed to delete selected images' });
     }
-  }
+  },
 );
 
 // DELETE /api/admin/media/:key
@@ -1678,23 +1796,27 @@ router.delete(
       if (attachedPosts.length) {
         return res.status(409).json({
           error: 'Image is still attached to content',
-          attachedPosts
+          attachedPosts,
         });
       }
 
       const mediaAsset = await MediaAsset.findOne({
-        $or: [{ key }, { originalKey: key }]
+        $or: [{ key }, { originalKey: key }],
       }).lean();
       const objectKeys = mediaAsset
         ? toAdminMediaAssetItem(mediaAsset, attachmentMap).objectKeys
         : [key];
 
-      await Promise.all(objectKeys.map(objectKey =>
-        s3Client.send(new DeleteObjectCommand({
-          Bucket: process.env.MINIO_BUCKET_NAME,
-          Key: objectKey
-        }))
-      ));
+      await Promise.all(
+        objectKeys.map((objectKey) =>
+          s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: process.env.MINIO_BUCKET_NAME,
+              Key: objectKey,
+            }),
+          ),
+        ),
+      );
       await MediaAsset.deleteOne({ $or: [{ key }, { originalKey: key }] });
 
       await writeAuditLog({
@@ -1704,19 +1826,19 @@ router.delete(
         targetType: 'media',
         targetSnapshot: {
           key,
-          url: buildPublicMediaUrl(key)
-        }
+          url: buildPublicMediaUrl(key),
+        },
       });
 
       res.json({
         message: 'Image deleted',
-        key
+        key,
       });
     } catch (err) {
       console.error('Admin media delete failed:', err);
       res.status(500).json({ error: 'Failed to delete image' });
     }
-  }
+  },
 );
 
 // POST /api/admin/users
@@ -1729,12 +1851,16 @@ router.post(
     try {
       const firstName = String(req.body?.firstName || '').trim();
       const lastName = String(req.body?.lastName || '').trim();
-      const email = String(req.body?.email || '').trim().toLowerCase();
+      const email = String(req.body?.email || '')
+        .trim()
+        .toLowerCase();
       const role = String(req.body?.role || 'subscriber').trim();
       const contentAreas = cleanContentAreas(req.body?.contentAreas);
 
       if (!firstName || !lastName || !email) {
-        return res.status(400).json({ error: 'First name, last name, and email are required' });
+        return res
+          .status(400)
+          .json({ error: 'First name, last name, and email are required' });
       }
 
       if (!/^\S+@\S+\.\S+$/u.test(email)) {
@@ -1749,13 +1875,17 @@ router.post(
         return res.status(400).json({ error: 'Invalid content area provided' });
       }
 
-      const customRoleValidation = await validateCustomRoleIds(req.body?.customRoleIds);
+      const customRoleValidation = await validateCustomRoleIds(
+        req.body?.customRoleIds,
+      );
       if (customRoleValidation.error) {
         return res.status(400).json({ error: customRoleValidation.error });
       }
 
       if (await User.exists({ email })) {
-        return res.status(409).json({ error: 'An account already exists for this email' });
+        return res
+          .status(409)
+          .json({ error: 'An account already exists for this email' });
       }
 
       const token = crypto.randomBytes(32).toString('hex');
@@ -1776,8 +1906,8 @@ router.post(
           tokenHash: hashInvitationToken(token),
           expiresAt: new Date(now.getTime() + INVITATION_TOKEN_TTL_MS),
           invitedBy: req.user._id,
-          sentAt: now
-        }
+          sentAt: now,
+        },
       });
 
       await user.save();
@@ -1790,18 +1920,22 @@ router.post(
         targetType: 'user',
         target: user._id,
         targetSnapshot: toAdminUser(user),
-        metadata: { role, customRoleIds: customRoleValidation.roleIds, contentAreas }
+        metadata: {
+          role,
+          customRoleIds: customRoleValidation.roleIds,
+          contentAreas,
+        },
       });
 
       res.status(201).json({
         message: 'Invitation sent',
-        user: toAdminUser(user)
+        user: toAdminUser(user),
       });
     } catch (error) {
       console.error('User invitation failed:', error);
       res.status(500).json({ error: 'Could not send invitation' });
     }
-  }
+  },
 );
 
 // GET /api/admin/users?query=name&limit=50
@@ -1817,18 +1951,20 @@ router.get(
 
       const filter = query
         ? {
-          $or: [
-            { username: { $regex: query, $options: 'i' } },
-            { accountName: { $regex: query, $options: 'i' } },
-            { email: { $regex: query, $options: 'i' } },
-            { firstName: { $regex: query, $options: 'i' } },
-            { lastName: { $regex: query, $options: 'i' } }
-          ]
-        }
+            $or: [
+              { username: { $regex: query, $options: 'i' } },
+              { accountName: { $regex: query, $options: 'i' } },
+              { email: { $regex: query, $options: 'i' } },
+              { firstName: { $regex: query, $options: 'i' } },
+              { lastName: { $regex: query, $options: 'i' } },
+            ],
+          }
         : {};
 
       const users = await User.find(filter)
-        .select('accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt')
+        .select(
+          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt',
+        )
         .sort({ accountName: 1, username: 1 })
         .limit(limit + 1)
         .populate('customRoles', 'name slug color permissions');
@@ -1839,15 +1975,15 @@ router.get(
         customRoles: await getAdminRoles(),
         permissionCatalog: PERMISSION_CATALOG,
         contentAreas: CONTENT_AREAS,
-        users: visibleUsers.map(user => toAdminUser(user)),
+        users: visibleUsers.map((user) => toAdminUser(user)),
         limit,
-        hasMore: users.length > limit
+        hasMore: users.length > limit,
       });
     } catch (err) {
       console.error('Admin user list failed:', err);
       res.status(500).json({ error: 'Failed to fetch users' });
     }
-  }
+  },
 );
 
 // GET /api/admin/users/export?format=csv|pdf&includeRoles=subscriber,editor&includeAccountTypes=member
@@ -1858,19 +1994,20 @@ router.get(
   requirePermission('canReadUsers'),
   async (req, res) => {
     try {
-      const format = String(req.query.format || 'csv').trim().toLowerCase();
+      const format = String(req.query.format || 'csv')
+        .trim()
+        .toLowerCase();
 
       if (!USER_EXPORT_FORMATS.includes(format)) {
         return res.status(400).json({ error: 'Invalid export format' });
       }
 
-      const {
-        filter,
-        includedRoles,
-        includedAccountTypes
-      } = getUserExportCriteria(req.query);
+      const { filter, includedRoles, includedAccountTypes } =
+        getUserExportCriteria(req.query);
       const users = await User.find(filter)
-        .select('accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas webauthn totp emailVerification.required emailVerification.verified emailVerification.verifiedAt createdAt updatedAt')
+        .select(
+          'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas webauthn totp emailVerification.required emailVerification.verified emailVerification.verifiedAt createdAt updatedAt',
+        )
         .sort({ accountName: 1, username: 1 })
         .populate('customRoles', 'name slug color permissions')
         .lean({ getters: true });
@@ -1887,24 +2024,29 @@ router.get(
         target: null,
         targetSnapshot: {
           username: 'User export',
-          accountName: 'User export'
+          accountName: 'User export',
         },
         metadata: {
           format,
           userCount: rows.length,
           includedRoles,
-          includedAccountTypes
-        }
+          includedAccountTypes,
+        },
       });
 
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${filename}"`,
+      );
 
       if (format === 'pdf') {
         res.type('application/pdf');
-        return res.send(buildUsersPdf(rows, {
-          includedRoles,
-          includedAccountTypes
-        }));
+        return res.send(
+          buildUsersPdf(rows, {
+            includedRoles,
+            includedAccountTypes,
+          }),
+        );
       }
 
       res.type('text/csv; charset=utf-8');
@@ -1913,7 +2055,7 @@ router.get(
       console.error('Admin user export failed:', err);
       return res.status(500).json({ error: 'Failed to export users' });
     }
-  }
+  },
 );
 
 // GET /api/admin/users/:userId
@@ -1927,51 +2069,54 @@ router.get(
       const { userId } = req.params;
 
       const user = await User.findById(userId)
-        .select('accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
+        .select(
+          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
+        )
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      const [events, retirementMessages, retirementComments, lastPosts] = await Promise.all([
-        Event.find({
-          $or: [
-            { createdBy: userId },
-            { publishedBy: userId }
-          ]
-        })
-          .select('title status contentArea startDate createdBy publishedBy updatedAt createdAt')
-          .sort({ updatedAt: -1 })
-          .limit(100)
-          .lean(),
-        RetirementMessage.find({
-          ...getRetirementMessageUserFilter(user)
-        })
-          .select('retiree status createdBy publishedBy publishedAt updatedAt createdAt')
-          .sort({ updatedAt: -1 })
-          .limit(100)
-          .lean(),
-        RetirementComment.find({
-          $or: [
-            { author: userId },
-            { publishedBy: userId }
-          ]
-        })
-          .select('body status retirementMessage author publishedBy createdAt updatedAt publishedAt')
-          .populate('retirementMessage', 'retiree status')
-          .sort({ updatedAt: -1 })
-          .limit(100)
-          .lean(),
-        LastPostMessage.find({ createdBy: userId })
-          .select('deceased status createdBy publishedAt updatedAt createdAt')
-          .sort({ updatedAt: -1 })
-          .limit(100)
-          .lean()
-      ]);
+      const [events, retirementMessages, retirementComments, lastPosts] =
+        await Promise.all([
+          Event.find({
+            $or: [{ createdBy: userId }, { publishedBy: userId }],
+          })
+            .select(
+              'title status contentArea startDate createdBy publishedBy updatedAt createdAt',
+            )
+            .sort({ updatedAt: -1 })
+            .limit(100)
+            .lean(),
+          RetirementMessage.find({
+            ...getRetirementMessageUserFilter(user),
+          })
+            .select(
+              'retiree status createdBy publishedBy publishedAt updatedAt createdAt',
+            )
+            .sort({ updatedAt: -1 })
+            .limit(100)
+            .lean(),
+          RetirementComment.find({
+            $or: [{ author: userId }, { publishedBy: userId }],
+          })
+            .select(
+              'body status retirementMessage author publishedBy createdAt updatedAt publishedAt',
+            )
+            .populate('retirementMessage', 'retiree status')
+            .sort({ updatedAt: -1 })
+            .limit(100)
+            .lean(),
+          LastPostMessage.find({ createdBy: userId })
+            .select('deceased status createdBy publishedAt updatedAt createdAt')
+            .sort({ updatedAt: -1 })
+            .limit(100)
+            .lean(),
+        ]);
 
       const posts = [
-        ...events.map(event => ({
+        ...events.map((event) => ({
           _id: event._id,
           type: 'event',
           title: getEventTitle(event),
@@ -1981,9 +2126,9 @@ router.get(
           date: event.startDate,
           updatedAt: event.updatedAt,
           createdAt: event.createdAt,
-          href: `/submit-event?id=${encodeURIComponent(event._id)}`
+          href: `/submit-event?id=${encodeURIComponent(event._id)}`,
         })),
-        ...retirementMessages.map(message => ({
+        ...retirementMessages.map((message) => ({
           _id: message._id,
           type: 'retirementMessage',
           title: getRetirementMessageTitle(message),
@@ -1992,9 +2137,9 @@ router.get(
           date: message.retiree?.retirementDate,
           updatedAt: message.updatedAt,
           createdAt: message.createdAt,
-          href: `/retirement-message?id=${encodeURIComponent(message._id)}`
+          href: `/retirement-message?id=${encodeURIComponent(message._id)}`,
         })),
-        ...retirementComments.map(comment => ({
+        ...retirementComments.map((comment) => ({
           _id: comment._id,
           type: 'retirementComment',
           title: getRetirementCommentTitle(comment),
@@ -2005,9 +2150,9 @@ router.get(
           createdAt: comment.createdAt,
           href: comment.retirementMessage?._id
             ? `/retirement-message?id=${encodeURIComponent(comment.retirementMessage._id)}`
-            : ''
+            : '',
         })),
-        ...lastPosts.map(lastPost => ({
+        ...lastPosts.map((lastPost) => ({
           _id: lastPost._id,
           type: 'lastPost',
           title: getLastPostMessageTitle(lastPost),
@@ -2015,13 +2160,15 @@ router.get(
           action: 'submitted',
           updatedAt: lastPost.updatedAt,
           createdAt: lastPost.createdAt,
-          href: lastPost.status === 'published'
-            ? `/last-post-message?id=${encodeURIComponent(lastPost._id)}`
-            : ''
-        }))
-      ].sort((a, b) =>
-        new Date(b.updatedAt || b.createdAt || 0) -
-        new Date(a.updatedAt || a.createdAt || 0)
+          href:
+            lastPost.status === 'published'
+              ? `/last-post-message?id=${encodeURIComponent(lastPost._id)}`
+              : '',
+        })),
+      ].sort(
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt || 0) -
+          new Date(a.updatedAt || a.createdAt || 0),
       );
 
       res.json({
@@ -2034,15 +2181,19 @@ router.get(
           retirementMessages: retirementMessages.length,
           retirementComments: retirementComments.length,
           lastPosts: lastPosts.length,
-          total: events.length + retirementMessages.length + retirementComments.length + lastPosts.length
+          total:
+            events.length +
+            retirementMessages.length +
+            retirementComments.length +
+            lastPosts.length,
         }),
-        posts
+        posts,
       });
     } catch (err) {
       console.error('Admin user detail failed:', err);
       res.status(500).json({ error: 'Failed to fetch user details' });
     }
-  }
+  },
 );
 
 // PATCH /api/admin/users/:userId
@@ -2062,20 +2213,30 @@ router.patch(
       let customRoleChange = null;
 
       if (Object.prototype.hasOwnProperty.call(req.body || {}, 'role')) {
-        roleValidation = await validateStandardRoleChange(userId, req.user, role);
+        roleValidation = await validateStandardRoleChange(
+          userId,
+          req.user,
+          role,
+        );
 
         if (roleValidation.error) {
-          return res.status(roleValidation.status).json({ error: roleValidation.error });
+          return res
+            .status(roleValidation.status)
+            .json({ error: roleValidation.error });
         }
 
         updates.role = role;
       }
 
-      if (Object.prototype.hasOwnProperty.call(req.body || {}, 'contentAreas')) {
+      if (
+        Object.prototype.hasOwnProperty.call(req.body || {}, 'contentAreas')
+      ) {
         const cleanAreas = cleanContentAreas(contentAreas);
 
         if (!validateContentAreas(cleanAreas)) {
-          return res.status(400).json({ error: 'Invalid content area provided' });
+          return res
+            .status(400)
+            .json({ error: 'Invalid content area provided' });
         }
 
         const previousUser = await User.findById(userId).select('contentAreas');
@@ -2088,7 +2249,9 @@ router.patch(
         updates.contentAreas = cleanAreas;
       }
 
-      if (Object.prototype.hasOwnProperty.call(req.body || {}, 'customRoleIds')) {
+      if (
+        Object.prototype.hasOwnProperty.call(req.body || {}, 'customRoleIds')
+      ) {
         const roleIdValidation = await validateCustomRoleIds(customRoleIds);
 
         if (roleIdValidation.error) {
@@ -2105,19 +2268,17 @@ router.patch(
         updates.customRoles = roleIdValidation.roleIds;
 
         const allRoleIds = [
-          ...new Set([
-            ...previousCustomRoleIds,
-            ...roleIdValidation.roleIds
-          ])
+          ...new Set([...previousCustomRoleIds, ...roleIdValidation.roleIds]),
         ];
         const rolesForAudit = allRoleIds.length
-          ? await Role.find({ _id: { $in: allRoleIds } })
-            .select('name slug description color permissions createdAt updatedAt')
+          ? await Role.find({ _id: { $in: allRoleIds } }).select(
+              'name slug description color permissions createdAt updatedAt',
+            )
           : [];
         const roleDetailsById = getRoleDetailsById(rolesForAudit);
         const roleDiff = getStringArrayDiff(
           previousCustomRoleIds,
-          roleIdValidation.roleIds
+          roleIdValidation.roleIds,
         );
 
         customRoleChange = {
@@ -2128,12 +2289,14 @@ router.patch(
           previousRoles: getRoleDetails(roleDetailsById, previousCustomRoleIds),
           newRoles: getRoleDetails(roleDetailsById, roleIdValidation.roleIds),
           addedRoles: getRoleDetails(roleDetailsById, roleDiff.added),
-          removedRoles: getRoleDetails(roleDetailsById, roleDiff.removed)
+          removedRoles: getRoleDetails(roleDetailsById, roleDiff.removed),
         };
       }
 
       if (!Object.keys(updates).length) {
-        return res.status(400).json({ error: 'No admin user updates provided' });
+        return res
+          .status(400)
+          .json({ error: 'No admin user updates provided' });
       }
 
       const user = await User.findByIdAndUpdate(
@@ -2141,10 +2304,12 @@ router.patch(
         { $set: updates },
         {
           returnDocument: 'after',
-          runValidators: true
-        }
+          runValidators: true,
+        },
       )
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
+        .select(
+          'accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
+        )
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
@@ -2164,14 +2329,17 @@ router.patch(
           targetSnapshot: toAdminUser(user),
           metadata: {
             previousRole: roleValidation.targetUser.role,
-            newRole: user.role
-          }
+            newRole: user.role,
+          },
         });
       }
 
       if (
         Object.prototype.hasOwnProperty.call(updates, 'contentAreas') &&
-        !areStringArraysEqual(previousContentAreas || [], user.contentAreas || [])
+        !areStringArraysEqual(
+          previousContentAreas || [],
+          user.contentAreas || [],
+        )
       ) {
         await writeAuditLog({
           req,
@@ -2182,8 +2350,8 @@ router.patch(
           targetSnapshot: toAdminUser(user),
           metadata: {
             previousContentAreas: previousContentAreas || [],
-            newContentAreas: user.contentAreas || []
-          }
+            newContentAreas: user.contentAreas || [],
+          },
         });
       }
 
@@ -2191,7 +2359,7 @@ router.patch(
         Object.prototype.hasOwnProperty.call(updates, 'customRoles') &&
         !areStringArraysEqual(
           previousCustomRoleIds || [],
-          toAdminUser(user).customRoleIds || []
+          toAdminUser(user).customRoleIds || [],
         )
       ) {
         await writeAuditLog({
@@ -2202,19 +2370,20 @@ router.patch(
           target: user._id,
           targetSnapshot: toAdminUser(user),
           metadata: {
-            previousCustomRoleIds: customRoleChange?.previousCustomRoleIds || [],
+            previousCustomRoleIds:
+              customRoleChange?.previousCustomRoleIds || [],
             newCustomRoleIds: customRoleChange?.newCustomRoleIds || [],
             addedRoleIds: customRoleChange?.addedRoleIds || [],
             removedRoleIds: customRoleChange?.removedRoleIds || [],
             previousRoles: customRoleChange?.previousRoles || [],
             newRoles: customRoleChange?.newRoles || [],
             addedRoles: customRoleChange?.addedRoles || [],
-            removedRoles: customRoleChange?.removedRoles || []
-          }
+            removedRoles: customRoleChange?.removedRoles || [],
+          },
         });
 
         await Promise.all([
-          ...(customRoleChange?.addedRoles || []).map(role =>
+          ...(customRoleChange?.addedRoles || []).map((role) =>
             writeAuditLog({
               req,
               action: 'user.custom_role_added',
@@ -2223,11 +2392,11 @@ router.patch(
               target: user._id,
               targetSnapshot: toAdminUser(user),
               metadata: {
-                role
-              }
-            })
+                role,
+              },
+            }),
           ),
-          ...(customRoleChange?.removedRoles || []).map(role =>
+          ...(customRoleChange?.removedRoles || []).map((role) =>
             writeAuditLog({
               req,
               action: 'user.custom_role_removed',
@@ -2236,10 +2405,10 @@ router.patch(
               target: user._id,
               targetSnapshot: toAdminUser(user),
               metadata: {
-                role
-              }
-            })
-          )
+                role,
+              },
+            }),
+          ),
         ]);
       }
 
@@ -2248,13 +2417,13 @@ router.patch(
       res.json({
         message: 'User updated',
         user: toAdminUser(user, postSummary),
-        customRoles: await getAdminRoles()
+        customRoles: await getAdminRoles(),
       });
     } catch (err) {
       console.error('Admin user update failed:', err);
       res.status(500).json({ error: 'Failed to update user' });
     }
-  }
+  },
 );
 
 // PATCH /api/admin/users/:userId/mfa-reset
@@ -2268,11 +2437,15 @@ router.patch(
       const { userId } = req.params;
 
       if (isSelf(userId, req.user)) {
-        return res.status(400).json({ error: 'Administrators cannot reset their own MFA here' });
+        return res
+          .status(400)
+          .json({ error: 'Administrators cannot reset their own MFA here' });
       }
 
       const previousUser = await User.findById(userId)
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn webauthnRegistrationChallenge webauthnAuthenticationChallenge totp twoFactor customRoles contentAreas createdAt updatedAt')
+        .select(
+          'accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn webauthnRegistrationChallenge webauthnAuthenticationChallenge totp twoFactor customRoles contentAreas createdAt updatedAt',
+        )
         .populate('customRoles', 'name slug color permissions');
 
       if (!previousUser) {
@@ -2291,20 +2464,22 @@ router.patch(
             totp: {
               secret: '',
               enabled: false,
-              appName: ''
+              appName: '',
             },
             twoFactor: {
               tempToken: '',
-              tempExpires: null
-            }
-          }
+              tempExpires: null,
+            },
+          },
         },
         {
           returnDocument: 'after',
-          runValidators: true
-        }
+          runValidators: true,
+        },
       )
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
+        .select(
+          'accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
+        )
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
@@ -2322,21 +2497,21 @@ router.patch(
           previousMfa,
           previousMethods: previousMfa.methods,
           previousPasskeyCount: previousMfa.passkeyCount,
-          previousTotpEnabled: previousMfa.hadTotp
-        }
+          previousTotpEnabled: previousMfa.hadTotp,
+        },
       });
 
       const postSummary = await getUserPostSummary(user);
 
       res.json({
         message: 'User MFA reset',
-        user: toAdminUser(user, postSummary)
+        user: toAdminUser(user, postSummary),
       });
     } catch (err) {
       console.error('Admin MFA reset failed:', err);
       res.status(500).json({ error: 'Failed to reset user MFA' });
     }
-  }
+  },
 );
 
 // PATCH /api/admin/users/:userId/role
@@ -2350,7 +2525,11 @@ router.patch(
       const { role } = req.body;
       const { userId } = req.params;
 
-      const validation = await validateStandardRoleChange(userId, req.user, role);
+      const validation = await validateStandardRoleChange(
+        userId,
+        req.user,
+        role,
+      );
 
       if (validation.error) {
         return res.status(validation.status).json({ error: validation.error });
@@ -2359,9 +2538,11 @@ router.patch(
       const user = await User.findByIdAndUpdate(
         userId,
         { $set: { role } },
-        { returnDocument: 'after' }
+        { returnDocument: 'after' },
       )
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
+        .select(
+          'accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
+        )
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
@@ -2378,8 +2559,8 @@ router.patch(
           targetSnapshot: toAdminUser(user),
           metadata: {
             previousRole: validation.targetUser.role,
-            newRole: user.role
-          }
+            newRole: user.role,
+          },
         });
       }
 
@@ -2387,13 +2568,13 @@ router.patch(
 
       res.json({
         message: `User promoted to ${role}`,
-        user: toAdminUser(user, postSummary)
+        user: toAdminUser(user, postSummary),
       });
     } catch (err) {
       console.error('Admin role update failed:', err);
       res.status(500).json({ error: 'Failed to update user role' });
     }
-  }
+  },
 );
 
 // PATCH /api/admin/users/:userId/developer
@@ -2410,12 +2591,13 @@ router.patch(
 
       if (confirmation !== DEVELOPER_CONFIRMATION || confirmed !== true) {
         return res.status(400).json({
-          error: 'Developer promotion requires explicit confirmation'
+          error: 'Developer promotion requires explicit confirmation',
         });
       }
 
-      const previousUser = await User.findById(userId)
-        .select('role accountType username email accountName firstName lastName customRoles contentAreas createdAt updatedAt');
+      const previousUser = await User.findById(userId).select(
+        'role accountType username email accountName firstName lastName customRoles contentAreas createdAt updatedAt',
+      );
 
       if (!previousUser) {
         return res.status(404).json({ error: 'User not found' });
@@ -2423,7 +2605,7 @@ router.patch(
 
       if (previousUser.role !== 'administrator') {
         return res.status(400).json({
-          error: 'Only administrator accounts can be promoted to developer'
+          error: 'Only administrator accounts can be promoted to developer',
         });
       }
 
@@ -2432,10 +2614,12 @@ router.patch(
         { $set: { role: 'developer' } },
         {
           returnDocument: 'after',
-          runValidators: true
-        }
+          runValidators: true,
+        },
       )
-        .select('accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt')
+        .select(
+          'accountType username email accountName firstName lastName role emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
+        )
         .populate('customRoles', 'name slug color permissions');
 
       if (!user) {
@@ -2452,8 +2636,8 @@ router.patch(
           targetSnapshot: toAdminUser(user),
           metadata: {
             previousRole: previousUser.role,
-            newRole: user.role
-          }
+            newRole: user.role,
+          },
         });
       }
 
@@ -2461,56 +2645,57 @@ router.patch(
 
       res.json({
         message: 'User promoted to developer',
-        user: toAdminUser(user, postSummary)
+        user: toAdminUser(user, postSummary),
       });
     } catch (err) {
       console.error('Developer promotion failed:', err);
       res.status(500).json({ error: 'Failed to promote user to developer' });
     }
-  }
+  },
 );
 
-router.delete(
-  '/events/:eventId',
-  authMiddleware,
-  async (req, res) => {
-    try {
-      const event = await Event.findById(req.params.eventId);
+router.delete('/events/:eventId', authMiddleware, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.eventId);
 
-      if (!event) {
-        return res.status(404).json({ error: 'Event not found' });
-      }
-
-      const permissions = getUserPermissions(req.user);
-      const isOwner = String(event.createdBy || '') === String(req.user._id);
-      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
-        return res.status(403).json({ error: 'You do not have permission to delete this event' });
-      }
-
-      const snapshot = getEventSnapshot(event);
-
-      await event.deleteOne();
-      await writeAuditLog({
-        req,
-        action: 'content.deleted',
-        actor: req.user,
-        targetType: 'event',
-        target: event._id,
-        targetSnapshot: snapshot
-      });
-
-      res.json({ message: 'Event deleted' });
-    } catch (err) {
-      console.error('Admin event delete failed:', err);
-
-      if (err.name === 'CastError') {
-        return res.status(400).json({ error: 'Invalid event ID' });
-      }
-
-      res.status(500).json({ error: 'Failed to delete event' });
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
     }
+
+    const permissions = getUserPermissions(req.user);
+    const isOwner = String(event.createdBy || '') === String(req.user._id);
+    if (
+      !permissions.canDeleteContent &&
+      !(permissions.canDeleteOwnContent && isOwner)
+    ) {
+      return res
+        .status(403)
+        .json({ error: 'You do not have permission to delete this event' });
+    }
+
+    const snapshot = getEventSnapshot(event);
+
+    await event.deleteOne();
+    await writeAuditLog({
+      req,
+      action: 'content.deleted',
+      actor: req.user,
+      targetType: 'event',
+      target: event._id,
+      targetSnapshot: snapshot,
+    });
+
+    res.json({ message: 'Event deleted' });
+  } catch (err) {
+    console.error('Admin event delete failed:', err);
+
+    if (err.name === 'CastError') {
+      return res.status(400).json({ error: 'Invalid event ID' });
+    }
+
+    res.status(500).json({ error: 'Failed to delete event' });
   }
-);
+});
 
 router.delete(
   '/retirement-messages/:messageId',
@@ -2525,17 +2710,25 @@ router.delete(
 
       const permissions = getUserPermissions(req.user);
       const isOwner = String(message.createdBy || '') === String(req.user._id);
-      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
-        return res.status(403).json({ error: 'You do not have permission to delete this retirement message' });
+      if (
+        !permissions.canDeleteContent &&
+        !(permissions.canDeleteOwnContent && isOwner)
+      ) {
+        return res
+          .status(403)
+          .json({
+            error:
+              'You do not have permission to delete this retirement message',
+          });
       }
 
       const snapshot = getRetirementMessageSnapshot(message);
       const deletedComments = await RetirementComment.countDocuments({
-        retirementMessage: message._id
+        retirementMessage: message._id,
       });
 
       await RetirementComment.deleteMany({
-        retirementMessage: message._id
+        retirementMessage: message._id,
       });
       await message.deleteOne();
       await writeAuditLog({
@@ -2545,7 +2738,7 @@ router.delete(
         targetType: 'retirementMessage',
         target: message._id,
         targetSnapshot: snapshot,
-        metadata: { deletedComments }
+        metadata: { deletedComments },
       });
 
       res.json({ message: 'Retirement message deleted', deletedComments });
@@ -2558,7 +2751,7 @@ router.delete(
 
       res.status(500).json({ error: 'Failed to delete retirement message' });
     }
-  }
+  },
 );
 
 router.delete(
@@ -2566,8 +2759,9 @@ router.delete(
   authMiddleware,
   async (req, res) => {
     try {
-      const comment = await RetirementComment.findById(req.params.commentId)
-        .populate('retirementMessage', 'retiree status');
+      const comment = await RetirementComment.findById(
+        req.params.commentId,
+      ).populate('retirementMessage', 'retiree status');
 
       if (!comment) {
         return res.status(404).json({ error: 'Retirement comment not found' });
@@ -2575,13 +2769,18 @@ router.delete(
 
       const permissions = getUserPermissions(req.user);
       const isOwner = String(comment.author || '') === String(req.user._id);
-      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
-        return res.status(403).json({ error: 'You do not have permission to delete this comment' });
+      if (
+        !permissions.canDeleteContent &&
+        !(permissions.canDeleteOwnContent && isOwner)
+      ) {
+        return res
+          .status(403)
+          .json({ error: 'You do not have permission to delete this comment' });
       }
 
       const snapshot = getRetirementCommentSnapshot(comment, {
         includeBody: true,
-        includeRetirementMessageTitle: true
+        includeRetirementMessageTitle: true,
       });
       const deletedBy = snapshotUser(req.user);
 
@@ -2595,11 +2794,12 @@ router.delete(
         targetSnapshot: snapshot,
         metadata: {
           commentContent: snapshot.body,
-          deletedBy: deletedBy.accountName ||
+          deletedBy:
+            deletedBy.accountName ||
             deletedBy.username ||
             deletedBy.email ||
-            'Unknown user'
-        }
+            'Unknown user',
+        },
       });
 
       res.json({ message: 'Retirement comment deleted' });
@@ -2612,53 +2812,56 @@ router.delete(
 
       res.status(500).json({ error: 'Failed to delete retirement comment' });
     }
-  }
+  },
 );
 
-router.delete(
-  '/last-posts/:lastPostId',
-  authMiddleware,
-  async (req, res) => {
-    try {
-      const lastPost = await LastPostMessage.findById(req.params.lastPostId);
+router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
+  try {
+    const lastPost = await LastPostMessage.findById(req.params.lastPostId);
 
-      if (!lastPost) {
-        return res.status(404).json({ error: 'Last Post notice not found' });
-      }
-
-      const permissions = getUserPermissions(req.user);
-      const isOwner = String(lastPost.createdBy || '') === String(req.user._id);
-      if (!permissions.canDeleteContent && !(permissions.canDeleteOwnContent && isOwner)) {
-        return res.status(403).json({ error: 'You do not have permission to delete this Last Post notice' });
-      }
-
-      const snapshot = {
-        title: lastPost.title,
-        status: lastPost.status,
-        deceased: lastPost.deceased,
-        submitter: lastPost.submitter
-      };
-      await lastPost.deleteOne();
-      await writeAuditLog({
-        req,
-        action: 'content.deleted',
-        actor: req.user,
-        targetType: 'lastPost',
-        target: lastPost._id,
-        targetSnapshot: snapshot,
-        metadata: { deletedByOwner: isOwner }
-      });
-
-      return res.json({ message: 'Last Post notice deleted' });
-    } catch (error) {
-      if (error.name === 'CastError') {
-        return res.status(400).json({ error: 'Invalid Last Post notice ID' });
-      }
-
-      console.error('Last Post deletion failed:', error);
-      return res.status(500).json({ error: 'Could not delete Last Post notice' });
+    if (!lastPost) {
+      return res.status(404).json({ error: 'Last Post notice not found' });
     }
+
+    const permissions = getUserPermissions(req.user);
+    const isOwner = String(lastPost.createdBy || '') === String(req.user._id);
+    if (
+      !permissions.canDeleteContent &&
+      !(permissions.canDeleteOwnContent && isOwner)
+    ) {
+      return res
+        .status(403)
+        .json({
+          error: 'You do not have permission to delete this Last Post notice',
+        });
+    }
+
+    const snapshot = {
+      title: lastPost.title,
+      status: lastPost.status,
+      deceased: lastPost.deceased,
+      submitter: lastPost.submitter,
+    };
+    await lastPost.deleteOne();
+    await writeAuditLog({
+      req,
+      action: 'content.deleted',
+      actor: req.user,
+      targetType: 'lastPost',
+      target: lastPost._id,
+      targetSnapshot: snapshot,
+      metadata: { deletedByOwner: isOwner },
+    });
+
+    return res.json({ message: 'Last Post notice deleted' });
+  } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(400).json({ error: 'Invalid Last Post notice ID' });
+    }
+
+    console.error('Last Post deletion failed:', error);
+    return res.status(500).json({ error: 'Could not delete Last Post notice' });
   }
-);
+});
 
 module.exports = router;

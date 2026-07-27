@@ -8,10 +8,7 @@ const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const LastPostMessage = require('../models/LastPostMessage');
-const {
-  authMiddleware,
-  requirePermission
-} = require('../middleware/auth');
+const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
 const { sendMail } = require('../services/mailer');
@@ -20,7 +17,7 @@ const {
   clearRefreshTokenCookie,
   createSessionToken,
   readCookie,
-  setRefreshTokenCookie
+  setRefreshTokenCookie,
 } = require('../services/auth-session');
 
 const router = express.Router();
@@ -40,7 +37,7 @@ const EDITABLE_PROFILE_FIELDS = [
   'tradeOther',
   'currentUnit',
   'phone',
-  'preferredLanguage'
+  'preferredLanguage',
 ];
 
 const EDITABLE_ADDRESS_FIELDS = [
@@ -49,14 +46,14 @@ const EDITABLE_ADDRESS_FIELDS = [
   'city',
   'country',
   'stateProvince',
-  'postalCode'
+  'postalCode',
 ];
 
 const REQUIRED_PROFILE_FIELDS = [
   'firstName',
   'lastName',
   'status',
-  'affiliationElement'
+  'affiliationElement',
 ];
 
 const REQUIRED_ADDRESS_FIELDS = [
@@ -64,7 +61,7 @@ const REQUIRED_ADDRESS_FIELDS = [
   'city',
   'country',
   'stateProvince',
-  'postalCode'
+  'postalCode',
 ];
 
 const VALID_STATUSES = new Set([
@@ -74,14 +71,14 @@ const VALID_STATUSES = new Set([
   'civilian',
   'retired',
   'released',
-  'other'
+  'other',
 ]);
 
 const VALID_AFFILIATION_ELEMENTS = new Set([
   'army',
   'navy',
   'air_force',
-  'other'
+  'other',
 ]);
 
 const VALID_PREFERRED_LANGUAGES = new Set(['en', 'fr']);
@@ -99,14 +96,15 @@ function verifyDestructiveTotp(user, code) {
     secret: user.totp.secret,
     encoding: 'base32',
     token: String(code || '').replace(/\D/gu, ''),
-    window: Number(process.env.TOTP_WINDOW || 2)
+    window: Number(process.env.TOTP_WINDOW || 2),
   });
 }
 
 function hasFreshDestructivePasskeyVerification(user) {
   const verifiedAt = user?.twoFactor?.destructiveVerifiedAt;
-  return verifiedAt &&
-    Date.now() - new Date(verifiedAt).getTime() <= 5 * 60 * 1000;
+  return (
+    verifiedAt && Date.now() - new Date(verifiedAt).getTime() <= 5 * 60 * 1000
+  );
 }
 
 function hasOwnValue(source, key) {
@@ -186,11 +184,13 @@ async function prepareEmailVerification(user) {
   user.emailVerification.verified = false;
   user.emailVerification.verifiedAt = null;
   user.emailVerification.codeHash = hashToken(code);
-  user.emailVerification.codeExpiresAt =
-    new Date(Date.now() + EMAIL_VERIFICATION_CODE_TTL_MS);
+  user.emailVerification.codeExpiresAt = new Date(
+    Date.now() + EMAIL_VERIFICATION_CODE_TTL_MS,
+  );
   user.emailVerification.tempTokenHash = hashToken(tempToken);
-  user.emailVerification.tempTokenExpiresAt =
-    new Date(Date.now() + EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS);
+  user.emailVerification.tempTokenExpiresAt = new Date(
+    Date.now() + EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS,
+  );
 
   return { code, tempToken };
 }
@@ -201,8 +201,8 @@ async function sendEmailVerificationCode(user, code) {
     subject: 'Verify your CMCEN / RCMCE account',
     html: renderEmailVerificationEmail({
       code,
-      accountName: user.accountName || user.firstName
-    })
+      accountName: user.accountName || user.firstName,
+    }),
   });
 }
 
@@ -221,7 +221,7 @@ function getUserSnapshot(user) {
     firstName: user.firstName,
     lastName: user.lastName,
     role: user.role,
-    accountType: user.accountType || 'member'
+    accountType: user.accountType || 'member',
   };
 }
 
@@ -232,7 +232,7 @@ function createGhostPassword() {
 async function getRejectedEventNotifications(user) {
   const query = {
     createdBy: user._id,
-    status: 'rejected'
+    status: 'rejected',
   };
   const [count, events] = await Promise.all([
     Event.countDocuments(query),
@@ -240,40 +240,36 @@ async function getRejectedEventNotifications(user) {
       .select('title rejectionReason updatedAt')
       .sort({ updatedAt: -1 })
       .limit(10)
-      .lean()
+      .lean(),
   ]);
 
   return {
     count,
-    items: events.map(event => ({
+    items: events.map((event) => ({
       type: 'event',
       id: event._id,
       title: event.title,
       reason: event.rejectionReason || '',
       updatedAt: event.updatedAt,
       editHref: `/submit-event?id=${encodeURIComponent(String(event._id))}`,
-      href: `/submit-event?id=${encodeURIComponent(String(event._id))}`
-    }))
+      href: `/submit-event?id=${encodeURIComponent(String(event._id))}`,
+    })),
   };
 }
 
 function getRetirementMessageNotificationTitle(retirementMessage) {
   const retiree = retirementMessage.retiree || {};
-  const name = [
-    retiree.rank,
-    retiree.firstName,
-    retiree.lastName
-  ].filter(Boolean).join(' ');
+  const name = [retiree.rank, retiree.firstName, retiree.lastName]
+    .filter(Boolean)
+    .join(' ');
 
-  return name
-    ? `Retirement message for ${name}`
-    : 'Retirement message';
+  return name ? `Retirement message for ${name}` : 'Retirement message';
 }
 
 async function getRejectedRetirementMessageNotifications(user) {
   const query = {
     createdBy: user._id,
-    status: 'rejected'
+    status: 'rejected',
   };
   const [count, retirementMessages] = await Promise.all([
     RetirementMessage.countDocuments(query),
@@ -281,27 +277,27 @@ async function getRejectedRetirementMessageNotifications(user) {
       .select('retiree rejectionReason updatedAt')
       .sort({ updatedAt: -1 })
       .limit(10)
-      .lean()
+      .lean(),
   ]);
 
   return {
     count,
-    items: retirementMessages.map(retirementMessage => ({
+    items: retirementMessages.map((retirementMessage) => ({
       type: 'retirementMessage',
       id: retirementMessage._id,
       title: getRetirementMessageNotificationTitle(retirementMessage),
       reason: retirementMessage.rejectionReason || '',
       updatedAt: retirementMessage.updatedAt,
       editHref: `/submit-retirement?id=${encodeURIComponent(String(retirementMessage._id))}`,
-      href: `/submit-retirement?id=${encodeURIComponent(String(retirementMessage._id))}`
-    }))
+      href: `/submit-retirement?id=${encodeURIComponent(String(retirementMessage._id))}`,
+    })),
   };
 }
 
 async function getRejectedRetirementCommentNotifications(user) {
   const query = {
     author: user._id,
-    status: 'rejected'
+    status: 'rejected',
   };
   const [count, comments] = await Promise.all([
     RetirementComment.countDocuments(query),
@@ -310,23 +306,23 @@ async function getRejectedRetirementCommentNotifications(user) {
       .populate('retirementMessage', 'retiree status')
       .sort({ updatedAt: -1 })
       .limit(10)
-      .lean()
+      .lean(),
   ]);
 
   return {
     count,
-    items: comments.map(comment => ({
+    items: comments.map((comment) => ({
       type: 'retirementComment',
       id: comment._id,
       title: getRetirementMessageNotificationTitle(
-        comment.retirementMessage || {}
+        comment.retirementMessage || {},
       ),
       body: comment.body || '',
       reason: comment.rejectionReason || '',
       updatedAt: comment.updatedAt,
       editHref: `/notifications?comment=${encodeURIComponent(String(comment._id))}`,
-      href: `/notifications?comment=${encodeURIComponent(String(comment._id))}`
-    }))
+      href: `/notifications?comment=${encodeURIComponent(String(comment._id))}`,
+    })),
   };
 }
 
@@ -358,7 +354,7 @@ async function getNotificationSummary(user) {
   return {
     count,
     items,
-    href: '/notifications'
+    href: '/notifications',
   };
 }
 
@@ -366,9 +362,11 @@ async function getProfileResponse(user) {
   const profile = user.toObject ? user.toObject() : user;
   const mfa = {
     hasTotp: profile.totp?.enabled === true && Boolean(profile.totp?.secret),
-    hasPasskey: Array.isArray(profile.webauthn) && profile.webauthn.some(
-      credential => credential?.credentialID && credential?.publicKey
-    )
+    hasPasskey:
+      Array.isArray(profile.webauthn) &&
+      profile.webauthn.some(
+        (credential) => credential?.credentialID && credential?.publicKey,
+      ),
   };
   delete profile.totp;
   delete profile.webauthn;
@@ -377,7 +375,7 @@ async function getProfileResponse(user) {
   let notifications = {
     count: 0,
     items: [],
-    href: '/notifications'
+    href: '/notifications',
   };
 
   try {
@@ -390,7 +388,7 @@ async function getProfileResponse(user) {
     ...profile,
     mfa,
     permissions,
-    notifications
+    notifications,
   };
 }
 
@@ -398,7 +396,7 @@ function getProfileUpdate(body, currentUser) {
   const updates = {};
   const source = body || {};
 
-  EDITABLE_PROFILE_FIELDS.forEach(field => {
+  EDITABLE_PROFILE_FIELDS.forEach((field) => {
     if (hasOwnValue(source, field)) {
       updates[field] = cleanProfileString(source[field]);
     }
@@ -411,19 +409,19 @@ function getProfileUpdate(body, currentUser) {
       ? source.address
       : {};
 
-  EDITABLE_ADDRESS_FIELDS.forEach(field => {
+  EDITABLE_ADDRESS_FIELDS.forEach((field) => {
     if (hasOwnValue(addressSource, field)) {
       updates[`address.${field}`] = cleanProfileString(addressSource[field]);
     }
   });
 
-  REQUIRED_PROFILE_FIELDS.forEach(field => {
+  REQUIRED_PROFILE_FIELDS.forEach((field) => {
     if (hasOwnValue(updates, field) && !updates[field]) {
       throw new Error('Required profile fields are missing');
     }
   });
 
-  REQUIRED_ADDRESS_FIELDS.forEach(field => {
+  REQUIRED_ADDRESS_FIELDS.forEach((field) => {
     const updateKey = `address.${field}`;
 
     if (hasOwnValue(updates, updateKey) && !updates[updateKey]) {
@@ -431,10 +429,7 @@ function getProfileUpdate(body, currentUser) {
     }
   });
 
-  if (
-    hasOwnValue(updates, 'status') &&
-    !VALID_STATUSES.has(updates.status)
-  ) {
+  if (hasOwnValue(updates, 'status') && !VALID_STATUSES.has(updates.status)) {
     throw new Error('Invalid status');
   }
 
@@ -452,10 +447,7 @@ function getProfileUpdate(body, currentUser) {
     throw new Error('Invalid preferred language');
   }
 
-  if (
-    hasOwnValue(updates, 'firstName') ||
-    hasOwnValue(updates, 'lastName')
-  ) {
+  if (hasOwnValue(updates, 'firstName') || hasOwnValue(updates, 'lastName')) {
     const firstName = hasOwnValue(updates, 'firstName')
       ? updates.firstName
       : currentUser.firstName;
@@ -463,9 +455,7 @@ function getProfileUpdate(body, currentUser) {
       ? updates.lastName
       : currentUser.lastName;
 
-    updates.accountName = [firstName, lastName]
-      .filter(Boolean)
-      .join(' ');
+    updates.accountName = [firstName, lastName].filter(Boolean).join(' ');
   }
 
   return updates;
@@ -474,21 +464,24 @@ function getProfileUpdate(body, currentUser) {
 // POST /api/ghost/request
 // Start a strict guest account session by emailing a one-time code.
 router.post('/ghost/request', async (req, res) => {
-  const cleanEmail = String(req.body?.email || '').trim().toLowerCase();
+  const cleanEmail = String(req.body?.email || '')
+    .trim()
+    .toLowerCase();
 
   if (!cleanEmail) {
     return res.status(400).json({
-      error: 'Email is required'
+      error: 'Email is required',
     });
   }
 
   try {
-    let user = await User.findOne({ email: cleanEmail })
-      .select('+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt');
+    let user = await User.findOne({ email: cleanEmail }).select(
+      '+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
+    );
 
     if (user && user.accountType !== 'ghost') {
       return res.status(409).json({
-        error: 'An account already exists for this email. Please sign in.'
+        error: 'An account already exists for this email. Please sign in.',
       });
     }
 
@@ -501,7 +494,7 @@ router.post('/ghost/request', async (req, res) => {
         firstName: '',
         lastName: '',
         password: createGhostPassword(),
-        role: 'ghost'
+        role: 'ghost',
       });
     }
 
@@ -512,13 +505,13 @@ router.post('/ghost/request', async (req, res) => {
     res.json({
       message: 'Check your email for a guest access code.',
       verificationToken: verification.tempToken,
-      email: user.email
+      email: user.email,
     });
   } catch (error) {
     console.error('Ghost account request failed:', error);
 
     res.status(500).json({
-      error: 'Could not request guest access'
+      error: 'Could not request guest access',
     });
   }
 });
@@ -527,12 +520,14 @@ router.post('/ghost/request', async (req, res) => {
 // Verify a guest access code and return a ghost session token.
 router.post('/ghost/confirm', async (req, res) => {
   const verificationToken = String(req.body?.verificationToken || '').trim();
-  const code = String(req.body?.code || '').replace(/\D/gu, '').trim();
+  const code = String(req.body?.code || '')
+    .replace(/\D/gu, '')
+    .trim();
   const firstName = String(req.body?.firstName || '').trim();
 
   if (!verificationToken || !/^\d{6}$/u.test(code) || !firstName) {
     return res.status(400).json({
-      error: 'First name and verification code are required'
+      error: 'First name and verification code are required',
     });
   }
 
@@ -542,14 +537,14 @@ router.post('/ghost/confirm', async (req, res) => {
       'emailVerification.tempTokenHash': hashToken(verificationToken),
       'emailVerification.tempTokenExpiresAt': { $gt: new Date() },
       'emailVerification.codeHash': hashToken(code),
-      'emailVerification.codeExpiresAt': { $gt: new Date() }
+      'emailVerification.codeExpiresAt': { $gt: new Date() },
     }).select(
-      '+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt'
+      '+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
     );
 
     if (!user) {
       return res.status(400).json({
-        error: 'Guest access code is invalid or has expired'
+        error: 'Guest access code is invalid or has expired',
       });
     }
 
@@ -570,19 +565,19 @@ router.post('/ghost/confirm', async (req, res) => {
       actor: user,
       targetType: 'user',
       target: user._id,
-      targetSnapshot: getUserSnapshot(user)
+      targetSnapshot: getUserSnapshot(user),
     });
 
     setRefreshTokenCookie(req, res, user);
     res.json({
       message: 'Guest access confirmed',
-      token: createSessionToken(user)
+      token: createSessionToken(user),
     });
   } catch (error) {
     console.error('Ghost account confirmation failed:', error);
 
     res.status(500).json({
-      error: 'Could not confirm guest access'
+      error: 'Could not confirm guest access',
     });
   }
 });
@@ -600,17 +595,19 @@ router.get('/invitations/activate', async (req, res) => {
     const user = await User.findOne({
       accountType: 'invited',
       'invitation.tokenHash': hashToken(token),
-      'invitation.expiresAt': { $gt: new Date() }
+      'invitation.expiresAt': { $gt: new Date() },
     }).select('firstName lastName email');
 
     if (!user) {
-      return res.status(400).json({ error: 'Invitation link is invalid or has expired' });
+      return res
+        .status(400)
+        .json({ error: 'Invitation link is invalid or has expired' });
     }
 
     return res.json({
       firstName: user.firstName,
       lastName: user.lastName,
-      email: user.email
+      email: user.email,
     });
   } catch (error) {
     console.error('Invitation lookup failed:', error);
@@ -643,102 +640,108 @@ router.post('/register', async (req, res) => {
       email,
       password,
       passwordConfirmation,
-      invitationToken
+      invitationToken,
     } = req.body;
 
     if (password !== passwordConfirmation) {
       return res.status(400).json({
-        error: 'Passwords do not match'
+        error: 'Passwords do not match',
       });
     }
 
-    const cleanEmail = String(email || '').trim().toLowerCase();
+    const cleanEmail = String(email || '')
+      .trim()
+      .toLowerCase();
     const cleanFirstName = String(firstName || '').trim();
     const cleanLastName = String(lastName || '').trim();
-    const incomingPreferredLanguage =
-      String(preferredLanguage || '').trim();
+    const incomingPreferredLanguage = String(preferredLanguage || '').trim();
 
     if (
       incomingPreferredLanguage &&
       !VALID_PREFERRED_LANGUAGES.has(incomingPreferredLanguage)
     ) {
       return res.status(400).json({
-        error: 'Invalid preferred language'
+        error: 'Invalid preferred language',
       });
     }
 
-    const cleanPreferredLanguage =
-      VALID_PREFERRED_LANGUAGES.has(incomingPreferredLanguage)
-        ? incomingPreferredLanguage
-        : 'en';
+    const cleanPreferredLanguage = VALID_PREFERRED_LANGUAGES.has(
+      incomingPreferredLanguage,
+    )
+      ? incomingPreferredLanguage
+      : 'en';
     const cleanInvitationToken = String(invitationToken || '').trim();
     const invitedUser = cleanInvitationToken
       ? await User.findOne({
-        accountType: 'invited',
-        'invitation.tokenHash': hashToken(cleanInvitationToken),
-        'invitation.expiresAt': { $gt: new Date() }
-      }).select('+password +invitation.tokenHash +invitation.expiresAt')
+          accountType: 'invited',
+          'invitation.tokenHash': hashToken(cleanInvitationToken),
+          'invitation.expiresAt': { $gt: new Date() },
+        }).select('+password +invitation.tokenHash +invitation.expiresAt')
       : null;
 
     if (cleanInvitationToken && !invitedUser) {
-      return res.status(400).json({ error: 'Invitation link is invalid or has expired' });
+      return res
+        .status(400)
+        .json({ error: 'Invitation link is invalid or has expired' });
     }
 
     if (invitedUser && invitedUser.email !== cleanEmail) {
-      return res.status(400).json({ error: 'Use the email address that received the invitation' });
+      return res
+        .status(400)
+        .json({ error: 'Use the email address that received the invitation' });
     }
 
     const requiredFields = invitedUser
       ? [cleanEmail, String(password || ''), String(passwordConfirmation || '')]
       : [
-        cleanFirstName,
-        cleanLastName,
-        String(addressLine1 || '').trim(),
-        String(city || '').trim(),
-        String(country || '').trim(),
-        String(stateProvince || '').trim(),
-        String(postalCode || '').trim(),
-        String(status || '').trim(),
-        String(affiliationElement || '').trim(),
-        cleanEmail,
-        String(password || ''),
-        String(passwordConfirmation || '')
-      ];
+          cleanFirstName,
+          cleanLastName,
+          String(addressLine1 || '').trim(),
+          String(city || '').trim(),
+          String(country || '').trim(),
+          String(stateProvince || '').trim(),
+          String(postalCode || '').trim(),
+          String(status || '').trim(),
+          String(affiliationElement || '').trim(),
+          cleanEmail,
+          String(password || ''),
+          String(passwordConfirmation || ''),
+        ];
 
-    if (requiredFields.some(value => !value)) {
+    if (requiredFields.some((value) => !value)) {
       return res.status(400).json({
-        error: 'Required registration fields are missing'
+        error: 'Required registration fields are missing',
       });
     }
 
-    const user = invitedUser || new User({
-      username: cleanEmail,
-      email: cleanEmail,
-      accountName: [cleanFirstName, cleanLastName]
-        .filter(Boolean)
-        .join(' '),
-      firstName: cleanFirstName,
-      lastName: cleanLastName,
-      address: {
-        line1: String(addressLine1 || '').trim(),
-        line2: String(addressLine2 || '').trim(),
-        city: String(city || '').trim(),
-        country: String(country || '').trim(),
-        stateProvince: String(stateProvince || '').trim(),
-        postalCode: String(postalCode || '').trim()
-      },
-      rank: String(rank || '').trim(),
-      postNominals: String(postNominals || '').trim(),
-      company: String(company || '').trim(),
-      status: String(status || '').trim(),
-      affiliationElement: String(affiliationElement || '').trim(),
-      trade: String(trade || '').trim(),
-      tradeOther: String(tradeOther || '').trim(),
-      currentUnit: String(currentUnit || '').trim(),
-      preferredLanguage: cleanPreferredLanguage,
-      password,
-      role: 'subscriber'
-    });
+    const user =
+      invitedUser ||
+      new User({
+        username: cleanEmail,
+        email: cleanEmail,
+        accountName: [cleanFirstName, cleanLastName].filter(Boolean).join(' '),
+        firstName: cleanFirstName,
+        lastName: cleanLastName,
+        address: {
+          line1: String(addressLine1 || '').trim(),
+          line2: String(addressLine2 || '').trim(),
+          city: String(city || '').trim(),
+          country: String(country || '').trim(),
+          stateProvince: String(stateProvince || '').trim(),
+          postalCode: String(postalCode || '').trim(),
+        },
+        rank: String(rank || '').trim(),
+        postNominals: String(postNominals || '').trim(),
+        company: String(company || '').trim(),
+        status: String(status || '').trim(),
+        affiliationElement: String(affiliationElement || '').trim(),
+        trade: String(trade || '').trim(),
+        tradeOther: String(tradeOther || '').trim(),
+        currentUnit: String(currentUnit || '').trim(),
+        preferredLanguage: cleanPreferredLanguage,
+        password,
+        role: 'subscriber',
+      });
 
     if (invitedUser) {
       user.username = cleanEmail;
@@ -753,7 +756,9 @@ router.post('/register', async (req, res) => {
       user.emailVerification.verifiedAt = new Date();
     }
 
-    const verification = invitedUser ? null : await prepareEmailVerification(user);
+    const verification = invitedUser
+      ? null
+      : await prepareEmailVerification(user);
 
     await user.save();
     if (verification) {
@@ -772,23 +777,24 @@ router.post('/register', async (req, res) => {
         accountName: user.accountName,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role
+        role: user.role,
       },
       metadata: {
         accountName: user.accountName,
         email: user.email,
         emailVerification: invitedUser ? 'verified' : 'pending',
         mfaMethod: 'pending',
-        invitation: invitedUser ? 'activated' : undefined
-      }
+        invitation: invitedUser ? 'activated' : undefined,
+      },
     });
 
     if (invitedUser) {
       setRefreshTokenCookie(req, res, user);
       return res.status(201).json({
-        message: 'Account activated. Complete your profile from your account page.',
+        message:
+          'Account activated. Complete your profile from your account page.',
         token: createSessionToken(user),
-        user: await getProfileResponse(user)
+        user: await getProfileResponse(user),
       });
     }
 
@@ -796,7 +802,7 @@ router.post('/register', async (req, res) => {
       message: 'User created. Check your email for a verification code.',
       emailVerificationRequired: true,
       email: user.email,
-      verificationToken: verification.tempToken
+      verificationToken: verification.tempToken,
     });
   } catch (err) {
     console.error('--- FULL ERROR DETAILS ---');
@@ -812,8 +818,9 @@ router.post('/register', async (req, res) => {
 // Authenticate a user and return a short-lived JWT.
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  const user = await User.findOne({ username })
-    .select('+password +emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt');
+  const user = await User.findOne({ username }).select(
+    '+password +emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
+  );
 
   if (user && (await bcrypt.compare(password, user.password))) {
     if (userRequiresEmailVerification(user)) {
@@ -825,20 +832,27 @@ router.post('/login', async (req, res) => {
         emailVerificationRequired: true,
         email: user.email,
         verificationToken: verification.tempToken,
-        message: 'Check your email for a verification code.'
+        message: 'Check your email for a verification code.',
       });
     }
 
-    const hasWebAuthn = Array.isArray(user.webauthn) && user.webauthn.some(
-      credential => credential?.credentialID && credential?.publicKey
-    );
+    const hasWebAuthn =
+      Array.isArray(user.webauthn) &&
+      user.webauthn.some(
+        (credential) => credential?.credentialID && credential?.publicKey,
+      );
     const hasTOTP = user.totp?.enabled === true && Boolean(user.totp?.secret);
 
     if (hasWebAuthn || hasTOTP) {
       // create a short-lived temp token for completing 2FA
       const tempToken = crypto.randomBytes(32).toString('hex');
       const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-      await User.findByIdAndUpdate(user._id, { $set: { 'twoFactor.tempToken': tempToken, 'twoFactor.tempExpires': expires } });
+      await User.findByIdAndUpdate(user._id, {
+        $set: {
+          'twoFactor.tempToken': tempToken,
+          'twoFactor.tempExpires': expires,
+        },
+      });
       const methods = [];
       if (hasWebAuthn) methods.push('webauthn');
       if (hasTOTP) methods.push('totp');
@@ -852,11 +866,16 @@ router.post('/login', async (req, res) => {
           username: user.username,
           email: user.email,
           accountName: user.accountName,
-          role: user.role
+          role: user.role,
         },
-        metadata: { methods }
+        metadata: { methods },
       });
-      return res.json({ twoFactorRequired: true, methods, tempToken, expiresAt: expires.toISOString() });
+      return res.json({
+        twoFactorRequired: true,
+        methods,
+        tempToken,
+        expiresAt: expires.toISOString(),
+      });
     }
 
     const token = createSessionToken(user);
@@ -872,8 +891,8 @@ router.post('/login', async (req, res) => {
         username: user.username,
         email: user.email,
         accountName: user.accountName,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
 
     res.json({ token });
@@ -886,11 +905,13 @@ router.post('/login', async (req, res) => {
 // Verify a newly registered account email address with the emailed code.
 router.post('/email-verification/confirm', async (req, res) => {
   const verificationToken = String(req.body?.verificationToken || '').trim();
-  const code = String(req.body?.code || '').replace(/\D/gu, '').trim();
+  const code = String(req.body?.code || '')
+    .replace(/\D/gu, '')
+    .trim();
 
   if (!verificationToken || !/^\d{6}$/u.test(code)) {
     return res.status(400).json({
-      error: 'Verification token and code are required'
+      error: 'Verification token and code are required',
     });
   }
 
@@ -899,14 +920,14 @@ router.post('/email-verification/confirm', async (req, res) => {
       'emailVerification.tempTokenHash': hashToken(verificationToken),
       'emailVerification.tempTokenExpiresAt': { $gt: new Date() },
       'emailVerification.codeHash': hashToken(code),
-      'emailVerification.codeExpiresAt': { $gt: new Date() }
+      'emailVerification.codeExpiresAt': { $gt: new Date() },
     }).select(
-      '+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt'
+      '+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
     );
 
     if (!user || !userRequiresEmailVerification(user)) {
       return res.status(400).json({
-        error: 'Verification code is invalid or has expired'
+        error: 'Verification code is invalid or has expired',
       });
     }
 
@@ -929,20 +950,20 @@ router.post('/email-verification/confirm', async (req, res) => {
         username: user.username,
         email: user.email,
         accountName: user.accountName,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
 
     setRefreshTokenCookie(req, res, user);
     res.json({
       message: 'Email verified',
-      token: createSessionToken(user)
+      token: createSessionToken(user),
     });
   } catch (error) {
     console.error('Email verification failed:', error);
 
     res.status(500).json({
-      error: 'Could not verify email'
+      error: 'Could not verify email',
     });
   }
 });
@@ -950,7 +971,9 @@ router.post('/email-verification/confirm', async (req, res) => {
 // POST /api/password-reset/request
 // Send a one-time password reset link when the submitted email belongs to an account.
 router.post('/password-reset/request', async (req, res) => {
-  const cleanEmail = String(req.body?.email || '').trim().toLowerCase();
+  const cleanEmail = String(req.body?.email || '')
+    .trim()
+    .toLowerCase();
 
   try {
     if (!cleanEmail) {
@@ -964,13 +987,12 @@ router.post('/password-reset/request', async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetUrl =
-      `${getBaseUrl(req)}/login?resetToken=${encodeURIComponent(resetToken)}`;
+    const resetUrl = `${getBaseUrl(req)}/login?resetToken=${encodeURIComponent(resetToken)}`;
     const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
 
     user.passwordReset = {
       tokenHash: hashPasswordResetToken(resetToken),
-      expiresAt
+      expiresAt,
     };
     await user.save();
 
@@ -979,8 +1001,8 @@ router.post('/password-reset/request', async (req, res) => {
       subject: 'Reset your CMCEN / RCMCE password',
       html: renderPasswordResetEmail({
         resetUrl,
-        accountName: user.accountName || user.firstName
-      })
+        accountName: user.accountName || user.firstName,
+      }),
     });
 
     await writeAuditLog({
@@ -993,8 +1015,8 @@ router.post('/password-reset/request', async (req, res) => {
         username: user.username,
         email: user.email,
         accountName: user.accountName,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
 
     res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
@@ -1002,7 +1024,7 @@ router.post('/password-reset/request', async (req, res) => {
     console.error('Password reset request failed:', error);
 
     res.status(500).json({
-      error: 'Could not request password reset'
+      error: 'Could not request password reset',
     });
   }
 });
@@ -1016,36 +1038,36 @@ router.post('/password-reset/confirm', async (req, res) => {
 
   if (!resetToken || !password || !passwordConfirmation) {
     return res.status(400).json({
-      error: 'Required password reset fields are missing'
+      error: 'Required password reset fields are missing',
     });
   }
 
   if (password !== passwordConfirmation) {
     return res.status(400).json({
-      error: 'Passwords do not match'
+      error: 'Passwords do not match',
     });
   }
 
   try {
     const user = await User.findOne({
       'passwordReset.tokenHash': hashPasswordResetToken(resetToken),
-      'passwordReset.expiresAt': { $gt: new Date() }
+      'passwordReset.expiresAt': { $gt: new Date() },
     }).select('+password +passwordReset.tokenHash +passwordReset.expiresAt');
 
     if (!user) {
       return res.status(400).json({
-        error: 'Password reset link is invalid or has expired'
+        error: 'Password reset link is invalid or has expired',
       });
     }
 
     user.password = password;
     user.passwordReset = {
       tokenHash: '',
-      expiresAt: null
+      expiresAt: null,
     };
     user.twoFactor = {
       tempToken: '',
-      tempExpires: null
+      tempExpires: null,
     };
     user.sessionVersion = Number(user.sessionVersion || 0) + 1;
     await user.save();
@@ -1060,18 +1082,18 @@ router.post('/password-reset/confirm', async (req, res) => {
         username: user.username,
         email: user.email,
         accountName: user.accountName,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
 
     res.json({
-      message: 'Password has been reset. You can now sign in.'
+      message: 'Password has been reset. You can now sign in.',
     });
   } catch (error) {
     console.error('Password reset confirmation failed:', error);
 
     res.status(500).json({
-      error: 'Could not reset password'
+      error: 'Could not reset password',
     });
   }
 });
@@ -1084,7 +1106,7 @@ router.get('/me', authMiddleware, async (req, res) => {
 
 router.get('/notifications', authMiddleware, async (req, res) => {
   res.json({
-    notifications: await getNotificationSummary(req.user)
+    notifications: await getNotificationSummary(req.user),
   });
 });
 
@@ -1094,7 +1116,9 @@ router.post('/session/refresh', async (req, res) => {
 
   if (!refreshToken) {
     clearRefreshTokenCookie(req, res);
-    return res.status(401).json({ error: 'Refresh session is missing or expired' });
+    return res
+      .status(401)
+      .json({ error: 'Refresh session is missing or expired' });
   }
 
   try {
@@ -1106,7 +1130,10 @@ router.post('/session/refresh', async (req, res) => {
 
     const user = await User.findById(decoded.userId).select('sessionVersion');
 
-    if (!user || Number(decoded.sessionVersion || 0) !== Number(user.sessionVersion || 0)) {
+    if (
+      !user ||
+      Number(decoded.sessionVersion || 0) !== Number(user.sessionVersion || 0)
+    ) {
       throw new Error('Refresh session has been revoked');
     }
 
@@ -1114,7 +1141,9 @@ router.post('/session/refresh', async (req, res) => {
     return res.json({ token: createSessionToken(user) });
   } catch {
     clearRefreshTokenCookie(req, res);
-    return res.status(401).json({ error: 'Refresh session is missing or expired' });
+    return res
+      .status(401)
+      .json({ error: 'Refresh session is missing or expired' });
   }
 });
 
@@ -1127,7 +1156,7 @@ router.post('/session/logout', async (req, res) => {
 
     if (decoded.tokenType === 'refresh' && decoded.userId) {
       await User.findByIdAndUpdate(decoded.userId, {
-        $inc: { sessionVersion: 1 }
+        $inc: { sessionVersion: 1 },
       });
     }
   } catch {
@@ -1143,7 +1172,7 @@ router.post('/session/logout', async (req, res) => {
 router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
   if (req.user.accountType !== 'ghost' || req.user.role !== 'ghost') {
     return res.status(400).json({
-      error: 'Only ghost accounts can be upgraded'
+      error: 'Only ghost accounts can be upgraded',
     });
   }
 
@@ -1166,22 +1195,23 @@ router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
     currentUnit,
     preferredLanguage,
     password,
-    passwordConfirmation
+    passwordConfirmation,
   } = req.body || {};
 
   if (password !== passwordConfirmation) {
     return res.status(400).json({
-      error: 'Passwords do not match'
+      error: 'Passwords do not match',
     });
   }
 
   const cleanFirstName = String(firstName || '').trim();
   const cleanLastName = String(lastName || '').trim();
   const incomingPreferredLanguage = String(preferredLanguage || '').trim();
-  const cleanPreferredLanguage =
-    VALID_PREFERRED_LANGUAGES.has(incomingPreferredLanguage)
-      ? incomingPreferredLanguage
-      : 'en';
+  const cleanPreferredLanguage = VALID_PREFERRED_LANGUAGES.has(
+    incomingPreferredLanguage,
+  )
+    ? incomingPreferredLanguage
+    : 'en';
 
   const requiredFields = [
     cleanFirstName,
@@ -1194,12 +1224,12 @@ router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
     String(status || '').trim(),
     String(affiliationElement || '').trim(),
     String(password || ''),
-    String(passwordConfirmation || '')
+    String(passwordConfirmation || ''),
   ];
 
-  if (requiredFields.some(value => !value)) {
+  if (requiredFields.some((value) => !value)) {
     return res.status(400).json({
-      error: 'Required account fields are missing'
+      error: 'Required account fields are missing',
     });
   }
 
@@ -1208,7 +1238,7 @@ router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
 
     if (!user || user.accountType !== 'ghost') {
       return res.status(404).json({
-        error: 'Ghost account not found'
+        error: 'Ghost account not found',
       });
     }
 
@@ -1224,7 +1254,7 @@ router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
       city: String(city || '').trim(),
       country: String(country || '').trim(),
       stateProvince: String(stateProvince || '').trim(),
-      postalCode: String(postalCode || '').trim()
+      postalCode: String(postalCode || '').trim(),
     };
     user.rank = String(rank || '').trim();
     user.postNominals = String(postNominals || '').trim();
@@ -1250,66 +1280,85 @@ router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
       actor: user,
       targetType: 'user',
       target: user._id,
-      targetSnapshot: getUserSnapshot(user)
+      targetSnapshot: getUserSnapshot(user),
     });
 
     setRefreshTokenCookie(req, res, user);
     res.json({
       message: 'Account upgraded',
       token: createSessionToken(user),
-      user: await getProfileResponse(user)
+      user: await getProfileResponse(user),
     });
   } catch (error) {
     console.error('Ghost account upgrade failed:', error);
 
     res.status(500).json({
-      error: 'Could not upgrade account'
+      error: 'Could not upgrade account',
     });
   }
 });
 
 // DELETE /api/profile
 // Delete the current account after a fresh authenticator-app confirmation.
-router.delete('/profile', authMiddleware, requirePermission('canDeleteOwnAccount'), async (req, res) => {
-  const mfaCode = req.body?.mfaCode;
-  const mfaMethod = String(req.body?.mfaMethod || 'totp').trim();
+router.delete(
+  '/profile',
+  authMiddleware,
+  requirePermission('canDeleteOwnAccount'),
+  async (req, res) => {
+    const mfaCode = req.body?.mfaCode;
+    const mfaMethod = String(req.body?.mfaMethod || 'totp').trim();
 
-  const mfaVerified = mfaMethod === 'webauthn'
-    ? hasFreshDestructivePasskeyVerification(req.user)
-    : verifyDestructiveTotp(req.user, mfaCode);
+    const mfaVerified =
+      mfaMethod === 'webauthn'
+        ? hasFreshDestructivePasskeyVerification(req.user)
+        : verifyDestructiveTotp(req.user, mfaCode);
 
-  if (!mfaVerified) {
-    return res.status(403).json({ error: 'A recent MFA confirmation is required to delete your account' });
-  }
+    if (!mfaVerified) {
+      return res
+        .status(403)
+        .json({
+          error: 'A recent MFA confirmation is required to delete your account',
+        });
+    }
 
-  try {
-    const userId = req.user._id;
-    const snapshot = getUserSnapshot(req.user);
+    try {
+      const userId = req.user._id;
+      const snapshot = getUserSnapshot(req.user);
 
-    await Promise.all([
-      Event.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
-      RetirementMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
-      RetirementComment.updateMany({ author: userId }, { $set: { author: null } }),
-      LastPostMessage.updateMany({ createdBy: userId }, { $set: { createdBy: null } })
-    ]);
-    await User.deleteOne({ _id: userId });
-    await writeAuditLog({
-      req,
-      action: 'user.self_deleted',
-      actor: req.user,
-      targetType: 'user',
-      target: userId,
-      targetSnapshot: snapshot,
-      metadata: { contentDisposition: 'keep_and_anonymize', mfaMethod }
-    });
+      await Promise.all([
+        Event.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
+        RetirementMessage.updateMany(
+          { createdBy: userId },
+          { $set: { createdBy: null } },
+        ),
+        RetirementComment.updateMany(
+          { author: userId },
+          { $set: { author: null } },
+        ),
+        LastPostMessage.updateMany(
+          { createdBy: userId },
+          { $set: { createdBy: null } },
+        ),
+      ]);
+      await User.deleteOne({ _id: userId });
+      await writeAuditLog({
+        req,
+        action: 'user.self_deleted',
+        actor: req.user,
+        targetType: 'user',
+        target: userId,
+        targetSnapshot: snapshot,
+        metadata: { contentDisposition: 'keep_and_anonymize', mfaMethod },
+      });
 
-    clearRefreshTokenCookie(req, res);
-    return res.json({ message: 'Account deleted' });
-  } catch (error) {
-    console.error('Self account deletion failed:', error);
-    return res.status(500).json({ error: 'Could not delete account' });
-  }
-});
+      clearRefreshTokenCookie(req, res);
+      return res.json({ message: 'Account deleted' });
+    } catch (error) {
+      console.error('Self account deletion failed:', error);
+      return res.status(500).json({ error: 'Could not delete account' });
+    }
+  },
+);
 
 // PATCH /api/profile
 // Update safe, user-owned profile fields for the authenticated account.
@@ -1319,7 +1368,7 @@ router.patch('/profile', authMiddleware, async (req, res) => {
 
     if (!Object.keys(updates).length) {
       return res.status(400).json({
-        error: 'No editable profile fields were provided'
+        error: 'No editable profile fields were provided',
       });
     }
 
@@ -1328,15 +1377,15 @@ router.patch('/profile', authMiddleware, async (req, res) => {
       { $set: updates },
       {
         returnDocument: 'after',
-        runValidators: true
-      }
+        runValidators: true,
+      },
     )
       .select(PROFILE_SELECT)
       .populate('customRoles', 'name slug color permissions');
 
     if (!user) {
       return res.status(404).json({
-        error: 'User not found'
+        error: 'User not found',
       });
     }
 
@@ -1344,7 +1393,7 @@ router.patch('/profile', authMiddleware, async (req, res) => {
   } catch (error) {
     if (error.name === 'ValidationError') {
       return res.status(400).json({
-        error: 'Profile information is invalid'
+        error: 'Profile information is invalid',
       });
     }
 
@@ -1354,18 +1403,18 @@ router.patch('/profile', authMiddleware, async (req, res) => {
         'Required address fields are missing',
         'Invalid status',
         'Invalid affiliation element',
-        'Invalid preferred language'
+        'Invalid preferred language',
       ].includes(error.message)
     ) {
       return res.status(400).json({
-        error: error.message
+        error: error.message,
       });
     }
 
     console.error('Profile update failed:', error);
 
     res.status(500).json({
-      error: 'Could not update profile'
+      error: 'Could not update profile',
     });
   }
 });
@@ -1379,9 +1428,9 @@ router.get(
   (req, res) => {
     res.json({
       message: 'You may submit content',
-      role: req.user.role
+      role: req.user.role,
     });
-  }
+  },
 );
 
 // GET /api/admin-check
@@ -1392,9 +1441,9 @@ router.get(
   requirePermission('canManageUsers'),
   (req, res) => {
     res.json({
-      message: 'Administrator access confirmed'
+      message: 'Administrator access confirmed',
     });
-  }
+  },
 );
 
 module.exports = router;

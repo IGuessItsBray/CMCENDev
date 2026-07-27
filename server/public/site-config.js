@@ -17,7 +17,7 @@ let siteConfigState = {
       limit: "25",
       maxLimit: 1000,
       logs: [],
-      summary: null
+      summary: null,
     },
     comments: {
       isRunning: false,
@@ -26,7 +26,7 @@ let siteConfigState = {
       limit: "25",
       maxLimit: 1000,
       logs: [],
-      summary: null
+      summary: null,
     },
     lastPost: {
       isRunning: false,
@@ -35,15 +35,15 @@ let siteConfigState = {
       limit: "25",
       maxLimit: 1000,
       logs: [],
-      summary: null
-    }
-  }
+      summary: null,
+    },
+  },
 };
 
 const siteConfigMigrationLabels = {
   retirement: "site_config_migration_retirement",
   comments: "site_config_migration_comments",
-  lastPost: "site_config_migration_last_post"
+  lastPost: "site_config_migration_last_post",
 };
 
 function showSiteConfigStatus(message, state = "") {
@@ -55,7 +55,7 @@ function showSiteConfigToast(message, color = "info") {
   CMCENUtils.showToast(message, {
     color,
     position: "bottom-right",
-    animation: "slide"
+    animation: "slide",
   });
 }
 
@@ -73,7 +73,7 @@ function showSiteConfigPage() {
 function setSiteConfigState(nextState) {
   siteConfigState = {
     ...siteConfigState,
-    ...nextState
+    ...nextState,
   };
   renderSiteConfig();
 }
@@ -85,9 +85,9 @@ function siteConfigApiJson(path, options = {}) {
     redirectOnUnauthorized: true,
     headers: {
       ...(options.headers || {}),
-      "X-Config-Token": siteConfigToken
+      "X-Config-Token": siteConfigToken,
     },
-    unauthorizedMessage: translate("site_config_verify_error")
+    unauthorizedMessage: translate("site_config_verify_error"),
   });
 }
 
@@ -96,7 +96,7 @@ async function verifySiteConfigAccess() {
     token: siteConfigAuthToken,
     redirectOnUnauthorized: true,
     unauthorizedMessage: translate("site_config_verify_error"),
-    errorMessage: translate("site_config_verify_error")
+    errorMessage: translate("site_config_verify_error"),
   });
 
   if (user.permissions?.canAccessSiteConfig !== true) {
@@ -108,16 +108,13 @@ async function verifySiteConfigAccess() {
 }
 
 async function promptForConfigToken() {
-  const token = await CMCENModal.prompt(
-    translate("site_config_token_prompt"),
-    {
-      title: translate("site_config_heading"),
-      inputLabel: translate("site_config_token_prompt"),
-      inputType: "password",
-      autocomplete: "off",
-      confirmText: translate("modal_confirm")
-    }
-  );
+  const token = await CMCENModal.prompt(translate("site_config_token_prompt"), {
+    title: translate("site_config_heading"),
+    inputLabel: translate("site_config_token_prompt"),
+    inputType: "password",
+    autocomplete: "off",
+    confirmText: translate("modal_confirm"),
+  });
 
   if (!token) {
     throw new Error(translate("site_config_token_required"));
@@ -128,7 +125,7 @@ async function promptForConfigToken() {
   try {
     await siteConfigApiJson("/api/admin/site-config/verify", {
       method: "POST",
-      errorMessage: translate("site_config_token_invalid")
+      errorMessage: translate("site_config_token_invalid"),
     });
   } catch (error) {
     siteConfigToken = "";
@@ -141,7 +138,7 @@ async function logSiteConfigAccessRequest() {
     method: "POST",
     token: siteConfigAuthToken,
     redirectOnUnauthorized: true,
-    unauthorizedMessage: translate("site_config_verify_error")
+    unauthorizedMessage: translate("site_config_verify_error"),
   });
 }
 
@@ -182,7 +179,11 @@ function renderSiteConfig() {
   const content = document.createElement("div");
   content.className = "site-config-form";
 
-  content.append(createSiteConfigMessage(), createSiteConfigToolbar(), createSiteConfigOperations());
+  content.append(
+    createSiteConfigMessage(),
+    createSiteConfigToolbar(),
+    createSiteConfigOperations(),
+  );
 
   siteConfigContent.replaceChildren(content);
 }
@@ -218,7 +219,7 @@ function createMigrationSection() {
   heading.append(title, copy);
   section.append(heading);
 
-  Object.keys(siteConfigMigrationLabels).forEach(key => {
+  Object.keys(siteConfigMigrationLabels).forEach((key) => {
     section.append(createMigrationControl(key));
   });
 
@@ -238,7 +239,8 @@ function createMigrationControl(key) {
   title.textContent = translate(siteConfigMigrationLabels[key]);
 
   const message = document.createElement("p");
-  message.textContent = migration.message || translate("site_config_migration_ready");
+  message.textContent =
+    migration.message || translate("site_config_migration_ready");
 
   const limitField = document.createElement("label");
   limitField.className = "site-config-limit";
@@ -255,9 +257,9 @@ function createMigrationControl(key) {
   limitInput.value = migration.limit || "";
   limitInput.placeholder = translate("site_config_migration_limit_all");
   limitInput.disabled = migration.isRunning;
-  limitInput.addEventListener("input", event => {
+  limitInput.addEventListener("input", (event) => {
     updateMigrationState(key, {
-      limit: event.target.value
+      limit: event.target.value,
     });
   });
 
@@ -293,7 +295,9 @@ function createMigrationControl(key) {
     ? translate("site_config_migration_running")
     : translate("site_config_migration_dry_run");
   dryRun.disabled = migration.isRunning;
-  dryRun.addEventListener("click", () => runSiteConfigMigration(key, "dry-run"));
+  dryRun.addEventListener("click", () =>
+    runSiteConfigMigration(key, "dry-run"),
+  );
 
   const apply = document.createElement("button");
   apply.type = "button";
@@ -312,17 +316,27 @@ function createMigrationSummary(summary) {
   const list = document.createElement("dl");
   list.className = "site-config-summary";
   const items = [
-    [translate("site_config_migration_summary_retirements"), summary.retirementMessages],
-    [translate("site_config_migration_summary_last_posts"), summary.lastPostMessages],
+    [
+      translate("site_config_migration_summary_retirements"),
+      summary.retirementMessages,
+    ],
+    [
+      translate("site_config_migration_summary_last_posts"),
+      summary.lastPostMessages,
+    ],
     [translate("site_config_migration_summary_comments"), summary.comments],
-    [translate("site_config_migration_summary_manifest"), summary.manifestPath || "-"]
+    [
+      translate("site_config_migration_summary_manifest"),
+      summary.manifestPath || "-",
+    ],
   ];
 
   items.forEach(([label, value]) => {
     const term = document.createElement("dt");
     term.textContent = label;
     const detail = document.createElement("dd");
-    detail.textContent = value === null || value === undefined ? "-" : String(value);
+    detail.textContent =
+      value === null || value === undefined ? "-" : String(value);
     list.append(term, detail);
   });
 
@@ -336,7 +350,7 @@ function createMigrationLog(logs) {
   log.setAttribute("aria-live", "polite");
   log.setAttribute("aria-label", translate("site_config_migration_log_label"));
 
-  logs.slice(-80).forEach(entry => {
+  logs.slice(-80).forEach((entry) => {
     const line = document.createElement("p");
     line.className = entry.type === "stderr" ? "is-error" : "";
     line.textContent = entry.message;
@@ -386,20 +400,18 @@ function createMaintenanceSection() {
 
 async function loadSiteConfig() {
   setSiteConfigState({
-    message: ""
+    message: "",
   });
 
   try {
     const data = await siteConfigApiJson("/api/admin/site-config", {
-      errorMessage: translate("site_config_load_error")
+      errorMessage: translate("site_config_load_error"),
     });
 
-    const migrationMeta = Array.isArray(data.migrations)
-      ? data.migrations
-      : [];
+    const migrationMeta = Array.isArray(data.migrations) ? data.migrations : [];
     const nextMigrations = { ...siteConfigState.migrations };
 
-    migrationMeta.forEach(item => {
+    migrationMeta.forEach((item) => {
       const key = typeof item === "string" ? item : item?.key;
 
       if (!key || !nextMigrations[key]) {
@@ -408,61 +420,63 @@ async function loadSiteConfig() {
 
       nextMigrations[key] = {
         ...nextMigrations[key],
-        maxLimit: Number(item.maxLimit) || nextMigrations[key].maxLimit
+        maxLimit: Number(item.maxLimit) || nextMigrations[key].maxLimit,
       };
     });
 
     setSiteConfigState({
       message: "",
-      migrations: nextMigrations
+      migrations: nextMigrations,
     });
     showSiteConfigPage();
   } catch (error) {
     setSiteConfigState({
-      message: error.message || translate("site_config_load_error")
+      message: error.message || translate("site_config_load_error"),
     });
   }
 }
 
 async function purgeAnalyticsHistory() {
-  if (!await CMCENModal.confirm(
-    translate("site_config_analytics_purge_confirm"),
-    {
-      title: translate("site_config_analytics_purge"),
-      confirmText: translate("site_config_analytics_purge"),
-      destructive: true
-    }
-  )) {
+  if (
+    !(await CMCENModal.confirm(
+      translate("site_config_analytics_purge_confirm"),
+      {
+        title: translate("site_config_analytics_purge"),
+        confirmText: translate("site_config_analytics_purge"),
+        destructive: true,
+      },
+    ))
+  ) {
     return;
   }
 
   setSiteConfigState({
     isPurgingAnalytics: true,
-    message: ""
+    message: "",
   });
 
   try {
     const data = await siteConfigApiJson("/api/admin/site-config/analytics", {
       method: "DELETE",
-      errorMessage: translate("site_config_analytics_purge_error")
+      errorMessage: translate("site_config_analytics_purge_error"),
     });
 
     setSiteConfigState({
       isPurgingAnalytics: false,
-      message: ""
+      message: "",
     });
     showSiteConfigToast(
       data.message || translate("site_config_analytics_purge_success"),
-      "success"
+      "success",
     );
   } catch (error) {
     setSiteConfigState({
       isPurgingAnalytics: false,
-      message: ""
+      message: "",
     });
     showSiteConfigToast(
       error.message || translate("site_config_analytics_purge_error"),
-      "error"
+      "error",
     );
   }
 }
@@ -473,9 +487,9 @@ function updateMigrationState(key, nextState) {
       ...siteConfigState.migrations,
       [key]: {
         ...(siteConfigState.migrations[key] || {}),
-        ...nextState
-      }
-    }
+        ...nextState,
+      },
+    },
   });
 }
 
@@ -496,8 +510,8 @@ function appendMigrationLog(key, message, type = "stdout") {
     ...(migration.logs || []),
     {
       type,
-      message
-    }
+      message,
+    },
   ].slice(-120);
   const progress = migration.isRunning
     ? Math.min((migration.progress || 8) + 2, 95)
@@ -505,7 +519,7 @@ function appendMigrationLog(key, message, type = "stdout") {
 
   updateMigrationState(key, {
     logs,
-    progress
+    progress,
   });
 }
 
@@ -516,7 +530,7 @@ function parseMigrationStreamLine(line) {
     return {
       type: "log",
       stream: "stdout",
-      message: line
+      message: line,
     };
   }
 }
@@ -542,7 +556,7 @@ async function readMigrationStream(key, response) {
     const lines = buffer.split(/\r?\n/u);
     buffer = lines.pop() || "";
 
-    lines.filter(Boolean).forEach(line => {
+    lines.filter(Boolean).forEach((line) => {
       handleMigrationEvent(key, parseMigrationStreamLine(line));
     });
   }
@@ -571,7 +585,7 @@ function handleMigrationEvent(key, event) {
       isRunning: false,
       progress: 100,
       message: event.message || translate("site_config_migration_success"),
-      summary: event.summary || null
+      summary: event.summary || null,
     });
     return;
   }
@@ -582,7 +596,7 @@ function handleMigrationEvent(key, event) {
       isRunning: false,
       progress: 0,
       message: event.message || translate("site_config_migration_error"),
-      summary: event.summary || null
+      summary: event.summary || null,
     });
   }
 }
@@ -594,21 +608,30 @@ async function runSiteConfigMigration(key, mode) {
   const limitValue = String(migration.limit || "").trim();
   const limit = limitValue ? Number(limitValue) : null;
 
-  if (limitValue && (!Number.isInteger(limit) || limit < 1 || limit > maxLimit)) {
+  if (
+    limitValue &&
+    (!Number.isInteger(limit) || limit < 1 || limit > maxLimit)
+  ) {
     updateMigrationState(key, {
-      message: translate("site_config_migration_limit_error").replace("{max}", String(maxLimit))
+      message: translate("site_config_migration_limit_error").replace(
+        "{max}",
+        String(maxLimit),
+      ),
     });
     return;
   }
 
-  if (isApply && !await CMCENModal.confirm(
-    translate("site_config_migration_apply_confirm"),
-    {
-      title: translate("site_config_migration_apply"),
-      confirmText: translate("site_config_migration_apply"),
-      destructive: true
-    }
-  )) {
+  if (
+    isApply &&
+    !(await CMCENModal.confirm(
+      translate("site_config_migration_apply_confirm"),
+      {
+        title: translate("site_config_migration_apply"),
+        confirmText: translate("site_config_migration_apply"),
+        destructive: true,
+      },
+    ))
+  ) {
     return;
   }
 
@@ -619,7 +642,7 @@ async function runSiteConfigMigration(key, mode) {
     summary: null,
     message: isApply
       ? translate("site_config_migration_applying")
-      : translate("site_config_migration_dry_running")
+      : translate("site_config_migration_dry_running"),
   });
 
   const progressTimer = startMigrationProgress(key);
@@ -630,12 +653,12 @@ async function runSiteConfigMigration(key, mode) {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${siteConfigAuthToken}`,
-        "X-Config-Token": siteConfigToken
+        "X-Config-Token": siteConfigToken,
       },
       body: JSON.stringify({
         mode,
-        limit
-      })
+        limit,
+      }),
     });
 
     if (response.status === 401) {
@@ -655,7 +678,7 @@ async function runSiteConfigMigration(key, mode) {
       updateMigrationState(key, {
         isRunning: false,
         progress: 100,
-        message: translate("site_config_migration_success")
+        message: translate("site_config_migration_success"),
       });
     }
   } catch (error) {
@@ -667,10 +690,10 @@ async function runSiteConfigMigration(key, mode) {
         ...(siteConfigState.migrations[key]?.logs || []),
         {
           type: "stderr",
-          message: error.message || translate("site_config_migration_error")
-        }
+          message: error.message || translate("site_config_migration_error"),
+        },
       ].slice(-120),
-      message: error.message || translate("site_config_migration_error")
+      message: error.message || translate("site_config_migration_error"),
     });
   }
 }
@@ -686,14 +709,17 @@ async function initializeSiteConfigPage() {
     window.updateAdminWorkZoneTabsForUser(user);
     setSiteConfigState({
       canManageSiteConfig: user.permissions?.canManageSiteConfig === true,
-      isDeveloper: user.role === "developer"
+      isDeveloper: user.role === "developer",
     });
 
     await logSiteConfigAccessRequest();
     await promptForConfigToken();
     await loadSiteConfig();
   } catch (error) {
-    showSiteConfigStatus(error.message || translate("site_config_load_error"), "error");
+    showSiteConfigStatus(
+      error.message || translate("site_config_load_error"),
+      "error",
+    );
   }
 }
 

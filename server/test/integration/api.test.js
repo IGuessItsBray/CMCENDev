@@ -48,7 +48,7 @@ function createMemberData(overrides = {}) {
       city: 'Ottawa',
       country: 'Canada',
       stateProvince: 'Ontario',
-      postalCode: 'K1A 0A1'
+      postalCode: 'K1A 0A1',
     },
     rank: 'Captain',
     currentUnit: 'Integration Test Unit',
@@ -59,9 +59,9 @@ function createMemberData(overrides = {}) {
     emailVerification: {
       required: false,
       verified: true,
-      verifiedAt: new Date()
+      verifiedAt: new Date(),
     },
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -71,17 +71,15 @@ async function createUser(overrides = {}) {
 
 async function login(user, options = {}) {
   const agent = options.agent || request(app);
-  const response = await agent
-    .post('/api/login')
-    .send({
-      username: user.username,
-      password: options.password || 'Correct-Horse-Integration-1!'
-    });
+  const response = await agent.post('/api/login').send({
+    username: user.username,
+    password: options.password || 'Correct-Horse-Integration-1!',
+  });
 
   assert.equal(
     response.status,
     options.expectedStatus || 200,
-    `Login setup failed for ${user.username}: ${JSON.stringify(response.body)}`
+    `Login setup failed for ${user.username}: ${JSON.stringify(response.body)}`,
   );
 
   return response;
@@ -92,7 +90,8 @@ function bearer(token) {
 }
 
 function retirementPayload() {
-  const message = 'This integration retirement message contains enough detail to satisfy the minimum length while exercising the complete submission and review workflow.';
+  const message =
+    'This integration retirement message contains enough detail to satisfy the minimum length while exercising the complete submission and review workflow.';
 
   return {
     retiree: {
@@ -101,16 +100,20 @@ function retirementPayload() {
       lastName: 'Example',
       postNominals: 'CD',
       tradeRole: RETIREMENT_TRADE_ROLES[0],
-      retirementDate: '2026-08-01'
+      retirementDate: '2026-08-01',
     },
     message,
     messageLanguage: 'en',
     photoUrl: '',
     submitter: {
-      relationship: 'colleague'
+      firstName: 'Integration',
+      lastName: 'Submitter',
+      relationship: 'colleague',
+      email: 'submitter@example.test',
+      unit: 'Integration Test Unit',
     },
     publicationConsentConfirmed: true,
-    memberReviewConfirmed: true
+    memberReviewConfirmed: true,
   };
 }
 
@@ -124,11 +127,11 @@ function eventPayload(overrides = {}) {
   return {
     title: {
       en: 'Integration exercise',
-      fr: "Exercice d'integration"
+      fr: "Exercice d'integration",
     },
     description: {
       en: 'English event description',
-      fr: "Description francaise de l'evenement"
+      fr: "Description francaise de l'evenement",
     },
     location: { en: 'Ottawa', fr: 'Ottawa' },
     city: 'Ottawa',
@@ -138,9 +141,16 @@ function eventPayload(overrides = {}) {
     timezone: 'America/Toronto',
     startDate: startDate.toISOString().slice(0, 10),
     allDay: true,
+    submitter: {
+      rank: 'Captain',
+      firstName: 'Integration',
+      lastName: 'Submitter',
+      unitRole: 'Test Unit',
+      email: 'events@example.test',
+    },
     publicationPermissionConfirmed: true,
     contentArea: 'general',
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -164,8 +174,8 @@ async function submitAndPublishRetirement() {
       action: 'publish',
       messages: {
         en: translatedMessage('English'),
-        fr: translatedMessage('French')
-      }
+        fr: translatedMessage('French'),
+      },
     })
     .expect(200);
 
@@ -175,19 +185,19 @@ async function submitAndPublishRetirement() {
 before(async () => {
   mongoServer = await MongoMemoryServer.create({
     instance: {
-      dbName: 'cmcen-integration'
-    }
+      dbName: 'cmcen-integration',
+    },
   });
 
   await mongoose.connect(mongoServer.getUri());
   await Promise.all(
-    Object.values(mongoose.models).map(model => model.init())
+    Object.values(mongoose.models).map((model) => model.init()),
   );
 });
 
 beforeEach(async () => {
   const collections = Object.values(mongoose.connection.collections);
-  await Promise.all(collections.map(collection => collection.deleteMany({})));
+  await Promise.all(collections.map((collection) => collection.deleteMany({})));
 });
 
 after(async () => {
@@ -212,7 +222,7 @@ describe('system and authentication', () => {
 
     const invalidLogin = await login(user, {
       password: 'wrong-password',
-      expectedStatus: 401
+      expectedStatus: 401,
     });
     assert.equal(invalidLogin.status, 401);
     assert.equal(invalidLogin.body.error, 'Invalid credentials');
@@ -256,34 +266,42 @@ describe('public search', () => {
   test('returns canonical destinations for event, retirement, and static page results', async () => {
     const owner = await createUser({ role: 'editor' });
     const event = await Event.create({
-      title: { en: 'Searchable signal exercise', fr: 'Exercice de transmissions' },
+      title: {
+        en: 'Searchable signal exercise',
+        fr: 'Exercice de transmissions',
+      },
       description: { en: 'Search result destination check.', fr: '' },
       startDate: new Date('2040-07-18T12:00:00.000Z'),
       allDay: true,
       status: 'published',
-      createdBy: owner._id
+      createdBy: owner._id,
     });
     const retirement = await submitAndPublishRetirement();
 
     const eventSearch = await request(app)
       .get('/api/search?q=signal%20exercise')
       .expect(200);
-    const eventResult = eventSearch.body.results.find(result => result.type === 'event');
+    const eventResult = eventSearch.body.results.find(
+      (result) => result.type === 'event',
+    );
     assert.equal(eventResult.url, `/event?id=${event._id}`);
 
     const retirementSearch = await request(app)
       .get('/api/search?q=alex%20example')
       .expect(200);
     const retirementResult = retirementSearch.body.results.find(
-      result => result.type === 'retirement-message'
+      (result) => result.type === 'retirement-message',
     );
-    assert.equal(retirementResult.url, `/retirement-message?id=${retirement._id}`);
+    assert.equal(
+      retirementResult.url,
+      `/retirement-message?id=${retirement._id}`,
+    );
 
     const pageSearch = await request(app)
       .get('/api/search?q=calendar')
       .expect(200);
     const pageResult = pageSearch.body.results.find(
-      result => result.sourceId === '/calendar'
+      (result) => result.sourceId === '/calendar',
     );
     assert.equal(pageResult.url, '/calendar');
   });
@@ -314,11 +332,11 @@ describe('permissions and audit logs', () => {
         actorSnapshot: {
           username: admin.username,
           accountName: admin.accountName,
-          role: admin.role
+          role: admin.role,
         },
         targetType: 'event',
         targetSnapshot: { title: 'Quoted, "Event"' },
-        metadata: { note: 'First line\nSecond line' }
+        metadata: { note: 'First line\nSecond line' },
       },
       {
         action: 'content.deleted',
@@ -326,11 +344,11 @@ describe('permissions and audit logs', () => {
         actorSnapshot: {
           username: admin.username,
           accountName: admin.accountName,
-          role: admin.role
+          role: admin.role,
         },
         targetType: 'page',
-        targetSnapshot: { title: 'Other record' }
-      }
+        targetSnapshot: { title: 'Other record' },
+      },
     ]);
 
     const filtered = await request(app)
@@ -348,7 +366,9 @@ describe('permissions and audit logs', () => {
     assert.match(csv.text, /"Quoted, ""Event"""/);
     assert.match(csv.text, /"note: First line\nSecond line"/);
 
-    const exportAudit = await AuditLog.findOne({ action: 'audit.exported' }).lean();
+    const exportAudit = await AuditLog.findOne({
+      action: 'audit.exported',
+    }).lean();
     assert.equal(exportAudit.metadata.entryCount, 1);
   });
 });
@@ -436,22 +456,31 @@ describe('retirement message lifecycle', () => {
         action: 'publish',
         messages: {
           en: translatedMessage('English'),
-          fr: translatedMessage('French')
-        }
+          fr: translatedMessage('French'),
+        },
       })
       .expect(200);
 
     const publicMessage = await request(app)
       .get(`/api/retirement-messages/${message._id}`)
       .expect(200);
-    assert.equal((await RetirementMessage.findById(message._id)).status, 'published');
+    assert.equal(
+      (await RetirementMessage.findById(message._id)).status,
+      'published',
+    );
     assert.equal(publicMessage.body.retirementMessage.status, undefined);
-    assert.equal(publicMessage.body.retirementMessage.messages.en, translatedMessage('English'));
-    assert.equal(publicMessage.body.retirementMessage.messages.fr, translatedMessage('French'));
+    assert.equal(
+      publicMessage.body.retirementMessage.messages.en,
+      translatedMessage('English'),
+    );
+    assert.equal(
+      publicMessage.body.retirementMessage.messages.fr,
+      translatedMessage('French'),
+    );
 
     const publishedAudit = await AuditLog.findOne({
       action: 'content.published',
-      targetType: 'retirementMessage'
+      targetType: 'retirementMessage',
     }).lean();
     assert.equal(String(publishedAudit.target), String(message._id));
   });
@@ -478,10 +507,16 @@ describe('retirement message lifecycle', () => {
     await request(app)
       .patch(`/api/retirement-messages/${message._id}/review`)
       .set('Authorization', bearer(editorLogin.body.token))
-      .send({ action: 'reject', rejectionReason: 'Missing confirmation details' })
+      .send({
+        action: 'reject',
+        rejectionReason: 'Missing confirmation details',
+      })
       .expect(200);
 
-    assert.equal((await RetirementMessage.findById(message._id)).status, 'rejected');
+    assert.equal(
+      (await RetirementMessage.findById(message._id)).status,
+      'rejected',
+    );
   });
 });
 
@@ -500,11 +535,11 @@ describe('Last Post lifecycle', () => {
           fullRank: 'Sergeant',
           firstName: 'Jordan',
           surname: 'Example',
-          postNominal: 'CD'
+          postNominal: 'CD',
         },
         messageLanguage: 'en',
         message: 'An English Last Post notice used by the integration test.',
-        imageUrl: ''
+        imageUrl: '',
       })
       .expect(201);
 
@@ -518,8 +553,8 @@ describe('Last Post lifecycle', () => {
         action: 'publish',
         messages: {
           en: 'Published English Last Post notice.',
-          fr: 'Avis du Dernier appel publie en francais.'
-        }
+          fr: 'Avis du Dernier appel publie en francais.',
+        },
       })
       .expect(200);
 
@@ -537,7 +572,7 @@ describe('authorization matrix and account integrity', () => {
       { role: 'editor', path: '/api/events/review', expected: 200 },
       { role: 'editor', path: '/api/audit-logs', expected: 403 },
       { role: 'administrator', path: '/api/audit-logs', expected: 200 },
-      { role: 'administrator', path: '/api/admin/pages', expected: 200 }
+      { role: 'administrator', path: '/api/admin/pages', expected: 200 },
     ];
 
     for (const item of cases) {
@@ -554,11 +589,11 @@ describe('authorization matrix and account integrity', () => {
     const customRole = await Role.create({
       name: 'Audit Reader',
       slug: 'audit-reader',
-      permissions: ['audit.view', 'site_config.access']
+      permissions: ['audit.view', 'site_config.access'],
     });
     const user = await createUser({
       role: 'subscriber',
-      customRoles: [customRole._id]
+      customRoles: [customRole._id],
     });
     const session = await login(user);
 
@@ -646,22 +681,22 @@ describe('event, page, and comment workflows', () => {
         endDate: new Date('2040-07-02T12:00:00.000Z'),
         allDay: true,
         status: 'published',
-        createdBy: owner._id
+        createdBy: owner._id,
       },
       {
         title: { en: 'July event', fr: 'Événement de juillet' },
         startDate: new Date('2040-07-18T12:00:00.000Z'),
         allDay: true,
         status: 'published',
-        createdBy: owner._id
+        createdBy: owner._id,
       },
       {
         title: { en: 'August event', fr: 'Événement d’août' },
         startDate: new Date('2040-08-01T12:00:00.000Z'),
         allDay: true,
         status: 'published',
-        createdBy: owner._id
-      }
+        createdBy: owner._id,
+      },
     ]);
 
     const response = await request(app)
@@ -669,8 +704,8 @@ describe('event, page, and comment workflows', () => {
       .expect(200);
 
     assert.deepEqual(
-      response.body.events.map(event => event.title.en),
-      ['Overlapping event', 'July event']
+      response.body.events.map((event) => event.title.en),
+      ['Overlapping event', 'July event'],
     );
 
     const incompleteRange = await request(app)
@@ -679,7 +714,7 @@ describe('event, page, and comment workflows', () => {
 
     assert.equal(
       incompleteRange.body.error,
-      'The from and to parameters must be used together'
+      'The from and to parameters must be used together',
     );
   });
 
@@ -692,11 +727,13 @@ describe('event, page, and comment workflows', () => {
       title: { en: 'Integration Page', fr: "Page d'integration" },
       slug: 'integration-page',
       summary: { en: 'English summary', fr: 'Resume francais' },
-      blocks: [{
-        type: 'text',
-        body: { en: 'English body', fr: 'Corps francais' }
-      }],
-      access: { audience: 'public' }
+      blocks: [
+        {
+          type: 'text',
+          body: { en: 'English body', fr: 'Corps francais' },
+        },
+      ],
+      access: { audience: 'public' },
     };
 
     await request(app)
@@ -751,7 +788,10 @@ describe('event, page, and comment workflows', () => {
       .get(`/api/retirement-messages/${message._id}/comments`)
       .expect(200);
     assert.equal(publicComments.body.comments.length, 1);
-    assert.equal(await RetirementComment.countDocuments({ status: 'pending' }), 1);
+    assert.equal(
+      await RetirementComment.countDocuments({ status: 'pending' }),
+      1,
+    );
   });
 });
 
@@ -793,11 +833,13 @@ describe('MFA and audit behavior', () => {
 
     await AuditLog.create([
       { action: 'page.created', targetType: 'page', createdAt: oldDate },
-      { action: 'page.created', targetType: 'page', createdAt: recentDate }
+      { action: 'page.created', targetType: 'page', createdAt: recentDate },
     ]);
 
     const filtered = await request(app)
-      .get('/api/audit-logs?action=page.created&startDate=2026-07-01&endDate=2026-07-31')
+      .get(
+        '/api/audit-logs?action=page.created&startDate=2026-07-01&endDate=2026-07-31',
+      )
       .set('Authorization', bearer(session.body.token))
       .expect(200);
     assert.equal(filtered.body.logs.length, 1);
@@ -807,9 +849,14 @@ describe('MFA and audit behavior', () => {
       .set('Authorization', bearer(session.body.token))
       .set('X-Forwarded-For', '203.0.113.8, 2001:db8::1')
       .expect(200);
-    const exportAudit = await AuditLog.findOne({ action: 'audit.exported' }).lean();
+    const exportAudit = await AuditLog.findOne({
+      action: 'audit.exported',
+    }).lean();
     assert.equal(exportAudit.metadata.ipAddress, '203.0.113.8');
-    assert.equal(exportAudit.metadata.ipAddresses.includes('2001:db8::1'), true);
+    assert.equal(
+      exportAudit.metadata.ipAddresses.includes('2001:db8::1'),
+      true,
+    );
   });
 });
 
@@ -821,7 +868,7 @@ describe('media lifecycle', () => {
     const adminSession = await login(admin);
     const sentCommands = [];
     const originalSend = s3Client.send.bind(s3Client);
-    s3Client.send = async command => {
+    s3Client.send = async (command) => {
       sentCommands.push(command);
       return {};
     };
@@ -832,9 +879,11 @@ describe('media lifecycle', () => {
           width: 32,
           height: 24,
           channels: 3,
-          background: '#336699'
-        }
-      }).png().toBuffer();
+          background: '#336699',
+        },
+      })
+        .png()
+        .toBuffer();
       const uploaded = await request(app)
         .post('/api/upload')
         .set('Authorization', bearer(contributorSession.body.token))
@@ -843,22 +892,32 @@ describe('media lifecycle', () => {
         .field('cdnSlug', 'integration-portrait')
         .attach('image', image, {
           filename: 'portrait.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
-      const asset = await MediaAsset.findById(uploaded.body.mediaAsset._id).lean();
+      const asset = await MediaAsset.findById(
+        uploaded.body.mediaAsset._id,
+      ).lean();
       assert.equal(asset.uploadContext.type, 'mediaManager');
       assert.equal(asset.displayName, 'Integration portrait');
       assert.equal(asset.originalName, 'portrait.png');
       assert.equal(asset.cdnSlug, 'integration-portrait');
-      assert.match(asset.url, /\/integration-test\/images\/integration-portrait\/large\.webp$/);
+      assert.match(
+        asset.url,
+        /\/integration-test\/images\/integration-portrait\/large\.webp$/,
+      );
       assert.equal(Object.keys(asset.variants).length, 4);
-      assert.equal(sentCommands.filter(command => command.constructor.name === 'PutObjectCommand').length, 5);
+      assert.equal(
+        sentCommands.filter(
+          (command) => command.constructor.name === 'PutObjectCommand',
+        ).length,
+        5,
+      );
 
       const uploadAudit = await AuditLog.findOne({
         action: 'media.uploaded',
-        target: asset._id
+        target: asset._id,
       }).lean();
       assert.equal(uploadAudit.metadata.cdnSlug, 'integration-portrait');
 
@@ -869,7 +928,7 @@ describe('media lifecycle', () => {
         .field('cdnSlug', 'integration-portrait')
         .attach('image', image, {
           filename: 'portrait.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(409);
       assert.equal(duplicate.body.error, 'That CDN slug is already in use');
@@ -879,7 +938,12 @@ describe('media lifecycle', () => {
         .set('Authorization', bearer(adminSession.body.token))
         .expect(200);
       assert.equal(await MediaAsset.countDocuments({ _id: asset._id }), 0);
-      assert.equal(sentCommands.filter(command => command.constructor.name === 'DeleteObjectCommand').length, 5);
+      assert.equal(
+        sentCommands.filter(
+          (command) => command.constructor.name === 'DeleteObjectCommand',
+        ).length,
+        5,
+      );
     } finally {
       s3Client.send = originalSend;
     }
@@ -892,13 +956,14 @@ describe('media lifecycle', () => {
       key: 'images/attached/original.png',
       originalKey: 'images/attached/original.png',
       url: 'http://127.0.0.1:9000/integration-test/images/attached/original.png',
-      originalUrl: 'http://127.0.0.1:9000/integration-test/images/attached/original.png',
-      originalName: 'attached.png'
+      originalUrl:
+        'http://127.0.0.1:9000/integration-test/images/attached/original.png',
+      originalName: 'attached.png',
     });
     const message = await submitAndPublishRetirement();
     await RetirementMessage.updateOne(
       { _id: message._id },
-      { $set: { photoUrl: asset.url } }
+      { $set: { photoUrl: asset.url } },
     );
 
     const response = await request(app)
@@ -916,17 +981,17 @@ describe('media lifecycle', () => {
     const orphan = await MediaAsset.create({
       key: 'images/orphan/original.png',
       originalKey: 'images/orphan/original.png',
-      url: 'http://127.0.0.1:9000/integration-test/images/orphan/original.png'
+      url: 'http://127.0.0.1:9000/integration-test/images/orphan/original.png',
     });
     const attached = await MediaAsset.create({
       key: 'images/used/original.png',
       originalKey: 'images/used/original.png',
-      url: 'http://127.0.0.1:9000/integration-test/images/used/original.png'
+      url: 'http://127.0.0.1:9000/integration-test/images/used/original.png',
     });
     const message = await submitAndPublishRetirement();
     await RetirementMessage.updateOne(
       { _id: message._id },
-      { $set: { photoUrl: attached.url } }
+      { $set: { photoUrl: attached.url } },
     );
     const originalSend = s3Client.send.bind(s3Client);
     s3Client.send = async () => ({});
@@ -936,7 +1001,7 @@ describe('media lifecycle', () => {
         .post('/api/admin/media/bulk-delete')
         .set('Authorization', bearer(session.body.token))
         .send({
-          keys: [orphan.key, attached.key, 'images/missing/original.png']
+          keys: [orphan.key, attached.key, 'images/missing/original.png'],
         })
         .expect(200);
 
@@ -958,13 +1023,13 @@ describe('database integrity', () => {
 
     await assert.rejects(
       User.create({ ...userData, username: 'different@example.test' }),
-      error => error?.code === 11000
+      (error) => error?.code === 11000,
     );
 
     await MediaAsset.create({ key: 'images/unique/original.png' });
     await assert.rejects(
       MediaAsset.create({ key: 'images/unique/original.png' }),
-      error => error?.code === 11000
+      (error) => error?.code === 11000,
     );
   });
 
@@ -973,7 +1038,7 @@ describe('database integrity', () => {
     const session = await login(editor);
     const pagePayload = {
       title: { en: 'Unique page' },
-      slug: 'unique-page'
+      slug: 'unique-page',
     };
 
     await request(app)

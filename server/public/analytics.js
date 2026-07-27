@@ -6,7 +6,7 @@ const analyticsContent = document.getElementById("analyticsContent");
 const analyticsState = {
   range: "30d",
   data: null,
-  isLoading: false
+  isLoading: false,
 };
 
 function analyticsText(key, fallback) {
@@ -17,7 +17,7 @@ function analyticsText(key, fallback) {
 function showAnalyticsLoading() {
   CMCENUtils.setStatusLoading(
     analyticsStatus,
-    analyticsText("analytics_loading", "Loading analytics...")
+    analyticsText("analytics_loading", "Loading analytics..."),
   );
   analyticsPage.hidden = true;
 }
@@ -40,7 +40,10 @@ async function analyticsApi(path, options = {}) {
       auth: true,
       token: analyticsToken,
       redirectOnUnauthorized: true,
-      unauthorizedMessage: analyticsText("admin_verify_error", "Please sign in again.")
+      unauthorizedMessage: analyticsText(
+        "admin_verify_error",
+        "Please sign in again.",
+      ),
     });
   } catch (error) {
     if (error.status === 403) {
@@ -60,7 +63,7 @@ function formatDate(value) {
 
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
-    timeStyle: "short"
+    timeStyle: "short",
   }).format(new Date(value));
 }
 
@@ -94,7 +97,7 @@ function createRangeToolbar() {
     ["7d", "Last 7 days"],
     ["30d", "Last 30 days"],
     ["90d", "Last 90 days"],
-    ["all", "All time"]
+    ["all", "All time"],
   ].forEach(([value, text]) => {
     const option = document.createElement("option");
     option.value = value;
@@ -140,7 +143,12 @@ function getBreakdownCount(item) {
   return item.visits ?? item.visitors ?? 0;
 }
 
-function createBreakdown(title, items, emptyText = "No visits yet", tooltip = "") {
+function createBreakdown(
+  title,
+  items,
+  emptyText = "No visits yet",
+  tooltip = "",
+) {
   const panel = document.createElement("section");
   panel.className = "analytics-panel";
 
@@ -158,7 +166,7 @@ function createBreakdown(title, items, emptyText = "No visits yet", tooltip = ""
   list.className = "analytics-breakdown-list";
   const max = Math.max(...items.map(getBreakdownCount), 1);
 
-  items.forEach(item => {
+  items.forEach((item) => {
     const row = document.createElement("div");
     row.className = "analytics-breakdown-row";
 
@@ -173,7 +181,10 @@ function createBreakdown(title, items, emptyText = "No visits yet", tooltip = ""
 
     const meter = document.createElement("span");
     meter.className = "analytics-meter";
-    meter.style.setProperty("--analytics-meter-width", `${Math.max((getBreakdownCount(item) / max) * 100, 4)}%`);
+    meter.style.setProperty(
+      "--analytics-meter-width",
+      `${Math.max((getBreakdownCount(item) / max) * 100, 4)}%`,
+    );
 
     meta.append(label, count);
     row.append(meta, meter);
@@ -203,7 +214,7 @@ function createRecentVisits(visits) {
   const list = document.createElement("div");
   list.className = "analytics-recent-list";
 
-  visits.forEach(visit => {
+  visits.forEach((visit) => {
     const item = document.createElement("article");
     item.className = "analytics-recent-item";
 
@@ -212,13 +223,17 @@ function createRecentVisits(visits) {
 
     const details = document.createElement("span");
     details.textContent = [
-      visit.isRegistered ? `registered ${visit.userRole || ""}`.trim() : "guest",
+      visit.isRegistered
+        ? `registered ${visit.userRole || ""}`.trim()
+        : "guest",
       visit.source || "direct",
       visit.deviceType || "unknown",
       visit.osType || "Unknown",
       visit.browser || "Unknown",
-      visit.country || "Unknown"
-    ].filter(Boolean).join(" · ");
+      visit.country || "Unknown",
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
     const time = document.createElement("time");
     time.dateTime = visit.createdAt || "";
@@ -245,20 +260,26 @@ function renderAnalytics() {
     createCard("Visits", totals.visits),
     createCard("Unique visitors", totals.uniqueVisitors),
     createCard("Registered visitors", totals.uniqueRegistered),
-    createCard("Guest visitors", totals.uniqueGuests)
+    createCard("Guest visitors", totals.uniqueGuests),
   );
-  const trafficSourcesTooltip = "Direct means no outside referrer was sent, including typed URLs, bookmarks, and same-site navigation. Internal is historical same-site traffic recorded before this dashboard treated it as direct.";
+  const trafficSourcesTooltip =
+    "Direct means no outside referrer was sent, including typed URLs, bookmarks, and same-site navigation. Internal is historical same-site traffic recorded before this dashboard treated it as direct.";
 
   const grid = document.createElement("div");
   grid.className = "analytics-grid";
   grid.append(
     createBreakdown("Visits by page", data.pages),
-    createBreakdown("Traffic sources", data.sources, "No visits yet", trafficSourcesTooltip),
+    createBreakdown(
+      "Traffic sources",
+      data.sources,
+      "No visits yet",
+      trafficSourcesTooltip,
+    ),
     createBreakdown("Device types", data.devices),
     createBreakdown("Operating systems", data.operatingSystems),
     createBreakdown("Browsers", data.browsers),
     createBreakdown("Countries", data.countries),
-    createBreakdown("Unique visitors by role", data.roles)
+    createBreakdown("Unique visitors by role", data.roles),
   );
 
   analyticsContent.append(stats, grid, createRecentVisits(data.recentVisits));
@@ -266,7 +287,10 @@ function renderAnalytics() {
 
 async function verifyAnalyticsAccess() {
   const user = await analyticsApi("/api/me", {
-    errorMessage: analyticsText("admin_verify_error", "Could not verify your account.")
+    errorMessage: analyticsText(
+      "admin_verify_error",
+      "Could not verify your account.",
+    ),
   });
 
   if (typeof updateAdminWorkZoneTabsForUser === "function") {

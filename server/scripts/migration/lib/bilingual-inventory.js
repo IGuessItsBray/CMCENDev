@@ -32,7 +32,8 @@ function getContentType(value) {
 
   if (
     /^retirement-/iu.test(parts[0] || '') ||
-    (parts[0] === 'fr' && /^(retraite-|annonce-de-retraite)/iu.test(parts[1] || ''))
+    (parts[0] === 'fr' &&
+      /^(retraite-|annonce-de-retraite)/iu.test(parts[1] || ''))
   ) {
     return 'retirement';
   }
@@ -45,8 +46,10 @@ function isContentDetailUrl(value) {
   const contentType = getContentType(value);
 
   if (contentType === 'last-post') {
-    return (parts[0] === 'lp' && Boolean(parts[1])) ||
-      (parts[0] === 'fr' && parts[1] === 'lp' && Boolean(parts[2]));
+    return (
+      (parts[0] === 'lp' && Boolean(parts[1])) ||
+      (parts[0] === 'fr' && parts[1] === 'lp' && Boolean(parts[2]))
+    );
   }
 
   if (contentType === 'retirement') {
@@ -67,7 +70,9 @@ function getLanguageFromUrl(value) {
 function isArchiveUrl(value) {
   const pathname = new URL(normalizeUrl(value) || WORDPRESS_BASE_URL).pathname;
 
-  return /retirements-list|liste-des-departs-a-la-retraite|last-post-years-archive|dernier-appel-archives-des-annees/iu.test(pathname);
+  return /retirements-list|liste-des-departs-a-la-retraite|last-post-years-archive|dernier-appel-archives-des-annees/iu.test(
+    pathname,
+  );
 }
 
 function getSlug(value) {
@@ -81,7 +86,9 @@ function extractLinks(html, baseUrl) {
   let match = pattern.exec(String(html || ''));
 
   while (match) {
-    const link = normalizeUrl(new URL(match[1], baseUrl || WORDPRESS_BASE_URL).href);
+    const link = normalizeUrl(
+      new URL(match[1], baseUrl || WORDPRESS_BASE_URL).href,
+    );
 
     if (link) {
       links.add(link);
@@ -98,7 +105,7 @@ function getAlternateLinks(html, baseUrl) {
   const source = String(html || '');
   const patterns = [
     /<(?:link|a)\b[^>]*\bhreflang=["'](en|fr)(?:-[^"']*)?["'][^>]*\bhref=["']([^"']+)["'][^>]*>/giu,
-    /<li\b[^>]*\bwpml-ls-item-(en|fr)\b[^>]*>[\s\S]*?<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>/giu
+    /<li\b[^>]*\bwpml-ls-item-(en|fr)\b[^>]*>[\s\S]*?<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>/giu,
   ];
 
   for (const pattern of patterns) {
@@ -106,7 +113,7 @@ function getAlternateLinks(html, baseUrl) {
 
     while (match) {
       alternates[match[1].toLowerCase()] = normalizeUrl(
-        new URL(match[2], baseUrl || WORDPRESS_BASE_URL).href
+        new URL(match[2], baseUrl || WORDPRESS_BASE_URL).href,
       );
       match = pattern.exec(source);
     }
@@ -117,14 +124,21 @@ function getAlternateLinks(html, baseUrl) {
 
 function getPageTitle(html) {
   const title = String(html || '').match(/<title\b[^>]*>([\s\S]*?)<\/title>/iu);
-  return title ? stripHtml(title[1]).replace(/\s+[|–-]\s+CMCEN.*$/iu, '').trim() : '';
+  return title
+    ? stripHtml(title[1])
+        .replace(/\s+[|–-]\s+CMCEN.*$/iu, '')
+        .trim()
+    : '';
 }
 
 function normalizeSubject(value) {
   return cleanString(value)
     .toLowerCase()
     .replace(/<[^>]+>/gu, ' ')
-    .replace(/^(last\s+post|in\s+memoriam|retirement(?:\s+announcement)?|dernier(?:s)?\s+appel(?:s)?|depart(?:s)?\s+a\s+la\s+retraite|retraite|annonce\s+de\s+retraite)\s*[-:–]?\s*/iu, '')
+    .replace(
+      /^(last\s+post|in\s+memoriam|retirement(?:\s+announcement)?|dernier(?:s)?\s+appel(?:s)?|depart(?:s)?\s+a\s+la\s+retraite|retraite|annonce\s+de\s+retraite)\s*[-:–]?\s*/iu,
+      '',
+    )
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/gu, '')
     .replace(/[^a-z0-9]+/gu, ' ')
@@ -151,13 +165,16 @@ function getPairKey(entry) {
 }
 
 function pairEntries(entries) {
-  const byUrl = new Map(entries.map(entry => [entry.url, entry]));
+  const byUrl = new Map(entries.map((entry) => [entry.url, entry]));
   const paired = new Set();
   const pairs = [];
 
-  for (const entry of entries.filter(item => item.language === 'en')) {
-    const alternateUrl = entry.alternateUrls?.fr ||
-      (entry.contentType === 'last-post' ? deriveFrenchLastPostUrl(entry.url) : '');
+  for (const entry of entries.filter((item) => item.language === 'en')) {
+    const alternateUrl =
+      entry.alternateUrls?.fr ||
+      (entry.contentType === 'last-post'
+        ? deriveFrenchLastPostUrl(entry.url)
+        : '');
     const french = byUrl.get(alternateUrl);
 
     if (french && french.contentType === entry.contentType) {
@@ -167,15 +184,17 @@ function pairEntries(entries) {
         contentType: entry.contentType,
         en: entry,
         fr: french,
-        pairing: entry.alternateUrls?.fr ? 'alternate-link' : 'derived-last-post-url',
-        needsManualReview: false
+        pairing: entry.alternateUrls?.fr
+          ? 'alternate-link'
+          : 'derived-last-post-url',
+        needsManualReview: false,
       });
     }
   }
 
-  const unmatched = entries.filter(entry => !paired.has(entry.url));
+  const unmatched = entries.filter((entry) => !paired.has(entry.url));
   const bySubject = new Map();
-  unmatched.forEach(entry => {
+  unmatched.forEach((entry) => {
     const key = getPairKey(entry);
     if (!key || key.endsWith(':')) {
       return;
@@ -187,8 +206,8 @@ function pairEntries(entries) {
   });
 
   for (const candidates of bySubject.values()) {
-    const english = candidates.filter(entry => entry.language === 'en');
-    const french = candidates.filter(entry => entry.language === 'fr');
+    const english = candidates.filter((entry) => entry.language === 'en');
+    const french = candidates.filter((entry) => entry.language === 'fr');
 
     if (english.length === 1 && french.length === 1) {
       paired.add(english[0].url);
@@ -198,7 +217,7 @@ function pairEntries(entries) {
         en: english[0],
         fr: french[0],
         pairing: 'normalized-subject',
-        needsManualReview: false
+        needsManualReview: false,
       });
     }
   }
@@ -206,8 +225,8 @@ function pairEntries(entries) {
   return {
     pairs,
     unpaired: entries
-      .filter(entry => !paired.has(entry.url))
-      .map(entry => ({ ...entry, needsManualReview: true }))
+      .filter((entry) => !paired.has(entry.url))
+      .map((entry) => ({ ...entry, needsManualReview: true })),
   };
 }
 
@@ -224,5 +243,5 @@ module.exports = {
   isArchiveUrl,
   normalizeSubject,
   normalizeUrl,
-  pairEntries
+  pairEntries,
 };

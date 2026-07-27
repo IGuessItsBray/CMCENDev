@@ -3,7 +3,7 @@ async function resolvePostWithFallback({
   fetchPage,
   onRestMiss = () => {},
   onRestError = () => {},
-  onPageError = () => {}
+  onPageError = () => {},
 }) {
   try {
     const post = await fetchRest();
@@ -29,7 +29,7 @@ async function resolveCollectionWithFallback({
   fetchPrimary,
   fetchFallback,
   onPrimaryError = () => {},
-  onPrimaryEmpty = () => {}
+  onPrimaryEmpty = () => {},
 }) {
   try {
     const items = await fetchPrimary();
@@ -45,7 +45,7 @@ async function resolveCollectionWithFallback({
 
   return {
     items: await fetchFallback(),
-    usedFallback: true
+    usedFallback: true,
   };
 }
 
@@ -56,7 +56,7 @@ async function resolveCollectionWithFinalFallback({
   onPrimaryError = () => {},
   onPrimaryEmpty = () => {},
   onFallbackError = () => {},
-  onFallbackEmpty = () => {}
+  onFallbackEmpty = () => {},
 }) {
   try {
     const primaryItems = await fetchPrimary();
@@ -65,7 +65,7 @@ async function resolveCollectionWithFinalFallback({
       return {
         items: primaryItems,
         usedFallback: false,
-        usedFinalFallback: false
+        usedFinalFallback: false,
       };
     }
 
@@ -81,7 +81,7 @@ async function resolveCollectionWithFinalFallback({
       return {
         items: fallbackItems,
         usedFallback: true,
-        usedFinalFallback: false
+        usedFinalFallback: false,
       };
     }
 
@@ -93,12 +93,12 @@ async function resolveCollectionWithFinalFallback({
   return {
     items: await fetchFinalFallback(),
     usedFallback: true,
-    usedFinalFallback: true
+    usedFinalFallback: true,
   };
 }
 
 module.exports = {
   resolveCollectionWithFallback,
   resolveCollectionWithFinalFallback,
-  resolvePostWithFallback
+  resolvePostWithFallback,
 };

@@ -2,17 +2,17 @@ const mongoose = require('mongoose');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
-  normalizePermissionKeys
+  normalizePermissionKeys,
 } = require('../config/permissions');
 
-const PERMISSION_KEYS = PERMISSION_CATALOG.map(permission => permission.key);
+const PERMISSION_KEYS = PERMISSION_CATALOG.map((permission) => permission.key);
 
 const LocalizedStringSchema = new mongoose.Schema(
   {
     en: { type: String, trim: true, default: '' },
-    fr: { type: String, trim: true, default: '' }
+    fr: { type: String, trim: true, default: '' },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ImageCropSchema = new mongoose.Schema(
@@ -20,9 +20,9 @@ const ImageCropSchema = new mongoose.Schema(
     x: { type: Number, min: 0, max: 100, default: 50 },
     y: { type: Number, min: 0, max: 100, default: 50 },
     zoom: { type: Number, min: 1, max: 3, default: 1 },
-    rotate: { type: Number, enum: [0, 90, 180, 270], default: 0 }
+    rotate: { type: Number, enum: [0, 90, 180, 270], default: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ImageVariantSchema = new mongoose.Schema(
@@ -32,9 +32,9 @@ const ImageVariantSchema = new mongoose.Schema(
     width: { type: Number, min: 0, default: 0 },
     height: { type: Number, min: 0, default: 0 },
     size: { type: Number, min: 0, default: 0 },
-    mimeType: { type: String, trim: true, default: 'image/webp' }
+    mimeType: { type: String, trim: true, default: 'image/webp' },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ImageVariantsSchema = new mongoose.Schema(
@@ -42,104 +42,113 @@ const ImageVariantsSchema = new mongoose.Schema(
     thumb: { type: ImageVariantSchema, default: () => ({}) },
     medium: { type: ImageVariantSchema, default: () => ({}) },
     large: { type: ImageVariantSchema, default: () => ({}) },
-    hero: { type: ImageVariantSchema, default: () => ({}) }
+    hero: { type: ImageVariantSchema, default: () => ({}) },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const PageBlockSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ['heading', 'text', 'image', 'callout', 'button', 'divider', 'columns', 'carousel'],
-      required: true
+      enum: [
+        'heading',
+        'text',
+        'image',
+        'callout',
+        'button',
+        'divider',
+        'columns',
+        'carousel',
+      ],
+      required: true,
     },
     level: {
       type: Number,
       min: 2,
       max: 3,
-      default: 2
+      default: 2,
     },
     text: {
       type: LocalizedStringSchema,
-      default: () => ({})
+      default: () => ({}),
     },
     body: {
       type: LocalizedStringSchema,
-      default: () => ({})
+      default: () => ({}),
     },
     url: {
       type: String,
       trim: true,
-      default: ''
+      default: '',
     },
     mediaKey: {
       type: String,
       trim: true,
-      default: ''
+      default: '',
     },
     mediaUrl: {
       type: String,
       trim: true,
-      default: ''
+      default: '',
     },
     mediaVariants: {
       type: ImageVariantsSchema,
-      default: () => ({})
+      default: () => ({}),
     },
     alt: {
       type: LocalizedStringSchema,
-      default: () => ({})
+      default: () => ({}),
     },
     caption: {
       type: LocalizedStringSchema,
-      default: () => ({})
+      default: () => ({}),
     },
     crop: {
       type: ImageCropSchema,
-      default: () => ({})
+      default: () => ({}),
     },
     variant: {
       type: String,
       enum: ['standard', 'important'],
-      default: 'standard'
+      default: 'standard',
     },
     columns: {
       type: [
         {
           title: {
             type: LocalizedStringSchema,
-            default: () => ({})
+            default: () => ({}),
           },
           body: {
             type: LocalizedStringSchema,
-            default: () => ({})
+            default: () => ({}),
           },
           mediaKey: {
             type: String,
             trim: true,
-            default: ''
+            default: '',
           },
           mediaUrl: {
             type: String,
             trim: true,
-            default: ''
+            default: '',
           },
           mediaVariants: {
             type: ImageVariantsSchema,
-            default: () => ({})
+            default: () => ({}),
           },
           alt: {
             type: LocalizedStringSchema,
-            default: () => ({})
+            default: () => ({}),
           },
           crop: {
             type: ImageCropSchema,
-            default: () => ({})
-          }
-        }
+            default: () => ({}),
+          },
+        },
       ],
-      default: []
+      default: [],
     },
     items: {
       type: [
@@ -147,35 +156,35 @@ const PageBlockSchema = new mongoose.Schema(
           mediaKey: {
             type: String,
             trim: true,
-            default: ''
+            default: '',
           },
           mediaUrl: {
             type: String,
             trim: true,
-            default: ''
+            default: '',
           },
           mediaVariants: {
             type: ImageVariantsSchema,
-            default: () => ({})
+            default: () => ({}),
           },
           alt: {
             type: LocalizedStringSchema,
-            default: () => ({})
+            default: () => ({}),
           },
           caption: {
             type: LocalizedStringSchema,
-            default: () => ({})
+            default: () => ({}),
           },
           crop: {
             type: ImageCropSchema,
-            default: () => ({})
-          }
-        }
+            default: () => ({}),
+          },
+        },
       ],
-      default: []
-    }
+      default: [],
+    },
   },
-  { _id: true }
+  { _id: true },
 );
 
 const PageAccessSchema = new mongoose.Schema(
@@ -183,30 +192,30 @@ const PageAccessSchema = new mongoose.Schema(
     audience: {
       type: String,
       enum: ['public', 'authenticated', 'restricted'],
-      default: 'public'
+      default: 'public',
     },
     roles: {
       type: [String],
       enum: USER_ROLES,
-      default: []
+      default: [],
     },
     customRoles: {
       type: [
         {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'Role'
-        }
+          ref: 'Role',
+        },
       ],
-      default: []
+      default: [],
     },
     permissions: {
       type: [String],
       enum: PERMISSION_KEYS,
       default: [],
-      set: normalizePermissionKeys
-    }
+      set: normalizePermissionKeys,
+    },
   },
-  { _id: false }
+  { _id: false },
 );
 
 function normalizeSlug(value) {
@@ -222,7 +231,7 @@ const PageSchema = new mongoose.Schema(
     title: {
       type: LocalizedStringSchema,
       required: true,
-      default: () => ({})
+      default: () => ({}),
     },
     slug: {
       type: String,
@@ -231,46 +240,46 @@ const PageSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       maxlength: 120,
-      set: normalizeSlug
+      set: normalizeSlug,
     },
     summary: {
       type: LocalizedStringSchema,
-      default: () => ({})
+      default: () => ({}),
     },
     status: {
       type: String,
       enum: ['draft', 'published', 'archived'],
-      default: 'draft'
+      default: 'draft',
     },
     blocks: {
       type: [PageBlockSchema],
-      default: []
+      default: [],
     },
     access: {
       type: PageAccessSchema,
-      default: () => ({})
+      default: () => ({}),
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      default: null
+      default: null,
     },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      default: null
+      default: null,
     },
     publishedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      default: null
+      default: null,
     },
     publishedAt: {
       type: Date,
-      default: null
-    }
+      default: null,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 PageSchema.pre('validate', function () {

@@ -119,7 +119,7 @@
 
     const form = control.form || document;
     const radios = form.querySelectorAll(
-      `input[type="radio"][name="${cssEscape(control.name)}"]`
+      `input[type="radio"][name="${cssEscape(control.name)}"]`,
     );
 
     radios.forEach(syncControl);
@@ -132,7 +132,7 @@
       return;
     }
 
-    root.querySelectorAll?.(controlSelector).forEach(control => {
+    root.querySelectorAll?.(controlSelector).forEach((control) => {
       syncControl(control);
       syncRadioGroup(control);
     });
@@ -140,44 +140,44 @@
 
   document.addEventListener(
     "invalid",
-    event => {
+    (event) => {
       syncControl(event.target);
       syncRadioGroup(event.target);
     },
-    true
+    true,
   );
 
   document.addEventListener(
     "input",
-    event => {
+    (event) => {
       syncControl(event.target);
       syncRadioGroup(event.target);
     },
-    true
+    true,
   );
 
   document.addEventListener(
     "change",
-    event => {
+    (event) => {
       syncControl(event.target);
       syncRadioGroup(event.target);
       syncControls(document);
     },
-    true
+    true,
   );
 
   document.addEventListener("languagechange", () => {
     syncControls(document);
   });
 
-  const observer = new MutationObserver(mutations => {
-    mutations.forEach(mutation => {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
       if (mutation.type === "attributes") {
         syncControl(mutation.target);
         return;
       }
 
-      mutation.addedNodes.forEach(node => {
+      mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
           syncControls(node);
         }
@@ -197,8 +197,8 @@
       "minlength",
       "pattern",
       "required",
-      "type"
-    ]
+      "type",
+    ],
   });
 
   window.refreshLocalizedValidationMessages = () => {

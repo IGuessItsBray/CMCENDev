@@ -5,7 +5,7 @@ const {
   EVENT_ORGANIZING_ENTITIES,
   EVENT_TYPES,
   CANADIAN_REGIONS,
-  CANADIAN_TIMEZONES
+  CANADIAN_TIMEZONES,
 } = require('../config/content');
 
 const LocalizedTextSchema = new mongoose.Schema(
@@ -13,18 +13,18 @@ const LocalizedTextSchema = new mongoose.Schema(
     en: {
       type: String,
       trim: true,
-      maxlength: 500
+      maxlength: 500,
     },
 
     fr: {
       type: String,
       trim: true,
-      maxlength: 500
-    }
+      maxlength: 500,
+    },
   },
   {
-    _id: false
-  }
+    _id: false,
+  },
 );
 
 const LocalizedLongTextSchema = new mongoose.Schema(
@@ -32,18 +32,18 @@ const LocalizedLongTextSchema = new mongoose.Schema(
     en: {
       type: String,
       trim: true,
-      maxlength: 10000
+      maxlength: 10000,
     },
 
     fr: {
       type: String,
       trim: true,
-      maxlength: 10000
-    }
+      maxlength: 10000,
+    },
   },
   {
-    _id: false
-  }
+    _id: false,
+  },
 );
 
 const SubmitterSchema = new mongoose.Schema(
@@ -52,28 +52,28 @@ const SubmitterSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: 100,
-      default: ''
+      default: '',
     },
 
     firstName: {
       type: String,
       trim: true,
       maxlength: 150,
-      default: ''
+      default: '',
     },
 
     lastName: {
       type: String,
       trim: true,
       maxlength: 150,
-      default: ''
+      default: '',
     },
 
     unitRole: {
       type: String,
       trim: true,
       maxlength: 300,
-      default: ''
+      default: '',
     },
 
     email: {
@@ -81,44 +81,43 @@ const SubmitterSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       maxlength: 320,
-      default: ''
+      default: '',
     },
 
     phone: {
       type: String,
       trim: true,
       maxlength: 50,
-      default: ''
-    }
+      default: '',
+    },
   },
   {
-    _id: false
-  }
+    _id: false,
+  },
 );
 
-const PublicationPermissionSchema =
-  new mongoose.Schema(
-    {
-      confirmed: {
-        type: Boolean,
-        default: false
-      },
-
-      confirmedAt: {
-        type: Date,
-        default: null
-      },
-
-      confirmedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        default: null
-      }
+const PublicationPermissionSchema = new mongoose.Schema(
+  {
+    confirmed: {
+      type: Boolean,
+      default: false,
     },
-    {
-      _id: false
-    }
-  );
+
+    confirmedAt: {
+      type: Date,
+      default: null,
+    },
+
+    confirmedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+  },
+  {
+    _id: false,
+  },
+);
 
 const EventSchema = new mongoose.Schema(
   {
@@ -128,196 +127,174 @@ const EventSchema = new mongoose.Schema(
 
       validate: {
         validator(value) {
-          return Boolean(
-            value?.en || value?.fr
-          );
+          return Boolean(value?.en || value?.fr);
         },
 
-        message:
-          'An English or French event title is required'
-      }
+        message: 'An English or French event title is required',
+      },
     },
 
     description: {
       type: LocalizedLongTextSchema,
-      default: () => ({})
+      default: () => ({}),
     },
 
     location: {
       type: LocalizedTextSchema,
-      default: () => ({})
+      default: () => ({}),
     },
 
     registration: {
       type: LocalizedLongTextSchema,
-      default: () => ({})
+      default: () => ({}),
     },
 
     city: {
       type: String,
       trim: true,
       maxlength: 200,
-      default: ''
+      default: '',
     },
 
     provinceRegion: {
       type: String,
-      enum: [
-        ...CANADIAN_REGIONS,
-        ''
-      ],
-      default: ''
+      enum: [...CANADIAN_REGIONS, ''],
+      default: '',
     },
 
     organizingEntity: {
       type: String,
-      enum: [
-        ...EVENT_ORGANIZING_ENTITIES,
-        ''
-      ],
-      default: ''
+      enum: [...EVENT_ORGANIZING_ENTITIES, ''],
+      default: '',
     },
 
     eventType: {
       type: String,
-      enum: [
-        ...EVENT_TYPES,
-        ''
-      ],
-      default: ''
+      enum: [...EVENT_TYPES, ''],
+      default: '',
     },
 
     timezone: {
       type: String,
-      enum: [
-        ...CANADIAN_TIMEZONES,
-        ''
-      ],
-      default: ''
+      enum: [...CANADIAN_TIMEZONES, ''],
+      default: '',
     },
 
     startDate: {
       type: Date,
-      required: true
+      required: true,
     },
 
     endDate: {
       type: Date,
-      default: null
+      default: null,
     },
 
     allDay: {
       type: Boolean,
-      default: true
+      default: true,
     },
 
     imagePath: {
       type: String,
       trim: true,
-      default: null
+      default: null,
     },
 
     contentArea: {
       type: String,
       trim: true,
-      default: 'general'
+      default: 'general',
     },
 
     submitter: {
       type: SubmitterSchema,
-      default: () => ({})
+      default: () => ({}),
     },
 
     publicationPermission: {
       type: PublicationPermissionSchema,
-      default: () => ({})
+      default: () => ({}),
     },
 
     status: {
       type: String,
       enum: CONTENT_STATUSES,
-      default: 'draft'
+      default: 'draft',
     },
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
-      index: true
+      index: true,
     },
 
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      default: null
+      default: null,
     },
 
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      default: null
+      default: null,
     },
 
     reviewedAt: {
       type: Date,
-      default: null
+      default: null,
     },
 
     publishedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      default: null
+      default: null,
     },
 
     publishedAt: {
       type: Date,
-      default: null
+      default: null,
     },
 
     lastSubmittedAt: {
       type: Date,
-      default: null
+      default: null,
     },
 
     rejectionReason: {
       type: String,
       trim: true,
       maxlength: 2000,
-      default: null
+      default: null,
     },
 
     deleteRequested: {
       type: Boolean,
-      default: false
+      default: false,
     },
 
     deleteRequestReason: {
       type: String,
       trim: true,
       maxlength: 2000,
-      default: null
+      default: null,
     },
 
     deleteRequestedAt: {
       type: Date,
-      default: null
-    }
+      default: null,
+    },
   },
   {
-    timestamps: true
-  }
+    timestamps: true,
+  },
 );
 
 EventSchema.pre('validate', function () {
-  if (
-    this.startDate &&
-    this.endDate &&
-    this.endDate < this.startDate
-  ) {
-    this.invalidate(
-      'endDate',
-      'End date cannot be earlier than start date'
-    );
+  if (this.startDate && this.endDate && this.endDate < this.startDate) {
+    this.invalidate('endDate', 'End date cannot be earlier than start date');
   }
 
   if (
@@ -326,39 +303,34 @@ EventSchema.pre('validate', function () {
     this.endDate &&
     this.endDate <= this.startDate
   ) {
-    this.invalidate(
-      'endDate',
-      'A timed event must end after it starts'
-    );
+    this.invalidate('endDate', 'A timed event must end after it starts');
   }
 
   if (
     this.publicationPermission?.confirmed &&
     !this.publicationPermission.confirmedAt
   ) {
-    this.publicationPermission.confirmedAt =
-      new Date();
+    this.publicationPermission.confirmedAt = new Date();
   }
 });
 
 // Public calendar queries.
 EventSchema.index({
   status: 1,
-  startDate: 1
+  startDate: 1,
 });
 
 // Contributor dashboards and My Events.
 EventSchema.index({
   createdBy: 1,
   status: 1,
-  startDate: -1
+  startDate: -1,
 });
 
 // Review queue.
 EventSchema.index({
   status: 1,
-  createdAt: 1
+  createdAt: 1,
 });
 
-module.exports =
-  mongoose.model('Event', EventSchema);
+module.exports = mongoose.model('Event', EventSchema);

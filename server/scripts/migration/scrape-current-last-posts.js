@@ -1,5 +1,5 @@
 require('dotenv').config({
-  path: require('path').join(__dirname, '..', '..', '.env')
+  path: require('path').join(__dirname, '..', '..', '.env'),
 });
 
 const path = require('path');
@@ -12,22 +12,22 @@ const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { parseArgs, resolvePath } = require('./lib/args');
 const {
   assertPublicMediaBaseUrl,
-  configurePublicMediaBaseUrl
+  configurePublicMediaBaseUrl,
 } = require('./lib/public-media');
 const { downloadSourceImage } = require('./lib/source-image');
 const {
   LEGACY_SUBMITTER_RANK,
-  normalizeDeceasedRank
+  normalizeDeceasedRank,
 } = require('./lib/legacy-rank');
 const {
   resolveCollectionWithFinalFallback,
-  resolvePostWithFallback
+  resolvePostWithFallback,
 } = require('./lib/post-resolver');
 const {
   cleanString,
   parseDate,
   stripHtml,
-  writeJson
+  writeJson,
 } = require('./lib/wordpress');
 const LastPostMessage = require('../../models/LastPostMessage');
 const LastPostComment = require('../../models/LastPostComment');
@@ -40,21 +40,19 @@ const s3Client = require('../../storage');
 const WORDPRESS_BASE_URL = 'https://cmcen-rcmce.ca';
 const LAST_POST_ARCHIVE_URL = `${WORDPRESS_BASE_URL}/last-post-years-archive/`;
 const DEFAULT_CATEGORY_SLUG = 'lp-category';
-const CATEGORY_SLUG_FALLBACKS = Object.freeze([
-  'lp-category',
-  'last-post'
-]);
+const CATEGORY_SLUG_FALLBACKS = Object.freeze(['lp-category', 'last-post']);
 const WORDPRESS_PAGE_SIZE = 100;
 const LEGACY_REQUEST_HEADERS = Object.freeze({
   Accept: 'application/json,text/html,application/xhtml+xml',
   'Accept-Language': 'en-CA,en;q=0.9,fr-CA;q=0.8',
-  'User-Agent': 'Mozilla/5.0 (compatible; CMCENContentMigration/1.0; +https://cmcen-rcmce.ca/)'
+  'User-Agent':
+    'Mozilla/5.0 (compatible; CMCENContentMigration/1.0; +https://cmcen-rcmce.ca/)',
 });
 const IMAGE_VARIANTS = Object.freeze([
   { name: 'thumb', width: 400 },
   { name: 'medium', width: 900 },
   { name: 'large', width: 1600 },
-  { name: 'hero', width: 2200 }
+  { name: 'hero', width: 2200 },
 ]);
 const KNOWN_RANKS = Object.freeze([
   'CHIEF WARRANT OFFICER',
@@ -78,7 +76,7 @@ const KNOWN_RANKS = Object.freeze([
   'MR.',
   'MR',
   'MS.',
-  'MS'
+  'MS',
 ]);
 
 const args = parseArgs();
@@ -86,21 +84,27 @@ const publicMediaBaseUrl = configurePublicMediaBaseUrl(args);
 const apply = Boolean(args.apply);
 const limit = args.limit ? Number(args.limit) : Infinity;
 const categorySlug = String(args.category || DEFAULT_CATEGORY_SLUG);
-const contentMode = ['all', 'last-posts', 'comments'].includes(String(args.content || 'all'))
+const contentMode = ['all', 'last-posts', 'comments'].includes(
+  String(args.content || 'all'),
+)
   ? String(args.content || 'all')
   : 'all';
-const shouldImportLastPosts = contentMode === 'all' || contentMode === 'last-posts';
-const shouldImportComments = contentMode === 'all' || contentMode === 'comments';
+const shouldImportLastPosts =
+  contentMode === 'all' || contentMode === 'last-posts';
+const shouldImportComments =
+  contentMode === 'all' || contentMode === 'comments';
 const outputDir = resolvePath(args.output, path.join(__dirname, 'output'));
 const manifestPath = resolvePath(
   args.manifest,
-  path.join(outputDir, 'current-last-post-scrape-manifest.json')
+  path.join(outputDir, 'current-last-post-scrape-manifest.json'),
 );
 
 function decodeHtml(value) {
   return String(value || '')
     .replace(/&#(\d+);/gu, (_, code) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/giu, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+    .replace(/&#x([0-9a-f]+);/giu, (_, code) =>
+      String.fromCodePoint(parseInt(code, 16)),
+    )
     .replace(/&nbsp;/giu, ' ')
     .replace(/&amp;/giu, '&')
     .replace(/&#038;/gu, '&')
@@ -113,17 +117,21 @@ function decodeHtml(value) {
 }
 
 function slugify(value) {
-  return cleanString(decodeHtml(value))
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/gu, '-')
-    .replace(/^-+|-+$/gu, '')
-    .slice(0, 120) || 'last-post';
+  return (
+    cleanString(decodeHtml(value))
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gu, '-')
+      .replace(/^-+|-+$/gu, '')
+      .slice(0, 120) || 'last-post'
+  );
 }
 
 function getCleanExtension(value, fallback = 'jpg') {
-  return String(value || fallback)
-    .toLowerCase()
-    .replace(/[^a-z0-9]/gu, '') || fallback;
+  return (
+    String(value || fallback)
+      .toLowerCase()
+      .replace(/[^a-z0-9]/gu, '') || fallback
+  );
 }
 
 function getExtensionFromUrl(url, contentType = '') {
@@ -147,10 +155,12 @@ function getPostTitle(post) {
 function getStableNumericId(value) {
   let hash = 0;
 
-  String(value || '').split('').forEach(character => {
-    hash = ((hash << 5) - hash) + character.charCodeAt(0);
-    hash |= 0;
-  });
+  String(value || '')
+    .split('')
+    .forEach((character) => {
+      hash = (hash << 5) - hash + character.charCodeAt(0);
+      hash |= 0;
+    });
 
   return Math.abs(hash) + 900000000;
 }
@@ -175,12 +185,16 @@ function getEmbeddedImageUrl(post) {
     return normalizeMediaUrl(post.sourceImageUrl);
   }
 
-  return normalizeMediaUrl(post?._embedded?.['wp:featuredmedia']?.[0]?.source_url);
+  return normalizeMediaUrl(
+    post?._embedded?.['wp:featuredmedia']?.[0]?.source_url,
+  );
 }
 
 function getFirstContentImageUrl(post) {
   const contentHtml = String(post?.content?.rendered || '');
-  const match = contentHtml.match(/<img\b[^>]*(?:src|data-src)=["']([^"']+)["']/iu);
+  const match = contentHtml.match(
+    /<img\b[^>]*(?:src|data-src)=["']([^"']+)["']/iu,
+  );
 
   return match ? normalizeMediaUrl(match[1]) : '';
 }
@@ -213,7 +227,9 @@ function getLanguage(post) {
 }
 
 function getCommentBody(comment) {
-  return stripHtml(decodeHtml(comment?.content?.rendered || comment?.content || ''));
+  return stripHtml(
+    decodeHtml(comment?.content?.rendered || comment?.content || ''),
+  );
 }
 
 function getCommentStatus(comment) {
@@ -225,7 +241,11 @@ function getCommentStatus(comment) {
 }
 
 function getWordPressCommentAuthorName(comment) {
-  return cleanString(decodeHtml(comment?.author_name || comment?.authorName || 'WordPress commenter'));
+  return cleanString(
+    decodeHtml(
+      comment?.author_name || comment?.authorName || 'WordPress commenter',
+    ),
+  );
 }
 
 function normalizeLastPostDate(value) {
@@ -242,12 +262,14 @@ function normalizeLastPostDate(value) {
   }
 
   const humanDateMatch = cleanValue.match(
-    /^(\d{1,2})\s+([A-Za-z]{3,9})\.?,?\s+(\d{2,4})$/u
+    /^(\d{1,2})\s+([A-Za-z]{3,9})\.?,?\s+(\d{2,4})$/u,
   );
 
   if (humanDateMatch) {
     const [, dayValue, monthValue, yearValue] = humanDateMatch;
-    const parsed = new Date(`${monthValue} ${dayValue}, ${yearValue.length === 2 ? `20${yearValue}` : yearValue}`);
+    const parsed = new Date(
+      `${monthValue} ${dayValue}, ${yearValue.length === 2 ? `20${yearValue}` : yearValue}`,
+    );
 
     if (!Number.isNaN(parsed.getTime())) {
       return parsed.toISOString().slice(0, 10);
@@ -262,7 +284,9 @@ function getPublishedAt(post) {
   const parsedDate = parseDate(normalizedDate);
 
   if (!parsedDate || Number.isNaN(new Date(parsedDate).getTime())) {
-    console.log(`No valid published date found for Last Post ${post.id}; leaving publishedAt empty`);
+    console.log(
+      `No valid published date found for Last Post ${post.id}; leaving publishedAt empty`,
+    );
     return null;
   }
 
@@ -276,15 +300,17 @@ function parseDeceased(title) {
     .replace(/\s+/gu, ' ')
     .trim();
   const postNominalsMatch = cleanTitle.match(
-    /,\s*([A-Z][A-Z. -]*(?:,\s*[A-Z][A-Z. -]*)*)\s*$/u
+    /,\s*([A-Z][A-Z. -]*(?:,\s*[A-Z][A-Z. -]*)*)\s*$/u,
   );
   const nameTitle = postNominalsMatch
     ? cleanTitle.slice(0, postNominalsMatch.index).trim()
     : cleanTitle;
-  const rank = KNOWN_RANKS.find(value =>
-    nameTitle.toUpperCase().startsWith(`${value} `) ||
-    nameTitle.toUpperCase() === value
-  ) || '';
+  const rank =
+    KNOWN_RANKS.find(
+      (value) =>
+        nameTitle.toUpperCase().startsWith(`${value} `) ||
+        nameTitle.toUpperCase() === value,
+    ) || '';
   const nameOnly = (rank ? nameTitle.slice(rank.length) : nameTitle)
     .replace(/[“"][^”"]+[”"]/gu, '')
     .replace(/\s+/gu, ' ')
@@ -293,11 +319,17 @@ function parseDeceased(title) {
 
   return {
     fullRank: normalizeDeceasedRank(rank),
-    firstName: parts.length >= 2 ? parts[parts.length - 2].replace(/[",]/gu, '') : '',
-    surname: parts.length >= 1 ? parts[parts.length - 1].replace(/[",]/gu, '') : '',
+    firstName:
+      parts.length >= 2 ? parts[parts.length - 2].replace(/[",]/gu, '') : '',
+    surname:
+      parts.length >= 1 ? parts[parts.length - 1].replace(/[",]/gu, '') : '',
     postNominal: postNominalsMatch
-      ? postNominalsMatch[1].split(',').map(value => value.trim()).filter(Boolean).join(', ')
-      : ''
+      ? postNominalsMatch[1]
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean)
+          .join(', ')
+      : '',
   };
 }
 
@@ -312,7 +344,7 @@ function toPostDocument(post, mediaResult) {
     slug: post.slug || slugify(title),
     messageLanguage: language,
     messages: {
-      [language]: message
+      [language]: message,
     },
     imageUrl: mediaResult?.asset?.url || getImageUrl(post),
     photoUrl: mediaResult?.asset?.url || getImageUrl(post),
@@ -321,7 +353,7 @@ function toPostDocument(post, mediaResult) {
       rank: LEGACY_SUBMITTER_RANK,
       firstName: 'Live Site',
       lastName: 'Import',
-      email: 'legacy-import@cmcen.local'
+      email: 'legacy-import@cmcen.local',
     },
     status: post.status === 'publish' ? 'published' : 'pending',
     publishedAt: post.status === 'publish' ? publishedAt : null,
@@ -339,9 +371,9 @@ function toPostDocument(post, mediaResult) {
         title,
         sourceImageUrl: mediaResult?.sourceUrl || getImageUrl(post),
         mediaAssetKey: mediaResult?.asset?.key || '',
-        scrapedFrom: LAST_POST_ARCHIVE_URL
-      }
-    }
+        scrapedFrom: LAST_POST_ARCHIVE_URL,
+      },
+    },
   };
 }
 
@@ -349,7 +381,7 @@ async function fetchJsonResponse(url) {
   const response = await axios.get(url, {
     responseType: 'json',
     timeout: 30000,
-    headers: LEGACY_REQUEST_HEADERS
+    headers: LEGACY_REQUEST_HEADERS,
   });
 
   return response;
@@ -363,8 +395,9 @@ async function fetchText(url, { allowNotFound = false } = {}) {
   const response = await axios.get(url, {
     responseType: 'text',
     timeout: 30000,
-    validateStatus: status => status < 400 || (allowNotFound && status === 404),
-    headers: LEGACY_REQUEST_HEADERS
+    validateStatus: (status) =>
+      status < 400 || (allowNotFound && status === 404),
+    headers: LEGACY_REQUEST_HEADERS,
   });
 
   if (response.status === 404) {
@@ -381,39 +414,43 @@ function getTotalPages(response) {
 }
 
 async function getCategoryId() {
-  const categorySlugs = Array.from(new Set([
-    categorySlug,
-    ...CATEGORY_SLUG_FALLBACKS
-  ].filter(Boolean)));
+  const categorySlugs = Array.from(
+    new Set([categorySlug, ...CATEGORY_SLUG_FALLBACKS].filter(Boolean)),
+  );
 
   for (const slug of categorySlugs) {
     console.log(`Looking up WordPress category "${slug}"`);
     const categories = await fetchJson(
-      `${WORDPRESS_BASE_URL}/wp-json/wp/v2/categories?slug=${encodeURIComponent(slug)}`
+      `${WORDPRESS_BASE_URL}/wp-json/wp/v2/categories?slug=${encodeURIComponent(slug)}`,
     );
     const category = Array.isArray(categories) ? categories[0] : null;
 
     if (category?.id) {
       if (slug !== categorySlug) {
-        console.log(`Using fallback WordPress category "${slug}" for Last Post notices`);
+        console.log(
+          `Using fallback WordPress category "${slug}" for Last Post notices`,
+        );
       }
 
       return category.id;
     }
   }
 
-  throw new Error(`Could not find a WordPress Last Post category. Tried: ${categorySlugs.join(', ')}.`);
+  throw new Error(
+    `Could not find a WordPress Last Post category. Tried: ${categorySlugs.join(', ')}.`,
+  );
 }
 
 function getArchivePageLinks(html) {
-  return Array.from(String(html || '').matchAll(/href=["']([^"']+)["']/giu))
-    .map(match => decodeHtml(match[1]));
+  return Array.from(
+    String(html || '').matchAll(/href=["']([^"']+)["']/giu),
+  ).map((match) => decodeHtml(match[1]));
 }
 
 function normalizeInternalLinks(values, pattern) {
   return values
-    .filter(value => pattern.test(value))
-    .map(value => {
+    .filter((value) => pattern.test(value))
+    .map((value) => {
       try {
         return new URL(value, WORDPRESS_BASE_URL).href;
       } catch {
@@ -426,20 +463,25 @@ function normalizeInternalLinks(values, pattern) {
 function getLastPostArchivePageLinks(html) {
   return normalizeInternalLinks(
     getArchivePageLinks(html),
-    /\/last-post\/page\/\d+\/?/iu
+    /\/last-post\/page\/\d+\/?/iu,
   );
 }
 
 function getCategoryPageLinks(html, slug) {
   return normalizeInternalLinks(
     getArchivePageLinks(html),
-    new RegExp(`/category/${slug.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}/page/\\d+/?`, 'iu')
+    new RegExp(
+      `/category/${slug.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}/page/\\d+/?`,
+      'iu',
+    ),
   );
 }
 
 function getLastPostSlugs(html) {
-  return Array.from(String(html || '').matchAll(/href=["']([^"']*\/lp\/[^"']+)["']/giu))
-    .map(match => getPostSlugFromLink(match[1]))
+  return Array.from(
+    String(html || '').matchAll(/href=["']([^"']*\/lp\/[^"']+)["']/giu),
+  )
+    .map((match) => getPostSlugFromLink(match[1]))
     .filter(Boolean);
 }
 
@@ -448,23 +490,31 @@ async function fetchPostBySlug(slug) {
   return resolvePostWithFallback({
     fetchRest: async () => {
       const posts = await fetchJson(
-        `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_embed=1`
+        `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_embed=1`,
       );
       const post = Array.isArray(posts) ? posts[0] : null;
       return post?.id ? post : null;
     },
     fetchPage: () => fetchPostFromPage(slug),
     onRestMiss: () => {
-      console.log(`REST post not found for ${slug}; scraping the /lp/ page HTML`);
+      console.log(
+        `REST post not found for ${slug}; scraping the /lp/ page HTML`,
+      );
     },
-    onRestError: error => {
+    onRestError: (error) => {
       const status = error.response?.status;
-      const detail = status ? `status ${status}` : (error.message || 'request failed');
-      console.log(`REST lookup failed for ${slug} (${detail}); scraping the /lp/ page HTML`);
+      const detail = status
+        ? `status ${status}`
+        : error.message || 'request failed';
+      console.log(
+        `REST lookup failed for ${slug} (${detail}); scraping the /lp/ page HTML`,
+      );
     },
-    onPageError: error => {
-      console.log(`Skipping Last Post slug ${slug}: ${error.message || 'page scrape failed'}`);
-    }
+    onPageError: (error) => {
+      console.log(
+        `Skipping Last Post slug ${slug}: ${error.message || 'page scrape failed'}`,
+      );
+    },
   });
 }
 
@@ -477,7 +527,7 @@ function extractFirstMatch(html, pattern) {
 function extractLastPostHtmlContent(html) {
   const sourceHtml = String(html || '');
   const bodyMatch = sourceHtml.match(
-    /<div\b[^>]*class=["'][^"']*\bet_pb_cpt_text_0\b[^"']*["'][^>]*>([\s\S]*?)(?=<div class=["']et_pb_section et_pb_section_4\b|<div class=["']et_pb_button_module_wrapper\b)/iu
+    /<div\b[^>]*class=["'][^"']*\bet_pb_cpt_text_0\b[^"']*["'][^>]*>([\s\S]*?)(?=<div class=["']et_pb_section et_pb_section_4\b|<div class=["']et_pb_button_module_wrapper\b)/iu,
   );
 
   if (!bodyMatch) {
@@ -494,8 +544,8 @@ function extractLastPostImageUrl(html) {
   return normalizeMediaUrl(
     extractFirstMatch(
       html,
-      /et_pb_acf_single_item_0[\s\S]*?(?:data-src|src)=["']([^"']+)["']/iu
-    )
+      /et_pb_acf_single_item_0[\s\S]*?(?:data-src|src)=["']([^"']+)["']/iu,
+    ),
   );
 }
 
@@ -508,25 +558,31 @@ async function fetchPostFromPage(slug) {
     return null;
   }
 
-  const title = cleanString(
-    extractFirstMatch(html, /<h1[^>]*class=["'][^"']*cpt_title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/iu)
-      .replace(/<[^>]+>/gu, '')
-  ) || cleanString(
-    extractFirstMatch(html, /<title>([\s\S]*?)<\/title>/iu)
-      .replace(/\s*\|\s*CMCEN\s*$/iu, '')
-      .replace(/<[^>]+>/gu, '')
-  );
+  const title =
+    cleanString(
+      extractFirstMatch(
+        html,
+        /<h1[^>]*class=["'][^"']*cpt_title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/iu,
+      ).replace(/<[^>]+>/gu, ''),
+    ) ||
+    cleanString(
+      extractFirstMatch(html, /<title>([\s\S]*?)<\/title>/iu)
+        .replace(/\s*\|\s*CMCEN\s*$/iu, '')
+        .replace(/<[^>]+>/gu, ''),
+    );
   const publishedLabel = normalizeLastPostDate(
     cleanString(
-      extractFirstMatch(html, /<span class=["']published["'][^>]*>([\s\S]*?)<\/span>/iu)
-        .replace(/<[^>]+>/gu, ' ')
-    )
+      extractFirstMatch(
+        html,
+        /<span class=["']published["'][^>]*>([\s\S]*?)<\/span>/iu,
+      ).replace(/<[^>]+>/gu, ' '),
+    ),
   );
   const contentHtml = extractLastPostHtmlContent(html);
   const imageUrl = extractLastPostImageUrl(html);
-  const wordpressPostId = Number(
-    extractFirstMatch(html, /\bpostid-(\d+)\b/iu)
-  ) || getStableNumericId(slug);
+  const wordpressPostId =
+    Number(extractFirstMatch(html, /\bpostid-(\d+)\b/iu)) ||
+    getStableNumericId(slug);
 
   if (/^404\s+not\s+found$/iu.test(title)) {
     console.log(`Skipping Last Post slug ${slug}: /lp/ page is a 404 page`);
@@ -538,21 +594,21 @@ async function fetchPostFromPage(slug) {
     date: publishedLabel,
     date_gmt: publishedLabel,
     guid: {
-      rendered: url
+      rendered: url,
     },
     slug,
     status: 'publish',
     type: 'lp',
     link: url,
     title: {
-      rendered: title || slug
+      rendered: title || slug,
     },
     content: {
-      rendered: contentHtml || title || slug
+      rendered: contentHtml || title || slug,
     },
     author: null,
     featured_media: 0,
-    sourceImageUrl: imageUrl
+    sourceImageUrl: imageUrl,
   };
 }
 
@@ -575,8 +631,11 @@ async function getLatestPostsFromArchive() {
     const html = await fetchText(pageUrl);
     const slugs = getLastPostSlugs(html);
     const totalToCollect = Number.isFinite(limit)
-      ? Math.min(seenSlugs.size + slugs.filter(slug => !seenSlugs.has(slug)).length, limit)
-      : seenSlugs.size + slugs.filter(slug => !seenSlugs.has(slug)).length;
+      ? Math.min(
+          seenSlugs.size + slugs.filter((slug) => !seenSlugs.has(slug)).length,
+          limit,
+        )
+      : seenSlugs.size + slugs.filter((slug) => !seenSlugs.has(slug)).length;
     console.log(`Found ${slugs.length} Last Post links on archive page`);
 
     for (const slug of slugs) {
@@ -589,11 +648,13 @@ async function getLatestPostsFromArchive() {
 
       if (post) {
         posts.push(post);
-        console.log(`[${posts.length}/${totalToCollect}] Collected Last Post ${post.id}: ${getPostTitle(post)}`);
+        console.log(
+          `[${posts.length}/${totalToCollect}] Collected Last Post ${post.id}: ${getPostTitle(post)}`,
+        );
       }
     }
 
-    getLastPostArchivePageLinks(html).forEach(link => {
+    getLastPostArchivePageLinks(html).forEach((link) => {
       if (!seenPages.has(link) && !queue.includes(link)) {
         queue.push(link);
       }
@@ -604,16 +665,17 @@ async function getLatestPostsFromArchive() {
 }
 
 async function getLatestPostsFromCategoryArchive() {
-  const categorySlugs = Array.from(new Set([
-    categorySlug,
-    ...CATEGORY_SLUG_FALLBACKS
-  ].filter(Boolean)));
+  const categorySlugs = Array.from(
+    new Set([categorySlug, ...CATEGORY_SLUG_FALLBACKS].filter(Boolean)),
+  );
   const seenPages = new Set();
   const seenSlugs = new Set();
   const posts = [];
 
   for (const slug of categorySlugs) {
-    const queue = [`${WORDPRESS_BASE_URL}/category/${encodeURIComponent(slug)}/`];
+    const queue = [
+      `${WORDPRESS_BASE_URL}/category/${encodeURIComponent(slug)}/`,
+    ];
 
     while (queue.length && posts.length < limit) {
       const pageUrl = queue.shift();
@@ -628,12 +690,14 @@ async function getLatestPostsFromCategoryArchive() {
       const html = await fetchText(pageUrl, { allowNotFound: true });
 
       if (!html) {
-        console.log(`Skipping Last Post category "${slug}": category page returned 404`);
+        console.log(
+          `Skipping Last Post category "${slug}": category page returned 404`,
+        );
         break;
       }
 
       const slugs = getLastPostSlugs(html);
-      const newSlugs = slugs.filter(postSlug => !seenSlugs.has(postSlug));
+      const newSlugs = slugs.filter((postSlug) => !seenSlugs.has(postSlug));
       const totalToCollect = Number.isFinite(limit)
         ? Math.min(seenSlugs.size + newSlugs.length, limit)
         : seenSlugs.size + newSlugs.length;
@@ -650,11 +714,13 @@ async function getLatestPostsFromCategoryArchive() {
 
         if (post) {
           posts.push(post);
-          console.log(`[${posts.length}/${totalToCollect}] Collected Last Post ${post.id}: ${getPostTitle(post)}`);
+          console.log(
+            `[${posts.length}/${totalToCollect}] Collected Last Post ${post.id}: ${getPostTitle(post)}`,
+          );
         }
       }
 
-      getCategoryPageLinks(html, slug).forEach(link => {
+      getCategoryPageLinks(html, slug).forEach((link) => {
         if (!seenPages.has(link) && !queue.includes(link)) {
           queue.push(link);
         }
@@ -674,20 +740,24 @@ async function getLatestPosts(categoryId) {
   let page = 1;
   let totalPages = 1;
 
-  console.log(`Fetching WordPress Last Post notices for category ${categoryId}`);
+  console.log(
+    `Fetching WordPress Last Post notices for category ${categoryId}`,
+  );
 
   while (page <= totalPages && posts.length < limit) {
     const perPage = Number.isFinite(limit)
       ? Math.min(WORDPRESS_PAGE_SIZE, limit - posts.length)
       : WORDPRESS_PAGE_SIZE;
     const response = await fetchJsonResponse(
-      `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?per_page=${perPage}&page=${page}&categories=${categoryId}&_embed=1`
+      `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?per_page=${perPage}&page=${page}&categories=${categoryId}&_embed=1`,
     );
     const pagePosts = Array.isArray(response.data) ? response.data : [];
 
     totalPages = getTotalPages(response);
     posts.push(...pagePosts);
-    console.log(`Fetched Last Post page ${page}/${totalPages} (${posts.length} collected)`);
+    console.log(
+      `Fetched Last Post page ${page}/${totalPages} (${posts.length} collected)`,
+    );
 
     if (pagePosts.length === 0) {
       break;
@@ -712,14 +782,16 @@ async function getPostComments(post) {
 
     try {
       response = await fetchJsonResponse(
-        `${WORDPRESS_BASE_URL}/wp-json/wp/v2/comments?post=${postId}&per_page=${WORDPRESS_PAGE_SIZE}&page=${page}&status=approve`
+        `${WORDPRESS_BASE_URL}/wp-json/wp/v2/comments?post=${postId}&per_page=${WORDPRESS_PAGE_SIZE}&page=${page}&status=approve`,
       );
     } catch (error) {
       const status = error.response?.status;
 
       if (status === 401 || status === 403 || status === 404) {
         post.commentFetchError = `WordPress comments REST endpoint returned ${status}`;
-        console.log(`Skipping Last Post comments for ${postId}: ${post.commentFetchError}`);
+        console.log(
+          `Skipping Last Post comments for ${postId}: ${post.commentFetchError}`,
+        );
         return comments;
       }
 
@@ -730,7 +802,9 @@ async function getPostComments(post) {
 
     totalPages = getTotalPages(response);
     comments.push(...pageComments);
-    console.log(`Fetched Last Post comment page ${page}/${totalPages} for post ${postId} (${comments.length} collected)`);
+    console.log(
+      `Fetched Last Post comment page ${page}/${totalPages} for post ${postId} (${comments.length} collected)`,
+    );
 
     if (pageComments.length === 0) {
       break;
@@ -751,36 +825,50 @@ async function getLatestLastPostPosts() {
       return getLatestPosts(categoryId);
     },
     fetchFinalFallback: getLatestPostsFromCategoryArchive,
-    onPrimaryError: error => {
+    onPrimaryError: (error) => {
       const status = error.response?.status;
-      const detail = status ? `status ${status}` : (error.message || 'request failed');
-      console.log(`Last Post archive scan failed (${detail}); falling back to category scan`);
+      const detail = status
+        ? `status ${status}`
+        : error.message || 'request failed';
+      console.log(
+        `Last Post archive scan failed (${detail}); falling back to category scan`,
+      );
     },
     onPrimaryEmpty: () => {
-      console.log('No /lp/ links found on the Last Post archive; falling back to category scan');
+      console.log(
+        'No /lp/ links found on the Last Post archive; falling back to category scan',
+      );
     },
-    onFallbackError: error => {
+    onFallbackError: (error) => {
       const status = error.response?.status;
-      const detail = status ? `status ${status}` : (error.message || 'request failed');
-      console.log(`Last Post category REST scan failed (${detail}); falling back to category page scrape`);
+      const detail = status
+        ? `status ${status}`
+        : error.message || 'request failed';
+      console.log(
+        `Last Post category REST scan failed (${detail}); falling back to category page scrape`,
+      );
     },
     onFallbackEmpty: () => {
-      console.log('No Last Post notices found through category REST; falling back to category page scrape');
-    }
+      console.log(
+        'No Last Post notices found through category REST; falling back to category page scrape',
+      );
+    },
   });
 
   if (!collection.usedFallback) {
     return {
-      posts: Number.isFinite(limit) ? collection.items.slice(0, limit) : collection.items,
+      posts: Number.isFinite(limit)
+        ? collection.items.slice(0, limit)
+        : collection.items,
       sourceType: 'archive-links',
-      categoryId: null
+      categoryId: null,
     };
   }
 
   return {
     posts: collection.items,
     sourceType: collection.usedFinalFallback ? 'category-pages' : 'category',
-    categoryId
+    categoryId,
   };
 }
 
@@ -803,11 +891,11 @@ async function getLegacyImportUser() {
           privacyAccepted: true,
           privacyAcceptedAt: new Date(),
           caslAccepted: false,
-          caslAcceptedAt: null
-        }
-      }
+          caslAcceptedAt: null,
+        },
+      },
     },
-    { new: true, upsert: true, runValidators: true }
+    { new: true, upsert: true, runValidators: true },
   );
 }
 
@@ -833,21 +921,21 @@ async function getWordPressCommentAuthor(comment) {
           privacyAccepted: true,
           privacyAcceptedAt: new Date(),
           caslAccepted: false,
-          caslAcceptedAt: null
-        }
-      }
+          caslAcceptedAt: null,
+        },
+      },
     },
-    { new: true, upsert: true, runValidators: true }
+    { new: true, upsert: true, runValidators: true },
   );
 }
 
 function summarizeComments(comments) {
-  return comments.map(comment => ({
+  return comments.map((comment) => ({
     wordpressCommentId: comment.id,
     authorName: getWordPressCommentAuthorName(comment),
     status: getCommentStatus(comment),
     publishedAt: parseDate(comment.date_gmt || comment.date),
-    bodyLength: getCommentBody(comment).length
+    bodyLength: getCommentBody(comment).length,
   }));
 }
 
@@ -872,25 +960,28 @@ async function importComments({ comments, lastPostMessage, legacyImportUser }) {
       status,
       reviewedBy: legacyImportUser?._id || null,
       reviewedAt: status === 'published' ? publishedAt || new Date() : null,
-      publishedBy: status === 'published' ? legacyImportUser?._id || null : null,
+      publishedBy:
+        status === 'published' ? legacyImportUser?._id || null : null,
       publishedAt: status === 'published' ? publishedAt || null : null,
       legacy: {
         source: 'cmcen-live-site',
-        wordpressPostId: lastPostMessage.legacy?.postId || lastPostMessage.legacy?.wordpressPostId,
+        wordpressPostId:
+          lastPostMessage.legacy?.postId ||
+          lastPostMessage.legacy?.wordpressPostId,
         wordpressCommentId: comment.id,
         parentCommentId: comment.parent || null,
         authorName: getWordPressCommentAuthorName(comment),
         authorUrl: comment.author_url || '',
-        importedAt: new Date()
-      }
+        importedAt: new Date(),
+      },
     };
     const importedComment = await LastPostComment.findOneAndUpdate(
       {
         'legacy.source': 'cmcen-live-site',
-        'legacy.wordpressCommentId': comment.id
+        'legacy.wordpressCommentId': comment.id,
       },
       { $set: document },
-      { new: true, upsert: true, runValidators: true }
+      { new: true, upsert: true, runValidators: true },
     );
 
     importedComments.push(importedComment);
@@ -901,24 +992,30 @@ async function importComments({ comments, lastPostMessage, legacyImportUser }) {
 }
 
 async function putObject({ key, body, contentType }) {
-  await s3Client.send(new PutObjectCommand({
-    Bucket: process.env.MINIO_BUCKET_NAME,
-    Key: key,
-    Body: body,
-    ContentType: contentType
-  }));
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: process.env.MINIO_BUCKET_NAME,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    }),
+  );
 }
 
 async function uploadImageForPost(post) {
   const sourceUrl = getImageUrl(post);
   const sourceImage = await downloadSourceImage(sourceUrl, {
-    validateImage: buffer => sharp(buffer).rotate().raw().toBuffer()
+    validateImage: (buffer) => sharp(buffer).rotate().raw().toBuffer(),
   });
 
   if (sourceImage.usedFallback) {
-    console.log(`Source image ${sourceImage.fallbackReason} for Last Post ${post.id}; using jimmy-crest.webp`);
+    console.log(
+      `Source image ${sourceImage.fallbackReason} for Last Post ${post.id}; using jimmy-crest.webp`,
+    );
   } else {
-    console.log(`Downloaded source image for Last Post ${post.id}: ${sourceUrl}`);
+    console.log(
+      `Downloaded source image for Last Post ${post.id}: ${sourceUrl}`,
+    );
   }
 
   const buffer = sourceImage.buffer;
@@ -935,42 +1032,50 @@ async function uploadImageForPost(post) {
   await putObject({
     key: originalKey,
     body: buffer,
-    contentType
+    contentType,
   });
 
-  await Promise.all(IMAGE_VARIANTS.map(async variant => {
-    const width = metadata.width ? Math.min(metadata.width, variant.width) : variant.width;
-    const variantBuffer = await sharp(buffer)
-      .rotate()
-      .resize({
-        width,
-        withoutEnlargement: true
-      })
-      .webp({ quality: 82 })
-      .toBuffer({ resolveWithObject: true });
-    const key = `${baseKey}/${variant.name}.webp`;
+  await Promise.all(
+    IMAGE_VARIANTS.map(async (variant) => {
+      const width = metadata.width
+        ? Math.min(metadata.width, variant.width)
+        : variant.width;
+      const variantBuffer = await sharp(buffer)
+        .rotate()
+        .resize({
+          width,
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 82 })
+        .toBuffer({ resolveWithObject: true });
+      const key = `${baseKey}/${variant.name}.webp`;
 
-    await putObject({
-      key,
-      body: variantBuffer.data,
-      contentType: 'image/webp'
-    });
+      await putObject({
+        key,
+        body: variantBuffer.data,
+        contentType: 'image/webp',
+      });
 
-    variants[variant.name] = {
-      key,
-      url: buildPublicMediaUrl(key),
-      width: variantBuffer.info.width,
-      height: variantBuffer.info.height,
-      size: variantBuffer.info.size,
-      mimeType: 'image/webp'
-    };
-    console.log(`Uploaded ${variant.name} image variant for Last Post ${post.id}`);
-  }));
+      variants[variant.name] = {
+        key,
+        url: buildPublicMediaUrl(key),
+        width: variantBuffer.info.width,
+        height: variantBuffer.info.height,
+        size: variantBuffer.info.size,
+        mimeType: 'image/webp',
+      };
+      console.log(
+        `Uploaded ${variant.name} image variant for Last Post ${post.id}`,
+      );
+    }),
+  );
 
   const title = getPostTitle(post);
   const assetDocument = {
     key: originalKey,
-    url: buildPublicMediaUrl(variants.large?.key || variants.hero?.key || originalKey),
+    url: buildPublicMediaUrl(
+      variants.large?.key || variants.hero?.key || originalKey,
+    ),
     originalKey,
     originalUrl: buildPublicMediaUrl(originalKey),
     originalName: sourceImage.originalName || `${slugify(title)}.${extension}`,
@@ -988,11 +1093,12 @@ async function uploadImageForPost(post) {
       sourceField: 'imageUrl',
       sourceUrl: post.link || sourceUrl,
       label: title || `Last Post ${post.id}`,
-      linkedAt: new Date()
+      linkedAt: new Date(),
     },
     inferredName: title || `Last Post ${post.id}`,
     fileMetadata: {
-      originalName: sourceImage.originalName || `${slugify(title)}.${extension}`,
+      originalName:
+        sourceImage.originalName || `${slugify(title)}.${extension}`,
       mimeType: contentType,
       size: buffer.length,
       storageKey: originalKey,
@@ -1000,28 +1106,32 @@ async function uploadImageForPost(post) {
       usedFallback: sourceImage.usedFallback,
       fallbackReason: sourceImage.fallbackReason,
       fallbackAsset: sourceImage.usedFallback ? 'jimmy-crest' : '',
-      fallbackSourceUrl: sourceImage.fallbackSourceUrl
+      fallbackSourceUrl: sourceImage.fallbackSourceUrl,
     },
     imageMetadata: sanitizeImageMetadata(metadata),
-    uploadedBy: null
+    uploadedBy: null,
   };
   const asset = await MediaAsset.findOneAndUpdate(
     { key: originalKey },
     { $set: assetDocument },
-    { new: true, upsert: true, runValidators: true }
+    { new: true, upsert: true, runValidators: true },
   );
 
   console.log(`Upserted media asset for Last Post ${post.id}: ${originalKey}`);
 
   return {
     sourceUrl,
-    asset: asset.toObject()
+    asset: asset.toObject(),
   };
 }
 
 function summarize(post, document, mediaResult) {
   const language = document.messageLanguage;
-  const message = document.messages?.[language] || document.messages?.en || document.messages?.fr || '';
+  const message =
+    document.messages?.[language] ||
+    document.messages?.en ||
+    document.messages?.fr ||
+    '';
 
   return {
     wordpressPostId: post.id,
@@ -1034,7 +1144,7 @@ function summarize(post, document, mediaResult) {
     sourceImageUrl: mediaResult?.sourceUrl || getImageUrl(post),
     mediaAssetKey: mediaResult?.asset?.key || '',
     imageUrl: document.imageUrl,
-    imported: apply
+    imported: apply,
   };
 }
 
@@ -1052,11 +1162,7 @@ async function main() {
     console.log(`Public media base URL: ${publicMediaBaseUrl}`);
   }
 
-  const {
-    posts,
-    sourceType,
-    categoryId
-  } = await getLatestLastPostPosts();
+  const { posts, sourceType, categoryId } = await getLatestLastPostPosts();
   const results = [];
   let legacyImportUser = null;
 
@@ -1076,79 +1182,94 @@ async function main() {
     let stage = 'fetch-comments';
 
     try {
-    console.log(`[${progressLabel}] Processing WordPress Last Post message ${post.id}: ${getPostTitle(post)}`);
-    const comments = await getPostComments(post);
-
-    if (apply && shouldImportLastPosts) {
-      stage = 'upload-image';
-      mediaResult = await uploadImageForPost(post);
-    }
-
-    stage = 'build-message';
-    const document = toPostDocument(post, mediaResult);
-    const language = document.messageLanguage;
-    const message = document.messages?.[language] || '';
-
-    if (message.length < 2) {
-      results.push({
-        wordpressPostId: post.id,
-        title: document.title,
-        imported: false,
-        error: 'Message is shorter than the LastPostMessage minimum length.'
-      });
-      console.log(`[${progressLabel}] Skipping Last Post message ${post.id}: message too short`);
-      continue;
-    }
-
-    if (apply && shouldImportLastPosts) {
-      stage = 'upsert-message';
-      console.log(`[${progressLabel}] Upserting Last Post message for WordPress post ${post.id}`);
-      lastPostMessage = await LastPostMessage.findOneAndUpdate(
-        {
-          'legacy.source': 'cmcen-live-site',
-          'legacy.postId': post.id
-        },
-        { $set: document },
-        { new: true, upsert: true, runValidators: true }
+      console.log(
+        `[${progressLabel}] Processing WordPress Last Post message ${post.id}: ${getPostTitle(post)}`,
       );
-    } else if (apply && shouldImportComments) {
-      console.log(`[${progressLabel}] Finding migrated Last Post message for WordPress post ${post.id}`);
-      lastPostMessage = await LastPostMessage.findOne({
-        'legacy.source': 'cmcen-live-site',
-        'legacy.postId': post.id
-      });
-    }
+      const comments = await getPostComments(post);
 
-    const summary = summarize(post, document, mediaResult);
-    summary.comments = summarizeComments(comments);
-    summary.commentFetchError = post.commentFetchError || '';
+      if (apply && shouldImportLastPosts) {
+        stage = 'upload-image';
+        mediaResult = await uploadImageForPost(post);
+      }
 
-    if (apply && shouldImportComments) {
-      if (!lastPostMessage) {
-        summary.error = 'Last Post message must be migrated before importing comments.';
-        results.push(summary);
-        console.log(`[${progressLabel}] Skipping comments for Last Post ${post.id}: migrated message not found`);
+      stage = 'build-message';
+      const document = toPostDocument(post, mediaResult);
+      const language = document.messageLanguage;
+      const message = document.messages?.[language] || '';
+
+      if (message.length < 2) {
+        results.push({
+          wordpressPostId: post.id,
+          title: document.title,
+          imported: false,
+          error: 'Message is shorter than the LastPostMessage minimum length.',
+        });
+        console.log(
+          `[${progressLabel}] Skipping Last Post message ${post.id}: message too short`,
+        );
         continue;
       }
 
-      stage = 'import-comments';
-      const importedComments = await importComments({
-        comments,
-        lastPostMessage,
-        legacyImportUser
-      });
-      summary.commentsImported = importedComments.length;
-    }
+      if (apply && shouldImportLastPosts) {
+        stage = 'upsert-message';
+        console.log(
+          `[${progressLabel}] Upserting Last Post message for WordPress post ${post.id}`,
+        );
+        lastPostMessage = await LastPostMessage.findOneAndUpdate(
+          {
+            'legacy.source': 'cmcen-live-site',
+            'legacy.postId': post.id,
+          },
+          { $set: document },
+          { new: true, upsert: true, runValidators: true },
+        );
+      } else if (apply && shouldImportComments) {
+        console.log(
+          `[${progressLabel}] Finding migrated Last Post message for WordPress post ${post.id}`,
+        );
+        lastPostMessage = await LastPostMessage.findOne({
+          'legacy.source': 'cmcen-live-site',
+          'legacy.postId': post.id,
+        });
+      }
 
-    results.push(summary);
+      const summary = summarize(post, document, mediaResult);
+      summary.comments = summarizeComments(comments);
+      summary.commentFetchError = post.commentFetchError || '';
 
-    if (shouldImportLastPosts) {
-      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} Last Post message ${post.id}: ${document.title}`);
-    }
+      if (apply && shouldImportComments) {
+        if (!lastPostMessage) {
+          summary.error =
+            'Last Post message must be migrated before importing comments.';
+          results.push(summary);
+          console.log(
+            `[${progressLabel}] Skipping comments for Last Post ${post.id}: migrated message not found`,
+          );
+          continue;
+        }
 
-    if (shouldImportComments) {
-      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} ${summary.comments.length} Last Post comments for ${post.id}`);
-    }
+        stage = 'import-comments';
+        const importedComments = await importComments({
+          comments,
+          lastPostMessage,
+          legacyImportUser,
+        });
+        summary.commentsImported = importedComments.length;
+      }
+
+      results.push(summary);
+
+      if (shouldImportLastPosts) {
+        console.log(
+          `[${progressLabel}] ${apply ? 'Imported' : 'Would import'} Last Post message ${post.id}: ${document.title}`,
+        );
+      }
+
+      if (shouldImportComments) {
+        console.log(
+          `[${progressLabel}] ${apply ? 'Imported' : 'Would import'} ${summary.comments.length} Last Post comments for ${post.id}`,
+        );
+      }
     } catch (error) {
       const errorMessage = error?.message || String(error);
       results.push({
@@ -1157,9 +1278,11 @@ async function main() {
         imported: Boolean(lastPostMessage),
         skipped: true,
         failedStage: stage,
-        error: errorMessage
+        error: errorMessage,
       });
-      console.error(`[${progressLabel}] Skipping Last Post message ${post.id} after ${stage} failed: ${errorMessage}`);
+      console.error(
+        `[${progressLabel}] Skipping Last Post message ${post.id} after ${stage} failed: ${errorMessage}`,
+      );
     }
   }
 
@@ -1177,15 +1300,19 @@ async function main() {
     contentMode,
     apply,
     scrapedAt: new Date().toISOString(),
-    results
+    results,
   });
 
-  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportLastPosts ? results.filter(result => !result.error).length : 0} Last Post messages.`);
-  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportComments ? results.reduce((sum, result) => sum + (result.comments?.length || 0), 0) : 0} Last Post comments.`);
+  console.log(
+    `${apply ? 'Imported' : 'Would import'} ${shouldImportLastPosts ? results.filter((result) => !result.error).length : 0} Last Post messages.`,
+  );
+  console.log(
+    `${apply ? 'Imported' : 'Would import'} ${shouldImportComments ? results.reduce((sum, result) => sum + (result.comments?.length || 0), 0) : 0} Last Post comments.`,
+  );
   console.log(`Wrote manifest: ${manifestPath}`);
 }
 
-main().catch(async error => {
+main().catch(async (error) => {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
   }

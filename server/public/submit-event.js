@@ -3,7 +3,9 @@ const eventPageMessage = document.getElementById("eventPageMessage");
 const eventEditLoading = document.getElementById("eventEditLoading");
 const eventEditContext = document.getElementById("eventEditContext");
 const eventEditRejection = document.getElementById("eventEditRejection");
-const eventEditRejectionReason = document.getElementById("eventEditRejectionReason");
+const eventEditRejectionReason = document.getElementById(
+  "eventEditRejectionReason",
+);
 
 const myEventsSection = document.getElementById("myEventsSection");
 const myEventsList = document.getElementById("myEventsList");
@@ -16,7 +18,9 @@ const cancelEventEditing = document.getElementById("cancelEventEditing");
 const eventPageEyebrow = document.getElementById("eventPageEyebrow");
 const submitEventTitle = document.getElementById("submitEventTitle");
 const submitEventIntro = document.getElementById("submitEventIntro");
-const eventSubmitButtonLabel = document.getElementById("eventSubmitButtonLabel");
+const eventSubmitButtonLabel = document.getElementById(
+  "eventSubmitButtonLabel",
+);
 const eventSubmitButton = document.getElementById("eventSubmitButton");
 
 const eventAllDay = document.getElementById("eventAllDay");
@@ -48,16 +52,14 @@ let eventEndPicker = null;
 const eventPageParams = new URLSearchParams(window.location.search);
 let editingEventId = eventPageParams.get("id");
 const initialEventPanel =
-  eventPageParams.get("panel") === "form"
-    ? "form"
-    : "events";
+  eventPageParams.get("panel") === "form" ? "form" : "events";
 
 function eventApiJson(path, token, options = {}) {
   return CMCENUtils.apiJson(path, {
     ...options,
     token,
     redirectOnUnauthorized: true,
-    unauthorizedMessage: translate("event_permission_error")
+    unauthorizedMessage: translate("event_permission_error"),
   });
 }
 
@@ -65,9 +67,7 @@ function showMyEventsLoading() {
   myEventsSection.hidden = false;
   myEventsCount.hidden = true;
   myEventsList.replaceChildren(
-    createLoadingSpinner(
-      translate("my_events_loading")
-    )
+    createLoadingSpinner(translate("my_events_loading")),
   );
 }
 
@@ -85,28 +85,27 @@ function setEventEditLoading(isLoading) {
 
 function getLocalizedEventTitle(event) {
   return (
-    CMCENUtils.getLocalizedText(event.title) ||
-    translate("my_events_untitled")
+    CMCENUtils.getLocalizedText(event.title) || translate("my_events_untitled")
   );
 }
 
 function formatMyEventDate(event) {
   if (event.allDay) {
     return CMCENUtils.formatDate(event.startDate, {
-      timeZone: "UTC"
+      timeZone: "UTC",
     });
   }
 
   return CMCENUtils.formatDate(event.startDate, {
     timeStyle: "short",
     hourCycle: "h23",
-    timeZone: event.timezone || undefined
+    timeZone: event.timezone || undefined,
   });
 }
 
 function formatMyEventUpdatedDate(value) {
   return CMCENUtils.formatDate(value, {
-    fallback: "—"
+    fallback: "—",
   });
 }
 
@@ -146,21 +145,23 @@ function createMyEventCard(submittedEvent) {
   const details = document.createElement("div");
   details.className = "my-event-card-details";
 
-  const location = [
-    submittedEvent.city,
-    submittedEvent.provinceRegion
-  ].filter(Boolean).join(", ");
+  const location = [submittedEvent.city, submittedEvent.provinceRegion]
+    .filter(Boolean)
+    .join(", ");
 
   [
     formatMyEventDate(submittedEvent),
     location,
     formatMyEventType(submittedEvent.eventType),
-    `${translate("my_events_last_updated")}: ` + formatMyEventUpdatedDate(submittedEvent.updatedAt)
-  ].filter(Boolean).forEach(value => {
-    const item = document.createElement("span");
-    item.textContent = value;
-    details.appendChild(item);
-  });
+    `${translate("my_events_last_updated")}: ` +
+    formatMyEventUpdatedDate(submittedEvent.updatedAt),
+  ]
+    .filter(Boolean)
+    .forEach((value) => {
+      const item = document.createElement("span");
+      item.textContent = value;
+      details.appendChild(item);
+    });
 
   header.append(status, title, details);
 
@@ -169,7 +170,7 @@ function createMyEventCard(submittedEvent) {
     editLink.className = "my-event-edit-link";
     editLink.href = `/submit-event?id=${encodeURIComponent(submittedEvent._id)}`;
     editLink.textContent = translate("my_events_edit");
-    editLink.addEventListener("click", event => {
+    editLink.addEventListener("click", (event) => {
       event.preventDefault();
       startEditingEvent(submittedEvent._id);
     });
@@ -180,28 +181,35 @@ function createMyEventCard(submittedEvent) {
     deleteButton.type = "button";
     deleteButton.className = "my-event-edit-link is-danger";
     deleteButton.textContent = "Delete";
-    deleteButton.addEventListener("click", async event => {
+    deleteButton.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopPropagation();
 
-      if (!await CMCENModal.confirm(
-        "Delete this submitted event? This cannot be undone.",
-        { title: "Delete event", confirmText: "Delete", destructive: true }
-      )) return;
+      if (
+        !(await CMCENModal.confirm(
+          "Delete this submitted event? This cannot be undone.",
+          { title: "Delete event", confirmText: "Delete", destructive: true },
+        ))
+      )
+        return;
 
       try {
         await eventApiJson(
           `/api/admin/events/${encodeURIComponent(submittedEvent._id)}`,
           token,
-          { method: "DELETE", errorMessage: "Could not delete event" }
+          { method: "DELETE", errorMessage: "Could not delete event" },
         );
         await loadMyEvents(token);
         CMCENUtils.showToast("Event deleted", {
-          color: "success", position: "bottom-right", animation: "slide"
+          color: "success",
+          position: "bottom-right",
+          animation: "slide",
         });
       } catch (error) {
         CMCENUtils.showToast(error.message || "Could not delete event", {
-          color: "error", position: "bottom-right", animation: "slide"
+          color: "error",
+          position: "bottom-right",
+          animation: "slide",
         });
       }
     });
@@ -227,7 +235,9 @@ function createMyEventCard(submittedEvent) {
 
     rejection.className = "my-event-rejection";
 
-    rejection.textContent = `${translate("my_events_rejection_reason")}: ` + submittedEvent.rejectionReason;
+    rejection.textContent =
+      `${translate("my_events_rejection_reason")}: ` +
+      submittedEvent.rejectionReason;
 
     article.appendChild(rejection);
   }
@@ -240,12 +250,10 @@ function renderMyEvents() {
 
   const count = myEvents.length;
 
-  myEventsCount.textContent = count === 1 ?
-    translate("my_events_count_singular") :
-    translate(
-      "my_events_count_plural",
-      { count }
-    );
+  myEventsCount.textContent =
+    count === 1
+      ? translate("my_events_count_singular")
+      : translate("my_events_count_plural", { count });
 
   myEventsCount.hidden = !isEventTabActive("events");
   myEventsSection.hidden = false;
@@ -260,10 +268,8 @@ function renderMyEvents() {
     return;
   }
 
-  myEvents.forEach(event => {
-    myEventsList.appendChild(
-      createMyEventCard(event)
-    );
+  myEvents.forEach((event) => {
+    myEventsList.appendChild(createMyEventCard(event));
   });
 }
 
@@ -272,34 +278,24 @@ async function loadMyEvents(token) {
 
   try {
     const data = await eventApiJson("/api/events/mine", token, {
-      errorMessage: translate("my_events_load_error")
+      errorMessage: translate("my_events_load_error"),
     });
 
-    myEvents =
-      Array.isArray(data.events)
-        ? data.events
-        : [];
+    myEvents = Array.isArray(data.events) ? data.events : [];
 
     renderMyEvents();
   } catch (error) {
     myEventsSection.hidden = false;
 
     myEventsList.textContent =
-      error.message ||
-      translate(
-        "my_events_load_error"
-      );
+      error.message || translate("my_events_load_error");
   }
 }
 
-function showPageMessage(
-  message,
-  type = "error"
-) {
+function showPageMessage(message, type = "error") {
   eventPageMessage.textContent = message;
 
-  eventPageMessage.className =
-    `event-page-message is-${type}`;
+  eventPageMessage.className = `event-page-message is-${type}`;
 
   eventPageMessage.hidden = false;
 }
@@ -312,7 +308,7 @@ function showFormMessage(message, type = "error") {
   CMCENUtils.showToast(message, {
     color: type === "success" ? "success" : type === "info" ? "info" : "error",
     position: "bottom-right",
-    animation: "slide"
+    animation: "slide",
   });
 }
 
@@ -329,8 +325,8 @@ function setSubmitting(submitting) {
         ? "event_submitting"
         : editingEventId
           ? "save_event_changes"
-          : "submit_event_button"
-    )
+          : "submit_event_button",
+    ),
   );
 }
 
@@ -341,13 +337,8 @@ function syncScheduleFields() {
   eventEndDate.required = !isAllDay;
   eventEndDateHint.hidden = !isAllDay;
 
-  if (
-    !isAllDay &&
-    !eventEndDate.value &&
-    eventStartDate.value
-  ) {
-    eventEndDate.value =
-      eventStartDate.value;
+  if (!isAllDay && !eventEndDate.value && eventStartDate.value) {
+    eventEndDate.value = eventStartDate.value;
   }
 
   refreshEventSchedulePickers();
@@ -370,8 +361,7 @@ function keepEndDateInRange() {
     eventEndDate.value &&
     eventEndDate.value < eventStartDate.value
   ) {
-    eventEndDate.value =
-      eventStartDate.value;
+    eventEndDate.value = eventStartDate.value;
   }
 
   if (
@@ -421,32 +411,21 @@ function getEventDateValues() {
   syncSchedulePickerValues();
 
   if (!eventStartDate.value) {
-    throw new Error(
-      translate("event_start_required")
-    );
+    throw new Error(translate("event_start_required"));
   }
 
   if (eventStartDate.value < getTodayDateValue()) {
-    throw new Error(
-      translate("event_start_in_past")
-    );
+    throw new Error(translate("event_start_in_past"));
   }
 
   if (eventAllDay.checked) {
-    if (
-      eventEndDate.value &&
-      eventEndDate.value <
-      eventStartDate.value
-    ) {
-      throw new Error(
-        translate("event_end_after_start")
-      );
+    if (eventEndDate.value && eventEndDate.value < eventStartDate.value) {
+      throw new Error(translate("event_end_after_start"));
     }
 
     return {
       startDate: eventStartDate.value,
-      endDate:
-        eventEndDate.value || null
+      endDate: eventEndDate.value || null,
     };
   }
 
@@ -455,11 +434,7 @@ function getEventDateValues() {
     !eventEndDate.value ||
     !eventEndTime.value
   ) {
-    throw new Error(
-      translate(
-        "event_timed_fields_required"
-      )
-    );
+    throw new Error(translate("event_timed_fields_required"));
   }
 
   const startDateTime =
@@ -471,14 +446,12 @@ function getEventDateValues() {
     `${eventEndTime.value}:00`;
 
   if (endDateTime <= startDateTime) {
-    throw new Error(
-      translate("event_end_after_start")
-    );
+    throw new Error(translate("event_end_after_start"));
   }
 
   return {
     startDate: startDateTime,
-    endDate: endDateTime
+    endDate: endDateTime,
   };
 }
 
@@ -487,7 +460,7 @@ const eventTabController = CMCENUtils.bindTabs({
   panels: eventPanels,
   panelKey: "eventPanel",
   tabs: eventTabs,
-  tabKey: "eventTab"
+  tabKey: "eventTab",
 });
 
 function activateEventTab(tabName) {
@@ -497,9 +470,8 @@ function activateEventTab(tabName) {
 
 function isEventTabActive(tabName) {
   return Array.from(eventTabs).some(
-    tab =>
-      tab.dataset.eventTab === tabName &&
-      tab.classList.contains("is-active")
+    (tab) =>
+      tab.dataset.eventTab === tabName && tab.classList.contains("is-active"),
   );
 }
 
@@ -510,56 +482,44 @@ function updateEventPageHeader(tabName) {
 
   const isMyEvents = tabName === "events";
 
-  cancelEventEditing.hidden =
-    isMyEvents ||
-    !editingEventId;
+  cancelEventEditing.hidden = isMyEvents || !editingEventId;
 
   eventPageEyebrow.textContent = translate(
-    isMyEvents
-      ? "my_events_eyebrow"
-      : "event_submission_eyebrow"
+    isMyEvents ? "my_events_eyebrow" : "event_submission_eyebrow",
   );
   submitEventTitle.textContent = translate(
     isMyEvents
       ? "my_events_heading"
       : editingEventId
         ? "edit_event_heading"
-        : "submit_event_heading"
+        : "submit_event_heading",
   );
   submitEventIntro.textContent = translate(
     isMyEvents
       ? "my_events_intro"
       : editingEventId
         ? "edit_event_intro"
-        : "submit_event_intro"
+        : "submit_event_intro",
   );
-  myEventsCount.hidden =
-    !isMyEvents ||
-    !myEventsCount.textContent;
+  myEventsCount.hidden = !isMyEvents || !myEventsCount.textContent;
 }
 
 function buildEventData() {
   const title = {
-    en: document
-      .getElementById("eventTitleEn")
-      .value
-      .trim(),
+    en: document.getElementById("eventTitleEn").value.trim(),
 
-    fr: document
-      .getElementById("eventTitleFr")
-      .value
-      .trim()
+    fr: document.getElementById("eventTitleFr").value.trim(),
   };
 
   if (!title.en && !title.fr) {
-    throw new Error(
-      translate("event_title_required")
-    );
+    throw new Error(translate("event_title_required"));
   }
 
   const dateValues = getEventDateValues();
 
-  const permissionConfirmed = document.getElementById("eventPublicationPermission").checked;
+  const permissionConfirmed = document.getElementById(
+    "eventPublicationPermission",
+  ).checked;
 
   if (!permissionConfirmed) {
     throw new Error(translate("event_permission_required"));
@@ -569,81 +529,42 @@ function buildEventData() {
     title,
 
     location: {
-      en: document
-        .getElementById("eventLocationEn")
-        .value
-        .trim(),
+      en: document.getElementById("eventLocationEn").value.trim(),
 
-      fr: document
-        .getElementById("eventLocationFr")
-        .value
-        .trim()
+      fr: document.getElementById("eventLocationFr").value.trim(),
     },
 
     description: {
-      en: document
-        .getElementById(
-          "eventDescriptionEn"
-        )
-        .value
-        .trim(),
+      en: document.getElementById("eventDescriptionEn").value.trim(),
 
-      fr: document
-        .getElementById(
-          "eventDescriptionFr"
-        )
-        .value
-        .trim()
+      fr: document.getElementById("eventDescriptionFr").value.trim(),
     },
 
     registration: {
-      en: document
-        .getElementById("eventRegistrationEn")
-        .value
-        .trim(),
+      en: document.getElementById("eventRegistrationEn").value.trim(),
 
-      fr: document
-        .getElementById("eventRegistrationFr")
-        .value
-        .trim()
+      fr: document.getElementById("eventRegistrationFr").value.trim(),
     },
 
-    timezone: document
-      .getElementById("eventTimezone")
-      .value,
+    timezone: document.getElementById("eventTimezone").value,
 
     ...dateValues,
 
-    allDay:
-      eventAllDay.checked,
+    allDay: eventAllDay.checked,
 
     publicationPermissionConfirmed: permissionConfirmed,
 
-    contentArea:
-      "general",
+    contentArea: "general",
 
-    publishNow:
-      !publishNowContainer.hidden &&
-      eventPublishNow.checked,
+    publishNow: !publishNowContainer.hidden && eventPublishNow.checked,
 
-    city: document
-      .getElementById("eventCity")
-      .value
-      .trim(),
+    city: document.getElementById("eventCity").value.trim(),
 
-    provinceRegion: document
-      .getElementById("eventProvinceRegion")
-      .value,
+    provinceRegion: document.getElementById("eventProvinceRegion").value,
 
-    organizingEntity: document
-      .getElementById("eventOrganizingEntity")
-      .value,
+    organizingEntity: document.getElementById("eventOrganizingEntity").value,
 
-    eventType: document
-      .getElementById("eventType")
-      .value,
-
-
+    eventType: document.getElementById("eventType").value,
   };
 }
 
@@ -721,7 +642,7 @@ async function initializeEventPage() {
 
   try {
     currentUser = await eventApiJson("/api/me", token, {
-      errorMessage: translate("event_permission_error")
+      errorMessage: translate("event_permission_error"),
     });
 
     if (!currentUser.permissions?.canCreateDrafts) {
@@ -735,20 +656,13 @@ async function initializeEventPage() {
     }
 
     const canPublishGeneral =
-      currentUser.permissions
-        ?.canReviewAndPublish === true ||
-      (
-        currentUser.permissions
-          ?.canPublishOwnContent === true &&
-        currentUser.contentAreas
-          ?.includes("general")
-      );
+      currentUser.permissions?.canReviewAndPublish === true ||
+      (currentUser.permissions?.canPublishOwnContent === true &&
+        currentUser.contentAreas?.includes("general"));
 
-    publishNowContainer.hidden =
-      !canPublishGeneral;
+    publishNowContainer.hidden = !canPublishGeneral;
 
-    reviewNote.hidden =
-      canPublishGeneral;
+    reviewNote.hidden = canPublishGeneral;
 
     await loadMyEvents(token);
     if (editingEventId) {
@@ -768,12 +682,7 @@ async function initializeEventPage() {
     eventForm.hidden = false;
   } catch (error) {
     setEventEditLoading(false);
-    showPageMessage(
-      error.message ||
-      translate(
-        "event_permission_error"
-      )
-    );
+    showPageMessage(error.message || translate("event_permission_error"));
   }
 }
 
@@ -786,8 +695,7 @@ eventForm.addEventListener(
 
     clearFormMessage();
 
-    const token =
-      CMCENUtils.requireAuthToken();
+    const token = CMCENUtils.requireAuthToken();
 
     if (!token) {
       redirectToLogin();
@@ -807,20 +715,16 @@ eventForm.addEventListener(
 
     try {
       const wasEditing = Boolean(editingEventId);
-      const requestUrl =
-        wasEditing
-          ? `/api/events/${encodeURIComponent(editingEventId)}`
-          : "/api/events";
+      const requestUrl = wasEditing
+        ? `/api/events/${encodeURIComponent(editingEventId)}`
+        : "/api/events";
 
-      const requestMethod =
-        wasEditing
-          ? "PATCH"
-          : "POST";
+      const requestMethod = wasEditing ? "PATCH" : "POST";
 
       const data = await eventApiJson(requestUrl, token, {
         method: requestMethod,
         body: eventData,
-        errorMessage: translate("event_submit_error")
+        errorMessage: translate("event_submit_error"),
       });
 
       if (wasEditing) {
@@ -833,9 +737,9 @@ eventForm.addEventListener(
           translate(
             eventData.publishNow
               ? "event_submit_success_published"
-              : "event_submit_success_pending"
+              : "event_submit_success_pending",
           ),
-          "success"
+          "success",
         );
       }
 
@@ -843,55 +747,39 @@ eventForm.addEventListener(
         window.refreshAuthUI();
       }
     } catch (error) {
-      showFormMessage(
-        error.message ||
-        translate(
-          "event_submit_error"
-        )
-      );
+      showFormMessage(error.message || translate("event_submit_error"));
     } finally {
       setSubmitting(false);
     }
+  });
+
+document.addEventListener("languagechange", () => {
+  setSubmitting(isSubmitting);
+
+  if (accessDenied) {
+    pageTitle.textContent = translate("event_access_denied_title");
+
+    showPageMessage(translate("event_access_denied"));
   }
-);
+  if (myEventsSection.hidden === false) {
+    const isMyEventsLoading = myEventsList.querySelector(".loading-state");
 
-document.addEventListener(
-  "languagechange",
-  () => {
-    setSubmitting(isSubmitting);
-
-    if (accessDenied) {
-      pageTitle.textContent =
-        translate(
-          "event_access_denied_title"
-        );
-
-      showPageMessage(
-        translate("event_access_denied")
-      );
-    }
-    if (myEventsSection.hidden === false) {
-      const isMyEventsLoading =
-        myEventsList.querySelector(".loading-state");
-
-      if (isMyEventsLoading) {
-        showMyEventsLoading();
-      } else {
-        renderMyEvents();
-      }
-    }
-    updateEventFormModeText();
-    refreshEventSchedulePickers();
-  }
-);
-
-window.addEventListener(
-  "pageshow", () => {
-    if (!CMCENUtils.requireAuthToken()) {
-      redirectToLogin();
+    if (isMyEventsLoading) {
+      showMyEventsLoading();
+    } else {
+      renderMyEvents();
     }
   }
+  updateEventFormModeText();
+  refreshEventSchedulePickers();
+}
 );
+
+window.addEventListener("pageshow", () => {
+  if (!CMCENUtils.requireAuthToken()) {
+    redirectToLogin();
+  }
+});
 
 function setEventField(id, value = "") {
   const field = document.getElementById(id);
@@ -909,11 +797,7 @@ function setEventCheckbox(id, checked) {
   }
 }
 
-function getEventFormDateParts(
-  dateValue,
-  timezone,
-  allDay
-) {
+function getEventFormDateParts(dateValue, timezone, allDay) {
   if (!dateValue) {
     return {
       date: "",
@@ -923,27 +807,21 @@ function getEventFormDateParts(
 
   const date = new Date(dateValue);
 
-  const formatter =
-    new Intl.DateTimeFormat("en-CA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-      timeZone:
-        allDay
-          ? "UTC"
-          : timezone || "UTC"
-    });
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: allDay ? "UTC" : timezone || "UTC",
+  });
 
   const parts = {};
 
-  formatter
-    .formatToParts(date)
-    .forEach(part => {
-      parts[part.type] = part.value;
-    });
+  formatter.formatToParts(date).forEach((part) => {
+    parts[part.type] = part.value;
+  });
 
   return {
     date:
@@ -1092,13 +970,13 @@ function populateEventForm(event) {
   const start = getEventFormDateParts(
     event.startDate,
     event.timezone,
-    event.allDay
+    event.allDay,
   );
 
   const end = getEventFormDateParts(
     event.endDate,
     event.timezone,
-    event.allDay
+    event.allDay,
   );
 
   setEventField("eventStartDate", start.date);
@@ -1116,8 +994,8 @@ async function loadEventForEditing(token, eventId) {
     `/api/events/${encodeURIComponent(eventId)}/edit`,
     token,
     {
-      errorMessage: "Could not load event for editing"
-    }
+      errorMessage: "Could not load event for editing",
+    },
   );
 
   if (editingEventId !== eventId) {
@@ -1147,8 +1025,7 @@ async function startEditingEvent(eventId) {
   updateEventFormModeText();
   setEventEditLoading(true);
 
-  const editUrl =
-    `/submit-event?id=${encodeURIComponent(eventId)}`;
+  const editUrl = `/submit-event?id=${encodeURIComponent(eventId)}`;
 
   if (window.location.pathname + window.location.search !== editUrl) {
     window.history.pushState({}, "", editUrl);
@@ -1163,10 +1040,7 @@ async function startEditingEvent(eventId) {
 
     setEventEditLoading(false);
     eventForm.hidden = true;
-    showPageMessage(
-      error.message ||
-      translate("event_permission_error")
-    );
+    showPageMessage(error.message || translate("event_permission_error"));
   }
 }
 
@@ -1174,20 +1048,18 @@ function updateEventFormModeText() {
   const isEditing = Boolean(editingEventId);
 
   updateEventEditContext();
-  cancelEventEditing.hidden =
-    !isEditing ||
-    isEventTabActive("events");
+  cancelEventEditing.hidden = !isEditing || isEventTabActive("events");
   cancelEventEditing.disabled = isSubmitting;
-  eventFormTabLabel.textContent = translate(isEditing ? "edit_event_tab" : "submit_new_event_tab");
-  updateEventPageHeader(
-    isEventTabActive("events")
-      ? "events"
-      : "form"
+  eventFormTabLabel.textContent = translate(
+    isEditing ? "edit_event_tab" : "submit_new_event_tab",
   );
-  eventSubmitButtonLabel.textContent = translate(isEditing ? "save_event_changes" : "submit_event_button");
+  updateEventPageHeader(isEventTabActive("events") ? "events" : "form");
+  eventSubmitButtonLabel.textContent = translate(
+    isEditing ? "save_event_changes" : "submit_event_button",
+  );
   eventSubmitButton.setAttribute(
     "aria-label",
-    translate(isEditing ? "save_event_changes" : "submit_event_button")
+    translate(isEditing ? "save_event_changes" : "submit_event_button"),
   );
 }
 

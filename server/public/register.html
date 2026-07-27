@@ -1,16 +1,15 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title data-i18n="register_page_title">
-      Register | CMCEN / RCMCE
-    </title>
-    <link rel="icon" type="image/png" href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png" />
+    <title data-i18n="register_page_title">Register | CMCEN / RCMCE</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
 
@@ -18,34 +17,21 @@
     <header id="header"></header>
 
     <main class="register-main">
-      <section
-        class="register-shell"
-        aria-labelledby="registerTitle"
-      >
+      <section class="register-shell" aria-labelledby="registerTitle">
         <header class="register-heading">
-
           <div>
-            <p
-              class="register-eyebrow"
-              data-i18n="member_registration"
-            >
+            <p class="register-eyebrow" data-i18n="member_registration">
               Member registration
             </p>
 
-            <h1
-              id="registerTitle"
-              data-i18n="create_account"
-            >
+            <h1 id="registerTitle" data-i18n="create_account">
               Create an account
             </h1>
           </div>
         </header>
 
         <div class="register-panel">
-          <form
-            class="register-form"
-            id="registerForm"
-          >
+          <form class="register-form" id="registerForm">
             <p
               class="register-error"
               id="registerError"
@@ -56,10 +42,7 @@
 
             <div class="register-fields">
               <div class="register-field">
-                <label
-                  for="regFirstName"
-                  data-i18n="first_name"
-                >
+                <label for="regFirstName" data-i18n="first_name">
                   First name
                 </label>
 
@@ -73,10 +56,7 @@
               </div>
 
               <div class="register-field">
-                <label
-                  for="regLastName"
-                  data-i18n="last_name"
-                >
+                <label for="regLastName" data-i18n="last_name">
                   Last name
                 </label>
 
@@ -90,10 +70,7 @@
               </div>
 
               <div class="register-field register-field-wide">
-                <label
-                  for="regAddressLine1"
-                  data-i18n="address_line_1"
-                >
+                <label for="regAddressLine1" data-i18n="address_line_1">
                   Address line 1
                 </label>
 
@@ -107,10 +84,7 @@
               </div>
 
               <div class="register-field register-field-wide">
-                <label
-                  for="regAddressLine2"
-                  data-i18n="address_line_2"
-                >
+                <label for="regAddressLine2" data-i18n="address_line_2">
                   Address line 2
                 </label>
 
@@ -123,12 +97,7 @@
               </div>
 
               <div class="register-field">
-                <label
-                  for="regCity"
-                  data-i18n="city"
-                >
-                  City
-                </label>
+                <label for="regCity" data-i18n="city"> City </label>
 
                 <input
                   type="text"
@@ -140,12 +109,7 @@
               </div>
 
               <div class="register-field">
-                <label
-                  for="regCountry"
-                  data-i18n="country"
-                >
-                  Country
-                </label>
+                <label for="regCountry" data-i18n="country"> Country </label>
 
                 <input
                   type="text"
@@ -157,10 +121,7 @@
               </div>
 
               <div class="register-field">
-                <label
-                  for="regStateProvince"
-                  data-i18n="state_province"
-                >
+                <label for="regStateProvince" data-i18n="state_province">
                   State/province
                 </label>
 
@@ -174,10 +135,7 @@
               </div>
 
               <div class="register-field">
-                <label
-                  for="regPostalCode"
-                  data-i18n="postal_code"
-                >
+                <label for="regPostalCode" data-i18n="postal_code">
                   Zip/postal code
                 </label>
 
@@ -191,42 +149,21 @@
               </div>
 
               <div class="register-field">
-                <label
-                  for="regRank"
-                  data-i18n="rank"
-                >
-                  Rank
-                </label>
+                <label for="regRank" data-i18n="rank"> Rank </label>
 
-                <input
-                  type="text"
-                  id="regRank"
-                  name="rank"
-                />
+                <input type="text" id="regRank" name="rank" />
               </div>
 
               <div class="register-field">
-                <label
-                  for="regPostNominals"
-                  data-i18n="post_nominals"
-                >
+                <label for="regPostNominals" data-i18n="post_nominals">
                   Post nominals
                 </label>
 
-                <input
-                  type="text"
-                  id="regPostNominals"
-                  name="postNominals"
-                />
+                <input type="text" id="regPostNominals" name="postNominals" />
               </div>
 
               <div class="register-field">
-                <label
-                  for="regCompany"
-                  data-i18n="company"
-                >
-                  Company
-                </label>
+                <label for="regCompany" data-i18n="company"> Company </label>
 
                 <input
                   type="text"
@@ -237,18 +174,9 @@
               </div>
 
               <div class="register-field">
-                <label
-                  for="regStatus"
-                  data-i18n="status"
-                >
-                  Status
-                </label>
+                <label for="regStatus" data-i18n="status"> Status </label>
 
-                <select
-                  id="regStatus"
-                  name="status"
-                  required
-                >
+                <select id="regStatus" name="status" required>
                   <option value="" selected disabled data-i18n="select_option">
                     Select an option
                   </option>
@@ -277,9 +205,7 @@
                     Released
                   </option>
 
-                  <option value="other" data-i18n="status_other">
-                    Other
-                  </option>
+                  <option value="other" data-i18n="status_other">Other</option>
                 </select>
               </div>
 
@@ -300,51 +226,32 @@
                     Select an option
                   </option>
 
-                  <option value="army" data-i18n="element_army">
-                    Army
-                  </option>
+                  <option value="army" data-i18n="element_army">Army</option>
 
-                  <option value="navy" data-i18n="element_navy">
-                    Navy
-                  </option>
+                  <option value="navy" data-i18n="element_navy">Navy</option>
 
                   <option value="air_force" data-i18n="element_air_force">
                     Air Force
                   </option>
 
-                  <option value="other" data-i18n="element_other">
-                    Other
-                  </option>
+                  <option value="other" data-i18n="element_other">Other</option>
                 </select>
               </div>
 
               <div class="register-field">
-                <label
-                  for="regTrade"
-                  data-i18n="trade"
-                >
+                <label for="regTrade" data-i18n="trade">
                   MOSID/MOC/Trade
                 </label>
 
-                <select
-                  id="regTrade"
-                  name="trade"
-                >
+                <select id="regTrade" name="trade">
                   <option value="" selected data-i18n="select_option">
                     Select an option
                   </option>
                 </select>
               </div>
 
-              <div
-                class="register-field"
-                id="regTradeOtherField"
-                hidden
-              >
-                <label
-                  for="regTradeOther"
-                  data-i18n="trade_other"
-                >
+              <div class="register-field" id="regTradeOtherField" hidden>
+                <label for="regTradeOther" data-i18n="trade_other">
                   MOSID/MOC/Trade (Other)
                 </label>
 
@@ -357,10 +264,7 @@
               </div>
 
               <div class="register-field register-field-wide">
-                <label
-                  for="regCurrentUnit"
-                  data-i18n="current_unit"
-                >
+                <label for="regCurrentUnit" data-i18n="current_unit">
                   Current unit
                 </label>
 
@@ -385,23 +289,14 @@
                   name="preferredLanguage"
                   required
                 >
-                  <option value="en" data-i18n="language_en">
-                    English
-                  </option>
+                  <option value="en" data-i18n="language_en">English</option>
 
-                  <option value="fr" data-i18n="language_fr">
-                    French
-                  </option>
+                  <option value="fr" data-i18n="language_fr">French</option>
                 </select>
               </div>
 
               <div class="register-field register-field-wide">
-                <label
-                  for="regEmail"
-                  data-i18n="email"
-                >
-                  Email
-                </label>
+                <label for="regEmail" data-i18n="email"> Email </label>
 
                 <input
                   type="email"
@@ -415,12 +310,7 @@
               </div>
 
               <div class="register-field">
-                <label
-                  for="regPassword"
-                  data-i18n="password"
-                >
-                  Password
-                </label>
+                <label for="regPassword" data-i18n="password"> Password </label>
 
                 <input
                   type="password"
@@ -472,16 +362,9 @@
               </button>
 
               <p class="register-switch">
-                <span data-i18n="have_account">
-                  Already have an account?
-                </span>
+                <span data-i18n="have_account"> Already have an account? </span>
 
-                <a
-                  href="/login"
-                  data-i18n="login_title"
-                >
-                  Sign in
-                </a>
+                <a href="/login" data-i18n="login_title"> Sign in </a>
               </p>
             </div>
           </form>
@@ -493,13 +376,9 @@
             hidden
           >
             <div class="register-mfa-heading">
-              <p class="register-eyebrow">
-                Email verification
-              </p>
+              <p class="register-eyebrow">Email verification</p>
 
-              <h2 id="registerEmailVerificationTitle">
-                Check your email
-              </h2>
+              <h2 id="registerEmailVerificationTitle">Check your email</h2>
             </div>
 
             <p class="register-mfa-copy">
@@ -544,13 +423,9 @@
             hidden
           >
             <div class="register-mfa-heading">
-              <p class="register-eyebrow">
-                Account security
-              </p>
+              <p class="register-eyebrow">Account security</p>
 
-              <h2 id="registerMfaTitle">
-                Choose your multi-factor method
-              </h2>
+              <h2 id="registerMfaTitle">Choose your multi-factor method</h2>
             </div>
 
             <p
@@ -561,25 +436,19 @@
               hidden
             ></p>
 
-            <div
-              class="register-mfa-options"
-              id="registerMfaOptions"
-            >
+            <div class="register-mfa-options" id="registerMfaOptions">
               <button
                 class="register-mfa-option is-recommended"
                 id="registerPasskeyOption"
                 type="button"
               >
-                <span class="register-mfa-option-label">
-                  Passkey
-                </span>
+                <span class="register-mfa-option-label"> Passkey </span>
 
-                <span class="register-mfa-recommended">
-                  Recommended
-                </span>
+                <span class="register-mfa-recommended"> Recommended </span>
 
                 <span class="register-mfa-option-copy">
-                  Use your device fingerprint, face unlock, PIN, or security key.
+                  Use your device fingerprint, face unlock, PIN, or security
+                  key.
                 </span>
               </button>
 
@@ -593,16 +462,13 @@
                 </span>
 
                 <span class="register-mfa-option-copy">
-                  Use a six-digit code from an app such as Microsoft Authenticator, Google Authenticator, or 1Password.
+                  Use a six-digit code from an app such as Microsoft
+                  Authenticator, Google Authenticator, or 1Password.
                 </span>
               </button>
             </div>
 
-            <div
-              class="register-totp-setup"
-              id="registerTotpSetup"
-              hidden
-            >
+            <div class="register-totp-setup" id="registerTotpSetup" hidden>
               <div
                 class="mfa-output"
                 id="registerTotpOutput"

@@ -1,9 +1,5 @@
 (function initializeAdminUsersView(global) {
-  function create({
-    root,
-    getState,
-    actions
-  }) {
+  function create({ root, getState, actions }) {
     let shouldRestoreSearchFocus = false;
     let searchFocusSelection = null;
     const USER_ROW_RENDER_LIMIT = 100;
@@ -17,9 +13,8 @@
     }
 
     function getText(key, fallback, replacements = {}) {
-      const translated = typeof translate === "function"
-        ? translate(key, replacements)
-        : key;
+      const translated =
+        typeof translate === "function" ? translate(key, replacements) : key;
 
       return translated === key ? fallback : translated;
     }
@@ -32,9 +27,9 @@
       const units = ["B", "KB", "MB", "GB"];
       const unitIndex = Math.min(
         Math.floor(Math.log(bytes) / Math.log(1024)),
-        units.length - 1
+        units.length - 1,
       );
-      const amount = bytes / (1024 ** unitIndex);
+      const amount = bytes / 1024 ** unitIndex;
 
       return `${amount.toFixed(amount >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
     }
@@ -55,7 +50,8 @@
     function createCustomRoleBadge(role) {
       const badge = document.createElement("span");
       badge.className = "admin-user-role-badge is-custom";
-      badge.textContent = role?.name || getText("admin_roles_custom_role", "Custom role");
+      badge.textContent =
+        role?.name || getText("admin_roles_custom_role", "Custom role");
 
       if (role?.color) {
         badge.style.borderColor = role.color;
@@ -106,7 +102,7 @@
       return Boolean(
         user?._id &&
         state.currentUserId &&
-        String(user._id) === String(state.currentUserId)
+        String(user._id) === String(state.currentUserId),
       );
     }
 
@@ -124,7 +120,7 @@
       return Boolean(
         state.currentUserPermissions?.canResetUserMfa === true &&
         user?._id &&
-        !isSelectedSelf(user)
+        !isSelectedSelf(user),
       );
     }
 
@@ -134,12 +130,12 @@
       return Boolean(
         state.currentUserPermissions?.canDeleteAnyUser === true &&
         user?._id &&
-        !isSelectedSelf(user)
+        !isSelectedSelf(user),
       );
     }
 
     function getStandardRoles() {
-      return getState().roles.filter(role => role !== "developer");
+      return getState().roles.filter((role) => role !== "developer");
     }
 
     function createMessage() {
@@ -161,7 +157,7 @@
       button.className = "admin-user-row";
       button.classList.toggle(
         "is-selected",
-        state.selectedUserId === String(user._id)
+        state.selectedUserId === String(user._id),
       );
 
       const name = document.createElement("strong");
@@ -174,14 +170,14 @@
       count.className = "admin-user-post-count";
       count.textContent = user.postSummary
         ? translate("admin_users_post_count", {
-          count: user.postSummary.total || 0
-        })
+            count: user.postSummary.total || 0,
+          })
         : getText("admin_users_row_select", "Open profile");
 
       button.append(
         name,
         meta,
-        createAccountTypeBadge(user) || createRoleBadge(user.role)
+        createAccountTypeBadge(user) || createRoleBadge(user.role),
       );
 
       const emailVerificationBadge = createEmailVerificationBadge(user);
@@ -189,7 +185,7 @@
         button.append(emailVerificationBadge);
       }
 
-      (user.customRoles || []).slice(0, 3).forEach(role => {
+      (user.customRoles || []).slice(0, 3).forEach((role) => {
         button.append(createCustomRoleBadge(role));
       });
 
@@ -219,12 +215,12 @@
 
     function getExportOptions(panel) {
       return {
-        includeRoles: Array
-          .from(panel.querySelectorAll('input[name="includeRoles"]:checked'))
-          .map(input => input.value),
-        includeAccountTypes: Array
-          .from(panel.querySelectorAll('input[name="includeAccountTypes"]:checked'))
-          .map(input => input.value)
+        includeRoles: Array.from(
+          panel.querySelectorAll('input[name="includeRoles"]:checked'),
+        ).map((input) => input.value),
+        includeAccountTypes: Array.from(
+          panel.querySelectorAll('input[name="includeAccountTypes"]:checked'),
+        ).map((input) => input.value),
       };
     }
 
@@ -245,34 +241,44 @@
       const roleGroup = document.createElement("div");
       roleGroup.className = "admin-users-export-group";
       const roleTitle = document.createElement("span");
-      roleTitle.textContent = getText("admin_users_export_include_roles", "Roles to include");
+      roleTitle.textContent = getText(
+        "admin_users_export_include_roles",
+        "Roles to include",
+      );
       roleGroup.append(roleTitle);
 
-      (state.roles || []).forEach(role => {
-        roleGroup.append(createExportCheckbox(
-          "includeRoles",
-          role,
-          translate(`role_${role}`),
-          !["developer", "administrator"].includes(role)
-        ));
+      (state.roles || []).forEach((role) => {
+        roleGroup.append(
+          createExportCheckbox(
+            "includeRoles",
+            role,
+            translate(`role_${role}`),
+            !["developer", "administrator"].includes(role),
+          ),
+        );
       });
 
       const accountTypeGroup = document.createElement("div");
       accountTypeGroup.className = "admin-users-export-group";
       const accountTypeTitle = document.createElement("span");
-      accountTypeTitle.textContent = getText("admin_users_export_include_account_types", "Account types to include");
+      accountTypeTitle.textContent = getText(
+        "admin_users_export_include_account_types",
+        "Account types to include",
+      );
       accountTypeGroup.append(accountTypeTitle);
       [
         ["member", getText("admin_users_account_member", "Member")],
         ["ghost", getText("admin_users_account_ghost", "Ghost")],
-        ["invited", "Invited"]
+        ["invited", "Invited"],
       ].forEach(([value, label]) => {
-        accountTypeGroup.append(createExportCheckbox(
-          "includeAccountTypes",
-          value,
-          label,
-          value === "member"
-        ));
+        accountTypeGroup.append(
+          createExportCheckbox(
+            "includeAccountTypes",
+            value,
+            label,
+            value === "member",
+          ),
+        );
       });
 
       filters.append(roleGroup, accountTypeGroup);
@@ -282,7 +288,7 @@
 
       [
         ["csv", getText("admin_users_export_csv", "Export CSV")],
-        ["pdf", getText("admin_users_export_pdf", "Export PDF")]
+        ["pdf", getText("admin_users_export_pdf", "Export PDF")],
       ].forEach(([format, label]) => {
         const button = document.createElement("button");
         button.type = "button";
@@ -322,10 +328,10 @@
       searchInput.value = state.searchQuery;
       searchInput.placeholder = translate("admin_users_search_placeholder");
       searchInput.autocomplete = "off";
-      searchInput.addEventListener("input", event => {
+      searchInput.addEventListener("input", (event) => {
         searchFocusSelection = {
           start: searchInput.selectionStart,
-          end: searchInput.selectionEnd
+          end: searchInput.selectionEnd,
         };
         actions.searchUsers(event.target.value);
       });
@@ -340,7 +346,8 @@
       invite.type = "button";
       invite.className = "admin-work-zone-button is-primary";
       invite.textContent = "Create account";
-      invite.disabled = state.currentUserPermissions?.canProvisionUsers !== true;
+      invite.disabled =
+        state.currentUserPermissions?.canProvisionUsers !== true;
       invite.addEventListener("click", actions.provisionUser);
 
       search.append(searchLabel, searchInput);
@@ -351,7 +358,9 @@
       list.className = "admin-user-list";
 
       if (state.isLoading && !state.users.length) {
-        list.append(CMCENUtils.createLoadingSpinner(translate("admin_users_loading")));
+        list.append(
+          CMCENUtils.createLoadingSpinner(translate("admin_users_loading")),
+        );
       } else if (!state.users.length) {
         const empty = document.createElement("p");
         empty.className = "admin-empty-state";
@@ -360,7 +369,7 @@
           : translate("admin_users_empty");
         list.append(empty);
       } else {
-        state.users.slice(0, USER_ROW_RENDER_LIMIT).forEach(user => {
+        state.users.slice(0, USER_ROW_RENDER_LIMIT).forEach((user) => {
           list.append(createUserButton(user));
         });
       }
@@ -368,14 +377,23 @@
       panel.append(list);
 
       if (state.userListHasMore || state.users.length > USER_ROW_RENDER_LIMIT) {
-        const isAtListCap = state.userListHasMore && (state.userListLimit || 0) >= USER_ROW_RENDER_LIMIT;
+        const isAtListCap =
+          state.userListHasMore &&
+          (state.userListLimit || 0) >= USER_ROW_RENDER_LIMIT;
         const more = document.createElement("button");
         more.type = "button";
         more.className = "admin-work-zone-button is-secondary admin-users-more";
-        more.textContent = isAtListCap || state.users.length > USER_ROW_RENDER_LIMIT
-          ? getText("admin_users_more_rendered", "Refine search to narrow results")
-          : getText("admin_users_more", "Show more users");
-        more.disabled = isAtListCap || state.users.length > USER_ROW_RENDER_LIMIT || state.isLoading;
+        more.textContent =
+          isAtListCap || state.users.length > USER_ROW_RENDER_LIMIT
+            ? getText(
+                "admin_users_more_rendered",
+                "Refine search to narrow results",
+              )
+            : getText("admin_users_more", "Show more users");
+        more.disabled =
+          isAtListCap ||
+          state.users.length > USER_ROW_RENDER_LIMIT ||
+          state.isLoading;
         more.addEventListener("click", actions.showMoreUsers);
         panel.append(more);
       }
@@ -384,13 +402,19 @@
         window.requestAnimationFrame(() => {
           const selection = searchFocusSelection || {
             start: searchInput.value.length,
-            end: searchInput.value.length
+            end: searchInput.value.length,
           };
 
           searchInput.focus();
           searchInput.setSelectionRange(
-            Math.min(selection.start ?? searchInput.value.length, searchInput.value.length),
-            Math.min(selection.end ?? searchInput.value.length, searchInput.value.length)
+            Math.min(
+              selection.start ?? searchInput.value.length,
+              searchInput.value.length,
+            ),
+            Math.min(
+              selection.end ?? searchInput.value.length,
+              searchInput.value.length,
+            ),
           );
           shouldRestoreSearchFocus = false;
         });
@@ -405,11 +429,9 @@
       select.name = "role";
       select.disabled = isSelectedSelf(user) || isDeveloper(user);
 
-      const roles = isDeveloper(user)
-        ? ["developer"]
-        : getStandardRoles();
+      const roles = isDeveloper(user) ? ["developer"] : getStandardRoles();
 
-      roles.forEach(role => {
+      roles.forEach((role) => {
         const option = document.createElement("option");
         option.value = role;
         option.textContent = translate(`role_${role}`);
@@ -427,7 +449,7 @@
       wrapper.className = "admin-content-area-options";
       const selectedAreas = new Set(user?.contentAreas || []);
 
-      state.contentAreas.forEach(area => {
+      state.contentAreas.forEach((area) => {
         const label = document.createElement("label");
         label.className = "admin-content-area-option";
 
@@ -457,13 +479,13 @@
         empty.className = "admin-empty-state";
         empty.textContent = getText(
           "admin_roles_assignment_empty",
-          "No custom roles have been created yet."
+          "No custom roles have been created yet.",
         );
         wrapper.append(empty);
         return wrapper;
       }
 
-      state.customRoles.forEach(role => {
+      state.customRoles.forEach((role) => {
         const label = document.createElement("label");
         label.className = "admin-custom-role-option";
 
@@ -495,7 +517,10 @@
       heading.className = "admin-panel-heading";
 
       const title = document.createElement("h4");
-      title.textContent = getText("admin_users_mfa_heading", "Multi-factor authentication");
+      title.textContent = getText(
+        "admin_users_mfa_heading",
+        "Multi-factor authentication",
+      );
 
       const status = document.createElement("span");
       status.className = `admin-user-mfa-status ${mfa.enabled ? "is-enabled" : "is-empty"}`;
@@ -512,8 +537,8 @@
           ? getText("admin_users_mfa_totp_enabled", "Authenticator app enabled")
           : getText("admin_users_mfa_totp_not_enabled", "No authenticator app"),
         translate("admin_users_mfa_passkeys", {
-          count: mfa.passkeyCount || 0
-        })
+          count: mfa.passkeyCount || 0,
+        }),
       ].join(" · ");
 
       const reset = document.createElement("button");
@@ -528,7 +553,7 @@
         help.className = "admin-editor-help";
         help.textContent = getText(
           "admin_users_mfa_self_help",
-          "You cannot reset your own MFA from this panel."
+          "You cannot reset your own MFA from this panel.",
         );
         panel.append(heading, details, reset, help);
         return panel;
@@ -566,21 +591,21 @@
     }
 
     function getSelectedContentAreas(form) {
-      return Array
-        .from(form.querySelectorAll(".admin-content-area-option input:checked"))
-        .map(input => input.value);
+      return Array.from(
+        form.querySelectorAll(".admin-content-area-option input:checked"),
+      ).map((input) => input.value);
     }
 
     function getSelectedCustomRoleIds(form) {
-      return Array
-        .from(form.querySelectorAll(".admin-custom-role-option input:checked"))
-        .map(input => input.value);
+      return Array.from(
+        form.querySelectorAll(".admin-custom-role-option input:checked"),
+      ).map((input) => input.value);
     }
 
     function getSelectedPermissions(form) {
-      return Array
-        .from(form.querySelectorAll(".admin-permission-option input:checked"))
-        .map(input => input.value);
+      return Array.from(
+        form.querySelectorAll(".admin-permission-option input:checked"),
+      ).map((input) => input.value);
     }
 
     function createPostItem(post) {
@@ -597,12 +622,13 @@
         title.href = post.href;
       }
 
-      const typeLabel = {
-        event: translate("admin_content_type_event"),
-        retirementMessage: translate("admin_content_type_post"),
-        retirementComment: translate("admin_content_type_comment"),
-        lastPost: getText("admin_content_type_last_post", "Last Post notice")
-      }[post.type] || translate("admin_content_type_content");
+      const typeLabel =
+        {
+          event: translate("admin_content_type_event"),
+          retirementMessage: translate("admin_content_type_post"),
+          retirementComment: translate("admin_content_type_comment"),
+          lastPost: getText("admin_content_type_last_post", "Last Post notice"),
+        }[post.type] || translate("admin_content_type_content");
 
       const badges = document.createElement("div");
       badges.className = "admin-post-badges";
@@ -623,8 +649,10 @@
       details.textContent = [
         post.action,
         post.contentArea ? formatContentArea(post.contentArea) : "",
-        formatDate(post.updatedAt || post.createdAt)
-      ].filter(Boolean).join(" · ");
+        formatDate(post.updatedAt || post.createdAt),
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
       item.append(header, details);
 
@@ -649,7 +677,7 @@
     function getPermissionGroups() {
       const groups = new Map();
 
-      getState().permissionCatalog.forEach(permission => {
+      getState().permissionCatalog.forEach((permission) => {
         const groupName = permission.group || "Permissions";
 
         if (!groups.has(groupName)) {
@@ -684,7 +712,7 @@
         title.textContent = groupName;
         group.append(title);
 
-        permissions.forEach(permission => {
+        permissions.forEach((permission) => {
           const label = document.createElement("label");
           label.className = "admin-permission-option";
 
@@ -702,7 +730,9 @@
 
           const action = document.createElement("em");
           action.textContent = permission.action || "";
-          action.className = `permission-action-${String(permission.action || "other")
+          action.className = `permission-action-${String(
+            permission.action || "other",
+          )
             .toLowerCase()
             .replace(/[^a-z0-9_-]/g, "-")}`;
 
@@ -726,7 +756,7 @@
       button.className = "admin-role-row";
       button.classList.toggle(
         "is-selected",
-        String(role._id) === String(state.selectedRoleId)
+        String(role._id) === String(state.selectedRoleId),
       );
 
       const swatch = document.createElement("span");
@@ -766,7 +796,7 @@
         actions.createRole({
           name: `New role ${roleNumber}`,
           color: "#4F46E5",
-          permissions: []
+          permissions: [],
         });
       });
 
@@ -784,17 +814,19 @@
         empty.className = "admin-empty-state";
         empty.textContent = getText(
           "admin_roles_empty",
-          "Create a role to start assigning custom permissions."
+          "Create a role to start assigning custom permissions.",
         );
         list.append(empty);
       } else {
-        state.customRoles.forEach(role => {
+        state.customRoles.forEach((role) => {
           list.append(createRoleDefinitionButton(role));
         });
       }
 
       const selectedRole =
-        state.customRoles.find(role => String(role._id) === String(state.selectedRoleId)) ||
+        state.customRoles.find(
+          (role) => String(role._id) === String(state.selectedRoleId),
+        ) ||
         state.customRoles[0] ||
         null;
 
@@ -806,7 +838,7 @@
         empty.className = "admin-empty-state";
         empty.textContent = getText(
           "admin_roles_select_empty",
-          "No custom role selected."
+          "No custom role selected.",
         );
         form.append(empty);
       } else {
@@ -841,12 +873,13 @@
           name: "color",
           value: selectedRole.color || "#4F46E5",
           fallback: "#4F46E5",
-          label: "Badge color"
+          label: "Badge color",
         });
         colorField.append(colorLabel, colorInput);
 
         const descriptionField = document.createElement("label");
-        descriptionField.className = "admin-editor-field admin-role-field-description";
+        descriptionField.className =
+          "admin-editor-field admin-role-field-description";
         const descriptionLabel = document.createElement("span");
         descriptionLabel.textContent = "Description";
         const descriptionInput = document.createElement("textarea");
@@ -857,10 +890,14 @@
         descriptionField.append(descriptionLabel, descriptionInput);
 
         const permissionField = document.createElement("fieldset");
-        permissionField.className = "admin-editor-fieldset admin-role-field-permissions";
+        permissionField.className =
+          "admin-editor-fieldset admin-role-field-permissions";
         const permissionLegend = document.createElement("legend");
         permissionLegend.textContent = "Permissions";
-        permissionField.append(permissionLegend, createPermissionOptions(selectedRole));
+        permissionField.append(
+          permissionLegend,
+          createPermissionOptions(selectedRole),
+        );
 
         const actionsRow = document.createElement("div");
         actionsRow.className = "admin-role-form-actions";
@@ -874,7 +911,9 @@
         remove.type = "button";
         remove.className = "admin-work-zone-button is-danger";
         remove.textContent = "Delete role";
-        remove.addEventListener("click", () => actions.deleteRole(selectedRole));
+        remove.addEventListener("click", () =>
+          actions.deleteRole(selectedRole),
+        );
 
         actionsRow.append(save, remove);
         form.append(
@@ -883,17 +922,17 @@
           colorField,
           descriptionField,
           permissionField,
-          actionsRow
+          actionsRow,
         );
 
-        form.addEventListener("submit", event => {
+        form.addEventListener("submit", (event) => {
           event.preventDefault();
           actions.saveRole(selectedRole._id, {
             name: form.elements.name.value,
             slug: form.elements.slug.value,
             color: form.elements.color.value,
             description: form.elements.description.value,
-            permissions: getSelectedPermissions(form)
+            permissions: getSelectedPermissions(form),
           });
         });
       }
@@ -924,12 +963,15 @@
         empty.className = "admin-user-empty-detail";
 
         const title = document.createElement("h3");
-        title.textContent = getText("admin_users_select_profile_title", "Select a user");
+        title.textContent = getText(
+          "admin_users_select_profile_title",
+          "Select a user",
+        );
 
         const copy = document.createElement("p");
         copy.textContent = getText(
           "admin_users_select_profile_body",
-          "Choose a user from the list to edit roles, custom permissions, MFA, and submitted content."
+          "Choose a user from the list to edit roles, custom permissions, MFA, and submitted content.",
         );
 
         empty.append(title, copy);
@@ -948,20 +990,18 @@
       meta.textContent = [
         user.email || user.username || "",
         translate("admin_users_joined", {
-          date: formatDate(user.createdAt)
-        })
-      ].filter(Boolean).join(" · ");
+          date: formatDate(user.createdAt),
+        }),
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
       const identityBadges = [
         createAccountTypeBadge(user) || createRoleBadge(user.role),
-        createEmailVerificationBadge(user)
+        createEmailVerificationBadge(user),
       ].filter(Boolean);
 
-      identity.append(
-        title,
-        ...identityBadges,
-        meta
-      );
+      identity.append(title, ...identityBadges, meta);
       header.append(identity);
 
       const form = document.createElement("form");
@@ -1001,7 +1041,7 @@
       const customRolesLegend = document.createElement("legend");
       customRolesLegend.textContent = getText(
         "admin_roles_assign_label",
-        "Custom roles"
+        "Custom roles",
       );
 
       customRolesField.append(customRolesLegend, createCustomRoleOptions(user));
@@ -1017,18 +1057,20 @@
         const promoteDeveloper = document.createElement("button");
         promoteDeveloper.type = "button";
         promoteDeveloper.className = "admin-work-zone-button is-danger";
-        promoteDeveloper.textContent = translate("admin_users_promote_developer");
+        promoteDeveloper.textContent = translate(
+          "admin_users_promote_developer",
+        );
         promoteDeveloper.addEventListener("click", () => {
           actions.promoteDeveloper(user);
         });
         form.append(promoteDeveloper);
       }
 
-      form.addEventListener("submit", event => {
+      form.addEventListener("submit", (event) => {
         event.preventDefault();
         const payload = {
           contentAreas: getSelectedContentAreas(form),
-          customRoleIds: getSelectedCustomRoleIds(form)
+          customRoleIds: getSelectedCustomRoleIds(form),
         };
 
         if (!isDeveloper(user)) {
@@ -1043,7 +1085,7 @@
 
       const postsHeading = document.createElement("h4");
       postsHeading.textContent = translate("admin_users_posts_heading", {
-        count: state.posts.length
+        count: state.posts.length,
       });
       postsPanel.append(postsHeading);
 
@@ -1053,7 +1095,7 @@
         empty.textContent = translate("admin_users_posts_empty");
         postsPanel.append(empty);
       } else {
-        state.posts.forEach(post => {
+        state.posts.forEach((post) => {
           postsPanel.append(createPostItem(post));
         });
       }
@@ -1071,24 +1113,28 @@
       item.className = "admin-media-attachment";
 
       const link = document.createElement(attachment.href ? "a" : "span");
-      link.textContent = attachment.title || translate("admin_content_untitled_content");
+      link.textContent =
+        attachment.title || translate("admin_content_untitled_content");
 
       if (attachment.href) {
         link.href = attachment.href;
       }
 
       const meta = document.createElement("span");
-      const typeLabel = {
-        event: translate("admin_content_type_event"),
-        retirementMessage: translate("admin_content_type_retirement_message"),
-        lastPostMessage: translate("admin_content_type_last_post_message")
-      }[attachment.type] || translate("admin_content_type_content");
+      const typeLabel =
+        {
+          event: translate("admin_content_type_event"),
+          retirementMessage: translate("admin_content_type_retirement_message"),
+          lastPostMessage: translate("admin_content_type_last_post_message"),
+        }[attachment.type] || translate("admin_content_type_content");
 
       meta.textContent = [
         typeLabel,
         attachment.status || "",
-        attachment.field || ""
-      ].filter(Boolean).join(" · ");
+        attachment.field || "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
       item.append(link, meta);
 
@@ -1138,7 +1184,8 @@
       body.className = "admin-media-body";
 
       const title = document.createElement("h4");
-      title.textContent = mediaItem.name || mediaItem.originalName || mediaItem.key;
+      title.textContent =
+        mediaItem.name || mediaItem.originalName || mediaItem.key;
 
       const meta = document.createElement("p");
       meta.className = "admin-media-meta";
@@ -1147,10 +1194,12 @@
         formatFileSize(mediaItem.size),
         mediaItem.lastModified
           ? translate("admin_media_modified", {
-            date: formatDate(mediaItem.lastModified)
-          })
-          : ""
-      ].filter(Boolean).join(" · ");
+              date: formatDate(mediaItem.lastModified),
+            })
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
       const attachmentCount = Number(mediaItem.attachedPostCount || 0);
       const attachments = document.createElement("div");
@@ -1159,17 +1208,17 @@
       const attachmentHeading = document.createElement("strong");
       attachmentHeading.textContent = attachmentCount
         ? translate(
-          attachmentCount === 1
-            ? "admin_media_attached_count_singular"
-            : "admin_media_attached_count_plural",
-          { count: attachmentCount }
-        )
+            attachmentCount === 1
+              ? "admin_media_attached_count_singular"
+              : "admin_media_attached_count_plural",
+            { count: attachmentCount },
+          )
         : translate("admin_media_not_attached");
       attachments.append(attachmentHeading);
 
       if (attachmentCount) {
         const list = document.createElement("ul");
-        (mediaItem.attachedPosts || []).forEach(attachment => {
+        (mediaItem.attachedPosts || []).forEach((attachment) => {
           list.append(createMediaAttachment(attachment));
         });
         attachments.append(list);
@@ -1188,7 +1237,10 @@
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "admin-work-zone-button is-danger";
-      remove.disabled = Boolean(attachmentCount) || state.mediaIsDeleting || state.mediaIsLoading;
+      remove.disabled =
+        Boolean(attachmentCount) ||
+        state.mediaIsDeleting ||
+        state.mediaIsLoading;
       if (isDeleting) {
         const deleting = document.createElement("span");
         deleting.className = "admin-media-sort-loading";
@@ -1212,14 +1264,16 @@
       const state = getState();
       const selectedKeys = new Set(state.selectedMediaKeys || []);
       const deletingKeys = new Set(state.mediaDeletingKeys || []);
-      const selectedItems = state.media.filter(item => selectedKeys.has(item.key));
+      const selectedItems = state.media.filter((item) =>
+        selectedKeys.has(item.key),
+      );
       const selectedCount = selectedItems.length;
-      const removableCount = selectedItems
-        .filter(item => !Number(item.attachedPostCount || 0))
-        .length;
+      const removableCount = selectedItems.filter(
+        (item) => !Number(item.attachedPostCount || 0),
+      ).length;
       const isDeletingSelection =
         state.mediaIsDeleting &&
-        selectedItems.some(item => deletingKeys.has(item.key));
+        selectedItems.some((item) => deletingKeys.has(item.key));
 
       if (!selectedCount) {
         return null;
@@ -1235,7 +1289,8 @@
       selectVisible.type = "button";
       selectVisible.className = "admin-work-zone-button is-secondary";
       selectVisible.textContent = "Select visible";
-      selectVisible.disabled = state.mediaIsLoading || state.mediaIsDeleting || !state.media.length;
+      selectVisible.disabled =
+        state.mediaIsLoading || state.mediaIsDeleting || !state.media.length;
       selectVisible.addEventListener("click", actions.selectVisibleMedia);
 
       const clear = document.createElement("button");
@@ -1248,7 +1303,8 @@
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "admin-work-zone-button is-danger";
-      remove.disabled = state.mediaIsLoading || state.mediaIsDeleting || !removableCount;
+      remove.disabled =
+        state.mediaIsLoading || state.mediaIsDeleting || !removableCount;
       if (isDeletingSelection) {
         const deleting = document.createElement("span");
         deleting.className = "admin-media-sort-loading";
@@ -1278,8 +1334,8 @@
       const intro = document.createElement("p");
       intro.textContent = state.mediaBucket
         ? translate("admin_media_intro_bucket", {
-          bucket: state.mediaBucket
-        })
+            bucket: state.mediaBucket,
+          })
         : translate("admin_media_intro");
 
       copy.append(title, intro);
@@ -1297,7 +1353,7 @@
         ["oldest", "Oldest first"],
         ["name", "Name"],
         ["size", "Largest first"],
-        ["orphaned", "Orphaned first"]
+        ["orphaned", "Orphaned first"],
       ].forEach(([value, label]) => {
         const option = document.createElement("option");
         option.value = value;
@@ -1305,7 +1361,8 @@
         sortSelect.append(option);
       });
       sortSelect.value = state.mediaSort || "newest";
-      sortSelect.disabled = state.mediaIsLoading || state.mediaIsUploading || state.mediaIsDeleting;
+      sortSelect.disabled =
+        state.mediaIsLoading || state.mediaIsUploading || state.mediaIsDeleting;
       sortSelect.addEventListener("change", () => {
         actions.setMediaSort(sortSelect.value);
       });
@@ -1333,8 +1390,11 @@
       slugLabel.append(slugText, slugInput);
 
       const uploadLabel = document.createElement("label");
-      uploadLabel.className = "admin-work-zone-button is-primary admin-media-upload-button";
-      uploadLabel.textContent = state.mediaIsUploading ? "Uploading..." : "Upload images";
+      uploadLabel.className =
+        "admin-work-zone-button is-primary admin-media-upload-button";
+      uploadLabel.textContent = state.mediaIsUploading
+        ? "Uploading..."
+        : "Upload images";
 
       const uploadInput = document.createElement("input");
       uploadInput.type = "file";
@@ -1352,22 +1412,26 @@
       refresh.type = "button";
       refresh.className = "admin-work-zone-button is-secondary";
       refresh.textContent = translate("admin_refresh");
-      refresh.disabled = state.mediaIsLoading || state.mediaIsUploading || state.mediaIsDeleting;
+      refresh.disabled =
+        state.mediaIsLoading || state.mediaIsUploading || state.mediaIsDeleting;
       refresh.addEventListener("click", actions.refreshMedia);
 
       headerActions.append(sortLabel, slugLabel, uploadLabel, refresh);
       header.append(copy, headerActions);
-      header.addEventListener("dragover", event => {
+      header.addEventListener("dragover", (event) => {
         event.preventDefault();
         header.classList.add("is-dragging");
       });
       header.addEventListener("dragleave", () => {
         header.classList.remove("is-dragging");
       });
-      header.addEventListener("drop", event => {
+      header.addEventListener("drop", (event) => {
         event.preventDefault();
         header.classList.remove("is-dragging");
-        actions.uploadMediaFiles(event.dataTransfer?.files || [], slugInput.value);
+        actions.uploadMediaFiles(
+          event.dataTransfer?.files || [],
+          slugInput.value,
+        );
       });
       panel.append(header);
 
@@ -1375,7 +1439,7 @@
         const uploads = document.createElement("div");
         uploads.className = "admin-media-upload-list";
 
-        state.mediaUploadQueue.forEach(item => {
+        state.mediaUploadQueue.forEach((item) => {
           const row = document.createElement("div");
           row.className = `admin-media-upload-row is-${item.status}`;
 
@@ -1386,21 +1450,27 @@
           name.textContent = item.name;
 
           const meta = document.createElement("span");
-          const sizeLabel = item.originalSize && item.originalSize > item.size
-            ? `${formatFileSize(item.originalSize)} -> ${formatFileSize(item.size)}`
-            : formatFileSize(item.size);
+          const sizeLabel =
+            item.originalSize && item.originalSize > item.size
+              ? `${formatFileSize(item.originalSize)} -> ${formatFileSize(item.size)}`
+              : formatFileSize(item.size);
           meta.textContent = [
             sizeLabel,
             item.status === "error"
               ? item.message || "Upload failed"
               : item.status === "complete"
                 ? "Uploaded"
-                : item.message || `${item.progress || 0}%`
-          ].filter(Boolean).join(" · ");
+                : item.message || `${item.progress || 0}%`,
+          ]
+            .filter(Boolean)
+            .join(" · ");
 
           const progress = document.createElement("span");
           progress.className = "admin-media-upload-progress";
-          progress.style.setProperty("--upload-progress", `${Math.max(0, Math.min(item.progress || 0, 100))}%`);
+          progress.style.setProperty(
+            "--upload-progress",
+            `${Math.max(0, Math.min(item.progress || 0, 100))}%`,
+          );
 
           details.append(name, meta);
           row.append(details, progress);
@@ -1416,7 +1486,9 @@
       }
 
       if (state.mediaIsLoading && !state.media.length) {
-        panel.append(CMCENUtils.createLoadingSpinner(translate("admin_media_loading")));
+        panel.append(
+          CMCENUtils.createLoadingSpinner(translate("admin_media_loading")),
+        );
         return panel;
       }
 
@@ -1430,7 +1502,7 @@
 
       const grid = document.createElement("div");
       grid.className = "admin-media-grid";
-      state.media.forEach(mediaItem => {
+      state.media.forEach((mediaItem) => {
         grid.append(createMediaCard(mediaItem));
       });
       panel.append(grid);
@@ -1438,7 +1510,8 @@
       if (state.mediaIsTruncated) {
         const loadMore = document.createElement("button");
         loadMore.type = "button";
-        loadMore.className = "admin-work-zone-button is-secondary admin-media-load-more";
+        loadMore.className =
+          "admin-work-zone-button is-secondary admin-media-load-more";
         loadMore.textContent = state.mediaIsLoading
           ? translate("loading_text")
           : translate("admin_media_load_more");
@@ -1477,11 +1550,11 @@
 
     return {
       render,
-      restoreSearchFocus
+      restoreSearchFocus,
     };
   }
 
   global.CMCENAdminUsersView = {
-    create
+    create,
   };
 })(window);

@@ -3,7 +3,9 @@ const adminWorkZone = document.getElementById("adminWorkZone");
 const adminWorkZoneStatus = document.getElementById("adminWorkZoneStatus");
 
 let adminWorkZoneState = {
-  activeView: ["media", "roles"].includes(new URLSearchParams(window.location.search).get("view"))
+  activeView: ["media", "roles"].includes(
+    new URLSearchParams(window.location.search).get("view"),
+  )
     ? new URLSearchParams(window.location.search).get("view")
     : "users",
   currentUserId: "",
@@ -33,7 +35,7 @@ let adminWorkZoneState = {
   mediaIsUploading: false,
   isLoading: false,
   message: "",
-  searchQuery: ""
+  searchQuery: "",
 };
 let adminSearchTimeout = 0;
 let adminUserSearchRequestId = 0;
@@ -45,10 +47,11 @@ const adminUsersView = CMCENAdminUsersView.create({
     loadUserDetail: loadAdminUserDetail,
     searchUsers: scheduleAdminUserSearch,
     refreshUsers: () => loadAdminUsers(),
-    showMoreUsers: () => loadAdminUsers({
-      limit: Math.min((adminWorkZoneState.userListLimit || 50) + 50, 100),
-      preserveSelection: true
-    }),
+    showMoreUsers: () =>
+      loadAdminUsers({
+        limit: Math.min((adminWorkZoneState.userListLimit || 50) + 50, 100),
+        preserveSelection: true,
+      }),
     exportUsers: exportAdminUsers,
     provisionUser: provisionAdminUser,
     saveUser: saveAdminUser,
@@ -61,11 +64,12 @@ const adminUsersView = CMCENAdminUsersView.create({
     deleteRole: deleteAdminRole,
     deletePost: deleteAdminPost,
     refreshMedia: () => loadAdminMedia(),
-    loadMoreMedia: cursor => loadAdminMedia({
-      append: true,
-      cursor
-    }),
-    setMediaSort: sort => {
+    loadMoreMedia: (cursor) =>
+      loadAdminMedia({
+        append: true,
+        cursor,
+      }),
+    setMediaSort: (sort) => {
       setAdminWorkZoneState({ mediaSort: sort || "newest" });
       loadAdminMedia({ sort: sort || "newest" });
     },
@@ -74,8 +78,8 @@ const adminUsersView = CMCENAdminUsersView.create({
     clearMediaSelection: clearAdminMediaSelection,
     uploadMediaFiles: uploadAdminMediaFiles,
     deleteMedia: deleteAdminMedia,
-    deleteSelectedMedia: deleteSelectedAdminMedia
-  }
+    deleteSelectedMedia: deleteSelectedAdminMedia,
+  },
 });
 
 async function adminApiJson(path, options = {}) {
@@ -84,7 +88,7 @@ async function adminApiJson(path, options = {}) {
       ...options,
       token: adminToken,
       redirectOnUnauthorized: true,
-      unauthorizedMessage: translate("admin_verify_error")
+      unauthorizedMessage: translate("admin_verify_error"),
     });
   } catch (error) {
     if (error.status === 403) {
@@ -100,8 +104,8 @@ async function adminApiBlob(path, options = {}) {
     ...options,
     headers: {
       ...(options.headers || {}),
-      Authorization: `Bearer ${adminToken}`
-    }
+      Authorization: `Bearer ${adminToken}`,
+    },
   });
 
   if (response.status === 401) {
@@ -116,12 +120,14 @@ async function adminApiBlob(path, options = {}) {
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || options.errorMessage || translate("admin_verify_error"));
+    throw new Error(
+      data.error || options.errorMessage || translate("admin_verify_error"),
+    );
   }
 
   return {
     blob: await response.blob(),
-    filename: getDownloadFilename(response.headers.get("Content-Disposition"))
+    filename: getDownloadFilename(response.headers.get("Content-Disposition")),
   };
 }
 
@@ -162,7 +168,7 @@ function showAdminWorkZone() {
 function setAdminWorkZoneState(nextState, { render = true } = {}) {
   adminWorkZoneState = {
     ...adminWorkZoneState,
-    ...nextState
+    ...nextState,
   };
 
   if (render) {
@@ -174,7 +180,7 @@ function showAdminActionToast(message, color = "info") {
   CMCENUtils.showToast(message, {
     color,
     position: "bottom-right",
-    animation: "slide"
+    animation: "slide",
   });
 }
 
@@ -185,11 +191,14 @@ function scheduleAdminUserSearch(value) {
   adminUserSearchRequestId = requestId;
 
   window.clearTimeout(adminSearchTimeout);
-  setAdminWorkZoneState({
-    searchQuery: query
-  }, {
-    render: false
-  });
+  setAdminWorkZoneState(
+    {
+      searchQuery: query,
+    },
+    {
+      render: false,
+    },
+  );
 
   adminSearchTimeout = window.setTimeout(() => {
     loadAdminUsers({
@@ -197,7 +206,7 @@ function scheduleAdminUserSearch(value) {
       preserveSelection: false,
       restoreSearchFocus: true,
       suppressLoadingRender: true,
-      searchRequestId: requestId
+      searchRequestId: requestId,
     });
   }, 250);
 }
@@ -208,7 +217,7 @@ async function loadAdminUsers({
   preserveSelection = true,
   restoreSearchFocus = false,
   suppressLoadingRender = false,
-  searchRequestId = null
+  searchRequestId = null,
 } = {}) {
   const cleanQuery = String(query || "").trim();
   const requestId = searchRequestId || adminUserSearchRequestId;
@@ -217,13 +226,16 @@ async function loadAdminUsers({
     adminUsersView.restoreSearchFocus();
   }
 
-  setAdminWorkZoneState({
-    isLoading: true,
-    message: "",
-    searchQuery: cleanQuery
-  }, {
-    render: !suppressLoadingRender
-  });
+  setAdminWorkZoneState(
+    {
+      isLoading: true,
+      message: "",
+      searchQuery: cleanQuery,
+    },
+    {
+      render: !suppressLoadingRender,
+    },
+  );
 
   try {
     const params = new URLSearchParams();
@@ -238,17 +250,20 @@ async function loadAdminUsers({
       : "/api/admin/users";
 
     const data = await adminApiJson(requestUrl, {
-      errorMessage: translate("admin_users_load_error")
+      errorMessage: translate("admin_users_load_error"),
     });
 
     if (restoreSearchFocus && requestId !== adminUserSearchRequestId) {
       return;
     }
 
-    const selectedUserId = preserveSelection &&
-      data.users?.some(user => String(user._id) === adminWorkZoneState.selectedUserId)
-      ? adminWorkZoneState.selectedUserId
-      : "";
+    const selectedUserId =
+      preserveSelection &&
+      data.users?.some(
+        (user) => String(user._id) === adminWorkZoneState.selectedUserId,
+      )
+        ? adminWorkZoneState.selectedUserId
+        : "";
     const selectionChanged =
       selectedUserId !== adminWorkZoneState.selectedUserId;
 
@@ -265,24 +280,26 @@ async function loadAdminUsers({
       permissionCatalog: data.permissionCatalog || [],
       selectedRoleId:
         adminWorkZoneState.selectedRoleId &&
-        data.customRoles?.some(role => String(role._id) === adminWorkZoneState.selectedRoleId)
+        data.customRoles?.some(
+          (role) => String(role._id) === adminWorkZoneState.selectedRoleId,
+        )
           ? adminWorkZoneState.selectedRoleId
           : data.customRoles?.[0]?._id || "",
       contentAreas: data.contentAreas || [],
       selectedUserId,
-      selectedUser: selectedUserId && !selectionChanged
-        ? adminWorkZoneState.selectedUser
-        : null,
-      posts: selectedUserId && !selectionChanged
-        ? adminWorkZoneState.posts
-        : [],
-      isLoading: false
+      selectedUser:
+        selectedUserId && !selectionChanged
+          ? adminWorkZoneState.selectedUser
+          : null,
+      posts:
+        selectedUserId && !selectionChanged ? adminWorkZoneState.posts : [],
+      isLoading: false,
     });
     showAdminWorkZone();
 
     if (selectedUserId && selectionChanged) {
       await loadAdminUserDetail(selectedUserId, {
-        restoreSearchFocus
+        restoreSearchFocus,
       });
     }
   } catch (error) {
@@ -298,7 +315,7 @@ async function loadAdminUsers({
 
     setAdminWorkZoneState({
       isLoading: false,
-      message: error.message || translate("admin_users_load_error")
+      message: error.message || translate("admin_users_load_error"),
     });
   }
 }
@@ -306,12 +323,12 @@ async function loadAdminUsers({
 async function loadAdminRoles() {
   setAdminWorkZoneState({
     isLoading: true,
-    message: ""
+    message: "",
   });
 
   try {
     const data = await adminApiJson("/api/admin/roles", {
-      errorMessage: "Could not load roles"
+      errorMessage: "Could not load roles",
     });
     const roles = data.roles || [];
 
@@ -320,17 +337,19 @@ async function loadAdminRoles() {
       permissionCatalog: data.permissionCatalog || [],
       selectedRoleId:
         adminWorkZoneState.selectedRoleId &&
-        roles.some(role => String(role._id) === adminWorkZoneState.selectedRoleId)
+        roles.some(
+          (role) => String(role._id) === adminWorkZoneState.selectedRoleId,
+        )
           ? adminWorkZoneState.selectedRoleId
           : roles[0]?._id || "",
-      isLoading: false
+      isLoading: false,
     });
     showAdminWorkZone();
   } catch (error) {
     showAdminWorkZone();
     setAdminWorkZoneState({
       isLoading: false,
-      message: error.message || "Could not load roles"
+      message: error.message || "Could not load roles",
     });
   }
 }
@@ -338,11 +357,11 @@ async function loadAdminRoles() {
 async function loadAdminMedia({
   append = false,
   cursor = "",
-  sort = adminWorkZoneState.mediaSort || "newest"
+  sort = adminWorkZoneState.mediaSort || "newest",
 } = {}) {
   setAdminWorkZoneState({
     mediaIsLoading: true,
-    message: ""
+    message: "",
   });
 
   try {
@@ -355,13 +374,13 @@ async function loadAdminMedia({
     }
 
     const data = await adminApiJson(`/api/admin/media?${params}`, {
-      errorMessage: translate("admin_media_load_error")
+      errorMessage: translate("admin_media_load_error"),
     });
 
     const nextMedia = append
       ? [...adminWorkZoneState.media, ...(data.media || [])]
       : data.media || [];
-    const visibleKeys = new Set(nextMedia.map(item => item.key));
+    const visibleKeys = new Set(nextMedia.map((item) => item.key));
 
     setAdminWorkZoneState({
       media: nextMedia,
@@ -369,16 +388,17 @@ async function loadAdminMedia({
       mediaIsTruncated: Boolean(data.isTruncated),
       mediaBucket: data.bucket || "",
       mediaSort: data.sort || sort,
-      selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || [])
-        .filter(key => visibleKeys.has(key)),
-      mediaIsLoading: false
+      selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || []).filter(
+        (key) => visibleKeys.has(key),
+      ),
+      mediaIsLoading: false,
     });
     showAdminWorkZone();
   } catch (error) {
     showAdminWorkZone();
     setAdminWorkZoneState({
       mediaIsLoading: false,
-      message: error.message || translate("admin_media_load_error")
+      message: error.message || translate("admin_media_load_error"),
     });
   }
 }
@@ -387,28 +407,30 @@ async function deleteAdminMedia(mediaItem) {
   if (mediaItem.attachedPostCount) {
     showAdminActionToast(
       translate("admin_media_delete_attached_error"),
-      "error"
+      "error",
     );
     return;
   }
 
-  if (!await CMCENModal.confirm(
-    translate("admin_media_delete_confirm", {
-      key: mediaItem.key
-    }),
-    {
-      title: translate("mfa_delete"),
-      confirmText: translate("mfa_delete"),
-      destructive: true
-    }
-  )) {
+  if (
+    !(await CMCENModal.confirm(
+      translate("admin_media_delete_confirm", {
+        key: mediaItem.key,
+      }),
+      {
+        title: translate("mfa_delete"),
+        confirmText: translate("mfa_delete"),
+        destructive: true,
+      },
+    ))
+  ) {
     return;
   }
 
   setAdminWorkZoneState({
     mediaDeletingKeys: [mediaItem.key],
     mediaIsDeleting: true,
-    message: ""
+    message: "",
   });
 
   try {
@@ -416,39 +438,40 @@ async function deleteAdminMedia(mediaItem) {
       `/api/admin/media/${encodeURIComponent(mediaItem.key)}`,
       {
         method: "DELETE",
-        errorMessage: translate("admin_media_delete_error")
-      }
+        errorMessage: translate("admin_media_delete_error"),
+      },
     );
 
     await loadAdminMedia();
     setAdminWorkZoneState({
-      selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || [])
-        .filter(key => key !== mediaItem.key),
+      selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || []).filter(
+        (key) => key !== mediaItem.key,
+      ),
       mediaDeletingKeys: [],
-      mediaIsDeleting: false
+      mediaIsDeleting: false,
     });
     showAdminActionToast(
       data.message || translate("admin_media_delete_success"),
-      "success"
+      "success",
     );
   } catch (error) {
     const attachedCount = error.data?.attachedPosts?.length || 0;
     const fallback = attachedCount
       ? translate(
-        attachedCount === 1
-          ? "admin_media_delete_attached_count_singular"
-          : "admin_media_delete_attached_count_plural",
-        { count: attachedCount }
-      )
+          attachedCount === 1
+            ? "admin_media_delete_attached_count_singular"
+            : "admin_media_delete_attached_count_plural",
+          { count: attachedCount },
+        )
       : translate("admin_media_delete_error");
 
     setAdminWorkZoneState({
       mediaDeletingKeys: [],
-      mediaIsDeleting: false
+      mediaIsDeleting: false,
     });
     showAdminActionToast(
       attachedCount ? fallback : error.message || fallback,
-      "error"
+      "error",
     );
   }
 }
@@ -466,7 +489,7 @@ function toggleAdminMediaSelection(mediaItem, selected) {
   }
 
   setAdminWorkZoneState({
-    selectedMediaKeys: [...selectedKeys]
+    selectedMediaKeys: [...selectedKeys],
   });
 }
 
@@ -475,103 +498,112 @@ function selectVisibleAdminMedia() {
     selectedMediaKeys: [
       ...new Set([
         ...(adminWorkZoneState.selectedMediaKeys || []),
-        ...adminWorkZoneState.media.map(item => item.key).filter(Boolean)
-      ])
-    ]
+        ...adminWorkZoneState.media.map((item) => item.key).filter(Boolean),
+      ]),
+    ],
   });
 }
 
 function clearAdminMediaSelection() {
   setAdminWorkZoneState({
-    selectedMediaKeys: []
+    selectedMediaKeys: [],
   });
 }
 
 async function deleteSelectedAdminMedia() {
   const selectedKeys = new Set(adminWorkZoneState.selectedMediaKeys || []);
-  const selectedItems = adminWorkZoneState.media.filter(item => selectedKeys.has(item.key));
-  const removableItems = selectedItems.filter(item => !Number(item.attachedPostCount || 0));
+  const selectedItems = adminWorkZoneState.media.filter((item) =>
+    selectedKeys.has(item.key),
+  );
+  const removableItems = selectedItems.filter(
+    (item) => !Number(item.attachedPostCount || 0),
+  );
 
   if (!removableItems.length) {
     showAdminActionToast(translate("admin_media_bulk_delete_none"), "error");
     return;
   }
 
-  if (!await CMCENModal.confirm(
-    translate("admin_media_bulk_delete_confirm", {
-      count: removableItems.length
-    }),
-    {
-      title: translate("mfa_delete"),
-      confirmText: translate("mfa_delete"),
-      destructive: true
-    }
-  )) {
+  if (
+    !(await CMCENModal.confirm(
+      translate("admin_media_bulk_delete_confirm", {
+        count: removableItems.length,
+      }),
+      {
+        title: translate("mfa_delete"),
+        confirmText: translate("mfa_delete"),
+        destructive: true,
+      },
+    ))
+  ) {
     return;
   }
 
   setAdminWorkZoneState({
-    mediaDeletingKeys: removableItems.map(item => item.key),
+    mediaDeletingKeys: removableItems.map((item) => item.key),
     mediaIsDeleting: true,
-    message: ""
+    message: "",
   });
 
   try {
     const data = await adminApiJson("/api/admin/media/bulk-delete", {
       method: "POST",
       body: JSON.stringify({
-        keys: removableItems.map(item => item.key)
+        keys: removableItems.map((item) => item.key),
       }),
-      errorMessage: translate("admin_media_bulk_delete_error")
+      errorMessage: translate("admin_media_bulk_delete_error"),
     });
     const deletedKeys = new Set(data.deleted || []);
     const skippedCount = Number(data.skipped?.length || 0);
     const missingCount = Number(data.missing?.length || 0);
     const parts = [
       translate("admin_media_bulk_delete_success", {
-        count: deletedKeys.size
-      })
+        count: deletedKeys.size,
+      }),
     ];
 
     if (skippedCount) {
-      parts.push(translate("admin_media_bulk_delete_skipped", {
-        count: skippedCount
-      }));
+      parts.push(
+        translate("admin_media_bulk_delete_skipped", {
+          count: skippedCount,
+        }),
+      );
     }
 
     if (missingCount) {
-      parts.push(translate("admin_media_bulk_delete_missing", {
-        count: missingCount
-      }));
+      parts.push(
+        translate("admin_media_bulk_delete_missing", {
+          count: missingCount,
+        }),
+      );
     }
 
     await loadAdminMedia();
     setAdminWorkZoneState({
-      selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || [])
-        .filter(key => !deletedKeys.has(key)),
+      selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || []).filter(
+        (key) => !deletedKeys.has(key),
+      ),
       mediaDeletingKeys: [],
-      mediaIsDeleting: false
+      mediaIsDeleting: false,
     });
     showAdminActionToast(parts.join(" "), "success");
   } catch (error) {
     setAdminWorkZoneState({
       mediaDeletingKeys: [],
-      mediaIsDeleting: false
+      mediaIsDeleting: false,
     });
     showAdminActionToast(
       error.message || translate("admin_media_bulk_delete_error"),
-      "error"
+      "error",
     );
   }
 }
 
 function updateMediaUploadItem(id, update) {
   setAdminWorkZoneState({
-    mediaUploadQueue: adminWorkZoneState.mediaUploadQueue.map(item =>
-      item.id === id
-        ? { ...item, ...update }
-        : item
-    )
+    mediaUploadQueue: adminWorkZoneState.mediaUploadQueue.map((item) =>
+      item.id === id ? { ...item, ...update } : item,
+    ),
   });
 }
 
@@ -586,18 +618,18 @@ function uploadSingleAdminMediaFile(file, id, cdnSlug = "") {
     formData.append("cdnSlug", cdnSlug);
   }
 
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const request = new XMLHttpRequest();
 
     request.open("POST", "/api/upload");
     request.setRequestHeader("Authorization", `Bearer ${adminToken}`);
 
-    request.upload.addEventListener("progress", event => {
+    request.upload.addEventListener("progress", (event) => {
       if (!event.lengthComputable) return;
 
       updateMediaUploadItem(id, {
         status: "uploading",
-        progress: Math.round((event.loaded / event.total) * 100)
+        progress: Math.round((event.loaded / event.total) * 100),
       });
     });
 
@@ -608,7 +640,7 @@ function uploadSingleAdminMediaFile(file, id, cdnSlug = "") {
         updateMediaUploadItem(id, {
           status: "error",
           progress: 0,
-          message: data.error || "Upload failed"
+          message: data.error || "Upload failed",
         });
         resolve(null);
         return;
@@ -617,7 +649,7 @@ function uploadSingleAdminMediaFile(file, id, cdnSlug = "") {
       updateMediaUploadItem(id, {
         status: "complete",
         progress: 100,
-        message: "Uploaded"
+        message: "Uploaded",
       });
       resolve(data);
     });
@@ -626,7 +658,7 @@ function uploadSingleAdminMediaFile(file, id, cdnSlug = "") {
       updateMediaUploadItem(id, {
         status: "error",
         progress: 0,
-        message: "Upload failed"
+        message: "Upload failed",
       });
       resolve(null);
     });
@@ -636,7 +668,9 @@ function uploadSingleAdminMediaFile(file, id, cdnSlug = "") {
 }
 
 async function uploadAdminMediaFiles(files, cdnSlug = "") {
-  const imageFiles = [...(files || [])].filter(file => file.type.startsWith("image/"));
+  const imageFiles = [...(files || [])].filter((file) =>
+    file.type.startsWith("image/"),
+  );
 
   if (!imageFiles.length) {
     showAdminActionToast("Choose one or more image files to upload.", "error");
@@ -646,7 +680,10 @@ async function uploadAdminMediaFiles(files, cdnSlug = "") {
   const cleanCdnSlug = String(cdnSlug || "").trim();
 
   if (cleanCdnSlug && imageFiles.length !== 1) {
-    showAdminActionToast("Use a custom CDN slug with one image at a time.", "error");
+    showAdminActionToast(
+      "Use a custom CDN slug with one image at a time.",
+      "error",
+    );
     return;
   }
 
@@ -656,13 +693,13 @@ async function uploadAdminMediaFiles(files, cdnSlug = "") {
     size: file.size,
     status: "queued",
     progress: 0,
-    message: ""
+    message: "",
   }));
 
   setAdminWorkZoneState({
     mediaUploadQueue: uploadItems,
     mediaIsUploading: true,
-    message: ""
+    message: "",
   });
 
   const uploadConcurrency = 4;
@@ -677,12 +714,12 @@ async function uploadAdminMediaFiles(files, cdnSlug = "") {
       updateMediaUploadItem(item.id, {
         status: "uploading",
         progress: 0,
-        message: "Preparing image"
+        message: "Preparing image",
       });
       updateMediaUploadItem(item.id, {
         name: file.name,
         size: file.size,
-        message: "Processing variants"
+        message: "Processing variants",
       });
       await uploadSingleAdminMediaFile(file, item.id, cleanCdnSlug);
     }
@@ -691,25 +728,26 @@ async function uploadAdminMediaFiles(files, cdnSlug = "") {
   await Promise.all(
     Array.from(
       { length: Math.min(uploadConcurrency, uploadItems.length) },
-      () => uploadWorker()
-    )
+      () => uploadWorker(),
+    ),
   );
 
   setAdminWorkZoneState({
-    mediaIsUploading: false
+    mediaIsUploading: false,
   });
   await loadAdminMedia();
 }
 
 async function loadCurrentAdmin() {
   const user = await adminApiJson("/api/me", {
-    errorMessage: translate("admin_verify_error")
+    errorMessage: translate("admin_verify_error"),
   });
-  const requiredPermission = {
-    media: "canViewMediaLibrary",
-    roles: "canManageRoles",
-    users: "canReadUsers"
-  }[adminWorkZoneState.activeView] || "canReadUsers";
+  const requiredPermission =
+    {
+      media: "canViewMediaLibrary",
+      roles: "canManageRoles",
+      users: "canReadUsers",
+    }[adminWorkZoneState.activeView] || "canReadUsers";
 
   if (user.permissions?.[requiredPermission] !== true) {
     window.location.href = "/dashboard";
@@ -719,7 +757,7 @@ async function loadCurrentAdmin() {
   setAdminWorkZoneState({
     currentUserId: user._id || user.id || "",
     currentUserPermissions: user.permissions || {},
-    currentUserMfa: user.mfa || {}
+    currentUserMfa: user.mfa || {},
   });
 
   window.updateAdminWorkZoneTabsForUser(user);
@@ -727,9 +765,10 @@ async function loadCurrentAdmin() {
   return user;
 }
 
-async function loadAdminUserDetail(userId, {
-  restoreSearchFocus = false
-} = {}) {
+async function loadAdminUserDetail(
+  userId,
+  { restoreSearchFocus = false } = {},
+) {
   if (!userId) return;
 
   if (restoreSearchFocus) {
@@ -738,13 +777,16 @@ async function loadAdminUserDetail(userId, {
 
   setAdminWorkZoneState({
     selectedUserId: String(userId),
-    message: ""
+    message: "",
   });
 
   try {
-    const data = await adminApiJson(`/api/admin/users/${encodeURIComponent(userId)}`, {
-      errorMessage: translate("admin_users_detail_load_error")
-    });
+    const data = await adminApiJson(
+      `/api/admin/users/${encodeURIComponent(userId)}`,
+      {
+        errorMessage: translate("admin_users_detail_load_error"),
+      },
+    );
 
     if (restoreSearchFocus) {
       adminUsersView.restoreSearchFocus();
@@ -755,14 +797,16 @@ async function loadAdminUserDetail(userId, {
       posts: data.posts || [],
       roles: data.roles || adminWorkZoneState.roles,
       customRoles: data.customRoles || adminWorkZoneState.customRoles,
-      permissionCatalog: data.permissionCatalog || adminWorkZoneState.permissionCatalog,
+      permissionCatalog:
+        data.permissionCatalog || adminWorkZoneState.permissionCatalog,
       selectedRoleId:
         adminWorkZoneState.selectedRoleId &&
-        (data.customRoles || adminWorkZoneState.customRoles)
-          .some(role => String(role._id) === adminWorkZoneState.selectedRoleId)
+        (data.customRoles || adminWorkZoneState.customRoles).some(
+          (role) => String(role._id) === adminWorkZoneState.selectedRoleId,
+        )
           ? adminWorkZoneState.selectedRoleId
           : (data.customRoles || adminWorkZoneState.customRoles)[0]?._id || "",
-      contentAreas: data.contentAreas || adminWorkZoneState.contentAreas
+      contentAreas: data.contentAreas || adminWorkZoneState.contentAreas,
     });
   } catch (error) {
     if (restoreSearchFocus) {
@@ -770,37 +814,38 @@ async function loadAdminUserDetail(userId, {
     }
 
     setAdminWorkZoneState({
-      message: error.message || translate("admin_users_detail_load_error")
+      message: error.message || translate("admin_users_detail_load_error"),
     });
   }
 }
 
 async function saveAdminUser(userId, payload) {
   setAdminWorkZoneState({
-    message: ""
+    message: "",
   });
 
   try {
-    const data = await adminApiJson(`/api/admin/users/${encodeURIComponent(userId)}`, {
-      method: "PATCH",
-      body: payload,
-      errorMessage: translate("admin_users_save_error")
-    });
+    const data = await adminApiJson(
+      `/api/admin/users/${encodeURIComponent(userId)}`,
+      {
+        method: "PATCH",
+        body: payload,
+        errorMessage: translate("admin_users_save_error"),
+      },
+    );
 
     setAdminWorkZoneState({
       selectedUser: data.user,
       customRoles: data.customRoles || adminWorkZoneState.customRoles,
-      users: adminWorkZoneState.users.map(user =>
-        String(user._id) === String(data.user._id)
-          ? data.user
-          : user
-      )
+      users: adminWorkZoneState.users.map((user) =>
+        String(user._id) === String(data.user._id) ? data.user : user,
+      ),
     });
     showAdminActionToast(translate("admin_users_save_success"), "success");
   } catch (error) {
     showAdminActionToast(
       error.message || translate("admin_users_save_error"),
-      "error"
+      "error",
     );
   }
 }
@@ -809,36 +854,39 @@ async function provisionAdminUser() {
   const firstName = await CMCENModal.prompt("Enter the member's first name.", {
     title: "Create account",
     inputLabel: "First name",
-    confirmText: "Continue"
+    confirmText: "Continue",
   });
   if (!firstName) return;
 
   const lastName = await CMCENModal.prompt("Enter the member's last name.", {
     title: "Create account",
     inputLabel: "Last name",
-    confirmText: "Continue"
+    confirmText: "Continue",
   });
   if (!lastName) return;
 
-  const email = await CMCENModal.prompt("Enter the email address that will receive the activation link.", {
-    title: "Create account",
-    inputLabel: "Email address",
-    confirmText: "Send invitation"
-  });
+  const email = await CMCENModal.prompt(
+    "Enter the email address that will receive the activation link.",
+    {
+      title: "Create account",
+      inputLabel: "Email address",
+      confirmText: "Send invitation",
+    },
+  );
   if (!email) return;
 
   try {
     const data = await adminApiJson("/api/admin/users", {
       method: "POST",
       body: { firstName, lastName, email },
-      errorMessage: "Could not send invitation"
+      errorMessage: "Could not send invitation",
     });
 
     setAdminWorkZoneState({
       users: [data.user, ...adminWorkZoneState.users],
       selectedUserId: String(data.user._id),
       selectedUser: data.user,
-      posts: []
+      posts: [],
     });
     showAdminActionToast("Invitation sent", "success");
   } catch (error) {
@@ -852,7 +900,10 @@ async function exportAdminUsers(format, options = {}) {
   params.set("format", format === "pdf" ? "pdf" : "csv");
 
   params.set("includeRoles", (options.includeRoles || []).join(","));
-  params.set("includeAccountTypes", (options.includeAccountTypes || []).join(","));
+  params.set(
+    "includeAccountTypes",
+    (options.includeAccountTypes || []).join(","),
+  );
 
   setAdminWorkZoneState({ message: "" });
 
@@ -860,19 +911,19 @@ async function exportAdminUsers(format, options = {}) {
     const { blob, filename } = await adminApiBlob(
       `/api/admin/users/export?${params}`,
       {
-        errorMessage: translate("admin_users_export_error")
-      }
+        errorMessage: translate("admin_users_export_error"),
+      },
     );
 
     downloadBlob(
       blob,
-      filename || `cmcen-users.${format === "pdf" ? "pdf" : "csv"}`
+      filename || `cmcen-users.${format === "pdf" ? "pdf" : "csv"}`,
     );
     showAdminActionToast(translate("admin_users_export_success"), "success");
   } catch (error) {
     showAdminActionToast(
       error.message || translate("admin_users_export_error"),
-      "error"
+      "error",
     );
   }
 }
@@ -880,21 +931,23 @@ async function exportAdminUsers(format, options = {}) {
 async function resetAdminUserMfa(user) {
   if (!user?._id) return;
 
-  if (!await CMCENModal.confirm(
-    translate("admin_users_mfa_reset_confirm", {
-      name: CMCENUtils.getUserDisplayName(user, translate("unknown_user"))
-    }),
-    {
-      title: translate("admin_users_mfa_reset"),
-      confirmText: translate("admin_users_mfa_reset"),
-      destructive: true
-    }
-  )) {
+  if (
+    !(await CMCENModal.confirm(
+      translate("admin_users_mfa_reset_confirm", {
+        name: CMCENUtils.getUserDisplayName(user, translate("unknown_user")),
+      }),
+      {
+        title: translate("admin_users_mfa_reset"),
+        confirmText: translate("admin_users_mfa_reset"),
+        destructive: true,
+      },
+    ))
+  ) {
     return;
   }
 
   setAdminWorkZoneState({
-    message: ""
+    message: "",
   });
 
   try {
@@ -902,23 +955,23 @@ async function resetAdminUserMfa(user) {
       `/api/admin/users/${encodeURIComponent(user._id)}/mfa-reset`,
       {
         method: "PATCH",
-        errorMessage: translate("admin_users_mfa_reset_error")
-      }
+        errorMessage: translate("admin_users_mfa_reset_error"),
+      },
     );
 
     setAdminWorkZoneState({
       selectedUser: data.user,
-      users: adminWorkZoneState.users.map(existingUser =>
+      users: adminWorkZoneState.users.map((existingUser) =>
         String(existingUser._id) === String(data.user._id)
           ? data.user
-          : existingUser
-      )
+          : existingUser,
+      ),
     });
     showAdminActionToast(translate("admin_users_mfa_reset_success"), "success");
   } catch (error) {
     showAdminActionToast(
       error.message || translate("admin_users_mfa_reset_error"),
-      "error"
+      "error",
     );
   }
 }
@@ -926,16 +979,16 @@ async function resetAdminUserMfa(user) {
 async function loadCurrentAdminMfaCapabilities() {
   const [totpStatus, passkeys] = await Promise.all([
     adminApiJson("/api/mfa/totp/status", {
-      errorMessage: "Could not check authenticator status"
+      errorMessage: "Could not check authenticator status",
     }),
     adminApiJson("/api/mfa/webauthn/credentials", {
-      errorMessage: "Could not check passkey status"
-    })
+      errorMessage: "Could not check passkey status",
+    }),
   ]);
 
   const mfa = {
     hasTotp: totpStatus?.enabled === true,
-    hasPasskey: Array.isArray(passkeys) && passkeys.length > 0
+    hasPasskey: Array.isArray(passkeys) && passkeys.length > 0,
   };
 
   setAdminWorkZoneState({ currentUserMfa: mfa });
@@ -947,7 +1000,7 @@ async function deleteAdminUser(user) {
 
   const displayName = CMCENUtils.getUserDisplayName(
     user,
-    translate("unknown_user")
+    translate("unknown_user"),
   );
   const dispositionChoice = await CMCENModal.choose(
     `Choose what should happen to ${displayName}'s submitted content.`,
@@ -957,16 +1010,18 @@ async function deleteAdminUser(user) {
         {
           value: "keep_and_anonymize",
           label: "Keep content",
-          description: "Retain all submitted content without account attribution."
+          description:
+            "Retain all submitted content without account attribution.",
         },
         {
           value: "delete_all",
           label: "Delete all content",
-          description: "Permanently remove all submitted content with the account.",
-          destructive: true
-        }
-      ]
-    }
+          description:
+            "Permanently remove all submitted content with the account.",
+          destructive: true,
+        },
+      ],
+    },
   );
   const contentDisposition = dispositionChoice;
 
@@ -978,7 +1033,7 @@ async function deleteAdminUser(user) {
   } catch (error) {
     showAdminActionToast(
       error.message || "Could not check your MFA methods.",
-      "error"
+      "error",
     );
     return;
   }
@@ -987,7 +1042,10 @@ async function deleteAdminUser(user) {
   const hasPasskey = mfaCapabilities.hasPasskey;
 
   if (!hasTotp && !hasPasskey) {
-    showAdminActionToast("Set up an authenticator app or passkey before deleting an account.", "error");
+    showAdminActionToast(
+      "Set up an authenticator app or passkey before deleting an account.",
+      "error",
+    );
     return;
   }
 
@@ -1003,15 +1061,15 @@ async function deleteAdminUser(user) {
           {
             value: "totp",
             label: "Authenticator app",
-            description: "Enter a current verification code."
+            description: "Enter a current verification code.",
           },
           {
             value: "webauthn",
             label: "Passkey",
-            description: "Confirm with a registered device passkey."
-          }
-        ]
-      }
+            description: "Confirm with a registered device passkey.",
+          },
+        ],
+      },
     );
 
     if (!choice) return;
@@ -1024,8 +1082,8 @@ async function deleteAdminUser(user) {
       {
         title: "Confirm account deletion",
         inputLabel: "Authenticator code",
-        confirmText: "Delete account"
-      }
+        confirmText: "Delete account",
+      },
     );
     if (!mfaCode) return;
   }
@@ -1035,21 +1093,23 @@ async function deleteAdminUser(user) {
   try {
     if (mfaMethod === "webauthn") {
       if (!window.PublicKeyCredential) {
-        throw new Error("An authenticator code is required because passkeys are unavailable in this browser");
+        throw new Error(
+          "An authenticator code is required because passkeys are unavailable in this browser",
+        );
       }
 
       const options = CMCENUtils.preparePublicKeyRequestOptions(
         await adminApiJson("/api/mfa/webauthn/authenticate/options", {
           method: "POST",
-          errorMessage: "Could not start passkey confirmation"
-        })
+          errorMessage: "Could not start passkey confirmation",
+        }),
       );
       const assertion = await navigator.credentials.get({ publicKey: options });
 
       await adminApiJson("/api/mfa/webauthn/authenticate/verify", {
         method: "POST",
         body: CMCENUtils.serializeAssertionCredential(assertion),
-        errorMessage: "Could not verify passkey confirmation"
+        errorMessage: "Could not verify passkey confirmation",
       });
       mfaMethod = "webauthn";
     }
@@ -1059,17 +1119,17 @@ async function deleteAdminUser(user) {
       {
         method: "DELETE",
         body: { contentDisposition, mfaCode, mfaMethod },
-        errorMessage: "Could not delete account"
-      }
+        errorMessage: "Could not delete account",
+      },
     );
 
     setAdminWorkZoneState({
       selectedUserId: "",
       selectedUser: null,
       posts: [],
-      users: adminWorkZoneState.users.filter(existingUser =>
-        String(existingUser._id) !== String(user._id)
-      )
+      users: adminWorkZoneState.users.filter(
+        (existingUser) => String(existingUser._id) !== String(user._id),
+      ),
     });
     showAdminActionToast(data.message || "Account deleted", "success");
   } catch (error) {
@@ -1079,48 +1139,48 @@ async function deleteAdminUser(user) {
 
 function selectAdminRole(roleId) {
   setAdminWorkZoneState({
-    selectedRoleId: String(roleId || "")
+    selectedRoleId: String(roleId || ""),
   });
 }
 
 function syncAssignedCustomRoles(users, customRoles) {
   const rolesById = new Map(
-    (customRoles || []).map(role => [String(role._id), role])
+    (customRoles || []).map((role) => [String(role._id), role]),
   );
 
-  return (users || []).map(user => ({
+  return (users || []).map((user) => ({
     ...user,
     customRoles: (user.customRoleIds || [])
-      .map(roleId => rolesById.get(String(roleId)))
-      .filter(Boolean)
+      .map((roleId) => rolesById.get(String(roleId)))
+      .filter(Boolean),
   }));
 }
 
 async function createAdminRole(payload) {
   setAdminWorkZoneState({
-    message: ""
+    message: "",
   });
 
   try {
     const data = await adminApiJson("/api/admin/roles", {
       method: "POST",
       body: payload,
-      errorMessage: "Could not create role"
+      errorMessage: "Could not create role",
     });
 
     setAdminWorkZoneState({
       customRoles: data.roles || adminWorkZoneState.customRoles,
       users: syncAssignedCustomRoles(
         adminWorkZoneState.users,
-        data.roles || adminWorkZoneState.customRoles
+        data.roles || adminWorkZoneState.customRoles,
       ),
       selectedUser: adminWorkZoneState.selectedUser
         ? syncAssignedCustomRoles(
-          [adminWorkZoneState.selectedUser],
-          data.roles || adminWorkZoneState.customRoles
-        )[0]
+            [adminWorkZoneState.selectedUser],
+            data.roles || adminWorkZoneState.customRoles,
+          )[0]
         : null,
-      selectedRoleId: data.role?._id || adminWorkZoneState.selectedRoleId
+      selectedRoleId: data.role?._id || adminWorkZoneState.selectedRoleId,
     });
     showAdminActionToast(data.message || "Role created", "success");
   } catch (error) {
@@ -1132,29 +1192,32 @@ async function saveAdminRole(roleId, payload) {
   if (!roleId) return;
 
   setAdminWorkZoneState({
-    message: ""
+    message: "",
   });
 
   try {
-    const data = await adminApiJson(`/api/admin/roles/${encodeURIComponent(roleId)}`, {
-      method: "PATCH",
-      body: payload,
-      errorMessage: "Could not save role"
-    });
+    const data = await adminApiJson(
+      `/api/admin/roles/${encodeURIComponent(roleId)}`,
+      {
+        method: "PATCH",
+        body: payload,
+        errorMessage: "Could not save role",
+      },
+    );
 
     setAdminWorkZoneState({
       customRoles: data.roles || adminWorkZoneState.customRoles,
       users: syncAssignedCustomRoles(
         adminWorkZoneState.users,
-        data.roles || adminWorkZoneState.customRoles
+        data.roles || adminWorkZoneState.customRoles,
       ),
       selectedUser: adminWorkZoneState.selectedUser
         ? syncAssignedCustomRoles(
-          [adminWorkZoneState.selectedUser],
-          data.roles || adminWorkZoneState.customRoles
-        )[0]
+            [adminWorkZoneState.selectedUser],
+            data.roles || adminWorkZoneState.customRoles,
+          )[0]
         : null,
-      selectedRoleId: data.role?._id || roleId
+      selectedRoleId: data.role?._id || roleId,
     });
     showAdminActionToast(data.message || "Role updated", "success");
   } catch (error) {
@@ -1165,52 +1228,61 @@ async function saveAdminRole(roleId, payload) {
 async function deleteAdminRole(role) {
   if (!role?._id) return;
 
-  if (!await CMCENModal.confirm(
-    `Delete role "${role.name}"? It will be removed from every assigned member.`,
-    {
-      title: translate("mfa_delete"),
-      confirmText: translate("mfa_delete"),
-      destructive: true
-    }
-  )) {
+  if (
+    !(await CMCENModal.confirm(
+      `Delete role "${role.name}"? It will be removed from every assigned member.`,
+      {
+        title: translate("mfa_delete"),
+        confirmText: translate("mfa_delete"),
+        destructive: true,
+      },
+    ))
+  ) {
     return;
   }
 
   setAdminWorkZoneState({
-    message: ""
+    message: "",
   });
 
   try {
-    const data = await adminApiJson(`/api/admin/roles/${encodeURIComponent(role._id)}`, {
-      method: "DELETE",
-      errorMessage: "Could not delete role"
-    });
+    const data = await adminApiJson(
+      `/api/admin/roles/${encodeURIComponent(role._id)}`,
+      {
+        method: "DELETE",
+        errorMessage: "Could not delete role",
+      },
+    );
     const nextRoles = data.roles || [];
 
     setAdminWorkZoneState({
       customRoles: nextRoles,
       selectedRoleId: nextRoles[0]?._id || "",
-      users: adminWorkZoneState.users.map(user => ({
+      users: adminWorkZoneState.users.map((user) => ({
         ...user,
         customRoles: (user.customRoles || []).filter(
-          assignedRole => String(assignedRole._id) !== String(role._id)
+          (assignedRole) => String(assignedRole._id) !== String(role._id),
         ),
         customRoleIds: (user.customRoleIds || []).filter(
-          assignedRoleId => String(assignedRoleId) !== String(role._id)
-        )
+          (assignedRoleId) => String(assignedRoleId) !== String(role._id),
+        ),
       })),
       selectedUser: adminWorkZoneState.selectedUser
         ? {
-          ...adminWorkZoneState.selectedUser,
-          customRoles: (adminWorkZoneState.selectedUser.customRoles || []).filter(
-            assignedRole => String(assignedRole._id) !== String(role._id)
-          ),
-          customRoleIds: (adminWorkZoneState.selectedUser.customRoleIds || []).filter(
-            assignedRoleId => String(assignedRoleId) !== String(role._id)
-          )
-        }
+            ...adminWorkZoneState.selectedUser,
+            customRoles: (
+              adminWorkZoneState.selectedUser.customRoles || []
+            ).filter(
+              (assignedRole) => String(assignedRole._id) !== String(role._id),
+            ),
+            customRoleIds: (
+              adminWorkZoneState.selectedUser.customRoleIds || []
+            ).filter(
+              (assignedRoleId) => String(assignedRoleId) !== String(role._id),
+            ),
+          }
         : null,
-      message: ""
+      message: "",
     });
     showAdminActionToast(data.message || "Role deleted", "success");
   } catch (error) {
@@ -1221,28 +1293,32 @@ async function deleteAdminRole(role) {
 async function promoteAdminUserToDeveloper(user) {
   const displayName = CMCENUtils.getUserDisplayName(
     user,
-    translate("unknown_user")
+    translate("unknown_user"),
   );
 
-  if (!await CMCENModal.confirm(
-    translate("admin_users_promote_confirm", {
-      name: displayName
-    }),
-    {
-      title: translate("admin_users_promote_developer"),
-      confirmText: translate("modal_confirm")
-    }
-  )) {
+  if (
+    !(await CMCENModal.confirm(
+      translate("admin_users_promote_confirm", {
+        name: displayName,
+      }),
+      {
+        title: translate("admin_users_promote_developer"),
+        confirmText: translate("modal_confirm"),
+      },
+    ))
+  ) {
     return;
   }
 
-  if (!await CMCENModal.confirm(
-    translate("admin_users_promote_access_confirm"),
-    {
-      title: translate("admin_users_promote_developer"),
-      confirmText: translate("modal_confirm")
-    }
-  )) {
+  if (
+    !(await CMCENModal.confirm(
+      translate("admin_users_promote_access_confirm"),
+      {
+        title: translate("admin_users_promote_developer"),
+        confirmText: translate("modal_confirm"),
+      },
+    ))
+  ) {
     return;
   }
 
@@ -1251,8 +1327,8 @@ async function promoteAdminUserToDeveloper(user) {
     {
       title: translate("admin_users_promote_developer"),
       inputLabel: "DEVELOPER",
-      confirmText: translate("modal_confirm")
-    }
+      confirmText: translate("modal_confirm"),
+    },
   );
 
   if (confirmation !== "DEVELOPER") {
@@ -1260,7 +1336,7 @@ async function promoteAdminUserToDeveloper(user) {
   }
 
   setAdminWorkZoneState({
-    message: ""
+    message: "",
   });
 
   try {
@@ -1270,25 +1346,25 @@ async function promoteAdminUserToDeveloper(user) {
         method: "PATCH",
         body: {
           confirmed: true,
-          confirmation
+          confirmation,
         },
-        errorMessage: translate("admin_users_promote_error")
-      }
+        errorMessage: translate("admin_users_promote_error"),
+      },
     );
 
     setAdminWorkZoneState({
       selectedUser: data.user,
-      users: adminWorkZoneState.users.map(existingUser =>
+      users: adminWorkZoneState.users.map((existingUser) =>
         String(existingUser._id) === String(data.user._id)
           ? data.user
-          : existingUser
-      )
+          : existingUser,
+      ),
     });
     showAdminActionToast(translate("admin_users_promote_success"), "success");
   } catch (error) {
     showAdminActionToast(
       error.message || translate("admin_users_promote_error"),
-      "error"
+      "error",
     );
   }
 }
@@ -1323,46 +1399,48 @@ async function deleteAdminPost(post) {
     return;
   }
 
-  if (!await CMCENModal.confirm(
-    translate("admin_content_delete_confirm", {
-      title: post.title || translate("admin_content_this_item")
-    }),
-    {
-      title: translate("mfa_delete"),
-      confirmText: translate("mfa_delete"),
-      destructive: true
-    }
-  )) {
+  if (
+    !(await CMCENModal.confirm(
+      translate("admin_content_delete_confirm", {
+        title: post.title || translate("admin_content_this_item"),
+      }),
+      {
+        title: translate("mfa_delete"),
+        confirmText: translate("mfa_delete"),
+        destructive: true,
+      },
+    ))
+  ) {
     return;
   }
 
   setAdminWorkZoneState({
-    message: ""
+    message: "",
   });
 
   try {
     const data = await adminApiJson(endpoint, {
       method: "DELETE",
-      errorMessage: translate("admin_content_delete_error")
+      errorMessage: translate("admin_content_delete_error"),
     });
 
     setAdminWorkZoneState({
       posts: adminWorkZoneState.posts.filter(
-        item => String(item._id) !== String(post._id)
-      )
+        (item) => String(item._id) !== String(post._id),
+      ),
     });
     showAdminActionToast(
       data.message || translate("admin_content_delete_success"),
-      "success"
+      "success",
     );
 
     await loadAdminUsers({
-      preserveSelection: true
+      preserveSelection: true,
     });
   } catch (error) {
     showAdminActionToast(
       error.message || translate("admin_content_delete_error"),
-      "error"
+      "error",
     );
   }
 }
@@ -1393,7 +1471,10 @@ async function initializeAdminUsersPage() {
       await loadAdminUsers();
     }
   } catch (error) {
-    setAdminStatus(error.message || translate("admin_work_zone_load_error"), "error");
+    setAdminStatus(
+      error.message || translate("admin_work_zone_load_error"),
+      "error",
+    );
   }
 }
 

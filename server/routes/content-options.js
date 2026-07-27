@@ -2,7 +2,7 @@ const express = require('express');
 const {
   ACCOUNT_TRADE_OPTIONS,
   RETIREMENT_TRADE_ROLE_GROUPS,
-  RETIREMENT_TRADE_ROLES
+  RETIREMENT_TRADE_ROLES,
 } = require('../config/content');
 
 const router = express.Router();
@@ -13,8 +13,9 @@ function serializeForScript(value) {
 
 function createTradeOptionsRuntime() {
   const accountTradeOptions = serializeForScript(ACCOUNT_TRADE_OPTIONS);
-  const retirementTradeRoleGroups =
-    serializeForScript(RETIREMENT_TRADE_ROLE_GROUPS);
+  const retirementTradeRoleGroups = serializeForScript(
+    RETIREMENT_TRADE_ROLE_GROUPS,
+  );
   const retirementTradeRoles = serializeForScript(RETIREMENT_TRADE_ROLES);
 
   return `"use strict";
@@ -103,7 +104,7 @@ router.get('/api/content-options', (req, res) => {
   res.json({
     accountTradeOptions: ACCOUNT_TRADE_OPTIONS,
     retirementTradeRoleGroups: RETIREMENT_TRADE_ROLE_GROUPS,
-    retirementTradeRoles: RETIREMENT_TRADE_ROLES
+    retirementTradeRoles: RETIREMENT_TRADE_ROLES,
   });
 });
 

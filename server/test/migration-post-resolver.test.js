@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const {
   resolveCollectionWithFallback,
   resolveCollectionWithFinalFallback,
-  resolvePostWithFallback
+  resolvePostWithFallback,
 } = require('../scripts/migration/lib/post-resolver');
 
 test('falls back to the legacy page when the WordPress REST lookup returns 403', async () => {
@@ -17,7 +17,7 @@ test('falls back to the legacy page when the WordPress REST lookup returns 403',
       throw restFailure;
     },
     fetchPage: async () => fallbackPost,
-    onRestError: error => errors.push(error)
+    onRestError: (error) => errors.push(error),
   });
 
   assert.equal(post, fallbackPost);
@@ -35,7 +35,7 @@ test('skips one legacy post when both REST and page lookups fail', async () => {
     fetchPage: async () => {
       throw pageFailure;
     },
-    onPageError: error => pageErrors.push(error)
+    onPageError: (error) => pageErrors.push(error),
   });
 
   assert.equal(post, null);
@@ -53,7 +53,7 @@ test('falls back to the category scan when the Last Post archive returns 403', a
       throw archiveFailure;
     },
     fetchFallback: async () => categoryPosts,
-    onPrimaryError: error => errors.push(error)
+    onPrimaryError: (error) => errors.push(error),
   });
 
   assert.equal(result.usedFallback, true);
@@ -78,8 +78,8 @@ test('falls back to the category page scrape when archive and category REST fail
       throw categoryFailure;
     },
     fetchFinalFallback: async () => categoryPagePosts,
-    onPrimaryError: error => primaryErrors.push(error),
-    onFallbackError: error => fallbackErrors.push(error)
+    onPrimaryError: (error) => primaryErrors.push(error),
+    onFallbackError: (error) => fallbackErrors.push(error),
   });
 
   assert.equal(result.usedFallback, true);

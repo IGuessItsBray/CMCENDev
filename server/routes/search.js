@@ -15,26 +15,26 @@ const STATIC_PAGES = [
     path: '/index',
     file: 'index.html',
     type: 'page',
-    title: 'CMCEN / RCMCE'
+    title: 'CMCEN / RCMCE',
   },
   {
     path: '/about-family',
     file: 'about-family.html',
     type: 'page',
-    title: 'About the C&E Family'
+    title: 'About the C&E Family',
   },
   {
     path: '/calendar',
     file: 'calendar.html',
     type: 'page',
-    title: 'Events Calendar'
+    title: 'Events Calendar',
   },
   {
     path: '/submit-retirement',
     file: 'submit-retirement.html',
     type: 'page',
-    title: 'Submit a Retirement Message'
-  }
+    title: 'Submit a Retirement Message',
+  },
 ];
 
 function cleanQuery(value) {
@@ -52,7 +52,7 @@ function getQueryTerms(query) {
   return query
     .toLowerCase()
     .split(' ')
-    .map(term => term.trim())
+    .map((term) => term.trim())
     .filter(Boolean);
 }
 
@@ -60,9 +60,7 @@ function getLocalizedText(value, language) {
   if (!value) return '';
 
   const preferred =
-    typeof value[language] === 'string'
-      ? value[language].trim()
-      : '';
+    typeof value[language] === 'string' ? value[language].trim() : '';
 
   if (preferred) return preferred;
 
@@ -101,10 +99,7 @@ function stripHtml(value) {
 }
 
 function scoreText(queryTerms, fields) {
-  const haystack = fields
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+  const haystack = fields.filter(Boolean).join(' ').toLowerCase();
 
   if (!haystack) return 0;
 
@@ -146,25 +141,27 @@ async function searchEvents(query, queryTerms, language) {
     'city',
     'provinceRegion',
     'organizingEntity',
-    'eventType'
+    'eventType',
   ];
 
-  const andClauses = queryTerms.map(term => {
+  const andClauses = queryTerms.map((term) => {
     const regex = new RegExp(escapeRegex(term), 'i');
-    return { $or: fields.map(f => ({ [f]: regex })) };
+    return { $or: fields.map((f) => ({ [f]: regex })) };
   });
 
   const events = await Event.find({
     status: 'published',
     // require each search term to match at least one of the fields
-    $and: andClauses
+    $and: andClauses,
   })
-    .select('title description location city provinceRegion organizingEntity eventType startDate createdAt')
+    .select(
+      'title description location city provinceRegion organizingEntity eventType startDate createdAt',
+    )
     .sort({ startDate: 1 })
     .limit(MAX_RESULTS_PER_SOURCE)
     .lean();
 
-  return events.map(event => {
+  return events.map((event) => {
     const title = getLocalizedText(event.title, language) || 'Event';
     const description = getLocalizedText(event.description, language);
     const location = getLocalizedText(event.location, language);
@@ -175,8 +172,10 @@ async function searchEvents(query, queryTerms, language) {
         event.city,
         event.provinceRegion,
         event.organizingEntity,
-        event.eventType
-      ].filter(Boolean).join(' ')
+        event.eventType,
+      ]
+        .filter(Boolean)
+        .join(' '),
     );
 
     return {
@@ -192,8 +191,8 @@ async function searchEvents(query, queryTerms, language) {
         event.city,
         event.provinceRegion,
         event.organizingEntity,
-        event.eventType
-      ])
+        event.eventType,
+      ]),
     };
   });
 }
@@ -209,44 +208,43 @@ async function searchRetirementMessages(query, queryTerms) {
     'messages.en',
     'messages.fr',
     'message',
-    'submitter.unit'
+    'submitter.unit',
   ];
 
-  const andClauses = queryTerms.map(term => {
+  const andClauses = queryTerms.map((term) => {
     const regex = new RegExp(escapeRegex(term), 'i');
-    return { $or: fields.map(f => ({ [f]: regex })) };
+    return { $or: fields.map((f) => ({ [f]: regex })) };
   });
 
   const messages = await RetirementMessage.find({
     status: 'published',
     // require each search term to match at least one of the fields
-    $and: andClauses
+    $and: andClauses,
   })
     .select('retiree message messageLanguage messages publishedAt createdAt')
     .sort({ publishedAt: -1, createdAt: -1 })
     .limit(MAX_RESULTS_PER_SOURCE)
     .lean();
 
-  return messages.map(message => {
+  return messages.map((message) => {
     const retireeNameBase = [
       message.retiree?.rank,
       message.retiree?.firstName,
-      message.retiree?.lastName
-    ].filter(Boolean).join(' ');
+      message.retiree?.lastName,
+    ]
+      .filter(Boolean)
+      .join(' ');
 
-    const retireeName = [
-      retireeNameBase,
-      message.retiree?.postNominals
-    ].filter(Boolean).join(', ');
+    const retireeName = [retireeNameBase, message.retiree?.postNominals]
+      .filter(Boolean)
+      .join(', ');
 
     const title = retireeName
       ? `Retirement message for ${retireeName}`
       : 'Retirement message';
 
     const messageText =
-      message.messages?.en ||
-      message.messages?.fr ||
-      message.message;
+      message.messages?.en || message.messages?.fr || message.message;
 
     const summary = truncate(messageText);
 
@@ -263,19 +261,19 @@ async function searchRetirementMessages(query, queryTerms) {
         message.messages?.en,
         message.messages?.fr,
         message.retiree?.tradeRole,
-        message.retiree?.postNominals
-      ])
+        message.retiree?.postNominals,
+      ]),
     };
   });
 }
 
 async function searchStaticPages(queryTerms) {
   const pages = await Promise.all(
-    STATIC_PAGES.map(async page => {
+    STATIC_PAGES.map(async (page) => {
       try {
         const html = await fs.readFile(
           path.join(PUBLIC_DIR, page.file),
-          'utf8'
+          'utf8',
         );
         const text = normalizeText(stripHtml(html));
         const score = scoreText(queryTerms, [page.title, text]);
@@ -291,13 +289,13 @@ async function searchStaticPages(queryTerms) {
           summary: truncate(text),
           url: page.path,
           date: null,
-          score
+          score,
         };
       } catch (error) {
         console.error(`Could not search static page ${page.file}:`, error);
         return null;
       }
-    })
+    }),
   );
 
   return pages.filter(Boolean).slice(0, MAX_RESULTS_PER_SOURCE);
@@ -314,7 +312,7 @@ router.get('/', async (req, res) => {
       return res.json({
         query,
         total: 0,
-        results: []
+        results: [],
       });
     }
 
@@ -322,25 +320,21 @@ router.get('/', async (req, res) => {
     const [events, retirementMessages, pages] = await Promise.all([
       searchEvents(query, queryTerms, language),
       searchRetirementMessages(query, queryTerms),
-      searchStaticPages(queryTerms)
+      searchStaticPages(queryTerms),
     ]);
 
-    const results = sortResults([
-      ...events,
-      ...retirementMessages,
-      ...pages
-    ]);
+    const results = sortResults([...events, ...retirementMessages, ...pages]);
 
     res.json({
       query,
       total: results.length,
-      results
+      results,
     });
   } catch (error) {
     console.error('Search failed:', error);
 
     res.status(500).json({
-      error: 'Could not complete search'
+      error: 'Could not complete search',
     });
   }
 });

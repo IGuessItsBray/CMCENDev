@@ -1,18 +1,23 @@
 const reviewQueue = document.getElementById("reviewQueue");
 const reviewPageMessage = document.getElementById("reviewPageMessage");
 const retirementReviewQueue = document.getElementById("retirementReviewQueue");
-const retirementReviewPageMessage =
-  document.getElementById("retirementReviewPageMessage");
+const retirementReviewPageMessage = document.getElementById(
+  "retirementReviewPageMessage",
+);
 const lastPostReviewQueue = document.getElementById("lastPostReviewQueue");
-const lastPostReviewPageMessage =
-  document.getElementById("lastPostReviewPageMessage");
+const lastPostReviewPageMessage = document.getElementById(
+  "lastPostReviewPageMessage",
+);
 const commentReviewQueue = document.getElementById("commentReviewQueue");
-const commentReviewPageMessage =
-  document.getElementById("commentReviewPageMessage");
+const commentReviewPageMessage = document.getElementById(
+  "commentReviewPageMessage",
+);
 const reviewTabs = document.querySelectorAll("[data-review-tab]");
 const reviewPanels = document.querySelectorAll("[data-review-panel]");
 const reviewTabNames = ["events", "retirements", "last-posts", "comments"];
-const requestedReviewTab = new URLSearchParams(window.location.search).get("tab");
+const requestedReviewTab = new URLSearchParams(window.location.search).get(
+  "tab",
+);
 
 let pendingEvents = [];
 let pendingRetirementMessages = [];
@@ -53,7 +58,7 @@ async function reviewApiJson(path, options = {}) {
       ...options,
       token,
       redirectOnUnauthorized: true,
-      unauthorizedMessage: translate("sign_in_to_continue")
+      unauthorizedMessage: translate("sign_in_to_continue"),
     });
   } catch (error) {
     if (error.status === 403) {
@@ -82,7 +87,7 @@ function getDisplayTitle(event) {
 function formatSubmittedDate(dateValue) {
   return CMCENUtils.formatDate(dateValue, {
     locale: getReviewLocale(),
-    timeStyle: "short"
+    timeStyle: "short",
   });
 }
 
@@ -91,29 +96,21 @@ function formatContentArea(value) {
 }
 
 const timezoneTranslationKeys = {
-  "America/St_Johns":
-    "timezone_newfoundland",
+  "America/St_Johns": "timezone_newfoundland",
 
-  "America/Halifax":
-    "timezone_atlantic",
+  "America/Halifax": "timezone_atlantic",
 
-  "America/Toronto":
-    "timezone_eastern",
+  "America/Toronto": "timezone_eastern",
 
-  "America/Winnipeg":
-    "timezone_central",
+  "America/Winnipeg": "timezone_central",
 
-  "America/Edmonton":
-    "timezone_mountain",
+  "America/Edmonton": "timezone_mountain",
 
-  "America/Vancouver":
-    "timezone_pacific",
+  "America/Vancouver": "timezone_pacific",
 
-  "America/Regina":
-    "timezone_central",
+  "America/Regina": "timezone_central",
 
-  "America/Whitehorse":
-    "timezone_mountain"
+  "America/Whitehorse": "timezone_mountain",
 };
 
 function formatTranslatedOption(prefix, value) {
@@ -121,9 +118,7 @@ function formatTranslatedOption(prefix, value) {
     return "—";
   }
 
-  const normalizedValue = String(value)
-    .toLowerCase()
-    .replace(/-/g, "_");
+  const normalizedValue = String(value).toLowerCase().replace(/-/g, "_");
 
   const key = `${prefix}_${normalizedValue}`;
 
@@ -196,42 +191,33 @@ function formatReviewUser(user) {
 
 function formatRetireeName(retirementMessage) {
   const { name, postNominals } = CMCENUtils.getRetireeNameParts(
-    retirementMessage?.retiree
+    retirementMessage?.retiree,
   );
 
-  return [
-    name,
-    postNominals
-  ]
-    .filter(Boolean)
-    .join(", ") ||
-    translate("retirement_review_untitled");
+  return (
+    [name, postNominals].filter(Boolean).join(", ") ||
+    translate("retirement_review_untitled")
+  );
 }
 
 function formatLastPostName(lastPost) {
   const deceased = lastPost?.deceased || {};
-  const name = [
-    deceased.fullRank,
-    deceased.firstName,
-    deceased.surname
-  ]
-    .map(value => String(value || "").trim())
+  const name = [deceased.fullRank, deceased.firstName, deceased.surname]
+    .map((value) => String(value || "").trim())
     .filter(Boolean)
     .join(" ");
 
-  return [name, deceased.postNominal]
-    .filter(Boolean)
-    .join(", ") ||
-    translate("last_post_default_name");
+  return (
+    [name, deceased.postNominal].filter(Boolean).join(", ") ||
+    translate("last_post_default_name")
+  );
 }
 
 function formatCommentAuthor(comment) {
   const author = comment.author || {};
 
   return (
-    [author.firstName, author.lastName]
-      .filter(Boolean)
-      .join(" ") ||
+    [author.firstName, author.lastName].filter(Boolean).join(" ") ||
     author.accountName ||
     author.username ||
     author.email ||
@@ -244,7 +230,7 @@ function formatDateOnly(dateValue) {
     locale: getReviewLocale(),
     dateStyle: "long",
     timeZone: "UTC",
-    fallback: "—"
+    fallback: "—",
   });
 }
 
@@ -283,7 +269,7 @@ function configureTwoStepDecision({
   rejectConfirmationKey,
   confirmPublishLabelKey = "confirm_publish_submission",
   confirmRejectLabelKey = "confirm_reject_submission",
-  submit
+  submit,
 }) {
   const decisionPrompt = document.createElement("p");
   decisionPrompt.className = "review-decision-prompt";
@@ -318,9 +304,7 @@ function configureTwoStepDecision({
     pendingAction = action;
     setTranslatedText(
       decisionPrompt,
-      action === "publish"
-        ? publishConfirmationKey
-        : rejectConfirmationKey
+      action === "publish" ? publishConfirmationKey : rejectConfirmationKey,
     );
     decisionPrompt.hidden = false;
     rejectionField.hidden = action !== "reject";
@@ -356,7 +340,7 @@ function configureTwoStepDecision({
     decisionPrompt,
     rejectionField,
     actionMessage,
-    actions
+    actions,
   );
 }
 
@@ -370,7 +354,7 @@ function createReviewRecordSection(titleKey, items, additionalClass = "") {
   const grid = document.createElement("div");
   grid.className = "review-record-data";
 
-  items.forEach(item => {
+  items.forEach((item) => {
     const record = document.createElement("div");
 
     record.className = "review-record-item";
@@ -389,9 +373,7 @@ function createReviewRecordSection(titleKey, items, additionalClass = "") {
     value.className = "review-record-value";
 
     if (item.valueClass) {
-      value.classList.add(
-        item.valueClass
-      );
+      value.classList.add(item.valueClass);
     }
 
     value.textContent = item.value || "—";
@@ -445,13 +427,19 @@ function createContentSection(event, language, heading) {
   titleLabel.className = "review-content-label";
   setTranslatedText(titleLabel, "review_title_label");
 
-  const title = createContentValue("review-event-title-value", getContentValue(event.title, language));
+  const title = createContentValue(
+    "review-event-title-value",
+    getContentValue(event.title, language),
+  );
 
   const locationLabel = document.createElement("span");
   locationLabel.className = "review-content-label";
   setTranslatedText(locationLabel, "event_location_label");
 
-  const location = createContentValue("review-event-location", getContentValue(event.location, language));
+  const location = createContentValue(
+    "review-event-location",
+    getContentValue(event.location, language),
+  );
 
   const descriptionLabel = document.createElement("span");
   descriptionLabel.className = "review-content-label";
@@ -459,10 +447,7 @@ function createContentSection(event, language, heading) {
 
   const description = createContentValue(
     "review-event-description",
-    getContentValue(
-      event.description,
-      language
-    )
+    getContentValue(event.description, language),
   );
 
   const registrationLabel = document.createElement("span");
@@ -471,7 +456,8 @@ function createContentSection(event, language, heading) {
 
   const registration = document.createElement("p");
   registration.className = "review-event-registration";
-  registration.textContent = getContentValue(event.registration, language) || "—";
+  registration.textContent =
+    getContentValue(event.registration, language) || "—";
 
   body.append(
     titleLabel,
@@ -481,7 +467,7 @@ function createContentSection(event, language, heading) {
     descriptionLabel,
     description,
     registrationLabel,
-    registration
+    registration,
   );
 
   section.append(header, body);
@@ -513,244 +499,185 @@ function createReviewCard(event) {
   status.className = "review-status-badge";
   setTranslatedText(status, "review_status_pending");
 
-  cardHeader.append(
-    headingCopy,
-    status
+  cardHeader.append(headingCopy, status);
+
+  const eventInformation = createReviewRecordSection(
+    "review_event_information",
+    [
+      {
+        labelKey: "event_city",
+        value: event.city,
+      },
+
+      {
+        labelKey: "event_province_region",
+
+        value: formatTranslatedOption("region", event.provinceRegion),
+      },
+
+      {
+        labelKey: "event_organizing_entity",
+
+        value: formatTranslatedOption("entity", event.organizingEntity),
+      },
+
+      {
+        labelKey: "event_type",
+
+        value:
+          formatTranslatedOption(
+            "event_type",
+            event.eventType
+          )
+      },
+
+      {
+        labelKey: "event_start_date",
+
+        value:
+          formatEventReviewDate(
+            event,
+            event.startDate
+          )
+      },
+
+      {
+        labelKey: "event_start_time",
+
+        value:
+          formatEventReviewTime(
+            event,
+            event.startDate
+          )
+      },
+
+      {
+        labelKey: "event_end_date",
+
+        value:
+          formatEventReviewDate(
+            event,
+            event.endDate
+          )
+      },
+
+      {
+        labelKey: "event_end_time",
+
+        value:
+          formatEventReviewTime(
+            event,
+            event.endDate
+          )
+      },
+
+      {
+        labelKey: "event_timezone",
+
+        value: formatEventTimezone(event.timezone),
+      },
+    ],
+    "review-event-information",
   );
-
-  const eventInformation =
-    createReviewRecordSection(
-      "review_event_information",
-      [
-        {
-          labelKey: "event_city",
-          value: event.city
-        },
-
-        {
-          labelKey:
-            "event_province_region",
-
-          value:
-            formatTranslatedOption(
-              "region",
-              event.provinceRegion
-            )
-        },
-
-        {
-          labelKey:
-            "event_organizing_entity",
-
-          value:
-            formatTranslatedOption(
-              "entity",
-              event.organizingEntity
-            )
-        },
-
-        {
-          labelKey: "event_type",
-
-          value:
-            formatTranslatedOption(
-              "event_type",
-              event.eventType
-            )
-        },
-
-        {
-          labelKey: "event_start_date",
-
-          value:
-            formatEventReviewDate(
-              event,
-              event.startDate
-            )
-        },
-
-        {
-          labelKey: "event_start_time",
-
-          value:
-            formatEventReviewTime(
-              event,
-              event.startDate
-            )
-        },
-
-        {
-          labelKey: "event_end_date",
-
-          value:
-            formatEventReviewDate(
-              event,
-              event.endDate
-            )
-        },
-
-        {
-          labelKey: "event_end_time",
-
-          value:
-            formatEventReviewTime(
-              event,
-              event.endDate
-            )
-        },
-
-        {
-          labelKey: "event_timezone",
-
-          value:
-            formatEventTimezone(
-              event.timezone
-            )
-        }
-      ],
-      "review-event-information"
-    );
 
   const languages = document.createElement("div");
   languages.className = "review-language-grid";
   languages.append(
-    createContentSection(
-      event,
-      "en",
-      "English"
-    ),
-    createContentSection(
-      event,
-      "fr",
-      "Français"
-    )
+    createContentSection(event, "en", "English"),
+    createContentSection(event, "fr", "Français"),
   );
 
-  const submitterInformation =
-    createReviewRecordSection(
-      "review_submitter_record",
-      [
-        {
-          labelKey:
-            "event_submitter_rank",
+  const submitterInformation = createReviewRecordSection(
+    "review_submitter_record",
+    [
+      {
+        labelKey: "event_submitter_rank",
 
-          value:
-            event.submitter?.rank
-        },
+        value: event.submitter?.rank,
+      },
 
-        {
-          labelKey:
-            "event_submitter_first_name",
+      {
+        labelKey: "event_submitter_first_name",
 
-          value:
-            event.submitter?.firstName
-        },
+        value: event.submitter?.firstName,
+      },
 
-        {
-          labelKey:
-            "event_submitter_last_name",
+      {
+        labelKey: "event_submitter_last_name",
 
-          value:
-            event.submitter?.lastName
-        },
+        value: event.submitter?.lastName,
+      },
 
-        {
-          labelKey:
-            "event_submitter_unit_role",
+      {
+        labelKey: "event_submitter_unit_role",
 
-          value:
-            event.submitter?.unitRole,
+        value: event.submitter?.unitRole,
 
-          wide: true
-        },
+        wide: true,
+      },
 
-        {
-          labelKey:
-            "event_submitter_email",
+      {
+        labelKey: "event_submitter_email",
 
-          value:
-            event.submitter?.email,
+        value: event.submitter?.email,
 
-          wide: true
-        },
+        wide: true,
+      },
 
-        {
-          labelKey:
-            "event_submitter_phone",
+      {
+        labelKey: "event_submitter_phone",
 
-          value:
-            event.submitter?.phone || "—",
+        value: event.submitter?.phone || "—",
 
-          wide: true
-        }
-      ]
-    );
+        wide: true,
+      },
+    ],
+  );
 
-  const permissionConfirmed =
-    event.publicationPermission
-      ?.confirmed === true;
+  const permissionConfirmed = event.publicationPermission?.confirmed === true;
 
-  const authorizationInformation =
-    createReviewRecordSection(
-      "review_authorization_record",
-      [
-        {
-          labelKey:
-            "review_permission_status",
+  const authorizationInformation = createReviewRecordSection(
+    "review_authorization_record",
+    [
+      {
+        labelKey: "review_permission_status",
 
-          value: translate(
-            permissionConfirmed
-              ? "review_permission_confirmed"
-              : "review_permission_not_recorded"
-          ),
+        value: translate(
+          permissionConfirmed
+            ? "review_permission_confirmed"
+            : "review_permission_not_recorded",
+        ),
 
-          valueClass:
-            permissionConfirmed
-              ? "is-confirmed"
-              : "is-unconfirmed"
-        },
+        valueClass: permissionConfirmed ? "is-confirmed" : "is-unconfirmed",
+      },
 
-        {
-          labelKey:
-            "review_confirmed_by",
+      {
+        labelKey: "review_confirmed_by",
 
-          value:
-            formatReviewUser(
-              event.publicationPermission
-                ?.confirmedBy
-            ),
+        value: formatReviewUser(event.publicationPermission?.confirmedBy),
 
-          wide: true
-        },
+        wide: true,
+      },
 
-        {
-          labelKey:
-            "review_confirmed_on",
+      {
+        labelKey: "review_confirmed_on",
 
-          value:
-            event.publicationPermission
-              ?.confirmedAt
-              ? formatSubmittedDate(
-                event.publicationPermission
-                  .confirmedAt
-              )
-              : "—",
+        value: event.publicationPermission?.confirmedAt
+          ? formatSubmittedDate(event.publicationPermission.confirmedAt)
+          : "—",
 
-          wide: true
-        }
-      ]
-    );
+        wide: true,
+      },
+    ],
+  );
 
   const submissionRecord = document.createElement("div");
   submissionRecord.className = "review-submission-record";
-  submissionRecord.append(
-    submitterInformation,
-    authorizationInformation
-  );
+  submissionRecord.append(submitterInformation, authorizationInformation);
 
   const submissionDetails = createSubmissionDetails(
     submissionRecord,
-    "review_submission_details"
+    "review_submission_details",
   );
 
   const decision = document.createElement("section");
@@ -765,82 +692,56 @@ function createReviewCard(event) {
   const decisionHelp = document.createElement("p");
   setTranslatedText(decisionHelp, "rejection_reason_help");
 
-  decisionCopy.append(
-    decisionHeading,
-    decisionHelp
-  );
+  decisionCopy.append(decisionHeading, decisionHelp);
 
-  const rejectionField =
-    document.createElement("div");
+  const rejectionField = document.createElement("div");
 
-  rejectionField.className =
-    "review-rejection-field";
+  rejectionField.className = "review-rejection-field";
 
-  const rejectionLabel =
-    document.createElement("label");
+  const rejectionLabel = document.createElement("label");
 
   setTranslatedText(rejectionLabel, "rejection_reason_label");
 
-  const rejectionReason =
-    document.createElement("textarea");
+  const rejectionReason = document.createElement("textarea");
 
-  rejectionReason.className =
-    "review-rejection-reason";
+  rejectionReason.className = "review-rejection-reason";
 
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
 
-  setTranslatedPlaceholder(
-    rejectionReason,
-    "rejection_reason_placeholder"
-  );
+  setTranslatedPlaceholder(rejectionReason, "rejection_reason_placeholder");
 
-  rejectionLabel.htmlFor =
-    `rejection-${event._id}`;
+  rejectionLabel.htmlFor = `rejection-${event._id}`;
 
-  rejectionReason.id =
-    `rejection-${event._id}`;
+  rejectionReason.id = `rejection-${event._id}`;
 
-  rejectionField.append(
-    rejectionLabel,
-    rejectionReason
-  );
+  rejectionField.append(rejectionLabel, rejectionReason);
 
-  const actionMessage =
-    document.createElement("p");
+  const actionMessage = document.createElement("p");
 
-  actionMessage.className =
-    "review-action-message";
+  actionMessage.className = "review-action-message";
 
-  actionMessage.setAttribute(
-    "role",
-    "alert"
-  );
+  actionMessage.setAttribute("role", "alert");
 
   actionMessage.hidden = true;
 
-  const actions =
-    document.createElement("div");
+  const actions = document.createElement("div");
 
   actions.className = "review-actions review-event-actions";
 
-  const publishButton =
-    document.createElement("button");
+  const publishButton = document.createElement("button");
 
   publishButton.type = "button";
 
-  publishButton.className =
-    "review-publish-button";
+  publishButton.className = "review-publish-button";
 
   setTranslatedText(publishButton, "publish_event");
 
-  const rejectButton =
-    document.createElement("button");
+  const rejectButton = document.createElement("button");
 
   rejectButton.type = "button";
 
-  rejectButton.className =
-    "review-reject-button";
+  rejectButton.className = "review-reject-button";
 
   setTranslatedText(rejectButton, "reject_event");
 
@@ -860,7 +761,7 @@ function createReviewCard(event) {
     confirmRejectLabelKey: "confirm_reject_event",
     submit(action) {
       submitReview(event._id, action, article);
-    }
+    },
   });
 
   article.append(
@@ -868,7 +769,7 @@ function createReviewCard(event) {
     eventInformation,
     languages,
     submissionDetails,
-    decision
+    decision,
   );
 
   return article;
@@ -879,7 +780,7 @@ function createRetirementMessageFields(retirementMessage) {
   grid.className =
     "review-language-grid retirement-review-language-grid retirement-review-message-fields";
 
-  ["en", "fr"].forEach(languageCode => {
+  ["en", "fr"].forEach((languageCode) => {
     const panel = document.createElement("section");
     panel.className = "review-language-panel";
 
@@ -894,7 +795,7 @@ function createRetirementMessageFields(retirementMessage) {
     title.textContent = translate(
       languageCode === "en"
         ? "retirement_review_english_message"
-        : "retirement_review_french_message"
+        : "retirement_review_french_message",
     );
 
     panelHeading.append(code, title);
@@ -904,28 +805,22 @@ function createRetirementMessageFields(retirementMessage) {
 
     const label = document.createElement("label");
     label.className = "review-content-label";
-    label.htmlFor =
-      `retirementMessage${retirementMessage._id}${languageCode}`;
+    label.htmlFor = `retirementMessage${retirementMessage._id}${languageCode}`;
     label.textContent = translate("retirement_message_text");
 
     const textarea = document.createElement("textarea");
-    textarea.id =
-      `retirementMessage${retirementMessage._id}${languageCode}`;
-    textarea.className =
-      "retirement-review-message-input";
-    textarea.dataset.retirementMessageLanguage =
-      languageCode;
+    textarea.id = `retirementMessage${retirementMessage._id}${languageCode}`;
+    textarea.className = "retirement-review-message-input";
+    textarea.dataset.retirementMessageLanguage = languageCode;
     textarea.rows = 9;
     textarea.minLength = 100;
     textarea.maxLength = 10000;
     textarea.required = true;
     textarea.value =
       retirementMessage.messages?.[languageCode] ||
-      (
-        retirementMessage.messageLanguage === languageCode
-          ? retirementMessage.message
-          : ""
-      ) ||
+      (retirementMessage.messageLanguage === languageCode
+        ? retirementMessage.message
+        : "") ||
       "";
 
     const hint = document.createElement("small");
@@ -933,14 +828,14 @@ function createRetirementMessageFields(retirementMessage) {
     hint.textContent = translate(
       textarea.value.trim().length >= 100
         ? "retirement_review_translation_ready"
-        : "retirement_review_translation_missing"
+        : "retirement_review_translation_missing",
     );
 
     textarea.addEventListener("input", () => {
       hint.textContent = translate(
         textarea.value.trim().length >= 100
           ? "retirement_review_translation_ready"
-          : "retirement_review_translation_missing"
+          : "retirement_review_translation_missing",
       );
     });
 
@@ -958,12 +853,10 @@ function createRetirementPhotoSection(retirementMessage) {
   }
 
   const section = document.createElement("section");
-  section.className =
-    "review-record-section retirement-review-photo-section";
+  section.className = "review-record-section retirement-review-photo-section";
 
   const heading = document.createElement("h3");
-  heading.textContent =
-    translate("retirement_review_photo_record");
+  heading.textContent = translate("retirement_review_photo_record");
 
   const link = document.createElement("a");
   link.className = "retirement-review-photo-link";
@@ -974,7 +867,7 @@ function createRetirementPhotoSection(retirementMessage) {
   const image = document.createElement("img");
   image.src = retirementMessage.photoUrl;
   image.alt = translate("retirement_review_photo_alt", {
-    name: formatRetireeName(retirementMessage)
+    name: formatRetireeName(retirementMessage),
   });
   image.loading = "lazy";
 
@@ -990,8 +883,7 @@ function createRetirementPhotoSection(retirementMessage) {
 function createRetirementReviewCard(retirementMessage) {
   const article = document.createElement("article");
   article.className = "review-event-card";
-  article.dataset.retirementMessageId =
-    retirementMessage._id;
+  article.dataset.retirementMessageId = retirementMessage._id;
 
   const cardHeader = document.createElement("header");
   cardHeader.className = "review-event-card-header";
@@ -1000,12 +892,10 @@ function createRetirementReviewCard(retirementMessage) {
   headingCopy.className = "review-event-card-heading";
 
   const eyebrow = document.createElement("p");
-  eyebrow.textContent =
-    translate("retirement_review_pending_submission");
+  eyebrow.textContent = translate("retirement_review_pending_submission");
 
   const title = document.createElement("h2");
-  title.textContent =
-    formatRetireeName(retirementMessage);
+  title.textContent = formatRetireeName(retirementMessage);
 
   headingCopy.append(eyebrow, title);
 
@@ -1013,173 +903,142 @@ function createRetirementReviewCard(retirementMessage) {
   status.className = "review-status-badge";
   status.textContent = translate("review_status_pending");
 
-  cardHeader.append(
-    headingCopy,
-    status
+  cardHeader.append(headingCopy, status);
+
+  const retireeInformation = createReviewRecordSection(
+    "retirement_review_retiree_record",
+    [
+      {
+        labelKey: "retirement_rank",
+        value: retirementMessage.retiree?.rank,
+      },
+
+      {
+        labelKey: "retirement_first_name",
+        value: retirementMessage.retiree?.firstName,
+      },
+
+      {
+        labelKey: "retirement_last_name",
+        value: retirementMessage.retiree?.lastName,
+      },
+
+      {
+        labelKey: "retirement_post_nominals",
+        value: retirementMessage.retiree?.postNominals,
+      },
+
+      {
+        labelKey: "retirement_date",
+        value: formatDateOnly(retirementMessage.retiree?.retirementDate),
+      },
+
+      {
+        labelKey: "retirement_trade_role",
+        value: retirementMessage.retiree?.tradeRole,
+        wide: true,
+      },
+    ],
+    "review-event-information",
   );
 
-  const retireeInformation =
-    createReviewRecordSection(
-      "retirement_review_retiree_record",
-      [
-        {
-          labelKey: "retirement_rank",
-          value: retirementMessage.retiree?.rank
-        },
+  const messageFields = createRetirementMessageFields(retirementMessage);
 
-        {
-          labelKey: "retirement_first_name",
-          value: retirementMessage.retiree?.firstName
-        },
+  const submitterInformation = createReviewRecordSection(
+    "review_submitter_record",
+    [
+      {
+        labelKey: "retirement_submitter_first_name",
+        value: retirementMessage.submitter?.firstName,
+      },
 
-        {
-          labelKey: "retirement_last_name",
-          value: retirementMessage.retiree?.lastName
-        },
+      {
+        labelKey: "retirement_submitter_last_name",
+        value: retirementMessage.submitter?.lastName,
+      },
 
-        {
-          labelKey: "retirement_post_nominals",
-          value: retirementMessage.retiree?.postNominals
-        },
+      {
+        labelKey: "retirement_submitter_relationship",
+        value: formatTranslatedOption(
+          "relationship",
+          retirementMessage.submitter?.relationship,
+        ),
+      },
 
-        {
-          labelKey: "retirement_date",
-          value: formatDateOnly(
-            retirementMessage.retiree?.retirementDate
-          )
-        },
+      {
+        labelKey: "retirement_submitter_email",
+        value: retirementMessage.submitter?.email,
+        wide: true,
+      },
 
-        {
-          labelKey: "retirement_trade_role",
-          value: retirementMessage.retiree?.tradeRole,
-          wide: true
-        }
-      ],
-      "review-event-information"
-    );
-
-  const messageFields = createRetirementMessageFields(
-    retirementMessage
+      {
+        labelKey: "retirement_submitter_unit",
+        value: retirementMessage.submitter?.unit,
+        wide: true,
+      },
+    ],
   );
-
-  const submitterInformation =
-    createReviewRecordSection(
-      "review_submitter_record",
-      [
-        {
-          labelKey: "retirement_submitter_first_name",
-          value: retirementMessage.submitter?.firstName
-        },
-
-        {
-          labelKey: "retirement_submitter_last_name",
-          value: retirementMessage.submitter?.lastName
-        },
-
-        {
-          labelKey: "retirement_submitter_relationship",
-          value:
-            formatTranslatedOption(
-              "relationship",
-              retirementMessage.submitter?.relationship
-            )
-        },
-
-        {
-          labelKey: "retirement_submitter_email",
-          value: retirementMessage.submitter?.email,
-          wide: true
-        },
-
-        {
-          labelKey: "retirement_submitter_unit",
-          value: retirementMessage.submitter?.unit,
-          wide: true
-        }
-      ]
-    );
 
   const consentConfirmed =
-    retirementMessage.publicationConsent
-      ?.confirmed === true;
+    retirementMessage.publicationConsent?.confirmed === true;
 
   const memberReviewConfirmed =
-    retirementMessage.memberReviewConfirmation
-      ?.confirmed === true;
+    retirementMessage.memberReviewConfirmation?.confirmed === true;
 
-  const authorizationInformation =
-    createReviewRecordSection(
-      "review_authorization_record",
-      [
-        {
-          labelKey: "retirement_member_review_status",
-          value: translate(
-            memberReviewConfirmed
-              ? "review_permission_confirmed"
-              : "review_permission_not_recorded"
-          ),
-          valueClass:
-            memberReviewConfirmed
-              ? "is-confirmed"
-              : "is-unconfirmed"
-        },
+  const authorizationInformation = createReviewRecordSection(
+    "review_authorization_record",
+    [
+      {
+        labelKey: "retirement_member_review_status",
+        value: translate(
+          memberReviewConfirmed
+            ? "review_permission_confirmed"
+            : "review_permission_not_recorded",
+        ),
+        valueClass: memberReviewConfirmed ? "is-confirmed" : "is-unconfirmed",
+      },
 
-        {
-          labelKey: "review_confirmed_on",
-          value:
-            retirementMessage.memberReviewConfirmation
-              ?.confirmedAt
-              ? formatSubmittedDate(
-                retirementMessage
-                  .memberReviewConfirmation
-                  .confirmedAt
-              )
-              : "—"
-        },
+      {
+        labelKey: "review_confirmed_on",
+        value: retirementMessage.memberReviewConfirmation?.confirmedAt
+          ? formatSubmittedDate(
+            retirementMessage.memberReviewConfirmation.confirmedAt,
+          )
+          : "—",
+      },
 
-        {
-          labelKey: "retirement_publication_ack_status",
-          value: translate(
-            consentConfirmed
-              ? "review_permission_confirmed"
-              : "review_permission_not_recorded"
-          ),
-          valueClass:
-            consentConfirmed
-              ? "is-confirmed"
-              : "is-unconfirmed"
-        },
+      {
+        labelKey: "retirement_publication_ack_status",
+        value: translate(
+          consentConfirmed
+            ? "review_permission_confirmed"
+            : "review_permission_not_recorded",
+        ),
+        valueClass: consentConfirmed ? "is-confirmed" : "is-unconfirmed",
+      },
 
-        {
-          labelKey: "review_confirmed_on",
-          value:
-            retirementMessage.publicationConsent
-              ?.confirmedAt
-              ? formatSubmittedDate(
-                retirementMessage
-                  .publicationConsent
-                  .confirmedAt
-              )
-              : "—",
-          wide: true
-        }
-      ]
-    );
+      {
+        labelKey: "review_confirmed_on",
+        value: retirementMessage.publicationConsent?.confirmedAt
+          ? formatSubmittedDate(
+            retirementMessage.publicationConsent.confirmedAt,
+          )
+          : "—",
+        wide: true,
+      },
+    ],
+  );
 
   const submissionRecord = document.createElement("div");
   submissionRecord.className = "review-submission-record";
-  submissionRecord.append(
-    submitterInformation,
-    authorizationInformation
-  );
+  submissionRecord.append(submitterInformation, authorizationInformation);
 
   const submissionDetails = createSubmissionDetails(
     submissionRecord,
-    "review_submission_details"
+    "review_submission_details",
   );
 
-  const photoSection =
-    createRetirementPhotoSection(retirementMessage);
+  const photoSection = createRetirementPhotoSection(retirementMessage);
 
   const decision = document.createElement("section");
   decision.className = "review-decision";
@@ -1191,90 +1050,55 @@ function createRetirementReviewCard(retirementMessage) {
   setTranslatedText(decisionHeading, "review_decision");
 
   const decisionHelp = document.createElement("p");
-  setTranslatedText(
-    decisionHelp,
-    "retirement_rejection_reason_help"
-  );
+  setTranslatedText(decisionHelp, "retirement_rejection_reason_help");
 
-  decisionCopy.append(
-    decisionHeading,
-    decisionHelp
-  );
+  decisionCopy.append(decisionHeading, decisionHelp);
 
-  const rejectionField =
-    document.createElement("div");
+  const rejectionField = document.createElement("div");
 
-  rejectionField.className =
-    "review-rejection-field";
+  rejectionField.className = "review-rejection-field";
 
-  const rejectionLabel =
-    document.createElement("label");
+  const rejectionLabel = document.createElement("label");
 
   setTranslatedText(rejectionLabel, "rejection_reason_label");
 
-  const rejectionReason =
-    document.createElement("textarea");
+  const rejectionReason = document.createElement("textarea");
 
-  rejectionReason.className =
-    "review-rejection-reason";
+  rejectionReason.className = "review-rejection-reason";
 
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
-  setTranslatedPlaceholder(
-    rejectionReason,
-    "rejection_reason_placeholder"
-  );
+  setTranslatedPlaceholder(rejectionReason, "rejection_reason_placeholder");
 
-  rejectionLabel.htmlFor =
-    `retirement-rejection-${retirementMessage._id}`;
+  rejectionLabel.htmlFor = `retirement-rejection-${retirementMessage._id}`;
 
-  rejectionReason.id =
-    `retirement-rejection-${retirementMessage._id}`;
+  rejectionReason.id = `retirement-rejection-${retirementMessage._id}`;
 
-  rejectionField.append(
-    rejectionLabel,
-    rejectionReason
-  );
+  rejectionField.append(rejectionLabel, rejectionReason);
 
-  const actionMessage =
-    document.createElement("p");
+  const actionMessage = document.createElement("p");
 
-  actionMessage.className =
-    "review-action-message";
+  actionMessage.className = "review-action-message";
 
-  actionMessage.setAttribute(
-    "role",
-    "alert"
-  );
+  actionMessage.setAttribute("role", "alert");
 
   actionMessage.hidden = true;
 
-  const actions =
-    document.createElement("div");
+  const actions = document.createElement("div");
 
   actions.className = "review-actions";
 
-  const publishButton =
-    document.createElement("button");
+  const publishButton = document.createElement("button");
 
   publishButton.type = "button";
-  publishButton.className =
-    "review-publish-button";
-  setTranslatedText(
-    publishButton,
-    "publish_retirement_message"
-  );
+  publishButton.className = "review-publish-button";
+  setTranslatedText(publishButton, "publish_retirement_message");
 
-  const rejectButton =
-    document.createElement("button");
+  const rejectButton = document.createElement("button");
 
   rejectButton.type = "button";
-  rejectButton.className =
-    "review-reject-button";
-  setTranslatedText(
-    rejectButton,
-    "reject_retirement_message"
-  );
+  rejectButton.className = "review-reject-button";
+  setTranslatedText(rejectButton, "reject_retirement_message");
 
   configureTwoStepDecision({
     decision,
@@ -1289,28 +1113,17 @@ function createRetirementReviewCard(retirementMessage) {
     publishConfirmationKey: "review_publish_confirmation",
     rejectConfirmationKey: "review_reject_confirmation",
     submit(action) {
-      submitRetirementReview(
-        retirementMessage._id,
-        action,
-        article
-      );
-    }
+      submitRetirementReview(retirementMessage._id, action, article);
+    },
   });
 
-  article.append(
-    cardHeader,
-    retireeInformation,
-    messageFields
-  );
+  article.append(cardHeader, retireeInformation, messageFields);
 
   if (photoSection) {
     article.append(photoSection);
   }
 
-  article.append(
-    submissionDetails,
-    decision
-  );
+  article.append(submissionDetails, decision);
 
   return article;
 }
@@ -1319,7 +1132,7 @@ function createLastPostMessageSection(lastPost) {
   const grid = document.createElement("div");
   grid.className = "review-language-grid";
 
-  ["en", "fr"].forEach(languageCode => {
+  ["en", "fr"].forEach((languageCode) => {
     const panel = document.createElement("section");
     panel.className = "review-language-panel";
 
@@ -1334,7 +1147,7 @@ function createLastPostMessageSection(lastPost) {
     title.textContent = translate(
       languageCode === "en"
         ? "last_post_review_english_notice"
-        : "last_post_review_french_notice"
+        : "last_post_review_french_notice",
     );
     panelHeading.append(code, title);
 
@@ -1361,7 +1174,7 @@ function createLastPostMessageSection(lastPost) {
       hint.textContent = translate(
         textarea.value.trim()
           ? "last_post_review_translation_ready"
-          : "last_post_review_translation_missing"
+          : "last_post_review_translation_missing",
       );
     };
     textarea.addEventListener("input", updateHint);
@@ -1393,7 +1206,7 @@ function createLastPostImageSection(lastPost) {
   const image = document.createElement("img");
   image.src = lastPost.imageUrl;
   image.alt = translate("last_post_image_alt", {
-    name: formatLastPostName(lastPost)
+    name: formatLastPostName(lastPost),
   });
   image.loading = "lazy";
 
@@ -1431,9 +1244,12 @@ function createLastPostReviewCard(lastPost) {
       { labelKey: "last_post_full_rank", value: lastPost.deceased?.fullRank },
       { labelKey: "last_post_first_name", value: lastPost.deceased?.firstName },
       { labelKey: "last_post_surname", value: lastPost.deceased?.surname },
-      { labelKey: "last_post_post_nominal", value: lastPost.deceased?.postNominal }
+      {
+        labelKey: "last_post_post_nominal",
+        value: lastPost.deceased?.postNominal,
+      },
     ],
-    "review-event-information"
+    "review-event-information",
   );
 
   const submitterInformation = createReviewRecordSection(
@@ -1442,8 +1258,8 @@ function createLastPostReviewCard(lastPost) {
       { labelKey: "rank", value: lastPost.submitter?.rank },
       { labelKey: "first_name", value: lastPost.submitter?.firstName },
       { labelKey: "last_name", value: lastPost.submitter?.lastName },
-      { labelKey: "email", value: lastPost.submitter?.email, wide: true }
-    ]
+      { labelKey: "email", value: lastPost.submitter?.email, wide: true },
+    ],
   );
 
   const submissionRecord = document.createElement("div");
@@ -1452,7 +1268,7 @@ function createLastPostReviewCard(lastPost) {
 
   const submissionDetails = createSubmissionDetails(
     submissionRecord,
-    "review_submitter_details"
+    "review_submitter_details",
   );
 
   const imageSection = createLastPostImageSection(lastPost);
@@ -1463,10 +1279,7 @@ function createLastPostReviewCard(lastPost) {
   const decisionHeading = document.createElement("h3");
   setTranslatedText(decisionHeading, "review_decision");
   const decisionHelp = document.createElement("p");
-  setTranslatedText(
-    decisionHelp,
-    "last_post_rejection_reason_help"
-  );
+  setTranslatedText(decisionHelp, "last_post_rejection_reason_help");
   decisionCopy.append(decisionHeading, decisionHelp);
 
   const rejectionField = document.createElement("div");
@@ -1479,10 +1292,7 @@ function createLastPostReviewCard(lastPost) {
   rejectionReason.className = "review-rejection-reason";
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
-  setTranslatedPlaceholder(
-    rejectionReason,
-    "rejection_reason_placeholder"
-  );
+  setTranslatedPlaceholder(rejectionReason, "rejection_reason_placeholder");
   rejectionField.append(rejectionLabel, rejectionReason);
 
   const actionMessage = document.createElement("p");
@@ -1515,10 +1325,14 @@ function createLastPostReviewCard(lastPost) {
     rejectConfirmationKey: "review_reject_confirmation",
     submit(action) {
       submitLastPostReview(lastPost._id, action, article);
-    }
+    },
   });
 
-  article.append(cardHeader, deceasedInformation, createLastPostMessageSection(lastPost));
+  article.append(
+    cardHeader,
+    deceasedInformation,
+    createLastPostMessageSection(lastPost),
+  );
   if (imageSection) article.append(imageSection);
   article.append(submissionDetails, decision);
   return article;
@@ -1536,12 +1350,10 @@ function createCommentReviewCard(comment) {
   headingCopy.className = "review-event-card-heading";
 
   const eyebrow = document.createElement("p");
-  eyebrow.textContent =
-    translate("comment_review_pending_submission");
+  eyebrow.textContent = translate("comment_review_pending_submission");
 
   const title = document.createElement("h2");
-  title.textContent =
-    formatRetireeName(comment.retirementMessage);
+  title.textContent = formatRetireeName(comment.retirementMessage);
 
   headingCopy.append(eyebrow, title);
 
@@ -1549,36 +1361,27 @@ function createCommentReviewCard(comment) {
   status.className = "review-status-badge";
   status.textContent = translate("review_status_pending");
 
-  cardHeader.append(
-    headingCopy,
-    status
-  );
+  cardHeader.append(headingCopy, status);
 
   const commentSection = document.createElement("section");
   commentSection.className =
     "review-record-section comment-review-comment-section";
 
   const commentHeading = document.createElement("h3");
-  commentHeading.textContent =
-    translate("comment_review_comment_record");
+  commentHeading.textContent = translate("comment_review_comment_record");
 
   const commentBody = document.createElement("p");
-  commentBody.className =
-    "review-event-description comment-review-body";
+  commentBody.className = "review-event-description comment-review-body";
   commentBody.textContent = comment.body || "—";
 
-  commentSection.append(
-    commentHeading,
-    commentBody
-  );
+  commentSection.append(commentHeading, commentBody);
 
   const relatedSection = document.createElement("section");
   relatedSection.className =
     "review-record-section comment-review-related-section";
 
   const relatedHeading = document.createElement("h3");
-  relatedHeading.textContent =
-    translate("comment_review_related_record");
+  relatedHeading.textContent = translate("comment_review_related_record");
 
   const relatedData = document.createElement("div");
   relatedData.className = "review-record-data";
@@ -1588,52 +1391,42 @@ function createCommentReviewCard(comment) {
 
   const relatedLabel = document.createElement("span");
   relatedLabel.className = "review-record-label";
-  relatedLabel.textContent =
-    translate("comment_review_retiree_label");
+  relatedLabel.textContent = translate("comment_review_retiree_label");
 
   const relatedLink = document.createElement("a");
-  relatedLink.className =
-    "review-record-value comment-review-related-link";
+  relatedLink.className = "review-record-value comment-review-related-link";
 
   if (comment.retirementMessage?._id) {
-    relatedLink.href =
-      `/retirement-message?id=${encodeURIComponent(
-        comment.retirementMessage._id
-      )}`;
+    relatedLink.href = `/retirement-message?id=${encodeURIComponent(
+      comment.retirementMessage._id,
+    )}`;
   }
 
-  relatedLink.textContent =
-    formatRetireeName(comment.retirementMessage);
+  relatedLink.textContent = formatRetireeName(comment.retirementMessage);
 
-  relatedItem.append(
-    relatedLabel,
-    relatedLink
-  );
+  relatedItem.append(relatedLabel, relatedLink);
 
   relatedData.appendChild(relatedItem);
-  relatedSection.append(
-    relatedHeading,
-    relatedData
-  );
+  relatedSection.append(relatedHeading, relatedData);
 
   const submitterInformation = createReviewRecordSection(
     "review_submitter_record",
     [
       {
         labelKey: "submitted_by",
-        value: formatCommentAuthor(comment)
+        value: formatCommentAuthor(comment),
       },
       {
         labelKey: "email",
         value: comment.author?.email,
-        wide: true
+        wide: true,
       },
       {
         labelKey: "submitted_on",
         value: formatSubmittedDate(comment.createdAt),
-        wide: true
-      }
-    ]
+        wide: true,
+      },
+    ],
   );
 
   const submissionRecord = document.createElement("div");
@@ -1642,7 +1435,7 @@ function createCommentReviewCard(comment) {
 
   const submissionDetails = createSubmissionDetails(
     submissionRecord,
-    "review_submitter_details"
+    "review_submitter_details",
   );
 
   const decision = document.createElement("section");
@@ -1655,15 +1448,9 @@ function createCommentReviewCard(comment) {
   setTranslatedText(decisionHeading, "review_decision");
 
   const decisionHelp = document.createElement("p");
-  setTranslatedText(
-    decisionHelp,
-    "comment_rejection_reason_help"
-  );
+  setTranslatedText(decisionHelp, "comment_rejection_reason_help");
 
-  decisionCopy.append(
-    decisionHeading,
-    decisionHelp
-  );
+  decisionCopy.append(decisionHeading, decisionHelp);
 
   const rejectionField = document.createElement("div");
   rejectionField.className = "review-rejection-field";
@@ -1675,20 +1462,12 @@ function createCommentReviewCard(comment) {
   rejectionReason.className = "review-rejection-reason";
   rejectionReason.rows = 3;
   rejectionReason.maxLength = 2000;
-  setTranslatedPlaceholder(
-    rejectionReason,
-    "rejection_reason_placeholder"
-  );
+  setTranslatedPlaceholder(rejectionReason, "rejection_reason_placeholder");
 
-  rejectionLabel.htmlFor =
-    `comment-rejection-${comment._id}`;
-  rejectionReason.id =
-    `comment-rejection-${comment._id}`;
+  rejectionLabel.htmlFor = `comment-rejection-${comment._id}`;
+  rejectionReason.id = `comment-rejection-${comment._id}`;
 
-  rejectionField.append(
-    rejectionLabel,
-    rejectionReason
-  );
+  rejectionField.append(rejectionLabel, rejectionReason);
 
   const actionMessage = document.createElement("p");
   actionMessage.className = "review-action-message";
@@ -1722,7 +1501,7 @@ function createCommentReviewCard(comment) {
     rejectConfirmationKey: "review_reject_confirmation",
     submit(action) {
       submitCommentReview(comment._id, action, article);
-    }
+    },
   });
 
   article.append(
@@ -1730,7 +1509,7 @@ function createCommentReviewCard(comment) {
     commentSection,
     relatedSection,
     submissionDetails,
-    decision
+    decision,
   );
 
   return article;
@@ -1739,13 +1518,11 @@ function createCommentReviewCard(comment) {
 function showPageMessage(
   message,
   type = "neutral",
-  messageElement = reviewPageMessage
+  messageElement = reviewPageMessage,
 ) {
-  messageElement.textContent =
-    message;
+  messageElement.textContent = message;
 
-  messageElement.className =
-    `review-page-message is-${type}`;
+  messageElement.className = `review-page-message is-${type}`;
   messageElement.removeAttribute("aria-label");
 
   messageElement.hidden = false;
@@ -1754,14 +1531,13 @@ function showPageMessage(
 function showQueueLoading(
   messageKey,
   messageElement = reviewPageMessage,
-  queueElement = reviewQueue
+  queueElement = reviewQueue,
 ) {
   const message = translate(messageKey);
   const loading = CMCENUtils.createLoadingSpinner(message);
 
   messageElement.replaceChildren(...Array.from(loading.childNodes));
-  messageElement.className =
-    "review-page-message is-loading";
+  messageElement.className = "review-page-message is-loading";
   messageElement.setAttribute("aria-label", message);
   messageElement.hidden = false;
   queueElement.hidden = true;
@@ -1771,7 +1547,7 @@ function showNotice(message, type = "success") {
   CMCENUtils.showToast(message, {
     color: type === "success" ? "success" : type === "error" ? "error" : "info",
     position: "bottom-right",
-    animation: "slide"
+    animation: "slide",
   });
 }
 
@@ -1788,10 +1564,8 @@ function renderReviewQueue() {
   reviewPageMessage.hidden = true;
   reviewQueue.hidden = false;
 
-  pendingEvents.forEach(event => {
-    reviewQueue.appendChild(
-      createReviewCard(event)
-    );
+  pendingEvents.forEach((event) => {
+    reviewQueue.appendChild(createReviewCard(event));
   });
 }
 
@@ -1803,7 +1577,7 @@ function renderRetirementReviewQueue() {
     showPageMessage(
       translate("no_pending_retirement_messages"),
       "empty",
-      retirementReviewPageMessage
+      retirementReviewPageMessage,
     );
 
     return;
@@ -1812,9 +1586,9 @@ function renderRetirementReviewQueue() {
   retirementReviewPageMessage.hidden = true;
   retirementReviewQueue.hidden = false;
 
-  pendingRetirementMessages.forEach(retirementMessage => {
+  pendingRetirementMessages.forEach((retirementMessage) => {
     retirementReviewQueue.appendChild(
-      createRetirementReviewCard(retirementMessage)
+      createRetirementReviewCard(retirementMessage),
     );
   });
 }
@@ -1827,7 +1601,7 @@ function renderLastPostReviewQueue() {
     showPageMessage(
       translate("no_pending_last_posts"),
       "empty",
-      lastPostReviewPageMessage
+      lastPostReviewPageMessage,
     );
     return;
   }
@@ -1835,10 +1609,8 @@ function renderLastPostReviewQueue() {
   lastPostReviewPageMessage.hidden = true;
   lastPostReviewQueue.hidden = false;
 
-  pendingLastPosts.forEach(lastPost => {
-    lastPostReviewQueue.appendChild(
-      createLastPostReviewCard(lastPost)
-    );
+  pendingLastPosts.forEach((lastPost) => {
+    lastPostReviewQueue.appendChild(createLastPostReviewCard(lastPost));
   });
 }
 
@@ -1850,7 +1622,7 @@ function renderCommentReviewQueue() {
     showPageMessage(
       translate("no_pending_retirement_comments"),
       "empty",
-      commentReviewPageMessage
+      commentReviewPageMessage,
     );
 
     return;
@@ -1859,10 +1631,8 @@ function renderCommentReviewQueue() {
   commentReviewPageMessage.hidden = true;
   commentReviewQueue.hidden = false;
 
-  pendingComments.forEach(comment => {
-    commentReviewQueue.appendChild(
-      createCommentReviewCard(comment)
-    );
+  pendingComments.forEach((comment) => {
+    commentReviewQueue.appendChild(createCommentReviewCard(comment));
   });
 }
 
@@ -1872,7 +1642,7 @@ function createReviewActionContext(card) {
     buttons: card.querySelectorAll("button"),
     publishButton: card.querySelector(".review-publish-button"),
     rejectButton: card.querySelector(".review-reject-button"),
-    reasonInput: card.querySelector(".review-rejection-reason")
+    reasonInput: card.querySelector(".review-rejection-reason"),
   };
 
   return context;
@@ -1893,26 +1663,23 @@ async function performReviewAction({
   publishLabelKey,
   rejectLabelKey,
   onSuccess,
-  renderQueue
+  renderQueue,
 }) {
-  context.buttons.forEach(button => {
+  context.buttons.forEach((button) => {
     button.disabled = true;
   });
 
-  const activeButton = action === "publish"
-    ? context.publishButton
-    : context.rejectButton;
+  const activeButton =
+    action === "publish" ? context.publishButton : context.rejectButton;
   activeButton.textContent = translate(
-    action === "publish"
-      ? "review_publishing"
-      : "review_rejecting"
+    action === "publish" ? "review_publishing" : "review_rejecting",
   );
 
   try {
     await reviewApiJson(path, {
       method: "PATCH",
       body,
-      errorMessage
+      errorMessage,
     });
 
     onSuccess();
@@ -1927,7 +1694,7 @@ async function performReviewAction({
   } catch (error) {
     showNotice(error.message || errorMessage, "error");
 
-    context.buttons.forEach(button => {
+    context.buttons.forEach((button) => {
       button.disabled = false;
     });
 
@@ -1944,7 +1711,7 @@ async function submitReview(eventId, action, card) {
     showReviewValidationError(
       context,
       translate("rejection_reason_required"),
-      context.reasonInput
+      context.reasonInput,
     );
     return;
   }
@@ -1955,47 +1722,40 @@ async function submitReview(eventId, action, card) {
     path: `/api/events/${eventId}/review`,
     body: {
       action,
-      rejectionReason:
-        action === "reject"
-          ? rejectionReason
-          : undefined
+      rejectionReason: action === "reject" ? rejectionReason : undefined,
     },
     errorMessage: translate("review_failed"),
     successMessageKey:
-      action === "publish"
-        ? "review_publish_success"
-        : "review_reject_success",
+      action === "publish" ? "review_publish_success" : "review_reject_success",
     publishLabelKey: "publish_event",
     rejectLabelKey: "reject_event",
     onSuccess() {
-      pendingEvents = pendingEvents.filter(event => event._id !== eventId);
+      pendingEvents = pendingEvents.filter((event) => event._id !== eventId);
     },
-    renderQueue: renderReviewQueue
+    renderQueue: renderReviewQueue,
   });
 }
 
 async function submitRetirementReview(messageId, action, card) {
   const context = createReviewActionContext(card);
   const rejectionReason = context.reasonInput.value.trim();
-  const messageInputs =
-    card.querySelectorAll(
-      ".retirement-review-message-input"
-    );
+  const messageInputs = card.querySelectorAll(
+    ".retirement-review-message-input",
+  );
   const messages = {};
 
   if (action === "reject" && !rejectionReason) {
     showReviewValidationError(
       context,
       translate("retirement_rejection_reason_required"),
-      context.reasonInput
+      context.reasonInput,
     );
     return;
   }
 
   if (action === "publish") {
     for (const input of messageInputs) {
-      const language =
-        input.dataset.retirementMessageLanguage;
+      const language = input.dataset.retirementMessageLanguage;
 
       messages[language] = input.value.trim();
 
@@ -2003,7 +1763,7 @@ async function submitRetirementReview(messageId, action, card) {
         showReviewValidationError(
           context,
           translate("retirement_review_translation_required"),
-          input
+          input,
         );
         return;
       }
@@ -2016,14 +1776,8 @@ async function submitRetirementReview(messageId, action, card) {
     path: `/api/retirement-messages/${messageId}/review`,
     body: {
       action,
-      rejectionReason:
-        action === "reject"
-          ? rejectionReason
-          : undefined,
-      messages:
-        action === "publish"
-          ? messages
-          : undefined
+      rejectionReason: action === "reject" ? rejectionReason : undefined,
+      messages: action === "publish" ? messages : undefined,
     },
     errorMessage: translate("retirement_review_failed"),
     successMessageKey:
@@ -2034,10 +1788,10 @@ async function submitRetirementReview(messageId, action, card) {
     rejectLabelKey: "reject_retirement_message",
     onSuccess() {
       pendingRetirementMessages = pendingRetirementMessages.filter(
-        retirementMessage => retirementMessage._id !== messageId
+        (retirementMessage) => retirementMessage._id !== messageId,
       );
     },
-    renderQueue: renderRetirementReviewQueue
+    renderQueue: renderRetirementReviewQueue,
   });
 }
 
@@ -2050,14 +1804,14 @@ async function submitLastPostReview(messageId, action, card) {
     showReviewValidationError(
       context,
       translate("last_post_rejection_reason_required"),
-      context.reasonInput
+      context.reasonInput,
     );
     return;
   }
 
   if (action === "publish") {
     const messageInputs = card.querySelectorAll(
-      ".last-post-review-message-input"
+      ".last-post-review-message-input",
     );
 
     for (const input of messageInputs) {
@@ -2068,7 +1822,7 @@ async function submitLastPostReview(messageId, action, card) {
         showReviewValidationError(
           context,
           translate("last_post_review_translation_required"),
-          input
+          input,
         );
         return;
       }
@@ -2082,7 +1836,7 @@ async function submitLastPostReview(messageId, action, card) {
     body: {
       action,
       rejectionReason: action === "reject" ? rejectionReason : undefined,
-      messages: action === "publish" ? messages : undefined
+      messages: action === "publish" ? messages : undefined,
     },
     errorMessage: translate("last_post_review_failed"),
     successMessageKey:
@@ -2093,10 +1847,10 @@ async function submitLastPostReview(messageId, action, card) {
     rejectLabelKey: "reject_last_post",
     onSuccess() {
       pendingLastPosts = pendingLastPosts.filter(
-        lastPost => lastPost._id !== messageId
+        (lastPost) => lastPost._id !== messageId,
       );
     },
-    renderQueue: renderLastPostReviewQueue
+    renderQueue: renderLastPostReviewQueue,
   });
 }
 
@@ -2108,7 +1862,7 @@ async function submitCommentReview(commentId, action, card) {
     showReviewValidationError(
       context,
       translate("comment_rejection_reason_required"),
-      context.reasonInput
+      context.reasonInput,
     );
     return;
   }
@@ -2119,10 +1873,7 @@ async function submitCommentReview(commentId, action, card) {
     path: `/api/retirement-messages/comments/${commentId}/review`,
     body: {
       action,
-      rejectionReason:
-        action === "reject"
-          ? rejectionReason
-          : undefined
+      rejectionReason: action === "reject" ? rejectionReason : undefined,
     },
     errorMessage: translate("comment_review_failed"),
     successMessageKey:
@@ -2133,10 +1884,10 @@ async function submitCommentReview(commentId, action, card) {
     rejectLabelKey: "reject_comment",
     onSuccess() {
       pendingComments = pendingComments.filter(
-        comment => comment._id !== commentId
+        (comment) => comment._id !== commentId,
       );
     },
-    renderQueue: renderCommentReviewQueue
+    renderQueue: renderCommentReviewQueue,
   });
 }
 
@@ -2151,22 +1902,22 @@ async function loadReviewQueue() {
   showQueueLoading(
     "loading_retirement_messages",
     retirementReviewPageMessage,
-    retirementReviewQueue
+    retirementReviewQueue,
   );
   showQueueLoading(
     "loading_retirement_comments",
     commentReviewPageMessage,
-    commentReviewQueue
+    commentReviewQueue,
   );
   showQueueLoading(
     "loading_last_posts",
     lastPostReviewPageMessage,
-    lastPostReviewQueue
+    lastPostReviewQueue,
   );
 
   try {
     const user = await reviewApiJson("/api/me", {
-      errorMessage: translate("review_access_denied")
+      errorMessage: translate("review_access_denied"),
     });
 
     if (!user.permissions?.canReviewAndPublish) {
@@ -2176,58 +1927,54 @@ async function loadReviewQueue() {
       showPageMessage(
         translate("review_access_denied"),
         "error",
-        retirementReviewPageMessage
+        retirementReviewPageMessage,
       );
       showPageMessage(
         translate("review_access_denied"),
         "error",
-        commentReviewPageMessage
+        commentReviewPageMessage,
       );
       showPageMessage(
         translate("review_access_denied"),
         "error",
-        lastPostReviewPageMessage
+        lastPostReviewPageMessage,
       );
 
       return;
     }
 
-    const [
-      eventResult,
-      retirementResult,
-      lastPostResult,
-      commentResult
-    ] = await Promise.allSettled([
-      reviewApiJson("/api/events/review", {
-        errorMessage: translate("review_load_error")
-      }),
-      reviewApiJson("/api/retirement-messages/review", {
-        errorMessage: translate("retirement_review_load_error")
-      }),
-      reviewApiJson("/api/last-posts/review", {
-        errorMessage: translate("last_post_review_load_error")
-      }),
-      reviewApiJson("/api/retirement-messages/comments/review", {
-        errorMessage: translate("comment_review_load_error")
-      })
-    ]);
+    const [eventResult, retirementResult, lastPostResult, commentResult] =
+      await Promise.allSettled([
+        reviewApiJson("/api/events/review", {
+          errorMessage: translate("review_load_error"),
+        }),
+        reviewApiJson("/api/retirement-messages/review", {
+          errorMessage: translate("retirement_review_load_error"),
+        }),
+        reviewApiJson("/api/last-posts/review", {
+          errorMessage: translate("last_post_review_load_error"),
+        }),
+        reviewApiJson("/api/retirement-messages/comments/review", {
+          errorMessage: translate("comment_review_load_error"),
+        }),
+      ]);
 
     const results = [
       eventResult,
       retirementResult,
       lastPostResult,
-      commentResult
+      commentResult,
     ];
     const rejectedResults = results.filter(
-      result => result.status === "rejected"
+      (result) => result.status === "rejected",
     );
 
-    if (rejectedResults.some(result => result.reason?.status === 401)) {
+    if (rejectedResults.some((result) => result.reason?.status === 401)) {
       return;
     }
 
     const forbiddenResult = rejectedResults.find(
-      result => result.reason?.status === 403
+      (result) => result.reason?.status === 403,
     );
 
     if (forbiddenResult) {
@@ -2240,13 +1987,11 @@ async function loadReviewQueue() {
 
       showPageMessage(
         eventResult.reason?.message || translate("review_load_error"),
-        "error"
+        "error",
       );
     } else {
       const eventData = eventResult.value;
-      pendingEvents = Array.isArray(eventData.events)
-        ? eventData.events
-        : [];
+      pendingEvents = Array.isArray(eventData.events) ? eventData.events : [];
 
       renderReviewQueue();
     }
@@ -2258,16 +2003,15 @@ async function loadReviewQueue() {
         retirementResult.reason?.message ||
         translate("retirement_review_load_error"),
         "error",
-        retirementReviewPageMessage
+        retirementReviewPageMessage,
       );
     } else {
       const retirementData = retirementResult.value;
-      pendingRetirementMessages =
-        Array.isArray(
-          retirementData.retirementMessages
-        )
-          ? retirementData.retirementMessages
-          : [];
+      pendingRetirementMessages = Array.isArray(
+        retirementData.retirementMessages,
+      )
+        ? retirementData.retirementMessages
+        : [];
 
       renderRetirementReviewQueue();
     }
@@ -2276,17 +2020,15 @@ async function loadReviewQueue() {
       commentLoadFailed = true;
 
       showPageMessage(
-        commentResult.reason?.message ||
-        translate("comment_review_load_error"),
+        commentResult.reason?.message || translate("comment_review_load_error"),
         "error",
-        commentReviewPageMessage
+        commentReviewPageMessage,
       );
     } else {
       const commentData = commentResult.value;
-      pendingComments =
-        Array.isArray(commentData.comments)
-          ? commentData.comments
-          : [];
+      pendingComments = Array.isArray(commentData.comments)
+        ? commentData.comments
+        : [];
 
       renderCommentReviewQueue();
     }
@@ -2294,9 +2036,10 @@ async function loadReviewQueue() {
     if (lastPostResult.status === "rejected") {
       lastPostLoadFailed = true;
       showPageMessage(
-        lastPostResult.reason?.message || translate("last_post_review_load_error"),
+        lastPostResult.reason?.message ||
+        translate("last_post_review_load_error"),
         "error",
-        lastPostReviewPageMessage
+        lastPostReviewPageMessage,
       );
     } else {
       const lastPostData = lastPostResult.value;
@@ -2305,7 +2048,6 @@ async function loadReviewQueue() {
         : [];
       renderLastPostReviewQueue();
     }
-
   } catch (error) {
     accessDenied = accessDenied || error.status === 403;
     loadFailed = !accessDenied;
@@ -2315,83 +2057,77 @@ async function loadReviewQueue() {
 
     showPageMessage(error.message || translate("review_load_error"), "error");
     showPageMessage(
-      error.message ||
-      translate("retirement_review_load_error"),
+      error.message || translate("retirement_review_load_error"),
       "error",
-      retirementReviewPageMessage
+      retirementReviewPageMessage,
     );
     showPageMessage(
-      error.message ||
-      translate("comment_review_load_error"),
+      error.message || translate("comment_review_load_error"),
       "error",
-      commentReviewPageMessage
+      commentReviewPageMessage,
     );
     showPageMessage(
       error.message || translate("last_post_review_load_error"),
       "error",
-      lastPostReviewPageMessage
+      lastPostReviewPageMessage,
     );
   }
 }
 
 function updateEventReviewCardsLanguage() {
-  reviewQueue
-    .querySelectorAll(".review-event-card--event")
-    .forEach(card => {
-      const event = pendingEvents.find(
-        item => item._id === card.dataset.eventId
-      );
+  reviewQueue.querySelectorAll(".review-event-card--event").forEach((card) => {
+    const event = pendingEvents.find(
+      (item) => item._id === card.dataset.eventId,
+    );
 
-      if (!event) {
-        return;
-      }
+    if (!event) {
+      return;
+    }
 
-      const title = card.querySelector(".review-event-card-heading h2");
+    const title = card.querySelector(".review-event-card-heading h2");
 
-      if (title) {
-        title.textContent = getDisplayTitle(event);
-      }
+    if (title) {
+      title.textContent = getDisplayTitle(event);
+    }
 
-      const eventInformationValues = [
-        event.city,
-        formatTranslatedOption("region", event.provinceRegion),
-        formatTranslatedOption("entity", event.organizingEntity),
-        formatTranslatedOption("event_type", event.eventType),
-        formatEventReviewDate(event, event.startDate),
-        formatEventReviewTime(event, event.startDate),
-        formatEventReviewDate(event, event.endDate),
-        formatEventReviewTime(event, event.endDate),
-        formatEventTimezone(event.timezone)
-      ];
+    const eventInformationValues = [
+      event.city,
+      formatTranslatedOption("region", event.provinceRegion),
+      formatTranslatedOption("entity", event.organizingEntity),
+      formatTranslatedOption("event_type", event.eventType),
+      formatEventReviewDate(event, event.startDate),
+      formatEventReviewTime(event, event.startDate),
+      formatEventReviewDate(event, event.endDate),
+      formatEventReviewTime(event, event.endDate),
+      formatEventTimezone(event.timezone)
+    ];
 
-      card
-        .querySelectorAll(
-          ".review-event-information .review-record-value"
-        )
-        .forEach((value, index) => {
-          value.textContent = eventInformationValues[index] || "—";
-        });
+    card
+      .querySelectorAll(".review-event-information .review-record-value")
+      .forEach((value, index) => {
+        value.textContent = eventInformationValues[index] || "—";
+      });
 
-      const authorizationValues = [
-        translate(
-          event.publicationPermission?.confirmed === true
-            ? "review_permission_confirmed"
-            : "review_permission_not_recorded"
-        ),
-        formatReviewUser(event.publicationPermission?.confirmedBy),
-        event.publicationPermission?.confirmedAt
-          ? formatSubmittedDate(event.publicationPermission.confirmedAt)
-          : "—"
-      ];
+    const authorizationValues = [
+      translate(
+        event.publicationPermission?.confirmed === true
+          ? "review_permission_confirmed"
+          : "review_permission_not_recorded",
+      ),
+      formatReviewUser(event.publicationPermission?.confirmedBy),
+      event.publicationPermission?.confirmedAt
+        ? formatSubmittedDate(event.publicationPermission.confirmedAt)
+        : "—",
+    ];
 
-      card
-        .querySelectorAll(
-          ".review-submission-details .review-record-section:last-child .review-record-value"
-        )
-        .forEach((value, index) => {
-          value.textContent = authorizationValues[index] || "—";
-        });
-    });
+    card
+      .querySelectorAll(
+        ".review-submission-details .review-record-section:last-child .review-record-value",
+      )
+      .forEach((value, index) => {
+        value.textContent = authorizationValues[index] || "—";
+      });
+  });
 }
 
 document.addEventListener("languagechange", updateEventReviewCardsLanguage);
@@ -2403,19 +2139,17 @@ const reviewTabController = CMCENUtils.bindTabs({
   panels: reviewPanels,
   panelKey: "reviewPanel",
   tabs: reviewTabs,
-  tabKey: "reviewTab"
+  tabKey: "reviewTab",
 });
 
 function activateReviewTab(tabName) {
   reviewTabController.activate(tabName);
 }
 
-window.addEventListener(
-  "pageshow", () => {
-    if (!getReviewToken()) {
-      redirectToLogin();
-    }
+window.addEventListener("pageshow", () => {
+  if (!getReviewToken()) {
+    redirectToLogin();
   }
-);
+});
 
 loadReviewQueue();

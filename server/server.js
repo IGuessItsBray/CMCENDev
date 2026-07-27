@@ -1,6 +1,6 @@
 const path = require('path');
 require('dotenv').config({
-  path: path.join(__dirname, '.env')
+  path: path.join(__dirname, '.env'),
 });
 const nodeCrypto = require('crypto');
 const childProcess = require('child_process');
@@ -51,7 +51,7 @@ function getBuildCommit() {
       .execFileSync('git', ['rev-parse', 'HEAD'], {
         cwd: path.join(__dirname, '..'),
         encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore']
+        stdio: ['ignore', 'pipe', 'ignore'],
       })
       .trim();
   } catch (error) {
@@ -64,7 +64,7 @@ const buildCommit = getBuildCommit();
 app.get('/api/version', (req, res) => {
   res.json({
     commit: buildCommit,
-    shortCommit: buildCommit ? buildCommit.slice(0, 7) : ''
+    shortCommit: buildCommit ? buildCommit.slice(0, 7) : '',
   });
 });
 
@@ -110,9 +110,8 @@ function redirectHtmlExtension(req, res, next) {
     return next();
   }
 
-  const nextPath = req.path === '/index.html'
-    ? '/'
-    : req.path.replace(/\.html$/u, '');
+  const nextPath =
+    req.path === '/index.html' ? '/' : req.path.replace(/\.html$/u, '');
 
   return res.redirect(301, `${nextPath}${req.url.slice(req.path.length)}`);
 }
@@ -127,11 +126,14 @@ function serveExtensionlessHtml(req, res, next) {
     return next();
   }
 
-  return res.sendFile(path.join(__dirname, 'public', `${req.path.slice(1)}.html`), error => {
-    if (error) {
-      return next();
-    }
-  });
+  return res.sendFile(
+    path.join(__dirname, 'public', `${req.path.slice(1)}.html`),
+    (error) => {
+      if (error) {
+        return next();
+      }
+    },
+  );
 }
 
 app.use(redirectHtmlExtension);
@@ -179,9 +181,10 @@ app.use((error, req, res, next) => {
     return next(error);
   }
 
-  const statusCode = Number.isInteger(error.status) && error.status >= 400 && error.status < 600
-    ? error.status
-    : 500;
+  const statusCode =
+    Number.isInteger(error.status) && error.status >= 400 && error.status < 600
+      ? error.status
+      : 500;
 
   console.error('Unhandled request error:', error);
 
@@ -190,7 +193,7 @@ app.use((error, req, res, next) => {
   }
 
   return res.status(statusCode).json({
-    error: statusCode >= 500 ? 'Internal server error' : 'Request failed'
+    error: statusCode >= 500 ? 'Internal server error' : 'Request failed',
   });
 });
 
@@ -201,9 +204,7 @@ async function startServer() {
     console.log('Connected to MongoDB');
 
     return app.listen(process.env.PORT || 3000, () => {
-      console.log(
-        `Server running on port ${process.env.PORT || 3000}`
-      );
+      console.log(`Server running on port ${process.env.PORT || 3000}`);
     });
   } catch (err) {
     console.error('Startup failed:', err);
@@ -217,5 +218,5 @@ if (require.main === module) {
 
 module.exports = {
   app,
-  startServer
+  startServer,
 };

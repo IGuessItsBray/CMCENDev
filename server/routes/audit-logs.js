@@ -2,10 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const AuditLog = require('../models/AuditLog');
 const { writeAuditLog } = require('../services/audit-log');
-const {
-  authMiddleware,
-  requirePermission
-} = require('../middleware/auth');
+const { authMiddleware, requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -62,7 +59,7 @@ function buildAuditLogFilter(query) {
   if (startDate || endDate) {
     filter.createdAt = {
       ...(startDate ? { $gte: startDate } : {}),
-      ...(endDate ? { $lt: endDate } : {})
+      ...(endDate ? { $lt: endDate } : {}),
     };
   }
 
@@ -76,14 +73,11 @@ function buildAuditLogFilter(query) {
       { 'targetSnapshot.email': userRegex },
       { 'targetSnapshot.accountName': userRegex },
       { 'targetSnapshot.firstName': userRegex },
-      { 'targetSnapshot.lastName': userRegex }
+      { 'targetSnapshot.lastName': userRegex },
     ];
 
     if (mongoose.isValidObjectId(user)) {
-      userFilters.push(
-        { actor: user },
-        { target: user }
-      );
+      userFilters.push({ actor: user }, { target: user });
     }
 
     filter.$or = userFilters;
@@ -162,7 +156,13 @@ function getActorLabel(log) {
 
 function buildMetadataSummary(metadata = {}) {
   return Object.entries(metadata)
-    .filter(([key, value]) => key !== 'ipAddresses' && value !== undefined && value !== null && value !== '')
+    .filter(
+      ([key, value]) =>
+        key !== 'ipAddresses' &&
+        value !== undefined &&
+        value !== null &&
+        value !== '',
+    )
     .map(([key, value]) => `${key}: ${formatCsvValue(value)}`)
     .join('; ');
 }
@@ -177,10 +177,10 @@ function buildAuditLogCsv(logs) {
     'IP Address',
     'IP Addresses',
     'Details',
-    'Target ID'
+    'Target ID',
   ];
 
-  const rows = logs.map(log => {
+  const rows = logs.map((log) => {
     const metadata = log.metadata || {};
 
     return [
@@ -192,12 +192,12 @@ function buildAuditLogCsv(logs) {
       metadata.ipAddress,
       metadata.ipAddresses,
       buildMetadataSummary(metadata),
-      log.target
+      log.target,
     ];
   });
 
   return [headers, ...rows]
-    .map(row => row.map(escapeCsv).join(','))
+    .map((row) => row.map(escapeCsv).join(','))
     .join('\n');
 }
 
@@ -209,16 +209,14 @@ router.get(
     try {
       const filter = buildAuditLogFilter(req.query);
 
-      const logs = await AuditLog.find(filter)
-        .sort({ createdAt: -1 })
-        .lean();
+      const logs = await AuditLog.find(filter).sort({ createdAt: -1 }).lean();
 
       res.json({ logs });
     } catch (error) {
       console.error('Audit log list failed:', error);
       res.status(500).json({ error: 'Failed to fetch audit logs' });
     }
-  }
+  },
 );
 
 router.get(
@@ -240,7 +238,7 @@ router.get(
         actor: req.user,
         targetType: 'audit',
         targetSnapshot: {
-          name: 'Audit log export'
+          name: 'Audit log export',
         },
         metadata: {
           format: 'csv',
@@ -249,18 +247,21 @@ router.get(
           targetType: cleanString(req.query.targetType),
           user: cleanString(req.query.user).slice(0, 100),
           startDate: cleanString(req.query.startDate),
-          endDate: cleanString(req.query.endDate)
-        }
+          endDate: cleanString(req.query.endDate),
+        },
       });
 
       res.type('text/csv; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename="cmcen-audit-log-${timestamp}.csv"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="cmcen-audit-log-${timestamp}.csv"`,
+      );
       res.send(buildAuditLogCsv(logs));
     } catch (error) {
       console.error('Audit log export failed:', error);
       res.status(500).json({ error: 'Failed to export audit logs' });
     }
-  }
+  },
 );
 
 module.exports = router;

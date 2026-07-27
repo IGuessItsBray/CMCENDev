@@ -12,11 +12,19 @@ const HTTP_METHODS = new Set([
   'patch',
   'post',
   'put',
-  'trace'
+  'trace',
 ]);
 
 async function loadSchema() {
-  const schemaPath = path.join(__dirname, '..', '..', '..', 'api', 'schema', 'openapi.yaml');
+  const schemaPath = path.join(
+    __dirname,
+    '..',
+    '..',
+    '..',
+    'api',
+    'schema',
+    'openapi.yaml',
+  );
   return YAML.parse(await readFile(schemaPath, 'utf8'));
 }
 
@@ -24,7 +32,7 @@ function getOperations(schema) {
   return Object.entries(schema.paths || {}).flatMap(([route, pathItem]) =>
     Object.entries(pathItem || {})
       .filter(([method]) => HTTP_METHODS.has(method))
-      .map(([method, operation]) => ({ route, method, operation }))
+      .map(([method, operation]) => ({ route, method, operation })),
   );
 }
 
@@ -40,7 +48,7 @@ describe('OpenAPI contract', () => {
       assert.equal(
         Object.keys(operation.responses || {}).length > 0,
         true,
-        `${method.toUpperCase()} ${route} must declare responses`
+        `${method.toUpperCase()} ${route} must declare responses`,
       );
     }
   });
@@ -71,11 +79,14 @@ describe('OpenAPI contract', () => {
       ['post', '/api/retirement-messages'],
       ['patch', '/api/retirement-messages/{messageId}/review'],
       ['post', '/api/last-posts'],
-      ['patch', '/api/last-posts/{messageId}/review']
+      ['patch', '/api/last-posts/{messageId}/review'],
     ];
 
     for (const [method, route] of requiredOperations) {
-      assert.ok(schema.paths?.[route]?.[method], `${method.toUpperCase()} ${route} is undocumented`);
+      assert.ok(
+        schema.paths?.[route]?.[method],
+        `${method.toUpperCase()} ${route} is undocumented`,
+      );
     }
   });
 });

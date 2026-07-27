@@ -8,9 +8,9 @@ const MediaVariantSchema = new mongoose.Schema(
     width: { type: Number, min: 0, default: 0 },
     height: { type: Number, min: 0, default: 0 },
     size: { type: Number, min: 0, default: 0 },
-    mimeType: { type: String, trim: true, default: 'image/webp' }
+    mimeType: { type: String, trim: true, default: 'image/webp' },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const MediaAssetSchema = new mongoose.Schema(
@@ -21,38 +21,38 @@ const MediaAssetSchema = new mongoose.Schema(
       default: randomUUID,
       unique: true,
       sparse: true,
-      index: true
+      index: true,
     },
     key: {
       type: String,
       required: true,
       trim: true,
-      unique: true
+      unique: true,
     },
     url: {
       type: String,
       trim: true,
-      default: ''
+      default: '',
     },
     originalKey: {
       type: String,
       trim: true,
-      default: ''
+      default: '',
     },
     originalUrl: {
       type: String,
       trim: true,
-      default: ''
+      default: '',
     },
     originalName: {
       type: String,
       trim: true,
-      default: ''
+      default: '',
     },
     displayName: {
       type: String,
       trim: true,
-      default: ''
+      default: '',
     },
     cdnSlug: {
       type: String,
@@ -60,106 +60,109 @@ const MediaAssetSchema = new mongoose.Schema(
       lowercase: true,
       default: undefined,
       unique: true,
-      sparse: true
+      sparse: true,
     },
     mimeType: {
       type: String,
       trim: true,
-      default: ''
+      default: '',
     },
     width: {
       type: Number,
       min: 0,
-      default: 0
+      default: 0,
     },
     height: {
       type: Number,
       min: 0,
-      default: 0
+      default: 0,
     },
     size: {
       type: Number,
       min: 0,
-      default: 0
+      default: 0,
     },
     variants: {
       thumb: { type: MediaVariantSchema, default: () => ({}) },
       medium: { type: MediaVariantSchema, default: () => ({}) },
       large: { type: MediaVariantSchema, default: () => ({}) },
-      hero: { type: MediaVariantSchema, default: () => ({}) }
+      hero: { type: MediaVariantSchema, default: () => ({}) },
     },
     uploadContext: {
       type: {
         type: String,
         trim: true,
-        default: 'unknown'
+        default: 'unknown',
       },
       context: {
         type: String,
         trim: true,
-        default: ''
+        default: '',
       },
       sourceId: {
         type: String,
         trim: true,
-        default: ''
+        default: '',
       },
       sourceModel: {
         type: String,
         trim: true,
-        default: ''
+        default: '',
       },
       sourceField: {
         type: String,
         trim: true,
-        default: ''
+        default: '',
       },
       sourceUrl: {
         type: String,
         trim: true,
-        default: ''
+        default: '',
       },
       sourceSlug: {
         type: String,
         trim: true,
-        default: ''
+        default: '',
       },
       label: {
         type: String,
         trim: true,
-        default: ''
+        default: '',
       },
       linkedAt: {
         type: Date,
-        default: null
-      }
+        default: null,
+      },
     },
     inferredName: {
       type: String,
       trim: true,
-      default: ''
+      default: '',
     },
     fileMetadata: {
       type: mongoose.Schema.Types.Mixed,
-      default: () => ({})
+      default: () => ({}),
     },
     imageMetadata: {
       type: mongoose.Schema.Types.Mixed,
-      default: () => ({})
+      default: () => ({}),
     },
     uploadedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      default: null
-    }
+      default: null,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 MediaAssetSchema.index({ createdAt: -1 });
 MediaAssetSchema.index({ displayName: 1, createdAt: -1 });
 MediaAssetSchema.index({ size: -1, createdAt: -1 });
 MediaAssetSchema.index({ 'uploadContext.type': 1, createdAt: -1 });
-MediaAssetSchema.index({ 'uploadContext.sourceId': 1, 'uploadContext.sourceField': 1 });
+MediaAssetSchema.index({
+  'uploadContext.sourceId': 1,
+  'uploadContext.sourceField': 1,
+});
 
 module.exports = mongoose.model('MediaAsset', MediaAssetSchema);

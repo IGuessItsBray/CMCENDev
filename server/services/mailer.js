@@ -5,7 +5,7 @@ const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
   secure: false,
-  requireTLS: true
+  requireTLS: true,
 });
 
 function sendMail({ to, cc, subject, html }) {
@@ -19,7 +19,7 @@ function sendMail({ to, cc, subject, html }) {
     to,
     cc,
     subject,
-    html
+    html,
   });
 }
 

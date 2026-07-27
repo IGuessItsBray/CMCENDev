@@ -1,9 +1,5 @@
 function getEventTitle(event) {
-  return (
-    event.title?.en ||
-    event.title?.fr ||
-    'Untitled event'
-  );
+  return event.title?.en || event.title?.fr || 'Untitled event';
 }
 
 function getEventSnapshot(event) {
@@ -13,34 +9,26 @@ function getEventSnapshot(event) {
     contentArea: event.contentArea || 'general',
     createdBy: event.createdBy,
     publishedBy: event.publishedBy,
-    startDate: event.startDate
+    startDate: event.startDate,
   };
 }
 
 function getRetirementMessageTitle(message) {
   const retiree = message.retiree || {};
-  const name = [
-    retiree?.rank,
-    retiree?.firstName,
-    retiree?.lastName
-  ].filter(Boolean).join(' ');
+  const name = [retiree?.rank, retiree?.firstName, retiree?.lastName]
+    .filter(Boolean)
+    .join(' ');
 
-  return name
-    ? `Retirement message for ${name}`
-    : 'Retirement message';
+  return name ? `Retirement message for ${name}` : 'Retirement message';
 }
 
 function getRetirementCommentTitle(comment) {
   const retiree = comment.retirementMessage?.retiree;
-  const name = [
-    retiree?.rank,
-    retiree?.firstName,
-    retiree?.lastName
-  ].filter(Boolean).join(' ');
+  const name = [retiree?.rank, retiree?.firstName, retiree?.lastName]
+    .filter(Boolean)
+    .join(' ');
 
-  return name
-    ? `Retirement comment for ${name}`
-    : 'Retirement comment';
+  return name ? `Retirement comment for ${name}` : 'Retirement comment';
 }
 
 function getRetirementMessageSnapshot(message) {
@@ -49,15 +37,13 @@ function getRetirementMessageSnapshot(message) {
     status: message.status,
     createdBy: message.createdBy,
     publishedBy: message.publishedBy,
-    retiree: message.retiree
+    retiree: message.retiree,
   };
 }
 
 function getRetirementCommentSnapshot(comment, options = {}) {
-  const {
-    includeBody = false,
-    includeRetirementMessageTitle = false
-  } = options;
+  const { includeBody = false, includeRetirementMessageTitle = false } =
+    options;
   const snapshot = {
     title: includeRetirementMessageTitle
       ? getRetirementCommentTitle(comment)
@@ -66,7 +52,7 @@ function getRetirementCommentSnapshot(comment, options = {}) {
     author: comment.author,
     retirementMessage: comment.retirementMessage,
     publishedBy: comment.publishedBy,
-    excerpt: String(comment.body || '').slice(0, 240)
+    excerpt: String(comment.body || '').slice(0, 240),
   };
 
   if (includeBody) {
@@ -82,5 +68,5 @@ module.exports = {
   getRetirementCommentSnapshot,
   getRetirementCommentTitle,
   getRetirementMessageSnapshot,
-  getRetirementMessageTitle
+  getRetirementMessageTitle,
 };

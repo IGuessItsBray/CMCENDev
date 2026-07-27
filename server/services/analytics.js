@@ -13,7 +13,7 @@ const SKIPPED_EXTENSIONS = new Set([
   '.woff2',
   '.ttf',
   '.map',
-  '.txt'
+  '.txt',
 ]);
 
 function cleanString(value, fallback = '') {
@@ -41,7 +41,11 @@ function shouldTrackRequest(req) {
 function getDeviceType(userAgent) {
   const agent = userAgent.toLowerCase();
 
-  if (/bot|crawler|spider|preview|slurp|duckduckbot|bingbot|googlebot/u.test(agent)) {
+  if (
+    /bot|crawler|spider|preview|slurp|duckduckbot|bingbot|googlebot/u.test(
+      agent,
+    )
+  ) {
     return 'bot';
   }
 
@@ -99,7 +103,9 @@ function getReferrerHost(referrer) {
 function getSource(req, referrerHost) {
   if (!referrerHost) return 'direct';
 
-  const host = cleanString(req.headers.host).split(':')[0].replace(/^www\./iu, '');
+  const host = cleanString(req.headers.host)
+    .split(':')[0]
+    .replace(/^www\./iu, '');
   if (host && referrerHost === host) return 'direct';
 
   return referrerHost;
@@ -114,9 +120,7 @@ function normalizeCountryCode(value) {
 }
 
 function getCountryFromLocale(locale) {
-  const localeParts = cleanString(locale)
-    .replace(/_/gu, '-')
-    .split('-');
+  const localeParts = cleanString(locale).replace(/_/gu, '-').split('-');
 
   return localeParts.length > 1
     ? normalizeCountryCode(localeParts[localeParts.length - 1])
@@ -126,11 +130,19 @@ function getCountryFromLocale(locale) {
 function getCountryFromTimeZone(timeZone) {
   const cleanTimeZone = cleanString(timeZone);
 
-  if (/^(America\/Toronto|America\/Vancouver|America\/Edmonton|America\/Winnipeg|America\/Halifax|America\/St_Johns|America\/Regina|America\/Whitehorse)$/u.test(cleanTimeZone)) {
+  if (
+    /^(America\/Toronto|America\/Vancouver|America\/Edmonton|America\/Winnipeg|America\/Halifax|America\/St_Johns|America\/Regina|America\/Whitehorse)$/u.test(
+      cleanTimeZone,
+    )
+  ) {
     return 'CA';
   }
 
-  if (/^(America\/New_York|America\/Chicago|America\/Denver|America\/Los_Angeles|America\/Phoenix|America\/Anchorage|Pacific\/Honolulu)$/u.test(cleanTimeZone)) {
+  if (
+    /^(America\/New_York|America\/Chicago|America\/Denver|America\/Los_Angeles|America\/Phoenix|America\/Anchorage|Pacific\/Honolulu)$/u.test(
+      cleanTimeZone,
+    )
+  ) {
     return 'US';
   }
 
@@ -141,7 +153,7 @@ function getCountryFromTimeZone(timeZone) {
 function getClientIp(req) {
   const forwardedFor = cleanString(req.headers['x-forwarded-for'])
     .split(',')
-    .map(value => cleanString(value))
+    .map((value) => cleanString(value))
     .find(Boolean);
 
   return forwardedFor || cleanString(req.ip || req.socket?.remoteAddress);
@@ -162,7 +174,11 @@ function isInternalIpAddress(value) {
   if (/^192\.168\./u.test(ipAddress)) return true;
   if (/^172\.(1[6-9]|2\d|3[0-1])\./u.test(ipAddress)) return true;
   if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./u.test(ipAddress)) return true;
-  if (/^fc[0-9a-f]{2}:/iu.test(ipAddress) || /^fd[0-9a-f]{2}:/iu.test(ipAddress)) return true;
+  if (
+    /^fc[0-9a-f]{2}:/iu.test(ipAddress) ||
+    /^fd[0-9a-f]{2}:/iu.test(ipAddress)
+  )
+    return true;
   if (/^fe80:/iu.test(ipAddress)) return true;
 
   return false;
@@ -181,14 +197,18 @@ function getCountry(req, fallbackLocale = '', fallbackTimeZone = '') {
     req.headers['x-geoip-country-code'],
     req.headers['x-geo-country'],
     req.headers['x-ip-country'],
-    req.headers['fastly-client-country']
-  ].map(normalizeCountryCode).find(Boolean);
+    req.headers['fastly-client-country'],
+  ]
+    .map(normalizeCountryCode)
+    .find(Boolean);
 
-  return country ||
+  return (
+    country ||
     (isInternalIpAddress(getClientIp(req)) ? 'Internal' : '') ||
     getCountryFromTimeZone(fallbackTimeZone) ||
     getCountryFromLocale(fallbackLocale) ||
-    'CA';
+    'CA'
+  );
 }
 
 function normalizeStoredCountry(country, ipAddress = '') {
@@ -215,5 +235,5 @@ module.exports = {
   getReferrerHost,
   normalizeStoredCountry,
   getSource,
-  shouldTrackRequest
+  shouldTrackRequest,
 };

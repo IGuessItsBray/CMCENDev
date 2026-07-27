@@ -1,5 +1,5 @@
 require('dotenv').config({
-  path: require('path').join(__dirname, '..', '..', '.env')
+  path: require('path').join(__dirname, '..', '..', '.env'),
 });
 
 const path = require('path');
@@ -12,14 +12,14 @@ const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { parseArgs, resolvePath } = require('./lib/args');
 const {
   assertPublicMediaBaseUrl,
-  configurePublicMediaBaseUrl
+  configurePublicMediaBaseUrl,
 } = require('./lib/public-media');
 const { downloadSourceImage } = require('./lib/source-image');
 const {
   cleanString,
   parseDate,
   stripHtml,
-  writeJson
+  writeJson,
 } = require('./lib/wordpress');
 const MediaAsset = require('../../models/MediaAsset');
 const RetirementComment = require('../../models/RetirementComment');
@@ -37,7 +37,7 @@ const IMAGE_VARIANTS = Object.freeze([
   { name: 'thumb', width: 400 },
   { name: 'medium', width: 900 },
   { name: 'large', width: 1600 },
-  { name: 'hero', width: 2200 }
+  { name: 'hero', width: 2200 },
 ]);
 const KNOWN_RANKS = Object.freeze([
   'CHIEF WARRANT OFFICER',
@@ -61,7 +61,7 @@ const KNOWN_RANKS = Object.freeze([
   'MR.',
   'MR',
   'MS.',
-  'MS'
+  'MS',
 ]);
 const MONTHS = Object.freeze({
   jan: 0,
@@ -87,7 +87,7 @@ const MONTHS = Object.freeze({
   nov: 10,
   november: 10,
   dec: 11,
-  december: 11
+  december: 11,
 });
 
 const args = parseArgs();
@@ -95,24 +95,29 @@ const publicMediaBaseUrl = configurePublicMediaBaseUrl(args);
 const apply = Boolean(args.apply);
 const limit = args.limit ? Number(args.limit) : Infinity;
 const categorySlug = String(args.category || DEFAULT_CATEGORY_SLUG);
-const contentMode = ['all', 'retirements', 'comments'].includes(String(args.content || 'all'))
+const contentMode = ['all', 'retirements', 'comments'].includes(
+  String(args.content || 'all'),
+)
   ? String(args.content || 'all')
   : 'all';
-const shouldImportRetirements = contentMode === 'all' || contentMode === 'retirements';
-const shouldImportComments = contentMode === 'all' || contentMode === 'comments';
-const postScanLabel = contentMode === 'comments'
-  ? 'retirement parent post'
-  : 'retirement post';
+const shouldImportRetirements =
+  contentMode === 'all' || contentMode === 'retirements';
+const shouldImportComments =
+  contentMode === 'all' || contentMode === 'comments';
+const postScanLabel =
+  contentMode === 'comments' ? 'retirement parent post' : 'retirement post';
 const outputDir = resolvePath(args.output, path.join(__dirname, 'output'));
 const manifestPath = resolvePath(
   args.manifest,
-  path.join(outputDir, 'current-retirement-scrape-manifest.json')
+  path.join(outputDir, 'current-retirement-scrape-manifest.json'),
 );
 
 function decodeHtml(value) {
   return String(value || '')
     .replace(/&#(\d+);/gu, (_, code) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/giu, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+    .replace(/&#x([0-9a-f]+);/giu, (_, code) =>
+      String.fromCodePoint(parseInt(code, 16)),
+    )
     .replace(/&nbsp;/giu, ' ')
     .replace(/&amp;/giu, '&')
     .replace(/&#038;/gu, '&')
@@ -125,17 +130,21 @@ function decodeHtml(value) {
 }
 
 function slugify(value) {
-  return cleanString(decodeHtml(value))
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/gu, '-')
-    .replace(/^-+|-+$/gu, '')
-    .slice(0, 120) || 'retirement-message';
+  return (
+    cleanString(decodeHtml(value))
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gu, '-')
+      .replace(/^-+|-+$/gu, '')
+      .slice(0, 120) || 'retirement-message'
+  );
 }
 
 function getCleanExtension(value, fallback = 'jpg') {
-  return String(value || fallback)
-    .toLowerCase()
-    .replace(/[^a-z0-9]/gu, '') || fallback;
+  return (
+    String(value || fallback)
+      .toLowerCase()
+      .replace(/[^a-z0-9]/gu, '') || fallback
+  );
 }
 
 function getExtensionFromUrl(url, contentType = '') {
@@ -162,7 +171,9 @@ function getEmbeddedImageUrl(post) {
 
 function getFirstContentImageUrl(post) {
   const contentHtml = String(post?.content?.rendered || '');
-  const match = contentHtml.match(/<img\b[^>]*(?:src|data-src)=["']([^"']+)["']/iu);
+  const match = contentHtml.match(
+    /<img\b[^>]*(?:src|data-src)=["']([^"']+)["']/iu,
+  );
 
   return match ? decodeHtml(match[1]) : '';
 }
@@ -200,8 +211,7 @@ function getLanguage(post) {
 }
 
 function getCommentBody(comment) {
-  return stripHtml(decodeHtml(comment?.content?.rendered))
-    .slice(0, 2000);
+  return stripHtml(decodeHtml(comment?.content?.rendered)).slice(0, 2000);
 }
 
 function getCommentStatus(comment) {
@@ -216,12 +226,21 @@ function parseRetirementDate(content) {
   const cleanContent = cleanString(content);
   const datePattern = String.raw`((?:\d{1,2}\s+[A-Z]{3,9}|[A-Z]{3,9}\s+\d{1,2}),?\s+\d{4})`;
   const patterns = [
-    new RegExp(String.raw`\b(?:shall\s+retire|will\s+retire|retires?|retired|release|departing)[^.]{0,160}?\b(?:on|effective|as of)\s+${datePattern}`, 'iu'),
-    new RegExp(String.raw`\b(?:retirement|retirement\s+date|date\s+of\s+retirement)\s*[:\-]\s*${datePattern}`, 'iu'),
-    new RegExp(String.raw`\b(?:on|effective|as of)\s+${datePattern}[^.]{0,80}?\b(?:retire|retirement|release)`, 'iu')
+    new RegExp(
+      String.raw`\b(?:shall\s+retire|will\s+retire|retires?|retired|release|departing)[^.]{0,160}?\b(?:on|effective|as of)\s+${datePattern}`,
+      'iu',
+    ),
+    new RegExp(
+      String.raw`\b(?:retirement|retirement\s+date|date\s+of\s+retirement)\s*[:\-]\s*${datePattern}`,
+      'iu',
+    ),
+    new RegExp(
+      String.raw`\b(?:on|effective|as of)\s+${datePattern}[^.]{0,80}?\b(?:retire|retirement|release)`,
+      'iu',
+    ),
   ];
   const match = patterns
-    .map(pattern => cleanContent.match(pattern))
+    .map((pattern) => cleanContent.match(pattern))
     .find(Boolean);
 
   if (!match) {
@@ -239,16 +258,16 @@ function parseArticleDate(value) {
   const monthFirst = cleanValue.match(/^([A-Z]{3,9})\s+(\d{1,2})\s+(\d{4})$/iu);
   const parts = dayFirst
     ? {
-      day: Number(dayFirst[1]),
-      month: MONTHS[dayFirst[2].toLowerCase()],
-      year: Number(dayFirst[3])
-    }
+        day: Number(dayFirst[1]),
+        month: MONTHS[dayFirst[2].toLowerCase()],
+        year: Number(dayFirst[3]),
+      }
     : monthFirst
       ? {
-        day: Number(monthFirst[2]),
-        month: MONTHS[monthFirst[1].toLowerCase()],
-        year: Number(monthFirst[3])
-      }
+          day: Number(monthFirst[2]),
+          month: MONTHS[monthFirst[1].toLowerCase()],
+          year: Number(monthFirst[3]),
+        }
       : null;
 
   if (!parts || parts.month === undefined) {
@@ -265,15 +284,17 @@ function parseRetiree(title, content) {
     .trim();
   const withoutTrade = cleanTitle.split(/\s+[-–]\s+\d{3,}/u)[0];
   const postNominalsMatch = withoutTrade.match(
-    /,\s*([A-Z][A-Z. -]*(?:,\s*[A-Z][A-Z. -]*)*)\s*$/u
+    /,\s*([A-Z][A-Z. -]*(?:,\s*[A-Z][A-Z. -]*)*)\s*$/u,
   );
   const nameTitle = postNominalsMatch
     ? withoutTrade.slice(0, postNominalsMatch.index).trim()
     : withoutTrade;
-  const rank = KNOWN_RANKS.find(value =>
-    nameTitle.toUpperCase().startsWith(`${value} `) ||
-    nameTitle.toUpperCase() === value
-  ) || '';
+  const rank =
+    KNOWN_RANKS.find(
+      (value) =>
+        nameTitle.toUpperCase().startsWith(`${value} `) ||
+        nameTitle.toUpperCase() === value,
+    ) || '';
   const nameOnly = (rank ? nameTitle.slice(rank.length) : nameTitle)
     .replace(/[“"][^”"]+[”"]/gu, '')
     .replace(/\b[A-Z]\.\s+(?=[A-Z][A-Z'-]+$)/gu, '')
@@ -283,14 +304,27 @@ function parseRetiree(title, content) {
   const tradeRole = cleanTitle.match(/\d{3,}\s*,\s*(.+)$/u)?.[1]?.trim() || '';
 
   return {
-    rank: rank || parts.slice(0, Math.min(3, Math.max(parts.length - 2, 1))).join(' ') || 'Unknown',
-    firstName: parts.length >= 2 ? parts[parts.length - 2].replace(/[",]/gu, '') : 'Unknown',
-    lastName: parts.length >= 1 ? parts[parts.length - 1].replace(/[",]/gu, '') : 'Unknown',
+    rank:
+      rank ||
+      parts.slice(0, Math.min(3, Math.max(parts.length - 2, 1))).join(' ') ||
+      'Unknown',
+    firstName:
+      parts.length >= 2
+        ? parts[parts.length - 2].replace(/[",]/gu, '')
+        : 'Unknown',
+    lastName:
+      parts.length >= 1
+        ? parts[parts.length - 1].replace(/[",]/gu, '')
+        : 'Unknown',
     postNominals: postNominalsMatch
-      ? postNominalsMatch[1].split(',').map(value => value.trim()).filter(Boolean).join(', ')
+      ? postNominalsMatch[1]
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean)
+          .join(', ')
       : '',
     tradeRole,
-    retirementDate: parseRetirementDate(content)
+    retirementDate: parseRetirementDate(content),
   };
 }
 
@@ -306,7 +340,7 @@ function toPostDocument(post, mediaResult, legacyImportUser = null) {
     message,
     messageLanguage: language,
     messages: {
-      [language]: message
+      [language]: message,
     },
     photoUrl: mediaResult?.asset?.url || '',
     submitter: {
@@ -314,15 +348,15 @@ function toPostDocument(post, mediaResult, legacyImportUser = null) {
       lastName: 'Import',
       relationship: 'other',
       email: 'legacy-import@cmcen.local',
-      unit: 'CMCEN'
+      unit: 'CMCEN',
     },
     publicationConsent: {
       confirmed: true,
-      confirmedAt: publishedAt || new Date()
+      confirmedAt: publishedAt || new Date(),
     },
     memberReviewConfirmation: {
       confirmed: true,
-      confirmedAt: publishedAt || new Date()
+      confirmedAt: publishedAt || new Date(),
     },
     status: post.status === 'publish' ? 'published' : 'pending',
     createdBy: legacyImportUserId,
@@ -340,8 +374,8 @@ function toPostDocument(post, mediaResult, legacyImportUser = null) {
       importedAt: new Date(),
       sourceImageUrl: mediaResult?.sourceUrl || getImageUrl(post),
       mediaAssetKey: mediaResult?.asset?.key || '',
-      scrapedFrom: RETIREMENT_LIST_URL
-    }
+      scrapedFrom: RETIREMENT_LIST_URL,
+    },
   };
 }
 
@@ -350,8 +384,8 @@ async function fetchJsonResponse(url) {
     responseType: 'json',
     timeout: 30000,
     headers: {
-      'User-Agent': 'CMCEN migration test script'
-    }
+      'User-Agent': 'CMCEN migration test script',
+    },
   });
 
   return response;
@@ -366,8 +400,8 @@ async function fetchText(url) {
     responseType: 'text',
     timeout: 30000,
     headers: {
-      'User-Agent': 'CMCEN migration test script'
-    }
+      'User-Agent': 'CMCEN migration test script',
+    },
   });
 
   return String(response.data || '');
@@ -382,7 +416,7 @@ function getTotalPages(response) {
 async function getCategoryId() {
   console.log(`Looking up WordPress category "${categorySlug}"`);
   const categories = await fetchJson(
-    `${WORDPRESS_BASE_URL}/wp-json/wp/v2/categories?slug=${encodeURIComponent(categorySlug)}`
+    `${WORDPRESS_BASE_URL}/wp-json/wp/v2/categories?slug=${encodeURIComponent(categorySlug)}`,
   );
   const category = Array.isArray(categories) ? categories[0] : null;
 
@@ -398,22 +432,26 @@ async function getLatestPosts(categoryId) {
   let page = 1;
   let totalPages = 1;
 
-  console.log(contentMode === 'comments'
-    ? `Scanning retirement posts in category ${categoryId} so comments can be fetched by parent post`
-    : `Fetching WordPress retirement posts for category ${categoryId}`);
+  console.log(
+    contentMode === 'comments'
+      ? `Scanning retirement posts in category ${categoryId} so comments can be fetched by parent post`
+      : `Fetching WordPress retirement posts for category ${categoryId}`,
+  );
 
   while (page <= totalPages && posts.length < limit) {
     const perPage = Number.isFinite(limit)
       ? Math.min(WORDPRESS_PAGE_SIZE, limit - posts.length)
       : WORDPRESS_PAGE_SIZE;
     const response = await fetchJsonResponse(
-      `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?per_page=${perPage}&page=${page}&categories=${categoryId}&_embed=1`
+      `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?per_page=${perPage}&page=${page}&categories=${categoryId}&_embed=1`,
     );
     const pagePosts = Array.isArray(response.data) ? response.data : [];
 
     totalPages = getTotalPages(response);
     posts.push(...pagePosts);
-    console.log(`Fetched ${postScanLabel} page ${page}/${totalPages} (${posts.length} collected)`);
+    console.log(
+      `Fetched ${postScanLabel} page ${page}/${totalPages} (${posts.length} collected)`,
+    );
 
     if (pagePosts.length === 0) {
       break;
@@ -427,7 +465,8 @@ async function getLatestPosts(categoryId) {
 
 function getRetirementListSlugs(html) {
   const slugs = new Set();
-  const linkPattern = /<a\b[^>]*class=["'][^"']*ninja_table_permalink[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>/giu;
+  const linkPattern =
+    /<a\b[^>]*class=["'][^"']*ninja_table_permalink[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>/giu;
   let match = linkPattern.exec(html);
 
   while (match) {
@@ -445,12 +484,14 @@ function getRetirementListSlugs(html) {
 
 async function fetchPostBySlug(slug) {
   const posts = await fetchJson(
-    `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_embed=1`
+    `${WORDPRESS_BASE_URL}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_embed=1`,
   );
   const post = Array.isArray(posts) ? posts[0] : null;
 
   if (!post?.id) {
-    console.log(`Skipping retirement slug ${slug}: WordPress REST post not found`);
+    console.log(
+      `Skipping retirement slug ${slug}: WordPress REST post not found`,
+    );
     return null;
   }
 
@@ -461,7 +502,9 @@ async function getLatestPostsFromRetirementList() {
   const html = await fetchText(RETIREMENT_LIST_URL);
   const slugs = getRetirementListSlugs(html);
   const posts = [];
-  const totalToCollect = Number.isFinite(limit) ? Math.min(slugs.length, limit) : slugs.length;
+  const totalToCollect = Number.isFinite(limit)
+    ? Math.min(slugs.length, limit)
+    : slugs.length;
 
   console.log(`Found ${slugs.length} retirement links on retirement list page`);
 
@@ -474,7 +517,9 @@ async function getLatestPostsFromRetirementList() {
 
     if (post) {
       posts.push(post);
-      console.log(`[${posts.length}/${totalToCollect}] Collected retirement ${post.id}: ${getPostTitle(post)}`);
+      console.log(
+        `[${posts.length}/${totalToCollect}] Collected retirement ${post.id}: ${getPostTitle(post)}`,
+      );
     }
   }
 
@@ -488,17 +533,19 @@ async function getRetirementPosts() {
     return {
       posts: Number.isFinite(limit) ? listPosts.slice(0, limit) : listPosts,
       sourceType: 'retirements-list',
-      categoryId: null
+      categoryId: null,
     };
   }
 
-  console.log('No retirement links found on the list page; falling back to category scan');
+  console.log(
+    'No retirement links found on the list page; falling back to category scan',
+  );
   const categoryId = await getCategoryId();
 
   return {
     posts: await getLatestPosts(categoryId),
     sourceType: 'category',
-    categoryId
+    categoryId,
   };
 }
 
@@ -511,13 +558,15 @@ async function getPostComments(postId) {
 
   while (page <= totalPages) {
     const response = await fetchJsonResponse(
-      `${WORDPRESS_BASE_URL}/wp-json/wp/v2/comments?post=${postId}&per_page=${WORDPRESS_PAGE_SIZE}&page=${page}&status=approve`
+      `${WORDPRESS_BASE_URL}/wp-json/wp/v2/comments?post=${postId}&per_page=${WORDPRESS_PAGE_SIZE}&page=${page}&status=approve`,
     );
     const pageComments = Array.isArray(response.data) ? response.data : [];
 
     totalPages = getTotalPages(response);
     comments.push(...pageComments);
-    console.log(`Fetched comment page ${page}/${totalPages} for post ${postId} (${comments.length} collected)`);
+    console.log(
+      `Fetched comment page ${page}/${totalPages} for post ${postId} (${comments.length} collected)`,
+    );
 
     if (pageComments.length === 0) {
       break;
@@ -544,17 +593,19 @@ async function getLegacyImportUser() {
         preferredLanguage: 'en',
         role: 'subscriber',
         customRoles: [],
-        contentAreas: []
-      }
+        contentAreas: [],
+      },
     },
-    { new: true, upsert: true, runValidators: true }
+    { new: true, upsert: true, runValidators: true },
   );
 }
 
 async function getWordPressCommentAuthor(comment) {
   const authorName = getWordPressCommentAuthorName(comment);
   const username = `wp-comment-${slugify(authorName)}`;
-  const [firstName, ...lastNameParts] = authorName.split(/\s+/u).filter(Boolean);
+  const [firstName, ...lastNameParts] = authorName
+    .split(/\s+/u)
+    .filter(Boolean);
 
   return User.findOneAndUpdate(
     { username },
@@ -570,31 +621,35 @@ async function getWordPressCommentAuthor(comment) {
         preferredLanguage: 'en',
         role: 'subscriber',
         customRoles: [],
-        contentAreas: []
-      }
+        contentAreas: [],
+      },
     },
-    { new: true, upsert: true, runValidators: true }
+    { new: true, upsert: true, runValidators: true },
   );
 }
 
 async function putObject({ key, body, contentType }) {
-  await s3Client.send(new PutObjectCommand({
-    Bucket: process.env.MINIO_BUCKET_NAME,
-    Key: key,
-    Body: body,
-    ContentType: contentType
-  }));
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: process.env.MINIO_BUCKET_NAME,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    }),
+  );
 }
 
 async function uploadImageForPost(post) {
   const sourceUrl = getImageUrl(post);
   const sourceImage = await downloadSourceImage(sourceUrl, {
     userAgent: 'CMCEN migration script',
-    validateImage: buffer => sharp(buffer).rotate().raw().toBuffer()
+    validateImage: (buffer) => sharp(buffer).rotate().raw().toBuffer(),
   });
 
   if (sourceImage.usedFallback) {
-    console.log(`Source image ${sourceImage.fallbackReason} for post ${post.id}; using jimmy-crest.webp`);
+    console.log(
+      `Source image ${sourceImage.fallbackReason} for post ${post.id}; using jimmy-crest.webp`,
+    );
   } else {
     console.log(`Downloaded source image for post ${post.id}: ${sourceUrl}`);
   }
@@ -613,42 +668,48 @@ async function uploadImageForPost(post) {
   await putObject({
     key: originalKey,
     body: buffer,
-    contentType
+    contentType,
   });
 
-  await Promise.all(IMAGE_VARIANTS.map(async variant => {
-    const width = metadata.width ? Math.min(metadata.width, variant.width) : variant.width;
-    const variantBuffer = await sharp(buffer)
-      .rotate()
-      .resize({
-        width,
-        withoutEnlargement: true
-      })
-      .webp({ quality: 82 })
-      .toBuffer({ resolveWithObject: true });
-    const key = `${baseKey}/${variant.name}.webp`;
+  await Promise.all(
+    IMAGE_VARIANTS.map(async (variant) => {
+      const width = metadata.width
+        ? Math.min(metadata.width, variant.width)
+        : variant.width;
+      const variantBuffer = await sharp(buffer)
+        .rotate()
+        .resize({
+          width,
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 82 })
+        .toBuffer({ resolveWithObject: true });
+      const key = `${baseKey}/${variant.name}.webp`;
 
-    await putObject({
-      key,
-      body: variantBuffer.data,
-      contentType: 'image/webp'
-    });
+      await putObject({
+        key,
+        body: variantBuffer.data,
+        contentType: 'image/webp',
+      });
 
-    variants[variant.name] = {
-      key,
-      url: buildPublicMediaUrl(key),
-      width: variantBuffer.info.width,
-      height: variantBuffer.info.height,
-      size: variantBuffer.info.size,
-      mimeType: 'image/webp'
-    };
-    console.log(`Uploaded ${variant.name} image variant for post ${post.id}`);
-  }));
+      variants[variant.name] = {
+        key,
+        url: buildPublicMediaUrl(key),
+        width: variantBuffer.info.width,
+        height: variantBuffer.info.height,
+        size: variantBuffer.info.size,
+        mimeType: 'image/webp',
+      };
+      console.log(`Uploaded ${variant.name} image variant for post ${post.id}`);
+    }),
+  );
 
   const title = getPostTitle(post);
   const assetDocument = {
     key: originalKey,
-    url: buildPublicMediaUrl(variants.large?.key || variants.hero?.key || originalKey),
+    url: buildPublicMediaUrl(
+      variants.large?.key || variants.hero?.key || originalKey,
+    ),
     originalKey,
     originalUrl: buildPublicMediaUrl(originalKey),
     originalName: sourceImage.originalName || `${slugify(title)}.${extension}`,
@@ -666,11 +727,12 @@ async function uploadImageForPost(post) {
       sourceField: 'photoUrl',
       sourceUrl: post.link || sourceUrl,
       label: title || `Retirement ${post.id}`,
-      linkedAt: new Date()
+      linkedAt: new Date(),
     },
     inferredName: title || `Retirement ${post.id}`,
     fileMetadata: {
-      originalName: sourceImage.originalName || `${slugify(title)}.${extension}`,
+      originalName:
+        sourceImage.originalName || `${slugify(title)}.${extension}`,
       mimeType: contentType,
       size: buffer.length,
       storageKey: originalKey,
@@ -678,22 +740,22 @@ async function uploadImageForPost(post) {
       usedFallback: sourceImage.usedFallback,
       fallbackReason: sourceImage.fallbackReason,
       fallbackAsset: sourceImage.usedFallback ? 'jimmy-crest' : '',
-      fallbackSourceUrl: sourceImage.fallbackSourceUrl
+      fallbackSourceUrl: sourceImage.fallbackSourceUrl,
     },
     imageMetadata: sanitizeImageMetadata(metadata),
-    uploadedBy: null
+    uploadedBy: null,
   };
 
   const asset = await MediaAsset.findOneAndUpdate(
     { key: originalKey },
     { $set: assetDocument },
-    { new: true, upsert: true, runValidators: true }
+    { new: true, upsert: true, runValidators: true },
   );
   console.log(`Upserted media asset for post ${post.id}: ${originalKey}`);
 
   return {
     sourceUrl,
-    asset: asset.toObject()
+    asset: asset.toObject(),
   };
 }
 
@@ -711,18 +773,18 @@ function summarize(post, document, mediaResult) {
     photoUrl: document.photoUrl,
     imported: apply && shouldImportRetirements,
     commentsImported: 0,
-    comments: []
+    comments: [],
   };
 }
 
 function summarizeComments(comments) {
-  return comments.map(comment => ({
+  return comments.map((comment) => ({
     wordpressCommentId: comment.id,
     authorName: cleanString(decodeHtml(comment.author_name)),
     body: getCommentBody(comment),
     status: getCommentStatus(comment),
     publishedAt: parseDate(comment.date_gmt || comment.date),
-    url: comment.link || ''
+    url: comment.link || '',
   }));
 }
 
@@ -730,7 +792,9 @@ async function importComments({ comments, retirementMessage }) {
   const importedComments = [];
 
   for (const comment of comments) {
-    console.log(`Processing WordPress comment ${comment.id} for post ${comment.post}`);
+    console.log(
+      `Processing WordPress comment ${comment.id} for post ${comment.post}`,
+    );
     const body = getCommentBody(comment);
 
     if (body.length < 2) {
@@ -758,16 +822,16 @@ async function importComments({ comments, retirementMessage }) {
         authorName: getWordPressCommentAuthorName(comment),
         authorUrl: comment.author_url || '',
         url: comment.link || '',
-        importedAt: new Date()
-      }
+        importedAt: new Date(),
+      },
     };
     const importedComment = await RetirementComment.findOneAndUpdate(
       {
         'legacy.source': 'cmcen-live-site',
-        'legacy.wordpressCommentId': comment.id
+        'legacy.wordpressCommentId': comment.id,
       },
       { $set: document },
-      { new: true, upsert: true, runValidators: true }
+      { new: true, upsert: true, runValidators: true },
     );
 
     importedComments.push(importedComment);
@@ -791,17 +855,15 @@ async function main() {
     console.log(`Public media base URL: ${publicMediaBaseUrl}`);
   }
 
-  const {
-    posts,
-    sourceType,
-    categoryId
-  } = await getRetirementPosts();
+  const { posts, sourceType, categoryId } = await getRetirementPosts();
   const results = [];
   let legacyImportUser = null;
 
-  console.log(contentMode === 'comments'
-    ? `Collected ${posts.length} retirement parent posts to scan for approved comments`
-    : `Collected ${posts.length} retirement posts for ${contentMode} mode`);
+  console.log(
+    contentMode === 'comments'
+      ? `Collected ${posts.length} retirement parent posts to scan for approved comments`
+      : `Collected ${posts.length} retirement posts for ${contentMode} mode`,
+  );
 
   if (apply) {
     console.log('Connecting to MongoDB');
@@ -817,76 +879,92 @@ async function main() {
     let stage = 'fetch-comments';
 
     try {
-    console.log(contentMode === 'comments'
-      ? `[${progressLabel}] Scanning comments for retirement parent post ${post.id}: ${getPostTitle(post)}`
-      : `[${progressLabel}] Processing WordPress retirement message ${post.id}: ${getPostTitle(post)}`);
-    const comments = await getPostComments(post.id);
-
-    if (apply && shouldImportRetirements) {
-      stage = 'upload-image';
-      mediaResult = await uploadImageForPost(post);
-    }
-
-    stage = 'build-message';
-    const document = toPostDocument(post, mediaResult, legacyImportUser);
-
-    if (document.message.length < 100) {
-      results.push({
-        wordpressPostId: post.id,
-        title: document.legacy.title,
-        imported: false,
-        error: 'Message is shorter than the RetirementMessage minimum length.'
-      });
-      console.log(`[${progressLabel}] Skipping retirement message ${post.id}: message too short`);
-      continue;
-    }
-
-    if (apply && shouldImportRetirements) {
-      stage = 'upsert-message';
-      console.log(`[${progressLabel}] Upserting retirement message for WordPress post ${post.id}`);
-      retirementMessage = await RetirementMessage.findOneAndUpdate(
-        {
-          'legacy.source': 'cmcen-live-site',
-          'legacy.wordpressPostId': post.id
-        },
-        { $set: document },
-        { new: true, upsert: true, runValidators: true }
+      console.log(
+        contentMode === 'comments'
+          ? `[${progressLabel}] Scanning comments for retirement parent post ${post.id}: ${getPostTitle(post)}`
+          : `[${progressLabel}] Processing WordPress retirement message ${post.id}: ${getPostTitle(post)}`,
       );
-    } else if (apply && shouldImportComments) {
-      console.log(`[${progressLabel}] Finding migrated retirement message for WordPress post ${post.id}`);
-      retirementMessage = await RetirementMessage.findOne({
-        'legacy.source': 'cmcen-live-site',
-        'legacy.wordpressPostId': post.id
-      });
-    }
+      const comments = await getPostComments(post.id);
 
-    const summary = summarize(post, document, mediaResult);
-    summary.comments = summarizeComments(comments);
+      if (apply && shouldImportRetirements) {
+        stage = 'upload-image';
+        mediaResult = await uploadImageForPost(post);
+      }
 
-    if (apply && shouldImportComments) {
-      if (!retirementMessage) {
-        summary.error = 'Retirement message must be migrated before importing comments.';
-        results.push(summary);
-        console.log(`[${progressLabel}] Skipping comments for ${post.id}: retirement message not found`);
+      stage = 'build-message';
+      const document = toPostDocument(post, mediaResult, legacyImportUser);
+
+      if (document.message.length < 100) {
+        results.push({
+          wordpressPostId: post.id,
+          title: document.legacy.title,
+          imported: false,
+          error:
+            'Message is shorter than the RetirementMessage minimum length.',
+        });
+        console.log(
+          `[${progressLabel}] Skipping retirement message ${post.id}: message too short`,
+        );
         continue;
       }
 
-      stage = 'import-comments';
-      const importedComments = await importComments({
-        comments,
-        retirementMessage
-      });
-      summary.commentsImported = importedComments.length;
-    }
+      if (apply && shouldImportRetirements) {
+        stage = 'upsert-message';
+        console.log(
+          `[${progressLabel}] Upserting retirement message for WordPress post ${post.id}`,
+        );
+        retirementMessage = await RetirementMessage.findOneAndUpdate(
+          {
+            'legacy.source': 'cmcen-live-site',
+            'legacy.wordpressPostId': post.id,
+          },
+          { $set: document },
+          { new: true, upsert: true, runValidators: true },
+        );
+      } else if (apply && shouldImportComments) {
+        console.log(
+          `[${progressLabel}] Finding migrated retirement message for WordPress post ${post.id}`,
+        );
+        retirementMessage = await RetirementMessage.findOne({
+          'legacy.source': 'cmcen-live-site',
+          'legacy.wordpressPostId': post.id,
+        });
+      }
 
-    results.push(summary);
-    if (shouldImportRetirements) {
-      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} retirement message ${post.id}: ${document.legacy.title}`);
-    }
+      const summary = summarize(post, document, mediaResult);
+      summary.comments = summarizeComments(comments);
 
-    if (shouldImportComments) {
-      console.log(`[${progressLabel}] ${apply ? 'Imported' : 'Would import'} ${summary.comments.length} retirement comments for ${post.id}`);
-    }
+      if (apply && shouldImportComments) {
+        if (!retirementMessage) {
+          summary.error =
+            'Retirement message must be migrated before importing comments.';
+          results.push(summary);
+          console.log(
+            `[${progressLabel}] Skipping comments for ${post.id}: retirement message not found`,
+          );
+          continue;
+        }
+
+        stage = 'import-comments';
+        const importedComments = await importComments({
+          comments,
+          retirementMessage,
+        });
+        summary.commentsImported = importedComments.length;
+      }
+
+      results.push(summary);
+      if (shouldImportRetirements) {
+        console.log(
+          `[${progressLabel}] ${apply ? 'Imported' : 'Would import'} retirement message ${post.id}: ${document.legacy.title}`,
+        );
+      }
+
+      if (shouldImportComments) {
+        console.log(
+          `[${progressLabel}] ${apply ? 'Imported' : 'Would import'} ${summary.comments.length} retirement comments for ${post.id}`,
+        );
+      }
     } catch (error) {
       const errorMessage = error?.message || String(error);
       results.push({
@@ -895,9 +973,11 @@ async function main() {
         imported: Boolean(retirementMessage),
         skipped: true,
         failedStage: stage,
-        error: errorMessage
+        error: errorMessage,
       });
-      console.error(`[${progressLabel}] Skipping retirement message ${post.id} after ${stage} failed: ${errorMessage}`);
+      console.error(
+        `[${progressLabel}] Skipping retirement message ${post.id} after ${stage} failed: ${errorMessage}`,
+      );
     }
   }
 
@@ -915,15 +995,19 @@ async function main() {
     contentMode,
     apply,
     scrapedAt: new Date().toISOString(),
-    results
+    results,
   });
 
-  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportRetirements ? results.filter(result => !result.error).length : 0} retirement messages.`);
-  console.log(`${apply ? 'Imported' : 'Would import'} ${shouldImportComments ? results.reduce((sum, result) => sum + (result.comments?.length || 0), 0) : 0} retirement comments.`);
+  console.log(
+    `${apply ? 'Imported' : 'Would import'} ${shouldImportRetirements ? results.filter((result) => !result.error).length : 0} retirement messages.`,
+  );
+  console.log(
+    `${apply ? 'Imported' : 'Would import'} ${shouldImportComments ? results.reduce((sum, result) => sum + (result.comments?.length || 0), 0) : 0} retirement comments.`,
+  );
   console.log(`Wrote manifest: ${manifestPath}`);
 }
 
-main().catch(async error => {
+main().catch(async (error) => {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
   }

@@ -25,21 +25,21 @@ function applyTheme(nextTheme, { persist = true } = {}) {
     const translateText =
       typeof window.translate === "function"
         ? window.translate
-        : key => {
-          const fallbacks = {
-            theme_switch_to_light_label: "Switch to light mode",
-            theme_switch_to_dark_label: "Switch to dark mode"
-          };
+        : (key) => {
+            const fallbacks = {
+              theme_switch_to_light_label: "Switch to light mode",
+              theme_switch_to_dark_label: "Switch to dark mode",
+            };
 
-          return fallbacks[key] || key;
-        };
+            return fallbacks[key] || key;
+          };
 
     themeToggle.setAttribute("aria-pressed", String(isDark));
     themeToggle.setAttribute(
       "aria-label",
       isDark
         ? translateText("theme_switch_to_light_label")
-        : translateText("theme_switch_to_dark_label")
+        : translateText("theme_switch_to_dark_label"),
     );
   }
 
@@ -50,8 +50,8 @@ function applyTheme(nextTheme, { persist = true } = {}) {
   document.dispatchEvent(
     new CustomEvent("themechange", {
       bubbles: true,
-      detail: { theme: nextTheme }
-    })
+      detail: { theme: nextTheme },
+    }),
   );
 }
 
@@ -63,17 +63,17 @@ function toggleTheme() {
 
 applyTheme(getPreferredTheme(), { persist: false });
 
-darkModeQuery.addEventListener("change", event => {
+darkModeQuery.addEventListener("change", (event) => {
   if (!localStorage.getItem(themeStorageKey)) {
     applyTheme(event.matches ? "dark" : "light", {
-      persist: false
+      persist: false,
     });
   }
 });
 
 document.addEventListener("languagechange", () => {
   applyTheme(document.documentElement.dataset.theme || getPreferredTheme(), {
-    persist: false
+    persist: false,
   });
   updateDynamicNavigationLabels();
 });
@@ -88,14 +88,14 @@ const navLinks = {
       { route: "/about_foundation.html", i18n: "menu_about_option_4" },
       { route: "/about_museum.html", i18n: "menu_about_option_5" },
       { route: "/ownership.html", i18n: "menu_about_option_6" },
-    ]
+    ],
   },
   doctrine: {
     titleKey: "menu_doctrine_title",
     items: [
       { route: "/doctrine_hub.html", i18n: "menu_doctrine_option_1" },
       { route: "/awards.html", i18n: "menu_doctrine_option_2" },
-    ]
+    ],
   },
   news: {
     titleKey: "menu_news_title",
@@ -104,12 +104,12 @@ const navLinks = {
       {
         route: "/submit-event",
         i18n: "menu_news_option_2",
-        permission: "canCreateDrafts"
+        permission: "canCreateDrafts",
       },
       {
-        route: '/review-submissions',
-        i18n: 'menu_review_events',
-        permission: 'canReviewAndPublish'
+        route: "/review-submissions",
+        i18n: "menu_review_events",
+        permission: "canReviewAndPublish",
       },
       { route: "/news_stories.html", i18n: "menu_news_option_3" },
       { route: "/last-post", i18n: "menu_news_option_4" },
@@ -118,7 +118,7 @@ const navLinks = {
       { route: "/promotions.html", i18n: "menu_news_option_7" },
       { route: "/history.html", i18n: "menu_news_option_8" },
       { route: "/gallery.html", i18n: "menu_news_option_9" },
-    ]
+    ],
   },
   benefits: {
     titleKey: "menu_benefits_title",
@@ -128,8 +128,8 @@ const navLinks = {
       { route: "/bursaries.html", i18n: "menu_benefits_option_3" },
       { route: "/affiliate_offers.html", i18n: "menu_benefits_option_4" },
       { route: "/support_troops.html", i18n: "menu_benefits_option_5" },
-    ]
-  }
+    ],
+  },
 };
 
 // header links that aren't dropdowns
@@ -139,12 +139,12 @@ const standaloneLinks = [
 let customNavigationItems = [];
 
 function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function escapeCssIdentifier(value) {
@@ -152,31 +152,33 @@ function escapeCssIdentifier(value) {
     return window.CSS.escape(value);
   }
 
-  return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+  return String(value || "").replace(/[^a-zA-Z0-9_-]/g, "\\$&");
 }
 
 function getLocalizedNavigationLabel(label) {
-  const language = CMCENUtils?.getCurrentLanguage?.() || 'en';
-  const fallbackLanguage = language === 'fr' ? 'en' : 'fr';
+  const language = CMCENUtils?.getCurrentLanguage?.() || "en";
+  const fallbackLanguage = language === "fr" ? "en" : "fr";
 
-  return String(label?.[language] || label?.[fallbackLanguage] || '').trim();
+  return String(label?.[language] || label?.[fallbackLanguage] || "").trim();
 }
 
 function updateDynamicNavigationLabels() {
-  document.querySelectorAll('[data-nav-label-en], [data-nav-label-fr]').forEach(link => {
-    link.textContent = getLocalizedNavigationLabel({
-      en: link.dataset.navLabelEn || '',
-      fr: link.dataset.navLabelFr || ''
+  document
+    .querySelectorAll("[data-nav-label-en], [data-nav-label-fr]")
+    .forEach((link) => {
+      link.textContent = getLocalizedNavigationLabel({
+        en: link.dataset.navLabelEn || "",
+        fr: link.dataset.navLabelFr || "",
+      });
     });
-  });
 }
 
 function applyCurrentLanguage() {
-  if (typeof applyLanguage === 'function') {
+  if (typeof applyLanguage === "function") {
     applyLanguage(
-      typeof currentLang === 'string'
+      typeof currentLang === "string"
         ? currentLang
-        : CMCENUtils?.getCurrentLanguage?.() || 'en'
+        : CMCENUtils?.getCurrentLanguage?.() || "en",
     );
   }
 
@@ -195,13 +197,13 @@ const protectedPages = new Set([
   "/admin-users",
 
   ...Object.values(navLinks)
-    .flatMap(dropdown => dropdown.items)
-    .filter(item => item.protected || item.permission)
-    .map(item => item.route),
+    .flatMap((dropdown) => dropdown.items)
+    .filter((item) => item.protected || item.permission)
+    .map((item) => item.route),
 
   ...standaloneLinks
-    .filter(item => item.protected || item.permission)
-    .map(item => item.route)
+    .filter((item) => item.protected || item.permission)
+    .map((item) => item.route),
 ]);
 
 function getAccessAttributes(item) {
@@ -210,22 +212,26 @@ function getAccessAttributes(item) {
   }
 
   if (item.protected) {
-    return 'data-auth-required hidden';
+    return "data-auth-required hidden";
   }
 
-  return '';
+  return "";
 }
 
 function renderDropdown(dropdown, index) {
   const menuId = `primaryNavigationDropdown${index}`;
-  const itemsHtml = dropdown.items.map(item => `
+  const itemsHtml = dropdown.items
+    .map(
+      (item) => `
     <li ${getAccessAttributes(item)}>
       <a
         href="${item.route}"
         data-i18n="${item.i18n}"
       ></a>
     </li>
-  `).join('');
+  `,
+    )
+    .join("");
 
   return `
     <div class="dropdown">
@@ -261,14 +267,12 @@ function renderStandaloneLink(link) {
 function loadHeader() {
   const dropdownsHtml = Object.values(navLinks)
     .map((dropdown, index) => renderDropdown(dropdown, index))
-    .join('');
+    .join("");
 
-  const standaloneHtml = standaloneLinks
-    .map(renderStandaloneLink)
-    .join('');
+  const standaloneHtml = standaloneLinks.map(renderStandaloneLink).join("");
 
-  const header = document.getElementById('header');
-  header.className = 'site-header';
+  const header = document.getElementById("header");
+  header.className = "site-header";
   header.innerHTML = `
     <div class="header-identity-row">
       <div class="header-inner">
@@ -387,27 +391,26 @@ function loadHeader() {
     </div>
   `;
 
-  const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-  const primaryNavigation = document.getElementById('primaryNavigation');
+  const mobileMenuToggle = document.getElementById("mobileMenuToggle");
+  const primaryNavigation = document.getElementById("primaryNavigation");
 
   function isMobileNavigation() {
-    return window.matchMedia('(max-width: 700px)').matches;
+    return window.matchMedia("(max-width: 700px)").matches;
   }
 
   function setMobileDropdownOpen(dropdown, isOpen) {
-    dropdown.classList.toggle('is-mobile-dropdown-open', isOpen);
-    dropdown.querySelector('.dropdown-toggle')?.setAttribute(
-      'aria-expanded',
-      String(isOpen)
-    );
+    dropdown.classList.toggle("is-mobile-dropdown-open", isOpen);
+    dropdown
+      .querySelector(".dropdown-toggle")
+      ?.setAttribute("aria-expanded", String(isOpen));
   }
 
   function openCurrentMobileDropdown() {
     const currentPath = window.location.pathname;
     const currentLink = primaryNavigation?.querySelector(
-      `.dropdown-menu a[href="${currentPath}"]`
+      `.dropdown-menu a[href="${currentPath}"]`,
     );
-    const currentDropdown = currentLink?.closest('.dropdown');
+    const currentDropdown = currentLink?.closest(".dropdown");
 
     if (currentDropdown) {
       setMobileDropdownOpen(currentDropdown, true);
@@ -416,8 +419,8 @@ function loadHeader() {
 
   function updateMobileMenuOffset() {
     header.style.setProperty(
-      '--mobile-header-height',
-      `${header.offsetHeight}px`
+      "--mobile-header-height",
+      `${header.offsetHeight}px`,
     );
   }
 
@@ -426,13 +429,13 @@ function loadHeader() {
       updateMobileMenuOffset();
     }
 
-    header.classList.toggle('is-mobile-menu-open', isOpen);
-    document.body.classList.toggle('mobile-menu-lock', isOpen);
+    header.classList.toggle("is-mobile-menu-open", isOpen);
+    document.body.classList.toggle("mobile-menu-lock", isOpen);
 
-    mobileMenuToggle?.setAttribute('aria-expanded', String(isOpen));
+    mobileMenuToggle?.setAttribute("aria-expanded", String(isOpen));
     mobileMenuToggle?.setAttribute(
-      'aria-label',
-      isOpen ? 'Close menu' : 'Open menu'
+      "aria-label",
+      isOpen ? "Close menu" : "Open menu",
     );
 
     if (isOpen) {
@@ -440,35 +443,37 @@ function loadHeader() {
     }
   }
 
-  mobileMenuToggle?.addEventListener('click', () => {
-    setMobileMenuOpen(!header.classList.contains('is-mobile-menu-open'));
+  mobileMenuToggle?.addEventListener("click", () => {
+    setMobileMenuOpen(!header.classList.contains("is-mobile-menu-open"));
   });
 
-  document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
+  document
+    .getElementById("themeToggle")
+    ?.addEventListener("click", toggleTheme);
   applyTheme(document.documentElement.dataset.theme || getPreferredTheme(), {
-    persist: false
+    persist: false,
   });
 
-  primaryNavigation?.addEventListener('click', event => {
-    const dropdownToggle = event.target.closest('.dropdown-toggle');
+  primaryNavigation?.addEventListener("click", (event) => {
+    const dropdownToggle = event.target.closest(".dropdown-toggle");
 
     if (dropdownToggle && isMobileNavigation()) {
       event.preventDefault();
 
-      const dropdown = dropdownToggle.closest('.dropdown');
-      const isOpen = dropdown.classList.contains('is-mobile-dropdown-open');
+      const dropdown = dropdownToggle.closest(".dropdown");
+      const isOpen = dropdown.classList.contains("is-mobile-dropdown-open");
 
       setMobileDropdownOpen(dropdown, !isOpen);
       return;
     }
 
-    if (event.target.closest('a')) {
+    if (event.target.closest("a")) {
       setMobileMenuOpen(false);
     }
   });
 
-  window.addEventListener('resize', () => {
-    if (header.classList.contains('is-mobile-menu-open')) {
+  window.addEventListener("resize", () => {
+    if (header.classList.contains("is-mobile-menu-open")) {
       updateMobileMenuOffset();
     }
 
@@ -477,27 +482,28 @@ function loadHeader() {
     }
   });
 
-  document.dispatchEvent(new Event('cmcenheaderready'));
+  document.dispatchEvent(new Event("cmcenheaderready"));
 }
 
 const footerSocialLinks = [
   {
-    label: 'Facebook',
-    url: 'https://www.facebook.com/'
+    label: "Facebook",
+    url: "https://www.facebook.com/",
   },
   {
-    label: 'Instagram',
-    url: 'https://www.instagram.com/'
-  }
+    label: "Instagram",
+    url: "https://www.instagram.com/",
+  },
 ];
 
 function loadFooter() {
-  const footer = document.getElementById('footer');
+  const footer = document.getElementById("footer");
 
   if (!footer) return;
 
   const socialLinksHtml = footerSocialLinks
-    .map(link => `
+    .map(
+      (link) => `
       <a
         href="${link.url}"
         class="footer-social-link"
@@ -506,10 +512,11 @@ function loadFooter() {
       >
         ${link.label}
       </a>
-    `)
-    .join('');
+    `,
+    )
+    .join("");
 
-  footer.className = 'site-footer';
+  footer.className = "site-footer";
 
   footer.innerHTML = `
     <section class="ownership-band">
@@ -726,34 +733,35 @@ function loadFooter() {
     </div>
   `;
 
-  const yearElement = document.getElementById('copyrightYear');
+  const yearElement = document.getElementById("copyrightYear");
 
   if (yearElement) {
-    yearElement.textContent =
-      new Date().getFullYear();
+    yearElement.textContent = new Date().getFullYear();
   }
 
   updateFooterVersion();
 
-  document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
+  document
+    .getElementById("themeToggle")
+    ?.addEventListener("click", toggleTheme);
 }
 
 async function updateFooterVersion() {
-  const versionElement = document.getElementById('footerVersion');
+  const versionElement = document.getElementById("footerVersion");
 
   if (!versionElement) return;
 
   const hostname = window.location.hostname;
   const isLocal =
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === '[::1]';
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]";
   const showsCommit =
-    hostname === 'cmcen-staging.corebot.ca' ||
-    hostname === 'beta.cmcen-rcmce.ca';
+    hostname === "cmcen-staging.corebot.ca" ||
+    hostname === "beta.cmcen-rcmce.ca";
 
   if (isLocal) {
-    versionElement.textContent = 'Running version: Local development';
+    versionElement.textContent = "Running version: Local development";
     versionElement.hidden = false;
     return;
   }
@@ -761,8 +769,8 @@ async function updateFooterVersion() {
   if (!showsCommit) return;
 
   try {
-    const response = await fetch('/api/version', {
-      cache: 'no-store'
+    const response = await fetch("/api/version", {
+      cache: "no-store",
     });
 
     if (!response.ok) return;
@@ -775,7 +783,7 @@ async function updateFooterVersion() {
       versionElement.hidden = false;
     }
   } catch (error) {
-    console.warn('Version unavailable:', error);
+    console.warn("Version unavailable:", error);
   }
 }
 
@@ -784,10 +792,10 @@ loadFooter();
 
 async function loadCustomNavigationItems() {
   try {
-    const response = await fetch('/api/navigation');
+    const response = await fetch("/api/navigation");
 
     if (!response.ok) {
-      throw new Error('Navigation request failed');
+      throw new Error("Navigation request failed");
     }
 
     const data = await response.json();
@@ -796,25 +804,25 @@ async function loadCustomNavigationItems() {
     renderCustomNavigationItems();
     updateAuthRestrictedItems();
   } catch (error) {
-    console.warn('Custom navigation unavailable:', error);
+    console.warn("Custom navigation unavailable:", error);
   }
 }
 
 function renderCustomNavigationItems() {
-  const primaryNavigation = document.getElementById('primaryNavigation');
+  const primaryNavigation = document.getElementById("primaryNavigation");
   primaryNavigation
-    ?.querySelectorAll('[data-custom-nav-group], [data-custom-nav-item]')
-    .forEach(item => item.remove());
+    ?.querySelectorAll("[data-custom-nav-group], [data-custom-nav-item]")
+    .forEach((item) => item.remove());
 
   const groupKeys = Object.keys(navLinks);
-  const customGroups = customNavigationItems.filter(item =>
-    item.type === 'group' && !groupKeys.includes(item.group)
+  const customGroups = customNavigationItems.filter(
+    (item) => item.type === "group" && !groupKeys.includes(item.group),
   );
 
-  customGroups.forEach(group => {
-    const wrapper = document.createElement('div');
+  customGroups.forEach((group) => {
+    const wrapper = document.createElement("div");
     const menuId = `primaryNavigationCustom${group.group}`;
-    wrapper.className = 'dropdown';
+    wrapper.className = "dropdown";
     wrapper.dataset.customNavGroup = group.group;
     wrapper.innerHTML = `
       <button
@@ -822,8 +830,8 @@ function renderCustomNavigationItems() {
         class="dropdown-toggle"
         aria-controls="${escapeHtml(menuId)}"
         aria-expanded="false"
-        data-nav-label-en="${escapeHtml(group.label?.en || '')}"
-        data-nav-label-fr="${escapeHtml(group.label?.fr || '')}"
+        data-nav-label-en="${escapeHtml(group.label?.en || "")}"
+        data-nav-label-fr="${escapeHtml(group.label?.fr || "")}"
       >${escapeHtml(getLocalizedNavigationLabel(group.label))}</button>
 
       <ul
@@ -835,28 +843,31 @@ function renderCustomNavigationItems() {
     primaryNavigation?.append(wrapper);
   });
 
-  customNavigationItems.forEach(item => {
-    if (item.type === 'group') return;
+  customNavigationItems.forEach((item) => {
+    if (item.type === "group") return;
 
     const groupIndex = groupKeys.indexOf(item.group);
-    const menu = groupIndex >= 0
-      ? document.getElementById(`primaryNavigationDropdown${groupIndex}`)
-      : document.querySelector(`[data-custom-nav-group="${escapeCssIdentifier(item.group)}"] .dropdown-menu`);
+    const menu =
+      groupIndex >= 0
+        ? document.getElementById(`primaryNavigationDropdown${groupIndex}`)
+        : document.querySelector(
+            `[data-custom-nav-group="${escapeCssIdentifier(item.group)}"] .dropdown-menu`,
+          );
 
     if (!menu || !item.route) return;
 
-    const listItem = document.createElement('li');
-    listItem.dataset.customNavItem = 'true';
+    const listItem = document.createElement("li");
+    listItem.dataset.customNavItem = "true";
 
     if (item.permission) {
       listItem.dataset.permission = item.permission;
       listItem.hidden = true;
     }
 
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = item.route;
-    link.dataset.navLabelEn = item.label?.en || '';
-    link.dataset.navLabelFr = item.label?.fr || '';
+    link.dataset.navLabelEn = item.label?.en || "";
+    link.dataset.navLabelFr = item.label?.fr || "";
     link.textContent = getLocalizedNavigationLabel(item.label);
 
     listItem.append(link);
@@ -875,9 +886,7 @@ window.reloadSiteNavigation = async function reloadSiteNavigation() {
 };
 
 function getStoredAuthToken() {
-  return CMCENUtils.storeAuthToken(
-    CMCENUtils.getStoredAuthToken()
-  );
+  return CMCENUtils.storeAuthToken(CMCENUtils.getStoredAuthToken());
 }
 
 function getAccountIcon() {
@@ -906,13 +915,13 @@ async function showSignOutModal() {
   const confirmed = await CMCENModal.confirm(
     getSignOutTranslation(
       "signout_confirm_message",
-      "Are you sure you want to sign out?"
+      "Are you sure you want to sign out?",
     ),
     {
       title: getSignOutTranslation("signout_confirm_title", "Sign out?"),
       cancelText: getSignOutTranslation("signout_cancel", "Cancel"),
-      confirmText: getSignOutTranslation("signout_confirm", "Sign out")
-    }
+      confirmText: getSignOutTranslation("signout_confirm", "Sign out"),
+    },
   );
 
   if (confirmed) {
@@ -923,13 +932,17 @@ async function showSignOutModal() {
 async function performSignOut() {
   CMCENUtils.clearMfaSession();
 
-  document.getElementById('header')?.classList.remove('is-mobile-menu-open');
-  document.body.classList.remove('mobile-menu-lock');
-  document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded', 'false');
-  document.getElementById('mobileMenuToggle')?.setAttribute('aria-label', 'Open menu');
+  document.getElementById("header")?.classList.remove("is-mobile-menu-open");
+  document.body.classList.remove("mobile-menu-lock");
+  document
+    .getElementById("mobileMenuToggle")
+    ?.setAttribute("aria-expanded", "false");
+  document
+    .getElementById("mobileMenuToggle")
+    ?.setAttribute("aria-label", "Open menu");
 
   await CMCENUtils.signOut();
-  window.location.href = '/login';
+  window.location.href = "/login";
 }
 
 async function handleSignOut(event) {
@@ -957,7 +970,7 @@ function getNotificationBadge(count) {
 function updateNotificationBadges(count = 0) {
   document
     .querySelectorAll(".notification-badge")
-    .forEach(badge => badge.remove());
+    .forEach((badge) => badge.remove());
 
   const badgeHtml = getNotificationBadge(count);
 
@@ -967,15 +980,15 @@ function updateNotificationBadges(count = 0) {
 
   document
     .querySelectorAll(".account-link, .mobile-menu-account-link")
-    .forEach(link => {
+    .forEach((link) => {
       link.insertAdjacentHTML("beforeend", badgeHtml);
     });
 }
 
 function updateAuthButtons() {
   const token = getStoredAuthToken();
-  const authButtons = document.querySelector('.auth-buttons');
-  const mobileMenuAccount = document.getElementById('mobileMenuAccount');
+  const authButtons = document.querySelector(".auth-buttons");
+  const mobileMenuAccount = document.getElementById("mobileMenuAccount");
 
   if (!authButtons || !mobileMenuAccount) {
     return;
@@ -1020,8 +1033,12 @@ function updateAuthButtons() {
       </button>
     `;
 
-    document.getElementById("signOutBtn").addEventListener("click", handleSignOut);
-    document.getElementById("mobileSignOutBtn").addEventListener("click", handleSignOut);
+    document
+      .getElementById("signOutBtn")
+      .addEventListener("click", handleSignOut);
+    document
+      .getElementById("mobileSignOutBtn")
+      .addEventListener("click", handleSignOut);
   } else {
     authButtons.innerHTML = `
       <a
@@ -1052,49 +1069,49 @@ function updateAuthButtons() {
 async function updateAuthRestrictedItems() {
   const token = getStoredAuthToken();
 
-  const authRequiredItems = document.querySelectorAll('[data-auth-required]');
+  const authRequiredItems = document.querySelectorAll("[data-auth-required]");
 
-  const permissionRequiredItems = document.querySelectorAll('[data-permission]');
+  const permissionRequiredItems =
+    document.querySelectorAll("[data-permission]");
 
-  authRequiredItems.forEach(element => {
+  authRequiredItems.forEach((element) => {
     element.hidden = true;
   });
 
-  permissionRequiredItems.forEach(element => {
+  permissionRequiredItems.forEach((element) => {
     element.hidden = true;
   });
 
   if (!token) return;
 
   try {
-    const user = await CMCENUtils.apiJson('/api/me', {
+    const user = await CMCENUtils.apiJson("/api/me", {
       token,
-      errorMessage: 'Could not verify navigation permissions'
+      errorMessage: "Could not verify navigation permissions",
     });
 
     updateNotificationBadges(user.notifications?.count || 0);
 
-    authRequiredItems.forEach(element => {
+    authRequiredItems.forEach((element) => {
       element.hidden = false;
     });
 
-    permissionRequiredItems.forEach(element => {
+    permissionRequiredItems.forEach((element) => {
       const permissionName = element.dataset.permission;
       element.hidden = user.permissions?.[permissionName] !== true;
     });
   } catch (error) {
     if (error.status === 401) {
       CMCENUtils.clearAuthToken();
-      document.getElementById('header')?.classList.remove('is-mobile-menu-open');
-      document.body.classList.remove('mobile-menu-lock');
+      document
+        .getElementById("header")
+        ?.classList.remove("is-mobile-menu-open");
+      document.body.classList.remove("mobile-menu-lock");
       updateAuthButtons();
       return;
     }
 
-    console.error(
-      'Navigation permission check failed:',
-      error
-    );
+    console.error("Navigation permission check failed:", error);
   }
 }
 

@@ -1,6 +1,10 @@
 const express = require('express');
 const Timer = require('../models/Timer');
-const { authMiddleware, optionalAuthMiddleware, requirePermission } = require('../middleware/auth');
+const {
+  authMiddleware,
+  optionalAuthMiddleware,
+  requirePermission,
+} = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
@@ -13,7 +17,7 @@ function cleanString(value, fallback = '') {
 function cleanLocalizedText(value = {}) {
   return {
     en: cleanString(value.en).slice(0, 600),
-    fr: cleanString(value.fr).slice(0, 600)
+    fr: cleanString(value.fr).slice(0, 600),
   };
 }
 
@@ -39,7 +43,9 @@ function cleanScreenPosition(value) {
 
 function timerPayload(body = {}) {
   return {
-    title: cleanString(body.title, 'Untitled banner').slice(0, 120) || 'Untitled banner',
+    title:
+      cleanString(body.title, 'Untitled banner').slice(0, 120) ||
+      'Untitled banner',
     text: cleanLocalizedText(body.text || {}),
     color: cleanColor(body.color, '#1d4ed8'),
     textColor: cleanColor(body.textColor, '#ffffff'),
@@ -49,7 +55,7 @@ function timerPayload(body = {}) {
     placement: cleanPlacement(body.placement),
     screenPosition: cleanScreenPosition(body.screenPosition),
     enabled: body.enabled !== false,
-    order: Number.isFinite(Number(body.order)) ? Number(body.order) : 0
+    order: Number.isFinite(Number(body.order)) ? Number(body.order) : 0,
   };
 }
 
@@ -68,23 +74,21 @@ function toTimerResponse(timer) {
     enabled: timer.enabled !== false,
     order: timer.order || 0,
     createdAt: timer.createdAt ? timer.createdAt.toISOString() : '',
-    updatedAt: timer.updatedAt ? timer.updatedAt.toISOString() : ''
+    updatedAt: timer.updatedAt ? timer.updatedAt.toISOString() : '',
   };
 }
 
 function activeTimerQuery(scope) {
   const now = new Date();
-  const placements = scope === 'home'
-    ? ['global', 'home']
-    : ['global'];
+  const placements = scope === 'home' ? ['global', 'home'] : ['global'];
 
   return {
     enabled: true,
     placement: { $in: placements },
     $and: [
       { $or: [{ startsAt: null }, { startsAt: { $lte: now } }] },
-      { $or: [{ endsAt: null }, { endsAt: { $gte: now } }] }
-    ]
+      { $or: [{ endsAt: null }, { endsAt: { $gte: now } }] },
+    ],
   };
 }
 
@@ -97,7 +101,7 @@ async function writeTimerAuditLog(req, action, timer, metadata = {}) {
       targetType: 'timer',
       target: timer?._id || null,
       targetSnapshot: timer ? toTimerResponse(timer) : null,
-      metadata
+      metadata,
     });
   } catch (error) {
     console.error('Timer audit log failed:', error);
@@ -124,17 +128,17 @@ router.get(
   authMiddleware,
   requirePermission('canManageTimers'),
   async (req, res) => {
-  try {
-    const timers = await Timer.find({})
-      .sort({ order: 1, createdAt: -1 })
-      .lean();
+    try {
+      const timers = await Timer.find({})
+        .sort({ order: 1, createdAt: -1 })
+        .lean();
 
-    res.json({ timers: timers.map(toTimerResponse) });
-  } catch (error) {
-    console.error('Admin timers failed:', error);
-    res.status(500).json({ error: 'Could not load banners' });
-  }
-  }
+      res.json({ timers: timers.map(toTimerResponse) });
+    } catch (error) {
+      console.error('Admin timers failed:', error);
+      res.status(500).json({ error: 'Could not load banners' });
+    }
+  },
 );
 
 router.post(
@@ -142,21 +146,21 @@ router.post(
   authMiddleware,
   requirePermission('canManageTimers'),
   async (req, res) => {
-  try {
-    const timer = await Timer.create({
-      ...timerPayload(req.body || {}),
-      createdBy: req.user?._id || null,
-      updatedBy: req.user?._id || null
-    });
+    try {
+      const timer = await Timer.create({
+        ...timerPayload(req.body || {}),
+        createdBy: req.user?._id || null,
+        updatedBy: req.user?._id || null,
+      });
 
-    await writeTimerAuditLog(req, 'timer.created', timer);
+      await writeTimerAuditLog(req, 'timer.created', timer);
 
-    res.status(201).json({ timer: toTimerResponse(timer) });
-  } catch (error) {
-    console.error('Timer create failed:', error);
-    res.status(400).json({ error: 'Could not create banner' });
-  }
-  }
+      res.status(201).json({ timer: toTimerResponse(timer) });
+    } catch (error) {
+      console.error('Timer create failed:', error);
+      res.status(400).json({ error: 'Could not create banner' });
+    }
+  },
 );
 
 router.patch(
@@ -164,26 +168,26 @@ router.patch(
   authMiddleware,
   requirePermission('canManageTimers'),
   async (req, res) => {
-  try {
-    const timer = await Timer.findById(req.params.timerId);
+    try {
+      const timer = await Timer.findById(req.params.timerId);
 
-    if (!timer) {
-      return res.status(404).json({ error: 'Banner not found' });
+      if (!timer) {
+        return res.status(404).json({ error: 'Banner not found' });
+      }
+
+      Object.assign(timer, timerPayload(req.body || {}), {
+        updatedBy: req.user?._id || null,
+      });
+      await timer.save();
+
+      await writeTimerAuditLog(req, 'timer.updated', timer);
+
+      res.json({ timer: toTimerResponse(timer) });
+    } catch (error) {
+      console.error('Timer update failed:', error);
+      res.status(400).json({ error: 'Could not update banner' });
     }
-
-    Object.assign(timer, timerPayload(req.body || {}), {
-      updatedBy: req.user?._id || null
-    });
-    await timer.save();
-
-    await writeTimerAuditLog(req, 'timer.updated', timer);
-
-    res.json({ timer: toTimerResponse(timer) });
-  } catch (error) {
-    console.error('Timer update failed:', error);
-    res.status(400).json({ error: 'Could not update banner' });
-  }
-  }
+  },
 );
 
 router.delete(
@@ -191,22 +195,22 @@ router.delete(
   authMiddleware,
   requirePermission('canManageTimers'),
   async (req, res) => {
-  try {
-    const timer = await Timer.findById(req.params.timerId);
+    try {
+      const timer = await Timer.findById(req.params.timerId);
 
-    if (!timer) {
-      return res.status(404).json({ error: 'Banner not found' });
+      if (!timer) {
+        return res.status(404).json({ error: 'Banner not found' });
+      }
+
+      await timer.deleteOne();
+      await writeTimerAuditLog(req, 'timer.deleted', timer);
+
+      res.json({ message: 'Banner deleted' });
+    } catch (error) {
+      console.error('Timer delete failed:', error);
+      res.status(500).json({ error: 'Could not delete banner' });
     }
-
-    await timer.deleteOne();
-    await writeTimerAuditLog(req, 'timer.deleted', timer);
-
-    res.json({ message: 'Banner deleted' });
-  } catch (error) {
-    console.error('Timer delete failed:', error);
-    res.status(500).json({ error: 'Could not delete banner' });
-  }
-  }
+  },
 );
 
 module.exports = router;

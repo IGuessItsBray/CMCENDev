@@ -12,53 +12,48 @@ const MIGRATION_SCRIPT_PATH = path.join(
   '..',
   'scripts',
   'migration',
-  'scrape-current-retirements.js'
+  'scrape-current-retirements.js',
 );
 const LAST_POST_MIGRATION_SCRIPT_PATH = path.join(
   __dirname,
   '..',
   'scripts',
   'migration',
-  'scrape-current-last-posts.js'
+  'scrape-current-last-posts.js',
 );
 const CONFIG_TOKEN_KEY = 'config_token';
-const CONFIG_TOKEN_ALIASES = Object.freeze([
-  CONFIG_TOKEN_KEY,
-  'CONFIG_TOKEN'
-]);
+const CONFIG_TOKEN_ALIASES = Object.freeze([CONFIG_TOKEN_KEY, 'CONFIG_TOKEN']);
 const MIGRATION_DEFINITIONS = Object.freeze({
   retirement: {
     label: 'Retirement migration',
     scriptPath: MIGRATION_SCRIPT_PATH,
     args: ['--content=retirements'],
-    maxLimit: 1000
+    maxLimit: 1000,
   },
   comments: {
     label: 'Comment migration',
     scriptPath: MIGRATION_SCRIPT_PATH,
     args: ['--content=comments'],
-    maxLimit: 1000
+    maxLimit: 1000,
   },
   lastPost: {
     label: 'Last Post migration',
     scriptPath: LAST_POST_MIGRATION_SCRIPT_PATH,
     args: [],
-    maxLimit: 1000
-  }
+    maxLimit: 1000,
+  },
 });
 
 function getExpectedConfigToken() {
-  return CONFIG_TOKEN_ALIASES
-    .map(key => process.env[key])
-    .find(value => String(value || '').length > 0) || '';
+  return (
+    CONFIG_TOKEN_ALIASES.map((key) => process.env[key]).find(
+      (value) => String(value || '').length > 0,
+    ) || ''
+  );
 }
 
 function getSubmittedConfigToken(req) {
-  return String(
-    req.headers['x-config-token'] ||
-    req.body?.configToken ||
-    ''
-  );
+  return String(req.headers['x-config-token'] || req.body?.configToken || '');
 }
 
 function tokensMatch(submittedToken, expectedToken) {
@@ -84,9 +79,9 @@ async function writeConfigAuditLog(req, action, metadata = {}) {
       actor: req.user,
       targetType: 'config',
       targetSnapshot: {
-        area: 'site-config'
+        area: 'site-config',
       },
-      metadata
+      metadata,
     });
   } catch (error) {
     console.error('Site config audit log failed:', error);
@@ -103,7 +98,7 @@ async function validateConfigToken(req) {
       status: 503,
       error: 'Site configuration access token is not configured',
       reason: 'token_not_configured',
-      hasSubmittedToken: Boolean(submittedToken)
+      hasSubmittedToken: Boolean(submittedToken),
     };
   }
 
@@ -113,13 +108,13 @@ async function validateConfigToken(req) {
       status: 403,
       error: 'Invalid site configuration token',
       reason: 'invalid_token',
-      hasSubmittedToken: Boolean(submittedToken)
+      hasSubmittedToken: Boolean(submittedToken),
     };
   }
 
   return {
     ok: true,
-    hasSubmittedToken: true
+    hasSubmittedToken: true,
   };
 }
 
@@ -130,11 +125,11 @@ async function requireConfigToken(req, res, next) {
     await writeConfigAuditLog(req, 'config.token_rejected', {
       reason: tokenResult.reason,
       hasSubmittedToken: tokenResult.hasSubmittedToken,
-      route: req.originalUrl
+      route: req.originalUrl,
     });
 
     return res.status(tokenResult.status).json({
-      error: tokenResult.error
+      error: tokenResult.error,
     });
   }
 
@@ -144,7 +139,7 @@ async function requireConfigToken(req, res, next) {
 function requireDeveloperRole(req, res, next) {
   if (req.user?.role !== 'developer') {
     return res.status(404).json({
-      error: 'Endpoint not found'
+      error: 'Endpoint not found',
     });
   }
 
@@ -171,9 +166,15 @@ function parseMigrationLimit(value, maxLimit) {
 
 function getMigrationSummary(stdout, stderr, mode) {
   const output = `${stdout || ''}\n${stderr || ''}`.trim();
-  const retirementMatch = output.match(/\b(?:Imported|Would import)\s+(\d+)\s+retirement messages\./iu);
-  const commentMatch = output.match(/\b(?:Imported|Would import)\s+(\d+)\s+retirement comments\./iu);
-  const lastPostMatch = output.match(/\b(?:Imported|Would import)\s+(\d+)\s+Last Post messages\./u);
+  const retirementMatch = output.match(
+    /\b(?:Imported|Would import)\s+(\d+)\s+retirement messages\./iu,
+  );
+  const commentMatch = output.match(
+    /\b(?:Imported|Would import)\s+(\d+)\s+retirement comments\./iu,
+  );
+  const lastPostMatch = output.match(
+    /\b(?:Imported|Would import)\s+(\d+)\s+Last Post messages\./u,
+  );
   const manifestMatch = output.match(/Wrote manifest:\s*(.+)$/imu);
 
   return {
@@ -182,15 +183,17 @@ function getMigrationSummary(stdout, stderr, mode) {
     comments: commentMatch ? Number(commentMatch[1]) : null,
     lastPostMessages: lastPostMatch ? Number(lastPostMatch[1]) : null,
     manifestPath: manifestMatch ? manifestMatch[1].trim() : '',
-    output: output.split(/\r?\n/u).slice(-30)
+    output: output.split(/\r?\n/u).slice(-30),
   };
 }
 
 function writeMigrationEvent(res, event) {
-  res.write(`${JSON.stringify({
-    timestamp: new Date().toISOString(),
-    ...event
-  })}\n`);
+  res.write(
+    `${JSON.stringify({
+      timestamp: new Date().toISOString(),
+      ...event,
+    })}\n`,
+  );
 }
 
 function splitMigrationOutputLines(chunk, carry = '') {
@@ -199,11 +202,18 @@ function splitMigrationOutputLines(chunk, carry = '') {
 
   return {
     lines: lines.slice(0, -1),
-    carry: lines.at(-1) || ''
+    carry: lines.at(-1) || '',
   };
 }
 
-function runMigrationStream({ req, res, definition, migrationKey, mode, limit }) {
+function runMigrationStream({
+  req,
+  res,
+  definition,
+  migrationKey,
+  mode,
+  limit,
+}) {
   const args = [definition.scriptPath, ...definition.args];
 
   if (mode === 'apply') {
@@ -216,15 +226,18 @@ function runMigrationStream({ req, res, definition, migrationKey, mode, limit })
 
   const child = spawn(process.execPath, args, {
     cwd: path.join(__dirname, '..', '..'),
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
   const output = [];
   let stdoutCarry = '';
   let stderrCarry = '';
   let settled = false;
-  const timeout = setTimeout(() => {
-    child.kill('SIGTERM');
-  }, 1000 * 60 * 30);
+  const timeout = setTimeout(
+    () => {
+      child.kill('SIGTERM');
+    },
+    1000 * 60 * 30,
+  );
 
   res.on('close', () => {
     if (!settled) {
@@ -234,14 +247,14 @@ function runMigrationStream({ req, res, definition, migrationKey, mode, limit })
 
   function handleLines(lines, stream) {
     lines
-      .map(line => line.trim())
+      .map((line) => line.trim())
       .filter(Boolean)
-      .forEach(line => {
+      .forEach((line) => {
         output.push(line);
         writeMigrationEvent(res, {
           type: 'log',
           stream,
-          message: line
+          message: line,
         });
       });
   }
@@ -251,34 +264,34 @@ function runMigrationStream({ req, res, definition, migrationKey, mode, limit })
     migration: migrationKey,
     mode,
     limit,
-    message: `${definition.label} ${mode === 'apply' ? 'started' : 'dry run started'}`
+    message: `${definition.label} ${mode === 'apply' ? 'started' : 'dry run started'}`,
   });
 
-  child.stdout.on('data', chunk => {
+  child.stdout.on('data', (chunk) => {
     const result = splitMigrationOutputLines(chunk, stdoutCarry);
     stdoutCarry = result.carry;
     handleLines(result.lines, 'stdout');
   });
 
-  child.stderr.on('data', chunk => {
+  child.stderr.on('data', (chunk) => {
     const result = splitMigrationOutputLines(chunk, stderrCarry);
     stderrCarry = result.carry;
     handleLines(result.lines, 'stderr');
   });
 
-  child.on('error', error => {
+  child.on('error', (error) => {
     if (settled) return;
 
     settled = true;
     clearTimeout(timeout);
     writeMigrationEvent(res, {
       type: 'error',
-      message: error.message || 'Migration failed to start'
+      message: error.message || 'Migration failed to start',
     });
     res.end();
   });
 
-  child.on('close', async code => {
+  child.on('close', async (code) => {
     if (settled) return;
 
     settled = true;
@@ -300,12 +313,12 @@ function runMigrationStream({ req, res, definition, migrationKey, mode, limit })
           migration: migrationKey,
           mode,
           label: definition.label,
-          limit
+          limit,
         },
         metadata: {
           ...summary,
-          limit
-        }
+          limit,
+        },
       });
     } catch (error) {
       console.error('Migration audit log failed:', error);
@@ -314,17 +327,18 @@ function runMigrationStream({ req, res, definition, migrationKey, mode, limit })
     if (code === 0) {
       writeMigrationEvent(res, {
         type: 'summary',
-        message: mode === 'apply'
-          ? `${definition.label} completed`
-          : `${definition.label} dry run completed`,
-        summary
+        message:
+          mode === 'apply'
+            ? `${definition.label} completed`
+            : `${definition.label} dry run completed`,
+        summary,
       });
       writeMigrationEvent(res, { type: 'done' });
     } else {
       writeMigrationEvent(res, {
         type: 'error',
         message: `${definition.label} failed with exit code ${code}`,
-        summary
+        summary,
       });
     }
 
@@ -334,35 +348,45 @@ function runMigrationStream({ req, res, definition, migrationKey, mode, limit })
 
 router.use(authMiddleware);
 
-router.post('/access', requireDeveloperRole, requirePermission('canAccessSiteConfig'), async (req, res) => {
-  await writeConfigAuditLog(req, 'config.access_requested', {
-    route: req.originalUrl
-  });
-
-  res.json({ ok: true });
-});
-
-router.post('/verify', requireDeveloperRole, requirePermission('canAccessSiteConfig'), async (req, res) => {
-  const tokenResult = await validateConfigToken(req);
-
-  if (!tokenResult.ok) {
-    await writeConfigAuditLog(req, 'config.token_rejected', {
-      reason: tokenResult.reason,
-      hasSubmittedToken: tokenResult.hasSubmittedToken,
-      route: req.originalUrl
+router.post(
+  '/access',
+  requireDeveloperRole,
+  requirePermission('canAccessSiteConfig'),
+  async (req, res) => {
+    await writeConfigAuditLog(req, 'config.access_requested', {
+      route: req.originalUrl,
     });
 
-    return res.status(tokenResult.status).json({
-      error: tokenResult.error
+    res.json({ ok: true });
+  },
+);
+
+router.post(
+  '/verify',
+  requireDeveloperRole,
+  requirePermission('canAccessSiteConfig'),
+  async (req, res) => {
+    const tokenResult = await validateConfigToken(req);
+
+    if (!tokenResult.ok) {
+      await writeConfigAuditLog(req, 'config.token_rejected', {
+        reason: tokenResult.reason,
+        hasSubmittedToken: tokenResult.hasSubmittedToken,
+        route: req.originalUrl,
+      });
+
+      return res.status(tokenResult.status).json({
+        error: tokenResult.error,
+      });
+    }
+
+    await writeConfigAuditLog(req, 'config.token_accepted', {
+      route: req.originalUrl,
     });
-  }
 
-  await writeConfigAuditLog(req, 'config.token_accepted', {
-    route: req.originalUrl
-  });
-
-  res.json({ ok: true });
-});
+    res.json({ ok: true });
+  },
+);
 
 router.get(
   '/',
@@ -370,21 +394,23 @@ router.get(
   requirePermission('canAccessSiteConfig'),
   requireConfigToken,
   async (req, res) => {
-  try {
-    res.json({
-      migrations: Object.entries(MIGRATION_DEFINITIONS).map(([key, definition]) => ({
-        key,
-        maxLimit: definition.maxLimit
-      })),
-      maintenance: {
-        canPurgeAnalytics: req.user?.role === 'developer'
-      }
-    });
-  } catch (error) {
-    console.error('Site config operations read failed:', error);
-    res.status(500).json({ error: 'Could not load site operations' });
-  }
-  }
+    try {
+      res.json({
+        migrations: Object.entries(MIGRATION_DEFINITIONS).map(
+          ([key, definition]) => ({
+            key,
+            maxLimit: definition.maxLimit,
+          }),
+        ),
+        maintenance: {
+          canPurgeAnalytics: req.user?.role === 'developer',
+        },
+      });
+    } catch (error) {
+      console.error('Site config operations read failed:', error);
+      res.status(500).json({ error: 'Could not load site operations' });
+    }
+  },
 );
 
 router.post(
@@ -393,44 +419,44 @@ router.post(
   requirePermission('canManageSiteConfig'),
   requireConfigToken,
   async (req, res) => {
-  try {
-    const definition = getMigrationDefinition(req.params.migrationKey);
-    const mode = req.body?.mode === 'apply' ? 'apply' : 'dry-run';
+    try {
+      const definition = getMigrationDefinition(req.params.migrationKey);
+      const mode = req.body?.mode === 'apply' ? 'apply' : 'dry-run';
 
-    if (!definition) {
-      return res.status(404).json({ error: 'Migration not found' });
-    }
+      if (!definition) {
+        return res.status(404).json({ error: 'Migration not found' });
+      }
 
-    const limit = parseMigrationLimit(req.body?.limit, definition.maxLimit);
+      const limit = parseMigrationLimit(req.body?.limit, definition.maxLimit);
 
-    if ((req.body?.limit ?? '') !== '' && !limit) {
-      return res.status(400).json({
-        error: `Migration limit must be a whole number from 1 to ${definition.maxLimit}`
+      if ((req.body?.limit ?? '') !== '' && !limit) {
+        return res.status(400).json({
+          error: `Migration limit must be a whole number from 1 to ${definition.maxLimit}`,
+        });
+      }
+
+      res.set({
+        'Content-Type': 'application/x-ndjson; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        'X-Accel-Buffering': 'no',
+      });
+      res.flushHeaders?.();
+
+      runMigrationStream({
+        req,
+        res,
+        definition,
+        migrationKey: req.params.migrationKey,
+        mode,
+        limit,
+      });
+    } catch (error) {
+      console.error('Site config migration failed:', error);
+      res.status(500).json({
+        error: error.message || 'Migration failed',
       });
     }
-
-    res.set({
-      'Content-Type': 'application/x-ndjson; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      'X-Accel-Buffering': 'no'
-    });
-    res.flushHeaders?.();
-
-    runMigrationStream({
-      req,
-      res,
-      definition,
-      migrationKey: req.params.migrationKey,
-      mode,
-      limit
-    });
-  } catch (error) {
-    console.error('Site config migration failed:', error);
-    res.status(500).json({
-      error: error.message || 'Migration failed'
-    });
-  }
-  }
+  },
 );
 
 router.delete(
@@ -439,32 +465,32 @@ router.delete(
   requirePermission('canManageSiteConfig'),
   requireConfigToken,
   async (req, res) => {
-  try {
-    const result = await AnalyticsVisit.deleteMany({});
+    try {
+      const result = await AnalyticsVisit.deleteMany({});
 
-    await writeAuditLog({
-      req,
-      action: 'analytics.purged',
-      actor: req.user,
-      targetType: 'analytics',
-      targetSnapshot: {
-        deletedCount: result.deletedCount || 0
-      },
-      metadata: {
+      await writeAuditLog({
+        req,
+        action: 'analytics.purged',
+        actor: req.user,
+        targetType: 'analytics',
+        targetSnapshot: {
+          deletedCount: result.deletedCount || 0,
+        },
+        metadata: {
+          deletedCount: result.deletedCount || 0,
+          route: req.originalUrl,
+        },
+      });
+
+      res.json({
+        message: 'Analytics history purged',
         deletedCount: result.deletedCount || 0,
-        route: req.originalUrl
-      }
-    });
-
-    res.json({
-      message: 'Analytics history purged',
-      deletedCount: result.deletedCount || 0
-    });
-  } catch (error) {
-    console.error('Analytics purge failed:', error);
-    res.status(500).json({ error: 'Failed to purge analytics' });
-  }
-  }
+      });
+    } catch (error) {
+      console.error('Analytics purge failed:', error);
+      res.status(500).json({ error: 'Failed to purge analytics' });
+    }
+  },
 );
 
 module.exports = router;

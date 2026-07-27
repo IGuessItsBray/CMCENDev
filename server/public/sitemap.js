@@ -22,7 +22,8 @@
     link.href = item.route || "/";
 
     const title = document.createElement("strong");
-    title.textContent = getLocalizedText(item.title) || item.route || "Untitled";
+    title.textContent =
+      getLocalizedText(item.title) || item.route || "Untitled";
     link.append(title);
 
     const route = document.createElement("span");
@@ -45,7 +46,9 @@
     sitemapGrid.innerHTML = "";
     const items = Array.isArray(data?.items) ? data.items : [];
     const sections = Array.isArray(data?.sections) ? data.sections : [];
-    const sectionsByKey = new Map(sections.map(section => [section.key, section]));
+    const sectionsByKey = new Map(
+      sections.map((section) => [section.key, section]),
+    );
 
     if (!items.length) {
       setStatus("No sitemap entries are available.", true);
@@ -53,24 +56,25 @@
     }
 
     const sectionKeys = [
-      ...sections.map(section => section.key),
-      ...items.map(item => item.section)
+      ...sections.map((section) => section.key),
+      ...items.map((item) => item.section),
     ].filter((key, index, list) => key && list.indexOf(key) === index);
 
-    sectionKeys.forEach(sectionKey => {
-      const sectionItems = items.filter(item => item.section === sectionKey);
+    sectionKeys.forEach((sectionKey) => {
+      const sectionItems = items.filter((item) => item.section === sectionKey);
       if (!sectionItems.length) return;
 
       const section = document.createElement("section");
       section.className = "sitemap-section";
 
       const heading = document.createElement("h2");
-      heading.textContent = getLocalizedText(sectionsByKey.get(sectionKey)?.title) || "Pages";
+      heading.textContent =
+        getLocalizedText(sectionsByKey.get(sectionKey)?.title) || "Pages";
       section.append(heading);
 
       const list = document.createElement("div");
       list.className = "sitemap-list";
-      sectionItems.forEach(item => {
+      sectionItems.forEach((item) => {
         list.append(createSitemapLink(item));
       });
       section.append(list);

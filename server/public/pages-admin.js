@@ -27,7 +27,7 @@ let pagesState = {
   mediaPicker: null,
   cropEditor: null,
   uploadProgress: {},
-  canManageNavigation: false
+  canManageNavigation: false,
 };
 
 function localized(value) {
@@ -39,7 +39,7 @@ function pageApi(path, options = {}) {
     ...options,
     token: pagesAdminToken,
     redirectOnUnauthorized: true,
-    unauthorizedMessage: "Authentication required"
+    unauthorizedMessage: "Authentication required",
   });
 }
 
@@ -74,7 +74,7 @@ function showPagesPage() {
 function setPagesState(nextState) {
   pagesState = {
     ...pagesState,
-    ...nextState
+    ...nextState,
   };
   renderPagesAdmin();
 }
@@ -83,7 +83,7 @@ function showPagesActionToast(message, color = "info") {
   CMCENUtils.showToast(message, {
     color,
     position: "bottom-right",
-    animation: "slide"
+    animation: "slide",
   });
 }
 
@@ -91,7 +91,7 @@ function setAutoSaveState(status, message = "") {
   pagesState = {
     ...pagesState,
     autoSaveStatus: status,
-    autoSaveMessage: message
+    autoSaveMessage: message,
   };
   renderAutoSaveStatus();
 }
@@ -111,7 +111,7 @@ function scheduleAutoSave() {
   pagesState = {
     ...pagesState,
     autoSaveStatus: "pending",
-    autoSaveMessage: "Unsaved changes"
+    autoSaveMessage: "Unsaved changes",
   };
   renderAutoSaveStatus();
 
@@ -132,9 +132,9 @@ function setUploadProgress(progressKey, update) {
       ...(pagesState.uploadProgress || {}),
       [progressKey]: {
         ...(pagesState.uploadProgress?.[progressKey] || {}),
-        ...update
-      }
-    }
+        ...update,
+      },
+    },
   };
   renderPagesAdmin();
 }
@@ -158,14 +158,14 @@ function getDefaultCrop() {
     x: 50,
     y: 50,
     zoom: 1,
-    rotate: 0
+    rotate: 0,
   };
 }
 
 function getCrop(value) {
   return {
     ...getDefaultCrop(),
-    ...(value || {})
+    ...(value || {}),
   };
 }
 
@@ -184,7 +184,7 @@ function getNewBlock(type = "text") {
     crop: getDefaultCrop(),
     variant: "standard",
     columns: [],
-    items: []
+    items: [],
   };
 
   if (type === "columns") {
@@ -196,7 +196,7 @@ function getNewBlock(type = "text") {
         mediaUrl: "",
         mediaVariants: {},
         alt: getEmptyLocalized(),
-        crop: getDefaultCrop()
+        crop: getDefaultCrop(),
       },
       {
         title: { en: "Right column", fr: "" },
@@ -205,15 +205,15 @@ function getNewBlock(type = "text") {
         mediaUrl: "",
         mediaVariants: {},
         alt: getEmptyLocalized(),
-        crop: getDefaultCrop()
-      }
+        crop: getDefaultCrop(),
+      },
     ];
   }
 
   if (type === "carousel") {
     block.text = {
       en: "Carousel heading",
-      fr: ""
+      fr: "",
     };
     block.items = [
       {
@@ -221,8 +221,8 @@ function getNewBlock(type = "text") {
         mediaUrl: "",
         alt: getEmptyLocalized(),
         caption: getEmptyLocalized(),
-        crop: getDefaultCrop()
-      }
+        crop: getDefaultCrop(),
+      },
     ];
   }
 
@@ -234,14 +234,14 @@ function getDefaultPageAccess() {
     audience: "public",
     roles: [],
     customRoles: [],
-    permissions: []
+    permissions: [],
   };
 }
 
 function getSelectedPageAccess() {
   return {
     ...getDefaultPageAccess(),
-    ...(pagesState.selectedPage?.access || {})
+    ...(pagesState.selectedPage?.access || {}),
   };
 }
 
@@ -249,17 +249,19 @@ function getUploadMediaUpdate(data) {
   return {
     mediaKey: data.key || "",
     mediaUrl: data.url || "",
-    mediaVariants: data.variants || {}
+    mediaVariants: data.variants || {},
   };
 }
 
 function getPreviewMediaUrl(media = {}) {
   const variants = media.mediaVariants || {};
-  return variants.medium?.url ||
+  return (
+    variants.medium?.url ||
     variants.large?.url ||
     variants.hero?.url ||
     media.mediaUrl ||
-    "";
+    ""
+  );
 }
 
 function getCleanSlug(value) {
@@ -273,13 +275,13 @@ function getCleanSlug(value) {
 function updateSelectedPage(update, { render = true, autosave = true } = {}) {
   const selectedPage = {
     ...pagesState.selectedPage,
-    ...update
+    ...update,
   };
 
   if (!render) {
     pagesState = {
       ...pagesState,
-      selectedPage
+      selectedPage,
     };
 
     if (autosave) {
@@ -297,81 +299,108 @@ function updateSelectedPage(update, { render = true, autosave = true } = {}) {
 }
 
 function updateLocalizedField(field, language, value) {
-  updateSelectedPage({
-    [field]: {
-      ...(pagesState.selectedPage?.[field] || {}),
-      [language]: value
-    }
-  }, { render: false, autosave: true });
+  updateSelectedPage(
+    {
+      [field]: {
+        ...(pagesState.selectedPage?.[field] || {}),
+        [language]: value,
+      },
+    },
+    { render: false, autosave: true },
+  );
 }
 
 function updateBlock(index, update, { render = true } = {}) {
   const blocks = [...(pagesState.selectedPage?.blocks || [])];
   blocks[index] = {
     ...blocks[index],
-    ...update
+    ...update,
   };
   updateSelectedPage({ blocks }, { render });
 }
 
 function updateBlockLocalized(index, field, language, value) {
   const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock();
-  updateBlock(index, {
-    [field]: {
-      ...(block[field] || {}),
-      [language]: value
-    }
-  }, { render: false });
+  updateBlock(
+    index,
+    {
+      [field]: {
+        ...(block[field] || {}),
+        [language]: value,
+      },
+    },
+    { render: false },
+  );
 }
 
 function updateBlockColumn(index, columnIndex, update, { render = true } = {}) {
-  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("columns");
+  const block =
+    pagesState.selectedPage?.blocks?.[index] || getNewBlock("columns");
   const columns = [...(block.columns || [])];
   columns[columnIndex] = {
     ...(columns[columnIndex] || {}),
-    ...update
+    ...update,
   };
   updateBlock(index, { columns }, { render });
 }
 
-function updateBlockColumnLocalized(index, columnIndex, field, language, value) {
-  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("columns");
+function updateBlockColumnLocalized(
+  index,
+  columnIndex,
+  field,
+  language,
+  value,
+) {
+  const block =
+    pagesState.selectedPage?.blocks?.[index] || getNewBlock("columns");
   const column = block.columns?.[columnIndex] || {};
-  updateBlockColumn(index, columnIndex, {
-    [field]: {
-      ...(column[field] || {}),
-      [language]: value
-    }
-  }, { render: false });
+  updateBlockColumn(
+    index,
+    columnIndex,
+    {
+      [field]: {
+        ...(column[field] || {}),
+        [language]: value,
+      },
+    },
+    { render: false },
+  );
 }
 
 function updateCarouselItem(index, itemIndex, update, { render = true } = {}) {
-  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
+  const block =
+    pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
   const items = [...(block.items || [])];
   items[itemIndex] = {
     ...(items[itemIndex] || {}),
-    ...update
+    ...update,
   };
   updateBlock(index, { items }, { render });
 }
 
 function updateCarouselItemLocalized(index, itemIndex, field, language, value) {
-  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
+  const block =
+    pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
   const item = block.items?.[itemIndex] || {};
-  updateCarouselItem(index, itemIndex, {
-    [field]: {
-      ...(item[field] || {}),
-      [language]: value
-    }
-  }, { render: false });
+  updateCarouselItem(
+    index,
+    itemIndex,
+    {
+      [field]: {
+        ...(item[field] || {}),
+        [language]: value,
+      },
+    },
+    { render: false },
+  );
 }
 
 function updatePageAccess(update) {
   updateSelectedPage({
     access: {
       ...getSelectedPageAccess(),
-      ...update
-    }
+      ...update,
+    },
   });
 }
 
@@ -391,7 +420,7 @@ function toggleAccessListValue(field, value, isChecked) {
 function openMediaPicker(target) {
   setPagesState({
     mediaPicker: target,
-    mediaIsLoading: !pagesState.media.length
+    mediaIsLoading: !pagesState.media.length,
   });
 
   if (!pagesState.media.length) {
@@ -412,7 +441,7 @@ function applySelectedMedia(mediaItem) {
     mediaKey: mediaItem.key || "",
     mediaUrl: mediaItem.url || "",
     mediaVariants: mediaItem.variants || {},
-    crop: getCrop(getCropTargetMedia(target)?.crop)
+    crop: getCrop(getCropTargetMedia(target)?.crop),
   };
 
   if (target.type === "block") {
@@ -442,11 +471,19 @@ function getCropTargetMedia(target = pagesState.cropEditor) {
   }
 
   if (target.type === "column") {
-    return pagesState.selectedPage?.blocks?.[target.blockIndex]?.columns?.[target.columnIndex] || null;
+    return (
+      pagesState.selectedPage?.blocks?.[target.blockIndex]?.columns?.[
+        target.columnIndex
+      ] || null
+    );
   }
 
   if (target.type === "carousel") {
-    return pagesState.selectedPage?.blocks?.[target.blockIndex]?.items?.[target.itemIndex] || null;
+    return (
+      pagesState.selectedPage?.blocks?.[target.blockIndex]?.items?.[
+        target.itemIndex
+      ] || null
+    );
   }
 
   return null;
@@ -472,7 +509,7 @@ function getBuiltInRoleLabel(role) {
 function getPageAccessSummary(page) {
   const access = {
     ...getDefaultPageAccess(),
-    ...(page?.access || {})
+    ...(page?.access || {}),
   };
 
   if (access.audience === "public") {
@@ -500,7 +537,7 @@ function createCheckboxOption({ label, checked, onChange, badgeColor = "" }) {
   const input = document.createElement("input");
   input.type = "checkbox";
   input.checked = checked;
-  input.addEventListener("change", event => onChange(event.target.checked));
+  input.addEventListener("change", (event) => onChange(event.target.checked));
 
   if (badgeColor) {
     const swatch = document.createElement("span");
@@ -554,11 +591,14 @@ function createPageList() {
     empty.append(emptyTitle, emptyText);
     list.append(empty);
   } else {
-    pagesState.pages.forEach(page => {
+    pagesState.pages.forEach((page) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "pages-admin-page-row";
-      button.classList.toggle("is-selected", String(page._id) === String(pagesState.selectedPageId));
+      button.classList.toggle(
+        "is-selected",
+        String(page._id) === String(pagesState.selectedPageId),
+      );
 
       const name = document.createElement("strong");
       name.textContent = localized(page.title) || page.slug;
@@ -591,17 +631,19 @@ function createLocalizedInput(label, field, type = "input") {
   legend.textContent = label;
   wrapper.append(legend);
 
-  ["en", "fr"].forEach(language => {
+  ["en", "fr"].forEach((language) => {
     const inputLabel = document.createElement("label");
     inputLabel.className = "pages-editor-field";
 
     const text = document.createElement("span");
     text.textContent = language.toUpperCase();
 
-    const input = document.createElement(type === "textarea" ? "textarea" : "input");
+    const input = document.createElement(
+      type === "textarea" ? "textarea" : "input",
+    );
     if (type !== "textarea") input.type = "text";
     input.value = pagesState.selectedPage?.[field]?.[language] || "";
-    input.addEventListener("input", event => {
+    input.addEventListener("input", (event) => {
       updateLocalizedField(field, language, event.target.value);
     });
 
@@ -620,17 +662,20 @@ function createBlockLocalizedInput(index, label, field, type = "textarea") {
   legend.textContent = label;
   wrapper.append(legend);
 
-  ["en", "fr"].forEach(language => {
+  ["en", "fr"].forEach((language) => {
     const inputLabel = document.createElement("label");
     inputLabel.className = "pages-editor-field";
 
     const text = document.createElement("span");
     text.textContent = language.toUpperCase();
 
-    const input = document.createElement(type === "textarea" ? "textarea" : "input");
+    const input = document.createElement(
+      type === "textarea" ? "textarea" : "input",
+    );
     if (type !== "textarea") input.type = "text";
-    input.value = pagesState.selectedPage?.blocks?.[index]?.[field]?.[language] || "";
-    input.addEventListener("input", event => {
+    input.value =
+      pagesState.selectedPage?.blocks?.[index]?.[field]?.[language] || "";
+    input.addEventListener("input", (event) => {
       updateBlockLocalized(index, field, language, event.target.value);
     });
 
@@ -641,7 +686,12 @@ function createBlockLocalizedInput(index, label, field, type = "textarea") {
   return wrapper;
 }
 
-function createNestedLocalizedInput({ label, value = {}, onInput, type = "textarea" }) {
+function createNestedLocalizedInput({
+  label,
+  value = {},
+  onInput,
+  type = "textarea",
+}) {
   const wrapper = document.createElement("fieldset");
   wrapper.className = "pages-editor-fieldset";
 
@@ -649,17 +699,21 @@ function createNestedLocalizedInput({ label, value = {}, onInput, type = "textar
   legend.textContent = label;
   wrapper.append(legend);
 
-  ["en", "fr"].forEach(language => {
+  ["en", "fr"].forEach((language) => {
     const inputLabel = document.createElement("label");
     inputLabel.className = "pages-editor-field";
 
     const text = document.createElement("span");
     text.textContent = language.toUpperCase();
 
-    const input = document.createElement(type === "textarea" ? "textarea" : "input");
+    const input = document.createElement(
+      type === "textarea" ? "textarea" : "input",
+    );
     if (type !== "textarea") input.type = "text";
     input.value = value?.[language] || "";
-    input.addEventListener("input", event => onInput(language, event.target.value));
+    input.addEventListener("input", (event) =>
+      onInput(language, event.target.value),
+    );
 
     inputLabel.append(text, input);
     wrapper.append(inputLabel);
@@ -686,7 +740,8 @@ function createBlockToolbar(index) {
   const moveDown = document.createElement("button");
   moveDown.type = "button";
   moveDown.textContent = "Down";
-  moveDown.disabled = index === (pagesState.selectedPage?.blocks || []).length - 1;
+  moveDown.disabled =
+    index === (pagesState.selectedPage?.blocks || []).length - 1;
   moveDown.className = "admin-work-zone-button is-secondary";
   moveDown.addEventListener("click", () => moveBlock(index, 1));
 
@@ -706,14 +761,17 @@ function createCanvasDropZone(insertIndex) {
   zone.dataset.insertIndex = String(insertIndex);
 
   const label = document.createElement("span");
-  label.textContent = insertIndex === 0
-    ? "Drop block at top"
-    : "Drop block here";
+  label.textContent =
+    insertIndex === 0 ? "Drop block at top" : "Drop block here";
   zone.append(label);
 
-  zone.addEventListener("dragover", event => {
-    const hasBlockType = event.dataTransfer.types.includes("application/x-cmcen-block-type");
-    const hasBlockIndex = event.dataTransfer.types.includes("application/x-cmcen-block-index");
+  zone.addEventListener("dragover", (event) => {
+    const hasBlockType = event.dataTransfer.types.includes(
+      "application/x-cmcen-block-type",
+    );
+    const hasBlockIndex = event.dataTransfer.types.includes(
+      "application/x-cmcen-block-index",
+    );
 
     if (!hasBlockType && !hasBlockIndex) return;
 
@@ -726,12 +784,16 @@ function createCanvasDropZone(insertIndex) {
     zone.classList.remove("is-active");
   });
 
-  zone.addEventListener("drop", event => {
+  zone.addEventListener("drop", (event) => {
     event.preventDefault();
     zone.classList.remove("is-active");
 
-    const blockType = event.dataTransfer.getData("application/x-cmcen-block-type");
-    const existingIndex = Number(event.dataTransfer.getData("application/x-cmcen-block-index"));
+    const blockType = event.dataTransfer.getData(
+      "application/x-cmcen-block-type",
+    );
+    const existingIndex = Number(
+      event.dataTransfer.getData("application/x-cmcen-block-index"),
+    );
 
     if (blockType) {
       insertBlock(blockType, insertIndex);
@@ -772,7 +834,7 @@ function createMediaDropZone({
   onChoose,
   onCrop,
   progressKey,
-  label = "Drop image here or choose file"
+  label = "Drop image here or choose file",
 }) {
   const wrapper = document.createElement("div");
   wrapper.className = "pages-media-field";
@@ -793,14 +855,14 @@ function createMediaDropZone({
   const text = document.createElement("span");
   text.textContent = hasMedia ? "Replace image" : label;
 
-  zone.addEventListener("dragover", event => {
+  zone.addEventListener("dragover", (event) => {
     event.preventDefault();
     zone.classList.add("is-dragging");
   });
   zone.addEventListener("dragleave", () => {
     zone.classList.remove("is-dragging");
   });
-  zone.addEventListener("drop", event => {
+  zone.addEventListener("drop", (event) => {
     event.preventDefault();
     zone.classList.remove("is-dragging");
     const file = event.dataTransfer?.files?.[0];
@@ -838,15 +900,20 @@ function createMediaDropZone({
     progressWrapper.className = `pages-upload-progress is-${progress.status || "uploading"}`;
 
     const labelElement = document.createElement("span");
-    labelElement.textContent = progress.status === "error"
-      ? progress.message || "Upload failed"
-      : progress.status === "complete"
-        ? "Upload complete"
-        : progress.message || `Uploading ${Math.round(progress.percent || 0)}%`;
+    labelElement.textContent =
+      progress.status === "error"
+        ? progress.message || "Upload failed"
+        : progress.status === "complete"
+          ? "Upload complete"
+          : progress.message ||
+            `Uploading ${Math.round(progress.percent || 0)}%`;
 
     const bar = document.createElement("span");
     bar.className = "pages-upload-progress-bar";
-    bar.style.setProperty("--upload-progress", `${Math.max(0, Math.min(progress.percent || 0, 100))}%`);
+    bar.style.setProperty(
+      "--upload-progress",
+      `${Math.max(0, Math.min(progress.percent || 0, 100))}%`,
+    );
 
     progressWrapper.append(labelElement, bar);
     wrapper.append(progressWrapper);
@@ -864,10 +931,12 @@ function createColumnEditor(block, index, column, columnIndex) {
   panel.append(title);
 
   if (column.mediaUrl) {
-    panel.append(createCroppedPreview({
-      src: getPreviewMediaUrl(column),
-      crop: column.crop
-    }));
+    panel.append(
+      createCroppedPreview({
+        src: getPreviewMediaUrl(column),
+        crop: column.crop,
+      }),
+    );
   }
 
   panel.append(
@@ -875,35 +944,46 @@ function createColumnEditor(block, index, column, columnIndex) {
       hasMedia: Boolean(column.mediaUrl),
       label: "Add column image",
       progressKey: `column:${index}:${columnIndex}`,
-      onUpload: file => uploadColumnImage(index, columnIndex, file),
-      onCrop: () => openCropEditor({
-        type: "column",
-        blockIndex: index,
-        columnIndex
-      }),
-      onChoose: () => openMediaPicker({
-        type: "column",
-        blockIndex: index,
-        columnIndex
-      })
+      onUpload: (file) => uploadColumnImage(index, columnIndex, file),
+      onCrop: () =>
+        openCropEditor({
+          type: "column",
+          blockIndex: index,
+          columnIndex,
+        }),
+      onChoose: () =>
+        openMediaPicker({
+          type: "column",
+          blockIndex: index,
+          columnIndex,
+        }),
     }),
     createNestedLocalizedInput({
       label: "Column title",
       value: column.title,
       type: "input",
-      onInput: (language, value) => updateBlockColumnLocalized(index, columnIndex, "title", language, value)
+      onInput: (language, value) =>
+        updateBlockColumnLocalized(
+          index,
+          columnIndex,
+          "title",
+          language,
+          value,
+        ),
     }),
     createNestedLocalizedInput({
       label: "Column body",
       value: column.body,
-      onInput: (language, value) => updateBlockColumnLocalized(index, columnIndex, "body", language, value)
+      onInput: (language, value) =>
+        updateBlockColumnLocalized(index, columnIndex, "body", language, value),
     }),
     createNestedLocalizedInput({
       label: "Image alt text",
       value: column.alt,
       type: "input",
-      onInput: (language, value) => updateBlockColumnLocalized(index, columnIndex, "alt", language, value)
-    })
+      onInput: (language, value) =>
+        updateBlockColumnLocalized(index, columnIndex, "alt", language, value),
+    }),
   );
 
   return panel;
@@ -930,10 +1010,12 @@ function createCarouselItemEditor(block, index, item, itemIndex) {
   panel.append(header);
 
   if (item.mediaUrl) {
-    panel.append(createCroppedPreview({
-      src: getPreviewMediaUrl(item),
-      crop: item.crop
-    }));
+    panel.append(
+      createCroppedPreview({
+        src: getPreviewMediaUrl(item),
+        crop: item.crop,
+      }),
+    );
   }
 
   panel.append(
@@ -941,30 +1023,40 @@ function createCarouselItemEditor(block, index, item, itemIndex) {
       hasMedia: Boolean(item.mediaUrl),
       label: "Add slide image",
       progressKey: `carousel:${index}:${itemIndex}`,
-      onUpload: file => uploadCarouselImage(index, itemIndex, file),
-      onCrop: () => openCropEditor({
-        type: "carousel",
-        blockIndex: index,
-        itemIndex
-      }),
-      onChoose: () => openMediaPicker({
-        type: "carousel",
-        blockIndex: index,
-        itemIndex
-      })
+      onUpload: (file) => uploadCarouselImage(index, itemIndex, file),
+      onCrop: () =>
+        openCropEditor({
+          type: "carousel",
+          blockIndex: index,
+          itemIndex,
+        }),
+      onChoose: () =>
+        openMediaPicker({
+          type: "carousel",
+          blockIndex: index,
+          itemIndex,
+        }),
     }),
     createNestedLocalizedInput({
       label: "Alt text",
       value: item.alt,
       type: "input",
-      onInput: (language, value) => updateCarouselItemLocalized(index, itemIndex, "alt", language, value)
+      onInput: (language, value) =>
+        updateCarouselItemLocalized(index, itemIndex, "alt", language, value),
     }),
     createNestedLocalizedInput({
       label: "Caption",
       value: item.caption,
       type: "input",
-      onInput: (language, value) => updateCarouselItemLocalized(index, itemIndex, "caption", language, value)
-    })
+      onInput: (language, value) =>
+        updateCarouselItemLocalized(
+          index,
+          itemIndex,
+          "caption",
+          language,
+          value,
+        ),
+    }),
   );
 
   return panel;
@@ -976,10 +1068,13 @@ function createBlockEditor(block, index) {
   article.draggable = true;
   article.dataset.blockIndex = String(index);
 
-  article.addEventListener("dragstart", event => {
+  article.addEventListener("dragstart", (event) => {
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", String(index));
-    event.dataTransfer.setData("application/x-cmcen-block-index", String(index));
+    event.dataTransfer.setData(
+      "application/x-cmcen-block-index",
+      String(index),
+    );
     document.body.classList.add("pages-is-dragging");
     article.classList.add("is-dragging");
   });
@@ -987,9 +1082,13 @@ function createBlockEditor(block, index) {
     document.body.classList.remove("pages-is-dragging");
     article.classList.remove("is-dragging");
   });
-  article.addEventListener("dragover", event => {
-    const hasBlockType = event.dataTransfer.types.includes("application/x-cmcen-block-type");
-    const hasBlockIndex = event.dataTransfer.types.includes("application/x-cmcen-block-index");
+  article.addEventListener("dragover", (event) => {
+    const hasBlockType = event.dataTransfer.types.includes(
+      "application/x-cmcen-block-type",
+    );
+    const hasBlockIndex = event.dataTransfer.types.includes(
+      "application/x-cmcen-block-index",
+    );
 
     if (!hasBlockType && !hasBlockIndex) return;
 
@@ -999,13 +1098,15 @@ function createBlockEditor(block, index) {
   article.addEventListener("dragleave", () => {
     article.classList.remove("is-drop-target");
   });
-  article.addEventListener("drop", event => {
+  article.addEventListener("drop", (event) => {
     event.preventDefault();
     article.classList.remove("is-drop-target");
-    const blockType = event.dataTransfer.getData("application/x-cmcen-block-type");
+    const blockType = event.dataTransfer.getData(
+      "application/x-cmcen-block-type",
+    );
     const fromIndex = Number(
       event.dataTransfer.getData("application/x-cmcen-block-index") ||
-      event.dataTransfer.getData("text/plain")
+        event.dataTransfer.getData("text/plain"),
     );
 
     if (blockType) {
@@ -1027,30 +1128,36 @@ function createBlockEditor(block, index) {
   article.append(header);
 
   if (block.type === "heading") {
-    article.append(createBlockLocalizedInput(index, "Heading text", "text", "input"));
+    article.append(
+      createBlockLocalizedInput(index, "Heading text", "text", "input"),
+    );
   } else if (block.type === "image") {
     if (block.mediaUrl) {
-      article.append(createCroppedPreview({
-        src: getPreviewMediaUrl(block),
-        crop: block.crop
-      }));
+      article.append(
+        createCroppedPreview({
+          src: getPreviewMediaUrl(block),
+          crop: block.crop,
+        }),
+      );
     }
     article.append(
       createMediaDropZone({
         hasMedia: Boolean(block.mediaUrl),
         progressKey: `block:${index}`,
-        onUpload: file => uploadBlockImage(index, file),
-        onCrop: () => openCropEditor({
-          type: "block",
-          blockIndex: index
-        }),
-        onChoose: () => openMediaPicker({
-          type: "block",
-          blockIndex: index
-        })
+        onUpload: (file) => uploadBlockImage(index, file),
+        onCrop: () =>
+          openCropEditor({
+            type: "block",
+            blockIndex: index,
+          }),
+        onChoose: () =>
+          openMediaPicker({
+            type: "block",
+            blockIndex: index,
+          }),
       }),
       createBlockLocalizedInput(index, "Alt text", "alt", "input"),
-      createBlockLocalizedInput(index, "Caption", "caption", "input")
+      createBlockLocalizedInput(index, "Caption", "caption", "input"),
     );
   } else if (block.type === "button") {
     const urlLabel = document.createElement("label");
@@ -1060,13 +1167,14 @@ function createBlockEditor(block, index) {
     const input = document.createElement("input");
     input.type = "text";
     input.value = block.url || "";
-    input.addEventListener("input", event => updateBlock(
-      index,
-      { url: event.target.value },
-      { render: false }
-    ));
+    input.addEventListener("input", (event) =>
+      updateBlock(index, { url: event.target.value }, { render: false }),
+    );
     urlLabel.append(span, input);
-    article.append(createBlockLocalizedInput(index, "Button label", "text", "input"), urlLabel);
+    article.append(
+      createBlockLocalizedInput(index, "Button label", "text", "input"),
+      urlLabel,
+    );
   } else if (block.type === "divider") {
     const note = document.createElement("p");
     note.className = "admin-empty-state";
@@ -1075,16 +1183,23 @@ function createBlockEditor(block, index) {
   } else if (block.type === "columns") {
     const columns = document.createElement("div");
     columns.className = "pages-column-editors";
-    (block.columns?.length ? block.columns : getNewBlock("columns").columns).forEach((column, columnIndex) => {
+    (block.columns?.length
+      ? block.columns
+      : getNewBlock("columns").columns
+    ).forEach((column, columnIndex) => {
       columns.append(createColumnEditor(block, index, column, columnIndex));
     });
     article.append(columns);
   } else if (block.type === "carousel") {
     const carouselItems = document.createElement("div");
     carouselItems.className = "pages-carousel-item-editors";
-    (block.items?.length ? block.items : getNewBlock("carousel").items).forEach((item, itemIndex) => {
-      carouselItems.append(createCarouselItemEditor(block, index, item, itemIndex));
-    });
+    (block.items?.length ? block.items : getNewBlock("carousel").items).forEach(
+      (item, itemIndex) => {
+        carouselItems.append(
+          createCarouselItemEditor(block, index, item, itemIndex),
+        );
+      },
+    );
 
     const addSlide = document.createElement("button");
     addSlide.type = "button";
@@ -1094,10 +1209,16 @@ function createBlockEditor(block, index) {
     article.append(
       createBlockLocalizedInput(index, "Carousel heading", "text", "input"),
       carouselItems,
-      addSlide
+      addSlide,
     );
   } else {
-    article.append(createBlockLocalizedInput(index, block.type === "callout" ? "Callout text" : "Text", "body"));
+    article.append(
+      createBlockLocalizedInput(
+        index,
+        block.type === "callout" ? "Callout text" : "Text",
+        "body",
+      ),
+    );
   }
 
   return article;
@@ -1130,7 +1251,7 @@ function createBlockControls() {
     ["carousel", "Carousel"],
     ["callout", "Callout"],
     ["button", "Button"],
-    ["divider", "Divider"]
+    ["divider", "Divider"],
   ].forEach(([type, label]) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -1139,7 +1260,7 @@ function createBlockControls() {
     button.textContent = label;
     button.disabled = !pagesState.selectedPage;
     button.addEventListener("click", () => addBlock(type));
-    button.addEventListener("dragstart", event => {
+    button.addEventListener("dragstart", (event) => {
       if (!pagesState.selectedPage) {
         event.preventDefault();
         return;
@@ -1179,7 +1300,7 @@ function createPageAccessEditor() {
   [
     ["public", "Everyone"],
     ["authenticated", "Signed-in members"],
-    ["restricted", "Selected roles or permissions"]
+    ["restricted", "Selected roles or permissions"],
   ].forEach(([value, label]) => {
     const option = document.createElement("option");
     option.value = value;
@@ -1187,7 +1308,7 @@ function createPageAccessEditor() {
     audience.append(option);
   });
   audience.value = access.audience || "public";
-  audience.addEventListener("change", event => {
+  audience.addEventListener("change", (event) => {
     updatePageAccess({ audience: event.target.value });
   });
 
@@ -1205,12 +1326,15 @@ function createPageAccessEditor() {
   roleTitle.textContent = "Built-in roles";
   roleGroup.append(roleTitle);
 
-  (pagesState.roles || []).forEach(role => {
-    roleGroup.append(createCheckboxOption({
-      label: getBuiltInRoleLabel(role),
-      checked: (access.roles || []).includes(role),
-      onChange: isChecked => toggleAccessListValue("roles", role, isChecked)
-    }));
+  (pagesState.roles || []).forEach((role) => {
+    roleGroup.append(
+      createCheckboxOption({
+        label: getBuiltInRoleLabel(role),
+        checked: (access.roles || []).includes(role),
+        onChange: (isChecked) =>
+          toggleAccessListValue("roles", role, isChecked),
+      }),
+    );
   });
 
   const customRoleGroup = document.createElement("div");
@@ -1226,13 +1350,18 @@ function createPageAccessEditor() {
     empty.textContent = "No custom roles yet.";
     customRoleGroup.append(empty);
   } else {
-    pagesState.customRoles.forEach(role => {
-      customRoleGroup.append(createCheckboxOption({
-        label: role.name,
-        badgeColor: role.color,
-        checked: (access.customRoles || []).some(roleId => String(roleId) === String(role._id)),
-        onChange: isChecked => toggleAccessListValue("customRoles", String(role._id), isChecked)
-      }));
+    pagesState.customRoles.forEach((role) => {
+      customRoleGroup.append(
+        createCheckboxOption({
+          label: role.name,
+          badgeColor: role.color,
+          checked: (access.customRoles || []).some(
+            (roleId) => String(roleId) === String(role._id),
+          ),
+          onChange: (isChecked) =>
+            toggleAccessListValue("customRoles", String(role._id), isChecked),
+        }),
+      );
     });
   }
 
@@ -1243,12 +1372,15 @@ function createPageAccessEditor() {
   permissionTitle.textContent = "Permission scopes";
   permissionGroup.append(permissionTitle);
 
-  (pagesState.permissionCatalog || []).forEach(permission => {
-    permissionGroup.append(createCheckboxOption({
-      label: `${permission.label} (${permission.key})`,
-      checked: (access.permissions || []).includes(permission.key),
-      onChange: isChecked => toggleAccessListValue("permissions", permission.key, isChecked)
-    }));
+  (pagesState.permissionCatalog || []).forEach((permission) => {
+    permissionGroup.append(
+      createCheckboxOption({
+        label: `${permission.label} (${permission.key})`,
+        checked: (access.permissions || []).includes(permission.key),
+        onChange: (isChecked) =>
+          toggleAccessListValue("permissions", permission.key, isChecked),
+      }),
+    );
   });
 
   fieldset.append(roleGroup, customRoleGroup, permissionGroup);
@@ -1268,7 +1400,8 @@ function createPageEditor() {
     heading.textContent = "Select or create a page";
 
     const copy = document.createElement("span");
-    copy.textContent = "Choose a page on the left, or create a new one to open the drag-and-drop builder.";
+    copy.textContent =
+      "Choose a page on the left, or create a new one to open the drag-and-drop builder.";
 
     empty.append(heading, copy);
     panel.append(empty);
@@ -1278,7 +1411,8 @@ function createPageEditor() {
   const header = document.createElement("div");
   header.className = "admin-panel-heading";
   const title = document.createElement("h3");
-  title.textContent = localized(pagesState.selectedPage.title) || "Untitled page";
+  title.textContent =
+    localized(pagesState.selectedPage.title) || "Untitled page";
   const status = document.createElement("span");
   status.className = "admin-user-role-badge";
   status.textContent = pagesState.selectedPage.status;
@@ -1300,7 +1434,7 @@ function createPageEditor() {
   const slug = document.createElement("input");
   slug.type = "text";
   slug.value = pagesState.selectedPage.slug || "";
-  slug.addEventListener("input", event => {
+  slug.addEventListener("input", (event) => {
     const cleanSlug = getCleanSlug(event.target.value);
     event.target.value = cleanSlug;
     updateSelectedPage({ slug: cleanSlug }, { render: false });
@@ -1333,10 +1467,13 @@ function createPageEditor() {
   const publish = document.createElement("button");
   publish.type = "button";
   publish.className = "admin-work-zone-button is-secondary";
-  publish.textContent = pagesState.selectedPage.status === "published" ? "Unpublish" : "Publish";
-  publish.addEventListener("click", () => updatePageStatus(
-    pagesState.selectedPage.status === "published" ? "draft" : "published"
-  ));
+  publish.textContent =
+    pagesState.selectedPage.status === "published" ? "Unpublish" : "Publish";
+  publish.addEventListener("click", () =>
+    updatePageStatus(
+      pagesState.selectedPage.status === "published" ? "draft" : "published",
+    ),
+  );
 
   const preview = document.createElement("a");
   preview.className = "admin-work-zone-button is-secondary";
@@ -1360,10 +1497,10 @@ function createPageEditor() {
     createLocalizedInput("Summary", "summary", "textarea"),
     createPageAccessEditor(),
     blocks,
-    actions
+    actions,
   );
 
-  panel.addEventListener("submit", event => {
+  panel.addEventListener("submit", (event) => {
     event.preventDefault();
     saveSelectedPage({ auto: false });
   });
@@ -1376,7 +1513,9 @@ function createNavigationPanel() {
   panel.className = "pages-navigation-panel";
   const selectedPage = pagesState.selectedPage;
   const selectedPageIsPublished = selectedPage?.status === "published";
-  const publishedPages = pagesState.pages.filter(existingPage => existingPage.status === "published");
+  const publishedPages = pagesState.pages.filter(
+    (existingPage) => existingPage.status === "published",
+  );
 
   const header = document.createElement("div");
   header.className = "admin-panel-heading";
@@ -1398,13 +1537,15 @@ function createNavigationPanel() {
   const introTitle = document.createElement("strong");
   introTitle.textContent = "Published pages only";
   const introCopy = document.createElement("p");
-  introCopy.textContent = "Draft pages cannot be added to the public navbar. Publish a page first, then add it under a navbar parent.";
+  introCopy.textContent =
+    "Draft pages cannot be added to the public navbar. Publish a page first, then add it under a navbar parent.";
   intro.append(introTitle, introCopy);
 
   if (selectedPage && !selectedPageIsPublished) {
     const selectedWarning = document.createElement("p");
     selectedWarning.className = "pages-navigation-note";
-    selectedWarning.textContent = "The selected page is still a draft, so it is hidden from the Add page menu.";
+    selectedWarning.textContent =
+      "The selected page is still a draft, so it is hidden from the Add page menu.";
     intro.append(selectedWarning);
   }
 
@@ -1420,7 +1561,8 @@ function createNavigationPanel() {
 
   const groupHelp = document.createElement("p");
   groupHelp.className = "pages-navigation-help";
-  groupHelp.textContent = "Parents are top-level dropdown labels in the site header.";
+  groupHelp.textContent =
+    "Parents are top-level dropdown labels in the site header.";
 
   const groupName = document.createElement("input");
   groupName.type = "text";
@@ -1436,7 +1578,7 @@ function createNavigationPanel() {
   addGroup.textContent = "Add parent";
 
   groupForm.append(groupFormTitle, groupHelp, groupName, groupNameFr, addGroup);
-  groupForm.addEventListener("submit", event => {
+  groupForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const labelEn = groupName.value.trim();
     const labelFr = groupNameFr.value.trim();
@@ -1448,16 +1590,16 @@ function createNavigationPanel() {
       group: getCleanSlug(labelEn || labelFr),
       label: {
         en: labelEn,
-        fr: labelFr
+        fr: labelFr,
       },
       route: "",
       visible: true,
-      order: pagesState.navigationGroups.length + 1
+      order: pagesState.navigationGroups.length + 1,
     });
   });
 
   const group = document.createElement("select");
-  pagesState.navigationGroups.forEach(groupName => {
+  pagesState.navigationGroups.forEach((groupName) => {
     const option = document.createElement("option");
     option.value = getNavigationGroupKey(groupName);
     option.textContent = getNavigationGroupLabel(groupName);
@@ -1471,16 +1613,15 @@ function createNavigationPanel() {
     option.textContent = "Publish a page first";
     page.append(option);
   }
-  publishedPages
-    .forEach(existingPage => {
-      const option = document.createElement("option");
-      option.value = existingPage._id;
-      option.textContent = localized(existingPage.title) || existingPage.slug;
-      option.dataset.route = existingPage.route;
-      option.dataset.labelEn = existingPage.title?.en || "";
-      option.dataset.labelFr = existingPage.title?.fr || "";
-      page.append(option);
-    });
+  publishedPages.forEach((existingPage) => {
+    const option = document.createElement("option");
+    option.value = existingPage._id;
+    option.textContent = localized(existingPage.title) || existingPage.slug;
+    option.dataset.route = existingPage.route;
+    option.dataset.labelEn = existingPage.title?.en || "";
+    option.dataset.labelFr = existingPage.title?.fr || "";
+    page.append(option);
+  });
   page.disabled = !publishedPages.length;
 
   const add = document.createElement("button");
@@ -1500,7 +1641,7 @@ function createNavigationPanel() {
     : "No published pages are available yet. Publish a page before adding it to the navbar.";
 
   form.append(addPageTitle, addPageHelp, group, page, add);
-  form.addEventListener("submit", event => {
+  form.addEventListener("submit", (event) => {
     event.preventDefault();
     const option = page.selectedOptions[0];
     if (!option) return;
@@ -1510,10 +1651,10 @@ function createNavigationPanel() {
       route: option.dataset.route,
       label: {
         en: option.dataset.labelEn,
-        fr: option.dataset.labelFr
+        fr: option.dataset.labelFr,
       },
       visible: true,
-      order: pagesState.navigationItems.length + 1
+      order: pagesState.navigationItems.length + 1,
     });
   });
 
@@ -1521,17 +1662,19 @@ function createNavigationPanel() {
 
   const list = document.createElement("div");
   list.className = "pages-navigation-list";
-  pagesState.navigationItems.forEach(item => {
+  pagesState.navigationItems.forEach((item) => {
     const row = document.createElement("div");
     row.className = "pages-navigation-row";
     const label = document.createElement("span");
     const groupLabel = getNavigationGroupLabel(
-      pagesState.navigationGroups.find(group => getNavigationGroupKey(group) === item.group) ||
-      item.group
+      pagesState.navigationGroups.find(
+        (group) => getNavigationGroupKey(group) === item.group,
+      ) || item.group,
     );
-    label.textContent = item.type === "group"
-      ? `${groupLabel} · parent`
-      : `${groupLabel} · ${localized(item.label)}`;
+    label.textContent =
+      item.type === "group"
+        ? `${groupLabel} · parent`
+        : `${groupLabel} · ${localized(item.label)}`;
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "admin-work-zone-button is-danger";
@@ -1552,7 +1695,7 @@ function createMediaPickerModal() {
 
   const overlay = document.createElement("div");
   overlay.className = "pages-media-picker-overlay";
-  overlay.addEventListener("click", event => {
+  overlay.addEventListener("click", (event) => {
     if (event.target === overlay) {
       closeMediaPicker();
     }
@@ -1587,13 +1730,14 @@ function createMediaPickerModal() {
   } else if (!pagesState.media.length) {
     const empty = document.createElement("p");
     empty.className = "admin-empty-state";
-    empty.textContent = "No CDN media found yet. Upload an image from a page block to add one.";
+    empty.textContent =
+      "No CDN media found yet. Upload an image from a page block to add one.";
     body.append(empty);
   } else {
     const grid = document.createElement("div");
     grid.className = "pages-media-picker-grid";
 
-    pagesState.media.forEach(mediaItem => {
+    pagesState.media.forEach((mediaItem) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "pages-media-picker-item";
@@ -1622,14 +1766,18 @@ function createMediaPickerModal() {
   refresh.className = "admin-work-zone-button is-secondary";
   refresh.textContent = pagesState.mediaIsLoading ? "Loading..." : "Refresh";
   refresh.disabled = pagesState.mediaIsLoading;
-  refresh.addEventListener("click", () => loadPageBuilderMedia({ reset: true }));
+  refresh.addEventListener("click", () =>
+    loadPageBuilderMedia({ reset: true }),
+  );
   footer.append(refresh);
 
   if (pagesState.mediaIsTruncated) {
     const loadMore = document.createElement("button");
     loadMore.type = "button";
     loadMore.className = "admin-work-zone-button is-secondary";
-    loadMore.textContent = pagesState.mediaIsLoading ? "Loading..." : "Load more";
+    loadMore.textContent = pagesState.mediaIsLoading
+      ? "Loading..."
+      : "Load more";
     loadMore.disabled = pagesState.mediaIsLoading;
     loadMore.addEventListener("click", () => loadPageBuilderMedia());
     footer.append(loadMore);
@@ -1650,7 +1798,7 @@ function createCropEditorModal() {
   const crop = getCrop(media.crop);
   const overlay = document.createElement("div");
   overlay.className = "pages-media-picker-overlay";
-  overlay.addEventListener("click", event => {
+  overlay.addEventListener("click", (event) => {
     if (event.target === overlay) {
       closeCropEditor();
     }
@@ -1681,7 +1829,7 @@ function createCropEditorModal() {
 
   const preview = createCroppedPreview({
     src: getPreviewMediaUrl(media),
-    crop
+    crop,
   });
   preview.classList.add("pages-crop-preview");
 
@@ -1699,10 +1847,10 @@ function createCropEditorModal() {
     input.max = String(max);
     input.step = String(step);
     input.value = String(crop[key]);
-    input.addEventListener("change", event => {
+    input.addEventListener("change", (event) => {
       updateCropTarget({
         ...getCrop(getCropTargetMedia()?.crop),
-        [key]: Number(event.target.value)
+        [key]: Number(event.target.value),
       });
     });
     field.append(text, input);
@@ -1716,7 +1864,7 @@ function createCropEditorModal() {
   const rotateField = document.createElement("div");
   rotateField.className = "pages-crop-rotate-controls";
 
-  [0, 90, 180, 270].forEach(value => {
+  [0, 90, 180, 270].forEach((value) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "admin-work-zone-button is-secondary";
@@ -1725,7 +1873,7 @@ function createCropEditorModal() {
     button.addEventListener("click", () => {
       updateCropTarget({
         ...getCrop(getCropTargetMedia()?.crop),
-        rotate: value
+        rotate: value,
       });
     });
     rotateField.append(button);
@@ -1739,13 +1887,16 @@ function createCropEditorModal() {
 }
 
 function renderPagesAdmin() {
-  pagesAdminContent.classList.toggle("is-page-selected", Boolean(pagesState.selectedPage));
+  pagesAdminContent.classList.toggle(
+    "is-page-selected",
+    Boolean(pagesState.selectedPage),
+  );
 
   const children = [
     createMessage(),
     createPagesSidebar(),
     createBlockControls(),
-    createPageEditor()
+    createPageEditor(),
   ];
   const mediaPicker = createMediaPickerModal();
   const cropEditor = createCropEditorModal();
@@ -1763,7 +1914,7 @@ function renderPagesAdmin() {
 
 async function verifyAccess() {
   const user = await pageApi("/api/me", {
-    errorMessage: "Could not verify account"
+    errorMessage: "Could not verify account",
   });
 
   if (user.permissions?.canManagePages !== true) {
@@ -1771,7 +1922,8 @@ async function verifyAccess() {
     return null;
   }
 
-  pagesState.canManageNavigation = user.permissions?.canManageNavigation === true;
+  pagesState.canManageNavigation =
+    user.permissions?.canManageNavigation === true;
   window.updateAdminWorkZoneTabsForUser(user);
   return user;
 }
@@ -1779,12 +1931,15 @@ async function verifyAccess() {
 async function loadPages() {
   cancelAutoSave();
   const data = await pageApi("/api/admin/pages", {
-    errorMessage: "Could not load pages"
+    errorMessage: "Could not load pages",
   });
-  const selectedPageId = pagesState.selectedPageId &&
-    data.pages?.some(page => String(page._id) === String(pagesState.selectedPageId))
-    ? pagesState.selectedPageId
-    : data.pages?.[0]?._id || "";
+  const selectedPageId =
+    pagesState.selectedPageId &&
+    data.pages?.some(
+      (page) => String(page._id) === String(pagesState.selectedPageId),
+    )
+      ? pagesState.selectedPageId
+      : data.pages?.[0]?._id || "";
 
   setPagesState({
     pages: data.pages || [],
@@ -1794,12 +1949,13 @@ async function loadPages() {
     customRoles: data.customRoles || [],
     permissionCatalog: data.permissionCatalog || [],
     selectedPageId,
-    selectedPage: selectedPageId === pagesState.selectedPageId
-      ? pagesState.selectedPage
-      : null,
+    selectedPage:
+      selectedPageId === pagesState.selectedPageId
+        ? pagesState.selectedPage
+        : null,
     message: "",
     autoSaveStatus: "idle",
-    autoSaveMessage: ""
+    autoSaveMessage: "",
   });
   showPagesPage();
 
@@ -1811,7 +1967,7 @@ async function loadPages() {
 async function loadPageDetail(pageId) {
   cancelAutoSave();
   const data = await pageApi(`/api/admin/pages/${encodeURIComponent(pageId)}`, {
-    errorMessage: "Could not load page"
+    errorMessage: "Could not load page",
   });
   setPagesState({
     selectedPageId: data.page._id,
@@ -1819,7 +1975,7 @@ async function loadPageDetail(pageId) {
     message: "",
     autoSaveStatus: "idle",
     autoSaveMessage: "",
-    lastSavedAt: data.page.updatedAt || null
+    lastSavedAt: data.page.updatedAt || null,
   });
 }
 
@@ -1828,11 +1984,11 @@ async function loadPageBuilderMedia({ reset = false } = {}) {
     mediaIsLoading: true,
     ...(reset
       ? {
-        media: [],
-        mediaNextCursor: "",
-        mediaIsTruncated: false
-      }
-      : {})
+          media: [],
+          mediaNextCursor: "",
+          mediaIsTruncated: false,
+        }
+      : {}),
   });
 
   try {
@@ -1844,7 +2000,7 @@ async function loadPageBuilderMedia({ reset = false } = {}) {
     }
 
     const data = await pageApi(`/api/admin/pages/media?${params}`, {
-      errorMessage: "Could not load CDN media"
+      errorMessage: "Could not load CDN media",
     });
 
     setPagesState({
@@ -1853,12 +2009,12 @@ async function loadPageBuilderMedia({ reset = false } = {}) {
         : [...pagesState.media, ...(data.media || [])],
       mediaNextCursor: data.nextCursor || "",
       mediaIsTruncated: Boolean(data.isTruncated),
-      mediaIsLoading: false
+      mediaIsLoading: false,
     });
   } catch (error) {
     setPagesState({
       mediaIsLoading: false,
-      message: error.message || "Could not load CDN media"
+      message: error.message || "Could not load CDN media",
     });
   }
 }
@@ -1871,9 +2027,9 @@ async function createPage() {
       body: {
         title: { en: title, fr: "" },
         slug: `new-page-${Date.now()}`,
-        blocks: [getNewBlock("text")]
+        blocks: [getNewBlock("text")],
       },
-      errorMessage: "Could not create page"
+      errorMessage: "Could not create page",
     });
 
     await loadPages();
@@ -1920,17 +2076,20 @@ async function saveSelectedPage({ auto = false } = {}) {
   let data;
 
   try {
-    data = await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}`, {
-      method: "PATCH",
-      body: {
-        title: pagesState.selectedPage.title,
-        slug: pagesState.selectedPage.slug,
-        summary: pagesState.selectedPage.summary,
-        access: getSelectedPageAccess(),
-        blocks: pagesState.selectedPage.blocks || []
+    data = await pageApi(
+      `/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}`,
+      {
+        method: "PATCH",
+        body: {
+          title: pagesState.selectedPage.title,
+          slug: pagesState.selectedPage.slug,
+          summary: pagesState.selectedPage.summary,
+          access: getSelectedPageAccess(),
+          blocks: pagesState.selectedPage.blocks || [],
+        },
+        errorMessage: "Could not save page",
       },
-      errorMessage: "Could not save page"
-    });
+    );
   } catch (error) {
     if (auto) {
       setAutoSaveState("error", error.message || "Autosave failed");
@@ -1941,7 +2100,10 @@ async function saveSelectedPage({ auto = false } = {}) {
     return;
   }
 
-  if (requestId !== autoSaveRequestId || String(pagesState.selectedPageId) !== String(pageId)) {
+  if (
+    requestId !== autoSaveRequestId ||
+    String(pagesState.selectedPageId) !== String(pageId)
+  ) {
     return;
   }
 
@@ -1950,7 +2112,7 @@ async function saveSelectedPage({ auto = false } = {}) {
       ...pagesState,
       autoSaveStatus: "saved",
       autoSaveMessage: "Saved",
-      lastSavedAt: data.page.updatedAt || new Date().toISOString()
+      lastSavedAt: data.page.updatedAt || new Date().toISOString(),
     };
     renderAutoSaveStatus();
     return;
@@ -1961,22 +2123,24 @@ async function saveSelectedPage({ auto = false } = {}) {
     message: "",
     autoSaveStatus: "saved",
     autoSaveMessage: "Saved",
-    lastSavedAt: data.page.updatedAt || new Date().toISOString()
+    lastSavedAt: data.page.updatedAt || new Date().toISOString(),
   });
   showPagesActionToast(data.message || "Page saved", "success");
 
   const listData = await pageApi("/api/admin/pages", {
-    errorMessage: "Could not refresh page list"
+    errorMessage: "Could not refresh page list",
   }).catch(() => null);
 
   if (listData && String(pagesState.selectedPageId) === String(pageId)) {
     setPagesState({
       pages: listData.pages || pagesState.pages,
       navigationItems: listData.navigationItems || pagesState.navigationItems,
-      navigationGroups: listData.navigationGroups || pagesState.navigationGroups,
+      navigationGroups:
+        listData.navigationGroups || pagesState.navigationGroups,
       roles: listData.roles || pagesState.roles,
       customRoles: listData.customRoles || pagesState.customRoles,
-      permissionCatalog: listData.permissionCatalog || pagesState.permissionCatalog
+      permissionCatalog:
+        listData.permissionCatalog || pagesState.permissionCatalog,
     });
   }
 }
@@ -1986,42 +2150,54 @@ async function updatePageStatus(status) {
   cancelAutoSave();
 
   try {
-    const data = await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}/status`, {
-      method: "PATCH",
-      body: { status },
-      errorMessage: "Could not update page status"
-    });
+    const data = await pageApi(
+      `/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}/status`,
+      {
+        method: "PATCH",
+        body: { status },
+        errorMessage: "Could not update page status",
+      },
+    );
 
     setPagesState({
       selectedPage: data.page,
-      message: ""
+      message: "",
     });
     await loadPages();
     showPagesActionToast(data.message || "Page status updated", "success");
   } catch (error) {
-    showPagesActionToast(error.message || "Could not update page status", "error");
+    showPagesActionToast(
+      error.message || "Could not update page status",
+      "error",
+    );
   }
 }
 
 async function deleteSelectedPage() {
   if (!pagesState.selectedPage?._id) return;
-  if (!await CMCENModal.confirm("Delete this page?", {
-    title: "Delete page",
-    confirmText: "Delete",
-    destructive: true
-  })) return;
+  if (
+    !(await CMCENModal.confirm("Delete this page?", {
+      title: "Delete page",
+      confirmText: "Delete",
+      destructive: true,
+    }))
+  )
+    return;
   cancelAutoSave();
 
   try {
-    await pageApi(`/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}`, {
-      method: "DELETE",
-      errorMessage: "Could not delete page"
-    });
+    await pageApi(
+      `/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}`,
+      {
+        method: "DELETE",
+        errorMessage: "Could not delete page",
+      },
+    );
 
     setPagesState({
       selectedPageId: "",
       selectedPage: null,
-      message: ""
+      message: "",
     });
     await loadPages();
     showPagesActionToast("Page deleted", "success");
@@ -2068,7 +2244,8 @@ function reorderBlock(fromIndex, toIndex) {
 }
 
 function addCarouselItem(index) {
-  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
+  const block =
+    pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
   updateBlock(index, {
     items: [
       ...(block.items || []),
@@ -2077,14 +2254,15 @@ function addCarouselItem(index) {
         mediaUrl: "",
         mediaVariants: {},
         alt: getEmptyLocalized(),
-        caption: getEmptyLocalized()
-      }
-    ]
+        caption: getEmptyLocalized(),
+      },
+    ],
   });
 }
 
 function removeCarouselItem(index, itemIndex) {
-  const block = pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
+  const block =
+    pagesState.selectedPage?.blocks?.[index] || getNewBlock("carousel");
   const items = [...(block.items || [])];
   items.splice(itemIndex, 1);
   updateBlock(index, { items });
@@ -2095,7 +2273,7 @@ async function uploadBlockImage(index, file) {
 
   updateBlock(index, {
     ...getUploadMediaUpdate(data),
-    crop: getCrop(pagesState.selectedPage?.blocks?.[index]?.crop)
+    crop: getCrop(pagesState.selectedPage?.blocks?.[index]?.crop),
   });
 }
 
@@ -2104,7 +2282,9 @@ async function uploadColumnImage(index, columnIndex, file) {
 
   updateBlockColumn(index, columnIndex, {
     ...getUploadMediaUpdate(data),
-    crop: getCrop(pagesState.selectedPage?.blocks?.[index]?.columns?.[columnIndex]?.crop)
+    crop: getCrop(
+      pagesState.selectedPage?.blocks?.[index]?.columns?.[columnIndex]?.crop,
+    ),
   });
 }
 
@@ -2113,7 +2293,9 @@ async function uploadCarouselImage(index, itemIndex, file) {
 
   updateCarouselItem(index, itemIndex, {
     ...getUploadMediaUpdate(data),
-    crop: getCrop(pagesState.selectedPage?.blocks?.[index]?.items?.[itemIndex]?.crop)
+    crop: getCrop(
+      pagesState.selectedPage?.blocks?.[index]?.items?.[itemIndex]?.crop,
+    ),
   });
 }
 
@@ -2121,7 +2303,7 @@ function uploadImageToCdn(file, progressKey) {
   setUploadProgress(progressKey, {
     status: "uploading",
     percent: 0,
-    message: "Preparing image"
+    message: "Preparing image",
   });
 
   return uploadImageToCdnThroughServer(file, progressKey);
@@ -2138,9 +2320,9 @@ function uploadImageToCdnThroughServer(file, progressKey) {
   formData.append(
     "sourceName",
     pagesState.selectedPage?.title?.en ||
-    pagesState.selectedPage?.title?.fr ||
-    file.name ||
-    "Page image"
+      pagesState.selectedPage?.title?.fr ||
+      file.name ||
+      "Page image",
   );
 
   return new Promise((resolve, reject) => {
@@ -2149,12 +2331,12 @@ function uploadImageToCdnThroughServer(file, progressKey) {
     request.open("POST", "/api/upload");
     request.setRequestHeader("Authorization", `Bearer ${pagesAdminToken}`);
 
-    request.upload.addEventListener("progress", event => {
+    request.upload.addEventListener("progress", (event) => {
       if (!event.lengthComputable) return;
 
       setUploadProgress(progressKey, {
         status: "uploading",
-        percent: Math.round((event.loaded / event.total) * 100)
+        percent: Math.round((event.loaded / event.total) * 100),
       });
     });
 
@@ -2166,7 +2348,7 @@ function uploadImageToCdnThroughServer(file, progressKey) {
         setUploadProgress(progressKey, {
           status: "error",
           percent: 0,
-          message
+          message,
         });
         reject(new Error(message));
         return;
@@ -2175,7 +2357,7 @@ function uploadImageToCdnThroughServer(file, progressKey) {
       setUploadProgress(progressKey, {
         status: "complete",
         percent: 100,
-        message: "Upload complete"
+        message: "Upload complete",
       });
       window.setTimeout(() => clearUploadProgress(progressKey), 900);
       resolve(data);
@@ -2186,7 +2368,7 @@ function uploadImageToCdnThroughServer(file, progressKey) {
       setUploadProgress(progressKey, {
         status: "error",
         percent: 0,
-        message
+        message,
       });
       reject(new Error(message));
     });
@@ -2200,13 +2382,16 @@ async function createNavigationItem(payload) {
     await pageApi("/api/admin/navigation-items", {
       method: "POST",
       body: payload,
-      errorMessage: "Could not add navigation item"
+      errorMessage: "Could not add navigation item",
     });
     await loadPages();
     await window.reloadSiteNavigation?.();
     showPagesActionToast("Navigation item added", "success");
   } catch (error) {
-    showPagesActionToast(error.message || "Could not add navigation item", "error");
+    showPagesActionToast(
+      error.message || "Could not add navigation item",
+      "error",
+    );
   }
 }
 
@@ -2214,13 +2399,16 @@ async function deleteNavigationItem(itemId) {
   try {
     await pageApi(`/api/admin/navigation-items/${encodeURIComponent(itemId)}`, {
       method: "DELETE",
-      errorMessage: "Could not remove navigation item"
+      errorMessage: "Could not remove navigation item",
     });
     await loadPages();
     await window.reloadSiteNavigation?.();
     showPagesActionToast("Navigation item removed", "success");
   } catch (error) {
-    showPagesActionToast(error.message || "Could not remove navigation item", "error");
+    showPagesActionToast(
+      error.message || "Could not remove navigation item",
+      "error",
+    );
   }
 }
 

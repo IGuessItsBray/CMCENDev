@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   test:
-    name: Node.js 20 test suite
+    name: Node.js 24 test suite
     runs-on: ubuntu-latest
     timeout-minutes: 20
 

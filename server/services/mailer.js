@@ -8,7 +8,7 @@ const transporter = nodemailer.createTransport({
   requireTLS: true,
 });
 
-function sendMail({ to, cc, subject, html }) {
+function sendMail({ to, cc, subject, text, html }) {
   if (process.env.NODE_ENV === 'test') {
     return Promise.resolve({ accepted: [to].filter(Boolean), test: true });
   }
@@ -19,6 +19,7 @@ function sendMail({ to, cc, subject, html }) {
     to,
     cc,
     subject,
+    text,
     html,
   });
 }

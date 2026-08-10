@@ -23,7 +23,7 @@ function getCdnBaseUrl() {
 }
 
 function getKnownCdnBaseUrls() {
-  return [getCdnBaseUrl()].filter(
+  return [getCdnBaseUrl(), getMinioPublicBaseUrl()].filter(
     (value, index, allValues) => value && allValues.indexOf(value) === index,
   );
 }

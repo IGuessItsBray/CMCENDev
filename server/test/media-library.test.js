@@ -3,6 +3,7 @@ const { afterEach, test } = require('node:test');
 const {
   buildPublicMediaUrl,
   getCdnBaseUrl,
+  getMediaKeyFromValue,
 } = require('../services/media-library');
 
 const ENV_KEYS = [
@@ -53,5 +54,24 @@ test('prefers an explicit CDN base URL', () => {
   assert.equal(
     buildPublicMediaUrl('images/example photo.jpg'),
     'https://cdn.example.ca/media/images/example%20photo.jpg',
+  );
+});
+
+test('recognizes an internal storage URL and rebuilds it through the CDN', () => {
+  process.env.CDN_PUBLIC_BASE_URL = 'https://cdn.example.ca/media';
+  process.env.MINIO_ENDPOINT = 'http://100.64.0.10:9000';
+  delete process.env.MINIO_PUBLIC_ENDPOINT;
+  process.env.MINIO_BUCKET_NAME = 'cmcen-demo';
+
+  const internalUrl =
+    'http://100.64.0.10:9000/cmcen-demo/images/alex-example/large.webp';
+
+  assert.equal(
+    getMediaKeyFromValue(internalUrl),
+    'images/alex-example/large.webp',
+  );
+  assert.equal(
+    buildPublicMediaUrl(getMediaKeyFromValue(internalUrl)),
+    'https://cdn.example.ca/media/images/alex-example/large.webp',
   );
 });

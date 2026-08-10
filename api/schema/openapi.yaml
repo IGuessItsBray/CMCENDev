@@ -772,7 +772,18 @@ paths:
                   format: binary
                 uploadSource:
                   type: string
-                  enum: [retirementMessage, lastPostMessage, event, mediaManager, pageBuilder, migration, directUpload, legacyStorage, unknown]
+                  enum:
+                    [
+                      retirementMessage,
+                      lastPostMessage,
+                      event,
+                      mediaManager,
+                      pageBuilder,
+                      migration,
+                      directUpload,
+                      legacyStorage,
+                      unknown,
+                    ]
                   description: UI or workflow that initiated the upload.
                 uploadContext:
                   type: string
@@ -797,7 +808,7 @@ paths:
                   description: Name inferred from the source content, such as retiree, deceased member, or event title.
                 cdnSlug:
                   type: string
-                  pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+                  pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                   maxLength: 80
                   description: Optional unique CDN path slug. Creates objects under images/{cdnSlug}/.
       responses:
@@ -1216,8 +1227,7 @@ paths:
     post:
       tags: [Retirements]
       summary: Submit retirement message.
-      description: >-
-        Submitter name, email, and unit are copied from the authenticated profile; the request supplies only `submitter.relationship`. The submission enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canBypassReviewStages`.
+      description: Submitter name, email, and unit are copied from the authenticated profile; the request supplies only `submitter.relationship`. When `MAIL_TO_BRANCH` is configured, the server emails the normalized submission and canonical public photo URL to the internal branch mailbox for Power Automate processing. The submission enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canBypassReviewStages`.
       x-permission: canSubmitRetirementMessages
       requestBody:
         $ref: "#/components/requestBodies/RetirementMessage"
@@ -1510,7 +1520,18 @@ components:
               size: { type: integer, minimum: 0 }
               uploadSource:
                 type: string
-                enum: [retirementMessage, lastPostMessage, event, mediaManager, pageBuilder, migration, directUpload, legacyStorage, unknown]
+                enum:
+                  [
+                    retirementMessage,
+                    lastPostMessage,
+                    event,
+                    mediaManager,
+                    pageBuilder,
+                    migration,
+                    directUpload,
+                    legacyStorage,
+                    unknown,
+                  ]
               uploadContext: { type: string }
               sourceId: { type: string }
               sourceModel: { type: string }

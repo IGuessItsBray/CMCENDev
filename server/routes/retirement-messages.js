@@ -18,6 +18,9 @@ const {
   parseAffirmativeBoolean,
   parseDateOnly,
 } = require('../services/content-utils');
+const {
+  sendRetirementSubmissionEmail,
+} = require('../services/retirement-submission-email');
 
 const router = express.Router();
 
@@ -419,6 +422,24 @@ router.post(
       await retirementMessage.save();
       await linkRetirementPhotoToMediaAsset(retirementMessage);
 
+      let branchNotificationStatus = 'sent';
+
+      try {
+        const notification = await sendRetirementSubmissionEmail(
+          retirementMessage,
+        );
+        branchNotificationStatus = notification.skipped ? 'skipped' : 'sent';
+
+        if (notification.skipped) {
+          console.warn(
+            `Retirement submission branch email skipped: ${notification.reason}`,
+          );
+        }
+      } catch (error) {
+        branchNotificationStatus = 'failed';
+        console.error('Could not send retirement submission branch email:', error);
+      }
+
       await writeAuditLog({
         req,
         action: 'content.created',
@@ -426,7 +447,10 @@ router.post(
         targetType: 'retirementMessage',
         target: retirementMessage._id,
         targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
-        metadata: { status: retirementMessage.status },
+        metadata: {
+          status: retirementMessage.status,
+          branchNotification: branchNotificationStatus,
+        },
       });
 
       if (retirementMessage.status === 'published') {

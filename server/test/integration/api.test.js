@@ -428,6 +428,43 @@ describe('retirement message lifecycle', () => {
       .expect(403);
   });
 
+  test('lets bypass-capable users choose immediate publication', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const developer = await createUser({ role: 'developer' });
+    const contributorLogin = await login(contributor);
+    const developerLogin = await login(developer);
+
+    await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({ ...retirementPayload(), publishNow: true })
+      .expect(403);
+
+    const queued = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(developerLogin.body.token))
+      .send(retirementPayload())
+      .expect(201);
+    assert.equal(queued.body.status, 'pending');
+
+    const queuedMessage = await RetirementMessage.findOne({
+      status: 'pending',
+    }).lean();
+    const resubmitted = await request(app)
+      .patch(`/api/retirement-messages/${queuedMessage._id}`)
+      .set('Authorization', bearer(developerLogin.body.token))
+      .send({ ...retirementPayload(), publishNow: true })
+      .expect(200);
+    assert.equal(resubmitted.body.retirementMessage.status, 'published');
+
+    const published = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(developerLogin.body.token))
+      .send({ ...retirementPayload(), publishNow: true })
+      .expect(201);
+    assert.equal(published.body.status, 'published');
+  });
+
   test('requires bilingual review content, publishes, and exposes the message publicly', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });

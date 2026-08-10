@@ -367,7 +367,16 @@ router.post(
 
       const permissions = getUserPermissions(req.user);
 
-      const bypassesReview = permissions.canBypassReviewStages === true;
+      const wantsImmediatePublication = parseAffirmativeBoolean(
+        req.body.publishNow,
+      );
+      const canBypassReview = permissions.canBypassReviewStages === true;
+
+      if (wantsImmediatePublication && !canBypassReview) {
+        return res.status(403).json({
+          error: 'You do not have permission to publish retirement messages immediately',
+        });
+      }
 
       const retirementMessage = new RetirementMessage({
         retiree: cleanRetiree,
@@ -396,15 +405,15 @@ router.post(
 
         updatedBy: req.user._id,
 
-        status: bypassesReview ? 'published' : 'pending',
+        status: wantsImmediatePublication ? 'published' : 'pending',
 
-        reviewedBy: bypassesReview ? req.user._id : null,
+        reviewedBy: wantsImmediatePublication ? req.user._id : null,
 
-        reviewedAt: bypassesReview ? confirmationDate : null,
+        reviewedAt: wantsImmediatePublication ? confirmationDate : null,
 
-        publishedBy: bypassesReview ? req.user._id : null,
+        publishedBy: wantsImmediatePublication ? req.user._id : null,
 
-        publishedAt: bypassesReview ? confirmationDate : null,
+        publishedAt: wantsImmediatePublication ? confirmationDate : null,
       });
 
       await retirementMessage.save();
@@ -433,7 +442,7 @@ router.post(
       }
 
       return res.status(201).json({
-        message: bypassesReview
+        message: wantsImmediatePublication
           ? 'Retirement message published successfully'
           : 'Retirement message submitted for review',
 
@@ -924,10 +933,21 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       retirementMessage.createdBy &&
       String(retirementMessage.createdBy) === String(req.user._id);
     const canReview = permissions.canReviewAndPublish === true;
+    const previousStatus = retirementMessage.status;
+    const wantsImmediatePublication = parseAffirmativeBoolean(
+      req.body.publishNow,
+    );
+    const canBypassReview = permissions.canBypassReviewStages === true;
 
     if (!isOwner && !canReview) {
       return res.status(403).json({
         error: 'You do not have permission to edit this retirement message',
+      });
+    }
+
+    if (wantsImmediatePublication && !canBypassReview) {
+      return res.status(403).json({
+        error: 'You do not have permission to publish retirement messages immediately',
       });
     }
 
@@ -972,10 +992,9 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       confirmedAt: now,
     };
     retirementMessage.updatedBy = req.user._id;
-    retirementMessage.status =
-      canReview && permissions.canBypassReviewStages === true
-        ? 'published'
-        : 'pending';
+    retirementMessage.status = wantsImmediatePublication
+      ? 'published'
+      : 'pending';
     retirementMessage.rejectionReason = '';
     retirementMessage.reviewedBy =
       retirementMessage.status === 'published' ? req.user._id : null;
@@ -1001,6 +1020,21 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
         status: retirementMessage.status,
       },
     });
+
+    if (
+      retirementMessage.status === 'published' &&
+      previousStatus !== 'published'
+    ) {
+      await writeAuditLog({
+        req,
+        action: 'content.published',
+        actor: req.user,
+        targetType: 'retirementMessage',
+        target: retirementMessage._id,
+        targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+        metadata: { source: 'update' },
+      });
+    }
 
     res.json({
       message:

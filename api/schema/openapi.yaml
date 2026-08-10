@@ -1216,7 +1216,8 @@ paths:
     post:
       tags: [Retirements]
       summary: Submit retirement message.
-      description: Submitter name, email, and unit are copied from the authenticated profile; the request supplies only `submitter.relationship`.
+      description: >-
+        Submitter name, email, and unit are copied from the authenticated profile; the request supplies only `submitter.relationship`. The submission enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canBypassReviewStages`.
       x-permission: canSubmitRetirementMessages
       requestBody:
         $ref: "#/components/requestBodies/RetirementMessage"
@@ -1562,12 +1563,17 @@ components:
             type: object
             additionalProperties: true
     RetirementMessage:
-      description: The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates.
+      description: >-
+        The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates. The message enters the review queue by default. Set `publishNow: true` only when the authenticated user has `canBypassReviewStages`.
       required: true
       content:
         application/json:
           schema:
             type: object
+            properties:
+              publishNow:
+                type: boolean
+                description: Publish immediately when the authenticated user has `canBypassReviewStages`.
             additionalProperties: true
     ReviewDecision:
       required: true

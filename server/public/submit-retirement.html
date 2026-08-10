@@ -457,7 +457,36 @@
             </label>
           </section>
 
-          <footer class="event-form-actions">
+          <footer class="event-submit-options">
+            <div class="event-publication-copy">
+              <label
+                class="event-toggle event-publish-toggle"
+                id="retirementPublishNowContainer"
+                for="retirementPublishNow"
+                hidden
+              >
+                <input type="checkbox" id="retirementPublishNow" />
+
+                <span>
+                  <strong data-i18n="retirement_publish_now">
+                    Publish immediately
+                  </strong>
+
+                  <small data-i18n="retirement_publish_now_hint">
+                    Skip the review queue and publish this retirement message now.
+                  </small>
+                </span>
+              </label>
+
+              <p
+                class="event-review-note"
+                id="retirementReviewNote"
+                data-i18n="retirement_review_note"
+              >
+                Your retirement message will be sent to an editor for review.
+              </p>
+            </div>
+
             <button
               class="event-submit-button"
               id="retirementSubmitButton"

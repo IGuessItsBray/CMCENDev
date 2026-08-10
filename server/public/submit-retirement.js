@@ -6,6 +6,11 @@ const retirementSubmitButton = document.getElementById(
 );
 const retirementSubmitButtonLabel =
   retirementSubmitButton.querySelector("span");
+const retirementPublishNowContainer = document.getElementById(
+  "retirementPublishNowContainer",
+);
+const retirementPublishNow = document.getElementById("retirementPublishNow");
+const retirementReviewNote = document.getElementById("retirementReviewNote");
 const retirementSubmitTitle = document.getElementById("submitEventTitle");
 const retirementSubmitIntro = document.getElementById("submitEventIntro");
 const retirementMessageLanguage = document.getElementById(
@@ -354,6 +359,8 @@ function buildRetirementMessageData(photoUrl = "") {
 
     publicationConsentConfirmed: consentConfirmed,
     memberReviewConfirmed,
+    publishNow:
+      !retirementPublishNowContainer.hidden && retirementPublishNow.checked,
     website: getFieldValue("retirementWebsite"),
   };
 }
@@ -375,6 +382,11 @@ async function verifyRetirementAccess() {
 
     currentRetirementUser = user;
     populateRetirementSubmitterFromProfile(user);
+
+    const canBypassReview =
+      user.permissions?.canBypassReviewStages === true;
+    retirementPublishNowContainer.hidden = !canBypassReview;
+    retirementReviewNote.hidden = canBypassReview;
 
     if (editingRetirementMessageId) {
       await loadRetirementMessageForEditing();

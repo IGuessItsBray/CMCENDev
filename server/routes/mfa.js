@@ -19,6 +19,10 @@ const {
   updateAccountCreationMfaMethod,
   writeAuditLog,
 } = require('../services/audit-log');
+const {
+  createRateLimit,
+  readPositiveInteger,
+} = require('../middleware/rate-limit');
 
 const router = express.Router();
 
@@ -27,6 +31,14 @@ const configuredRPID = process.env.RP_ID || '';
 const configuredOrigin = process.env.RP_ORIGIN || '';
 const defaultTotpWindow = 2;
 const defaultTotpAppName = 'Authenticator app';
+const mfaVerificationLimit = createRateLimit({
+  name: 'mfa-verification',
+  windowMs:
+    readPositiveInteger('MFA_VERIFICATION_RATE_LIMIT_WINDOW_SECONDS', 5 * 60) *
+    1000,
+  max: readPositiveInteger('MFA_VERIFICATION_RATE_LIMIT_MAX', 5),
+  keyGenerator: (req) => String(req.user?._id || ''),
+});
 
 function getFirstHeaderValue(value) {
   return (
@@ -401,6 +413,7 @@ router.post(
 router.post(
   '/webauthn/authenticate/verify',
   authOrTempMiddleware,
+  mfaVerificationLimit,
   async (req, res) => {
     try {
       const user = await User.findById(req.user._id);
@@ -584,74 +597,80 @@ router.get('/totp/qrcode', authMiddleware, async (req, res) => {
 });
 
 // TOTP verify
-router.post('/totp/verify', authOrTempMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const token = normalizeTotpToken(req.body?.token);
+router.post(
+  '/totp/verify',
+  authOrTempMiddleware,
+  mfaVerificationLimit,
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id);
+      const token = normalizeTotpToken(req.body?.token);
 
-    if (!user.totp?.secret)
-      return res.status(400).json({ error: 'No TOTP secret set' });
-    if (!/^\d{6,8}$/.test(token))
-      return res
-        .status(400)
-        .json({ error: 'Enter the six-digit authenticator code' });
+      if (!user.totp?.secret)
+        return res.status(400).json({ error: 'No TOTP secret set' });
+      if (!/^\d{6,8}$/.test(token))
+        return res
+          .status(400)
+          .json({ error: 'Enter the six-digit authenticator code' });
 
-    const verification = speakeasy.totp.verifyDelta({
-      secret: user.totp.secret,
-      encoding: 'base32',
-      token,
-      window: getTotpWindow(),
-    });
+      const verification = speakeasy.totp.verifyDelta({
+        secret: user.totp.secret,
+        encoding: 'base32',
+        token,
+        window: getTotpWindow(),
+      });
 
-    if (!verification) return res.status(400).json({ error: 'Invalid token' });
+      if (!verification)
+        return res.status(400).json({ error: 'Invalid token' });
 
-    if (verification.delta !== 0) {
-      console.warn(
-        'totp/verify -> accepted token with time-step delta:',
-        verification.delta,
-        'user:',
-        String(user._id),
-      );
-    }
+      if (verification.delta !== 0) {
+        console.warn(
+          'totp/verify -> accepted token with time-step delta:',
+          verification.delta,
+          'user:',
+          String(user._id),
+        );
+      }
 
-    await User.findByIdAndUpdate(user._id, {
-      $set: {
-        'totp.enabled': true,
-        'twoFactor.destructiveVerifiedAt': new Date(),
-      },
-    });
-    await updateAccountCreationMfaMethod(user, 'totp');
-
-    const responsePayload = { verified: true };
-    if (req.isTemp) {
-      const fullToken = createSessionToken(user);
-      setRefreshTokenCookie(req, res, user);
       await User.findByIdAndUpdate(user._id, {
-        $set: { 'twoFactor.tempToken': '', 'twoFactor.tempExpires': null },
-      });
-      await writeAuditLog({
-        req,
-        action: 'user.login',
-        actor: user,
-        targetType: 'user',
-        target: user._id,
-        targetSnapshot: {
-          username: user.username,
-          email: user.email,
-          accountName: user.accountName,
-          role: user.role,
+        $set: {
+          'totp.enabled': true,
+          'twoFactor.destructiveVerifiedAt': new Date(),
         },
-        metadata: { method: 'totp' },
       });
-      responsePayload.token = fullToken;
-    }
+      await updateAccountCreationMfaMethod(user, 'totp');
 
-    res.json(responsePayload);
-  } catch (err) {
-    console.error('totp/verify error', err);
-    res.status(500).json({ error: 'Could not verify TOTP token' });
-  }
-});
+      const responsePayload = { verified: true };
+      if (req.isTemp) {
+        const fullToken = createSessionToken(user);
+        setRefreshTokenCookie(req, res, user);
+        await User.findByIdAndUpdate(user._id, {
+          $set: { 'twoFactor.tempToken': '', 'twoFactor.tempExpires': null },
+        });
+        await writeAuditLog({
+          req,
+          action: 'user.login',
+          actor: user,
+          targetType: 'user',
+          target: user._id,
+          targetSnapshot: {
+            username: user.username,
+            email: user.email,
+            accountName: user.accountName,
+            role: user.role,
+          },
+          metadata: { method: 'totp' },
+        });
+        responsePayload.token = fullToken;
+      }
+
+      res.json(responsePayload);
+    } catch (err) {
+      console.error('totp/verify error', err);
+      res.status(500).json({ error: 'Could not verify TOTP token' });
+    }
+  },
+);
 
 router.delete('/totp', authMiddleware, async (req, res) => {
   try {

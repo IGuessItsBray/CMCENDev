@@ -833,6 +833,57 @@ describe('event, page, and comment workflows', () => {
 });
 
 describe('MFA and audit behavior', () => {
+  test('rate limits repeated password reset requests for the same email', async () => {
+    const email = `reset-limit-${Date.now()}@example.test`;
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await request(app)
+        .post('/api/password-reset/request')
+        .set('X-Forwarded-For', `198.51.100.${attempt + 1}`)
+        .send({ email })
+        .expect(200);
+    }
+
+    const limited = await request(app)
+      .post('/api/password-reset/request')
+      .set('X-Forwarded-For', '198.51.100.4')
+      .send({ email })
+      .expect(429);
+
+    assert.match(limited.headers['retry-after'], /^\d+$/);
+    assert.equal(
+      limited.body.error,
+      'Too many requests. Please try again later.',
+    );
+  });
+
+  test('rate limits repeated invalid TOTP verification attempts per account', async () => {
+    const user = await createUser();
+    const session = await login(user);
+    const authorization = bearer(session.body.token);
+
+    await request(app)
+      .post('/api/mfa/totp/setup')
+      .set('Authorization', authorization)
+      .expect(200);
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await request(app)
+        .post('/api/mfa/totp/verify')
+        .set('Authorization', authorization)
+        .send({ token: '000000' })
+        .expect(400);
+    }
+
+    const limited = await request(app)
+      .post('/api/mfa/totp/verify')
+      .set('Authorization', authorization)
+      .send({ token: '000000' })
+      .expect(429);
+
+    assert.match(limited.headers['retry-after'], /^\d+$/);
+  });
+
   test('sets up and verifies TOTP without exposing the secret in audit logs', async () => {
     const user = await createUser();
     const session = await login(user);

@@ -183,7 +183,7 @@ Mounted at `/api/search`.
 
 | Method | Path          | Access | Purpose                                                                                                                                                                                 |
 | ------ | ------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`  | `/api/search` | Public | Search published events, retirement messages, and public pages. Query: `q`, optional `lang` (`en` or `fr`). Each result includes a canonical relative `url` for its public destination. |
+| `GET`  | `/api/search` | Public | Search published events, retirement messages, Last Post notices, and public pages. Query: `q`, optional `lang` (`en` or `fr`). Only results with a canonical relative `url` are returned. |
 
 ## Pages and Navigation
 

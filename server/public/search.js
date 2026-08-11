@@ -17,6 +17,7 @@ function getTypeLabel(type) {
   const labels = {
     event: translate("search_type_event"),
     "retirement-message": translate("search_type_retirement_message"),
+    "last-post-message": translate("search_type_last_post_message"),
     page: translate("search_type_page"),
   };
 
@@ -46,6 +47,8 @@ function setStatus(messageKey, replacements = {}) {
 }
 
 function renderResult(result) {
+  if (!result.url) return null;
+
   const article = document.createElement("article");
   article.className = "search-result";
 
@@ -68,14 +71,10 @@ function renderResult(result) {
   const title = document.createElement("h2");
   title.className = "search-result-title";
 
-  if (result.url) {
-    const link = document.createElement("a");
-    link.href = result.url;
-    link.textContent = result.title;
-    title.appendChild(link);
-  } else {
-    title.textContent = result.title;
-  }
+  const link = document.createElement("a");
+  link.href = result.url;
+  link.textContent = result.title;
+  title.appendChild(link);
 
   const summary = document.createElement("p");
   summary.className = "search-result-summary";
@@ -103,9 +102,10 @@ function renderResults(data) {
 
   const fragment = document.createDocumentFragment();
 
-  data.results.forEach((result) => {
-    fragment.appendChild(renderResult(result));
-  });
+  data.results
+    .map(renderResult)
+    .filter(Boolean)
+    .forEach((result) => fragment.appendChild(result));
 
   searchResults.appendChild(fragment);
 }

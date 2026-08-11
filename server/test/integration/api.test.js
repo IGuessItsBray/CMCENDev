@@ -277,6 +277,28 @@ describe('public search', () => {
       createdBy: owner._id,
     });
     const retirement = await submitAndPublishRetirement();
+    const lastPost = await LastPostMessage.create({
+      title: 'Last Post for Searchable Signal',
+      submitter: {
+        rank: 'Captain',
+        firstName: 'Search',
+        lastName: 'Tester',
+        email: 'search@example.test',
+      },
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Signal',
+        surname: 'Memorial',
+      },
+      messageLanguage: 'en',
+      messages: {
+        en: 'A searchable memorial notice for the signal community.',
+        fr: 'Un avis commemoratif recherche.',
+      },
+      status: 'published',
+      publishedAt: new Date(),
+      createdBy: owner._id,
+    });
 
     const eventSearch = await request(app)
       .get('/api/search?q=signal%20exercise')
@@ -285,6 +307,17 @@ describe('public search', () => {
       (result) => result.type === 'event',
     );
     assert.equal(eventResult.url, `/event?id=${event._id}`);
+
+    const lastPostSearch = await request(app)
+      .get('/api/search?q=signal%20memorial')
+      .expect(200);
+    const lastPostResult = lastPostSearch.body.results.find(
+      (result) => result.type === 'last-post-message',
+    );
+    assert.equal(
+      lastPostResult.url,
+      `/last-post-message?id=${lastPost._id}`,
+    );
 
     const retirementSearch = await request(app)
       .get('/api/search?q=alex%20example')
@@ -304,6 +337,12 @@ describe('public search', () => {
       (result) => result.sourceId === '/calendar',
     );
     assert.equal(pageResult.url, '/calendar');
+    assert.equal(
+      [...eventSearch.body.results, ...lastPostSearch.body.results].every(
+        (result) => Boolean(result.url),
+      ),
+      true,
+    );
   });
 });
 
@@ -833,6 +872,57 @@ describe('event, page, and comment workflows', () => {
 });
 
 describe('MFA and audit behavior', () => {
+  test('rate limits repeated password reset requests for the same email', async () => {
+    const email = `reset-limit-${Date.now()}@example.test`;
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await request(app)
+        .post('/api/password-reset/request')
+        .set('X-Forwarded-For', `198.51.100.${attempt + 1}`)
+        .send({ email })
+        .expect(200);
+    }
+
+    const limited = await request(app)
+      .post('/api/password-reset/request')
+      .set('X-Forwarded-For', '198.51.100.4')
+      .send({ email })
+      .expect(429);
+
+    assert.match(limited.headers['retry-after'], /^\d+$/);
+    assert.equal(
+      limited.body.error,
+      'Too many requests. Please try again later.',
+    );
+  });
+
+  test('rate limits repeated invalid TOTP verification attempts per account', async () => {
+    const user = await createUser();
+    const session = await login(user);
+    const authorization = bearer(session.body.token);
+
+    await request(app)
+      .post('/api/mfa/totp/setup')
+      .set('Authorization', authorization)
+      .expect(200);
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await request(app)
+        .post('/api/mfa/totp/verify')
+        .set('Authorization', authorization)
+        .send({ token: '000000' })
+        .expect(400);
+    }
+
+    const limited = await request(app)
+      .post('/api/mfa/totp/verify')
+      .set('Authorization', authorization)
+      .send({ token: '000000' })
+      .expect(429);
+
+    assert.match(limited.headers['retry-after'], /^\d+$/);
+  });
+
   test('sets up and verifies TOTP without exposing the secret in audit logs', async () => {
     const user = await createUser();
     const session = await login(user);
@@ -898,6 +988,43 @@ describe('MFA and audit behavior', () => {
 });
 
 describe('media lifecycle', () => {
+  test('filters media by content type and searches file or image names', async () => {
+    const admin = await createUser({ role: 'administrator' });
+    const session = await login(admin);
+    const retirementAsset = await MediaAsset.create({
+      key: 'images/retirement-ceremony/original.png',
+      originalKey: 'images/retirement-ceremony/original.png',
+      originalName: 'retirement-ceremony.png',
+      displayName: 'Retirement ceremony portrait',
+      uploadContext: { type: 'retirementMessage' },
+    });
+    await MediaAsset.create({
+      key: 'images/event-banner/original.png',
+      originalKey: 'images/event-banner/original.png',
+      originalName: 'event-banner.png',
+      displayName: 'Summer event banner',
+      uploadContext: { type: 'event' },
+    });
+
+    const searched = await request(app)
+      .get('/api/admin/media?search=ceremony')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    assert.deepEqual(searched.body.media.map((asset) => asset.key), [
+      retirementAsset.key,
+    ]);
+
+    const filtered = await request(app)
+      .get('/api/admin/media?type=retirement')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    assert.equal(
+      filtered.body.media.some((asset) => asset.key === retirementAsset.key),
+      true,
+    );
+    assert.equal(filtered.body.type, 'retirement');
+  });
+
   test('uploads image variants with a custom CDN slug and prevents reuse', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const admin = await createUser({ role: 'administrator' });

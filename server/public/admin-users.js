@@ -28,6 +28,8 @@ let adminWorkZoneState = {
   mediaBucket: "",
   mediaIsLoading: false,
   mediaSort: "newest",
+  mediaType: "all",
+  mediaSearch: "",
   selectedMediaKeys: [],
   mediaDeletingKeys: [],
   mediaIsDeleting: false,
@@ -72,6 +74,14 @@ const adminUsersView = CMCENAdminUsersView.create({
     setMediaSort: (sort) => {
       setAdminWorkZoneState({ mediaSort: sort || "newest" });
       loadAdminMedia({ sort: sort || "newest" });
+    },
+    setMediaType: (type) => {
+      setAdminWorkZoneState({ mediaType: type || "all" });
+      loadAdminMedia({ type: type || "all" });
+    },
+    setMediaSearch: (search) => {
+      setAdminWorkZoneState({ mediaSearch: search || "" });
+      loadAdminMedia({ search: search || "" });
     },
     toggleMediaSelection: toggleAdminMediaSelection,
     selectVisibleMedia: selectVisibleAdminMedia,
@@ -358,6 +368,8 @@ async function loadAdminMedia({
   append = false,
   cursor = "",
   sort = adminWorkZoneState.mediaSort || "newest",
+  type = adminWorkZoneState.mediaType || "all",
+  search = adminWorkZoneState.mediaSearch || "",
 } = {}) {
   setAdminWorkZoneState({
     mediaIsLoading: true,
@@ -368,6 +380,8 @@ async function loadAdminMedia({
     const params = new URLSearchParams();
     params.set("limit", "100");
     params.set("sort", sort);
+    params.set("type", type);
+    if (search.trim()) params.set("search", search.trim());
 
     if (cursor) {
       params.set("cursor", cursor);
@@ -388,6 +402,8 @@ async function loadAdminMedia({
       mediaIsTruncated: Boolean(data.isTruncated),
       mediaBucket: data.bucket || "",
       mediaSort: data.sort || sort,
+      mediaType: data.type || type,
+      mediaSearch: data.search ?? search,
       selectedMediaKeys: (adminWorkZoneState.selectedMediaKeys || []).filter(
         (key) => visibleKeys.has(key),
       ),

@@ -9,6 +9,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 ## Conventions
 
 - JSON APIs generally return `{ error: string }` on failure.
+- Every `/api` endpoint is rate limited by source IP (300 requests per minute by default). Responses include `RateLimit-*` headers; throttled requests return `429` with `Retry-After`. Sensitive password-reset and MFA verification routes have stricter limits listed below.
 - Authenticated routes expect `Authorization: Bearer <jwt>`.
 - MFA temp-flow routes may also accept a temp token through `x-temp-token`, `tempToken` in the JSON body, or `tempToken` in the query string.
 - Permission names below use the legacy flag used in middleware, with the catalog key in parentheses where helpful.
@@ -60,8 +61,8 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `POST`   | `/api/session/refresh`                | Refresh-token cookie                                             | Exchange a valid refresh cookie for a new access token.                                                                                                               |
 | `POST`   | `/api/session/logout`                 | Refresh-token cookie                                             | Revoke the refresh session and clear its cookie.                                                                                                                      |
 | `POST`   | `/api/email-verification/confirm`     | Public                                                           | Confirm email verification token.                                                                                                                                     |
-| `POST`   | `/api/password-reset/request`         | Public                                                           | Request password reset email.                                                                                                                                         |
-| `POST`   | `/api/password-reset/confirm`         | Public                                                           | Complete password reset with token.                                                                                                                                   |
+| `POST`   | `/api/password-reset/request`         | Public; rate limited                                             | Request password reset email. Limited by source IP (5 per 15 minutes) and submitted email (3 per hour).                                                               |
+| `POST`   | `/api/password-reset/confirm`         | Public; rate limited                                             | Complete password reset with token. Limited by source IP (5 per 15 minutes).                                                                                          |
 | `GET`    | `/api/me`                             | Authenticated                                                    | Return current user, permissions, and notification summary.                                                                                                           |
 | `GET`    | `/api/notifications`                  | Authenticated                                                    | Return compact notification list.                                                                                                                                     |
 | `POST`   | `/api/ghost/upgrade`                  | Authenticated                                                    | Upgrade/merge a ghost account into the current authenticated account.                                                                                                 |
@@ -79,11 +80,11 @@ Mounted at `/api/mfa`.
 | `POST`   | `/api/mfa/webauthn/register/options`          | Authenticated               | Generate passkey registration options.                                                        |
 | `POST`   | `/api/mfa/webauthn/register/verify`           | Authenticated               | Verify and store new passkey credential.                                                      |
 | `POST`   | `/api/mfa/webauthn/authenticate/options`      | Authenticated or temp token | Generate passkey authentication options.                                                      |
-| `POST`   | `/api/mfa/webauthn/authenticate/verify`       | Authenticated or temp token | Verify passkey auth; completes login when using temp token.                                   |
+| `POST`   | `/api/mfa/webauthn/authenticate/verify`       | Authenticated or temp token; rate limited | Verify passkey auth; completes login when using temp token. Limited to 5 verification attempts per account per 5 minutes. |
 | `POST`   | `/api/mfa/totp/setup`                         | Authenticated               | Create a pending TOTP secret with a server-assigned authenticator name and QR data.           |
 | `GET`    | `/api/mfa/totp/status`                        | Authenticated               | Return TOTP enabled/pending status.                                                           |
 | `GET`    | `/api/mfa/totp/qrcode`                        | Authenticated               | Return QR code for pending/current TOTP setup.                                                |
-| `POST`   | `/api/mfa/totp/verify`                        | Authenticated or temp token | Verify TOTP; completes login when using temp token.                                           |
+| `POST`   | `/api/mfa/totp/verify`                        | Authenticated or temp token; rate limited | Verify TOTP; completes login when using temp token. Limited to 5 verification attempts per account per 5 minutes.         |
 | `DELETE` | `/api/mfa/totp`                               | Authenticated               | Disable active TOTP (guarded against removing the last MFA method) or cancel a pending setup. |
 | `GET`    | `/api/mfa/webauthn/credentials`               | Authenticated               | List registered passkeys.                                                                     |
 | `PATCH`  | `/api/mfa/webauthn/credentials/:credentialID` | Authenticated               | Rename a passkey.                                                                             |

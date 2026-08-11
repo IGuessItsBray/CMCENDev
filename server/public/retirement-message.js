@@ -703,6 +703,7 @@ retirementCommentForm.addEventListener("submit", async (event) => {
     }
 
     retirementCommentForm.reset();
+    CMCENUtils.bindCharacterCounters();
 
     if (data.status === "published" && data.comment) {
       const empty = retirementCommentList.querySelector(

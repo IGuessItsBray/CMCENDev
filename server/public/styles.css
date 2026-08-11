@@ -8672,6 +8672,15 @@ a.dropdown-toggle {
   line-height: 1.4;
 }
 
+.character-counter {
+  display: block;
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: right;
+}
+
 .event-language-note {
   margin: 10px 2px 0;
   color: var(--text-muted);

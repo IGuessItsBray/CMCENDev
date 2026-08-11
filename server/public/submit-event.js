@@ -556,6 +556,7 @@ function buildEventData() {
 
 function resetEventForm() {
   eventForm.reset();
+  CMCENUtils.bindCharacterCounters();
 
   eventAllDay.checked = true;
 
@@ -932,6 +933,7 @@ function populateEventForm(event) {
   setEventField("eventDescriptionFr", event.description?.fr);
   setEventField("eventRegistrationEn", event.registration?.en);
   setEventField("eventRegistrationFr", event.registration?.fr);
+  CMCENUtils.bindCharacterCounters();
   setEventField("eventCity", event.city);
   setEventField("eventProvinceRegion", event.provinceRegion);
   setEventField("eventOrganizingEntity", event.organizingEntity);

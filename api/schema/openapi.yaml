@@ -1110,7 +1110,7 @@ paths:
     post:
       tags: [Events]
       summary: Submit event.
-      description: Submitter details are copied from the authenticated user's profile.
+      description: Submitter details are copied from the authenticated user's profile. Descriptions and registration instructions are limited to 10,000 characters per language.
       x-permission: canCreateDrafts
       requestBody:
         $ref: "#/components/requestBodies/Event"
@@ -1145,7 +1145,7 @@ paths:
     patch:
       tags: [Events]
       summary: Update event.
-      description: Updates event content while preserving the original submitter record.
+      description: Updates event content while preserving the original submitter record. Descriptions and registration instructions are limited to 10,000 characters per language.
       parameters:
         - $ref: "#/components/parameters/Id"
       requestBody:
@@ -1185,6 +1185,7 @@ paths:
     post:
       tags: [Last Posts]
       summary: Submit a Last Post notice.
+      description: Notice text is limited to 10,000 characters.
       x-permission: canCreateDrafts
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
@@ -1582,10 +1583,11 @@ components:
         application/json:
           schema:
             type: object
+            description: Event descriptions and registration instructions are limited to 10,000 characters per language.
             additionalProperties: true
     RetirementMessage:
       description: >-
-        The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates. The message enters the review queue by default. Set `publishNow: true` only when the authenticated user has `canBypassReviewStages`.
+        The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates. Message text is limited to 10,000 characters. The message enters the review queue by default. Set `publishNow: true` only when the authenticated user has `canBypassReviewStages`.
       required: true
       content:
         application/json:

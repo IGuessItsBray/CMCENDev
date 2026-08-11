@@ -497,6 +497,7 @@ function populateRetirementForm(retirementMessage) {
     "retirementMessageText",
     getRetirementMessageText(retirementMessage),
   );
+  CMCENUtils.bindCharacterCounters();
   setRetirementField("retirementSubmitterRelationship", submitter.relationship);
   setRetirementCheckbox("retirementMemberReviewConfirmed", true);
   setRetirementCheckbox("retirementPublicationConsent", true);
@@ -564,6 +565,7 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
 
     if (!editingRetirementMessageId) {
       retirementSubmitForm.reset();
+      CMCENUtils.bindCharacterCounters();
       setDefaultMessageLanguage();
       updateRetirementTradePicker();
       populateRetirementSubmitterFromProfile(currentRetirementUser);

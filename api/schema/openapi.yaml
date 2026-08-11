@@ -5,6 +5,8 @@ info:
   description: >
     OpenAPI-style inventory for the Express routes mounted by server/server.js.
     Schemas are intentionally broad where handlers return Mongoose documents.
+    Every /api endpoint is rate limited by source IP and may return 429 with
+    Retry-After and RateLimit-* headers. Sensitive endpoints have stricter limits.
 servers:
   - url: http://localhost:3000
     description: Local development (Eric)
@@ -219,6 +221,8 @@ paths:
       responses:
         "200":
           description: Reset request result.
+        "429":
+          $ref: "#/components/responses/RateLimited"
   /api/password-reset/confirm:
     post:
       tags: [Auth]
@@ -229,6 +233,8 @@ paths:
       responses:
         "200":
           description: Reset confirmation result.
+        "429":
+          $ref: "#/components/responses/RateLimited"
   /api/me:
     get:
       tags: [Auth]
@@ -325,6 +331,8 @@ paths:
       responses:
         "200":
           description: Authentication result; may include JWT.
+        "429":
+          $ref: "#/components/responses/RateLimited"
   /api/mfa/totp/setup:
     post:
       tags: [MFA]
@@ -357,6 +365,8 @@ paths:
       responses:
         "200":
           description: Verification result; may include JWT.
+        "429":
+          $ref: "#/components/responses/RateLimited"
   /api/mfa/totp:
     delete:
       tags: [MFA]
@@ -1622,6 +1632,16 @@ components:
   responses:
     Error:
       description: Error response.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    RateLimited:
+      description: Too many requests. The `Retry-After` header states when to retry.
+      headers:
+        Retry-After:
+          schema: { type: integer, minimum: 1 }
+          description: Seconds until the request may be retried.
       content:
         application/json:
           schema:

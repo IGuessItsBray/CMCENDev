@@ -19,6 +19,12 @@ const {
   readCookie,
   setRefreshTokenCookie,
 } = require('../services/auth-session');
+const {
+  createRateLimit,
+  getClientIp,
+  rateLimitByIp,
+  readPositiveInteger,
+} = require('../middleware/rate-limit');
 
 const router = express.Router();
 
@@ -88,6 +94,32 @@ const PASSWORD_RESET_GENERIC_MESSAGE =
 const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
 const EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS = 30 * 60 * 1000;
 const GHOST_PASSWORD_BYTES = 32;
+
+const passwordResetRequestIpLimit = rateLimitByIp(
+  'password-reset-request-ip',
+  'PASSWORD_RESET_REQUEST_RATE_LIMIT_WINDOW_SECONDS',
+  'PASSWORD_RESET_REQUEST_RATE_LIMIT_MAX',
+  { windowSeconds: 15 * 60, max: 5 },
+);
+const passwordResetRequestEmailLimit = createRateLimit({
+  name: 'password-reset-request-email',
+  windowMs:
+    readPositiveInteger(
+      'PASSWORD_RESET_REQUEST_EMAIL_RATE_LIMIT_WINDOW_SECONDS',
+      60 * 60,
+    ) * 1000,
+  max: readPositiveInteger('PASSWORD_RESET_REQUEST_EMAIL_RATE_LIMIT_MAX', 3),
+  keyGenerator: (req) =>
+    String(req.body?.email || '')
+      .trim()
+      .toLowerCase() || getClientIp(req),
+});
+const passwordResetConfirmLimit = rateLimitByIp(
+  'password-reset-confirm-ip',
+  'PASSWORD_RESET_CONFIRM_RATE_LIMIT_WINDOW_SECONDS',
+  'PASSWORD_RESET_CONFIRM_RATE_LIMIT_MAX',
+  { windowSeconds: 15 * 60, max: 5 },
+);
 
 function verifyDestructiveTotp(user, code) {
   if (!user?.totp?.secret || user.totp.enabled !== true) return false;
@@ -970,133 +1002,142 @@ router.post('/email-verification/confirm', async (req, res) => {
 
 // POST /api/password-reset/request
 // Send a one-time password reset link when the submitted email belongs to an account.
-router.post('/password-reset/request', async (req, res) => {
-  const cleanEmail = String(req.body?.email || '')
-    .trim()
-    .toLowerCase();
+router.post(
+  '/password-reset/request',
+  passwordResetRequestIpLimit,
+  passwordResetRequestEmailLimit,
+  async (req, res) => {
+    const cleanEmail = String(req.body?.email || '')
+      .trim()
+      .toLowerCase();
 
-  try {
-    if (!cleanEmail) {
-      return res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
+    try {
+      if (!cleanEmail) {
+        return res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
+      }
+
+      const user = await User.findOne({ email: cleanEmail });
+
+      if (!user) {
+        return res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
+      }
+
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetUrl = `${getBaseUrl(req)}/login?resetToken=${encodeURIComponent(resetToken)}`;
+      const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
+
+      user.passwordReset = {
+        tokenHash: hashPasswordResetToken(resetToken),
+        expiresAt,
+      };
+      await user.save();
+
+      await sendMail({
+        to: user.email,
+        subject: 'Reset your CMCEN / RCMCE password',
+        html: renderPasswordResetEmail({
+          resetUrl,
+          accountName: user.accountName || user.firstName,
+        }),
+      });
+
+      await writeAuditLog({
+        req,
+        action: 'user.password_reset_requested',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: {
+          username: user.username,
+          email: user.email,
+          accountName: user.accountName,
+          role: user.role,
+        },
+      });
+
+      res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+
+      res.status(500).json({
+        error: 'Could not request password reset',
+      });
     }
-
-    const user = await User.findOne({ email: cleanEmail });
-
-    if (!user) {
-      return res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
-    }
-
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetUrl = `${getBaseUrl(req)}/login?resetToken=${encodeURIComponent(resetToken)}`;
-    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
-
-    user.passwordReset = {
-      tokenHash: hashPasswordResetToken(resetToken),
-      expiresAt,
-    };
-    await user.save();
-
-    await sendMail({
-      to: user.email,
-      subject: 'Reset your CMCEN / RCMCE password',
-      html: renderPasswordResetEmail({
-        resetUrl,
-        accountName: user.accountName || user.firstName,
-      }),
-    });
-
-    await writeAuditLog({
-      req,
-      action: 'user.password_reset_requested',
-      actor: user,
-      targetType: 'user',
-      target: user._id,
-      targetSnapshot: {
-        username: user.username,
-        email: user.email,
-        accountName: user.accountName,
-        role: user.role,
-      },
-    });
-
-    res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
-  } catch (error) {
-    console.error('Password reset request failed:', error);
-
-    res.status(500).json({
-      error: 'Could not request password reset',
-    });
-  }
-});
+  },
+);
 
 // POST /api/password-reset/confirm
 // Consume a valid reset token and set a new account password.
-router.post('/password-reset/confirm', async (req, res) => {
-  const resetToken = String(req.body?.token || '').trim();
-  const password = String(req.body?.password || '');
-  const passwordConfirmation = String(req.body?.passwordConfirmation || '');
+router.post(
+  '/password-reset/confirm',
+  passwordResetConfirmLimit,
+  async (req, res) => {
+    const resetToken = String(req.body?.token || '').trim();
+    const password = String(req.body?.password || '');
+    const passwordConfirmation = String(req.body?.passwordConfirmation || '');
 
-  if (!resetToken || !password || !passwordConfirmation) {
-    return res.status(400).json({
-      error: 'Required password reset fields are missing',
-    });
-  }
-
-  if (password !== passwordConfirmation) {
-    return res.status(400).json({
-      error: 'Passwords do not match',
-    });
-  }
-
-  try {
-    const user = await User.findOne({
-      'passwordReset.tokenHash': hashPasswordResetToken(resetToken),
-      'passwordReset.expiresAt': { $gt: new Date() },
-    }).select('+password +passwordReset.tokenHash +passwordReset.expiresAt');
-
-    if (!user) {
+    if (!resetToken || !password || !passwordConfirmation) {
       return res.status(400).json({
-        error: 'Password reset link is invalid or has expired',
+        error: 'Required password reset fields are missing',
       });
     }
 
-    user.password = password;
-    user.passwordReset = {
-      tokenHash: '',
-      expiresAt: null,
-    };
-    user.twoFactor = {
-      tempToken: '',
-      tempExpires: null,
-    };
-    user.sessionVersion = Number(user.sessionVersion || 0) + 1;
-    await user.save();
+    if (password !== passwordConfirmation) {
+      return res.status(400).json({
+        error: 'Passwords do not match',
+      });
+    }
 
-    await writeAuditLog({
-      req,
-      action: 'user.password_reset_completed',
-      actor: user,
-      targetType: 'user',
-      target: user._id,
-      targetSnapshot: {
-        username: user.username,
-        email: user.email,
-        accountName: user.accountName,
-        role: user.role,
-      },
-    });
+    try {
+      const user = await User.findOne({
+        'passwordReset.tokenHash': hashPasswordResetToken(resetToken),
+        'passwordReset.expiresAt': { $gt: new Date() },
+      }).select('+password +passwordReset.tokenHash +passwordReset.expiresAt');
 
-    res.json({
-      message: 'Password has been reset. You can now sign in.',
-    });
-  } catch (error) {
-    console.error('Password reset confirmation failed:', error);
+      if (!user) {
+        return res.status(400).json({
+          error: 'Password reset link is invalid or has expired',
+        });
+      }
 
-    res.status(500).json({
-      error: 'Could not reset password',
-    });
-  }
-});
+      user.password = password;
+      user.passwordReset = {
+        tokenHash: '',
+        expiresAt: null,
+      };
+      user.twoFactor = {
+        tempToken: '',
+        tempExpires: null,
+      };
+      user.sessionVersion = Number(user.sessionVersion || 0) + 1;
+      await user.save();
+
+      await writeAuditLog({
+        req,
+        action: 'user.password_reset_completed',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: {
+          username: user.username,
+          email: user.email,
+          accountName: user.accountName,
+          role: user.role,
+        },
+      });
+
+      res.json({
+        message: 'Password has been reset. You can now sign in.',
+      });
+    } catch (error) {
+      console.error('Password reset confirmation failed:', error);
+
+      res.status(500).json({
+        error: 'Could not reset password',
+      });
+    }
+  },
+);
 
 // GET /api/me
 // Return the authenticated user's profile and computed permissions.

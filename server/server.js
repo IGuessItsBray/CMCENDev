@@ -27,11 +27,19 @@ const timerRoutes = require('./routes/timers');
 const uploadRoutes = require('./routes/uploads');
 const mfaRoutes = require('./routes/mfa');
 const pageRoutes = require('./routes/pages');
+const { rateLimitByIp } = require('./middleware/rate-limit');
 
 const app = express();
 const isApiDocsEnabled = process.env.ENABLE_API_DOCS === 'true';
+const apiRateLimit = rateLimitByIp(
+  'api-ip',
+  'API_RATE_LIMIT_WINDOW_SECONDS',
+  'API_RATE_LIMIT_MAX',
+  { windowSeconds: 60, max: 300 },
+);
 app.set('trust proxy', true);
 app.use(express.json());
+app.use('/api', apiRateLimit);
 app.use(translationRoutes);
 app.use(contentOptionRoutes);
 

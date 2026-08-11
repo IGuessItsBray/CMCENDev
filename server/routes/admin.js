@@ -601,6 +601,54 @@ function getMediaSortKey(value) {
     : 'newest';
 }
 
+function cleanMediaSearch(value) {
+  return String(value || '').trim().slice(0, 120);
+}
+
+function getMediaTypeFilter(value) {
+  return [
+    'all',
+    'retirement',
+    'last-post',
+    'event',
+    'page',
+    'upload',
+    'migration',
+    'unattached',
+  ].includes(value)
+    ? value
+    : 'all';
+}
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+function matchesMediaType(asset, type) {
+  if (type === 'all') return true;
+  if (type === 'unattached') return !asset.attachedPostCount;
+
+  const attachmentTypes = new Set(
+    (asset.attachedPosts || []).map((attachment) => attachment.type),
+  );
+  const matchesAttachment = {
+    retirement: attachmentTypes.has('retirementMessage'),
+    'last-post': attachmentTypes.has('lastPostMessage'),
+    event: attachmentTypes.has('event'),
+  }[type];
+  if (matchesAttachment) return true;
+
+  const uploadType = asset.uploadContext?.type;
+  return {
+    retirement: uploadType === 'retirementMessage',
+    'last-post': uploadType === 'lastPostMessage',
+    event: uploadType === 'event',
+    page: uploadType === 'pageBuilder',
+    upload: uploadType === 'mediaManager' || uploadType === 'directUpload',
+    migration: uploadType === 'migration' || uploadType === 'legacyStorage',
+  }[type] === true;
+}
+
 function sortStorageObjectsNewestFirst(objects = []) {
   return [...objects].sort((first, second) => {
     const firstTime = first.LastModified
@@ -1639,32 +1687,53 @@ router.get(
       const offset = cleanMediaCursor(req.query.cursor);
       const sortKey = getMediaSortKey(req.query.sort);
       const sort = getMediaSort(sortKey);
+      const typeFilter = getMediaTypeFilter(req.query.type);
+      const search = cleanMediaSearch(req.query.search);
+      const searchPattern = search ? new RegExp(escapeRegex(search), 'i') : null;
+      const mediaFilter = searchPattern
+        ? {
+            $or: [
+              { key: searchPattern },
+              { originalKey: searchPattern },
+              { originalName: searchPattern },
+              { displayName: searchPattern },
+              { inferredName: searchPattern },
+              { cdnSlug: searchPattern },
+              { 'uploadContext.label': searchPattern },
+            ],
+          }
+        : {};
 
       await seedMediaAssetsFromStorageIfEmpty();
 
       const attachmentMap = await getMediaAttachments();
-      const mediaQuery = MediaAsset.find({}).sort(sort);
+      const mediaQuery = MediaAsset.find(mediaFilter).sort(sort);
+      const requiresInMemoryFiltering =
+        sortKey === 'orphaned' || typeFilter !== 'all';
       const mediaAssets =
-        sortKey === 'orphaned'
+        requiresInMemoryFiltering
           ? await mediaQuery.lean()
           : await mediaQuery.skip(offset).limit(maxKeys).lean();
-      const totalMedia =
-        sortKey === 'orphaned'
-          ? mediaAssets.length
-          : await MediaAsset.countDocuments({});
       const sortedMedia = sortAdminMediaItems(
-        mediaAssets.map((asset) => toAdminMediaAssetItem(asset, attachmentMap)),
+        mediaAssets
+          .map((asset) => toAdminMediaAssetItem(asset, attachmentMap))
+          .filter((asset) => matchesMediaType(asset, typeFilter)),
         sortKey,
       );
       const media =
-        sortKey === 'orphaned'
+        requiresInMemoryFiltering
           ? sortedMedia.slice(offset, offset + maxKeys)
           : sortedMedia;
+      const totalMedia = requiresInMemoryFiltering
+        ? sortedMedia.length
+        : await MediaAsset.countDocuments(mediaFilter);
       const nextOffset = offset + media.length;
 
       res.json({
         bucket: process.env.MINIO_BUCKET_NAME || '',
         sort: sortKey,
+        type: typeFilter,
+        search,
         media,
         nextCursor: nextOffset < totalMedia ? String(nextOffset) : '',
         isTruncated: nextOffset < totalMedia,

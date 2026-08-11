@@ -535,7 +535,7 @@ paths:
     get:
       tags: [Admin, Uploads]
       summary: List media assets.
-      description: Returns media assets with linked event, retirement, and Last Post usage metadata.
+      description: Returns media assets with linked event, retirement, and Last Post usage metadata. Supports type filtering and filename/image-name search.
       x-permission: canViewMediaLibrary
       parameters:
         - name: limit
@@ -549,6 +549,15 @@ paths:
           schema:
             type: string
             enum: [newest, oldest, name, size, orphaned]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, retirement, last-post, event, page, upload, migration, unattached]
+        - name: search
+          in: query
+          description: Case-insensitive match against filename, image name, key, CDN slug, or upload label.
+          schema: { type: string, maxLength: 120 }
       responses:
         "200":
           description: Media assets.

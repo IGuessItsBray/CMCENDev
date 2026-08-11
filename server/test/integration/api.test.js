@@ -949,6 +949,43 @@ describe('MFA and audit behavior', () => {
 });
 
 describe('media lifecycle', () => {
+  test('filters media by content type and searches file or image names', async () => {
+    const admin = await createUser({ role: 'administrator' });
+    const session = await login(admin);
+    const retirementAsset = await MediaAsset.create({
+      key: 'images/retirement-ceremony/original.png',
+      originalKey: 'images/retirement-ceremony/original.png',
+      originalName: 'retirement-ceremony.png',
+      displayName: 'Retirement ceremony portrait',
+      uploadContext: { type: 'retirementMessage' },
+    });
+    await MediaAsset.create({
+      key: 'images/event-banner/original.png',
+      originalKey: 'images/event-banner/original.png',
+      originalName: 'event-banner.png',
+      displayName: 'Summer event banner',
+      uploadContext: { type: 'event' },
+    });
+
+    const searched = await request(app)
+      .get('/api/admin/media?search=ceremony')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    assert.deepEqual(searched.body.media.map((asset) => asset.key), [
+      retirementAsset.key,
+    ]);
+
+    const filtered = await request(app)
+      .get('/api/admin/media?type=retirement')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    assert.equal(
+      filtered.body.media.some((asset) => asset.key === retirementAsset.key),
+      true,
+    );
+    assert.equal(filtered.body.type, 'retirement');
+  });
+
   test('uploads image variants with a custom CDN slug and prevents reuse', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const admin = await createUser({ role: 'administrator' });

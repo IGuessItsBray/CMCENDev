@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs/promises');
 const path = require('path');
 const Event = require('../models/Event');
+const LastPostMessage = require('../models/LastPostMessage');
 const RetirementMessage = require('../models/RetirementMessage');
 
 const router = express.Router();
@@ -115,6 +116,7 @@ function scoreText(queryTerms, fields) {
 
 function sortResults(results) {
   return results
+    .filter((result) => Boolean(result?.url))
     .sort((left, right) => {
       if (right.score !== left.score) {
         return right.score - left.score;
@@ -127,6 +129,62 @@ function sortResults(results) {
     })
     .slice(0, MAX_RESULTS)
     .map(({ score, ...result }) => result);
+}
+
+async function searchLastPostMessages(queryTerms, language) {
+  const fields = [
+    'title',
+    'slug',
+    'deceased.fullRank',
+    'deceased.firstName',
+    'deceased.surname',
+    'deceased.postNominal',
+    'messages.en',
+    'messages.fr',
+  ];
+  const andClauses = queryTerms.map((term) => {
+    const regex = new RegExp(escapeRegex(term), 'i');
+    return { $or: fields.map((field) => ({ [field]: regex })) };
+  });
+  const messages = await LastPostMessage.find({
+    status: 'published',
+    $and: andClauses,
+  })
+    .select('title deceased messages publishedAt createdAt')
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .limit(MAX_RESULTS_PER_SOURCE)
+    .lean();
+
+  return messages.map((message) => {
+    const name = [
+      message.deceased?.fullRank,
+      message.deceased?.firstName,
+      message.deceased?.surname,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const title = message.title || (name ? `Last Post: ${name}` : 'Last Post');
+    const summary = truncate(getLocalizedText(message.messages, language));
+
+    return {
+      type: 'last-post-message',
+      sourceId: String(message._id),
+      title,
+      summary,
+      url: `/last-post-message?id=${encodeURIComponent(String(message._id))}`,
+      date: message.publishedAt || message.createdAt || null,
+      score: scoreText(queryTerms, [
+        title,
+        summary,
+        message.messages?.en,
+        message.messages?.fr,
+        message.deceased?.fullRank,
+        message.deceased?.firstName,
+        message.deceased?.surname,
+        message.deceased?.postNominal,
+      ]),
+    };
+  });
 }
 
 async function searchEvents(query, queryTerms, language) {
@@ -317,13 +375,20 @@ router.get('/', async (req, res) => {
     }
 
     const queryTerms = getQueryTerms(query);
-    const [events, retirementMessages, pages] = await Promise.all([
+    const [events, retirementMessages, lastPostMessages, pages] =
+      await Promise.all([
       searchEvents(query, queryTerms, language),
       searchRetirementMessages(query, queryTerms),
+      searchLastPostMessages(queryTerms, language),
       searchStaticPages(queryTerms),
-    ]);
+      ]);
 
-    const results = sortResults([...events, ...retirementMessages, ...pages]);
+    const results = sortResults([
+      ...events,
+      ...retirementMessages,
+      ...lastPostMessages,
+      ...pages,
+    ]);
 
     res.json({
       query,

@@ -277,6 +277,28 @@ describe('public search', () => {
       createdBy: owner._id,
     });
     const retirement = await submitAndPublishRetirement();
+    const lastPost = await LastPostMessage.create({
+      title: 'Last Post for Searchable Signal',
+      submitter: {
+        rank: 'Captain',
+        firstName: 'Search',
+        lastName: 'Tester',
+        email: 'search@example.test',
+      },
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Signal',
+        surname: 'Memorial',
+      },
+      messageLanguage: 'en',
+      messages: {
+        en: 'A searchable memorial notice for the signal community.',
+        fr: 'Un avis commemoratif recherche.',
+      },
+      status: 'published',
+      publishedAt: new Date(),
+      createdBy: owner._id,
+    });
 
     const eventSearch = await request(app)
       .get('/api/search?q=signal%20exercise')
@@ -285,6 +307,17 @@ describe('public search', () => {
       (result) => result.type === 'event',
     );
     assert.equal(eventResult.url, `/event?id=${event._id}`);
+
+    const lastPostSearch = await request(app)
+      .get('/api/search?q=signal%20memorial')
+      .expect(200);
+    const lastPostResult = lastPostSearch.body.results.find(
+      (result) => result.type === 'last-post-message',
+    );
+    assert.equal(
+      lastPostResult.url,
+      `/last-post-message?id=${lastPost._id}`,
+    );
 
     const retirementSearch = await request(app)
       .get('/api/search?q=alex%20example')
@@ -304,6 +337,12 @@ describe('public search', () => {
       (result) => result.sourceId === '/calendar',
     );
     assert.equal(pageResult.url, '/calendar');
+    assert.equal(
+      [...eventSearch.body.results, ...lastPostSearch.body.results].every(
+        (result) => Boolean(result.url),
+      ),
+      true,
+    );
   });
 });
 

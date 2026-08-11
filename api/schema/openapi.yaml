@@ -936,7 +936,7 @@ paths:
                       properties:
                         type:
                           type: string
-                          enum: [event, retirement-message, page]
+                          enum: [event, retirement-message, last-post-message, page]
                         sourceId:
                           type: string
                         title:

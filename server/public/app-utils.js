@@ -1226,6 +1226,32 @@
     });
   }
 
+  function bindCharacterCounters(root = document) {
+    root.querySelectorAll("textarea[data-character-counter]").forEach((textarea) => {
+      if (textarea.dataset.characterCounterBound === "true") {
+        textarea.characterCounterUpdate?.();
+        return;
+      }
+
+      const maximum = Number.parseInt(textarea.maxLength, 10);
+      if (!Number.isInteger(maximum) || maximum < 1) return;
+
+      const counter = document.createElement("small");
+      counter.className = "character-counter";
+      counter.setAttribute("aria-live", "polite");
+
+      const updateCounter = () => {
+        counter.textContent = `${textarea.value.length.toLocaleString()} / ${maximum.toLocaleString()} characters`;
+      };
+
+      textarea.insertAdjacentElement("afterend", counter);
+      textarea.addEventListener("input", updateCounter);
+      textarea.dataset.characterCounterBound = "true";
+      textarea.characterCounterUpdate = updateCounter;
+      updateCounter();
+    });
+  }
+
   window.CMCENUtils = {
     activateTabs,
     apiFetch,
@@ -1233,6 +1259,7 @@
     arrayBufferToBase64url,
     authHeaders,
     base64urlToArrayBuffer,
+    bindCharacterCounters,
     bindTabs,
     clearAuthToken,
     clearMfaSession,
@@ -1268,4 +1295,5 @@
   };
 
   window.addEventListener("load", trackPageVisit, { once: true });
+  bindCharacterCounters();
 })();

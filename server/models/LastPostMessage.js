@@ -85,11 +85,13 @@ const LastPostMessageSchema = new mongoose.Schema(
       en: {
         type: String,
         trim: true,
+        maxlength: 10000,
         default: '',
       },
       fr: {
         type: String,
         trim: true,
+        maxlength: 10000,
         default: '',
       },
     },

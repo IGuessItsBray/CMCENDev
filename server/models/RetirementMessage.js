@@ -49,6 +49,7 @@ const retirementMessageSchema = new mongoose.Schema(
       required: true,
       trim: true,
       minlength: 100,
+      maxlength: 10000,
     },
 
     messageLanguage: {
@@ -61,12 +62,14 @@ const retirementMessageSchema = new mongoose.Schema(
       en: {
         type: String,
         trim: true,
+        maxlength: 10000,
         default: '',
       },
 
       fr: {
         type: String,
         trim: true,
+        maxlength: 10000,
         default: '',
       },
     },

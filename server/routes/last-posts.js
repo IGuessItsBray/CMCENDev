@@ -203,6 +203,12 @@ router.post(
           .json({ error: 'A Last Post notice is required' });
       }
 
+      if (message.length > 10000) {
+        return res.status(400).json({
+          error: 'The Last Post notice must be 10000 characters or fewer',
+        });
+      }
+
       if (!isValidImageUrl(imageUrl)) {
         return res.status(400).json({
           error: 'The image URL must begin with http:// or https://',

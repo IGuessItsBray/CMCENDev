@@ -275,6 +275,10 @@ function validateRetirementMessagePayload(payload) {
     return 'The retirement message must contain at least 100 characters';
   }
 
+  if (cleanMessage.length > 10000) {
+    return 'The retirement message must be 10000 characters or fewer';
+  }
+
   if (!ALLOWED_LANGUAGES.includes(messageLanguage)) {
     return 'The message language is invalid';
   }

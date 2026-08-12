@@ -12,6 +12,10 @@ const MAX_RESULTS = 30;
 const MAX_RESULTS_PER_SOURCE = 10;
 
 const STATIC_PAGES = [
+  { path: '/awards', file: 'awards.html', type: 'page', title: 'Awards' },
+  { path: '/association_directors', file: 'association_directors.html', type: 'page', title: 'Association Directors and Advisors' },
+  { path: '/branch_advisory_council', file: 'branch_advisory_council.html', type: 'page', title: 'Branch Advisory Council' },
+  { path: '/ce_professions', file: 'ce_professions.html', type: 'page', title: 'Communications & Electronics Professions' },
   {
     path: '/index',
     file: 'index.html',
@@ -25,10 +29,66 @@ const STATIC_PAGES = [
     title: 'About the C&E Family',
   },
   {
+    path: '/about_branch',
+    file: 'about_branch.html',
+    type: 'page',
+    title: 'About the C&E Branch',
+  },
+  {
+    path: '/about_association',
+    file: 'about_association.html',
+    type: 'page',
+    title: 'About the C&E Association',
+  },
+  {
+    path: '/about_museum_foundation',
+    file: 'about_museum_foundation.html',
+    type: 'page',
+    title: 'About the C&E Museum & Foundation',
+  },
+  {
+    path: '/affiliate_offers',
+    file: 'affiliate_offers.html',
+    type: 'page',
+    title: 'Affiliates',
+  },
+  {
     path: '/calendar',
     file: 'calendar.html',
     type: 'page',
     title: 'Events Calendar',
+  },
+  { path: '/certificates', file: 'certificates.html', type: 'page', title: 'Certificates' },
+  { path: '/doctrine_hub', file: 'doctrine_hub.html', type: 'page', title: 'Doctrine Hub' },
+  { path: '/gallery', file: 'gallery.html', type: 'page', title: 'Gallery' },
+  { path: '/governance', file: 'governance.html', type: 'page', title: 'Governance' },
+  {
+    path: '/bursaries',
+    file: 'bursaries.html',
+    type: 'page',
+    title: 'Bursaries and Education',
+  },
+  {
+    path: '/cfmws',
+    file: 'cfmws.html',
+    type: 'page',
+    title: 'Canadian Forces Morale and Welfare Services',
+  },
+  {
+    path: '/history',
+    file: 'history.html',
+    type: 'page',
+    title: 'History',
+  },
+  { path: '/honours_awards', file: 'honours_awards.html', type: 'page', title: 'Honours and Awards' },
+  { path: '/leadership', file: 'leadership.html', type: 'page', title: 'Leadership' },
+  { path: '/news_stories', file: 'news_stories.html', type: 'page', title: 'News Stories' },
+  { path: '/promotions', file: 'promotions.html', type: 'page', title: 'Promotions' },
+  {
+    path: '/veteran_services',
+    file: 'veteran_services.html',
+    type: 'page',
+    title: 'Veteran Services',
   },
   {
     path: '/submit-retirement',
@@ -36,6 +96,13 @@ const STATIC_PAGES = [
     type: 'page',
     title: 'Submit a Retirement Message',
   },
+  {
+    path: '/support_troops',
+    file: 'support_troops.html',
+    type: 'page',
+    title: 'Support Our Troops',
+  },
+  { path: '/standing_orders', file: 'standing_orders.html', type: 'page', title: 'Standing Orders' },
 ];
 
 function cleanQuery(value) {

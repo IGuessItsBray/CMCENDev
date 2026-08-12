@@ -70,6 +70,15 @@ const SITEMAP_ACCOUNT_HTML = new Set([
 ]);
 const SITEMAP_STATIC_LABELS = Object.freeze({
   'about-family.html': { en: 'About the C&E Family', fr: 'Famille des C et E' },
+  'about_association.html': {
+    en: 'About the C&E Association',
+    fr: 'À propos de l’Association des C et E',
+  },
+  'about_branch.html': { en: 'About the C&E Branch', fr: 'À propos de la Branche des C et E' },
+  'about_museum_foundation.html': {
+    en: 'About the C&E Museum & Foundation',
+    fr: 'À propos du Musée et de la Fondation des C et E',
+  },
   'calendar.html': { en: 'Events Calendar', fr: 'Calendrier des événements' },
   'dashboard.html': {
     en: 'Account dashboard',

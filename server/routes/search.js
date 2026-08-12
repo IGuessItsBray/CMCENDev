@@ -25,6 +25,24 @@ const STATIC_PAGES = [
     title: 'About the C&E Family',
   },
   {
+    path: '/about_branch',
+    file: 'about_branch.html',
+    type: 'page',
+    title: 'About the C&E Branch',
+  },
+  {
+    path: '/about_association',
+    file: 'about_association.html',
+    type: 'page',
+    title: 'About the C&E Association',
+  },
+  {
+    path: '/about_museum_foundation',
+    file: 'about_museum_foundation.html',
+    type: 'page',
+    title: 'About the C&E Museum & Foundation',
+  },
+  {
     path: '/calendar',
     file: 'calendar.html',
     type: 'page',

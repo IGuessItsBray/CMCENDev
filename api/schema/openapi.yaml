@@ -34,7 +34,58 @@ tags:
   - name: Events
   - name: Last Posts
   - name: Retirements
+  - name: Certificates
 paths:
+  /api/certificate-requests:
+    get:
+      tags: [Certificates]
+      summary: List certificate requests for fulfillment.
+      description: Returns requests that still need printing or mailing by default. Supply a status or `status=all` to include completed requests.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, ready_to_mail, mailed, printed, actionable, all]
+      responses:
+        "200":
+          description: Certificate request worklist.
+  /api/certificate-requests/count:
+    get:
+      tags: [Certificates]
+      summary: Count actionable certificate requests.
+      x-permission: canManageCertificateRequests
+      responses:
+        "200":
+          description: Returns `pending`, `readyToMail`, and total `actionable` counts.
+  /api/certificate-requests/{certificateRequestId}/status:
+    patch:
+      tags: [Certificates]
+      summary: Advance certificate fulfillment.
+      description: Confirm every requested certificate is printed to move from `pending` to `ready_to_mail`, then confirm mailing to move to `mailed`. The actor and timestamp are recorded in the audit log.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - $ref: "#/components/parameters/CertificateRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [ready_to_mail, mailed]
+                printedCertificateKeys:
+                  type: array
+                  description: Required for the `ready_to_mail` transition. Must contain `member` and every requested `family:{index}` key.
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Certificate request fulfillment status updated.
   /api/version:
     get:
       tags: [System]
@@ -1247,7 +1298,7 @@ paths:
     post:
       tags: [Retirements]
       summary: Submit retirement message.
-      description: Submitter name, email, and unit are copied from the authenticated profile; the request supplies only `submitter.relationship`. When `MAIL_TO_BRANCH` is configured, the server emails the normalized submission and canonical public photo URL to the internal branch mailbox for Power Automate processing. The submission enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canBypassReviewStages`.
+      description: Submitter name, email, and unit are copied from the authenticated profile; the request supplies only `submitter.relationship`. An optional complete `certificateRequest` also creates a separate pending certificate-request record associated with the retirement message. When `MAIL_TO_BRANCH` is configured, the server emails the normalized submission and canonical public photo URL to the internal branch mailbox for Power Automate processing. The submission enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canBypassReviewStages`.
       x-permission: canSubmitRetirementMessages
       requestBody:
         $ref: "#/components/requestBodies/RetirementMessage"
@@ -1331,7 +1382,7 @@ paths:
     patch:
       tags: [Retirements]
       summary: Update retirement message.
-      description: Updates retirement content while preserving the original submitter contact record; missing legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`.
+      description: Updates retirement content while preserving the original submitter contact record; missing legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`. An optional complete `certificateRequest` creates a separate pending certificate-request record associated with the retirement message.
       parameters:
         - $ref: "#/components/parameters/MessageId"
       requestBody:
@@ -1395,6 +1446,11 @@ components:
       schema: { type: string }
     CommentId:
       name: commentId
+      in: path
+      required: true
+      schema: { type: string }
+    CertificateRequestId:
+      name: certificateRequestId
       in: path
       required: true
       schema: { type: string }
@@ -1606,7 +1662,7 @@ components:
             additionalProperties: true
     RetirementMessage:
       description: >-
-        The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates. Message text is limited to 10,000 characters. The message enters the review queue by default. Set `publishNow: true` only when the authenticated user has `canBypassReviewStages`.
+        The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates. Message text is limited to 10,000 characters. A complete optional `certificateRequest` creates a separate pending certificate-request record. The retirement member's rank and MOSID/role are copied from `retiree`, and every certificate field is required except `member.ceBranchEnrollmentDate`. The message enters the review queue by default. Set `publishNow: true` only when the authenticated user has `canBypassReviewStages`.
       required: true
       content:
         application/json:
@@ -1616,6 +1672,45 @@ components:
               publishNow:
                 type: boolean
                 description: Publish immediately when the authenticated user has `canBypassReviewStages`.
+              certificateRequest:
+                type: object
+                required: [member, familyMembers, mailingAddress]
+                properties:
+                  member:
+                    type: object
+                    required: [fullName, rankLanguage, decorations, lastUnit, cafEnrollmentDate, releaseDate, neededByDate, dwdParadeRequested]
+                    properties:
+                      fullName: { type: string }
+                      rankLanguage: { type: string, enum: [en, fr] }
+                      decorations:
+                        type: array
+                        minItems: 1
+                        items: { type: string }
+                      lastUnit: { type: string }
+                      cafEnrollmentDate: { type: string, format: date }
+                      releaseDate: { type: string, format: date }
+                      ceBranchEnrollmentDate: { type: string, format: date }
+                      neededByDate: { type: string, format: date }
+                      dwdParadeRequested: { type: boolean }
+                  familyMembers:
+                    type: array
+                    items:
+                      type: object
+                      required: [relationship, fullName]
+                      properties:
+                        relationship: { type: string }
+                        relationshipOther: { type: string }
+                        fullName: { type: string }
+                  mailingAddress:
+                    type: object
+                    required: [line1, line2, city, province, postalCode, country]
+                    properties:
+                      line1: { type: string }
+                      line2: { type: string }
+                      city: { type: string }
+                      province: { type: string }
+                      postalCode: { type: string }
+                      country: { type: string }
             additionalProperties: true
     ReviewDecision:
       required: true

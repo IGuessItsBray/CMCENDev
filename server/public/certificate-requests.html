@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title data-i18n="certificate_requests_page_title">
+      Certificate Requests | CMCEN / RCMCE
+    </title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="certificate-requests-main">
+      <section
+        class="certificate-requests-shell"
+        aria-labelledby="certificateRequestsTitle"
+      >
+        <header class="certificate-requests-heading">
+          <p class="certificate-requests-eyebrow" data-i18n="certificate_requests_eyebrow">
+            Certificate operations
+          </p>
+
+          <h1 id="certificateRequestsTitle" data-i18n="certificate_requests_title">
+            Certificate Requests
+          </h1>
+
+          <p data-i18n="certificate_requests_intro">
+            Prepare pending certificate requests and confirm them once printed.
+          </p>
+        </header>
+
+        <p
+          class="certificate-requests-status is-loading"
+          id="certificateRequestsStatus"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading certificate requests..."
+        >
+          <span class="loading-state-spinner" aria-hidden="true"></span>
+          <span class="visually-hidden" data-i18n="certificate_requests_loading">
+            Loading certificate requests...
+          </span>
+        </p>
+
+        <div
+          class="certificate-requests-list"
+          id="certificateRequestsList"
+          aria-live="polite"
+          hidden
+        ></div>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/certificate-requests.js"></script>
+  </body>
+</html>

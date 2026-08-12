@@ -20,6 +20,7 @@ const dashboardDangerZoneContent = dashboardDangerZone?.querySelector(
 
 let currentDashboardUser = null;
 let currentReviewCounts = null;
+let currentCertificateRequestCount = null;
 const profileSaveSuccessDisplayMs = 2200;
 
 const profileSelectOptions = {
@@ -882,14 +883,21 @@ function getReviewCountLabel(type, value) {
   return translate(`dashboard_review_${type}_${plural}`, { count });
 }
 
-function createReviewQueueLink({ tab, type, labelKey, count }) {
+function createReviewQueueLink({
+  tab,
+  type,
+  labelKey,
+  count,
+  href,
+  ariaLabelKey = "dashboard_review_open_queue",
+}) {
   const reviewCount = Number.isInteger(count) && count >= 0 ? count : 0;
   const link = document.createElement("a");
   link.className = "dashboard-review-queue-link";
-  link.href = `/review-submissions.html?tab=${encodeURIComponent(tab)}`;
+  link.href = href || `/review-submissions.html?tab=${encodeURIComponent(tab)}`;
   link.setAttribute(
     "aria-label",
-    translate("dashboard_review_open_queue", {
+    translate(ariaLabelKey, {
       count: getReviewCountLabel(type, reviewCount),
     }),
   );
@@ -1041,12 +1049,18 @@ function renderDashboard(user) {
   dashboardActions.replaceChildren(...actions.map(createActionLink));
 
   const canReviewSubmissions = user.permissions?.canReviewAndPublish === true;
+  const canManageCertificateRequests =
+    user.permissions?.canManageCertificateRequests === true;
 
-  dashboardReviewWork.hidden = !canReviewSubmissions;
+  dashboardReviewWork.hidden = !(
+    canReviewSubmissions || canManageCertificateRequests
+  );
 
-  if (canReviewSubmissions) {
-    if (currentReviewCounts) {
-      dashboardReviewQueues.replaceChildren(
+  if (canReviewSubmissions || canManageCertificateRequests) {
+    const reviewQueues = [];
+
+    if (canReviewSubmissions && currentReviewCounts) {
+      reviewQueues.push(
         createReviewQueueLink({
           tab: "events",
           type: "events",
@@ -1072,9 +1086,23 @@ function renderDashboard(user) {
           count: currentReviewCounts.comments,
         }),
       );
-    } else {
-      dashboardReviewQueues.replaceChildren(...createReviewQueuesUnavailable());
+    } else if (canReviewSubmissions) {
+      reviewQueues.push(...createReviewQueuesUnavailable());
     }
+
+    if (canManageCertificateRequests) {
+      reviewQueues.push(
+        createReviewQueueLink({
+          href: "/certificate-requests",
+          type: "certificate_requests",
+          labelKey: "dashboard_action_certificate_requests",
+          count: currentCertificateRequestCount,
+          ariaLabelKey: "dashboard_certificate_requests_open_queue",
+        }),
+      );
+    }
+
+    dashboardReviewQueues.replaceChildren(...reviewQueues);
   } else {
     dashboardReviewQueues.replaceChildren();
   }
@@ -1121,6 +1149,28 @@ async function loadDashboard() {
       }
     } else {
       currentReviewCounts = null;
+    }
+
+    if (user.permissions?.canManageCertificateRequests === true) {
+      try {
+        const certificateCounts = await CMCENUtils.apiJson(
+          "/api/certificate-requests/count",
+          {
+            token,
+            errorMessage: "Could not load certificate request count",
+          },
+        );
+        currentCertificateRequestCount = Number.isInteger(
+          certificateCounts.actionable,
+        )
+          ? certificateCounts.actionable
+          : 0;
+      } catch (error) {
+        console.error("Certificate request count could not be loaded:", error);
+        currentCertificateRequestCount = null;
+      }
+    } else {
+      currentCertificateRequestCount = null;
     }
 
     renderDashboard(user);

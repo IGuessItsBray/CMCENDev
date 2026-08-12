@@ -812,6 +812,7 @@
   let modalInputGroup = null;
   let modalInputLabel = null;
   let modalInput = null;
+  let modalChecklist = null;
   let modalChoiceActions = null;
   let modalActions = null;
   let modalCancelButton = null;
@@ -908,6 +909,10 @@
 
     modalInputGroup.append(modalInputLabel, modalInput);
 
+    modalChecklist = document.createElement("fieldset");
+    modalChecklist.className = "cmcen-modal-checklist";
+    modalChecklist.hidden = true;
+
     modalChoiceActions = document.createElement("div");
     modalChoiceActions.className = "cmcen-modal-choices";
     modalChoiceActions.hidden = true;
@@ -929,6 +934,7 @@
     body.append(
       modalMessage,
       modalInputGroup,
+      modalChecklist,
       modalChoiceActions,
       modalActions,
     );
@@ -961,6 +967,8 @@
       closeModal(
         modalActiveRequest.type === "prompt"
           ? modalInput.value
+          : modalActiveRequest.type === "checklist"
+            ? modalActiveRequest.getCheckedValues()
           : modalActiveRequest.confirmValue,
       );
     });
@@ -1008,7 +1016,9 @@
 
         const isPrompt = type === "prompt";
         const isChoice = type === "choice";
+        const isChecklist = type === "checklist";
         const isAlert = type === "alert";
+        const checklist = isChecklist ? options.checklist || [] : [];
         const titleKey = isPrompt
           ? "modal_input_title"
           : isAlert
@@ -1029,6 +1039,12 @@
               : null,
           cancelValue: isPrompt ? null : false,
           confirmValue: isAlert ? undefined : true,
+          getCheckedValues: () =>
+            Array.from(
+              modalChecklist.querySelectorAll(
+                'input[type="checkbox"]:checked',
+              ),
+            ).map((input) => input.value),
           closeOnBackdrop: options.closeOnBackdrop !== false,
         };
 
@@ -1041,8 +1057,55 @@
           options.closeLabel || getModalTranslation("modal_close", "Close"),
         );
         modalInputGroup.hidden = !isPrompt;
+        modalChecklist.hidden = !isChecklist;
+        modalChecklist.replaceChildren();
         modalChoiceActions.hidden = !isChoice;
         modalChoiceActions.replaceChildren();
+
+        if (isChecklist) {
+          const legend = document.createElement("legend");
+          legend.className = "cmcen-modal-checklist-title";
+          legend.textContent =
+            options.checklistLabel ||
+            getModalTranslation("modal_checklist_label", "Confirm each item");
+          modalChecklist.append(legend);
+
+          const updateChecklistConfirmation = () => {
+            modalConfirmButton.disabled =
+              !checklist.length ||
+              !Array.from(
+                modalChecklist.querySelectorAll('input[type="checkbox"]'),
+              ).every((input) => input.checked);
+          };
+
+          checklist.forEach((item, index) => {
+            const label = document.createElement("label");
+            label.className = "cmcen-modal-checklist-item";
+
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.value = String(item.value || index);
+            input.addEventListener("change", updateChecklistConfirmation);
+
+            const copy = document.createElement("span");
+            const itemLabel = document.createElement("strong");
+            itemLabel.textContent = String(item.label || item.value || "");
+            copy.append(itemLabel);
+
+            if (item.description) {
+              const description = document.createElement("small");
+              description.textContent = String(item.description);
+              copy.append(description);
+            }
+
+            label.append(input, copy);
+            modalChecklist.append(label);
+          });
+
+          updateChecklistConfirmation();
+        } else {
+          modalConfirmButton.disabled = false;
+        }
 
         if (isChoice) {
           (options.choices || []).forEach((choice) => {
@@ -1094,8 +1157,10 @@
             ? modalInput
             : isChoice
               ? modalChoiceActions.querySelector("button")
+              : isChecklist
+                ? modalChecklist.querySelector('input[type="checkbox"]')
               : modalConfirmButton;
-          focusTarget.focus();
+          focusTarget?.focus();
           if (isPrompt) modalInput.select();
         });
       });
@@ -1117,6 +1182,9 @@
     },
     choose(message, options) {
       return showModal("choice", message, options);
+    },
+    confirmChecklist(message, options) {
+      return showModal("checklist", message, options);
     },
   };
 

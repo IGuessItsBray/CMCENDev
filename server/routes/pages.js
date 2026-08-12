@@ -80,7 +80,9 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     fr: 'À propos du Musée et de la Fondation des C et E',
   },
   'affiliate_offers.html': { en: 'Affiliates', fr: 'Affiliés' },
+  'bursaries.html': { en: 'Bursaries and Education', fr: 'Bourses et éducation' },
   'calendar.html': { en: 'Events Calendar', fr: 'Calendrier des événements' },
+  'cfmws.html': { en: 'Canadian Forces Morale and Welfare Services', fr: 'Services de bien-être et moral des Forces canadiennes' },
   'dashboard.html': {
     en: 'Account dashboard',
     fr: 'Tableau de bord du compte',
@@ -112,6 +114,7 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     en: 'Submit a retirement message',
     fr: 'Soumettre un message de retraite',
   },
+  'support_troops.html': { en: 'Support Our Troops', fr: 'Appuyons nos troupes' },
   'veteran_services.html': { en: 'Veteran Services', fr: 'Services aux vétérans' },
 });
 

@@ -55,6 +55,18 @@ const STATIC_PAGES = [
     title: 'Events Calendar',
   },
   {
+    path: '/bursaries',
+    file: 'bursaries.html',
+    type: 'page',
+    title: 'Bursaries and Education',
+  },
+  {
+    path: '/cfmws',
+    file: 'cfmws.html',
+    type: 'page',
+    title: 'Canadian Forces Morale and Welfare Services',
+  },
+  {
     path: '/history',
     file: 'history.html',
     type: 'page',
@@ -71,6 +83,12 @@ const STATIC_PAGES = [
     file: 'submit-retirement.html',
     type: 'page',
     title: 'Submit a Retirement Message',
+  },
+  {
+    path: '/support_troops',
+    file: 'support_troops.html',
+    type: 'page',
+    title: 'Support Our Troops',
   },
 ];
 

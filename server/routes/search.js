@@ -43,10 +43,28 @@ const STATIC_PAGES = [
     title: 'About the C&E Museum & Foundation',
   },
   {
+    path: '/affiliate_offers',
+    file: 'affiliate_offers.html',
+    type: 'page',
+    title: 'Affiliates',
+  },
+  {
     path: '/calendar',
     file: 'calendar.html',
     type: 'page',
     title: 'Events Calendar',
+  },
+  {
+    path: '/history',
+    file: 'history.html',
+    type: 'page',
+    title: 'History',
+  },
+  {
+    path: '/veteran_services',
+    file: 'veteran_services.html',
+    type: 'page',
+    title: 'Veteran Services',
   },
   {
     path: '/submit-retirement',

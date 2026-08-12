@@ -79,6 +79,7 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     en: 'About the C&E Museum & Foundation',
     fr: 'À propos du Musée et de la Fondation des C et E',
   },
+  'affiliate_offers.html': { en: 'Affiliates', fr: 'Affiliés' },
   'calendar.html': { en: 'Events Calendar', fr: 'Calendrier des événements' },
   'dashboard.html': {
     en: 'Account dashboard',
@@ -86,6 +87,7 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
   },
   'event.html': { en: 'Event details', fr: 'Détails de l’événement' },
   'index.html': { en: 'Home', fr: 'Accueil' },
+  'history.html': { en: 'History', fr: 'Histoire' },
   'last-post.html': { en: 'Last Post', fr: 'Dernière sonnerie' },
   'last-post-message.html': {
     en: 'Last Post message',
@@ -110,6 +112,7 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     en: 'Submit a retirement message',
     fr: 'Soumettre un message de retraite',
   },
+  'veteran_services.html': { en: 'Veteran Services', fr: 'Services aux vétérans' },
 });
 
 function cleanText(value, maxLength = 10000) {

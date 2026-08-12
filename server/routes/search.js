@@ -13,6 +13,8 @@ const MAX_RESULTS_PER_SOURCE = 10;
 
 const STATIC_PAGES = [
   { path: '/awards', file: 'awards.html', type: 'page', title: 'Awards' },
+  { path: '/association_directors', file: 'association_directors.html', type: 'page', title: 'Association Directors and Advisors' },
+  { path: '/branch_advisory_council', file: 'branch_advisory_council.html', type: 'page', title: 'Branch Advisory Council' },
   { path: '/ce_professions', file: 'ce_professions.html', type: 'page', title: 'Communications & Electronics Professions' },
   {
     path: '/index',
@@ -78,6 +80,8 @@ const STATIC_PAGES = [
     type: 'page',
     title: 'History',
   },
+  { path: '/honours_awards', file: 'honours_awards.html', type: 'page', title: 'Honours and Awards' },
+  { path: '/leadership', file: 'leadership.html', type: 'page', title: 'Leadership' },
   { path: '/news_stories', file: 'news_stories.html', type: 'page', title: 'News Stories' },
   { path: '/promotions', file: 'promotions.html', type: 'page', title: 'Promotions' },
   {

@@ -69,6 +69,7 @@ const SITEMAP_ACCOUNT_HTML = new Set([
   'register.html',
 ]);
 const SITEMAP_STATIC_LABELS = Object.freeze({
+  'awards.html': { en: 'Awards', fr: 'Prix' },
   'about-family.html': { en: 'About the C&E Family', fr: 'Famille des C et E' },
   'about_association.html': {
     en: 'About the C&E Association',
@@ -82,6 +83,8 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
   'affiliate_offers.html': { en: 'Affiliates', fr: 'Affiliés' },
   'bursaries.html': { en: 'Bursaries and Education', fr: 'Bourses et éducation' },
   'calendar.html': { en: 'Events Calendar', fr: 'Calendrier des événements' },
+  'certificates.html': { en: 'Certificates', fr: 'Certificats' },
+  'doctrine_hub.html': { en: 'Doctrine Hub', fr: 'Centre de doctrine' },
   'cfmws.html': { en: 'Canadian Forces Morale and Welfare Services', fr: 'Services de bien-être et moral des Forces canadiennes' },
   'dashboard.html': {
     en: 'Account dashboard',
@@ -90,6 +93,9 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
   'event.html': { en: 'Event details', fr: 'Détails de l’événement' },
   'index.html': { en: 'Home', fr: 'Accueil' },
   'history.html': { en: 'History', fr: 'Histoire' },
+  'gallery.html': { en: 'Gallery', fr: 'Galerie' },
+  'news_stories.html': { en: 'News Stories', fr: 'Nouvelles' },
+  'promotions.html': { en: 'Promotions', fr: 'Promotions' },
   'last-post.html': { en: 'Last Post', fr: 'Dernière sonnerie' },
   'last-post-message.html': {
     en: 'Last Post message',

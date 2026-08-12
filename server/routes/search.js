@@ -12,6 +12,7 @@ const MAX_RESULTS = 30;
 const MAX_RESULTS_PER_SOURCE = 10;
 
 const STATIC_PAGES = [
+  { path: '/awards', file: 'awards.html', type: 'page', title: 'Awards' },
   {
     path: '/index',
     file: 'index.html',
@@ -54,6 +55,9 @@ const STATIC_PAGES = [
     type: 'page',
     title: 'Events Calendar',
   },
+  { path: '/certificates', file: 'certificates.html', type: 'page', title: 'Certificates' },
+  { path: '/doctrine_hub', file: 'doctrine_hub.html', type: 'page', title: 'Doctrine Hub' },
+  { path: '/gallery', file: 'gallery.html', type: 'page', title: 'Gallery' },
   {
     path: '/bursaries',
     file: 'bursaries.html',
@@ -72,6 +76,8 @@ const STATIC_PAGES = [
     type: 'page',
     title: 'History',
   },
+  { path: '/news_stories', file: 'news_stories.html', type: 'page', title: 'News Stories' },
+  { path: '/promotions', file: 'promotions.html', type: 'page', title: 'Promotions' },
   {
     path: '/veteran_services',
     file: 'veteran_services.html',

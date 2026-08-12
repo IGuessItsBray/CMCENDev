@@ -13,6 +13,7 @@ const MAX_RESULTS_PER_SOURCE = 10;
 
 const STATIC_PAGES = [
   { path: '/awards', file: 'awards.html', type: 'page', title: 'Awards' },
+  { path: '/ce_professions', file: 'ce_professions.html', type: 'page', title: 'Communications & Electronics Professions' },
   {
     path: '/index',
     file: 'index.html',
@@ -58,6 +59,7 @@ const STATIC_PAGES = [
   { path: '/certificates', file: 'certificates.html', type: 'page', title: 'Certificates' },
   { path: '/doctrine_hub', file: 'doctrine_hub.html', type: 'page', title: 'Doctrine Hub' },
   { path: '/gallery', file: 'gallery.html', type: 'page', title: 'Gallery' },
+  { path: '/governance', file: 'governance.html', type: 'page', title: 'Governance' },
   {
     path: '/bursaries',
     file: 'bursaries.html',
@@ -96,6 +98,7 @@ const STATIC_PAGES = [
     type: 'page',
     title: 'Support Our Troops',
   },
+  { path: '/standing_orders', file: 'standing_orders.html', type: 'page', title: 'Standing Orders' },
 ];
 
 function cleanQuery(value) {

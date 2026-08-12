@@ -84,6 +84,7 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
   'bursaries.html': { en: 'Bursaries and Education', fr: 'Bourses et éducation' },
   'calendar.html': { en: 'Events Calendar', fr: 'Calendrier des événements' },
   'certificates.html': { en: 'Certificates', fr: 'Certificats' },
+  'ce_professions.html': { en: 'Communications & Electronics Professions', fr: 'Professions des communications et de l’électronique' },
   'doctrine_hub.html': { en: 'Doctrine Hub', fr: 'Centre de doctrine' },
   'cfmws.html': { en: 'Canadian Forces Morale and Welfare Services', fr: 'Services de bien-être et moral des Forces canadiennes' },
   'dashboard.html': {
@@ -94,6 +95,7 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
   'index.html': { en: 'Home', fr: 'Accueil' },
   'history.html': { en: 'History', fr: 'Histoire' },
   'gallery.html': { en: 'Gallery', fr: 'Galerie' },
+  'governance.html': { en: 'Governance', fr: 'Gouvernance' },
   'news_stories.html': { en: 'News Stories', fr: 'Nouvelles' },
   'promotions.html': { en: 'Promotions', fr: 'Promotions' },
   'last-post.html': { en: 'Last Post', fr: 'Dernière sonnerie' },
@@ -121,6 +123,7 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     fr: 'Soumettre un message de retraite',
   },
   'support_troops.html': { en: 'Support Our Troops', fr: 'Appuyons nos troupes' },
+  'standing_orders.html': { en: 'Standing Orders', fr: 'Ordres permanents' },
   'veteran_services.html': { en: 'Veteran Services', fr: 'Services aux vétérans' },
 });
 

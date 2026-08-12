@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const CertificateRequest = require('../models/CertificateRequest');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
@@ -7,9 +8,14 @@ const { getUserPermissions } = require('../config/permissions');
 const { RETIREMENT_TRADE_ROLES } = require('../config/content');
 const { writeAuditLog } = require('../services/audit-log');
 const {
+  getCertificateRequestSnapshot,
   getRetirementCommentSnapshot,
   getRetirementMessageSnapshot,
 } = require('../services/content-snapshots');
+const {
+  getCleanCertificateRequestPayload,
+  validateCertificateRequestPayload,
+} = require('../services/certificate-requests');
 const { linkMediaAssetToSource } = require('../services/media-assets');
 const {
   cleanLocalizedText,
@@ -315,6 +321,74 @@ function validateRetirementMessagePayload(payload) {
   return '';
 }
 
+function getCertificateRequestPayload(body = {}) {
+  if (!Object.hasOwn(body, 'certificateRequest')) {
+    return null;
+  }
+
+  return getCleanCertificateRequestPayload(body.certificateRequest);
+}
+
+function getCertificateRequestDocument({
+  certificatePayload,
+  retirementMessage,
+  requester,
+  user,
+}) {
+  return {
+    certificateType: 'retirement',
+    source: {
+      type: 'retirementMessage',
+      id: retirementMessage._id,
+    },
+    member: {
+      ...certificatePayload.member,
+      rank: retirementMessage.retiree.rank,
+      tradeRole: retirementMessage.retiree.tradeRole,
+    },
+    familyMembers: certificatePayload.familyMembers,
+    mailingAddress: certificatePayload.mailingAddress,
+    requester,
+    createdBy: user._id,
+    updatedBy: user._id,
+  };
+}
+
+async function createCertificateRequest({
+  certificatePayload,
+  retirementMessage,
+  requester,
+  user,
+  req,
+}) {
+  const certificateRequest = new CertificateRequest(
+    getCertificateRequestDocument({
+      certificatePayload,
+      retirementMessage,
+      requester,
+      user,
+    }),
+  );
+
+  await certificateRequest.save();
+
+  await writeAuditLog({
+    req,
+    action: 'content.certificate_request_created',
+    actor: user,
+    targetType: 'certificateRequest',
+    target: certificateRequest._id,
+    targetSnapshot: getCertificateRequestSnapshot(certificateRequest),
+    metadata: {
+      certificateType: certificateRequest.certificateType,
+      sourceType: certificateRequest.source.type,
+      status: certificateRequest.status,
+    },
+  });
+
+  return certificateRequest;
+}
+
 router.post(
   '/',
   authMiddleware,
@@ -358,6 +432,17 @@ router.post(
       if (validationError) {
         return res.status(400).json({
           error: validationError,
+        });
+      }
+
+      const certificatePayload = getCertificateRequestPayload(req.body);
+      const certificateValidationError = certificatePayload
+        ? validateCertificateRequestPayload(certificatePayload)
+        : '';
+
+      if (certificateValidationError) {
+        return res.status(400).json({
+          error: certificateValidationError,
         });
       }
 
@@ -424,6 +509,24 @@ router.post(
       });
 
       await retirementMessage.save();
+
+      let certificateRequest = null;
+
+      if (certificatePayload) {
+        try {
+          certificateRequest = await createCertificateRequest({
+            certificatePayload,
+            retirementMessage,
+            requester: cleanSubmitter,
+            user: req.user,
+            req,
+          });
+        } catch (error) {
+          await RetirementMessage.deleteOne({ _id: retirementMessage._id });
+          throw error;
+        }
+      }
+
       await linkRetirementPhotoToMediaAsset(retirementMessage);
 
       let branchNotificationStatus = 'sent';
@@ -475,6 +578,12 @@ router.post(
           : 'Retirement message submitted for review',
 
         status: retirementMessage.status,
+        certificateRequest: certificateRequest
+          ? {
+              id: certificateRequest._id,
+              status: certificateRequest.status,
+            }
+          : null,
       });
     } catch (error) {
       console.error('Could not submit retirement message:', error);
@@ -995,6 +1104,17 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
+    const certificatePayload = getCertificateRequestPayload(req.body);
+    const certificateValidationError = certificatePayload
+      ? validateCertificateRequestPayload(certificatePayload)
+      : '';
+
+    if (certificateValidationError) {
+      return res.status(400).json({
+        error: certificateValidationError,
+      });
+    }
+
     const {
       cleanRetiree,
       cleanMessage,
@@ -1036,6 +1156,16 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     await retirementMessage.save();
     await linkRetirementPhotoToMediaAsset(retirementMessage);
 
+    const certificateRequest = certificatePayload
+      ? await createCertificateRequest({
+          certificatePayload,
+          retirementMessage,
+          requester: cleanSubmitter,
+          user: req.user,
+          req,
+        })
+      : null;
+
     await writeAuditLog({
       req,
       action: 'content.created',
@@ -1070,6 +1200,12 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
           ? 'Retirement message updated and published'
           : 'Retirement message updated and submitted for review',
       retirementMessage,
+      certificateRequest: certificateRequest
+        ? {
+            id: certificateRequest._id,
+            status: certificateRequest.status,
+          }
+        : null,
     });
   } catch (error) {
     if (error.name === 'CastError') {

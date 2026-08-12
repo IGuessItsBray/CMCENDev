@@ -23,6 +23,14 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Submit retirement messages for review.',
   },
   {
+    key: 'certificates.manage',
+    label: 'Manage certificate requests',
+    group: 'Certificates',
+    action: 'edit',
+    description:
+      'View certificate requests with delivery details and confirm completed certificates were printed.',
+  },
+  {
     key: 'content.publish_own',
     label: 'Publish own content',
     group: 'Content',
@@ -203,6 +211,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canAccessConnections: 'connections.read',
   canCreateDrafts: 'content.create',
   canSubmitRetirementMessages: 'retirements.submit',
+  canManageCertificateRequests: 'certificates.manage',
   canPublishOwnContent: 'content.publish_own',
   canReviewAndPublish: 'content.review',
   canDeleteContent: 'content.delete',
@@ -260,6 +269,8 @@ function getBuiltInPermissionFlags(user) {
     canCreateDrafts: isGhost || hasMinimumRole(role, 'contributor'),
 
     canSubmitRetirementMessages: isGhost || hasMinimumRole(role, 'contributor'),
+
+    canManageCertificateRequests: hasMinimumRole(role, 'editor'),
 
     canPublishOwnContent: hasMinimumRole(role, 'author'),
 
@@ -366,6 +377,10 @@ function getUserPermissions(user) {
       explicitPermissions.add(permission);
     }
   });
+
+  if (explicitPermissions.has('content.review')) {
+    explicitPermissions.add('certificates.manage');
+  }
 
   Object.entries(LEGACY_PERMISSION_KEYS).forEach(([legacyName, permission]) => {
     flags[legacyName] =

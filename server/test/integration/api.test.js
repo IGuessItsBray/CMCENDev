@@ -18,6 +18,7 @@ const speakeasy = require('speakeasy');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { app } = require('../../server');
 const AuditLog = require('../../models/AuditLog');
+const CertificateRequest = require('../../models/CertificateRequest');
 const Event = require('../../models/Event');
 const LastPostMessage = require('../../models/LastPostMessage');
 const MediaAsset = require('../../models/MediaAsset');
@@ -114,6 +115,40 @@ function retirementPayload() {
     },
     publicationConsentConfirmed: true,
     memberReviewConfirmed: true,
+  };
+}
+
+function certificateRequestPayload() {
+  return {
+    member: {
+      fullName: 'Sergeant Alex Example, CD',
+      rankLanguage: 'en',
+      decorations: ['CD'],
+      lastUnit: 'CMBG HQ & Sigs',
+      cafEnrollmentDate: '2001-09-01',
+      releaseDate: '2026-08-01',
+      ceBranchEnrollmentDate: '',
+      neededByDate: '2026-07-15',
+      dwdParadeRequested: false,
+    },
+    familyMembers: [
+      {
+        relationship: 'son',
+        fullName: 'Jordan Example',
+      },
+      {
+        relationship: 'daughter',
+        fullName: 'Taylor Example',
+      },
+    ],
+    mailingAddress: {
+      line1: '100 Certificate Way',
+      line2: 'Unit 2',
+      city: 'Ottawa',
+      province: 'Ontario',
+      postalCode: 'K1A 0A1',
+      country: 'Canada',
+    },
   };
 }
 
@@ -413,6 +448,197 @@ describe('permissions and audit logs', () => {
 });
 
 describe('retirement message lifecycle', () => {
+  test('creates a pending certificate request alongside a retirement submission', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const contributorLogin = await login(contributor);
+
+    const submitted = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        ...retirementPayload(),
+        certificateRequest: certificateRequestPayload(),
+      })
+      .expect(201);
+
+    assert.equal(submitted.body.status, 'pending');
+    assert.equal(submitted.body.certificateRequest.status, 'pending');
+
+    const retirementMessage = await RetirementMessage.findOne().lean();
+    const certificateRequest = await CertificateRequest.findById(
+      submitted.body.certificateRequest.id,
+    ).lean();
+
+    assert.equal(certificateRequest.certificateType, 'retirement');
+    assert.equal(certificateRequest.status, 'pending');
+    assert.equal(certificateRequest.source.type, 'retirementMessage');
+    assert.equal(
+      String(certificateRequest.source.id),
+      String(retirementMessage._id),
+    );
+    assert.equal(certificateRequest.member.rank, 'Sergeant');
+    assert.equal(
+      certificateRequest.member.tradeRole,
+      RETIREMENT_TRADE_ROLES[0],
+    );
+    assert.equal(certificateRequest.member.ceBranchEnrollmentDate, null);
+    assert.equal(certificateRequest.member.dwdParadeRequested, false);
+    assert.deepEqual(
+      certificateRequest.familyMembers.map((member) => member.relationship),
+      ['son', 'daughter'],
+    );
+
+    const auditLog = await AuditLog.findOne({
+      action: 'content.certificate_request_created',
+      target: certificateRequest._id,
+    }).lean();
+    assert.equal(auditLog.targetType, 'certificateRequest');
+    assert.equal(auditLog.metadata.status, 'pending');
+  });
+
+  test('requires every certificate field other than the C&E enrollment date', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const contributorLogin = await login(contributor);
+    const invalidCertificateRequest = certificateRequestPayload();
+    invalidCertificateRequest.mailingAddress.line2 = '';
+
+    const rejected = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        ...retirementPayload(),
+        certificateRequest: invalidCertificateRequest,
+      })
+      .expect(400);
+
+    assert.match(rejected.body.error, /mailing address field is required/);
+    assert.equal(await RetirementMessage.countDocuments(), 0);
+    assert.equal(await CertificateRequest.countDocuments(), 0);
+  });
+
+  test('requires every certificate confirmation before mailing and audits fulfillment', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorLogin = await login(contributor);
+    const editorLogin = await login(editor);
+
+    const submitted = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        ...retirementPayload(),
+        certificateRequest: certificateRequestPayload(),
+      })
+      .expect(201);
+
+    const certificateRequestId = submitted.body.certificateRequest.id;
+
+    await request(app)
+      .get('/api/certificate-requests/count')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(403);
+
+    const count = await request(app)
+      .get('/api/certificate-requests/count')
+      .set('Authorization', bearer(editorLogin.body.token))
+      .expect(200);
+    assert.equal(count.body.pending, 1);
+    assert.equal(count.body.readyToMail, 0);
+    assert.equal(count.body.actionable, 1);
+
+    const pendingRequests = await request(app)
+      .get('/api/certificate-requests?status=pending')
+      .set('Authorization', bearer(editorLogin.body.token))
+      .expect(200);
+    assert.equal(pendingRequests.body.certificateRequests.length, 1);
+    assert.equal(
+      pendingRequests.body.certificateRequests[0].mailingAddress.line1,
+      '100 Certificate Way',
+    );
+
+    await request(app)
+      .patch(`/api/certificate-requests/${certificateRequestId}/status`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ status: 'ready_to_mail', printedCertificateKeys: ['member'] })
+      .expect(400);
+
+    const printingConfirmed = await request(app)
+      .patch(`/api/certificate-requests/${certificateRequestId}/status`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({
+        status: 'ready_to_mail',
+        printedCertificateKeys: ['member', 'family:0', 'family:1'],
+      })
+      .expect(200);
+    assert.equal(printingConfirmed.body.certificateRequest.status, 'ready_to_mail');
+
+    const printedRequest = await CertificateRequest.findById(
+      certificateRequestId,
+    ).lean();
+    assert.equal(printedRequest.status, 'ready_to_mail');
+    assert.equal(String(printedRequest.printedBy), String(editor._id));
+    assert.ok(printedRequest.printedAt);
+    assert.deepEqual(
+      printedRequest.printedCertificates.map((certificate) =>
+        certificate.certificateKey,
+      ),
+      ['member', 'family:0', 'family:1'],
+    );
+
+    const readyToMailCount = await request(app)
+      .get('/api/certificate-requests/count')
+      .set('Authorization', bearer(editorLogin.body.token))
+      .expect(200);
+    assert.equal(readyToMailCount.body.pending, 0);
+    assert.equal(readyToMailCount.body.readyToMail, 1);
+    assert.equal(readyToMailCount.body.actionable, 1);
+
+    const readyToMailRequests = await request(app)
+      .get('/api/certificate-requests?status=actionable')
+      .set('Authorization', bearer(editorLogin.body.token))
+      .expect(200);
+    assert.equal(readyToMailRequests.body.certificateRequests.length, 1);
+    assert.equal(
+      readyToMailRequests.body.certificateRequests[0].status,
+      'ready_to_mail',
+    );
+
+    const printAudit = await AuditLog.findOne({
+      action: 'content.certificate_request_print_confirmed',
+      target: certificateRequestId,
+    }).lean();
+    assert.equal(printAudit.metadata.previousStatus, 'pending');
+    assert.equal(printAudit.metadata.status, 'ready_to_mail');
+    assert.equal(printAudit.metadata.certificateCount, 3);
+
+    const mailed = await request(app)
+      .patch(`/api/certificate-requests/${certificateRequestId}/status`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ status: 'mailed' })
+      .expect(200);
+    assert.equal(mailed.body.certificateRequest.status, 'mailed');
+
+    const mailedRequest = await CertificateRequest.findById(
+      certificateRequestId,
+    ).lean();
+    assert.equal(mailedRequest.status, 'mailed');
+    assert.equal(String(mailedRequest.mailedBy), String(editor._id));
+    assert.ok(mailedRequest.mailedAt);
+
+    const emptyActionableRequests = await request(app)
+      .get('/api/certificate-requests?status=actionable')
+      .set('Authorization', bearer(editorLogin.body.token))
+      .expect(200);
+    assert.equal(emptyActionableRequests.body.certificateRequests.length, 0);
+
+    const mailAudit = await AuditLog.findOne({
+      action: 'content.certificate_request_mailed',
+      target: certificateRequestId,
+    }).lean();
+    assert.equal(mailAudit.metadata.previousStatus, 'ready_to_mail');
+    assert.equal(mailAudit.metadata.status, 'mailed');
+  });
+
   test('enforces submission and review permissions', async () => {
     const subscriber = await createUser({ role: 'subscriber' });
     const contributor = await createUser({ role: 'contributor' });

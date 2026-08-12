@@ -62,7 +62,23 @@ function getRetirementCommentSnapshot(comment, options = {}) {
   return snapshot;
 }
 
+function getCertificateRequestSnapshot(certificateRequest) {
+  const member = certificateRequest.member || {};
+  const fullName = String(member.fullName || '').trim();
+
+  return {
+    title: fullName
+      ? `${certificateRequest.certificateType} certificate request for ${fullName}`
+      : 'Certificate request',
+    certificateType: certificateRequest.certificateType,
+    status: certificateRequest.status,
+    source: certificateRequest.source,
+    createdBy: certificateRequest.createdBy,
+  };
+}
+
 module.exports = {
+  getCertificateRequestSnapshot,
   getEventSnapshot,
   getEventTitle,
   getRetirementCommentSnapshot,

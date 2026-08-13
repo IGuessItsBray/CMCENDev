@@ -1232,6 +1232,43 @@ paths:
             type: string
             format: date
             pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: eventType
+          in: query
+          required: false
+          description: Only return events with this event type.
+          schema:
+            type: string
+            enum: [conference, mess-function, ceremony, training, social, other]
+        - name: organizingEntity
+          in: query
+          required: false
+          description: Only return events organized by this entity.
+          schema:
+            type: string
+            enum: [branch, association, foundation, museum]
+        - name: provinceRegion
+          in: query
+          required: false
+          description: Only return events in this province or region.
+          schema:
+            type: string
+            enum:
+              [
+                AB,
+                BC,
+                MB,
+                NB,
+                NL,
+                NS,
+                NT,
+                NU,
+                ON,
+                PE,
+                QC,
+                SK,
+                YT,
+                International,
+              ]
       responses:
         "200":
           description: >

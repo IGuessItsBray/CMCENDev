@@ -14,6 +14,27 @@ const calendarMonthViewButton = document.getElementById(
 const calendarAgendaViewButton = document.getElementById(
   "calendarAgendaViewButton",
 );
+const calendarEventTypeFilter = document.getElementById(
+  "calendarEventTypeFilter",
+);
+const calendarOrganizingEntityFilter = document.getElementById(
+  "calendarOrganizingEntityFilter",
+);
+const calendarProvinceRegionFilter = document.getElementById(
+  "calendarProvinceRegionFilter",
+);
+const calendarClearFiltersButton = document.getElementById(
+  "calendarClearFiltersButton",
+);
+const calendarDownloadButton = document.getElementById(
+  "calendarDownloadButton",
+);
+
+const calendarFilterElements = [
+  calendarEventTypeFilter,
+  calendarOrganizingEntityFilter,
+  calendarProvinceRegionFilter,
+];
 
 const MAX_EVENTS_PER_DAY = 3;
 
@@ -41,6 +62,18 @@ function getCalendarTranslation(key, replacements = {}) {
   }
 
   return key;
+}
+
+function getCalendarFilters() {
+  return {
+    eventType: calendarEventTypeFilter.value,
+    organizingEntity: calendarOrganizingEntityFilter.value,
+    provinceRegion: calendarProvinceRegionFilter.value,
+  };
+}
+
+function hasCalendarFilters() {
+  return Object.values(getCalendarFilters()).some(Boolean);
 }
 
 function getInitialCalendarView() {
@@ -137,6 +170,215 @@ function getCalendarGridRange(month) {
     lastGridDay,
     dayCount,
   };
+}
+
+function formatIcsDate(dateValue) {
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
+  ].join("");
+}
+
+function formatIcsDateTime(dateValue) {
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return `${formatIcsDate(date)}T${String(date.getUTCHours()).padStart(
+    2,
+    "0",
+  )}${String(date.getUTCMinutes()).padStart(2, "0")}${String(
+    date.getUTCSeconds(),
+  ).padStart(2, "0")}Z`;
+}
+
+function formatIcsExclusiveEndDate(dateValue) {
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  date.setUTCDate(date.getUTCDate() + 1);
+
+  return formatIcsDate(date);
+}
+
+function escapeIcsText(value) {
+  return String(value || "")
+    .replace(/\\/gu, "\\\\")
+    .replace(/\r\n|\r|\n/gu, "\\n")
+    .replace(/;/gu, "\\;")
+    .replace(/,/gu, "\\,");
+}
+
+function foldIcsLine(line) {
+  const encoder = new TextEncoder();
+  const lines = [];
+  let currentLine = "";
+  let currentLineByteLength = 0;
+
+  for (const character of line) {
+    const characterByteLength = encoder.encode(character).length;
+
+    if (currentLine && currentLineByteLength + characterByteLength > 75) {
+      lines.push(currentLine);
+      currentLine = " ";
+      currentLineByteLength = 1;
+    }
+
+    currentLine += character;
+    currentLineByteLength += characterByteLength;
+  }
+
+  lines.push(currentLine);
+
+  return lines.join("\r\n");
+}
+
+function getIcsEventLocation(event, language) {
+  return [
+    getLocalizedText(event.location, language),
+    [event.city, getRegionLabel(event.provinceRegion)]
+      .filter(Boolean)
+      .join(", "),
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function getIcsEventDescription(event, language) {
+  const description = getLocalizedText(event.description, language);
+  const registration = getLocalizedText(event.registration, language);
+  const details = [description];
+
+  if (registration) {
+    details.push(
+      `${getCalendarTranslation("event_registration_label")}: ${registration}`,
+    );
+  }
+
+  return details.filter(Boolean).join("\n\n");
+}
+
+function getIcsEventUrl(event) {
+  const url = new URL("/event", window.location.origin);
+
+  url.searchParams.set("id", event._id);
+
+  return url.toString();
+}
+
+function getIcsEventLines(event, language, generatedAt) {
+  const title =
+    getLocalizedText(event.title, language) ||
+    getCalendarTranslation("calendar_untitled_event");
+  const startDate = event.allDay
+    ? formatIcsDate(event.startDate)
+    : formatIcsDateTime(event.startDate);
+  const endDate = event.allDay
+    ? formatIcsExclusiveEndDate(event.endDate || event.startDate)
+    : formatIcsDateTime(event.endDate);
+  const lines = [
+    "BEGIN:VEVENT",
+    `UID:${escapeIcsText(`${event._id}@${window.location.hostname}`)}`,
+    `DTSTAMP:${generatedAt}`,
+  ];
+
+  if (event.allDay) {
+    lines.push(`DTSTART;VALUE=DATE:${startDate}`);
+
+    if (endDate) {
+      lines.push(`DTEND;VALUE=DATE:${endDate}`);
+    }
+  } else {
+    lines.push(`DTSTART:${startDate}`);
+
+    if (endDate) {
+      lines.push(`DTEND:${endDate}`);
+    }
+  }
+
+  lines.push(`SUMMARY:${escapeIcsText(title)}`);
+
+  const description = getIcsEventDescription(event, language);
+
+  if (description) {
+    lines.push(`DESCRIPTION:${escapeIcsText(description)}`);
+  }
+
+  const location = getIcsEventLocation(event, language);
+
+  if (location) {
+    lines.push(`LOCATION:${escapeIcsText(location)}`);
+  }
+
+  if (event.eventType) {
+    lines.push(
+      `CATEGORIES:${escapeIcsText(getEventTypeLabel(event.eventType))}`,
+    );
+  }
+
+  lines.push(`URL:${getIcsEventUrl(event)}`, "END:VEVENT");
+
+  return lines;
+}
+
+function buildCalendarIcs(events, language) {
+  const generatedAt = formatIcsDateTime(new Date());
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//CMCEN//Events Calendar//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    ...events.flatMap((event) =>
+      getIcsEventLines(event, language, generatedAt),
+    ),
+    "END:VCALENDAR",
+  ];
+
+  return `${lines.map(foldIcsLine).join("\r\n")}\r\n`;
+}
+
+function downloadCalendarIcs() {
+  if (!publicEvents.length) {
+    return;
+  }
+
+  const { firstGridDay, lastGridDay } = getCalendarGridRange(displayedMonth);
+  const fileName = [
+    "cmcen-events",
+    getLocalDateKey(firstGridDay),
+    "to",
+    getLocalDateKey(lastGridDay),
+  ].join("-");
+  const content = buildCalendarIcs(publicEvents, getCurrentLanguage());
+  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = downloadUrl;
+  link.download = `${fileName}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+
+  CMCENUtils.showToast(getCalendarTranslation("calendar_download_started"), {
+    color: "success",
+    position: "bottom-right",
+    animation: "slide",
+  });
 }
 
 function formatMonthHeading(event, locale) {
@@ -819,6 +1061,12 @@ function updateCalendarControls(locale) {
   calendarTodayButton.disabled = isLoadingEvents;
   calendarMonthViewButton.disabled = isLoadingEvents;
   calendarAgendaViewButton.disabled = isLoadingEvents;
+  calendarFilterElements.forEach((filter) => {
+    filter.disabled = isLoadingEvents;
+  });
+  calendarClearFiltersButton.disabled =
+    isLoadingEvents || !hasCalendarFilters();
+  calendarDownloadButton.disabled = isLoadingEvents || !publicEvents.length;
   calendarMonthViewButton.setAttribute("aria-pressed", String(isMonthView));
   calendarAgendaViewButton.setAttribute("aria-pressed", String(!isMonthView));
   calendarMonthViewButton.classList.toggle("is-active", isMonthView);
@@ -870,6 +1118,13 @@ async function loadEvents() {
   const query = new URLSearchParams({
     from: getLocalDateKey(firstGridDay),
     to: getLocalDateKey(lastGridDay),
+  });
+  const filters = getCalendarFilters();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) {
+      query.set(key, value);
+    }
   });
 
   isLoadingEvents = true;
@@ -943,6 +1198,23 @@ calendarTodayButton.addEventListener("click", () => {
     renderCalendar();
   });
 });
+
+calendarFilterElements.forEach((filter) => {
+  filter.addEventListener("change", loadEvents);
+});
+
+calendarClearFiltersButton.addEventListener("click", () => {
+  if (!hasCalendarFilters()) {
+    return;
+  }
+
+  calendarFilterElements.forEach((filter) => {
+    filter.value = "";
+  });
+  loadEvents();
+});
+
+calendarDownloadButton.addEventListener("click", downloadCalendarIcs);
 
 document.addEventListener("languagechange", renderCalendar);
 

@@ -571,6 +571,36 @@
     return loading;
   }
 
+  function createSkeleton(className = "") {
+    const skeleton = document.createElement("span");
+    skeleton.className = ["skeleton", className].filter(Boolean).join(" ");
+    skeleton.setAttribute("aria-hidden", "true");
+    return skeleton;
+  }
+
+  function trackMediaLoading(image) {
+    if (!(image instanceof HTMLImageElement)) return;
+
+    const clearLoadingState = () => image.classList.remove("is-media-loading");
+
+    image.classList.add("is-media-loading");
+    image.addEventListener("load", clearLoadingState, { once: true });
+    image.addEventListener("error", clearLoadingState, { once: true });
+
+    if (image.complete) {
+      clearLoadingState();
+    }
+  }
+
+  function bindMediaSkeletons(root = document) {
+    if (root instanceof HTMLImageElement) {
+      trackMediaLoading(root);
+      return;
+    }
+
+    root.querySelectorAll?.("img").forEach(trackMediaLoading);
+  }
+
   function getElementList(value) {
     if (!value) {
       return [];
@@ -1328,10 +1358,12 @@
     authHeaders,
     base64urlToArrayBuffer,
     bindCharacterCounters,
+    bindMediaSkeletons,
     bindTabs,
     clearAuthToken,
     clearMfaSession,
     createLoadingSpinner,
+    createSkeleton,
     ensureWebAuthnAvailable,
     formatDate,
     formatTitleCaseValue,
@@ -1364,4 +1396,11 @@
 
   window.addEventListener("load", trackPageVisit, { once: true });
   bindCharacterCounters();
+  bindMediaSkeletons();
+
+  new MutationObserver((records) => {
+    records.forEach((record) => {
+      record.addedNodes.forEach((node) => bindMediaSkeletons(node));
+    });
+  }).observe(document.documentElement, { childList: true, subtree: true });
 })();

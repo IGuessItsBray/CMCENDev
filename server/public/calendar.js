@@ -1132,6 +1132,7 @@ async function loadEvents() {
   renderCalendar();
   showCalendarMessage("loading_events", "loading");
   calendarGridElement.setAttribute("aria-busy", "true");
+  calendarGridElement.classList.add("is-skeleton-loading");
 
   try {
     const response = await fetch(`/api/events?${query}`);
@@ -1164,6 +1165,7 @@ async function loadEvents() {
     if (requestId === requestSequence) {
       isLoadingEvents = false;
       calendarGridElement.removeAttribute("aria-busy");
+      calendarGridElement.classList.remove("is-skeleton-loading");
       updateCalendarControls(getLocale(getCurrentLanguage()));
     }
   }

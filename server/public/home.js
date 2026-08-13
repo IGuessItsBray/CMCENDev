@@ -267,12 +267,37 @@ function createHomeRetirementItem(retirementMessage, language) {
   return item;
 }
 
+function createHomeFeedSkeleton({ withMedia = false } = {}) {
+  const item = document.createElement("div");
+  item.className = "home-feed-item home-feed-item--skeleton";
+  item.setAttribute("aria-hidden", "true");
+  item.appendChild(
+    CMCENUtils.createSkeleton(
+      withMedia ? "skeleton--home-media" : "skeleton--home-date",
+    ),
+  );
+
+  const content = document.createElement("span");
+  content.className = "home-feed-content";
+  content.append(
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-title"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-short"),
+  );
+  item.appendChild(content);
+
+  return item;
+}
+
 function renderHomeEvents() {
   const language = getHomeLanguage();
 
   homeEventsList?.replaceChildren();
 
   if (homeEventsState === "loading") {
+    homeEventsList?.append(
+      ...Array.from({ length: 3 }, () => createHomeFeedSkeleton()),
+    );
     setHomeMessage(
       homeEventsMessage,
       getHomeTranslation("home_events_loading"),
@@ -311,6 +336,11 @@ function renderHomeRetirements() {
   homeRetirementsList?.replaceChildren();
 
   if (homeRetirementsState === "loading") {
+    homeRetirementsList?.append(
+      ...Array.from({ length: 3 }, () =>
+        createHomeFeedSkeleton({ withMedia: true }),
+      ),
+    );
     setHomeMessage(
       homeRetirementsMessage,
       getHomeTranslation("home_retirements_loading"),

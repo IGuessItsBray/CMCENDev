@@ -16,8 +16,23 @@ function showDetailMessage(message, type = "neutral") {
 
 function showDetailLoading() {
   const message = translate("last_post_detail_loading");
+  const skeleton = document.createElement("div");
+  skeleton.className = "content-detail-skeleton content-detail-skeleton--last-post";
+  skeleton.setAttribute("aria-hidden", "true");
+  skeleton.append(
+    CMCENUtils.createSkeleton("skeleton--detail-title"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-short"),
+    CMCENUtils.createSkeleton("skeleton--detail-photo"),
+    CMCENUtils.createSkeleton("skeleton--detail-block"),
+    CMCENUtils.createSkeleton("skeleton--detail-block skeleton--detail-block-short"),
+  );
+  const accessibleLabel = document.createElement("span");
+  accessibleLabel.className = "visually-hidden";
+  accessibleLabel.textContent = message;
+
   lastPostDetailMessage.replaceChildren(
-    ...Array.from(CMCENUtils.createLoadingSpinner(message).childNodes),
+    skeleton,
+    accessibleLabel,
   );
   lastPostDetailMessage.className = "last-post-message is-loading";
   lastPostDetailMessage.setAttribute("aria-label", message);

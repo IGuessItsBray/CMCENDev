@@ -23,16 +23,17 @@ function showLastPostMessage(message, type = "neutral") {
   lastPostMessage.className = `last-post-message is-${type}`;
   lastPostMessage.hidden = false;
   lastPostGrid.hidden = true;
+  lastPostGrid.classList.remove("is-skeleton-loading");
   lastPostLoadMore.hidden = true;
 }
 
 function showLastPostLoading() {
   const message = translate("last_post_loading");
   lastPostMessage.replaceChildren(...createLoadingContent(message));
-  lastPostMessage.className = "last-post-message is-loading";
+  lastPostMessage.className = "last-post-message is-loading visually-hidden";
   lastPostMessage.setAttribute("aria-label", message);
   lastPostMessage.hidden = false;
-  lastPostGrid.hidden = true;
+  renderLastPostSkeletons();
   lastPostLoadMore.hidden = true;
 }
 
@@ -92,6 +93,28 @@ function createLastPostCard(lastPost) {
   return card;
 }
 
+function createLastPostSkeletonCard() {
+  const card = document.createElement("div");
+  card.className = "last-post-card last-post-card--skeleton";
+  card.setAttribute("aria-hidden", "true");
+  card.append(
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-short"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-title"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
+    CMCENUtils.createSkeleton("skeleton--line"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
+  );
+  return card;
+}
+
+function renderLastPostSkeletons() {
+  lastPostGrid.replaceChildren(
+    ...Array.from({ length: 6 }, createLastPostSkeletonCard),
+  );
+  lastPostGrid.classList.add("is-skeleton-loading");
+  lastPostGrid.hidden = false;
+}
+
 function updateLoadMore() {
   const visible = lastPostHasMore && lastPostGrid.childElementCount > 0;
   lastPostLoadMore.hidden = !visible;
@@ -116,6 +139,7 @@ function renderLastPosts(lastPosts, { append = false } = {}) {
   });
 
   lastPostMessage.hidden = true;
+  lastPostGrid.classList.remove("is-skeleton-loading");
   lastPostGrid.hidden = false;
   updateLoadMore();
 }

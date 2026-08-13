@@ -1495,8 +1495,16 @@ describe('media lifecycle', () => {
           background: '#336699',
         },
       })
-        .png()
+        .jpeg()
+        .withMetadata({
+          exif: {
+            IFD0: {
+              Artist: 'Sensitive source identity',
+            },
+          },
+        })
         .toBuffer();
+      assert.ok((await sharp(image).metadata()).exif);
       const uploaded = await request(app)
         .post('/api/upload')
         .set('Authorization', bearer(contributorSession.body.token))
@@ -1504,8 +1512,8 @@ describe('media lifecycle', () => {
         .field('sourceName', 'Integration portrait')
         .field('cdnSlug', 'integration-portrait')
         .attach('image', image, {
-          filename: 'portrait.png',
-          contentType: 'image/png',
+          filename: 'portrait.jpg',
+          contentType: 'image/jpeg',
         })
         .expect(201);
 
@@ -1514,8 +1522,10 @@ describe('media lifecycle', () => {
       ).lean();
       assert.equal(asset.uploadContext.type, 'mediaManager');
       assert.equal(asset.displayName, 'Integration portrait');
-      assert.equal(asset.originalName, 'portrait.png');
+      assert.equal(asset.originalName, 'portrait.jpg');
       assert.equal(asset.cdnSlug, 'integration-portrait');
+      assert.equal(asset.mimeType, 'image/webp');
+      assert.match(asset.key, /\/original\.webp$/);
       assert.match(
         asset.url,
         /\/integration-test\/images\/integration-portrait\/large\.webp$/,
@@ -1527,6 +1537,24 @@ describe('media lifecycle', () => {
         ).length,
         5,
       );
+      const storedOriginal = sentCommands.find(
+        (command) =>
+          command.constructor.name === 'PutObjectCommand' &&
+          command.input.Key === asset.originalKey,
+      );
+      assert.ok(storedOriginal);
+      const storedMetadata = await sharp(storedOriginal.input.Body).metadata();
+      assert.equal(storedMetadata.exif, undefined);
+      assert.equal(storedMetadata.xmp, undefined);
+      assert.equal(storedMetadata.iptc, undefined);
+      assert.equal(storedMetadata.icc, undefined);
+      assert.equal(asset.imageMetadata.format, 'webp');
+      assert.equal(asset.imageMetadata.width, 32);
+      assert.equal(asset.imageMetadata.height, 24);
+      assert.equal('exif' in asset.imageMetadata, false);
+      assert.equal('xmp' in asset.imageMetadata, false);
+      assert.equal('iptc' in asset.imageMetadata, false);
+      assert.equal('icc' in asset.imageMetadata, false);
 
       const uploadAudit = await AuditLog.findOne({
         action: 'media.uploaded',
@@ -1560,6 +1588,23 @@ describe('media lifecycle', () => {
     } finally {
       s3Client.send = originalSend;
     }
+  });
+
+  test('rejects signed direct uploads that would bypass media sanitization', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const session = await login(contributor);
+
+    const response = await request(app)
+      .post('/api/upload-url')
+      .set('Authorization', bearer(session.body.token))
+      .send({ filename: 'unsanitized.jpg', contentType: 'image/jpeg' })
+      .expect(410);
+
+    assert.match(response.body.error, /Direct uploads are disabled/u);
+    assert.equal(
+      await MediaAsset.countDocuments({ originalName: 'unsanitized.jpg' }),
+      0,
+    );
   });
 
   test('refuses to delete media attached to a retirement message', async () => {

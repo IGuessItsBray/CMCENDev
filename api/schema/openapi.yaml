@@ -839,7 +839,8 @@ paths:
   /api/upload:
     post:
       tags: [Uploads]
-      summary: Upload image through server.
+      summary: Upload and sanitize image through server.
+      description: Every stored image is validated and re-encoded as metadata-free WebP before it is written to object storage. Direct-to-storage uploads are not supported.
       x-permission: canUploadMedia
       requestBody:
         required: true
@@ -899,13 +900,12 @@ paths:
   /api/upload-url:
     post:
       tags: [Uploads]
-      summary: Create signed direct-upload URL.
+      summary: Retired direct-upload endpoint.
+      description: Always returns 410 because direct-to-storage uploads bypass mandatory metadata removal. Use POST /api/upload instead.
       x-permission: canUploadMedia
-      requestBody:
-        $ref: "#/components/requestBodies/UploadUrl"
       responses:
-        "201":
-          description: Signed upload URL.
+        "410":
+          description: Direct uploads are permanently disabled.
   /api/image/{key}:
     get:
       tags: [Uploads]

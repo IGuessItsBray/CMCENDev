@@ -103,6 +103,22 @@ const LastPostMessageSchema = new mongoose.Schema(
       default: '',
     },
 
+    publicationPermission: {
+      confirmed: {
+        type: Boolean,
+        default: false,
+      },
+      confirmedAt: {
+        type: Date,
+        default: null,
+      },
+      confirmedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
+    },
+
     photoUrl: {
       type: String,
       trim: true,
@@ -122,6 +138,20 @@ const LastPostMessageSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
       index: true,
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
+    publishedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
     publishedAt: {
       type: Date,

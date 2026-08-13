@@ -35,6 +35,7 @@ const MediaAsset = require('../../models/MediaAsset');
 const User = require('../../models/User');
 const { buildPublicMediaUrl } = require('../../services/media-library');
 const { sanitizeImageMetadata } = require('../../services/media-assets');
+const { sanitizeImageBuffer } = require('../../services/media-sanitization');
 const s3Client = require('../../storage');
 
 const WORDPRESS_BASE_URL = 'https://cmcen-rcmce.ca';
@@ -1018,14 +1019,13 @@ async function uploadImageForPost(post) {
     );
   }
 
-  const buffer = sourceImage.buffer;
-  const contentType = sourceImage.contentType;
-  const extension = sourceImage.usedFallback
-    ? 'webp'
-    : getExtensionFromUrl(sourceUrl, contentType);
+  const sanitizedImage = await sanitizeImageBuffer(sourceImage.buffer);
+  const buffer = sanitizedImage.buffer;
+  const contentType = sanitizedImage.mimeType;
+  const extension = 'webp';
   const baseKey = `legacy/current-site/last-post/${post.id}-${slugify(post.slug || getPostTitle(post))}`;
   const originalKey = `${baseKey}/original.${extension}`;
-  const metadata = await sharp(buffer).metadata();
+  const metadata = sanitizedImage.metadata;
   const variants = {};
 
   console.log(`Uploading original image for Last Post ${post.id}`);

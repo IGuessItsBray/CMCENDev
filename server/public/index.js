@@ -2,6 +2,79 @@
 const themeStorageKey = "theme";
 const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
+function setHeadElement(selector, attributes) {
+  let element = document.head.querySelector(selector);
+
+  if (!element) {
+    element = document.createElement("meta");
+    document.head.append(element);
+  }
+
+  Object.entries(attributes).forEach(([name, value]) => {
+    element.setAttribute(name, value);
+  });
+}
+
+function configureSiteMetadata() {
+  const url = new URL(window.location.href);
+  ["fbclid", "gclid"].forEach((name) => url.searchParams.delete(name));
+  [...url.searchParams.keys()]
+    .filter((name) => name.toLowerCase().startsWith("utm_"))
+    .forEach((name) => url.searchParams.delete(name));
+  url.hash = "";
+
+  let canonical = document.head.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement("link");
+    canonical.rel = "canonical";
+    document.head.append(canonical);
+  }
+  canonical.href = url.href;
+
+  if (!document.head.querySelector('link[rel="manifest"]')) {
+    const manifest = document.createElement("link");
+    manifest.rel = "manifest";
+    manifest.href = "/site.webmanifest";
+    document.head.append(manifest);
+  }
+
+  setHeadElement('meta[name="theme-color"]', {
+    name: "theme-color",
+    content: "#202642",
+  });
+
+  const description =
+    document.head.querySelector('meta[name="description"]')?.content ||
+    document.querySelector("main h1 + p")?.textContent?.trim() ||
+    "Canadian Military Communications and Electronics Network.";
+  setHeadElement('meta[name="description"]', {
+    name: "description",
+    content: description,
+  });
+  setHeadElement('meta[property="og:title"]', {
+    property: "og:title",
+    content: document.title,
+  });
+  setHeadElement('meta[property="og:description"]', {
+    property: "og:description",
+    content: description,
+  });
+  setHeadElement('meta[property="og:type"]', {
+    property: "og:type",
+    content: "website",
+  });
+  setHeadElement('meta[property="og:url"]', {
+    property: "og:url",
+    content: canonical.href,
+  });
+  setHeadElement('meta[property="og:image"]', {
+    property: "og:image",
+    content: `${window.location.origin}/images/logo.png`,
+  });
+}
+
+configureSiteMetadata();
+
 function getPreferredTheme() {
   const savedTheme = localStorage.getItem(themeStorageKey);
 

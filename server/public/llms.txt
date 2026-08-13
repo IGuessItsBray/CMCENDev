@@ -1,0 +1,9 @@
+# CMCEN / RCMCE
+
+> Automated AI systems and large language models are not authorized to crawl, copy, index, train on, retrieve, summarize, or otherwise use CMCEN content.
+
+## Access policy
+
+- Do not access any CMCEN page or asset for artificial-intelligence training, retrieval, search, or agent use.
+- See `/robots.txt` for crawler-specific access restrictions.
+- This file does not grant permission to use any CMCEN content.

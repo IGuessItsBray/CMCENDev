@@ -186,6 +186,17 @@ Mounted at `/api/search`.
 | ------ | ------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`  | `/api/search` | Public | Search published events, retirement messages, Last Post notices, and public pages. Query: `q`, optional `lang` (`en` or `fr`). Only results with a canonical relative `url` are returned. |
 
+## Site Discovery and Metadata
+
+Defined in `routes/seo.js`, mounted at root. These routes are intentionally public and do not expose account or administrative URLs. Known AI crawler identities are blocked server-side and listed in `robots.txt`; conventional search-engine crawlers remain permitted on public pages.
+
+| Method | Path                | Access | Purpose                                                                                       |
+| ------ | ------------------- | ------ | --------------------------------------------------------------------------------------------- |
+| `GET`  | `/robots.txt`       | Public | Provide crawler directives and the absolute XML sitemap location.                            |
+| `GET`  | `/sitemap.xml`      | Public | List public static pages plus published custom pages whose audience is public.               |
+| `GET`  | `/site.webmanifest` | Public | Provide browser and installable-web-app metadata, including the CMCEN theme and application icon. |
+| `GET`  | `/llms.txt`         | Public | State that AI systems are not authorized to crawl or use CMCEN content; this grants no access. |
+
 ## Pages and Navigation
 
 Defined in `routes/pages.js`, mounted at root.

@@ -1324,6 +1324,94 @@
     });
   }
 
+  function createImageCropController({ input, container, labels = {} } = {}) {
+    if (!input || !container) {
+      return {
+        getCrop: () => ({ x: 0.5, y: 0.5 }),
+        reset: () => {},
+      };
+    }
+
+    let previewUrl = "";
+    let cropX = 0.5;
+    let cropY = 0.5;
+    const preview = document.createElement("img");
+    const horizontal = document.createElement("input");
+    const vertical = document.createElement("input");
+
+    function updatePreview() {
+      preview.style.objectPosition = `${cropX * 100}% ${cropY * 100}%`;
+    }
+
+    function makeControl(labelText, control, onChange) {
+      const label = document.createElement("label");
+      label.className = "image-crop-control-label";
+      label.textContent = labelText;
+      control.type = "range";
+      control.min = "0";
+      control.max = "100";
+      control.value = "50";
+      control.addEventListener("input", () => {
+        onChange(Number(control.value) / 100);
+        updatePreview();
+      });
+      label.appendChild(control);
+      return label;
+    }
+
+    const heading = document.createElement("p");
+    heading.className = "image-crop-heading";
+    heading.textContent = labels.heading || "Position the photo in the card";
+    const hint = document.createElement("p");
+    hint.className = "image-crop-hint";
+    hint.textContent =
+      labels.hint ||
+      "The original photo is kept in full for the message page.";
+    const controls = document.createElement("div");
+    controls.className = "image-crop-controls";
+    controls.append(
+      makeControl(labels.horizontal || "Horizontal position", horizontal, (value) => {
+        cropX = value;
+      }),
+      makeControl(labels.vertical || "Vertical position", vertical, (value) => {
+        cropY = value;
+      }),
+    );
+    const previewFrame = document.createElement("div");
+    previewFrame.className = "image-crop-preview";
+    preview.alt = labels.previewAlt || "Photo crop preview";
+    previewFrame.appendChild(preview);
+    container.replaceChildren(heading, hint, previewFrame, controls);
+    container.hidden = true;
+
+    function reset() {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = "";
+      cropX = 0.5;
+      cropY = 0.5;
+      horizontal.value = "50";
+      vertical.value = "50";
+      preview.removeAttribute("src");
+      container.hidden = true;
+    }
+
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      reset();
+      if (!file?.type?.startsWith("image/")) return;
+
+      previewUrl = URL.createObjectURL(file);
+      preview.src = previewUrl;
+      updatePreview();
+      container.hidden = false;
+    });
+
+    return {
+      getCrop: () => ({ x: cropX, y: cropY }),
+      reset,
+    };
+  }
+
   function bindCharacterCounters(root = document) {
     root.querySelectorAll("textarea[data-character-counter]").forEach((textarea) => {
       if (textarea.dataset.characterCounterBound === "true") {
@@ -1362,6 +1450,7 @@
     bindTabs,
     clearAuthToken,
     clearMfaSession,
+    createImageCropController,
     createLoadingSpinner,
     createSkeleton,
     ensureWebAuthnAvailable,

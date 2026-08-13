@@ -122,6 +122,7 @@ async function createMediaAssetRecord({
     height: uploadResult.original?.height || 0,
     size: uploadResult.original?.size || file?.size || 0,
     variants: uploadResult.variants || {},
+    display: uploadResult.display || {},
     uploadContext: cleanUploadContext,
     inferredName: cleanUploadContext.label,
     fileMetadata: buildFileMetadata(file, uploadResult),
@@ -193,6 +194,8 @@ function getMediaAssetKeys(asset = {}) {
     asset.url,
     asset.originalKey,
     asset.originalUrl,
+    asset.display?.key,
+    asset.display?.url,
     ...Object.values(variants).flatMap((variant) => [
       variant?.key,
       variant?.url,
@@ -213,6 +216,8 @@ function getMediaAssetObjectKeys(asset = {}) {
     asset.originalKey,
     getMediaKeyFromValue(asset.url),
     getMediaKeyFromValue(asset.originalUrl),
+    asset.display?.key,
+    getMediaKeyFromValue(asset.display?.url),
     ...Object.values(variants).flatMap((variant) => [
       variant?.key,
       getMediaKeyFromValue(variant?.url),

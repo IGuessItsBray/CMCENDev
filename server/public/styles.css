@@ -1155,6 +1155,327 @@ svg {
   }
 }
 
+/* Shared content skeletons ------------------------------------------------ */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  flex: 0 0 auto;
+  border-radius: 5px;
+  background: var(--branch-grey-200);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.46) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-sweep 1.6s ease-in-out infinite;
+}
+
+img.is-media-loading {
+  background: linear-gradient(
+    100deg,
+    var(--branch-grey-200) 20%,
+    var(--branch-grey-100) 38%,
+    var(--branch-grey-200) 56%
+  );
+  background-size: 100% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes skeleton-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes skeleton-pulse {
+  from {
+    opacity: 0.72;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.skeleton--line {
+  width: 100%;
+  height: 12px;
+  margin-top: 10px;
+}
+
+.skeleton--line-title {
+  width: 78%;
+  height: 20px;
+}
+
+.skeleton--line-medium {
+  width: 58%;
+}
+
+.skeleton--line-short {
+  width: 34%;
+}
+
+.skeleton--home-date {
+  width: 46px;
+  height: 46px;
+}
+
+.skeleton--home-media {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+}
+
+.home-feed-item--skeleton {
+  pointer-events: none;
+}
+
+.home-feed-item--skeleton .home-feed-content {
+  display: grid;
+  align-content: center;
+}
+
+.retirement-card--skeleton,
+.last-post-card--skeleton,
+.search-result--skeleton,
+.sitemap-section--skeleton {
+  pointer-events: none;
+}
+
+.retirement-card--skeleton .retirement-card-header {
+  display: grid;
+}
+
+.skeleton--retirement-photo {
+  width: 100%;
+  min-height: 174px;
+  margin-top: 12px;
+  border-radius: 0;
+}
+
+.skeleton--retirement-footer {
+  width: 42%;
+  height: 12px;
+  margin: 18px;
+}
+
+.last-post-card--skeleton .skeleton--line:first-child {
+  margin-top: 0;
+}
+
+.search-result--skeleton .skeleton--line:first-child,
+.sitemap-section--skeleton .skeleton--line:first-child {
+  margin-top: 0;
+}
+
+.sitemap-section--skeleton {
+  min-height: 180px;
+  padding: 18px;
+}
+
+.content-detail-skeleton {
+  width: min(100%, 920px);
+  min-height: 350px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 10px;
+}
+
+.content-detail-skeleton--event {
+  grid-template-columns: 116px minmax(0, 1fr);
+}
+
+.content-detail-skeleton--event .skeleton--detail-date {
+  grid-row: span 3;
+}
+
+.content-detail-skeleton--event .skeleton--detail-block {
+  grid-column: 1 / -1;
+}
+
+.skeleton--detail-date {
+  width: 104px;
+  height: 132px;
+}
+
+.skeleton--detail-title {
+  width: min(74%, 560px);
+  height: 36px;
+}
+
+.skeleton--detail-photo {
+  width: min(100%, 420px);
+  height: 260px;
+  margin-top: 12px;
+}
+
+.skeleton--detail-block {
+  width: 100%;
+  height: 84px;
+  margin-top: 12px;
+}
+
+.skeleton--detail-block-short {
+  width: 72%;
+}
+
+.calendar-grid.is-skeleton-loading .calendar-day-heading,
+.calendar-grid.is-skeleton-loading .calendar-day-events {
+  opacity: 0;
+}
+
+.calendar-grid.is-skeleton-loading .calendar-day::after {
+  content: '';
+  width: 72%;
+  height: 11px;
+  margin-top: 12px;
+  display: block;
+  border-radius: 4px;
+  background: linear-gradient(
+    100deg,
+    var(--branch-grey-200) 20%,
+    var(--branch-grey-100) 38%,
+    var(--branch-grey-200) 56%
+  );
+  background-size: 280% 100%;
+  background-position: 100% 0;
+  box-shadow: 0 24px 0 var(--branch-grey-200), 0 48px 0 var(--branch-grey-200);
+  animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
+}
+
+.dashboard-status.is-loading .loading-state,
+.review-page-message.is-loading .loading-state,
+.notifications-status.is-loading .loading-state,
+.certificate-requests-status.is-loading .loading-state {
+  width: min(100%, 360px);
+  min-height: 96px;
+  grid-template-rows: 1fr;
+}
+
+.dashboard-status.is-loading .loading-state-spinner,
+.review-page-message.is-loading .loading-state-spinner,
+.notifications-status.is-loading .loading-state-spinner,
+.certificate-requests-status.is-loading .loading-state-spinner {
+  display: none;
+}
+
+.dashboard-status.is-loading:not(:has(.loading-state)) > .loading-state-spinner,
+.review-page-message.is-loading:not(:has(.loading-state)) > .loading-state-spinner,
+.notifications-status.is-loading:not(:has(.loading-state)) > .loading-state-spinner,
+.certificate-requests-status.is-loading:not(:has(.loading-state)) > .loading-state-spinner {
+  display: none;
+}
+
+.dashboard-status.is-loading .loading-state::before,
+.review-page-message.is-loading .loading-state::before,
+.notifications-status.is-loading .loading-state::before,
+.certificate-requests-status.is-loading .loading-state::before {
+  content: '';
+  width: 100%;
+  height: 13px;
+  display: block;
+  border-radius: 5px;
+  background: linear-gradient(
+    100deg,
+    var(--branch-grey-200) 20%,
+    var(--branch-grey-100) 38%,
+    var(--branch-grey-200) 56%
+  );
+  background-size: 280% 100%;
+  background-position: 100% 0;
+  box-shadow: 0 27px 0 var(--branch-grey-200), 0 54px 0 var(--branch-grey-200);
+  animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
+}
+
+.dashboard-status.is-loading:not(:has(.loading-state))::before,
+.review-page-message.is-loading:not(:has(.loading-state))::before,
+.notifications-status.is-loading:not(:has(.loading-state))::before,
+.certificate-requests-status.is-loading:not(:has(.loading-state))::before {
+  content: '';
+  width: min(100%, 360px);
+  height: 13px;
+  display: block;
+  border-radius: 5px;
+  background: linear-gradient(
+    100deg,
+    var(--branch-grey-200) 20%,
+    var(--branch-grey-100) 38%,
+    var(--branch-grey-200) 56%
+  );
+  background-size: 280% 100%;
+  background-position: 100% 0;
+  box-shadow: 0 27px 0 var(--branch-grey-200), 0 54px 0 var(--branch-grey-200);
+  animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after,
+  img.is-media-loading,
+  .calendar-grid.is-skeleton-loading .calendar-day::after,
+  .dashboard-status.is-loading .loading-state::before,
+  .review-page-message.is-loading .loading-state::before,
+  .notifications-status.is-loading .loading-state::before,
+  .certificate-requests-status.is-loading .loading-state::before,
+  .dashboard-status.is-loading:not(:has(.loading-state))::before,
+  .review-page-message.is-loading:not(:has(.loading-state))::before,
+  .notifications-status.is-loading:not(:has(.loading-state))::before,
+  .certificate-requests-status.is-loading:not(:has(.loading-state))::before {
+    animation: none;
+  }
+}
+
+html[data-theme='dark'] .skeleton,
+html[data-theme='dark'] img.is-media-loading,
+html[data-theme='dark'] .calendar-grid.is-skeleton-loading .calendar-day::after,
+html[data-theme='dark'] .dashboard-status.is-loading .loading-state::before,
+html[data-theme='dark'] .review-page-message.is-loading .loading-state::before,
+html[data-theme='dark'] .notifications-status.is-loading .loading-state::before,
+html[data-theme='dark'] .certificate-requests-status.is-loading .loading-state::before,
+html[data-theme='dark'] .dashboard-status.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark'] .review-page-message.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark'] .notifications-status.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark'] .certificate-requests-status.is-loading:not(:has(.loading-state))::before {
+  background: linear-gradient(100deg, #2b3850 20%, #3b4a63 38%, #2b3850 56%);
+  background-size: 280% 100%;
+}
+
+html[data-theme='dark'] .skeleton {
+  background: #2b3850;
+}
+
+html[data-theme='dark'] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(115, 137, 170, 0.46) 50%,
+    transparent 100%
+  );
+}
+
+html[data-theme='dark'] .calendar-grid.is-skeleton-loading .calendar-day::after,
+html[data-theme='dark'] .dashboard-status.is-loading .loading-state::before,
+html[data-theme='dark'] .review-page-message.is-loading .loading-state::before,
+html[data-theme='dark'] .notifications-status.is-loading .loading-state::before,
+html[data-theme='dark'] .certificate-requests-status.is-loading .loading-state::before,
+html[data-theme='dark'] .dashboard-status.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark'] .review-page-message.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark'] .notifications-status.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark'] .certificate-requests-status.is-loading:not(:has(.loading-state))::before {
+  box-shadow: 0 24px 0 #2b3850, 0 48px 0 #2b3850;
+}
+
 .hero {
   display: flex;
 

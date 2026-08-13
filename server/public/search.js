@@ -110,6 +110,23 @@ function renderResults(data) {
   searchResults.appendChild(fragment);
 }
 
+function renderSearchSkeletons() {
+  searchResults.replaceChildren(
+    ...Array.from({ length: 5 }, () => {
+      const result = document.createElement("article");
+      result.className = "search-result search-result--skeleton";
+      result.setAttribute("aria-hidden", "true");
+      result.append(
+        CMCENUtils.createSkeleton("skeleton--line skeleton--line-short"),
+        CMCENUtils.createSkeleton("skeleton--line skeleton--line-title"),
+        CMCENUtils.createSkeleton("skeleton--line"),
+        CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
+      );
+      return result;
+    }),
+  );
+}
+
 async function runSearch(query) {
   const cleanQuery = query.trim();
   lastSearchQuery = cleanQuery;
@@ -122,6 +139,7 @@ async function runSearch(query) {
   }
 
   setStatus("search_loading");
+  renderSearchSkeletons();
 
   try {
     const params = new URLSearchParams({

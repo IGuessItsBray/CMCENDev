@@ -845,7 +845,8 @@ function createMediaDropZone({
 
   const input = document.createElement("input");
   input.type = "file";
-  input.accept = "image/*";
+  input.accept =
+    ".jpg,.jpeg,.png,.webp,.gif,.heic,image/jpeg,image/png,image/webp,image/gif,image/heic";
   input.hidden = true;
   input.addEventListener("change", () => {
     const file = input.files?.[0];

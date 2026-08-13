@@ -25,6 +25,7 @@ const {
   buildPublicMediaUrl,
   getMediaKeyFromValue,
 } = require('../services/media-library');
+const { deleteContentMediaAssets } = require('../services/media-assets');
 const {
   getEventSnapshot,
   getEventTitle,
@@ -95,6 +96,15 @@ const USER_EXPORT_FIELDS = Object.freeze([
   ['createdAt', 'Created at'],
   ['updatedAt', 'Updated at'],
 ]);
+
+function getContentMediaCleanupMetadata(cleanup = []) {
+  return cleanup.map((item) => ({
+    status: item.status,
+    key: item.key || '',
+    objectCount: item.objectKeys?.length || 0,
+    remainingReferenceCount: item.references?.length || 0,
+  }));
+}
 
 function verifyDestructiveTotp(user, code) {
   if (!user?.totp?.secret || user.totp.enabled !== true) return false;
@@ -2739,6 +2749,12 @@ router.delete('/events/:eventId', authMiddleware, async (req, res) => {
     }
 
     const snapshot = getEventSnapshot(event);
+    const mediaCleanup = permissions.canDeleteContent
+      ? await deleteContentMediaAssets({
+          mediaUrls: [event.imagePath],
+          source: { type: 'event', id: event._id },
+        })
+      : [];
 
     await event.deleteOne();
     await writeAuditLog({
@@ -2748,6 +2764,9 @@ router.delete('/events/:eventId', authMiddleware, async (req, res) => {
       targetType: 'event',
       target: event._id,
       targetSnapshot: snapshot,
+      metadata: {
+        mediaCleanup: getContentMediaCleanupMetadata(mediaCleanup),
+      },
     });
 
     res.json({ message: 'Event deleted' });
@@ -2788,6 +2807,12 @@ router.delete(
       const deletedComments = await RetirementComment.countDocuments({
         retirementMessage: message._id,
       });
+      const mediaCleanup = permissions.canDeleteContent
+        ? await deleteContentMediaAssets({
+            mediaUrls: [message.photoUrl],
+            source: { type: 'retirementMessage', id: message._id },
+          })
+        : [];
 
       await RetirementComment.deleteMany({
         retirementMessage: message._id,
@@ -2800,7 +2825,10 @@ router.delete(
         targetType: 'retirementMessage',
         target: message._id,
         targetSnapshot: snapshot,
-        metadata: { deletedComments },
+        metadata: {
+          deletedComments,
+          mediaCleanup: getContentMediaCleanupMetadata(mediaCleanup),
+        },
       });
 
       res.json({ message: 'Retirement message deleted', deletedComments });
@@ -2902,6 +2930,12 @@ router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
       deceased: lastPost.deceased,
       submitter: lastPost.submitter,
     };
+    const mediaCleanup = permissions.canDeleteContent
+      ? await deleteContentMediaAssets({
+          mediaUrls: [lastPost.imageUrl, lastPost.photoUrl],
+          source: { type: 'lastPostMessage', id: lastPost._id },
+        })
+      : [];
     await lastPost.deleteOne();
     await writeAuditLog({
       req,
@@ -2910,7 +2944,10 @@ router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
       targetType: 'lastPost',
       target: lastPost._id,
       targetSnapshot: snapshot,
-      metadata: { deletedByOwner: isOwner },
+      metadata: {
+        deletedByOwner: isOwner,
+        mediaCleanup: getContentMediaCleanupMetadata(mediaCleanup),
+      },
     });
 
     return res.json({ message: 'Last Post notice deleted' });

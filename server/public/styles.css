@@ -9554,33 +9554,6 @@ a.my-event-card-row:focus-visible {
   line-height: 1.5;
 }
 
-.certificate-request-print-button {
-  min-height: 40px;
-  border: 1px solid var(--gold-400);
-  border-radius: 2px;
-  background: var(--gold-500);
-  color: var(--navy-950);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 900;
-  cursor: pointer;
-  transition:
-    background-color 150ms ease,
-    border-color 150ms ease,
-    opacity 150ms ease;
-}
-
-.certificate-request-print-button:hover:not(:disabled),
-.certificate-request-print-button:focus-visible:not(:disabled) {
-  border-color: var(--gold-300);
-  background: var(--gold-300);
-}
-
-.certificate-request-print-button:disabled {
-  cursor: progress;
-  opacity: 0.62;
-}
-
 .certificate-requests-status,
 .certificate-requests-empty {
   margin: 0;
@@ -9670,7 +9643,6 @@ a.my-event-card-row:focus-visible {
 
 .certificate-request-print-button {
   flex: 0 0 auto;
-  padding: 0 14px;
 }
 
 .certificate-request-card-sections {
@@ -14896,7 +14868,8 @@ html[data-theme='dark'] .last-post-submit-button {
   .retirement-comment-form button,
   .last-post-submit-button,
   .last-post-load-more button,
-  .cmcen-modal-button
+  .cmcen-modal-button,
+  .certificate-request-print-button
 ) {
   min-height: var(--control-height);
   padding: 0 16px;
@@ -14941,7 +14914,8 @@ html[data-theme='dark'] .last-post-submit-button {
   .search-page-form button,
   .retirement-comment-form button,
   .last-post-submit-button,
-  .cmcen-modal-button-primary
+  .cmcen-modal-button-primary,
+  .certificate-request-print-button
 ) {
   border-color: var(--button-primary-border);
   background: var(--button-primary-bg);
@@ -15004,7 +14978,8 @@ html[data-theme='dark'] .last-post-submit-button {
     .retirement-comment-form button,
     .last-post-submit-button,
     .last-post-load-more button,
-    .cmcen-modal-button
+    .cmcen-modal-button,
+    .certificate-request-print-button
   ):hover:not(:disabled),
 :is(
     .login-submit,
@@ -15024,7 +14999,8 @@ html[data-theme='dark'] .last-post-submit-button {
     .retirement-comment-form button,
     .last-post-submit-button,
     .last-post-load-more button,
-    .cmcen-modal-button
+    .cmcen-modal-button,
+    .certificate-request-print-button
   ):focus-visible:not(:disabled) {
   border-color: var(--gold-600);
   background: var(--button-secondary-hover-bg);
@@ -15051,7 +15027,8 @@ html[data-theme='dark'] .last-post-submit-button {
     .search-page-form button,
     .retirement-comment-form button,
     .last-post-submit-button,
-    .cmcen-modal-button-primary
+    .cmcen-modal-button-primary,
+    .certificate-request-print-button
   ):hover:not(:disabled),
 :is(
     .login-submit,
@@ -15068,7 +15045,8 @@ html[data-theme='dark'] .last-post-submit-button {
     .search-page-form button,
     .retirement-comment-form button,
     .last-post-submit-button,
-    .cmcen-modal-button-primary
+    .cmcen-modal-button-primary,
+    .certificate-request-print-button
   ):focus-visible:not(:disabled) {
   border-color: var(--gold-600);
   background: var(--button-primary-hover-bg);
@@ -15103,7 +15081,8 @@ html[data-theme='dark'] .last-post-submit-button {
   .retirement-comment-form button,
   .last-post-submit-button,
   .last-post-load-more button,
-  .cmcen-modal-button
+  .cmcen-modal-button,
+  .certificate-request-print-button
 ):disabled {
   cursor: not-allowed;
   opacity: 0.58;

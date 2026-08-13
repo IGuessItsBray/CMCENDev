@@ -2,8 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const LastPostMessage = require('../models/LastPostMessage');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
+const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
-const { cleanString } = require('../services/content-utils');
+const { cleanString, parseBoolean } = require('../services/content-utils');
 const { linkMediaAssetToSource } = require('../services/media-assets');
 
 const router = express.Router();
@@ -170,6 +171,14 @@ router.post(
       const messageLanguage = cleanString(req.body?.messageLanguage);
       const message = cleanString(req.body?.message);
       const imageUrl = cleanString(req.body?.imageUrl);
+      const publicationPermissionConfirmed = parseBoolean(
+        req.body?.publicationPermissionConfirmed,
+        false,
+      );
+      const wantsImmediatePublication = parseBoolean(
+        req.body?.publishNow,
+        false,
+      );
       const submitter = {
         rank: cleanString(req.user.rank),
         firstName: cleanString(req.user.firstName),
@@ -213,6 +222,12 @@ router.post(
           .json({ error: 'A Last Post notice is required' });
       }
 
+      if (!publicationPermissionConfirmed) {
+        return res.status(400).json({
+          error: 'Chain-of-command permission confirmation is required',
+        });
+      }
+
       if (message.length > 10000) {
         return res.status(400).json({
           error: 'The Last Post notice must be 10000 characters or fewer',
@@ -225,6 +240,18 @@ router.post(
         });
       }
 
+      const permissions = getUserPermissions(req.user);
+      const canPublishImmediately =
+        permissions.canReviewAndPublish === true;
+
+      if (wantsImmediatePublication && !canPublishImmediately) {
+        return res.status(403).json({
+          error: 'You do not have permission to publish Last Post notices immediately',
+        });
+      }
+
+      const now = new Date();
+
       const lastPost = await LastPostMessage.create({
         submitter,
         deceased: cleanDeceased,
@@ -233,18 +260,52 @@ router.post(
           [messageLanguage]: message,
         },
         imageUrl,
-        status: 'pending',
+        publicationPermission: {
+          confirmed: true,
+          confirmedAt: now,
+          confirmedBy: req.user._id,
+        },
+        status: wantsImmediatePublication ? 'published' : 'pending',
         createdBy: req.user._id,
+        reviewedBy: wantsImmediatePublication ? req.user._id : null,
+        reviewedAt: wantsImmediatePublication ? now : null,
+        publishedBy: wantsImmediatePublication ? req.user._id : null,
+        publishedAt: wantsImmediatePublication ? now : null,
       });
 
       await linkLastPostImageToMediaAsset(lastPost);
+
+      await writeAuditLog({
+        req,
+        action: 'content.created',
+        actor: req.user,
+        targetType: 'lastPost',
+        target: lastPost._id,
+        targetSnapshot: getLastPostSnapshot(lastPost),
+        metadata: { status: lastPost.status },
+      });
+
+      if (lastPost.status === 'published') {
+        await writeAuditLog({
+          req,
+          action: 'content.published',
+          actor: req.user,
+          targetType: 'lastPost',
+          target: lastPost._id,
+          targetSnapshot: getLastPostSnapshot(lastPost),
+          metadata: { source: 'create' },
+        });
+      }
 
       return res.status(201).json({
         lastPost: {
           _id: lastPost._id,
           status: lastPost.status,
         },
-        message: 'Last Post notice submitted for review',
+        message:
+          lastPost.status === 'published'
+            ? 'Last Post notice published successfully'
+            : 'Last Post notice submitted for review',
       });
     } catch (error) {
       console.error('Could not submit Last Post notice:', error);
@@ -262,6 +323,10 @@ router.get(
   async (req, res) => {
     try {
       const lastPosts = await LastPostMessage.find({ status: 'pending' })
+        .populate(
+          'publicationPermission.confirmedBy',
+          'username accountName email role',
+        )
         .sort({ createdAt: 1, _id: 1 })
         .lean();
 

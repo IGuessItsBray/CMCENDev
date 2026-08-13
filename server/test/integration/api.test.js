@@ -29,6 +29,7 @@ const Role = require('../../models/Role');
 const User = require('../../models/User');
 const s3Client = require('../../storage');
 const { RETIREMENT_TRADE_ROLES } = require('../../config/content');
+const { buildPublicMediaUrl } = require('../../services/media-library');
 
 let mongoServer;
 let userSequence = 0;
@@ -891,11 +892,17 @@ describe('Last Post lifecycle', () => {
         messageLanguage: 'en',
         message: 'An English Last Post notice used by the integration test.',
         imageUrl: '',
+        publicationPermissionConfirmed: true,
       })
       .expect(201);
 
     const notice = await LastPostMessage.findOne();
     assert.equal(notice.status, 'pending');
+    assert.equal(notice.publicationPermission.confirmed, true);
+    assert.equal(
+      String(notice.publicationPermission.confirmedBy),
+      String(contributor._id),
+    );
 
     await request(app)
       .patch(`/api/last-posts/${notice._id}/review`)
@@ -932,6 +939,7 @@ describe('Last Post lifecycle', () => {
         },
         messageLanguage: 'en',
         message: 'Submitted English Last Post notice.',
+        publicationPermissionConfirmed: true,
       })
       .expect(201);
 
@@ -969,6 +977,65 @@ describe('Last Post lifecycle', () => {
       .set('Authorization', bearer(editorLogin.body.token))
       .send({ action: 'publish' })
       .expect(200);
+  });
+
+  test('requires chain-of-command consent and limits immediate publication to reviewers', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const administrator = await createUser({ role: 'administrator' });
+    const contributorLogin = await login(contributor);
+    const administratorLogin = await login(administrator);
+    const submission = {
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Immediate',
+        surname: 'Publication',
+      },
+      messageLanguage: 'en',
+      message: 'A Last Post notice used to verify consent and immediate publication.',
+    };
+
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(submission)
+      .expect(400);
+
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        ...submission,
+        publicationPermissionConfirmed: true,
+        publishNow: true,
+      })
+      .expect(403);
+
+    const published = await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(administratorLogin.body.token))
+      .send({
+        ...submission,
+        publicationPermissionConfirmed: true,
+        publishNow: true,
+      })
+      .expect(201);
+    assert.equal(published.body.lastPost.status, 'published');
+
+    const publishedNotice = await LastPostMessage.findOne({
+      status: 'published',
+    });
+    assert.ok(publishedNotice.publishedAt);
+    assert.equal(
+      String(publishedNotice.publishedBy),
+      String(administrator._id),
+    );
+
+    const publicationAudit = await AuditLog.findOne({
+      action: 'content.published',
+      target: publishedNotice._id,
+    });
+    assert.equal(publicationAudit.targetType, 'lastPost');
+    assert.equal(publicationAudit.metadata.source, 'create');
   });
 });
 
@@ -1564,6 +1631,211 @@ describe('media lifecycle', () => {
 
     assert.equal(response.body.error, 'Image is still attached to content');
     assert.equal(await MediaAsset.countDocuments({ _id: asset._id }), 1);
+  });
+
+  test('deletes unshared images and variants when an administrator deletes content', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const contributor = await createUser({ role: 'contributor' });
+    const administratorSession = await login(administrator);
+    const contributorSession = await login(contributor);
+    const createAsset = async (slug) => {
+      const baseKey = `images/${slug}`;
+      const originalKey = `${baseKey}/original.png`;
+      const variants = Object.fromEntries(
+        ['thumb', 'medium', 'large', 'hero'].map((name) => [
+          name,
+          {
+            key: `${baseKey}/${name}.webp`,
+            url: buildPublicMediaUrl(`${baseKey}/${name}.webp`),
+          },
+        ]),
+      );
+
+      return MediaAsset.create({
+        key: originalKey,
+        url: variants.large.url,
+        originalKey,
+        originalUrl: buildPublicMediaUrl(originalKey),
+        variants,
+      });
+    };
+    const [eventAsset, retirementAsset, lastPostAsset] = await Promise.all([
+      createAsset('delete-event'),
+      createAsset('delete-retirement'),
+      createAsset('delete-last-post'),
+    ]);
+
+    await request(app)
+      .post('/api/events')
+      .set('Authorization', bearer(administratorSession.body.token))
+      .send(
+        eventPayload({
+          imagePath: eventAsset.url,
+          publishNow: true,
+        }),
+      )
+      .expect(201);
+    const event = await Event.findOne({ imagePath: eventAsset.url }).lean();
+    assert.equal(event.status, 'published');
+
+    await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({ ...retirementPayload(), photoUrl: retirementAsset.url })
+      .expect(201);
+    const retirementMessage = await RetirementMessage.findOne({
+      photoUrl: retirementAsset.url,
+    }).lean();
+    assert.equal(retirementMessage.status, 'pending');
+
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({
+        deceased: {
+          fullRank: 'Sergeant',
+          firstName: 'Image',
+          surname: 'Cleanup',
+        },
+        messageLanguage: 'en',
+        message: 'A Last Post notice with an image that should be deleted with the notice.',
+        imageUrl: lastPostAsset.url,
+        publicationPermissionConfirmed: true,
+      })
+      .expect(201);
+    const lastPost = await LastPostMessage.findOne({
+      imageUrl: lastPostAsset.url,
+    }).lean();
+    assert.equal(lastPost.status, 'pending');
+
+    const sentCommands = [];
+    const originalSend = s3Client.send.bind(s3Client);
+    s3Client.send = async (command) => {
+      sentCommands.push(command);
+      return {};
+    };
+
+    try {
+      await request(app)
+        .delete(`/api/admin/events/${event._id}`)
+        .set('Authorization', bearer(administratorSession.body.token))
+        .expect(200);
+      await request(app)
+        .delete(`/api/admin/retirement-messages/${retirementMessage._id}`)
+        .set('Authorization', bearer(administratorSession.body.token))
+        .expect(200);
+      await request(app)
+        .delete(`/api/admin/last-posts/${lastPost._id}`)
+        .set('Authorization', bearer(administratorSession.body.token))
+        .expect(200);
+
+      assert.equal(await Event.countDocuments({ _id: event._id }), 0);
+      assert.equal(
+        await RetirementMessage.countDocuments({ _id: retirementMessage._id }),
+        0,
+      );
+      assert.equal(await LastPostMessage.countDocuments({ _id: lastPost._id }), 0);
+      assert.equal(await MediaAsset.countDocuments({ _id: eventAsset._id }), 0);
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: retirementAsset._id }),
+        0,
+      );
+      assert.equal(await MediaAsset.countDocuments({ _id: lastPostAsset._id }), 0);
+      assert.equal(
+        sentCommands.filter(
+          (command) => command.constructor.name === 'DeleteObjectCommand',
+        ).length,
+        15,
+      );
+
+      const deleteAudit = await AuditLog.findOne({
+        action: 'content.deleted',
+        target: event._id,
+      }).lean();
+      assert.equal(deleteAudit.metadata.mediaCleanup[0].status, 'deleted');
+      assert.equal(deleteAudit.metadata.mediaCleanup[0].objectCount, 5);
+    } finally {
+      s3Client.send = originalSend;
+    }
+  });
+
+  test('keeps an image while another content record still references it', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const contributor = await createUser({ role: 'contributor' });
+    const administratorSession = await login(administrator);
+    const contributorSession = await login(contributor);
+    const baseKey = 'images/shared-content-image';
+    const originalKey = `${baseKey}/original.png`;
+    const sharedAsset = await MediaAsset.create({
+      key: originalKey,
+      url: buildPublicMediaUrl(`${baseKey}/large.webp`),
+      originalKey,
+      originalUrl: buildPublicMediaUrl(originalKey),
+      variants: Object.fromEntries(
+        ['thumb', 'medium', 'large', 'hero'].map((name) => [
+          name,
+          { key: `${baseKey}/${name}.webp` },
+        ]),
+      ),
+    });
+
+    await request(app)
+      .post('/api/events')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload({ imagePath: sharedAsset.url }))
+      .expect(201);
+    const event = await Event.findOne({ imagePath: sharedAsset.url }).lean();
+
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({
+        deceased: {
+          fullRank: 'Sergeant',
+          firstName: 'Shared',
+          surname: 'Image',
+        },
+        messageLanguage: 'en',
+        message: 'A Last Post notice that deliberately shares an event image.',
+        imageUrl: sharedAsset.url,
+        publicationPermissionConfirmed: true,
+      })
+      .expect(201);
+    const lastPost = await LastPostMessage.findOne({
+      imageUrl: sharedAsset.url,
+    }).lean();
+
+    const sentCommands = [];
+    const originalSend = s3Client.send.bind(s3Client);
+    s3Client.send = async (command) => {
+      sentCommands.push(command);
+      return {};
+    };
+
+    try {
+      await request(app)
+        .delete(`/api/admin/events/${event._id}`)
+        .set('Authorization', bearer(administratorSession.body.token))
+        .expect(200);
+
+      assert.equal(await MediaAsset.countDocuments({ _id: sharedAsset._id }), 1);
+      assert.equal(sentCommands.length, 0);
+
+      await request(app)
+        .delete(`/api/admin/last-posts/${lastPost._id}`)
+        .set('Authorization', bearer(administratorSession.body.token))
+        .expect(200);
+
+      assert.equal(await MediaAsset.countDocuments({ _id: sharedAsset._id }), 0);
+      assert.equal(
+        sentCommands.filter(
+          (command) => command.constructor.name === 'DeleteObjectCommand',
+        ).length,
+        5,
+      );
+    } finally {
+      s3Client.send = originalSend;
+    }
   });
 
   test('bulk deletion reports deleted, attached, and missing keys independently', async () => {

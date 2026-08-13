@@ -3,6 +3,14 @@ const lastPostPageMessage = document.getElementById("lastPostPageMessage");
 const lastPostSubmitButton = document.getElementById("lastPostSubmitButton");
 const lastPostSubmitButtonLabel = lastPostSubmitButton.querySelector("span");
 const lastPostImage = document.getElementById("lastPostImage");
+const lastPostPublicationPermission = document.getElementById(
+  "lastPostPublicationPermission",
+);
+const lastPostPublishNowContainer = document.getElementById(
+  "lastPostPublishNowContainer",
+);
+const lastPostPublishNow = document.getElementById("lastPostPublishNow");
+const lastPostReviewNote = document.getElementById("lastPostReviewNote");
 const LAST_POST_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
 function getFieldValue(id) {
@@ -36,6 +44,11 @@ function setSubmitting(isSubmitting) {
 
 function getSubmissionPayload(imageUrl = "") {
   const messageLanguage = getFieldValue("lastPostMessageLanguage");
+  const publicationPermissionConfirmed = lastPostPublicationPermission.checked;
+
+  if (!publicationPermissionConfirmed) {
+    throw new Error(translate("last_post_permission_confirmation_required"));
+  }
 
   return {
     deceased: {
@@ -47,6 +60,9 @@ function getSubmissionPayload(imageUrl = "") {
     messageLanguage,
     message: getFieldValue("lastPostMessage"),
     imageUrl,
+    publicationPermissionConfirmed,
+    publishNow:
+      !lastPostPublishNowContainer.hidden && lastPostPublishNow.checked,
   };
 }
 
@@ -118,6 +134,10 @@ async function initializeLastPostSubmission() {
 
     document.getElementById("lastPostMessageLanguage").value =
       CMCENUtils.getCurrentLanguage();
+    const canPublishImmediately =
+      currentUser.permissions?.canReviewAndPublish === true;
+    lastPostPublishNowContainer.hidden = !canPublishImmediately;
+    lastPostReviewNote.hidden = canPublishImmediately;
     lastPostSubmitForm.hidden = false;
   } catch (error) {
     showPageMessage(error.message || translate("last_post_permission_error"));
@@ -139,10 +159,11 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
   setSubmitting(true);
   try {
     const imageUrl = await uploadLastPostImage(token);
+    const submissionPayload = getSubmissionPayload(imageUrl);
     const data = await CMCENUtils.apiJson("/api/last-posts", {
       method: "POST",
       token,
-      body: getSubmissionPayload(imageUrl),
+      body: submissionPayload,
       redirectOnUnauthorized: true,
       unauthorizedMessage: translate("last_post_permission_error"),
     });
@@ -151,7 +172,12 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
     document.getElementById("lastPostMessageLanguage").value =
       CMCENUtils.getCurrentLanguage();
     showFormMessage(
-      data.message || translate("last_post_submit_success"),
+      data.message ||
+        translate(
+          submissionPayload.publishNow
+            ? "last_post_submit_success_published"
+            : "last_post_submit_success",
+        ),
       "success",
     );
   } catch (error) {

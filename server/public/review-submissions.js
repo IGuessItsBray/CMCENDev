@@ -1800,9 +1800,38 @@ function createLastPostReviewCard(lastPost) {
     ],
   );
 
+  const permissionConfirmed =
+    lastPost.publicationPermission?.confirmed === true;
+  const authorizationInformation = createReviewRecordSection(
+    "review_authorization_record",
+    [
+      {
+        labelKey: "review_permission_status",
+        value: translate(
+          permissionConfirmed
+            ? "review_permission_confirmed"
+            : "review_permission_not_recorded",
+        ),
+        valueClass: permissionConfirmed ? "is-confirmed" : "is-unconfirmed",
+      },
+      {
+        labelKey: "review_confirmed_by",
+        value: formatReviewUser(lastPost.publicationPermission?.confirmedBy),
+        wide: true,
+      },
+      {
+        labelKey: "review_confirmed_on",
+        value: lastPost.publicationPermission?.confirmedAt
+          ? formatSubmittedDate(lastPost.publicationPermission.confirmedAt)
+          : "—",
+        wide: true,
+      },
+    ],
+  );
+
   const submissionRecord = document.createElement("div");
   submissionRecord.className = "review-submission-record";
-  submissionRecord.append(submitterInformation);
+  submissionRecord.append(submitterInformation, authorizationInformation);
 
   const submissionDetails = createSubmissionDetails(
     submissionRecord,

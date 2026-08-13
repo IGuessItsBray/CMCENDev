@@ -741,7 +741,7 @@ paths:
     delete:
       tags: [Admin, LastPost]
       summary: Delete a Last Post notice.
-      description: Allowed for administrators/developers or the original submitter with own-content deletion permission.
+      description: Allowed for administrators/developers or the original submitter with own-content deletion permission. Administrator deletion removes an attached image and its generated variants when no other content still references that asset.
       parameters:
         - name: lastPostId
           in: path
@@ -756,6 +756,7 @@ paths:
     delete:
       tags: [Admin, Events]
       summary: Delete any event.
+      description: Administrator deletion removes an attached image and its generated variants when no other content still references that asset.
       x-permission: canDeleteContent
       parameters:
         - $ref: "#/components/parameters/EventId"
@@ -766,6 +767,7 @@ paths:
     delete:
       tags: [Admin, Retirements]
       summary: Delete any retirement message.
+      description: Administrator deletion removes an attached image and its generated variants when no other content still references that asset.
       x-permission: canDeleteContent
       parameters:
         - $ref: "#/components/parameters/MessageId"
@@ -1285,10 +1287,10 @@ paths:
     post:
       tags: [Last Posts]
       summary: Submit a Last Post notice.
-      description: Notice text is limited to 10,000 characters.
+      description: Chain-of-command consent is required. The notice enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canReviewAndPublish`. Notice text is limited to 10,000 characters.
       x-permission: canCreateDrafts
       requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
+        $ref: "#/components/requestBodies/LastPostSubmission"
       responses:
         "201":
           description: Created Last Post notice.
@@ -1845,6 +1847,52 @@ components:
                 type: string
                 minLength: 100
                 maxLength: 10000
+    LastPostSubmission:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              [
+                deceased,
+                messageLanguage,
+                message,
+                publicationPermissionConfirmed,
+              ]
+            properties:
+              deceased:
+                type: object
+                required: [fullRank, firstName, surname]
+                properties:
+                  fullRank:
+                    type: string
+                    maxLength: 80
+                  firstName:
+                    type: string
+                    maxLength: 80
+                  surname:
+                    type: string
+                    maxLength: 80
+                  postNominal:
+                    type: string
+                    maxLength: 120
+              messageLanguage:
+                type: string
+                enum: [en, fr]
+              message:
+                type: string
+                minLength: 1
+                maxLength: 10000
+              imageUrl:
+                type: string
+                format: uri
+              publicationPermissionConfirmed:
+                type: boolean
+                description: Must be true to confirm chain-of-command consent.
+              publishNow:
+                type: boolean
+                description: Allowed only with canReviewAndPublish.
     LastPostReviewContent:
       required: true
       content:

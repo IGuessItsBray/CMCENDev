@@ -184,7 +184,81 @@
             </div>
           </section>
 
-          <footer class="event-form-actions">
+          <section
+            class="event-authorization-section"
+            aria-labelledby="lastPostAuthorizationHeading"
+          >
+            <header class="event-authorization-heading">
+              <div>
+                <p
+                  class="event-section-eyebrow"
+                  data-i18n="last_post_authorization_eyebrow"
+                >
+                  Publication authorization
+                </p>
+
+                <h2
+                  id="lastPostAuthorizationHeading"
+                  data-i18n="last_post_authorization_heading"
+                >
+                  Chain-of-command confirmation
+                </h2>
+              </div>
+            </header>
+
+            <label
+              class="event-authorization-checkbox"
+              for="lastPostPublicationPermission"
+            >
+              <input
+                type="checkbox"
+                id="lastPostPublicationPermission"
+                name="publicationPermissionConfirmed"
+                required
+              />
+
+              <span>
+                <strong data-i18n="last_post_permission_confirmation">
+                  I confirm I have consent from my chain of command to publish this Last Post notice.
+                </strong>
+
+                <small data-i18n="last_post_permission_confirmation_hint">
+                  This confirmation is required before the notice can be submitted for review or publication.
+                </small>
+              </span>
+            </label>
+          </section>
+
+          <footer class="event-submit-options">
+            <div class="event-publication-copy">
+              <label
+                class="event-toggle event-publish-toggle"
+                id="lastPostPublishNowContainer"
+                for="lastPostPublishNow"
+                hidden
+              >
+                <input type="checkbox" id="lastPostPublishNow" />
+
+                <span>
+                  <strong data-i18n="last_post_publish_now">
+                    Publish immediately
+                  </strong>
+
+                  <small data-i18n="last_post_publish_now_hint">
+                    Skip the review queue and publish this Last Post notice now.
+                  </small>
+                </span>
+              </label>
+
+              <p
+                class="event-review-note"
+                id="lastPostReviewNote"
+                data-i18n="last_post_review_note"
+              >
+                Your Last Post notice will be sent to an editor for review.
+              </p>
+            </div>
+
             <button
               class="event-submit-button"
               id="lastPostSubmitButton"

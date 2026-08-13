@@ -88,6 +88,7 @@ const MediaAssetSchema = new mongoose.Schema(
       large: { type: MediaVariantSchema, default: () => ({}) },
       hero: { type: MediaVariantSchema, default: () => ({}) },
     },
+    display: { type: MediaVariantSchema, default: () => ({}) },
     uploadContext: {
       type: {
         type: String,

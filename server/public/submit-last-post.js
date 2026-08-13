@@ -12,6 +12,17 @@ const lastPostPublishNowContainer = document.getElementById(
 const lastPostPublishNow = document.getElementById("lastPostPublishNow");
 const lastPostReviewNote = document.getElementById("lastPostReviewNote");
 const LAST_POST_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+const lastPostImageCrop = CMCENUtils.createImageCropController({
+  input: lastPostImage,
+  container: document.getElementById("lastPostImageCrop"),
+  labels: {
+    heading: translate("image_crop_heading"),
+    hint: translate("image_crop_hint"),
+    horizontal: translate("image_crop_horizontal"),
+    vertical: translate("image_crop_vertical"),
+    previewAlt: translate("image_crop_preview_alt"),
+  },
+});
 
 function getFieldValue(id) {
   return String(document.getElementById(id)?.value || "").trim();
@@ -42,7 +53,7 @@ function setSubmitting(isSubmitting) {
   );
 }
 
-function getSubmissionPayload(imageUrl = "") {
+function getSubmissionPayload(imageUrl = "", imageDisplayUrl = "") {
   const messageLanguage = getFieldValue("lastPostMessageLanguage");
   const publicationPermissionConfirmed = lastPostPublicationPermission.checked;
 
@@ -60,6 +71,7 @@ function getSubmissionPayload(imageUrl = "") {
     messageLanguage,
     message: getFieldValue("lastPostMessage"),
     imageUrl,
+    imageDisplayUrl,
     publicationPermissionConfirmed,
     publishNow:
       !lastPostPublishNowContainer.hidden && lastPostPublishNow.checked,
@@ -89,6 +101,10 @@ async function uploadLastPostImage(token) {
   uploadData.append("uploadSource", "lastPostMessage");
   uploadData.append("uploadContext", "last-post");
   uploadData.append("sourceField", "imageUrl");
+  uploadData.append("displayAspectRatio", "4:3");
+  const crop = lastPostImageCrop.getCrop();
+  uploadData.append("displayCropX", String(crop.x));
+  uploadData.append("displayCropY", String(crop.y));
   uploadData.append(
     "sourceName",
     [
@@ -113,7 +129,10 @@ async function uploadLastPostImage(token) {
     throw new Error(translate("last_post_image_upload_error"));
   }
 
-  return data.url;
+  return {
+    imageUrl: data.url,
+    imageDisplayUrl: data.display?.url || "",
+  };
 }
 
 async function initializeLastPostSubmission() {
@@ -158,8 +177,11 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
 
   setSubmitting(true);
   try {
-    const imageUrl = await uploadLastPostImage(token);
-    const submissionPayload = getSubmissionPayload(imageUrl);
+    const uploadResult = await uploadLastPostImage(token);
+    const submissionPayload = getSubmissionPayload(
+      uploadResult?.imageUrl || "",
+      uploadResult?.imageDisplayUrl || "",
+    );
     const data = await CMCENUtils.apiJson("/api/last-posts", {
       method: "POST",
       token,
@@ -168,6 +190,7 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
       unauthorizedMessage: translate("last_post_permission_error"),
     });
     lastPostSubmitForm.reset();
+    lastPostImageCrop.reset();
     CMCENUtils.bindCharacterCounters();
     document.getElementById("lastPostMessageLanguage").value =
       CMCENUtils.getCurrentLanguage();

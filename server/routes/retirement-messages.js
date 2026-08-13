@@ -215,6 +215,7 @@ function getCleanRetirementMessagePayload(body = {}, submitterDetails = {}) {
     message,
     messageLanguage,
     photoUrl,
+    photoDisplayUrl,
     submitter = {},
     publicationConsentConfirmed,
     memberReviewConfirmed,
@@ -245,6 +246,7 @@ function getCleanRetirementMessagePayload(body = {}, submitterDetails = {}) {
       [messageLanguage]: cleanMessage,
     }),
     cleanPhotoUrl: cleanString(photoUrl),
+    cleanPhotoDisplayUrl: cleanString(photoDisplayUrl),
     cleanSubmitter,
     messageLanguage,
     consentConfirmed: parseAffirmativeBoolean(publicationConsentConfirmed),
@@ -257,6 +259,7 @@ function validateRetirementMessagePayload(payload) {
     cleanRetiree,
     cleanMessage,
     cleanPhotoUrl,
+    cleanPhotoDisplayUrl,
     cleanSubmitter,
     messageLanguage,
     consentConfirmed,
@@ -291,6 +294,10 @@ function validateRetirementMessagePayload(payload) {
 
   if (cleanPhotoUrl.length > 2000) {
     return 'The photo URL is too long';
+  }
+
+  if (cleanPhotoDisplayUrl.length > 2000) {
+    return 'The display photo URL is too long';
   }
 
   if (
@@ -451,6 +458,7 @@ router.post(
         cleanMessage,
         cleanMessages,
         cleanPhotoUrl,
+        cleanPhotoDisplayUrl,
         cleanSubmitter,
         messageLanguage,
       } = payload;
@@ -481,6 +489,8 @@ router.post(
         messages: cleanMessages,
 
         photoUrl: cleanPhotoUrl,
+
+        photoDisplayUrl: cleanPhotoDisplayUrl,
 
         submitter: cleanSubmitter,
 
@@ -616,6 +626,7 @@ router.get('/', async (req, res) => {
       .select({
         retiree: 1,
         photoUrl: 1,
+        photoDisplayUrl: 1,
         publishedAt: 1,
       })
       .sort({
@@ -1124,6 +1135,7 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       cleanMessage,
       cleanMessages,
       cleanPhotoUrl,
+      cleanPhotoDisplayUrl,
       cleanSubmitter,
       messageLanguage,
     } = payload;
@@ -1134,6 +1146,7 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     retirementMessage.messageLanguage = messageLanguage;
     retirementMessage.messages = cleanMessages;
     retirementMessage.photoUrl = cleanPhotoUrl;
+    retirementMessage.photoDisplayUrl = cleanPhotoDisplayUrl;
     retirementMessage.submitter = cleanSubmitter;
     retirementMessage.publicationConsent = {
       confirmed: true,
@@ -1400,6 +1413,7 @@ router.get('/:messageId', async (req, res) => {
         messageLanguage: 1,
         messages: 1,
         photoUrl: 1,
+        photoDisplayUrl: 1,
         publishedAt: 1,
       })
       .lean();

@@ -889,7 +889,7 @@ paths:
     post:
       tags: [Uploads]
       summary: Upload and sanitize image through server.
-      description: Every stored image is validated and re-encoded as metadata-free WebP before it is written to object storage. Direct-to-storage uploads are not supported.
+      description: Every stored image is validated and re-encoded as metadata-free WebP before it is written to object storage. Direct-to-storage uploads are not supported. Retirement and Last Post uploads may request a 4:3 display derivative while preserving the original image.
       x-permission: canUploadMedia
       requestBody:
         required: true
@@ -938,6 +938,22 @@ paths:
                 sourceName:
                   type: string
                   description: Name inferred from the source content, such as retiree, deceased member, or event title.
+                displayAspectRatio:
+                  type: string
+                  enum: ["4:3"]
+                  description: Creates a cropped display derivative for retirement or Last Post uploads.
+                displayCropX:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  default: 0.5
+                  description: Horizontal focal position in the requested display derivative.
+                displayCropY:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  default: 0.5
+                  description: Vertical focal position in the requested display derivative.
                 cdnSlug:
                   type: string
                   pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
@@ -1823,6 +1839,14 @@ components:
           schema:
             type: object
             properties:
+              photoUrl:
+                type: string
+                format: uri
+                description: Full original photo URL for the retirement message.
+              photoDisplayUrl:
+                type: string
+                format: uri
+                description: Optional 4:3 display derivative returned by POST /api/upload for card layouts.
               publishNow:
                 type: boolean
                 description: Publish immediately when the authenticated user has `canBypassReviewStages`.
@@ -1973,6 +1997,10 @@ components:
               imageUrl:
                 type: string
                 format: uri
+              imageDisplayUrl:
+                type: string
+                format: uri
+                description: Optional 4:3 display derivative returned by POST /api/upload; imageUrl remains the full original.
               publicationPermissionConfirmed:
                 type: boolean
                 description: Must be true to confirm chain-of-command consent.

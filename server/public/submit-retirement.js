@@ -61,6 +61,17 @@ const RETIREMENT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const redirectToLogin = CMCENUtils.redirectToLogin;
 const retirementPageParams = new URLSearchParams(window.location.search);
 const editingRetirementMessageId = retirementPageParams.get("id");
+const retirementPhotoCrop = CMCENUtils.createImageCropController({
+  input: retirementPhotoInput,
+  container: document.getElementById("retirementPhotoCrop"),
+  labels: {
+    heading: translate("image_crop_heading"),
+    hint: translate("image_crop_hint"),
+    horizontal: translate("image_crop_horizontal"),
+    vertical: translate("image_crop_vertical"),
+    previewAlt: translate("image_crop_preview_alt"),
+  },
+});
 
 let editingRetirementMessage = null;
 let currentRetirementUser = null;
@@ -701,7 +712,10 @@ async function uploadRetirementPhoto() {
   validateRetirementPhoto(file);
 
   if (!file) {
-    return "";
+    return {
+      photoUrl: editingRetirementMessage?.photoUrl || "",
+      photoDisplayUrl: editingRetirementMessage?.photoDisplayUrl || "",
+    };
   }
 
   const uploadData = new FormData();
@@ -710,6 +724,10 @@ async function uploadRetirementPhoto() {
   uploadData.append("uploadSource", "retirementMessage");
   uploadData.append("uploadContext", "retirement-message");
   uploadData.append("sourceField", "photoUrl");
+  uploadData.append("displayAspectRatio", "4:3");
+  const crop = retirementPhotoCrop.getCrop();
+  uploadData.append("displayCropX", String(crop.x));
+  uploadData.append("displayCropY", String(crop.y));
   uploadData.append(
     "sourceName",
     [
@@ -731,10 +749,13 @@ async function uploadRetirementPhoto() {
     throw new Error(translate("retirement_photo_upload_error"));
   }
 
-  return data.url;
+  return {
+    photoUrl: data.url,
+    photoDisplayUrl: data.display?.url || "",
+  };
 }
 
-function buildRetirementMessageData(photoUrl = "") {
+function buildRetirementMessageData(photoUrl = "", photoDisplayUrl = "") {
   const message = getFieldValue("retirementMessageText");
   const memberReviewConfirmed = document.getElementById(
     "retirementMemberReviewConfirmed",
@@ -780,6 +801,8 @@ function buildRetirementMessageData(photoUrl = "") {
     message,
     messageLanguage: retirementMessageLanguage.value,
     photoUrl: photoUrl || editingRetirementMessage?.photoUrl || "",
+    photoDisplayUrl:
+      photoDisplayUrl || editingRetirementMessage?.photoDisplayUrl || "",
     submitter: {
       firstName: getFieldValue("retirementSubmitterFirstName"),
       lastName: getFieldValue("retirementSubmitterLastName"),
@@ -1029,7 +1052,9 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
   setRetirementSubmitting(true);
 
   try {
-    formData.photoUrl = await uploadRetirementPhoto();
+    const uploadResult = await uploadRetirementPhoto();
+    formData.photoUrl = uploadResult.photoUrl;
+    formData.photoDisplayUrl = uploadResult.photoDisplayUrl;
 
     const requestUrl = editingRetirementMessageId
       ? `/api/retirement-messages/${encodeURIComponent(editingRetirementMessageId)}`
@@ -1044,6 +1069,7 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
 
     if (!editingRetirementMessageId) {
       retirementSubmitForm.reset();
+      retirementPhotoCrop.reset();
       CMCENUtils.bindCharacterCounters();
       setDefaultMessageLanguage();
       updateRetireeRankPicker();

@@ -77,6 +77,15 @@ function getContentValue(value, language) {
   return value[language].trim();
 }
 
+function getRetirementReviewMessage(retirementMessage, language) {
+  return (
+    getContentValue(retirementMessage.messages, language) ||
+    (retirementMessage.messageLanguage === language
+      ? String(retirementMessage.message || "").trim()
+      : "")
+  );
+}
+
 function getDisplayTitle(event) {
   return (
     CMCENUtils.getLocalizedText(event.title, getReviewLanguage()) ||
@@ -400,10 +409,76 @@ function createContentValue(className, value) {
   return element;
 }
 
+function updateContentValue(element, value) {
+  const content = String(value || "").trim();
+
+  if (content) {
+    element.textContent = content;
+    element.classList.remove("is-missing");
+    element.removeAttribute("data-i18n");
+    return;
+  }
+
+  setTranslatedText(element, "translation_missing");
+  element.classList.add("is-missing");
+}
+
+function createReviewEditIcon() {
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("aria-hidden", "true");
+  icon.setAttribute("focusable", "false");
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute(
+    "d",
+    "M4 16.5V20h3.5L18.3 9.2l-3.5-3.5L4 16.5Zm16-9.2a1 1 0 0 0 0-1.4l-1.9-1.9a1 1 0 0 0-1.4 0l-1.5 1.5 3.5 3.5L20 7.3Z",
+  );
+  icon.appendChild(path);
+
+  return icon;
+}
+
+function createLanguageEditorField({
+  eventId,
+  language,
+  field,
+  labelKey,
+  maxLength,
+  multiline = false,
+  rows,
+  value,
+}) {
+  const fieldGroup = document.createElement("div");
+  fieldGroup.className = "review-language-editor-field";
+
+  const label = document.createElement("label");
+  label.className = "review-content-label";
+  label.htmlFor = `review-event-${eventId}-${language}-${field}`;
+  setTranslatedText(label, labelKey);
+
+  const input = document.createElement(multiline ? "textarea" : "input");
+  input.id = label.htmlFor;
+  input.name = field;
+  input.maxLength = maxLength;
+  input.value = value;
+
+  if (multiline) {
+    input.rows = rows;
+  } else {
+    input.type = "text";
+  }
+
+  fieldGroup.append(label, input);
+
+  return { fieldGroup, input };
+}
+
 function createContentSection(event, language, heading) {
   const section = document.createElement("section");
   section.className = "review-language-panel";
   section.lang = language;
+  const editorId = `review-event-${event._id}-${language}-editor`;
 
   const header = document.createElement("header");
   header.className = "review-language-heading";
@@ -415,10 +490,40 @@ function createContentSection(event, language, heading) {
   const sectionHeading = document.createElement("h3");
   sectionHeading.textContent = heading;
 
-  header.append(code, sectionHeading);
+  const controls = document.createElement("div");
+  controls.className = "review-language-controls";
+
+  const editButton = document.createElement("button");
+  editButton.type = "button";
+  editButton.className = "review-language-edit-button";
+  editButton.setAttribute("data-i18n-aria-label", "review_edit_event_content");
+  editButton.appendChild(createReviewEditIcon());
+
+  const saveButton = document.createElement("button");
+  saveButton.type = "submit";
+  saveButton.className = "event-submit-button review-language-save-button";
+  saveButton.setAttribute("form", editorId);
+  saveButton.hidden = true;
+
+  const saveButtonLabel = document.createElement("span");
+  setTranslatedText(saveButtonLabel, "save_event_changes");
+  saveButton.appendChild(saveButtonLabel);
+
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.className = "review-language-cancel-button";
+  cancelButton.setAttribute("data-i18n-aria-label", "cancel_event_editing");
+  cancelButton.textContent = "×";
+  cancelButton.hidden = true;
+
+  controls.append(editButton, saveButton, cancelButton);
+  header.append(code, sectionHeading, controls);
 
   const body = document.createElement("div");
   body.className = "review-language-body";
+
+  const content = document.createElement("div");
+  content.className = "review-language-content";
 
   const titleLabel = document.createElement("span");
   titleLabel.className = "review-content-label";
@@ -456,7 +561,7 @@ function createContentSection(event, language, heading) {
   registration.textContent =
     getContentValue(event.registration, language) || "—";
 
-  body.append(
+  content.append(
     titleLabel,
     title,
     locationLabel,
@@ -467,6 +572,165 @@ function createContentSection(event, language, heading) {
     registration,
   );
 
+  const editor = document.createElement("form");
+  editor.id = editorId;
+  editor.className = "review-language-editor";
+  editor.hidden = true;
+
+  const titleField = createLanguageEditorField({
+    eventId: event._id,
+    language,
+    field: "title",
+    labelKey: "review_title_label",
+    maxLength: 500,
+    value: getContentValue(event.title, language),
+  });
+  const locationField = createLanguageEditorField({
+    eventId: event._id,
+    language,
+    field: "location",
+    labelKey: "event_location_label",
+    maxLength: 500,
+    value: getContentValue(event.location, language),
+  });
+  const descriptionField = createLanguageEditorField({
+    eventId: event._id,
+    language,
+    field: "description",
+    labelKey: "review_description_label",
+    maxLength: 10000,
+    multiline: true,
+    rows: 6,
+    value: getContentValue(event.description, language),
+  });
+  const registrationField = createLanguageEditorField({
+    eventId: event._id,
+    language,
+    field: "registration",
+    labelKey: "event_registration_label",
+    maxLength: 10000,
+    multiline: true,
+    rows: 5,
+    value: getContentValue(event.registration, language),
+  });
+
+  editor.append(
+    titleField.fieldGroup,
+    locationField.fieldGroup,
+    descriptionField.fieldGroup,
+    registrationField.fieldGroup,
+  );
+
+  const fields = {
+    title: titleField.input,
+    location: locationField.input,
+    description: descriptionField.input,
+    registration: registrationField.input,
+  };
+  const contentValues = { title, location, description, registration };
+
+  function setEditing(editing) {
+    content.hidden = editing;
+    editor.hidden = !editing;
+    editButton.hidden = editing;
+    saveButton.hidden = !editing;
+    cancelButton.hidden = !editing;
+  }
+
+  function setSaving(saving) {
+    saveButton.disabled = saving;
+    cancelButton.disabled = saving;
+    saveButton.setAttribute("aria-busy", String(saving));
+    saveButton.setAttribute(
+      "data-i18n-aria-label",
+      saving ? "review_saving_event_content" : "save_event_changes",
+    );
+    setTranslatedText(
+      saveButtonLabel,
+      saving ? "review_saving_event_content" : "save_event_changes",
+    );
+  }
+
+  function updateDisplayedContent(updatedContent) {
+    updateContentValue(contentValues.title, updatedContent.title);
+    updateContentValue(contentValues.location, updatedContent.location);
+    updateContentValue(contentValues.description, updatedContent.description);
+    contentValues.registration.textContent = updatedContent.registration || "—";
+  }
+
+  function restoreFields() {
+    fields.title.value = getContentValue(event.title, language);
+    fields.location.value = getContentValue(event.location, language);
+    fields.description.value = getContentValue(event.description, language);
+    fields.registration.value = getContentValue(event.registration, language);
+  }
+
+  editButton.addEventListener("click", () => {
+    restoreFields();
+    setEditing(true);
+    fields.title.focus();
+  });
+
+  cancelButton.addEventListener("click", () => {
+    restoreFields();
+    setEditing(false);
+    editButton.focus();
+  });
+
+  editor.addEventListener("submit", async (submitEvent) => {
+    submitEvent.preventDefault();
+
+    if (saveButton.disabled) {
+      return;
+    }
+
+    const updatedContent = {
+      title: fields.title.value,
+      location: fields.location.value,
+      description: fields.description.value,
+      registration: fields.registration.value,
+    };
+
+    setSaving(true);
+
+    try {
+      const result = await reviewApiJson(
+        `/api/events/${event._id}/review-content`,
+        {
+          method: "PATCH",
+          body: { language, content: updatedContent },
+          errorMessage: translate("review_event_content_update_failed"),
+        },
+      );
+      const savedEvent = result.event || {};
+
+      ["title", "location", "description", "registration"].forEach((field) => {
+        event[field] = {
+          ...(event[field] || {}),
+          [language]: getContentValue(savedEvent[field], language),
+        };
+      });
+
+      updateDisplayedContent({
+        title: event.title[language],
+        location: event.location[language],
+        description: event.description[language],
+        registration: event.registration[language],
+      });
+      setEditing(false);
+      updateEventReviewCardsLanguage();
+      showNotice(translate("review_event_content_updated"));
+    } catch (error) {
+      showNotice(
+        error.message || translate("review_event_content_update_failed"),
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  });
+
+  body.append(content, editor);
   section.append(header, body);
 
   return section;
@@ -760,6 +1024,8 @@ function createRetirementMessageFields(retirementMessage) {
   ["en", "fr"].forEach((languageCode) => {
     const panel = document.createElement("section");
     panel.className = "review-language-panel";
+    panel.lang = languageCode;
+    const editorId = `retirement-message-${retirementMessage._id}-${languageCode}-editor`;
 
     const panelHeading = document.createElement("header");
     panelHeading.className = "review-language-heading";
@@ -775,15 +1041,55 @@ function createRetirementMessageFields(retirementMessage) {
         : "retirement_review_french_message",
     );
 
-    panelHeading.append(code, title);
+    const controls = document.createElement("div");
+    controls.className = "review-language-controls";
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className =
+      "review-language-edit-button review-retirement-message-edit-button";
+    editButton.dataset.retirementMessageLanguage = languageCode;
+    editButton.setAttribute(
+      "data-i18n-aria-label",
+      "review_edit_retirement_message",
+    );
+    editButton.appendChild(createReviewEditIcon());
+
+    const saveButton = document.createElement("button");
+    saveButton.type = "submit";
+    saveButton.className = "event-submit-button review-language-save-button";
+    saveButton.setAttribute("form", editorId);
+    saveButton.hidden = true;
+
+    const saveButtonLabel = document.createElement("span");
+    setTranslatedText(saveButtonLabel, "save_event_changes");
+    saveButton.appendChild(saveButtonLabel);
+
+    const cancelButton = document.createElement("button");
+    cancelButton.type = "button";
+    cancelButton.className = "review-language-cancel-button";
+    cancelButton.setAttribute("data-i18n-aria-label", "cancel_event_editing");
+    cancelButton.textContent = "×";
+    cancelButton.hidden = true;
+
+    controls.append(editButton, saveButton, cancelButton);
+    panelHeading.append(code, title, controls);
 
     const body = document.createElement("div");
     body.className = "review-language-body";
 
+    const messageValue = document.createElement("p");
+    messageValue.className = "retirement-review-message-value";
+
     const label = document.createElement("label");
     label.className = "review-content-label";
     label.htmlFor = `retirementMessage${retirementMessage._id}${languageCode}`;
-    label.textContent = translate("retirement_message_text");
+    setTranslatedText(label, "retirement_message_text");
+
+    const editor = document.createElement("form");
+    editor.id = editorId;
+    editor.className = "retirement-review-message-editor";
+    editor.hidden = true;
 
     const textarea = document.createElement("textarea");
     textarea.id = `retirementMessage${retirementMessage._id}${languageCode}`;
@@ -793,30 +1099,144 @@ function createRetirementMessageFields(retirementMessage) {
     textarea.minLength = 100;
     textarea.maxLength = 10000;
     textarea.required = true;
-    textarea.value =
-      retirementMessage.messages?.[languageCode] ||
-      (retirementMessage.messageLanguage === languageCode
-        ? retirementMessage.message
-        : "") ||
-      "";
+    textarea.value = getRetirementReviewMessage(
+      retirementMessage,
+      languageCode,
+    );
 
     const hint = document.createElement("small");
     hint.className = "retirement-review-message-hint";
-    hint.textContent = translate(
+    setTranslatedText(
+      hint,
       textarea.value.trim().length >= 100
         ? "retirement_review_translation_ready"
         : "retirement_review_translation_missing",
     );
 
     textarea.addEventListener("input", () => {
-      hint.textContent = translate(
+      setTranslatedText(
+        hint,
         textarea.value.trim().length >= 100
           ? "retirement_review_translation_ready"
           : "retirement_review_translation_missing",
       );
     });
 
-    body.append(label, textarea, hint);
+    function updateMessageValue(value) {
+      const message = String(value || "").trim();
+
+      if (message) {
+        messageValue.textContent = message;
+        messageValue.classList.remove("is-missing");
+        messageValue.removeAttribute("data-i18n");
+        return;
+      }
+
+      setTranslatedText(messageValue, "retirement_review_translation_missing");
+      messageValue.classList.add("is-missing");
+    }
+
+    function setEditing(editing) {
+      messageValue.hidden = editing;
+      editor.hidden = !editing;
+      editButton.hidden = editing;
+      saveButton.hidden = !editing;
+      cancelButton.hidden = !editing;
+    }
+
+    function setSaving(saving) {
+      saveButton.disabled = saving;
+      cancelButton.disabled = saving;
+      saveButton.setAttribute("aria-busy", String(saving));
+      saveButton.setAttribute(
+        "data-i18n-aria-label",
+        saving ? "review_saving_retirement_message" : "save_event_changes",
+      );
+      setTranslatedText(
+        saveButtonLabel,
+        saving ? "review_saving_retirement_message" : "save_event_changes",
+      );
+    }
+
+    function restoreMessage() {
+      textarea.value = getRetirementReviewMessage(
+        retirementMessage,
+        languageCode,
+      );
+      setTranslatedText(
+        hint,
+        textarea.value.trim().length >= 100
+          ? "retirement_review_translation_ready"
+          : "retirement_review_translation_missing",
+      );
+    }
+
+    updateMessageValue(textarea.value);
+
+    editButton.addEventListener("click", () => {
+      restoreMessage();
+      setEditing(true);
+      textarea.focus();
+    });
+
+    cancelButton.addEventListener("click", () => {
+      restoreMessage();
+      setEditing(false);
+      editButton.focus();
+    });
+
+    editor.addEventListener("submit", async (submitEvent) => {
+      submitEvent.preventDefault();
+
+      if (saveButton.disabled) {
+        return;
+      }
+
+      setSaving(true);
+
+      try {
+        const result = await reviewApiJson(
+          `/api/retirement-messages/${retirementMessage._id}/review-content`,
+          {
+            method: "PATCH",
+            body: {
+              language: languageCode,
+              message: textarea.value,
+            },
+            errorMessage: translate("retirement_review_content_update_failed"),
+          },
+        );
+        const savedRetirementMessage = result.retirementMessage || {};
+
+        retirementMessage.messages = {
+          ...(retirementMessage.messages || {}),
+          [languageCode]: getRetirementReviewMessage(
+            savedRetirementMessage,
+            languageCode,
+          ),
+        };
+
+        if (typeof savedRetirementMessage.message === "string") {
+          retirementMessage.message = savedRetirementMessage.message;
+        }
+
+        updateMessageValue(
+          getRetirementReviewMessage(retirementMessage, languageCode),
+        );
+        setEditing(false);
+        showNotice(translate("retirement_review_content_updated"));
+      } catch (error) {
+        showNotice(
+          error.message || translate("retirement_review_content_update_failed"),
+          "error",
+        );
+      } finally {
+        setSaving(false);
+      }
+    });
+
+    editor.append(label, textarea, hint);
+    body.append(messageValue, editor);
     panel.append(panelHeading, body);
     grid.appendChild(panel);
   });
@@ -1112,6 +1532,8 @@ function createLastPostMessageSection(lastPost) {
   ["en", "fr"].forEach((languageCode) => {
     const panel = document.createElement("section");
     panel.className = "review-language-panel";
+    panel.lang = languageCode;
+    const editorId = `last-post-message-${lastPost._id}-${languageCode}-editor`;
 
     const panelHeading = document.createElement("header");
     panelHeading.className = "review-language-heading";
@@ -1126,15 +1548,56 @@ function createLastPostMessageSection(lastPost) {
         ? "last_post_review_english_notice"
         : "last_post_review_french_notice",
     );
-    panelHeading.append(code, title);
+
+    const controls = document.createElement("div");
+    controls.className = "review-language-controls";
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className =
+      "review-language-edit-button review-last-post-message-edit-button";
+    editButton.dataset.lastPostMessageLanguage = languageCode;
+    editButton.setAttribute(
+      "data-i18n-aria-label",
+      "review_edit_last_post_message",
+    );
+    editButton.appendChild(createReviewEditIcon());
+
+    const saveButton = document.createElement("button");
+    saveButton.type = "submit";
+    saveButton.className = "event-submit-button review-language-save-button";
+    saveButton.setAttribute("form", editorId);
+    saveButton.hidden = true;
+
+    const saveButtonLabel = document.createElement("span");
+    setTranslatedText(saveButtonLabel, "save_event_changes");
+    saveButton.appendChild(saveButtonLabel);
+
+    const cancelButton = document.createElement("button");
+    cancelButton.type = "button";
+    cancelButton.className = "review-language-cancel-button";
+    cancelButton.setAttribute("data-i18n-aria-label", "cancel_event_editing");
+    cancelButton.textContent = "×";
+    cancelButton.hidden = true;
+
+    controls.append(editButton, saveButton, cancelButton);
+    panelHeading.append(code, title, controls);
 
     const body = document.createElement("div");
     body.className = "review-language-body";
 
+    const messageValue = document.createElement("p");
+    messageValue.className = "last-post-review-message-value";
+
     const label = document.createElement("label");
     label.className = "review-content-label";
     label.htmlFor = `lastPostMessage${lastPost._id}${languageCode}`;
-    label.textContent = translate("last_post_message");
+    setTranslatedText(label, "last_post_message");
+
+    const editor = document.createElement("form");
+    editor.id = editorId;
+    editor.className = "last-post-review-message-editor";
+    editor.hidden = true;
 
     const textarea = document.createElement("textarea");
     textarea.id = `lastPostMessage${lastPost._id}${languageCode}`;
@@ -1143,12 +1606,13 @@ function createLastPostMessageSection(lastPost) {
     textarea.rows = 9;
     textarea.maxLength = 10000;
     textarea.required = true;
-    textarea.value = lastPost.messages?.[languageCode] || "";
+    textarea.value = getContentValue(lastPost.messages, languageCode);
 
     const hint = document.createElement("small");
     hint.className = "retirement-review-message-hint";
     const updateHint = () => {
-      hint.textContent = translate(
+      setTranslatedText(
+        hint,
         textarea.value.trim()
           ? "last_post_review_translation_ready"
           : "last_post_review_translation_missing",
@@ -1157,7 +1621,104 @@ function createLastPostMessageSection(lastPost) {
     textarea.addEventListener("input", updateHint);
     updateHint();
 
-    body.append(label, textarea, hint);
+    function updateMessageValue(value) {
+      const message = String(value || "").trim();
+
+      if (message) {
+        messageValue.textContent = message;
+        messageValue.classList.remove("is-missing");
+        messageValue.removeAttribute("data-i18n");
+        return;
+      }
+
+      setTranslatedText(messageValue, "last_post_review_translation_missing");
+      messageValue.classList.add("is-missing");
+    }
+
+    function setEditing(editing) {
+      messageValue.hidden = editing;
+      editor.hidden = !editing;
+      editButton.hidden = editing;
+      saveButton.hidden = !editing;
+      cancelButton.hidden = !editing;
+    }
+
+    function setSaving(saving) {
+      saveButton.disabled = saving;
+      cancelButton.disabled = saving;
+      saveButton.setAttribute("aria-busy", String(saving));
+      saveButton.setAttribute(
+        "data-i18n-aria-label",
+        saving ? "review_saving_last_post_message" : "save_event_changes",
+      );
+      setTranslatedText(
+        saveButtonLabel,
+        saving ? "review_saving_last_post_message" : "save_event_changes",
+      );
+    }
+
+    function restoreMessage() {
+      textarea.value = getContentValue(lastPost.messages, languageCode);
+      updateHint();
+    }
+
+    updateMessageValue(textarea.value);
+
+    editButton.addEventListener("click", () => {
+      restoreMessage();
+      setEditing(true);
+      textarea.focus();
+    });
+
+    cancelButton.addEventListener("click", () => {
+      restoreMessage();
+      setEditing(false);
+      editButton.focus();
+    });
+
+    editor.addEventListener("submit", async (submitEvent) => {
+      submitEvent.preventDefault();
+
+      if (saveButton.disabled) {
+        return;
+      }
+
+      setSaving(true);
+
+      try {
+        const result = await reviewApiJson(
+          `/api/last-posts/${lastPost._id}/review-content`,
+          {
+            method: "PATCH",
+            body: {
+              language: languageCode,
+              message: textarea.value,
+            },
+            errorMessage: translate("last_post_review_content_update_failed"),
+          },
+        );
+        const savedLastPost = result.lastPost || {};
+
+        lastPost.messages = {
+          ...(lastPost.messages || {}),
+          [languageCode]: getContentValue(savedLastPost.messages, languageCode),
+        };
+
+        updateMessageValue(getContentValue(lastPost.messages, languageCode));
+        setEditing(false);
+        showNotice(translate("last_post_review_content_updated"));
+      } catch (error) {
+        showNotice(
+          error.message || translate("last_post_review_content_update_failed"),
+          "error",
+        );
+      } finally {
+        setSaving(false);
+      }
+    });
+
+    editor.append(label, textarea, hint);
+    body.append(messageValue, editor);
     panel.append(panelHeading, body);
     grid.appendChild(panel);
   });
@@ -1716,10 +2277,9 @@ async function submitReview(eventId, action, card) {
 async function submitRetirementReview(messageId, action, card) {
   const context = createReviewActionContext(card);
   const rejectionReason = context.reasonInput.value.trim();
-  const messageInputs = card.querySelectorAll(
-    ".retirement-review-message-input",
+  const retirementMessage = pendingRetirementMessages.find(
+    (item) => item._id === messageId,
   );
-  const messages = {};
 
   if (action === "reject" && !rejectionReason) {
     showReviewValidationError(
@@ -1731,19 +2291,20 @@ async function submitRetirementReview(messageId, action, card) {
   }
 
   if (action === "publish") {
-    for (const input of messageInputs) {
-      const language = input.dataset.retirementMessageLanguage;
+    const missingLanguage = ["en", "fr"].find(
+      (language) =>
+        getRetirementReviewMessage(retirementMessage || {}, language).length <
+        100,
+    );
 
-      messages[language] = input.value.trim();
-
-      if (messages[language].length < 100) {
-        showReviewValidationError(
-          context,
-          translate("retirement_review_translation_required"),
-          input,
-        );
-        return;
-      }
+    if (missingLanguage) {
+      showNotice(translate("retirement_review_translation_required"), "error");
+      card
+        .querySelector(
+          `.review-retirement-message-edit-button[data-retirement-message-language="${missingLanguage}"]`,
+        )
+        ?.focus();
+      return;
     }
   }
 
@@ -1754,7 +2315,6 @@ async function submitRetirementReview(messageId, action, card) {
     body: {
       action,
       rejectionReason: action === "reject" ? rejectionReason : undefined,
-      messages: action === "publish" ? messages : undefined,
     },
     errorMessage: translate("retirement_review_failed"),
     successMessageKey:
@@ -1775,7 +2335,7 @@ async function submitRetirementReview(messageId, action, card) {
 async function submitLastPostReview(messageId, action, card) {
   const context = createReviewActionContext(card);
   const rejectionReason = context.reasonInput.value.trim();
-  const messages = {};
+  const lastPost = pendingLastPosts.find((item) => item._id === messageId);
 
   if (action === "reject" && !rejectionReason) {
     showReviewValidationError(
@@ -1787,22 +2347,18 @@ async function submitLastPostReview(messageId, action, card) {
   }
 
   if (action === "publish") {
-    const messageInputs = card.querySelectorAll(
-      ".last-post-review-message-input",
+    const missingLanguage = ["en", "fr"].find(
+      (language) => !getContentValue(lastPost?.messages, language),
     );
 
-    for (const input of messageInputs) {
-      const language = input.dataset.lastPostMessageLanguage;
-      messages[language] = input.value.trim();
-
-      if (!messages[language]) {
-        showReviewValidationError(
-          context,
-          translate("last_post_review_translation_required"),
-          input,
-        );
-        return;
-      }
+    if (missingLanguage) {
+      showNotice(translate("last_post_review_translation_required"), "error");
+      card
+        .querySelector(
+          `.review-last-post-message-edit-button[data-last-post-message-language="${missingLanguage}"]`,
+        )
+        ?.focus();
+      return;
     }
   }
 
@@ -1813,7 +2369,6 @@ async function submitLastPostReview(messageId, action, card) {
     body: {
       action,
       rejectionReason: action === "reject" ? rejectionReason : undefined,
-      messages: action === "publish" ? messages : undefined,
     },
     errorMessage: translate("last_post_review_failed"),
     successMessageKey:

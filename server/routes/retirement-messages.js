@@ -466,7 +466,8 @@ router.post(
 
       if (wantsImmediatePublication && !canBypassReview) {
         return res.status(403).json({
-          error: 'You do not have permission to publish retirement messages immediately',
+          error:
+            'You do not have permission to publish retirement messages immediately',
         });
       }
 
@@ -532,9 +533,8 @@ router.post(
       let branchNotificationStatus = 'sent';
 
       try {
-        const notification = await sendRetirementSubmissionEmail(
-          retirementMessage,
-        );
+        const notification =
+          await sendRetirementSubmissionEmail(retirementMessage);
         branchNotificationStatus = notification.skipped ? 'skipped' : 'sent';
 
         if (notification.skipped) {
@@ -544,7 +544,10 @@ router.post(
         }
       } catch (error) {
         branchNotificationStatus = 'failed';
-        console.error('Could not send retirement submission branch email:', error);
+        console.error(
+          'Could not send retirement submission branch email:',
+          error,
+        );
       }
 
       await writeAuditLog({
@@ -1084,7 +1087,8 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
 
     if (wantsImmediatePublication && !canBypassReview) {
       return res.status(403).json({
-        error: 'You do not have permission to publish retirement messages immediately',
+        error:
+          'You do not have permission to publish retirement messages immediately',
       });
     }
 
@@ -1426,6 +1430,103 @@ router.get('/:messageId', async (req, res) => {
     });
   }
 });
+
+router.patch(
+  '/:messageId/review-content',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      const { language, message } = req.body;
+
+      if (!ALLOWED_LANGUAGES.includes(language)) {
+        return res.status(400).json({
+          error: 'Review content language must be English or French',
+        });
+      }
+
+      if (typeof message !== 'string') {
+        return res.status(400).json({
+          error: 'Retirement review message text is required',
+        });
+      }
+
+      const cleanMessage = cleanString(message);
+
+      if (cleanMessage.length < 100) {
+        return res.status(400).json({
+          error:
+            'Retirement review message text must contain at least 100 characters',
+        });
+      }
+
+      const retirementMessage = await RetirementMessage.findById(
+        req.params.messageId,
+      );
+
+      if (!retirementMessage) {
+        return res.status(404).json({
+          error: 'Retirement message not found',
+        });
+      }
+
+      if (retirementMessage.status !== 'pending') {
+        return res.status(409).json({
+          error:
+            'Only pending retirement messages can have review content updated',
+        });
+      }
+
+      retirementMessage.set(`messages.${language}`, cleanMessage);
+      retirementMessage.markModified('messages');
+
+      if (retirementMessage.messageLanguage === language) {
+        retirementMessage.message = cleanMessage;
+      }
+
+      retirementMessage.updatedBy = req.user._id;
+
+      await retirementMessage.save();
+
+      await writeAuditLog({
+        req,
+        action: 'content.review_content_updated',
+        actor: req.user,
+        targetType: 'retirementMessage',
+        target: retirementMessage._id,
+        targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+        metadata: {
+          source: 'review-content',
+          language,
+          fields: ['message'],
+        },
+      });
+
+      return res.json({
+        message: 'Retirement review content updated',
+        retirementMessage,
+      });
+    } catch (error) {
+      console.error('Could not update retirement review content:', error);
+
+      if (error.name === 'CastError') {
+        return res.status(400).json({
+          error: 'Invalid retirement message ID',
+        });
+      }
+
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({
+          error: getValidationErrorMessage(error),
+        });
+      }
+
+      return res.status(500).json({
+        error: 'Could not update retirement review content',
+      });
+    }
+  },
+);
 
 router.patch(
   '/:messageId/review',

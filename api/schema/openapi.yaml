@@ -19,6 +19,7 @@ servers:
 security:
   - bearerAuth: []
 tags:
+  - name: Site
   - name: System
   - name: Auth
   - name: MFA
@@ -86,6 +87,54 @@ paths:
       responses:
         "200":
           description: Certificate request fulfillment status updated.
+  /robots.txt:
+    get:
+      tags: [Site]
+      summary: Get crawler directives.
+      security: []
+      responses:
+        "200":
+          description: Robots.txt content with the absolute XML sitemap location.
+          content:
+            text/plain:
+              schema:
+                type: string
+  /sitemap.xml:
+    get:
+      tags: [Site]
+      summary: Get the crawler XML sitemap.
+      security: []
+      responses:
+        "200":
+          description: Public static pages and published public custom pages.
+          content:
+            application/xml:
+              schema:
+                type: string
+  /site.webmanifest:
+    get:
+      tags: [Site]
+      summary: Get web application metadata.
+      security: []
+      responses:
+        "200":
+          description: Web application manifest.
+          content:
+            application/manifest+json:
+              schema:
+                type: object
+  /llms.txt:
+    get:
+      tags: [Site]
+      summary: Get the AI access-policy notice.
+      security: []
+      responses:
+        "200":
+          description: Plain-text notice that does not grant AI systems permission to use site content.
+          content:
+            text/plain:
+              schema:
+                type: string
   /api/version:
     get:
       tags: [System]

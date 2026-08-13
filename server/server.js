@@ -28,6 +28,11 @@ const timerRoutes = require('./routes/timers');
 const uploadRoutes = require('./routes/uploads');
 const mfaRoutes = require('./routes/mfa');
 const pageRoutes = require('./routes/pages');
+const {
+  blockKnownAiCrawlers,
+  router: seoRoutes,
+  setStandardResponseHeaders,
+} = require('./routes/seo');
 const { rateLimitByIp } = require('./middleware/rate-limit');
 
 const app = express();
@@ -40,6 +45,8 @@ const apiRateLimit = rateLimitByIp(
 );
 app.set('trust proxy', true);
 app.use(express.json());
+app.use(setStandardResponseHeaders);
+app.use(blockKnownAiCrawlers);
 app.use('/api', apiRateLimit);
 app.use(translationRoutes);
 app.use(contentOptionRoutes);
@@ -146,6 +153,7 @@ function serveExtensionlessHtml(req, res, next) {
 }
 
 app.use(redirectHtmlExtension);
+app.use(seoRoutes);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api', authRoutes);

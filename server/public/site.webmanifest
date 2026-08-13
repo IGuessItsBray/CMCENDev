@@ -1,0 +1,17 @@
+{
+  "name": "Canadian Military Communications and Electronics Network",
+  "short_name": "CMCEN",
+  "description": "A shared home for Canada's Communications and Electronics community.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#171c32",
+  "theme_color": "#202642",
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "600x805",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -17,12 +17,6 @@ const STATIC_PAGES = [
   { path: '/branch_advisory_council', file: 'branch_advisory_council.html', type: 'page', title: 'Branch Advisory Council' },
   { path: '/ce_professions', file: 'ce_professions.html', type: 'page', title: 'Communications & Electronics Professions' },
   {
-    path: '/index',
-    file: 'index.html',
-    type: 'page',
-    title: 'CMCEN / RCMCE',
-  },
-  {
     path: '/about-family',
     file: 'about-family.html',
     type: 'page',
@@ -58,6 +52,12 @@ const STATIC_PAGES = [
     type: 'page',
     title: 'Events Calendar',
   },
+  {
+    path: '/retirements',
+    file: 'retirements.html',
+    type: 'page',
+    title: 'Retirement Messages',
+  },
   { path: '/certificates', file: 'certificates.html', type: 'page', title: 'Certificates' },
   { path: '/doctrine_hub', file: 'doctrine_hub.html', type: 'page', title: 'Doctrine Hub' },
   { path: '/gallery', file: 'gallery.html', type: 'page', title: 'Gallery' },
@@ -79,6 +79,12 @@ const STATIC_PAGES = [
     file: 'history.html',
     type: 'page',
     title: 'History',
+  },
+  {
+    path: '/last-post',
+    file: 'last-post.html',
+    type: 'page',
+    title: 'Last Post',
   },
   { path: '/honours_awards', file: 'honours_awards.html', type: 'page', title: 'Honours and Awards' },
   { path: '/leadership', file: 'leadership.html', type: 'page', title: 'Leadership' },
@@ -181,6 +187,56 @@ function scoreText(queryTerms, fields) {
   }, 0);
 }
 
+function scoreTitleMatch(query, queryTerms, title, type) {
+  const normalizedQuery = normalizeText(query).toLowerCase();
+  const normalizedTitle = normalizeText(title).toLowerCase();
+
+  if (!normalizedQuery || !normalizedTitle) {
+    return 0;
+  }
+
+  if (normalizedTitle === normalizedQuery) {
+    // An exact navigation-page title is the clearest possible destination.
+    return type === 'page' ? 10000 : 9000;
+  }
+
+  const leadingTitleWord = new RegExp(
+    `^${escapeRegex(normalizedQuery)}s?\\b`,
+    'i',
+  );
+
+  if (leadingTitleWord.test(normalizedTitle)) {
+    return type === 'page' ? 7000 : 6000;
+  }
+
+  const exactPhrase = new RegExp(
+    `\\b${escapeRegex(normalizedQuery)}\\b`,
+    'i',
+  );
+
+  if (exactPhrase.test(normalizedTitle)) {
+    return 5000;
+  }
+
+  const hasEveryQueryTerm = queryTerms.every((term) => {
+    const exactWord = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
+    return exactWord.test(normalizedTitle);
+  });
+
+  if (hasEveryQueryTerm) {
+    return 1000;
+  }
+
+  return scoreText(queryTerms, [normalizedTitle]) * 100;
+}
+
+function scoreSearchResult(query, queryTerms, { title, type, fields }) {
+  return (
+    scoreTitleMatch(query, queryTerms, title, type) +
+    scoreText(queryTerms, fields)
+  );
+}
+
 function sortResults(results) {
   return results
     .filter((result) => Boolean(result?.url))
@@ -198,7 +254,7 @@ function sortResults(results) {
     .map(({ score, ...result }) => result);
 }
 
-async function searchLastPostMessages(queryTerms, language) {
+async function searchLastPostMessages(query, queryTerms, language) {
   const fields = [
     'title',
     'slug',
@@ -240,16 +296,20 @@ async function searchLastPostMessages(queryTerms, language) {
       summary,
       url: `/last-post-message?id=${encodeURIComponent(String(message._id))}`,
       date: message.publishedAt || message.createdAt || null,
-      score: scoreText(queryTerms, [
+      score: scoreSearchResult(query, queryTerms, {
         title,
-        summary,
-        message.messages?.en,
-        message.messages?.fr,
-        message.deceased?.fullRank,
-        message.deceased?.firstName,
-        message.deceased?.surname,
-        message.deceased?.postNominal,
-      ]),
+        type: 'last-post-message',
+        fields: [
+          title,
+          summary,
+          message.messages?.en,
+          message.messages?.fr,
+          message.deceased?.fullRank,
+          message.deceased?.firstName,
+          message.deceased?.surname,
+          message.deceased?.postNominal,
+        ],
+      }),
     };
   });
 }
@@ -310,14 +370,18 @@ async function searchEvents(query, queryTerms, language) {
       summary,
       url: `/event?id=${encodeURIComponent(String(event._id))}`,
       date: event.startDate || event.createdAt || null,
-      score: scoreText(queryTerms, [
+      score: scoreSearchResult(query, queryTerms, {
         title,
-        summary,
-        event.city,
-        event.provinceRegion,
-        event.organizingEntity,
-        event.eventType,
-      ]),
+        type: 'event',
+        fields: [
+          title,
+          summary,
+          event.city,
+          event.provinceRegion,
+          event.organizingEntity,
+          event.eventType,
+        ],
+      }),
     };
   });
 }
@@ -380,19 +444,23 @@ async function searchRetirementMessages(query, queryTerms) {
       summary,
       url: `/retirement-message?id=${encodeURIComponent(String(message._id))}`,
       date: message.publishedAt || message.createdAt || null,
-      score: scoreText(queryTerms, [
+      score: scoreSearchResult(query, queryTerms, {
         title,
-        summary,
-        message.messages?.en,
-        message.messages?.fr,
-        message.retiree?.tradeRole,
-        message.retiree?.postNominals,
-      ]),
+        type: 'retirement-message',
+        fields: [
+          title,
+          summary,
+          message.messages?.en,
+          message.messages?.fr,
+          message.retiree?.tradeRole,
+          message.retiree?.postNominals,
+        ],
+      }),
     };
   });
 }
 
-async function searchStaticPages(queryTerms) {
+async function searchStaticPages(query, queryTerms) {
   const pages = await Promise.all(
     STATIC_PAGES.map(async (page) => {
       try {
@@ -401,7 +469,11 @@ async function searchStaticPages(queryTerms) {
           'utf8',
         );
         const text = normalizeText(stripHtml(html));
-        const score = scoreText(queryTerms, [page.title, text]);
+        const score = scoreSearchResult(query, queryTerms, {
+          title: page.title,
+          type: page.type,
+          fields: [page.title, text],
+        });
 
         if (score === 0) {
           return null;
@@ -446,8 +518,8 @@ router.get('/', async (req, res) => {
       await Promise.all([
       searchEvents(query, queryTerms, language),
       searchRetirementMessages(query, queryTerms),
-      searchLastPostMessages(queryTerms, language),
-      searchStaticPages(queryTerms),
+      searchLastPostMessages(query, queryTerms, language),
+      searchStaticPages(query, queryTerms),
       ]);
 
     const results = sortResults([

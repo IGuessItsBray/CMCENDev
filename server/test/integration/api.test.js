@@ -370,6 +370,38 @@ describe('public search', () => {
       (result) => result.sourceId === '/calendar',
     );
     assert.equal(pageResult.url, '/calendar');
+
+    const historySearch = await request(app)
+      .get('/api/search?q=history')
+      .expect(200);
+    assert.equal(historySearch.body.results[0].sourceId, '/history');
+
+    const homeSearch = await request(app)
+      .get('/api/search?q=home')
+      .expect(200);
+    assert.equal(
+      homeSearch.body.results.some((result) => result.sourceId === '/index'),
+      false,
+    );
+
+    const retirementPageSearch = await request(app)
+      .get('/api/search?q=retirement')
+      .expect(200);
+    assert.equal(
+      retirementPageSearch.body.results[0].sourceId,
+      '/retirements',
+    );
+
+    const lastPostPageSearch = await request(app)
+      .get('/api/search?q=last%20post')
+      .expect(200);
+    assert.equal(lastPostPageSearch.body.results[0].sourceId, '/last-post');
+
+    const eventPageSearch = await request(app)
+      .get('/api/search?q=event')
+      .expect(200);
+    assert.equal(eventPageSearch.body.results[0].sourceId, '/calendar');
+
     assert.equal(
       [...eventSearch.body.results, ...lastPostSearch.body.results].every(
         (result) => Boolean(result.url),

@@ -1021,7 +1021,7 @@ paths:
   /api/search:
     get:
       tags: [Search]
-      summary: Search public content.
+      summary: Search non-Home public content with singular/plural-aware title ranking.
       security: []
       parameters:
         - name: q

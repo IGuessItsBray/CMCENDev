@@ -184,7 +184,7 @@ Mounted at `/api/search`.
 
 | Method | Path          | Access | Purpose                                                                                                                                                                                   |
 | ------ | ------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`  | `/api/search` | Public | Search published events, retirement messages, Last Post notices, and public pages. Query: `q`, optional `lang` (`en` or `fr`). Only results with a canonical relative `url` are returned. |
+| `GET`  | `/api/search` | Public | Search published events, retirement messages, Last Post notices, and public pages other than Home, including the Retirement Messages collection and Last Post archive. Query: `q`, optional `lang` (`en` or `fr`). Results are ranked by title relevance before body-text matches; exact, leading, and singular/plural leading title matches rank first. Only results with a canonical relative `url` are returned. |
 
 ## Site Discovery and Metadata
 

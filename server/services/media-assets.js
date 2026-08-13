@@ -52,40 +52,24 @@ function buildUploadContextFromBody(body = {}) {
   return buildUploadContext(body);
 }
 
-function sanitizeMetadataValue(value) {
-  if (Buffer.isBuffer(value)) {
-    return {
-      byteLength: value.length,
-    };
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((item) => sanitizeMetadataValue(item));
-  }
-
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [
-        key,
-        sanitizeMetadataValue(item),
-      ]),
-    );
-  }
-
-  if (
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    typeof value === 'boolean' ||
-    value === null
-  ) {
-    return value;
-  }
-
-  return String(value || '');
-}
-
 function sanitizeImageMetadata(metadata = {}) {
-  return sanitizeMetadataValue(metadata);
+  // Keep only rendering information. Embedded camera, location, author, and
+  // profile metadata must never be copied into the media record.
+  return Object.fromEntries(
+    [
+      'format',
+      'width',
+      'height',
+      'space',
+      'channels',
+      'depth',
+      'hasAlpha',
+      'pages',
+      'pageHeight',
+    ]
+      .filter((key) => metadata[key] !== undefined && metadata[key] !== null)
+      .map((key) => [key, metadata[key]]),
+  );
 }
 
 function getDisplayName(file, uploadContext = {}) {
@@ -138,53 +122,6 @@ async function createMediaAssetRecord({
     imageMetadata: sanitizeImageMetadata(
       imageMetadata || uploadResult.imageMetadata || {},
     ),
-    uploadedBy: user?._id || null,
-  });
-
-  return asset.toObject();
-}
-
-async function createDirectUploadMediaAssetRecord({
-  key,
-  originalName,
-  contentType,
-  size,
-  user,
-  uploadContext,
-}) {
-  const url = buildPublicMediaUrl(key);
-  const initialUploadContext = buildUploadContext(uploadContext);
-  const cleanUploadContext = buildUploadContext({
-    ...initialUploadContext,
-    type:
-      initialUploadContext.type === 'unknown'
-        ? 'directUpload'
-        : initialUploadContext.type,
-    context:
-      initialUploadContext.context === 'unknown'
-        ? 'direct-upload'
-        : initialUploadContext.context,
-  });
-  const displayName = truncate(cleanUploadContext.label || originalName || key);
-
-  const asset = await MediaAsset.create({
-    key,
-    url,
-    originalKey: key,
-    originalUrl: url,
-    originalName: truncate(originalName || key),
-    displayName,
-    mimeType: cleanString(contentType),
-    size: Number(size || 0),
-    uploadContext: cleanUploadContext,
-    inferredName: cleanUploadContext.label,
-    fileMetadata: {
-      originalName: cleanString(originalName),
-      mimeType: cleanString(contentType),
-      size: Number(size || 0),
-      storageKey: cleanString(key),
-      uploadStatus: 'signed-url-issued',
-    },
     uploadedBy: user?._id || null,
   });
 
@@ -246,7 +183,6 @@ async function linkMediaAssetToSource({
 module.exports = {
   buildUploadContext,
   buildUploadContextFromBody,
-  createDirectUploadMediaAssetRecord,
   createMediaAssetRecord,
   linkMediaAssetToSource,
   sanitizeImageMetadata,

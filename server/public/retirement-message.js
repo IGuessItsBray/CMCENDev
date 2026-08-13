@@ -53,9 +53,22 @@ let visibleCommentMessageKey = "";
 let visibleCommentMessageType = "neutral";
 
 function createRetirementLoadingContent(message) {
-  const loading = CMCENUtils.createLoadingSpinner(message);
+  const skeleton = document.createElement("div");
+  skeleton.className = "content-detail-skeleton content-detail-skeleton--retirement";
+  skeleton.setAttribute("aria-hidden", "true");
+  skeleton.append(
+    CMCENUtils.createSkeleton("skeleton--detail-title"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
+    CMCENUtils.createSkeleton("skeleton--detail-photo"),
+    CMCENUtils.createSkeleton("skeleton--detail-block"),
+    CMCENUtils.createSkeleton("skeleton--detail-block skeleton--detail-block-short"),
+  );
 
-  return Array.from(loading.childNodes);
+  const accessibleLabel = document.createElement("span");
+  accessibleLabel.className = "visually-hidden";
+  accessibleLabel.textContent = message;
+
+  return [skeleton, accessibleLabel];
 }
 
 function showRetirementDetailMessage(message, type = "neutral") {

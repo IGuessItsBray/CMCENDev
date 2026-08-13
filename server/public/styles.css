@@ -1541,6 +1541,135 @@ a.dropdown-toggle {
   gap: 10px;
 }
 
+.calendar-tools {
+  margin-top: 20px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+  border: 1px solid rgba(23, 28, 50, 0.14);
+  border-radius: 7px;
+  background: var(--white);
+  box-shadow: 0 8px 18px rgba(15, 18, 31, 0.1);
+}
+
+.calendar-tools-heading {
+  grid-column: 1 / -1;
+  margin: 0 0 -4px;
+  color: var(--navy-900);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  font-weight: normal;
+  line-height: 1.2;
+}
+
+.calendar-filter-fields {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.calendar-filter-field {
+  min-width: 0;
+}
+
+.calendar-filter-field label {
+  margin-bottom: 5px;
+  display: block;
+  color: var(--navy-900);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.calendar-filter-field select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 34px 0 10px;
+  border: 1px solid rgba(23, 28, 50, 0.28);
+  border-radius: 4px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.calendar-filter-field select:focus-visible {
+  border-color: var(--gold-500);
+  outline: 3px solid rgba(213, 155, 39, 0.3);
+  outline-offset: 1px;
+}
+
+.calendar-tool-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-clear-filters-button,
+.calendar-download-button {
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.calendar-clear-filters-button {
+  border-color: rgba(23, 28, 50, 0.28);
+  background: var(--white);
+  color: var(--navy-900);
+}
+
+.calendar-download-button {
+  border-color: var(--navy-900);
+  background: var(--navy-900);
+  color: var(--white);
+}
+
+.calendar-clear-filters-button:hover:not(:disabled),
+.calendar-clear-filters-button:focus-visible {
+  border-color: var(--navy-900);
+  background: var(--branch-grey-100);
+}
+
+.calendar-download-button:hover:not(:disabled),
+.calendar-download-button:focus-visible {
+  border-color: var(--gold-500);
+  background: var(--gold-500);
+  color: var(--navy-950);
+}
+
+.calendar-clear-filters-button:hover:not(:disabled),
+.calendar-download-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.calendar-clear-filters-button:focus-visible,
+.calendar-download-button:focus-visible {
+  outline: 3px solid rgba(213, 155, 39, 0.45);
+  outline-offset: 2px;
+}
+
+.calendar-clear-filters-button:disabled,
+.calendar-download-button:disabled,
+.calendar-filter-field select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .calendar-view {
   margin-top: 20px;
 }
@@ -2038,6 +2167,18 @@ a.dropdown-toggle {
 }
 
 @media (max-width: 700px) {
+  .calendar-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-filter-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-tool-actions {
+    justify-content: space-between;
+  }
+
   .calendar-controls {
     align-items: stretch;
     flex-direction: column;
@@ -16019,9 +16160,28 @@ html[data-theme='dark'] .home-feed-content strong {
 }
 
 html[data-theme='dark'] .calendar-controls,
+html[data-theme='dark'] .calendar-tools,
 html[data-theme='dark'] .calendar-weekdays {
   border-color: var(--dark-border);
   background: var(--dark-surface-2);
+}
+
+html[data-theme='dark'] .calendar-tools-heading,
+html[data-theme='dark'] .calendar-filter-field label {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .calendar-filter-field select,
+html[data-theme='dark'] .calendar-clear-filters-button {
+  border-color: var(--dark-border-strong);
+  background: #151f31;
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .calendar-clear-filters-button:hover:not(:disabled),
+html[data-theme='dark'] .calendar-clear-filters-button:focus-visible {
+  border-color: var(--gold-500);
+  background: #202b3f;
 }
 
 html[data-theme='dark'] .calendar-grid {

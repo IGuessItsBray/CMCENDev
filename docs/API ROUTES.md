@@ -243,7 +243,7 @@ Mounted at `/api/events`.
 
 | Method  | Path                                  | Access                                | Purpose                                                                                                                                                                                                                            |
 | ------- | ------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`   | `/api/events`                         | Public                                | List published upcoming events, or published events overlapping a requested `from`/`to` calendar range.                                                                                                                            |
+| `GET`   | `/api/events`                         | Public                                | List published upcoming events, or published events overlapping a requested `from`/`to` calendar range. Results can be filtered by event type, organizing entity, and province or region.                                          |
 | `POST`  | `/api/events`                         | Authenticated + `canCreateDrafts`     | Submit an event. Descriptions and registration instructions are limited to 10,000 characters per language. Submitter details are copied from the authenticated profile; users with review/bypass permissions may publish directly. |
 | `GET`   | `/api/events/review`                  | Authenticated + `canReviewAndPublish` | List event review queue.                                                                                                                                                                                                           |
 | `GET`   | `/api/events/mine`                    | Authenticated                         | List current user's events.                                                                                                                                                                                                        |
@@ -257,6 +257,9 @@ Mounted at `/api/events`.
 `YYYY-MM-DD` form. They must be supplied together, define an inclusive range
 of at most 370 days, and return published events that start in or overlap that
 range. Calls without those parameters retain the upcoming-events behaviour.
+Optional `eventType`, `organizingEntity`, and `provinceRegion` parameters use
+their published event-option values and are combined when more than one is
+supplied.
 
 ## Last Post Notices
 

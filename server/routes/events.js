@@ -407,9 +407,46 @@ function getPublicEventRange(query = {}) {
   };
 }
 
-function getPublicEventsQuery(range) {
+function getPublicEventFilterValue(query, parameterName, allowedValues) {
+  const rawValue = query?.[parameterName];
+
+  if (rawValue === undefined || rawValue === null || rawValue === '') {
+    return '';
+  }
+
+  const value = typeof rawValue === 'string' ? rawValue.trim() : '';
+
+  if (!value || !allowedValues.includes(value)) {
+    const error = new Error(`The ${parameterName} parameter is invalid`);
+
+    error.status = 400;
+    throw error;
+  }
+
+  return value;
+}
+
+function getPublicEventFilters(query = {}) {
+  return {
+    eventType: getPublicEventFilterValue(query, 'eventType', EVENT_TYPES),
+    organizingEntity: getPublicEventFilterValue(
+      query,
+      'organizingEntity',
+      EVENT_ORGANIZING_ENTITIES,
+    ),
+    provinceRegion: getPublicEventFilterValue(
+      query,
+      'provinceRegion',
+      CANADIAN_REGIONS,
+    ),
+  };
+}
+
+function getPublicEventsQuery(range, filters = {}) {
+  let query;
+
   if (range) {
-    return {
+    query = {
       status: 'published',
 
       // Include events that begin in the requested dates and
@@ -431,35 +468,50 @@ function getPublicEventsQuery(range) {
         },
       ],
     };
+  } else {
+    const startOfToday = new Date();
+
+    startOfToday.setUTCHours(0, 0, 0, 0);
+
+    query = {
+      status: 'published',
+
+      // Preserve the legacy public list: future events and multi-day
+      // events still underway.
+      $or: [
+        {
+          endDate: { $gte: startOfToday },
+        },
+        {
+          endDate: null,
+          startDate: { $gte: startOfToday },
+        },
+      ],
+    };
   }
 
-  const startOfToday = new Date();
+  if (filters.eventType) {
+    query.eventType = filters.eventType;
+  }
 
-  startOfToday.setUTCHours(0, 0, 0, 0);
+  if (filters.organizingEntity) {
+    query.organizingEntity = filters.organizingEntity;
+  }
 
-  return {
-    status: 'published',
+  if (filters.provinceRegion) {
+    query.provinceRegion = filters.provinceRegion;
+  }
 
-    // Preserve the legacy public list: future events and multi-day
-    // events still underway.
-    $or: [
-      {
-        endDate: { $gte: startOfToday },
-      },
-      {
-        endDate: null,
-        startDate: { $gte: startOfToday },
-      },
-    ],
-  };
+  return query;
 }
 
 // Only published events are returned publicly.
 router.get('/', async (req, res) => {
   try {
     const range = getPublicEventRange(req.query);
+    const filters = getPublicEventFilters(req.query);
 
-    const events = await Event.find(getPublicEventsQuery(range))
+    const events = await Event.find(getPublicEventsQuery(range, filters))
       .select(PUBLIC_EVENT_FIELDS)
       .sort({
         startDate: 1,

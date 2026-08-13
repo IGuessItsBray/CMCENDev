@@ -1201,6 +1201,9 @@ describe('event, page, and comment workflows', () => {
     await Event.create([
       {
         title: { en: 'Overlapping event', fr: 'Événement en cours' },
+        provinceRegion: 'ON',
+        organizingEntity: 'association',
+        eventType: 'training',
         startDate: new Date('2040-06-29T12:00:00.000Z'),
         endDate: new Date('2040-07-02T12:00:00.000Z'),
         allDay: true,
@@ -1209,6 +1212,9 @@ describe('event, page, and comment workflows', () => {
       },
       {
         title: { en: 'July event', fr: 'Événement de juillet' },
+        provinceRegion: 'QC',
+        organizingEntity: 'branch',
+        eventType: 'ceremony',
         startDate: new Date('2040-07-18T12:00:00.000Z'),
         allDay: true,
         status: 'published',
@@ -1216,6 +1222,9 @@ describe('event, page, and comment workflows', () => {
       },
       {
         title: { en: 'August event', fr: 'Événement d’août' },
+        provinceRegion: 'ON',
+        organizingEntity: 'association',
+        eventType: 'training',
         startDate: new Date('2040-08-01T12:00:00.000Z'),
         allDay: true,
         status: 'published',
@@ -1232,6 +1241,17 @@ describe('event, page, and comment workflows', () => {
       ['Overlapping event', 'July event'],
     );
 
+    const filteredResponse = await request(app)
+      .get(
+        '/api/events?from=2040-07-01&to=2040-07-31&eventType=training&organizingEntity=association&provinceRegion=ON',
+      )
+      .expect(200);
+
+    assert.deepEqual(
+      filteredResponse.body.events.map((event) => event.title.en),
+      ['Overlapping event'],
+    );
+
     const incompleteRange = await request(app)
       .get('/api/events?from=2040-07-01')
       .expect(400);
@@ -1239,6 +1259,15 @@ describe('event, page, and comment workflows', () => {
     assert.equal(
       incompleteRange.body.error,
       'The from and to parameters must be used together',
+    );
+
+    const invalidFilter = await request(app)
+      .get('/api/events?eventType=invalid')
+      .expect(400);
+
+    assert.equal(
+      invalidFilter.body.error,
+      'The eventType parameter is invalid',
     );
   });
 

@@ -349,10 +349,7 @@ describe('public search', () => {
     const lastPostResult = lastPostSearch.body.results.find(
       (result) => result.type === 'last-post-message',
     );
-    assert.equal(
-      lastPostResult.url,
-      `/last-post-message?id=${lastPost._id}`,
-    );
+    assert.equal(lastPostResult.url, `/last-post-message?id=${lastPost._id}`);
 
     const retirementSearch = await request(app)
       .get('/api/search?q=alex%20example')
@@ -570,17 +567,19 @@ describe('retirement message lifecycle', () => {
         printedCertificateKeys: ['member', 'family:0', 'family:1'],
       })
       .expect(200);
-    assert.equal(printingConfirmed.body.certificateRequest.status, 'ready_to_mail');
+    assert.equal(
+      printingConfirmed.body.certificateRequest.status,
+      'ready_to_mail',
+    );
 
-    const printedRequest = await CertificateRequest.findById(
-      certificateRequestId,
-    ).lean();
+    const printedRequest =
+      await CertificateRequest.findById(certificateRequestId).lean();
     assert.equal(printedRequest.status, 'ready_to_mail');
     assert.equal(String(printedRequest.printedBy), String(editor._id));
     assert.ok(printedRequest.printedAt);
     assert.deepEqual(
-      printedRequest.printedCertificates.map((certificate) =>
-        certificate.certificateKey,
+      printedRequest.printedCertificates.map(
+        (certificate) => certificate.certificateKey,
       ),
       ['member', 'family:0', 'family:1'],
     );
@@ -618,9 +617,8 @@ describe('retirement message lifecycle', () => {
       .expect(200);
     assert.equal(mailed.body.certificateRequest.status, 'mailed');
 
-    const mailedRequest = await CertificateRequest.findById(
-      certificateRequestId,
-    ).lean();
+    const mailedRequest =
+      await CertificateRequest.findById(certificateRequestId).lean();
     assert.equal(mailedRequest.status, 'mailed');
     assert.equal(String(mailedRequest.mailedBy), String(editor._id));
     assert.ok(mailedRequest.mailedAt);
@@ -787,6 +785,57 @@ describe('retirement message lifecycle', () => {
     assert.equal(String(publishedAudit.target), String(message._id));
   });
 
+  test('lets reviewers save a retirement translation before publication', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorLogin = await login(contributor);
+    const editorLogin = await login(editor);
+
+    await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(retirementPayload())
+      .expect(201);
+
+    const messageId = (await RetirementMessage.findOne())._id;
+    const frenchTranslation = translatedMessage('French reviewer');
+
+    await request(app)
+      .patch(`/api/retirement-messages/${messageId}/review-content`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({ language: 'fr', message: frenchTranslation })
+      .expect(403);
+
+    const response = await request(app)
+      .patch(`/api/retirement-messages/${messageId}/review-content`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ language: 'fr', message: frenchTranslation })
+      .expect(200);
+
+    assert.equal(response.body.retirementMessage.status, 'pending');
+    assert.equal(
+      response.body.retirementMessage.messages.fr,
+      frenchTranslation,
+    );
+
+    const savedMessage = await RetirementMessage.findById(messageId);
+    assert.equal(savedMessage.status, 'pending');
+    assert.equal(savedMessage.messages.fr, frenchTranslation);
+
+    const auditEntry = await AuditLog.findOne({
+      action: 'content.review_content_updated',
+      target: savedMessage._id,
+    });
+    assert.equal(auditEntry.targetType, 'retirementMessage');
+    assert.equal(auditEntry.metadata.language, 'fr');
+
+    await request(app)
+      .patch(`/api/retirement-messages/${messageId}/review`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ action: 'publish' })
+      .expect(200);
+  });
+
   test('requires a reason when rejecting a pending message', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
@@ -863,6 +912,63 @@ describe('Last Post lifecycle', () => {
     const list = await request(app).get('/api/last-posts').expect(200);
     assert.equal(list.body.lastPosts.length, 1);
     assert.equal(list.body.lastPosts[0].deceased.surname, 'Example');
+  });
+
+  test('lets reviewers save a Last Post translation before publication', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorLogin = await login(contributor);
+    const editorLogin = await login(editor);
+
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        deceased: {
+          fullRank: 'Sergeant',
+          firstName: 'Last',
+          surname: 'Post',
+          postNominal: 'CD',
+        },
+        messageLanguage: 'en',
+        message: 'Submitted English Last Post notice.',
+      })
+      .expect(201);
+
+    const notice = await LastPostMessage.findOne();
+    const frenchTranslation = 'Avis du Dernier appel ajouté par le réviseur.';
+
+    await request(app)
+      .patch(`/api/last-posts/${notice._id}/review-content`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({ language: 'fr', message: frenchTranslation })
+      .expect(403);
+
+    const response = await request(app)
+      .patch(`/api/last-posts/${notice._id}/review-content`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ language: 'fr', message: frenchTranslation })
+      .expect(200);
+
+    assert.equal(response.body.lastPost.status, 'pending');
+    assert.equal(response.body.lastPost.messages.fr, frenchTranslation);
+
+    const savedNotice = await LastPostMessage.findById(notice._id);
+    assert.equal(savedNotice.status, 'pending');
+    assert.equal(savedNotice.messages.fr, frenchTranslation);
+
+    const auditEntry = await AuditLog.findOne({
+      action: 'content.review_content_updated',
+      target: savedNotice._id,
+    });
+    assert.equal(auditEntry.targetType, 'lastPost');
+    assert.equal(auditEntry.metadata.language, 'fr');
+
+    await request(app)
+      .patch(`/api/last-posts/${notice._id}/review`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ action: 'publish' })
+      .expect(200);
   });
 });
 
@@ -971,6 +1077,55 @@ describe('event, page, and comment workflows', () => {
     assert.equal(publicEvent.body.event.title.en, 'Integration exercise');
     assert.equal(publicEvent.body.event.title.fr, "Exercice d'integration");
     assert.equal((await Event.findById(event._id)).status, 'published');
+  });
+
+  test('lets reviewers update one pending event language without changing its review state', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorSession = await login(contributor);
+    const editorSession = await login(editor);
+
+    const submitted = await request(app)
+      .post('/api/events')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(201);
+
+    const eventId = submitted.body.event._id;
+    const changes = {
+      title: 'Exercice d’intégration révisé',
+      location: 'Ottawa, Ontario',
+      description: 'Description française ajoutée par le réviseur.',
+      registration: 'Inscription auprès de la section locale.',
+    };
+
+    await request(app)
+      .patch(`/api/events/${eventId}/review-content`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({ language: 'fr', content: changes })
+      .expect(403);
+
+    const response = await request(app)
+      .patch(`/api/events/${eventId}/review-content`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ language: 'fr', content: changes })
+      .expect(200);
+
+    assert.equal(response.body.event.status, 'pending');
+    assert.equal(response.body.event.title.en, 'Integration exercise');
+    assert.deepEqual(response.body.event.title.fr, changes.title);
+
+    const updatedEvent = await Event.findById(eventId);
+    assert.equal(updatedEvent.status, 'pending');
+    assert.equal(updatedEvent.location.fr, changes.location);
+    assert.equal(updatedEvent.description.fr, changes.description);
+    assert.equal(updatedEvent.registration.fr, changes.registration);
+
+    const auditEntry = await AuditLog.findOne({
+      action: 'content.review_content_updated',
+      target: updatedEvent._id,
+    });
+    assert.equal(auditEntry.metadata.language, 'fr');
   });
 
   test('returns published events that overlap a requested calendar range', async () => {
@@ -1236,9 +1391,10 @@ describe('media lifecycle', () => {
       .get('/api/admin/media?search=ceremony')
       .set('Authorization', bearer(session.body.token))
       .expect(200);
-    assert.deepEqual(searched.body.media.map((asset) => asset.key), [
-      retirementAsset.key,
-    ]);
+    assert.deepEqual(
+      searched.body.media.map((asset) => asset.key),
+      [retirementAsset.key],
+    );
 
     const filtered = await request(app)
       .get('/api/admin/media?type=retirement')

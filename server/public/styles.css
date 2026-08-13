@@ -10507,7 +10507,7 @@ a.my-event-card-row:focus-visible {
   min-height: 50px;
   padding: 11px 14px;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 9px;
   border-bottom: 1px solid var(--branch-grey-200);
   background: linear-gradient(180deg, var(--branch-grey-100), #e4e7ea);
@@ -10530,6 +10530,107 @@ a.my-event-card-row:focus-visible {
 
 .review-language-body {
   padding: 15px;
+}
+
+.review-language-controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.review-language-edit-button,
+.review-language-cancel-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--branch-grey-500);
+  border-radius: 2px;
+  background: var(--white);
+  color: var(--navy-900);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.review-language-edit-button svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.review-language-edit-button:hover,
+.review-language-edit-button:focus-visible,
+.review-language-cancel-button:hover,
+.review-language-cancel-button:focus-visible {
+  border-color: var(--gold-600);
+  background: #fff8e7;
+  color: var(--gold-700);
+}
+
+.review-language-cancel-button {
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.review-language-save-button.event-submit-button {
+  min-width: 0;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 10px;
+}
+
+.review-language-editor {
+  display: grid;
+  gap: 14px;
+}
+
+.review-language-editor-field {
+  display: grid;
+  gap: 5px;
+}
+
+.review-language-editor .review-content-label {
+  margin: 0;
+}
+
+.review-language-editor input,
+.review-language-editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 2px;
+  outline: none;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.review-language-editor textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.review-language-editor input:hover,
+.review-language-editor textarea:hover {
+  border-color: var(--branch-grey-500);
+}
+
+.review-language-editor input:focus,
+.review-language-editor textarea:focus {
+  border-color: var(--gold-600);
+  box-shadow: 0 0 0 3px rgba(197, 141, 35, 0.14);
 }
 
 .review-content-label {
@@ -10611,6 +10712,17 @@ a.my-event-card-row:focus-visible {
 .retirement-review-message-fields {
   margin: 0 18px 18px;
   padding: 14px 0 0;
+}
+
+.retirement-review-message-value,
+.last-post-review-message-value {
+  min-height: 168px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .retirement-review-message-input,
@@ -14501,6 +14613,14 @@ html[data-theme='dark'] .last-post-submit-button {
     padding: 12px;
   }
 
+  .review-language-heading {
+    padding: 9px 10px;
+  }
+
+  .review-language-save-button.event-submit-button {
+    padding: 0 9px;
+  }
+
   .review-actions {
     flex-direction: column-reverse;
   }
@@ -16160,6 +16280,8 @@ html[data-theme='dark'] .review-event-registration,
 html[data-theme='dark'] .review-event-title-value,
 html[data-theme='dark'] .review-event-location,
 html[data-theme='dark'] .review-event-description,
+html[data-theme='dark'] .retirement-review-message-value,
+html[data-theme='dark'] .last-post-review-message-value,
 html[data-theme='dark'] .comment-review-body {
   color: var(--dark-text-soft);
 }
@@ -16211,7 +16333,11 @@ html[data-theme='dark'] .review-cancel-action {
 
 html[data-theme='dark'] .review-rejection-reason,
 html[data-theme='dark'] .retirement-review-message-input,
-html[data-theme='dark'] .last-post-review-message-input {
+html[data-theme='dark'] .last-post-review-message-input,
+html[data-theme='dark'] .review-language-editor input,
+html[data-theme='dark'] .review-language-editor textarea,
+html[data-theme='dark'] .review-language-edit-button,
+html[data-theme='dark'] .review-language-cancel-button {
   border-color: var(--dark-border-strong);
   background: var(--dark-bg-elevated);
   color: var(--dark-text);
@@ -16219,7 +16345,11 @@ html[data-theme='dark'] .last-post-review-message-input {
 
 html[data-theme='dark'] .review-rejection-reason:hover,
 html[data-theme='dark'] .retirement-review-message-input:hover,
-html[data-theme='dark'] .last-post-review-message-input:hover {
+html[data-theme='dark'] .last-post-review-message-input:hover,
+html[data-theme='dark'] .review-language-editor input:hover,
+html[data-theme='dark'] .review-language-editor textarea:hover,
+html[data-theme='dark'] .review-language-edit-button:hover,
+html[data-theme='dark'] .review-language-cancel-button:hover {
   border-color: rgba(240, 199, 108, 0.58);
 }
 

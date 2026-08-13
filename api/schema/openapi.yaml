@@ -604,7 +604,17 @@ paths:
           in: query
           schema:
             type: string
-            enum: [all, retirement, last-post, event, page, upload, migration, unattached]
+            enum:
+              [
+                all,
+                retirement,
+                last-post,
+                event,
+                page,
+                upload,
+                migration,
+                unattached,
+              ]
         - name: search
           in: query
           description: Case-insensitive match against filename, image name, key, CDN slug, or upload label.
@@ -987,7 +997,8 @@ paths:
                       properties:
                         type:
                           type: string
-                          enum: [event, retirement-message, last-post-message, page]
+                          enum:
+                            [event, retirement-message, last-post-message, page]
                         sourceId:
                           type: string
                         title:
@@ -1232,6 +1243,25 @@ paths:
       responses:
         "200":
           description: Event edit payload.
+  /api/events/{eventId}/review-content:
+    patch:
+      tags: [Events]
+      summary: Update one language of a pending event during review.
+      description: Updates title, location, description, and registration text for one language without changing the pending review status.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        $ref: "#/components/requestBodies/EventReviewContent"
+      responses:
+        "200":
+          description: Updated event review content.
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/events/{eventId}/review:
     patch:
       tags: [Events]
@@ -1280,6 +1310,23 @@ paths:
       responses:
         "200":
           description: Last Post notice.
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/last-posts/{messageId}/review-content:
+    patch:
+      tags: [Last Posts]
+      summary: Update one language of a pending Last Post notice during review.
+      description: Updates one Last Post translation without changing the pending review status.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/LastPostReviewContent"
+      responses:
+        "200":
+          description: Updated Last Post review content.
+        "400":
+          $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
   /api/last-posts/{messageId}/review:
@@ -1410,6 +1457,25 @@ paths:
       responses:
         "201":
           description: Created comment.
+  /api/retirement-messages/{messageId}/review-content:
+    patch:
+      tags: [Retirements]
+      summary: Update one language of a pending retirement message during review.
+      description: Updates one retirement message translation without changing the pending review status. Each saved message must contain at least 100 characters.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/RetirementReviewContent"
+      responses:
+        "200":
+          description: Updated retirement review content.
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/retirement-messages/{messageId}/review:
     patch:
       tags: [Retirements]
@@ -1678,7 +1744,17 @@ components:
                 properties:
                   member:
                     type: object
-                    required: [fullName, rankLanguage, decorations, lastUnit, cafEnrollmentDate, releaseDate, neededByDate, dwdParadeRequested]
+                    required:
+                      [
+                        fullName,
+                        rankLanguage,
+                        decorations,
+                        lastUnit,
+                        cafEnrollmentDate,
+                        releaseDate,
+                        neededByDate,
+                        dwdParadeRequested,
+                      ]
                     properties:
                       fullName: { type: string }
                       rankLanguage: { type: string, enum: [en, fr] }
@@ -1703,7 +1779,8 @@ components:
                         fullName: { type: string }
                   mailingAddress:
                     type: object
-                    required: [line1, line2, city, province, postalCode, country]
+                    required:
+                      [line1, line2, city, province, postalCode, country]
                     properties:
                       line1: { type: string }
                       line2: { type: string }
@@ -1726,6 +1803,62 @@ components:
                 type: string
               reason:
                 type: string
+    EventReviewContent:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [language, content]
+            properties:
+              language:
+                type: string
+                enum: [en, fr]
+              content:
+                type: object
+                required: [title, location, description, registration]
+                properties:
+                  title:
+                    type: string
+                    maxLength: 500
+                  location:
+                    type: string
+                    maxLength: 500
+                  description:
+                    type: string
+                    maxLength: 10000
+                  registration:
+                    type: string
+                    maxLength: 10000
+    RetirementReviewContent:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [language, message]
+            properties:
+              language:
+                type: string
+                enum: [en, fr]
+              message:
+                type: string
+                minLength: 100
+                maxLength: 10000
+    LastPostReviewContent:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [language, message]
+            properties:
+              language:
+                type: string
+                enum: [en, fr]
+              message:
+                type: string
+                maxLength: 10000
     TranslationUpdate:
       required: true
       content:

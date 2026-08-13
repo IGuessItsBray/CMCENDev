@@ -15,6 +15,7 @@ const adminRoutes = require('./routes/admin');
 const analyticsRoutes = require('./routes/analytics');
 const auditLogRoutes = require('./routes/audit-logs');
 const authRoutes = require('./routes/auth');
+const certificateRequestRoutes = require('./routes/certificate-requests');
 const contentOptionRoutes = require('./routes/content-options');
 const diagnosticsRoutes = require('./routes/diagnostics');
 const eventRoutes = require('./routes/events');
@@ -27,11 +28,19 @@ const timerRoutes = require('./routes/timers');
 const uploadRoutes = require('./routes/uploads');
 const mfaRoutes = require('./routes/mfa');
 const pageRoutes = require('./routes/pages');
+const { rateLimitByIp } = require('./middleware/rate-limit');
 
 const app = express();
 const isApiDocsEnabled = process.env.ENABLE_API_DOCS === 'true';
+const apiRateLimit = rateLimitByIp(
+  'api-ip',
+  'API_RATE_LIMIT_WINDOW_SECONDS',
+  'API_RATE_LIMIT_MAX',
+  { windowSeconds: 60, max: 300 },
+);
 app.set('trust proxy', true);
 app.use(express.json());
+app.use('/api', apiRateLimit);
 app.use(translationRoutes);
 app.use(contentOptionRoutes);
 
@@ -150,6 +159,7 @@ app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/last-posts', lastPostRoutes);
 app.use('/api/retirement-messages', retirementMessageRoutes);
+app.use('/api/certificate-requests', certificateRequestRoutes);
 app.use('/api/search', searchRoutes);
 app.use(pageRoutes);
 app.use(serveExtensionlessHtml);

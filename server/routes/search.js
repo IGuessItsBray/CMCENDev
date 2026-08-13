@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs/promises');
 const path = require('path');
 const Event = require('../models/Event');
+const LastPostMessage = require('../models/LastPostMessage');
 const RetirementMessage = require('../models/RetirementMessage');
 
 const router = express.Router();
@@ -11,6 +12,10 @@ const MAX_RESULTS = 30;
 const MAX_RESULTS_PER_SOURCE = 10;
 
 const STATIC_PAGES = [
+  { path: '/awards', file: 'awards.html', type: 'page', title: 'Awards' },
+  { path: '/association_directors', file: 'association_directors.html', type: 'page', title: 'Association Directors and Advisors' },
+  { path: '/branch_advisory_council', file: 'branch_advisory_council.html', type: 'page', title: 'Branch Advisory Council' },
+  { path: '/ce_professions', file: 'ce_professions.html', type: 'page', title: 'Communications & Electronics Professions' },
   {
     path: '/index',
     file: 'index.html',
@@ -24,10 +29,66 @@ const STATIC_PAGES = [
     title: 'About the C&E Family',
   },
   {
+    path: '/about_branch',
+    file: 'about_branch.html',
+    type: 'page',
+    title: 'About the C&E Branch',
+  },
+  {
+    path: '/about_association',
+    file: 'about_association.html',
+    type: 'page',
+    title: 'About the C&E Association',
+  },
+  {
+    path: '/about_museum_foundation',
+    file: 'about_museum_foundation.html',
+    type: 'page',
+    title: 'About the C&E Museum & Foundation',
+  },
+  {
+    path: '/affiliate_offers',
+    file: 'affiliate_offers.html',
+    type: 'page',
+    title: 'Affiliates',
+  },
+  {
     path: '/calendar',
     file: 'calendar.html',
     type: 'page',
     title: 'Events Calendar',
+  },
+  { path: '/certificates', file: 'certificates.html', type: 'page', title: 'Certificates' },
+  { path: '/doctrine_hub', file: 'doctrine_hub.html', type: 'page', title: 'Doctrine Hub' },
+  { path: '/gallery', file: 'gallery.html', type: 'page', title: 'Gallery' },
+  { path: '/governance', file: 'governance.html', type: 'page', title: 'Governance' },
+  {
+    path: '/bursaries',
+    file: 'bursaries.html',
+    type: 'page',
+    title: 'Bursaries and Education',
+  },
+  {
+    path: '/cfmws',
+    file: 'cfmws.html',
+    type: 'page',
+    title: 'Canadian Forces Morale and Welfare Services',
+  },
+  {
+    path: '/history',
+    file: 'history.html',
+    type: 'page',
+    title: 'History',
+  },
+  { path: '/honours_awards', file: 'honours_awards.html', type: 'page', title: 'Honours and Awards' },
+  { path: '/leadership', file: 'leadership.html', type: 'page', title: 'Leadership' },
+  { path: '/news_stories', file: 'news_stories.html', type: 'page', title: 'News Stories' },
+  { path: '/promotions', file: 'promotions.html', type: 'page', title: 'Promotions' },
+  {
+    path: '/veteran_services',
+    file: 'veteran_services.html',
+    type: 'page',
+    title: 'Veteran Services',
   },
   {
     path: '/submit-retirement',
@@ -35,6 +96,13 @@ const STATIC_PAGES = [
     type: 'page',
     title: 'Submit a Retirement Message',
   },
+  {
+    path: '/support_troops',
+    file: 'support_troops.html',
+    type: 'page',
+    title: 'Support Our Troops',
+  },
+  { path: '/standing_orders', file: 'standing_orders.html', type: 'page', title: 'Standing Orders' },
 ];
 
 function cleanQuery(value) {
@@ -115,6 +183,7 @@ function scoreText(queryTerms, fields) {
 
 function sortResults(results) {
   return results
+    .filter((result) => Boolean(result?.url))
     .sort((left, right) => {
       if (right.score !== left.score) {
         return right.score - left.score;
@@ -127,6 +196,62 @@ function sortResults(results) {
     })
     .slice(0, MAX_RESULTS)
     .map(({ score, ...result }) => result);
+}
+
+async function searchLastPostMessages(queryTerms, language) {
+  const fields = [
+    'title',
+    'slug',
+    'deceased.fullRank',
+    'deceased.firstName',
+    'deceased.surname',
+    'deceased.postNominal',
+    'messages.en',
+    'messages.fr',
+  ];
+  const andClauses = queryTerms.map((term) => {
+    const regex = new RegExp(escapeRegex(term), 'i');
+    return { $or: fields.map((field) => ({ [field]: regex })) };
+  });
+  const messages = await LastPostMessage.find({
+    status: 'published',
+    $and: andClauses,
+  })
+    .select('title deceased messages publishedAt createdAt')
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .limit(MAX_RESULTS_PER_SOURCE)
+    .lean();
+
+  return messages.map((message) => {
+    const name = [
+      message.deceased?.fullRank,
+      message.deceased?.firstName,
+      message.deceased?.surname,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const title = message.title || (name ? `Last Post: ${name}` : 'Last Post');
+    const summary = truncate(getLocalizedText(message.messages, language));
+
+    return {
+      type: 'last-post-message',
+      sourceId: String(message._id),
+      title,
+      summary,
+      url: `/last-post-message?id=${encodeURIComponent(String(message._id))}`,
+      date: message.publishedAt || message.createdAt || null,
+      score: scoreText(queryTerms, [
+        title,
+        summary,
+        message.messages?.en,
+        message.messages?.fr,
+        message.deceased?.fullRank,
+        message.deceased?.firstName,
+        message.deceased?.surname,
+        message.deceased?.postNominal,
+      ]),
+    };
+  });
 }
 
 async function searchEvents(query, queryTerms, language) {
@@ -317,13 +442,20 @@ router.get('/', async (req, res) => {
     }
 
     const queryTerms = getQueryTerms(query);
-    const [events, retirementMessages, pages] = await Promise.all([
+    const [events, retirementMessages, lastPostMessages, pages] =
+      await Promise.all([
       searchEvents(query, queryTerms, language),
       searchRetirementMessages(query, queryTerms),
+      searchLastPostMessages(queryTerms, language),
       searchStaticPages(queryTerms),
-    ]);
+      ]);
 
-    const results = sortResults([...events, ...retirementMessages, ...pages]);
+    const results = sortResults([
+      ...events,
+      ...retirementMessages,
+      ...lastPostMessages,
+      ...pages,
+    ]);
 
     res.json({
       query,

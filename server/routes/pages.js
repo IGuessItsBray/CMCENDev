@@ -69,14 +69,39 @@ const SITEMAP_ACCOUNT_HTML = new Set([
   'register.html',
 ]);
 const SITEMAP_STATIC_LABELS = Object.freeze({
+  'awards.html': { en: 'Awards', fr: 'Prix' },
   'about-family.html': { en: 'About the C&E Family', fr: 'Famille des C et E' },
+  'about_association.html': {
+    en: 'About the C&E Association',
+    fr: 'À propos de l’Association des C et E',
+  },
+  'about_branch.html': { en: 'About the C&E Branch', fr: 'À propos de la Branche des C et E' },
+  'about_museum_foundation.html': {
+    en: 'About the C&E Museum & Foundation',
+    fr: 'À propos du Musée et de la Fondation des C et E',
+  },
+  'association_directors.html': { en: 'Association Directors and Advisors', fr: 'Directeurs et conseillers de l’Association' },
+  'affiliate_offers.html': { en: 'Affiliates', fr: 'Affiliés' },
+  'bursaries.html': { en: 'Bursaries and Education', fr: 'Bourses et éducation' },
+  'branch_advisory_council.html': { en: 'Branch Advisory Council', fr: 'Conseil consultatif de la Branche' },
   'calendar.html': { en: 'Events Calendar', fr: 'Calendrier des événements' },
+  'certificates.html': { en: 'Certificates', fr: 'Certificats' },
+  'ce_professions.html': { en: 'Communications & Electronics Professions', fr: 'Professions des communications et de l’électronique' },
+  'doctrine_hub.html': { en: 'Doctrine Hub', fr: 'Centre de doctrine' },
+  'cfmws.html': { en: 'Canadian Forces Morale and Welfare Services', fr: 'Services de bien-être et moral des Forces canadiennes' },
   'dashboard.html': {
     en: 'Account dashboard',
     fr: 'Tableau de bord du compte',
   },
   'event.html': { en: 'Event details', fr: 'Détails de l’événement' },
   'index.html': { en: 'Home', fr: 'Accueil' },
+  'history.html': { en: 'History', fr: 'Histoire' },
+  'honours_awards.html': { en: 'Honours and Awards', fr: 'Distinctions et prix' },
+  'leadership.html': { en: 'Leadership', fr: 'Leadership' },
+  'gallery.html': { en: 'Gallery', fr: 'Galerie' },
+  'governance.html': { en: 'Governance', fr: 'Gouvernance' },
+  'news_stories.html': { en: 'News Stories', fr: 'Nouvelles' },
+  'promotions.html': { en: 'Promotions', fr: 'Promotions' },
   'last-post.html': { en: 'Last Post', fr: 'Dernière sonnerie' },
   'last-post-message.html': {
     en: 'Last Post message',
@@ -101,6 +126,9 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     en: 'Submit a retirement message',
     fr: 'Soumettre un message de retraite',
   },
+  'support_troops.html': { en: 'Support Our Troops', fr: 'Appuyons nos troupes' },
+  'standing_orders.html': { en: 'Standing Orders', fr: 'Ordres permanents' },
+  'veteran_services.html': { en: 'Veteran Services', fr: 'Services aux vétérans' },
 });
 
 function cleanText(value, maxLength = 10000) {

@@ -1147,6 +1147,100 @@ router.patch('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// update the event copy for one language while it is awaiting review
+router.patch(
+  '/:eventId/review-content',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      const { language, content } = req.body;
+      const editableFields = [
+        'title',
+        'location',
+        'description',
+        'registration',
+      ];
+
+      if (!['en', 'fr'].includes(language)) {
+        return res.status(400).json({
+          error: 'Review content language must be English or French',
+        });
+      }
+
+      if (
+        !content ||
+        typeof content !== 'object' ||
+        Array.isArray(content) ||
+        editableFields.some((field) => typeof content[field] !== 'string')
+      ) {
+        return res.status(400).json({
+          error:
+            'Review content must include title, location, description, and registration text',
+        });
+      }
+
+      const event = await Event.findById(req.params.eventId);
+
+      if (!event) {
+        return res.status(404).json({
+          error: 'Event not found',
+        });
+      }
+
+      if (event.status !== 'pending') {
+        return res.status(409).json({
+          error: 'Only pending events can have review content updated',
+        });
+      }
+
+      editableFields.forEach((field) => {
+        event.set(`${field}.${language}`, cleanString(content[field]));
+      });
+      event.updatedBy = req.user._id;
+
+      await event.save();
+
+      await writeAuditLog({
+        req,
+        action: 'content.review_content_updated',
+        actor: req.user,
+        targetType: 'event',
+        target: event._id,
+        targetSnapshot: getEventSnapshot(event),
+        metadata: {
+          source: 'review-content',
+          language,
+          fields: editableFields,
+        },
+      });
+
+      return res.json({
+        message: 'Event review content updated',
+        event,
+      });
+    } catch (error) {
+      console.error('Could not update event review content:', error);
+
+      if (error.name === 'CastError') {
+        return res.status(400).json({
+          error: 'Invalid event ID',
+        });
+      }
+
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({
+          error: getValidationErrorMessage(error),
+        });
+      }
+
+      return res.status(500).json({
+        error: 'Could not update event review content',
+      });
+    }
+  },
+);
+
 // publish or reject an event
 router.patch(
   '/:eventId/review',

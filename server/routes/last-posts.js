@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const LastPostMessage = require('../models/LastPostMessage');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
+const { writeAuditLog } = require('../services/audit-log');
 const { cleanString } = require('../services/content-utils');
 const { linkMediaAssetToSource } = require('../services/media-assets');
 
@@ -119,6 +120,15 @@ function getLocalizedMessages(lastPost) {
   return messages;
 }
 
+function getLastPostSnapshot(lastPost) {
+  return {
+    title: getDeceasedName(lastPost),
+    status: lastPost.status,
+    createdBy: lastPost.createdBy,
+    publishedAt: lastPost.publishedAt,
+  };
+}
+
 function serializeLastPost(lastPost) {
   const deceased = lastPost.deceased?.toObject?.() || lastPost.deceased || {};
 
@@ -203,6 +213,12 @@ router.post(
           .json({ error: 'A Last Post notice is required' });
       }
 
+      if (message.length > 10000) {
+        return res.status(400).json({
+          error: 'The Last Post notice must be 10000 characters or fewer',
+        });
+      }
+
       if (!isValidImageUrl(imageUrl)) {
         return res.status(400).json({
           error: 'The image URL must begin with http:// or https://',
@@ -260,6 +276,80 @@ router.get(
 );
 
 router.patch(
+  '/:messageId/review-content',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      const { messageId } = req.params;
+      const { language, message } = req.body;
+
+      if (!mongoose.Types.ObjectId.isValid(messageId)) {
+        return res.status(404).json({ error: 'Last Post notice not found' });
+      }
+
+      if (!['en', 'fr'].includes(language)) {
+        return res.status(400).json({
+          error: 'Review content language must be English or French',
+        });
+      }
+
+      if (typeof message !== 'string') {
+        return res.status(400).json({
+          error: 'Last Post review message text is required',
+        });
+      }
+
+      const lastPost = await LastPostMessage.findOne({
+        _id: messageId,
+        status: 'pending',
+      });
+
+      if (!lastPost) {
+        return res
+          .status(404)
+          .json({ error: 'Pending Last Post notice not found' });
+      }
+
+      lastPost.set(`messages.${language}`, cleanString(message));
+      lastPost.markModified('messages');
+      await lastPost.save();
+
+      await writeAuditLog({
+        req,
+        action: 'content.review_content_updated',
+        actor: req.user,
+        targetType: 'lastPost',
+        target: lastPost._id,
+        targetSnapshot: getLastPostSnapshot(lastPost),
+        metadata: {
+          source: 'review-content',
+          language,
+          fields: ['message'],
+        },
+      });
+
+      return res.json({
+        message: 'Last Post review content updated',
+        lastPost,
+      });
+    } catch (error) {
+      console.error('Could not update Last Post review content:', error);
+
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({
+          error: 'The Last Post notice must be 10000 characters or fewer',
+        });
+      }
+
+      return res
+        .status(500)
+        .json({ error: 'Could not update Last Post review content' });
+    }
+  },
+);
+
+router.patch(
   '/:messageId/review',
   authMiddleware,
   requirePermission('canReviewAndPublish'),
@@ -304,9 +394,12 @@ router.patch(
         return res.json({ lastPost });
       }
 
+      const storedMessages = getLocalizedMessages(lastPost);
       const messages = {
-        en: cleanString(req.body?.messages?.en),
-        fr: cleanString(req.body?.messages?.fr),
+        en:
+          cleanString(req.body?.messages?.en) || cleanString(storedMessages.en),
+        fr:
+          cleanString(req.body?.messages?.fr) || cleanString(storedMessages.fr),
       };
 
       if (!messages.en || !messages.fr) {

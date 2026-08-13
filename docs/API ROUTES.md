@@ -9,6 +9,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 ## Conventions
 
 - JSON APIs generally return `{ error: string }` on failure.
+- Every `/api` endpoint is rate limited by source IP (300 requests per minute by default). Responses include `RateLimit-*` headers; throttled requests return `429` with `Retry-After`. Sensitive password-reset and MFA verification routes have stricter limits listed below.
 - Authenticated routes expect `Authorization: Bearer <jwt>`.
 - MFA temp-flow routes may also accept a temp token through `x-temp-token`, `tempToken` in the JSON body, or `tempToken` in the query string.
 - Permission names below use the legacy flag used in middleware, with the catalog key in parentheses where helpful.
@@ -60,8 +61,8 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `POST`   | `/api/session/refresh`                | Refresh-token cookie                                             | Exchange a valid refresh cookie for a new access token.                                                                                                               |
 | `POST`   | `/api/session/logout`                 | Refresh-token cookie                                             | Revoke the refresh session and clear its cookie.                                                                                                                      |
 | `POST`   | `/api/email-verification/confirm`     | Public                                                           | Confirm email verification token.                                                                                                                                     |
-| `POST`   | `/api/password-reset/request`         | Public                                                           | Request password reset email.                                                                                                                                         |
-| `POST`   | `/api/password-reset/confirm`         | Public                                                           | Complete password reset with token.                                                                                                                                   |
+| `POST`   | `/api/password-reset/request`         | Public; rate limited                                             | Request password reset email. Limited by source IP (5 per 15 minutes) and submitted email (3 per hour).                                                               |
+| `POST`   | `/api/password-reset/confirm`         | Public; rate limited                                             | Complete password reset with token. Limited by source IP (5 per 15 minutes).                                                                                          |
 | `GET`    | `/api/me`                             | Authenticated                                                    | Return current user, permissions, and notification summary.                                                                                                           |
 | `GET`    | `/api/notifications`                  | Authenticated                                                    | Return compact notification list.                                                                                                                                     |
 | `POST`   | `/api/ghost/upgrade`                  | Authenticated                                                    | Upgrade/merge a ghost account into the current authenticated account.                                                                                                 |
@@ -74,21 +75,21 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 
 Mounted at `/api/mfa`.
 
-| Method   | Path                                          | Access                      | Purpose                                                                                       |
-| -------- | --------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------- |
-| `POST`   | `/api/mfa/webauthn/register/options`          | Authenticated               | Generate passkey registration options.                                                        |
-| `POST`   | `/api/mfa/webauthn/register/verify`           | Authenticated               | Verify and store new passkey credential.                                                      |
-| `POST`   | `/api/mfa/webauthn/authenticate/options`      | Authenticated or temp token | Generate passkey authentication options.                                                      |
-| `POST`   | `/api/mfa/webauthn/authenticate/verify`       | Authenticated or temp token | Verify passkey auth; completes login when using temp token.                                   |
-| `POST`   | `/api/mfa/totp/setup`                         | Authenticated               | Create a pending TOTP secret with a server-assigned authenticator name and QR data.           |
-| `GET`    | `/api/mfa/totp/status`                        | Authenticated               | Return TOTP enabled/pending status.                                                           |
-| `GET`    | `/api/mfa/totp/qrcode`                        | Authenticated               | Return QR code for pending/current TOTP setup.                                                |
-| `POST`   | `/api/mfa/totp/verify`                        | Authenticated or temp token | Verify TOTP; completes login when using temp token.                                           |
-| `DELETE` | `/api/mfa/totp`                               | Authenticated               | Disable active TOTP (guarded against removing the last MFA method) or cancel a pending setup. |
-| `GET`    | `/api/mfa/webauthn/credentials`               | Authenticated               | List registered passkeys.                                                                     |
-| `PATCH`  | `/api/mfa/webauthn/credentials/:credentialID` | Authenticated               | Rename a passkey.                                                                             |
-| `DELETE` | `/api/mfa/webauthn/credentials/:credentialID` | Authenticated               | Delete a passkey, guarded against removing the last MFA method.                               |
-| `POST`   | `/api/mfa/webauthn/cleanup`                   | Authenticated               | Remove invalid/empty passkey records.                                                         |
+| Method   | Path                                          | Access                                    | Purpose                                                                                                                   |
+| -------- | --------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `POST`   | `/api/mfa/webauthn/register/options`          | Authenticated                             | Generate passkey registration options.                                                                                    |
+| `POST`   | `/api/mfa/webauthn/register/verify`           | Authenticated                             | Verify and store new passkey credential.                                                                                  |
+| `POST`   | `/api/mfa/webauthn/authenticate/options`      | Authenticated or temp token               | Generate passkey authentication options.                                                                                  |
+| `POST`   | `/api/mfa/webauthn/authenticate/verify`       | Authenticated or temp token; rate limited | Verify passkey auth; completes login when using temp token. Limited to 5 verification attempts per account per 5 minutes. |
+| `POST`   | `/api/mfa/totp/setup`                         | Authenticated                             | Create a pending TOTP secret with a server-assigned authenticator name and QR data.                                       |
+| `GET`    | `/api/mfa/totp/status`                        | Authenticated                             | Return TOTP enabled/pending status.                                                                                       |
+| `GET`    | `/api/mfa/totp/qrcode`                        | Authenticated                             | Return QR code for pending/current TOTP setup.                                                                            |
+| `POST`   | `/api/mfa/totp/verify`                        | Authenticated or temp token; rate limited | Verify TOTP; completes login when using temp token. Limited to 5 verification attempts per account per 5 minutes.         |
+| `DELETE` | `/api/mfa/totp`                               | Authenticated                             | Disable active TOTP (guarded against removing the last MFA method) or cancel a pending setup.                             |
+| `GET`    | `/api/mfa/webauthn/credentials`               | Authenticated                             | List registered passkeys.                                                                                                 |
+| `PATCH`  | `/api/mfa/webauthn/credentials/:credentialID` | Authenticated                             | Rename a passkey.                                                                                                         |
+| `DELETE` | `/api/mfa/webauthn/credentials/:credentialID` | Authenticated                             | Delete a passkey, guarded against removing the last MFA method.                                                           |
+| `POST`   | `/api/mfa/webauthn/cleanup`                   | Authenticated                             | Remove invalid/empty passkey records.                                                                                     |
 
 ## Analytics
 
@@ -119,7 +120,7 @@ Mounted at `/api/admin`.
 | `POST`   | `/api/admin/roles`                          | Authenticated + `canManageRoles`                                              | Create custom role.                                                                                                                                                                                                                                                           |
 | `PATCH`  | `/api/admin/roles/:roleId`                  | Authenticated + `canManageRoles`                                              | Update custom role.                                                                                                                                                                                                                                                           |
 | `DELETE` | `/api/admin/roles/:roleId`                  | Authenticated + `canManageRoles`                                              | Delete custom role and remove it from users.                                                                                                                                                                                                                                  |
-| `GET`    | `/api/admin/media`                          | Authenticated + `canViewMediaLibrary`                                         | List media assets with linked event, retirement, and Last Post usage. Query: `limit`, `cursor`, `sort=newest\|oldest\|name\|size\|orphaned`.                                                                                                                                  |
+| `GET`    | `/api/admin/media`                          | Authenticated + `canViewMediaLibrary`                                         | List media assets with linked event, retirement, and Last Post usage. Query: `limit`, `cursor`, `sort=newest\|oldest\|name\|size\|orphaned`, `type=all\|retirement\|last-post\|event\|page\|upload\|migration\|unattached`, and `search` (file or image name).                |
 | `POST`   | `/api/admin/media/bulk-delete`              | Authenticated + `canDeleteMedia`                                              | Delete selected unattached media assets by JSON body `keys`; attached assets are skipped and reported.                                                                                                                                                                        |
 | `DELETE` | `/api/admin/media/:key`                     | Authenticated + `canDeleteMedia`                                              | Delete unattached media by key.                                                                                                                                                                                                                                               |
 | `GET`    | `/api/admin/users`                          | Authenticated + `canReadUsers`                                                | List lightweight user rows. Query: `query`, `limit` from 1-100. Post summaries and editable detail load from the user detail endpoint.                                                                                                                                        |
@@ -181,9 +182,9 @@ Banner payload fields: `title`, `text.en`, `text.fr`, `color`, `textColor`, `sta
 
 Mounted at `/api/search`.
 
-| Method | Path          | Access | Purpose                                                                                                                                                                                 |
-| ------ | ------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`  | `/api/search` | Public | Search published events, retirement messages, and public pages. Query: `q`, optional `lang` (`en` or `fr`). Each result includes a canonical relative `url` for its public destination. |
+| Method | Path          | Access | Purpose                                                                                                                                                                                   |
+| ------ | ------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/search` | Public | Search published events, retirement messages, Last Post notices, and public pages. Query: `q`, optional `lang` (`en` or `fr`). Only results with a canonical relative `url` are returned. |
 
 ## Pages and Navigation
 
@@ -207,20 +208,39 @@ Defined in `routes/pages.js`, mounted at root.
 | `PATCH`  | `/api/admin/navigation-items/:itemId` | Authenticated + `canManageNavigation` | Update navigation item/group.                                                                                                                             |
 | `DELETE` | `/api/admin/navigation-items/:itemId` | Authenticated + `canManageNavigation` | Delete navigation item/group.                                                                                                                             |
 
+## Certificate Requests
+
+Mounted at `/api/certificate-requests`.
+
+Certificate request fulfillment is separate from editorial review because the
+records include private mailing and family information. Access requires
+`canManageCertificateRequests` (`certificates.manage`), granted by default to
+editors and other review staff, and available for assignment through custom
+roles. Staff must confirm each requested certificate was printed before a
+request becomes ready to mail, then separately confirm the completed package
+was mailed. Both transitions record the acting user, timestamp, and audit entry.
+
+| Method  | Path                                                     | Access                                         | Purpose                                                                                                                                                                             |
+| ------- | -------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`   | `/api/certificate-requests/count`                        | Authenticated + `canManageCertificateRequests` | Return `pending`, `readyToMail`, and total actionable request counts for the dashboard.                                                                                             |
+| `GET`   | `/api/certificate-requests`                              | Authenticated + `canManageCertificateRequests` | List actionable requests by default. Query: `status=pending\|ready_to_mail\|mailed\|printed\|actionable\|all`.                                                                      |
+| `PATCH` | `/api/certificate-requests/:certificateRequestId/status` | Authenticated + `canManageCertificateRequests` | Confirm printing with every certificate key: `{ "status": "ready_to_mail", "printedCertificateKeys": ["member", "family:0"] }`; then confirm mailing with `{ "status": "mailed" }`. |
+
 ## Events
 
 Mounted at `/api/events`.
 
-| Method  | Path                          | Access                                | Purpose                                                                                                                                  |
-| ------- | ----------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`   | `/api/events`                 | Public                                | List published upcoming events, or published events overlapping a requested `from`/`to` calendar range.                                  |
-| `POST`  | `/api/events`                 | Authenticated + `canCreateDrafts`     | Submit an event. Submitter details are copied from the authenticated profile; users with review/bypass permissions may publish directly. |
-| `GET`   | `/api/events/review`          | Authenticated + `canReviewAndPublish` | List event review queue.                                                                                                                 |
-| `GET`   | `/api/events/mine`            | Authenticated                         | List current user's events.                                                                                                              |
-| `GET`   | `/api/events/:id`             | Public                                | Get one published event.                                                                                                                 |
-| `GET`   | `/api/events/:id/edit`        | Authenticated owner or reviewer       | Get full event edit payload.                                                                                                             |
-| `PATCH` | `/api/events/:id`             | Authenticated owner or reviewer       | Update event while preserving its original submitter record.                                                                             |
-| `PATCH` | `/api/events/:eventId/review` | Authenticated + `canReviewAndPublish` | Publish or reject event.                                                                                                                 |
+| Method  | Path                                  | Access                                | Purpose                                                                                                                                                                                                                            |
+| ------- | ------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`   | `/api/events`                         | Public                                | List published upcoming events, or published events overlapping a requested `from`/`to` calendar range.                                                                                                                            |
+| `POST`  | `/api/events`                         | Authenticated + `canCreateDrafts`     | Submit an event. Descriptions and registration instructions are limited to 10,000 characters per language. Submitter details are copied from the authenticated profile; users with review/bypass permissions may publish directly. |
+| `GET`   | `/api/events/review`                  | Authenticated + `canReviewAndPublish` | List event review queue.                                                                                                                                                                                                           |
+| `GET`   | `/api/events/mine`                    | Authenticated                         | List current user's events.                                                                                                                                                                                                        |
+| `GET`   | `/api/events/:id`                     | Public                                | Get one published event.                                                                                                                                                                                                           |
+| `GET`   | `/api/events/:id/edit`                | Authenticated owner or reviewer       | Get full event edit payload.                                                                                                                                                                                                       |
+| `PATCH` | `/api/events/:id`                     | Authenticated owner or reviewer       | Update event while preserving its original submitter record. Descriptions and registration instructions are limited to 10,000 characters per language.                                                                             |
+| `PATCH` | `/api/events/:eventId/review-content` | Authenticated + `canReviewAndPublish` | Update the title, location, description, and registration text for one language on a pending event; the event stays in the review queue.                                                                                           |
+| `PATCH` | `/api/events/:eventId/review`         | Authenticated + `canReviewAndPublish` | Publish or reject event.                                                                                                                                                                                                           |
 
 `GET /api/events` accepts optional `from` and `to` query parameters in
 `YYYY-MM-DD` form. They must be supplied together, define an inclusive range
@@ -231,33 +251,35 @@ range. Calls without those parameters retain the upcoming-events behaviour.
 
 Mounted at `/api/last-posts`.
 
-| Method  | Path                                | Access                                | Purpose                                                                               |
-| ------- | ----------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------- |
-| `POST`  | `/api/last-posts`                   | Authenticated + `canCreateDrafts`     | Submit a Last Post notice for review.                                                 |
-| `GET`   | `/api/last-posts/review`            | Authenticated + `canReviewAndPublish` | List pending Last Post notices.                                                       |
-| `PATCH` | `/api/last-posts/:messageId/review` | Authenticated + `canReviewAndPublish` | Publish or reject a pending notice. Publication requires English and French messages. |
-| `GET`   | `/api/last-posts`                   | Public                                | List published notices. Query: `limit`, `cursor`.                                     |
-| `GET`   | `/api/last-posts/:messageId`        | Public                                | Get one published notice.                                                             |
+| Method  | Path                                        | Access                                | Purpose                                                                               |
+| ------- | ------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------- |
+| `POST`  | `/api/last-posts`                           | Authenticated + `canCreateDrafts`     | Submit a Last Post notice for review. Notice text is limited to 10,000 characters.    |
+| `GET`   | `/api/last-posts/review`                    | Authenticated + `canReviewAndPublish` | List pending Last Post notices.                                                       |
+| `PATCH` | `/api/last-posts/:messageId/review-content` | Authenticated + `canReviewAndPublish` | Update one language of a pending notice; it stays in the review queue.                |
+| `PATCH` | `/api/last-posts/:messageId/review`         | Authenticated + `canReviewAndPublish` | Publish or reject a pending notice. Publication requires English and French messages. |
+| `GET`   | `/api/last-posts`                           | Public                                | List published notices. Query: `limit`, `cursor`.                                     |
+| `GET`   | `/api/last-posts/:messageId`                | Public                                | Get one published notice.                                                             |
 
 ## Retirement Messages and Comments
 
 Mounted at `/api/retirement-messages`.
 
-| Method  | Path                                                  | Access                                        | Purpose                                                                                                                                                                                                                                                                                                                   |
+| Method | Path | Access | Purpose |
 | ------- | ----------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `POST`  | `/api/retirement-messages`                            | Authenticated + `canSubmitRetirementMessages` | Submit retirement message. Submitter contact details are copied from the authenticated profile; the request supplies only the submitter relationship.                                                                                                                                                                     | When `MAIL_TO_BRANCH` is configured, the server emails the complete normalized submission and canonical public photo URL to the internal branch mailbox for Power Automate processing. | It enters the review queue by default; `publishNow: true` is allowed only for users with `canBypassReviewStages`. |
-| `GET`   | `/api/retirement-messages`                            | Public                                        | List published retirement messages.                                                                                                                                                                                                                                                                                       |
-| `GET`   | `/api/retirement-messages/review`                     | Authenticated + `canReviewAndPublish`         | List retirement-message review queue.                                                                                                                                                                                                                                                                                     |
-| `GET`   | `/api/retirement-messages/comments/review`            | Authenticated + `canReviewAndPublish`         | List comment review queue.                                                                                                                                                                                                                                                                                                |
-| `PATCH` | `/api/retirement-messages/comments/:commentId/review` | Authenticated + `canReviewAndPublish`         | Publish or reject comment.                                                                                                                                                                                                                                                                                                |
-| `GET`   | `/api/retirement-messages/comments/:commentId/edit`   | Authenticated owner or reviewer               | Get comment edit payload.                                                                                                                                                                                                                                                                                                 |
-| `PATCH` | `/api/retirement-messages/comments/:commentId`        | Authenticated owner or reviewer               | Update comment.                                                                                                                                                                                                                                                                                                           |
-| `GET`   | `/api/retirement-messages/:messageId/edit`            | Authenticated owner or reviewer               | Get full retirement-message edit payload.                                                                                                                                                                                                                                                                                 |
-| `PATCH` | `/api/retirement-messages/:messageId`                 | Authenticated owner or reviewer               | Update retirement message while preserving its original submitter contact record; missing legacy contact fields are filled from the authenticated profile, and the request may update the relationship. It enters the review queue by default; `publishNow: true` is allowed only for users with `canBypassReviewStages`. |
-| `GET`   | `/api/retirement-messages/:messageId/comments`        | Public                                        | List published comments for a message.                                                                                                                                                                                                                                                                                    |
-| `POST`  | `/api/retirement-messages/:messageId/comments`        | Authenticated                                 | Create comment.                                                                                                                                                                                                                                                                                                           |
-| `GET`   | `/api/retirement-messages/:messageId`                 | Public                                        | Get one published retirement message.                                                                                                                                                                                                                                                                                     |
-| `PATCH` | `/api/retirement-messages/:messageId/review`          | Authenticated + `canReviewAndPublish`         | Publish or reject retirement message.                                                                                                                                                                                                                                                                                     |
+| `POST` | `/api/retirement-messages` | Authenticated + `canSubmitRetirementMessages` | Submit retirement message. Message text is limited to 10,000 characters. Submitter contact details are copied from the authenticated profile; the request supplies only the submitter relationship. When an optional `certificateRequest` is supplied, the server also creates a separate pending, generic certificate-request record linked to this retirement message. The server derives the member's rank and MOSID/role from the retirement submission; every certificate field is required except the C&E Branch enrollment date. | When `MAIL_TO_BRANCH` is configured, the server emails the complete normalized submission and canonical public photo URL to the internal branch mailbox for Power Automate processing. | It enters the review queue by default; `publishNow: true` is allowed only for users with `canBypassReviewStages`. |
+| `GET` | `/api/retirement-messages` | Public | List published retirement messages. |
+| `GET` | `/api/retirement-messages/review` | Authenticated + `canReviewAndPublish` | List retirement-message review queue. |
+| `GET` | `/api/retirement-messages/comments/review` | Authenticated + `canReviewAndPublish` | List comment review queue. |
+| `PATCH` | `/api/retirement-messages/comments/:commentId/review` | Authenticated + `canReviewAndPublish` | Publish or reject comment. |
+| `GET` | `/api/retirement-messages/comments/:commentId/edit` | Authenticated owner or reviewer | Get comment edit payload. |
+| `PATCH` | `/api/retirement-messages/comments/:commentId` | Authenticated owner or reviewer | Update comment. |
+| `GET` | `/api/retirement-messages/:messageId/edit` | Authenticated owner or reviewer | Get full retirement-message edit payload. |
+| `PATCH` | `/api/retirement-messages/:messageId` | Authenticated owner or reviewer | Update retirement message while preserving its original submitter contact record; message text is limited to 10,000 characters. Missing legacy contact fields are filled from the authenticated profile, and the request may update the relationship. An optional complete `certificateRequest` creates a separate pending certificate-request record linked to the retirement message. It enters the review queue by default; `publishNow: true` is allowed only for users with `canBypassReviewStages`. |
+| `GET` | `/api/retirement-messages/:messageId/comments` | Public | List published comments for a message. |
+| `POST` | `/api/retirement-messages/:messageId/comments` | Authenticated | Create comment. |
+| `GET` | `/api/retirement-messages/:messageId` | Public | Get one published retirement message. |
+| `PATCH` | `/api/retirement-messages/:messageId/review-content` | Authenticated + `canReviewAndPublish` | Update one language of a pending retirement message; it stays in the review queue. |
+| `PATCH` | `/api/retirement-messages/:messageId/review` | Authenticated + `canReviewAndPublish` | Publish or reject retirement message. |
 
 ## Maintenance
 

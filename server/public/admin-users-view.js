@@ -2,6 +2,7 @@
   function create({ root, getState, actions }) {
     let shouldRestoreSearchFocus = false;
     let searchFocusSelection = null;
+    let mediaSearchTimer = null;
     const USER_ROW_RENDER_LIMIT = 100;
 
     function formatContentArea(contentArea) {
@@ -1368,6 +1369,52 @@
       });
       sortLabel.append(sortText, sortSelect);
 
+      const typeLabel = document.createElement("label");
+      typeLabel.className = "admin-media-sort-field";
+      const typeText = document.createElement("span");
+      typeText.textContent = "Type";
+      const typeSelect = document.createElement("select");
+      [
+        ["all", "All media"],
+        ["retirement", "Retirement"],
+        ["last-post", "Last Post"],
+        ["event", "Events"],
+        ["page", "Pages"],
+        ["upload", "Uploads"],
+        ["migration", "Migration"],
+        ["unattached", "Unattached"],
+      ].forEach(([value, label]) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        typeSelect.append(option);
+      });
+      typeSelect.value = state.mediaType || "all";
+      typeSelect.disabled = state.mediaIsLoading || state.mediaIsDeleting;
+      typeSelect.addEventListener("change", () => {
+        actions.setMediaType(typeSelect.value);
+      });
+      typeLabel.append(typeText, typeSelect);
+
+      const searchLabel = document.createElement("label");
+      searchLabel.className = "admin-media-slug-field";
+      const searchText = document.createElement("span");
+      searchText.textContent = "Search";
+      const searchInput = document.createElement("input");
+      searchInput.type = "search";
+      searchInput.placeholder = "File or image name";
+      searchInput.value = state.mediaSearch || "";
+      searchInput.maxLength = 120;
+      searchInput.autocomplete = "off";
+      searchInput.disabled = state.mediaIsLoading || state.mediaIsDeleting;
+      searchInput.addEventListener("input", () => {
+        clearTimeout(mediaSearchTimer);
+        mediaSearchTimer = setTimeout(() => {
+          actions.setMediaSearch(searchInput.value);
+        }, 250);
+      });
+      searchLabel.append(searchText, searchInput);
+
       if (state.mediaIsLoading) {
         const sortLoading = document.createElement("span");
         sortLoading.className = "admin-media-sort-loading";
@@ -1416,7 +1463,14 @@
         state.mediaIsLoading || state.mediaIsUploading || state.mediaIsDeleting;
       refresh.addEventListener("click", actions.refreshMedia);
 
-      headerActions.append(sortLabel, slugLabel, uploadLabel, refresh);
+      headerActions.append(
+        sortLabel,
+        typeLabel,
+        searchLabel,
+        slugLabel,
+        uploadLabel,
+        refresh,
+      );
       header.append(copy, headerActions);
       header.addEventListener("dragover", (event) => {
         event.preventDefault();

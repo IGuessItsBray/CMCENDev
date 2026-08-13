@@ -91,17 +91,6 @@
             <div class="event-section-content">
               <div class="event-details-grid">
                 <div class="event-field">
-                  <label for="retireeRank" data-i18n="retirement_rank"></label>
-                  <input
-                    id="retireeRank"
-                    name="retireeRank"
-                    type="text"
-                    maxlength="40"
-                    required
-                  />
-                </div>
-
-                <div class="event-field">
                   <label
                     for="retireeFirstName"
                     data-i18n="retirement_first_name"
@@ -142,12 +131,26 @@
                   />
                 </div>
 
+                <div class="event-field">
+                  <label
+                    for="retireeRetirementDate"
+                    data-i18n="retirement_date"
+                  ></label>
+                  <input
+                    id="retireeRetirementDate"
+                    name="retireeRetirementDate"
+                    type="date"
+                    maxlength="60"
+                    required
+                  />
+                </div>
+
                 <div
                   class="event-field event-field-wide retirement-trade-field"
                 >
                   <label
                     for="retireeTradeCategory"
-                    data-i18n="retirement_trade_role"
+                    data-i18n="retirement_rank_category"
                   ></label>
 
                   <select
@@ -180,6 +183,55 @@
                       Civilian
                     </option>
                   </select>
+                </div>
+
+                <div class="event-field" id="retireeRankPicker" hidden>
+                  <label for="retireeRank" data-i18n="retirement_rank"></label>
+                  <select id="retireeRank" name="retireeRank" disabled>
+                    <option value="" data-i18n="select_option">Select an option</option>
+                    <option value="Civilian" data-rank-category="civilian" data-i18n="retirement_rank_civilian">Civilian</option>
+                    <option value="Recruit" data-rank-category="ncm" data-i18n="retirement_rank_recruit">Recruit</option>
+                    <option value="Private" data-rank-category="ncm" data-i18n="retirement_rank_private">Private</option>
+                    <option value="Aviator" data-rank-category="ncm" data-i18n="retirement_rank_aviator">Aviator</option>
+                    <option value="Sailor Third Class" data-rank-category="ncm" data-i18n="retirement_rank_sailor_third_class">Sailor Third Class</option>
+                    <option value="Corporal" data-rank-category="ncm" data-i18n="retirement_rank_corporal">Corporal</option>
+                    <option value="Sailor Second Class" data-rank-category="ncm" data-i18n="retirement_rank_sailor_second_class">Sailor Second Class</option>
+                    <option value="Master Corporal" data-rank-category="ncm" data-i18n="retirement_rank_master_corporal">Master Corporal</option>
+                    <option value="Sailor First Class" data-rank-category="ncm" data-i18n="retirement_rank_sailor_first_class">Sailor First Class</option>
+                    <option value="Sergeant" data-rank-category="ncm" data-i18n="retirement_rank_sergeant">Sergeant</option>
+                    <option value="Petty Officer 2nd Class" data-rank-category="ncm" data-i18n="retirement_rank_petty_officer_second_class">Petty Officer 2nd Class</option>
+                    <option value="Warrant Officer" data-rank-category="ncm" data-i18n="retirement_rank_warrant_officer">Warrant Officer</option>
+                    <option value="Petty Officer 1st Class" data-rank-category="ncm" data-i18n="retirement_rank_petty_officer_first_class">Petty Officer 1st Class</option>
+                    <option value="Master Warrant Officer" data-rank-category="ncm" data-i18n="retirement_rank_master_warrant_officer">Master Warrant Officer</option>
+                    <option value="Chief Petty Officer 2nd Class" data-rank-category="ncm" data-i18n="retirement_rank_chief_petty_officer_second_class">Chief Petty Officer 2nd Class</option>
+                    <option value="Chief Warrant Officer" data-rank-category="ncm" data-i18n="retirement_rank_chief_warrant_officer">Chief Warrant Officer</option>
+                    <option value="Chief Petty Officer 1st Class" data-rank-category="ncm" data-i18n="retirement_rank_chief_petty_officer_first_class">Chief Petty Officer 1st Class</option>
+                    <option value="Officer Cadet" data-rank-category="officer" data-i18n="retirement_rank_officer_cadet">Officer Cadet</option>
+                    <option value="Naval Cadet" data-rank-category="officer" data-i18n="retirement_rank_naval_cadet">Naval Cadet</option>
+                    <option value="Second Lieutenant" data-rank-category="officer" data-i18n="retirement_rank_second_lieutenant">Second Lieutenant</option>
+                    <option value="Acting Sub-Lieutenant" data-rank-category="officer" data-i18n="retirement_rank_acting_sub_lieutenant">Acting Sub-Lieutenant</option>
+                    <option value="Lieutenant" data-rank-category="officer" data-i18n="retirement_rank_lieutenant">Lieutenant</option>
+                    <option value="Sub-Lieutenant" data-rank-category="officer" data-i18n="retirement_rank_sub_lieutenant">Sub-Lieutenant</option>
+                    <option value="Captain" data-rank-category="officer" data-i18n="retirement_rank_captain">Captain</option>
+                    <option value="Lieutenant (Navy)" data-rank-category="officer" data-i18n="retirement_rank_lieutenant_navy">Lieutenant (Navy)</option>
+                    <option value="Major" data-rank-category="officer" data-i18n="retirement_rank_major">Major</option>
+                    <option value="Lieutenant-Commander" data-rank-category="officer" data-i18n="retirement_rank_lieutenant_commander">Lieutenant-Commander</option>
+                    <option value="Lieutenant-Colonel" data-rank-category="officer" data-i18n="retirement_rank_lieutenant_colonel">Lieutenant-Colonel</option>
+                    <option value="Commander" data-rank-category="officer" data-i18n="retirement_rank_commander">Commander</option>
+                    <option value="Colonel" data-rank-category="officer" data-i18n="retirement_rank_colonel">Colonel</option>
+                    <option value="Captain (Navy)" data-rank-category="officer" data-i18n="retirement_rank_captain_navy">Captain (Navy)</option>
+                    <option value="Brigadier-General" data-rank-category="officer" data-i18n="retirement_rank_brigadier_general">Brigadier-General</option>
+                    <option value="Commodore" data-rank-category="officer" data-i18n="retirement_rank_commodore">Commodore</option>
+                    <option value="Major-General" data-rank-category="officer" data-i18n="retirement_rank_major_general">Major-General</option>
+                    <option value="Rear-Admiral" data-rank-category="officer" data-i18n="retirement_rank_rear_admiral">Rear-Admiral</option>
+                    <option value="Lieutenant-General" data-rank-category="officer" data-i18n="retirement_rank_lieutenant_general">Lieutenant-General</option>
+                    <option value="Vice-Admiral" data-rank-category="officer" data-i18n="retirement_rank_vice_admiral">Vice-Admiral</option>
+                    <option value="General" data-rank-category="officer" data-i18n="retirement_rank_general">General</option>
+                    <option value="Admiral" data-rank-category="officer" data-i18n="retirement_rank_admiral">Admiral</option>
+                  </select>
+                </div>
+
+                <div class="event-field event-field-wide retirement-trade-field">
 
                   <div
                     class="retirement-trade-panel"
@@ -215,20 +267,6 @@
                     id="retireeTradeRole"
                     name="retireeTradeRole"
                     type="hidden"
-                  />
-                </div>
-
-                <div class="event-field">
-                  <label
-                    for="retireeRetirementDate"
-                    data-i18n="retirement_date"
-                  ></label>
-                  <input
-                    id="retireeRetirementDate"
-                    name="retireeRetirementDate"
-                    type="date"
-                    maxlength="60"
-                    required
                   />
                 </div>
               </div>
@@ -303,6 +341,7 @@
                     rows="10"
                     minlength="100"
                     maxlength="10000"
+                    data-character-counter
                     required
                   ></textarea>
 
@@ -314,7 +353,684 @@
             </div>
           </section>
 
-          <section class="event-form-section event-section--full-bleed-heading">
+          <section
+            class="event-form-section event-section--full-bleed-heading certificate-request-section"
+            id="certificateRequestSection"
+          >
+            <header class="event-section-heading">
+              <span class="event-section-index">04</span>
+
+              <div>
+                <h2 data-i18n="certificate_request_heading">
+                  Printed Certificate Request
+                </h2>
+
+                <p data-i18n="certificate_request_intro">
+                  Request printed certificates for the retiring member and their
+                  family.
+                </p>
+              </div>
+            </header>
+
+            <div class="event-section-content certificate-request-content">
+              <label
+                class="certificate-request-toggle"
+                for="certificateRequested"
+              >
+                <input
+                  id="certificateRequested"
+                  name="certificateRequested"
+                  type="checkbox"
+                  aria-controls="certificateRequestDetails"
+                  aria-expanded="false"
+                />
+
+                <span class="certificate-request-switch" aria-hidden="true">
+                  <span></span>
+                </span>
+
+                <span class="certificate-request-toggle-copy">
+                  <strong data-i18n="certificate_request_toggle">
+                    Request printed certificates
+                  </strong>
+
+                  <small data-i18n="certificate_request_toggle_hint">
+                    Turn this on to provide the printing and mailing details.
+                  </small>
+                </span>
+              </label>
+
+              <div
+                class="certificate-request-panel"
+                id="certificateRequestDetails"
+                aria-hidden="true"
+              >
+                <div class="certificate-request-panel-inner">
+                  <fieldset class="certificate-request-fieldset">
+                    <legend data-i18n="certificate_member_heading">
+                      Retiring Member's Certificate
+                    </legend>
+
+                    <p
+                      class="certificate-request-fieldset-intro"
+                      data-i18n="certificate_member_intro"
+                    >
+                      Complete these details exactly as they should appear on
+                      the certificate.
+                    </p>
+
+                    <div class="event-details-grid">
+                      <div class="event-field event-field-wide">
+                        <label
+                          for="certificateMemberFullName"
+                          data-i18n="certificate_member_full_name"
+                        >
+                          Member full name
+                        </label>
+                        <input
+                          id="certificateMemberFullName"
+                          name="certificateMemberFullName"
+                          type="text"
+                          maxlength="160"
+                          autocomplete="name"
+                          data-i18n-placeholder="certificate_member_full_name_placeholder"
+                          placeholder="Exactly as it should appear on the certificate"
+                          required
+                          disabled
+                        />
+                      </div>
+
+                      <div class="event-field">
+                        <label
+                          for="certificateRankLanguage"
+                          data-i18n="certificate_rank_language"
+                        >
+                          Certificate rank language
+                        </label>
+                        <select
+                          id="certificateRankLanguage"
+                          name="certificateRankLanguage"
+                          required
+                          disabled
+                        >
+                          <option value="" data-i18n="select_option">
+                            Select an option
+                          </option>
+                          <option value="en" data-i18n="language_en">
+                            English
+                          </option>
+                          <option value="fr" data-i18n="language_fr">
+                            Français
+                          </option>
+                        </select>
+                      </div>
+
+                      <fieldset
+                        class="certificate-decorations-field event-field-wide"
+                      >
+                        <legend data-i18n="certificate_decorations">
+                          Decorations and post-nominals
+                        </legend>
+                        <p data-i18n="certificate_decorations_hint">
+                          Select every decoration and post-nominal that should
+                          appear on the certificate.
+                        </p>
+                        <div class="certificate-decoration-list">
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="VC"
+                              disabled
+                            /><span>VC</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="CV"
+                              disabled
+                            /><span>CV</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="OM"
+                              disabled
+                            /><span>OM</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="CC"
+                              disabled
+                            /><span>CC</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="OC"
+                              disabled
+                            /><span>OC</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="CMM"
+                              disabled
+                            /><span>CMM</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="COM"
+                              disabled
+                            /><span>COM</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="CVO"
+                              disabled
+                            /><span>CVO</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="OMM"
+                              disabled
+                            /><span>OMM</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="OOM"
+                              disabled
+                            /><span>OOM</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="LVO"
+                              disabled
+                            /><span>LVO</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="MMM"
+                              disabled
+                            /><span>MMM</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="MOM"
+                              disabled
+                            /><span>MOM</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="MVO"
+                              disabled
+                            /><span>MVO</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="GOQ"
+                              disabled
+                            /><span>GOQ</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="OQ"
+                              disabled
+                            /><span>OQ</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="CQ"
+                              disabled
+                            /><span>CQ</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="SOM"
+                              disabled
+                            /><span>SOM</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="O Ont"
+                              disabled
+                            /><span>O Ont</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="OBC"
+                              disabled
+                            /><span>OBC</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="AOE"
+                              disabled
+                            /><span>AOE</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="OPEI"
+                              disabled
+                            /><span>OPEI</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="ONB"
+                              disabled
+                            /><span>ONB</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="ONS"
+                              disabled
+                            /><span>ONS</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="ONL"
+                              disabled
+                            /><span>ONL</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="SMV"
+                              disabled
+                            /><span>SMV</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="SC"
+                              disabled
+                            /><span>SC</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="MSC"
+                              disabled
+                            /><span>MSC</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="MMV"
+                              disabled
+                            /><span>MMV</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="MB"
+                              disabled
+                            /><span>MB</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="MSM"
+                              disabled
+                            /><span>MSM</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="RVM"
+                              disabled
+                            /><span>RVM</span></label
+                          >
+                          <label
+                            ><input
+                              type="checkbox"
+                              name="certificateDecorations"
+                              value="CD"
+                              disabled
+                            /><span>CD</span></label
+                          >
+                        </div>
+                      </fieldset>
+
+                      <div class="event-field event-field-wide">
+                        <label
+                          for="certificateLastUnit"
+                          data-i18n="certificate_last_unit"
+                        >
+                          Last unit served with
+                        </label>
+                        <input
+                          id="certificateLastUnit"
+                          name="certificateLastUnit"
+                          type="text"
+                          maxlength="200"
+                          data-i18n-placeholder="certificate_last_unit_placeholder"
+                          placeholder="e.g., CMBG HQ &amp; Sigs / Quartier général et Escadron des transmissions"
+                          required
+                          disabled
+                        />
+                      </div>
+                    </div>
+                  </fieldset>
+
+                  <fieldset class="certificate-request-fieldset">
+                    <legend data-i18n="certificate_dates_heading">
+                      Important Dates
+                    </legend>
+
+                    <p
+                      class="certificate-request-fieldset-intro"
+                      data-i18n="certificate_dates_intro"
+                    >
+                      Use the dates needed to prepare the certificate package.
+                    </p>
+
+                    <div class="event-details-grid certificate-dates-grid">
+                      <div class="event-field">
+                        <label
+                          for="certificateCafEnrollmentDate"
+                          data-i18n="certificate_caf_enrollment_date"
+                        >
+                          CAF enrollment date
+                        </label>
+                        <input
+                          id="certificateCafEnrollmentDate"
+                          name="certificateCafEnrollmentDate"
+                          type="date"
+                          required
+                          disabled
+                        />
+                      </div>
+
+                      <div class="event-field">
+                        <label
+                          for="certificateReleaseDate"
+                          data-i18n="certificate_release_date"
+                        >
+                          Release date
+                        </label>
+                        <input
+                          id="certificateReleaseDate"
+                          name="certificateReleaseDate"
+                          type="date"
+                          required
+                          disabled
+                        />
+                      </div>
+
+                      <div class="event-field">
+                        <label
+                          for="certificateCeEnrollmentDate"
+                          data-i18n="certificate_ce_enrollment_date"
+                        >
+                          C&amp;E Branch enrollment date
+                        </label>
+                        <input
+                          id="certificateCeEnrollmentDate"
+                          name="certificateCeEnrollmentDate"
+                          type="date"
+                          disabled
+                        />
+                        <small data-i18n="certificate_ce_enrollment_hint">
+                          Required only if the member remustered.
+                        </small>
+                      </div>
+
+                      <div class="event-field">
+                        <label
+                          for="certificateNeededByDate"
+                          data-i18n="certificate_needed_by_date"
+                        >
+                          Certificates needed by
+                        </label>
+                        <input
+                          id="certificateNeededByDate"
+                          name="certificateNeededByDate"
+                          type="date"
+                          required
+                          disabled
+                        />
+                        <small data-i18n="certificate_needed_by_hint">
+                          The date the member needs the certificates in hand.
+                        </small>
+                      </div>
+
+                      <label class="certificate-dwd-option event-field-wide">
+                        <input
+                          id="certificateDwdParadeRequested"
+                          name="certificateDwdParadeRequested"
+                          type="checkbox"
+                          disabled
+                        />
+                        <span>
+                          <strong data-i18n="certificate_dwd_parade_requested">
+                            The member would like a Depart With Dignity (DWD)
+                            parade.
+                          </strong>
+                          <small data-i18n="certificate_dwd_parade_hint">
+                            Select this if the member would like a DWD parade.
+                          </small>
+                        </span>
+                      </label>
+                    </div>
+                  </fieldset>
+
+                  <fieldset class="certificate-request-fieldset">
+                    <legend data-i18n="certificate_family_heading">
+                      Family Member Certificates
+                    </legend>
+
+                    <p
+                      class="certificate-request-fieldset-intro"
+                      data-i18n="certificate_family_intro"
+                    >
+                      Add one certificate request for each family member.
+                      Relationships are always selected in relation to the
+                      retiring member.
+                    </p>
+
+                    <div
+                      class="certificate-family-list"
+                      id="certificateFamilyList"
+                      aria-live="polite"
+                    ></div>
+
+                    <button
+                      class="certificate-add-family-button"
+                      id="addCertificateFamilyMember"
+                      type="button"
+                      disabled
+                    >
+                      <span aria-hidden="true">+</span>
+                      <span data-i18n="certificate_add_family_member">
+                        Add a family member certificate
+                      </span>
+                    </button>
+                  </fieldset>
+
+                  <fieldset class="certificate-request-fieldset">
+                    <legend data-i18n="certificate_address_heading">
+                      Mailing Address
+                    </legend>
+
+                    <p
+                      class="certificate-request-fieldset-intro"
+                      data-i18n="certificate_address_intro"
+                    >
+                      Enter the address where the completed certificates should
+                      be mailed.
+                    </p>
+
+                    <div class="event-details-grid">
+                      <div class="event-field event-field-wide">
+                        <label
+                          for="certificateAddressLine1"
+                          data-i18n="certificate_address_line_1"
+                        >
+                          Address line 1
+                        </label>
+                        <input
+                          id="certificateAddressLine1"
+                          name="certificateAddressLine1"
+                          type="text"
+                          maxlength="160"
+                          autocomplete="address-line1"
+                          required
+                          disabled
+                        />
+                      </div>
+
+                      <div class="event-field event-field-wide">
+                        <label
+                          for="certificateAddressLine2"
+                          data-i18n="certificate_address_line_2"
+                        >
+                          Address line 2
+                        </label>
+                        <input
+                          id="certificateAddressLine2"
+                          name="certificateAddressLine2"
+                          type="text"
+                          maxlength="160"
+                          autocomplete="address-line2"
+                          required
+                          disabled
+                        />
+                      </div>
+
+                      <div class="event-field">
+                        <label
+                          for="certificateCity"
+                          data-i18n="certificate_city"
+                        >
+                          City
+                        </label>
+                        <input
+                          id="certificateCity"
+                          name="certificateCity"
+                          type="text"
+                          maxlength="100"
+                          autocomplete="address-level2"
+                          required
+                          disabled
+                        />
+                      </div>
+
+                      <div class="event-field">
+                        <label
+                          for="certificateProvince"
+                          data-i18n="certificate_province"
+                        >
+                          Province / state
+                        </label>
+                        <input
+                          id="certificateProvince"
+                          name="certificateProvince"
+                          type="text"
+                          maxlength="100"
+                          autocomplete="address-level1"
+                          required
+                          disabled
+                        />
+                      </div>
+
+                      <div class="event-field">
+                        <label
+                          for="certificatePostalCode"
+                          data-i18n="certificate_postal_code"
+                        >
+                          Postal / ZIP code
+                        </label>
+                        <input
+                          id="certificatePostalCode"
+                          name="certificatePostalCode"
+                          type="text"
+                          maxlength="24"
+                          autocomplete="postal-code"
+                          required
+                          disabled
+                        />
+                      </div>
+
+                      <div class="event-field">
+                        <label
+                          for="certificateCountry"
+                          data-i18n="certificate_country"
+                        >
+                          Country
+                        </label>
+                        <input
+                          id="certificateCountry"
+                          name="certificateCountry"
+                          type="text"
+                          maxlength="100"
+                          autocomplete="country-name"
+                          required
+                          disabled
+                        />
+                      </div>
+                    </div>
+                  </fieldset>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section
+            class="event-form-section event-section--full-bleed-heading retirement-submitter-section"
+            id="retirementSubmitterSection"
+          >
             <header class="event-section-heading">
               <span class="event-section-index">03</span>
 
@@ -473,7 +1189,8 @@
                   </strong>
 
                   <small data-i18n="retirement_publish_now_hint">
-                    Skip the review queue and publish this retirement message now.
+                    Skip the review queue and publish this retirement message
+                    now.
                   </small>
                 </span>
               </label>

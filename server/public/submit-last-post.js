@@ -147,6 +147,7 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
       unauthorizedMessage: translate("last_post_permission_error"),
     });
     lastPostSubmitForm.reset();
+    CMCENUtils.bindCharacterCounters();
     document.getElementById("lastPostMessageLanguage").value =
       CMCENUtils.getCurrentLanguage();
     showFormMessage(

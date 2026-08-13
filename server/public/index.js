@@ -85,9 +85,10 @@ const navLinks = {
       { route: "/about-family", i18n: "menu_about_option_1" },
       { route: "/about_branch.html", i18n: "menu_about_option_2" },
       { route: "/about_association.html", i18n: "menu_about_option_3" },
-      { route: "/about_foundation.html", i18n: "menu_about_option_4" },
-      { route: "/about_museum.html", i18n: "menu_about_option_5" },
-      { route: "/ownership.html", i18n: "menu_about_option_6" },
+      {
+        route: "/about_museum_foundation.html",
+        label: { en: "About the C&E Museum & Foundation", fr: "Musée et Fondation des C et E" },
+      },
     ],
   },
   doctrine: {
@@ -226,7 +227,7 @@ function renderDropdown(dropdown, index) {
     <li ${getAccessAttributes(item)}>
       <a
         href="${item.route}"
-        data-i18n="${item.i18n}"
+        ${item.label ? `data-nav-label-en="${item.label.en}" data-nav-label-fr="${item.label.fr}"` : `data-i18n="${item.i18n}"`}
       ></a>
     </li>
   `,

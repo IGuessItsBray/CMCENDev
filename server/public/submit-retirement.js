@@ -17,6 +17,8 @@ const retirementMessageLanguage = document.getElementById(
   "retirementMessageLanguage",
 );
 const retirementPhotoInput = document.getElementById("retirementPhoto");
+const retireeRankPicker = document.getElementById("retireeRankPicker");
+const retireeRank = document.getElementById("retireeRank");
 const retireeTradeCategory = document.getElementById("retireeTradeCategory");
 const retireeTradeRole = document.getElementById("retireeTradeRole");
 const retireeOfficerTradePanel = document.getElementById(
@@ -26,6 +28,33 @@ const retireeNcmTradePanel = document.getElementById("retireeNcmTradePanel");
 const retirementTradeOptionContainers = document.querySelectorAll(
   "[data-retirement-trade-options]",
 );
+const certificateRequested = document.getElementById("certificateRequested");
+const certificateRequestDetails = document.getElementById(
+  "certificateRequestDetails",
+);
+const certificateMemberFullName = document.getElementById(
+  "certificateMemberFullName",
+);
+const certificateFamilyList = document.getElementById("certificateFamilyList");
+const addCertificateFamilyMember = document.getElementById(
+  "addCertificateFamilyMember",
+);
+const certificateDateInputs = document.querySelectorAll(
+  "#certificateRequestDetails input[type='date']",
+);
+const certificateRequestSection = document.getElementById(
+  "certificateRequestSection",
+);
+const retirementSubmitterSection = document.getElementById(
+  "retirementSubmitterSection",
+);
+
+if (certificateRequestSection && retirementSubmitterSection) {
+  retirementSubmitterSection.insertAdjacentElement(
+    "afterend",
+    certificateRequestSection,
+  );
+}
 
 const retirementAuthToken = CMCENUtils.requireAuthToken();
 const RETIREMENT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
@@ -35,6 +64,39 @@ const editingRetirementMessageId = retirementPageParams.get("id");
 
 let editingRetirementMessage = null;
 let currentRetirementUser = null;
+let certificateFamilyMemberSequence = 0;
+
+const RETIREE_RANK_OPTIONS = Array.from(retireeRank.options)
+  .filter((option) => option.dataset.rankCategory)
+  .map((option) => ({
+    category: option.dataset.rankCategory,
+    value: option.value,
+    translationKey: option.dataset.i18n,
+    fallback: option.textContent.trim(),
+  }));
+
+const CERTIFICATE_FAMILY_RELATIONSHIPS = Object.freeze([
+  ["husband", "certificate_relationship_husband"],
+  ["wife", "certificate_relationship_wife"],
+  ["partner", "certificate_relationship_partner"],
+  ["girlfriend", "certificate_relationship_girlfriend"],
+  ["boyfriend", "certificate_relationship_boyfriend"],
+  ["father", "certificate_relationship_father"],
+  ["mother", "certificate_relationship_mother"],
+  ["step-father", "certificate_relationship_step_father"],
+  ["step-mother", "certificate_relationship_step_mother"],
+  ["adoptive-parent", "certificate_relationship_adoptive_parent"],
+  ["foster-parent", "certificate_relationship_foster_parent"],
+  ["guardian", "certificate_relationship_guardian"],
+  ["cousin", "certificate_relationship_cousin"],
+  ["brother", "certificate_relationship_brother"],
+  ["sister", "certificate_relationship_sister"],
+  ["son", "certificate_relationship_son"],
+  ["daughter", "certificate_relationship_daughter"],
+  ["uncle", "certificate_relationship_uncle"],
+  ["aunt", "certificate_relationship_aunt"],
+  ["other", "certificate_relationship_other"],
+]);
 
 function renderRetirementDeleteAction() {
   retirementSubmitForm
@@ -182,25 +244,23 @@ function getSelectedRetirementPhoto() {
   return retirementPhotoInput?.files?.[0] || null;
 }
 
-function getSelectedTradeRoleOption() {
-  return document.querySelector('input[name="retireeTradeRoleOption"]:checked');
+function getSelectedTradeRoleOption(optionName) {
+  return document.querySelector(`input[name="${optionName}"]:checked`);
 }
 
-function clearTradeRoleOptions() {
-  document
-    .querySelectorAll('input[name="retireeTradeRoleOption"]')
-    .forEach((option) => {
-      option.checked = false;
-    });
+function clearTradeRoleOptions(optionName) {
+  document.querySelectorAll(`input[name="${optionName}"]`).forEach((option) => {
+    option.checked = false;
+  });
 }
 
-function createTradeRoleOption(tradeRole) {
+function createTradeRoleOption(tradeRole, optionName) {
   const label = document.createElement("label");
   label.className = "retirement-radio-option";
 
   const input = document.createElement("input");
   input.type = "radio";
-  input.name = "retireeTradeRoleOption";
+  input.name = optionName;
   input.value = tradeRole;
 
   const text = document.createElement("span");
@@ -211,47 +271,414 @@ function createTradeRoleOption(tradeRole) {
   return label;
 }
 
-function populateRetirementTradeOptions() {
-  retirementTradeOptionContainers.forEach((container) => {
-    const category = container.dataset.retirementTradeOptions || "";
+function populateTradeOptions(containers, optionName, attributeName) {
+  containers.forEach((container) => {
+    const category = container.dataset[attributeName] || "";
     const options =
       typeof window.getCmcenRetirementTradeRoles === "function"
         ? window.getCmcenRetirementTradeRoles(category)
         : [];
 
-    container.replaceChildren(...options.map(createTradeRoleOption));
+    container.replaceChildren(
+      ...options.map((option) => createTradeRoleOption(option, optionName)),
+    );
   });
 }
 
-function updateRetirementTradePicker({ clearSelection = true } = {}) {
-  const category = retireeTradeCategory?.value || "";
+function updateTradePicker({
+  categorySelect,
+  tradeRoleInput,
+  officerPanel,
+  ncmPanel,
+  optionName,
+  requiredMessage,
+  clearSelection = true,
+}) {
+  const category = categorySelect?.value || "";
   const isOfficer = category === "officer";
   const isNcm = category === "ncm";
 
-  retireeOfficerTradePanel.hidden = !isOfficer;
-  retireeNcmTradePanel.hidden = !isNcm;
+  officerPanel.hidden = !isOfficer;
+  ncmPanel.hidden = !isNcm;
 
   if (clearSelection) {
-    clearTradeRoleOptions();
+    clearTradeRoleOptions(optionName);
   }
 
   if (category === "civilian") {
-    retireeTradeRole.value = "Civilian";
-    retireeTradeCategory.setCustomValidity("");
+    tradeRoleInput.value = "Civilian";
+    categorySelect.setCustomValidity("");
     return;
   }
 
-  const selectedOption = getSelectedTradeRoleOption();
-  retireeTradeRole.value = selectedOption?.value || "";
+  const selectedOption = getSelectedTradeRoleOption(optionName);
+  tradeRoleInput.value = selectedOption?.value || "";
 
-  if ((isOfficer || isNcm) && !retireeTradeRole.value) {
-    retireeTradeCategory.setCustomValidity(
-      translate("retirement_trade_role_required"),
+  if ((isOfficer || isNcm) && !tradeRoleInput.value) {
+    categorySelect.setCustomValidity(requiredMessage);
+    return;
+  }
+
+  categorySelect.setCustomValidity("");
+}
+
+function populateRetirementTradeOptions() {
+  populateTradeOptions(
+    retirementTradeOptionContainers,
+    "retireeTradeRoleOption",
+    "retirementTradeOptions",
+  );
+}
+
+function updateRetirementTradePicker({ clearSelection = true } = {}) {
+  updateTradePicker({
+    categorySelect: retireeTradeCategory,
+    tradeRoleInput: retireeTradeRole,
+    officerPanel: retireeOfficerTradePanel,
+    ncmPanel: retireeNcmTradePanel,
+    optionName: "retireeTradeRoleOption",
+    requiredMessage: translate("retirement_trade_role_required"),
+    clearSelection,
+  });
+}
+
+function createRetireeRankOption({ value = "", translationKey, fallback }) {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = translationKey ? translate(translationKey) : fallback;
+
+  return option;
+}
+
+function updateRetireeRankPicker({ clearSelection = true } = {}) {
+  const category = retireeTradeCategory?.value || "";
+  const requiresRankSelection = category === "officer" || category === "ncm";
+  const selectedRank = clearSelection ? "" : retireeRank.value;
+
+  retireeRankPicker.hidden = !requiresRankSelection;
+  retireeRank.disabled = !requiresRankSelection;
+  retireeRank.required = requiresRankSelection;
+
+  retireeRank.replaceChildren(
+    createRetireeRankOption({
+      translationKey: "select_option",
+      fallback: "Select an option",
+    }),
+    ...RETIREE_RANK_OPTIONS.filter((option) => option.category === category).map(
+      createRetireeRankOption,
+    ),
+  );
+
+  if (category === "civilian") {
+    retireeRank.value = "Civilian";
+  } else {
+    retireeRank.value = selectedRank;
+  }
+}
+
+function selectRetireeRank(rank) {
+  const matchingOption = RETIREE_RANK_OPTIONS.find(
+    (option) => option.value === rank,
+  );
+  const category = matchingOption?.category || "";
+
+  retireeTradeCategory.value = category;
+  updateRetirementTradePicker({ clearSelection: false });
+  updateRetireeRankPicker({ clearSelection: false });
+  retireeRank.value = rank || "";
+}
+
+function isCertificateRequestActive() {
+  return certificateRequested?.checked === true;
+}
+
+function getCertificateRetireeName() {
+  const certificateName = certificateMemberFullName?.value.trim();
+
+  if (certificateName) {
+    return certificateName;
+  }
+
+  return translate("certificate_retiring_member");
+}
+
+function updateCertificateFamilyCardContext(card) {
+  const context = card.querySelector("[data-certificate-family-context]");
+  const relationship = card.querySelector(
+    "[data-certificate-family-relationship]",
+  );
+
+  if (!context || !relationship) {
+    return;
+  }
+
+  const relationshipLabel = relationship.value
+    ? relationship.selectedOptions[0]?.textContent || relationship.value
+    : translate("certificate_family_member_generic");
+
+  const memberName = document.createElement("span");
+  memberName.className = "certificate-family-retiree-name";
+  memberName.textContent = getCertificateRetireeName();
+
+  const relationshipName = document.createElement("strong");
+  relationshipName.className = "certificate-family-relationship";
+  relationshipName.textContent = relationshipLabel;
+
+  const prefix = document.createTextNode(
+    translate("certificate_family_context_prefix"),
+  );
+  const connector = document.createTextNode(
+    translate("certificate_family_context_connector"),
+  );
+  const end = document.createTextNode(".");
+  const isFrench = getRetirementLanguage() === "fr";
+
+  context.replaceChildren(
+    prefix,
+    ...(isFrench
+      ? [relationshipName, connector, memberName, end]
+      : [memberName, connector, relationshipName, end]),
+  );
+}
+
+function updateCertificateFamilyOtherField(card) {
+  const relationship = card.querySelector(
+    "[data-certificate-family-relationship]",
+  );
+  const otherField = card.querySelector(
+    "[data-certificate-family-other-field]",
+  );
+  const otherInput = card.querySelector("[data-certificate-family-other]");
+  const isOther = relationship?.value === "other";
+
+  if (otherField) {
+    otherField.hidden = !isOther;
+  }
+
+  if (otherInput) {
+    otherInput.disabled = !isCertificateRequestActive() || !isOther;
+    otherInput.required = isOther;
+  }
+}
+
+function updateCertificateFamilyCardLanguage(card, index) {
+  const heading = card.querySelector("[data-certificate-family-heading]");
+  const removeButton = card.querySelector("[data-certificate-family-remove]");
+  const relationshipLabel = card.querySelector(
+    "[data-certificate-family-relationship-label]",
+  );
+  const fullNameLabel = card.querySelector(
+    "[data-certificate-family-full-name-label]",
+  );
+  const otherLabel = card.querySelector(
+    "[data-certificate-family-other-label]",
+  );
+  const fullNameInput = card.querySelector(
+    "[data-certificate-family-full-name]",
+  );
+  const otherInput = card.querySelector("[data-certificate-family-other]");
+
+  if (heading) {
+    heading.textContent = translate("certificate_family_member_number", {
+      number: index + 1,
+    });
+  }
+
+  if (removeButton) {
+    removeButton.textContent = translate("certificate_remove_family_member");
+    removeButton.setAttribute(
+      "aria-label",
+      translate("certificate_remove_family_member"),
     );
-    return;
   }
 
-  retireeTradeCategory.setCustomValidity("");
+  if (relationshipLabel) {
+    relationshipLabel.textContent = translate("certificate_relationship_label");
+  }
+
+  if (fullNameLabel) {
+    fullNameLabel.textContent = translate("certificate_family_full_name");
+  }
+
+  if (otherLabel) {
+    otherLabel.textContent = translate("certificate_relationship_other_label");
+  }
+
+  if (fullNameInput) {
+    fullNameInput.placeholder = translate(
+      "certificate_family_full_name_placeholder",
+    );
+  }
+
+  if (otherInput) {
+    otherInput.placeholder = translate(
+      "certificate_relationship_other_placeholder",
+    );
+  }
+
+  const relationship = card.querySelector(
+    "[data-certificate-family-relationship]",
+  );
+
+  if (relationship?.options[0]) {
+    relationship.options[0].textContent = translate("select_option");
+  }
+
+  card
+    .querySelectorAll("[data-certificate-relationship-key]")
+    .forEach((option) => {
+      option.textContent = translate(option.dataset.certificateRelationshipKey);
+    });
+
+  updateCertificateFamilyCardContext(card);
+}
+
+function updateCertificateFamilyCards() {
+  Array.from(
+    certificateFamilyList.querySelectorAll("[data-certificate-family-card]"),
+  ).forEach((card, index) => {
+    updateCertificateFamilyCardLanguage(card, index);
+    updateCertificateFamilyOtherField(card);
+  });
+}
+
+function createCertificateFamilyMemberCard() {
+  certificateFamilyMemberSequence += 1;
+  const sequence = certificateFamilyMemberSequence;
+  const card = document.createElement("article");
+  card.className = "certificate-family-card";
+  card.dataset.certificateFamilyCard = "true";
+
+  const header = document.createElement("header");
+  header.className = "certificate-family-card-header";
+
+  const heading = document.createElement("h4");
+  heading.dataset.certificateFamilyHeading = "true";
+
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.className = "certificate-card-remove-button";
+  removeButton.dataset.certificateFamilyRemove = "true";
+  removeButton.addEventListener("click", () => {
+    card.remove();
+    updateCertificateFamilyCards();
+  });
+
+  header.append(heading, removeButton);
+
+  const context = document.createElement("p");
+  context.className = "certificate-family-context";
+  context.dataset.certificateFamilyContext = "true";
+
+  const grid = document.createElement("div");
+  grid.className = "event-details-grid";
+
+  const relationshipField = document.createElement("div");
+  relationshipField.className = "event-field";
+
+  const relationshipLabel = document.createElement("label");
+  relationshipLabel.htmlFor = `certificateFamilyRelationship${sequence}`;
+  relationshipLabel.dataset.certificateFamilyRelationshipLabel = "true";
+
+  const relationship = document.createElement("select");
+  relationship.id = `certificateFamilyRelationship${sequence}`;
+  relationship.name = `certificateFamilyMembers[${sequence}][relationship]`;
+  relationship.required = true;
+  relationship.dataset.certificateFamilyRelationship = "true";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  relationship.append(placeholder);
+
+  CERTIFICATE_FAMILY_RELATIONSHIPS.forEach(([value, key]) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.dataset.certificateRelationshipKey = key;
+    relationship.append(option);
+  });
+
+  relationship.addEventListener("change", () => {
+    updateCertificateFamilyOtherField(card);
+    updateCertificateFamilyCardContext(card);
+  });
+
+  relationshipField.append(relationshipLabel, relationship);
+
+  const fullNameField = document.createElement("div");
+  fullNameField.className = "event-field";
+
+  const fullNameLabel = document.createElement("label");
+  fullNameLabel.htmlFor = `certificateFamilyFullName${sequence}`;
+  fullNameLabel.dataset.certificateFamilyFullNameLabel = "true";
+
+  const fullName = document.createElement("input");
+  fullName.id = `certificateFamilyFullName${sequence}`;
+  fullName.name = `certificateFamilyMembers[${sequence}][fullName]`;
+  fullName.type = "text";
+  fullName.maxLength = 160;
+  fullName.autocomplete = "name";
+  fullName.required = true;
+  fullName.dataset.certificateFamilyFullName = "true";
+  fullNameField.append(fullNameLabel, fullName);
+
+  const otherField = document.createElement("div");
+  otherField.className = "event-field event-field-wide";
+  otherField.hidden = true;
+  otherField.dataset.certificateFamilyOtherField = "true";
+
+  const otherLabel = document.createElement("label");
+  otherLabel.htmlFor = `certificateFamilyRelationshipOther${sequence}`;
+  otherLabel.dataset.certificateFamilyOtherLabel = "true";
+
+  const other = document.createElement("input");
+  other.id = `certificateFamilyRelationshipOther${sequence}`;
+  other.name = `certificateFamilyMembers[${sequence}][relationshipOther]`;
+  other.type = "text";
+  other.maxLength = 80;
+  other.disabled = true;
+  other.dataset.certificateFamilyOther = "true";
+  otherField.append(otherLabel, other);
+
+  grid.append(relationshipField, fullNameField, otherField);
+  card.append(header, context, grid);
+  updateCertificateFamilyCardLanguage(
+    card,
+    certificateFamilyList.children.length,
+  );
+
+  return card;
+}
+
+function setCertificateRequestActive(active) {
+  certificateRequested.setAttribute("aria-expanded", String(active));
+  certificateRequestDetails.classList.toggle("is-open", active);
+  certificateRequestDetails.setAttribute("aria-hidden", String(!active));
+
+  certificateRequestDetails
+    .querySelectorAll("input, select, textarea, button")
+    .forEach((control) => {
+      control.disabled = !active;
+    });
+
+  if (active && !certificateMemberFullName.value.trim()) {
+    certificateMemberFullName.value = [
+      getFieldValue("retireeFirstName"),
+      getFieldValue("retireeLastName"),
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  updateCertificateFamilyCards();
+}
+
+function resetCertificateRequestForm() {
+  certificateFamilyList.replaceChildren();
+  certificateRequested.checked = false;
+  setCertificateRequestActive(false);
+  certificateDateInputs.forEach((input) => {
+    window.CMCENDateTimePicker?.refreshDateInput(input);
+  });
 }
 
 function validateRetirementPhoto(file) {
@@ -336,6 +763,10 @@ function buildRetirementMessageData(photoUrl = "") {
     throw new Error(translate("retirement_consent_required"));
   }
 
+  const certificateRequest = isCertificateRequestActive()
+    ? buildCertificateRequestData()
+    : null;
+
   return {
     retiree: {
       rank: getFieldValue("retireeRank"),
@@ -362,6 +793,55 @@ function buildRetirementMessageData(photoUrl = "") {
     publishNow:
       !retirementPublishNowContainer.hidden && retirementPublishNow.checked,
     website: getFieldValue("retirementWebsite"),
+    ...(certificateRequest ? { certificateRequest } : {}),
+  };
+}
+
+function buildCertificateRequestData() {
+  const decorations = Array.from(
+    certificateRequestDetails.querySelectorAll(
+      'input[name="certificateDecorations"]:checked',
+    ),
+  ).map((input) => input.value);
+
+  if (!decorations.length) {
+    throw new Error(translate("certificate_decorations_required"));
+  }
+
+  const familyMembers = Array.from(
+    certificateFamilyList.querySelectorAll("[data-certificate-family-card]"),
+  ).map((card) => ({
+    relationship: card.querySelector(
+      "[data-certificate-family-relationship]",
+    )?.value,
+    relationshipOther: card.querySelector("[data-certificate-family-other]")
+      ?.value,
+    fullName: card.querySelector("[data-certificate-family-full-name]")?.value,
+  }));
+
+  return {
+    member: {
+      fullName: getFieldValue("certificateMemberFullName"),
+      rankLanguage: getFieldValue("certificateRankLanguage"),
+      decorations,
+      lastUnit: getFieldValue("certificateLastUnit"),
+      cafEnrollmentDate: getFieldValue("certificateCafEnrollmentDate"),
+      releaseDate: getFieldValue("certificateReleaseDate"),
+      ceBranchEnrollmentDate: getFieldValue("certificateCeEnrollmentDate"),
+      neededByDate: getFieldValue("certificateNeededByDate"),
+      dwdParadeRequested: document.getElementById(
+        "certificateDwdParadeRequested",
+      ).checked,
+    },
+    familyMembers,
+    mailingAddress: {
+      line1: getFieldValue("certificateAddressLine1"),
+      line2: getFieldValue("certificateAddressLine2"),
+      city: getFieldValue("certificateCity"),
+      province: getFieldValue("certificateProvince"),
+      postalCode: getFieldValue("certificatePostalCode"),
+      country: getFieldValue("certificateCountry"),
+    },
   };
 }
 
@@ -383,8 +863,7 @@ async function verifyRetirementAccess() {
     currentRetirementUser = user;
     populateRetirementSubmitterFromProfile(user);
 
-    const canBypassReview =
-      user.permissions?.canBypassReviewStages === true;
+    const canBypassReview = user.permissions?.canBypassReviewStages === true;
     retirementPublishNowContainer.hidden = !canBypassReview;
     retirementReviewNote.hidden = canBypassReview;
 
@@ -480,7 +959,7 @@ function populateRetirementForm(retirementMessage) {
   const retiree = retirementMessage.retiree || {};
   const submitter = retirementMessage.submitter || {};
 
-  setRetirementField("retireeRank", retiree.rank);
+  selectRetireeRank(retiree.rank);
   setRetirementField("retireeFirstName", retiree.firstName);
   setRetirementField("retireeLastName", retiree.lastName);
   setRetirementField("retireePostNominals", retiree.postNominals);
@@ -497,6 +976,7 @@ function populateRetirementForm(retirementMessage) {
     "retirementMessageText",
     getRetirementMessageText(retirementMessage),
   );
+  CMCENUtils.bindCharacterCounters();
   setRetirementField("retirementSubmitterRelationship", submitter.relationship);
   setRetirementCheckbox("retirementMemberReviewConfirmed", true);
   setRetirementCheckbox("retirementPublicationConsent", true);
@@ -564,8 +1044,11 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
 
     if (!editingRetirementMessageId) {
       retirementSubmitForm.reset();
+      CMCENUtils.bindCharacterCounters();
       setDefaultMessageLanguage();
+      updateRetireeRankPicker();
       updateRetirementTradePicker();
+      resetCertificateRequestForm();
       populateRetirementSubmitterFromProfile(currentRetirementUser);
     }
 
@@ -594,7 +1077,31 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
   }
 });
 
-retireeTradeCategory.addEventListener("change", updateRetirementTradePicker);
+retireeTradeCategory.addEventListener("change", () => {
+  updateRetireeRankPicker();
+  updateRetirementTradePicker();
+});
+
+certificateRequested.addEventListener("change", () => {
+  setCertificateRequestActive(isCertificateRequestActive());
+});
+
+addCertificateFamilyMember.addEventListener("click", () => {
+  const card = createCertificateFamilyMemberCard();
+  certificateFamilyList.append(card);
+  card.querySelector("[data-certificate-family-relationship]")?.focus();
+});
+
+["retireeFirstName", "retireeLastName"].forEach((id) => {
+  document
+    .getElementById(id)
+    ?.addEventListener("input", updateCertificateFamilyCards);
+});
+
+certificateMemberFullName.addEventListener(
+  "input",
+  updateCertificateFamilyCards,
+);
 
 retirementSubmitForm.addEventListener("change", (event) => {
   if (event.target.matches('input[name="retireeTradeRoleOption"]')) {
@@ -606,14 +1113,18 @@ retirementSubmitForm.addEventListener("change", (event) => {
 
 populateRetirementTradeOptions();
 setDefaultMessageLanguage();
+updateRetireeRankPicker();
 updateRetirementTradePicker();
+setCertificateRequestActive(false);
 updateRetirementFormModeText();
 verifyRetirementAccess();
 
-window.addEventListener("languagechange", () => {
+document.addEventListener("languagechange", () => {
   if (!editingRetirementMessageId) {
     setDefaultMessageLanguage();
   }
 
+  updateRetireeRankPicker({ clearSelection: false });
   updateRetirementFormModeText();
+  updateCertificateFamilyCards();
 });

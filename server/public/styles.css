@@ -659,6 +659,31 @@ svg {
   gap: 7px;
 }
 
+.cmcen-modal-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.cmcen-modal-form .cmcen-modal-field {
+  margin-top: 0;
+}
+
+.cmcen-modal-form .cmcen-modal-field > span {
+  color: var(--branch-grey-800);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.cmcen-modal-field-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .cmcen-modal-checklist {
   margin: 20px 0 0;
   padding: 0;
@@ -16365,6 +16390,14 @@ html[data-theme='dark'] .cmcen-modal-checklist-item:has(input:checked) {
 }
 
 html[data-theme='dark'] .cmcen-modal-checklist-item small {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .cmcen-modal-form .cmcen-modal-field > span {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .cmcen-modal-field-hint {
   color: var(--dark-text-soft);
 }
 

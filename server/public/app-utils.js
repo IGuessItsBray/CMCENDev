@@ -902,6 +902,7 @@
   let modalInputGroup = null;
   let modalInputLabel = null;
   let modalInput = null;
+  let modalFormFields = null;
   let modalChecklist = null;
   let modalChoiceActions = null;
   let modalActions = null;
@@ -999,6 +1000,10 @@
 
     modalInputGroup.append(modalInputLabel, modalInput);
 
+    modalFormFields = document.createElement("div");
+    modalFormFields.className = "cmcen-modal-form";
+    modalFormFields.hidden = true;
+
     modalChecklist = document.createElement("fieldset");
     modalChecklist.className = "cmcen-modal-checklist";
     modalChecklist.hidden = true;
@@ -1023,6 +1028,7 @@
     modalActions.append(modalCancelButton, modalConfirmButton);
     body.append(
       modalMessage,
+      modalFormFields,
       modalInputGroup,
       modalChecklist,
       modalChoiceActions,
@@ -1054,6 +1060,15 @@
 
     modalConfirmButton.addEventListener("click", () => {
       if (!modalActiveRequest) return;
+      if (modalActiveRequest.type === "form") {
+        const fields = Array.from(
+          modalFormFields.querySelectorAll("input, select, textarea"),
+        );
+
+        if (!fields.every((field) => field.reportValidity())) return;
+        closeModal(modalActiveRequest.getFormValues());
+        return;
+      }
       closeModal(
         modalActiveRequest.type === "prompt"
           ? modalInput.value
@@ -1072,9 +1087,20 @@
         return;
       }
 
-      if (event.key === "Enter" && modalActiveRequest.type === "prompt") {
+      if (
+        event.key === "Enter" &&
+        ["prompt", "form"].includes(modalActiveRequest.type)
+      ) {
         event.preventDefault();
-        closeModal(modalInput.value);
+        if (modalActiveRequest.type === "form") {
+          const fields = Array.from(
+            modalFormFields.querySelectorAll("input, select, textarea"),
+          );
+          if (!fields.every((field) => field.reportValidity())) return;
+          closeModal(modalActiveRequest.getFormValues());
+        } else {
+          closeModal(modalInput.value);
+        }
         return;
       }
 
@@ -1105,6 +1131,7 @@
         createModal();
 
         const isPrompt = type === "prompt";
+        const isForm = type === "form";
         const isChoice = type === "choice";
         const isChecklist = type === "checklist";
         const isAlert = type === "alert";
@@ -1135,6 +1162,12 @@
                 'input[type="checkbox"]:checked',
               ),
             ).map((input) => input.value),
+          getFormValues: () =>
+            Object.fromEntries(
+              Array.from(
+                modalFormFields.querySelectorAll("input, select, textarea"),
+              ).map((field) => [field.name, field.value]),
+            ),
           closeOnBackdrop: options.closeOnBackdrop !== false,
         };
 
@@ -1147,6 +1180,8 @@
           options.closeLabel || getModalTranslation("modal_close", "Close"),
         );
         modalInputGroup.hidden = !isPrompt;
+        modalFormFields.hidden = !isForm;
+        modalFormFields.replaceChildren();
         modalChecklist.hidden = !isChecklist;
         modalChecklist.replaceChildren();
         modalChoiceActions.hidden = !isChoice;
@@ -1197,6 +1232,51 @@
           modalConfirmButton.disabled = false;
         }
 
+        if (isForm) {
+          (options.fields || []).forEach((field) => {
+            const group = document.createElement("label");
+            group.className = "cmcen-modal-field";
+
+            const label = document.createElement("span");
+            label.textContent = field.label || field.name || "Field";
+
+            const control = document.createElement(
+              field.type === "select" ? "select" : "input",
+            );
+            control.className = "cmcen-modal-input";
+            control.name = field.name || "";
+            control.id = `cmcenModalField-${field.name || "input"}`;
+            control.required = field.required === true;
+            control.autocomplete = field.autocomplete || "off";
+
+            if (field.type === "select") {
+              (field.options || []).forEach((option) => {
+                const optionElement = document.createElement("option");
+                optionElement.value = String(option.value || "");
+                optionElement.textContent = String(option.label || option.value || "");
+                optionElement.selected = option.value === field.defaultValue;
+                control.append(optionElement);
+              });
+            } else {
+              control.type = field.type || "text";
+              control.value = String(field.defaultValue || "");
+              control.placeholder = field.placeholder || "";
+              if (field.maxLength) control.maxLength = field.maxLength;
+            }
+
+            group.append(label, control);
+
+            if (field.hint) {
+              const hint = document.createElement("small");
+              hint.className = "cmcen-modal-field-hint";
+              hint.textContent = field.hint;
+              group.append(hint);
+            }
+
+            modalFormFields.append(group);
+          });
+        }
+
         if (isChoice) {
           (options.choices || []).forEach((choice) => {
             const button = document.createElement("button");
@@ -1243,7 +1323,9 @@
         window.requestAnimationFrame(() => {
           if (modalActiveRequest?.resolve !== resolve) return;
 
-          const focusTarget = isPrompt
+          const focusTarget = isForm
+            ? modalFormFields.querySelector("input, select, textarea")
+            : isPrompt
             ? modalInput
             : isChoice
               ? modalChoiceActions.querySelector("button")
@@ -1269,6 +1351,9 @@
     },
     prompt(message, options) {
       return showModal("prompt", message, options);
+    },
+    form(message, options) {
+      return showModal("form", message, options);
     },
     choose(message, options) {
       return showModal("choice", message, options);

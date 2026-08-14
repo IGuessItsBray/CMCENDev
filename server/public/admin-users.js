@@ -869,34 +869,58 @@ async function saveAdminUser(userId, payload) {
 }
 
 async function provisionAdminUser() {
-  const firstName = await CMCENModal.prompt("Enter the member's first name.", {
-    title: "Create account",
-    inputLabel: "First name",
-    confirmText: "Continue",
-  });
-  if (!firstName) return;
-
-  const lastName = await CMCENModal.prompt("Enter the member's last name.", {
-    title: "Create account",
-    inputLabel: "Last name",
-    confirmText: "Continue",
-  });
-  if (!lastName) return;
-
-  const email = await CMCENModal.prompt(
-    "Enter the email address that will receive the activation link.",
+  const availableRoles = adminWorkZoneState.roles.filter(
+    (role) => !["ghost", "developer", "internal_beta"].includes(role),
+  );
+  const invitation = await CMCENModal.form(
+    "Send a seven-day account activation link. The recipient will set their own password.",
     {
-      title: "Create account",
-      inputLabel: "Email address",
+      title: "Invite user",
       confirmText: "Send invitation",
+      fields: [
+        {
+          name: "firstName",
+          label: "First name",
+          required: true,
+          autocomplete: "given-name",
+          maxLength: 80,
+        },
+        {
+          name: "lastName",
+          label: "Last name",
+          required: true,
+          autocomplete: "family-name",
+          maxLength: 80,
+        },
+        {
+          name: "email",
+          label: "Email",
+          type: "email",
+          required: true,
+          autocomplete: "email",
+        },
+        {
+          name: "role",
+          label: "Role",
+          type: "select",
+          required: true,
+          defaultValue: availableRoles.includes("subscriber")
+            ? "subscriber"
+            : availableRoles[0],
+          options: availableRoles.map((role) => ({
+            value: role,
+            label: translate(`role_${role}`),
+          })),
+        },
+      ],
     },
   );
-  if (!email) return;
+  if (!invitation) return;
 
   try {
     const data = await adminApiJson("/api/admin/users", {
       method: "POST",
-      body: { firstName, lastName, email },
+      body: invitation,
       errorMessage: "Could not send invitation",
     });
 

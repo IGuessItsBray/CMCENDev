@@ -75,6 +75,66 @@
     }
   }
 
+  const sessionCookieConsentKey = "cmcen_session_cookie_consent";
+  const sessionCookieConsentValue = "accepted";
+
+  function getSessionCookieConsentTranslation(key, fallback) {
+    if (typeof window.translate !== "function") {
+      return fallback;
+    }
+
+    const translated = window.translate(key);
+    return translated && translated !== key ? translated : fallback;
+  }
+
+  function hasSessionCookieConsent() {
+    try {
+      return (
+        localStorage.getItem(sessionCookieConsentKey) ===
+        sessionCookieConsentValue
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  function rememberSessionCookieConsent() {
+    try {
+      localStorage.setItem(sessionCookieConsentKey, sessionCookieConsentValue);
+    } catch {
+      // A visitor can still sign in; their browser will ask again next time.
+    }
+  }
+
+  async function requestSessionCookieConsent() {
+    const consented = await window.CMCENModal.confirm(
+      getSessionCookieConsentTranslation(
+        "session_cookie_consent_message",
+        "To sign in, CMCEN needs one secure cookie to protect your account and keep your session active. We do not use advertising or third-party cookies. Without it, you can still browse the public site but cannot sign in.",
+      ),
+      {
+        title: getSessionCookieConsentTranslation(
+          "session_cookie_consent_title",
+          "Sign in securely",
+        ),
+        cancelText: getSessionCookieConsentTranslation(
+          "session_cookie_consent_decline",
+          "Stay on the public site",
+        ),
+        confirmText: getSessionCookieConsentTranslation(
+          "session_cookie_consent_accept",
+          "Sign in securely",
+        ),
+      },
+    );
+
+    if (consented) {
+      rememberSessionCookieConsent();
+    }
+
+    return consented;
+  }
+
   let tokenRefreshPromise = null;
   let tokenRefreshTimer = null;
 
@@ -1372,6 +1432,7 @@
     getCurrentLocale,
     getLocalizedText,
     getRetireeNameParts,
+    hasSessionCookieConsent,
     getStoredAuthToken,
     getUserDisplayName,
     normalizeToken,
@@ -1379,6 +1440,7 @@
     preparePublicKeyRequestOptions,
     prepareImageUploadFile,
     redirectToLogin,
+    requestSessionCookieConsent,
     refreshAuthToken,
     requireAuthToken,
     serializeAssertionCredential,

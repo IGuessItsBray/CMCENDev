@@ -88,6 +88,10 @@ const VALID_AFFILIATION_ELEMENTS = new Set([
 ]);
 
 const VALID_PREFERRED_LANGUAGES = new Set(['en', 'fr']);
+
+function hasSessionCookieConsent(req) {
+  return req.body?.sessionCookieConsent === true;
+}
 const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 const PASSWORD_RESET_GENERIC_MESSAGE =
   'If an account exists for that email address, a password reset link has been sent.';
@@ -600,6 +604,13 @@ router.post('/ghost/confirm', async (req, res) => {
       targetSnapshot: getUserSnapshot(user),
     });
 
+    if (!hasSessionCookieConsent(req)) {
+      return res.json({
+        message: 'Guest access confirmed. Sign in to continue.',
+        sessionCookieConsentRequired: true,
+      });
+    }
+
     setRefreshTokenCookie(req, res, user);
     res.json({
       message: 'Guest access confirmed',
@@ -820,13 +831,21 @@ router.post('/register', async (req, res) => {
       },
     });
 
-    if (invitedUser) {
+    if (invitedUser && hasSessionCookieConsent(req)) {
       setRefreshTokenCookie(req, res, user);
       return res.status(201).json({
         message:
           'Account activated. Complete your profile from your account page.',
         token: createSessionToken(user),
         user: await getProfileResponse(user),
+      });
+    }
+
+    if (invitedUser) {
+      return res.status(201).json({
+        message:
+          'Account activated. Sign in to complete your profile and security setup.',
+        sessionCookieConsentRequired: true,
       });
     }
 
@@ -849,7 +868,7 @@ router.post('/register', async (req, res) => {
 // POST /api/login
 // Authenticate a user and return a short-lived JWT.
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, sessionCookieConsent } = req.body;
   const user = await User.findOne({ username }).select(
     '+password +emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
   );
@@ -866,6 +885,10 @@ router.post('/login', async (req, res) => {
         verificationToken: verification.tempToken,
         message: 'Check your email for a verification code.',
       });
+    }
+
+    if (sessionCookieConsent !== true) {
+      return res.json({ sessionCookieConsentRequired: true });
     }
 
     const hasWebAuthn =
@@ -985,6 +1008,13 @@ router.post('/email-verification/confirm', async (req, res) => {
         role: user.role,
       },
     });
+
+    if (!hasSessionCookieConsent(req)) {
+      return res.json({
+        message: 'Email verified. Sign in to continue.',
+        sessionCookieConsentRequired: true,
+      });
+    }
 
     setRefreshTokenCookie(req, res, user);
     res.json({

@@ -76,6 +76,7 @@ async function login(user, options = {}) {
   const response = await agent.post('/api/login').send({
     username: user.username,
     password: options.password || 'Correct-Horse-Integration-1!',
+    sessionCookieConsent: options.sessionCookieConsent ?? true,
   });
 
   assert.equal(
@@ -295,6 +296,23 @@ describe('system and authentication', () => {
 
     const audit = await AuditLog.findOne({ action: 'user.login' }).lean();
     assert.equal(String(audit.actor), String(user._id));
+  });
+
+  test('requires session-cookie consent before issuing a login session', async () => {
+    const user = await createUser();
+
+    const consentRequired = await login(user, {
+      sessionCookieConsent: false,
+    });
+
+    assert.equal(consentRequired.body.sessionCookieConsentRequired, true);
+    assert.equal(consentRequired.body.token, undefined);
+    assert.equal(consentRequired.headers['set-cookie'], undefined);
+
+    const consentedLogin = await login(user, { sessionCookieConsent: true });
+
+    assert.equal(typeof consentedLogin.body.token, 'string');
+    assert.match(consentedLogin.headers['set-cookie'][0], /cmcen_refresh=/);
   });
 });
 

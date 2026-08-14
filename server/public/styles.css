@@ -18214,6 +18214,38 @@ html[data-theme='dark'] .about-family-pillar-list li {
   color: var(--dark-text-soft);
 }
 
+html[data-theme='dark'] .developers-card {
+  border-color: var(--dark-border);
+  border-top-color: var(--gold-500);
+  background:
+    linear-gradient(130deg, var(--dark-surface-2), var(--dark-surface-3)),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.035) 0,
+      rgba(255, 255, 255, 0.035) 1px,
+      transparent 1px,
+      transparent 13px
+    );
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.36);
+}
+
+html[data-theme='dark'] .developers-card h1,
+html[data-theme='dark'] .developers-list strong {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .developers-made-with {
+  color: var(--gold-200);
+}
+
+html[data-theme='dark'] .developers-list li {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme='dark'] .developers-list span {
+  color: var(--dark-text-soft);
+}
+
 .theme-toggle {
   position: relative;
   display: inline-flex;

@@ -426,11 +426,25 @@
 
     function createRoleSelect(user) {
       const select = document.createElement("select");
+      const state = getState();
+      const canManageInternalBeta = state.currentUserRole === "developer";
+      const isInternalBetaUser = user?.role === "internal_beta";
       select.id = "adminUserRole";
       select.name = "role";
-      select.disabled = isSelectedSelf(user) || isDeveloper(user);
+      select.disabled =
+        isSelectedSelf(user) ||
+        isDeveloper(user) ||
+        (isInternalBetaUser && !canManageInternalBeta);
 
-      const roles = isDeveloper(user) ? ["developer"] : getStandardRoles();
+      const roles = isDeveloper(user)
+        ? ["developer"]
+        : getStandardRoles().filter(
+            (role) => canManageInternalBeta || role !== "internal_beta",
+          );
+
+      if (isInternalBetaUser && !roles.includes("internal_beta")) {
+        roles.push("internal_beta");
+      }
 
       roles.forEach((role) => {
         const option = document.createElement("option");

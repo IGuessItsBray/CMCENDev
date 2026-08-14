@@ -9,6 +9,7 @@ let adminWorkZoneState = {
     ? new URLSearchParams(window.location.search).get("view")
     : "users",
   currentUserId: "",
+  currentUserRole: "",
   currentUserPermissions: {},
   currentUserMfa: {},
   users: [],
@@ -772,6 +773,7 @@ async function loadCurrentAdmin() {
 
   setAdminWorkZoneState({
     currentUserId: user._id || user.id || "",
+    currentUserRole: user.role || "",
     currentUserPermissions: user.permissions || {},
     currentUserMfa: user.mfa || {},
   });

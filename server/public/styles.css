@@ -1710,6 +1710,14 @@ a.dropdown-toggle {
   margin-top: 0;
 }
 
+.developers-team-list li {
+  background: linear-gradient(
+    90deg,
+    rgba(32, 38, 66, 0.16),
+    rgba(238, 240, 242, 0.88)
+  );
+}
+
 /* ─────────────────────────────────────────────
    Public events calendar
    ───────────────────────────────────────────── */
@@ -18135,6 +18143,14 @@ html[data-theme='dark'] .about-family-pillar-list li {
     rgba(34, 45, 64, 0.88)
   );
   color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .developers-team-list li {
+  background: linear-gradient(
+    90deg,
+    rgba(69, 88, 142, 0.48),
+    rgba(34, 45, 64, 0.88)
+  );
 }
 
 .theme-toggle {

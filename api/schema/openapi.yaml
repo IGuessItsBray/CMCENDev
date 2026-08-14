@@ -701,7 +701,27 @@ paths:
       description: Creates an invited account and emails a seven-day activation link. The recipient sets their own password and completes their profile. Developer accounts cannot be provisioned through this endpoint.
       x-permission: canProvisionUsers
       requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, email, role]
+              properties:
+                firstName:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                lastName:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [subscriber, internal_beta, contributor, author, editor, administrator]
       responses:
         "201":
           description: Invitation sent.

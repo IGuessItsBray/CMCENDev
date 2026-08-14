@@ -1940,7 +1940,6 @@ router.post(
         .trim()
         .toLowerCase();
       const role = String(req.body?.role || 'subscriber').trim();
-      const contentAreas = cleanContentAreas(req.body?.contentAreas);
 
       if (!firstName || !lastName || !email) {
         return res
@@ -1962,15 +1961,10 @@ router.post(
         });
       }
 
-      if (!validateContentAreas(contentAreas)) {
-        return res.status(400).json({ error: 'Invalid content area provided' });
-      }
-
-      const customRoleValidation = await validateCustomRoleIds(
-        req.body?.customRoleIds,
-      );
-      if (customRoleValidation.error) {
-        return res.status(400).json({ error: customRoleValidation.error });
+      if (cleanRoleIds(req.body?.customRoleIds).length) {
+        return res.status(400).json({
+          error: 'Custom roles cannot be assigned when inviting a user',
+        });
       }
 
       if (await User.exists({ email })) {
@@ -1990,8 +1984,8 @@ router.post(
         lastName,
         password: crypto.randomBytes(32).toString('hex'),
         role,
-        customRoles: customRoleValidation.roleIds,
-        contentAreas,
+        customRoles: [],
+        contentAreas: [],
         emailVerification: { required: true, verified: false },
         invitation: {
           tokenHash: hashInvitationToken(token),
@@ -2013,8 +2007,8 @@ router.post(
         targetSnapshot: toAdminUser(user),
         metadata: {
           role,
-          customRoleIds: customRoleValidation.roleIds,
-          contentAreas,
+          customRoleIds: [],
+          contentAreas: [],
         },
       });
 

@@ -12,6 +12,7 @@ process.env.MINIO_SECRET_KEY = 'integration-test';
 process.env.MINIO_BUCKET_NAME = 'integration-test';
 
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const request = require('supertest');
 const sharp = require('sharp');
 const speakeasy = require('speakeasy');
@@ -1131,6 +1132,50 @@ describe('authorization matrix and account integrity', () => {
 
     const updatedMember = await User.findById(member._id).lean();
     assert.equal(updatedMember.role, 'internal_beta');
+  });
+
+  test('invites a user with a built-in role and rejects custom role assignment', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const customRole = await Role.create({
+      name: 'Invite-only custom role',
+      slug: 'invite-only-custom-role',
+      permissions: ['audit.view'],
+    });
+    const token = jwt.sign(
+      { userId: administrator._id },
+      process.env.JWT_SECRET,
+    );
+
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(token))
+      .send({
+        firstName: 'Jordan',
+        lastName: 'Example',
+        email: 'jordan.example@example.test',
+        role: 'editor',
+        customRoleIds: [String(customRole._id)],
+      })
+      .expect(400);
+
+    const response = await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(token))
+      .send({
+        firstName: 'Jordan',
+        lastName: 'Example',
+        email: 'jordan.example@example.test',
+        role: 'editor',
+      })
+      .expect(201);
+
+    assert.equal(response.body.user.role, 'editor');
+    assert.deepEqual(response.body.user.customRoles, []);
+    const invitedUser = await User.findById(response.body.user._id).lean();
+    assert.equal(invitedUser.accountType, 'invited');
+    assert.equal(invitedUser.firstName, 'Jordan');
+    assert.equal(invitedUser.lastName, 'Example');
+    assert.deepEqual(invitedUser.customRoles, []);
   });
 
   test('grants catalog permissions through a custom role but not developer-only access', async () => {

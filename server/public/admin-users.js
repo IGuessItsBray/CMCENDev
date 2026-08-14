@@ -869,8 +869,12 @@ async function saveAdminUser(userId, payload) {
 }
 
 async function provisionAdminUser() {
+  const canAssignInternalBeta =
+    adminWorkZoneState.currentUserRole === "developer";
   const availableRoles = adminWorkZoneState.roles.filter(
-    (role) => !["ghost", "developer", "internal_beta"].includes(role),
+    (role) =>
+      !["ghost", "developer"].includes(role) &&
+      (canAssignInternalBeta || role !== "internal_beta"),
   );
   const invitation = await CMCENModal.form(
     "Send a seven-day account activation link. The recipient will set their own password.",

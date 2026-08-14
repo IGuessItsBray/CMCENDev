@@ -1178,6 +1178,36 @@ describe('authorization matrix and account integrity', () => {
     assert.deepEqual(invitedUser.customRoles, []);
   });
 
+  test('restricts Internal Beta invitations to developers', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const developer = await createUser({ role: 'developer' });
+    const administratorLogin = await login(administrator);
+    const developerLogin = await login(developer);
+    const invitation = {
+      firstName: 'Beta',
+      lastName: 'Member',
+      email: 'internal-beta@example.test',
+      role: 'internal_beta',
+    };
+
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(administratorLogin.body.token))
+      .send(invitation)
+      .expect(403);
+
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(developerLogin.body.token))
+      .send(invitation)
+      .expect(201);
+
+    const invitedMember = await User.findOne({
+      email: invitation.email,
+    }).lean();
+    assert.equal(invitedMember.role, 'internal_beta');
+  });
+
   test('grants catalog permissions through a custom role but not developer-only access', async () => {
     const customRole = await Role.create({
       name: 'Audit Reader',

@@ -414,7 +414,7 @@ paths:
       tags: [MFA]
       summary: Generate WebAuthn authentication options.
       parameters:
-        - $ref: "#/components/parameters/TempTokenQuery"
+        - $ref: "#/components/parameters/TempTokenHeader"
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
       responses:
@@ -425,7 +425,7 @@ paths:
       tags: [MFA]
       summary: Verify WebAuthn authentication.
       parameters:
-        - $ref: "#/components/parameters/TempTokenQuery"
+        - $ref: "#/components/parameters/TempTokenHeader"
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
       responses:
@@ -459,7 +459,7 @@ paths:
       tags: [MFA]
       summary: Verify TOTP code.
       parameters:
-        - $ref: "#/components/parameters/TempTokenQuery"
+        - $ref: "#/components/parameters/TempTokenHeader"
       requestBody:
         $ref: "#/components/requestBodies/TotpVerify"
       responses:
@@ -1697,9 +1697,9 @@ components:
       schema:
         type: string
         enum: [retirement, comments, lastPost]
-    TempTokenQuery:
-      name: tempToken
-      in: query
+    TempTokenHeader:
+      name: x-temp-token
+      in: header
       required: false
       schema: { type: string }
   requestBodies:

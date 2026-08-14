@@ -54,32 +54,8 @@ function cleanPath(value) {
   return cleanValue.startsWith('/') ? cleanValue : '/';
 }
 
-async function groupCounts(match, field, { limit = 10 } = {}) {
-  if (field === 'country') {
-    const visits = await AnalyticsVisit.find(match)
-      .select('country ipAddress')
-      .lean();
-    const counts = new Map();
-
-    visits.forEach((visit) => {
-      const label = normalizeStoredCountry(visit.country, visit.ipAddress);
-      counts.set(label, (counts.get(label) || 0) + 1);
-    });
-
-    return Array.from(counts, ([label, visitsCount]) => ({
-      label,
-      visits: visitsCount,
-    }))
-      .sort(
-        (first, second) =>
-          second.visits - first.visits ||
-          first.label.localeCompare(second.label),
-      )
-      .slice(0, limit);
-  }
-
-  return AnalyticsVisit.aggregate([
-    { $match: match },
+function getBreakdownPipeline(field, limit) {
+  return [
     {
       $group: {
         _id: `$${field}`,
@@ -95,7 +71,77 @@ async function groupCounts(match, field, { limit = 10 } = {}) {
         visits: 1,
       },
     },
+  ];
+}
+
+function normalizeCountryCounts(rows) {
+  const counts = new Map();
+
+  rows.forEach((row) => {
+    const label = normalizeStoredCountry(row.label);
+    counts.set(label, (counts.get(label) || 0) + row.visits);
+  });
+
+  return Array.from(counts, ([label, visits]) => ({ label, visits }))
+    .sort(
+      (first, second) =>
+        second.visits - first.visits || first.label.localeCompare(second.label),
+    )
+    .slice(0, 10);
+}
+
+async function getTrafficSummary(match) {
+  const [summary] = await AnalyticsVisit.aggregate([
+    { $match: match },
+    {
+      $facet: {
+        totals: [
+          {
+            $group: {
+              _id: null,
+              visits: { $sum: 1 },
+              registered: {
+                $sum: { $cond: ['$isRegistered', 1, 0] },
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              visits: 1,
+              registered: 1,
+            },
+          },
+        ],
+        pages: getBreakdownPipeline('path', 12),
+        sources: getBreakdownPipeline('source', 10),
+        devices: getBreakdownPipeline('deviceType', 8),
+        operatingSystems: getBreakdownPipeline('osType', 8),
+        browsers: getBreakdownPipeline('browser', 8),
+        countries: getBreakdownPipeline('country', 10),
+        recentVisits: [
+          { $sort: { createdAt: -1 } },
+          { $limit: 25 },
+          {
+            $project: {
+              _id: 0,
+              path: 1,
+              source: 1,
+              deviceType: 1,
+              osType: 1,
+              browser: 1,
+              isRegistered: 1,
+              userRole: 1,
+              country: 1,
+              createdAt: 1,
+            },
+          },
+        ],
+      },
+    },
   ]);
+
+  return summary || {};
 }
 
 async function getUniqueVisitorSummary(match) {
@@ -186,37 +232,24 @@ router.get(
       const range =
         RANGE_DAYS[req.query.range] !== undefined ? req.query.range : '30d';
       const match = buildMatch(range);
-      const totalVisits = await AnalyticsVisit.countDocuments(match);
-      const registeredVisits = await AnalyticsVisit.countDocuments({
-        ...match,
-        isRegistered: true,
-      });
-      const guestVisits = Math.max(totalVisits - registeredVisits, 0);
-      const uniqueSummary = await getUniqueVisitorSummary(match);
-
-      const [
-        pages,
-        sources,
-        devices,
-        operatingSystems,
-        browsers,
-        countries,
-        recentVisits,
-      ] = await Promise.all([
-        groupCounts(match, 'path', { limit: 12 }),
-        groupCounts(match, 'source', { limit: 10 }),
-        groupCounts(match, 'deviceType', { limit: 8 }),
-        groupCounts(match, 'osType', { limit: 8 }),
-        groupCounts(match, 'browser', { limit: 8 }),
-        groupCounts(match, 'country', { limit: 10 }),
-        AnalyticsVisit.find(match)
-          .select(
-            'path source deviceType osType browser isRegistered userRole country createdAt',
-          )
-          .sort({ createdAt: -1 })
-          .limit(25)
-          .lean(),
+      const [trafficSummary, uniqueSummary] = await Promise.all([
+        getTrafficSummary(match),
+        getUniqueVisitorSummary(match),
       ]);
+      const totals = trafficSummary.totals?.[0] || {
+        visits: 0,
+        registered: 0,
+      };
+      const totalVisits = totals.visits;
+      const registeredVisits = totals.registered;
+      const guestVisits = Math.max(totalVisits - registeredVisits, 0);
+      const pages = trafficSummary.pages || [];
+      const sources = trafficSummary.sources || [];
+      const devices = trafficSummary.devices || [];
+      const operatingSystems = trafficSummary.operatingSystems || [];
+      const browsers = trafficSummary.browsers || [];
+      const countries = normalizeCountryCounts(trafficSummary.countries || []);
+      const recentVisits = trafficSummary.recentVisits || [];
 
       res.json({
         range,

@@ -111,54 +111,20 @@ async function adminApiJson(path, options = {}) {
 }
 
 async function adminApiBlob(path, options = {}) {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      Authorization: `Bearer ${adminToken}`,
-    },
-  });
+  try {
+    return await CMCENUtils.apiBlob(path, {
+      ...options,
+      token: adminToken,
+      redirectOnUnauthorized: true,
+      unauthorizedMessage: translate("admin_verify_error"),
+    });
+  } catch (error) {
+    if (error.status === 403) {
+      window.location.href = "/dashboard";
+    }
 
-  if (response.status === 401) {
-    window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-    throw new Error(translate("admin_verify_error"));
+    throw error;
   }
-
-  if (response.status === 403) {
-    window.location.href = "/dashboard";
-    throw new Error(translate("admin_verify_error"));
-  }
-
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(
-      data.error || options.errorMessage || translate("admin_verify_error"),
-    );
-  }
-
-  return {
-    blob: await response.blob(),
-    filename: getDownloadFilename(response.headers.get("Content-Disposition")),
-  };
-}
-
-function getDownloadFilename(contentDisposition) {
-  const header = String(contentDisposition || "");
-  const match = header.match(/filename="?([^"]+)"?/iu);
-
-  return match?.[1] || "";
-}
-
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = filename;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
 }
 
 function setAdminStatus(message, state = "") {
@@ -961,7 +927,7 @@ async function exportAdminUsers(format, options = {}) {
       },
     );
 
-    downloadBlob(
+    CMCENUtils.downloadBlob(
       blob,
       filename || `cmcen-users.${format === "pdf" ? "pdf" : "csv"}`,
     );

@@ -335,21 +335,24 @@
     }
 
     const data = parseJson ? await readJsonResponse(response) : response;
+    const errorData = response.ok
+      ? data
+      : parseJson
+        ? data
+        : await readJsonResponse(response.clone());
 
     if (response.status === 401 && redirectOnUnauthorized) {
       redirectToLogin(
         redirectOnUnauthorized === true ? "/login" : redirectOnUnauthorized,
       );
-      throw createApiError(unauthorizedMessage, response, data);
+      throw createApiError(unauthorizedMessage, response, errorData);
     }
 
     if (!response.ok) {
       throw createApiError(
-        parseJson
-          ? extractErrorMessage(data, response, errorMessage)
-          : errorMessage || `HTTP ${response.status} ${response.statusText}`,
+        extractErrorMessage(errorData, response, errorMessage),
         response,
-        data,
+        errorData,
       );
     }
 
@@ -362,6 +365,46 @@
       json: true,
       parseJson: true,
     });
+  }
+
+  function getDownloadFilename(contentDisposition) {
+    const header = String(contentDisposition || "");
+    const encodedMatch = header.match(/filename\*=UTF-8''([^;]+)/iu);
+
+    if (encodedMatch?.[1]) {
+      try {
+        return decodeURIComponent(encodedMatch[1]);
+      } catch {
+        return encodedMatch[1];
+      }
+    }
+
+    const match = header.match(/filename="?([^";]+)"?/iu);
+    return match?.[1] || "";
+  }
+
+  async function apiBlob(path, options = {}) {
+    const response = await apiFetch(path, {
+      ...options,
+      parseJson: false,
+    });
+
+    return {
+      blob: await response.blob(),
+      filename: getDownloadFilename(response.headers.get("Content-Disposition")),
+    };
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   function clearMfaSession() {
@@ -1585,6 +1628,7 @@
 
   window.CMCENUtils = {
     activateTabs,
+    apiBlob,
     apiFetch,
     apiJson,
     arrayBufferToBase64url,
@@ -1598,12 +1642,14 @@
     createImageCropController,
     createLoadingSpinner,
     createSkeleton,
+    downloadBlob,
     ensureWebAuthnAvailable,
     formatDate,
     formatTitleCaseValue,
     fromLocalDateAndTime,
     getCurrentLanguage,
     getCurrentLocale,
+    getDownloadFilename,
     getLocalizedText,
     getRetireeNameParts,
     hasSessionCookieConsent,

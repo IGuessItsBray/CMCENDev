@@ -51,14 +51,9 @@ function isIpv4Address(value) {
 }
 
 function getRequestIpDetails(req) {
-  const candidates = [
-    req?.headers?.['cf-connecting-ip'],
-    req?.headers?.['x-real-ip'],
-    req?.headers?.['x-forwarded-for'],
-    req?.ips,
-    req?.ip,
-    req?.socket?.remoteAddress,
-  ].flatMap(splitIpCandidates);
+  const candidates = [req?.ips, req?.ip, req?.socket?.remoteAddress].flatMap(
+    splitIpCandidates,
+  );
 
   const addresses = [];
 

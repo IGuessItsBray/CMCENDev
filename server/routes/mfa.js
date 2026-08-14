@@ -23,6 +23,7 @@ const {
   createRateLimit,
   readPositiveInteger,
 } = require('../middleware/rate-limit');
+const { isRequestFromTrustedProxy } = require('../config/network');
 
 const router = express.Router();
 
@@ -56,7 +57,9 @@ function isLocalHostname(hostname) {
 }
 
 function getPublicHost(req) {
-  const forwardedHost = getFirstHeaderValue(req.get('x-forwarded-host'));
+  const forwardedHost = isRequestFromTrustedProxy(req)
+    ? getFirstHeaderValue(req.get('x-forwarded-host'))
+    : '';
   return forwardedHost || req.get('host') || 'localhost';
 }
 
@@ -71,9 +74,7 @@ function getPublicHostname(req) {
 }
 
 function getPublicProtocol(req) {
-  const forwardedProto = getFirstHeaderValue(req.get('x-forwarded-proto'));
-  const protocol =
-    forwardedProto || req.protocol || (req.secure ? 'https' : 'http');
+  const protocol = req.protocol || (req.secure ? 'https' : 'http');
   const hostname = getPublicHostname(req);
 
   if (protocol === 'http' && !isLocalHostname(hostname)) {
@@ -257,14 +258,6 @@ router.post('/webauthn/register/options', authMiddleware, async (req, res) => {
       $set: { webauthnRegistrationChallenge: options.challenge },
     });
 
-    console.log(
-      'webauthn/register/options -> challenge length:',
-      options.challenge?.length,
-      'user.id:',
-      options.user?.id?.length,
-      'exclude:',
-      (options.excludeCredentials || []).length,
-    );
     res.json(normalizeRegistrationOptions(options));
   } catch (err) {
     console.error('webauthn/options error', err);
@@ -309,18 +302,14 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
       : bufferToBase64(registrationInfo.credentialPublicKey);
 
     if (!idB64url) {
-      console.error(
-        'webauthn/register/verify -> could not determine credential id from registrationInfo or body',
-        { registrationInfo, body },
-      );
+      console.warn('WebAuthn registration did not return a credential ID');
       return res
         .status(400)
         .json({ error: 'Could not determine credential id' });
     }
     if (!publicKeyB64) {
-      console.error(
-        'webauthn/register/verify -> could not determine credential public key',
-        { registrationInfo },
+      console.warn(
+        'WebAuthn registration did not return a credential public key',
       );
       return res
         .status(400)
@@ -341,10 +330,6 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
       nickname: String(body.nickname || '').trim(),
     };
 
-    console.log(
-      'webauthn/register/verify -> storing credential id length:',
-      idB64url?.length,
-    );
     await User.findByIdAndUpdate(user._id, {
       $pull: { webauthn: { credentialID: idB64url } },
       $set: { webauthnRegistrationChallenge: '' },
@@ -393,12 +378,6 @@ router.post(
         $set: { webauthnAuthenticationChallenge: options.challenge },
       });
 
-      console.log(
-        'webauthn/auth/options -> challenge length:',
-        options.challenge?.length,
-        'allow:',
-        (options.allowCredentials || []).length,
-      );
       res.json(normalizeAuthenticationOptions(options));
     } catch (err) {
       console.error('webauthn/auth/options error', err);
@@ -422,10 +401,6 @@ router.post(
       const expectedChallenge = user.webauthnAuthenticationChallenge;
 
       const rawIdFromClient = body.rawId;
-      console.log(
-        'webauthn/auth/verify -> rawId from client length:',
-        rawIdFromClient?.length,
-      );
       let dbCred = (user.webauthn || []).find(
         (c) => c.credentialID === rawIdFromClient,
       );
@@ -434,19 +409,11 @@ router.post(
         try {
           const alt = bufferToBase64url(Buffer.from(rawIdFromClient, 'base64'));
           dbCred = (user.webauthn || []).find((c) => c.credentialID === alt);
-          if (dbCred)
-            console.log(
-              'webauthn/auth/verify -> matched credential via alt conversion',
-            );
-        } catch (e) {
+        } catch {
           /* ignore */
         }
       }
       if (!dbCred) {
-        console.log(
-          'webauthn/auth/verify -> stored creds:',
-          (user.webauthn || []).map((c) => c.credentialID),
-        );
         return res.status(400).json({ error: 'Unknown credential' });
       }
 
@@ -539,15 +506,10 @@ router.post('/totp/setup', authMiddleware, async (req, res) => {
     let dataUrl = null;
     try {
       dataUrl = await qrcode.toDataURL(otpauth);
-      console.log('totp/setup -> qrcode length:', dataUrl?.length);
     } catch (e) {
       console.warn('Could not generate QR', e);
     }
 
-    console.log(
-      'totp/setup -> returning otpauth and qrcode present?',
-      !!dataUrl,
-    );
     res.json({ otpauth_url: otpauth, qrcode: dataUrl });
   } catch (err) {
     console.error('totp/setup error', err);
@@ -728,12 +690,6 @@ router.get('/webauthn/credentials', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const creds = user.webauthn || [];
-    console.log(
-      'webauthn/credentials -> user:',
-      String(user._id),
-      'count:',
-      creds.length,
-    );
     res.json(creds.map(serializeCredential));
   } catch (err) {
     console.error('webauthn/credentials error', err);
@@ -822,21 +778,10 @@ router.post('/webauthn/cleanup', authMiddleware, async (req, res) => {
     const filtered = before.filter(
       (c) => c && c.credentialID && String(c.credentialID).trim() !== '',
     );
-    const removed = before.length - filtered.length;
-
     const updated = await User.findByIdAndUpdate(
       user._id,
       { $set: { webauthn: filtered } },
       { returnDocument: 'after' },
-    );
-    const remaining = Array.isArray(updated.webauthn)
-      ? updated.webauthn.length
-      : 0;
-    console.log(
-      'webauthn/cleanup -> removed invalid entries:',
-      removed,
-      'remaining:',
-      remaining,
     );
     res.json(updated.webauthn || []);
   } catch (err) {

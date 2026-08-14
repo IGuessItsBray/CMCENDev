@@ -1,3 +1,5 @@
+const { isRequestFromTrustedProxy } = require('../config/network');
+
 const SKIPPED_EXTENSIONS = new Set([
   '.css',
   '.js',
@@ -151,12 +153,7 @@ function getCountryFromTimeZone(timeZone) {
 }
 
 function getClientIp(req) {
-  const forwardedFor = cleanString(req.headers['x-forwarded-for'])
-    .split(',')
-    .map((value) => cleanString(value))
-    .find(Boolean);
-
-  return forwardedFor || cleanString(req.ip || req.socket?.remoteAddress);
+  return cleanString(req.ip || req.socket?.remoteAddress);
 }
 
 function normalizeIpAddress(value) {
@@ -185,22 +182,23 @@ function isInternalIpAddress(value) {
 }
 
 function getCountry(req, fallbackLocale = '', fallbackTimeZone = '') {
-  const country = [
-    req.headers['cf-ipcountry'],
-    req.headers['x-vercel-ip-country'],
-    req.headers['x-appengine-country'],
-    req.headers['x-real-ip-country'],
-    req.headers['x-forwarded-country'],
-    req.headers['x-client-country'],
-    req.headers['x-country'],
-    req.headers['x-country-code'],
-    req.headers['x-geoip-country-code'],
-    req.headers['x-geo-country'],
-    req.headers['x-ip-country'],
-    req.headers['fastly-client-country'],
-  ]
-    .map(normalizeCountryCode)
-    .find(Boolean);
+  const proxyCountryHeaders = isRequestFromTrustedProxy(req)
+    ? [
+        req.headers['cf-ipcountry'],
+        req.headers['x-vercel-ip-country'],
+        req.headers['x-appengine-country'],
+        req.headers['x-real-ip-country'],
+        req.headers['x-forwarded-country'],
+        req.headers['x-client-country'],
+        req.headers['x-country'],
+        req.headers['x-country-code'],
+        req.headers['x-geoip-country-code'],
+        req.headers['x-geo-country'],
+        req.headers['x-ip-country'],
+        req.headers['fastly-client-country'],
+      ]
+    : [];
+  const country = proxyCountryHeaders.map(normalizeCountryCode).find(Boolean);
 
   return (
     country ||

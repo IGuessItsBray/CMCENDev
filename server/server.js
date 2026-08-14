@@ -33,6 +33,7 @@ const {
   router: seoRoutes,
   setStandardResponseHeaders,
 } = require('./routes/seo');
+const { getTrustedProxyCidrs } = require('./config/network');
 const { rateLimitByIp } = require('./middleware/rate-limit');
 
 const app = express();
@@ -43,7 +44,7 @@ const apiRateLimit = rateLimitByIp(
   'API_RATE_LIMIT_MAX',
   { windowSeconds: 60, max: 300 },
 );
-app.set('trust proxy', true);
+app.set('trust proxy', getTrustedProxyCidrs());
 app.use(express.json());
 app.use(setStandardResponseHeaders);
 app.use(blockKnownAiCrawlers);

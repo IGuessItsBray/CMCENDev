@@ -134,14 +134,7 @@ function requirePermission(permissionName) {
 
 async function authOrTempMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
-  const incomingTemp =
-    req.headers['x-temp-token'] || req.body?.tempToken || req.query?.tempToken;
-  console.log(
-    'authOrTempMiddleware -> authHeader present:',
-    !!authHeader,
-    'tempToken present:',
-    !!incomingTemp,
-  );
+  const incomingTemp = req.headers['x-temp-token'] || req.body?.tempToken;
 
   // Try regular JWT first
   if (authHeader?.startsWith('Bearer ')) {
@@ -159,15 +152,13 @@ async function authOrTempMiddleware(req, res, next) {
 
       req.user = user;
       return next();
-    } catch (e) {
-      console.log('authOrTempMiddleware -> JWT verify failed:', e && e.name);
+    } catch {
       // fall through to temp-token check
     }
   }
 
   const tempToken = incomingTemp;
   if (!tempToken) {
-    console.log('authOrTempMiddleware -> no temp token provided');
     return res.status(401).json({ error: 'Authentication required' });
   }
 

@@ -81,6 +81,7 @@ settings include:
 | `MONGO_URI` | Yes | MongoDB connection string |
 | `JWT_SECRET` | Yes | Signs access, refresh, and temporary authentication tokens |
 | `PORT` | No | HTTP port; defaults to `3000` |
+| `TRUST_PROXY_CIDRS` | Reverse-proxy deployments | Comma-separated trusted proxy ranges, such as `loopback` or a specific Docker network CIDR. Leave empty for a directly exposed service; never trust all forwarding headers. |
 | `APP_BASE_URL` | Recommended | Absolute application URL used in generated links |
 | `MINIO_ENDPOINT` | Yes | Internal S3-compatible endpoint |
 | `MINIO_ACCESS_KEY` | Yes | Object-storage access key |

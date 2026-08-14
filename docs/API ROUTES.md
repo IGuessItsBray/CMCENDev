@@ -11,7 +11,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 - JSON APIs generally return `{ error: string }` on failure.
 - Every `/api` endpoint is rate limited by source IP (300 requests per minute by default). Responses include `RateLimit-*` headers; throttled requests return `429` with `Retry-After`. Sensitive password-reset and MFA verification routes have stricter limits listed below.
 - Authenticated routes expect `Authorization: Bearer <jwt>`.
-- MFA temp-flow routes may also accept a temp token through `x-temp-token`, `tempToken` in the JSON body, or `tempToken` in the query string.
+- MFA temp-flow routes may also accept a temp token through `x-temp-token` or `tempToken` in the JSON body. Query-string tokens are rejected to avoid URL and access-log exposure.
 - Permission names below use the legacy flag used in middleware, with the catalog key in parentheses where helpful.
 - Public routes may still use optional auth to personalize access or analytics.
 

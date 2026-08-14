@@ -61,8 +61,7 @@ server/test/
     openapi.test.js
   integration/
     api.test.js
-  unit/
-    media-url.test.js
+  *.test.js        # focused unit and configuration tests
 ```
 
 `server.js` exports `app` for Supertest and starts MongoDB/listening only when it

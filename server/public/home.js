@@ -168,13 +168,15 @@ function createHomeRetirementMedia(retirementMessage, name) {
 
   if (retirementMessage.photoUrl) {
     const image = document.createElement("img");
+    const displayPhotoUrl =
+      retirementMessage.photoDisplayUrl || retirementMessage.photoUrl;
     const isPlaceholderPhoto = isHomeRetirementPlaceholderPhoto(
       retirementMessage.photoUrl,
     );
 
     image.src = isPlaceholderPhoto
       ? "/images/logo.png"
-      : retirementMessage.photoUrl;
+      : displayPhotoUrl;
     image.alt = isPlaceholderPhoto
       ? ""
       : getHomeTranslation("retirement_photo_alt", { name });

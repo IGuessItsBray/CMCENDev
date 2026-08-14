@@ -81,6 +81,15 @@ const retirementMessageSchema = new mongoose.Schema(
       default: '',
     },
 
+    // Cropped 4:3 derivative used in consistently sized public card layouts.
+    // The original photoUrl remains available for the full message view.
+    photoDisplayUrl: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
+
     submitter: {
       firstName: {
         type: String,

@@ -93,6 +93,7 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     en: 'Account dashboard',
     fr: 'Tableau de bord du compte',
   },
+  'devs.html': { en: 'CMCEN Developers', fr: 'Développeurs CMCEN' },
   'event.html': { en: 'Event details', fr: 'Détails de l’événement' },
   'index.html': { en: 'Home', fr: 'Accueil' },
   'history.html': { en: 'History', fr: 'Histoire' },

@@ -144,6 +144,7 @@ function serializeLastPost(lastPost) {
     displayName: getDeceasedName(lastPost),
     messages: getLocalizedMessages(lastPost),
     imageUrl: cleanString(lastPost.imageUrl),
+    imageDisplayUrl: cleanString(lastPost.imageDisplayUrl),
     publishedAt: lastPost.publishedAt || null,
   };
 }
@@ -171,6 +172,7 @@ router.post(
       const messageLanguage = cleanString(req.body?.messageLanguage);
       const message = cleanString(req.body?.message);
       const imageUrl = cleanString(req.body?.imageUrl);
+      const imageDisplayUrl = cleanString(req.body?.imageDisplayUrl);
       const publicationPermissionConfirmed = parseBoolean(
         req.body?.publicationPermissionConfirmed,
         false,
@@ -240,6 +242,12 @@ router.post(
         });
       }
 
+      if (!isValidImageUrl(imageDisplayUrl)) {
+        return res.status(400).json({
+          error: 'The display image URL must begin with http:// or https://',
+        });
+      }
+
       const permissions = getUserPermissions(req.user);
       const canPublishImmediately =
         permissions.canReviewAndPublish === true;
@@ -260,6 +268,7 @@ router.post(
           [messageLanguage]: message,
         },
         imageUrl,
+        imageDisplayUrl,
         publicationPermission: {
           confirmed: true,
           confirmedAt: now,

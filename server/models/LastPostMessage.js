@@ -103,6 +103,15 @@ const LastPostMessageSchema = new mongoose.Schema(
       default: '',
     },
 
+    // Cropped 4:3 derivative for any compact Last Post presentation. The
+    // full memorial image remains in imageUrl for the public notice.
+    imageDisplayUrl: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
+
     publicationPermission: {
       confirmed: {
         type: Boolean,

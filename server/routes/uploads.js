@@ -32,6 +32,8 @@ const IMAGE_VARIANTS = Object.freeze([
 ]);
 const CDN_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MAX_CDN_SLUG_LENGTH = 80;
+const MESSAGE_DISPLAY_ASPECT_RATIO = 4 / 3;
+const MESSAGE_DISPLAY_MAX_WIDTH = 1200;
 
 function cleanCdnSlug(value) {
   const slug = String(value || '')
@@ -108,13 +110,84 @@ function toVariantResponse(variants) {
   );
 }
 
-async function processImageUpload(file, cdnSlug = '') {
+function parseCropPosition(value) {
+  const parsed = Number.parseFloat(value);
+
+  if (!Number.isFinite(parsed)) return 0.5;
+
+  return Math.min(1, Math.max(0, parsed));
+}
+
+function shouldCreateMessageDisplayVariant(input = {}) {
+  return (
+    ['retirementMessage', 'lastPostMessage'].includes(input.uploadSource) &&
+    input.displayAspectRatio === '4:3'
+  );
+}
+
+async function createMessageDisplayVariant({ buffer, baseKey, cropPosition }) {
+  const image = sharp(buffer).rotate();
+  const metadata = await image.metadata();
+  const sourceWidth = metadata.width || 0;
+  const sourceHeight = metadata.height || 0;
+
+  if (!sourceWidth || !sourceHeight) {
+    throw new Error('Could not determine uploaded image dimensions');
+  }
+
+  const sourceAspectRatio = sourceWidth / sourceHeight;
+  const cropWidth = Math.max(
+    1,
+    Math.round(
+      sourceAspectRatio > MESSAGE_DISPLAY_ASPECT_RATIO
+        ? sourceHeight * MESSAGE_DISPLAY_ASPECT_RATIO
+        : sourceWidth,
+    ),
+  );
+  const cropHeight = Math.max(
+    1,
+    Math.round(
+      sourceAspectRatio > MESSAGE_DISPLAY_ASPECT_RATIO
+        ? sourceHeight
+        : sourceWidth / MESSAGE_DISPLAY_ASPECT_RATIO,
+    ),
+  );
+  const left = Math.round((sourceWidth - cropWidth) * cropPosition.x);
+  const top = Math.round((sourceHeight - cropHeight) * cropPosition.y);
+  const rendered = await image
+    .extract({ left, top, width: cropWidth, height: cropHeight })
+    .resize({ width: MESSAGE_DISPLAY_MAX_WIDTH, withoutEnlargement: true })
+    .webp({ quality: 84 })
+    .toBuffer({ resolveWithObject: true });
+  const key = `${baseKey}/display-4x3.webp`;
+
+  await putObject({
+    key,
+    body: rendered.data,
+    contentType: 'image/webp',
+  });
+
+  return {
+    key,
+    url: buildPublicMediaUrl(key),
+    width: rendered.info.width,
+    height: rendered.info.height,
+    size: rendered.info.size,
+    mimeType: 'image/webp',
+  };
+}
+
+async function processImageUpload(file, cdnSlug = '', options = {}) {
   const baseKey = getImageBaseKey(cdnSlug);
   const sanitizedImage = await sanitizeImageBuffer(file.buffer);
   const originalKey = `${baseKey}/original.webp`;
   const metadata = sanitizedImage.metadata;
   const sourceWidth = metadata.width || 0;
   const variants = {};
+  const cropPosition = {
+    x: parseCropPosition(options.displayCropX),
+    y: parseCropPosition(options.displayCropY),
+  };
 
   await putObject({
     key: originalKey,
@@ -153,6 +226,14 @@ async function processImageUpload(file, cdnSlug = '') {
     }),
   );
 
+  const display = shouldCreateMessageDisplayVariant(options)
+    ? await createMessageDisplayVariant({
+        buffer: sanitizedImage.buffer,
+        baseKey,
+        cropPosition,
+      })
+    : null;
+
   return {
     key: originalKey,
     url: buildPublicMediaUrl(
@@ -167,6 +248,7 @@ async function processImageUpload(file, cdnSlug = '') {
       mimeType: sanitizedImage.mimeType,
     },
     variants: toVariantResponse(variants),
+    ...(display ? { display } : {}),
     imageMetadata: sanitizeImageMetadata(metadata),
     cdnSlug,
   };
@@ -187,7 +269,7 @@ router.post(
 
       const cdnSlug = cleanCdnSlug(req.body?.cdnSlug);
       await assertCdnSlugAvailable(cdnSlug);
-      const uploadResult = await processImageUpload(req.file, cdnSlug);
+      const uploadResult = await processImageUpload(req.file, cdnSlug, req.body);
       const mediaAsset = await createMediaAssetRecord({
         uploadResult,
         file: req.file,

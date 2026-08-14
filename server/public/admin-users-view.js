@@ -1445,7 +1445,8 @@
 
       const uploadInput = document.createElement("input");
       uploadInput.type = "file";
-      uploadInput.accept = "image/*";
+      uploadInput.accept =
+        ".jpg,.jpeg,.png,.webp,.gif,.heic,image/jpeg,image/png,image/webp,image/gif,image/heic";
       uploadInput.multiple = true;
       uploadInput.hidden = true;
       uploadInput.disabled = state.mediaIsUploading || state.mediaIsDeleting;

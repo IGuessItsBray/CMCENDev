@@ -239,7 +239,7 @@ paths:
   /api/ghost/confirm:
     post:
       tags: [Auth]
-      summary: Confirm ghost-account claim.
+      summary: Confirm ghost-account claim and issue a session only after cookie consent.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
@@ -249,7 +249,7 @@ paths:
   /api/register:
     post:
       tags: [Auth]
-      summary: Register a user account.
+      summary: Register a user account; invitation activation issues a session only after cookie consent.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/AuthRegister"
@@ -276,7 +276,7 @@ paths:
   /api/login:
     post:
       tags: [Auth]
-      summary: Login with username and password.
+      summary: Login with username and password after confirming the required session cookie.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/Login"
@@ -304,7 +304,7 @@ paths:
   /api/email-verification/confirm:
     post:
       tags: [Auth]
-      summary: Confirm email verification token.
+      summary: Confirm email verification token and issue a session only after cookie consent.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
@@ -1699,6 +1699,9 @@ components:
             properties:
               username: { type: string }
               password: { type: string, format: password }
+              sessionCookieConsent:
+                type: boolean
+                description: Must be true before the API issues the secure refresh-session cookie.
     AuthRegister:
       required: true
       content:
@@ -1706,6 +1709,10 @@ components:
           schema:
             type: object
             additionalProperties: true
+            properties:
+              sessionCookieConsent:
+                type: boolean
+                description: Required when activating an invitation that immediately creates a secure session.
     TotpVerify:
       required: true
       content:

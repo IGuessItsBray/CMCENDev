@@ -46,6 +46,27 @@ function setLoginMessage(message, type = "error") {
   errorElement.classList.toggle("is-info", type === "info");
 }
 
+function getLoginTranslation(key, fallback) {
+  if (typeof window.translate !== "function") {
+    return fallback;
+  }
+
+  const translated = window.translate(key);
+  return translated && translated !== key ? translated : fallback;
+}
+
+function requestLogin(username, password, sessionCookieConsent) {
+  return CMCENUtils.apiJson("/api/login", {
+    method: "POST",
+    body: {
+      username,
+      password,
+      sessionCookieConsent,
+    },
+    errorMessage: "Login failed",
+  });
+}
+
 function setMfaMessage(message, type = "error") {
   mfaError.textContent = message;
   mfaError.hidden = !message;
@@ -442,11 +463,27 @@ emailVerificationForm.addEventListener("submit", async (event) => {
   setEmailVerificationMessage("");
 
   try {
+    const consented =
+      CMCENUtils.hasSessionCookieConsent() ||
+      (await CMCENUtils.requestSessionCookieConsent());
+
+    if (!consented) {
+      setEmailVerificationMessage(
+        getLoginTranslation(
+          "session_cookie_consent_declined",
+          "You were not signed in. CMCEN needs the secure session cookie to protect your account.",
+        ),
+        "info",
+      );
+      return;
+    }
+
     const data = await CMCENUtils.apiJson("/api/email-verification/confirm", {
       method: "POST",
       body: {
         verificationToken: emailVerificationToken,
         code,
+        sessionCookieConsent: true,
       },
       errorMessage: "Could not verify email",
     });
@@ -491,12 +528,28 @@ guestAccessForm.addEventListener("submit", async (event) => {
       return;
     }
 
+    const consented =
+      CMCENUtils.hasSessionCookieConsent() ||
+      (await CMCENUtils.requestSessionCookieConsent());
+
+    if (!consented) {
+      setGuestAccessMessage(
+        getLoginTranslation(
+          "session_cookie_consent_declined",
+          "You were not signed in. CMCEN needs the secure session cookie to protect your account.",
+        ),
+        "info",
+      );
+      return;
+    }
+
     const data = await CMCENUtils.apiJson("/api/ghost/confirm", {
       method: "POST",
       body: {
         verificationToken: guestVerificationToken,
         firstName: guestFirstName.value.trim(),
         code: guestCode.value.trim(),
+        sessionCookieConsent: true,
       },
       errorMessage: "Could not confirm guest access",
     });
@@ -521,14 +574,28 @@ loginForm.addEventListener("submit", async (event) => {
   loginButton.setAttribute("aria-busy", "true");
 
   try {
-    const data = await CMCENUtils.apiJson("/api/login", {
-      method: "POST",
-      body: {
-        username,
-        password,
-      },
-      errorMessage: "Login failed",
-    });
+    let data = await requestLogin(
+      username,
+      password,
+      CMCENUtils.hasSessionCookieConsent(),
+    );
+
+    if (data.sessionCookieConsentRequired) {
+      const consented = await CMCENUtils.requestSessionCookieConsent();
+
+      if (!consented) {
+        setLoginMessage(
+          getLoginTranslation(
+            "session_cookie_consent_declined",
+            "You were not signed in. CMCEN needs the secure session cookie to protect your account.",
+          ),
+          "info",
+        );
+        return;
+      }
+
+      data = await requestLogin(username, password, true);
+    }
 
     if (data.emailVerificationRequired) {
       emailVerificationToken = data.verificationToken || "";

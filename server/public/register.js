@@ -40,6 +40,33 @@ const registerPreferredLanguage = document.getElementById(
 let registrationToken = "";
 let emailVerificationToken = "";
 
+function getRegisterTranslation(key, fallback) {
+  if (typeof window.translate !== "function") {
+    return fallback;
+  }
+
+  const translated = window.translate(key);
+  return translated && translated !== key ? translated : fallback;
+}
+
+async function ensureSessionCookieConsent(setMessage) {
+  const consented =
+    CMCENUtils.hasSessionCookieConsent() ||
+    (await CMCENUtils.requestSessionCookieConsent());
+
+  if (!consented) {
+    setMessage(
+      getRegisterTranslation(
+        "session_cookie_consent_declined",
+        "You were not signed in. CMCEN needs the secure session cookie to protect your account.",
+      ),
+      "info",
+    );
+  }
+
+  return consented;
+}
+
 function setStoredToken(token) {
   registrationToken = CMCENUtils.storeAuthToken(token);
 
@@ -134,11 +161,16 @@ async function verifyEmailCode() {
   registerEmailVerificationVerify.disabled = true;
 
   try {
+    if (!(await ensureSessionCookieConsent(setEmailVerificationError))) {
+      return;
+    }
+
     const data = await CMCENUtils.apiJson("/api/email-verification/confirm", {
       method: "POST",
       body: {
         verificationToken: emailVerificationToken,
         code,
+        sessionCookieConsent: true,
       },
       errorMessage: "Could not verify email",
     });
@@ -405,6 +437,14 @@ registerForm.addEventListener("submit", async (event) => {
 
   if (invitationToken) {
     registration.invitationToken = invitationToken;
+
+    if (!(await ensureSessionCookieConsent(setRegisterError))) {
+      registerButton.disabled = false;
+      registerButton.removeAttribute("aria-busy");
+      return;
+    }
+
+    registration.sessionCookieConsent = true;
   }
 
   try {

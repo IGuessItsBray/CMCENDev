@@ -1110,6 +1110,29 @@ describe('authorization matrix and account integrity', () => {
     }
   });
 
+  test('restricts Internal Beta role changes to developers', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const developer = await createUser({ role: 'developer' });
+    const member = await createUser({ role: 'subscriber' });
+    const administratorLogin = await login(administrator);
+    const developerLogin = await login(developer);
+
+    await request(app)
+      .patch(`/api/admin/users/${member._id}/role`)
+      .set('Authorization', bearer(administratorLogin.body.token))
+      .send({ role: 'internal_beta' })
+      .expect(403);
+
+    await request(app)
+      .patch(`/api/admin/users/${member._id}/role`)
+      .set('Authorization', bearer(developerLogin.body.token))
+      .send({ role: 'internal_beta' })
+      .expect(200);
+
+    const updatedMember = await User.findById(member._id).lean();
+    assert.equal(updatedMember.role, 'internal_beta');
+  });
+
   test('grants catalog permissions through a custom role but not developer-only access', async () => {
     const customRole = await Role.create({
       name: 'Audit Reader',

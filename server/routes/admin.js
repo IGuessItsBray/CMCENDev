@@ -1326,6 +1326,16 @@ async function validateStandardRoleChange(userId, currentUser, role) {
     return { status: 404, error: 'User not found' };
   }
 
+  if (
+    (role === 'internal_beta' || targetUser.role === 'internal_beta') &&
+    currentUser?.role !== 'developer'
+  ) {
+    return {
+      status: 403,
+      error: 'Developer access is required to change the Internal Beta role',
+    };
+  }
+
   if (targetUser.role === 'developer') {
     return {
       status: 400,
@@ -1944,6 +1954,12 @@ router.post(
 
       if (!USER_ROLES.includes(role) || ['ghost', 'developer'].includes(role)) {
         return res.status(400).json({ error: 'Choose a valid initial role' });
+      }
+
+      if (role === 'internal_beta' && req.user?.role !== 'developer') {
+        return res.status(403).json({
+          error: 'Developer access is required to assign the Internal Beta role',
+        });
       }
 
       if (!validateContentAreas(contentAreas)) {

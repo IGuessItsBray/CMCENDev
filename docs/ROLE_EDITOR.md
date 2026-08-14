@@ -24,6 +24,13 @@ Custom role records contain an ObjectId, name, canonical permission keys, and
 timestamps. Add new permissions to `PERMISSION_CATALOG` before using them in a
 role or route guard.
 
+## Internal Beta system role
+
+`Internal Beta` is a built-in role for members authorized to use internal beta
+software. It has the same site permissions as `subscriber`, with a lime-green
+badge (`#A3E635`), and cannot be managed as a custom role. Only a developer may
+assign or remove it.
+
 ## User Assignment
 
 - `GET /api/admin/users` lists user summaries.

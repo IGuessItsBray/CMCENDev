@@ -4483,6 +4483,12 @@ a.dropdown-toggle {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.dashboard-role-badge.role-internal_beta {
+  border-color: #a3e635;
+  background: #a3e635;
+  color: #1b1b1b;
+}
+
 .dashboard-role-badge.role-contributor,
 .dashboard-role-badge.role-author {
   border-color: var(--gold-500);
@@ -5385,6 +5391,12 @@ a.dropdown-toggle {
   border-color: #b42318;
   background: #b42318;
   color: var(--white);
+}
+
+.admin-user-role-badge.role-internal_beta {
+  border-color: #a3e635;
+  background: #a3e635;
+  color: #1b1b1b;
 }
 
 .admin-user-role-badge.verification-verified {
@@ -18046,6 +18058,13 @@ html[data-theme='dark'] .dashboard-role-badge.role-developer {
   border-color: #ef4444;
   background: #b42318;
   color: #fff7f5;
+}
+
+html[data-theme='dark'] .admin-user-role-badge.role-internal_beta,
+html[data-theme='dark'] .dashboard-role-badge.role-internal_beta {
+  border-color: #a3e635;
+  background: #a3e635;
+  color: #1b1b1b;
 }
 
 html[data-theme='dark'] .admin-user-role-badge.verification-verified {

@@ -765,11 +765,12 @@ paths:
     patch:
       tags: [Admin]
       summary: Update built-in role.
+      description: Assigns a built-in role. `internal_beta` has the same site permissions as a subscriber and identifies members approved for internal beta software; only a developer may assign or remove it.
       x-permission: canManageUsers
       parameters:
         - $ref: "#/components/parameters/UserId"
       requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
+        $ref: "#/components/requestBodies/BuiltInRole"
       responses:
         "200":
           description: Updated role.
@@ -1804,6 +1805,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RoleInput"
+    BuiltInRole:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BuiltInRoleInput"
     Page:
       required: true
       content:
@@ -2121,3 +2128,11 @@ components:
         permissions:
           type: array
           items: { type: string }
+    BuiltInRoleInput:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum:
+            [ghost, subscriber, internal_beta, contributor, author, editor, administrator, developer]

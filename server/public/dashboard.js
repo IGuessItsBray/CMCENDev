@@ -47,6 +47,7 @@ function showDashboardLoading() {
 function getRoleKey(role) {
   const knownRoles = [
     "subscriber",
+    "internal_beta",
     "ghost",
     "contributor",
     "author",

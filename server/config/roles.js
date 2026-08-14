@@ -2,6 +2,7 @@
 const USER_ROLES = Object.freeze([
   'ghost',
   'subscriber',
+  'internal_beta',
   'contributor',
   'author',
   'editor',
@@ -12,6 +13,7 @@ const USER_ROLES = Object.freeze([
 const ROLE_LEVELS = Object.freeze({
   ghost: -1,
   subscriber: 0,
+  internal_beta: 0,
   contributor: 1,
   author: 2,
   editor: 3,

@@ -381,6 +381,19 @@ svg {
   text-align: right;
 }
 
+.footer-credit-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(234, 211, 163, 0.65);
+  text-underline-offset: 3px;
+}
+
+.footer-credit-link:hover,
+.footer-credit-link:focus-visible {
+  color: var(--gold-200);
+  text-decoration-color: currentColor;
+}
+
 .footer-version {
   flex-basis: 100%;
   margin-top: -16px;
@@ -1708,6 +1721,14 @@ a.dropdown-toggle {
 
 .about-family-pillar-list li:first-child {
   margin-top: 0;
+}
+
+.developers-team-list li {
+  background: linear-gradient(
+    90deg,
+    rgba(32, 38, 66, 0.16),
+    rgba(238, 240, 242, 0.88)
+  );
 }
 
 /* ─────────────────────────────────────────────
@@ -18135,6 +18156,14 @@ html[data-theme='dark'] .about-family-pillar-list li {
     rgba(34, 45, 64, 0.88)
   );
   color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .developers-team-list li {
+  background: linear-gradient(
+    90deg,
+    rgba(69, 88, 142, 0.48),
+    rgba(34, 45, 64, 0.88)
+  );
 }
 
 .theme-toggle {

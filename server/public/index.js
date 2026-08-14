@@ -795,7 +795,7 @@ function loadFooter() {
         </p>
 
         <p class="footer-credit">
-          Made with ♥ by Bray &amp; Eric
+          <a class="footer-credit-link" href="/devs">Made with ♥ by Bray &amp; Eric</a>
         </p>
 
         <p

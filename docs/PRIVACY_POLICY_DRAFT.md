@@ -2,10 +2,11 @@
 
 **Effective date:** [Month Day, Year]<br>
 **Last updated:** [Month Day, Year]<br>
-**Policy owner / legal entity:** [Insert the legal name of the organization operating CMCEN] ("CMCEN", "we", "us", or "our")<br>
+**Organization:** [Legal entity operating CMCEN] ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
-**Privacy contact:** [privacy@cmcen-rcmce.ca or other monitored address]<br>
-**Mailing address:** [Insert complete mailing address]
+**Privacy Contact:** [Privacy Contact name or title]<br>
+**Email:** [contact email address]<br>
+**Mailing Address:** [mailing address]
 
 > **Publication note:** This is a working draft, prepared from the current website’s features and data flows. It must be reviewed and completed by the policy owner and qualified Canadian privacy counsel before publication. In particular, confirm the policy owner, privacy contact, service providers, retention periods, and whether any provincial public-sector privacy law applies.
 
@@ -32,7 +33,7 @@ We collect the information described below only as reasonably necessary for the 
 Depending on the feature you use, this may include:
 
 - **Account and profile information:** username, email address, account name, first and last name, mailing address, telephone number, preferred language, rank, post-nominals, company, military/community status, affiliation element, trade, current unit, and information you choose to add to your profile.
-- **Account-security information:** password (stored in hashed form), email-verification records, password-reset and invitation token hashes, session information, and multi-factor authentication configuration. Passkey records contain public credential information; authenticator-app configuration includes a secret used to verify time-based codes.
+- **Account-security information:** credentials, verification, password-reset, invitation, session, and multi-factor authentication information that is necessary to secure and administer your account.
 - **Submission and correspondence information:** names, rank, unit or role, email address, telephone number, relationship to a retiree, event details, registration information, messages, comments, review correspondence, and other information in a form or message you submit.
 - **Images and files:** images and associated file information that you upload for an event, retirement message, Last Post notice, gallery, or other approved content.
 - **Consent records:** confirmations and timestamps associated with publication permissions or other consent-based features.
@@ -77,7 +78,9 @@ Some website features are designed to publish content. Once approved, the follow
 
 Before submitting public-facing content, you must ensure that you have the authority and all necessary permissions or consents to provide it and to authorize its publication. In particular, do not submit personal information about another person unless you are authorized to do so.
 
-For retirement submissions, the website requires a confirmation that the releasing member understands the intended public publication. CMCEN may remove or limit content when it receives a credible privacy, safety, legal, or operational-security concern, but cannot guarantee removal of copies made by third parties, search engines, or social-media platforms.
+For Last Post submissions, the website requires a mandatory attestation that the submitter has consent from their chain of command before the notice can be submitted. The attestation and its date are recorded, and the notice is subject to review before publication unless the submitter has authorized publication permission. For retirement submissions, the website requires a confirmation that the releasing member understands the intended public publication.
+
+CMCEN may remove or limit content when it receives a credible privacy, safety, legal, or operational-security concern. A person may request correction or removal of their own personal information. For a deceased member’s Last Post notice or account, only the verified next of kin may request a correction or deletion. We may ask for information reasonably necessary to verify identity and next-of-kin status. Requests are reviewed case by case; CMCEN cannot guarantee removal of copies made by third parties, search engines, or social-media platforms.
 
 ## 6. Legal basis and consent
 
@@ -89,9 +92,9 @@ By creating an account, submitting a form, or providing information through the 
 
 The website uses the following technologies:
 
-- **Essential authentication cookie:** a first-party, HTTP-only refresh-session cookie named `cmcen_refresh` is used to keep signed-in users authenticated. It is restricted to website API paths, uses `SameSite=Lax`, and is marked secure when the website is served in production. It expires after the configured session period (currently designed to be between 1 and 90 days).
-- **Local storage preference:** the website may save your light/dark theme preference in your browser’s local storage. This is a preference setting and is not sent to our server by the browser as a cookie.
-- **First-party analytics:** the website records visit information described in Section 3(B). This analytics implementation does not currently rely on a third-party advertising or cross-site tracking cookie.
+- **Essential technologies:** we use cookies and similar technologies that are necessary to provide secure sign-in and account features.
+- **Preference technologies:** we may save your website preferences in your browser so that the website can remember them.
+- **First-party analytics:** we use first-party analytics to understand website use as described in Section 3(B). We do not use cookies or similar technologies for behavioural advertising.
 
 You can control cookies and local storage through your browser settings. Blocking or clearing essential cookies may prevent account features from functioning. Before adding non-essential cookies, advertising technology, or a new third-party analytics provider, CMCEN will update this Policy and implement consent choices where required.
 
@@ -100,8 +103,8 @@ You can control cookies and local storage through your browser settings. Blockin
 We may disclose personal information only as described below, with consent where required, or as otherwise permitted or required by law:
 
 - **Publications:** to the public and social-media platforms when you authorize public content as described in Section 5.
-- **Authorized administrators and reviewers:** to authorized CMCEN personnel and volunteers who need access to operate the website, review submissions, respond to requests, protect security, or maintain records.
-- **Service providers:** to vendors that provide hosting, database, email delivery, media storage/CDN, backup, security, or technical support services on our behalf, subject to contractual or other appropriate safeguards. Current providers and data locations must be confirmed before publication: [list providers, functions, and countries].
+- **Authorized people:** only people with a need to know may access personal information to operate the website, review submissions, respond to requests, protect security, or maintain records. Developers have global access to operate and maintain the website. Branch staff receive permissions scoped by developers. Administrators have global control and editing access for website content, but do not have access to system or site configuration. Volunteers receive only scoped access to write, edit, or moderate within their assigned content areas.
+- **Service providers:** to providers that support the website on our behalf, subject to appropriate safeguards. Our current hosting arrangement is described in Section 9.
 - **Legal, safety, and operational purposes:** to law enforcement, regulators, government authorities, legal advisers, or others when required or permitted by law, necessary to respond to a valid legal process, protect rights or safety, investigate misuse, or address an operational-security concern.
 - **Organizational changes:** if the website or its operations are transferred, we may disclose relevant information as permitted by applicable law and will provide notice where required.
 
@@ -109,11 +112,19 @@ We do not sell personal information. We do not use personal information for beha
 
 ## 9. International and third-party processing
 
-The website and the systems used to support it—including its database, email, media storage, backups, and content delivery—are self-hosted on a virtual private server provided by Contabo in Toronto, Ontario, Canada. Personal information is stored and processed in Canada.
+As of the Last updated date above, the website and the systems used to support it—including its database, email, media storage, backups, and content delivery—are self-hosted on a virtual private server provided by Contabo in Toronto, Ontario, Canada. Personal information is stored and processed in Canada. Before we introduce a service provider or arrangement that processes personal information outside Canada, we will update this Policy and provide any notice or seek any consent required by applicable law.
 
 ## 10. Retention and deletion
 
 We retain personal information only for as long as reasonably necessary for the purposes described in this Policy, to meet legal, security, audit, dispute-resolution, and operational requirements, and then securely delete, anonymize, or de-identify it.
+
+### Account closure and submitted content
+
+When you delete your own account, we delete the account and anonymize the attribution for content you submitted, including event submissions, Last Post notices, retirement messages, and comments. The content may remain on the website or in our records without identifying you as its submitter.
+
+When an authorized staff member deletes an account, they choose whether to delete the account’s associated submitted content or retain it with the account attribution anonymized. We retain audit and security records as necessary for accountability, security, legal obligations, dispute resolution, and incident investigation; those records may not be deleted or anonymized at the same time as the account.
+
+Requests to correct or remove public content are reviewed case by case as described in Section 5. Removing content from the website does not guarantee removal from search engines, social-media platforms, archives, backups, or copies controlled by others.
 
 The current application does not establish a complete, published retention schedule. Before publication, CMCEN must adopt and insert approved retention periods for at least the following categories:
 
@@ -131,13 +142,13 @@ When information is public, deleting it from the website does not guarantee dele
 
 ## 11. Safeguards
 
-We use administrative, technical, and organizational safeguards appropriate to the sensitivity of the information, including access controls, role-based permissions, authentication and multi-factor authentication options, password hashing, encrypted transport where HTTPS is used, session controls, rate limiting, audit logging, and review controls for public submissions.
+We use administrative, technical, and organizational safeguards appropriate to the sensitivity of the information. These safeguards include access management, account-protection measures, policies and processes for authorized people, oversight of public submissions, and procedures to respond to security incidents.
 
 No method of transmission or storage is completely secure. You are responsible for using a unique, strong password, protecting your authentication methods, and notifying us promptly if you suspect unauthorized access to your account.
 
 ## 12. Access, correction, withdrawal, and complaints
 
-Subject to applicable law, you may request access to your personal information under our control, information about how it has been used or disclosed, and correction of information that is inaccurate or incomplete. You may also ask to withdraw consent, close your account, or request removal of personal information from public website content.
+Subject to applicable law, you may request access to your personal information under our control, information about how it has been used or disclosed, and correction of information that is inaccurate or incomplete. You may also ask to withdraw consent, close your account, or request removal of personal information from public website content. Only a verified next of kin may make a correction or deletion request concerning a deceased member’s Last Post notice or account.
 
 To make a request, contact the Privacy Contact in writing and provide enough information for us to verify your identity and locate the relevant records. We may request reasonable identity-verification information before responding. We will respond within the time required by applicable law and explain any lawful refusal, limitation, or fee before charging a fee.
 
@@ -159,11 +170,10 @@ We may update this Policy to reflect changes to the website, our practices, or a
 
 Questions, access requests, correction requests, consent withdrawals, complaints, and concerns about this Policy should be directed to:
 
-**Privacy Contact**<br>
-[Name or role title]<br>
-[Legal entity operating CMCEN]<br>
-[Mailing address]<br>
-[privacy email address]
+**[Legal entity operating CMCEN]**<br>
+[Privacy Contact name or title]<br>
+[mailing address]<br>
+[contact email address]<br>
 [telephone number, if offered]
 
 ---
@@ -172,7 +182,7 @@ Questions, access requests, correction requests, consent withdrawals, complaints
 
 1. Identify the correct legal entity, accountable Privacy Contact, and Canadian mailing address.
 2. Confirm whether CMCEN is governed by PIPEDA, Ontario public-sector privacy law, or another statute; adjust terminology and complaint channel accordingly.
-3. Confirm all processors and storage locations, including MongoDB host, MinIO/media storage, CDN, email delivery, backups, logging, and hosting.
+3. Review the Toronto hosting statement before each material infrastructure change, especially before introducing a provider that processes personal information outside Canada.
 4. Approve a retention schedule and configure the application to meet it. The current analytics and audit-log models have no visible automatic retention/deletion rule.
 5. Verify that public retirement, Last Post, and event consent text is appropriate and consistently captured for all public content types.
 6. Confirm that a monitored privacy email address and request-handling procedure exist.

@@ -2,9 +2,11 @@
 
 **Effective date:** [Month Day, Year]<br>
 **Last updated:** [Month Day, Year]<br>
-**Service provider / legal entity:** [Insert the legal name of the organization operating CMCEN] ("CMCEN", "we", "us", or "our")<br>
+**Organization:** [Legal entity operating CMCEN] ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
-**Contact:** [Insert monitored legal/contact email and mailing address]
+**Privacy Contact:** [Privacy Contact name or title]<br>
+**Email:** [contact email address]<br>
+**Mailing Address:** [mailing address]
 
 > **Publication note:** This is a working draft. It must be completed with the correct legal entity, contact details, governing-law decision, and any organization-specific rules, then reviewed by qualified legal counsel before publication.
 
@@ -40,9 +42,9 @@ You must not:
 
 ## 4. Accounts and account security
 
-Certain features require an account. You are responsible for safeguarding your login credentials, passkeys, authenticator-app codes, and devices, and for all activity occurring through your account except to the extent caused by CMCEN’s failure to use reasonable safeguards.
+Certain features require an account. You are responsible for safeguarding your login credentials, authentication methods, and devices, and for all activity occurring through your account except to the extent caused by CMCEN’s failure to use reasonable safeguards.
 
-You must notify us promptly at [security contact email] if you suspect unauthorized access to your account. We may require email verification, password resets, multi-factor authentication, or other security measures, and may suspend or restrict access when we reasonably believe it is necessary to protect users, the website, or the public.
+You must notify us promptly at [contact email address] if you suspect unauthorized access to your account. We may require additional security verification and may suspend or restrict access when we reasonably believe it is necessary to protect users, the website, or the public.
 
 Accounts are personal to the account holder unless CMCEN expressly authorizes otherwise. Do not share, sell, transfer, or lend access to your account.
 
@@ -64,7 +66,7 @@ By submitting User Content, you grant CMCEN a non-exclusive, worldwide, royalty-
 
 For content that you submit for public publication, this licence includes publication on the website, distribution through CMCEN communications, and sharing through CMCEN social-media platforms and partner channels where indicated by the submission process. You understand that public content may be copied, shared, indexed, archived, or republished by others outside CMCEN’s control.
 
-This licence ends when CMCEN deletes the User Content from its active Services, except to the extent the content has already been publicly shared, appears in archival or backup systems, must be retained for legal or security reasons, or cannot reasonably be removed from third-party systems.
+This licence ends when CMCEN deletes the User Content from its active Services, except to the extent the content has already been publicly shared, appears in archival or backup systems, must be retained for legal or security reasons, or cannot reasonably be removed from third-party systems. If an account is deleted and its submitted content is retained anonymously, this licence continues only to the extent necessary to retain, publish, preserve, and operate that anonymized content.
 
 ### 5.3 Review and removal
 
@@ -72,9 +74,11 @@ CMCEN may, but is not required to, review, translate, format, edit for clarity o
 
 Submission does not guarantee publication. Publication does not mean CMCEN endorses the content or the author’s views. Contact information supplied for review or follow-up will not ordinarily be displayed publicly unless the publication workflow expressly identifies it for publication.
 
+CMCEN reviews requests to correct or remove public User Content case by case. A person may request correction or removal of their own personal information. For a deceased member’s Last Post notice or account, only the verified next of kin may request correction or deletion. CMCEN may require information reasonably necessary to verify identity and next-of-kin status. Removal from the website does not guarantee removal from search engines, social-media platforms, archives, backups, or copies controlled by others.
+
 ### 5.4 Sensitive community content
 
-Retirement and Last Post content can concern living persons, deceased persons, family members, and service histories. Submit only information appropriate for public civilian publication. Keep current duties, locations, deployments, assignments, operational details, and other sensitive information to the minimum necessary or omit it. CMCEN may apply additional review requirements to this content.
+Retirement and Last Post content can concern living persons, deceased persons, family members, and service histories. Submit only information appropriate for public civilian publication. Keep current duties, locations, deployments, assignments, operational details, and other sensitive information to the minimum necessary or omit it. Last Post submissions require a mandatory attestation that the submitter has consent from their chain of command, and retirement submissions require confirmation that the releasing member understands the intended public publication. CMCEN may apply additional review requirements to this content.
 
 ## 6. Intellectual property
 
@@ -118,7 +122,7 @@ To the fullest extent permitted by law, you will indemnify and hold harmless CMC
 
 CMCEN may suspend, restrict, or terminate your access to all or part of the Services, remove or restrict User Content, or take other reasonable action if we believe you have violated these Terms, created a security or privacy risk, submitted operationally sensitive information, or used the Services in a way that may cause harm.
 
-You may stop using the Services at any time. To request account closure or removal of public content, contact [privacy/account contact]. Termination does not affect provisions that by their nature should survive, including intellectual-property, disclaimer, limitation-of-liability, indemnity, and dispute provisions.
+You may stop using the Services at any time. When you delete your own account, CMCEN deletes the account and anonymizes attribution for your submitted event submissions, Last Post notices, retirement messages, and comments; the content may remain without your account attribution. When authorized staff delete an account, they choose whether to delete its associated submitted content or retain it with attribution anonymized. Necessary audit and security records may remain. To request correction or removal of public content, contact [contact email address]. Termination does not affect provisions that by their nature should survive, including intellectual-property, disclaimer, limitation-of-liability, indemnity, and dispute provisions.
 
 ## 13. Changes to the Services or Terms
 
@@ -143,10 +147,10 @@ These Terms, together with the Privacy Policy and any specific terms presented f
 Questions or notices about these Terms should be directed to:
 
 **[Legal entity operating CMCEN]**<br>
-[Name or role title]<br>
-[Mailing address]<br>
-[Contact email address]
-[Telephone number, if offered]
+[Privacy Contact name or title]<br>
+[mailing address]<br>
+[contact email address]<br>
+[telephone number, if offered]
 
 ---
 

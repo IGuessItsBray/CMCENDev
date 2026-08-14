@@ -381,6 +381,19 @@ svg {
   text-align: right;
 }
 
+.footer-credit-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(234, 211, 163, 0.65);
+  text-underline-offset: 3px;
+}
+
+.footer-credit-link:hover,
+.footer-credit-link:focus-visible {
+  color: var(--gold-200);
+  text-decoration-color: currentColor;
+}
+
 .footer-version {
   flex-basis: 100%;
   margin-top: -16px;

@@ -232,13 +232,15 @@ function renderPhoto(retirementMessage, name) {
 
   if (retirementMessage.photoUrl) {
     const image = document.createElement("img");
+    const displayPhotoUrl =
+      retirementMessage.photoDisplayUrl || retirementMessage.photoUrl;
     const isPlaceholderPhoto = isRetirementPlaceholderPhoto(
       retirementMessage.photoUrl,
     );
 
     image.src = isPlaceholderPhoto
       ? RETIREMENT_PLACEHOLDER_PHOTO_URL
-      : retirementMessage.photoUrl;
+      : displayPhotoUrl;
     image.alt = isPlaceholderPhoto
       ? ""
       : translate("retirement_photo_alt", { name });

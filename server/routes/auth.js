@@ -1275,12 +1275,10 @@ router.put(
       subscribed &&
       (!getCaslSenderInfo().ready || req.body?.expressConsent !== true)
     ) {
-      return res
-        .status(400)
-        .json({
-          error:
-            'You must provide express consent after reviewing the sender information',
-        });
+      return res.status(400).json({
+        error:
+          'You must provide express consent after reviewing the sender information',
+      });
     }
     try {
       const user = await User.findById(req.user._id)
@@ -1295,7 +1293,7 @@ router.put(
           subscribed: true,
           consentedAt: now,
           consentSource: 'account_dashboard',
-          consentTextVersion: 'news-announcements-v1-2026-08-17',
+          consentTextVersion: 'news-announcements-v2-2026-08-17',
           unsubscribedAt: null,
         };
       } else if (!subscribed && current) {

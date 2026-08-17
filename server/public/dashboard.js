@@ -97,6 +97,8 @@ function createWeeklyBriefPreference(user) {
   const copy = {
     description: translate("weekly_brief_description"),
     label: translate("weekly_brief_consent"),
+    announcementLabel: translate("news_announcements_consent"),
+    optional: translate("email_subscriptions_optional"),
     withdraw: translate("weekly_brief_withdraw"),
     unavailable: translate("weekly_brief_unavailable"),
     sender: translate("weekly_brief_sender"),
@@ -104,6 +106,24 @@ function createWeeklyBriefPreference(user) {
 
   const description = document.createElement("p");
   description.textContent = copy.description;
+
+  const optional = document.createElement("p");
+  optional.className = "weekly-brief-note";
+  optional.textContent = copy.optional;
+
+  preference.append(description, optional);
+
+  if (brief.sender) {
+    const sender = document.createElement("p");
+    sender.className = "weekly-brief-sender";
+    sender.textContent = `${copy.sender}: ${brief.sender.name} — ${brief.sender.mailingAddress} — ${brief.sender.contact}`;
+    preference.append(sender);
+  } else if (!brief.available) {
+    const unavailable = document.createElement("p");
+    unavailable.className = "weekly-brief-note";
+    unavailable.textContent = copy.unavailable;
+    preference.append(unavailable);
+  }
 
   const control = document.createElement("label");
   control.className = "weekly-brief-control";
@@ -120,7 +140,7 @@ function createWeeklyBriefPreference(user) {
   withdrawal.className = "weekly-brief-note";
   withdrawal.textContent = copy.withdraw;
 
-  preference.append(description, control, withdrawal);
+  preference.append(control, withdrawal);
 
   const announcements = document.createElement("label");
   announcements.className = "weekly-brief-control";
@@ -129,8 +149,7 @@ function createWeeklyBriefPreference(user) {
   announcementInput.checked = user.newsAnnouncements?.subscribed === true;
   announcementInput.disabled = !brief.available && !announcementInput.checked;
   const announcementLabel = document.createElement("span");
-  announcementLabel.textContent =
-    "I also consent to occasional CMCEN / RCMCE news announcements by email.";
+  announcementLabel.textContent = copy.announcementLabel;
   announcements.append(announcementInput, announcementLabel);
   announcementInput.addEventListener("change", async () => {
     const subscribed = announcementInput.checked;
@@ -157,18 +176,6 @@ function createWeeklyBriefPreference(user) {
     }
   });
   preference.append(announcements);
-
-  if (brief.sender) {
-    const sender = document.createElement("p");
-    sender.className = "weekly-brief-sender";
-    sender.textContent = `${copy.sender}: ${brief.sender.name} — ${brief.sender.mailingAddress} — ${brief.sender.contact}`;
-    preference.append(sender);
-  } else if (!brief.available) {
-    const unavailable = document.createElement("p");
-    unavailable.className = "weekly-brief-note";
-    unavailable.textContent = copy.unavailable;
-    preference.append(unavailable);
-  }
 
   checkbox.addEventListener("change", async () => {
     const requestedSubscription = checkbox.checked;

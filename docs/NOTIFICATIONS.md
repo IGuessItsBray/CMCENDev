@@ -5,24 +5,25 @@ retirement comments. The client is implemented by
 [`notifications.js`](../server/public/notifications.js) and
 [`notifications.html`](../server/public/notifications.html).
 
-## Weekly email brief and CASL controls
+## Email subscriptions and CASL controls
 
 The weekly brief is sent on Friday at noon in the `America/Toronto` time zone.
 It contains public Last Post notices, retirement messages, and public pages
 published since the prior successful weekly delivery (or the prior seven days
 for the first delivery).
 
-The feature uses express consent only. A member must deliberately opt in on
-their account page after seeing the sender name, mailing address, and contact
-method. The account stores the consent date, source, text version, and any
-withdrawal date; subscription and withdrawal actions are also written to the
-audit log.
+The weekly brief and occasional news announcements both use express consent
+only. A member must deliberately opt in to each category on their account page
+after seeing the sender name, mailing address, contact method, purpose, and
+frequency. The choices are optional and separate from account registration.
+The account stores the consent date, source, text version, and any withdrawal
+date; subscription and withdrawal actions are also written to the audit log.
 
-Every emailed brief includes sender identification/contact information and a
-unique opaque unsubscribe link. The link immediately withdraws the weekly
-brief subscription without sign-in and remains valid for at least 60 days.
-Each delivery also includes standard `List-Unsubscribe` headers. Configure all
-of `CASL_SENDER_NAME`, `CASL_SENDER_MAILING_ADDRESS`, and
+Every subscription email includes sender identification/contact information and
+a unique opaque unsubscribe link. The link immediately withdraws the relevant
+email category without sign-in and remains valid for at least 60 days. Each
+delivery also includes standard `List-Unsubscribe` headers. Configure all of
+`CASL_SENDER_NAME`, `CASL_SENDER_MAILING_ADDRESS`, and
 `CASL_SENDER_CONTACT` before enabling delivery; the server will refuse opt-ins
 and delivery when any of these values is absent.
 

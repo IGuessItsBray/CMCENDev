@@ -94,6 +94,10 @@ body.cmcen-modal-lock {
   overflow: hidden;
 }
 
+body.beta-notice-lock {
+  overflow: hidden;
+}
+
 main {
   position: relative;
   isolation: isolate;
@@ -929,6 +933,192 @@ svg {
   }
 
   .cmcen-modal-button {
+    width: 100%;
+  }
+}
+
+.beta-notice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  min-height: 100dvh;
+  overflow-y: auto;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background:
+    radial-gradient(circle at 16% 12%, rgba(213, 155, 39, 0.22), transparent 30%),
+    linear-gradient(135deg, var(--navy-950), var(--navy-900) 48%, #333b61);
+}
+
+.beta-notice {
+  width: min(100%, 760px);
+  min-height: min(700px, calc(100dvh - 64px));
+  display: grid;
+  grid-template-columns: minmax(170px, 0.72fr) minmax(0, 1.28fr);
+  overflow: hidden;
+  border: 1px solid rgba(234, 211, 163, 0.5);
+  border-top: 5px solid var(--gold-500);
+  border-radius: 4px;
+  background: var(--white);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.5);
+}
+
+.beta-notice-brand {
+  padding: 46px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background:
+    linear-gradient(180deg, rgba(23, 28, 50, 0.06), transparent),
+    var(--branch-grey-100);
+  color: var(--navy-900);
+  font-family: var(--font-heading);
+  font-size: 28px;
+  letter-spacing: 0.04em;
+}
+
+.beta-notice-brand img {
+  width: min(150px, 100%);
+  height: auto;
+}
+
+.beta-notice-content {
+  padding: clamp(32px, 6vw, 64px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: linear-gradient(180deg, var(--white), #f8f8f7);
+}
+
+.beta-notice-kicker {
+  margin: 0 0 10px;
+  color: var(--gold-700);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.beta-notice h1 {
+  margin: 0;
+  color: var(--navy-900);
+  font-family: var(--font-heading);
+  font-size: clamp(32px, 4vw, 46px);
+  font-weight: normal;
+  line-height: 1.08;
+}
+
+.beta-notice-message {
+  margin-top: 28px;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.beta-notice-message p + p {
+  margin-top: 16px;
+}
+
+.beta-notice-message a {
+  color: var(--navy-800);
+  font-weight: 700;
+  text-decoration-color: var(--gold-600);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.beta-notice-message a:hover,
+.beta-notice-message a:focus-visible {
+  color: var(--gold-700);
+}
+
+.beta-notice-signature {
+  color: var(--navy-900);
+  font-family: var(--font-heading);
+  font-size: 18px;
+}
+
+.beta-notice-continue {
+  min-height: 48px;
+  margin-top: 32px;
+  padding: 0 22px;
+  align-self: flex-start;
+  border: 1px solid var(--gold-700);
+  border-radius: 3px;
+  background: var(--gold-600);
+  color: var(--navy-950);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.beta-notice-continue:hover,
+.beta-notice-continue:focus-visible {
+  background: var(--gold-500);
+  outline: 3px solid rgba(213, 155, 39, 0.38);
+  outline-offset: 3px;
+}
+
+html[data-theme='dark'] .beta-notice {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface);
+}
+
+html[data-theme='dark'] .beta-notice-brand {
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .beta-notice-content {
+  background: var(--dark-surface);
+}
+
+html[data-theme='dark'] .beta-notice h1,
+html[data-theme='dark'] .beta-notice-signature {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .beta-notice-message {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .beta-notice-message a {
+  color: var(--gold-200);
+}
+
+@media (max-width: 680px) {
+  .beta-notice-overlay {
+    display: block;
+    padding: 16px;
+  }
+
+  .beta-notice {
+    min-height: calc(100dvh - 32px);
+    grid-template-columns: 1fr;
+  }
+
+  .beta-notice-brand {
+    padding: 22px;
+    flex-direction: row;
+    justify-content: flex-start;
+    font-size: 24px;
+  }
+
+  .beta-notice-brand img {
+    width: 64px;
+  }
+
+  .beta-notice-content {
+    padding: 32px 24px;
+  }
+
+  .beta-notice-continue {
     width: 100%;
   }
 }

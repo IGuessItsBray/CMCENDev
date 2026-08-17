@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>News Story | CMCEN / RCMCE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main class="news-detail-main">
+      <article class="news-detail-shell" aria-labelledby="newsDetailTitle">
+        <p
+          class="news-message"
+          id="newsDetailMessage"
+          role="status"
+          aria-live="polite"
+        >
+          Loading news story...
+        </p>
+        <div id="newsDetailContent" hidden>
+          <a class="news-detail-back" href="/news_stories">← Back to news</a>
+          <section class="news-detail-hero">
+            <header class="news-detail-heading">
+              <p class="news-card-date" id="newsDetailDate"></p>
+              <h1 id="newsDetailTitle"></h1>
+              <button
+                class="news-secondary-button news-detail-edit"
+                id="newsDetailEdit"
+                type="button"
+                hidden
+              >
+                Edit story
+              </button>
+            </header>
+            <figure class="news-detail-image">
+              <img id="newsDetailImage" alt="" />
+            </figure>
+          </section>
+          <section class="news-detail-content">
+            <p id="newsDetailText"></p>
+          </section>
+        </div>
+      </article>
+    </main>
+    <dialog class="news-detail-editor-dialog" id="newsDetailEditorDialog">
+      <form class="news-detail-editor news-form" id="newsDetailEditorForm">
+        <div class="news-detail-editor-heading">
+          <div>
+            <p class="news-eyebrow">Editing</p>
+            <h2>Edit news story</h2>
+          </div>
+          <button
+            class="news-secondary-button"
+            id="newsDetailEditorCancel"
+            type="button"
+          >
+            Close
+          </button>
+        </div>
+        <div class="news-form-grid">
+          <label
+            >English title<input
+              id="newsDetailTitleEn"
+              maxlength="240"
+              required
+          /></label>
+          <label
+            >Titre français<input
+              id="newsDetailTitleFr"
+              maxlength="240"
+              required
+          /></label>
+          <label class="news-form-full"
+            >Replace photo (optional)<input
+              id="newsDetailImageInput"
+              type="file"
+              accept="image/*"
+          /></label>
+          <div
+            class="image-crop news-image-crop news-form-full"
+            id="newsDetailImageCrop"
+          ></div>
+          <label
+            >English story<textarea
+              id="newsDetailContentEn"
+              maxlength="20000"
+              rows="10"
+              required
+            ></textarea>
+          </label>
+          <label
+            >Article français<textarea
+              id="newsDetailContentFr"
+              maxlength="20000"
+              rows="10"
+              required
+            ></textarea>
+          </label>
+        </div>
+        <label class="news-draft-choice"
+          ><input id="newsDetailDraft" type="checkbox" /> Save as a draft
+          instead of publishing</label
+        >
+        <div class="news-form-actions">
+          <button class="news-primary-button" id="newsDetailSave" type="submit">
+            Save changes
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <footer id="footer"></footer>
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/news-story.js"></script>
+  </body>
+</html>

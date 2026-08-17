@@ -4,11 +4,15 @@ const homeRetirementsList = document.getElementById("homeRetirementsList");
 const homeRetirementsMessage = document.getElementById(
   "homeRetirementsMessage",
 );
+const homeNewsRail = document.getElementById("homeNewsRail");
+const homeNewsMessage = document.getElementById("homeNewsMessage");
 
 let homeEvents = [];
 let homeRetirementMessages = [];
 let homeEventsState = "loading";
 let homeRetirementsState = "loading";
+let homeNewsItems = [];
+let homeNewsState = "loading";
 
 function getHomeLanguage() {
   return CMCENUtils.getCurrentLanguage();
@@ -174,9 +178,7 @@ function createHomeRetirementMedia(retirementMessage, name) {
       retirementMessage.photoUrl,
     );
 
-    image.src = isPlaceholderPhoto
-      ? "/images/logo.png"
-      : displayPhotoUrl;
+    image.src = isPlaceholderPhoto ? "/images/logo.png" : displayPhotoUrl;
     image.alt = isPlaceholderPhoto
       ? ""
       : getHomeTranslation("retirement_photo_alt", { name });
@@ -289,6 +291,87 @@ function createHomeFeedSkeleton({ withMedia = false } = {}) {
   item.appendChild(content);
 
   return item;
+}
+
+function getHomeNewsDate(value, language) {
+  if (!value || Number.isNaN(new Date(value).getTime())) return "";
+  return CMCENUtils.formatDate(value, {
+    locale: getHomeLocale(language),
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function createHomeNewsItem(item, language) {
+  const link = document.createElement("a");
+  link.className = "home-news-card";
+  link.href =
+    item.type === "lastPost"
+      ? `/last-post-message?id=${encodeURIComponent(item._id)}`
+      : `/news-story?id=${encodeURIComponent(item._id)}`;
+
+  if (item.imageUrl) {
+    const image = document.createElement("img");
+    image.src = item.imageUrl;
+    image.alt = "";
+    image.loading = "lazy";
+    link.appendChild(image);
+  }
+
+  const content = document.createElement("span");
+  content.className = "home-news-card-content";
+  const type = document.createElement("span");
+  type.className = "home-news-card-type";
+  type.textContent = item.type === "lastPost" ? "Last Post" : "News";
+  const title = document.createElement("strong");
+  title.textContent =
+    getHomeLocalizedText(item.title, language) ||
+    (item.type === "lastPost" ? "In Memoriam" : "News story");
+  const date = document.createElement("span");
+  date.className = "home-news-card-date";
+  date.textContent = getHomeNewsDate(item.publishedAt, language);
+  content.append(type, title, date);
+  link.appendChild(content);
+  return link;
+}
+
+function renderHomeNews() {
+  const language = getHomeLanguage();
+  homeNewsRail?.replaceChildren();
+
+  if (homeNewsState === "loading") {
+    homeNewsRail?.append(
+      ...Array.from({ length: 4 }, () => {
+        const item = document.createElement("div");
+        item.className = "home-news-card home-news-card--skeleton";
+        item.append(CMCENUtils.createSkeleton("skeleton--home-media"));
+        return item;
+      }),
+    );
+    setHomeMessage(homeNewsMessage, "Loading news and stories...");
+    return;
+  }
+  if (homeNewsState === "error") {
+    setHomeMessage(
+      homeNewsMessage,
+      "News and stories could not be loaded.",
+      "error",
+    );
+    return;
+  }
+  if (!homeNewsItems.length) {
+    setHomeMessage(
+      homeNewsMessage,
+      "No news or Last Post notices have been published yet.",
+      "empty",
+    );
+    return;
+  }
+  clearHomeMessage(homeNewsMessage);
+  homeNewsItems.forEach((item) =>
+    homeNewsRail?.appendChild(createHomeNewsItem(item, language)),
+  );
 }
 
 function renderHomeEvents() {
@@ -422,12 +505,29 @@ async function loadHomeRetirements() {
   renderHomeRetirements();
 }
 
+async function loadHomeNews() {
+  try {
+    const response = await fetch("/api/news/feed?limit=10");
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not load news");
+    homeNewsItems = Array.isArray(data.items) ? data.items : [];
+    homeNewsState = "ready";
+  } catch (error) {
+    console.error("Homepage news failed to load:", error);
+    homeNewsState = "error";
+  }
+  renderHomeNews();
+}
+
 document.addEventListener("languagechange", () => {
   renderHomeEvents();
   renderHomeRetirements();
+  renderHomeNews();
 });
 
 renderHomeEvents();
 renderHomeRetirements();
+renderHomeNews();
 loadHomeEvents();
 loadHomeRetirements();
+loadHomeNews();

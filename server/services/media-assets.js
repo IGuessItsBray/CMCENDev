@@ -1,6 +1,7 @@
 const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
+const NewsArticle = require('../models/NewsArticle');
 const Page = require('../models/Page');
 const RetirementMessage = require('../models/RetirementMessage');
 const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
@@ -13,6 +14,7 @@ const s3Client = require('../storage');
 const MEDIA_UPLOAD_SOURCE_TYPES = new Set([
   'retirementMessage',
   'lastPostMessage',
+  'newsArticle',
   'event',
   'mediaManager',
   'pageBuilder',
@@ -204,7 +206,10 @@ function getMediaAssetKeys(asset = {}) {
 
   return new Set(
     values
-      .flatMap((value) => [String(value || '').trim(), getMediaKeyFromValue(value)])
+      .flatMap((value) => [
+        String(value || '').trim(),
+        getMediaKeyFromValue(value),
+      ])
       .filter(Boolean),
   );
 }
@@ -224,7 +229,11 @@ function getMediaAssetObjectKeys(asset = {}) {
     ]),
   ];
 
-  return [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      values.map((value) => String(value || '').trim()).filter(Boolean),
+    ),
+  ];
 }
 
 function isMediaReferenceForAsset(value, assetKeys) {
@@ -232,7 +241,8 @@ function isMediaReferenceForAsset(value, assetKeys) {
 
   return (
     Boolean(cleanValue) &&
-    (assetKeys.has(cleanValue) || assetKeys.has(getMediaKeyFromValue(cleanValue)))
+    (assetKeys.has(cleanValue) ||
+      assetKeys.has(getMediaKeyFromValue(cleanValue)))
   );
 }
 
@@ -246,12 +256,14 @@ function getPageMediaReferences(blocks = []) {
       [item.mediaUrl, `${fieldPrefix}.mediaUrl`],
     );
 
-    Object.entries(item.mediaVariants || {}).forEach(([variantName, variant]) => {
-      references.push(
-        [variant?.key, `${fieldPrefix}.mediaVariants.${variantName}.key`],
-        [variant?.url, `${fieldPrefix}.mediaVariants.${variantName}.url`],
-      );
-    });
+    Object.entries(item.mediaVariants || {}).forEach(
+      ([variantName, variant]) => {
+        references.push(
+          [variant?.key, `${fieldPrefix}.mediaVariants.${variantName}.key`],
+          [variant?.url, `${fieldPrefix}.mediaVariants.${variantName}.url`],
+        );
+      },
+    );
   };
 
   blocks.forEach((block, blockIndex) => {
@@ -268,7 +280,7 @@ function getPageMediaReferences(blocks = []) {
 }
 
 async function getContentMediaReferences(assetKeys) {
-  const [events, retirementMessages, lastPostMessages, pages] =
+  const [events, retirementMessages, lastPostMessages, newsArticles, pages] =
     await Promise.all([
       Event.find({ imagePath: { $nin: [null, ''] } })
         .select('_id imagePath')
@@ -283,6 +295,14 @@ async function getContentMediaReferences(assetKeys) {
         ],
       })
         .select('_id imageUrl photoUrl')
+        .lean(),
+      NewsArticle.find({
+        $or: [
+          { imageUrl: { $nin: [null, ''] } },
+          { imageDisplayUrl: { $nin: [null, ''] } },
+        ],
+      })
+        .select('_id imageUrl imageDisplayUrl')
         .lean(),
       Page.find({}).select('_id blocks').lean(),
     ]);
@@ -306,6 +326,15 @@ async function getContentMediaReferences(assetKeys) {
   lastPostMessages.forEach((message) => {
     addReference('lastPostMessage', message, 'imageUrl', message.imageUrl);
     addReference('lastPostMessage', message, 'photoUrl', message.photoUrl);
+  });
+  newsArticles.forEach((article) => {
+    addReference('newsArticle', article, 'imageUrl', article.imageUrl);
+    addReference(
+      'newsArticle',
+      article,
+      'imageDisplayUrl',
+      article.imageDisplayUrl,
+    );
   });
   pages.forEach((page) => {
     getPageMediaReferences(page.blocks).forEach(([value, field]) => {
@@ -341,7 +370,8 @@ async function deleteContentMediaAsset({ mediaUrl, source }) {
   const references = await getContentMediaReferences(assetKeys);
   const remainingReferences = references.filter(
     (reference) =>
-      reference.type !== source.type || String(reference.id) !== String(source.id),
+      reference.type !== source.type ||
+      String(reference.id) !== String(source.id),
   );
 
   if (remainingReferences.length) {

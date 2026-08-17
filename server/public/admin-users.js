@@ -3,7 +3,7 @@ const adminWorkZone = document.getElementById("adminWorkZone");
 const adminWorkZoneStatus = document.getElementById("adminWorkZoneStatus");
 
 let adminWorkZoneState = {
-  activeView: ["media", "roles"].includes(
+  activeView: ["media", "roles", "subscriptions"].includes(
     new URLSearchParams(window.location.search).get("view"),
   )
     ? new URLSearchParams(window.location.search).get("view")
@@ -765,6 +765,7 @@ async function loadCurrentAdmin() {
       media: "canViewMediaLibrary",
       roles: "canManageRoles",
       users: "canReadUsers",
+      subscriptions: "canManageSubscriptions",
     }[adminWorkZoneState.activeView] || "canReadUsers";
 
   if (user.permissions?.[requiredPermission] !== true) {
@@ -772,12 +773,15 @@ async function loadCurrentAdmin() {
     return null;
   }
 
-  setAdminWorkZoneState({
-    currentUserId: user._id || user.id || "",
-    currentUserRole: user.role || "",
-    currentUserPermissions: user.permissions || {},
-    currentUserMfa: user.mfa || {},
-  });
+  setAdminWorkZoneState(
+    {
+      currentUserId: user._id || user.id || "",
+      currentUserRole: user.role || "",
+      currentUserPermissions: user.permissions || {},
+      currentUserMfa: user.mfa || {},
+    },
+    { render: adminWorkZoneState.activeView !== "subscriptions" },
+  );
 
   window.updateAdminWorkZoneTabsForUser(user);
 
@@ -1003,7 +1007,10 @@ async function resendAdminInvitation(user) {
         ),
       });
     }
-    showAdminActionToast(error.message || "Could not resend invitation", "error");
+    showAdminActionToast(
+      error.message || "Could not resend invitation",
+      "error",
+    );
   }
 }
 
@@ -1576,7 +1583,9 @@ async function initializeAdminUsersPage() {
 
     if (!user) return;
 
-    if (adminWorkZoneState.activeView === "roles") {
+    if (adminWorkZoneState.activeView === "subscriptions") {
+      showAdminWorkZone();
+    } else if (adminWorkZoneState.activeView === "roles") {
       await loadAdminRoles();
     } else if (adminWorkZoneState.activeView === "media") {
       await loadAdminMedia();

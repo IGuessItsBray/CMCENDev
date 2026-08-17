@@ -17,6 +17,8 @@ const dashboardDangerZone = document.getElementById("dashboardDangerZone");
 const dashboardDangerZoneContent = dashboardDangerZone?.querySelector(
   ".dashboard-danger-zone-content",
 );
+const weeklyBriefSection = document.getElementById("weeklyBriefSection");
+const weeklyBriefPreference = document.getElementById("weeklyBriefPreference");
 
 let currentDashboardUser = null;
 let currentReviewCounts = null;
@@ -86,6 +88,125 @@ function createDetailRow(labelKey, value) {
   row.append(label, valueElement);
 
   return row;
+}
+
+function createWeeklyBriefPreference(user) {
+  const preference = document.createElement("div");
+  preference.className = "weekly-brief-preference";
+  const brief = user.weeklyBrief || {};
+  const copy = {
+    description: translate("weekly_brief_description"),
+    label: translate("weekly_brief_consent"),
+    withdraw: translate("weekly_brief_withdraw"),
+    unavailable: translate("weekly_brief_unavailable"),
+    sender: translate("weekly_brief_sender"),
+  };
+
+  const description = document.createElement("p");
+  description.textContent = copy.description;
+
+  const control = document.createElement("label");
+  control.className = "weekly-brief-control";
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = brief.subscribed === true;
+  checkbox.disabled = !brief.available && !checkbox.checked;
+
+  const label = document.createElement("span");
+  label.textContent = copy.label;
+  control.append(checkbox, label);
+
+  const withdrawal = document.createElement("p");
+  withdrawal.className = "weekly-brief-note";
+  withdrawal.textContent = copy.withdraw;
+
+  preference.append(description, control, withdrawal);
+
+  const announcements = document.createElement("label");
+  announcements.className = "weekly-brief-control";
+  const announcementInput = document.createElement("input");
+  announcementInput.type = "checkbox";
+  announcementInput.checked = user.newsAnnouncements?.subscribed === true;
+  announcementInput.disabled = !brief.available && !announcementInput.checked;
+  const announcementLabel = document.createElement("span");
+  announcementLabel.textContent =
+    "I also consent to occasional CMCEN / RCMCE news announcements by email.";
+  announcements.append(announcementInput, announcementLabel);
+  announcementInput.addEventListener("change", async () => {
+    const subscribed = announcementInput.checked;
+    announcementInput.disabled = true;
+    try {
+      const updated = await CMCENUtils.apiJson(
+        "/api/subscriptions/news-announcements",
+        {
+          method: "PUT",
+          token,
+          body: { subscribed, expressConsent: subscribed },
+          redirectOnUnauthorized: true,
+        },
+      );
+      currentDashboardUser = updated;
+      renderDashboard(updated);
+    } catch (error) {
+      announcementInput.checked = !subscribed;
+      announcementInput.disabled = false;
+      CMCENUtils.showToast(
+        error.message || "Could not update news announcement preference",
+        { color: "error" },
+      );
+    }
+  });
+  preference.append(announcements);
+
+  if (brief.sender) {
+    const sender = document.createElement("p");
+    sender.className = "weekly-brief-sender";
+    sender.textContent = `${copy.sender}: ${brief.sender.name} — ${brief.sender.mailingAddress} — ${brief.sender.contact}`;
+    preference.append(sender);
+  } else if (!brief.available) {
+    const unavailable = document.createElement("p");
+    unavailable.className = "weekly-brief-note";
+    unavailable.textContent = copy.unavailable;
+    preference.append(unavailable);
+  }
+
+  checkbox.addEventListener("change", async () => {
+    const requestedSubscription = checkbox.checked;
+    checkbox.disabled = true;
+
+    try {
+      const updatedUser = await CMCENUtils.apiJson(
+        "/api/subscriptions/weekly-brief",
+        {
+          method: "PUT",
+          token,
+          body: {
+            subscribed: requestedSubscription,
+            expressConsent: requestedSubscription,
+          },
+          redirectOnUnauthorized: true,
+          errorMessage: translate("weekly_brief_update_error"),
+        },
+      );
+      currentDashboardUser = updatedUser;
+      renderDashboard(updatedUser);
+      CMCENUtils.showToast(
+        requestedSubscription
+          ? translate("weekly_brief_subscribed")
+          : translate("weekly_brief_unsubscribed"),
+        { color: "success", position: "bottom-right", animation: "slide" },
+      );
+    } catch (error) {
+      checkbox.checked = !requestedSubscription;
+      checkbox.disabled = !brief.available && !checkbox.checked;
+      CMCENUtils.showToast(
+        error.message || translate("weekly_brief_update_error"),
+        { color: "error", position: "bottom-right", animation: "slide" },
+      );
+    }
+  });
+
+  return preference;
 }
 
 function createProfileField({
@@ -957,6 +1078,10 @@ function renderDashboard(user) {
   document
     .querySelector(".dashboard-mfa-section")
     ?.toggleAttribute("hidden", isGhost);
+  weeklyBriefSection?.toggleAttribute("hidden", isGhost);
+  weeklyBriefPreference?.replaceChildren(
+    ...(isGhost ? [] : [createWeeklyBriefPreference(user)]),
+  );
 
   const dangerZone = isGhost ? null : createDangerZone(user);
   dashboardDangerZone?.toggleAttribute("hidden", !dangerZone);

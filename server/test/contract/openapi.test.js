@@ -67,6 +67,9 @@ describe('OpenAPI contract', () => {
     const requiredOperations = [
       ['post', '/api/login'],
       ['post', '/api/session/refresh'],
+      ['put', '/api/subscriptions/weekly-brief'],
+      ['get', '/api/subscriptions/weekly-brief/unsubscribe'],
+      ['post', '/api/subscriptions/weekly-brief/unsubscribe'],
       ['get', '/api/audit-logs'],
       ['get', '/api/audit-logs/export.csv'],
       ['post', '/api/upload'],

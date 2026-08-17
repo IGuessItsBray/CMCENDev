@@ -132,6 +132,14 @@ const PERMISSION_CATALOG = Object.freeze([
       "Reset another user's authenticator app and passkeys from the admin work zone.",
   },
   {
+    key: 'subscriptions.manage',
+    label: 'Manage subscriptions and email blasts',
+    group: 'Communications',
+    action: 'admin',
+    description:
+      'View email subscriptions, export subscriber lists, and send consented news announcements.',
+  },
+  {
     key: 'roles.manage',
     label: 'Manage roles',
     group: 'Roles',
@@ -226,6 +234,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canDeleteAnyUser: 'users.delete_any',
   canProvisionUsers: 'users.provision',
   canResetUserMfa: 'users.mfa_reset',
+  canManageSubscriptions: 'subscriptions.manage',
   canManageRoles: 'roles.manage',
   canViewAuditLog: 'audit.view',
   canViewAnalytics: 'analytics.view',
@@ -299,6 +308,8 @@ function getBuiltInPermissionFlags(user) {
     canDeleteAnyUser: hasMinimumRole(role, 'administrator'),
 
     canResetUserMfa: hasMinimumRole(role, 'administrator'),
+
+    canManageSubscriptions: hasMinimumRole(role, 'administrator'),
 
     canManageRoles: hasMinimumRole(role, 'administrator'),
 

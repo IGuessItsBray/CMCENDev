@@ -10,7 +10,7 @@ const { writeAuditLog } = require('./audit-log');
 const { sendMail } = require('./mailer');
 
 const EASTERN_TIME_ZONE = 'America/Toronto';
-const CASL_CONSENT_TEXT_VERSION = 'weekly-brief-v1-2026-08-17';
+const CASL_CONSENT_TEXT_VERSION = 'weekly-brief-v2-2026-08-17';
 // One extra day ensures the link remains available for at least 60 full days
 // after SMTP accepts the message, even when delivery is delayed.
 const UNSUBSCRIBE_TOKEN_LIFETIME_MS = 61 * 24 * 60 * 60 * 1000;

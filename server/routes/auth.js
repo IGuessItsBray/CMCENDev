@@ -1295,7 +1295,7 @@ router.put(
           subscribed: true,
           consentedAt: now,
           consentSource: 'account_dashboard',
-          consentTextVersion: 'news-announcements-v1-2026-08-17',
+          consentTextVersion: 'news-announcements-v2-2026-08-17',
           unsubscribedAt: null,
         };
       } else if (!subscribed && current) {

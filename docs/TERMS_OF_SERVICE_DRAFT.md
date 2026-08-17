@@ -2,17 +2,12 @@
 
 **Effective date:** [Month Day, Year]<br>
 **Last updated:** [Month Day, Year]<br>
-**Organization:** [Legal entity operating CMCEN] ("CMCEN", "we", "us", or "our")<br>
+**Organization:** CAF Communications & Electronics Branch Office ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
-**Privacy Contact:** [Privacy Contact name or title]<br>
-**Legal Contact:** [Legal Contact name or title]<br>
-**Privacy Email:** privacy@cmcen.ca<br>
-**Legal Email:** legal@cmcen.ca<br>
-**General Email:** contact@cmcen.ca<br>
-**Security Email:** security@cmcen.ca<br>
-**Mailing Address:** [mailing address]
+**Privacy and Legal Contact:** MWO Terry Cadieux<br>
+**Mailing Address:** 9 Byng Ave, Kingston, ON K7K 5L3
 
-> **Publication note:** This is a working draft. It must be completed with the correct legal entity, contact details, governing-law decision, and any organization-specific rules, then reviewed by qualified legal counsel before publication.
+> **Publication note:** This is a working draft. It must be completed with a governing-law decision, any organization-specific rules, and a monitored direct contact channel, then reviewed by qualified legal counsel before publication.
 
 ## 1. Acceptance of these Terms
 
@@ -26,7 +21,7 @@ If you use the Services on behalf of an organization, you represent that you hav
 
 CMCEN provides an online information and community hub for the Canadian Military Communications and Electronics community. The Services may provide news, resources, events, community information, historical materials, retirement messages, Last Post notices, and moderated content-submission tools.
 
-The Services are informational and community-facing. Unless CMCEN expressly states otherwise in writing, they do not provide official operational, legal, medical, financial, employment, benefits, emergency, or security advice and are not an official channel for urgent or operational communications.
+The Services are informational and community-facing. Unless CMCEN expressly states otherwise in writing, they do not provide legal, medical, financial, employment, benefits, emergency, or security advice. Do not use the Services for urgent or operational communications, or to transmit information that requires an authorized Government of Canada, Canadian Armed Forces, or Department of National Defence channel.
 
 ## 3. Eligibility and authorized use
 
@@ -48,7 +43,7 @@ You must not:
 
 Certain features require an account. You are responsible for safeguarding your login credentials, authentication methods, and devices, and for all activity occurring through your account except to the extent caused by CMCEN’s failure to use reasonable safeguards.
 
-You must notify us promptly at security@cmcen.ca if you suspect unauthorized access to your account. We may require additional security verification and may suspend or restrict access when we reasonably believe it is necessary to protect users, the website, or the public.
+You must notify us promptly using the contact details in Section 16 if you suspect unauthorized access to your account. We may require additional security verification and may suspend or restrict access when we reasonably believe it is necessary to protect users, the website, or the public.
 
 Accounts are personal to the account holder unless CMCEN expressly authorizes otherwise. Do not share, sell, transfer, or lend access to your account.
 
@@ -92,11 +87,13 @@ CMCEN grants you a limited, revocable, non-exclusive, non-transferable licence t
 
 Third-party names, logos, content, and links belong to their respective owners. Nothing in these Terms grants you rights in them.
 
-If you believe content on the website infringes your copyright or other legal rights, contact legal@cmcen.ca with your name, contact information, identification of the material, location/URL, the basis of your request, and a statement that your report is accurate and made in good faith. For personal-information concerns, use privacy@cmcen.ca.
+If you believe content on the website infringes your copyright or other legal rights, contact us using the details in Section 16 with your name, contact information, identification of the material, location/URL, the basis of your request, and a statement that your report is accurate and made in good faith. For personal-information concerns, use the privacy-request process in the Privacy Policy.
 
-## 7. Privacy
+## 7. Privacy and email subscriptions
 
 Our collection, use, disclosure, and protection of personal information are described in the [CMCEN Privacy Policy](./PRIVACY_POLICY_DRAFT.md). Before these Terms are published on the website, replace the draft link with the public `/privacy` page.
+
+CMCEN may offer optional email subscriptions, including a weekly email brief and occasional news announcements. Opting in to one category does not opt you in to the other, and neither subscription is required to create or keep an account. Where CASL applies, we seek your express consent before sending that category of subscription email. Each subscription email will identify CMCEN, provide the required contact information, and include a working unsubscribe mechanism. You may withdraw your consent at any time through the unsubscribe link in the relevant email or through your account’s subscription controls. Account, security, password-reset, and submission-status messages are service communications and do not require an email-subscription opt-in.
 
 ## 8. Third-party links and platforms
 
@@ -126,7 +123,7 @@ To the fullest extent permitted by law, you will indemnify and hold harmless CMC
 
 CMCEN may suspend, restrict, or terminate your access to all or part of the Services, remove or restrict User Content, or take other reasonable action if we believe you have violated these Terms, created a security or privacy risk, submitted operationally sensitive information, or used the Services in a way that may cause harm.
 
-You may stop using the Services at any time. When you delete your own account, CMCEN deletes the account and anonymizes attribution for your submitted event submissions, Last Post notices, retirement messages, and comments; the content may remain without your account attribution. When authorized staff delete an account, they choose whether to delete its associated submitted content or retain it with attribution anonymized. Necessary audit and security records may remain. To request correction or removal of public content, contact privacy@cmcen.ca. Termination does not affect provisions that by their nature should survive, including intellectual-property, disclaimer, limitation-of-liability, indemnity, and dispute provisions.
+You may stop using the Services at any time. When you delete your own account, CMCEN deletes the account and anonymizes attribution for your submitted event submissions, Last Post notices, retirement messages, and comments; the content may remain without your account attribution. When authorized staff delete an account, they choose whether to delete its associated submitted content or retain it with attribution anonymized. Necessary audit and security records may remain. To request correction or removal of public content, use the privacy-request process in the Privacy Policy. Termination does not affect provisions that by their nature should survive, including intellectual-property, disclaimer, limitation-of-liability, indemnity, and dispute provisions.
 
 ## 13. Changes to the Services or Terms
 
@@ -150,22 +147,21 @@ These Terms, together with the Privacy Policy and any specific terms presented f
 
 Questions or notices about these Terms should be directed to:
 
-**[Legal entity operating CMCEN]**<br>
-[Legal Contact name or title]<br>
-[mailing address]<br>
-legal@cmcen.ca<br>
-[telephone number, if offered]
+**CAF Communications & Electronics Branch Office**<br>
+Attn: MWO Terry Cadieux<br>
+9 Byng Ave<br>
+Kingston, ON K7K 5L3
 
-For privacy matters, contact privacy@cmcen.ca; for website-security concerns, contact security@cmcen.ca; and for general website questions, contact contact@cmcen.ca.
+For privacy matters, use the privacy-request process in the Privacy Policy. For website-security concerns, general website questions, and legal notices, use the same mailing address unless CMCEN publishes a more specific monitored contact channel.
 
 ---
 
 ### Internal launch checklist (remove before publishing)
 
-1. Confirm the organization that owns and operates the website, and obtain authority to bind it to these Terms.
+1. Confirm authority to bind CAF Communications & Electronics Branch Office to these Terms.
 2. Choose and confirm the governing law, venue, dispute process, and liability approach with counsel.
 3. Confirm the public-content licence is broad enough for the actual website, archive, communications, and social-media practices, but no broader.
-4. Add the actual security, privacy, legal, copyright, and account-closure contact addresses.
+4. Publish and monitor direct security, privacy, legal, copyright, and account-closure contact channels.
 5. Replace draft document links with final public website URLs and add a visible Terms link in the footer and account-registration flow.
 6. Align the registration, event, retirement, Last Post, upload, and comment forms with the consent, authority, and operational-security representations in these Terms.
 7. Obtain a French translation and legal review before publishing the English and French versions together.

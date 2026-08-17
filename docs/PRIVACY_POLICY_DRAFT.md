@@ -2,17 +2,12 @@
 
 **Effective date:** [Month Day, Year]<br>
 **Last updated:** [Month Day, Year]<br>
-**Organization:** [Legal entity operating CMCEN] ("CMCEN", "we", "us", or "our")<br>
+**Organization:** CAF Communications & Electronics Branch Office ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
-**Privacy Contact:** [Privacy Contact name or title]<br>
-**Legal Contact:** [Legal Contact name or title]<br>
-**Privacy Email:** privacy@cmcen.ca<br>
-**Legal Email:** legal@cmcen.ca<br>
-**General Email:** contact@cmcen.ca<br>
-**Security Email:** security@cmcen.ca<br>
-**Mailing Address:** [mailing address]
+**Privacy and Legal Contact:** MWO Terry Cadieux<br>
+**Mailing Address:** 9 Byng Ave, Kingston, ON K7K 5L3
 
-> **Publication note:** This is a working draft, prepared from the current website’s features and data flows. It must be reviewed and completed by the policy owner and qualified Canadian privacy counsel before publication. In particular, confirm the policy owner, privacy contact, service providers, retention periods, and whether any provincial public-sector privacy law applies.
+> **Publication note:** This is a working draft, prepared from the current website’s features and data flows. It must be reviewed and completed by the policy owner and qualified Canadian privacy counsel before publication. In particular, confirm the applicable privacy-law regime, service providers, retention periods, and a monitored direct contact channel for privacy and CASL requests.
 
 ## 1. Scope and purpose
 
@@ -92,6 +87,17 @@ We collect, use, and disclose personal information with your knowledge and conse
 
 By creating an account, submitting a form, or providing information through the website, you consent to the reasonably necessary collection, use, and disclosure described in this Policy. You may withdraw consent, subject to legal or contractual limits and reasonable notice, by contacting us. Withdrawal may prevent us from providing an account or a feature, and does not affect processing already completed before withdrawal.
 
+### Optional email subscriptions and CASL
+
+CMCEN may offer optional email subscriptions, including a weekly email brief and occasional news announcements. These subscriptions are separate from account registration and are not required to create or keep an account. Account, security, password-reset, and submission-status messages are service communications, not marketing subscriptions.
+
+Before sending a subscription message that is subject to Canada's Anti-Spam Legislation (CASL), we obtain express consent for the applicable subscription category. At the time of consent, we clearly describe the purpose of the subscription, identify CMCEN, provide our mailing address and a valid contact method, and make clear that consent can be withdrawn. Current intended categories are:
+
+- **Weekly email brief:** a Friday-noon Eastern Time summary of newly published Last Post notices, retirement messages, and news; and
+- **News announcements:** occasional CMCEN / RCMCE announcements sent outside the weekly brief.
+
+We keep a record of consent and withdrawal for each category, including the date and time, source, consent-text version, and relevant account or contact information. Each subscription email identifies the sender, includes the required contact information, and provides a readily available unsubscribe mechanism. You may withdraw consent by using the unsubscribe link in the relevant email or through the subscription controls in your account. We process unsubscribe requests without delay and no later than the time required by applicable law.
+
 ## 7. Cookies, local storage, and similar technologies
 
 The website uses the following technologies:
@@ -154,7 +160,7 @@ No method of transmission or storage is completely secure. You are responsible f
 
 Subject to applicable law, you may request access to your personal information under our control, information about how it has been used or disclosed, and correction of information that is inaccurate or incomplete. You may also ask to withdraw consent, close your account, or request removal of personal information from public website content. Only a verified next of kin may make a correction or deletion request concerning a deceased member’s Last Post notice or account.
 
-To make a request, contact the Privacy Contact in writing and provide enough information for us to verify your identity and locate the relevant records. We may request reasonable identity-verification information before responding. We will respond within the time required by applicable law and explain any lawful refusal, limitation, or fee before charging a fee.
+To make a request, contact the Privacy and Legal Contact in writing at the mailing address in Section 16 and provide enough information for us to verify your identity and locate the relevant records. We may request reasonable identity-verification information before responding. We will respond within the time required by applicable law and explain any lawful refusal, limitation, or fee before charging a fee.
 
 If you are dissatisfied with our response, you may contact the Office of the Privacy Commissioner of Canada or the applicable provincial privacy regulator. Contact information is available at https://www.priv.gc.ca/.
 
@@ -174,24 +180,23 @@ We may update this Policy to reflect changes to the website, our practices, or a
 
 Questions, access requests, correction requests, consent withdrawals, complaints, and concerns about this Policy should be directed to:
 
-**[Legal entity operating CMCEN]**<br>
-[Privacy Contact name or title]<br>
-[mailing address]<br>
-privacy@cmcen.ca<br>
-[telephone number, if offered]
+**CAF Communications & Electronics Branch Office**<br>
+Attn: MWO Terry Cadieux<br>
+9 Byng Ave<br>
+Kingston, ON K7K 5L3
 
-For suspected account compromise or another website-security concern, contact security@cmcen.ca. For general website questions, contact contact@cmcen.ca. For legal notices, contact legal@cmcen.ca.
+For suspected account compromise, another website-security concern, or a legal notice, use the same mailing address unless CMCEN publishes a more specific monitored contact channel.
 
 ---
 
 ### Internal launch checklist (remove before publishing)
 
-1. Identify the correct legal entity, accountable Privacy Contact, and Canadian mailing address.
-2. Confirm whether CMCEN is governed by PIPEDA, Ontario public-sector privacy law, or another statute; adjust terminology and complaint channel accordingly.
-3. Review the Toronto hosting statement before each material infrastructure change, especially before introducing a provider that processes personal information outside Canada.
-4. Approve a retention schedule and configure the application to meet it. The current analytics and audit-log models have no visible automatic retention/deletion rule.
-5. Verify that public retirement, Last Post, and event consent text is appropriate and consistently captured for all public content types.
-6. Confirm that a monitored privacy email address and request-handling procedure exist.
+1. Confirm whether CMCEN is governed by PIPEDA, Ontario public-sector privacy law, or another statute; adjust terminology and complaint channel accordingly.
+2. Review the Toronto hosting statement before each material infrastructure change, especially before introducing a provider that processes personal information outside Canada.
+3. Approve a retention schedule and configure the application to meet it. The current analytics and audit-log models have no visible automatic retention/deletion rule.
+4. Verify that public retirement, Last Post, and event consent text is appropriate and consistently captured for all public content types.
+5. Publish and monitor a direct privacy-contact channel, and establish a request-handling procedure.
+6. Before enabling subscription emails, publish and monitor the CASL contact method (website, email address, or telephone number) and verify sender identification, consent records, and unsubscribe handling.
 7. Obtain a French translation and legal review before publishing the English and French versions together.
 
 ### Reference materials used for this draft
@@ -200,3 +205,4 @@ For suspected account compromise or another website-security concern, contact se
 - [Office of the Privacy Commissioner of Canada: meaningful consent guidance](https://www.priv.gc.ca/en/privacy-topics/privacy-laws-in-canada/the-personal-information-protection-and-electronic-documents-act-pipeda/p_principle/principles/p_consent/)
 - [Office of the Privacy Commissioner of Canada: breach reporting and recordkeeping](https://www.priv.gc.ca/en/privacy-topics/business-privacy/breaches-and-safeguards/privacy-breaches-at-your-business/gd_pb_201810/)
 - [PIPEDA, Schedule 1 (Justice Laws Website)](https://laws-lois.justice.gc.ca/eng/acts/P-8.6/section-sched417658.html)
+- [Canadian Radio-television and Telecommunications Commission: CASL frequently asked questions](https://crtc.gc.ca/eng/com500/faq500.htm)

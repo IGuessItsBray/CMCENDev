@@ -160,7 +160,10 @@ const navLinks = {
       { route: "/about_association.html", i18n: "menu_about_option_3" },
       {
         route: "/about_museum_foundation.html",
-        label: { en: "About the C&E Museum & Foundation", fr: "Musée et Fondation des C et E" },
+        label: {
+          en: "About the C&E Museum & Foundation",
+          fr: "Musée et Fondation des C et E",
+        },
       },
     ],
   },
@@ -838,19 +841,11 @@ function loadFooter() {
           <address class="footer-contact">
             <p>
               <span data-i18n="footer_address_label">Address</span><br />
-              <span>Association address to be confirmed</span>
+              <span>CAF Communications &amp; Electronics Branch Office<br />9 Byng Ave<br />Kingston, ON K7K 5L3</span>
             </p>
 
             <p>
-              <a href="mailto:contact@cmcen.ca">
-                contact@cmcen.ca
-              </a>
-            </p>
-
-            <p>
-              <a href="/contact.html" data-i18n="contact_form_link">
-                Contact form
-              </a>
+              Contact: MWO Terry Cadieux
             </p>
           </address>
         </section>
@@ -862,20 +857,20 @@ function loadFooter() {
 
           <ul>
             <li>
-              <a href="/privacy.html" data-i18n="privacy_policy">
+              <a href="/privacy" data-i18n="privacy_policy">
                 Privacy Policy
               </a>
             </li>
 
             <li>
-              <a href="mailto:privacy@cmcen.ca" data-i18n="privacy_contact">
-                Privacy inquiries
+              <a href="/terms">
+                Terms of Use
               </a>
             </li>
 
             <li>
-              <a href="mailto:legal@cmcen.ca" data-i18n="legal_contact">
-                Legal notices
+              <a href="/privacy#contact" data-i18n="privacy_contact">
+                Privacy inquiries
               </a>
             </li>
 
@@ -886,7 +881,7 @@ function loadFooter() {
             </li>
 
             <li>
-              <a href="/casl.html" data-i18n="casl_disclosure">
+              <a href="/casl" data-i18n="casl_disclosure">
                 CASL Disclosure
               </a>
             </li>
@@ -1416,7 +1411,10 @@ function showBetaNotice() {
     if (event.shiftKey && document.activeElement === firstFocusableElement) {
       event.preventDefault();
       lastFocusableElement.focus();
-    } else if (!event.shiftKey && document.activeElement === lastFocusableElement) {
+    } else if (
+      !event.shiftKey &&
+      document.activeElement === lastFocusableElement
+    ) {
       event.preventDefault();
       firstFocusableElement.focus();
     }

@@ -12,7 +12,12 @@ const {
   buildDocument,
   buildRecordFilter,
 } = require('../scripts/migration/lib/workbook-import');
-const { isImageLikeUrl } = require('../scripts/migration/lib/workbook-media');
+const {
+  CMCEN_CREST_FALLBACK_URL,
+  isCmcenCrestUrl,
+  isImageLikeUrl,
+  uploadWorkbookMedia,
+} = require('../scripts/migration/lib/workbook-media');
 
 function addSheet(workbook, name, rows) {
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(rows), name);
@@ -242,4 +247,23 @@ test('parses stored comments and avoids non-image files during upload', () => {
   assert.equal(parseComments('unstructured note')[0].parsed, false);
   assert.equal(isImageLikeUrl('https://example.test/photo.jpg'), true);
   assert.equal(isImageLikeUrl('https://example.test/document.pdf'), false);
+});
+
+test('reuses the pre-uploaded CMCEN crest instead of uploading it', async () => {
+  const sourceUrl =
+    'https://cmcen-rcmce.ca/wp-content/uploads/CMCEN-crest-snip-1.png';
+  const media = await uploadWorkbookMedia({ mediaLinks: [sourceUrl] });
+
+  assert.equal(isCmcenCrestUrl(sourceUrl), true);
+  assert.equal(
+    isCmcenCrestUrl(
+      'https://cmcen-rcmce.ca/wp-content/uploads/8-ACCS-Crest.gif',
+    ),
+    false,
+  );
+  assert.equal(media.assets.length, 1);
+  assert.equal(media.assets[0].url, CMCEN_CREST_FALLBACK_URL);
+  assert.equal(media.assets[0].display.url, CMCEN_CREST_FALLBACK_URL);
+  assert.equal(media.assets[0].key, null);
+  assert.deepEqual(media.failures, []);
 });

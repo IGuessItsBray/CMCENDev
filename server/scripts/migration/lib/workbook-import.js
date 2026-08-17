@@ -36,7 +36,7 @@ function buildLegacy(candidate, mediaResult) {
     translationGroup: candidate.translationGroup,
     recordClass: candidate.recordClass,
     notes: candidate.notes,
-    mediaAssetKeys: mediaResult.assets.map((asset) => asset.key),
+    mediaAssetKeys: mediaResult.assets.map((asset) => asset.key).filter(Boolean),
     importedAt: new Date(),
   };
 }

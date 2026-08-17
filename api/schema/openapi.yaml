@@ -698,7 +698,7 @@ paths:
     post:
       tags: [Admin]
       summary: Provision an invited user account.
-      description: Creates an invited account and emails a seven-day activation link. The recipient sets their own password and completes their profile. Developer accounts cannot be provisioned through this endpoint, and only a developer may choose the `internal_beta` role.
+      description: Creates an invited account and emails a seven-day activation link. The recipient sets their own password and completes their profile. An optional `message` replaces the standard account-creation message in the email and is retained for a resend. Developer accounts cannot be provisioned through this endpoint, and only a developer may choose the `internal_beta` role.
       x-permission: canProvisionUsers
       requestBody:
         required: true
@@ -719,6 +719,10 @@ paths:
                 email:
                   type: string
                   format: email
+                message:
+                  type: string
+                  maxLength: 2000
+                  description: Optional plain-text message that replaces the standard account-creation message in the invitation email.
                 role:
                   type: string
                   enum: [subscriber, internal_beta, contributor, author, editor, administrator]

@@ -905,6 +905,13 @@ async function provisionAdminUser() {
           autocomplete: "email",
         },
         {
+          name: "message",
+          label: "Message (optional)",
+          type: "textarea",
+          maxLength: 2000,
+          hint: "Replaces the standard account-creation message in the invitation email.",
+        },
+        {
           name: "role",
           label: "Role",
           type: "select",

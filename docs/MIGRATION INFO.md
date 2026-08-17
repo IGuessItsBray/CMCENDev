@@ -99,6 +99,45 @@ content, comment, identity, and placeholder-image reports have been reviewed.
 `--apply` is intentionally rejected until the dry-run importer and its manifest
 have been fully reviewed.
 
+## Reviewed Workbook Import
+
+The reviewed bilingual workbook can be used as the migration source of truth.
+The workbook importer reads its `Inventory`, `English Messages`, `French
+Messages`, and `Media & Comments` sheets directly. It validates the linked
+record IDs, source post IDs, and translation groups before doing any work.
+
+Start with a limited, read-only run. It produces a manifest describing the
+messages, pending translations, source media, non-image attachments, and
+comments that would be imported. It does not write to MongoDB, MinIO, or the
+CDN.
+
+```sh
+node server/scripts/migration/import-workbook-inventory.js \
+  --input=/absolute/path/to/production_bilingual_migration_inventory_cleaned.xlsx \
+  --limit=10
+```
+
+Apply mode downloads each image from the workbook's media list, sanitizes it,
+uploads the original plus `thumb`, `medium`, `large`, and `hero` WebP variants
+to MinIO, and persists CDN URLs and `MediaAsset` metadata. The message and
+comment upserts are idempotent: rerunning the same workbook updates the
+matching legacy record instead of creating duplicate content.
+
+```sh
+node server/scripts/migration/import-workbook-inventory.js \
+  --input=/absolute/path/to/production_bilingual_migration_inventory_cleaned.xlsx \
+  --apply \
+  --limit=10 \
+  --public-media-base-url=https://cdn.example.ca/cmcen-media
+```
+
+Run an unrestricted apply only after reviewing the limited manifest and CDN
+uploads. Fully bilingual records are published; records containing only one
+language are imported as pending, so they cannot appear publicly before a
+translation is added. Image links are uploaded. Non-image attachments, such as
+PDF and Word files, are retained in the manifest as skipped media and are not
+silently converted to images.
+
 ## Requirements
 
 Install the application dependencies first:
@@ -191,13 +230,13 @@ node server/scripts/migration/migrate-current-site-content.js --content=retireme
 node server/scripts/migration/migrate-current-site-content.js --content=last-posts
 ```
 
-| Mode | Retirement messages | Retirement comments | Last Post notices | Last Post comments |
-| --- | --- | --- | --- | --- |
-| `all` | Yes | Yes | Yes | When readable |
-| `messages` | Yes | No | Yes | No |
-| `comments` | No | Yes | No | When readable |
-| `retirements` | Yes | No | No | No |
-| `last-posts` | No | No | Yes | No |
+| Mode          | Retirement messages | Retirement comments | Last Post notices | Last Post comments |
+| ------------- | ------------------- | ------------------- | ----------------- | ------------------ |
+| `all`         | Yes                 | Yes                 | Yes               | When readable      |
+| `messages`    | Yes                 | No                  | Yes               | No                 |
+| `comments`    | No                  | Yes                 | No                | When readable      |
+| `retirements` | Yes                 | No                  | No                | No                 |
+| `last-posts`  | No                  | No                  | Yes               | No                 |
 
 WordPress may reject anonymous REST reads for Last Post comments. Those failures
 do not stop the message migration; each affected item records a

@@ -1179,6 +1179,52 @@ describe('authorization matrix and account integrity', () => {
     assert.equal(invitedUser.invitation.delivery.status, 'sent');
   });
 
+  test('stores an optional invitation message for delivery and resends', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const session = await login(administrator);
+    const message = 'Welcome to the team!\nPlease activate your account today.';
+
+    const response = await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        firstName: 'Message',
+        lastName: 'Recipient',
+        email: 'message.recipient@example.test',
+        role: 'subscriber',
+        message,
+      })
+      .expect(201);
+
+    const invitedUser = await User.findById(response.body.user._id).lean();
+    assert.equal(invitedUser.invitation.message, message);
+
+    await request(app)
+      .post(`/api/admin/users/${response.body.user._id}/invitation/resend`)
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    const resentUser = await User.findById(response.body.user._id).lean();
+    assert.equal(resentUser.invitation.message, message);
+  });
+
+  test('rejects an invitation message longer than 2,000 characters', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const session = await login(administrator);
+
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        firstName: 'Long',
+        lastName: 'Message',
+        email: 'long.message@example.test',
+        role: 'subscriber',
+        message: 'a'.repeat(2001),
+      })
+      .expect(400);
+  });
+
   test('resends an invitation with a renewed token and delivery diagnostics', async () => {
     const administrator = await createUser({ role: 'administrator' });
     const session = await login(administrator);

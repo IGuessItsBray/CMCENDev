@@ -18,5 +18,9 @@ test('uses the sender domain as the SMTP HELO fallback', () => {
     getSmtpClientName({ MAIL_FROM: 'noreply@cmcen.example.ca' }),
     'cmcen.example.ca',
   );
+  assert.equal(
+    getSmtpClientName({ MAIL_FROM: 'CMCEN / RCMCE <noreply@cmcen.example.ca>' }),
+    'cmcen.example.ca',
+  );
   assert.equal(getSmtpClientName({ MAIL_FROM: 'invalid' }), undefined);
 });

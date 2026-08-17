@@ -8,8 +8,10 @@ function getSmtpClientName(environment = process.env) {
   }
 
   const fromAddress = String(environment.MAIL_FROM || '').trim();
-  const atIndex = fromAddress.lastIndexOf('@');
-  const senderDomain = atIndex >= 0 ? fromAddress.slice(atIndex + 1).trim() : '';
+  const mailboxMatch = fromAddress.match(
+    /(?:^|<\s*)[^<>\s@]+@([^<>\s@]+)(?:\s*>|$)/u,
+  );
+  const senderDomain = String(mailboxMatch?.[1] || '').trim();
 
   return senderDomain || undefined;
 }

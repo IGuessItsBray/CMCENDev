@@ -16,6 +16,14 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Create draft events and other site content.',
   },
   {
+    key: 'news.manage',
+    label: 'Manage news stories',
+    group: 'News',
+    action: 'edit',
+    description:
+      'Create, edit, publish, unpublish, and delete bilingual news stories.',
+  },
+  {
     key: 'retirements.submit',
     label: 'Submit retirement messages',
     group: 'Retirements',
@@ -132,6 +140,14 @@ const PERMISSION_CATALOG = Object.freeze([
       "Reset another user's authenticator app and passkeys from the admin work zone.",
   },
   {
+    key: 'subscriptions.manage',
+    label: 'Manage subscriptions and email blasts',
+    group: 'Communications',
+    action: 'admin',
+    description:
+      'View email subscriptions, export subscriber lists, and send consented news announcements.',
+  },
+  {
     key: 'roles.manage',
     label: 'Manage roles',
     group: 'Roles',
@@ -210,6 +226,7 @@ const PERMISSION_CATALOG = Object.freeze([
 const LEGACY_PERMISSION_KEYS = Object.freeze({
   canAccessConnections: 'connections.read',
   canCreateDrafts: 'content.create',
+  canManageNews: 'news.manage',
   canSubmitRetirementMessages: 'retirements.submit',
   canManageCertificateRequests: 'certificates.manage',
   canPublishOwnContent: 'content.publish_own',
@@ -226,6 +243,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canDeleteAnyUser: 'users.delete_any',
   canProvisionUsers: 'users.provision',
   canResetUserMfa: 'users.mfa_reset',
+  canManageSubscriptions: 'subscriptions.manage',
   canManageRoles: 'roles.manage',
   canViewAuditLog: 'audit.view',
   canViewAnalytics: 'analytics.view',
@@ -268,6 +286,8 @@ function getBuiltInPermissionFlags(user) {
 
     canCreateDrafts: isGhost || hasMinimumRole(role, 'contributor'),
 
+    canManageNews: hasMinimumRole(role, 'editor'),
+
     canSubmitRetirementMessages: isGhost || hasMinimumRole(role, 'contributor'),
 
     canManageCertificateRequests: hasMinimumRole(role, 'editor'),
@@ -299,6 +319,8 @@ function getBuiltInPermissionFlags(user) {
     canDeleteAnyUser: hasMinimumRole(role, 'administrator'),
 
     canResetUserMfa: hasMinimumRole(role, 'administrator'),
+
+    canManageSubscriptions: hasMinimumRole(role, 'administrator'),
 
     canManageRoles: hasMinimumRole(role, 'administrator'),
 

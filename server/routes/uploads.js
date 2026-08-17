@@ -9,9 +9,7 @@ const {
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { randomUUID } = require('crypto');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
-const {
-  buildPublicMediaUrl,
-} = require('../services/media-library');
+const { buildPublicMediaUrl } = require('../services/media-library');
 const MediaAsset = require('../models/MediaAsset');
 const {
   buildUploadContextFromBody,
@@ -34,6 +32,8 @@ const CDN_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MAX_CDN_SLUG_LENGTH = 80;
 const MESSAGE_DISPLAY_ASPECT_RATIO = 4 / 3;
 const MESSAGE_DISPLAY_MAX_WIDTH = 1200;
+const NEWS_DISPLAY_ASPECT_RATIO = 16 / 9;
+const NEWS_DISPLAY_MAX_WIDTH = 1600;
 
 function cleanCdnSlug(value) {
   const slug = String(value || '')
@@ -118,14 +118,33 @@ function parseCropPosition(value) {
   return Math.min(1, Math.max(0, parsed));
 }
 
-function shouldCreateMessageDisplayVariant(input = {}) {
-  return (
+function getDisplayVariantConfig(input = {}) {
+  if (
     ['retirementMessage', 'lastPostMessage'].includes(input.uploadSource) &&
     input.displayAspectRatio === '4:3'
-  );
+  ) {
+    return {
+      aspectRatio: MESSAGE_DISPLAY_ASPECT_RATIO,
+      maxWidth: MESSAGE_DISPLAY_MAX_WIDTH,
+      filename: 'display-4x3.webp',
+    };
+  }
+
+  if (
+    input.uploadSource === 'newsArticle' &&
+    input.displayAspectRatio === '16:9'
+  ) {
+    return {
+      aspectRatio: NEWS_DISPLAY_ASPECT_RATIO,
+      maxWidth: NEWS_DISPLAY_MAX_WIDTH,
+      filename: 'display-16x9.webp',
+    };
+  }
+
+  return null;
 }
 
-async function createMessageDisplayVariant({ buffer, baseKey, cropPosition }) {
+async function createDisplayVariant({ buffer, baseKey, cropPosition, config }) {
   const image = sharp(buffer).rotate();
   const metadata = await image.metadata();
   const sourceWidth = metadata.width || 0;
@@ -139,27 +158,27 @@ async function createMessageDisplayVariant({ buffer, baseKey, cropPosition }) {
   const cropWidth = Math.max(
     1,
     Math.round(
-      sourceAspectRatio > MESSAGE_DISPLAY_ASPECT_RATIO
-        ? sourceHeight * MESSAGE_DISPLAY_ASPECT_RATIO
+      sourceAspectRatio > config.aspectRatio
+        ? sourceHeight * config.aspectRatio
         : sourceWidth,
     ),
   );
   const cropHeight = Math.max(
     1,
     Math.round(
-      sourceAspectRatio > MESSAGE_DISPLAY_ASPECT_RATIO
+      sourceAspectRatio > config.aspectRatio
         ? sourceHeight
-        : sourceWidth / MESSAGE_DISPLAY_ASPECT_RATIO,
+        : sourceWidth / config.aspectRatio,
     ),
   );
   const left = Math.round((sourceWidth - cropWidth) * cropPosition.x);
   const top = Math.round((sourceHeight - cropHeight) * cropPosition.y);
   const rendered = await image
     .extract({ left, top, width: cropWidth, height: cropHeight })
-    .resize({ width: MESSAGE_DISPLAY_MAX_WIDTH, withoutEnlargement: true })
+    .resize({ width: config.maxWidth, withoutEnlargement: true })
     .webp({ quality: 84 })
     .toBuffer({ resolveWithObject: true });
-  const key = `${baseKey}/display-4x3.webp`;
+  const key = `${baseKey}/${config.filename}`;
 
   await putObject({
     key,
@@ -226,11 +245,13 @@ async function processImageUpload(file, cdnSlug = '', options = {}) {
     }),
   );
 
-  const display = shouldCreateMessageDisplayVariant(options)
-    ? await createMessageDisplayVariant({
+  const displayConfig = getDisplayVariantConfig(options);
+  const display = displayConfig
+    ? await createDisplayVariant({
         buffer: sanitizedImage.buffer,
         baseKey,
         cropPosition,
+        config: displayConfig,
       })
     : null;
 
@@ -269,7 +290,11 @@ router.post(
 
       const cdnSlug = cleanCdnSlug(req.body?.cdnSlug);
       await assertCdnSlugAvailable(cdnSlug);
-      const uploadResult = await processImageUpload(req.file, cdnSlug, req.body);
+      const uploadResult = await processImageUpload(
+        req.file,
+        cdnSlug,
+        req.body,
+      );
       const mediaAsset = await createMediaAssetRecord({
         uploadResult,
         file: req.file,

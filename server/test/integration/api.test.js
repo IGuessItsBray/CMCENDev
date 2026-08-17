@@ -6,6 +6,10 @@ process.env.JWT_ACCESS_TOKEN_TTL = '15m';
 process.env.JWT_REFRESH_TOKEN_TTL_DAYS = '1';
 process.env.NODE_ENV = 'test';
 process.env.APP_BASE_URL = 'http://localhost:3000';
+process.env.CASL_SENDER_NAME = 'CMCEN / RCMCE';
+process.env.CASL_SENDER_MAILING_ADDRESS =
+  '100 Example Street, Ottawa, ON K1A 0A1';
+process.env.CASL_SENDER_CONTACT = 'https://example.test/contact';
 process.env.MINIO_ENDPOINT = 'http://127.0.0.1:9000';
 process.env.MINIO_ACCESS_KEY = 'integration-test';
 process.env.MINIO_SECRET_KEY = 'integration-test';
@@ -23,6 +27,7 @@ const CertificateRequest = require('../../models/CertificateRequest');
 const Event = require('../../models/Event');
 const LastPostMessage = require('../../models/LastPostMessage');
 const MediaAsset = require('../../models/MediaAsset');
+const NewsArticle = require('../../models/NewsArticle');
 const Page = require('../../models/Page');
 const RetirementComment = require('../../models/RetirementComment');
 const RetirementMessage = require('../../models/RetirementMessage');
@@ -31,6 +36,7 @@ const User = require('../../models/User');
 const s3Client = require('../../storage');
 const { RETIREMENT_TRADE_ROLES } = require('../../config/content');
 const { buildPublicMediaUrl } = require('../../services/media-library');
+const { createUnsubscribeToken } = require('../../services/weekly-brief');
 
 let mongoServer;
 let userSequence = 0;
@@ -315,10 +321,49 @@ describe('system and authentication', () => {
     assert.equal(typeof consentedLogin.body.token, 'string');
     assert.match(consentedLogin.headers['set-cookie'][0], /cmcen_refresh=/);
   });
+
+  test('records express weekly-brief consent and permits immediate email-link withdrawal', async () => {
+    const user = await createUser();
+    const loginResponse = await login(user);
+
+    await request(app)
+      .put('/api/subscriptions/weekly-brief')
+      .set('Authorization', bearer(loginResponse.body.token))
+      .send({ subscribed: true })
+      .expect(400);
+
+    const subscribed = await request(app)
+      .put('/api/subscriptions/weekly-brief')
+      .set('Authorization', bearer(loginResponse.body.token))
+      .send({ subscribed: true, expressConsent: true })
+      .expect(200);
+
+    assert.equal(subscribed.body.weeklyBrief.subscribed, true);
+    assert.ok(subscribed.body.weeklyBrief.consentedAt);
+    assert.equal(subscribed.body.weeklyBrief.available, true);
+    assert.ok(
+      await AuditLog.exists({ action: 'user.weekly_brief_subscribed' }),
+    );
+
+    const token = await createUnsubscribeToken(user);
+    await request(app)
+      .get(`/api/subscriptions/weekly-brief/unsubscribe?token=${token}`)
+      .expect(200);
+
+    const withdrawnUser = await User.findById(user._id).lean();
+    assert.equal(
+      withdrawnUser.emailSubscriptions.weeklyBrief.subscribed,
+      false,
+    );
+    assert.ok(withdrawnUser.emailSubscriptions.weeklyBrief.unsubscribedAt);
+    assert.ok(
+      await AuditLog.exists({ action: 'user.weekly_brief_unsubscribed' }),
+    );
+  });
 });
 
 describe('public search', () => {
-  test('returns canonical destinations for event, retirement, and static page results', async () => {
+  test('returns canonical destinations for news, event, retirement, and static page results', async () => {
     const owner = await createUser({ role: 'editor' });
     const event = await Event.create({
       title: {
@@ -354,6 +399,20 @@ describe('public search', () => {
       publishedAt: new Date(),
       createdBy: owner._id,
     });
+    const newsStory = await NewsArticle.create({
+      title: {
+        en: 'Searchable Signal News',
+        fr: 'Nouvelles de transmissions recherchables',
+      },
+      content: {
+        en: 'A searchable news story for the signal community.',
+        fr: 'Une nouvelle recherchable pour la communauté des transmissions.',
+      },
+      status: 'published',
+      publishedAt: new Date(),
+      createdBy: owner._id,
+      publishedBy: owner._id,
+    });
 
     const eventSearch = await request(app)
       .get('/api/search?q=signal%20exercise')
@@ -370,6 +429,14 @@ describe('public search', () => {
       (result) => result.type === 'last-post-message',
     );
     assert.equal(lastPostResult.url, `/last-post-message?id=${lastPost._id}`);
+
+    const newsSearch = await request(app)
+      .get('/api/search?q=signal%20news')
+      .expect(200);
+    const newsResult = newsSearch.body.results.find(
+      (result) => result.type === 'news-story',
+    );
+    assert.equal(newsResult.url, `/news-story?id=${newsStory._id}`);
 
     const retirementSearch = await request(app)
       .get('/api/search?q=alex%20example')
@@ -395,9 +462,7 @@ describe('public search', () => {
       .expect(200);
     assert.equal(historySearch.body.results[0].sourceId, '/history');
 
-    const homeSearch = await request(app)
-      .get('/api/search?q=home')
-      .expect(200);
+    const homeSearch = await request(app).get('/api/search?q=home').expect(200);
     assert.equal(
       homeSearch.body.results.some((result) => result.sourceId === '/index'),
       false,
@@ -406,10 +471,7 @@ describe('public search', () => {
     const retirementPageSearch = await request(app)
       .get('/api/search?q=retirement')
       .expect(200);
-    assert.equal(
-      retirementPageSearch.body.results[0].sourceId,
-      '/retirements',
-    );
+    assert.equal(retirementPageSearch.body.results[0].sourceId, '/retirements');
 
     const lastPostPageSearch = await request(app)
       .get('/api/search?q=last%20post')
@@ -493,6 +555,84 @@ describe('permissions and audit logs', () => {
       action: 'audit.exported',
     }).lean();
     assert.equal(exportAudit.metadata.entryCount, 1);
+  });
+});
+
+describe('news stories', () => {
+  test('uses the news permission to publish bilingual stories and audit their changes', async () => {
+    const publisherRole = await Role.create({
+      name: 'News Publisher',
+      slug: 'news-publisher',
+      permissions: ['news.manage'],
+    });
+    const publisher = await createUser({
+      role: 'subscriber',
+      customRoles: [publisherRole._id],
+    });
+    const session = await login(publisher);
+    const token = session.body.token;
+    const payload = {
+      title: { en: 'Signal update', fr: 'Mise a jour des transmissions' },
+      content: {
+        en: 'An English news story for the C&E Family.',
+        fr: 'Un article francais pour la famille des C et E.',
+      },
+      imageUrl: '',
+      status: 'published',
+    };
+
+    const created = await request(app)
+      .post('/api/news')
+      .set('Authorization', bearer(token))
+      .send(payload)
+      .expect(201);
+    const articleId = created.body.article._id;
+    assert.equal(
+      created.body.article.imageUrl,
+      'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp',
+    );
+    assert.equal(
+      created.body.article.imageDisplayUrl,
+      'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp',
+    );
+
+    const publicNews = await request(app).get('/api/news').expect(200);
+    assert.equal(publicNews.body.articles.length, 1);
+    assert.equal(publicNews.body.articles[0].title.fr, payload.title.fr);
+
+    const publicArticle = await request(app)
+      .get(`/api/news/${articleId}`)
+      .expect(200);
+    assert.equal(publicArticle.body.article.content.en, payload.content.en);
+
+    const feed = await request(app).get('/api/news/feed').expect(200);
+    assert.equal(feed.body.items[0].type, 'news');
+    assert.equal(feed.body.items[0].title.en, payload.title.en);
+
+    await request(app)
+      .patch(`/api/news/${articleId}`)
+      .set('Authorization', bearer(token))
+      .send({ ...payload, status: 'draft' })
+      .expect(200);
+
+    const hiddenPublicNews = await request(app).get('/api/news').expect(200);
+    assert.equal(hiddenPublicNews.body.articles.length, 0);
+    const managedNews = await request(app)
+      .get('/api/news/manage')
+      .set('Authorization', bearer(token))
+      .expect(200);
+    assert.equal(managedNews.body.articles[0].status, 'draft');
+
+    const audits = await AuditLog.find({ target: articleId }).lean();
+    assert.deepEqual(
+      audits.map((audit) => audit.action).sort(),
+      [
+        'content.created',
+        'content.published',
+        'content.updated',
+        'content.unpublished',
+      ].sort(),
+    );
   });
 });
 
@@ -1042,7 +1182,8 @@ describe('Last Post lifecycle', () => {
         surname: 'Publication',
       },
       messageLanguage: 'en',
-      message: 'A Last Post notice used to verify consent and immediate publication.',
+      message:
+        'A Last Post notice used to verify consent and immediate publication.',
     };
 
     await request(app)
@@ -1854,6 +1995,48 @@ describe('media lifecycle', () => {
     }
   });
 
+  test('creates a positionable 16:9 display crop for news images', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const session = await login(contributor);
+    const originalSend = s3Client.send.bind(s3Client);
+    s3Client.send = async () => ({});
+
+    try {
+      const image = await sharp({
+        create: {
+          width: 320,
+          height: 240,
+          channels: 3,
+          background: '#336699',
+        },
+      })
+        .png()
+        .toBuffer();
+      const uploaded = await request(app)
+        .post('/api/upload')
+        .set('Authorization', bearer(session.body.token))
+        .field('uploadSource', 'newsArticle')
+        .field('displayAspectRatio', '16:9')
+        .field('displayCropX', '0.25')
+        .field('displayCropY', '0.75')
+        .attach('image', image, {
+          filename: 'news.png',
+          contentType: 'image/png',
+        })
+        .expect(201);
+
+      assert.match(uploaded.body.display.url, /\/display-16x9\.webp$/);
+      assert.equal(
+        Math.round(
+          (uploaded.body.display.width / uploaded.body.display.height) * 100,
+        ),
+        Math.round((16 / 9) * 100),
+      );
+    } finally {
+      s3Client.send = originalSend;
+    }
+  });
+
   test('rejects signed direct uploads that would bypass media sanitization', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const session = await login(contributor);
@@ -1962,7 +2145,8 @@ describe('media lifecycle', () => {
           surname: 'Cleanup',
         },
         messageLanguage: 'en',
-        message: 'A Last Post notice with an image that should be deleted with the notice.',
+        message:
+          'A Last Post notice with an image that should be deleted with the notice.',
         imageUrl: lastPostAsset.url,
         publicationPermissionConfirmed: true,
       })
@@ -1998,13 +2182,19 @@ describe('media lifecycle', () => {
         await RetirementMessage.countDocuments({ _id: retirementMessage._id }),
         0,
       );
-      assert.equal(await LastPostMessage.countDocuments({ _id: lastPost._id }), 0);
+      assert.equal(
+        await LastPostMessage.countDocuments({ _id: lastPost._id }),
+        0,
+      );
       assert.equal(await MediaAsset.countDocuments({ _id: eventAsset._id }), 0);
       assert.equal(
         await MediaAsset.countDocuments({ _id: retirementAsset._id }),
         0,
       );
-      assert.equal(await MediaAsset.countDocuments({ _id: lastPostAsset._id }), 0);
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: lastPostAsset._id }),
+        0,
+      );
       assert.equal(
         sentCommands.filter(
           (command) => command.constructor.name === 'DeleteObjectCommand',
@@ -2082,7 +2272,10 @@ describe('media lifecycle', () => {
         .set('Authorization', bearer(administratorSession.body.token))
         .expect(200);
 
-      assert.equal(await MediaAsset.countDocuments({ _id: sharedAsset._id }), 1);
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: sharedAsset._id }),
+        1,
+      );
       assert.equal(sentCommands.length, 0);
 
       await request(app)
@@ -2090,7 +2283,10 @@ describe('media lifecycle', () => {
         .set('Authorization', bearer(administratorSession.body.token))
         .expect(200);
 
-      assert.equal(await MediaAsset.countDocuments({ _id: sharedAsset._id }), 0);
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: sharedAsset._id }),
+        0,
+      );
       assert.equal(
         sentCommands.filter(
           (command) => command.constructor.name === 'DeleteObjectCommand',

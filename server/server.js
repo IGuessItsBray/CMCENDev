@@ -20,6 +20,7 @@ const contentOptionRoutes = require('./routes/content-options');
 const diagnosticsRoutes = require('./routes/diagnostics');
 const eventRoutes = require('./routes/events');
 const lastPostRoutes = require('./routes/last-posts');
+const newsRoutes = require('./routes/news');
 const retirementMessageRoutes = require('./routes/retirement-messages');
 const searchRoutes = require('./routes/search');
 const siteConfigRoutes = require('./routes/site-config');
@@ -34,6 +35,7 @@ const {
   setStandardResponseHeaders,
 } = require('./routes/seo');
 const { rateLimitByIp } = require('./middleware/rate-limit');
+const { startWeeklyBriefScheduler } = require('./services/weekly-brief');
 
 const app = express();
 const isApiDocsEnabled = process.env.ENABLE_API_DOCS === 'true';
@@ -166,6 +168,7 @@ app.use('/api/admin/site-config', siteConfigRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/last-posts', lastPostRoutes);
+app.use('/api/news', newsRoutes);
 app.use('/api/retirement-messages', retirementMessageRoutes);
 app.use('/api/certificate-requests', certificateRequestRoutes);
 app.use('/api/search', searchRoutes);
@@ -220,6 +223,8 @@ async function startServer() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
+
+    startWeeklyBriefScheduler();
 
     return app.listen(process.env.PORT || 3000, () => {
       console.log(`Server running on port ${process.env.PORT || 3000}`);

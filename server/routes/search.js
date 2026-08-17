@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
+const NewsArticle = require('../models/NewsArticle');
 const RetirementMessage = require('../models/RetirementMessage');
 
 const router = express.Router();
@@ -13,9 +14,24 @@ const MAX_RESULTS_PER_SOURCE = 10;
 
 const STATIC_PAGES = [
   { path: '/awards', file: 'awards.html', type: 'page', title: 'Awards' },
-  { path: '/association_directors', file: 'association_directors.html', type: 'page', title: 'Association Directors and Advisors' },
-  { path: '/branch_advisory_council', file: 'branch_advisory_council.html', type: 'page', title: 'Branch Advisory Council' },
-  { path: '/ce_professions', file: 'ce_professions.html', type: 'page', title: 'Communications & Electronics Professions' },
+  {
+    path: '/association_directors',
+    file: 'association_directors.html',
+    type: 'page',
+    title: 'Association Directors and Advisors',
+  },
+  {
+    path: '/branch_advisory_council',
+    file: 'branch_advisory_council.html',
+    type: 'page',
+    title: 'Branch Advisory Council',
+  },
+  {
+    path: '/ce_professions',
+    file: 'ce_professions.html',
+    type: 'page',
+    title: 'Communications & Electronics Professions',
+  },
   {
     path: '/about-family',
     file: 'about-family.html',
@@ -58,9 +74,24 @@ const STATIC_PAGES = [
     type: 'page',
     title: 'Retirement Messages',
   },
-  { path: '/certificates', file: 'certificates.html', type: 'page', title: 'Certificates' },
-  { path: '/doctrine_hub', file: 'doctrine_hub.html', type: 'page', title: 'Doctrine Hub' },
-  { path: '/governance', file: 'governance.html', type: 'page', title: 'Governance' },
+  {
+    path: '/certificates',
+    file: 'certificates.html',
+    type: 'page',
+    title: 'Certificates',
+  },
+  {
+    path: '/doctrine_hub',
+    file: 'doctrine_hub.html',
+    type: 'page',
+    title: 'Doctrine Hub',
+  },
+  {
+    path: '/governance',
+    file: 'governance.html',
+    type: 'page',
+    title: 'Governance',
+  },
   {
     path: '/bursaries',
     file: 'bursaries.html',
@@ -85,10 +116,30 @@ const STATIC_PAGES = [
     type: 'page',
     title: 'Last Post',
   },
-  { path: '/honours_awards', file: 'honours_awards.html', type: 'page', title: 'Honours and Awards' },
-  { path: '/leadership', file: 'leadership.html', type: 'page', title: 'Leadership' },
-  { path: '/news_stories', file: 'news_stories.html', type: 'page', title: 'News Stories' },
-  { path: '/promotions', file: 'promotions.html', type: 'page', title: 'Promotions' },
+  {
+    path: '/honours_awards',
+    file: 'honours_awards.html',
+    type: 'page',
+    title: 'Honours and Awards',
+  },
+  {
+    path: '/leadership',
+    file: 'leadership.html',
+    type: 'page',
+    title: 'Leadership',
+  },
+  {
+    path: '/news_stories',
+    file: 'news_stories.html',
+    type: 'page',
+    title: 'News Stories',
+  },
+  {
+    path: '/promotions',
+    file: 'promotions.html',
+    type: 'page',
+    title: 'Promotions',
+  },
   {
     path: '/veteran_services',
     file: 'veteran_services.html',
@@ -107,7 +158,12 @@ const STATIC_PAGES = [
     type: 'page',
     title: 'Support Our Troops',
   },
-  { path: '/standing_orders', file: 'standing_orders.html', type: 'page', title: 'Standing Orders' },
+  {
+    path: '/standing_orders',
+    file: 'standing_orders.html',
+    type: 'page',
+    title: 'Standing Orders',
+  },
 ];
 
 function cleanQuery(value) {
@@ -208,10 +264,7 @@ function scoreTitleMatch(query, queryTerms, title, type) {
     return type === 'page' ? 7000 : 6000;
   }
 
-  const exactPhrase = new RegExp(
-    `\\b${escapeRegex(normalizedQuery)}\\b`,
-    'i',
-  );
+  const exactPhrase = new RegExp(`\\b${escapeRegex(normalizedQuery)}\\b`, 'i');
 
   if (exactPhrase.test(normalizedTitle)) {
     return 5000;
@@ -307,6 +360,48 @@ async function searchLastPostMessages(query, queryTerms, language) {
           message.deceased?.firstName,
           message.deceased?.surname,
           message.deceased?.postNominal,
+        ],
+      }),
+    };
+  });
+}
+
+async function searchNewsStories(query, queryTerms, language) {
+  const fields = ['title.en', 'title.fr', 'content.en', 'content.fr'];
+  const andClauses = queryTerms.map((term) => {
+    const regex = new RegExp(escapeRegex(term), 'i');
+    return { $or: fields.map((field) => ({ [field]: regex })) };
+  });
+  const articles = await NewsArticle.find({
+    status: 'published',
+    $and: andClauses,
+  })
+    .select('title content publishedAt createdAt')
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .limit(MAX_RESULTS_PER_SOURCE)
+    .lean();
+
+  return articles.map((article) => {
+    const title = getLocalizedText(article.title, language) || 'News story';
+    const summary = truncate(getLocalizedText(article.content, language));
+
+    return {
+      type: 'news-story',
+      sourceId: String(article._id),
+      title,
+      summary,
+      url: `/news-story?id=${encodeURIComponent(String(article._id))}`,
+      date: article.publishedAt || article.createdAt || null,
+      score: scoreSearchResult(query, queryTerms, {
+        title,
+        type: 'news-story',
+        fields: [
+          title,
+          summary,
+          article.title?.en,
+          article.title?.fr,
+          article.content?.en,
+          article.content?.fr,
         ],
       }),
     };
@@ -513,18 +608,20 @@ router.get('/', async (req, res) => {
     }
 
     const queryTerms = getQueryTerms(query);
-    const [events, retirementMessages, lastPostMessages, pages] =
+    const [events, retirementMessages, lastPostMessages, newsStories, pages] =
       await Promise.all([
-      searchEvents(query, queryTerms, language),
-      searchRetirementMessages(query, queryTerms),
-      searchLastPostMessages(query, queryTerms, language),
-      searchStaticPages(query, queryTerms),
+        searchEvents(query, queryTerms, language),
+        searchRetirementMessages(query, queryTerms),
+        searchLastPostMessages(query, queryTerms, language),
+        searchNewsStories(query, queryTerms, language),
+        searchStaticPages(query, queryTerms),
       ]);
 
     const results = sortResults([
       ...events,
       ...retirementMessages,
       ...lastPostMessages,
+      ...newsStories,
       ...pages,
     ]);
 

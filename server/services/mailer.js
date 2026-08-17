@@ -22,13 +22,15 @@ function getSmtpSecurityOptions(environment = process.env) {
     .trim()
     .toLowerCase();
   const secure =
-    smtpPort === 465 || ['true', 'tls', 'ssl', 'implicit'].includes(configuredSecurity);
+    smtpPort === 465 ||
+    ['true', 'tls', 'ssl', 'implicit'].includes(configuredSecurity);
 
   return {
     secure,
     requireTLS:
       !secure &&
-      (configuredSecurity === 'starttls' || environment.SMTP_REQUIRE_TLS !== 'false'),
+      (configuredSecurity === 'starttls' ||
+        environment.SMTP_REQUIRE_TLS !== 'false'),
   };
 }
 
@@ -48,7 +50,7 @@ if (smtpClientName) {
 
 const transporter = nodemailer.createTransport(transportOptions);
 
-function sendMail({ to, cc, subject, text, html }) {
+function sendMail({ to, cc, subject, text, html, headers }) {
   if (process.env.NODE_ENV === 'test') {
     return Promise.resolve({ accepted: [to].filter(Boolean), test: true });
   }
@@ -61,6 +63,7 @@ function sendMail({ to, cc, subject, text, html }) {
     subject,
     text,
     html,
+    headers,
   });
 }
 

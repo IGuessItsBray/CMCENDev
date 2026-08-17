@@ -12,6 +12,8 @@ const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
+const WeeklyBriefRun = require('../models/WeeklyBriefRun');
+const NewsBlast = require('../models/NewsBlast');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
@@ -21,6 +23,10 @@ const {
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog, snapshotUser } = require('../services/audit-log');
 const { sendMail } = require('../services/mailer');
+const {
+  createUnsubscribeToken,
+  getCaslSenderInfo,
+} = require('../services/weekly-brief');
 const {
   buildPublicMediaUrl,
   getMediaKeyFromValue,
@@ -613,7 +619,9 @@ function getMediaSortKey(value) {
 }
 
 function cleanMediaSearch(value) {
-  return String(value || '').trim().slice(0, 120);
+  return String(value || '')
+    .trim()
+    .slice(0, 120);
 }
 
 function getMediaTypeFilter(value) {
@@ -650,14 +658,16 @@ function matchesMediaType(asset, type) {
   if (matchesAttachment) return true;
 
   const uploadType = asset.uploadContext?.type;
-  return {
-    retirement: uploadType === 'retirementMessage',
-    'last-post': uploadType === 'lastPostMessage',
-    event: uploadType === 'event',
-    page: uploadType === 'pageBuilder',
-    upload: uploadType === 'mediaManager' || uploadType === 'directUpload',
-    migration: uploadType === 'migration' || uploadType === 'legacyStorage',
-  }[type] === true;
+  return (
+    {
+      retirement: uploadType === 'retirementMessage',
+      'last-post': uploadType === 'lastPostMessage',
+      event: uploadType === 'event',
+      page: uploadType === 'pageBuilder',
+      upload: uploadType === 'mediaManager' || uploadType === 'directUpload',
+      migration: uploadType === 'migration' || uploadType === 'legacyStorage',
+    }[type] === true
+  );
 }
 
 function sortStorageObjectsNewestFirst(objects = []) {
@@ -991,7 +1001,9 @@ async function recordInvitationDelivery(user, result) {
   user.invitation.delivery = {
     status: succeeded ? 'sent' : 'failed',
     attemptedAt,
-    messageId: String(mailResult.messageId || '').trim().slice(0, 240),
+    messageId: String(mailResult.messageId || '')
+      .trim()
+      .slice(0, 240),
     accepted: cleanInvitationDeliveryList(mailResult.accepted),
     rejected: cleanInvitationDeliveryList(mailResult.rejected),
     error: succeeded ? '' : getInvitationDeliveryError(result?.error),
@@ -1824,7 +1836,9 @@ router.get(
       const sort = getMediaSort(sortKey);
       const typeFilter = getMediaTypeFilter(req.query.type);
       const search = cleanMediaSearch(req.query.search);
-      const searchPattern = search ? new RegExp(escapeRegex(search), 'i') : null;
+      const searchPattern = search
+        ? new RegExp(escapeRegex(search), 'i')
+        : null;
       const mediaFilter = searchPattern
         ? {
             $or: [
@@ -1845,20 +1859,18 @@ router.get(
       const mediaQuery = MediaAsset.find(mediaFilter).sort(sort);
       const requiresInMemoryFiltering =
         sortKey === 'orphaned' || typeFilter !== 'all';
-      const mediaAssets =
-        requiresInMemoryFiltering
-          ? await mediaQuery.lean()
-          : await mediaQuery.skip(offset).limit(maxKeys).lean();
+      const mediaAssets = requiresInMemoryFiltering
+        ? await mediaQuery.lean()
+        : await mediaQuery.skip(offset).limit(maxKeys).lean();
       const sortedMedia = sortAdminMediaItems(
         mediaAssets
           .map((asset) => toAdminMediaAssetItem(asset, attachmentMap))
           .filter((asset) => matchesMediaType(asset, typeFilter)),
         sortKey,
       );
-      const media =
-        requiresInMemoryFiltering
-          ? sortedMedia.slice(offset, offset + maxKeys)
-          : sortedMedia;
+      const media = requiresInMemoryFiltering
+        ? sortedMedia.slice(offset, offset + maxKeys)
+        : sortedMedia;
       const totalMedia = requiresInMemoryFiltering
         ? sortedMedia.length
         : await MediaAsset.countDocuments(mediaFilter);
@@ -2079,7 +2091,8 @@ router.post(
 
       if (role === 'internal_beta' && req.user?.role !== 'developer') {
         return res.status(403).json({
-          error: 'Developer access is required to assign the Internal Beta role',
+          error:
+            'Developer access is required to assign the Internal Beta role',
         });
       }
 
@@ -2129,7 +2142,10 @@ router.post(
       });
 
       if (deliveryResult.error) {
-        console.error('User invitation email delivery failed:', deliveryResult.error);
+        console.error(
+          'User invitation email delivery failed:',
+          deliveryResult.error,
+        );
         return res.status(502).json({
           error:
             'Invitation was created, but the email could not be delivered. Fix the mail issue, then resend the invitation.',
@@ -2165,12 +2181,15 @@ router.post(
       }
 
       if (user.accountType !== 'invited') {
-        return res.status(400).json({ error: 'User does not have an invitation' });
+        return res
+          .status(400)
+          .json({ error: 'User does not have an invitation' });
       }
 
       if (user.role === 'internal_beta' && req.user?.role !== 'developer') {
         return res.status(403).json({
-          error: 'Developer access is required to resend an Internal Beta invitation',
+          error:
+            'Developer access is required to resend an Internal Beta invitation',
         });
       }
 
@@ -2200,7 +2219,10 @@ router.post(
       });
 
       if (deliveryResult.error) {
-        console.error('Invitation resend email delivery failed:', deliveryResult.error);
+        console.error(
+          'Invitation resend email delivery failed:',
+          deliveryResult.error,
+        );
         return res.status(502).json({
           error:
             'The invitation was renewed, but the email could not be delivered. Fix the mail issue, then resend it again.',
@@ -2215,6 +2237,232 @@ router.post(
     } catch (error) {
       console.error('Invitation resend failed:', error);
       res.status(500).json({ error: 'Could not resend invitation' });
+    }
+  },
+);
+
+// GET /api/admin/subscriptions
+// List consented weekly/news subscribers and recent delivery records.
+router.get(
+  '/subscriptions',
+  authMiddleware,
+  requirePermission('canManageSubscriptions'),
+  async (req, res) => {
+    try {
+      const [users, weeklyBriefs, newsBlasts] = await Promise.all([
+        User.find({
+          $or: [
+            { 'emailSubscriptions.weeklyBrief.subscribed': true },
+            { 'emailSubscriptions.newsAnnouncements.subscribed': true },
+          ],
+        })
+          .select(
+            'email accountName firstName lastName preferredLanguage emailSubscriptions createdAt',
+          )
+          .sort({ accountName: 1, email: 1 })
+          .lean(),
+        WeeklyBriefRun.find({ state: 'completed' })
+          .select(
+            'weekKey windowStart windowEnd recipientCount sentCount failedCount completedAt',
+          )
+          .sort({ completedAt: -1 })
+          .limit(52)
+          .lean(),
+        NewsBlast.find({})
+          .select(
+            'subject recipientCount sentCount failedCount sentAt createdAt',
+          )
+          .sort({ createdAt: -1 })
+          .limit(52)
+          .lean(),
+      ]);
+      res.json({
+        subscribers: users.map((user) => ({
+          id: user._id,
+          email: user.email,
+          name:
+            user.accountName ||
+            [user.firstName, user.lastName].filter(Boolean).join(' '),
+          preferredLanguage: user.preferredLanguage || 'en',
+          weeklyBrief:
+            user.emailSubscriptions?.weeklyBrief?.subscribed === true,
+          newsAnnouncements:
+            user.emailSubscriptions?.newsAnnouncements?.subscribed === true,
+          weeklyBriefConsentedAt:
+            user.emailSubscriptions?.weeklyBrief?.consentedAt || null,
+          newsAnnouncementsConsentedAt:
+            user.emailSubscriptions?.newsAnnouncements?.consentedAt || null,
+        })),
+        newsletters: [
+          ...weeklyBriefs.map((item) => ({
+            ...item,
+            type: 'weeklyBrief',
+            label: `Weekly brief — ${item.weekKey}`,
+          })),
+          ...newsBlasts.map((item) => ({
+            ...item,
+            type: 'newsBlast',
+            label: `News blast — ${item.subject}`,
+          })),
+        ].sort(
+          (first, second) =>
+            new Date(second.completedAt || second.sentAt || second.createdAt) -
+            new Date(first.completedAt || first.sentAt || first.createdAt),
+        ),
+      });
+    } catch (error) {
+      console.error('Subscription admin list failed:', error);
+      res.status(500).json({ error: 'Could not load subscriptions' });
+    }
+  },
+);
+
+router.get(
+  '/subscriptions/export.csv',
+  authMiddleware,
+  requirePermission('canManageSubscriptions'),
+  async (req, res) => {
+    try {
+      const users = await User.find({
+        $or: [
+          { 'emailSubscriptions.weeklyBrief.subscribed': true },
+          { 'emailSubscriptions.newsAnnouncements.subscribed': true },
+        ],
+      })
+        .select(
+          'email accountName firstName lastName preferredLanguage emailSubscriptions',
+        )
+        .sort({ accountName: 1, email: 1 })
+        .lean();
+      const header = [
+        'Email',
+        'Name',
+        'Preferred language',
+        'Weekly brief subscribed',
+        'Weekly brief consented at',
+        'News announcements subscribed',
+        'News announcements consented at',
+      ];
+      const rows = users.map((user) => [
+        user.email,
+        user.accountName ||
+          [user.firstName, user.lastName].filter(Boolean).join(' '),
+        user.preferredLanguage || 'en',
+        user.emailSubscriptions?.weeklyBrief?.subscribed === true
+          ? 'Yes'
+          : 'No',
+        user.emailSubscriptions?.weeklyBrief?.consentedAt || '',
+        user.emailSubscriptions?.newsAnnouncements?.subscribed === true
+          ? 'Yes'
+          : 'No',
+        user.emailSubscriptions?.newsAnnouncements?.consentedAt || '',
+      ]);
+      await writeAuditLog({
+        req,
+        action: 'subscriptions.exported',
+        actor: req.user,
+        targetType: 'subscription',
+        targetSnapshot: { name: 'Subscription export' },
+        metadata: { subscriberCount: rows.length },
+      });
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="cmcen-subscribers-${new Date().toISOString().slice(0, 10)}.csv"`,
+      );
+      res
+        .type('text/csv; charset=utf-8')
+        .send(
+          [header, ...rows]
+            .map((row) => row.map(escapeCsvValue).join(','))
+            .join('\n'),
+        );
+    } catch (error) {
+      console.error('Subscription export failed:', error);
+      res.status(500).json({ error: 'Could not export subscriptions' });
+    }
+  },
+);
+
+router.post(
+  '/subscriptions/news-blasts',
+  authMiddleware,
+  requirePermission('canManageSubscriptions'),
+  async (req, res) => {
+    const subject = String(req.body?.subject || '').trim();
+    const body = String(req.body?.body || '').trim();
+    const sender = getCaslSenderInfo();
+    const baseUrl = String(process.env.APP_BASE_URL || '').replace(/\/+$/u, '');
+    if (!subject || !body)
+      return res
+        .status(400)
+        .json({ error: 'A subject and message are required' });
+    if (!sender.ready || !baseUrl)
+      return res
+        .status(503)
+        .json({
+          error:
+            'CASL sender details and APP_BASE_URL must be configured before sending a news blast',
+        });
+    try {
+      const recipients = await User.find({
+        'emailSubscriptions.newsAnnouncements.subscribed': true,
+        'emailSubscriptions.newsAnnouncements.consentedAt': { $ne: null },
+        'emailSubscriptions.newsAnnouncements.unsubscribedAt': null,
+      }).select('email accountName preferredLanguage');
+      if (!recipients.length)
+        return res
+          .status(400)
+          .json({
+            error: 'There are no members subscribed to news announcements',
+          });
+      const blast = await NewsBlast.create({
+        subject,
+        body,
+        createdBy: req.user._id,
+        recipientCount: recipients.length,
+      });
+      let sentCount = 0;
+      let failedCount = 0;
+      for (const recipient of recipients) {
+        try {
+          const token = await createUnsubscribeToken(
+            recipient,
+            'newsAnnouncements',
+          );
+          const unsubscribeUrl = `${baseUrl}/api/subscriptions/news-announcements/unsubscribe?token=${encodeURIComponent(token)}`;
+          await sendMail({
+            to: recipient.email,
+            subject,
+            text: `${body}\n\n${sender.name}\n${sender.mailingAddress}\n${sender.contact}\n\nUnsubscribe: ${unsubscribeUrl}`,
+            html: `<p>${escapeHtml(body).replace(/\n/gu, '<br>')}</p><hr><p><strong>${escapeHtml(sender.name)}</strong><br>${escapeHtml(sender.mailingAddress)}<br><a href="${escapeHtml(sender.contact)}">${escapeHtml(sender.contact)}</a></p><p><a href="${escapeHtml(unsubscribeUrl)}">Unsubscribe from news announcements</a></p>`,
+            headers: {
+              'List-Unsubscribe': `<${unsubscribeUrl}>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+          });
+          sentCount += 1;
+        } catch (error) {
+          failedCount += 1;
+          console.error('News blast delivery failed:', error);
+        }
+      }
+      blast.sentCount = sentCount;
+      blast.failedCount = failedCount;
+      blast.sentAt = new Date();
+      await blast.save();
+      await writeAuditLog({
+        req,
+        action: 'subscriptions.news_blast_sent',
+        actor: req.user,
+        targetType: 'newsBlast',
+        target: blast._id,
+        targetSnapshot: { subject },
+        metadata: { recipientCount: recipients.length, sentCount, failedCount },
+      });
+      res.status(201).json({ message: 'News blast sent', blast });
+    } catch (error) {
+      console.error('News blast failed:', error);
+      res.status(500).json({ error: 'Could not send news blast' });
     }
   },
 );

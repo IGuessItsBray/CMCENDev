@@ -25,6 +25,9 @@ const NON_IMAGE_EXTENSIONS = new Set([
   '.ppt',
   '.pptx',
 ]);
+const CMCEN_CREST_SOURCE_FILENAME = 'cmcen-crest-snip-1.png';
+const CMCEN_CREST_FALLBACK_URL =
+  'https://cdn.corebot.ca/cmcen-demo/images/e7c1804e-712b-4b24-9244-85e85ad9cb01/large.webp';
 
 function isImageLikeUrl(value) {
   try {
@@ -33,6 +36,31 @@ function isImageLikeUrl(value) {
   } catch {
     return false;
   }
+}
+
+function isCmcenCrestUrl(value) {
+  try {
+    return (
+      path.basename(new URL(value).pathname).toLowerCase() ===
+      CMCEN_CREST_SOURCE_FILENAME
+    );
+  } catch {
+    return false;
+  }
+}
+
+function buildCmcenCrestFallbackAsset(sourceUrl) {
+  return {
+    key: null,
+    url: CMCEN_CREST_FALLBACK_URL,
+    display: { url: CMCEN_CREST_FALLBACK_URL },
+    fileMetadata: {
+      sourceUrl,
+      usedFallback: true,
+      fallbackReason: 'Reused the pre-uploaded CMCEN crest asset.',
+      fallbackSourceUrl: CMCEN_CREST_FALLBACK_URL,
+    },
+  };
 }
 
 async function putObject({ key, body, contentType }) {
@@ -156,6 +184,11 @@ async function uploadWorkbookMedia(candidate) {
   const failures = [];
 
   for (const [index, sourceUrl] of imageLinks.entries()) {
+    if (isCmcenCrestUrl(sourceUrl)) {
+      assets.push(buildCmcenCrestFallbackAsset(sourceUrl));
+      continue;
+    }
+
     try {
       assets.push(await uploadOneMedia({ candidate, sourceUrl, index }));
     } catch (error) {
@@ -175,6 +208,9 @@ async function uploadWorkbookMedia(candidate) {
 }
 
 module.exports = {
+  CMCEN_CREST_FALLBACK_URL,
+  buildCmcenCrestFallbackAsset,
+  isCmcenCrestUrl,
   isImageLikeUrl,
   uploadWorkbookMedia,
 };

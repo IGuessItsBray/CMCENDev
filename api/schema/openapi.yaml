@@ -794,6 +794,25 @@ paths:
       responses:
         "200":
           description: Updated role.
+  /api/admin/users/{userId}/invitation/resend:
+    post:
+      tags: [Admin]
+      summary: Resend an invited user's activation email.
+      description: Rotates the activation token, extends the invitation by seven days, and retries email delivery. Resending an `internal_beta` invitation requires a developer.
+      x-permission: canProvisionUsers
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Invitation resent.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
   /api/admin/users/{userId}/developer:
     patch:
       tags: [Admin]

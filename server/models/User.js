@@ -311,6 +311,18 @@ const UserSchema = new mongoose.Schema(
         default: null,
       },
       sentAt: { type: Date, default: null },
+      delivery: {
+        status: {
+          type: String,
+          enum: ['pending', 'sent', 'failed'],
+          default: 'pending',
+        },
+        attemptedAt: { type: Date, default: null },
+        messageId: { type: String, trim: true, maxlength: 240, default: '' },
+        accepted: { type: [String], default: [] },
+        rejected: { type: [String], default: [] },
+        error: { type: String, trim: true, maxlength: 240, default: '' },
+      },
     },
 
     // Incrementing this invalidates all browser refresh sessions for the user.

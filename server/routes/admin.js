@@ -877,6 +877,14 @@ function toAdminUser(user, postSummary = null) {
         ? {
             sentAt: plainUser.invitation?.sentAt || null,
             expiresAt: plainUser.invitation?.expiresAt || null,
+            delivery: {
+              status: plainUser.invitation?.delivery?.status || 'pending',
+              attemptedAt: plainUser.invitation?.delivery?.attemptedAt || null,
+              messageId: plainUser.invitation?.delivery?.messageId || '',
+              accepted: plainUser.invitation?.delivery?.accepted || [],
+              rejected: plainUser.invitation?.delivery?.rejected || [],
+              error: plainUser.invitation?.delivery?.error || '',
+            },
           }
         : null,
     emailVerification: {
@@ -924,7 +932,7 @@ async function sendInvitationEmail(req, user, token) {
     .replace(/</gu, '&lt;')
     .replace(/>/gu, '&gt;');
 
-  await sendMail({
+  return sendMail({
     to: user.email,
     subject: 'Activate your CMCEN / RCMCE account',
     html: `
@@ -934,6 +942,102 @@ async function sendInvitationEmail(req, user, token) {
       <p>This link expires in 7 days. You will set your own password and complete your profile.</p>
     `,
   });
+}
+
+function cleanInvitationDeliveryList(value) {
+  return (Array.isArray(value) ? value : [])
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+function getInvitationDeliveryError(error) {
+  const parts = [error?.code, error?.responseCode, error?.message]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+
+  return [...new Set(parts)].join(': ').slice(0, 240);
+}
+
+function getInvitationDeliveryMetadata(user) {
+  const delivery = user?.invitation?.delivery || {};
+
+  return {
+    status: delivery.status || 'pending',
+    attemptedAt: delivery.attemptedAt || null,
+    messageId: delivery.messageId || '',
+    accepted: delivery.accepted || [],
+    rejected: delivery.rejected || [],
+    error: delivery.error || '',
+  };
+}
+
+async function recordInvitationDelivery(user, result) {
+  const attemptedAt = new Date();
+  const succeeded = result?.ok === true;
+  const mailResult = result?.mailResult || {};
+
+  user.invitation.delivery = {
+    status: succeeded ? 'sent' : 'failed',
+    attemptedAt,
+    messageId: String(mailResult.messageId || '').trim().slice(0, 240),
+    accepted: cleanInvitationDeliveryList(mailResult.accepted),
+    rejected: cleanInvitationDeliveryList(mailResult.rejected),
+    error: succeeded ? '' : getInvitationDeliveryError(result?.error),
+  };
+
+  if (succeeded) {
+    user.invitation.sentAt = attemptedAt;
+  }
+
+  await user.save();
+  return getInvitationDeliveryMetadata(user);
+}
+
+async function deliverInvitation({ req, user, token, actor, action }) {
+  try {
+    const mailResult = await sendInvitationEmail(req, user, token);
+    const delivery = await recordInvitationDelivery(user, {
+      ok: true,
+      mailResult,
+    });
+
+    await writeAuditLog({
+      req,
+      action,
+      actor,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: toAdminUser(user),
+      metadata: {
+        role: user.role,
+        delivery,
+      },
+    });
+
+    return { delivery };
+  } catch (error) {
+    const delivery = await recordInvitationDelivery(user, {
+      ok: false,
+      error,
+    });
+
+    await writeAuditLog({
+      req,
+      action: 'user.invitation_delivery_failed',
+      actor,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: toAdminUser(user),
+      metadata: {
+        invitationAction: action,
+        role: user.role,
+        delivery,
+      },
+    });
+
+    return { delivery, error };
+  }
 }
 
 function getMfaAuditSnapshot(user) {
@@ -1991,26 +2095,28 @@ router.post(
           tokenHash: hashInvitationToken(token),
           expiresAt: new Date(now.getTime() + INVITATION_TOKEN_TTL_MS),
           invitedBy: req.user._id,
-          sentAt: now,
+          sentAt: null,
         },
       });
 
       await user.save();
-      await sendInvitationEmail(req, user, token);
 
-      await writeAuditLog({
+      const deliveryResult = await deliverInvitation({
         req,
-        action: 'user.invited',
+        user,
+        token,
         actor: req.user,
-        targetType: 'user',
-        target: user._id,
-        targetSnapshot: toAdminUser(user),
-        metadata: {
-          role,
-          customRoleIds: [],
-          contentAreas: [],
-        },
+        action: 'user.invited',
       });
+
+      if (deliveryResult.error) {
+        console.error('User invitation email delivery failed:', deliveryResult.error);
+        return res.status(502).json({
+          error:
+            'Invitation was created, but the email could not be delivered. Fix the mail issue, then resend the invitation.',
+          user: toAdminUser(user),
+        });
+      }
 
       res.status(201).json({
         message: 'Invitation sent',
@@ -2019,6 +2125,77 @@ router.post(
     } catch (error) {
       console.error('User invitation failed:', error);
       res.status(500).json({ error: 'Could not send invitation' });
+    }
+  },
+);
+
+// POST /api/admin/users/:userId/invitation/resend
+// Rotate an invited user's activation token and retry email delivery.
+router.post(
+  '/users/:userId/invitation/resend',
+  authMiddleware,
+  requirePermission('canProvisionUsers'),
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.params.userId).select(
+        'accountType username email accountName firstName lastName role invitation customRoles contentAreas emailVerification createdAt updatedAt',
+      );
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (user.accountType !== 'invited') {
+        return res.status(400).json({ error: 'User does not have an invitation' });
+      }
+
+      if (user.role === 'internal_beta' && req.user?.role !== 'developer') {
+        return res.status(403).json({
+          error: 'Developer access is required to resend an Internal Beta invitation',
+        });
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const now = new Date();
+      user.invitation.tokenHash = hashInvitationToken(token);
+      user.invitation.expiresAt = new Date(
+        now.getTime() + INVITATION_TOKEN_TTL_MS,
+      );
+      user.invitation.sentAt = null;
+      user.invitation.delivery = {
+        status: 'pending',
+        attemptedAt: null,
+        messageId: '',
+        accepted: [],
+        rejected: [],
+        error: '',
+      };
+      await user.save();
+
+      const deliveryResult = await deliverInvitation({
+        req,
+        user,
+        token,
+        actor: req.user,
+        action: 'user.invitation_resent',
+      });
+
+      if (deliveryResult.error) {
+        console.error('Invitation resend email delivery failed:', deliveryResult.error);
+        return res.status(502).json({
+          error:
+            'The invitation was renewed, but the email could not be delivered. Fix the mail issue, then resend it again.',
+          user: toAdminUser(user),
+        });
+      }
+
+      res.json({
+        message: 'Invitation resent',
+        user: toAdminUser(user),
+      });
+    } catch (error) {
+      console.error('Invitation resend failed:', error);
+      res.status(500).json({ error: 'Could not resend invitation' });
     }
   },
 );
@@ -2048,7 +2225,7 @@ router.get(
 
       const users = await User.find(filter)
         .select(
-          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt',
+          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt invitation.delivery emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt',
         )
         .sort({ accountName: 1, username: 1 })
         .limit(limit + 1)
@@ -2155,7 +2332,7 @@ router.get(
 
       const user = await User.findById(userId)
         .select(
-          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
+          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt invitation.delivery emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
         )
         .populate('customRoles', 'name slug color permissions');
 

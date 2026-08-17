@@ -1176,6 +1176,47 @@ describe('authorization matrix and account integrity', () => {
     assert.equal(invitedUser.firstName, 'Jordan');
     assert.equal(invitedUser.lastName, 'Example');
     assert.deepEqual(invitedUser.customRoles, []);
+    assert.equal(invitedUser.invitation.delivery.status, 'sent');
+  });
+
+  test('resends an invitation with a renewed token and delivery diagnostics', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const session = await login(administrator);
+    const invitation = await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        firstName: 'Resend',
+        lastName: 'Member',
+        email: 'resend.member@example.test',
+        role: 'subscriber',
+      })
+      .expect(201);
+    const invitedUserId = invitation.body.user._id;
+    const beforeResend = await User.findById(invitedUserId)
+      .select('+invitation.tokenHash')
+      .lean();
+
+    const resend = await request(app)
+      .post(`/api/admin/users/${invitedUserId}/invitation/resend`)
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    assert.equal(resend.body.user.invitation.delivery.status, 'sent');
+    assert.ok(resend.body.user.invitation.delivery.attemptedAt);
+    assert.ok(resend.body.user.invitation.sentAt);
+    const afterResend = await User.findById(invitedUserId)
+      .select('+invitation.tokenHash')
+      .lean();
+    assert.notEqual(
+      afterResend.invitation.tokenHash,
+      beforeResend.invitation.tokenHash,
+    );
+    const auditEntry = await AuditLog.findOne({
+      action: 'user.invitation_resent',
+      target: invitedUserId,
+    }).lean();
+    assert.equal(auditEntry.metadata.delivery.status, 'sent');
   });
 
   test('restricts Internal Beta invitations to developers', async () => {

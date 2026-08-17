@@ -305,6 +305,7 @@ const UserSchema = new mongoose.Schema(
     invitation: {
       tokenHash: { type: String, default: '', select: false },
       expiresAt: { type: Date, default: null, select: false },
+      message: { type: String, trim: true, maxlength: 2000, default: '' },
       invitedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

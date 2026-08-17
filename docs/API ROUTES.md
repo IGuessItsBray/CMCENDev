@@ -170,7 +170,7 @@ Mounted at `/api` from `routes/timers.js`. “Timers” is the legacy code/model
 | `PATCH`  | `/api/admin/timers/:timerId` | Authenticated + `canManageTimers`                   | Update banner.                                      |
 | `DELETE` | `/api/admin/timers/:timerId` | Authenticated + `canManageTimers`                   | Delete banner.                                      |
 
-Banner payload fields: `title`, `text.en`, `text.fr`, `color`, `textColor`, `startsAt`, `endsAt`, `countdownAt`, `placement`, `enabled`, `order`.
+Banner payload fields: `title`, `text.en`, `text.fr`, `color`, `textColor`, `startsAt`, `endsAt`, `countdownAt`, `placement`, `enabled`, `order`. `text.en` and `text.fr` render pasted `http://` and `https://` URLs as safe, clickable links.
 
 ## Translations
 

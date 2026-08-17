@@ -10,6 +10,7 @@
       admin_tab_analytics: "Analytics",
       admin_tab_timers: "Banners",
       admin_tab_site_config: "Site Config",
+      admin_tab_subscriptions: "Subscriptions",
     };
     const translated =
       typeof window.translate === "function" ? window.translate(key) : key;
@@ -18,6 +19,12 @@
   }
 
   const tabItems = [
+    {
+      key: "subscriptions",
+      href: "/admin-users?view=subscriptions",
+      labelKey: "admin_tab_subscriptions",
+      permission: "canManageSubscriptions",
+    },
     {
       key: "users",
       href: "/admin-users",
@@ -119,6 +126,8 @@
     if (path === "/admin-users" && params.get("view") === "roles") {
       return "roles";
     }
+    if (path === "/admin-users" && params.get("view") === "subscriptions")
+      return "subscriptions";
 
     if (path === "/admin-users") {
       return "users";

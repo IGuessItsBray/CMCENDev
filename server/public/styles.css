@@ -185,7 +185,15 @@ main > * {
 }
 
 @media (forced-colors: active) {
-  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  :where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]
+  ):focus-visible {
     outline: 2px solid ButtonText;
     box-shadow: none;
   }
@@ -947,7 +955,11 @@ svg {
   place-items: center;
   padding: 32px;
   background:
-    radial-gradient(circle at 16% 12%, rgba(213, 155, 39, 0.22), transparent 30%),
+    radial-gradient(
+      circle at 16% 12%,
+      rgba(213, 155, 39, 0.22),
+      transparent 30%
+    ),
     linear-gradient(135deg, var(--navy-950), var(--navy-900) 48%, #333b61);
 }
 
@@ -1619,7 +1631,9 @@ img.is-media-loading {
   );
   background-size: 280% 100%;
   background-position: 100% 0;
-  box-shadow: 0 24px 0 var(--branch-grey-200), 0 48px 0 var(--branch-grey-200);
+  box-shadow:
+    0 24px 0 var(--branch-grey-200),
+    0 48px 0 var(--branch-grey-200);
   animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
 }
 
@@ -1640,9 +1654,12 @@ img.is-media-loading {
 }
 
 .dashboard-status.is-loading:not(:has(.loading-state)) > .loading-state-spinner,
-.review-page-message.is-loading:not(:has(.loading-state)) > .loading-state-spinner,
-.notifications-status.is-loading:not(:has(.loading-state)) > .loading-state-spinner,
-.certificate-requests-status.is-loading:not(:has(.loading-state)) > .loading-state-spinner {
+.review-page-message.is-loading:not(:has(.loading-state))
+  > .loading-state-spinner,
+.notifications-status.is-loading:not(:has(.loading-state))
+  > .loading-state-spinner,
+.certificate-requests-status.is-loading:not(:has(.loading-state))
+  > .loading-state-spinner {
   display: none;
 }
 
@@ -1663,7 +1680,9 @@ img.is-media-loading {
   );
   background-size: 280% 100%;
   background-position: 100% 0;
-  box-shadow: 0 27px 0 var(--branch-grey-200), 0 54px 0 var(--branch-grey-200);
+  box-shadow:
+    0 27px 0 var(--branch-grey-200),
+    0 54px 0 var(--branch-grey-200);
   animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
 }
 
@@ -1684,7 +1703,9 @@ img.is-media-loading {
   );
   background-size: 280% 100%;
   background-position: 100% 0;
-  box-shadow: 0 27px 0 var(--branch-grey-200), 0 54px 0 var(--branch-grey-200);
+  box-shadow:
+    0 27px 0 var(--branch-grey-200),
+    0 54px 0 var(--branch-grey-200);
   animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
 }
 
@@ -1710,11 +1731,17 @@ html[data-theme='dark'] .calendar-grid.is-skeleton-loading .calendar-day::after,
 html[data-theme='dark'] .dashboard-status.is-loading .loading-state::before,
 html[data-theme='dark'] .review-page-message.is-loading .loading-state::before,
 html[data-theme='dark'] .notifications-status.is-loading .loading-state::before,
-html[data-theme='dark'] .certificate-requests-status.is-loading .loading-state::before,
-html[data-theme='dark'] .dashboard-status.is-loading:not(:has(.loading-state))::before,
-html[data-theme='dark'] .review-page-message.is-loading:not(:has(.loading-state))::before,
-html[data-theme='dark'] .notifications-status.is-loading:not(:has(.loading-state))::before,
-html[data-theme='dark'] .certificate-requests-status.is-loading:not(:has(.loading-state))::before {
+html[data-theme='dark']
+  .certificate-requests-status.is-loading
+  .loading-state::before,
+html[data-theme='dark']
+  .dashboard-status.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark']
+  .review-page-message.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark']
+  .notifications-status.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark']
+  .certificate-requests-status.is-loading:not(:has(.loading-state))::before {
   background: linear-gradient(100deg, #2b3850 20%, #3b4a63 38%, #2b3850 56%);
   background-size: 280% 100%;
 }
@@ -1736,12 +1763,20 @@ html[data-theme='dark'] .calendar-grid.is-skeleton-loading .calendar-day::after,
 html[data-theme='dark'] .dashboard-status.is-loading .loading-state::before,
 html[data-theme='dark'] .review-page-message.is-loading .loading-state::before,
 html[data-theme='dark'] .notifications-status.is-loading .loading-state::before,
-html[data-theme='dark'] .certificate-requests-status.is-loading .loading-state::before,
-html[data-theme='dark'] .dashboard-status.is-loading:not(:has(.loading-state))::before,
-html[data-theme='dark'] .review-page-message.is-loading:not(:has(.loading-state))::before,
-html[data-theme='dark'] .notifications-status.is-loading:not(:has(.loading-state))::before,
-html[data-theme='dark'] .certificate-requests-status.is-loading:not(:has(.loading-state))::before {
-  box-shadow: 0 24px 0 #2b3850, 0 48px 0 #2b3850;
+html[data-theme='dark']
+  .certificate-requests-status.is-loading
+  .loading-state::before,
+html[data-theme='dark']
+  .dashboard-status.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark']
+  .review-page-message.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark']
+  .notifications-status.is-loading:not(:has(.loading-state))::before,
+html[data-theme='dark']
+  .certificate-requests-status.is-loading:not(:has(.loading-state))::before {
+  box-shadow:
+    0 24px 0 #2b3850,
+    0 48px 0 #2b3850;
 }
 
 .hero {
@@ -4971,6 +5006,103 @@ a.dropdown-toggle {
   line-height: 1.2;
 }
 
+.dashboard-subscription-section {
+  grid-column: 1 / -1;
+  position: relative;
+  border-top: 1px solid var(--branch-grey-200);
+  background: linear-gradient(135deg, var(--white), var(--branch-grey-100));
+}
+
+.weekly-brief-preference {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.weekly-brief-preference p {
+  margin: 0;
+}
+
+.weekly-brief-preference > p:first-child,
+.weekly-brief-preference > .weekly-brief-note,
+.weekly-brief-preference > .weekly-brief-sender {
+  grid-column: 1 / -1;
+}
+
+.weekly-brief-control {
+  min-height: 68px;
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid var(--branch-grey-300);
+  border-radius: 4px;
+  background: var(--white);
+  box-shadow: 0 4px 12px rgba(15, 18, 31, 0.05);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.weekly-brief-control:hover {
+  border-color: var(--gold-600);
+}
+
+.weekly-brief-control input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--navy-800);
+}
+
+.weekly-brief-control input:disabled + span {
+  color: var(--branch-grey-700);
+}
+
+.weekly-brief-note,
+.weekly-brief-sender {
+  padding: 2px 0;
+  color: var(--branch-grey-800);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .weekly-brief-preference {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-subscriptions-panel {
+  display: grid;
+  gap: 20px;
+}
+.admin-subscriptions-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin-subscriptions-table th,
+.admin-subscriptions-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--branch-grey-200);
+  text-align: left;
+}
+.admin-subscriptions-panel section {
+  display: grid;
+  gap: 10px;
+}
+.admin-subscriptions-panel input,
+.admin-subscriptions-panel textarea,
+.admin-subscriptions-panel select {
+  width: 100%;
+  padding: 10px;
+  font: inherit;
+}
+.admin-subscriptions-panel textarea {
+  min-height: 180px;
+}
+
 .dashboard-detail-row {
   min-height: 55px;
   display: grid;
@@ -5834,7 +5966,13 @@ a.dropdown-toggle {
   overflow: auto;
   padding: 0 12px 12px;
   color: inherit;
-  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font:
+    12px/1.45 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
@@ -13460,19 +13598,30 @@ a.my-event-card-row:focus-visible {
 .retirement-detail-photo {
   margin: 0 auto 28px;
   width: min(100%, 720px);
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 2px;
+  background: var(--branch-grey-100);
+  box-shadow: 0 8px 20px rgba(15, 18, 31, 0.12);
   text-align: center;
 }
 
 .retirement-detail-photo > div {
-  display: block;
+  display: grid;
   width: 100%;
+  height: 100%;
+  place-items: center;
 }
 
 .retirement-detail-photo img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   margin: 0 auto;
+  object-fit: cover;
 }
 
 .retirement-detail-photo img.retirement-detail-photo-logo {
@@ -14910,7 +15059,6 @@ html[data-theme='dark'] .last-post-submit-button {
     margin-top: 0;
     text-align: left;
   }
-
 }
 
 @media (max-width: 1120px) {
@@ -17431,6 +17579,43 @@ html[data-theme='dark'] .dashboard-mfa-section {
       transparent 19rem
     ),
     var(--dark-surface-2);
+}
+
+html[data-theme='dark'] .dashboard-subscription-section {
+  border-top-color: var(--dark-border);
+  background:
+    radial-gradient(
+      circle at 92% 8%,
+      rgba(213, 155, 39, 0.1),
+      transparent 19rem
+    ),
+    var(--dark-surface-2);
+}
+
+html[data-theme='dark'] .weekly-brief-preference {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .weekly-brief-control {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-3);
+  color: var(--dark-text);
+  box-shadow: none;
+}
+
+html[data-theme='dark'] .weekly-brief-control:hover {
+  border-color: var(--gold-500);
+  background: #263349;
+}
+
+html[data-theme='dark'] .weekly-brief-control input {
+  accent-color: var(--gold-500);
+}
+
+html[data-theme='dark'] .weekly-brief-control input:disabled + span,
+html[data-theme='dark'] .weekly-brief-note,
+html[data-theme='dark'] .weekly-brief-sender {
+  color: var(--dark-text-soft);
 }
 
 html[data-theme='dark'] .mfa-panel-passkey {

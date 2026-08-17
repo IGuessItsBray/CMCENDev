@@ -349,6 +349,84 @@ paths:
       responses:
         "200":
           description: Notification summary.
+  /api/subscriptions/weekly-brief:
+    put:
+      tags: [Auth]
+      summary: Set the current user's weekly email brief subscription.
+      description: "Express opt-in requires `subscribed: true` and `expressConsent: true`. Withdrawal is immediate and is recorded in the audit log."
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated current user profile and subscription state.
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/subscriptions/weekly-brief/unsubscribe:
+    get:
+      tags: [Auth]
+      security: []
+      summary: Unsubscribe a recipient using an opaque email token.
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: HTML confirmation that the weekly brief has been unsubscribed.
+        "404":
+          description: The token is invalid or expired.
+    post:
+      tags: [Auth]
+      security: []
+      summary: Process an RFC 8058 one-click unsubscribe request.
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: HTML confirmation that the weekly brief has been unsubscribed.
+        "404":
+          description: The token is invalid or expired.
+  /api/subscriptions/news-announcements:
+    put:
+      tags: [Auth]
+      summary: Set the current user's news-announcement subscription.
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated profile and subscription state.
+  /api/admin/subscriptions:
+    get:
+      tags: [Admin]
+      summary: List email subscribers and sent newsletter history.
+      x-permission: canManageSubscriptions
+      responses:
+        "200":
+          description: Subscriber list and newsletter history.
+  /api/admin/subscriptions/export.csv:
+    get:
+      tags: [Admin]
+      summary: Export subscribed users to CSV.
+      x-permission: canManageSubscriptions
+      responses:
+        "200":
+          description: Subscription CSV export.
+  /api/admin/subscriptions/news-blasts:
+    post:
+      tags: [Admin]
+      summary: Send an announcement to express news-announcement subscribers.
+      x-permission: canManageSubscriptions
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "201":
+          description: News blast delivery result.
   /api/ghost/upgrade:
     post:
       tags: [Auth]
@@ -725,7 +803,15 @@ paths:
                   description: Optional plain-text message that replaces the standard account-creation message in the invitation email.
                 role:
                   type: string
-                  enum: [subscriber, internal_beta, contributor, author, editor, administrator]
+                  enum:
+                    [
+                      subscriber,
+                      internal_beta,
+                      contributor,
+                      author,
+                      editor,
+                      administrator,
+                    ]
       responses:
         "201":
           description: Invitation sent.
@@ -2179,4 +2265,13 @@ components:
         role:
           type: string
           enum:
-            [ghost, subscriber, internal_beta, contributor, author, editor, administrator, developer]
+            [
+              ghost,
+              subscriber,
+              internal_beta,
+              contributor,
+              author,
+              editor,
+              administrator,
+              developer,
+            ]

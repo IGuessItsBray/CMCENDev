@@ -1196,3 +1196,103 @@ window.refreshAuthUI = function refreshAuthUI() {
 
 updateAuthButtons();
 updateAuthRestrictedItems();
+
+const betaNoticeStorageKey = "cmcen_beta_notice_2026_acknowledged";
+
+function hasAcknowledgedBetaNotice() {
+  try {
+    return localStorage.getItem(betaNoticeStorageKey) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function showBetaNotice() {
+  if (hasAcknowledgedBetaNotice()) {
+    return;
+  }
+
+  const previouslyFocusedElement = document.activeElement;
+  const overlay = document.createElement("div");
+  overlay.className = "beta-notice-overlay";
+  overlay.setAttribute("role", "presentation");
+
+  const notice = document.createElement("section");
+  notice.className = "beta-notice";
+  notice.setAttribute("role", "dialog");
+  notice.setAttribute("aria-modal", "true");
+  notice.setAttribute("aria-labelledby", "betaNoticeTitle");
+  notice.setAttribute("aria-describedby", "betaNoticeMessage");
+  notice.innerHTML = `
+    <div class="beta-notice-brand" aria-hidden="true">
+      <img src="/images/logo.png" alt="" />
+      <span>CMCEN</span>
+    </div>
+    <div class="beta-notice-content">
+      <p class="beta-notice-kicker">Internal beta</p>
+      <h1 id="betaNoticeTitle">Welcome to CMCEN</h1>
+      <div class="beta-notice-message" id="betaNoticeMessage">
+        <p>Welcome to the internal beta for CMCEN. This beta will run from 21 August 2026 until 2 October 2026.</p>
+        <p>For any feedback or ideas, please email <a href="mailto:support@cmcen.ca">support@cmcen.ca</a>.</p>
+        <p>For any bugs or issues, please either email <a href="mailto:support@cmcen.ca">support@cmcen.ca</a> or file a bug report at <a href="https://git.corebot.ca/Eric/CMCENDev/issues" target="_blank" rel="noopener noreferrer">git.corebot.ca/Eric/CMCENDev/issues</a>.</p>
+        <p>Happy beta testing!</p>
+        <p class="beta-notice-signature">&ndash; Bray &amp; Eric</p>
+      </div>
+      <button class="beta-notice-continue" type="button">Continue to CMCEN</button>
+    </div>
+  `;
+
+  const continueButton = notice.querySelector(".beta-notice-continue");
+
+  function dismissNotice() {
+    try {
+      localStorage.setItem(betaNoticeStorageKey, "true");
+    } catch {
+      // The notice will be displayed again when browser storage is unavailable.
+    }
+
+    document.removeEventListener("keydown", trapFocus);
+    document.body.classList.remove("beta-notice-lock");
+    overlay.remove();
+
+    if (previouslyFocusedElement instanceof HTMLElement) {
+      previouslyFocusedElement.focus();
+    }
+  }
+
+  function trapFocus(event) {
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    const focusableElements = [
+      ...notice.querySelectorAll(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ];
+    const firstFocusableElement = focusableElements[0];
+    const lastFocusableElement = focusableElements.at(-1);
+
+    if (!firstFocusableElement || !lastFocusableElement) {
+      event.preventDefault();
+      return;
+    }
+
+    if (event.shiftKey && document.activeElement === firstFocusableElement) {
+      event.preventDefault();
+      lastFocusableElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastFocusableElement) {
+      event.preventDefault();
+      firstFocusableElement.focus();
+    }
+  }
+
+  continueButton.addEventListener("click", dismissNotice);
+  overlay.append(notice);
+  document.body.append(overlay);
+  document.body.classList.add("beta-notice-lock");
+  document.addEventListener("keydown", trapFocus);
+  continueButton.focus();
+}
+
+showBetaNotice();

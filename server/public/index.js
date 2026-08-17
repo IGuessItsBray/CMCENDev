@@ -725,8 +725,8 @@ function loadFooter() {
             </p>
 
             <p>
-              <a href="mailto:contact@example.ca">
-                contact@example.ca
+              <a href="mailto:contact@cmcen.ca">
+                contact@cmcen.ca
               </a>
             </p>
 
@@ -747,6 +747,24 @@ function loadFooter() {
             <li>
               <a href="/privacy.html" data-i18n="privacy_policy">
                 Privacy Policy
+              </a>
+            </li>
+
+            <li>
+              <a href="mailto:privacy@cmcen.ca" data-i18n="privacy_contact">
+                Privacy inquiries
+              </a>
+            </li>
+
+            <li>
+              <a href="mailto:legal@cmcen.ca" data-i18n="legal_contact">
+                Legal notices
+              </a>
+            </li>
+
+            <li>
+              <a href="mailto:security@cmcen.ca" data-i18n="security_contact">
+                Security concerns
               </a>
             </li>
 

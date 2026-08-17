@@ -18,6 +18,7 @@ function getTypeLabel(type) {
     event: translate("search_type_event"),
     "retirement-message": translate("search_type_retirement_message"),
     "last-post-message": translate("search_type_last_post_message"),
+    "news-story": translate("search_type_news_story"),
     page: translate("search_type_page"),
   };
 

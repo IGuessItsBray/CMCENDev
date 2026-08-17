@@ -16,6 +16,14 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Create draft events and other site content.',
   },
   {
+    key: 'news.manage',
+    label: 'Manage news stories',
+    group: 'News',
+    action: 'edit',
+    description:
+      'Create, edit, publish, unpublish, and delete bilingual news stories.',
+  },
+  {
     key: 'retirements.submit',
     label: 'Submit retirement messages',
     group: 'Retirements',
@@ -218,6 +226,7 @@ const PERMISSION_CATALOG = Object.freeze([
 const LEGACY_PERMISSION_KEYS = Object.freeze({
   canAccessConnections: 'connections.read',
   canCreateDrafts: 'content.create',
+  canManageNews: 'news.manage',
   canSubmitRetirementMessages: 'retirements.submit',
   canManageCertificateRequests: 'certificates.manage',
   canPublishOwnContent: 'content.publish_own',
@@ -276,6 +285,8 @@ function getBuiltInPermissionFlags(user) {
     canAccessConnections: hasMinimumRole(role, 'subscriber'),
 
     canCreateDrafts: isGhost || hasMinimumRole(role, 'contributor'),
+
+    canManageNews: hasMinimumRole(role, 'editor'),
 
     canSubmitRetirementMessages: isGhost || hasMinimumRole(role, 'contributor'),
 

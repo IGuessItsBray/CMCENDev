@@ -33,6 +33,7 @@ tags:
   - name: Search
   - name: Pages
   - name: Events
+  - name: News
   - name: Last Posts
   - name: Retirements
   - name: Certificates
@@ -1167,7 +1168,7 @@ paths:
   /api/search:
     get:
       tags: [Search]
-      summary: Search non-Home public content with singular/plural-aware title ranking.
+      summary: Search published news stories and non-Home public content with singular/plural-aware title ranking.
       security: []
       parameters:
         - name: q
@@ -1195,7 +1196,13 @@ paths:
                         type:
                           type: string
                           enum:
-                            [event, retirement-message, last-post-message, page]
+                            [
+                              event,
+                              retirement-message,
+                              last-post-message,
+                              news-story,
+                              page,
+                            ]
                         sourceId:
                           type: string
                         title:
@@ -1508,6 +1515,93 @@ paths:
       responses:
         "200":
           description: Review result.
+  /api/news:
+    get:
+      tags: [News]
+      summary: List published bilingual news stories.
+      security: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 48
+      responses:
+        "200":
+          description: Published news stories.
+    post:
+      tags: [News]
+      summary: Create a bilingual news story.
+      x-permission: canManageNews
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsArticleInput"
+      responses:
+        "201":
+          description: Created news story.
+  /api/news/feed:
+    get:
+      tags: [News]
+      summary: List newest published news stories and Last Post notices together.
+      security: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 24
+      responses:
+        "200":
+          description: Combined public news feed.
+  /api/news/manage:
+    get:
+      tags: [News]
+      summary: List all news stories, including drafts, for editorial management.
+      x-permission: canManageNews
+      responses:
+        "200":
+          description: Managed news stories.
+  /api/news/{articleId}:
+    get:
+      tags: [News]
+      summary: Get one published bilingual news story for its full article page.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: Published news story.
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [News]
+      summary: Update a bilingual news story or its publication state.
+      x-permission: canManageNews
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsArticleInput"
+      responses:
+        "200":
+          description: Updated news story.
+    delete:
+      tags: [News]
+      summary: Delete a news story.
+      x-permission: canManageNews
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: Deleted news story.
   /api/last-posts:
     get:
       tags: [Last Posts]
@@ -1731,6 +1825,11 @@ components:
   parameters:
     Id:
       name: id
+      in: path
+      required: true
+      schema: { type: string }
+    ArticleId:
+      name: articleId
       in: path
       required: true
       schema: { type: string }
@@ -2214,6 +2313,28 @@ components:
       properties:
         en: { type: string }
         fr: { type: string }
+    NewsArticleInput:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          $ref: "#/components/schemas/LocalizedText"
+          description: English and French titles are both required; each is at most 240 characters.
+        content:
+          $ref: "#/components/schemas/LocalizedText"
+          description: English and French content are both required; each is at most 20,000 characters.
+        imageUrl:
+          type: string
+          format: uri
+          description: Optional uploaded image URL. When omitted, the canonical CMCEN crest is used.
+        imageDisplayUrl:
+          type: string
+          format: uri
+          description: Optional server-generated 16:9 crop used by news cards and the homepage rail.
+        status:
+          type: string
+          enum: [published, draft]
+          default: published
     BannerInput:
       type: object
       properties:

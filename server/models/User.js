@@ -305,12 +305,25 @@ const UserSchema = new mongoose.Schema(
     invitation: {
       tokenHash: { type: String, default: '', select: false },
       expiresAt: { type: Date, default: null, select: false },
+      message: { type: String, trim: true, maxlength: 2000, default: '' },
       invitedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         default: null,
       },
       sentAt: { type: Date, default: null },
+      delivery: {
+        status: {
+          type: String,
+          enum: ['pending', 'sent', 'failed'],
+          default: 'pending',
+        },
+        attemptedAt: { type: Date, default: null },
+        messageId: { type: String, trim: true, maxlength: 240, default: '' },
+        accepted: { type: [String], default: [] },
+        rejected: { type: [String], default: [] },
+        error: { type: String, trim: true, maxlength: 240, default: '' },
+      },
     },
 
     // Incrementing this invalidates all browser refresh sessions for the user.

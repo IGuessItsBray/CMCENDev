@@ -5500,6 +5500,124 @@ a.dropdown-toggle {
   color: var(--white);
 }
 
+.admin-invitation-panel {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border-bottom: 1px solid var(--branch-grey-200);
+  background: var(--branch-grey-50);
+}
+
+.admin-invitation-panel .admin-panel-heading {
+  padding: 0;
+  border-bottom: 0;
+}
+
+.admin-invitation-panel h4 {
+  margin: 0;
+  color: var(--branch-grey-900);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.admin-invitation-status {
+  width: fit-content;
+  padding: 3px 7px;
+  border: 1px solid var(--branch-grey-300);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--branch-grey-800);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-invitation-status.is-sent {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: var(--white);
+}
+
+.admin-invitation-status.is-failed {
+  border-color: #b42318;
+  background: #b42318;
+  color: var(--white);
+}
+
+.admin-invitation-summary {
+  margin: 0;
+  color: var(--branch-grey-700);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-invitation-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-invitation-details > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 6px;
+  background: var(--white);
+}
+
+.admin-invitation-details span {
+  color: var(--branch-grey-700);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-invitation-details strong {
+  overflow-wrap: anywhere;
+  color: var(--branch-grey-900);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-invitation-diagnostic {
+  border: 1px solid #d0a09b;
+  border-radius: 6px;
+  background: #fff8f7;
+  color: #7a271a;
+}
+
+.admin-invitation-diagnostic summary {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-invitation-diagnostic code {
+  display: block;
+  max-height: 140px;
+  overflow: auto;
+  padding: 0 12px 12px;
+  color: inherit;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.admin-invitation-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-invitation-actions .admin-work-zone-button {
+  width: auto;
+}
+
 .admin-editor-field,
 .admin-editor-fieldset {
   display: grid;
@@ -13112,23 +13230,19 @@ a.my-event-card-row:focus-visible {
 .retirement-detail-photo {
   margin: 0 auto 28px;
   width: min(100%, 720px);
-  aspect-ratio: 4 / 3;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  background: var(--branch-grey-100);
-  box-shadow: 0 8px 20px rgba(15, 18, 31, 0.12);
   text-align: center;
+}
+
+.retirement-detail-photo > div {
+  display: block;
+  width: 100%;
 }
 
 .retirement-detail-photo img {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
   margin: 0 auto;
-  object-fit: cover;
 }
 
 .retirement-detail-photo img.retirement-detail-photo-logo {
@@ -14892,7 +15006,8 @@ html[data-theme='dark'] .last-post-submit-button {
   }
 
   .admin-user-editor,
-  .admin-user-mfa-panel {
+  .admin-user-mfa-panel,
+  .admin-invitation-details {
     grid-template-columns: 1fr;
   }
 
@@ -17624,6 +17739,32 @@ html[data-theme='dark'] .admin-user-editor,
 html[data-theme='dark'] .admin-role-form,
 html[data-theme='dark'] .admin-role-list {
   border-color: var(--dark-border);
+}
+
+html[data-theme='dark'] .admin-invitation-panel {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-2);
+}
+
+html[data-theme='dark'] .admin-invitation-details > div {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-3);
+}
+
+html[data-theme='dark'] .admin-invitation-panel h4,
+html[data-theme='dark'] .admin-invitation-details strong {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .admin-invitation-summary,
+html[data-theme='dark'] .admin-invitation-details span {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .admin-invitation-diagnostic {
+  border-color: #9d4d45;
+  background: rgba(126, 43, 35, 0.24);
+  color: #fecaca;
 }
 
 html[data-theme='dark'] .admin-work-zone-tabs:not(.event-management-tabs) {

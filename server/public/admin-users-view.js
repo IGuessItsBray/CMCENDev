@@ -135,6 +135,18 @@
       );
     }
 
+    function canResendInvitation(user) {
+      const state = getState();
+
+      return Boolean(
+        user?._id &&
+          user.accountType === "invited" &&
+          state.currentUserPermissions?.canProvisionUsers === true &&
+          (user.role !== "internal_beta" ||
+            state.currentUserRole === "developer"),
+      );
+    }
+
     function getStandardRoles() {
       return getState().roles.filter((role) => role !== "developer");
     }
@@ -575,6 +587,84 @@
       }
 
       panel.append(heading, details, reset);
+
+      return panel;
+    }
+
+    function createInvitationPanel(user) {
+      if (user?.accountType !== "invited") {
+        return null;
+      }
+
+      const invitation = user.invitation || {};
+      const delivery = invitation.delivery || {};
+      const panel = document.createElement("section");
+      panel.className = "admin-invitation-panel";
+
+      const heading = document.createElement("div");
+      heading.className = "admin-panel-heading";
+      const title = document.createElement("h4");
+      title.textContent = "Invitation delivery";
+      const status = document.createElement("span");
+      const statusValue = delivery.status || "pending";
+      status.className = `admin-invitation-status is-${statusValue}`;
+      status.textContent = statusValue.charAt(0).toUpperCase() + statusValue.slice(1);
+      heading.append(title, status);
+
+      const summary = document.createElement("p");
+      summary.className = "admin-invitation-summary";
+      summary.textContent =
+        statusValue === "failed"
+          ? "The mail service did not accept this invitation. Review the diagnostic, then resend it."
+          : statusValue === "sent"
+            ? "The activation link was handed to the mail service."
+            : "This invitation has not been sent yet.";
+
+      const details = document.createElement("div");
+      details.className = "admin-invitation-details";
+      [
+        ["Delivery", invitation.sentAt ? `Sent ${formatDate(invitation.sentAt)}` : "Not sent"],
+        [
+          "Expires",
+          invitation.expiresAt ? formatDate(invitation.expiresAt) : "No expiration set",
+        ],
+        [
+          "Last attempt",
+          delivery.attemptedAt ? formatDate(delivery.attemptedAt) : "No delivery attempt yet",
+        ],
+      ].forEach(([label, value]) => {
+        const item = document.createElement("div");
+        const itemLabel = document.createElement("span");
+        itemLabel.textContent = label;
+        const itemValue = document.createElement("strong");
+        itemValue.textContent = value;
+        item.append(itemLabel, itemValue);
+        details.append(item);
+      });
+
+      panel.append(heading, summary, details);
+
+      if (delivery.error) {
+        const diagnostic = document.createElement("details");
+        diagnostic.className = "admin-invitation-diagnostic";
+        const diagnosticTitle = document.createElement("summary");
+        diagnosticTitle.textContent = "View mail-service diagnostic";
+        const error = document.createElement("code");
+        error.textContent = delivery.error;
+        diagnostic.append(diagnosticTitle, error);
+        panel.append(diagnostic);
+      }
+
+      const actionsRow = document.createElement("div");
+      actionsRow.className = "admin-invitation-actions";
+      const resend = document.createElement("button");
+      resend.type = "button";
+      resend.className = "admin-work-zone-button is-secondary";
+      resend.textContent = "Resend invitation";
+      resend.disabled = !canResendInvitation(user);
+      resend.addEventListener("click", () => actions.resendInvitation(user));
+      actionsRow.append(resend);
+      panel.append(actionsRow);
 
       return panel;
     }
@@ -1115,7 +1205,12 @@
         });
       }
 
-      panel.append(header, form, createMfaPanel(user));
+      panel.append(header, form);
+      const invitationPanel = createInvitationPanel(user);
+      if (invitationPanel) {
+        panel.append(invitationPanel);
+      }
+      panel.append(createMfaPanel(user));
       const dangerZone = createDangerZone(user);
       if (dangerZone) panel.append(dangerZone);
       panel.append(postsPanel);

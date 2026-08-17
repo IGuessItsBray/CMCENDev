@@ -1091,6 +1091,12 @@
         event.key === "Enter" &&
         ["prompt", "form"].includes(modalActiveRequest.type)
       ) {
+        if (
+          modalActiveRequest.type === "form" &&
+          document.activeElement?.tagName === "TEXTAREA"
+        ) {
+          return;
+        }
         event.preventDefault();
         if (modalActiveRequest.type === "form") {
           const fields = Array.from(
@@ -1241,7 +1247,11 @@
             label.textContent = field.label || field.name || "Field";
 
             const control = document.createElement(
-              field.type === "select" ? "select" : "input",
+              field.type === "select"
+                ? "select"
+                : field.type === "textarea"
+                  ? "textarea"
+                  : "input",
             );
             control.className = "cmcen-modal-input";
             control.name = field.name || "";
@@ -1258,7 +1268,9 @@
                 control.append(optionElement);
               });
             } else {
-              control.type = field.type || "text";
+              if (field.type !== "textarea") {
+                control.type = field.type || "text";
+              }
               control.value = String(field.defaultValue || "");
               control.placeholder = field.placeholder || "";
               if (field.maxLength) control.maxLength = field.maxLength;

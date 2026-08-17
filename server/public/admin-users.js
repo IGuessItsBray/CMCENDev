@@ -58,6 +58,7 @@ const adminUsersView = CMCENAdminUsersView.create({
     exportUsers: exportAdminUsers,
     provisionUser: provisionAdminUser,
     saveUser: saveAdminUser,
+    resendInvitation: resendAdminInvitation,
     resetMfa: resetAdminUserMfa,
     deleteUser: deleteAdminUser,
     promoteDeveloper: promoteAdminUserToDeveloper,
@@ -904,6 +905,13 @@ async function provisionAdminUser() {
           autocomplete: "email",
         },
         {
+          name: "message",
+          label: "Message (optional)",
+          type: "textarea",
+          maxLength: 2000,
+          hint: "Replaces the standard account-creation message in the invitation email.",
+        },
+        {
           name: "role",
           label: "Role",
           type: "select",
@@ -936,7 +944,66 @@ async function provisionAdminUser() {
     });
     showAdminActionToast("Invitation sent", "success");
   } catch (error) {
+    const failedUser = error.data?.user;
+    if (failedUser) {
+      setAdminWorkZoneState({
+        users: [failedUser, ...adminWorkZoneState.users],
+        selectedUserId: String(failedUser._id),
+        selectedUser: failedUser,
+        posts: [],
+      });
+    }
     showAdminActionToast(error.message || "Could not send invitation", "error");
+  }
+}
+
+async function resendAdminInvitation(user) {
+  if (!user?._id) return;
+
+  const displayName = CMCENUtils.getUserDisplayName(
+    user,
+    translate("unknown_user"),
+  );
+  const confirmed = await CMCENModal.confirm(
+    `Send a new activation link to ${displayName}? The current link will stop working.`,
+    {
+      title: "Resend invitation",
+      confirmText: "Resend invitation",
+    },
+  );
+  if (!confirmed) return;
+
+  try {
+    const data = await adminApiJson(
+      `/api/admin/users/${encodeURIComponent(user._id)}/invitation/resend`,
+      {
+        method: "POST",
+        errorMessage: "Could not resend invitation",
+      },
+    );
+    const updatedUser = data.user;
+    setAdminWorkZoneState({
+      selectedUser: updatedUser,
+      users: adminWorkZoneState.users.map((existingUser) =>
+        String(existingUser._id) === String(updatedUser._id)
+          ? updatedUser
+          : existingUser,
+      ),
+    });
+    showAdminActionToast("Invitation resent", "success");
+  } catch (error) {
+    const updatedUser = error.data?.user;
+    if (updatedUser) {
+      setAdminWorkZoneState({
+        selectedUser: updatedUser,
+        users: adminWorkZoneState.users.map((existingUser) =>
+          String(existingUser._id) === String(updatedUser._id)
+            ? updatedUser
+            : existingUser,
+        ),
+      });
+    }
+    showAdminActionToast(error.message || "Could not resend invitation", "error");
   }
 }
 

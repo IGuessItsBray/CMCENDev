@@ -34,6 +34,7 @@ const {
   setStandardResponseHeaders,
 } = require('./routes/seo');
 const { rateLimitByIp } = require('./middleware/rate-limit');
+const { startWeeklyBriefScheduler } = require('./services/weekly-brief');
 
 const app = express();
 const isApiDocsEnabled = process.env.ENABLE_API_DOCS === 'true';
@@ -220,6 +221,8 @@ async function startServer() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
+
+    startWeeklyBriefScheduler();
 
     return app.listen(process.env.PORT || 3000, () => {
       console.log(`Server running on port ${process.env.PORT || 3000}`);

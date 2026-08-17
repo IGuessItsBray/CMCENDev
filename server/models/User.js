@@ -253,6 +253,26 @@ const UserSchema = new mongoose.Schema(
       default: [],
     },
 
+    // Express-consent evidence for CASL-regulated email. Withdrawal details
+    // remain on the account so the organization can demonstrate that it
+    // stopped sending this category of commercial electronic message.
+    emailSubscriptions: {
+      weeklyBrief: {
+        subscribed: { type: Boolean, default: false },
+        consentedAt: { type: Date, default: null },
+        consentSource: { type: String, trim: true, default: '' },
+        consentTextVersion: { type: String, trim: true, default: '' },
+        unsubscribedAt: { type: Date, default: null },
+      },
+      newsAnnouncements: {
+        subscribed: { type: Boolean, default: false },
+        consentedAt: { type: Date, default: null },
+        consentSource: { type: String, trim: true, default: '' },
+        consentTextVersion: { type: String, trim: true, default: '' },
+        unsubscribedAt: { type: Date, default: null },
+      },
+    },
+
     webauthn: {
       type: [
         {

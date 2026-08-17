@@ -8,10 +8,17 @@ const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const LastPostMessage = require('../models/LastPostMessage');
+const EmailUnsubscribeToken = require('../models/EmailUnsubscribeToken');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
 const { sendMail } = require('../services/mailer');
+const {
+  CASL_CONSENT_TEXT_VERSION,
+  getCaslSenderInfo,
+  getNewsAnnouncementsSubscription,
+  getWeeklyBriefSubscription,
+} = require('../services/weekly-brief');
 const {
   REFRESH_COOKIE_NAME,
   clearRefreshTokenCookie,
@@ -29,7 +36,7 @@ const {
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas createdAt updatedAt';
+  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -422,6 +429,8 @@ async function getProfileResponse(user) {
 
   return {
     ...profile,
+    weeklyBrief: getWeeklyBriefSubscription(profile),
+    newsAnnouncements: getNewsAnnouncementsSubscription(profile),
     mfa,
     permissions,
     notifications,
@@ -1180,6 +1189,226 @@ router.get('/notifications', authMiddleware, async (req, res) => {
     notifications: await getNotificationSummary(req.user),
   });
 });
+
+// PUT /api/subscriptions/weekly-brief
+// Capture an explicit, account-page opt-in or immediately withdraw it.
+router.put('/subscriptions/weekly-brief', authMiddleware, async (req, res) => {
+  const subscribed = req.body?.subscribed;
+
+  if (typeof subscribed !== 'boolean') {
+    return res.status(400).json({ error: 'A subscription choice is required' });
+  }
+
+  const sender = getCaslSenderInfo();
+  if (subscribed && (!sender.ready || req.body?.expressConsent !== true)) {
+    return res.status(400).json({
+      error:
+        'You must provide express consent after reviewing the sender information',
+    });
+  }
+
+  try {
+    const user = await User.findById(req.user._id)
+      .select(PROFILE_SELECT)
+      .populate('customRoles', 'name slug color permissions');
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const weeklyBrief = user.emailSubscriptions?.weeklyBrief;
+    const currentlySubscribed = weeklyBrief?.subscribed === true;
+    const now = new Date();
+
+    if (subscribed && !currentlySubscribed) {
+      user.emailSubscriptions.weeklyBrief = {
+        subscribed: true,
+        consentedAt: now,
+        consentSource: 'account_dashboard',
+        consentTextVersion: CASL_CONSENT_TEXT_VERSION,
+        unsubscribedAt: null,
+      };
+      await user.save();
+      await writeAuditLog({
+        req,
+        action: 'user.weekly_brief_subscribed',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: getUserSnapshot(user),
+        metadata: {
+          consentSource: 'account_dashboard',
+          consentTextVersion: CASL_CONSENT_TEXT_VERSION,
+        },
+      });
+    } else if (!subscribed && currentlySubscribed) {
+      user.emailSubscriptions.weeklyBrief.subscribed = false;
+      user.emailSubscriptions.weeklyBrief.unsubscribedAt = now;
+      await user.save();
+      await writeAuditLog({
+        req,
+        action: 'user.weekly_brief_unsubscribed',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: getUserSnapshot(user),
+        metadata: { source: 'account_dashboard' },
+      });
+    }
+
+    return res.json(await getProfileResponse(user));
+  } catch (error) {
+    console.error('Weekly brief subscription update failed:', error);
+    return res.status(500).json({ error: 'Could not update email preference' });
+  }
+});
+
+router.put(
+  '/subscriptions/news-announcements',
+  authMiddleware,
+  async (req, res) => {
+    const subscribed = req.body?.subscribed;
+    if (typeof subscribed !== 'boolean') {
+      return res
+        .status(400)
+        .json({ error: 'A subscription choice is required' });
+    }
+    if (
+      subscribed &&
+      (!getCaslSenderInfo().ready || req.body?.expressConsent !== true)
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            'You must provide express consent after reviewing the sender information',
+        });
+    }
+    try {
+      const user = await User.findById(req.user._id)
+        .select(PROFILE_SELECT)
+        .populate('customRoles', 'name slug color permissions');
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      const current =
+        user.emailSubscriptions?.newsAnnouncements?.subscribed === true;
+      const now = new Date();
+      if (subscribed && !current) {
+        user.emailSubscriptions.newsAnnouncements = {
+          subscribed: true,
+          consentedAt: now,
+          consentSource: 'account_dashboard',
+          consentTextVersion: 'news-announcements-v1-2026-08-17',
+          unsubscribedAt: null,
+        };
+      } else if (!subscribed && current) {
+        user.emailSubscriptions.newsAnnouncements.subscribed = false;
+        user.emailSubscriptions.newsAnnouncements.unsubscribedAt = now;
+      }
+      await user.save();
+      if (subscribed !== current) {
+        await writeAuditLog({
+          req,
+          action: subscribed
+            ? 'user.news_announcements_subscribed'
+            : 'user.news_announcements_unsubscribed',
+          actor: user,
+          targetType: 'user',
+          target: user._id,
+          targetSnapshot: getUserSnapshot(user),
+          metadata: { source: 'account_dashboard' },
+        });
+      }
+      return res.json(await getProfileResponse(user));
+    } catch (error) {
+      console.error('News announcement subscription update failed:', error);
+      return res
+        .status(500)
+        .json({ error: 'Could not update email preference' });
+    }
+  },
+);
+
+// This opaque-token endpoint is intentionally public: a recipient must be
+// able to unsubscribe without signing in. It performs the request immediately
+// and keeps the result token out of caches and referrer headers.
+async function unsubscribeWeeklyBrief(req, res) {
+  const token = String(req.query?.token || '').trim();
+  const tokenHash = hashToken(token);
+
+  res.set({
+    'Cache-Control': 'no-store',
+    'Referrer-Policy': 'no-referrer',
+  });
+
+  if (!token) {
+    return res
+      .status(400)
+      .type('html')
+      .send('<p>This unsubscribe link is invalid.</p>');
+  }
+
+  try {
+    const unsubscribeToken = await EmailUnsubscribeToken.findOne({
+      tokenHash,
+      subscriptionType: 'weeklyBrief',
+      expiresAt: { $gt: new Date() },
+    }).select('+tokenHash');
+
+    if (!unsubscribeToken) {
+      return res
+        .status(404)
+        .type('html')
+        .send('<p>This unsubscribe link is invalid or has expired.</p>');
+    }
+
+    const user = await User.findById(unsubscribeToken.user);
+    const subscriptionType = unsubscribeToken.subscriptionType;
+    const subscription = user?.emailSubscriptions?.[subscriptionType];
+    if (subscription?.subscribed === true) {
+      subscription.subscribed = false;
+      subscription.unsubscribedAt = new Date();
+      await user.save();
+      await writeAuditLog({
+        req,
+        action:
+          subscriptionType === 'newsAnnouncements'
+            ? 'user.news_announcements_unsubscribed'
+            : 'user.weekly_brief_unsubscribed',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: getUserSnapshot(user),
+        metadata: { source: 'email_unsubscribe_link', subscriptionType },
+      });
+    }
+
+    if (!unsubscribeToken.usedAt) {
+      unsubscribeToken.usedAt = new Date();
+      await unsubscribeToken.save();
+    }
+
+    return res
+      .type('html')
+      .send(
+        `<!doctype html><html><head><meta charset="utf-8"><title>Unsubscribed</title></head><body><main><h1>Unsubscribed</h1><p>You will no longer receive the CMCEN / RCMCE weekly email brief at this address.</p></main></body></html>`,
+      );
+  } catch (error) {
+    console.error('Weekly brief unsubscribe failed:', error);
+    return res
+      .status(500)
+      .type('html')
+      .send(
+        '<p>We could not complete your unsubscribe request. Please try the link again.</p>',
+      );
+  }
+}
+
+router
+  .route('/subscriptions/weekly-brief/unsubscribe')
+  .get(unsubscribeWeeklyBrief)
+  .post(unsubscribeWeeklyBrief);
+router
+  .route('/subscriptions/news-announcements/unsubscribe')
+  .get(unsubscribeWeeklyBrief)
+  .post(unsubscribeWeeklyBrief);
 
 // Exchange the HTTP-only, long-lived refresh cookie for a new short-lived API token.
 router.post('/session/refresh', async (req, res) => {

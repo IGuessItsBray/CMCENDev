@@ -6,6 +6,10 @@ process.env.JWT_ACCESS_TOKEN_TTL = '15m';
 process.env.JWT_REFRESH_TOKEN_TTL_DAYS = '1';
 process.env.NODE_ENV = 'test';
 process.env.APP_BASE_URL = 'http://localhost:3000';
+process.env.CASL_SENDER_NAME = 'CMCEN / RCMCE';
+process.env.CASL_SENDER_MAILING_ADDRESS =
+  '100 Example Street, Ottawa, ON K1A 0A1';
+process.env.CASL_SENDER_CONTACT = 'https://example.test/contact';
 process.env.MINIO_ENDPOINT = 'http://127.0.0.1:9000';
 process.env.MINIO_ACCESS_KEY = 'integration-test';
 process.env.MINIO_SECRET_KEY = 'integration-test';
@@ -31,6 +35,7 @@ const User = require('../../models/User');
 const s3Client = require('../../storage');
 const { RETIREMENT_TRADE_ROLES } = require('../../config/content');
 const { buildPublicMediaUrl } = require('../../services/media-library');
+const { createUnsubscribeToken } = require('../../services/weekly-brief');
 
 let mongoServer;
 let userSequence = 0;
@@ -315,6 +320,45 @@ describe('system and authentication', () => {
     assert.equal(typeof consentedLogin.body.token, 'string');
     assert.match(consentedLogin.headers['set-cookie'][0], /cmcen_refresh=/);
   });
+
+  test('records express weekly-brief consent and permits immediate email-link withdrawal', async () => {
+    const user = await createUser();
+    const loginResponse = await login(user);
+
+    await request(app)
+      .put('/api/subscriptions/weekly-brief')
+      .set('Authorization', bearer(loginResponse.body.token))
+      .send({ subscribed: true })
+      .expect(400);
+
+    const subscribed = await request(app)
+      .put('/api/subscriptions/weekly-brief')
+      .set('Authorization', bearer(loginResponse.body.token))
+      .send({ subscribed: true, expressConsent: true })
+      .expect(200);
+
+    assert.equal(subscribed.body.weeklyBrief.subscribed, true);
+    assert.ok(subscribed.body.weeklyBrief.consentedAt);
+    assert.equal(subscribed.body.weeklyBrief.available, true);
+    assert.ok(
+      await AuditLog.exists({ action: 'user.weekly_brief_subscribed' }),
+    );
+
+    const token = await createUnsubscribeToken(user);
+    await request(app)
+      .get(`/api/subscriptions/weekly-brief/unsubscribe?token=${token}`)
+      .expect(200);
+
+    const withdrawnUser = await User.findById(user._id).lean();
+    assert.equal(
+      withdrawnUser.emailSubscriptions.weeklyBrief.subscribed,
+      false,
+    );
+    assert.ok(withdrawnUser.emailSubscriptions.weeklyBrief.unsubscribedAt);
+    assert.ok(
+      await AuditLog.exists({ action: 'user.weekly_brief_unsubscribed' }),
+    );
+  });
 });
 
 describe('public search', () => {
@@ -395,9 +439,7 @@ describe('public search', () => {
       .expect(200);
     assert.equal(historySearch.body.results[0].sourceId, '/history');
 
-    const homeSearch = await request(app)
-      .get('/api/search?q=home')
-      .expect(200);
+    const homeSearch = await request(app).get('/api/search?q=home').expect(200);
     assert.equal(
       homeSearch.body.results.some((result) => result.sourceId === '/index'),
       false,
@@ -406,10 +448,7 @@ describe('public search', () => {
     const retirementPageSearch = await request(app)
       .get('/api/search?q=retirement')
       .expect(200);
-    assert.equal(
-      retirementPageSearch.body.results[0].sourceId,
-      '/retirements',
-    );
+    assert.equal(retirementPageSearch.body.results[0].sourceId, '/retirements');
 
     const lastPostPageSearch = await request(app)
       .get('/api/search?q=last%20post')
@@ -1042,7 +1081,8 @@ describe('Last Post lifecycle', () => {
         surname: 'Publication',
       },
       messageLanguage: 'en',
-      message: 'A Last Post notice used to verify consent and immediate publication.',
+      message:
+        'A Last Post notice used to verify consent and immediate publication.',
     };
 
     await request(app)
@@ -1962,7 +2002,8 @@ describe('media lifecycle', () => {
           surname: 'Cleanup',
         },
         messageLanguage: 'en',
-        message: 'A Last Post notice with an image that should be deleted with the notice.',
+        message:
+          'A Last Post notice with an image that should be deleted with the notice.',
         imageUrl: lastPostAsset.url,
         publicationPermissionConfirmed: true,
       })
@@ -1998,13 +2039,19 @@ describe('media lifecycle', () => {
         await RetirementMessage.countDocuments({ _id: retirementMessage._id }),
         0,
       );
-      assert.equal(await LastPostMessage.countDocuments({ _id: lastPost._id }), 0);
+      assert.equal(
+        await LastPostMessage.countDocuments({ _id: lastPost._id }),
+        0,
+      );
       assert.equal(await MediaAsset.countDocuments({ _id: eventAsset._id }), 0);
       assert.equal(
         await MediaAsset.countDocuments({ _id: retirementAsset._id }),
         0,
       );
-      assert.equal(await MediaAsset.countDocuments({ _id: lastPostAsset._id }), 0);
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: lastPostAsset._id }),
+        0,
+      );
       assert.equal(
         sentCommands.filter(
           (command) => command.constructor.name === 'DeleteObjectCommand',
@@ -2082,7 +2129,10 @@ describe('media lifecycle', () => {
         .set('Authorization', bearer(administratorSession.body.token))
         .expect(200);
 
-      assert.equal(await MediaAsset.countDocuments({ _id: sharedAsset._id }), 1);
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: sharedAsset._id }),
+        1,
+      );
       assert.equal(sentCommands.length, 0);
 
       await request(app)
@@ -2090,7 +2140,10 @@ describe('media lifecycle', () => {
         .set('Authorization', bearer(administratorSession.body.token))
         .expect(200);
 
-      assert.equal(await MediaAsset.countDocuments({ _id: sharedAsset._id }), 0);
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: sharedAsset._id }),
+        0,
+      );
       assert.equal(
         sentCommands.filter(
           (command) => command.constructor.name === 'DeleteObjectCommand',

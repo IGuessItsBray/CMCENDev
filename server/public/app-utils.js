@@ -682,6 +682,7 @@
       tabs,
       tabKey = "tab",
     } = options;
+    const managesPanels = getElementList(panels).length > 0;
 
     getElementList(tabs).forEach((tab) => {
       const isActive = tab.dataset[tabKey] === active;
@@ -693,6 +694,9 @@
         tab.hasAttribute("aria-selected")
       ) {
         tab.setAttribute("aria-selected", String(isActive));
+        if (managesPanels) {
+          tab.tabIndex = isActive ? 0 : -1;
+        }
       }
     });
 
@@ -708,12 +712,16 @@
     const tabs = getElementList(options.tabs);
     const tabKey = options.tabKey || "tab";
 
-    function activate(active) {
+    function activate(active, tab, event, notify = false) {
       activateTabs({
         ...options,
         active,
         tabs,
       });
+
+      if (notify && typeof options.onActivate === "function") {
+        options.onActivate(active, tab, event);
+      }
     }
 
     tabs.forEach((tab) => {
@@ -724,16 +732,40 @@
           event.preventDefault();
         }
 
-        activate(active);
+        activate(active, tab, event, true);
+      });
 
-        if (typeof options.onActivate === "function") {
-          options.onActivate(active, tab, event);
+      tab.addEventListener("keydown", (event) => {
+        const currentIndex = tabs.indexOf(tab);
+        let nextIndex = currentIndex;
+
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+          nextIndex = (currentIndex + 1) % tabs.length;
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+          nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        } else if (event.key === "Home") {
+          nextIndex = 0;
+        } else if (event.key === "End") {
+          nextIndex = tabs.length - 1;
+        } else {
+          return;
         }
+
+        event.preventDefault();
+        const nextTab = tabs[nextIndex];
+        nextTab.focus();
+        activate(nextTab.dataset[tabKey], nextTab, event, true);
       });
     });
 
-    if (options.active) {
-      activate(options.active);
+    const initiallyActive =
+      options.active ||
+      tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.dataset[
+        tabKey
+      ];
+
+    if (initiallyActive) {
+      activate(initiallyActive);
     }
 
     return { activate };
@@ -1091,6 +1123,12 @@
         event.key === "Enter" &&
         ["prompt", "form"].includes(modalActiveRequest.type)
       ) {
+        if (
+          modalActiveRequest.type === "form" &&
+          document.activeElement?.tagName === "TEXTAREA"
+        ) {
+          return;
+        }
         event.preventDefault();
         if (modalActiveRequest.type === "form") {
           const fields = Array.from(
@@ -1241,7 +1279,11 @@
             label.textContent = field.label || field.name || "Field";
 
             const control = document.createElement(
-              field.type === "select" ? "select" : "input",
+              field.type === "select"
+                ? "select"
+                : field.type === "textarea"
+                  ? "textarea"
+                  : "input",
             );
             control.className = "cmcen-modal-input";
             control.name = field.name || "";
@@ -1258,7 +1300,9 @@
                 control.append(optionElement);
               });
             } else {
-              control.type = field.type || "text";
+              if (field.type !== "textarea") {
+                control.type = field.type || "text";
+              }
               control.value = String(field.defaultValue || "");
               control.placeholder = field.placeholder || "";
               if (field.maxLength) control.maxLength = field.maxLength;

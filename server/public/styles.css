@@ -155,6 +155,42 @@ main > * {
   display: none !important;
 }
 
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 2000;
+  padding: 10px 14px;
+  border: 2px solid var(--white);
+  border-radius: 2px;
+  background: var(--navy-900);
+  color: var(--white);
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(-160%);
+  transition: transform 150ms ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 3px solid var(--gold-200);
+  outline-offset: 2px;
+}
+
+/* A fallback for controls without a component-specific focus treatment. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--white);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--navy-900);
+}
+
+@media (forced-colors: active) {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid ButtonText;
+    box-shadow: none;
+  }
+}
+
 img,
 svg {
   max-width: 100%;
@@ -1272,6 +1308,10 @@ html[data-theme='dark'] .beta-notice-message a {
 
 .dropdown:hover .dropdown-menu,
 .dropdown:focus-within .dropdown-menu {
+  display: block;
+}
+
+.dropdown.is-dropdown-open .dropdown-menu {
   display: block;
 }
 
@@ -13420,23 +13460,19 @@ a.my-event-card-row:focus-visible {
 .retirement-detail-photo {
   margin: 0 auto 28px;
   width: min(100%, 720px);
-  aspect-ratio: 4 / 3;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid var(--branch-grey-200);
-  border-radius: 2px;
-  background: var(--branch-grey-100);
-  box-shadow: 0 8px 20px rgba(15, 18, 31, 0.12);
   text-align: center;
+}
+
+.retirement-detail-photo > div {
+  display: block;
+  width: 100%;
 }
 
 .retirement-detail-photo img {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
   margin: 0 auto;
-  object-fit: cover;
 }
 
 .retirement-detail-photo img.retirement-detail-photo-logo {
@@ -18751,6 +18787,17 @@ html[data-theme='dark'] .theme-toggle__icon:last-child {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.site-timer-text a {
+  color: inherit;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.15em;
+}
+
+.site-timer.is-marquee:hover .site-timer-text,
+.site-timer.is-marquee:focus-within .site-timer-text {
+  animation-play-state: paused;
 }
 
 .site-timer:not(.is-marquee) .site-timer-text {

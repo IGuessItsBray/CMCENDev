@@ -35,6 +35,7 @@ const mfaError = document.getElementById("mfaError");
 const mfaCancel = document.getElementById("mfaCancel");
 
 let pendingMfa = null;
+let mfaRestoreFocus = null;
 let emailVerificationToken = "";
 let guestVerificationToken = "";
 const resetToken =
@@ -213,6 +214,8 @@ function ensureWebAuthnAvailable() {
 }
 
 function openMfaDialog(methods, tempToken) {
+  mfaRestoreFocus =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
   mfaOptions.replaceChildren();
   mfaTotpForm.hidden = true;
   mfaTotpCode.value = "";
@@ -252,6 +255,16 @@ function closeMfaDialog() {
   mfaTotpForm.hidden = true;
   mfaTotpCode.value = "";
   pendingMfa = null;
+  mfaRestoreFocus?.focus();
+  mfaRestoreFocus = null;
+}
+
+function getMfaFocusableElements() {
+  return Array.from(
+    mfaOverlay.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), [href], select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((element) => !element.hidden && element.getClientRects().length > 0);
 }
 
 async function passkeyMfaLogin(tempToken) {
@@ -365,6 +378,33 @@ mfaCancel.addEventListener("click", () => {
   }
 
   closeMfaDialog();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (mfaOverlay.hidden || !pendingMfa) return;
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    pendingMfa.reject(new Error("Sign-in cancelled"));
+    closeMfaDialog();
+    return;
+  }
+
+  if (event.key !== "Tab") return;
+
+  const focusableElements = getMfaFocusableElements();
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+
+  if (!firstElement || !lastElement) return;
+
+  if (event.shiftKey && document.activeElement === firstElement) {
+    event.preventDefault();
+    lastElement.focus();
+  } else if (!event.shiftKey && document.activeElement === lastElement) {
+    event.preventDefault();
+    firstElement.focus();
+  }
 });
 
 forgotPasswordLink.addEventListener("click", showForgotPasswordForm);

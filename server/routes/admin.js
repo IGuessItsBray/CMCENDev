@@ -53,6 +53,7 @@ const MAX_MEDIA_LIST_OBJECTS = 5000;
 const DEFAULT_USER_PAGE_SIZE = 50;
 const MAX_USER_PAGE_SIZE = 100;
 const INVITATION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_INVITATION_MESSAGE_LENGTH = 2000;
 const USER_EXPORT_FORMATS = Object.freeze(['csv', 'pdf']);
 const USER_EXPORT_FILTER_OPTIONS = Object.freeze({
   roles: USER_ROLES,
@@ -925,19 +926,29 @@ function getBaseUrl(req) {
     : `${req.protocol}://${req.get('host')}`;
 }
 
-async function sendInvitationEmail(req, user, token) {
-  const activationUrl = `${getBaseUrl(req)}/register?inviteToken=${encodeURIComponent(token)}`;
-  const accountName = String(user.accountName || user.firstName || 'there')
+function escapeHtml(value) {
+  return String(value || '')
     .replace(/&/gu, '&amp;')
     .replace(/</gu, '&lt;')
-    .replace(/>/gu, '&gt;');
+    .replace(/>/gu, '&gt;')
+    .replace(/"/gu, '&quot;')
+    .replace(/'/gu, '&#39;');
+}
+
+async function sendInvitationEmail(req, user, token) {
+  const activationUrl = `${getBaseUrl(req)}/register?inviteToken=${encodeURIComponent(token)}`;
+  const accountName = escapeHtml(user.accountName || user.firstName || 'there');
+  const invitationMessage = String(user.invitation?.message || '').trim();
+  const emailMessage = invitationMessage
+    ? escapeHtml(invitationMessage).replace(/\r?\n/gu, '<br>')
+    : 'An admin has created a CMCEN account for you.';
 
   return sendMail({
     to: user.email,
     subject: 'Activate your CMCEN / RCMCE account',
     html: `
       <p>Hello ${accountName},</p>
-      <p>An administrator has created a CMCEN / RCMCE account for you.</p>
+      <p>${emailMessage}</p>
       <p><a href="${activationUrl}">Activate your account</a></p>
       <p>This link expires in 7 days. You will set your own password and complete your profile.</p>
     `,
@@ -2044,6 +2055,7 @@ router.post(
         .trim()
         .toLowerCase();
       const role = String(req.body?.role || 'subscriber').trim();
+      const invitationMessage = String(req.body?.message || '').trim();
 
       if (!firstName || !lastName || !email) {
         return res
@@ -2053,6 +2065,12 @@ router.post(
 
       if (!/^\S+@\S+\.\S+$/u.test(email)) {
         return res.status(400).json({ error: 'Enter a valid email address' });
+      }
+
+      if (invitationMessage.length > MAX_INVITATION_MESSAGE_LENGTH) {
+        return res.status(400).json({
+          error: `Invitation message must be ${MAX_INVITATION_MESSAGE_LENGTH} characters or fewer`,
+        });
       }
 
       if (!USER_ROLES.includes(role) || ['ghost', 'developer'].includes(role)) {
@@ -2094,6 +2112,7 @@ router.post(
         invitation: {
           tokenHash: hashInvitationToken(token),
           expiresAt: new Date(now.getTime() + INVITATION_TOKEN_TTL_MS),
+          message: invitationMessage,
           invitedBy: req.user._id,
           sentAt: null,
         },

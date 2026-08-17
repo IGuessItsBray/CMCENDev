@@ -5,7 +5,11 @@
 **Organization:** [Legal entity operating CMCEN] ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
 **Privacy Contact:** [Privacy Contact name or title]<br>
-**Email:** [contact email address]<br>
+**Legal Contact:** [Legal Contact name or title]<br>
+**Privacy Email:** privacy@cmcen.ca<br>
+**Legal Email:** legal@cmcen.ca<br>
+**General Email:** contact@cmcen.ca<br>
+**Security Email:** security@cmcen.ca<br>
 **Mailing Address:** [mailing address]
 
 > **Publication note:** This is a working draft, prepared from the current website’s features and data flows. It must be reviewed and completed by the policy owner and qualified Canadian privacy counsel before publication. In particular, confirm the policy owner, privacy contact, service providers, retention periods, and whether any provincial public-sector privacy law applies.
@@ -173,8 +177,10 @@ Questions, access requests, correction requests, consent withdrawals, complaints
 **[Legal entity operating CMCEN]**<br>
 [Privacy Contact name or title]<br>
 [mailing address]<br>
-[contact email address]<br>
+privacy@cmcen.ca<br>
 [telephone number, if offered]
+
+For suspected account compromise or another website-security concern, contact security@cmcen.ca. For general website questions, contact contact@cmcen.ca. For legal notices, contact legal@cmcen.ca.
 
 ---
 

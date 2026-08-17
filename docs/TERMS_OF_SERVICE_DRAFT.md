@@ -5,7 +5,11 @@
 **Organization:** [Legal entity operating CMCEN] ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
 **Privacy Contact:** [Privacy Contact name or title]<br>
-**Email:** [contact email address]<br>
+**Legal Contact:** [Legal Contact name or title]<br>
+**Privacy Email:** privacy@cmcen.ca<br>
+**Legal Email:** legal@cmcen.ca<br>
+**General Email:** contact@cmcen.ca<br>
+**Security Email:** security@cmcen.ca<br>
 **Mailing Address:** [mailing address]
 
 > **Publication note:** This is a working draft. It must be completed with the correct legal entity, contact details, governing-law decision, and any organization-specific rules, then reviewed by qualified legal counsel before publication.
@@ -44,7 +48,7 @@ You must not:
 
 Certain features require an account. You are responsible for safeguarding your login credentials, authentication methods, and devices, and for all activity occurring through your account except to the extent caused by CMCEN’s failure to use reasonable safeguards.
 
-You must notify us promptly at [contact email address] if you suspect unauthorized access to your account. We may require additional security verification and may suspend or restrict access when we reasonably believe it is necessary to protect users, the website, or the public.
+You must notify us promptly at security@cmcen.ca if you suspect unauthorized access to your account. We may require additional security verification and may suspend or restrict access when we reasonably believe it is necessary to protect users, the website, or the public.
 
 Accounts are personal to the account holder unless CMCEN expressly authorizes otherwise. Do not share, sell, transfer, or lend access to your account.
 
@@ -88,7 +92,7 @@ CMCEN grants you a limited, revocable, non-exclusive, non-transferable licence t
 
 Third-party names, logos, content, and links belong to their respective owners. Nothing in these Terms grants you rights in them.
 
-If you believe content on the website infringes your copyright, privacy, or other rights, contact [legal/privacy contact] with your name, contact information, identification of the material, location/URL, the basis of your request, and a statement that your report is accurate and made in good faith.
+If you believe content on the website infringes your copyright or other legal rights, contact legal@cmcen.ca with your name, contact information, identification of the material, location/URL, the basis of your request, and a statement that your report is accurate and made in good faith. For personal-information concerns, use privacy@cmcen.ca.
 
 ## 7. Privacy
 
@@ -122,7 +126,7 @@ To the fullest extent permitted by law, you will indemnify and hold harmless CMC
 
 CMCEN may suspend, restrict, or terminate your access to all or part of the Services, remove or restrict User Content, or take other reasonable action if we believe you have violated these Terms, created a security or privacy risk, submitted operationally sensitive information, or used the Services in a way that may cause harm.
 
-You may stop using the Services at any time. When you delete your own account, CMCEN deletes the account and anonymizes attribution for your submitted event submissions, Last Post notices, retirement messages, and comments; the content may remain without your account attribution. When authorized staff delete an account, they choose whether to delete its associated submitted content or retain it with attribution anonymized. Necessary audit and security records may remain. To request correction or removal of public content, contact [contact email address]. Termination does not affect provisions that by their nature should survive, including intellectual-property, disclaimer, limitation-of-liability, indemnity, and dispute provisions.
+You may stop using the Services at any time. When you delete your own account, CMCEN deletes the account and anonymizes attribution for your submitted event submissions, Last Post notices, retirement messages, and comments; the content may remain without your account attribution. When authorized staff delete an account, they choose whether to delete its associated submitted content or retain it with attribution anonymized. Necessary audit and security records may remain. To request correction or removal of public content, contact privacy@cmcen.ca. Termination does not affect provisions that by their nature should survive, including intellectual-property, disclaimer, limitation-of-liability, indemnity, and dispute provisions.
 
 ## 13. Changes to the Services or Terms
 
@@ -147,10 +151,12 @@ These Terms, together with the Privacy Policy and any specific terms presented f
 Questions or notices about these Terms should be directed to:
 
 **[Legal entity operating CMCEN]**<br>
-[Privacy Contact name or title]<br>
+[Legal Contact name or title]<br>
 [mailing address]<br>
-[contact email address]<br>
+legal@cmcen.ca<br>
 [telephone number, if offered]
+
+For privacy matters, contact privacy@cmcen.ca; for website-security concerns, contact security@cmcen.ca; and for general website questions, contact contact@cmcen.ca.
 
 ---
 

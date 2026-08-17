@@ -1,7 +1,10 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 
-const { getSmtpClientName } = require('../services/mailer');
+const {
+  getSmtpClientName,
+  getSmtpSecurityOptions,
+} = require('../services/mailer');
 
 test('uses the configured SMTP HELO name when present', () => {
   assert.equal(
@@ -23,4 +26,15 @@ test('uses the sender domain as the SMTP HELO fallback', () => {
     'cmcen.example.ca',
   );
   assert.equal(getSmtpClientName({ MAIL_FROM: 'invalid' }), undefined);
+});
+
+test('uses explicit SMTP security modes', () => {
+  assert.deepEqual(
+    getSmtpSecurityOptions({ SMTP_PORT: '587', SMTP_SECURE: 'starttls' }),
+    { secure: false, requireTLS: true },
+  );
+  assert.deepEqual(
+    getSmtpSecurityOptions({ SMTP_PORT: '465', SMTP_SECURE: 'tls' }),
+    { secure: true, requireTLS: false },
+  );
 });

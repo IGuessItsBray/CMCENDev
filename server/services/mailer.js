@@ -16,13 +16,29 @@ function getSmtpClientName(environment = process.env) {
   return senderDomain || undefined;
 }
 
+function getSmtpSecurityOptions(environment = process.env) {
+  const smtpPort = Number(environment.SMTP_PORT);
+  const configuredSecurity = String(environment.SMTP_SECURE || '')
+    .trim()
+    .toLowerCase();
+  const secure =
+    smtpPort === 465 || ['true', 'tls', 'ssl', 'implicit'].includes(configuredSecurity);
+
+  return {
+    secure,
+    requireTLS:
+      !secure &&
+      (configuredSecurity === 'starttls' || environment.SMTP_REQUIRE_TLS !== 'false'),
+  };
+}
+
 // Reads SMTP_* once at startup. No credentials; the relay authenticates by server IP.
 const smtpPort = Number(process.env.SMTP_PORT);
+const smtpSecurity = getSmtpSecurityOptions();
 const transportOptions = {
   host: process.env.SMTP_HOST,
   port: smtpPort,
-  secure: smtpPort === 465,
-  requireTLS: smtpPort !== 465 && process.env.SMTP_REQUIRE_TLS !== 'false',
+  ...smtpSecurity,
 };
 const smtpClientName = getSmtpClientName();
 
@@ -48,4 +64,4 @@ function sendMail({ to, cc, subject, text, html }) {
   });
 }
 
-module.exports = { sendMail, getSmtpClientName };
+module.exports = { sendMail, getSmtpClientName, getSmtpSecurityOptions };

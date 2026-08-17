@@ -191,7 +191,6 @@ const navLinks = {
       { route: "/certificates.html", i18n: "menu_news_option_6" },
       { route: "/promotions.html", i18n: "menu_news_option_7" },
       { route: "/history.html", i18n: "menu_news_option_8" },
-      { route: "/gallery.html", i18n: "menu_news_option_9" },
     ],
   },
   benefits: {

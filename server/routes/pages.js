@@ -99,7 +99,6 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
   'history.html': { en: 'History', fr: 'Histoire' },
   'honours_awards.html': { en: 'Honours and Awards', fr: 'Distinctions et prix' },
   'leadership.html': { en: 'Leadership', fr: 'Leadership' },
-  'gallery.html': { en: 'Gallery', fr: 'Galerie' },
   'governance.html': { en: 'Governance', fr: 'Gouvernance' },
   'news_stories.html': { en: 'News Stories', fr: 'Nouvelles' },
   'promotions.html': { en: 'Promotions', fr: 'Promotions' },

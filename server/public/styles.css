@@ -13241,6 +13241,13 @@ a.my-event-card-row:focus-visible {
   text-align: center;
 }
 
+.retirement-detail-photo > div {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+}
+
 .retirement-detail-photo img {
   display: block;
   width: 100%;

@@ -103,6 +103,56 @@
     return JSON.stringify(first) === JSON.stringify(second);
   }
 
+  function appendLinkedText(element, value) {
+    const text = String(value || "");
+    const urlPattern = /https?:\/\/[^\s<>'"]+/giu;
+    let lastIndex = 0;
+
+    for (const match of text.matchAll(urlPattern)) {
+      const matchedUrl = match[0];
+      const trailingPunctuation = matchedUrl.match(/[.,!?;:]+$/u)?.[0] || "";
+      const url = matchedUrl.slice(
+        0,
+        matchedUrl.length - trailingPunctuation.length,
+      );
+      const index = match.index || 0;
+
+      if (index > lastIndex) {
+        element.append(document.createTextNode(text.slice(lastIndex, index)));
+      }
+
+      try {
+        const destination = new URL(url);
+
+        if (
+          destination.protocol !== "http:" &&
+          destination.protocol !== "https:"
+        ) {
+          throw new Error("Unsupported banner link protocol");
+        }
+
+        const link = document.createElement("a");
+        link.href = destination.href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = url;
+        element.append(link);
+      } catch (error) {
+        element.append(document.createTextNode(url));
+      }
+
+      if (trailingPunctuation) {
+        element.append(document.createTextNode(trailingPunctuation));
+      }
+
+      lastIndex = index + matchedUrl.length;
+    }
+
+    if (lastIndex < text.length) {
+      element.append(document.createTextNode(text.slice(lastIndex)));
+    }
+  }
+
   function createTimerElement(timer) {
     const banner = document.createElement("aside");
     banner.className = "site-timer";
@@ -114,7 +164,7 @@
 
     const text = document.createElement("span");
     text.className = "site-timer-text";
-    text.textContent = localized(timer.text) || timer.title || "Countdown";
+    appendLinkedText(text, localized(timer.text) || timer.title || "Countdown");
     track.append(text);
 
     if (timer.countdownAt) {

@@ -2134,6 +2134,7 @@ components:
         title: { type: string, maxLength: 120 }
         text:
           $ref: "#/components/schemas/LocalizedText"
+          description: Localized banner text. HTTP and HTTPS URLs in the text render as clickable links.
         color:
           type: string
           pattern: "^#[0-9a-fA-F]{6}$"

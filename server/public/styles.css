@@ -18599,6 +18599,17 @@ html[data-theme='dark'] .theme-toggle__icon:last-child {
   text-overflow: ellipsis;
 }
 
+.site-timer-text a {
+  color: inherit;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.15em;
+}
+
+.site-timer.is-marquee:hover .site-timer-text,
+.site-timer.is-marquee:focus-within .site-timer-text {
+  animation-play-state: paused;
+}
+
 .site-timer:not(.is-marquee) .site-timer-text {
   padding-right: 0;
 }

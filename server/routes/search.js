@@ -60,7 +60,6 @@ const STATIC_PAGES = [
   },
   { path: '/certificates', file: 'certificates.html', type: 'page', title: 'Certificates' },
   { path: '/doctrine_hub', file: 'doctrine_hub.html', type: 'page', title: 'Doctrine Hub' },
-  { path: '/gallery', file: 'gallery.html', type: 'page', title: 'Gallery' },
   { path: '/governance', file: 'governance.html', type: 'page', title: 'Governance' },
   {
     path: '/bursaries',

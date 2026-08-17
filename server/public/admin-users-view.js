@@ -135,6 +135,18 @@
       );
     }
 
+    function canResendInvitation(user) {
+      const state = getState();
+
+      return Boolean(
+        user?._id &&
+          user.accountType === "invited" &&
+          state.currentUserPermissions?.canProvisionUsers === true &&
+          (user.role !== "internal_beta" ||
+            state.currentUserRole === "developer"),
+      );
+    }
+
     function getStandardRoles() {
       return getState().roles.filter((role) => role !== "developer");
     }
@@ -575,6 +587,60 @@
       }
 
       panel.append(heading, details, reset);
+
+      return panel;
+    }
+
+    function createInvitationPanel(user) {
+      if (user?.accountType !== "invited") {
+        return null;
+      }
+
+      const invitation = user.invitation || {};
+      const delivery = invitation.delivery || {};
+      const panel = document.createElement("section");
+      panel.className = "admin-user-mfa-panel";
+
+      const heading = document.createElement("div");
+      heading.className = "admin-panel-heading";
+      const title = document.createElement("h4");
+      title.textContent = "Invitation delivery";
+      const status = document.createElement("span");
+      const statusValue = delivery.status || "pending";
+      status.className = `admin-user-mfa-status ${
+        statusValue === "sent" ? "is-enabled" : "is-empty"
+      }`;
+      status.textContent = statusValue;
+      heading.append(title, status);
+
+      const details = document.createElement("p");
+      details.className = "admin-post-details";
+      details.textContent = [
+        invitation.sentAt ? `Sent ${formatDate(invitation.sentAt)}` : "Not sent",
+        invitation.expiresAt
+          ? `Expires ${formatDate(invitation.expiresAt)}`
+          : "No expiration set",
+        delivery.attemptedAt
+          ? `Last attempted ${formatDate(delivery.attemptedAt)}`
+          : "No delivery attempt yet",
+      ].join(" · ");
+
+      panel.append(heading, details);
+
+      if (delivery.error) {
+        const error = document.createElement("p");
+        error.className = "admin-editor-help";
+        error.textContent = `Last mail error: ${delivery.error}`;
+        panel.append(error);
+      }
+
+      const resend = document.createElement("button");
+      resend.type = "button";
+      resend.className = "admin-work-zone-button is-secondary";
+      resend.textContent = "Resend invitation";
+      resend.disabled = !canResendInvitation(user);
+      resend.addEventListener("click", () => actions.resendInvitation(user));
+      panel.append(resend);
 
       return panel;
     }
@@ -1115,7 +1181,12 @@
         });
       }
 
-      panel.append(header, form, createMfaPanel(user));
+      panel.append(header, form);
+      const invitationPanel = createInvitationPanel(user);
+      if (invitationPanel) {
+        panel.append(invitationPanel);
+      }
+      panel.append(createMfaPanel(user));
       const dangerZone = createDangerZone(user);
       if (dangerZone) panel.append(dangerZone);
       panel.append(postsPanel);

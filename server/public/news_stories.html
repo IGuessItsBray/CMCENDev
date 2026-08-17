@@ -1,1 +1,132 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>News Stories | CMCEN / RCMCE</title><link rel="stylesheet" href="/styles.css"></head><body><header id="header"></header><main class="about-family-main"><article class="about-family-shell"><header class="about-family-hero"><div class="about-family-hero-copy"><p class="about-family-kicker">News &amp; events</p><h1>News Stories</h1><p class="about-family-intro">Updates, stories, and announcements from across the C&amp;E Family.</p></div><img src="/images/logo.png" alt="" class="about-family-emblem"></header><div class="about-family-body"><section class="about-family-section"><h2>Stay connected</h2><p>Current news is being brought into the new CMCEN publishing system. In the meantime, use the <a href="/calendar">Events Calendar</a>, <a href="/last-post">Last Post</a>, and <a href="/retirements">Retirements</a> sections for current community updates.</p></section></div></article></main><footer id="footer"></footer><script src="/app-utils.js"></script><script src="/timers.js"></script><script src="/index.js"></script><script src="/translations.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>News Stories | CMCEN / RCMCE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main class="news-main">
+      <section class="news-shell">
+        <header class="news-heading">
+          <p class="news-eyebrow">News &amp; events</p>
+          <h1>News Stories</h1>
+          <p>
+            Updates, stories, and announcements from across the C&amp;E Family.
+          </p>
+          <button
+            class="news-primary-button news-create-button"
+            type="button"
+            id="newsCreateButton"
+            hidden
+          >
+            Create news story
+          </button>
+        </header>
+
+        <p
+          class="news-message"
+          id="newsPageMessage"
+          role="status"
+          aria-live="polite"
+        >
+          Loading news stories...
+        </p>
+        <section
+          class="news-grid"
+          id="newsStoriesList"
+          aria-label="Published news stories"
+        ></section>
+
+        <section
+          class="news-editor"
+          id="newsEditor"
+          hidden
+          aria-labelledby="newsEditorTitle"
+        >
+          <div class="news-editor-heading">
+            <div>
+              <p class="news-eyebrow">Publishing</p>
+              <h2 id="newsEditorTitle">Create a news story</h2>
+            </div>
+            <button
+              class="news-secondary-button"
+              type="button"
+              id="newsEditorCancel"
+              hidden
+            >
+              Cancel edit
+            </button>
+          </div>
+          <p class="news-editor-note">
+            News is published immediately when you save it. Both English and
+            French are required.
+          </p>
+          <form id="newsStoryForm" class="news-form">
+            <input type="hidden" id="newsArticleId" />
+            <div class="news-form-grid">
+              <label
+                >English title<input id="newsTitleEn" maxlength="240" required
+              /></label>
+              <label
+                >Titre français<input id="newsTitleFr" maxlength="240" required
+              /></label>
+              <label class="news-form-full"
+                >Photo (optional)<input
+                  id="newsImage"
+                  type="file"
+                  accept="image/*"
+              /></label>
+              <div
+                class="image-crop news-image-crop news-form-full"
+                id="newsImageCrop"
+              ></div>
+              <label
+                >English story<textarea
+                  id="newsContentEn"
+                  maxlength="20000"
+                  rows="10"
+                  required
+                ></textarea>
+              </label>
+              <label
+                >Article français<textarea
+                  id="newsContentFr"
+                  maxlength="20000"
+                  rows="10"
+                  required
+                ></textarea>
+              </label>
+            </div>
+            <label class="news-draft-choice"
+              ><input id="newsDraft" type="checkbox" /> Save as a draft instead
+              of publishing</label
+            >
+            <div class="news-form-actions">
+              <button
+                class="news-primary-button"
+                id="newsSaveButton"
+                type="submit"
+              >
+                Publish story
+              </button>
+            </div>
+          </form>
+          <section
+            class="news-manage-list"
+            id="newsManageList"
+            aria-label="Your news management list"
+          ></section>
+        </section>
+      </section>
+    </main>
+    <footer id="footer"></footer>
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/news-stories.js"></script>
+  </body>
+</html>

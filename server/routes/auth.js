@@ -1275,12 +1275,10 @@ router.put(
       subscribed &&
       (!getCaslSenderInfo().ready || req.body?.expressConsent !== true)
     ) {
-      return res
-        .status(400)
-        .json({
-          error:
-            'You must provide express consent after reviewing the sender information',
-        });
+      return res.status(400).json({
+        error:
+          'You must provide express consent after reviewing the sender information',
+      });
     }
     try {
       const user = await User.findById(req.user._id)

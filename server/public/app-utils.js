@@ -682,6 +682,7 @@
       tabs,
       tabKey = "tab",
     } = options;
+    const managesPanels = getElementList(panels).length > 0;
 
     getElementList(tabs).forEach((tab) => {
       const isActive = tab.dataset[tabKey] === active;
@@ -693,6 +694,9 @@
         tab.hasAttribute("aria-selected")
       ) {
         tab.setAttribute("aria-selected", String(isActive));
+        if (managesPanels) {
+          tab.tabIndex = isActive ? 0 : -1;
+        }
       }
     });
 
@@ -708,12 +712,16 @@
     const tabs = getElementList(options.tabs);
     const tabKey = options.tabKey || "tab";
 
-    function activate(active) {
+    function activate(active, tab, event, notify = false) {
       activateTabs({
         ...options,
         active,
         tabs,
       });
+
+      if (notify && typeof options.onActivate === "function") {
+        options.onActivate(active, tab, event);
+      }
     }
 
     tabs.forEach((tab) => {
@@ -724,16 +732,40 @@
           event.preventDefault();
         }
 
-        activate(active);
+        activate(active, tab, event, true);
+      });
 
-        if (typeof options.onActivate === "function") {
-          options.onActivate(active, tab, event);
+      tab.addEventListener("keydown", (event) => {
+        const currentIndex = tabs.indexOf(tab);
+        let nextIndex = currentIndex;
+
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+          nextIndex = (currentIndex + 1) % tabs.length;
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+          nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        } else if (event.key === "Home") {
+          nextIndex = 0;
+        } else if (event.key === "End") {
+          nextIndex = tabs.length - 1;
+        } else {
+          return;
         }
+
+        event.preventDefault();
+        const nextTab = tabs[nextIndex];
+        nextTab.focus();
+        activate(nextTab.dataset[tabKey], nextTab, event, true);
       });
     });
 
-    if (options.active) {
-      activate(options.active);
+    const initiallyActive =
+      options.active ||
+      tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.dataset[
+        tabKey
+      ];
+
+    if (initiallyActive) {
+      activate(initiallyActive);
     }
 
     return { activate };

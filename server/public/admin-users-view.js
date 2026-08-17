@@ -599,7 +599,7 @@
       const invitation = user.invitation || {};
       const delivery = invitation.delivery || {};
       const panel = document.createElement("section");
-      panel.className = "admin-user-mfa-panel";
+      panel.className = "admin-invitation-panel";
 
       const heading = document.createElement("div");
       heading.className = "admin-panel-heading";
@@ -607,40 +607,64 @@
       title.textContent = "Invitation delivery";
       const status = document.createElement("span");
       const statusValue = delivery.status || "pending";
-      status.className = `admin-user-mfa-status ${
-        statusValue === "sent" ? "is-enabled" : "is-empty"
-      }`;
-      status.textContent = statusValue;
+      status.className = `admin-invitation-status is-${statusValue}`;
+      status.textContent = statusValue.charAt(0).toUpperCase() + statusValue.slice(1);
       heading.append(title, status);
 
-      const details = document.createElement("p");
-      details.className = "admin-post-details";
-      details.textContent = [
-        invitation.sentAt ? `Sent ${formatDate(invitation.sentAt)}` : "Not sent",
-        invitation.expiresAt
-          ? `Expires ${formatDate(invitation.expiresAt)}`
-          : "No expiration set",
-        delivery.attemptedAt
-          ? `Last attempted ${formatDate(delivery.attemptedAt)}`
-          : "No delivery attempt yet",
-      ].join(" · ");
+      const summary = document.createElement("p");
+      summary.className = "admin-invitation-summary";
+      summary.textContent =
+        statusValue === "failed"
+          ? "The mail service did not accept this invitation. Review the diagnostic, then resend it."
+          : statusValue === "sent"
+            ? "The activation link was handed to the mail service."
+            : "This invitation has not been sent yet.";
 
-      panel.append(heading, details);
+      const details = document.createElement("div");
+      details.className = "admin-invitation-details";
+      [
+        ["Delivery", invitation.sentAt ? `Sent ${formatDate(invitation.sentAt)}` : "Not sent"],
+        [
+          "Expires",
+          invitation.expiresAt ? formatDate(invitation.expiresAt) : "No expiration set",
+        ],
+        [
+          "Last attempt",
+          delivery.attemptedAt ? formatDate(delivery.attemptedAt) : "No delivery attempt yet",
+        ],
+      ].forEach(([label, value]) => {
+        const item = document.createElement("div");
+        const itemLabel = document.createElement("span");
+        itemLabel.textContent = label;
+        const itemValue = document.createElement("strong");
+        itemValue.textContent = value;
+        item.append(itemLabel, itemValue);
+        details.append(item);
+      });
+
+      panel.append(heading, summary, details);
 
       if (delivery.error) {
-        const error = document.createElement("p");
-        error.className = "admin-editor-help";
-        error.textContent = `Last mail error: ${delivery.error}`;
-        panel.append(error);
+        const diagnostic = document.createElement("details");
+        diagnostic.className = "admin-invitation-diagnostic";
+        const diagnosticTitle = document.createElement("summary");
+        diagnosticTitle.textContent = "View mail-service diagnostic";
+        const error = document.createElement("code");
+        error.textContent = delivery.error;
+        diagnostic.append(diagnosticTitle, error);
+        panel.append(diagnostic);
       }
 
+      const actionsRow = document.createElement("div");
+      actionsRow.className = "admin-invitation-actions";
       const resend = document.createElement("button");
       resend.type = "button";
       resend.className = "admin-work-zone-button is-secondary";
       resend.textContent = "Resend invitation";
       resend.disabled = !canResendInvitation(user);
       resend.addEventListener("click", () => actions.resendInvitation(user));
-      panel.append(resend);
+      actionsRow.append(resend);
+      panel.append(actionsRow);
 
       return panel;
     }

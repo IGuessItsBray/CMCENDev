@@ -255,6 +255,8 @@ test('reuses the branch crest for workbook placeholders and missing images', asy
     'https://cmcen-rcmce.ca/wp-content/uploads/CMCEN-crest-snip-1.png';
   const jimmyStatueUrl =
     'https://cmcen-rcmce.ca/wp-content/uploads/2022/06/Jimmy-Statue.png';
+  const jimmyJpegUrl =
+    'https://cmcen-rcmce.ca/wp-content/uploads/jimmy.jpeg';
   const tdInsuranceUrl =
     'https://cmcen-rcmce.ca/wp-content/uploads/TD-Insurance.png';
   const realImageUrl = 'https://example.test/member-photo.jpg';
@@ -263,6 +265,7 @@ test('reuses the branch crest for workbook placeholders and missing images', asy
 
   assert.equal(isWorkbookPlaceholderUrl(crestUrl), true);
   assert.equal(isWorkbookPlaceholderUrl(jimmyStatueUrl), true);
+  assert.equal(isWorkbookPlaceholderUrl(jimmyJpegUrl), true);
   assert.equal(isWorkbookPlaceholderUrl(tdInsuranceUrl), true);
   assert.equal(isWorkbookPlaceholderUrl(BRANCH_CREST_URL), true);
   assert.equal(

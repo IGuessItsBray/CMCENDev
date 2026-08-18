@@ -123,6 +123,12 @@ function getMonthKey(event) {
   return `${year}-${String(month + 1).padStart(2, "0")}`;
 }
 
+function getDisplayedMonthKey() {
+  return `${displayedMonth.getFullYear()}-${String(
+    displayedMonth.getMonth() + 1,
+  ).padStart(2, "0")}`;
+}
+
 function getStartOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
@@ -1020,14 +1026,41 @@ function renderAgenda(language, locale) {
   heading.textContent = getCalendarTranslation("calendar_agenda_heading");
   eventListElement.appendChild(heading);
 
-  if (!publicEvents.length) {
+  // The event request includes the leading and trailing days that fill the
+  // month grid. Agenda view shows only events in the selected month.
+  const agendaEvents = publicEvents.filter(
+    (event) => getMonthKey(event) === getDisplayedMonthKey(),
+  );
+
+  if (!agendaEvents.length) {
+    const emptyMonth = document.createElement("section");
+    emptyMonth.className = "calendar-month";
+
+    const monthTitle = document.createElement("h3");
+    monthTitle.className = "calendar-month-title";
+    monthTitle.textContent = formatCalendarMonth(displayedMonth, locale);
+
+    const emptyCard = document.createElement("div");
+    emptyCard.className = "calendar-event calendar-event-empty";
+
+    const emptyContent = document.createElement("div");
+    emptyContent.className = "calendar-event-content";
+
+    const emptyTitle = document.createElement("p");
+    emptyTitle.className = "calendar-event-title";
+    emptyTitle.textContent = getCalendarTranslation("calendar_no_events_in_view");
+
+    emptyContent.append(emptyTitle);
+    emptyCard.append(emptyContent);
+    emptyMonth.append(monthTitle, emptyCard);
+    eventListElement.append(emptyMonth);
     return;
   }
 
   let currentMonthKey = null;
   let currentMonthGroup = null;
 
-  publicEvents.forEach((event) => {
+  agendaEvents.forEach((event) => {
     const monthKey = getMonthKey(event);
 
     if (monthKey !== currentMonthKey) {
@@ -1104,7 +1137,7 @@ function renderCalendar() {
     return;
   }
 
-  if (!publicEvents.length) {
+  if (!publicEvents.length && selectedView === "month") {
     showCalendarMessage("calendar_no_events_in_view");
     return;
   }

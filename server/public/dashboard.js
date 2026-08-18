@@ -107,22 +107,26 @@ function createWeeklyBriefPreference(user) {
   const description = document.createElement("p");
   description.textContent = copy.description;
 
+  preference.append(description);
+
+  const information = document.createElement("div");
+  information.className = "weekly-brief-information";
+
   const optional = document.createElement("p");
   optional.className = "weekly-brief-note";
   optional.textContent = copy.optional;
-
-  preference.append(description, optional);
+  information.append(optional);
 
   if (brief.sender) {
     const sender = document.createElement("p");
     sender.className = "weekly-brief-sender";
     sender.textContent = `${copy.sender}: ${brief.sender.name} — ${brief.sender.mailingAddress} — ${brief.sender.contact}`;
-    preference.append(sender);
+    information.append(sender);
   } else if (!brief.available) {
     const unavailable = document.createElement("p");
     unavailable.className = "weekly-brief-note";
     unavailable.textContent = copy.unavailable;
-    preference.append(unavailable);
+    information.append(unavailable);
   }
 
   const control = document.createElement("label");
@@ -140,7 +144,8 @@ function createWeeklyBriefPreference(user) {
   withdrawal.className = "weekly-brief-note";
   withdrawal.textContent = copy.withdraw;
 
-  preference.append(control, withdrawal);
+  information.append(withdrawal);
+  preference.append(information, control);
 
   const announcements = document.createElement("label");
   announcements.className = "weekly-brief-control";

@@ -409,6 +409,26 @@
     input.name = "";
     input.classList.add("cmcen-native-date-input-hidden");
     input.insertAdjacentElement("afterend", picker);
+
+    // Labels must target the custom trigger instead of the visually hidden
+    // native input. Otherwise Safari opens its unstyled built-in calendar
+    // whenever a user clicks a date label.
+    const trigger = picker.querySelector(".cmcen-date-time-trigger");
+    if (input.id && trigger) {
+      trigger.id = `${input.id}PickerTrigger`;
+      document
+        .querySelectorAll("label[for]")
+        .forEach((label) => {
+          if (label.htmlFor !== input.id) return;
+
+          label.htmlFor = trigger.id;
+          label.addEventListener("click", (event) => {
+            event.preventDefault();
+            trigger.click();
+          });
+        });
+    }
+
     enhancedDatePickers.set(input, picker);
     return picker;
   }

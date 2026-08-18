@@ -82,6 +82,8 @@ settings include:
 | `JWT_SECRET` | Yes | Signs access, refresh, and temporary authentication tokens |
 | `PORT` | No | HTTP port; defaults to `3000` |
 | `APP_BASE_URL` | Recommended | Absolute application URL used in generated links |
+| `PLAUSIBLE_DOMAIN` | No | Website domain configured in the self-hosted Plausible instance; both Plausible settings are required to enable tracking |
+| `PLAUSIBLE_API_URL` | No | Self-hosted Plausible event endpoint, normally `https://<plausible-host>/api/event` |
 | `MINIO_ENDPOINT` | Yes | Internal S3-compatible endpoint |
 | `MINIO_ACCESS_KEY` | Yes | Object-storage access key |
 | `MINIO_SECRET_KEY` | Yes | Object-storage secret key |

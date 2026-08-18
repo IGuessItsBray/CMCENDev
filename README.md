@@ -98,6 +98,77 @@ settings include:
 
 Do not commit `server/.env` or real credentials.
 
+## Self-hosted Plausible Analytics
+
+CMCEN can send browser analytics directly to a [self-hosted Plausible Community
+Edition instance](https://github.com/plausible/community-edition). Analytics are
+off by default; no Plausible script is initialized unless both
+`PLAUSIBLE_DOMAIN` and `PLAUSIBLE_API_URL` are configured. The application does
+not store Plausible credentials, nor does it proxy analytics events.
+
+### Requirements
+
+- A maintained Plausible Community Edition installation. The official Compose
+  stack includes Plausible, PostgreSQL, and ClickHouse; run it separately from
+  CMCEN.
+- Docker Engine and Docker Compose on the analytics host.
+- A CPU supporting SSE 4.2 (x86) or NEON (ARM), which ClickHouse requires, and
+  at least 2 GB RAM for the Plausible stack. Allocate persistent storage for
+  PostgreSQL, ClickHouse, and backups; analytics-event storage grows with site
+  traffic.
+- A dedicated public DNS name for the analytics service, such as
+  `analytics.example.ca`, with HTTPS. When using Plausible's built-in TLS,
+  inbound ports 80 and 443 must reach that host. If TLS is terminated by an
+  existing reverse proxy, publish the Plausible service only through that proxy.
+- Ongoing operational ownership: promptly apply Plausible security upgrades,
+  monitor capacity and availability, and test database/volume restores. Do not
+  expose the bundled PostgreSQL or ClickHouse services to the public internet.
+
+### Install Plausible Community Edition
+
+Use the current, version-pinned official Community Edition release and its
+deployment instructions. In brief, clone the release branch, create its `.env`,
+set `BASE_URL` to the analytics URL, and generate a unique secret key:
+
+```sh
+git clone -b v3.2.1 --single-branch \
+  https://github.com/plausible/community-edition.git plausible-ce
+cd plausible-ce
+printf 'BASE_URL=https://analytics.example.ca\n' > .env
+printf 'SECRET_KEY_BASE=%s\n' "$(openssl rand -base64 48)" >> .env
+```
+
+Follow the upstream guide to expose the service with HTTPS, then start it with
+`docker compose up -d`. Open `BASE_URL`, create the first Plausible user, and
+add the CMCEN public hostname as a site. The site domain must match the value
+configured in `PLAUSIBLE_DOMAIN`; enter only the hostname, without `https://`
+or a path. Check the upstream release notes before selecting a newer release or
+performing an upgrade.
+
+### Configure CMCEN
+
+On the CMCEN host, add these values to `server/.env` and restart the service or
+recreate its container:
+
+```dotenv
+# Public hostname registered as a site in Plausible (no scheme or path).
+PLAUSIBLE_DOMAIN=cmcen.example.ca
+# Public HTTPS event endpoint of the self-hosted Plausible instance.
+PLAUSIBLE_API_URL=https://analytics.example.ca/api/event
+```
+
+`PLAUSIBLE_API_URL` must be a complete `http` or `https` URL that ends in
+`/api/event`. Use the browser-accessible analytics URL—not an internal Docker,
+VPN, or database address—because events are posted from visitors' browsers.
+Leave either setting empty to disable tracking.
+
+After deployment, visit a public CMCEN page and confirm the browser can `POST`
+to the configured endpoint without a CORS or TLS error. The expected event API
+response is `202 Accepted`; then verify that the pageview appears in the
+Plausible dashboard. If the service sits behind a proxy or CDN, preserve the
+real visitor IP in `X-Forwarded-For`; otherwise Plausible's bot filtering can
+discard events or miscount visitors.
+
 ## Commands
 
 Run these from `server/`:
@@ -160,6 +231,7 @@ Read [docs/MIGRATION INFO.md](docs/MIGRATION%20INFO.md) before using `--apply`.
 - [Role editor](docs/ROLE_EDITOR.md)
 - [Testing](docs/TESTING.md)
 - [Recent changelog](docs/CHANGELOG_LAST_WEEK.md)
+- [Plausible Community Edition deployment guide](https://github.com/plausible/community-edition)
 
 When an endpoint changes, update both `docs/API ROUTES.md` and
 `api/schema/openapi.yaml` in the same change.

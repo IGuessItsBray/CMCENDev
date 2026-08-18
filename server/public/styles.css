@@ -14399,11 +14399,19 @@ html[data-theme='dark'] .news-message {
 }
 
 .retirement-detail-photo img.retirement-detail-photo-logo {
-  width: min(44vw, 220px);
-  height: auto;
-  max-height: 260px;
-  padding: 18px;
+  width: min(65vw, 360px);
+  height: min(65vw, 360px);
+  max-height: none;
+  padding: 0;
   background: transparent;
+  object-fit: contain;
+  object-position: center;
+}
+
+.retirement-detail-photo:has(.retirement-detail-photo-logo) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .retirement-detail-message-section,

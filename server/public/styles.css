@@ -2893,6 +2893,25 @@ a.dropdown-toggle {
     transform 160ms ease;
 }
 
+.calendar-event-empty {
+  min-height: 0;
+  pointer-events: none;
+}
+
+.calendar-event-empty .calendar-event-content {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  min-height: 78px;
+}
+
+.calendar-event-empty .calendar-event-title {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .calendar-month-title + .calendar-event {
   border-top-color: rgba(255, 255, 255, 0.7);
 }
@@ -3054,6 +3073,23 @@ a.dropdown-toggle {
 .event-detail-shell {
   width: min(100%, 1040px);
   margin: 0 auto;
+}
+
+.event-detail-back-link {
+  width: fit-content;
+  margin: 0 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--navy-900);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.event-detail-back-link::before {
+  content: "←";
+  font-size: 18px;
+  line-height: 1;
 }
 
 .event-detail-hero {
@@ -5015,7 +5051,7 @@ a.dropdown-toggle {
 
 .weekly-brief-preference {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px 16px;
   color: var(--ink);
   font-size: 14px;
@@ -5027,13 +5063,26 @@ a.dropdown-toggle {
 }
 
 .weekly-brief-preference > p:first-child,
+.weekly-brief-information,
 .weekly-brief-preference > .weekly-brief-note,
 .weekly-brief-preference > .weekly-brief-sender {
   grid-column: 1 / -1;
 }
 
+.dashboard-subscription-section .dashboard-section-heading h2,
+.dashboard-subscription-section .weekly-brief-preference,
+.dashboard-subscription-section .weekly-brief-note,
+.dashboard-subscription-section .weekly-brief-sender {
+  color: var(--ink);
+}
+
+.weekly-brief-information {
+  display: grid;
+  gap: 4px;
+}
+
 .weekly-brief-control {
-  min-height: 68px;
+  min-height: 52px;
   padding: 14px;
   display: flex;
   align-items: flex-start;
@@ -5064,8 +5113,14 @@ a.dropdown-toggle {
 .weekly-brief-note,
 .weekly-brief-sender {
   padding: 2px 0;
-  color: var(--branch-grey-800);
+  color: var(--ink);
   font-size: 13px;
+}
+
+@media (min-width: 641px) {
+  .weekly-brief-control span {
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 640px) {
@@ -18198,6 +18253,13 @@ html[data-theme='dark'] .dashboard-subscription-section {
 
 html[data-theme='dark'] .weekly-brief-preference {
   color: var(--dark-text);
+}
+
+html[data-theme='dark'] .dashboard-subscription-section .dashboard-section-heading h2,
+html[data-theme='dark'] .dashboard-subscription-section .weekly-brief-preference,
+html[data-theme='dark'] .dashboard-subscription-section .weekly-brief-note,
+html[data-theme='dark'] .dashboard-subscription-section .weekly-brief-sender {
+  color: var(--dark-text-soft);
 }
 
 html[data-theme='dark'] .weekly-brief-control {

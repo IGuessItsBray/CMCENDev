@@ -10,6 +10,8 @@ const Role = require('../models/Role');
 const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
+const NewsArticle = require('../models/NewsArticle');
+const Page = require('../models/Page');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const WeeklyBriefRun = require('../models/WeeklyBriefRun');
@@ -415,7 +417,50 @@ function getLastPostMessageTitle(message) {
   );
 }
 
-function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
+function getNewsArticleTitle(article) {
+  return article.title?.en || article.title?.fr || 'News story';
+}
+
+function getPageTitle(page) {
+  return page.title?.en || page.title?.fr || page.slug || 'Page';
+}
+
+function getPageMediaReferences(blocks = []) {
+  const references = [];
+  const addMediaItem = (item, fieldPrefix) => {
+    if (!item || typeof item !== 'object') return;
+
+    const values = [item.mediaKey, item.mediaUrl];
+
+    Object.entries(item.mediaVariants || {}).forEach(
+      ([, variant]) => {
+        values.push(variant?.key, variant?.url);
+      },
+    );
+
+    references.push([values, fieldPrefix]);
+  };
+
+  blocks.forEach((block, blockIndex) => {
+    addMediaItem(block, `blocks.${blockIndex}`);
+    (block.columns || []).forEach((column, columnIndex) => {
+      addMediaItem(column, `blocks.${blockIndex}.columns.${columnIndex}`);
+    });
+    (block.items || []).forEach((item, itemIndex) => {
+      addMediaItem(item, `blocks.${blockIndex}.items.${itemIndex}`);
+    });
+  });
+
+  return references;
+}
+
+function getMediaAttachmentMap(
+  events,
+  retirementMessages,
+  lastPostMessages,
+  newsArticles,
+  pages,
+) {
   const attachmentMap = new Map();
 
   function addAttachment(key, attachment) {
@@ -425,7 +470,16 @@ function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
       attachmentMap.set(key, []);
     }
 
-    attachmentMap.get(key).push(attachment);
+    const attachments = attachmentMap.get(key);
+    if (
+      !attachments.some(
+        (existing) =>
+          existing.type === attachment.type &&
+          String(existing._id) === String(attachment._id),
+      )
+    ) {
+      attachments.push(attachment);
+    }
   }
 
   events.forEach((event) => {
@@ -467,6 +521,40 @@ function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
     });
   });
 
+  newsArticles.forEach((article) => {
+    const attachment = {
+      _id: article._id,
+      type: 'newsArticle',
+      title: getNewsArticleTitle(article),
+      status: article.status,
+      href: `/news_stories?edit=${encodeURIComponent(article._id)}`,
+    };
+
+    addAttachment(getMediaKeyFromValue(article.imageUrl), {
+      ...attachment,
+      field: 'imageUrl',
+    });
+    addAttachment(getMediaKeyFromValue(article.imageDisplayUrl), {
+      ...attachment,
+      field: 'imageDisplayUrl',
+    });
+  });
+
+  pages.forEach((page) => {
+    const attachment = {
+      _id: page._id,
+      type: 'page',
+      title: getPageTitle(page),
+      status: page.status,
+    };
+
+    getPageMediaReferences(page.blocks).forEach(([values, field]) => {
+      values.forEach((value) => {
+        addAttachment(getMediaKeyFromValue(value), { ...attachment, field });
+      });
+    });
+  });
+
   return attachmentMap;
 }
 
@@ -475,7 +563,7 @@ function addAttachmentAliases(attachmentMap, aliasKeys) {
   const uniqueAttachments = Array.from(
     new Map(
       attachments.map((attachment) => [
-        `${attachment.type}:${attachment._id}:${attachment.field}`,
+        `${attachment.type}:${attachment._id}`,
         attachment,
       ]),
     ).values(),
@@ -494,17 +582,22 @@ function getMediaAssetAttachmentKeys(asset) {
       [
         asset?.key,
         asset?.originalKey,
-        getMediaVariantKey(asset, 'thumb'),
-        getMediaVariantKey(asset, 'medium'),
-        getMediaVariantKey(asset, 'large'),
-        getMediaVariantKey(asset, 'hero'),
+        getMediaKeyFromValue(asset?.url),
+        getMediaKeyFromValue(asset?.originalUrl),
+        asset?.display?.key,
+        getMediaKeyFromValue(asset?.display?.url),
+        ...Object.values(asset?.variants || {}).flatMap((variant) => [
+          variant?.key,
+          getMediaKeyFromValue(variant?.url),
+        ]),
       ].filter(Boolean),
     ),
   ];
 }
 
 async function getMediaAttachments() {
-  const [events, retirementMessages, lastPostMessages] = await Promise.all([
+  const [events, retirementMessages, lastPostMessages, newsArticles, pages] =
+    await Promise.all([
     Event.find({
       imagePath: { $nin: [null, ''] },
     })
@@ -523,9 +616,24 @@ async function getMediaAttachments() {
     })
       .select('title deceased status imageUrl photoUrl updatedAt createdAt')
       .lean(),
+    NewsArticle.find({
+      $or: [
+        { imageUrl: { $nin: [null, ''] } },
+        { imageDisplayUrl: { $nin: [null, ''] } },
+      ],
+    })
+      .select('title status imageUrl imageDisplayUrl')
+      .lean(),
+    Page.find({}).select('title slug status blocks').lean(),
   ]);
 
-  return getMediaAttachmentMap(events, retirementMessages, lastPostMessages);
+  return getMediaAttachmentMap(
+    events,
+    retirementMessages,
+    lastPostMessages,
+    newsArticles,
+    pages,
+  );
 }
 
 function toAdminMediaItem(object, attachmentMap) {
@@ -551,10 +659,6 @@ function toAdminMediaItem(object, attachmentMap) {
     attachedPosts: attachments,
     attachedPostCount: attachments.length,
   };
-}
-
-function getMediaVariantKey(asset, name) {
-  return asset?.variants?.[name]?.key || '';
 }
 
 function toAdminMediaAssetItem(asset, attachmentMap) {

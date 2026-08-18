@@ -1327,11 +1327,19 @@
       attachments.append(attachmentHeading);
 
       if (attachmentCount) {
+        const attachmentDetails = document.createElement("details");
+        attachmentDetails.className = "admin-media-attachment-details";
+
+        const attachmentSummary = document.createElement("summary");
+        attachmentSummary.textContent = attachmentHeading.textContent;
+
         const list = document.createElement("ul");
         (mediaItem.attachedPosts || []).forEach((attachment) => {
           list.append(createMediaAttachment(attachment));
         });
-        attachments.append(list);
+
+        attachmentDetails.append(attachmentSummary, list);
+        attachments.replaceChildren(attachmentDetails);
       }
 
       const actionsWrapper = document.createElement("div");

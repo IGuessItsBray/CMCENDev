@@ -8119,6 +8119,22 @@ a.dropdown-toggle {
   line-height: 1.35;
 }
 
+.admin-media-attachment-details summary {
+  color: var(--branch-grey-800);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.admin-media-attachment-details summary:hover {
+  color: var(--navy-900);
+}
+
+.admin-media-attachment-details[open] summary {
+  margin-bottom: 7px;
+}
+
 .admin-media-attachments ul {
   display: grid;
   gap: 6px;

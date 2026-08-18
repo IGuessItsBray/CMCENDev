@@ -14291,6 +14291,12 @@ html[data-theme='dark'] .news-message {
   background: transparent;
 }
 
+.retirement-detail-photo:has(.retirement-detail-photo-logo) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
 .retirement-detail-message-section,
 .retirement-detail-comments {
   padding: 22px 24px;

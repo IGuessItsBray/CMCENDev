@@ -577,6 +577,16 @@ function addAttachmentAliases(attachmentMap, aliasKeys) {
 }
 
 function getMediaAssetAttachmentKeys(asset) {
+  const originalKey = asset?.originalKey || asset?.key || '';
+  const originalMatch = originalKey.match(
+    /^(.*)\/original\.[a-z0-9]+$/iu,
+  );
+  const generatedVariantKeys = originalMatch
+    ? ['thumb', 'medium', 'large', 'hero'].map(
+        (name) => `${originalMatch[1]}/${name}.webp`,
+      )
+    : [];
+
   return [
     ...new Set(
       [
@@ -590,6 +600,7 @@ function getMediaAssetAttachmentKeys(asset) {
           variant?.key,
           getMediaKeyFromValue(variant?.url),
         ]),
+        ...generatedVariantKeys,
       ].filter(Boolean),
     ),
   ];

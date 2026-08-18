@@ -59,53 +59,28 @@
         </div>
 
         <div class="dashboard-content" id="dashboardContent" hidden>
-          <section
-            class="dashboard-section"
-            aria-labelledby="accountDetailsTitle"
-          >
-            <header class="dashboard-section-heading">
-              <h2
-                id="accountDetailsTitle"
-                data-i18n="dashboard_account_details"
-              >
-                Account details
-              </h2>
-            </header>
-
-            <div class="dashboard-details" id="dashboardDetails"></div>
-          </section>
-
-          <aside
-            class="dashboard-section dashboard-actions-section"
-            aria-labelledby="availableActionsTitle"
-          >
-            <header class="dashboard-section-heading">
-              <h2
-                id="availableActionsTitle"
-                data-i18n="dashboard_available_actions"
-              >
-                Available actions
-              </h2>
-            </header>
-
-            <nav
-              class="dashboard-actions"
-              id="dashboardActions"
-              aria-label="Account actions"
-            ></nav>
-
+          <section class="dashboard-workspace" id="dashboardWorkspace">
             <section
               class="dashboard-review-work"
               id="dashboardReviewWork"
               aria-labelledby="dashboardReviewWorkTitle"
               hidden
             >
-              <h3
-                id="dashboardReviewWorkTitle"
-                data-i18n="dashboard_review_work_title"
-              >
-                Submissions to review
-              </h3>
+              <header class="dashboard-section-heading dashboard-review-heading">
+                <div>
+                  <h2
+                    id="dashboardReviewWorkTitle"
+                    data-i18n="dashboard_review_work_title"
+                  >
+                    Submissions to review
+                  </h2>
+                  <p
+                    class="dashboard-review-summary"
+                    id="dashboardReviewSummary"
+                    hidden
+                  ></p>
+                </div>
+              </header>
 
               <div
                 class="dashboard-review-queues"
@@ -113,7 +88,56 @@
                 aria-live="polite"
               ></div>
             </section>
-          </aside>
+
+            <aside
+              class="dashboard-section dashboard-actions-section"
+              aria-labelledby="availableActionsTitle"
+            >
+              <header class="dashboard-section-heading">
+                <h2
+                  id="availableActionsTitle"
+                  data-i18n="dashboard_quick_actions"
+                >
+                  Quick actions
+                </h2>
+              </header>
+
+              <nav
+                class="dashboard-actions"
+                id="dashboardActions"
+                aria-label="Account actions"
+              ></nav>
+            </aside>
+          </section>
+
+          <section
+            class="dashboard-section dashboard-profile-section"
+            aria-labelledby="accountDetailsTitle"
+          >
+            <details class="dashboard-profile-details" id="dashboardProfileDetails">
+              <summary>
+                <span class="dashboard-profile-summary-copy">
+                  <span
+                    class="dashboard-profile-summary-title"
+                    id="accountDetailsTitle"
+                    role="heading"
+                    aria-level="2"
+                    data-i18n="dashboard_account_profile"
+                  >
+                    Account &amp; profile
+                  </span>
+                  <span
+                    class="dashboard-profile-summary-meta"
+                    id="dashboardProfileSummary"
+                  ></span>
+                </span>
+              </summary>
+
+              <div class="dashboard-profile-details-content">
+                <div class="dashboard-details" id="dashboardDetails"></div>
+              </div>
+            </details>
+          </section>
 
           <section
             class="dashboard-section dashboard-mfa-section"

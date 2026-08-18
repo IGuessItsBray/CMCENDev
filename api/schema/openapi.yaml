@@ -148,6 +148,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VersionResponse"
+  /api/client-config/plausible:
+    get:
+      tags: [System]
+      summary: Get public Plausible tracker configuration.
+      description: "Returns `{ enabled: false }` unless both self-hosted Plausible environment settings are configured."
+      security: []
+      responses:
+        "200":
+          description: Public Plausible tracker configuration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlausibleConfig"
   /api/data:
     get:
       tags: [System]
@@ -2267,6 +2280,15 @@ components:
       properties:
         commit: { type: string }
         shortCommit: { type: string }
+    PlausibleConfig:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        domain: { type: string }
+        endpoint:
+          type: string
+          format: uri
     LocalizedText:
       type: object
       properties:

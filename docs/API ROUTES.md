@@ -100,6 +100,10 @@ Mounted at `/api/mfa`.
 
 Mounted at `/api/analytics`.
 
+| Method | Path | Access | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/api/client-config/plausible` | Public | Return enabled self-hosted Plausible configuration for the official tracker package, or `{ "enabled": false }` when it is not configured. |
+
 | Method | Path                   | Access                                                | Purpose                                                                                                                                                                 |
 | ------ | ---------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`  | `/api/analytics`       | Authenticated + `canViewAnalytics` (`analytics.view`) | Return visit totals, unique visitor totals, pages, sources, devices, browsers, countries, unique visitors by role, and recent visits. Query: `range=7d\|30d\|90d\|all`. |

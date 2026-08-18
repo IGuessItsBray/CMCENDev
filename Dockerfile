@@ -9,6 +9,7 @@ WORKDIR /usr/src/app/server
 
 # Install production dependencies from the authoritative server lockfile.
 COPY --chown=nodeuser:nodeuser server/package*.json ./
+COPY --chown=nodeuser:nodeuser server/vendor/xlsx-0.20.3.tgz ./vendor/
 RUN npm ci --omit=dev
 
 # Copy the application and the OpenAPI schema served in development mode.

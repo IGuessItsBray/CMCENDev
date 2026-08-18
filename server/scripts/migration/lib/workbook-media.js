@@ -25,9 +25,14 @@ const NON_IMAGE_EXTENSIONS = new Set([
   '.ppt',
   '.pptx',
 ]);
-const CMCEN_CREST_SOURCE_FILENAME = 'cmcen-crest-snip-1.png';
-const CMCEN_CREST_FALLBACK_URL =
-  'https://cdn.corebot.ca/cmcen-demo/images/e7c1804e-712b-4b24-9244-85e85ad9cb01/large.webp';
+const BRANCH_CREST_URL =
+  'https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp';
+const WORKBOOK_PLACEHOLDER_PATTERNS = Object.freeze([
+  /cmcen-crest-snip/iu,
+  /\/jimmy(?:[-_.]|$)/iu,
+  /td[-_ ]?insurance/iu,
+  /064b615c-38c3-4946-a82f-48116a9d9a55/iu,
+]);
 
 function isImageLikeUrl(value) {
   try {
@@ -38,29 +43,36 @@ function isImageLikeUrl(value) {
   }
 }
 
-function isCmcenCrestUrl(value) {
-  try {
-    return (
-      path.basename(new URL(value).pathname).toLowerCase() ===
-      CMCEN_CREST_SOURCE_FILENAME
-    );
-  } catch {
-    return false;
-  }
+function isWorkbookPlaceholderUrl(value) {
+  const sourceUrl = String(value || '').trim();
+
+  return (
+    sourceUrl === BRANCH_CREST_URL ||
+    WORKBOOK_PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(sourceUrl))
+  );
 }
 
-function buildCmcenCrestFallbackAsset(sourceUrl) {
+function buildBranchCrestFallbackAsset(sourceUrl) {
   return {
     key: null,
-    url: CMCEN_CREST_FALLBACK_URL,
-    display: { url: CMCEN_CREST_FALLBACK_URL },
+    url: BRANCH_CREST_URL,
+    display: { url: BRANCH_CREST_URL },
     fileMetadata: {
       sourceUrl,
       usedFallback: true,
-      fallbackReason: 'Reused the pre-uploaded CMCEN crest asset.',
-      fallbackSourceUrl: CMCEN_CREST_FALLBACK_URL,
+      fallbackReason: 'Reused the pre-uploaded CMCEN branch crest asset.',
+      fallbackSourceUrl: BRANCH_CREST_URL,
     },
   };
+}
+
+function selectWorkbookImageLinks(mediaLinks) {
+  const imageLinks = mediaLinks.filter(isImageLikeUrl);
+  const nonPlaceholderImages = imageLinks.filter(
+    (sourceUrl) => !isWorkbookPlaceholderUrl(sourceUrl),
+  );
+
+  return nonPlaceholderImages.length ? nonPlaceholderImages : [BRANCH_CREST_URL];
 }
 
 async function putObject({ key, body, contentType }) {
@@ -178,14 +190,14 @@ async function uploadOneMedia({ candidate, sourceUrl, index }) {
 }
 
 async function uploadWorkbookMedia(candidate) {
-  const imageLinks = candidate.mediaLinks.filter(isImageLikeUrl);
+  const imageLinks = selectWorkbookImageLinks(candidate.mediaLinks);
   const skipped = candidate.mediaLinks.filter((url) => !isImageLikeUrl(url));
   const assets = [];
   const failures = [];
 
   for (const [index, sourceUrl] of imageLinks.entries()) {
-    if (isCmcenCrestUrl(sourceUrl)) {
-      assets.push(buildCmcenCrestFallbackAsset(sourceUrl));
+    if (isWorkbookPlaceholderUrl(sourceUrl)) {
+      assets.push(buildBranchCrestFallbackAsset(sourceUrl));
       continue;
     }
 
@@ -208,9 +220,10 @@ async function uploadWorkbookMedia(candidate) {
 }
 
 module.exports = {
-  CMCEN_CREST_FALLBACK_URL,
-  buildCmcenCrestFallbackAsset,
-  isCmcenCrestUrl,
+  BRANCH_CREST_URL,
+  buildBranchCrestFallbackAsset,
   isImageLikeUrl,
+  isWorkbookPlaceholderUrl,
+  selectWorkbookImageLinks,
   uploadWorkbookMedia,
 };

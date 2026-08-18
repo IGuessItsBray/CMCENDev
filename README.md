@@ -138,13 +138,14 @@ environment. The image health check calls `GET /api/data` every 30 seconds.
 
 ## Migration Tools
 
-The retained migration tool imports retirement messages, Last Post notices,
-media, metadata, and available WordPress comments from the current public site.
-It is dry-run by default:
+The workbook importer is the sole retained migration tool. It imports reviewed
+retirement messages and Last Post notices, their bilingual content, media, and
+available comments from the versioned workbook:
 
 ```sh
-node server/scripts/migration/migrate-current-site-content.js --limit=3
-node server/scripts/migration/migrate-current-site-content.js --apply
+node server/scripts/migration/import-workbook-inventory.js \
+  --input=./scripts/migration/import/cmcen_export_latest.xlsx \
+  --limit=3
 ```
 
 Read [docs/MIGRATION INFO.md](docs/MIGRATION%20INFO.md) before using `--apply`.

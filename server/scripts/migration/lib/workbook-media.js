@@ -29,7 +29,7 @@ const BRANCH_CREST_URL =
   'https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp';
 const WORKBOOK_PLACEHOLDER_PATTERNS = Object.freeze([
   /cmcen-crest-snip/iu,
-  /jimmy-(?:crest|statue)/iu,
+  /\/jimmy(?:[-_.]|$)/iu,
   /td[-_ ]?insurance/iu,
   /064b615c-38c3-4946-a82f-48116a9d9a55/iu,
 ]);

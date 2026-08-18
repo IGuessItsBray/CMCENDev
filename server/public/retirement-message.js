@@ -138,6 +138,7 @@ function isRetirementPlaceholderPhoto(photoUrl) {
     return (
       fileName === "logo.png" ||
       fileName.includes("cmcen-crest") ||
+      pathname.includes("/branch-crest/") ||
       pathname.includes("/legacy/wordpress/348036/")
     );
   } catch (error) {
@@ -147,6 +148,7 @@ function isRetirementPlaceholderPhoto(photoUrl) {
     return (
       fileName === "logo.png" ||
       fileName.includes("cmcen-crest") ||
+      pathname.includes("/branch-crest/") ||
       pathname.includes("/legacy/wordpress/348036/")
     );
   }

@@ -46,9 +46,10 @@ Fully bilingual records are published. Single-language records are imported as
 pending so they do not appear publicly before translation. Non-image attachments
 are recorded in the manifest and skipped.
 
-The generic `CMCEN-crest-snip-1.png` source is never uploaded. It reuses the
-pre-uploaded CDN crest asset instead; unit-specific crests and normal photos
-continue through the media import.
+CMCEN crest, Jimmy statue, and TD Insurance placeholder images are never
+uploaded. They reuse `https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp`
+instead. Records with no usable image use that same branch crest fallback;
+unit-specific crests and normal photos continue through the media import.
 
 ## Requirements
 

@@ -990,23 +990,6 @@ paths:
       responses:
         "200":
           description: Available protected operations.
-  /api/admin/site-config/migrations/{migrationKey}:
-    post:
-      tags: [Site Config]
-      summary: Run a site migration.
-      description: Streams newline-delimited JSON progress events while the migration process runs.
-      x-permission: canManageSiteConfig
-      parameters:
-        - $ref: "#/components/parameters/MigrationKey"
-      requestBody:
-        $ref: "#/components/requestBodies/SiteConfigMigrationRun"
-      responses:
-        "200":
-          description: Newline-delimited migration events.
-          content:
-            application/x-ndjson:
-              schema:
-                type: string
   /api/admin/site-config/analytics:
     delete:
       tags: [Site Config, Analytics]
@@ -1898,13 +1881,6 @@ components:
       in: path
       required: true
       schema: { type: string }
-    MigrationKey:
-      name: migrationKey
-      in: path
-      required: true
-      schema:
-        type: string
-        enum: [retirement, comments, lastPost]
     TempTokenQuery:
       name: tempToken
       in: query
@@ -1973,23 +1949,6 @@ components:
             type: object
             properties:
               configToken: { type: string }
-    SiteConfigMigrationRun:
-      required: false
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              mode:
-                type: string
-                enum: [dry-run, apply]
-                default: dry-run
-              limit:
-                type: integer
-                minimum: 1
-                maximum: 1000
-                nullable: true
-                description: Optional maximum number of migration source records to process. Omit or send null to process all records.
     UploadUrl:
       required: true
       content:

@@ -4,6 +4,34 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.1.0-beta.2] - 2026-08-19
+
+
+
+### Bug Fixes
+
+
+- ci: Use explicit git-cliff action source
+
+- release: Correct changelog release generation
+
+- ci: Harden release preparation workflow
+
+
+
+### CI
+
+
+- release: Add release preparation workflow
+
+
+
+### Features
+
+
+- notifications: Add notification center
+
+
 ## [0.1.0-beta.1] - 2026-08-19
 
 ### Internal Beta

@@ -749,3 +749,31 @@ in the same pull request.
 
 This includes adding, removing, renaming, changing the meaning of, or changing
 the expected format or default behavior of an environment variable.
+
+## Contributing
+
+Contributions to CMCEN / RCMCE are welcome, including contributions created
+with AI coding assistants and autonomous coding agents.
+
+This repository is explicitly **AI-agent friendly**.
+
+Before contributing:
+
+1. Read [`CONTRIBUTING.md`](docs/CONTRIBUTING.md).
+2. Read [`AGENTS.md`](AGENTS.md) in full.
+3. If using an AI coding agent, explicitly ensure it has read and is following
+   `AGENTS.md` before allowing it to modify the repository.
+4. Follow the repository's branch, Conventional Commit, and pull request naming
+   standards.
+5. Submit all changes through a pull request targeting `main`.
+
+AI-assisted contributions are held to the same standards as manually written
+contributions. The contributor submitting the pull request remains responsible
+for reviewing, testing, and validating the submitted changes.
+
+Pull requests are normally squash-merged into `main`. PR titles therefore
+become part of the canonical Git history and are used by the automated
+changelog and release tooling.
+
+See [`CONTRIBUTING.md`](docs/CONTRIBUTING.md) for the contribution workflow and
+[`AGENTS.md`](AGENTS.md) for the complete repository development policy.

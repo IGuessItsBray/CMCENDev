@@ -35,6 +35,7 @@ const {
   setStandardResponseHeaders,
 } = require('./routes/seo');
 const { rateLimitByIp } = require('./middleware/rate-limit');
+const { getPlausibleConfig } = require('./services/plausible');
 const { startWeeklyBriefScheduler } = require('./services/weekly-brief');
 
 const app = express();
@@ -84,6 +85,11 @@ app.get('/api/version', (req, res) => {
     commit: buildCommit,
     shortCommit: buildCommit ? buildCommit.slice(0, 7) : '',
   });
+});
+
+app.get('/api/client-config/plausible', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=300');
+  res.json(getPlausibleConfig());
 });
 
 if (isApiDocsEnabled) {
@@ -156,6 +162,19 @@ function serveExtensionlessHtml(req, res, next) {
 
 app.use(redirectHtmlExtension);
 app.use(seoRoutes);
+app.get('/vendor/plausible-tracker.js', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.type('js');
+  res.sendFile(
+    path.join(
+      __dirname,
+      'node_modules',
+      '@plausible-analytics',
+      'tracker',
+      'plausible.js',
+    ),
+  );
+});
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api', authRoutes);

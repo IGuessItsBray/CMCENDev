@@ -3,6 +3,7 @@ const token = CMCENUtils.requireAuthToken();
 const dashboardStatus = document.getElementById("dashboardStatus");
 const dashboardContent = document.getElementById("dashboardContent");
 const dashboardDetails = document.getElementById("dashboardDetails");
+const dashboardWorkspace = document.getElementById("dashboardWorkspace");
 const dashboardActions = document.getElementById("dashboardActions");
 const dashboardTitle = document.getElementById("dashboardTitle");
 const dashboardMemberName = document.getElementById("dashboardMemberName");
@@ -13,6 +14,15 @@ const dashboardRoleDescription = document.getElementById(
 );
 const dashboardReviewWork = document.getElementById("dashboardReviewWork");
 const dashboardReviewQueues = document.getElementById("dashboardReviewQueues");
+const dashboardReviewSummary = document.getElementById(
+  "dashboardReviewSummary",
+);
+const dashboardProfileDetails = document.getElementById(
+  "dashboardProfileDetails",
+);
+const dashboardProfileSummary = document.getElementById(
+  "dashboardProfileSummary",
+);
 const dashboardDangerZone = document.getElementById("dashboardDangerZone");
 const dashboardDangerZoneContent = dashboardDangerZone?.querySelector(
   ".dashboard-danger-zone-content",
@@ -576,13 +586,13 @@ function createGhostUpgradeForm(user) {
 
 function createProfileForm(user) {
   const form = document.createElement("form");
-  form.className = "dashboard-profile-form";
+  form.className = "dashboard-profile-form dashboard-profile-form--account";
   form.noValidate = false;
 
   const grid = document.createElement("div");
   grid.className = "dashboard-profile-grid";
 
-  grid.append(
+  const profileFields = [
     createProfileField({
       name: "firstName",
       labelKey: "first_name",
@@ -713,7 +723,7 @@ function createProfileForm(user) {
       optionPrefix: "language",
       required: true,
     }),
-  );
+  ];
 
   const readonlyDetails = document.createElement("div");
   readonlyDetails.className = "dashboard-profile-readonly";
@@ -747,7 +757,20 @@ function createProfileForm(user) {
   cancelButton.textContent = translate("dashboard_cancel_profile");
 
   controls.append(editButton, saveButton, cancelButton);
-  form.append(grid, readonlyDetails, controls);
+
+  const [firstNameField, lastNameField, ...remainingProfileFields] =
+    profileFields;
+  const profileFieldsPanel = document.createElement("div");
+  profileFieldsPanel.className = "dashboard-profile-fields";
+
+  const profileFirstRow = document.createElement("div");
+  profileFirstRow.className =
+    "dashboard-profile-grid dashboard-profile-grid--first-row";
+  profileFirstRow.append(firstNameField, lastNameField);
+
+  grid.append(...remainingProfileFields);
+  profileFieldsPanel.append(profileFirstRow, grid);
+  form.append(profileFieldsPanel, controls, readonlyDetails);
 
   form
     .querySelector("[data-profile-field='trade']")
@@ -1017,6 +1040,32 @@ function getReviewCountLabel(type, value) {
   return translate(`dashboard_review_${type}_${plural}`, { count });
 }
 
+function getReviewWorkTotal({
+  canReviewSubmissions,
+  canManageCertificateRequests,
+}) {
+  const counts = [];
+
+  if (canReviewSubmissions && currentReviewCounts) {
+    counts.push(
+      currentReviewCounts.events,
+      currentReviewCounts.retirementMessages,
+      currentReviewCounts.lastPosts,
+      currentReviewCounts.comments,
+    );
+  }
+
+  if (canManageCertificateRequests) {
+    counts.push(currentCertificateRequestCount);
+  }
+
+  if (!counts.length || counts.some((count) => !Number.isInteger(count))) {
+    return null;
+  }
+
+  return counts.reduce((total, count) => total + Math.max(0, count), 0);
+}
+
 function createReviewQueueLink({
   tab,
   type,
@@ -1062,6 +1111,8 @@ function createReviewQueuesUnavailable() {
 }
 
 function renderDashboard(user) {
+  const profileWasOpen = dashboardProfileDetails?.open === true;
+
   currentDashboardUser = user;
 
   const role = getRoleKey(user.role);
@@ -1085,6 +1136,11 @@ function renderDashboard(user) {
   dashboardRoleBadge.className = `dashboard-role-badge role-${role}`;
   dashboardRoleDescription.textContent = translate(`role_description_${role}`);
   dashboardRoleSummary.hidden = false;
+
+  dashboardProfileSummary.textContent = [user.email, roleTitle]
+    .filter(Boolean)
+    .join(" · ");
+  dashboardProfileDetails.open = profileWasOpen;
 
   const isGhost = user.accountType === "ghost" || user.role === "ghost";
   document
@@ -1189,12 +1245,12 @@ function renderDashboard(user) {
   const canReviewSubmissions = user.permissions?.canReviewAndPublish === true;
   const canManageCertificateRequests =
     user.permissions?.canManageCertificateRequests === true;
+  const hasReviewWork = canReviewSubmissions || canManageCertificateRequests;
 
-  dashboardReviewWork.hidden = !(
-    canReviewSubmissions || canManageCertificateRequests
-  );
+  dashboardWorkspace.classList.toggle("has-review-work", hasReviewWork);
+  dashboardReviewWork.hidden = !hasReviewWork;
 
-  if (canReviewSubmissions || canManageCertificateRequests) {
+  if (hasReviewWork) {
     const reviewQueues = [];
 
     if (canReviewSubmissions && currentReviewCounts) {
@@ -1241,8 +1297,25 @@ function renderDashboard(user) {
     }
 
     dashboardReviewQueues.replaceChildren(...reviewQueues);
+
+    const reviewWorkTotal = getReviewWorkTotal({
+      canReviewSubmissions,
+      canManageCertificateRequests,
+    });
+    dashboardReviewSummary.hidden = reviewWorkTotal === null;
+    dashboardReviewSummary.textContent =
+      reviewWorkTotal === null
+        ? ""
+        : translate(
+            reviewWorkTotal === 1
+              ? "dashboard_review_open_items_singular"
+              : "dashboard_review_open_items_plural",
+            { count: reviewWorkTotal },
+          );
   } else {
     dashboardReviewQueues.replaceChildren();
+    dashboardReviewSummary.hidden = true;
+    dashboardReviewSummary.textContent = "";
   }
 
   dashboardStatus.hidden = true;

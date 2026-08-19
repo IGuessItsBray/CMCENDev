@@ -261,6 +261,14 @@ describe('system and authentication', () => {
     assert.equal(missing.body.error, 'Endpoint not found');
   });
 
+  test('does not expose Plausible tracking until it is configured', async () => {
+    const response = await request(app)
+      .get('/api/client-config/plausible')
+      .expect(200);
+
+    assert.deepEqual(response.body, { enabled: false });
+  });
+
   test('rejects invalid credentials and malformed bearer tokens', async () => {
     const user = await createUser();
 

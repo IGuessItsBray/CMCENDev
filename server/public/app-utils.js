@@ -1434,6 +1434,19 @@
     }).catch(() => {});
   }
 
+  function initializePlausibleAnalytics() {
+    fetch('/api/client-config/plausible')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((config) => {
+        if (!config?.enabled || !config.domain || !config.endpoint) return;
+
+        return import('/vendor/plausible-tracker.js').then(({ init }) => {
+          init({ domain: config.domain, endpoint: config.endpoint });
+        });
+      })
+      .catch(() => {});
+  }
+
   function getCompressedImageName(file, mimeType) {
     const extension = mimeType === "image/png" ? "png" : "jpg";
     const baseName =
@@ -1675,6 +1688,7 @@
   };
 
   window.addEventListener("load", trackPageVisit, { once: true });
+  initializePlausibleAnalytics();
   bindCharacterCounters();
   bindMediaSkeletons();
 

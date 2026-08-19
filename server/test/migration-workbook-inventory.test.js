@@ -13,9 +13,10 @@ const {
   buildRecordFilter,
 } = require('../scripts/migration/lib/workbook-import');
 const {
-  CMCEN_CREST_FALLBACK_URL,
-  isCmcenCrestUrl,
+  BRANCH_CREST_URL,
   isImageLikeUrl,
+  isWorkbookPlaceholderUrl,
+  selectWorkbookImageLinks,
   uploadWorkbookMedia,
 } = require('../scripts/migration/lib/workbook-media');
 
@@ -249,21 +250,38 @@ test('parses stored comments and avoids non-image files during upload', () => {
   assert.equal(isImageLikeUrl('https://example.test/document.pdf'), false);
 });
 
-test('reuses the pre-uploaded CMCEN crest instead of uploading it', async () => {
-  const sourceUrl =
+test('reuses the branch crest for workbook placeholders and missing images', async () => {
+  const crestUrl =
     'https://cmcen-rcmce.ca/wp-content/uploads/CMCEN-crest-snip-1.png';
-  const media = await uploadWorkbookMedia({ mediaLinks: [sourceUrl] });
+  const jimmyStatueUrl =
+    'https://cmcen-rcmce.ca/wp-content/uploads/2022/06/Jimmy-Statue.png';
+  const jimmyJpegUrl =
+    'https://cmcen-rcmce.ca/wp-content/uploads/jimmy.jpeg';
+  const tdInsuranceUrl =
+    'https://cmcen-rcmce.ca/wp-content/uploads/TD-Insurance.png';
+  const realImageUrl = 'https://example.test/member-photo.jpg';
+  const media = await uploadWorkbookMedia({ mediaLinks: [crestUrl] });
+  const missingImageMedia = await uploadWorkbookMedia({ mediaLinks: [] });
 
-  assert.equal(isCmcenCrestUrl(sourceUrl), true);
+  assert.equal(isWorkbookPlaceholderUrl(crestUrl), true);
+  assert.equal(isWorkbookPlaceholderUrl(jimmyStatueUrl), true);
+  assert.equal(isWorkbookPlaceholderUrl(jimmyJpegUrl), true);
+  assert.equal(isWorkbookPlaceholderUrl(tdInsuranceUrl), true);
+  assert.equal(isWorkbookPlaceholderUrl(BRANCH_CREST_URL), true);
   assert.equal(
-    isCmcenCrestUrl(
+    isWorkbookPlaceholderUrl(
       'https://cmcen-rcmce.ca/wp-content/uploads/8-ACCS-Crest.gif',
     ),
     false,
   );
+  assert.deepEqual(selectWorkbookImageLinks([crestUrl, realImageUrl]), [
+    realImageUrl,
+  ]);
+  assert.deepEqual(selectWorkbookImageLinks([]), [BRANCH_CREST_URL]);
   assert.equal(media.assets.length, 1);
-  assert.equal(media.assets[0].url, CMCEN_CREST_FALLBACK_URL);
-  assert.equal(media.assets[0].display.url, CMCEN_CREST_FALLBACK_URL);
+  assert.equal(media.assets[0].url, BRANCH_CREST_URL);
+  assert.equal(media.assets[0].display.url, BRANCH_CREST_URL);
   assert.equal(media.assets[0].key, null);
   assert.deepEqual(media.failures, []);
+  assert.equal(missingImageMedia.primaryAsset.url, BRANCH_CREST_URL);
 });

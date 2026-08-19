@@ -4,6 +4,16 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.1.0-beta.6] - 2026-08-19
+
+
+
+### Bug Fixes
+
+
+- ci: Use release token for tag publishing
+
+
 ## [0.1.0-beta.5] - 2026-08-19
 
 

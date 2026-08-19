@@ -143,144 +143,166 @@
             class="dashboard-section dashboard-mfa-section"
             aria-labelledby="mfaTitle"
           >
-            <header class="dashboard-section-heading">
-              <h2 id="mfaTitle" data-i18n="dashboard_mfa_title">
-                Multi-factor authentication
-              </h2>
-              <p class="dashboard-mfa-intro" data-i18n="mfa_intro">
-                Add a second sign-in method to keep your account protected.
-              </p>
-            </header>
-
-            <div class="dashboard-mfa-grid" id="mfa-config">
-              <article class="mfa-panel mfa-panel-totp">
-                <header class="mfa-panel-header">
-                  <div class="mfa-panel-copy">
-                    <div class="mfa-panel-title-row">
-                      <h3 data-i18n="mfa_totp_title">Authenticator app</h3>
-                      <button
-                        class="mfa-card-help"
-                        type="button"
-                        data-tooltip-key="mfa_totp_description"
-                        aria-label="Use an authenticator app to generate a sign-in code."
-                      >
-                        ?
-                      </button>
-                    </div>
-                  </div>
-                  <div class="mfa-actions">
-                    <button
-                      class="mfa-button mfa-button-primary"
-                      id="totp-setup"
-                      type="button"
-                      data-i18n="mfa_setup_totp"
-                    >
-                      Setup
-                    </button>
-                  </div>
-                </header>
-
-                <div
-                  class="mfa-output"
-                  id="totp-otpauth"
-                  aria-live="polite"
-                ></div>
-
-                <div class="mfa-verification-row" id="totp-verification" hidden>
-                  <label class="mfa-field">
-                    <span data-i18n="mfa_authenticator_code">
-                      Authenticator code
-                    </span>
-                    <input
-                      id="totp-code"
-                      inputmode="numeric"
-                      autocomplete="one-time-code"
-                      placeholder="000000"
-                    />
-                  </label>
-
-                  <button
-                    class="mfa-button"
-                    id="totp-verify"
-                    type="button"
-                    data-i18n="mfa_verify"
+            <details class="dashboard-disclosure" id="dashboardMfaDetails">
+              <summary>
+                <span class="dashboard-disclosure-summary-copy">
+                  <span
+                    class="dashboard-disclosure-summary-title"
+                    id="mfaTitle"
+                    role="heading"
+                    aria-level="2"
+                    data-i18n="dashboard_mfa_title"
                   >
-                    Verify
-                  </button>
-                </div>
-                <div
-                  class="totp-manager"
-                  aria-labelledby="totpStatusTitle"
-                  hidden
-                >
-                  <div class="passkey-manager-heading">
-                    <h4 id="totpStatusTitle" data-i18n="mfa_totp_status_title">
-                      Authenticator app status
-                    </h4>
-                  </div>
+                    Multi-factor authentication
+                  </span>
+                  <span
+                    class="dashboard-disclosure-summary-meta dashboard-mfa-summary-meta"
+                    data-i18n="mfa_intro"
+                  >
+                    Add a second sign-in method to keep your account protected.
+                  </span>
+                </span>
+              </summary>
 
-                  <div
-                    class="totp-status"
-                    id="totp-status"
-                    aria-live="polite"
-                  ></div>
-                </div>
-              </article>
+              <div class="dashboard-disclosure-content">
+                <div class="dashboard-mfa-grid" id="mfa-config">
+                  <article class="mfa-panel mfa-panel-totp">
+                    <header class="mfa-panel-header">
+                      <div class="mfa-panel-copy">
+                        <div class="mfa-panel-title-row">
+                          <h3 data-i18n="mfa_totp_title">Authenticator app</h3>
+                          <button
+                            class="mfa-card-help"
+                            type="button"
+                            data-tooltip-key="mfa_totp_description"
+                            aria-label="Use an authenticator app to generate a sign-in code."
+                          >
+                            ?
+                          </button>
+                        </div>
+                      </div>
+                      <div class="mfa-actions">
+                        <button
+                          class="mfa-button mfa-button-primary"
+                          id="totp-setup"
+                          type="button"
+                          data-i18n="mfa_setup_totp"
+                        >
+                          Setup
+                        </button>
+                      </div>
+                    </header>
 
-              <article class="mfa-panel mfa-panel-passkey">
-                <header class="mfa-panel-header">
-                  <div class="mfa-panel-copy">
-                    <div class="mfa-panel-title-row">
-                      <h3 data-i18n="mfa_passkey_title">Passkey</h3>
+                    <div
+                      class="mfa-output"
+                      id="totp-otpauth"
+                      aria-live="polite"
+                    ></div>
+
+                    <div
+                      class="mfa-verification-row"
+                      id="totp-verification"
+                      hidden
+                    >
+                      <label class="mfa-field">
+                        <span data-i18n="mfa_authenticator_code">
+                          Authenticator code
+                        </span>
+                        <input
+                          id="totp-code"
+                          inputmode="numeric"
+                          autocomplete="one-time-code"
+                          placeholder="000000"
+                        />
+                      </label>
+
                       <button
-                        class="mfa-card-help"
+                        class="mfa-button"
+                        id="totp-verify"
                         type="button"
-                        data-tooltip-key="mfa_passkey_description"
-                        aria-label="Sign in securely with your device, fingerprint, or face recognition."
+                        data-i18n="mfa_verify"
                       >
-                        ?
+                        Verify
                       </button>
                     </div>
-                    <span
-                      class="mfa-recommended mfa-passkey-recommended"
-                      data-i18n="mfa_recommended"
-                      >Recommended</span
+                    <div
+                      class="totp-manager"
+                      aria-labelledby="totpStatusTitle"
+                      hidden
                     >
-                  </div>
-                  <div class="mfa-actions">
-                    <button
-                      class="mfa-button mfa-button-primary"
-                      id="webauthn-register"
-                      type="button"
-                      data-i18n="mfa_register_passkey"
-                    >
-                      Setup
-                    </button>
-                  </div>
-                </header>
+                      <div class="passkey-manager-heading">
+                        <h4
+                          id="totpStatusTitle"
+                          data-i18n="mfa_totp_status_title"
+                        >
+                          Authenticator app status
+                        </h4>
+                      </div>
 
-                <div
-                  class="passkey-manager"
-                  aria-labelledby="passkeyListTitle"
-                  hidden
-                >
-                  <div class="passkey-manager-heading">
-                    <h4
-                      id="passkeyListTitle"
-                      data-i18n="mfa_registered_passkeys_title"
-                    >
-                      Registered passkeys
-                    </h4>
-                  </div>
+                      <div
+                        class="totp-status"
+                        id="totp-status"
+                        aria-live="polite"
+                      ></div>
+                    </div>
+                  </article>
 
-                  <div
-                    class="passkey-list"
-                    id="passkey-list"
-                    aria-live="polite"
-                  ></div>
+                  <article class="mfa-panel mfa-panel-passkey">
+                    <header class="mfa-panel-header">
+                      <div class="mfa-panel-copy">
+                        <div class="mfa-panel-title-row">
+                          <h3 data-i18n="mfa_passkey_title">Passkey</h3>
+                          <button
+                            class="mfa-card-help"
+                            type="button"
+                            data-tooltip-key="mfa_passkey_description"
+                            aria-label="Sign in securely with your device, fingerprint, or face recognition."
+                          >
+                            ?
+                          </button>
+                        </div>
+                        <span
+                          class="mfa-recommended mfa-passkey-recommended"
+                          data-i18n="mfa_recommended"
+                          >Recommended</span
+                        >
+                      </div>
+                      <div class="mfa-actions">
+                        <button
+                          class="mfa-button mfa-button-primary"
+                          id="webauthn-register"
+                          type="button"
+                          data-i18n="mfa_register_passkey"
+                        >
+                          Setup
+                        </button>
+                      </div>
+                    </header>
+
+                    <div
+                      class="passkey-manager"
+                      aria-labelledby="passkeyListTitle"
+                      hidden
+                    >
+                      <div class="passkey-manager-heading">
+                        <h4
+                          id="passkeyListTitle"
+                          data-i18n="mfa_registered_passkeys_title"
+                        >
+                          Registered passkeys
+                        </h4>
+                      </div>
+
+                      <div
+                        class="passkey-list"
+                        id="passkey-list"
+                        aria-live="polite"
+                      ></div>
+                    </div>
+                  </article>
                 </div>
-              </article>
-            </div>
+              </div>
+            </details>
           </section>
 
           <section
@@ -288,12 +310,28 @@
             id="weeklyBriefSection"
             aria-labelledby="weeklyBriefTitle"
           >
-            <header class="dashboard-section-heading">
-              <h2 id="weeklyBriefTitle" data-i18n="weekly_brief_title">
-                Weekly Email Summary
-              </h2>
-            </header>
-            <div id="weeklyBriefPreference"></div>
+            <details
+              class="dashboard-disclosure"
+              id="dashboardSubscriptionDetails"
+            >
+              <summary>
+                <span class="dashboard-disclosure-summary-copy">
+                  <span
+                    class="dashboard-disclosure-summary-title"
+                    id="weeklyBriefTitle"
+                    role="heading"
+                    aria-level="2"
+                    data-i18n="weekly_brief_title"
+                  >
+                    Weekly Email Summary
+                  </span>
+                </span>
+              </summary>
+
+              <div class="dashboard-disclosure-content">
+                <div id="weeklyBriefPreference"></div>
+              </div>
+            </details>
           </section>
 
           <section
@@ -302,10 +340,27 @@
             aria-labelledby="dashboardDangerZoneTitle"
             hidden
           >
-            <header class="dashboard-section-heading">
-              <h2 id="dashboardDangerZoneTitle">Danger Zone</h2>
-            </header>
-            <div class="dashboard-danger-zone-content"></div>
+            <details
+              class="dashboard-disclosure"
+              id="dashboardDangerZoneDetails"
+            >
+              <summary>
+                <span class="dashboard-disclosure-summary-copy">
+                  <span
+                    class="dashboard-disclosure-summary-title"
+                    id="dashboardDangerZoneTitle"
+                    role="heading"
+                    aria-level="2"
+                  >
+                    Danger Zone
+                  </span>
+                </span>
+              </summary>
+
+              <div class="dashboard-disclosure-content">
+                <div class="dashboard-danger-zone-content"></div>
+              </div>
+            </details>
           </section>
         </div>
       </section>

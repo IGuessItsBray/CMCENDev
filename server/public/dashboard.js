@@ -1324,6 +1324,134 @@ function showDashboardError(message) {
   dashboardStatus.appendChild(error);
 }
 
+function enableDashboardDisclosureMotion() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  document
+    .querySelectorAll(".dashboard-profile-details, .dashboard-disclosure")
+    .forEach((details) => {
+      const summary = details.querySelector(":scope > summary");
+
+      if (!summary) {
+        return;
+      }
+
+      let animationFrame = null;
+      let cleanupTimer = null;
+      let transitionEndHandler = null;
+
+      const resetAnimationStyles = () => {
+        details.classList.remove("is-animating", "is-closing");
+        details.style.height = "";
+        details.style.overflow = "";
+        details.style.transition = "";
+      };
+
+      const cancelAnimation = () => {
+        if (animationFrame !== null) {
+          window.cancelAnimationFrame(animationFrame);
+          animationFrame = null;
+        }
+
+        if (cleanupTimer !== null) {
+          window.clearTimeout(cleanupTimer);
+          cleanupTimer = null;
+        }
+
+        if (transitionEndHandler) {
+          details.removeEventListener("transitionend", transitionEndHandler);
+          transitionEndHandler = null;
+        }
+      };
+
+      const animateHeight = ({
+        startHeight,
+        endHeight,
+        duration,
+        easing,
+        onFinish,
+      }) => {
+        cancelAnimation();
+        details.style.transition = "none";
+        details.style.height = startHeight;
+        details.style.overflow = "hidden";
+
+        let finished = false;
+        const finish = () => {
+          if (finished) {
+            return;
+          }
+
+          finished = true;
+          cancelAnimation();
+          onFinish();
+        };
+
+        transitionEndHandler = (event) => {
+          if (event.target === details && event.propertyName === "height") {
+            finish();
+          }
+        };
+        details.addEventListener("transitionend", transitionEndHandler);
+        animationFrame = window.requestAnimationFrame(() => {
+          details.style.transition = `height ${duration}ms ${easing}`;
+          animationFrame = window.requestAnimationFrame(() => {
+            details.style.height = endHeight;
+            cleanupTimer = window.setTimeout(finish, duration + 120);
+          });
+        });
+      };
+
+      const expand = () => {
+        const startHeight = `${details.offsetHeight}px`;
+        cancelAnimation();
+        details.style.height = "";
+        details.open = true;
+        const endHeight = `${details.offsetHeight}px`;
+
+        details.classList.add("is-animating");
+        details.classList.remove("is-closing");
+        animateHeight({
+          startHeight,
+          endHeight,
+          duration: 240,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          onFinish: resetAnimationStyles,
+        });
+      };
+
+      const collapse = () => {
+        const startHeight = `${details.offsetHeight}px`;
+        const endHeight = `${summary.offsetHeight}px`;
+
+        details.classList.add("is-animating", "is-closing");
+        animateHeight({
+          startHeight,
+          endHeight,
+          duration: 200,
+          easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+          onFinish: () => {
+            details.open = false;
+            resetAnimationStyles();
+          },
+        });
+      };
+
+      summary.addEventListener("click", (event) => {
+        event.preventDefault();
+
+        if (details.open && !details.classList.contains("is-closing")) {
+          collapse();
+          return;
+        }
+
+        expand();
+      });
+    });
+}
+
 async function loadDashboard() {
   showDashboardLoading();
 
@@ -1405,4 +1533,5 @@ window.addEventListener("pageshow", () => {
   }
 });
 
+enableDashboardDisclosureMotion();
 loadDashboard();

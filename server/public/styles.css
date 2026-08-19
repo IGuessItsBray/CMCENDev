@@ -1836,7 +1836,6 @@ img.is-media-loading {
   animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
 }
 
-.dashboard-status.is-loading .loading-state,
 .review-page-message.is-loading .loading-state,
 .certificate-requests-status.is-loading .loading-state {
   width: min(100%, 360px);
@@ -1844,13 +1843,11 @@ img.is-media-loading {
   grid-template-rows: 1fr;
 }
 
-.dashboard-status.is-loading .loading-state-spinner,
 .review-page-message.is-loading .loading-state-spinner,
 .certificate-requests-status.is-loading .loading-state-spinner {
   display: none;
 }
 
-.dashboard-status.is-loading:not(:has(.loading-state)) > .loading-state-spinner,
 .review-page-message.is-loading:not(:has(.loading-state))
   > .loading-state-spinner,
 .certificate-requests-status.is-loading:not(:has(.loading-state))
@@ -1858,7 +1855,6 @@ img.is-media-loading {
   display: none;
 }
 
-.dashboard-status.is-loading .loading-state::before,
 .review-page-message.is-loading .loading-state::before,
 .certificate-requests-status.is-loading .loading-state::before {
   content: '';
@@ -1880,7 +1876,6 @@ img.is-media-loading {
   animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
 }
 
-.dashboard-status.is-loading:not(:has(.loading-state))::before,
 .review-page-message.is-loading:not(:has(.loading-state))::before,
 .certificate-requests-status.is-loading:not(:has(.loading-state))::before {
   content: '';
@@ -1906,10 +1901,8 @@ img.is-media-loading {
   .skeleton::after,
   img.is-media-loading,
   .calendar-grid.is-skeleton-loading .calendar-day::after,
-  .dashboard-status.is-loading .loading-state::before,
   .review-page-message.is-loading .loading-state::before,
   .certificate-requests-status.is-loading .loading-state::before,
-  .dashboard-status.is-loading:not(:has(.loading-state))::before,
   .review-page-message.is-loading:not(:has(.loading-state))::before,
   .certificate-requests-status.is-loading:not(:has(.loading-state))::before {
     animation: none;
@@ -1919,13 +1912,10 @@ img.is-media-loading {
 html[data-theme='dark'] .skeleton,
 html[data-theme='dark'] img.is-media-loading,
 html[data-theme='dark'] .calendar-grid.is-skeleton-loading .calendar-day::after,
-html[data-theme='dark'] .dashboard-status.is-loading .loading-state::before,
 html[data-theme='dark'] .review-page-message.is-loading .loading-state::before,
 html[data-theme='dark']
   .certificate-requests-status.is-loading
   .loading-state::before,
-html[data-theme='dark']
-  .dashboard-status.is-loading:not(:has(.loading-state))::before,
 html[data-theme='dark']
   .review-page-message.is-loading:not(:has(.loading-state))::before,
 html[data-theme='dark']
@@ -1948,13 +1938,10 @@ html[data-theme='dark'] .skeleton::after {
 }
 
 html[data-theme='dark'] .calendar-grid.is-skeleton-loading .calendar-day::after,
-html[data-theme='dark'] .dashboard-status.is-loading .loading-state::before,
 html[data-theme='dark'] .review-page-message.is-loading .loading-state::before,
 html[data-theme='dark']
   .certificate-requests-status.is-loading
   .loading-state::before,
-html[data-theme='dark']
-  .dashboard-status.is-loading:not(:has(.loading-state))::before,
 html[data-theme='dark']
   .review-page-message.is-loading:not(:has(.loading-state))::before,
 html[data-theme='dark']
@@ -5031,6 +5018,148 @@ a.dropdown-toggle {
   min-height: 220px;
   display: grid;
   place-items: center;
+}
+
+.dashboard-status.is-loading:has(.dashboard-loading-skeleton) {
+  min-height: 0;
+  padding: 0;
+  display: block;
+}
+
+.dashboard-loading-skeleton {
+  overflow: hidden;
+  background: var(--white);
+  pointer-events: none;
+}
+
+.dashboard-loading-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+}
+
+.dashboard-loading-review-work,
+.dashboard-loading-actions-section {
+  min-width: 0;
+  padding: 28px 30px 30px;
+}
+
+.dashboard-loading-review-work {
+  background: var(--white);
+}
+
+.dashboard-loading-actions-section {
+  border-left: 1px solid var(--branch-grey-200);
+  background: linear-gradient(180deg, var(--branch-grey-100), var(--white));
+}
+
+.dashboard-loading-section-heading {
+  min-height: 49px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  border-bottom: 2px solid var(--gold-500);
+}
+
+.dashboard-loading-review-title,
+.dashboard-loading-actions-title,
+.dashboard-loading-disclosure-title {
+  width: min(54%, 228px);
+  height: 24px;
+}
+
+.dashboard-loading-review-summary {
+  width: min(42%, 164px);
+  height: 12px;
+}
+
+.dashboard-loading-review-queues {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dashboard-loading-review-queue {
+  min-height: 84px;
+  padding: 10px 7px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  border: 1px solid var(--branch-grey-200);
+  border-top: 3px solid var(--navy-800);
+  border-radius: 2px;
+  background: var(--branch-grey-100);
+}
+
+.dashboard-loading-review-count {
+  width: 28px;
+  height: 23px;
+}
+
+.dashboard-loading-review-label {
+  width: 68%;
+  height: 11px;
+}
+
+.dashboard-loading-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-loading-action {
+  min-height: 65px;
+  padding: 12px 14px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  border: 1px solid var(--branch-grey-200);
+  border-left: 3px solid var(--navy-800);
+  border-radius: 2px;
+  background: var(--white);
+}
+
+.dashboard-loading-action-title {
+  width: 48%;
+  height: 16px;
+}
+
+.dashboard-loading-action-copy {
+  width: 76%;
+  height: 11px;
+}
+
+.dashboard-loading-disclosure {
+  min-height: 86px;
+  padding: 20px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid var(--branch-grey-200);
+  background: linear-gradient(135deg, var(--white), var(--branch-grey-100));
+}
+
+.dashboard-loading-disclosure-copy {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.dashboard-loading-disclosure-meta {
+  width: min(240px, 52vw);
+  height: 12px;
+}
+
+.dashboard-loading-disclosure-toggle {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+
+.dashboard-loading-disclosure--short .dashboard-loading-disclosure-title {
+  width: min(34%, 170px);
 }
 
 .dashboard-status p {
@@ -9060,7 +9189,16 @@ a.dropdown-toggle {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .dashboard-loading-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .dashboard-workspace.has-review-work .dashboard-actions-section {
+    border-top: 1px solid var(--branch-grey-200);
+    border-left: 0;
+  }
+
+  .dashboard-loading-actions-section {
     border-top: 1px solid var(--branch-grey-200);
     border-left: 0;
   }
@@ -16053,6 +16191,11 @@ html[data-theme='dark'] .last-post-submit-button {
     padding: 24px 22px;
   }
 
+  .dashboard-loading-review-work,
+  .dashboard-loading-actions-section {
+    padding: 24px 22px;
+  }
+
   .dashboard-profile-section,
   .dashboard-mfa-section,
   .dashboard-subscription-section,
@@ -16071,6 +16214,11 @@ html[data-theme='dark'] .last-post-submit-button {
 
   .dashboard-profile-details > summary,
   .dashboard-disclosure > summary {
+    min-height: 78px;
+    padding: 18px 22px;
+  }
+
+  .dashboard-loading-disclosure {
     min-height: 78px;
     padding: 18px 22px;
   }
@@ -18648,6 +18796,43 @@ html[data-theme='dark'] .event-loading {
 
 html[data-theme='dark'] .dashboard-section {
   background: var(--dark-surface-2);
+}
+
+html[data-theme='dark'] .dashboard-loading-skeleton,
+html[data-theme='dark'] .dashboard-loading-review-work {
+  background: var(--dark-surface-2);
+}
+
+html[data-theme='dark'] .dashboard-loading-actions-section {
+  border-left-color: var(--dark-border);
+  background: linear-gradient(
+    180deg,
+    var(--dark-surface-2),
+    var(--dark-surface)
+  );
+}
+
+html[data-theme='dark'] .dashboard-loading-review-queue,
+html[data-theme='dark'] .dashboard-loading-action {
+  border-color: var(--dark-border-strong);
+  background: linear-gradient(180deg, #202b40, #172135);
+}
+
+html[data-theme='dark'] .dashboard-loading-review-queue {
+  border-top-color: #5d789f;
+}
+
+html[data-theme='dark'] .dashboard-loading-action {
+  border-left-color: var(--gold-500);
+}
+
+html[data-theme='dark'] .dashboard-loading-disclosure {
+  border-top-color: var(--dark-border);
+  background: linear-gradient(
+    160deg,
+    rgba(101, 124, 159, 0.16),
+    rgba(19, 29, 46, 0.08) 62%
+  );
 }
 
 html[data-theme='dark']

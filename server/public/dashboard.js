@@ -1,6 +1,9 @@
 const token = CMCENUtils.requireAuthToken();
 
 const dashboardStatus = document.getElementById("dashboardStatus");
+const dashboardLoadingTemplate = document.getElementById(
+  "dashboardLoadingTemplate",
+);
 const dashboardContent = document.getElementById("dashboardContent");
 const dashboardDetails = document.getElementById("dashboardDetails");
 const dashboardWorkspace = document.getElementById("dashboardWorkspace");
@@ -52,7 +55,13 @@ const profileSelectOptions = {
 function showDashboardLoading() {
   const message = translate("loading_text");
 
-  CMCENUtils.setStatusLoading(dashboardStatus, message);
+  dashboardStatus.replaceChildren(
+    dashboardLoadingTemplate.content.cloneNode(true),
+  );
+  dashboardStatus.className = "dashboard-status is-loading";
+  dashboardStatus.setAttribute("aria-label", message);
+  dashboardStatus.hidden = false;
+  dashboardStatus.querySelector(".visually-hidden").textContent = message;
   dashboardContent.hidden = true;
 }
 

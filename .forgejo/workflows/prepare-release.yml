@@ -125,17 +125,7 @@ jobs:
           export DESCRIPTION="Prepare $VERSION by updating CHANGELOG.md from Conventional Commit history since the previous release tag."
 
           PAYLOAD="$(
-            python3 -c '
-import json
-import os
-
-print(json.dumps({
-    "head": os.environ["BRANCH"],
-    "base": "main",
-    "title": os.environ["TITLE"],
-    "body": os.environ["DESCRIPTION"],
-}))
-'
+            python3 -c 'import json,os; print(json.dumps({"head": os.environ["BRANCH"], "base": "main", "title": os.environ["TITLE"], "body": os.environ["DESCRIPTION"]}))'
           )"
 
           RESPONSE="$(
@@ -152,13 +142,7 @@ print(json.dumps({
 
           PR_NUMBER="$(
             printf '%s' "$RESPONSE" |
-              python3 -c '
-import json
-import sys
-
-response = json.load(sys.stdin)
-print(response["number"])
-'
+              python3 -c 'import json,sys; print(json.load(sys.stdin)["number"])'
           )"
 
           if [ -z "$PR_NUMBER" ]; then
@@ -169,13 +153,7 @@ print(response["number"])
           echo "Created pull request #$PR_NUMBER"
 
           ASSIGNEE_PAYLOAD="$(
-            python3 -c '
-import json
-
-print(json.dumps({
-    "assignees": ["Bray", "Eric"]
-}))
-'
+            python3 -c 'import json; print(json.dumps({"assignees": ["Bray", "Eric"]}))'
           )"
 
           curl \

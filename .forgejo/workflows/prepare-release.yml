@@ -110,22 +110,16 @@ jobs:
         run: |
           set -eu
 
-          PR_NUMBER="$(tea pulls list \
-            --login corebot \
-            --repo Eric/CMCENDev \
-            --state open \
-            --fields index,head \
-            --output json |
-            python3 -c '
-import json, sys
-version = sys.argv[1]
-branch = f"release/{version}"
-prs = json.load(sys.stdin)
-for pr in prs:
-    if pr.get("head") == branch:
-        print(pr["index"])
-        break
-' "$VERSION")"
+          PR_NUMBER="$(
+            tea pulls list \
+              --login corebot \
+              --repo Eric/CMCENDev \
+              --state open \
+              --fields index,head \
+              --output json |
+            python3 -c 'import json,sys; version=sys.argv[1]; branch=f"release/{version}"; prs=json.load(sys.stdin); print(next((str(pr["index"]) for pr in prs if pr.get("head")==branch), ""))' \
+              "$VERSION"
+          )"
 
           if [ -z "$PR_NUMBER" ]; then
             echo "Unable to locate newly-created release PR."

@@ -12,7 +12,7 @@ jobs:
   publish-release:
     name: Publish Forgejo release
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -150,3 +150,63 @@ jobs:
 
           echo
           echo "Published release $TAG."
+
+      - name: Log in to Forgejo container registry
+        env:
+          REGISTRY_USERNAME: ${{ secrets.RELEASE_AUTOMATION_USERNAME }}
+          REGISTRY_TOKEN: ${{ secrets.RELEASE_AUTOMATION_TOKEN }}
+        run: |
+          set -eu
+
+          if [ -z "${REGISTRY_USERNAME:-}" ]; then
+            echo "RELEASE_AUTOMATION_USERNAME is not configured."
+            exit 1
+          fi
+
+          if [ -z "${REGISTRY_TOKEN:-}" ]; then
+            echo "RELEASE_AUTOMATION_TOKEN is not configured."
+            exit 1
+          fi
+
+          printf '%s' "$REGISTRY_TOKEN" |
+            docker login git.corebot.ca \
+              --username "$REGISTRY_USERNAME" \
+              --password-stdin
+
+      - name: Build release container image
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -eu
+
+          IMAGE="git.corebot.ca/eric/cmcen-dev:$TAG"
+
+          echo "Building $IMAGE"
+
+          docker build \
+            --label "org.opencontainers.image.source=https://git.corebot.ca/Eric/CMCENDev" \
+            --label "org.opencontainers.image.version=$TAG" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --tag "$IMAGE" \
+            .
+
+      - name: Push release container image
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -eu
+
+          IMAGE="git.corebot.ca/eric/cmcen-dev:$TAG"
+
+          echo "Pushing $IMAGE"
+
+          docker push "$IMAGE"
+
+          echo
+          echo "Published container image:"
+          echo "$IMAGE"
+
+      - name: Log out of Forgejo container registry
+        if: always()
+        run: |
+          docker logout git.corebot.ca || true

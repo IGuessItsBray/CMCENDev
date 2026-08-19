@@ -4,6 +4,23 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.1.0-beta.4] - 2026-08-19
+
+
+
+### CI
+
+
+- release: Publish Docker images to Forgejo Packages
+
+
+
+### Features
+
+
+- dashboard: Add animated account accordions
+
+
 ## [0.1.0-beta.3] - 2026-08-19
 
 

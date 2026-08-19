@@ -51,16 +51,30 @@ jobs:
           git config user.name "CMCEN Release Automation"
           git config user.email "release-automation@users.noreply.local"
 
+          if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+            echo "Local branch already exists: $BRANCH"
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "Remote branch already exists: $BRANCH"
+            exit 1
+          fi
+
           git switch -c "$BRANCH"
 
       - name: Generate changelog
         env:
           VERSION: ${{ inputs.version }}
         run: |
+          set -eu
+
           ./scripts/prepare-release.sh "$VERSION"
 
       - name: Review generated changes
         run: |
+          set -eu
+
           git status --short
           git diff --check
           git diff -- CHANGELOG.md
@@ -78,6 +92,8 @@ jobs:
             exit 1
           fi
 
+          git diff --cached --check
+
           git commit -m "chore(release): prepare $VERSION"
 
       - name: Push release branch
@@ -88,45 +104,89 @@ jobs:
 
           git push origin "release/$VERSION"
 
-      - name: Open pull request
+      - name: Open and assign pull request
         env:
           VERSION: ${{ inputs.version }}
           FORGEJO_TOKEN: ${{ secrets.RELEASE_AUTOMATION_TOKEN }}
         run: |
           set -eu
 
-          tea pulls create \
-            --login corebot \
-            --repo Eric/CMCENDev \
-            --head "release/$VERSION" \
-            --base main \
-            --title "chore(release): prepare $VERSION" \
-            --description "Prepare $VERSION by updating CHANGELOG.md from Conventional Commit history since the previous release tag."
-
-      - name: Assign pull request
-        env:
-          VERSION: ${{ inputs.version }}
-          FORGEJO_TOKEN: ${{ secrets.RELEASE_AUTOMATION_TOKEN }}
-        run: |
-          set -eu
-
-          PR_NUMBER="$(
-            tea pulls list \
-              --login corebot \
-              --repo Eric/CMCENDev \
-              --state open \
-              --fields index,head \
-              --output json |
-            python3 -c 'import json,sys; version=sys.argv[1]; branch=f"release/{version}"; prs=json.load(sys.stdin); print(next((str(pr["index"]) for pr in prs if pr.get("head")==branch), ""))' \
-              "$VERSION"
-          )"
-
-          if [ -z "$PR_NUMBER" ]; then
-            echo "Unable to locate newly-created release PR."
+          if [ -z "${FORGEJO_TOKEN:-}" ]; then
+            echo "RELEASE_AUTOMATION_TOKEN is not configured."
             exit 1
           fi
 
-          tea pulls edit "$PR_NUMBER" \
-            --login corebot \
-            --repo Eric/CMCENDev \
-            --add-assignees Bray,Eric
+          API_BASE="https://git.corebot.ca/api/v1"
+          REPO_OWNER="Eric"
+          REPO_NAME="CMCENDev"
+
+          export BRANCH="release/$VERSION"
+          export TITLE="chore(release): prepare $VERSION"
+          export DESCRIPTION="Prepare $VERSION by updating CHANGELOG.md from Conventional Commit history since the previous release tag."
+
+          PAYLOAD="$(
+            python3 -c '
+import json
+import os
+
+print(json.dumps({
+    "head": os.environ["BRANCH"],
+    "base": "main",
+    "title": os.environ["TITLE"],
+    "body": os.environ["DESCRIPTION"],
+}))
+'
+          )"
+
+          RESPONSE="$(
+            curl \
+              --fail-with-body \
+              --silent \
+              --show-error \
+              --request POST \
+              --header "Authorization: token $FORGEJO_TOKEN" \
+              --header "Content-Type: application/json" \
+              --data "$PAYLOAD" \
+              "$API_BASE/repos/$REPO_OWNER/$REPO_NAME/pulls"
+          )"
+
+          PR_NUMBER="$(
+            printf '%s' "$RESPONSE" |
+              python3 -c '
+import json
+import sys
+
+response = json.load(sys.stdin)
+print(response["number"])
+'
+          )"
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "Forgejo did not return a pull request number."
+            exit 1
+          fi
+
+          echo "Created pull request #$PR_NUMBER"
+
+          ASSIGNEE_PAYLOAD="$(
+            python3 -c '
+import json
+
+print(json.dumps({
+    "assignees": ["Bray", "Eric"]
+}))
+'
+          )"
+
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --request POST \
+            --header "Authorization: token $FORGEJO_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data "$ASSIGNEE_PAYLOAD" \
+            "$API_BASE/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/assignees" \
+            >/dev/null
+
+          echo "Assigned pull request #$PR_NUMBER to Bray and Eric."

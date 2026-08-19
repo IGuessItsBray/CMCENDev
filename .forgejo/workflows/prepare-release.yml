@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version, e.g. v0.1.0-beta.2"
+        description: "Release version, e.g. v0.1.0-beta.4"
         required: true
         type: string
 
@@ -36,7 +36,7 @@ jobs:
           if ! printf '%s\n' "$VERSION" |
             grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
             echo "Invalid release version: $VERSION"
-            echo "Expected format such as v0.1.0-beta.2"
+            echo "Expected format such as v0.1.0-beta.4"
             exit 1
           fi
 
@@ -156,7 +156,9 @@ jobs:
             python3 -c 'import json; print(json.dumps({"assignees": ["Bray", "Eric"]}))'
           )"
 
-          curl \
+          echo "Attempting to assign pull request #$PR_NUMBER to Bray and Eric..."
+
+          if curl \
             --fail-with-body \
             --silent \
             --show-error \
@@ -165,6 +167,11 @@ jobs:
             --header "Content-Type: application/json" \
             --data "$ASSIGNEE_PAYLOAD" \
             "$API_BASE/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/assignees" \
-            >/dev/null
+            >/dev/null; then
+            echo "Assigned pull request #$PR_NUMBER to Bray and Eric."
+          else
+            echo "WARNING: pull request #$PR_NUMBER was created successfully, but automatic assignment failed."
+            echo "WARNING: this does not fail release preparation."
+          fi
 
-          echo "Assigned pull request #$PR_NUMBER to Bray and Eric."
+          echo "Release pull request preparation completed successfully."

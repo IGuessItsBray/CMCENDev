@@ -355,7 +355,7 @@ paths:
       summary: Get current user.
       responses:
         "200":
-          description: Current user, permissions, and notifications.
+          description: Current user, permissions, and lightweight notification counts for the header badge. Full notification entries are available from GET /api/notifications.
   /api/notifications:
     get:
       tags: [Auth]

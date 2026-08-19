@@ -274,20 +274,28 @@ function createGhostPassword() {
 }
 
 function getReviewResultQuery(ownerField, user, lastReadAt) {
-  const reviewResults = [{ status: 'rejected' }];
+  return {
+    [ownerField]: user._id,
+    $or: [
+      getRejectedReviewResultQuery(),
+      getUnreadApprovalReviewResultQuery(user, lastReadAt),
+    ],
+  };
+}
+
+function getRejectedReviewResultQuery() {
+  return { status: 'rejected' };
+}
+
+function getUnreadApprovalReviewResultQuery(user, lastReadAt) {
   const approvalReadAt =
     lastReadAt ||
     new Date(Date.now() - INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS);
 
-  reviewResults.push({
+  return {
     status: 'published',
     reviewedAt: { $gt: approvalReadAt },
     reviewedBy: { $ne: user._id },
-  });
-
-  return {
-    [ownerField]: user._id,
-    $or: reviewResults,
   };
 }
 
@@ -436,6 +444,46 @@ async function getNotificationSummary(user) {
   };
 }
 
+async function getReviewResultCounts(Model, ownerField, user, lastReadAt) {
+  const ownerQuery = { [ownerField]: user._id };
+  const [actionCount, unreadCount] = await Promise.all([
+    Model.countDocuments({
+      ...ownerQuery,
+      ...getRejectedReviewResultQuery(),
+    }),
+    Model.countDocuments({
+      ...ownerQuery,
+      ...getUnreadApprovalReviewResultQuery(user, lastReadAt),
+    }),
+  ]);
+
+  return { actionCount, unreadCount };
+}
+
+async function getNotificationCounts(user) {
+  const lastReadAt = user.notificationState?.lastReadAt || null;
+  const [events, retirementMessages, retirementComments] = await Promise.all([
+    getReviewResultCounts(Event, 'createdBy', user, lastReadAt),
+    getReviewResultCounts(RetirementMessage, 'createdBy', user, lastReadAt),
+    getReviewResultCounts(RetirementComment, 'author', user, lastReadAt),
+  ]);
+
+  const actionCount =
+    events.actionCount +
+    retirementMessages.actionCount +
+    retirementComments.actionCount;
+  const unreadCount =
+    events.unreadCount +
+    retirementMessages.unreadCount +
+    retirementComments.unreadCount;
+
+  return {
+    count: actionCount + unreadCount,
+    actionCount,
+    unreadCount,
+  };
+}
+
 async function getProfileResponse(user) {
   const profile = user.toObject ? user.toObject() : user;
   const mfa = {
@@ -454,15 +502,12 @@ async function getProfileResponse(user) {
     count: 0,
     actionCount: 0,
     unreadCount: 0,
-    shouldMarkRead: false,
-    items: [],
-    readThrough: new Date().toISOString(),
   };
 
   try {
-    notifications = await getNotificationSummary(profile);
+    notifications = await getNotificationCounts(profile);
   } catch (error) {
-    console.error('Could not load notification summary:', error);
+    console.error('Could not load notification counts:', error);
   }
 
   return {

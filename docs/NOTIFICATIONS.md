@@ -42,6 +42,9 @@ and delivery when any of these values is absent.
 
 ## API
 
+- `GET /api/me` includes lightweight `{ notifications: { count, actionCount,
+  unreadCount } }` data for the header badge. It does not load notification
+  entries.
 - `GET /api/notifications` returns `{ notifications: { count, actionCount,
   unreadCount, shouldMarkRead, items, readThrough } }` for the authenticated account.
   `actionCount` is the number of current rejections; `unreadCount` is the
@@ -52,19 +55,25 @@ and delivery when any of these values is absent.
 - `PATCH /api/retirement-messages/comments/:commentId` updates an editable
   retirement comment.
 
-Both calls require a bearer token. The client obtains it through
+All notification API calls require a bearer token. The client obtains it through
 `CMCENUtils.requireAuthToken()` and redirects unauthenticated visitors to login.
 
 ## Client Behavior
 
-`index.js` loads the notification summary with the authenticated navigation
-state, then refreshes the list from `/api/notifications` when the bell opens.
+`index.js` renders the badge from the lightweight counts returned with the
+authenticated navigation state, then loads the full summary from
+`/api/notifications` only when the bell opens. This keeps initial header
+rendering independent of notification titles, sorting, and related-record
+lookups. The current header snapshot is cached in browser session storage,
+scoped to the authenticated account, so the badge and prior entries are
+available immediately after navigation and continue to work after a routine
+access-token refresh.
 If the summary has unread approvals, it sends the returned `readThrough` value
 to `/api/notifications/read`; a later review decision is not cleared because it
 falls outside that snapshot. The badge retains `actionCount` after that call.
-While the page is visible, the header refreshes its notification summary every
-minute and when the tab regains focus; those background refreshes never mark an
-approval as read.
+When the tab becomes visible again, the header refreshes its lightweight badge
+count through `GET /api/me`; it never polls in the background. Those count
+refreshes never mark an approval as read.
 Supported item types include events, retirement messages, and retirement
 comments. The header uses DOM-created links and text so notification titles and
 rejection reasons are never inserted as HTML.

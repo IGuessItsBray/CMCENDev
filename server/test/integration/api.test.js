@@ -1806,6 +1806,17 @@ describe('event, page, and comment workflows', () => {
       publishedAt: reviewDate,
     });
 
+    const profile = await request(app)
+      .get('/api/me')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    assert.deepEqual(profile.body.notifications, {
+      count: 2,
+      actionCount: 1,
+      unreadCount: 1,
+    });
+
     const notifications = await request(app)
       .get('/api/notifications')
       .set('Authorization', bearer(session.body.token))

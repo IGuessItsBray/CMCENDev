@@ -5,6 +5,15 @@
       .replace(/^Bearer\s+/i, "");
   }
 
+  function translateText(key, fallback = key, replacements = {}) {
+    if (typeof window.translate !== "function") {
+      return fallback;
+    }
+
+    const translated = window.translate(key, replacements);
+    return translated && translated !== key ? translated : fallback;
+  }
+
   function escapeRegExp(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
@@ -79,12 +88,7 @@
   const sessionCookieConsentValue = "accepted";
 
   function getSessionCookieConsentTranslation(key, fallback) {
-    if (typeof window.translate !== "function") {
-      return fallback;
-    }
-
-    const translated = window.translate(key);
-    return translated && translated !== key ? translated : fallback;
+    return translateText(key, fallback);
   }
 
   function hasSessionCookieConsent() {
@@ -832,12 +836,7 @@
   }
 
   function getToastDismissLabel(fallback) {
-    if (typeof window.translate !== "function") {
-      return fallback;
-    }
-
-    const translated = window.translate("toast_dismiss");
-    return translated && translated !== "toast_dismiss" ? translated : fallback;
+    return translateText("toast_dismiss", fallback);
   }
 
   /**
@@ -945,12 +944,7 @@
   let modalQueue = Promise.resolve();
 
   function getModalTranslation(key, fallback) {
-    if (typeof window.translate !== "function") {
-      return fallback;
-    }
-
-    const translated = window.translate(key);
-    return translated && translated !== key ? translated : fallback;
+    return translateText(key, fallback);
   }
 
   function getFocusableModalElements() {
@@ -1685,6 +1679,7 @@
     toLocalDateTimeInput,
     toLocalTimeInput,
     trackPageVisit,
+    translateText,
   };
 
   window.addEventListener("load", trackPageVisit, { once: true });

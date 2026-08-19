@@ -214,8 +214,9 @@ const standaloneLinks = [
 ];
 let customNavigationItems = [];
 let headerNotificationItems = [];
+let headerNotificationCount = 0;
 let headerNotificationListeners = null;
-let headerNotificationRefreshTimer = null;
+const headerNotificationCachePrefix = "cmcen_header_notifications_";
 
 function escapeHtml(value) {
   return String(value || "")
@@ -1180,12 +1181,7 @@ function getNotificationBellIcon() {
 }
 
 function getSignOutTranslation(key, fallback) {
-  if (typeof window.translate !== "function") {
-    return fallback;
-  }
-
-  const translated = window.translate(key);
-  return translated && translated !== key ? translated : fallback;
+  return CMCENUtils.translateText(key, fallback);
 }
 
 async function showSignOutModal() {
@@ -1242,8 +1238,107 @@ function getNotificationBadge(count) {
   `;
 }
 
+function normalizeHeaderNotificationCount(value) {
+  const count = Number(value);
+  return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+}
+
+function getHeaderNotificationCacheKey(token) {
+  const tokenParts = String(token || "").split(".");
+  let cacheScope = token;
+
+  if (tokenParts.length === 3) {
+    try {
+      const payload = JSON.parse(
+        atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")),
+      );
+      const userId = String(payload?.userId || "").trim();
+
+      if (userId) {
+        cacheScope = userId;
+      }
+    } catch {
+      // Keep the cache isolated to this token if it cannot be decoded.
+    }
+  }
+
+  let hash = 0;
+
+  for (let index = 0; index < cacheScope.length; index += 1) {
+    hash = (hash * 31 + cacheScope.charCodeAt(index)) | 0;
+  }
+
+  return `${headerNotificationCachePrefix}${hash >>> 0}`;
+}
+
+function getCachedHeaderNotifications(token) {
+  const emptyNotifications = {
+    count: 0,
+    actionCount: 0,
+    unreadCount: 0,
+    items: [],
+  };
+
+  if (!token) {
+    return emptyNotifications;
+  }
+
+  try {
+    const cached = JSON.parse(
+      sessionStorage.getItem(getHeaderNotificationCacheKey(token)) || "",
+    );
+
+    if (!cached || typeof cached !== "object") {
+      return emptyNotifications;
+    }
+
+    return {
+      count: normalizeHeaderNotificationCount(cached.count),
+      actionCount: normalizeHeaderNotificationCount(cached.actionCount),
+      unreadCount: normalizeHeaderNotificationCount(cached.unreadCount),
+      items: Array.isArray(cached.items) ? cached.items : [],
+    };
+  } catch {
+    return emptyNotifications;
+  }
+}
+
+function cacheHeaderNotifications(notifications, token) {
+  if (!token) {
+    return;
+  }
+
+  const cached = getCachedHeaderNotifications(token);
+  const hasItems = Array.isArray(notifications.items);
+  const count = normalizeHeaderNotificationCount(
+    notifications.count ?? cached.count,
+  );
+
+  try {
+    sessionStorage.setItem(
+      getHeaderNotificationCacheKey(token),
+      JSON.stringify({
+        count,
+        actionCount: normalizeHeaderNotificationCount(
+          notifications.actionCount ?? cached.actionCount,
+        ),
+        unreadCount: normalizeHeaderNotificationCount(
+          notifications.unreadCount ?? cached.unreadCount,
+        ),
+        items: count === 0 ? [] : hasItems ? notifications.items : cached.items,
+      }),
+    );
+  } catch {
+    // The live response remains usable when session storage is unavailable.
+  }
+}
+
 function updateNotificationBadges(count = 0) {
   const notificationCount = Number(count) || 0;
+  const notificationsHeading = CMCENUtils.translateText(
+    "notifications_heading",
+    "Notifications",
+  );
 
   document
     .querySelectorAll(".notification-badge")
@@ -1253,8 +1348,8 @@ function updateNotificationBadges(count = 0) {
     toggle.setAttribute(
       "aria-label",
       notificationCount > 0
-        ? `${translate("notifications_heading")} (${notificationCount})`
-        : translate("notifications_heading"),
+        ? `${notificationsHeading} (${notificationCount})`
+        : notificationsHeading,
     );
   });
 
@@ -1394,10 +1489,20 @@ function setHeaderNotificationOpen(isOpen) {
 }
 
 function updateHeaderNotifications(notifications = {}) {
-  headerNotificationItems = Array.isArray(notifications.items)
-    ? notifications.items
-    : [];
-  updateNotificationBadges(notifications.count || 0);
+  if (Array.isArray(notifications.items)) {
+    headerNotificationItems = notifications.items;
+  }
+
+  headerNotificationCount = normalizeHeaderNotificationCount(
+    notifications.count,
+  );
+
+  if (!Array.isArray(notifications.items) && headerNotificationCount === 0) {
+    headerNotificationItems = [];
+  }
+
+  cacheHeaderNotifications(notifications, getStoredAuthToken());
+  updateNotificationBadges(headerNotificationCount);
 
   if (
     document.getElementById("notificationToggle")?.getAttribute(
@@ -1426,7 +1531,11 @@ async function markHeaderNotificationsRead(
     });
 
     if (getStoredAuthToken() === token) {
-      updateNotificationBadges(remainingActionCount);
+      updateHeaderNotifications({
+        count: remainingActionCount,
+        actionCount: remainingActionCount,
+        unreadCount: 0,
+      });
     }
   } catch (error) {
     console.error("Could not mark notifications as read:", error);
@@ -1440,7 +1549,16 @@ async function loadHeaderNotifications() {
     return;
   }
 
-  showHeaderNotificationStatus(translate("notifications_loading"), "loading");
+  if (headerNotificationCount === 0) {
+    renderHeaderNotifications([]);
+    return;
+  }
+
+  if (headerNotificationItems.length) {
+    renderHeaderNotifications();
+  } else {
+    showHeaderNotificationStatus(translate("notifications_loading"), "loading");
+  }
 
   try {
     const data = await CMCENUtils.apiJson("/api/notifications", {
@@ -1469,7 +1587,7 @@ async function loadHeaderNotifications() {
   }
 }
 
-async function refreshHeaderNotifications() {
+async function refreshHeaderNotificationCount() {
   const token = getStoredAuthToken();
 
   if (!token) {
@@ -1477,22 +1595,21 @@ async function refreshHeaderNotifications() {
   }
 
   try {
-    const data = await CMCENUtils.apiJson("/api/notifications", {
+    const user = await CMCENUtils.apiJson("/api/me", {
       token,
       errorMessage: translate("notifications_load_error"),
     });
 
     if (getStoredAuthToken() === token) {
-      updateHeaderNotifications(data.notifications || {});
+      updateHeaderNotifications(user.notifications || {});
     }
   } catch (error) {
-    console.error("Could not refresh notifications:", error);
+    console.error("Could not refresh notification count:", error);
   }
 }
 
 function setupHeaderNotifications() {
   headerNotificationListeners?.abort();
-  window.clearInterval(headerNotificationRefreshTimer);
   headerNotificationListeners = new AbortController();
 
   const { signal } = headerNotificationListeners;
@@ -1551,7 +1668,10 @@ function setupHeaderNotifications() {
 
   document.addEventListener(
     "languagechange",
-    () => renderHeaderNotifications(),
+    () => {
+      updateNotificationBadges(headerNotificationCount);
+      renderHeaderNotifications();
+    },
     { signal },
   );
 
@@ -1559,17 +1679,11 @@ function setupHeaderNotifications() {
     "visibilitychange",
     () => {
       if (document.visibilityState === "visible") {
-        refreshHeaderNotifications();
+        refreshHeaderNotificationCount();
       }
     },
     { signal },
   );
-
-  headerNotificationRefreshTimer = window.setInterval(() => {
-    if (document.visibilityState === "visible") {
-      refreshHeaderNotifications();
-    }
-  }, 60_000);
 }
 
 function updateAuthButtons() {
@@ -1662,7 +1776,9 @@ function updateAuthButtons() {
   headerNotifications.hidden = !token;
   applyCurrentLanguage();
 
-  updateHeaderNotifications({ count: 0, items: [] });
+  updateHeaderNotifications(
+    token ? getCachedHeaderNotifications(token) : { count: 0, items: [] },
+  );
 }
 
 async function updateAuthRestrictedItems() {

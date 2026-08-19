@@ -1129,57 +1129,238 @@ actually required.
 Commit messages should be concise and should accurately represent the content
 of the commit.
 
-## Branch and Commit Relationship
+## Pull Request Naming Standard
 
-Branch types and commit types serve different purposes.
+Pull request titles MUST follow Conventional Commits 1.0.0 syntax.
 
-Do not assume that every commit on a branch must use the same type as the
-branch.
-
-For example, a feature branch:
+Use:
 
 ```text
-feat/add-passkey-support
+<type>[optional scope][optional !]: <description>
 ```
 
-may legitimately contain:
+Examples:
 
 ```text
+feat(auth): add passkey authentication
+fix(mfa): prevent duplicate totp enrollment
+docs(config): update environment documentation
+chore: update dependencies
+refactor(api): simplify permission checks
+feat(auth)!: replace legacy authentication flow
+```
+
+The PR title represents the overall purpose of the pull request.
+
+PR titles MUST:
+
+1. Use a valid Conventional Commit type.
+2. Use an optional scope only when it provides useful context.
+3. Use `!` when the overall PR introduces a breaking change.
+4. Include a concise description after the colon and space.
+5. Describe the complete user-facing, developer-facing, operational, or
+   repository-level purpose of the PR.
+6. Be suitable for use as the subject of a squash-merge commit.
+7. Remain purpose-oriented.
+8. MUST NOT identify the agent, tool, IDE, developer, or automation that
+   created the PR.
+
+Do NOT use vague or source-oriented PR titles such as:
+
+```text
+Update stuff
+Fixes
+Codex changes
+Claude changes
+PR for auth work
+Feature branch merge
+Various updates
+Bray changes
+```
+
+Prefer:
+
+```text
+docs(config): update project configuration documentation
+fix(auth): repair login redirect handling
+feat(events): add event filtering
+chore(deps): update runtime dependencies
+refactor(api): simplify role permission checks
+```
+
+### PR Title And Branch Relationship
+
+The branch name and PR title serve different purposes.
+
+Example:
+
+```text
+Branch:
+feat/add-passkey-authentication
+
+PR:
+feat(auth): add passkey authentication
+```
+
+The branch follows the repository's Conventional Branch policy.
+
+The PR title follows Conventional Commits syntax.
+
+The PR title SHOULD summarize the complete purpose of the change rather than
+mechanically copying or transforming the branch name.
+
+### PR Title And Commit Relationship
+
+Individual commits within a pull request MAY use different Conventional Commit
+types when appropriate.
+
+Example:
+
+```text
+Branch:
+feat/add-passkey-authentication
+
+Commits:
+feat(auth): add passkey registration
+test(auth): add passkey integration tests
+docs(config): document WebAuthn configuration
+fix(auth): handle missing credential ids
+
+PR:
+feat(auth): add passkey authentication
+```
+
+The PR title communicates the overall change.
+
+Individual commit messages communicate the individual pieces of work.
+
+Do not change a technically accurate commit type merely to make every commit
+match the PR title.
+
+### Squash Merge Compatibility
+
+PR titles MUST be suitable for use as squash-merge commit subjects.
+
+When a pull request is squash-merged, the resulting commit SHOULD preserve the
+PR title as its commit subject.
+
+This keeps the first-parent history of `main` machine-readable and suitable for:
+
+* automated changelog generation;
+* release-note generation;
+* Semantic Versioning analysis;
+* commit classification;
+* repository-history review.
+
+Because of this, agents MUST NOT use temporary, conversational, vague, or
+non-Conventional-Commit PR titles.
+
+Before opening a PR, agents MUST confirm that the proposed title would still
+make sense if it became the permanent squash-merge commit on `main`.
+
+### Breaking Changes
+
+If the overall PR introduces a breaking change, indicate it with `!`.
+
+Example:
+
+```text
+feat(auth)!: replace legacy authentication flow
+```
+
+The PR description SHOULD explain:
+
+* what compatibility is being broken;
+* why the breaking change is necessary;
+* what users, clients, developers, or operators must change;
+* any migration requirements;
+* any configuration or deployment actions required.
+
+### Pull Request Description Requirements
+
+PR descriptions SHOULD provide enough information for reviewers to understand
+and validate the change without reconstructing the intent from individual
+commits.
+
+Include, when applicable:
+
+* a concise summary of the change;
+* important implementation details;
+* tests and validation performed;
+* configuration changes;
+* database or migration impact;
+* security, authentication, authorization, or permission impact;
+* new dependencies and why no reasonable alternative existed;
+* breaking changes;
+* deployment or operator actions required;
+* documentation updated;
+* known limitations or follow-up work.
+
+For configuration changes, explicitly identify updates to:
+
+```text
+.env.example
+docs/CONFIG.md
+```
+
+For endpoint changes, explicitly identify updates to:
+
+```text
+docs/API ROUTES.md
+api/schema/openapi.yaml
+```
+
+Do not place credentials, tokens, passwords, private infrastructure details, or
+other secrets in PR descriptions.
+
+## Branch, Commit, And PR Relationship
+
+Branch names, individual commit messages, and PR titles each have a separate
+purpose.
+
+For example:
+
+```text
+Branch:
+feat/add-passkey-support
+
+Commits:
 feat(auth): add passkey registration
 test(auth): add passkey registration tests
-docs(auth): document passkey configuration
+docs(config): document WebAuthn configuration
 fix(auth): handle missing credential ids
+
+PR:
+feat(auth): add passkey support
 ```
 
-The branch communicates the overall purpose of the work. Each commit
-communicates the purpose of that individual change.
+The branch describes the overall workstream using Conventional Branch naming.
 
-Branch names MUST remain purpose-oriented regardless of who or what created
-the branch.
+Each commit describes an individual change using Conventional Commits.
 
-Do not use the agent name as either a branch prefix or a commit type.
+The PR title describes the overall reviewed change using Conventional Commits
+syntax and is suitable for use as the squash-merge commit subject.
+
+Do not assume every commit on a branch must use the same type as the branch or
+PR.
+
+Branch names and PR titles MUST remain purpose-oriented regardless of who or
+what created them.
+
+Do not use an agent name as a branch prefix, commit type, or PR title prefix.
 
 For example, do NOT use:
 
 ```text
 codex/add-passkey-support
-```
-
-or:
-
-```text
 codex: add passkey support
+Codex: add passkey support
 ```
 
 Use:
 
 ```text
 feat/add-passkey-support
-```
-
-and:
-
-```text
 feat(auth): add passkey support
 ```
 
@@ -1414,8 +1595,11 @@ Before reporting a code change complete:
 11. Commit using Conventional Commits 1.0.0.
 12. Push the working branch to the appropriate remote.
 13. Open a pull request targeting `main`.
-14. Assign the pull request to `Bray` and `Eric`.
-15. Report the pull request and any checks that could not be run or did not
+14. Confirm the pull request title follows the Pull Request Naming Standard.
+15. Confirm the pull request description includes applicable testing,
+    configuration, security, migration, dependency, and deployment information.
+16. Assign the pull request to `Bray` and `Eric`.
+17. Report the pull request and any checks that could not be run or did not
     pass.
 
 Do not claim a test, check, build, deployment, push, pull request, or other
@@ -1426,8 +1610,8 @@ that clearly rather than modifying unrelated code merely to make the check
 green.
 
 Do not report the task as fully complete if a required validation,
-documentation, configuration, or pull-request step remains unperformed or
-failed. Clearly state what remains.
+documentation, configuration, PR-title, or pull-request step remains
+unperformed or failed. Clearly state what remains.
 
 ## Pull Request Requirement
 
@@ -1461,9 +1645,12 @@ For every change:
 5. Review the diff.
 6. Commit using Conventional Commits 1.0.0.
 7. Push the branch to the appropriate remote.
-8. Open a pull request targeting `main`.
-9. Assign the PR to `Bray` and `Eric`.
-10. Report the PR when the work is complete.
+8. Open a pull request targeting `main` with a title that follows the Pull
+   Request Naming Standard.
+9. Ensure the PR description contains the applicable validation and operational
+   information.
+10. Assign the PR to `Bray` and `Eric`.
+11. Report the PR when the work is complete.
 
 Agents MUST NOT:
 
@@ -1504,7 +1691,7 @@ git diff
 git add <changed-files>
 git commit -m "<conventional-commit-message>"
 git push codex <conventional-branch-name>
-tea pulls create --login corebot --repo Eric/CMCENDev --head <branch> --base main --title "<title>" --description "<body>"
+tea pulls create --login corebot --repo Eric/CMCENDev --head <branch> --base main --title "<conventional-pr-title>" --description "<body>"
 tea pulls edit <pr-number> --login corebot --repo Eric/CMCENDev --add-assignees Bray,Eric
 ```
 
@@ -1525,7 +1712,7 @@ git diff
 git add server/routes/auth.js docs/'API ROUTES.md' api/schema/
 git commit -m "feat(auth): add passkey authentication"
 git push codex feat/add-passkey-authentication
-tea pulls create --login corebot --repo Eric/CMCENDev --head feat/add-passkey-authentication --base main --title "feat: add passkey authentication" --description "<body>"
+tea pulls create --login corebot --repo Eric/CMCENDev --head feat/add-passkey-authentication --base main --title "feat(auth): add passkey authentication" --description "<body>"
 tea pulls edit <pr-number> --login corebot --repo Eric/CMCENDev --add-assignees Bray,Eric
 ```
 
@@ -1536,16 +1723,16 @@ git status --short
 git fetch origin
 git switch main
 git pull --ff-only origin main
-git switch -c docs/update-config-documentation
+git switch -c chore/update-project-documentation
 
-# Update the synchronized configuration documentation.
+# Update synchronized configuration documentation.
 git diff --check
-git diff -- .env.example docs/CONFIG.md README.md
+git diff -- .env.example docs/CONFIG.md README.md AGENTS.md compose.dev.yml
 
-git add .env.example docs/CONFIG.md README.md
-git commit -m "docs(config): update environment configuration"
-git push codex docs/update-config-documentation
-tea pulls create --login corebot --repo Eric/CMCENDev --head docs/update-config-documentation --base main --title "docs(config): update environment configuration" --description "<body>"
+git add .env.example docs/CONFIG.md README.md AGENTS.md compose.dev.yml
+git commit -m "docs(config): update project configuration documentation"
+git push codex chore/update-project-documentation
+tea pulls create --login corebot --repo Eric/CMCENDev --head chore/update-project-documentation --base main --title "docs(config): update project configuration documentation" --description "<body>"
 tea pulls edit <pr-number> --login corebot --repo Eric/CMCENDev --add-assignees Bray,Eric
 ```
 

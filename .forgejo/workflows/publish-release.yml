@@ -1,0 +1,152 @@
+name: Publish release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    name: Publish Forgejo release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read release tag
+        id: release
+        run: |
+          set -eu
+
+          TAG="${GITHUB_REF#refs/tags/}"
+
+          if ! printf '%s\n' "$TAG" |
+            grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "Invalid release tag: $TAG"
+            echo "Expected SemVer such as:"
+            echo "  v0.1.0-beta.3"
+            echo "  v0.1.0-rc.1"
+            echo "  v0.1.0"
+            echo "  v1.0.0"
+            exit 1
+          fi
+
+          VERSION="${TAG#v}"
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          case "$VERSION" in
+            *-*)
+              echo "prerelease=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "prerelease=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Extract release notes
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -eu
+
+          python3 - "$VERSION" <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          version = sys.argv[1]
+          changelog = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+
+          heading = re.escape(f"## [{version}]")
+          pattern = re.compile(
+              rf"^{heading}[^\n]*\n(.*?)(?=^## \[|\Z)",
+              re.MULTILINE | re.DOTALL,
+          )
+
+          match = pattern.search(changelog)
+
+          if not match:
+              print(
+                  f"Could not find CHANGELOG.md section for {version}.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          body = match.group(1).strip()
+
+          if not body:
+              print(
+                  f"CHANGELOG.md section for {version} is empty.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          pathlib.Path("release-notes.md").write_text(
+              body + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+          echo "Release notes:"
+          cat release-notes.md
+
+      - name: Publish Forgejo release
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          FORGEJO_TOKEN: ${{ secrets.RELEASE_AUTOMATION_TOKEN }}
+        run: |
+          set -eu
+
+          if [ -z "${FORGEJO_TOKEN:-}" ]; then
+            echo "RELEASE_AUTOMATION_TOKEN is not configured."
+            exit 1
+          fi
+
+          API_BASE="https://git.corebot.ca/api/v1"
+          REPO_OWNER="Eric"
+          REPO_NAME="CMCENDev"
+
+          export TAG
+          export VERSION
+          export PRERELEASE
+
+          PAYLOAD="$(
+            python3 - <<'PY'
+          import json
+          import os
+          import pathlib
+
+          body = pathlib.Path("release-notes.md").read_text(encoding="utf-8")
+
+          print(json.dumps({
+              "tag_name": os.environ["TAG"],
+              "target_commitish": "main",
+              "name": os.environ["TAG"],
+              "body": body,
+              "draft": False,
+              "prerelease": os.environ["PRERELEASE"] == "true",
+          }))
+          PY
+          )"
+
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --request POST \
+            --header "Authorization: token $FORGEJO_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data "$PAYLOAD" \
+            "$API_BASE/repos/$REPO_OWNER/$REPO_NAME/releases"
+
+          echo
+          echo "Published release $TAG."

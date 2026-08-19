@@ -15,10 +15,22 @@ jobs:
     timeout-minutes: 5
 
     steps:
+      - name: Verify release automation token
+        env:
+          RELEASE_AUTOMATION_TOKEN: ${{ secrets.RELEASE_AUTOMATION_TOKEN }}
+        run: |
+          set -eu
+
+          if [ -z "${RELEASE_AUTOMATION_TOKEN:-}" ]; then
+            echo "RELEASE_AUTOMATION_TOKEN is not configured."
+            exit 1
+          fi
+
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.RELEASE_AUTOMATION_TOKEN }}
 
       - name: Detect release preparation commit
         id: release

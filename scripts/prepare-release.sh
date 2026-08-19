@@ -49,7 +49,7 @@ echo
 echo "Generating changelog..."
 
 git-cliff \
-  "${LATEST_TAG}..HEAD" \
+  --unreleased \
   --config cliff.toml \
   --tag "$VERSION" \
   --prepend CHANGELOG.md

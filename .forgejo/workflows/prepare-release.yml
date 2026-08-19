@@ -1,0 +1,132 @@
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version, e.g. v0.1.0-beta.2"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare-release:
+    name: Prepare release PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install git-cliff
+        uses: taiki-e/install-action@git-cliff
+
+      - name: Validate requested version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -eu
+
+          if ! printf '%s\n' "$VERSION" |
+            grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "Invalid release version: $VERSION"
+            echo "Expected format such as v0.1.0-beta.2"
+            exit 1
+          fi
+
+      - name: Create release branch
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -eu
+
+          BRANCH="release/$VERSION"
+
+          git config user.name "CMCEN Release Automation"
+          git config user.email "release-automation@users.noreply.local"
+
+          git switch -c "$BRANCH"
+
+      - name: Generate changelog
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          ./scripts/prepare-release.sh "$VERSION"
+
+      - name: Review generated changes
+        run: |
+          git status --short
+          git diff --check
+          git diff -- CHANGELOG.md
+
+      - name: Commit release preparation
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -eu
+
+          git add CHANGELOG.md
+
+          if git diff --cached --quiet; then
+            echo "No changelog changes were generated."
+            exit 1
+          fi
+
+          git commit -m "chore(release): prepare $VERSION"
+
+      - name: Push release branch
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -eu
+
+          git push origin "release/$VERSION"
+
+      - name: Open pull request
+        env:
+          VERSION: ${{ inputs.version }}
+          FORGEJO_TOKEN: ${{ secrets.RELEASE_AUTOMATION_TOKEN }}
+        run: |
+          set -eu
+
+          tea pulls create \
+            --login corebot \
+            --repo Eric/CMCENDev \
+            --head "release/$VERSION" \
+            --base main \
+            --title "chore(release): prepare $VERSION" \
+            --description "Prepare $VERSION by updating CHANGELOG.md from Conventional Commit history since the previous release tag."
+
+      - name: Assign pull request
+        env:
+          VERSION: ${{ inputs.version }}
+          FORGEJO_TOKEN: ${{ secrets.RELEASE_AUTOMATION_TOKEN }}
+        run: |
+          set -eu
+
+          PR_NUMBER="$(
+            tea pulls list \
+              --login corebot \
+              --repo Eric/CMCENDev \
+              --state open \
+              --fields index,head \
+              --output json |
+            python3 -c 'import json,sys; version=sys.argv[1]; branch=f"release/{version}"; prs=json.load(sys.stdin); print(next((str(pr["index"]) for pr in prs if pr.get("head")==branch), ""))' \
+              "$VERSION"
+          )"
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "Unable to locate newly-created release PR."
+            exit 1
+          fi
+
+          tea pulls edit "$PR_NUMBER" \
+            --login corebot \
+            --repo Eric/CMCENDev \
+            --add-assignees Bray,Eric

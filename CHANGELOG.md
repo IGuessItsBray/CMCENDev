@@ -4,6 +4,32 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.1.0-beta.5] - 2026-08-19
+
+
+
+### Bug Fixes
+
+
+- ci: Make release PR assignment non-blocking
+
+- dashboard: Align loading skeleton with content
+
+
+
+### CI
+
+
+- release: Tag prepared releases automatically
+
+
+
+### Documentation
+
+
+- agents: Document automatic release tagging
+
+
 ## [0.1.0-beta.4] - 2026-08-19
 
 

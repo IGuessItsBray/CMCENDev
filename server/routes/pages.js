@@ -65,7 +65,6 @@ const SITEMAP_EXCLUDED_HTML = new Set([
 const SITEMAP_ACCOUNT_HTML = new Set([
   'dashboard.html',
   'login.html',
-  'notifications.html',
   'register.html',
 ]);
 const SITEMAP_STATIC_LABELS = Object.freeze({
@@ -108,7 +107,6 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     fr: 'Message de dernière sonnerie',
   },
   'login.html': { en: 'Sign in', fr: 'Connexion' },
-  'notifications.html': { en: 'Notifications', fr: 'Notifications' },
   'register.html': { en: 'Create account', fr: 'Créer un compte' },
   'retirement-message.html': {
     en: 'Retirement message',

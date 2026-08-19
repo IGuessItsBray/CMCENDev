@@ -232,6 +232,12 @@ retirementMessageSchema.index({
 });
 
 retirementMessageSchema.index({
+  createdBy: 1,
+  status: 1,
+  reviewedAt: -1,
+});
+
+retirementMessageSchema.index({
   publishedBy: 1,
   publishedAt: -1,
 });

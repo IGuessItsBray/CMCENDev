@@ -327,6 +327,13 @@ EventSchema.index({
   startDate: -1,
 });
 
+// Header review-result notifications.
+EventSchema.index({
+  createdBy: 1,
+  status: 1,
+  reviewedAt: -1,
+});
+
 // Review queue.
 EventSchema.index({
   status: 1,

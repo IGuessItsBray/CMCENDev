@@ -630,25 +630,23 @@ MAIL_TO_BRANCH=
 This is used by the retirement-submission workflow as its primary internal
 destination.
 
-### `SEND_EMAIL_ON_RETIREMENT_SUBMISSION`
+### `DISABLE_EMAIL_SENDING`
 
-Controls whether retirement submissions automatically generate notification
-email.
+Controls whether CMCEN hands any outbound email to SMTP. When set to `true`,
+the underlying workflows continue but no message is delivered. Use this for
+safe local development and notification testing.
 
-Disabled:
-
-```dotenv
-SEND_EMAIL_ON_RETIREMENT_SUBMISSION=false
-```
-
-Enabled:
+Default:
 
 ```dotenv
-SEND_EMAIL_ON_RETIREMENT_SUBMISSION=true
+DISABLE_EMAIL_SENDING=false
 ```
 
-Keep this disabled in local environments unless email delivery is intentionally
-being tested.
+For local testing:
+
+```dotenv
+DISABLE_EMAIL_SENDING=true
+```
 
 ## CASL Sender Configuration
 
@@ -829,7 +827,7 @@ SMTP_PORT=587
 SMTP_SECURE=starttls
 SMTP_REQUIRE_TLS=true
 
-SEND_EMAIL_ON_RETIREMENT_SUBMISSION=false
+DISABLE_EMAIL_SENDING=true
 ENABLE_API_DOCS=true
 ```
 

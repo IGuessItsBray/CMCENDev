@@ -34,6 +34,18 @@ const retirementCommentSubmit = document.getElementById(
   "retirementCommentSubmit",
 );
 
+const retirementCommentLabel = document.getElementById(
+  "retirementCommentLabel",
+);
+
+const retirementCommentEditContext = document.getElementById(
+  "retirementCommentEditContext",
+);
+
+const retirementCommentCancel = document.getElementById(
+  "retirementCommentCancel",
+);
+
 const retirementCommentLogin = document.getElementById(
   "retirementCommentLogin",
 );
@@ -51,6 +63,10 @@ let visibleDetailMessageKey = "";
 let visibleDetailMessageType = "neutral";
 let visibleCommentMessageKey = "";
 let visibleCommentMessageType = "neutral";
+let requestedRetirementCommentEditId = new URLSearchParams(
+  window.location.search,
+).get("editComment");
+let editingRetirementComment = null;
 
 function createRetirementLoadingContent(message) {
   const skeleton = document.createElement("div");
@@ -305,6 +321,105 @@ function showRetirementCommentMessageKey(key, type = "neutral") {
 
 function getStoredToken() {
   return CMCENUtils.getStoredAuthToken();
+}
+
+function getRetirementCommentEditHref() {
+  return `/retirement-message?id=${encodeURIComponent(currentRetirementMessageId)}`;
+}
+
+function updateRetirementCommentFormCopy() {
+  const isEditing = Boolean(editingRetirementComment);
+  const labelKey = isEditing
+    ? "retirement_comment_edit"
+    : "retirement_comment_add";
+  const noteKey = isEditing
+    ? "retirement_comment_resubmit_note"
+    : "retirement_comment_review_note";
+  const submitKey = isEditing
+    ? "retirement_comment_resubmit"
+    : "retirement_comment_post";
+  const note = retirementCommentForm?.querySelector("small");
+
+  if (retirementCommentLabel) {
+    retirementCommentLabel.dataset.i18n = labelKey;
+    retirementCommentLabel.textContent = translate(labelKey);
+  }
+
+  if (note) {
+    note.dataset.i18n = noteKey;
+    note.textContent = translate(noteKey);
+  }
+
+  if (retirementCommentSubmit && !retirementCommentSubmit.disabled) {
+    retirementCommentSubmit.dataset.i18n = submitKey;
+    retirementCommentSubmit.textContent = translate(submitKey);
+  }
+
+  if (retirementCommentCancel) {
+    retirementCommentCancel.href = getRetirementCommentEditHref();
+    retirementCommentCancel.hidden = !isEditing;
+  }
+
+  if (retirementCommentEditContext) {
+    const reason = String(
+      editingRetirementComment?.rejectionReason || "",
+    ).trim();
+    retirementCommentEditContext.textContent = reason
+      ? `${translate("my_events_rejection_reason")}: ${reason}`
+      : "";
+    retirementCommentEditContext.hidden = !isEditing || !reason;
+  }
+}
+
+function setRetirementCommentEditor(comment = null) {
+  editingRetirementComment = comment;
+
+  if (comment) {
+    retirementCommentText.value = comment.body || "";
+  }
+
+  updateRetirementCommentFormCopy();
+  CMCENUtils.bindCharacterCounters();
+}
+
+async function loadRetirementCommentEditor(token) {
+  if (!requestedRetirementCommentEditId || !currentRetirementMessageId) {
+    setRetirementCommentEditor();
+    return;
+  }
+
+  try {
+    const data = await CMCENUtils.apiJson(
+      `/api/retirement-messages/comments/${encodeURIComponent(requestedRetirementCommentEditId)}/edit`,
+      {
+        token,
+        errorMessage: translate("retirement_comment_edit_load_error"),
+      },
+    );
+    const comment = data.comment;
+    const messageId =
+      comment?.retirementMessage?._id || comment?.retirementMessage;
+
+    if (String(messageId || "") !== String(currentRetirementMessageId)) {
+      throw new Error(translate("retirement_comment_edit_load_error"));
+    }
+
+    if (comment.status !== "rejected") {
+      throw new Error(translate("retirement_comment_no_longer_rejected"));
+    }
+
+    setRetirementCommentEditor(comment);
+    retirementCommentForm?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  } catch (error) {
+    setRetirementCommentEditor();
+    showRetirementCommentMessage(
+      error.message || translate("retirement_comment_edit_load_error"),
+      "error",
+    );
+  }
 }
 
 function removeRetirementAdminActions() {
@@ -613,6 +728,7 @@ async function setupCommentAccess() {
       canManageRetirementComments = canDeleteAnyContent;
       canDeleteOwnRetirementComments = canDeleteOwnContent;
       renderRetirementAdminActions();
+      await loadRetirementCommentEditor(token);
     } catch (error) {
       canManageRetirementComments = false;
       canManageRetirementMessages = false;
@@ -683,19 +799,28 @@ retirementCommentForm.addEventListener("submit", async (event) => {
   }
 
   const body = retirementCommentText.value.trim();
+  const submittingEdit = Boolean(editingRetirementComment);
+  const commentId = editingRetirementComment?._id;
 
   retirementCommentSubmit.disabled = true;
-  retirementCommentSubmit.textContent = translate("retirement_comment_posting");
+  retirementCommentSubmit.textContent = translate(
+    submittingEdit
+      ? "retirement_comment_resubmitting"
+      : "retirement_comment_posting",
+  );
   retirementCommentMessage.hidden = true;
   visibleCommentMessageKey = "";
 
   try {
+    const endpoint = submittingEdit
+      ? `/api/retirement-messages/comments/${encodeURIComponent(commentId)}`
+      : `/api/retirement-messages/${encodeURIComponent(
+          currentRetirementMessageId,
+        )}/comments`;
     const response = await fetch(
-      `/api/retirement-messages/${encodeURIComponent(
-        currentRetirementMessageId,
-      )}/comments`,
+      endpoint,
       {
-        method: "POST",
+        method: submittingEdit ? "PATCH" : "POST",
 
         headers: CMCENUtils.authHeaders(token, {
           "Content-Type": "application/json",
@@ -715,8 +840,28 @@ retirementCommentForm.addEventListener("submit", async (event) => {
 
     if (!response.ok) {
       throw new Error(
-        data.error || translate("retirement_comment_submit_error"),
+        data.error ||
+          translate(
+            submittingEdit
+              ? "retirement_comment_update_error"
+              : "retirement_comment_submit_error",
+          ),
       );
+    }
+
+    if (submittingEdit) {
+      requestedRetirementCommentEditId = null;
+      setRetirementCommentEditor();
+      window.history.replaceState({}, "", getRetirementCommentEditHref());
+      await loadComments(currentRetirementMessageId);
+      window.refreshAuthUI?.();
+
+      CMCENUtils.showToast(translate("retirement_comment_updated"), {
+        color: "success",
+        position: "bottom-right",
+        animation: "slide",
+      });
+      return;
     }
 
     retirementCommentForm.reset();
@@ -747,12 +892,17 @@ retirementCommentForm.addEventListener("submit", async (event) => {
     }
   } catch (error) {
     CMCENUtils.showToast(
-      error.message || translate("retirement_comment_submit_error"),
+      error.message ||
+        translate(
+          submittingEdit
+            ? "retirement_comment_update_error"
+            : "retirement_comment_submit_error",
+        ),
       { color: "error", position: "bottom-right", animation: "slide" },
     );
   } finally {
     retirementCommentSubmit.disabled = false;
-    retirementCommentSubmit.textContent = translate("retirement_comment_post");
+    updateRetirementCommentFormCopy();
   }
 });
 
@@ -783,11 +933,7 @@ document.addEventListener("languagechange", () => {
     );
   }
 
-  retirementCommentSubmit.textContent = translate(
-    retirementCommentSubmit.disabled
-      ? "retirement_comment_posting"
-      : "retirement_comment_post",
-  );
+  updateRetirementCommentFormCopy();
 });
 
 loadRetirementMessage();

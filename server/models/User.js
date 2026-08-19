@@ -273,6 +273,13 @@ const UserSchema = new mongoose.Schema(
       },
     },
 
+    notificationState: {
+      // Keep this unset until the member actually opens the notification menu.
+      // A Date.now default would be applied when reading legacy users too,
+      // incorrectly treating existing review results as already read.
+      lastReadAt: { type: Date, default: null },
+    },
+
     webauthn: {
       type: [
         {
@@ -335,7 +342,7 @@ const UserSchema = new mongoose.Schema(
       delivery: {
         status: {
           type: String,
-          enum: ['pending', 'sent', 'failed'],
+          enum: ['pending', 'sent', 'skipped', 'failed'],
           default: 'pending',
         },
         attemptedAt: { type: Date, default: null },

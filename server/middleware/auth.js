@@ -27,7 +27,7 @@ async function authMiddleware(req, res, next) {
   try {
     const user = await User.findById(decoded.userId)
       .select(
-        'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas emailSubscriptions totp webauthn twoFactor createdAt updatedAt',
+        'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas emailSubscriptions notificationState totp webauthn twoFactor createdAt updatedAt',
       )
       .populate('customRoles', 'name slug color permissions');
 
@@ -61,7 +61,7 @@ async function optionalAuthMiddleware(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId)
       .select(
-        'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas emailSubscriptions createdAt updatedAt',
+        'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas emailSubscriptions notificationState createdAt updatedAt',
       )
       .populate('customRoles', 'name slug color permissions');
 
@@ -150,7 +150,7 @@ async function authOrTempMiddleware(req, res, next) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById(decoded.userId)
         .select(
-          'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt',
+          'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas notificationState createdAt updatedAt',
         )
         .populate('customRoles', 'name slug color permissions');
 

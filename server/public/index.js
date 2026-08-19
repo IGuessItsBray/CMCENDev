@@ -213,6 +213,9 @@ const standaloneLinks = [
   //{ route: "/contact.html", i18n: "menu_connections", protected: true },
 ];
 let customNavigationItems = [];
+let headerNotificationItems = [];
+let headerNotificationListeners = null;
+let headerNotificationRefreshTimer = null;
 
 function escapeHtml(value) {
   return String(value || "")
@@ -264,7 +267,6 @@ function applyCurrentLanguage() {
 // list of only protected pages
 const protectedPages = new Set([
   "/dashboard",
-  "/notifications",
   "/submit-event",
   "/review-submissions",
   "/translations-admin",
@@ -396,7 +398,62 @@ function loadHeader() {
         </a>
 
         <div class="header-utilities">
-          <div class="auth-buttons"></div>
+          <div class="header-account-controls">
+            <div class="auth-buttons"></div>
+
+            <div
+              class="header-notifications"
+              id="headerNotifications"
+              hidden
+            >
+              <button
+                type="button"
+                class="notification-toggle"
+                id="notificationToggle"
+                aria-controls="notificationDropdown"
+                aria-expanded="false"
+              >
+                ${getNotificationBellIcon()}
+                <span
+                  class="visually-hidden"
+                  data-i18n="notifications_heading"
+                >
+                  Notifications
+                </span>
+              </button>
+
+              <section
+                class="notification-dropdown"
+                id="notificationDropdown"
+                aria-labelledby="notificationDropdownTitle"
+                hidden
+              >
+                <header class="notification-dropdown-header">
+                  <h2
+                    id="notificationDropdownTitle"
+                    data-i18n="notifications_heading"
+                  >
+                    Notifications
+                  </h2>
+                </header>
+
+                <p
+                  class="notification-dropdown-status"
+                  id="notificationDropdownStatus"
+                  role="status"
+                  aria-live="polite"
+                  hidden
+                ></p>
+
+                <div
+                  class="notification-dropdown-list"
+                  id="notificationDropdownList"
+                ></div>
+              </section>
+            </div>
+          </div>
+
+          <div class="header-signout" id="headerSignOut"></div>
 
           <button
             type="button"
@@ -491,6 +548,8 @@ function loadHeader() {
   const mobileMenuToggle = document.getElementById("mobileMenuToggle");
   const primaryNavigation = document.getElementById("primaryNavigation");
   let suppressNextDesktopDropdownFocusOpen = false;
+
+  setupHeaderNotifications();
 
   function isMobileNavigation() {
     return window.matchMedia("(max-width: 700px)").matches;
@@ -656,6 +715,7 @@ function loadHeader() {
 
   document.addEventListener("keydown", (event) => {
     if (
+      !event.defaultPrevented &&
       event.key === "Escape" &&
       isMobileNavigation() &&
       header.classList.contains("is-mobile-menu-open")
@@ -1106,6 +1166,19 @@ function getAccountIcon() {
   `;
 }
 
+function getNotificationBellIcon() {
+  return `
+    <svg
+      class="utility-icon notification-bell-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path d="M18 10.2c0-3.6-2.1-6.2-6-6.2s-6 2.6-6 6.2c0 4.2-1.6 5.6-2.4 6.4h16.8c-.8-.8-2.4-2.2-2.4-6.4Z"></path>
+      <path d="M9.7 20h4.6"></path>
+    </svg>
+  `;
+}
+
 function getSignOutTranslation(key, fallback) {
   if (typeof window.translate !== "function") {
     return fallback;
@@ -1161,40 +1234,357 @@ function getNotificationBadge(count) {
     return "";
   }
 
-  const label = `${notificationCount} notification${notificationCount === 1 ? "" : "s"}`;
-
   return `
     <span
       class="notification-badge"
-      aria-label="${label}"
+      aria-hidden="true"
     >${notificationCount}</span>
   `;
 }
 
 function updateNotificationBadges(count = 0) {
+  const notificationCount = Number(count) || 0;
+
   document
     .querySelectorAll(".notification-badge")
     .forEach((badge) => badge.remove());
 
-  const badgeHtml = getNotificationBadge(count);
+  document.querySelectorAll(".notification-toggle").forEach((toggle) => {
+    toggle.setAttribute(
+      "aria-label",
+      notificationCount > 0
+        ? `${translate("notifications_heading")} (${notificationCount})`
+        : translate("notifications_heading"),
+    );
+  });
+
+  const badgeHtml = getNotificationBadge(notificationCount);
 
   if (!badgeHtml) {
     return;
   }
 
   document
-    .querySelectorAll(".account-link, .mobile-menu-account-link")
-    .forEach((link) => {
-      link.insertAdjacentHTML("beforeend", badgeHtml);
+    .querySelectorAll(".notification-toggle")
+    .forEach((toggle) => toggle.insertAdjacentHTML("beforeend", badgeHtml));
+}
+
+function getHeaderNotificationTitle(item) {
+  const notificationState = getHeaderNotificationState(item);
+
+  if (item?.type === "event") {
+    const eventTitle =
+      CMCENUtils.getLocalizedText(item.title) ||
+      translate("notifications_type_event");
+
+    if (notificationState === "published") {
+      return translate("notifications_event_published_message").replace(
+        "{title}",
+        eventTitle,
+      );
+    }
+
+    return eventTitle;
+  }
+
+  return item?.title || translate(`notifications_type_${item?.type}`);
+}
+
+function getHeaderNotificationSummary(item) {
+  if (getHeaderNotificationState(item) !== "rejected") {
+    return "";
+  }
+
+  const reason = String(item?.reason || "").trim();
+
+  if (!reason) {
+    return "";
+  }
+
+  return `${translate("my_events_rejection_reason")}: ${reason}`;
+}
+
+function getHeaderNotificationState(item) {
+  return item?.status === "published" ? "published" : "rejected";
+}
+
+function getHeaderNotificationStatus(item) {
+  return translate(`notifications_status_${getHeaderNotificationState(item)}`);
+}
+
+function renderHeaderNotifications(items = headerNotificationItems) {
+  const list = document.getElementById("notificationDropdownList");
+  const status = document.getElementById("notificationDropdownStatus");
+
+  if (!list || !status) {
+    return;
+  }
+
+  list.replaceChildren();
+  status.hidden = true;
+
+  if (!items.length) {
+    status.textContent = translate("notifications_empty");
+    status.className = "notification-dropdown-status is-empty";
+    status.hidden = false;
+    return;
+  }
+
+  items.forEach((item) => {
+    const notification = document.createElement("a");
+    notification.className = "notification-dropdown-item";
+    notification.href = item.editHref || item.href || "/dashboard";
+
+    const badges = document.createElement("div");
+    badges.className = "notification-dropdown-badges";
+
+    const type = document.createElement("span");
+    type.className = `notification-dropdown-type is-${item.type}`;
+    type.textContent = translate(`notifications_type_${item.type}`);
+
+    const status = document.createElement("span");
+    status.className = `notification-dropdown-status-badge is-${getHeaderNotificationState(item)}`;
+    status.textContent = getHeaderNotificationStatus(item);
+
+    badges.append(type, status);
+
+    const title = document.createElement("strong");
+    title.className = "notification-dropdown-title";
+    title.textContent = getHeaderNotificationTitle(item);
+
+    notification.append(badges, title);
+
+    const summary = getHeaderNotificationSummary(item);
+
+    if (summary) {
+      const reason = document.createElement("span");
+      reason.className = "notification-dropdown-reason";
+      reason.textContent = summary;
+      notification.appendChild(reason);
+    }
+
+    list.appendChild(notification);
+  });
+}
+
+function showHeaderNotificationStatus(message, type = "neutral") {
+  const list = document.getElementById("notificationDropdownList");
+  const status = document.getElementById("notificationDropdownStatus");
+
+  if (!list || !status) {
+    return;
+  }
+
+  list.replaceChildren();
+  status.textContent = message;
+  status.className = `notification-dropdown-status is-${type}`;
+  status.hidden = false;
+}
+
+function setHeaderNotificationOpen(isOpen) {
+  const toggle = document.getElementById("notificationToggle");
+  const dropdown = document.getElementById("notificationDropdown");
+
+  if (!toggle || !dropdown) {
+    return;
+  }
+
+  toggle.setAttribute("aria-expanded", String(isOpen));
+  dropdown.hidden = !isOpen;
+}
+
+function updateHeaderNotifications(notifications = {}) {
+  headerNotificationItems = Array.isArray(notifications.items)
+    ? notifications.items
+    : [];
+  updateNotificationBadges(notifications.count || 0);
+
+  if (
+    document.getElementById("notificationToggle")?.getAttribute(
+      "aria-expanded",
+    ) === "true"
+  ) {
+    renderHeaderNotifications();
+  }
+}
+
+async function markHeaderNotificationsRead(
+  readThrough,
+  token,
+  remainingActionCount = 0,
+) {
+  if (!readThrough || getStoredAuthToken() !== token) {
+    return;
+  }
+
+  try {
+    await CMCENUtils.apiJson("/api/notifications/read", {
+      method: "POST",
+      token,
+      body: { readThrough },
+      errorMessage: translate("notifications_load_error"),
     });
+
+    if (getStoredAuthToken() === token) {
+      updateNotificationBadges(remainingActionCount);
+    }
+  } catch (error) {
+    console.error("Could not mark notifications as read:", error);
+  }
+}
+
+async function loadHeaderNotifications() {
+  const token = getStoredAuthToken();
+
+  if (!token) {
+    return;
+  }
+
+  showHeaderNotificationStatus(translate("notifications_loading"), "loading");
+
+  try {
+    const data = await CMCENUtils.apiJson("/api/notifications", {
+      token,
+      errorMessage: translate("notifications_load_error"),
+    });
+
+    if (getStoredAuthToken() !== token) {
+      return;
+    }
+
+    updateHeaderNotifications(data.notifications || {});
+    renderHeaderNotifications();
+    if (data.notifications?.shouldMarkRead) {
+      markHeaderNotificationsRead(
+        data.notifications.readThrough,
+        token,
+        data.notifications.actionCount,
+      );
+    }
+  } catch (error) {
+    showHeaderNotificationStatus(
+      error.message || translate("notifications_load_error"),
+      "error",
+    );
+  }
+}
+
+async function refreshHeaderNotifications() {
+  const token = getStoredAuthToken();
+
+  if (!token) {
+    return;
+  }
+
+  try {
+    const data = await CMCENUtils.apiJson("/api/notifications", {
+      token,
+      errorMessage: translate("notifications_load_error"),
+    });
+
+    if (getStoredAuthToken() === token) {
+      updateHeaderNotifications(data.notifications || {});
+    }
+  } catch (error) {
+    console.error("Could not refresh notifications:", error);
+  }
+}
+
+function setupHeaderNotifications() {
+  headerNotificationListeners?.abort();
+  window.clearInterval(headerNotificationRefreshTimer);
+  headerNotificationListeners = new AbortController();
+
+  const { signal } = headerNotificationListeners;
+  const container = document.getElementById("headerNotifications");
+  const toggle = document.getElementById("notificationToggle");
+
+  if (!container || !toggle) {
+    return;
+  }
+
+  toggle.addEventListener(
+    "click",
+    () => {
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
+      setHeaderNotificationOpen(!isOpen);
+
+      if (!isOpen) {
+        loadHeaderNotifications();
+      }
+    },
+    { signal },
+  );
+
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (
+        !document.body.contains(container) ||
+        container.contains(event.target)
+      ) {
+        return;
+      }
+
+      setHeaderNotificationOpen(false);
+    },
+    { signal },
+  );
+
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key !== "Escape" || !document.body.contains(container)) {
+        return;
+      }
+
+      if (toggle.getAttribute("aria-expanded") !== "true") {
+        return;
+      }
+
+      event.preventDefault();
+      setHeaderNotificationOpen(false);
+      toggle.focus();
+    },
+    { signal },
+  );
+
+  document.addEventListener(
+    "languagechange",
+    () => renderHeaderNotifications(),
+    { signal },
+  );
+
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (document.visibilityState === "visible") {
+        refreshHeaderNotifications();
+      }
+    },
+    { signal },
+  );
+
+  headerNotificationRefreshTimer = window.setInterval(() => {
+    if (document.visibilityState === "visible") {
+      refreshHeaderNotifications();
+    }
+  }, 60_000);
 }
 
 function updateAuthButtons() {
   const token = getStoredAuthToken();
   const authButtons = document.querySelector(".auth-buttons");
   const mobileMenuAccount = document.getElementById("mobileMenuAccount");
+  const headerNotifications = document.getElementById("headerNotifications");
+  const headerSignOut = document.getElementById("headerSignOut");
 
-  if (!authButtons || !mobileMenuAccount) {
+  if (
+    !authButtons ||
+    !mobileMenuAccount ||
+    !headerNotifications ||
+    !headerSignOut
+  ) {
     return;
   }
 
@@ -1207,7 +1597,9 @@ function updateAuthButtons() {
         ${getAccountIcon()}
         <span data-i18n="account">Account</span>
       </a>
+    `;
 
+    headerSignOut.innerHTML = `
       <button
         type="button"
         class="utility-link signout-link"
@@ -1263,11 +1655,14 @@ function updateAuthButtons() {
         <span data-i18n="login_btn">Login</span>
       </a>
     `;
+
+    headerSignOut.replaceChildren();
   }
 
+  headerNotifications.hidden = !token;
   applyCurrentLanguage();
 
-  updateNotificationBadges(0);
+  updateHeaderNotifications({ count: 0, items: [] });
 }
 
 async function updateAuthRestrictedItems() {
@@ -1294,7 +1689,7 @@ async function updateAuthRestrictedItems() {
       errorMessage: "Could not verify navigation permissions",
     });
 
-    updateNotificationBadges(user.notifications?.count || 0);
+    updateHeaderNotifications(user.notifications || {});
 
     authRequiredItems.forEach((element) => {
       element.hidden = false;

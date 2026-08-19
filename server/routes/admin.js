@@ -24,7 +24,7 @@ const {
 } = require('../config/permissions');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog, snapshotUser } = require('../services/audit-log');
-const { sendMail } = require('../services/mailer');
+const { isEmailSendingDisabled, sendMail } = require('../services/mailer');
 const {
   createUnsubscribeToken,
   getCaslSenderInfo,
@@ -1110,18 +1110,23 @@ function getInvitationDeliveryMetadata(user) {
 
 async function recordInvitationDelivery(user, result) {
   const attemptedAt = new Date();
-  const succeeded = result?.ok === true;
+  const skipped = result?.mailResult?.skipped === true;
+  const succeeded = result?.ok === true && !skipped;
   const mailResult = result?.mailResult || {};
 
   user.invitation.delivery = {
-    status: succeeded ? 'sent' : 'failed',
+    status: skipped ? 'skipped' : succeeded ? 'sent' : 'failed',
     attemptedAt,
     messageId: String(mailResult.messageId || '')
       .trim()
       .slice(0, 240),
     accepted: cleanInvitationDeliveryList(mailResult.accepted),
     rejected: cleanInvitationDeliveryList(mailResult.rejected),
-    error: succeeded ? '' : getInvitationDeliveryError(result?.error),
+    error: skipped
+      ? String(mailResult.reason || 'Email delivery is disabled').slice(0, 240)
+      : succeeded
+        ? ''
+        : getInvitationDeliveryError(result?.error),
   };
 
   if (succeeded) {
@@ -2505,6 +2510,12 @@ router.post(
   async (req, res) => {
     const subject = String(req.body?.subject || '').trim();
     const body = String(req.body?.body || '').trim();
+    if (isEmailSendingDisabled()) {
+      return res.status(202).json({
+        message: 'News blast delivery skipped because email sending is disabled',
+        skipped: true,
+      });
+    }
     const sender = getCaslSenderInfo();
     const baseUrl = String(process.env.APP_BASE_URL || '').replace(/\/+$/u, '');
     if (!subject || !body)

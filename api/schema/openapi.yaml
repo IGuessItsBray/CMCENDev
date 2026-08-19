@@ -359,10 +359,21 @@ paths:
   /api/notifications:
     get:
       tags: [Auth]
-      summary: Get user notifications.
+      summary: Get current rejections and unread externally reviewed approvals.
       responses:
         "200":
-          description: Notification summary.
+          description: Notification summary with current action items, unread approval items, direct destinations, and read-through snapshot.
+  /api/notifications/read:
+    post:
+      tags: [Auth]
+      summary: Mark informational approval notifications as read through a snapshot time.
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Saved notification read time.
+        "400":
+          $ref: "#/components/responses/Error"
   /api/subscriptions/weekly-brief:
     put:
       tags: [Auth]
@@ -441,6 +452,8 @@ paths:
       responses:
         "201":
           description: News blast delivery result.
+        "202":
+          description: News blast delivery skipped because global email sending is disabled.
   /api/ghost/upgrade:
     post:
       tags: [Auth]

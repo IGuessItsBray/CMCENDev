@@ -94,8 +94,15 @@
                 novalidate
                 hidden
               >
+                <p
+                  class="retirement-comment-edit-context"
+                  id="retirementCommentEditContext"
+                  hidden
+                ></p>
+
                 <label
                   for="retirementCommentText"
+                  id="retirementCommentLabel"
                   data-i18n="retirement_comment_add"
                 >
                   Add a comment
@@ -116,13 +123,25 @@
                     Comments may be reviewed before publication.
                   </small>
 
-                  <button
-                    id="retirementCommentSubmit"
-                    type="submit"
-                    data-i18n="retirement_comment_post"
-                  >
-                    Post comment
-                  </button>
+                  <div class="retirement-comment-form-actions">
+                    <a
+                      class="retirement-comment-cancel"
+                      id="retirementCommentCancel"
+                      href="/retirements"
+                      data-i18n="retirement_comment_cancel_edit"
+                      hidden
+                    >
+                      Cancel editing
+                    </a>
+
+                    <button
+                      id="retirementCommentSubmit"
+                      type="submit"
+                      data-i18n="retirement_comment_post"
+                    >
+                      Post comment
+                    </button>
+                  </div>
                 </div>
               </form>
 

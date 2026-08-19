@@ -36,7 +36,7 @@ const {
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions createdAt updatedAt';
+  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions notificationState createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -105,6 +105,7 @@ const PASSWORD_RESET_GENERIC_MESSAGE =
 const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
 const EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS = 30 * 60 * 1000;
 const GHOST_PASSWORD_BYTES = 32;
+const INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 
 const passwordResetRequestIpLimit = rateLimitByIp(
   'password-reset-request-ip',
@@ -272,30 +273,67 @@ function createGhostPassword() {
   return crypto.randomBytes(GHOST_PASSWORD_BYTES).toString('hex');
 }
 
-async function getRejectedEventNotifications(user) {
-  const query = {
-    createdBy: user._id,
-    status: 'rejected',
-  };
-  const [count, events] = await Promise.all([
-    Event.countDocuments(query),
-    Event.find(query)
-      .select('title rejectionReason updatedAt')
-      .sort({ updatedAt: -1 })
-      .limit(10)
-      .lean(),
-  ]);
+function getReviewResultQuery(ownerField, user, lastReadAt) {
+  const reviewResults = [{ status: 'rejected' }];
+  const approvalReadAt =
+    lastReadAt ||
+    new Date(Date.now() - INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS);
+
+  reviewResults.push({
+    status: 'published',
+    reviewedAt: { $gt: approvalReadAt },
+    reviewedBy: { $ne: user._id },
+  });
 
   return {
-    count,
+    [ownerField]: user._id,
+    $or: reviewResults,
+  };
+}
+
+function getReviewResultHref(type, item) {
+  const id = encodeURIComponent(String(item._id));
+
+  if (item.status === 'rejected') {
+    if (type === 'event') return `/submit-event?id=${id}`;
+    if (type === 'retirementMessage') return `/submit-retirement?id=${id}`;
+
+    const messageId = encodeURIComponent(
+      String(item.retirementMessage?._id || item.retirementMessage || ''),
+    );
+    return `/retirement-message?id=${messageId}&editComment=${id}`;
+  }
+
+  if (type === 'event') return `/event?id=${id}`;
+
+  if (type === 'retirementMessage') return `/retirement-message?id=${id}`;
+
+  const messageId = encodeURIComponent(
+    String(item.retirementMessage?._id || item.retirementMessage || ''),
+  );
+  return `/retirement-message?id=${messageId}#comments`;
+}
+
+async function getEventReviewNotifications(user, lastReadAt) {
+  const events = await Event.find(
+    getReviewResultQuery('createdBy', user, lastReadAt),
+  )
+    .select('title status rejectionReason reviewedAt updatedAt')
+    .sort({ reviewedAt: -1 })
+    .lean();
+
+  return {
+    actionCount: events.filter((event) => event.status === 'rejected').length,
+    unreadCount: events.filter((event) => event.status === 'published').length,
     items: events.map((event) => ({
       type: 'event',
       id: event._id,
       title: event.title,
+      status: event.status,
       reason: event.rejectionReason || '',
-      updatedAt: event.updatedAt,
-      editHref: `/submit-event?id=${encodeURIComponent(String(event._id))}`,
-      href: `/submit-event?id=${encodeURIComponent(String(event._id))}`,
+      updatedAt: event.reviewedAt || event.updatedAt,
+      editHref: getReviewResultHref('event', event),
+      href: getReviewResultHref('event', event),
     })),
   };
 }
@@ -309,51 +347,48 @@ function getRetirementMessageNotificationTitle(retirementMessage) {
   return name ? `Retirement message for ${name}` : 'Retirement message';
 }
 
-async function getRejectedRetirementMessageNotifications(user) {
-  const query = {
-    createdBy: user._id,
-    status: 'rejected',
-  };
-  const [count, retirementMessages] = await Promise.all([
-    RetirementMessage.countDocuments(query),
-    RetirementMessage.find(query)
-      .select('retiree rejectionReason updatedAt')
-      .sort({ updatedAt: -1 })
-      .limit(10)
-      .lean(),
-  ]);
+async function getRetirementMessageReviewNotifications(user, lastReadAt) {
+  const retirementMessages = await RetirementMessage.find(
+    getReviewResultQuery('createdBy', user, lastReadAt),
+  )
+    .select('retiree status rejectionReason reviewedAt updatedAt')
+    .sort({ reviewedAt: -1 })
+    .lean();
 
   return {
-    count,
+    actionCount: retirementMessages.filter(
+      (retirementMessage) => retirementMessage.status === 'rejected',
+    ).length,
+    unreadCount: retirementMessages.filter(
+      (retirementMessage) => retirementMessage.status === 'published',
+    ).length,
     items: retirementMessages.map((retirementMessage) => ({
       type: 'retirementMessage',
       id: retirementMessage._id,
       title: getRetirementMessageNotificationTitle(retirementMessage),
+      status: retirementMessage.status,
       reason: retirementMessage.rejectionReason || '',
-      updatedAt: retirementMessage.updatedAt,
-      editHref: `/submit-retirement?id=${encodeURIComponent(String(retirementMessage._id))}`,
-      href: `/submit-retirement?id=${encodeURIComponent(String(retirementMessage._id))}`,
+      updatedAt: retirementMessage.reviewedAt || retirementMessage.updatedAt,
+      editHref: getReviewResultHref('retirementMessage', retirementMessage),
+      href: getReviewResultHref('retirementMessage', retirementMessage),
     })),
   };
 }
 
-async function getRejectedRetirementCommentNotifications(user) {
-  const query = {
-    author: user._id,
-    status: 'rejected',
-  };
-  const [count, comments] = await Promise.all([
-    RetirementComment.countDocuments(query),
-    RetirementComment.find(query)
-      .select('body rejectionReason updatedAt retirementMessage')
-      .populate('retirementMessage', 'retiree status')
-      .sort({ updatedAt: -1 })
-      .limit(10)
-      .lean(),
-  ]);
+async function getRetirementCommentReviewNotifications(user, lastReadAt) {
+  const comments = await RetirementComment.find(
+    getReviewResultQuery('author', user, lastReadAt),
+  )
+    .select('body status rejectionReason reviewedAt updatedAt retirementMessage')
+    .populate('retirementMessage', 'retiree status')
+    .sort({ reviewedAt: -1 })
+    .lean();
 
   return {
-    count,
+    actionCount: comments.filter((comment) => comment.status === 'rejected')
+      .length,
+    unreadCount: comments.filter((comment) => comment.status === 'published')
+      .length,
     items: comments.map((comment) => ({
       type: 'retirementComment',
       id: comment._id,
@@ -361,43 +396,43 @@ async function getRejectedRetirementCommentNotifications(user) {
         comment.retirementMessage || {},
       ),
       body: comment.body || '',
+      status: comment.status,
       reason: comment.rejectionReason || '',
-      updatedAt: comment.updatedAt,
-      editHref: `/notifications?comment=${encodeURIComponent(String(comment._id))}`,
-      href: `/notifications?comment=${encodeURIComponent(String(comment._id))}`,
+      updatedAt: comment.reviewedAt || comment.updatedAt,
+      editHref: getReviewResultHref('retirementComment', comment),
+      href: getReviewResultHref('retirementComment', comment),
     })),
   };
 }
 
 async function getNotificationSummary(user) {
-  const permissions = getUserPermissions(user);
+  const readThrough = new Date();
+  const lastReadAt = user.notificationState?.lastReadAt || null;
   const items = [];
-  let count = 0;
+  let actionCount = 0;
+  let unreadCount = 0;
 
-  if (permissions.canCreateDrafts === true) {
-    const rejectedEvents = await getRejectedEventNotifications(user);
-    count += rejectedEvents.count;
-    items.push(...rejectedEvents.items);
-  }
+  const [events, retirementMessages, retirementComments] = await Promise.all([
+    getEventReviewNotifications(user, lastReadAt),
+    getRetirementMessageReviewNotifications(user, lastReadAt),
+    getRetirementCommentReviewNotifications(user, lastReadAt),
+  ]);
 
-  if (permissions.canSubmitRetirementMessages === true) {
-    const rejectedRetirementMessages =
-      await getRejectedRetirementMessageNotifications(user);
-    count += rejectedRetirementMessages.count;
-    items.push(...rejectedRetirementMessages.items);
-  }
-
-  const rejectedRetirementComments =
-    await getRejectedRetirementCommentNotifications(user);
-  count += rejectedRetirementComments.count;
-  items.push(...rejectedRetirementComments.items);
+  [events, retirementMessages, retirementComments].forEach((result) => {
+    actionCount += result.actionCount;
+    unreadCount += result.unreadCount;
+    items.push(...result.items);
+  });
 
   items.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
   return {
-    count,
+    count: actionCount + unreadCount,
+    actionCount,
+    unreadCount,
+    shouldMarkRead: !lastReadAt || unreadCount > 0,
     items,
-    href: '/notifications',
+    readThrough: readThrough.toISOString(),
   };
 }
 
@@ -417,8 +452,11 @@ async function getProfileResponse(user) {
   const permissions = getUserPermissions(profile);
   let notifications = {
     count: 0,
+    actionCount: 0,
+    unreadCount: 0,
+    shouldMarkRead: false,
     items: [],
-    href: '/notifications',
+    readThrough: new Date().toISOString(),
   };
 
   try {
@@ -1188,6 +1226,38 @@ router.get('/notifications', authMiddleware, async (req, res) => {
   res.json({
     notifications: await getNotificationSummary(req.user),
   });
+});
+
+router.post('/notifications/read', authMiddleware, async (req, res) => {
+  const readThrough = new Date(req.body?.readThrough);
+
+  if (Number.isNaN(readThrough.getTime())) {
+    return res.status(400).json({
+      error: 'A valid notification read time is required',
+    });
+  }
+
+  const currentReadAt = req.user.notificationState?.lastReadAt;
+  const lastReadAt =
+    currentReadAt && currentReadAt > readThrough ? currentReadAt : readThrough;
+
+  if (!currentReadAt || currentReadAt < readThrough) {
+    await User.updateOne(
+      { _id: req.user._id },
+      { $set: { 'notificationState.lastReadAt': lastReadAt } },
+    );
+
+    await writeAuditLog({
+      req,
+      action: 'user.notifications_read',
+      actor: req.user,
+      targetType: 'user',
+      target: req.user._id,
+      metadata: { readThrough: readThrough.toISOString() },
+    });
+  }
+
+  res.json({ lastReadAt });
 });
 
 // PUT /api/subscriptions/weekly-brief

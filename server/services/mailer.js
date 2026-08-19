@@ -34,6 +34,14 @@ function getSmtpSecurityOptions(environment = process.env) {
   };
 }
 
+function isEmailSendingDisabled(environment = process.env) {
+  return (
+    String(environment.DISABLE_EMAIL_SENDING || '')
+      .trim()
+      .toLowerCase() === 'true'
+  );
+}
+
 // Reads SMTP_* once at startup. No credentials; the relay authenticates by server IP.
 const smtpPort = Number(process.env.SMTP_PORT);
 const smtpSecurity = getSmtpSecurityOptions();
@@ -55,6 +63,15 @@ function sendMail({ to, cc, subject, text, html, headers }) {
     return Promise.resolve({ accepted: [to].filter(Boolean), test: true });
   }
 
+  if (isEmailSendingDisabled()) {
+    return Promise.resolve({
+      accepted: [],
+      rejected: [],
+      skipped: true,
+      reason: 'DISABLE_EMAIL_SENDING is true',
+    });
+  }
+
   return transporter.sendMail({
     from: process.env.MAIL_FROM,
     replyTo: process.env.MAIL_REPLY_TO,
@@ -67,4 +84,9 @@ function sendMail({ to, cc, subject, text, html, headers }) {
   });
 }
 
-module.exports = { sendMail, getSmtpClientName, getSmtpSecurityOptions };
+module.exports = {
+  sendMail,
+  getSmtpClientName,
+  getSmtpSecurityOptions,
+  isEmailSendingDisabled,
+};

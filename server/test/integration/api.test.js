@@ -269,6 +269,18 @@ describe('system and authentication', () => {
     assert.deepEqual(response.body, { enabled: false });
   });
 
+  test('redirects the retired notifications page to the dashboard', async () => {
+    await request(app)
+      .get('/notifications')
+      .expect('Location', '/dashboard')
+      .expect(301);
+
+    await request(app)
+      .get('/notifications.html')
+      .expect('Location', '/dashboard')
+      .expect(301);
+  });
+
   test('rejects invalid credentials and malformed bearer tokens', async () => {
     const user = await createUser();
 
@@ -1486,6 +1498,14 @@ describe('event, page, and comment workflows', () => {
   test('submits, reviews, and publicly returns a bilingual event', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
+
+    // Existing accounts created before notification tracking have no read time.
+    // Their first notification request must still include recent approvals.
+    await User.updateOne(
+      { _id: contributor._id },
+      { $unset: { notificationState: 1 } },
+    );
+
     const contributorSession = await login(contributor);
     const editorSession = await login(editor);
 
@@ -1528,6 +1548,19 @@ describe('event, page, and comment workflows', () => {
     assert.equal(publicEvent.body.event.title.en, 'Integration exercise');
     assert.equal(publicEvent.body.event.title.fr, "Exercice d'integration");
     assert.equal((await Event.findById(event._id)).status, 'published');
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    const publishedNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(event._id),
+    );
+
+    assert.equal(notifications.body.notifications.unreadCount, 1);
+    assert.equal(publishedNotification.type, 'event');
+    assert.equal(publishedNotification.status, 'published');
+    assert.equal(publishedNotification.href, `/event?id=${event._id}`);
   });
 
   test('lets reviewers update one pending event language without changing its review state', async () => {
@@ -1656,7 +1689,10 @@ describe('event, page, and comment workflows', () => {
   });
 
   test('prevents unauthorized page management and publishes a bilingual page', async () => {
-    const subscriber = await createUser({ role: 'subscriber' });
+    const subscriber = await createUser({
+      role: 'subscriber',
+      notificationState: { lastReadAt: null },
+    });
     const editor = await createUser({ role: 'editor' });
     const subscriberSession = await login(subscriber);
     const editorSession = await login(editor);
@@ -1729,6 +1765,123 @@ describe('event, page, and comment workflows', () => {
       await RetirementComment.countDocuments({ status: 'pending' }),
       1,
     );
+  });
+
+  test('returns unread published and rejected review results with direct destinations', async () => {
+    const message = await submitAndPublishRetirement();
+    const subscriber = await createUser({ role: 'subscriber' });
+    const reviewer = await createUser({ role: 'editor' });
+    const session = await login(subscriber);
+    const reviewDate = new Date();
+    const comment = await RetirementComment.create({
+      retirementMessage: message._id,
+      author: subscriber._id,
+      body: 'Please correct this rejected integration comment.',
+      status: 'rejected',
+      rejectionReason: 'Add the missing context.',
+      reviewedBy: reviewer._id,
+      reviewedAt: reviewDate,
+    });
+    const event = await Event.create({
+      ...eventPayload(),
+      createdBy: subscriber._id,
+      status: 'published',
+      reviewedBy: reviewer._id,
+      publishedBy: reviewer._id,
+      reviewedAt: reviewDate,
+      publishedAt: reviewDate,
+    });
+    const selfPublishedEvent = await Event.create({
+      ...eventPayload({
+        title: {
+          en: 'Self-published integration exercise',
+          fr: 'Exercice d’intégration autopublié',
+        },
+      }),
+      createdBy: subscriber._id,
+      status: 'published',
+      reviewedBy: subscriber._id,
+      publishedBy: subscriber._id,
+      reviewedAt: reviewDate,
+      publishedAt: reviewDate,
+    });
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    const notification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(comment._id),
+    );
+    const publishedNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(event._id),
+    );
+    const expectedEditHref = `/retirement-message?id=${message._id}&editComment=${comment._id}`;
+
+    assert.equal(notifications.body.notifications.count, 2);
+    assert.equal(notifications.body.notifications.actionCount, 1);
+    assert.equal(notifications.body.notifications.unreadCount, 1);
+    assert.equal(notifications.body.notifications.shouldMarkRead, true);
+    assert.match(notifications.body.notifications.readThrough, /^\d{4}-\d{2}-\d{2}T/);
+    assert.equal(notification.type, 'retirementComment');
+    assert.equal(notification.status, 'rejected');
+    assert.equal(notification.editHref, expectedEditHref);
+    assert.equal(notification.href, expectedEditHref);
+    assert.equal(publishedNotification.type, 'event');
+    assert.equal(publishedNotification.status, 'published');
+    assert.equal(publishedNotification.href, `/event?id=${event._id}`);
+    assert.equal(
+      notifications.body.notifications.items.some(
+        (item) => String(item.id) === String(selfPublishedEvent._id),
+      ),
+      false,
+    );
+
+    const editableComment = await request(app)
+      .get(`/api/retirement-messages/comments/${comment._id}/edit`)
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    assert.equal(
+      String(editableComment.body.comment.retirementMessage._id),
+      String(message._id),
+    );
+    assert.equal(editableComment.body.comment.status, 'rejected');
+
+    await request(app)
+      .post('/api/notifications/read')
+      .set('Authorization', bearer(session.body.token))
+      .send({ readThrough: notifications.body.notifications.readThrough })
+      .expect(200);
+
+    const readNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    assert.equal(readNotifications.body.notifications.count, 1);
+    assert.equal(readNotifications.body.notifications.actionCount, 1);
+    assert.equal(readNotifications.body.notifications.unreadCount, 0);
+    assert.equal(
+      String(readNotifications.body.notifications.items[0].id),
+      String(comment._id),
+    );
+
+    const readAudit = await AuditLog.findOne({
+      action: 'user.notifications_read',
+      actor: subscriber._id,
+    }).lean();
+    assert.equal(readAudit.metadata.readThrough, notifications.body.notifications.readThrough);
+
+    await RetirementComment.findByIdAndUpdate(comment._id, {
+      status: 'pending',
+      rejectionReason: '',
+    });
+
+    const resolvedNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    assert.equal(resolvedNotifications.body.notifications.count, 0);
   });
 });
 

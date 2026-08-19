@@ -1162,8 +1162,6 @@ function renderDashboard(user) {
   );
 
   const actions = [];
-  const notificationCount = user.notifications?.count || 0;
-
   if (isGhost) {
     actions.push({
       href: "/submit-event",
@@ -1171,16 +1169,6 @@ function renderDashboard(user) {
       descriptionKey: "dashboard_action_my_submissions_description",
     });
   } else {
-    if (notificationCount > 0) {
-      actions.push({
-        href: user.notifications?.href || "/notifications",
-        titleKey: "dashboard_action_notifications",
-        descriptionKey: "dashboard_action_notifications_description",
-        count: notificationCount,
-        variant: "notification",
-      });
-    }
-
     if (user.permissions?.canSubmitRetirementMessages === true) {
       actions.push({
         href: "/submit-retirement",

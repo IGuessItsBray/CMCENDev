@@ -1,9 +1,22 @@
 # Notifications
 
-The authenticated notifications page surfaces rejected submissions and editable
-retirement comments. The client is implemented by
-[`notifications.js`](../server/public/notifications.js) and
-[`notifications.html`](../server/public/notifications.html).
+Authenticated users receive review-result notifications from the bell in the
+shared header. Each entry has a submission-type badge and an outcome badge:
+`Published` or `Rejected`. Rejections are action items and remain in the bell
+until the submission is resubmitted or otherwise leaves the rejected state.
+Published items are informational: opening the bell marks those review results
+read without dismissing any outstanding rejection.
+
+Selecting a rejected item opens its correction view directly: events open the
+event form, retirement messages open the retirement form, and comments open
+the associated retirement message with its comment editor ready. Published
+items instead open their public detail view. Content that the submitter was
+authorized to publish immediately does not create an approval notification.
+
+Accounts that predate this feature see reviewer approvals from the prior 30
+days the first time their bell is opened, then establish their normal
+approval-read baseline. Current rejections always appear; older approvals are
+not backfilled into the dropdown.
 
 ## Email subscriptions and CASL controls
 
@@ -29,8 +42,13 @@ and delivery when any of these values is absent.
 
 ## API
 
-- `GET /api/notifications` returns `{ notifications: { items: [...] } }` for the
-  authenticated account.
+- `GET /api/notifications` returns `{ notifications: { count, actionCount,
+  unreadCount, shouldMarkRead, items, readThrough } }` for the authenticated account.
+  `actionCount` is the number of current rejections; `unreadCount` is the
+  number of unseen approvals from another reviewer. Each item has its `type`,
+  `status`, direct destination, and review timestamp.
+- `POST /api/notifications/read` accepts `{ readThrough }` from a returned
+  summary and records all review results through that snapshot as read.
 - `PATCH /api/retirement-messages/comments/:commentId` updates an editable
   retirement comment.
 
@@ -39,15 +57,22 @@ Both calls require a bearer token. The client obtains it through
 
 ## Client Behavior
 
-`loadNotifications()` fetches the current list and renders each item with
-`createNotificationCard()`. Supported item types include events, retirement
-messages, and retirement comments. A `?comment=<id>` query highlights and
-scrolls to the matching retirement comment.
+`index.js` loads the notification summary with the authenticated navigation
+state, then refreshes the list from `/api/notifications` when the bell opens.
+If the summary has unread approvals, it sends the returned `readThrough` value
+to `/api/notifications/read`; a later review decision is not cleared because it
+falls outside that snapshot. The badge retains `actionCount` after that call.
+While the page is visible, the header refreshes its notification summary every
+minute and when the tab regains focus; those background refreshes never mark an
+approval as read.
+Supported item types include events, retirement messages, and retirement
+comments. The header uses DOM-created links and text so notification titles and
+rejection reasons are never inserted as HTML.
 
-Editable retirement comments render a text area and submit action. The client
-validates the body, disables the action during the request, reports the result
-through the card status region, and reloads notifications after a successful
-update.
+Rejected retirement comments use
+`/retirement-message?id=<message-id>&editComment=<comment-id>`. The detail
+page verifies owner/reviewer access through the existing edit endpoint, shows
+the rejection reason, and resubmits through the existing comment PATCH route.
 
 ## Accessibility and Localization
 
@@ -67,11 +92,14 @@ label mappings, and both language dictionaries together.
       {
         "id": "507f1f77bcf86cd799439011",
         "type": "retirementComment",
+        "status": "rejected",
         "body": "Please clarify this detail.",
         "updatedAt": "2026-07-09T12:00:00.000Z",
-        "editHref": "/retirement-message?id=507f1f77bcf86cd799439012"
+        "editHref": "/retirement-message?id=507f1f77bcf86cd799439012&editComment=507f1f77bcf86cd799439011"
       }
-    ]
+    ],
+    "count": 1,
+    "readThrough": "2026-08-18T12:00:00.000Z"
   }
 }
 ```

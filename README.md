@@ -317,6 +317,7 @@ Important settings include:
 | `SMTP_PORT` | Email | SMTP relay port |
 | `SMTP_SECURE` | Email | SMTP transport security mode; current deployments use `starttls` |
 | `MAIL_FROM` | Email | Sender address |
+| `DISABLE_EMAIL_SENDING` | Email | Set to `true` to suppress every outbound email while retaining the related workflow. |
 | `ENABLE_API_DOCS` | No | Set to `true` only when API documentation should be exposed |
 | `PLAUSIBLE_DOMAIN` | No | Public CMCEN hostname registered with Plausible |
 | `PLAUSIBLE_API_URL` | No | Public Plausible event API endpoint |

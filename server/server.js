@@ -134,6 +134,10 @@ function redirectHtmlExtension(req, res, next) {
     return next();
   }
 
+  if (req.path === '/notifications.html') {
+    return res.redirect(301, `/dashboard${req.url.slice(req.path.length)}`);
+  }
+
   const nextPath =
     req.path === '/index.html' ? '/' : req.path.replace(/\.html$/u, '');
 
@@ -175,6 +179,9 @@ app.get('/vendor/plausible-tracker.js', (req, res) => {
     ),
   );
 });
+app.get('/notifications', (req, res) =>
+  res.redirect(301, `/dashboard${req.url.slice(req.path.length)}`),
+);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api', authRoutes);

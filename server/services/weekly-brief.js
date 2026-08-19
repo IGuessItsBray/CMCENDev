@@ -7,7 +7,7 @@ const User = require('../models/User');
 const WeeklyBriefDelivery = require('../models/WeeklyBriefDelivery');
 const WeeklyBriefRun = require('../models/WeeklyBriefRun');
 const { writeAuditLog } = require('./audit-log');
-const { sendMail } = require('./mailer');
+const { isEmailSendingDisabled, sendMail } = require('./mailer');
 
 const EASTERN_TIME_ZONE = 'America/Toronto';
 const CASL_CONSENT_TEXT_VERSION = 'weekly-brief-v2-2026-08-17';
@@ -297,6 +297,13 @@ async function createUnsubscribeToken(user, subscriptionType = 'weeklyBrief') {
 }
 
 async function runWeeklyBrief(now = new Date()) {
+  if (isEmailSendingDisabled()) {
+    return {
+      skipped: true,
+      reason: 'DISABLE_EMAIL_SENDING is true',
+    };
+  }
+
   const sender = getCaslSenderInfo();
   const baseUrl = String(process.env.APP_BASE_URL || '').replace(/\/+$/u, '');
 

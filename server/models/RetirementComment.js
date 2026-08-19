@@ -82,6 +82,12 @@ retirementCommentSchema.index({
 });
 
 retirementCommentSchema.index({
+  author: 1,
+  status: 1,
+  reviewedAt: -1,
+});
+
+retirementCommentSchema.index({
   publishedBy: 1,
   publishedAt: -1,
 });

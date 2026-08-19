@@ -1,0 +1,51 @@
+name: Validate PR title
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+
+jobs:
+  validate-pr-title:
+    name: Conventional PR title
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Validate Conventional Commit PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -eu
+
+          pattern='^(feat|fix|docs|test|refactor|perf|build|ci|chore|revert)(\([a-z0-9][a-z0-9-]*\))?(!)?: .+'
+
+          echo "Validating PR title:"
+          echo "$PR_TITLE"
+
+          if ! printf '%s\n' "$PR_TITLE" | grep -Eq "$pattern"; then
+            echo
+            echo "Invalid PR title."
+            echo
+            echo "PR titles must follow Conventional Commits:"
+            echo "  <type>[optional scope][optional !]: <description>"
+            echo
+            echo "Examples:"
+            echo "  feat(auth): add passkey authentication"
+            echo "  fix(mfa): prevent duplicate totp enrollment"
+            echo "  docs(config): update environment documentation"
+            echo "  chore: update dependencies"
+            echo "  feat(auth)!: replace legacy authentication flow"
+            exit 1
+          fi
+
+          echo "PR title is valid."

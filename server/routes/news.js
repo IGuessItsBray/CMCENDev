@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const NewsArticle = require('../models/NewsArticle');
 const LastPostMessage = require('../models/LastPostMessage');
+const Page = require('../models/Page');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
 const {
@@ -133,12 +134,24 @@ router.get('/feed', async (req, res) => {
       Math.max(Number.parseInt(req.query.limit, 10) || 8, 1),
       24,
     );
-    const [articles, lastPosts] = await Promise.all([
+    const [articles, lastPosts, featuredPages] = await Promise.all([
       NewsArticle.find({ status: 'published' })
         .sort({ publishedAt: -1, _id: -1 })
         .limit(limit)
         .lean(),
       LastPostMessage.find({ status: 'published' })
+        .sort({ publishedAt: -1, _id: -1 })
+        .limit(limit)
+        .lean(),
+      Page.find({
+        status: 'published',
+        featuredOnHome: true,
+        $or: [
+          { 'access.audience': 'public' },
+          { 'access.audience': { $exists: false } },
+          { access: { $exists: false } },
+        ],
+      })
         .sort({ publishedAt: -1, _id: -1 })
         .limit(limit)
         .lean(),
@@ -179,6 +192,15 @@ router.get('/feed', async (req, res) => {
         content: cleanLocalizedText(post.messages),
         imageUrl: cleanString(post.imageDisplayUrl || post.imageUrl),
         publishedAt: post.publishedAt,
+      })),
+      ...featuredPages.map((page) => ({
+        type: 'page',
+        _id: page._id,
+        title: cleanLocalizedText(page.title),
+        content: cleanLocalizedText(page.summary),
+        imageUrl: '',
+        route: `/pages/${page.slug}`,
+        publishedAt: page.publishedAt,
       })),
     ]
       .sort(

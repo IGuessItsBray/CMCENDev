@@ -980,6 +980,7 @@
   let modalCloseButton = null;
   let modalActiveRequest = null;
   let modalQueue = Promise.resolve();
+  let modalEmbeddedPositionCleanup = null;
 
   function getModalTranslation(key, fallback) {
     return translateText(key, fallback);
@@ -997,12 +998,46 @@
     );
   }
 
+  function positionModalInEmbeddedViewport() {
+    modalEmbeddedPositionCleanup?.();
+    modalEmbeddedPositionCleanup = null;
+
+    try {
+      if (window.parent === window || !window.frameElement) return;
+
+      modalOverlay.classList.add("is-embedded");
+      const position = () => {
+        const frameRect = window.frameElement.getBoundingClientRect();
+        const modalHeight = modalDialog.getBoundingClientRect().height;
+        const top = Math.max(
+          16,
+          window.parent.innerHeight / 2 - frameRect.top - modalHeight / 2,
+        );
+        modalDialog.style.setProperty("--cmcen-modal-top", `${top}px`);
+      };
+      const schedulePosition = () => window.requestAnimationFrame(position);
+      schedulePosition();
+      window.parent.addEventListener("scroll", schedulePosition, { passive: true });
+      window.parent.addEventListener("resize", schedulePosition);
+      modalEmbeddedPositionCleanup = () => {
+        window.parent.removeEventListener("scroll", schedulePosition);
+        window.parent.removeEventListener("resize", schedulePosition);
+        modalOverlay.classList.remove("is-embedded");
+        modalDialog.style.removeProperty("--cmcen-modal-top");
+      };
+    } catch {
+      modalOverlay.classList.remove("is-embedded");
+    }
+  }
+
   function closeModal(value) {
     const request = modalActiveRequest;
 
     if (!request) return;
 
     modalActiveRequest = null;
+    modalEmbeddedPositionCleanup?.();
+    modalEmbeddedPositionCleanup = null;
     modalOverlay.hidden = true;
     document.body.classList.remove("cmcen-modal-lock");
     request.restoreFocus?.focus();
@@ -1395,6 +1430,7 @@
 
         modalOverlay.hidden = false;
         document.body.classList.add("cmcen-modal-lock");
+        positionModalInEmbeddedViewport();
 
         window.requestAnimationFrame(() => {
           if (modalActiveRequest?.resolve !== resolve) return;

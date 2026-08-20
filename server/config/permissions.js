@@ -105,6 +105,13 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Create, edit, publish, archive, and delete custom pages.',
   },
   {
+    key: 'pages.feature_home',
+    label: 'Feature pages on home',
+    group: 'Pages',
+    action: 'publish',
+    description: 'Place published public custom pages in the homepage news feed.',
+  },
+  {
     key: 'navigation.manage',
     label: 'Manage navigation',
     group: 'Pages',
@@ -239,6 +246,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canManageContentAreas: 'content_areas.manage',
   canManageTranslations: 'translations.manage',
   canManagePages: 'pages.manage',
+  canFeaturePagesOnHome: 'pages.feature_home',
   canManageNavigation: 'navigation.manage',
   canReadUsers: 'users.read',
   canManageUsers: 'users.manage',
@@ -308,6 +316,8 @@ function getBuiltInPermissionFlags(user) {
     canManageTranslations: hasMinimumRole(role, 'editor'),
 
     canManagePages: hasMinimumRole(role, 'editor'),
+
+    canFeaturePagesOnHome: hasMinimumRole(role, 'administrator'),
 
     canManageNavigation: hasMinimumRole(role, 'administrator'),
 

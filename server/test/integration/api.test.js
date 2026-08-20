@@ -2003,6 +2003,12 @@ describe('event, page, and comment workflows', () => {
     await request(app)
       .patch(`/api/admin/pages/${pageId}/status`)
       .set('Authorization', bearer(editorSession.body.token))
+      .send({ status: 'published', featureOnHome: true })
+      .expect(403);
+
+    await request(app)
+      .patch(`/api/admin/pages/${pageId}/status`)
+      .set('Authorization', bearer(editorSession.body.token))
       .send({ status: 'published' })
       .expect(200);
 
@@ -2011,6 +2017,188 @@ describe('event, page, and comment workflows', () => {
       .expect(200);
     assert.equal(publicPage.body.page.title.fr, "Page d'integration");
     assert.equal((await Page.findById(pageId)).status, 'published');
+  });
+
+  test('features authorized public pages in the homepage news feed', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const session = await login(administrator);
+    const created = await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        title: { en: 'Homepage feature', fr: 'Vedette accueil' },
+        slug: 'homepage-feature',
+        summary: { en: 'Featured page summary', fr: 'Resume de la vedette' },
+        access: { audience: 'public' },
+      })
+      .expect(201);
+    const pageId = created.body.page._id;
+
+    const published = await request(app)
+      .patch(`/api/admin/pages/${pageId}/status`)
+      .set('Authorization', bearer(session.body.token))
+      .send({ status: 'published', featureOnHome: true })
+      .expect(200);
+
+    assert.equal(published.body.page.featuredOnHome, true);
+
+    const feed = await request(app).get('/api/news/feed?limit=24').expect(200);
+    const featuredItem = feed.body.items.find(
+      (item) => String(item._id) === String(pageId),
+    );
+    assert.equal(featuredItem.type, 'page');
+    assert.equal(featuredItem.route, '/pages/homepage-feature');
+    assert.equal(featuredItem.title.fr, 'Vedette accueil');
+  });
+
+  test('keeps draft-linked navbar items private until the page is published', async () => {
+    const editor = await createUser({ role: 'developer' });
+    const session = await login(editor);
+    const created = await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        title: { en: 'Prepared navigation page' },
+        slug: 'prepared-navigation-page',
+        blocks: [
+          {
+            type: 'text',
+            body: { en: 'Prepared content.' },
+            layout: { span: 99 },
+          },
+        ],
+      })
+      .expect(201);
+
+    const pageId = created.body.page._id;
+    assert.equal(created.body.page.blocks[0].layout.span, 12);
+    assert.equal(created.body.page.blocks[0].layout.column, 1);
+    assert.equal(created.body.page.blocks[0].layout.row, 1);
+    assert.equal(created.body.page.blocks[0].layout.rowSpan, 3);
+
+    const navigationItem = await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        group: 'about',
+        page: pageId,
+        route: '/pages/prepared-navigation-page',
+        label: { en: 'Prepared navigation page' },
+        visible: true,
+      })
+      .expect(201);
+
+    await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        group: 'about',
+        page: pageId,
+        route: '/pages/prepared-navigation-page',
+        label: { en: 'Duplicate navigation page' },
+        visible: true,
+      })
+      .expect(409);
+
+    await request(app)
+      .patch(`/api/admin/navigation-items/${navigationItem.body.item._id}`)
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        group: 'news',
+        page: pageId,
+        route: '/pages/prepared-navigation-page',
+        label: { en: 'Prepared navigation page' },
+        visible: true,
+      })
+      .expect(200);
+
+    const whileDraft = await request(app).get('/api/navigation').expect(200);
+    assert.equal(
+      whileDraft.body.items.some((item) => String(item.page) === String(pageId)),
+      false,
+    );
+
+    await request(app)
+      .patch(`/api/admin/pages/${pageId}/status`)
+      .set('Authorization', bearer(session.body.token))
+      .send({ status: 'published' })
+      .expect(200);
+
+    const oncePublished = await request(app).get('/api/navigation').expect(200);
+    assert.equal(
+      oncePublished.body.items.some((item) => String(item.page) === String(pageId)),
+      true,
+    );
+  });
+
+  test('keeps divider blocks to one grid row', async () => {
+    const editor = await createUser({ role: 'developer' });
+    const session = await login(editor);
+    const created = await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        title: { en: 'Divider layout' },
+        slug: 'divider-layout',
+        blocks: [{ type: 'divider', layout: { rowSpan: 8 } }],
+      })
+      .expect(201);
+
+    const pageId = created.body.page._id;
+    assert.equal(created.body.page.blocks[0].layout.rowSpan, 1);
+
+    const updated = await request(app)
+      .patch(`/api/admin/pages/${pageId}`)
+      .set('Authorization', bearer(session.body.token))
+      .send({ blocks: [{ type: 'divider', layout: { rowSpan: 6 } }] })
+      .expect(200);
+
+    assert.equal(updated.body.page.blocks[0].layout.rowSpan, 1);
+  });
+
+  test('returns a page route for a published page linked to a custom navbar parent', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const session = await login(developer);
+    const created = await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', bearer(session.body.token))
+      .send({ title: { en: 'Custom navigation page' }, slug: 'custom-navigation-page' })
+      .expect(201);
+    const pageId = created.body.page._id;
+
+    await request(app)
+      .patch(`/api/admin/pages/${pageId}/status`)
+      .set('Authorization', bearer(session.body.token))
+      .send({ status: 'published' })
+      .expect(200);
+
+    await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        type: 'group',
+        group: 'custom',
+        label: { en: 'Custom' },
+        visible: true,
+      })
+      .expect(201);
+
+    await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        group: 'custom',
+        page: pageId,
+        label: { en: 'Custom navigation page' },
+        visible: true,
+      })
+      .expect(201);
+
+    const navigation = await request(app).get('/api/navigation').expect(200);
+    const link = navigation.body.items.find(
+      (item) => String(item.page) === String(pageId),
+    );
+    assert.equal(link.route, '/pages/custom-navigation-page');
   });
 
   test('holds subscriber comments for review and immediately publishes author comments', async () => {

@@ -227,14 +227,6 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-function escapeCssIdentifier(value) {
-  if (window.CSS?.escape) {
-    return window.CSS.escape(value);
-  }
-
-  return String(value || "").replace(/[^a-zA-Z0-9_-]/g, "\\$&");
-}
-
 function getLocalizedNavigationLabel(label) {
   const language = CMCENUtils?.getCurrentLanguage?.() || "en";
   const fallbackLanguage = language === "fr" ? "en" : "fr";
@@ -1143,8 +1135,17 @@ function renderCustomNavigationItems() {
 
   const groupKeys = Object.keys(navLinks);
   const customGroups = customNavigationItems.filter(
-    (item) => item.type === "group" && !groupKeys.includes(item.group),
+    (item) =>
+      item.type === "group" &&
+      !groupKeys.includes(item.group) &&
+      customNavigationItems.some(
+        (candidate) =>
+          candidate.type !== "group" &&
+          candidate.group === item.group &&
+          Boolean(candidate.route),
+      ),
   );
+  const customMenus = new Map();
 
   customGroups.forEach((group) => {
     const wrapper = document.createElement("div");
@@ -1168,6 +1169,7 @@ function renderCustomNavigationItems() {
     `;
 
     primaryNavigation?.append(wrapper);
+    customMenus.set(group.group, wrapper.querySelector(".dropdown-menu"));
   });
 
   customNavigationItems.forEach((item) => {
@@ -1177,9 +1179,7 @@ function renderCustomNavigationItems() {
     const menu =
       groupIndex >= 0
         ? document.getElementById(`primaryNavigationDropdown${groupIndex}`)
-        : document.querySelector(
-            `[data-custom-nav-group="${escapeCssIdentifier(item.group)}"] .dropdown-menu`,
-          );
+        : customMenus.get(item.group);
 
     if (!menu || !item.route) return;
 

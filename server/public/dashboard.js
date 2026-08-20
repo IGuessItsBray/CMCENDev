@@ -183,6 +183,53 @@ function prepareEmbeddedAdminTool(frame) {
   });
 }
 
+function resizeEmbeddedAdminTool(frame) {
+  const document = frame.contentDocument;
+  if (!document) return;
+
+  const contentRoot = document.querySelector("main") || document.body;
+  const height = Math.ceil(
+    Math.max(
+      contentRoot?.scrollHeight || 0,
+      contentRoot?.offsetHeight || 0,
+      contentRoot?.getBoundingClientRect().height || 0,
+    ),
+  );
+  const nextHeight = Math.min(3200, Math.max(1, height));
+
+  if (Math.abs(frame.getBoundingClientRect().height - nextHeight) > 1) {
+    frame.style.height = `${nextHeight}px`;
+  }
+}
+
+function observeEmbeddedAdminToolHeight(frame) {
+  const document = frame.contentDocument;
+  if (!document) return;
+
+  frame.adminToolResizeObserver?.disconnect();
+  let scheduled = false;
+  const resize = () => {
+    if (scheduled) return;
+    scheduled = true;
+    window.requestAnimationFrame(() => {
+      scheduled = false;
+      resizeEmbeddedAdminTool(frame);
+    });
+  };
+
+  if (typeof ResizeObserver === "function") {
+    const observer = new ResizeObserver(resize);
+    if (document.querySelector("main")) {
+      observer.observe(document.querySelector("main"));
+    } else if (document.body) {
+      observer.observe(document.body);
+    }
+    frame.adminToolResizeObserver = observer;
+  }
+
+  resize();
+}
+
 function finishAdminToolLoading(frame) {
   frame.adminToolLoading?.remove();
   frame.adminToolLoading = null;
@@ -250,6 +297,9 @@ async function loadAdminToolFrame(frame, tool) {
     embeddedStyles.textContent = `
       #header, footer, #adminWorkZoneTabs { display: none !important; }
       .dashboard-heading { display: none !important; }
+      html, body { min-height: 0 !important; height: auto !important; }
+      body { display: block !important; }
+      main { flex: none !important; }
       .dashboard-main, .translations-admin-main { padding: 0 !important; }
       .dashboard-shell, .admin-work-zone-dashboard-shell { width: 100% !important; }
     `;
@@ -264,6 +314,7 @@ async function loadAdminToolFrame(frame, tool) {
       () => {
         syncEmbeddedAdminToolTheme(frame);
         prepareEmbeddedAdminTool(frame);
+        observeEmbeddedAdminToolHeight(frame);
         waitForEmbeddedAdminTool(frame, tool);
       },
       { once: true },

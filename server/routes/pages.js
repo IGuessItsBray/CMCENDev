@@ -233,7 +233,26 @@ function cleanImageVariants(value) {
   };
 }
 
-function cleanBlock(block) {
+function cleanBlockLayout(value, fallbackRow) {
+  const source =
+    value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const span = Number.parseInt(source.span, 10);
+  const column = Number.parseInt(source.column, 10);
+  const row = Number.parseInt(source.row, 10);
+  const rowSpan = Number.parseInt(source.rowSpan, 10);
+  const cleanSpan = Number.isFinite(span) ? Math.min(Math.max(span, 1), 12) : 12;
+
+  return {
+    span: cleanSpan,
+    column: Number.isFinite(column)
+      ? Math.min(Math.max(column, 1), 13 - cleanSpan)
+      : 1,
+    row: Number.isFinite(row) ? Math.max(row, 1) : fallbackRow,
+    rowSpan: Number.isFinite(rowSpan) ? Math.min(Math.max(rowSpan, 1), 24) : 3,
+  };
+}
+
+function cleanBlock(block, index = 0) {
   const source =
     block && typeof block === 'object' && !Array.isArray(block) ? block : {};
   const type = BLOCK_TYPES.has(source.type) ? source.type : 'text';
@@ -281,6 +300,10 @@ function cleanBlock(block) {
     caption: cleanLocalizedText(source.caption, 500),
     crop: cleanCrop(source.crop),
     variant: source.variant === 'important' ? 'important' : 'standard',
+    layout: {
+      ...cleanBlockLayout(source.layout, index * 4 + 1),
+      ...(type === 'divider' ? { rowSpan: 1 } : {}),
+    },
     columns: (Array.isArray(source.columns) ? source.columns : [])
       .slice(0, 3)
       .map(cleanColumn),
@@ -540,6 +563,7 @@ function getPageSnapshot(page) {
     title: page.title || {},
     slug: page.slug,
     status: page.status,
+    featuredOnHome: Boolean(page.featuredOnHome),
     access: getPageAccess(page),
     updatedAt: page.updatedAt,
     publishedAt: page.publishedAt,
@@ -556,6 +580,7 @@ function toPageResponse(page, { includeBlocks = true } = {}) {
     route: `/pages/${plainPage.slug}`,
     summary: plainPage.summary || {},
     status: plainPage.status,
+    featuredOnHome: Boolean(plainPage.featuredOnHome),
     access: getPageAccess(plainPage),
     blocks: includeBlocks ? plainPage.blocks || [] : undefined,
     createdAt: plainPage.createdAt,
@@ -772,14 +797,17 @@ function toAdminRole(role) {
 
 function toNavigationItem(item) {
   const plainItem = item.toObject ? item.toObject() : item;
+  const page = plainItem.page && typeof plainItem.page === 'object'
+    ? plainItem.page
+    : null;
 
   return {
     _id: plainItem._id,
     type: plainItem.type || 'link',
     group: plainItem.group,
     label: plainItem.label || {},
-    page: plainItem.page?._id || plainItem.page || null,
-    route: plainItem.route,
+    page: page?._id || plainItem.page || null,
+    route: plainItem.route || (page?.slug ? `/pages/${page.slug}` : ''),
     permission: plainItem.permission || '',
     visible: plainItem.visible !== false,
     order: plainItem.order || 0,
@@ -880,7 +908,7 @@ router.get('/api/navigation', optionalAuthMiddleware, async (req, res) => {
   try {
     const items = await NavigationItem.find({ visible: true })
       .sort({ group: 1, order: 1, createdAt: 1 })
-      .populate('page', 'status access')
+      .populate('page', 'status access slug')
       .lean();
 
     res.json({
@@ -1179,9 +1207,38 @@ router.patch(
         return res.status(400).json({ error: 'Invalid page status' });
       }
 
+      const isFeatureUpdate = Object.hasOwn(req.body || {}, 'featureOnHome');
+      const shouldFeatureOnHome = req.body?.featureOnHome === true;
+      const permissions = getUserPermissions(req.user);
+
+      if (isFeatureUpdate && !permissions.canFeaturePagesOnHome) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      }
+
+      const existingPage = await Page.findById(req.params.pageId);
+
+      if (!existingPage) {
+        return res.status(404).json({ error: 'Page not found' });
+      }
+
+      if (
+        status === 'published' &&
+        shouldFeatureOnHome &&
+        getPageAccess(existingPage).audience !== 'public'
+      ) {
+        return res.status(400).json({
+          error: 'Only public pages can be featured on the homepage',
+        });
+      }
+
       const updates = {
         status,
         updatedBy: req.user?._id || null,
+        ...(status !== 'published'
+          ? { featuredOnHome: false }
+          : isFeatureUpdate
+            ? { featuredOnHome: shouldFeatureOnHome }
+            : {}),
         ...(status === 'published'
           ? {
               publishedBy: req.user?._id || null,
@@ -1195,10 +1252,6 @@ router.patch(
         { returnDocument: 'after', runValidators: true },
       );
 
-      if (!page) {
-        return res.status(404).json({ error: 'Page not found' });
-      }
-
       await writeAuditLog({
         req,
         action:
@@ -1207,7 +1260,7 @@ router.patch(
         targetType: 'page',
         target: page._id,
         targetSnapshot: getPageSnapshot(page),
-        metadata: { status },
+        metadata: { status, featuredOnHome: Boolean(page.featuredOnHome) },
       });
 
       res.json({
@@ -1267,6 +1320,20 @@ router.post(
         return res.status(400).json({ error: result.error });
       }
 
+      if (
+        (result.update.type || 'link') === 'link' &&
+        result.update.page &&
+        (await NavigationItem.exists({
+          type: 'link',
+          group: result.update.group,
+          page: result.update.page,
+        }))
+      ) {
+        return res.status(409).json({
+          error: 'This page is already linked in the selected header',
+        });
+      }
+
       const item = await NavigationItem.create({
         ...result.update,
         createdBy: req.user?._id || null,
@@ -1304,15 +1371,41 @@ router.patch(
         return res.status(400).json({ error: result.error });
       }
 
+      const existingItem = await NavigationItem.findById(req.params.itemId);
+
+      if (!existingItem) {
+        return res.status(404).json({ error: 'Navigation item not found' });
+      }
+
+      const nextType = result.update.type || existingItem.type;
+      const nextGroup = result.update.group || existingItem.group;
+      const nextPage = Object.prototype.hasOwnProperty.call(
+        result.update,
+        'page',
+      )
+        ? result.update.page
+        : existingItem.page;
+
+      if (
+        nextType === 'link' &&
+        nextPage &&
+        (await NavigationItem.exists({
+          _id: { $ne: existingItem._id },
+          type: 'link',
+          group: nextGroup,
+          page: nextPage,
+        }))
+      ) {
+        return res.status(409).json({
+          error: 'This page is already linked in the selected header',
+        });
+      }
+
       const item = await NavigationItem.findByIdAndUpdate(
         req.params.itemId,
         { $set: result.update },
         { returnDocument: 'after', runValidators: true },
       );
-
-      if (!item) {
-        return res.status(404).json({ error: 'Navigation item not found' });
-      }
 
       await writeAuditLog({
         req,

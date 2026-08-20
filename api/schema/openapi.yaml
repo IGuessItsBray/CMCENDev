@@ -1629,6 +1629,8 @@ paths:
       responses:
         "201":
           description: Created navigation item.
+        "409":
+          $ref: "#/components/responses/Error"
   /api/admin/navigation-items/{itemId}:
     patch:
       tags: [Pages]
@@ -1641,6 +1643,8 @@ paths:
       responses:
         "200":
           description: Updated navigation item.
+        "409":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Pages]
       summary: Delete navigation item.
@@ -1837,7 +1841,7 @@ paths:
   /api/news/feed:
     get:
       tags: [News]
-      summary: List newest published news stories and Last Post notices together.
+      summary: List newest published news stories, Last Post notices, and featured public custom pages together.
       security: []
       parameters:
         - in: query
@@ -2304,6 +2308,10 @@ components:
         application/json:
           schema:
             type: object
+            description: >-
+              Page content. Blocks may include free-grid `layout` coordinates:
+              `column`, `row`, `span` (1–12), and `rowSpan`; divider blocks
+              always use a rowSpan of 1.
             additionalProperties: true
     PageStatus:
       required: true
@@ -2316,12 +2324,19 @@ components:
               status:
                 type: string
                 enum: [draft, published, archived]
+              featureOnHome:
+                type: boolean
+                description: >-
+                  When publishing, administrators, developers, or users with
+                  canFeaturePagesOnHome may set this to true for public pages
+                  to include them in the homepage news feed.
     NavigationItem:
       required: true
       content:
         application/json:
           schema:
             type: object
+            description: A navigation item may reference a draft page; draft-linked items are not returned from the public navigation endpoint until the page is published. For page-linked items without a stored route, public navigation derives the route from the page slug.
             additionalProperties: true
     Event:
       required: true

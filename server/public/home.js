@@ -309,9 +309,11 @@ function createHomeNewsItem(item, language) {
   const link = document.createElement("a");
   link.className = "home-news-card";
   link.href =
-    item.type === "lastPost"
-      ? `/last-post-message?id=${encodeURIComponent(item._id)}`
-      : `/news-story?id=${encodeURIComponent(item._id)}`;
+    item.type === "page"
+      ? item.route || `/pages/${encodeURIComponent(item.slug || "")}`
+      : item.type === "lastPost"
+        ? `/last-post-message?id=${encodeURIComponent(item._id)}`
+        : `/news-story?id=${encodeURIComponent(item._id)}`;
 
   if (item.imageUrl) {
     const image = document.createElement("img");
@@ -325,11 +327,17 @@ function createHomeNewsItem(item, language) {
   content.className = "home-news-card-content";
   const type = document.createElement("span");
   type.className = "home-news-card-type";
-  type.textContent = item.type === "lastPost" ? "Last Post" : "News";
+  type.textContent =
+    item.type === "page" ? "Page" : item.type === "lastPost" ? "Last Post" : "News";
   const title = document.createElement("strong");
+  const fallbackTitle =
+    item.type === "page"
+      ? "Custom page"
+      : item.type === "lastPost"
+        ? "In Memoriam"
+        : "News story";
   title.textContent =
-    getHomeLocalizedText(item.title, language) ||
-    (item.type === "lastPost" ? "In Memoriam" : "News story");
+    getHomeLocalizedText(item.title, language) || fallbackTitle;
   const date = document.createElement("span");
   date.className = "home-news-card-date";
   date.textContent = getHomeNewsDate(item.publishedAt, language);

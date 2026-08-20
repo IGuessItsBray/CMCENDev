@@ -16,10 +16,6 @@ const retirementDetailPhoto = document.getElementById("retirementDetailPhoto");
 
 const retirementDetailText = document.getElementById("retirementDetailText");
 
-const retirementDetailHeading = document.querySelector(
-  ".retirement-detail-heading",
-);
-
 const retirementCommentMessage = document.getElementById(
   "retirementCommentMessage",
 );
@@ -56,7 +52,7 @@ let currentRetirementMessageId = "";
 let currentRetirementMessage = null;
 let loadedComments = [];
 let canManageRetirementComments = false;
-let canManageRetirementMessages = false;
+let canOpenRetirementWorkspace = false;
 let canDeleteOwnRetirementComments = false;
 let currentRetirementViewerId = "";
 let visibleDetailMessageKey = "";
@@ -424,110 +420,27 @@ async function loadRetirementCommentEditor(token) {
 }
 
 function removeRetirementAdminActions() {
-  retirementDetailHeading
-    ?.querySelector(".retirement-detail-admin-actions")
+  document
+    .querySelector("[data-content-workspace-shortcut='retirementMessage']")
     ?.remove();
-}
-
-async function deleteRetirementMessage() {
-  const token = getStoredToken();
-
-  if (!token) {
-    await setupCommentAccess();
-    return;
-  }
-
-  if (
-    !(await CMCENModal.confirm(
-      "Remove this retirement message from public view? Its comments and media will be preserved, and it can be restored later.",
-      {
-        title: "Remove retirement message",
-        confirmText: "Remove",
-        destructive: true,
-      },
-    ))
-  ) {
-    return;
-  }
-
-  const button = retirementDetailHeading?.querySelector(
-    "[data-action='delete-retirement-message']",
-  );
-
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Removing...";
-  }
-
-  try {
-    const response = await fetch(
-      `/api/admin/retirement-messages/${encodeURIComponent(currentRetirementMessageId)}`,
-      {
-        method: "DELETE",
-        headers: CMCENUtils.authHeaders(token),
-      },
-    );
-
-    const data = await response.json().catch(() => ({}));
-
-    if (response.status === 401) {
-      CMCENUtils.clearAuthToken();
-      await setupCommentAccess();
-      throw new Error("Sign in again to remove retirement messages.");
-    }
-
-    if (response.status === 403) {
-      canManageRetirementMessages = false;
-      removeRetirementAdminActions();
-      throw new Error(
-        "You do not have permission to remove retirement messages.",
-      );
-    }
-
-    if (!response.ok) {
-      throw new Error(data.error || "Could not remove retirement message");
-    }
-
-    CMCENUtils.showToast(
-      "Retirement message removed from public view and recorded in the audit log.",
-      { color: "success", position: "bottom-right", animation: "slide" },
-    );
-
-    setTimeout(() => {
-      window.location.href = "/retirements";
-    }, 900);
-  } catch (error) {
-    CMCENUtils.showToast(
-      error.message || "Could not remove retirement message",
-      { color: "error", position: "bottom-right", animation: "slide" },
-    );
-
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Remove retirement message";
-    }
-  }
 }
 
 function renderRetirementAdminActions() {
   removeRetirementAdminActions();
 
-  if (!canManageRetirementMessages || !currentRetirementMessageId) {
+  if (!canOpenRetirementWorkspace || !currentRetirementMessageId) {
     return;
   }
 
-  const actions = document.createElement("div");
-  actions.className = "retirement-detail-admin-actions";
-
-  const deleteButton = document.createElement("button");
-  deleteButton.type = "button";
-  deleteButton.className = "published-content-delete retirement-message-delete";
-  deleteButton.dataset.action = "delete-retirement-message";
-  deleteButton.textContent = "Remove retirement message";
-  deleteButton.addEventListener("click", deleteRetirementMessage);
-
-  actions.append(deleteButton);
-  retirementDetailHeading?.append(actions);
+  const shortcut = CMCENUtils.createContentWorkspaceShortcut({
+    contentType: "retirementMessage",
+    contentId: currentRetirementMessageId,
+    label: translate(
+      "content_workspace_open_record",
+      "Open in Content Workspace",
+    ),
+  });
+  if (shortcut) document.body.append(shortcut);
 }
 
 async function deleteRetirementComment(comment) {
@@ -702,37 +615,19 @@ async function setupCommentAccess() {
         errorMessage: "Could not verify retirement permissions",
       });
 
-      const canDeleteAnyContent = user.permissions?.canHideContent === true;
       const canDeleteOwnContent =
         user.permissions?.canDeleteOwnContent === true;
       currentRetirementViewerId = user._id || "";
 
-      canManageRetirementMessages = canDeleteAnyContent;
-
-      if (
-        !canManageRetirementMessages &&
-        canDeleteOwnContent &&
-        currentRetirementMessageId
-      ) {
-        const detail = await CMCENUtils.apiJson(
-          `/api/retirement-messages/${encodeURIComponent(currentRetirementMessageId)}/edit`,
-          {
-            token,
-            errorMessage: "Could not verify retirement message ownership",
-          },
-        );
-        canManageRetirementMessages =
-          String(detail.retirementMessage?.createdBy || "") ===
-          String(user._id);
-      }
-
-      canManageRetirementComments = canDeleteAnyContent;
+      canOpenRetirementWorkspace =
+        user.permissions?.canReviewAndPublish === true;
+      canManageRetirementComments = user.permissions?.canHideContent === true;
       canDeleteOwnRetirementComments = canDeleteOwnContent;
       renderRetirementAdminActions();
       await loadRetirementCommentEditor(token);
     } catch (error) {
       canManageRetirementComments = false;
-      canManageRetirementMessages = false;
+      canOpenRetirementWorkspace = false;
       canDeleteOwnRetirementComments = false;
       currentRetirementViewerId = "";
       removeRetirementAdminActions();
@@ -742,7 +637,7 @@ async function setupCommentAccess() {
   }
 
   canManageRetirementComments = false;
-  canManageRetirementMessages = false;
+  canOpenRetirementWorkspace = false;
   canDeleteOwnRetirementComments = false;
   currentRetirementViewerId = "";
   removeRetirementAdminActions();
@@ -918,6 +813,7 @@ document.addEventListener("languagechange", () => {
     retirementDetailTitle.textContent = translate("retirement_detail_title", {
       name,
     });
+    renderRetirementAdminActions();
   } else if (visibleDetailMessageKey) {
     showRetirementDetailMessageKey(
       visibleDetailMessageKey,

@@ -380,6 +380,7 @@ router.get(
     try {
       const type = String(req.query.type || 'all');
       const status = String(req.query.status || 'all');
+      const contentId = String(req.query.id || '').trim();
       const limit = getContentWorkspaceLimit(req.query.limit);
 
       if (type !== 'all' && !CONTENT_WORKSPACE_TYPES.includes(type)) {
@@ -390,13 +391,26 @@ router.get(
         return res.status(400).json({ error: 'Unsupported content status' });
       }
 
-      const statusFilter = status === 'all' ? {} : { status };
+      if (contentId && type === 'all') {
+        return res.status(400).json({
+          error: 'Choose a content type when selecting a specific record',
+        });
+      }
+
+      if (contentId && !mongoose.Types.ObjectId.isValid(contentId)) {
+        return res.status(400).json({ error: 'Invalid content ID' });
+      }
+
+      const contentFilter = {
+        ...(status === 'all' ? {} : { status }),
+        ...(contentId ? { _id: contentId } : {}),
+      };
       const types = type === 'all' ? CONTENT_WORKSPACE_TYPES : [type];
       const queries = [];
 
       if (types.includes('event')) {
         queries.push(
-          Event.find(statusFilter)
+          Event.find(contentFilter)
             .select(
               'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -419,7 +433,7 @@ router.get(
 
       if (types.includes('retirementMessage')) {
         queries.push(
-          RetirementMessage.find(statusFilter)
+          RetirementMessage.find(contentFilter)
             .select(
               'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -440,7 +454,7 @@ router.get(
 
       if (types.includes('lastPost')) {
         queries.push(
-          LastPostMessage.find(statusFilter)
+          LastPostMessage.find(contentFilter)
             .select(
               'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -465,7 +479,7 @@ router.get(
 
       if (types.includes('retirementComment')) {
         queries.push(
-          RetirementComment.find(statusFilter)
+          RetirementComment.find(contentFilter)
             .select(
               'retirementMessage author body status hiddenFromStatus rejectionReason updatedAt createdAt',
             )

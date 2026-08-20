@@ -1113,7 +1113,7 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List content in the staff editorial workspace.
-      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type and lifecycle status, and include the original status for removed records plus a rejection reason when applicable.
+      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type and lifecycle status, or narrowed to one record with `id` and a specific type. Includes the original status for removed records plus a rejection reason when applicable.
       x-permission: canReviewAndPublish
       parameters:
         - name: type
@@ -1126,6 +1126,11 @@ paths:
           schema:
             type: string
             enum: [all, draft, pending, published, rejected, hidden]
+        - name: id
+          in: query
+          description: MongoDB ObjectId for a single record. Requires a specific `type` value.
+          schema:
+            type: string
         - name: limit
           in: query
           schema:

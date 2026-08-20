@@ -1832,6 +1832,18 @@ describe('event, page, and comment workflows', () => {
     assert.equal(workspaceComment.content.body, commentCorrection);
     assert.equal(workspaceComment.content.author.email, editor.email);
 
+    const focusedWorkspace = await request(app)
+      .get('/api/admin/content?type=event&id=' + event._id)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(focusedWorkspace.body.items.length, 1);
+    assert.equal(String(focusedWorkspace.body.items[0]._id), String(event._id));
+
+    await request(app)
+      .get('/api/admin/content?id=' + event._id)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(400);
+
     const eventHistory = await request(app)
       .get(`/api/admin/content/event/${event._id}/revisions`)
       .set('Authorization', bearer(editorSession.body.token))

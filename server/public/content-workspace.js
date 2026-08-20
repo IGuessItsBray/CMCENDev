@@ -14,6 +14,7 @@ const contentWorkspaceDetail = document.getElementById(
 const contentWorkspaceState = {
   items: [],
   selectedId: "",
+  requestedContentId: "",
   user: null,
   isLoading: false,
   loadRequestId: 0,
@@ -124,6 +125,7 @@ function applyContentWorkspaceSearchParameters() {
   const searchParameters = new URLSearchParams(window.location.search);
   const type = searchParameters.get("type");
   const status = searchParameters.get("status");
+  const contentId = String(searchParameters.get("id") || "").trim();
 
   if (contentWorkspaceTypes.has(type)) {
     contentWorkspaceType.value = type;
@@ -132,14 +134,23 @@ function applyContentWorkspaceSearchParameters() {
   if (contentWorkspaceStatuses.has(status)) {
     contentWorkspaceStatusFilter.value = status;
   }
+
+  if (contentId) {
+    contentWorkspaceState.selectedId = contentId;
+    contentWorkspaceState.requestedContentId = contentId;
+  }
 }
 
-function updateContentWorkspaceSearchParameters() {
+function updateContentWorkspaceSearchParameters({ includeSelection = false } = {}) {
   const url = new URL(window.location.href);
-  url.search = new URLSearchParams({
+  const searchParameters = new URLSearchParams({
     type: contentWorkspaceType.value || "all",
     status: contentWorkspaceStatusFilter.value || "all",
-  }).toString();
+  });
+  if (includeSelection && contentWorkspaceState.selectedId) {
+    searchParameters.set("id", contentWorkspaceState.selectedId);
+  }
+  url.search = searchParameters.toString();
   window.history.replaceState({}, "", url);
 }
 
@@ -227,6 +238,65 @@ function createStatusBadge(status) {
   return badge;
 }
 
+function getPublicContentHref(item) {
+  if (!item?._id || item.status !== "published") return "";
+
+  if (item.type === "event") {
+    return `/event?id=${encodeURIComponent(item._id)}`;
+  }
+
+  if (item.type === "retirementMessage") {
+    return `/retirement-message?id=${encodeURIComponent(item._id)}`;
+  }
+
+  if (item.type === "lastPost") {
+    return `/last-post-message?id=${encodeURIComponent(item._id)}`;
+  }
+
+  if (item.type === "retirementComment") {
+    const retirementMessageId = item.content?.retirementMessage?._id;
+    return retirementMessageId
+      ? `/retirement-message?id=${encodeURIComponent(retirementMessageId)}`
+      : "";
+  }
+
+  return "";
+}
+
+function createPublicContentLink(item) {
+  const href = getPublicContentHref(item);
+  if (!href) return null;
+
+  const link = document.createElement("a");
+  link.className = "content-workspace-public-link";
+  link.href = href;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  setWorkspaceTranslatedText(
+    link,
+    "content_workspace_view_public_link",
+    "View public link",
+  );
+  return link;
+}
+
+function updateContentWorkspaceCount() {
+  if (contentWorkspaceState.isLoading) {
+    contentWorkspaceCount.textContent = "";
+    return;
+  }
+
+  const count = contentWorkspaceState.items.length;
+  const singular = count === 1;
+  contentWorkspaceCount.textContent = getText(
+    singular
+      ? "content_workspace_results_singular"
+      : "content_workspace_results_plural",
+    singular ? `${count} result` : `${count} results`,
+    { count },
+  );
+}
+
 function setRecordMetadata(metadata, item) {
   metadata.replaceChildren();
 
@@ -242,9 +312,7 @@ function setRecordMetadata(metadata, item) {
 
 function renderContentWorkspaceList() {
   contentWorkspaceList.replaceChildren();
-  contentWorkspaceCount.textContent = contentWorkspaceState.isLoading
-    ? ""
-    : String(contentWorkspaceState.items.length);
+  updateContentWorkspaceCount();
 
   if (contentWorkspaceState.isLoading) {
     const loading = document.createElement("p");
@@ -294,6 +362,8 @@ function renderContentWorkspaceList() {
     button.append(title, metadata, createStatusBadge(item.status));
     button.addEventListener("click", () => {
       contentWorkspaceState.selectedId = String(item._id);
+      contentWorkspaceState.requestedContentId = "";
+      updateContentWorkspaceSearchParameters({ includeSelection: true });
       renderContentWorkspaceList();
       renderContentWorkspaceDetail();
     });
@@ -1639,7 +1709,13 @@ function renderContentWorkspaceDetail() {
   header.className = "content-workspace-detail-heading";
   const title = document.createElement("h2");
   title.textContent = getItemTitle(item);
-  header.append(title, createDetailInfo(item), createStatusBadge(item.status));
+  const actions = document.createElement("div");
+  actions.className = "content-workspace-detail-actions";
+  actions.append(createStatusBadge(item.status));
+  const publicContentLink = createPublicContentLink(item);
+
+  header.append(title, createDetailInfo(item), actions);
+  if (publicContentLink) header.append(publicContentLink);
   contentWorkspaceDetail.append(header);
 
   const canEditPublicCopy =
@@ -2137,20 +2213,24 @@ async function loadContentWorkspace({
     status: contentWorkspaceStatusFilter.value || "all",
     limit: "100",
   });
+  if (contentWorkspaceState.requestedContentId) {
+    query.set("id", contentWorkspaceState.requestedContentId);
+  }
 
   try {
     const data = await contentWorkspaceApiJson(`/api/admin/content?${query}`);
     if (requestId !== contentWorkspaceState.loadRequestId) return;
 
-    const previousSelection = preserveSelection
-      ? contentWorkspaceState.selectedId
-      : "";
+    const previousSelection =
+      contentWorkspaceState.requestedContentId ||
+      (preserveSelection ? contentWorkspaceState.selectedId : "");
     contentWorkspaceState.items = Array.isArray(data.items) ? data.items : [];
     contentWorkspaceState.selectedId = contentWorkspaceState.items.some(
       (item) => String(item._id) === previousSelection,
     )
       ? previousSelection
       : String(contentWorkspaceState.items[0]?._id || "");
+    contentWorkspaceState.requestedContentId = "";
     setWorkspaceMessage(
       contentWorkspaceState.items.length
         ? ""
@@ -2191,6 +2271,7 @@ async function initializeContentWorkspace() {
 
 function updateContentWorkspaceLanguage() {
   updateContentWorkspaceStatusFilterAppearance();
+  updateContentWorkspaceCount();
 
   contentWorkspaceList
     .querySelectorAll("[data-content-workspace-record-id]")
@@ -2223,10 +2304,14 @@ function updateContentWorkspaceLanguage() {
 }
 
 contentWorkspaceType.addEventListener("change", () => {
+  contentWorkspaceState.selectedId = "";
+  contentWorkspaceState.requestedContentId = "";
   loadContentWorkspace({ updateSearchParameters: true });
 });
 
 contentWorkspaceStatusFilter.addEventListener("change", () => {
+  contentWorkspaceState.selectedId = "";
+  contentWorkspaceState.requestedContentId = "";
   updateContentWorkspaceStatusFilterAppearance();
   loadContentWorkspace({ updateSearchParameters: true });
 });

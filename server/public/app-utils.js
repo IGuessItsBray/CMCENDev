@@ -1672,6 +1672,33 @@
     });
   }
 
+  function createContentWorkspaceShortcut({
+    contentType,
+    contentId,
+    label = "Open in Content Workspace",
+  } = {}) {
+    if (!contentType || !contentId) return null;
+
+    const shortcut = document.createElement("a");
+    shortcut.className = "content-workspace-shortcut";
+    shortcut.href =
+      "/content-workspace?" +
+      new URLSearchParams({
+        type: contentType,
+        id: String(contentId),
+      });
+    shortcut.dataset.contentWorkspaceShortcut = contentType;
+    shortcut.setAttribute("aria-label", label);
+    shortcut.title = label;
+    shortcut.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+      '<path d="M5 4.75h14v14.5H5z"></path>' +
+      '<path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"></path>' +
+      "</svg>";
+
+    return shortcut;
+  }
+
   window.CMCENUtils = {
     activateTabs,
     apiFetch,
@@ -1684,6 +1711,7 @@
     bindTabs,
     clearAuthToken,
     clearMfaSession,
+    createContentWorkspaceShortcut,
     createImageCropController,
     createLoadingSpinner,
     createSkeleton,

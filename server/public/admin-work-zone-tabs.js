@@ -76,6 +76,8 @@
 
   let currentPermissions = null;
   let activeTooltip = null;
+  let mobileSectionMenuController = null;
+  const compactAdminTabs = window.matchMedia("(max-width: 700px)");
 
   function removeTooltip() {
     if (activeTooltip) {
@@ -167,17 +169,122 @@
     )
       ? options.permissions
       : currentPermissions;
-    tabs.setAttribute("role", "tablist");
+    const visibleItems = tabItems.filter(
+      (item) =>
+        (!item.permission || !permissions || permissions[item.permission] === true) &&
+        (!compactAdminTabs.matches || !["pages", "media"].includes(item.key)),
+    );
+
     tabs.replaceChildren();
 
-    tabItems
-      .filter(
-        (item) =>
-          !item.permission ||
-          !permissions ||
-          permissions[item.permission] === true,
-      )
-      .forEach((item) => {
+    if (compactAdminTabs.matches) {
+      tabs.classList.add("is-mobile-select");
+      tabs.removeAttribute("role");
+
+      mobileSectionMenuController?.abort();
+      mobileSectionMenuController = new AbortController();
+      const { signal } = mobileSectionMenuController;
+
+      const label = document.createElement("span");
+      label.className = "admin-work-zone-tab-select-label";
+      label.textContent = "Admin section";
+
+      const menu = document.createElement("div");
+      menu.className = "admin-work-zone-section-menu";
+
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "admin-work-zone-section-toggle";
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-controls", "adminWorkZoneSectionOptions");
+
+      const activeItem = visibleItems.find((item) => item.key === active);
+      const toggleLabel = document.createElement("span");
+      toggleLabel.textContent = activeItem
+        ? translateAdminTab(activeItem.labelKey)
+        : "Admin section";
+      const chevron = document.createElement("span");
+      chevron.className = "admin-work-zone-section-chevron";
+      chevron.setAttribute("aria-hidden", "true");
+      toggle.append(toggleLabel, chevron);
+
+      const optionsList = document.createElement("div");
+      optionsList.className = "admin-work-zone-section-options";
+      optionsList.id = "adminWorkZoneSectionOptions";
+      optionsList.hidden = true;
+
+      visibleItems.forEach((item) => {
+        const option = document.createElement("a");
+        option.className = "admin-work-zone-section-option";
+        option.href = item.href;
+        option.textContent = translateAdminTab(item.labelKey);
+        option.dataset.adminTab = item.key;
+        if (item.key === active) {
+          option.setAttribute("aria-current", "page");
+        }
+        optionsList.append(option);
+      });
+
+      const positionOptions = () => {
+        const rect = toggle.getBoundingClientRect();
+
+        Object.assign(optionsList.style, {
+          position: "fixed",
+          top: `${Math.round(rect.bottom + 6)}px`,
+          left: `${Math.round(rect.left)}px`,
+          width: `${Math.round(rect.width)}px`,
+          zIndex: "2000",
+        });
+      };
+
+      const setMenuOpen = (isOpen) => {
+        menu.classList.toggle("is-open", isOpen);
+        toggle.setAttribute("aria-expanded", String(isOpen));
+
+        if (isOpen) {
+          document.body.append(optionsList);
+          optionsList.hidden = false;
+          positionOptions();
+          return;
+        }
+
+        optionsList.hidden = true;
+        menu.append(optionsList);
+        optionsList.removeAttribute("style");
+      };
+
+      toggle.addEventListener("click", () => {
+        setMenuOpen(toggle.getAttribute("aria-expanded") !== "true");
+      });
+
+      document.addEventListener(
+        "pointerdown",
+        (event) => {
+          if (!menu.contains(event.target) && !optionsList.contains(event.target)) {
+            setMenuOpen(false);
+          }
+        },
+        { signal },
+      );
+      document.addEventListener(
+        "keydown",
+        (event) => {
+          if (event.key === "Escape") setMenuOpen(false);
+        },
+        { signal },
+      );
+
+      menu.append(toggle, optionsList);
+      tabs.append(label, menu);
+      return;
+    }
+
+    mobileSectionMenuController?.abort();
+    mobileSectionMenuController = null;
+    tabs.classList.remove("is-mobile-select");
+    tabs.setAttribute("role", "tablist");
+
+    visibleItems.forEach((item) => {
         const link = document.createElement("a");
         const isActive = item.key === active;
 
@@ -230,6 +337,10 @@
     };
 
   document.addEventListener("languagechange", () => {
+    renderAdminWorkZoneTabs({ permissions: currentPermissions });
+  });
+
+  compactAdminTabs.addEventListener("change", () => {
     renderAdminWorkZoneTabs({ permissions: currentPermissions });
   });
 

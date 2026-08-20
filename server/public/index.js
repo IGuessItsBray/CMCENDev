@@ -401,12 +401,13 @@ function loadHeader() {
         <div class="header-utilities">
           <div class="header-account-controls">
             <div class="auth-buttons"></div>
+          </div>
 
-            <div
-              class="header-notifications"
-              id="headerNotifications"
-              hidden
-            >
+          <div
+            class="header-notifications"
+            id="headerNotifications"
+            hidden
+          >
               <button
                 type="button"
                 class="notification-toggle"
@@ -451,7 +452,6 @@ function loadHeader() {
                   id="notificationDropdownList"
                 ></div>
               </section>
-            </div>
           </div>
 
           <div class="header-signout" id="headerSignOut"></div>
@@ -550,6 +550,16 @@ function loadHeader() {
 
   const mobileMenuToggle = document.getElementById("mobileMenuToggle");
   const primaryNavigation = document.getElementById("primaryNavigation");
+  const headerInner = header.querySelector(".header-identity-row .header-inner");
+  const headerUtilities = header.querySelector(".header-utilities");
+  const headerNotifications = document.getElementById("headerNotifications");
+
+  // Make notifications a top-level header control. Nested display: contents
+  // layouts can otherwise place it in a separate row on mobile Safari.
+  if (headerInner && headerUtilities && headerNotifications) {
+    headerInner.insertBefore(headerNotifications, headerUtilities);
+  }
+
   let suppressNextDesktopDropdownFocusOpen = false;
 
   setupHeaderNotifications();
@@ -559,6 +569,16 @@ function loadHeader() {
   }
 
   function setMobileDropdownOpen(dropdown, isOpen) {
+    if (isOpen) {
+      primaryNavigation
+        ?.querySelectorAll(".dropdown.is-mobile-dropdown-open")
+        .forEach((openDropdown) => {
+          if (openDropdown !== dropdown) {
+            setMobileDropdownOpen(openDropdown, false);
+          }
+        });
+    }
+
     dropdown.classList.toggle("is-mobile-dropdown-open", isOpen);
     dropdown
       .querySelector(".dropdown-toggle")
@@ -736,6 +756,12 @@ function loadHeader() {
 
     if (window.innerWidth > 700) {
       setMobileMenuOpen(false);
+    }
+  });
+
+  window.visualViewport?.addEventListener("resize", () => {
+    if (header.classList.contains("is-mobile-menu-open")) {
+      updateMobileMenuOffset();
     }
   });
 
@@ -925,7 +951,7 @@ function loadFooter() {
           </ul>
         </nav>
 
-        <section class="footer-column">
+        <section class="footer-column footer-contact-column">
           <h2 data-i18n="footer_contact">
             Contact
           </h2>
@@ -940,6 +966,13 @@ function loadFooter() {
               Contact: MWO Terry Cadieux
             </p>
           </address>
+
+          <div
+            class="footer-social"
+            aria-label="Social media"
+          >
+            ${socialLinksHtml}
+          </div>
         </section>
 
         <section class="footer-column footer-legal">
@@ -991,13 +1024,6 @@ function loadFooter() {
             </li>
           </ul>
 
-          <div
-            class="footer-social"
-            aria-label="Social media"
-          >
-            ${socialLinksHtml}
-          </div>
-  
         </section>
       </div>
     </div>
@@ -1598,6 +1624,7 @@ async function loadHeaderNotifications() {
   const token = getStoredAuthToken();
 
   if (!token) {
+    renderHeaderNotifications([]);
     return;
   }
 
@@ -1825,7 +1852,9 @@ function updateAuthButtons() {
     headerSignOut.replaceChildren();
   }
 
-  headerNotifications.hidden = !token;
+  // Keep the control visible for cookie-authenticated sessions and guests so
+  // the compact header layout remains stable on every page.
+  headerNotifications.hidden = false;
   updateTdInsuranceLink();
   applyCurrentLanguage();
 

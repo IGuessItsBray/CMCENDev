@@ -48,9 +48,9 @@ function buildRetirementDocument(candidate, mediaResult, legacyUser) {
 
   return {
     retiree: {
-      rank: candidate.identity.rank || 'Unknown',
-      firstName: candidate.identity.firstName || 'Unknown',
-      lastName: candidate.identity.lastName || 'Unknown',
+      rank: candidate.identity.rank,
+      firstName: candidate.identity.firstName,
+      lastName: candidate.identity.lastName,
       tradeRole: candidate.identity.trade,
       retirementDate: null,
     },
@@ -102,8 +102,8 @@ function buildLastPostDocument(candidate, mediaResult, legacyUser) {
     photoUrl: mediaResult.primaryAsset?.url || '',
     deceased: {
       fullRank: candidate.identity.rank,
-      firstName: candidate.identity.firstName || 'Unknown',
-      surname: candidate.identity.lastName || 'Unknown',
+      firstName: candidate.identity.firstName,
+      surname: candidate.identity.lastName,
       postNominal: '',
     },
     submitter: {

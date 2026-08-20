@@ -114,7 +114,6 @@
       const data = await CMCENUtils.apiJson("/api/sitemap");
       renderSitemap(data);
     } catch (error) {
-      console.error("Sitemap load failed:", error);
       setStatus("The site map could not be loaded right now.", true);
     }
   }

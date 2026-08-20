@@ -474,7 +474,6 @@ async function loadCertificateRequests() {
   } catch (error) {
     actionableCertificateRequests = [];
     certificateRequestsLoadFailed = true;
-    console.error("Could not load certificate requests:", error);
   } finally {
     renderCertificateRequests();
   }

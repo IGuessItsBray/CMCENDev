@@ -73,7 +73,6 @@ async function addNewsEditLink() {
     if (!user.permissions?.canManageNews) return;
     newsDetailEdit.hidden = false;
   } catch (error) {
-    console.error("Could not verify news editing permission:", error);
   }
 }
 

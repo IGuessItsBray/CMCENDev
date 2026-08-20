@@ -51,7 +51,7 @@ router.get('/translations.js', async (req, res) => {
     res
       .status(500)
       .type('application/javascript')
-      .send('console.error("Could not load translations.");');
+      .send('');
   }
 });
 

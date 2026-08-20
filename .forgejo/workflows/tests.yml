@@ -59,5 +59,29 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Restore Docker build cache
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: /tmp/.buildx-cache
+          key: docker-build-${{ runner.os }}-${{ hashFiles('Dockerfile', 'server/package-lock.json') }}
+          restore-keys: |
+            docker-build-${{ runner.os }}-
+
       - name: Build production image
-        run: docker build --tag cmcen-pr-test .
+        run: |
+          docker buildx build \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --load \
+            --tag cmcen-pr-test \
+            .
+
+      - name: Refresh Docker build cache
+        if: success()
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache

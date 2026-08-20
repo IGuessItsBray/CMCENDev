@@ -124,10 +124,19 @@ The workflow restores npm's download cache using a key derived from
 the authoritative clean install step. A runner without cache support continues
 the job without a cache.
 
-The Docker job runs from the repository root:
+The Docker job uses Buildx and restores a persistent layer cache. Its cache key
+is derived from the Dockerfile and `server/package-lock.json`, so application
+source changes can reuse the production dependency-install layer. A cache miss
+or a runner without cache support still performs a full build. The job runs
+from the repository root:
 
 ```sh
-docker build --tag cmcen-pr-test .
+docker buildx build \
+  --cache-from type=local,src=/tmp/.buildx-cache \
+  --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+  --load \
+  --tag cmcen-pr-test \
+  .
 ```
 
 Do not inject production credentials. The suite supplies its own JWT and

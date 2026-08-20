@@ -14,7 +14,7 @@ const workflowPath = path.resolve(
 );
 const workflow = YAML.parse(fs.readFileSync(workflowPath, 'utf8'));
 
-test('uses the runner-provided Node 24 runtime without setup-node or npm caching', () => {
+test('uses the runner-provided Node 24 runtime and caches Docker build layers', () => {
   assert.deepEqual(workflow.on.push.branches, ['main']);
   assert.deepEqual(workflow.on.pull_request.branches, ['main']);
 
@@ -29,4 +29,29 @@ test('uses the runner-provided Node 24 runtime without setup-node or npm caching
   assert.equal(setupNode, undefined);
   assert.match(runtimeCheck.run, /process\.versions\.node/u);
   assert.match(runtimeCheck.run, /!== '24'/u);
+
+  const buildxSetup = workflow.jobs['docker-build'].steps.find(
+    (step) => step.uses === 'docker/setup-buildx-action@v3',
+  );
+  const dockerCache = workflow.jobs['docker-build'].steps.find(
+    (step) => step.name === 'Restore Docker build cache',
+  );
+  const dockerBuild = workflow.jobs['docker-build'].steps.find(
+    (step) => step.name === 'Build production image',
+  );
+
+  assert.ok(buildxSetup);
+  assert.equal(dockerCache.uses, 'actions/cache@v4');
+  assert.equal(dockerCache.with.path, '/tmp/.buildx-cache');
+  assert.match(dockerCache.with.key, /server\/package-lock\.json/u);
+  assert.match(dockerBuild.run, /docker buildx build/u);
+  assert.match(dockerBuild.run, /--cache-from type=local/u);
+  assert.match(dockerBuild.run, /--cache-to type=local/u);
+
+  const cacheRefresh = workflow.jobs['docker-build'].steps.find(
+    (step) => step.name === 'Refresh Docker build cache',
+  );
+
+  assert.equal(cacheRefresh.if, 'success()');
+  assert.match(cacheRefresh.run, /\.buildx-cache-new/u);
 });

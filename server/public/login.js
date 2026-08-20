@@ -188,7 +188,6 @@ async function applyAccountLanguage(token) {
       window.applyLanguage(user.preferredLanguage);
     }
   } catch (error) {
-    console.warn("Could not apply account language preference:", error);
   }
 }
 

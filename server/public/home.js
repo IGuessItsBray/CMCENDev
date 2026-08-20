@@ -479,7 +479,6 @@ async function loadHomeEvents() {
       : [];
     homeEventsState = "ready";
   } catch (error) {
-    console.error("Homepage events failed to load:", error);
     homeEventsState = "error";
   }
 
@@ -500,7 +499,6 @@ async function loadHomeRetirements() {
       : [];
     homeRetirementsState = "ready";
   } catch (error) {
-    console.error("Homepage retirement messages failed to load:", error);
     homeRetirementsState = "error";
   }
 
@@ -515,7 +513,6 @@ async function loadHomeNews() {
     homeNewsItems = Array.isArray(data.items) ? data.items : [];
     homeNewsState = "ready";
   } catch (error) {
-    console.error("Homepage news failed to load:", error);
     homeNewsState = "error";
   }
   renderHomeNews();

@@ -1091,7 +1091,6 @@ async function updateFooterVersion() {
       versionElement.hidden = false;
     }
   } catch (error) {
-    console.warn("Version unavailable:", error);
   }
 }
 
@@ -1133,7 +1132,6 @@ async function loadCustomNavigationItems() {
     renderCustomNavigationItems();
     updateAuthRestrictedItems();
   } catch (error) {
-    console.warn("Custom navigation unavailable:", error);
   }
 }
 
@@ -1602,7 +1600,6 @@ async function markHeaderNotificationsRead(
       });
     }
   } catch (error) {
-    console.error("Could not mark notifications as read:", error);
   }
 }
 
@@ -1669,7 +1666,6 @@ async function refreshHeaderNotificationCount() {
       updateHeaderNotifications(user.notifications || {});
     }
   } catch (error) {
-    console.error("Could not refresh notification count:", error);
   }
 }
 
@@ -1894,7 +1890,6 @@ async function updateAuthRestrictedItems() {
       return;
     }
 
-    console.error("Navigation permission check failed:", error);
   }
 }
 

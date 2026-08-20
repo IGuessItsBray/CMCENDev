@@ -835,7 +835,6 @@ function createProfileForm(user) {
         renderDashboard(currentDashboardUser);
       });
     } catch (error) {
-      console.error("Profile save failed:", error);
       resetProfileSaveButton(saveButton);
       cancelButton.disabled = false;
       CMCENUtils.showToast(
@@ -1495,7 +1494,6 @@ async function loadDashboard() {
           },
         );
       } catch (error) {
-        console.error("Review submission counts could not be loaded:", error);
       }
     } else {
       currentReviewCounts = null;
@@ -1516,7 +1514,6 @@ async function loadDashboard() {
           ? certificateCounts.actionable
           : 0;
       } catch (error) {
-        console.error("Certificate request count could not be loaded:", error);
         currentCertificateRequestCount = null;
       }
     } else {
@@ -1525,7 +1522,6 @@ async function loadDashboard() {
 
     renderDashboard(user);
   } catch (error) {
-    console.error("Dashboard load failed:", error);
 
     showDashboardError(translate("dashboard_load_error"));
   }

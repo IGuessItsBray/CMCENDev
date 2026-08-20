@@ -666,7 +666,6 @@ async function saveTranslationRow(article, key) {
     showTranslationToast(translate("translations_saved"), "success");
     didSave = true;
   } catch (error) {
-    console.error("Translation save failed:", error);
     setTranslationRowStatus(
       status,
       translationRows.find((item) => item.key === key)?.missing || [],
@@ -714,7 +713,6 @@ async function loadTranslationsForEditing() {
       return;
     }
 
-    console.error("Translation load failed:", error);
     setTranslationsMessage(
       error.message || translate("translations_load_error"),
       "error",

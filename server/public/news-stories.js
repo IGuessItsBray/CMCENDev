@@ -249,7 +249,6 @@ async function initializeNewsEditor() {
     const article = managedArticles.find((item) => item._id === articleId);
     if (article) beginEdit(article);
   } catch (error) {
-    console.error("Could not verify news permissions:", error);
   }
 }
 

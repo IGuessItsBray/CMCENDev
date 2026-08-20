@@ -36,7 +36,10 @@ const {
 } = require('./routes/seo');
 const { rateLimitByIp } = require('./middleware/rate-limit');
 const { getPlausibleConfig } = require('./services/plausible');
+const logger = require('./services/logger');
 const { startWeeklyBriefScheduler } = require('./services/weekly-brief');
+
+logger.installConsole();
 
 const app = express();
 const isApiDocsEnabled = process.env.ENABLE_API_DOCS === 'true';

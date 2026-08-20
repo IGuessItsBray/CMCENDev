@@ -157,7 +157,6 @@ async function runSearch(query) {
     const data = await response.json();
     renderResults(data);
   } catch (error) {
-    console.error("Could not complete search:", error);
     setStatus("search_error");
   }
 }

@@ -290,7 +290,6 @@
         renderTimers();
       }
     } catch (error) {
-      console.warn("Banners unavailable:", error);
     }
   }
 

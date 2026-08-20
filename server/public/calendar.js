@@ -1189,7 +1189,6 @@ async function loadEvents() {
       return;
     }
 
-    console.error(error);
     publicEvents = [];
     renderMonthCalendar(getCurrentLanguage(), getLocale(getCurrentLanguage()));
     renderAgenda(getCurrentLanguage(), getLocale(getCurrentLanguage()));

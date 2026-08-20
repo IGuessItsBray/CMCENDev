@@ -39,22 +39,6 @@ deployment environment.
 `.env.example` is documentation and a template only. It must never contain real
 secrets.
 
-Environment variable names are case-sensitive.
-
-Use:
-
-```text
-CONFIG_TOKEN
-```
-
-not:
-
-```text
-config_token
-```
-
-for new configurations.
-
 ## Application Configuration
 
 ### `NODE_ENV`
@@ -192,30 +176,6 @@ JWT_REFRESH_TOKEN_TTL_DAYS=30
 ```
 
 The application constrains this value to a reasonable supported range.
-
-## Site Configuration Access
-
-### `CONFIG_TOKEN`
-
-Additional secret token used by protected site-configuration functionality.
-
-Example:
-
-```dotenv
-CONFIG_TOKEN=
-```
-
-Use a random value in any environment where this functionality is enabled.
-
-`CONFIG_TOKEN` is the canonical name.
-
-Older deployments may contain:
-
-```text
-config_token
-```
-
-but new environments should not use the lowercase form.
 
 ## Passkeys and WebAuthn
 
@@ -809,8 +769,6 @@ JWT_SECRET=<generate-a-local-secret>
 JWT_ACCESS_TOKEN_TTL=1h
 JWT_REFRESH_TOKEN_TTL_DAYS=30
 
-CONFIG_TOKEN=<generate-a-local-config-token>
-
 RP_NAME=CMCEN
 RP_ID=localhost
 RP_ORIGIN=http://localhost:3000
@@ -876,7 +834,6 @@ MONGO_URI
 JWT_SECRET
 JWT_ACCESS_TOKEN_TTL
 JWT_REFRESH_TOKEN_TTL_DAYS
-CONFIG_TOKEN
 RP_NAME
 RP_ID
 RP_ORIGIN
@@ -917,7 +874,6 @@ The following values must be treated as secrets:
 ```text
 MONGO_URI
 JWT_SECRET
-CONFIG_TOKEN
 MINIO_ACCESS_KEY
 MINIO_SECRET_KEY
 ADMIN_PASSWORD

@@ -25,7 +25,6 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `routes/diagnostics.js`         | `/api`                     |
 | `routes/uploads.js`             | `/api`                     |
 | `routes/admin.js`               | `/api/admin`               |
-| `routes/site-config.js`         | `/api/admin/site-config`   |
 | `routes/audit-logs.js`          | `/api/audit-logs`          |
 | `routes/events.js`              | `/api/events`              |
 | `routes/news.js`                | `/api/news`                |
@@ -150,17 +149,6 @@ Mounted at `/api/admin`.
 | `DELETE` | `/api/admin/last-posts/:lastPostId`          | Authenticated + `canDeleteContent`, or original owner + `canDeleteOwnContent` | Delete a Last Post notice. Administrator deletion also removes an attached, unshared image and its generated variants.                                                                                                                                                                                                                                                                                                                        |
 | `DELETE` | `/api/admin/retirement-comments/:commentId`  | Authenticated + `canDeleteContent`, or original owner + `canDeleteOwnContent` | Delete a retirement comment.                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
-## Site Config
-
-Mounted at `/api/admin/site-config`.
-
-| Method   | Path                                              | Access                                                 | Purpose                                                                                                                                                                                            |
-| -------- | ------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST`   | `/api/admin/site-config/access`                   | Authenticated + `canAccessSiteConfig`                  | Audit/log site-config access attempt.                                                                                                                                                              |
-| `POST`   | `/api/admin/site-config/verify`                   | Authenticated + `canAccessSiteConfig` + token          | Verify token gate for config access.                                                                                                                                                               |
-| `GET`    | `/api/admin/site-config`                          | Authenticated + `canAccessSiteConfig` + verified token | Read available protected site operations.                                                                                                                                                          |
-| `DELETE` | `/api/admin/site-config/analytics`                | Authenticated + `canManageSiteConfig` + verified token | Purge analytics history.                                                                                                                                                                           |
-
 ## Uploads and Media
 
 Mounted at `/api`.
@@ -219,7 +207,7 @@ Defined in `routes/pages.js`, mounted at root.
 | -------- | ------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`    | `/pages/:slug`                        | Public                                | Serve custom page shell.                                                                                                                                  |
 | `GET`    | `/api/navigation`                     | Public with optional auth             | Return visible dynamic navigation.                                                                                                                        |
-| `GET`    | `/api/sitemap`                        | Public with optional auth             | Return generated sitemap sections and links from public HTML files plus published custom pages. Excludes Site Config and non-public utility/admin shells. |
+| `GET`    | `/api/sitemap`                        | Public with optional auth             | Return generated sitemap sections and links from public HTML files plus published custom pages. Excludes non-public utility/admin shells. |
 | `GET`    | `/api/pages/:slug`                    | Public with optional auth             | Return page content if access rules allow it.                                                                                                             |
 | `GET`    | `/api/admin/pages/:pageId/preview`    | Authenticated + `canManagePages`      | Preview page by ID regardless of publication status.                                                                                                      |
 | `GET`    | `/api/admin/pages`                    | Authenticated + `canManagePages`      | List admin page summaries plus navigation/admin metadata.                                                                                                 |

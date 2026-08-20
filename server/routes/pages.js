@@ -58,7 +58,6 @@ const SITEMAP_EXCLUDED_HTML = new Set([
   'page.html',
   'pages-admin.html',
   'retirement-message.html',
-  'site-config.html',
   'timers-admin.html',
   'translations-admin.html',
 ]);

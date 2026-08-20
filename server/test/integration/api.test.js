@@ -1456,11 +1456,11 @@ describe('authorization matrix and account integrity', () => {
     assert.equal(invitedMember.role, 'internal_beta');
   });
 
-  test('grants catalog permissions through a custom role but not developer-only access', async () => {
+  test('grants catalog permissions through a custom role without developer-only escalation', async () => {
     const customRole = await Role.create({
       name: 'Audit Reader',
       slug: 'audit-reader',
-      permissions: ['audit.view', 'site_config.access'],
+      permissions: ['audit.view', 'review.bypass'],
     });
     const user = await createUser({
       role: 'subscriber',
@@ -1473,11 +1473,12 @@ describe('authorization matrix and account integrity', () => {
       .set('Authorization', bearer(session.body.token))
       .expect(200);
 
-    await request(app)
-      .post('/api/admin/site-config/access')
+    const profile = await request(app)
+      .get('/api/me')
       .set('Authorization', bearer(session.body.token))
-      .send({})
-      .expect(404);
+      .expect(200);
+
+    assert.equal(profile.body.permissions.canBypassReviewStages, false);
   });
 
   test('rejects an otherwise valid token after its user is deleted', async () => {

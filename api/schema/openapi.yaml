@@ -26,7 +26,6 @@ tags:
   - name: Analytics
   - name: Audit Log
   - name: Admin
-  - name: Site Config
   - name: Uploads
   - name: Banners
   - name: Translations
@@ -990,41 +989,6 @@ paths:
       responses:
         "200":
           description: Delete result.
-  /api/admin/site-config/access:
-    post:
-      tags: [Site Config]
-      summary: Log site config access request.
-      x-permission: canAccessSiteConfig
-      responses:
-        "200":
-          description: Access recorded.
-  /api/admin/site-config/verify:
-    post:
-      tags: [Site Config]
-      summary: Verify site-config token.
-      x-permission: canAccessSiteConfig
-      requestBody:
-        $ref: "#/components/requestBodies/SiteConfigToken"
-      responses:
-        "200":
-          description: Verification result.
-  /api/admin/site-config:
-    get:
-      tags: [Site Config]
-      summary: Read available site operations.
-      x-permission: canAccessSiteConfig
-      responses:
-        "200":
-          description: Available protected operations.
-  /api/admin/site-config/analytics:
-    delete:
-      tags: [Site Config, Analytics]
-      summary: Purge analytics history.
-      description: Token-gated protected maintenance action.
-      x-permission: canManageSiteConfig
-      responses:
-        "200":
-          description: Purge result.
   /api/upload:
     post:
       tags: [Uploads]
@@ -1967,14 +1931,6 @@ components:
               referrer: { type: string }
               locale: { type: string, example: en-CA }
               timeZone: { type: string, example: America/Toronto }
-    SiteConfigToken:
-      required: false
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              configToken: { type: string }
     UploadUrl:
       required: true
       content:

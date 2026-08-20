@@ -15,7 +15,6 @@ const NON_INDEXABLE_PATHS = [
   /^\/pages-admin(?:\/|$)/u,
   /^\/register(?:\/|$)/u,
   /^\/review-submissions(?:\/|$)/u,
-  /^\/site-config(?:\/|$)/u,
   /^\/timers-admin(?:\/|$)/u,
   /^\/translations-admin(?:\/|$)/u,
   /^\/submit-(?:event|last-post|retirement)(?:\/|$)/u,
@@ -40,7 +39,6 @@ const SITEMAP_EXCLUDED_FILES = new Set([
   'retirement-message.html',
   'review-submissions.html',
   'search.html',
-  'site-config.html',
   'sitemap.html',
   'submit-event.html',
   'submit-last-post.html',
@@ -187,7 +185,7 @@ function buildRobotsTxt(baseUrl) {
     (crawler) => `User-agent: ${crawler}\nDisallow: /`,
   ).join('\n\n');
 
-  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin-users\nDisallow: /analytics\nDisallow: /audit-log\nDisallow: /dashboard\nDisallow: /login\nDisallow: /pages-admin\nDisallow: /register\nDisallow: /review-submissions\nDisallow: /site-config\nDisallow: /timers-admin\nDisallow: /translations-admin\nDisallow: /submit-event\nDisallow: /submit-last-post\nDisallow: /submit-retirement\n\n# AI crawlers are not permitted to crawl or use CMCEN content.\n${blockedAiCrawlerRules}\n\nSitemap: ${baseUrl}/sitemap.xml\n`;
+  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin-users\nDisallow: /analytics\nDisallow: /audit-log\nDisallow: /dashboard\nDisallow: /login\nDisallow: /pages-admin\nDisallow: /register\nDisallow: /review-submissions\nDisallow: /timers-admin\nDisallow: /translations-admin\nDisallow: /submit-event\nDisallow: /submit-last-post\nDisallow: /submit-retirement\n\n# AI crawlers are not permitted to crawl or use CMCEN content.\n${blockedAiCrawlerRules}\n\nSitemap: ${baseUrl}/sitemap.xml\n`;
 }
 
 router.get('/robots.txt', (req, res) => {

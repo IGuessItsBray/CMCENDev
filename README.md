@@ -388,7 +388,6 @@ Important settings include:
 | `CDN_PUBLIC_BASE_URL` | No | Preferred full public media/CDN base URL, including any bucket path |
 | `RP_ID` | Production MFA | WebAuthn relying-party domain |
 | `RP_ORIGIN` | Production MFA | Exact WebAuthn application origin |
-| `CONFIG_TOKEN` | Site config | Additional token for protected site-config operations |
 | `SMTP_HOST` | Email | SMTP relay host |
 | `SMTP_PORT` | Email | SMTP relay port |
 | `SMTP_SECURE` | Email | SMTP transport security mode; current deployments use `starttls` |

@@ -9,7 +9,6 @@
       admin_tab_audit_log: "Audit Log",
       admin_tab_analytics: "Analytics",
       admin_tab_timers: "Banners",
-      admin_tab_site_config: "Site Config",
       admin_tab_subscriptions: "Subscriptions",
     };
     const translated =
@@ -72,12 +71,6 @@
       href: "/timers-admin",
       labelKey: "admin_tab_timers",
       permission: "canManageTimers",
-    },
-    {
-      key: "site-config",
-      href: "/site-config",
-      labelKey: "admin_tab_site_config",
-      permission: "canAccessSiteConfig",
     },
   ];
 
@@ -153,10 +146,6 @@
       return "timers";
     }
 
-    if (path === "/site-config") {
-      return "site-config";
-    }
-
     return "";
   }
 
@@ -178,13 +167,6 @@
     )
       ? options.permissions
       : currentPermissions;
-    const includeSiteConfig = permissions
-      ? permissions.canAccessSiteConfig === true
-      : options.includeSiteConfig === true ||
-        tabs.dataset.includeSiteConfig === "true" ||
-        active === "site-config";
-
-    tabs.dataset.includeSiteConfig = includeSiteConfig ? "true" : "false";
     tabs.setAttribute("role", "tablist");
     tabs.replaceChildren();
 
@@ -195,7 +177,6 @@
           !permissions ||
           permissions[item.permission] === true,
       )
-      .filter((item) => item.key !== "site-config" || includeSiteConfig)
       .forEach((item) => {
         const link = document.createElement("a");
         const isActive = item.key === active;

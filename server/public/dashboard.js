@@ -1202,7 +1202,6 @@ function renderDashboard(user) {
       "canManageTimers",
       "canViewMediaLibrary",
       "canViewAuditLog",
-      "canAccessSiteConfig",
     ].some((permission) => user.permissions?.[permission] === true);
 
     if (
@@ -1230,7 +1229,9 @@ function renderDashboard(user) {
                   ? "/admin-users?view=media"
                   : user.permissions?.canViewAuditLog === true
                     ? "/audit-log"
-                    : "/site-config",
+                    : user.permissions?.canViewAnalytics === true
+                      ? "/analytics"
+                      : "/timers-admin",
         titleKey: "dashboard_action_admin_work_zone",
         descriptionKey: "dashboard_action_admin_work_zone_description",
       });

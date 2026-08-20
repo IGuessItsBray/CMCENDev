@@ -178,22 +178,6 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Create, update, schedule, and delete public site banners.',
   },
   {
-    key: 'site_config.access',
-    label: 'Access site config',
-    group: 'Site config',
-    action: 'read',
-    description:
-      'Open the site configuration work zone after token verification.',
-  },
-  {
-    key: 'site_config.manage',
-    label: 'Manage site config',
-    group: 'Site config',
-    action: 'admin',
-    description:
-      'Edit environment-backed site configuration values after token verification.',
-  },
-  {
     key: 'media.read',
     label: 'View media library',
     group: 'Media',
@@ -248,8 +232,6 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canViewAuditLog: 'audit.view',
   canViewAnalytics: 'analytics.view',
   canManageTimers: 'timers.manage',
-  canAccessSiteConfig: 'site_config.access',
-  canManageSiteConfig: 'site_config.manage',
   canViewMediaLibrary: 'media.read',
   canUploadMedia: 'media.upload',
   canDeleteMedia: 'media.delete',
@@ -258,8 +240,6 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
 
 const CUSTOM_ROLE_DENYLIST = Object.freeze([
   'review.bypass',
-  'site_config.access',
-  'site_config.manage',
 ]);
 
 function getAllPermissionKeys() {
@@ -329,10 +309,6 @@ function getBuiltInPermissionFlags(user) {
     canViewAnalytics: hasMinimumRole(role, 'administrator'),
 
     canManageTimers: hasMinimumRole(role, 'editor'),
-
-    canAccessSiteConfig: role === 'developer',
-
-    canManageSiteConfig: role === 'developer',
 
     canViewMediaLibrary: hasMinimumRole(role, 'administrator'),
 

@@ -20,18 +20,6 @@ function translationApiJson(path, token, options = {}) {
   });
 }
 
-async function syncDeveloperSiteConfigTab(token) {
-  try {
-    const user = await translationApiJson("/api/me", token, {
-      errorMessage: translate("translations_access_denied"),
-    });
-
-    window.updateAdminWorkZoneTabsForUser(user);
-  } catch {
-    // The translation editor still works without the developer-only tab.
-  }
-}
-
 function setTranslationsMessage(message, state = "", messageKey = "") {
   activeTranslationsMessageKey = messageKey;
   translationsMessage.textContent = message;
@@ -323,8 +311,6 @@ async function loadTranslationsForEditing() {
   if (!token) {
     return;
   }
-
-  syncDeveloperSiteConfigTab(token);
 
   setTranslationsMessage(
     translate("translations_loading"),

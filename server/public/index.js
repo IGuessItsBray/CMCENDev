@@ -929,12 +929,6 @@ function loadFooter() {
             </li>
 
             <li>
-              <a href="/subscribe.html" data-i18n="subscribe">
-                Subscribe
-              </a>
-            </li>
-
-            <li>
               <a href="/contact.html" data-i18n="menu_contact">
                 Contact
               </a>
@@ -1003,7 +997,7 @@ function loadFooter() {
             </li>
 
             <li>
-              <a href="/accessibility.html" data-i18n="accessibility">
+              <a href="/accessibility" data-i18n="accessibility">
                 Accessibility
               </a>
             </li>

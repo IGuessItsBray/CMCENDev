@@ -1025,6 +1025,7 @@ paths:
       tags: [Admin, LastPost]
       summary: Delete a Last Post notice.
       description: Allowed for administrators/developers or the original submitter with own-content deletion permission. Administrator deletion removes an attached image and its generated variants when no other content still references that asset.
+      x-permission: canDeleteContent
       parameters:
         - name: lastPostId
           in: path
@@ -1034,6 +1035,48 @@ paths:
         "200":
           description: Last Post notice deleted.
         "403":
+          $ref: "#/components/responses/Error"
+  /api/admin/last-posts/{lastPostId}/hide:
+    patch:
+      tags: [Admin, LastPost]
+      summary: Remove a Last Post notice from public view.
+      description: Allowed for content editors or the original submitter with own-content deletion permission. The notice and attached media are retained for restoration; an optional reason is recorded in the audit log.
+      x-permission: canHideContent
+      parameters:
+        - name: lastPostId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Last Post notice removed from public view.
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/admin/content/{contentType}/{contentId}/revisions:
+    get:
+      tags: [Admin, Content]
+      summary: List staff-authored content revisions.
+      description: Returns up to 100 public-field revisions for an event, retirement message, Last Post notice, or retirement comment. Submitter contact details are excluded.
+      x-permission: canReviewAndPublish
+      parameters:
+        - name: contentType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [event, retirementMessage, lastPost, retirementComment]
+        - name: contentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Content revisions.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
           $ref: "#/components/responses/Error"
   /api/admin/events/{eventId}:
     patch:
@@ -1064,6 +1107,82 @@ paths:
       responses:
         "200":
           description: Delete result.
+  /api/admin/content:
+    get:
+      tags: [Admin, Content]
+      summary: List content in the staff editorial workspace.
+      description: Returns compact public-content records without submitter contact details. Results can be filtered by type and lifecycle status.
+      x-permission: canReviewAndPublish
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, event, retirementMessage, lastPost, retirementComment]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, draft, pending, published, rejected, hidden]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Editorial workspace content.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/admin/last-posts/{lastPostId}/restore:
+    patch:
+      tags: [Admin, LastPost]
+      summary: Restore a removed Last Post notice.
+      x-permission: canRestoreContent
+      parameters:
+        - name: lastPostId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Restored Last Post notice.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/admin/events/{eventId}/hide:
+    patch:
+      tags: [Admin, Events]
+      summary: Remove an event from public view.
+      description: Allowed for content editors or the original submitter with own-content deletion permission. The event and attached media are retained for restoration; an optional reason is recorded in the audit log.
+      x-permission: canHideContent
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Event removed from public view.
+  /api/admin/events/{eventId}/restore:
+    patch:
+      tags: [Admin, Events]
+      summary: Restore a removed event.
+      x-permission: canRestoreContent
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Restored event.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/admin/retirement-messages/{messageId}:
     patch:
       tags: [Admin, Retirements]
@@ -1093,6 +1212,33 @@ paths:
       responses:
         "200":
           description: Delete result.
+  /api/admin/retirement-messages/{messageId}/hide:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Remove a retirement message from public view.
+      description: Allowed for content editors or the original submitter with own-content deletion permission. The message, comments, and attached media are retained for restoration; an optional reason is recorded in the audit log.
+      x-permission: canHideContent
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Retirement message removed from public view.
+  /api/admin/retirement-messages/{messageId}/restore:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Restore a removed retirement message.
+      x-permission: canRestoreContent
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Restored retirement message.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/admin/retirement-comments/{commentId}:
     delete:
       tags: [Admin, Retirements]
@@ -1103,6 +1249,33 @@ paths:
       responses:
         "200":
           description: Delete result.
+  /api/admin/retirement-comments/{commentId}/hide:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Remove a retirement comment from public view.
+      description: Allowed for content editors or the original author with own-content deletion permission. The comment is retained for restoration; an optional reason is recorded in the audit log.
+      x-permission: canHideContent
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      responses:
+        "200":
+          description: Retirement comment removed from public view.
+  /api/admin/retirement-comments/{commentId}/restore:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Restore a removed retirement comment.
+      x-permission: canRestoreContent
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      responses:
+        "200":
+          description: Restored retirement comment.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/upload:
     post:
       tags: [Uploads]
@@ -1574,8 +1747,8 @@ paths:
   /api/events/{eventId}/review-content:
     patch:
       tags: [Events]
-      summary: Update one language of a pending event during review.
-      description: Updates title, location, description, and registration text for one language without changing the pending review status.
+      summary: Update one language of event content during review or publication.
+      description: Updates title, location, description, and registration text for one language on a pending or published event. A public-field revision and audit entry retain the before/after values.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/EventId"
@@ -1730,8 +1903,8 @@ paths:
   /api/last-posts/{messageId}/review-content:
     patch:
       tags: [Last Posts]
-      summary: Update one language of a pending Last Post notice during review.
-      description: Updates one Last Post translation without changing the pending review status.
+      summary: Update one language of a Last Post notice during review or publication.
+      description: Updates one translation on a pending or published Last Post notice. A public-field revision and audit entry retain the before/after values.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/MessageId"
@@ -1875,8 +2048,8 @@ paths:
   /api/retirement-messages/{messageId}/review-content:
     patch:
       tags: [Retirements]
-      summary: Update one language of a pending retirement message during review.
-      description: Updates one retirement message translation without changing the pending review status. Each saved message must contain at least 100 characters.
+      summary: Update one language of a retirement message during review or publication.
+      description: Updates one translation on a pending or published retirement message. A public-field revision and audit entry retain the before/after values. Each saved message must contain at least 100 characters.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/MessageId"

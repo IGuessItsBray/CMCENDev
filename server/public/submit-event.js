@@ -180,15 +180,15 @@ function createMyEventCard(submittedEvent) {
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "my-event-edit-link is-danger";
-    deleteButton.textContent = "Delete";
+    deleteButton.textContent = "Remove";
     deleteButton.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopPropagation();
 
       if (
         !(await CMCENModal.confirm(
-          "Delete this submitted event? This cannot be undone.",
-          { title: "Delete event", confirmText: "Delete", destructive: true },
+          "Remove this submitted event? A content editor can restore it later.",
+          { title: "Remove event", confirmText: "Remove", destructive: true },
         ))
       )
         return;
@@ -197,16 +197,16 @@ function createMyEventCard(submittedEvent) {
         await eventApiJson(
           `/api/admin/events/${encodeURIComponent(submittedEvent._id)}`,
           token,
-          { method: "DELETE", errorMessage: "Could not delete event" },
+          { method: "DELETE", errorMessage: "Could not remove event" },
         );
         await loadMyEvents(token);
-        CMCENUtils.showToast("Event deleted", {
+        CMCENUtils.showToast("Event removed from public view", {
           color: "success",
           position: "bottom-right",
           animation: "slide",
         });
       } catch (error) {
-        CMCENUtils.showToast(error.message || "Could not delete event", {
+        CMCENUtils.showToast(error.message || "Could not remove event", {
           color: "error",
           position: "bottom-right",
           animation: "slide",

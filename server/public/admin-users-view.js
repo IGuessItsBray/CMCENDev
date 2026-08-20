@@ -768,13 +768,30 @@
         item.append(excerpt);
       }
 
-      const deleteButton = document.createElement("button");
-      deleteButton.type = "button";
-      deleteButton.className = "admin-work-zone-button is-danger";
-      deleteButton.textContent = translate("admin_delete");
-      deleteButton.addEventListener("click", () => actions.deletePost(post));
+      const contentActionButton = document.createElement("button");
+      contentActionButton.type = "button";
 
-      item.append(deleteButton);
+      if (post.status === "hidden") {
+        contentActionButton.className = "admin-work-zone-button";
+        contentActionButton.textContent = getText(
+          "admin_content_restore",
+          "Restore",
+        );
+        contentActionButton.addEventListener("click", () =>
+          actions.restorePost(post),
+        );
+      } else {
+        contentActionButton.className = "admin-work-zone-button is-danger";
+        contentActionButton.textContent = getText(
+          "admin_content_remove",
+          "Remove",
+        );
+        contentActionButton.addEventListener("click", () =>
+          actions.deletePost(post),
+        );
+      }
+
+      item.append(contentActionButton);
 
       return item;
     }

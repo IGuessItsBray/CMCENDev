@@ -17,6 +17,7 @@ const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
 const { sendMail } = require('../services/mailer');
 const { getEventSnapshot } = require('../services/content-snapshots');
+const { recordContentRevision } = require('../services/content-revisions');
 const {
   cleanLocalizedText,
   cleanString,
@@ -1023,6 +1024,12 @@ router.patch('/:id', authMiddleware, async (req, res) => {
       });
     }
 
+    if (event.status === 'hidden') {
+      return res.status(409).json({
+        error: 'Restore this event before editing or publishing it',
+      });
+    }
+
     if (wantsImmediatePublication && !mayPublish) {
       return res.status(403).json({
         error: 'You do not have permission to publish in this content area',
@@ -1199,7 +1206,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// update the event copy for one language while it is awaiting review
+// Update one language of event copy while it is pending review or published.
 router.patch(
   '/:eventId/review-content',
   authMiddleware,
@@ -1240,11 +1247,15 @@ router.patch(
         });
       }
 
-      if (event.status !== 'pending') {
+      if (!['pending', 'published'].includes(event.status)) {
         return res.status(409).json({
-          error: 'Only pending events can have review content updated',
+          error: 'Only pending or published events can have content updated',
         });
       }
+
+      const before = Object.fromEntries(
+        editableFields.map((field) => [field, event.get(`${field}.${language}`) || '']),
+      );
 
       editableFields.forEach((field) => {
         event.set(`${field}.${language}`, cleanString(content[field]));
@@ -1253,22 +1264,44 @@ router.patch(
 
       await event.save();
 
+      const after = Object.fromEntries(
+        editableFields.map((field) => [field, event.get(`${field}.${language}`) || '']),
+      );
+      await recordContentRevision({
+        contentType: 'event',
+        content: event,
+        actor: req.user,
+        status: event.status,
+        language,
+        fields: editableFields,
+        before,
+        after,
+        note: req.body.note,
+      });
+
       await writeAuditLog({
         req,
-        action: 'content.review_content_updated',
+        action:
+          event.status === 'pending'
+            ? 'content.review_content_updated'
+            : 'content.staff_content_updated',
         actor: req.user,
         targetType: 'event',
         target: event._id,
         targetSnapshot: getEventSnapshot(event),
         metadata: {
           source: 'review-content',
+          status: event.status,
           language,
           fields: editableFields,
         },
       });
 
       return res.json({
-        message: 'Event review content updated',
+        message:
+          event.status === 'published'
+            ? 'Published event content updated'
+            : 'Event review content updated',
         event,
       });
     } catch (error) {

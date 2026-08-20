@@ -13,6 +13,7 @@ const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
 const NewsArticle = require('../models/NewsArticle');
 const Page = require('../models/Page');
+const ContentRevision = require('../models/ContentRevision');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const WeeklyBriefRun = require('../models/WeeklyBriefRun');
@@ -35,15 +36,16 @@ const {
   buildPublicMediaUrl,
   getMediaKeyFromValue,
 } = require('../services/media-library');
-const { deleteContentMediaAssets } = require('../services/media-assets');
 const {
   getEventSnapshot,
   getEventTitle,
+  getLastPostMessageSnapshot,
   getRetirementCommentSnapshot,
   getRetirementCommentTitle,
   getRetirementMessageSnapshot,
   getRetirementMessageTitle,
 } = require('../services/content-snapshots');
+const { hideContent, restoreContent } = require('../services/content-lifecycle');
 const s3Client = require('../storage');
 
 const router = express.Router();
@@ -198,15 +200,6 @@ const USER_EXPORT_FIELDS = Object.freeze([
   ['updatedAt', 'Updated at'],
 ]);
 
-function getContentMediaCleanupMetadata(cleanup = []) {
-  return cleanup.map((item) => ({
-    status: item.status,
-    key: item.key || '',
-    objectCount: item.objectKeys?.length || 0,
-    remainingReferenceCount: item.references?.length || 0,
-  }));
-}
-
 function verifyDestructiveTotp(user, code) {
   if (!user?.totp?.secret || user.totp.enabled !== true) return false;
 
@@ -252,6 +245,243 @@ router.get(
       res.status(500).json({
         error: 'Could not load review submission counts',
       });
+    }
+  },
+);
+
+const REVISION_CONTENT_MODELS = Object.freeze({
+  event: Event,
+  retirementMessage: RetirementMessage,
+  lastPost: LastPostMessage,
+  retirementComment: RetirementComment,
+});
+
+const CONTENT_WORKSPACE_TYPES = Object.freeze([
+  'event',
+  'retirementMessage',
+  'lastPost',
+  'retirementComment',
+]);
+const CONTENT_WORKSPACE_STATUSES = Object.freeze([
+  'draft',
+  'pending',
+  'published',
+  'rejected',
+  'hidden',
+]);
+
+function getContentWorkspaceLimit(value) {
+  const limit = Number.parseInt(value, 10);
+
+  if (!Number.isInteger(limit) || limit < 1) return 50;
+  return Math.min(limit, 100);
+}
+
+function toContentWorkspaceItem(type, content) {
+  const base = {
+    _id: content._id,
+    type,
+    status: content.status,
+    hiddenFromStatus: content.hiddenFromStatus || '',
+    updatedAt: content.updatedAt,
+    createdAt: content.createdAt,
+  };
+
+  if (type === 'event') {
+    return {
+      ...base,
+      title: getEventTitle(content),
+      content: {
+        title: content.title || {},
+        location: content.location || {},
+        description: content.description || {},
+        registration: content.registration || {},
+        city: content.city || '',
+        startDate: content.startDate || null,
+      },
+    };
+  }
+
+  if (type === 'retirementMessage') {
+    return {
+      ...base,
+      title: getRetirementMessageTitle(content),
+      content: {
+        messages: content.messages || {},
+        messageLanguage: content.messageLanguage || '',
+        retiree: content.retiree || {},
+      },
+    };
+  }
+
+  if (type === 'lastPost') {
+    return {
+      ...base,
+      title: getLastPostMessageTitle(content),
+      content: {
+        messages: content.messages || {},
+        messageLanguage: content.messageLanguage || '',
+        deceased: content.deceased || {},
+      },
+    };
+  }
+
+  return {
+    ...base,
+    title: getRetirementCommentTitle(content),
+    content: {
+      body: content.body || '',
+      retirementMessage: content.retirementMessage
+        ? {
+            _id: content.retirementMessage._id,
+            title: getRetirementMessageTitle(content.retirementMessage),
+          }
+        : null,
+    },
+  };
+}
+
+// GET /api/admin/content
+// Return a compact, staff-only cross-content workspace without submitter data.
+router.get(
+  '/content',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      const type = String(req.query.type || 'all');
+      const status = String(req.query.status || 'all');
+      const limit = getContentWorkspaceLimit(req.query.limit);
+
+      if (type !== 'all' && !CONTENT_WORKSPACE_TYPES.includes(type)) {
+        return res.status(400).json({ error: 'Unsupported content type' });
+      }
+
+      if (status !== 'all' && !CONTENT_WORKSPACE_STATUSES.includes(status)) {
+        return res.status(400).json({ error: 'Unsupported content status' });
+      }
+
+      const statusFilter = status === 'all' ? {} : { status };
+      const types = type === 'all' ? CONTENT_WORKSPACE_TYPES : [type];
+      const queries = [];
+
+      if (types.includes('event')) {
+        queries.push(
+          Event.find(statusFilter)
+            .select(
+              'title location description registration city startDate status hiddenFromStatus updatedAt createdAt',
+            )
+            .sort({ updatedAt: -1, _id: -1 })
+            .limit(limit)
+            .lean()
+            .then((records) => records.map((record) => toContentWorkspaceItem('event', record))),
+        );
+      }
+
+      if (types.includes('retirementMessage')) {
+        queries.push(
+          RetirementMessage.find(statusFilter)
+            .select(
+              'retiree messages messageLanguage status hiddenFromStatus updatedAt createdAt',
+            )
+            .sort({ updatedAt: -1, _id: -1 })
+            .limit(limit)
+            .lean()
+            .then((records) =>
+              records.map((record) =>
+                toContentWorkspaceItem('retirementMessage', record),
+              ),
+            ),
+        );
+      }
+
+      if (types.includes('lastPost')) {
+        queries.push(
+          LastPostMessage.find(statusFilter)
+            .select(
+              'deceased messages messageLanguage status hiddenFromStatus updatedAt createdAt',
+            )
+            .sort({ updatedAt: -1, _id: -1 })
+            .limit(limit)
+            .lean()
+            .then((records) =>
+              records.map((record) => toContentWorkspaceItem('lastPost', record)),
+            ),
+        );
+      }
+
+      if (types.includes('retirementComment')) {
+        queries.push(
+          RetirementComment.find(statusFilter)
+            .select(
+              'retirementMessage body status hiddenFromStatus updatedAt createdAt',
+            )
+            .populate('retirementMessage', 'retiree')
+            .sort({ updatedAt: -1, _id: -1 })
+            .limit(limit)
+            .lean()
+            .then((records) =>
+              records.map((record) =>
+                toContentWorkspaceItem('retirementComment', record),
+              ),
+            ),
+        );
+      }
+
+      const items = (await Promise.all(queries))
+        .flat()
+        .sort(
+          (left, right) =>
+            new Date(right.updatedAt || right.createdAt || 0) -
+            new Date(left.updatedAt || left.createdAt || 0),
+        )
+        .slice(0, limit);
+
+      return res.json({ items });
+    } catch (error) {
+      console.error('Could not load content workspace:', error);
+      return res.status(500).json({ error: 'Could not load content workspace' });
+    }
+  },
+);
+
+// GET /api/admin/content/:contentType/:contentId/revisions
+// Return staff-authored revisions without exposing submitter contact details.
+router.get(
+  '/content/:contentType/:contentId/revisions',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      const { contentType, contentId } = req.params;
+      const Model = REVISION_CONTENT_MODELS[contentType];
+
+      if (!Model) {
+        return res.status(400).json({ error: 'Unsupported content type' });
+      }
+
+      const exists = await Model.exists({ _id: contentId });
+
+      if (!exists) {
+        return res.status(404).json({ error: 'Content not found' });
+      }
+
+      const revisions = await ContentRevision.find({
+        contentType,
+        contentId,
+      })
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(100)
+        .lean();
+
+      return res.json({ revisions });
+    } catch (error) {
+      if (error.name === 'CastError') {
+        return res.status(400).json({ error: 'Invalid content ID' });
+      }
+
+      console.error('Could not load content revisions:', error);
+      return res.status(500).json({ error: 'Could not load content revisions' });
     }
   },
 );
@@ -3853,6 +4083,194 @@ router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
     console.error('Last Post deletion failed:', error);
     return res.status(500).json({ error: 'Could not delete Last Post notice' });
   }
+});
+
+function buildContentRemovalHandler({
+  Model,
+  idParam,
+  targetType,
+  displayName,
+  getSnapshot,
+  getOwner = (content) => content.createdBy,
+  load = (id) => Model.findById(id),
+}) {
+  return async (req, res) => {
+    try {
+      const content = await load(req.params[idParam]);
+
+      if (!content) {
+        return res.status(404).json({ error: `${displayName} not found` });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const isOwner = String(getOwner(content) || '') === String(req.user._id);
+      if (
+        !permissions.canHideContent &&
+        !(permissions.canDeleteOwnContent && isOwner)
+      ) {
+        return res.status(403).json({
+          error: `You do not have permission to remove this ${displayName.toLowerCase()}`,
+        });
+      }
+
+      const snapshot = getSnapshot(content);
+      const removal = hideContent(content, {
+        actor: req.user,
+        reason: req.body?.reason,
+      });
+
+      if (!removal) {
+        return res.status(409).json({
+          error: `${displayName} is already removed or cannot be removed`,
+        });
+      }
+
+      await content.save();
+      await writeAuditLog({
+        req,
+        action: 'content.hidden',
+        actor: req.user,
+        targetType,
+        target: content._id,
+        targetSnapshot: snapshot,
+        metadata: {
+          previousStatus: removal.previousStatus,
+          reason: removal.reason,
+          removedByOwner: isOwner,
+        },
+      });
+
+      return res.json({
+        message: `${displayName} removed from public view`,
+        content,
+      });
+    } catch (error) {
+      if (error.name === 'CastError') {
+        return res.status(400).json({ error: `Invalid ${displayName} ID` });
+      }
+
+      console.error(`Admin ${displayName} removal failed:`, error);
+      return res.status(500).json({ error: `Failed to remove ${displayName}` });
+    }
+  };
+}
+
+function buildContentRestoreHandler({
+  Model,
+  idParam,
+  targetType,
+  displayName,
+  getSnapshot,
+  load = (id) => Model.findById(id),
+}) {
+  return async (req, res) => {
+    try {
+      const content = await load(req.params[idParam]);
+
+      if (!content) {
+        return res.status(404).json({ error: `${displayName} not found` });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      if (!permissions.canRestoreContent) {
+        return res.status(403).json({
+          error: `You do not have permission to restore this ${displayName.toLowerCase()}`,
+        });
+      }
+
+      const snapshot = getSnapshot(content);
+      const restoration = restoreContent(content);
+
+      if (!restoration) {
+        return res.status(409).json({
+          error: `${displayName} is not available to restore`,
+        });
+      }
+
+      await content.save();
+      await writeAuditLog({
+        req,
+        action: 'content.restored',
+        actor: req.user,
+        targetType,
+        target: content._id,
+        targetSnapshot: snapshot,
+        metadata: {
+          restoredStatus: restoration.restoredStatus,
+        },
+      });
+
+      return res.json({
+        message: `${displayName} restored`,
+        content,
+      });
+    } catch (error) {
+      if (error.name === 'CastError') {
+        return res.status(400).json({ error: `Invalid ${displayName} ID` });
+      }
+
+      console.error(`Admin ${displayName} restore failed:`, error);
+      return res.status(500).json({ error: `Failed to restore ${displayName}` });
+    }
+  };
+}
+
+const contentRemovalRoutes = [
+  {
+    path: '/events/:eventId',
+    Model: Event,
+    idParam: 'eventId',
+    targetType: 'event',
+    displayName: 'Event',
+    getSnapshot: getEventSnapshot,
+  },
+  {
+    path: '/retirement-messages/:messageId',
+    Model: RetirementMessage,
+    idParam: 'messageId',
+    targetType: 'retirementMessage',
+    displayName: 'Retirement message',
+    getSnapshot: getRetirementMessageSnapshot,
+  },
+  {
+    path: '/retirement-comments/:commentId',
+    Model: RetirementComment,
+    idParam: 'commentId',
+    targetType: 'retirementComment',
+    displayName: 'Retirement comment',
+    getSnapshot: (comment) =>
+      getRetirementCommentSnapshot(comment, {
+        includeBody: true,
+        includeRetirementMessageTitle: true,
+      }),
+    getOwner: (comment) => comment.author,
+    load: (id) =>
+      RetirementComment.findById(id).populate(
+        'retirementMessage',
+        'retiree status',
+      ),
+  },
+  {
+    path: '/last-posts/:lastPostId',
+    Model: LastPostMessage,
+    idParam: 'lastPostId',
+    targetType: 'lastPost',
+    displayName: 'Last Post notice',
+    getSnapshot: getLastPostMessageSnapshot,
+  },
+];
+
+contentRemovalRoutes.forEach((route) => {
+  router.patch(
+    `${route.path}/hide`,
+    authMiddleware,
+    buildContentRemovalHandler(route),
+  );
+  router.patch(
+    `${route.path}/restore`,
+    authMiddleware,
+    buildContentRestoreHandler(route),
+  );
 });
 
 module.exports = router;

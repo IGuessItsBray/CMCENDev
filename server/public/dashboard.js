@@ -1119,6 +1119,15 @@ function createReviewQueuesUnavailable() {
   return [message, link];
 }
 
+function createContentWorkspaceLink() {
+  const link = document.createElement("a");
+  link.className = "dashboard-review-open-link";
+  link.href = "/content-workspace";
+  link.textContent = translate("dashboard_review_manage_content");
+
+  return link;
+}
+
 function renderDashboard(user) {
   const profileWasOpen = dashboardProfileDetails?.open === true;
 
@@ -1292,6 +1301,10 @@ function renderDashboard(user) {
           ariaLabelKey: "dashboard_certificate_requests_open_queue",
         }),
       );
+    }
+
+    if (canReviewSubmissions) {
+      reviewQueues.push(createContentWorkspaceLink());
     }
 
     dashboardReviewQueues.replaceChildren(...reviewQueues);

@@ -270,6 +270,30 @@ const EventSchema = new mongoose.Schema(
       default: null,
     },
 
+    hiddenFromStatus: {
+      type: String,
+      enum: ['draft', 'pending', 'published', 'rejected', ''],
+      default: '',
+    },
+
+    hiddenAt: {
+      type: Date,
+      default: null,
+    },
+
+    hiddenBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    hiddenReason: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
+
     deleteRequested: {
       type: Boolean,
       default: false,

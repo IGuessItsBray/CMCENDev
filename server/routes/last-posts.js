@@ -4,6 +4,7 @@ const LastPostMessage = require('../models/LastPostMessage');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
+const { recordContentRevision } = require('../services/content-revisions');
 const { cleanString, parseBoolean } = require('../services/content-utils');
 const { linkMediaAssetToSource } = require('../services/media-assets');
 
@@ -374,37 +375,62 @@ router.patch(
         });
       }
 
-      const lastPost = await LastPostMessage.findOne({
-        _id: messageId,
-        status: 'pending',
-      });
+      const lastPost = await LastPostMessage.findById(messageId);
 
       if (!lastPost) {
         return res
           .status(404)
-          .json({ error: 'Pending Last Post notice not found' });
+          .json({ error: 'Last Post notice not found' });
       }
+
+      if (!['pending', 'published'].includes(lastPost.status)) {
+        return res.status(409).json({
+          error: 'Only pending or published Last Post notices can have content updated',
+        });
+      }
+
+      const before = { message: lastPost.messages?.[language] || '' };
 
       lastPost.set(`messages.${language}`, cleanString(message));
       lastPost.markModified('messages');
+      lastPost.updatedBy = req.user._id;
       await lastPost.save();
+
+      await recordContentRevision({
+        contentType: 'lastPost',
+        content: lastPost,
+        actor: req.user,
+        status: lastPost.status,
+        language,
+        fields: ['message'],
+        before,
+        after: { message: lastPost.messages?.[language] || '' },
+        note: req.body.note,
+      });
 
       await writeAuditLog({
         req,
-        action: 'content.review_content_updated',
+        action:
+          lastPost.status === 'pending'
+            ? 'content.review_content_updated'
+            : 'content.staff_content_updated',
         actor: req.user,
         targetType: 'lastPost',
         target: lastPost._id,
         targetSnapshot: getLastPostSnapshot(lastPost),
         metadata: {
           source: 'review-content',
+          status: lastPost.status,
           language,
           fields: ['message'],
         },
       });
 
       return res.json({
-        message: 'Last Post review content updated',
+        message:
+          lastPost.status === 'published'
+            ? 'Published Last Post content updated'
+            : 'Last Post review content updated',
         lastPost,
       });
     } catch (error) {

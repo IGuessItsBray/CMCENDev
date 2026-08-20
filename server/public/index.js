@@ -270,6 +270,7 @@ const protectedPages = new Set([
   "/dashboard",
   "/submit-event",
   "/review-submissions",
+  "/content-workspace",
   "/translations-admin",
   "/pages-admin",
   "/timers-admin",

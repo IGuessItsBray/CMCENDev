@@ -44,6 +44,9 @@ const auditActions = [
   ["content.rejected", "audit_action_content_rejected"],
   ["content.drafted", "audit_action_content_drafted"],
   ["content.deleted", "audit_action_content_deleted"],
+  ["content.hidden", "audit_action_content_hidden"],
+  ["content.restored", "audit_action_content_restored"],
+  ["content.staff_content_updated", "audit_action_content_staff_content_updated"],
   ["analytics.purged", "audit_action_analytics_purged"],
   ["config.access_requested", "audit_action_config_access_requested"],
   ["config.token_accepted", "audit_action_config_token_accepted"],
@@ -341,7 +344,7 @@ function shouldRenderAuditTarget(log) {
 }
 
 function getAuditTargetHref(log) {
-  if (log.action === "content.deleted") {
+  if (["content.deleted", "content.hidden"].includes(log.action)) {
     return "";
   }
 

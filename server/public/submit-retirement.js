@@ -125,14 +125,14 @@ function renderRetirementDeleteAction() {
   deleteButton.type = "button";
   deleteButton.className = "event-submit-button is-danger";
   deleteButton.dataset.action = "delete-retirement-submission";
-  deleteButton.textContent = "Delete submission";
+  deleteButton.textContent = "Remove submission";
   deleteButton.addEventListener("click", async () => {
     if (
       !(await CMCENModal.confirm(
-        "Delete this submitted retirement message? This cannot be undone.",
+        "Remove this submitted retirement message? A content editor can restore it later.",
         {
-          title: "Delete retirement message",
-          confirmText: "Delete",
+          title: "Remove retirement message",
+          confirmText: "Remove",
           destructive: true,
         },
       ))
@@ -145,14 +145,14 @@ function renderRetirementDeleteAction() {
         `/api/admin/retirement-messages/${encodeURIComponent(editingRetirementMessageId)}`,
         {
           method: "DELETE",
-          errorMessage: "Could not delete retirement message",
+          errorMessage: "Could not remove retirement message",
         },
       );
       window.location.href = "/retirements";
     } catch (error) {
       deleteButton.disabled = false;
       showRetirementSubmissionToast(
-        error.message || "Could not delete retirement message",
+        error.message || "Could not remove retirement message",
       );
     }
   });

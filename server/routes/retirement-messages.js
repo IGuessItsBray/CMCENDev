@@ -12,6 +12,7 @@ const {
   getRetirementCommentSnapshot,
   getRetirementMessageSnapshot,
 } = require('../services/content-snapshots');
+const { recordContentRevision } = require('../services/content-revisions');
 const {
   getCleanCertificateRequestPayload,
   validateCertificateRequestPayload,
@@ -972,6 +973,12 @@ router.patch('/comments/:commentId', authMiddleware, async (req, res) => {
       });
     }
 
+    if (comment.status === 'hidden') {
+      return res.status(409).json({
+        error: 'Restore this comment before editing or publishing it',
+      });
+    }
+
     comment.body = cleanBody;
     comment.status =
       canReview && permissions.canPublishOwnContent === true
@@ -1093,6 +1100,12 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     if (!isOwner && !canReview) {
       return res.status(403).json({
         error: 'You do not have permission to edit this retirement message',
+      });
+    }
+
+    if (retirementMessage.status === 'hidden') {
+      return res.status(409).json({
+        error: 'Restore this retirement message before editing or publishing it',
       });
     }
 
@@ -1484,12 +1497,16 @@ router.patch(
         });
       }
 
-      if (retirementMessage.status !== 'pending') {
+      if (!['pending', 'published'].includes(retirementMessage.status)) {
         return res.status(409).json({
           error:
-            'Only pending retirement messages can have review content updated',
+            'Only pending or published retirement messages can have content updated',
         });
       }
+
+      const before = {
+        message: retirementMessage.messages?.[language] || '',
+      };
 
       retirementMessage.set(`messages.${language}`, cleanMessage);
       retirementMessage.markModified('messages');
@@ -1502,22 +1519,41 @@ router.patch(
 
       await retirementMessage.save();
 
+      await recordContentRevision({
+        contentType: 'retirementMessage',
+        content: retirementMessage,
+        actor: req.user,
+        status: retirementMessage.status,
+        language,
+        fields: ['message'],
+        before,
+        after: { message: retirementMessage.messages?.[language] || '' },
+        note: req.body.note,
+      });
+
       await writeAuditLog({
         req,
-        action: 'content.review_content_updated',
+        action:
+          retirementMessage.status === 'pending'
+            ? 'content.review_content_updated'
+            : 'content.staff_content_updated',
         actor: req.user,
         targetType: 'retirementMessage',
         target: retirementMessage._id,
         targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
         metadata: {
           source: 'review-content',
+          status: retirementMessage.status,
           language,
           fields: ['message'],
         },
       });
 
       return res.json({
-        message: 'Retirement review content updated',
+        message:
+          retirementMessage.status === 'published'
+            ? 'Published retirement message content updated'
+            : 'Retirement review content updated',
         retirementMessage,
       });
     } catch (error) {

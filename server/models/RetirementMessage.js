@@ -156,7 +156,7 @@ const retirementMessageSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['pending', 'published', 'rejected'],
+      enum: ['pending', 'published', 'rejected', 'hidden'],
       default: 'pending',
       index: true,
     },
@@ -197,6 +197,30 @@ const retirementMessageSchema = new mongoose.Schema(
     },
 
     rejectionReason: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
+
+    hiddenFromStatus: {
+      type: String,
+      enum: ['pending', 'published', 'rejected', ''],
+      default: '',
+    },
+
+    hiddenAt: {
+      type: Date,
+      default: null,
+    },
+
+    hiddenBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    hiddenReason: {
       type: String,
       trim: true,
       maxlength: 2000,

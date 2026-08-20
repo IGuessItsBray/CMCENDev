@@ -74,10 +74,10 @@ async function deletePublishedEvent() {
 
   if (
     !(await CMCENModal.confirm(
-      "Delete this event? This will be recorded in the audit log.",
+      "Remove this event from public view? It can be restored later and this will be recorded in the audit log.",
       {
-        title: "Delete event",
-        confirmText: "Delete",
+        title: "Remove event",
+        confirmText: "Remove",
         destructive: true,
       },
     ))
@@ -89,7 +89,7 @@ async function deletePublishedEvent() {
 
   if (button) {
     button.disabled = true;
-    button.textContent = "Deleting...";
+    button.textContent = "Removing...";
   }
 
   try {
@@ -106,20 +106,20 @@ async function deletePublishedEvent() {
     if (response.status === 401) {
       CMCENUtils.clearAuthToken();
       await setupEventAdminAccess();
-      throw new Error("Sign in again to delete events.");
+      throw new Error("Sign in again to remove events.");
     }
 
     if (response.status === 403) {
       canManageEvents = false;
       removeEventAdminActions();
-      throw new Error("You do not have permission to delete events.");
+      throw new Error("You do not have permission to remove events.");
     }
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not delete event");
+      throw new Error(data.error || "Could not remove event");
     }
 
-    CMCENUtils.showToast("Event deleted and recorded in the audit log.", {
+    CMCENUtils.showToast("Event removed from public view and recorded in the audit log.", {
       color: "success",
       position: "bottom-right",
       animation: "slide",
@@ -129,7 +129,7 @@ async function deletePublishedEvent() {
       window.location.href = "/calendar";
     }, 900);
   } catch (error) {
-    CMCENUtils.showToast(error.message || "Could not delete event", {
+    CMCENUtils.showToast(error.message || "Could not remove event", {
       color: "error",
       position: "bottom-right",
       animation: "slide",
@@ -137,7 +137,7 @@ async function deletePublishedEvent() {
 
     if (button) {
       button.disabled = false;
-      button.textContent = "Delete event";
+      button.textContent = "Remove event";
     }
   }
 }
@@ -156,7 +156,7 @@ function renderEventAdminActions() {
   deleteButton.type = "button";
   deleteButton.className = "published-content-delete event-delete";
   deleteButton.dataset.action = "delete-event";
-  deleteButton.textContent = "Delete event";
+  deleteButton.textContent = "Remove event";
   deleteButton.addEventListener("click", deletePublishedEvent);
 
   actions.append(deleteButton);
@@ -180,7 +180,7 @@ async function setupEventAdminAccess() {
       errorMessage: "Could not verify event permissions",
     });
 
-    const canDeleteAnyEvent = user.permissions?.canDeleteContent === true;
+    const canDeleteAnyEvent = user.permissions?.canHideContent === true;
     const canDeleteOwnEvent = user.permissions?.canDeleteOwnContent === true;
 
     canManageEvents = canDeleteAnyEvent;

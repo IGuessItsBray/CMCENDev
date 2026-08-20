@@ -439,10 +439,10 @@ async function deleteRetirementMessage() {
 
   if (
     !(await CMCENModal.confirm(
-      "Delete this retirement message and its comments? This will be recorded in the audit log.",
+      "Remove this retirement message from public view? Its comments and media will be preserved, and it can be restored later.",
       {
-        title: "Delete retirement message",
-        confirmText: "Delete",
+        title: "Remove retirement message",
+        confirmText: "Remove",
         destructive: true,
       },
     ))
@@ -456,7 +456,7 @@ async function deleteRetirementMessage() {
 
   if (button) {
     button.disabled = true;
-    button.textContent = "Deleting...";
+    button.textContent = "Removing...";
   }
 
   try {
@@ -473,23 +473,23 @@ async function deleteRetirementMessage() {
     if (response.status === 401) {
       CMCENUtils.clearAuthToken();
       await setupCommentAccess();
-      throw new Error("Sign in again to delete retirement messages.");
+      throw new Error("Sign in again to remove retirement messages.");
     }
 
     if (response.status === 403) {
       canManageRetirementMessages = false;
       removeRetirementAdminActions();
       throw new Error(
-        "You do not have permission to delete retirement messages.",
+        "You do not have permission to remove retirement messages.",
       );
     }
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not delete retirement message");
+      throw new Error(data.error || "Could not remove retirement message");
     }
 
     CMCENUtils.showToast(
-      "Retirement message deleted and recorded in the audit log.",
+      "Retirement message removed from public view and recorded in the audit log.",
       { color: "success", position: "bottom-right", animation: "slide" },
     );
 
@@ -498,13 +498,13 @@ async function deleteRetirementMessage() {
     }, 900);
   } catch (error) {
     CMCENUtils.showToast(
-      error.message || "Could not delete retirement message",
+      error.message || "Could not remove retirement message",
       { color: "error", position: "bottom-right", animation: "slide" },
     );
 
     if (button) {
       button.disabled = false;
-      button.textContent = "Delete retirement message";
+      button.textContent = "Remove retirement message";
     }
   }
 }
@@ -523,7 +523,7 @@ function renderRetirementAdminActions() {
   deleteButton.type = "button";
   deleteButton.className = "published-content-delete retirement-message-delete";
   deleteButton.dataset.action = "delete-retirement-message";
-  deleteButton.textContent = "Delete retirement message";
+  deleteButton.textContent = "Remove retirement message";
   deleteButton.addEventListener("click", deleteRetirementMessage);
 
   actions.append(deleteButton);
@@ -540,10 +540,10 @@ async function deleteRetirementComment(comment) {
 
   if (
     !(await CMCENModal.confirm(
-      "Delete this comment? This will be recorded in the audit log.",
+      "Remove this comment from public view? It can be restored later and this will be recorded in the audit log.",
       {
-        title: "Delete comment",
-        confirmText: "Delete",
+        title: "Remove comment",
+        confirmText: "Remove",
         destructive: true,
       },
     ))
@@ -565,18 +565,18 @@ async function deleteRetirementComment(comment) {
     if (response.status === 401) {
       CMCENUtils.clearAuthToken();
       await setupCommentAccess();
-      throw new Error("Sign in again to delete comments.");
+      throw new Error("Sign in again to remove comments.");
     }
 
     if (response.status === 403) {
       canManageRetirementComments = false;
       canDeleteOwnRetirementComments = false;
       renderComments(loadedComments);
-      throw new Error("You do not have permission to delete comments.");
+      throw new Error("You do not have permission to remove comments.");
     }
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not delete comment");
+      throw new Error(data.error || "Could not remove comment");
     }
 
     loadedComments = loadedComments.filter(
@@ -584,13 +584,13 @@ async function deleteRetirementComment(comment) {
     );
 
     renderComments(loadedComments);
-    CMCENUtils.showToast("Comment deleted and recorded in the audit log.", {
+    CMCENUtils.showToast("Comment removed from public view and recorded in the audit log.", {
       color: "success",
       position: "bottom-right",
       animation: "slide",
     });
   } catch (error) {
-    CMCENUtils.showToast(error.message || "Could not delete comment", {
+    CMCENUtils.showToast(error.message || "Could not remove comment", {
       color: "error",
       position: "bottom-right",
       animation: "slide",
@@ -628,10 +628,10 @@ function createCommentElement(comment) {
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "retirement-comment-delete";
-    deleteButton.textContent = "Delete";
+    deleteButton.textContent = "Remove";
     deleteButton.setAttribute(
       "aria-label",
-      `Delete comment by ${formatCommentAuthor(comment.author)}`,
+      `Remove comment by ${formatCommentAuthor(comment.author)}`,
     );
     deleteButton.addEventListener("click", () => {
       deleteRetirementComment(comment);
@@ -702,7 +702,7 @@ async function setupCommentAccess() {
         errorMessage: "Could not verify retirement permissions",
       });
 
-      const canDeleteAnyContent = user.permissions?.canDeleteContent === true;
+      const canDeleteAnyContent = user.permissions?.canHideContent === true;
       const canDeleteOwnContent =
         user.permissions?.canDeleteOwnContent === true;
       currentRetirementViewerId = user._id || "";

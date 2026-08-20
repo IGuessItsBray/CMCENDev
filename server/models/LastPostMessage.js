@@ -138,7 +138,7 @@ const LastPostMessageSchema = new mongoose.Schema(
     // Publication metadata is needed for review and for the public archive.
     status: {
       type: String,
-      enum: ['pending', 'published', 'rejected'],
+      enum: ['pending', 'published', 'rejected', 'hidden'],
       default: 'pending',
       index: true,
     },
@@ -147,6 +147,11 @@ const LastPostMessageSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
       index: true,
+    },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -168,6 +173,30 @@ const LastPostMessageSchema = new mongoose.Schema(
       index: true,
     },
     rejectionReason: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
+
+    hiddenFromStatus: {
+      type: String,
+      enum: ['pending', 'published', 'rejected', ''],
+      default: '',
+    },
+
+    hiddenAt: {
+      type: Date,
+      default: null,
+    },
+
+    hiddenBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    hiddenReason: {
       type: String,
       trim: true,
       maxlength: 2000,

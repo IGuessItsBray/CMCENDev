@@ -67,6 +67,7 @@ const adminUsersView = CMCENAdminUsersView.create({
     saveRole: saveAdminRole,
     deleteRole: deleteAdminRole,
     deletePost: deleteAdminPost,
+    restorePost: restoreAdminPost,
     refreshMedia: () => loadAdminMedia(),
     loadMoreMedia: (cursor) =>
       loadAdminMedia({
@@ -1511,22 +1512,27 @@ function getAdminDeleteEndpoint(post) {
   return "";
 }
 
+function getAdminRestoreEndpoint(post) {
+  const endpoint = getAdminDeleteEndpoint(post);
+  return endpoint ? `${endpoint}/restore` : "";
+}
+
 async function deleteAdminPost(post) {
   const endpoint = getAdminDeleteEndpoint(post);
 
   if (!endpoint) {
-    showAdminActionToast(translate("admin_content_delete_type_error"), "error");
+    showAdminActionToast(translate("admin_content_remove_type_error"), "error");
     return;
   }
 
   if (
     !(await CMCENModal.confirm(
-      translate("admin_content_delete_confirm", {
+      translate("admin_content_remove_confirm", {
         title: post.title || translate("admin_content_this_item"),
       }),
       {
-        title: translate("mfa_delete"),
-        confirmText: translate("mfa_delete"),
+        title: translate("admin_content_remove"),
+        confirmText: translate("admin_content_remove"),
         destructive: true,
       },
     ))
@@ -1541,16 +1547,11 @@ async function deleteAdminPost(post) {
   try {
     const data = await adminApiJson(endpoint, {
       method: "DELETE",
-      errorMessage: translate("admin_content_delete_error"),
+      errorMessage: translate("admin_content_remove_error"),
     });
 
-    setAdminWorkZoneState({
-      posts: adminWorkZoneState.posts.filter(
-        (item) => String(item._id) !== String(post._id),
-      ),
-    });
     showAdminActionToast(
-      data.message || translate("admin_content_delete_success"),
+      data.message || translate("admin_content_remove_success"),
       "success",
     );
 
@@ -1559,7 +1560,51 @@ async function deleteAdminPost(post) {
     });
   } catch (error) {
     showAdminActionToast(
-      error.message || translate("admin_content_delete_error"),
+      error.message || translate("admin_content_remove_error"),
+      "error",
+    );
+  }
+}
+
+async function restoreAdminPost(post) {
+  const endpoint = getAdminRestoreEndpoint(post);
+
+  if (!endpoint) {
+    showAdminActionToast(translate("admin_content_restore_type_error"), "error");
+    return;
+  }
+
+  if (
+    !(await CMCENModal.confirm(
+      translate("admin_content_restore_confirm", {
+        title: post.title || translate("admin_content_this_item"),
+      }),
+      {
+        title: translate("admin_content_restore"),
+        confirmText: translate("admin_content_restore"),
+      },
+    ))
+  ) {
+    return;
+  }
+
+  try {
+    const data = await adminApiJson(endpoint, {
+      method: "PATCH",
+      errorMessage: translate("admin_content_restore_error"),
+    });
+
+    showAdminActionToast(
+      data.message || translate("admin_content_restore_success"),
+      "success",
+    );
+
+    await loadAdminUsers({
+      preserveSelection: true,
+    });
+  } catch (error) {
+    showAdminActionToast(
+      error.message || translate("admin_content_restore_error"),
       "error",
     );
   }

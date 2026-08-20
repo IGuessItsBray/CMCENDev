@@ -54,10 +54,27 @@ const PERMISSION_CATALOG = Object.freeze([
   },
   {
     key: 'content.delete',
-    label: 'Delete content',
+    label: 'Permanently purge content',
     group: 'Content',
     action: 'delete',
-    description: 'Delete events, retirement messages, and comments.',
+    description:
+      'Permanently purge previously removed content when recovery is no longer required.',
+  },
+  {
+    key: 'content.hide',
+    label: 'Remove published content',
+    group: 'Content',
+    action: 'edit',
+    description:
+      'Remove events, Last Post notices, retirement messages, and comments from public view while preserving them for restoration.',
+  },
+  {
+    key: 'content.restore',
+    label: 'Restore removed content',
+    group: 'Content',
+    action: 'edit',
+    description:
+      'Restore previously removed content to the status it had before removal.',
   },
   {
     key: 'content.delete_own',
@@ -216,6 +233,8 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canPublishOwnContent: 'content.publish_own',
   canReviewAndPublish: 'content.review',
   canDeleteContent: 'content.delete',
+  canHideContent: 'content.hide',
+  canRestoreContent: 'content.restore',
   canDeleteOwnContent: 'content.delete_own',
   canManageContentAreas: 'content_areas.manage',
   canManageTranslations: 'translations.manage',
@@ -277,6 +296,10 @@ function getBuiltInPermissionFlags(user) {
     canReviewAndPublish: hasMinimumRole(role, 'editor'),
 
     canDeleteContent: hasMinimumRole(role, 'administrator'),
+
+    canHideContent: hasMinimumRole(role, 'editor'),
+
+    canRestoreContent: hasMinimumRole(role, 'editor'),
 
     canDeleteOwnContent: hasMinimumRole(role, 'subscriber'),
 

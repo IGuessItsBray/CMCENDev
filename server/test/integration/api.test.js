@@ -24,6 +24,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const { app } = require('../../server');
 const AuditLog = require('../../models/AuditLog');
 const CertificateRequest = require('../../models/CertificateRequest');
+const ContentRevision = require('../../models/ContentRevision');
 const Event = require('../../models/Event');
 const LastPostMessage = require('../../models/LastPostMessage');
 const MediaAsset = require('../../models/MediaAsset');
@@ -1102,6 +1103,14 @@ describe('retirement message lifecycle', () => {
     assert.equal(auditEntry.targetType, 'retirementMessage');
     assert.equal(auditEntry.metadata.language, 'fr');
 
+    const revision = await ContentRevision.findOne({
+      contentType: 'retirementMessage',
+      contentId: savedMessage._id,
+    }).lean();
+    assert.equal(revision.language, 'fr');
+    assert.equal(revision.before.message, '');
+    assert.equal(revision.after.message, frenchTranslation);
+
     await request(app)
       .patch(`/api/retirement-messages/${messageId}/review`)
       .set('Authorization', bearer(editorLogin.body.token))
@@ -1243,6 +1252,14 @@ describe('Last Post lifecycle', () => {
     });
     assert.equal(auditEntry.targetType, 'lastPost');
     assert.equal(auditEntry.metadata.language, 'fr');
+
+    const revision = await ContentRevision.findOne({
+      contentType: 'lastPost',
+      contentId: savedNotice._id,
+    }).lean();
+    assert.equal(revision.language, 'fr');
+    assert.equal(revision.before.message, '');
+    assert.equal(revision.after.message, frenchTranslation);
 
     await request(app)
       .patch(`/api/last-posts/${notice._id}/review`)
@@ -1672,6 +1689,165 @@ describe('event, page, and comment workflows', () => {
       target: updatedEvent._id,
     });
     assert.equal(auditEntry.metadata.language, 'fr');
+
+    const revision = await ContentRevision.findOne({
+      contentType: 'event',
+      contentId: updatedEvent._id,
+    }).lean();
+    assert.equal(revision.language, 'fr');
+    assert.equal(revision.before.title, "Exercice d'integration");
+    assert.equal(revision.after.title, changes.title);
+  });
+
+  test('lets editors correct published content and exposes its staff revision history', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const editorSession = await login(editor);
+    const now = new Date();
+    const event = await Event.create({
+      ...eventPayload(),
+      status: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+    const retirementBase = retirementPayload();
+    const retirementMessage = await RetirementMessage.create({
+      ...retirementBase,
+      messages: {
+        en: retirementBase.message,
+        fr: translatedMessage('Retirement original French'),
+      },
+      status: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+      publicationConsent: { confirmed: true, confirmedAt: now },
+      memberReviewConfirmation: { confirmed: true, confirmedAt: now },
+    });
+    const lastPost = await LastPostMessage.create({
+      submitter: {
+        rank: 'Captain',
+        firstName: 'Editor',
+        lastName: 'Example',
+        email: 'editor@example.test',
+      },
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Published',
+        surname: 'Notice',
+      },
+      messageLanguage: 'en',
+      messages: {
+        en: 'Published Last Post notice before a staff correction.',
+        fr: 'Avis du Dernier appel publié avant une correction.',
+      },
+      status: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+
+    const eventChanges = {
+      title: 'Published event correction',
+      location: 'Ottawa, Ontario',
+      description: 'Published event description corrected by a staff editor.',
+      registration: 'Register with the branch office.',
+    };
+    const retirementCorrection = translatedMessage('Retirement staff correction');
+    const lastPostCorrection = 'Published Last Post notice corrected by staff.';
+
+    await request(app)
+      .patch(`/api/events/${event._id}/review-content`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        language: 'en',
+        content: eventChanges,
+        note: 'Corrected public details',
+      })
+      .expect(200);
+    await request(app)
+      .patch(`/api/retirement-messages/${retirementMessage._id}/review-content`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        language: 'fr',
+        message: retirementCorrection,
+        note: 'Corrected translation',
+      })
+      .expect(200);
+    await request(app)
+      .patch(`/api/last-posts/${lastPost._id}/review-content`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        language: 'en',
+        message: lastPostCorrection,
+        note: 'Corrected memorial copy',
+      })
+      .expect(200);
+
+    const [publicEvent, publicRetirement, publicLastPost] = await Promise.all([
+      request(app).get(`/api/events/${event._id}`).expect(200),
+      request(app)
+        .get(`/api/retirement-messages/${retirementMessage._id}`)
+        .expect(200),
+      request(app).get(`/api/last-posts/${lastPost._id}`).expect(200),
+    ]);
+    assert.equal(publicEvent.body.event.description.en, eventChanges.description);
+    assert.equal(
+      publicRetirement.body.retirementMessage.messages.fr,
+      retirementCorrection,
+    );
+    assert.equal(publicLastPost.body.lastPost.messages.en, lastPostCorrection);
+
+    const workspace = await request(app)
+      .get('/api/admin/content?status=published&limit=100')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    const workspaceEvent = workspace.body.items.find(
+      (item) => String(item._id) === String(event._id),
+    );
+    assert.equal(workspaceEvent.type, 'event');
+    assert.equal(workspaceEvent.content.title.en, eventChanges.title);
+    assert.equal(Object.hasOwn(workspaceEvent.content, 'submitter'), false);
+
+    const eventHistory = await request(app)
+      .get(`/api/admin/content/event/${event._id}/revisions`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    const retirementHistory = await request(app)
+      .get(
+        `/api/admin/content/retirementMessage/${retirementMessage._id}/revisions`,
+      )
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    const lastPostHistory = await request(app)
+      .get(`/api/admin/content/lastPost/${lastPost._id}/revisions`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+
+    assert.equal(eventHistory.body.revisions.length, 1);
+    assert.equal(eventHistory.body.revisions[0].status, 'published');
+    assert.equal(eventHistory.body.revisions[0].before.title, 'Integration exercise');
+    assert.equal(eventHistory.body.revisions[0].after.title, eventChanges.title);
+    assert.equal(eventHistory.body.revisions[0].note, 'Corrected public details');
+    assert.equal(
+      Object.hasOwn(eventHistory.body.revisions[0].actorSnapshot, 'email'),
+      false,
+    );
+    assert.equal(retirementHistory.body.revisions[0].before.message, translatedMessage('Retirement original French'));
+    assert.equal(
+      retirementHistory.body.revisions[0].after.message,
+      retirementCorrection,
+    );
+    assert.equal(lastPostHistory.body.revisions[0].before.message, 'Published Last Post notice before a staff correction.');
+    assert.equal(
+      lastPostHistory.body.revisions[0].after.message,
+      lastPostCorrection,
+    );
+
+    const staffEditAudits = await AuditLog.countDocuments({
+      action: 'content.staff_content_updated',
+    });
+    assert.equal(staffEditAudits, 3);
   });
 
   test('returns published events that overlap a requested calendar range', async () => {
@@ -2314,7 +2490,7 @@ describe('media lifecycle', () => {
     assert.equal(await MediaAsset.countDocuments({ _id: asset._id }), 1);
   });
 
-  test('deletes unshared images and variants when an administrator deletes content', async () => {
+  test('removes content reversibly without deleting attached media', async () => {
     const administrator = await createUser({ role: 'administrator' });
     const contributor = await createUser({ role: 'contributor' });
     const administratorSession = await login(administrator);
@@ -2380,7 +2556,7 @@ describe('media lifecycle', () => {
         },
         messageLanguage: 'en',
         message:
-          'A Last Post notice with an image that should be deleted with the notice.',
+          'A Last Post notice with an image that should remain available when the notice is removed.',
         imageUrl: lastPostAsset.url,
         publicationPermissionConfirmed: true,
       })
@@ -2399,55 +2575,70 @@ describe('media lifecycle', () => {
 
     try {
       await request(app)
-        .delete(`/api/admin/events/${event._id}`)
+        .patch(`/api/admin/events/${event._id}/hide`)
         .set('Authorization', bearer(administratorSession.body.token))
         .expect(200);
       await request(app)
-        .delete(`/api/admin/retirement-messages/${retirementMessage._id}`)
+        .patch(`/api/admin/retirement-messages/${retirementMessage._id}/hide`)
         .set('Authorization', bearer(administratorSession.body.token))
         .expect(200);
       await request(app)
-        .delete(`/api/admin/last-posts/${lastPost._id}`)
+        .patch(`/api/admin/last-posts/${lastPost._id}/hide`)
         .set('Authorization', bearer(administratorSession.body.token))
         .expect(200);
 
-      assert.equal(await Event.countDocuments({ _id: event._id }), 0);
+      const [removedEvent, removedRetirementMessage, removedLastPost] =
+        await Promise.all([
+          Event.findById(event._id).lean(),
+          RetirementMessage.findById(retirementMessage._id).lean(),
+          LastPostMessage.findById(lastPost._id).lean(),
+        ]);
+
+      assert.equal(removedEvent.status, 'hidden');
+      assert.equal(removedEvent.hiddenFromStatus, 'published');
+      assert.equal(removedRetirementMessage.status, 'hidden');
+      assert.equal(removedRetirementMessage.hiddenFromStatus, 'pending');
+      assert.equal(removedLastPost.status, 'hidden');
+      assert.equal(removedLastPost.hiddenFromStatus, 'pending');
+
+      await request(app).get(`/api/events/${event._id}`).expect(404);
       assert.equal(
         await RetirementMessage.countDocuments({ _id: retirementMessage._id }),
-        0,
+        1,
       );
       assert.equal(
         await LastPostMessage.countDocuments({ _id: lastPost._id }),
-        0,
+        1,
       );
-      assert.equal(await MediaAsset.countDocuments({ _id: eventAsset._id }), 0);
+      assert.equal(await Event.countDocuments({ _id: event._id }), 1);
+      assert.equal(await MediaAsset.countDocuments({ _id: eventAsset._id }), 1);
       assert.equal(
         await MediaAsset.countDocuments({ _id: retirementAsset._id }),
-        0,
+        1,
       );
       assert.equal(
         await MediaAsset.countDocuments({ _id: lastPostAsset._id }),
-        0,
+        1,
       );
       assert.equal(
         sentCommands.filter(
           (command) => command.constructor.name === 'DeleteObjectCommand',
         ).length,
-        15,
+        0,
       );
 
-      const deleteAudit = await AuditLog.findOne({
-        action: 'content.deleted',
+      const removalAudit = await AuditLog.findOne({
+        action: 'content.hidden',
         target: event._id,
       }).lean();
-      assert.equal(deleteAudit.metadata.mediaCleanup[0].status, 'deleted');
-      assert.equal(deleteAudit.metadata.mediaCleanup[0].objectCount, 5);
+      assert.equal(removalAudit.metadata.previousStatus, 'published');
+      assert.equal(removalAudit.metadata.removedByOwner, true);
     } finally {
       s3Client.send = originalSend;
     }
   });
 
-  test('keeps an image while another content record still references it', async () => {
+  test('preserves shared media when removed content is retained for restoration', async () => {
     const administrator = await createUser({ role: 'administrator' });
     const contributor = await createUser({ role: 'contributor' });
     const administratorSession = await login(administrator);
@@ -2502,7 +2693,7 @@ describe('media lifecycle', () => {
 
     try {
       await request(app)
-        .delete(`/api/admin/events/${event._id}`)
+        .patch(`/api/admin/events/${event._id}/hide`)
         .set('Authorization', bearer(administratorSession.body.token))
         .expect(200);
 
@@ -2513,23 +2704,79 @@ describe('media lifecycle', () => {
       assert.equal(sentCommands.length, 0);
 
       await request(app)
-        .delete(`/api/admin/last-posts/${lastPost._id}`)
+        .patch(`/api/admin/last-posts/${lastPost._id}/hide`)
         .set('Authorization', bearer(administratorSession.body.token))
         .expect(200);
 
       assert.equal(
         await MediaAsset.countDocuments({ _id: sharedAsset._id }),
-        0,
+        1,
       );
       assert.equal(
         sentCommands.filter(
           (command) => command.constructor.name === 'DeleteObjectCommand',
         ).length,
-        5,
+        0,
       );
     } finally {
       s3Client.send = originalSend;
     }
+  });
+
+  test('allows editors to remove and restore content but rejects an unauthorized restore', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorSession = await login(contributor);
+    const editorSession = await login(editor);
+
+    await request(app)
+      .post('/api/events')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(201);
+    const event = await Event.findOne({ createdBy: contributor._id }).lean();
+
+    await request(app)
+      .patch(`/api/admin/events/${event._id}/hide`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ reason: 'Duplicate submission' })
+      .expect(200);
+
+    const removedEvent = await Event.findById(event._id).lean();
+    assert.equal(removedEvent.status, 'hidden');
+    assert.equal(removedEvent.hiddenFromStatus, 'pending');
+    assert.equal(removedEvent.hiddenReason, 'Duplicate submission');
+
+    await request(app)
+      .patch(`/api/events/${event._id}`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(409);
+
+    await request(app)
+      .patch(`/api/admin/events/${event._id}/restore`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(403);
+
+    const restored = await request(app)
+      .patch(`/api/admin/events/${event._id}/restore`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(restored.body.content.status, 'pending');
+
+    const restoredEvent = await Event.findById(event._id).lean();
+    assert.equal(restoredEvent.status, 'pending');
+    assert.equal(restoredEvent.hiddenAt, null);
+    assert.equal(restoredEvent.hiddenBy, null);
+    assert.equal(restoredEvent.hiddenReason, '');
+
+    const auditActions = await AuditLog.find({ target: event._id })
+      .sort({ createdAt: 1 })
+      .lean();
+    assert.deepEqual(
+      auditActions.map((entry) => entry.action),
+      ['content.created', 'content.hidden', 'content.restored'],
+    );
   });
 
   test('bulk deletion reports deleted, attached, and missing keys independently', async () => {

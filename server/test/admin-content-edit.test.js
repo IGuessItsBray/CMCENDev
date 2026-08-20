@@ -8,6 +8,9 @@ test('provides audited admin edit routes for every content type', () => {
   const patchRoutes = adminRoutes.stack
     .filter((layer) => layer.route?.methods.patch)
     .map((layer) => layer.route.path);
+  const deleteRoutes = adminRoutes.stack
+    .filter((layer) => layer.route?.methods.delete)
+    .map((layer) => layer.route.path);
 
   assert.deepEqual(
     [
@@ -16,6 +19,24 @@ test('provides audited admin edit routes for every content type', () => {
       '/news/:articleId',
       '/events/:eventId',
     ].every((path) => patchRoutes.includes(path)),
+    true,
+  );
+  assert.deepEqual(
+    [
+      '/events/:eventId/hide',
+      '/retirement-messages/:messageId/hide',
+      '/retirement-comments/:commentId/hide',
+      '/last-posts/:lastPostId/hide',
+    ].every((path) => patchRoutes.includes(path)),
+    true,
+  );
+  assert.deepEqual(
+    [
+      '/events/:eventId',
+      '/retirement-messages/:messageId',
+      '/retirement-comments/:commentId',
+      '/last-posts/:lastPostId',
+    ].every((path) => deleteRoutes.includes(path)),
     true,
   );
 });

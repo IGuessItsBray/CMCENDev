@@ -31,6 +31,15 @@ function getRetirementCommentTitle(comment) {
   return name ? `Retirement comment for ${name}` : 'Retirement comment';
 }
 
+function getLastPostMessageTitle(message) {
+  const deceased = message.deceased || {};
+  const name = [deceased.fullRank, deceased.firstName, deceased.surname]
+    .filter(Boolean)
+    .join(' ');
+
+  return name ? `Last Post notice for ${name}` : 'Last Post notice';
+}
+
 function getRetirementMessageSnapshot(message) {
   return {
     title: getRetirementMessageTitle(message),
@@ -38,6 +47,16 @@ function getRetirementMessageSnapshot(message) {
     createdBy: message.createdBy,
     publishedBy: message.publishedBy,
     retiree: message.retiree,
+  };
+}
+
+function getLastPostMessageSnapshot(message) {
+  return {
+    title: message.title || getLastPostMessageTitle(message),
+    status: message.status,
+    createdBy: message.createdBy,
+    publishedBy: message.publishedBy,
+    deceased: message.deceased,
   };
 }
 
@@ -81,6 +100,8 @@ module.exports = {
   getCertificateRequestSnapshot,
   getEventSnapshot,
   getEventTitle,
+  getLastPostMessageSnapshot,
+  getLastPostMessageTitle,
   getRetirementCommentSnapshot,
   getRetirementCommentTitle,
   getRetirementMessageSnapshot,

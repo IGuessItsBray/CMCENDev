@@ -78,8 +78,10 @@ function renderLastPost(lastPost) {
   document.title = `${name} | ${translate("last_post_heading")} | CMCEN / RCMCE`;
   lastPostDetailTitle.textContent = name;
   lastPostDetailDate.textContent = formatPublishedDate(lastPost.publishedAt);
-  lastPostDetailText.textContent =
-    CMCENUtils.getLocalizedText(lastPost.messages) || "";
+  CMCENUtils.setLinkifiedText(
+    lastPostDetailText,
+    CMCENUtils.getLocalizedText(lastPost.messages),
+  );
   renderImage(lastPost, name);
   lastPostDetailMessage.hidden = true;
   lastPostDetailContent.hidden = false;

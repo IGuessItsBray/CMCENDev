@@ -179,8 +179,9 @@ function formatRetirementMessageText(text) {
 }
 
 function setRetirementMessageText(retirementMessage) {
-  retirementDetailText.textContent = formatRetirementMessageText(
-    getRetirementMessageText(retirementMessage),
+  CMCENUtils.setLinkifiedText(
+    retirementDetailText,
+    formatRetirementMessageText(getRetirementMessageText(retirementMessage)),
   );
 }
 

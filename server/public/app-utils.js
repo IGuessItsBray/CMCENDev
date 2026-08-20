@@ -18,6 +18,44 @@
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
+  function setLinkifiedText(element, value) {
+    const text = String(value || "");
+    const fragment = document.createDocumentFragment();
+    const urlPattern = /https?:\/\/[^\s<>"']+/gi;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = urlPattern.exec(text))) {
+      const urlText = match[0].replace(/[.,;:!?]+$/, "");
+      const linkEnd = match.index + urlText.length;
+
+      if (!urlText) continue;
+
+      fragment.append(document.createTextNode(text.slice(lastIndex, match.index)));
+
+      try {
+        const url = new URL(urlText);
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          throw new Error("Unsupported URL protocol");
+        }
+
+        const link = document.createElement("a");
+        link.href = url.href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = urlText;
+        fragment.append(link);
+      } catch {
+        fragment.append(document.createTextNode(urlText));
+      }
+
+      lastIndex = linkEnd;
+    }
+
+    fragment.append(document.createTextNode(text.slice(lastIndex)));
+    element.replaceChildren(fragment);
+  }
+
   function getRetireeNameParts(retiree = {}) {
     let name = [retiree.rank, retiree.firstName, retiree.lastName]
       .map((value) => String(value || "").trim())
@@ -1670,6 +1708,7 @@
     requireAuthToken,
     serializeAssertionCredential,
     serializeAttestationCredential,
+    setLinkifiedText,
     showToast,
     signOut,
     setStatusLoading,

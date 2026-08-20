@@ -493,7 +493,7 @@ function syncVisibleTranslationEdits() {
   });
 }
 
-function createTranslationTextarea(row, language) {
+function createTranslationTextarea(row, language, rows) {
   const field = document.createElement("div");
   field.className = "event-field translations-text-field";
 
@@ -505,14 +505,33 @@ function createTranslationTextarea(row, language) {
   );
 
   const textarea = document.createElement("textarea");
-  textarea.value = row.values[language] || "";
+  const value = row.values[language] || "";
+  textarea.value = value;
   textarea.dataset.language = language;
-  textarea.rows = 1;
+  textarea.rows = rows;
   textarea.spellcheck = true;
 
   field.append(label, textarea);
 
   return field;
+}
+
+function getTranslationTextareaRows(value) {
+  const estimatedRows = String(value || "")
+    .split(/\r?\n/)
+    .reduce(
+      (total, line) => total + Math.max(1, Math.ceil(line.length / 48)),
+      0,
+    );
+
+  return Math.min(6, Math.max(1, estimatedRows));
+}
+
+function getTranslationPairTextareaRows(row) {
+  return Math.max(
+    getTranslationTextareaRows(row.values.en),
+    getTranslationTextareaRows(row.values.fr),
+  );
 }
 
 function createTranslationRow(row) {
@@ -545,10 +564,10 @@ function createTranslationRow(row) {
 
   const fields = document.createElement("div");
   fields.className = "translation-fields";
-  fields.append(
-    createTranslationTextarea(row, "en"),
-    createTranslationTextarea(row, "fr"),
-  );
+  const rows = getTranslationPairTextareaRows(row);
+  const englishField = createTranslationTextarea(row, "en", rows);
+  const frenchField = createTranslationTextarea(row, "fr", rows);
+  fields.append(englishField, frenchField);
 
   const actions = document.createElement("div");
   actions.className = "translation-actions";

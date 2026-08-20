@@ -165,6 +165,19 @@ function getItemTitle(item) {
   return String(item?.title || "").trim() || getText("content_workspace_untitled", "Untitled content");
 }
 
+function getListItemTitle(item) {
+  if (item?.type === "retirementMessage") {
+    const retiree = item.content?.retiree || {};
+    const name = [retiree.rank, retiree.firstName, retiree.lastName]
+      .filter(Boolean)
+      .join(" ");
+
+    if (name) return name;
+  }
+
+  return getItemTitle(item);
+}
+
 function formatWorkspaceDate(value) {
   if (!value) return "";
 
@@ -353,7 +366,7 @@ function renderContentWorkspaceList() {
     );
 
     const title = document.createElement("strong");
-    title.textContent = getItemTitle(item);
+    title.textContent = getListItemTitle(item);
 
     const metadata = document.createElement("span");
     metadata.className = "content-workspace-record-meta";
@@ -402,12 +415,29 @@ function createDetailInfo(item) {
   return info;
 }
 
+function getInitialTextareaRows(
+  value,
+  { minimumRows = 5, maximumRows = 12, charactersPerRow = 60 } = {},
+) {
+  const estimatedRows = String(value || "")
+    .split(/\r?\n/)
+    .reduce(
+      (total, line) =>
+        total + Math.max(1, Math.ceil(line.length / charactersPerRow)),
+      0,
+    );
+
+  return Math.min(maximumRows, Math.max(minimumRows, estimatedRows));
+}
+
 function createEditableField({
   label,
   labelKey,
   field,
   value,
   multiline = false,
+  minimumRows,
+  maximumRows,
 }) {
   const labelElement = document.createElement("label");
   labelElement.className = "content-workspace-field";
@@ -424,7 +454,10 @@ function createEditableField({
   control.value = value || "";
 
   if (multiline) {
-    control.rows = 5;
+    control.rows = getInitialTextareaRows(value, {
+      ...(minimumRows ? { minimumRows } : {}),
+      ...(maximumRows ? { maximumRows } : {}),
+    });
   } else {
     control.type = "text";
   }
@@ -440,9 +473,10 @@ function createEditNoteField() {
     field: "revisionNote",
     value: "",
     multiline: true,
+    minimumRows: 2,
+    maximumRows: 4,
   });
   note.classList.add("content-workspace-note");
-  note.querySelector("textarea").rows = 2;
   return note;
 }
 
@@ -515,18 +549,21 @@ function createLanguageEditor(item, language) {
       );
     });
   } else {
+    const message = getEditorDraftValue(
+      item,
+      language,
+      "message",
+      getMessageForLanguage(item, language),
+    );
     group.append(
       createEditableField({
         label: getText("content_workspace_field_message", "Message"),
         labelKey: "content_workspace_field_message",
         field: "message",
-        value: getEditorDraftValue(
-          item,
-          language,
-          "message",
-          getMessageForLanguage(item, language),
-        ),
+        value: message,
         multiline: true,
+        minimumRows: 10,
+        maximumRows: 18,
       }),
     );
   }

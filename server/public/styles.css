@@ -13377,9 +13377,7 @@ a.my-event-card-row:focus-visible {
 }
 
 .translations-text-field textarea {
-  height: 38px;
   min-height: 38px;
-  max-height: 180px;
   padding: 8px 9px;
   font-size: 12px;
   line-height: 1.45;
@@ -19754,6 +19752,7 @@ html[data-theme='dark'] .content-workspace-review-prompt {
 html[data-theme='dark'] .content-workspace-record-meta,
 html[data-theme='dark'] .content-workspace-detail-info,
 html[data-theme='dark'] .content-workspace-revision-meta,
+html[data-theme='dark'] .content-workspace-revisions,
 html[data-theme='dark'] .content-workspace-read-only,
 html[data-theme='dark'] .content-workspace-revision-note,
 html[data-theme='dark'] .content-workspace-revision-actor,

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="contact_page_title">Contact | CMCEN / RCMCE</title>
+    <link rel="icon" type="image/png" href="/images/logo.png" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+
+    <main class="contact-main">
+      <section class="contact-shell" aria-labelledby="contactTitle">
+        <header class="contact-heading">
+          <p class="contact-eyebrow" data-i18n="contact_eyebrow">Member support</p>
+          <h1 id="contactTitle" data-i18n="contact_title">Contact us</h1>
+          <p data-i18n="contact_intro">
+            Send a message to the C&amp;E Branch Office. Your account details are included so we can respond.
+          </p>
+        </header>
+
+        <p class="contact-message" id="contactMessage" role="status" aria-live="polite" hidden></p>
+
+        <form class="contact-form" id="contactForm" novalidate hidden>
+          <section class="contact-profile" aria-labelledby="contactProfileTitle">
+            <h2 id="contactProfileTitle" data-i18n="contact_your_details">Your account details</h2>
+            <p data-i18n="contact_profile_note">These details come from your account and will be included with your message.</p>
+            <dl id="contactProfileDetails" class="contact-profile-details"></dl>
+          </section>
+
+          <div class="contact-field">
+            <label for="contactSubject" data-i18n="contact_subject">Subject</label>
+            <input id="contactSubject" name="subject" type="text" maxlength="160" required />
+          </div>
+
+          <div class="contact-field">
+            <label for="contactBody" data-i18n="contact_message_label">Message</label>
+            <textarea id="contactBody" name="message" rows="9" maxlength="10000" required></textarea>
+          </div>
+
+          <button class="contact-submit" id="contactSubmitButton" type="submit">
+            <span data-i18n="contact_send">Send message</span>
+          </button>
+        </form>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/contact.js"></script>
+  </body>
+</html>

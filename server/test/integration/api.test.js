@@ -513,6 +513,67 @@ describe('public search', () => {
 });
 
 describe('permissions and audit logs', () => {
+  test('sends contact messages using the authenticated member profile', async () => {
+    const previousMailToBranch = process.env.MAIL_TO_BRANCH;
+    process.env.MAIL_TO_BRANCH = 'branch@example.test';
+
+    try {
+      const user = await createUser({ phone: '613-555-0100' });
+      const session = await login(user);
+      const token = session.body.token;
+
+      await request(app)
+        .post('/api/contact')
+        .set('Authorization', bearer(token))
+        .send({
+          subject: 'Need assistance',
+          message: 'Please contact me about my membership.',
+          email: 'spoofed@example.test',
+          phone: '000-000-0000',
+        })
+        .expect(202);
+
+      const auditLog = await AuditLog.findOne({
+        action: 'contact.submitted',
+        actor: user._id,
+      }).lean();
+      assert.equal(auditLog.targetType, 'contactMessage');
+      assert.equal(auditLog.targetSnapshot.subject, 'Need assistance');
+      assert.equal(auditLog.metadata.messageLength, 38);
+      assert.equal(auditLog.actorSnapshot.email, user.email);
+    } finally {
+      if (previousMailToBranch === undefined) {
+        delete process.env.MAIL_TO_BRANCH;
+      } else {
+        process.env.MAIL_TO_BRANCH = previousMailToBranch;
+      }
+    }
+  });
+
+  test('requires sign-in and configured branch delivery for contact messages', async () => {
+    await request(app)
+      .post('/api/contact')
+      .send({ subject: 'Need assistance', message: 'Please contact me.' })
+      .expect(401);
+
+    const user = await createUser();
+    const session = await login(user);
+    const previousMailToBranch = process.env.MAIL_TO_BRANCH;
+    delete process.env.MAIL_TO_BRANCH;
+
+    try {
+      await request(app)
+        .post('/api/contact')
+        .set('Authorization', bearer(session.body.token))
+        .send({ subject: 'Need assistance', message: 'Please contact me.' })
+        .expect(503);
+    } finally {
+      if (previousMailToBranch !== undefined) {
+        process.env.MAIL_TO_BRANCH = previousMailToBranch;
+      }
+    }
+  });
+
   test('prevents a subscriber from reading the audit log', async () => {
     const user = await createUser({ role: 'subscriber' });
     const loginResponse = await login(user);

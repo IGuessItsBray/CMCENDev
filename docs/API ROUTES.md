@@ -36,6 +36,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `routes/pages.js`               | root                       |
 | `routes/translations.js`        | root                       |
 | `routes/content-options.js`     | root                       |
+| `routes/contact.js`             | `/api/contact`             |
 
 ## Public and System
 
@@ -75,6 +76,12 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `DELETE` | `/api/profile`                                          | Authenticated + `canDeleteOwnAccount` + current MFA confirmation | Delete the current account; associated content is retained and anonymized. Accepts a current TOTP code or a passkey assertion verified within the prior five minutes.                                                                                 |
 | `GET`    | `/api/contributor-check`                                | Authenticated + `canCreateDrafts`                                | Confirm contributor content access.                                                                                                                                                                                                                   |
 | `GET`    | `/api/admin-check`                                      | Authenticated + user admin access                                | Confirm admin user-management access.                                                                                                                                                                                                                 |
+
+## Contact
+
+| Method | Path | Access | Purpose |
+| ------ | ---- | ------ | ------- |
+| `POST` | `/api/contact` | Authenticated; rate limited | Send a member contact request to `MAIL_TO_BRANCH`. The server copies the member's current account name, email, phone, rank, unit, company, and address into the email; clients submit only `subject` (maximum 160 characters) and `message` (maximum 10,000 characters). The member email is used as the reply-to address and the submission is audited. |
 
 ## MFA
 

@@ -58,7 +58,7 @@ if (smtpClientName) {
 
 const transporter = nodemailer.createTransport(transportOptions);
 
-function sendMail({ to, cc, subject, text, html, headers }) {
+function sendMail({ to, cc, subject, text, html, headers, replyTo }) {
   if (process.env.NODE_ENV === 'test') {
     return Promise.resolve({ accepted: [to].filter(Boolean), test: true });
   }
@@ -74,7 +74,7 @@ function sendMail({ to, cc, subject, text, html, headers }) {
 
   return transporter.sendMail({
     from: process.env.MAIL_FROM,
-    replyTo: process.env.MAIL_REPLY_TO,
+    replyTo: replyTo || process.env.MAIL_REPLY_TO,
     to,
     cc,
     subject,

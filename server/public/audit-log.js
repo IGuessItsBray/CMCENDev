@@ -38,6 +38,7 @@ const auditActions = [
   ["user.ghost_upgraded", "audit_action_ghost_upgraded"],
   ["user.password_reset_requested", "audit_action_password_reset_requested"],
   ["user.password_reset_completed", "audit_action_password_reset_completed"],
+  ["contact.submitted", "audit_action_contact_submitted"],
   ["content.created", "audit_action_content_created"],
   ["content.published", "audit_action_content_published"],
   ["content.rejected", "audit_action_content_rejected"],
@@ -93,6 +94,7 @@ const auditTargetTypes = [
   ["timer", "audit_target_timers"],
   ["role", "audit_target_roles"],
   ["translation", "audit_target_translations"],
+  ["contactMessage", "audit_target_contact_messages"],
   ["retirementMessage", "audit_target_retirement_posts"],
   ["retirementComment", "audit_target_comments"],
 ];

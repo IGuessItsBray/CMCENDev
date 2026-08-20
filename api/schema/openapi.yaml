@@ -36,7 +36,43 @@ tags:
   - name: Last Posts
   - name: Retirements
   - name: Certificates
+  - name: Contact
 paths:
+  /api/contact:
+    post:
+      tags: [Contact]
+      summary: Send a member contact message.
+      description: >-
+        Sends the message to MAIL_TO_BRANCH. The server derives the member's
+        account name, email, phone, rank, unit, company, and address from the
+        authenticated account, then uses the member email as the reply-to address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, message]
+              properties:
+                subject:
+                  type: string
+                  maxLength: 160
+                message:
+                  type: string
+                  maxLength: 10000
+      responses:
+        "202":
+          description: Contact message accepted for delivery.
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
   /api/certificate-requests:
     get:
       tags: [Certificates]

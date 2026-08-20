@@ -587,8 +587,8 @@ Internal branch mailbox.
 MAIL_TO_BRANCH=
 ```
 
-This is used by the retirement-submission workflow as its primary internal
-destination.
+This is used by the retirement-submission workflow and signed-in member contact
+form as their primary internal destination.
 
 ### `DISABLE_EMAIL_SENDING`
 

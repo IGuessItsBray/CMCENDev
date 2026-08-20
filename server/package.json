@@ -22,7 +22,8 @@
     "test": "npm run check && npm run test:unit && npm run test:contract && npm run test:integration",
     "test:unit": "node --test test/*.test.js",
     "test:contract": "node --test test/contract/*.test.js",
-    "test:integration": "node --test --test-concurrency=1 test/integration/*.test.js",
+    "test:integration": "node scripts/quality/run-integration-tests.js",
+    "test:integration:serial": "node --test --test-concurrency=1 test/integration/*.test.js",
     "test:integration:watch": "node --test --watch --test-concurrency=1 test/integration/*.test.js"
   },
   "keywords": [],

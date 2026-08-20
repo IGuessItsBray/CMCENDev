@@ -14,6 +14,8 @@ process.env.MINIO_ENDPOINT = 'http://127.0.0.1:9000';
 process.env.MINIO_ACCESS_KEY = 'integration-test';
 process.env.MINIO_SECRET_KEY = 'integration-test';
 process.env.MINIO_BUCKET_NAME = 'integration-test';
+process.env.PLAUSIBLE_DOMAIN = '';
+process.env.PLAUSIBLE_API_URL = '';
 
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');

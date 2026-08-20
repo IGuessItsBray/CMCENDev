@@ -380,6 +380,7 @@ Important settings include:
 | `APP_BASE_URL` | Recommended | Absolute application URL used in generated links |
 | `PLAUSIBLE_DOMAIN` | No | Website domain configured in the self-hosted Plausible instance; both Plausible settings are required to enable tracking |
 | `PLAUSIBLE_API_URL` | No | Self-hosted Plausible event endpoint, normally `https://<plausible-host>/api/event` |
+| `PLAUSIBLE_SHARE_URL` | No | Shared Plausible dashboard URL used in the administrator Analytics workspace; treat its authorization value as a secret |
 | `MINIO_ENDPOINT` | Yes | Internal S3-compatible endpoint |
 | `MINIO_ACCESS_KEY` | Yes | Object-storage access key |
 | `MINIO_SECRET_KEY` | Yes | Object-storage secret key |
@@ -453,6 +454,9 @@ PLAUSIBLE_DOMAIN=cmcen.example.ca
 
 # Public browser-accessible Plausible event endpoint.
 PLAUSIBLE_API_URL=https://analytics.example.ca/api/event
+
+# Optional: replaces the legacy Admin > Analytics dashboard with this shared view.
+PLAUSIBLE_SHARE_URL=https://analytics.example.ca/share/cmcen.example.ca?auth=replace-with-share-token&embed=true&theme=system
 ```
 
 `PLAUSIBLE_API_URL` must be a complete `http` or `https` URL ending in:
@@ -469,7 +473,7 @@ Events are sent by visitors' browsers.
 Restart or recreate the CMCEN service after changing these values.
 
 See [docs/CONFIG.md](docs/CONFIG.md) for the canonical CMCEN-side definitions
-of `PLAUSIBLE_DOMAIN` and `PLAUSIBLE_API_URL`.
+of `PLAUSIBLE_DOMAIN`, `PLAUSIBLE_API_URL`, and `PLAUSIBLE_SHARE_URL`.
 
 ### Disable Analytics
 
@@ -478,6 +482,7 @@ Leave either of these settings empty:
 ```dotenv
 PLAUSIBLE_DOMAIN=
 PLAUSIBLE_API_URL=
+PLAUSIBLE_SHARE_URL=
 ```
 
 CMCEN will not initialize Plausible analytics.

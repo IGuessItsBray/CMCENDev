@@ -22,7 +22,21 @@ function getPlausibleConfig(environment = process.env) {
   return { enabled: true, domain, endpoint };
 }
 
+function getPlausibleEmbedConfig(environment = process.env) {
+  const embedUrl = normalizeHttpUrl(environment.PLAUSIBLE_SHARE_URL);
+
+  if (!embedUrl) return { enabled: false };
+
+  const url = new URL(embedUrl);
+  return {
+    enabled: true,
+    embedUrl,
+    scriptUrl: new URL('/js/embed.host.js', url.origin).toString(),
+  };
+}
+
 module.exports = {
   getPlausibleConfig,
+  getPlausibleEmbedConfig,
   normalizeHttpUrl,
 };

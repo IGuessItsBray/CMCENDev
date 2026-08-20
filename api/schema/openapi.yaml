@@ -627,6 +627,14 @@ paths:
       responses:
         "200":
           description: Analytics summary.
+  /api/analytics/embed:
+    get:
+      tags: [Analytics]
+      summary: Get the administrator Plausible dashboard embed configuration.
+      x-permission: canViewAnalytics
+      responses:
+        "200":
+          description: Whether the Plausible dashboard embed is configured, plus its URLs when enabled.
   /api/analytics/visit:
     post:
       tags: [Analytics]

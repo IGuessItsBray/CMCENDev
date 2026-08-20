@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const {
   getPlausibleConfig,
+  getPlausibleEmbedConfig,
   normalizeHttpUrl,
 } = require('../services/plausible');
 
@@ -37,4 +38,20 @@ test('rejects non-HTTP Plausible endpoints', () => {
     }),
     { enabled: false },
   );
+});
+
+test('builds a Plausible shared-dashboard embed configuration', () => {
+  assert.deepEqual(
+    getPlausibleEmbedConfig({
+      PLAUSIBLE_SHARE_URL:
+        'https://analytics.cmcen.example/share/cmcen.example?auth=example&embed=true&theme=system',
+    }),
+    {
+      enabled: true,
+      embedUrl:
+        'https://analytics.cmcen.example/share/cmcen.example?auth=example&embed=true&theme=system',
+      scriptUrl: 'https://analytics.cmcen.example/js/embed.host.js',
+    },
+  );
+  assert.deepEqual(getPlausibleEmbedConfig({}), { enabled: false });
 });

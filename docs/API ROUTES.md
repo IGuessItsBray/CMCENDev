@@ -107,6 +107,7 @@ Mounted at `/api/analytics`.
 | Method | Path                   | Access                                                | Purpose                                                                                                                                                                 |
 | ------ | ---------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`  | `/api/analytics`       | Authenticated + `canViewAnalytics` (`analytics.view`) | Return visit totals, unique visitor totals, pages, sources, devices, browsers, countries, unique visitors by role, and recent visits. Query: `range=7d\|30d\|90d\|all`. |
+| `GET`  | `/api/analytics/embed` | Authenticated + `canViewAnalytics` (`analytics.view`) | Return configured Plausible shared-dashboard embed details, or `enabled: false`. |
 | `POST` | `/api/analytics/visit` | Public with optional auth                             | Record a page visit. Body includes `path`, `fullPath`, `title`, `referrer`, `locale`, `timeZone`. Always returns `204`.                                                 |
 
 ## Audit Log

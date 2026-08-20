@@ -19887,6 +19887,24 @@ html[data-theme='dark'] .theme-toggle__icon:last-child {
   gap: 1rem;
 }
 
+.analytics-plausible-embed {
+  width: 1px;
+  min-width: 100%;
+  height: 1600px;
+  border: 0;
+  color-scheme: auto;
+}
+
+.analytics-plausible-attribution {
+  padding-bottom: 14px;
+  font-size: 14px;
+}
+
+.analytics-plausible-attribution a {
+  color: #4f46e5;
+  text-decoration: underline;
+}
+
 .site-timers {
   position: relative;
   z-index: 40;

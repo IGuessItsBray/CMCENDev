@@ -285,6 +285,54 @@ function renderAnalytics() {
   analyticsContent.append(stats, grid, createRecentVisits(data.recentVisits));
 }
 
+function getPlausibleEmbedUrl(embedUrl) {
+  const url = new URL(embedUrl);
+  const theme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  url.searchParams.set("theme", theme);
+  return url.toString();
+}
+
+function renderPlausibleEmbed(config) {
+  analyticsContent.replaceChildren();
+
+  const iframe = document.createElement("iframe");
+  iframe.className = "analytics-plausible-embed";
+  iframe.src = getPlausibleEmbedUrl(config.embedUrl);
+  iframe.scrolling = "no";
+  iframe.loading = "lazy";
+  iframe.title = "Plausible Analytics";
+  iframe.setAttribute("frameborder", "0");
+  iframe.setAttribute("plausible-embed", "");
+
+  document.addEventListener("themechange", () => {
+    iframe.src = getPlausibleEmbedUrl(config.embedUrl);
+  });
+
+  const attribution = document.createElement("div");
+  attribution.className = "analytics-plausible-attribution";
+  attribution.append("Stats powered by ");
+
+  const link = document.createElement("a");
+  link.href = "https://plausible.io";
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = "Plausible Analytics";
+  attribution.append(link);
+
+  analyticsContent.append(iframe, attribution);
+
+  if (
+    config.scriptUrl &&
+    !document.querySelector("script[data-plausible-embed]")
+  ) {
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = config.scriptUrl;
+    script.dataset.plausibleEmbed = "true";
+    document.body.append(script);
+  }
+}
+
 async function verifyAnalyticsAccess() {
   const user = await analyticsApi("/api/me", {
     errorMessage: analyticsText(
@@ -333,6 +381,13 @@ async function initAnalytics() {
     const hasAccess = await verifyAnalyticsAccess();
 
     if (hasAccess) {
+      const plausibleEmbed = await analyticsApi("/api/analytics/embed");
+      if (plausibleEmbed.enabled) {
+        renderPlausibleEmbed(plausibleEmbed);
+        showAnalyticsPage();
+        return;
+      }
+
       await loadAnalytics(true);
     }
   } catch (error) {

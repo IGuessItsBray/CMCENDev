@@ -702,6 +702,28 @@ The browser must be able to reach this address.
 
 Do not configure an internal Docker or private-network address here.
 
+### `PLAUSIBLE_SHARE_URL`
+
+Optional Plausible shared-dashboard URL displayed in the administrator
+Analytics workspace. When it is a valid `http` or `https` URL, users with
+`analytics.view` see the Plausible dashboard instead of the legacy CMCEN visit
+dashboard.
+
+Copy the complete embed/share URL from Plausible, including its `auth` and
+`embed=true` query parameters. CMCEN controls the `theme` parameter so the
+dashboard follows the current site light/dark mode. Its authorization value is
+sensitive: anyone with the URL can access the shared dashboard. Store it only
+in deployment configuration; do not commit it.
+
+Example:
+
+```dotenv
+PLAUSIBLE_SHARE_URL=https://analytics.example.ca/share/cmcen.example.ca?auth=replace-with-share-token&embed=true&theme=system
+```
+
+This setting is independent of `PLAUSIBLE_DOMAIN` and `PLAUSIBLE_API_URL`, so
+it may be enabled without browser event tracking.
+
 ### Disabling Plausible
 
 Leave either or both values empty:
@@ -709,6 +731,7 @@ Leave either or both values empty:
 ```dotenv
 PLAUSIBLE_DOMAIN=
 PLAUSIBLE_API_URL=
+PLAUSIBLE_SHARE_URL=
 ```
 
 CMCEN will not initialize Plausible tracking.

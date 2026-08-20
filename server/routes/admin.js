@@ -283,6 +283,7 @@ function toContentWorkspaceItem(type, content) {
     type,
     status: content.status,
     hiddenFromStatus: content.hiddenFromStatus || '',
+    rejectionReason: content.rejectionReason || '',
     updatedAt: content.updatedAt,
     createdAt: content.createdAt,
   };
@@ -297,7 +298,18 @@ function toContentWorkspaceItem(type, content) {
         description: content.description || {},
         registration: content.registration || {},
         city: content.city || '',
+        provinceRegion: content.provinceRegion || '',
+        organizingEntity: content.organizingEntity || '',
+        eventType: content.eventType || '',
+        timezone: content.timezone || '',
         startDate: content.startDate || null,
+        endDate: content.endDate || null,
+        allDay: content.allDay === true,
+        imagePath: content.imagePath || '',
+        contentArea: content.contentArea || 'general',
+        submitter: content.submitter || {},
+        publicationPermission: content.publicationPermission || {},
+        createdBy: content.createdBy || null,
       },
     };
   }
@@ -310,6 +322,12 @@ function toContentWorkspaceItem(type, content) {
         messages: content.messages || {},
         messageLanguage: content.messageLanguage || '',
         retiree: content.retiree || {},
+        photoUrl: content.photoUrl || '',
+        photoDisplayUrl: content.photoDisplayUrl || '',
+        submitter: content.submitter || {},
+        publicationConsent: content.publicationConsent || {},
+        memberReviewConfirmation: content.memberReviewConfirmation || {},
+        createdBy: content.createdBy || null,
       },
     };
   }
@@ -322,6 +340,14 @@ function toContentWorkspaceItem(type, content) {
         messages: content.messages || {},
         messageLanguage: content.messageLanguage || '',
         deceased: content.deceased || {},
+        title: content.title || '',
+        slug: content.slug || '',
+        imageUrl: content.imageUrl || '',
+        imageDisplayUrl: content.imageDisplayUrl || '',
+        photoUrl: content.photoUrl || '',
+        submitter: content.submitter || {},
+        publicationPermission: content.publicationPermission || {},
+        createdBy: content.createdBy || null,
       },
     };
   }
@@ -331,6 +357,8 @@ function toContentWorkspaceItem(type, content) {
     title: getRetirementCommentTitle(content),
     content: {
       body: content.body || '',
+      author: content.author || null,
+      createdAt: content.createdAt || null,
       retirementMessage: content.retirementMessage
         ? {
             _id: content.retirementMessage._id,
@@ -342,7 +370,8 @@ function toContentWorkspaceItem(type, content) {
 }
 
 // GET /api/admin/content
-// Return a compact, staff-only cross-content workspace without submitter data.
+// Return a staff-only cross-content workspace, including submission metadata
+// needed to review the record without returning to the legacy review page.
 router.get(
   '/content',
   authMiddleware,
@@ -369,8 +398,18 @@ router.get(
         queries.push(
           Event.find(statusFilter)
             .select(
-              'title location description registration city startDate status hiddenFromStatus updatedAt createdAt',
+              'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
+            .populate([
+              {
+                path: 'createdBy',
+                select: 'username accountName firstName lastName email role',
+              },
+              {
+                path: 'publicationPermission.confirmedBy',
+                select: 'username accountName firstName lastName email role',
+              },
+            ])
             .sort({ updatedAt: -1, _id: -1 })
             .limit(limit)
             .lean()
@@ -382,8 +421,12 @@ router.get(
         queries.push(
           RetirementMessage.find(statusFilter)
             .select(
-              'retiree messages messageLanguage status hiddenFromStatus updatedAt createdAt',
+              'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
+            .populate({
+              path: 'createdBy',
+              select: 'username accountName firstName lastName email role',
+            })
             .sort({ updatedAt: -1, _id: -1 })
             .limit(limit)
             .lean()
@@ -399,8 +442,18 @@ router.get(
         queries.push(
           LastPostMessage.find(statusFilter)
             .select(
-              'deceased messages messageLanguage status hiddenFromStatus updatedAt createdAt',
+              'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
+            .populate([
+              {
+                path: 'createdBy',
+                select: 'username accountName firstName lastName email role',
+              },
+              {
+                path: 'publicationPermission.confirmedBy',
+                select: 'username accountName firstName lastName email role',
+              },
+            ])
             .sort({ updatedAt: -1, _id: -1 })
             .limit(limit)
             .lean()
@@ -414,9 +467,15 @@ router.get(
         queries.push(
           RetirementComment.find(statusFilter)
             .select(
-              'retirementMessage body status hiddenFromStatus updatedAt createdAt',
+              'retirementMessage author body status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
-            .populate('retirementMessage', 'retiree')
+            .populate([
+              { path: 'retirementMessage', select: 'retiree' },
+              {
+                path: 'author',
+                select: 'username accountName firstName lastName email role',
+              },
+            ])
             .sort({ updatedAt: -1, _id: -1 })
             .limit(limit)
             .lean()
@@ -3670,7 +3729,7 @@ router.patch(
           return applyAdminStringFields(
             lastPost,
             body,
-            ['imageUrl', 'imageDisplayUrl'],
+            ['title', 'slug', 'imageUrl', 'imageDisplayUrl', 'photoUrl'],
             changedFields,
           );
         },
@@ -3678,6 +3737,48 @@ router.patch(
     } catch (error) {
       console.error('Admin Last Post update failed:', error);
       return res.status(500).json({ error: 'Could not update Last Post notice' });
+    }
+  },
+);
+
+// PATCH /api/admin/retirement-comments/:commentId
+// Correct a retirement comment from the staff content workspace.
+router.patch(
+  '/retirement-comments/:commentId',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      return await saveAdminContentEdit({
+        req,
+        res,
+        model: RetirementComment,
+        id: req.params.commentId,
+        targetType: 'retirementComment',
+        notFoundMessage: 'Retirement comment not found',
+        responseKey: 'comment',
+        getSnapshot: (comment) =>
+          getRetirementCommentSnapshot(comment, { includeBody: true }),
+        applyUpdates(comment, body, changedFields) {
+          if (!isPlainObject(body)) return 'Request body must be an object';
+          if (!Object.prototype.hasOwnProperty.call(body, 'body')) {
+            return 'Provide at least one editable field';
+          }
+          if (typeof body.body !== 'string') return 'body must be a string';
+
+          const cleanBody = cleanString(body.body);
+          if (cleanBody.length < 2 || cleanBody.length > 2000) {
+            return 'Comment text must contain between 2 and 2000 characters';
+          }
+
+          comment.body = cleanBody;
+          changedFields.push('body');
+          return '';
+        },
+      });
+    } catch (error) {
+      console.error('Admin retirement comment update failed:', error);
+      return res.status(500).json({ error: 'Could not update retirement comment' });
     }
   },
 );
@@ -4114,6 +4215,11 @@ function buildContentRemovalHandler({
       }
 
       const snapshot = getSnapshot(content);
+      if (content.status === 'pending') {
+        return res.status(409).json({
+          error: `Pending ${displayName.toLowerCase()} must be published, rejected, or deleted instead`,
+        });
+      }
       const removal = hideContent(content, {
         actor: req.user,
         reason: req.body?.reason,

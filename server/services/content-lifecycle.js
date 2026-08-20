@@ -15,7 +15,11 @@ function cleanRemovalReason(value) {
 }
 
 function hideContent(content, { actor, reason } = {}) {
-  if (!content || !RESTORABLE_CONTENT_STATUSES.has(content.status)) {
+  if (
+    !content ||
+    content.status === 'pending' ||
+    !RESTORABLE_CONTENT_STATUSES.has(content.status)
+  ) {
     return null;
   }
 

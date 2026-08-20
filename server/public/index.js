@@ -184,8 +184,8 @@ const navLinks = {
         permission: "canCreateDrafts",
       },
       {
-        route: "/review-submissions",
-        i18n: "menu_review_events",
+        route: "/content-workspace",
+        i18n: "menu_content_workspace",
         permission: "canReviewAndPublish",
       },
       { route: "/news_stories.html", i18n: "menu_news_option_3" },

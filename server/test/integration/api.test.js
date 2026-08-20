@@ -1726,6 +1726,14 @@ describe('event, page, and comment workflows', () => {
       publicationConsent: { confirmed: true, confirmedAt: now },
       memberReviewConfirmation: { confirmed: true, confirmedAt: now },
     });
+    const retirementComment = await RetirementComment.create({
+      retirementMessage: retirementMessage._id,
+      author: editor._id,
+      body: 'Published retirement comment before a staff correction.',
+      status: 'published',
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
     const lastPost = await LastPostMessage.create({
       submitter: {
         rank: 'Captain',
@@ -1757,6 +1765,7 @@ describe('event, page, and comment workflows', () => {
     };
     const retirementCorrection = translatedMessage('Retirement staff correction');
     const lastPostCorrection = 'Published Last Post notice corrected by staff.';
+    const commentCorrection = 'Published retirement comment corrected by staff.';
 
     await request(app)
       .patch(`/api/events/${event._id}/review-content`)
@@ -1785,6 +1794,11 @@ describe('event, page, and comment workflows', () => {
         note: 'Corrected memorial copy',
       })
       .expect(200);
+    await request(app)
+      .patch(`/api/admin/retirement-comments/${retirementComment._id}`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ body: commentCorrection })
+      .expect(200);
 
     const [publicEvent, publicRetirement, publicLastPost] = await Promise.all([
       request(app).get(`/api/events/${event._id}`).expect(200),
@@ -1809,7 +1823,14 @@ describe('event, page, and comment workflows', () => {
     );
     assert.equal(workspaceEvent.type, 'event');
     assert.equal(workspaceEvent.content.title.en, eventChanges.title);
-    assert.equal(Object.hasOwn(workspaceEvent.content, 'submitter'), false);
+    assert.equal(Object.hasOwn(workspaceEvent.content, 'submitter'), true);
+    assert.equal(workspaceEvent.content.submitter.email, 'events@example.test');
+    const workspaceComment = workspace.body.items.find(
+      (item) => String(item._id) === String(retirementComment._id),
+    );
+    assert.equal(workspaceComment.type, 'retirementComment');
+    assert.equal(workspaceComment.content.body, commentCorrection);
+    assert.equal(workspaceComment.content.author.email, editor.email);
 
     const eventHistory = await request(app)
       .get(`/api/admin/content/event/${event._id}/revisions`)
@@ -1850,6 +1871,11 @@ describe('event, page, and comment workflows', () => {
       action: 'content.staff_content_updated',
     });
     assert.equal(staffEditAudits, 3);
+    const commentEditAudit = await AuditLog.findOne({
+      action: 'content.admin_updated',
+      target: retirementComment._id,
+    }).lean();
+    assert.deepEqual(commentEditAudit.metadata.fields, ['body']);
   });
 
   test('returns published events that overlap a requested calendar range', async () => {
@@ -2568,6 +2594,17 @@ describe('media lifecycle', () => {
     }).lean();
     assert.equal(lastPost.status, 'pending');
 
+    await Promise.all([
+      RetirementMessage.updateOne(
+        { _id: retirementMessage._id },
+        { $set: { status: 'published', publishedAt: new Date() } },
+      ),
+      LastPostMessage.updateOne(
+        { _id: lastPost._id },
+        { $set: { status: 'published', publishedAt: new Date() } },
+      ),
+    ]);
+
     const sentCommands = [];
     const originalSend = s3Client.send.bind(s3Client);
     s3Client.send = async (command) => {
@@ -2599,9 +2636,9 @@ describe('media lifecycle', () => {
       assert.equal(removedEvent.status, 'hidden');
       assert.equal(removedEvent.hiddenFromStatus, 'published');
       assert.equal(removedRetirementMessage.status, 'hidden');
-      assert.equal(removedRetirementMessage.hiddenFromStatus, 'pending');
+      assert.equal(removedRetirementMessage.hiddenFromStatus, 'published');
       assert.equal(removedLastPost.status, 'hidden');
-      assert.equal(removedLastPost.hiddenFromStatus, 'pending');
+      assert.equal(removedLastPost.hiddenFromStatus, 'published');
 
       await request(app).get(`/api/events/${event._id}`).expect(404);
       assert.equal(
@@ -2686,6 +2723,17 @@ describe('media lifecycle', () => {
       imageUrl: sharedAsset.url,
     }).lean();
 
+    await Promise.all([
+      Event.updateOne(
+        { _id: event._id },
+        { $set: { status: 'published', publishedAt: new Date() } },
+      ),
+      LastPostMessage.updateOne(
+        { _id: lastPost._id },
+        { $set: { status: 'published', publishedAt: new Date() } },
+      ),
+    ]);
+
     const sentCommands = [];
     const originalSend = s3Client.send.bind(s3Client);
     s3Client.send = async (command) => {
@@ -2725,7 +2773,7 @@ describe('media lifecycle', () => {
     }
   });
 
-  test('allows editors to remove and restore content but rejects an unauthorized restore', async () => {
+  test('keeps pending content out of the removal workflow', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
     const contributorSession = await login(contributor);
@@ -2738,6 +2786,21 @@ describe('media lifecycle', () => {
       .expect(201);
     const event = await Event.findOne({ createdBy: contributor._id }).lean();
 
+    const pendingRemoval = await request(app)
+      .patch(`/api/admin/events/${event._id}/hide`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ reason: 'Duplicate submission' })
+      .expect(409);
+    assert.match(pendingRemoval.body.error, /must be published, rejected, or deleted/u);
+
+    const pendingEvent = await Event.findById(event._id).lean();
+    assert.equal(pendingEvent.status, 'pending');
+
+    await Event.updateOne(
+      { _id: event._id },
+      { $set: { status: 'published', publishedAt: new Date() } },
+    );
+
     await request(app)
       .patch(`/api/admin/events/${event._id}/hide`)
       .set('Authorization', bearer(editorSession.body.token))
@@ -2746,7 +2809,7 @@ describe('media lifecycle', () => {
 
     const removedEvent = await Event.findById(event._id).lean();
     assert.equal(removedEvent.status, 'hidden');
-    assert.equal(removedEvent.hiddenFromStatus, 'pending');
+    assert.equal(removedEvent.hiddenFromStatus, 'published');
     assert.equal(removedEvent.hiddenReason, 'Duplicate submission');
 
     await request(app)
@@ -2764,10 +2827,10 @@ describe('media lifecycle', () => {
       .patch(`/api/admin/events/${event._id}/restore`)
       .set('Authorization', bearer(editorSession.body.token))
       .expect(200);
-    assert.equal(restored.body.content.status, 'pending');
+    assert.equal(restored.body.content.status, 'published');
 
     const restoredEvent = await Event.findById(event._id).lean();
-    assert.equal(restoredEvent.status, 'pending');
+    assert.equal(restoredEvent.status, 'published');
     assert.equal(restoredEvent.hiddenAt, null);
     assert.equal(restoredEvent.hiddenBy, null);
     assert.equal(restoredEvent.hiddenReason, '');

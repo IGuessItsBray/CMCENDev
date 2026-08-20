@@ -16,6 +16,7 @@ test('provides audited admin edit routes for every content type', () => {
     [
       '/last-posts/:lastPostId',
       '/retirement-messages/:messageId',
+      '/retirement-comments/:commentId',
       '/news/:articleId',
       '/events/:eventId',
     ].every((path) => patchRoutes.includes(path)),

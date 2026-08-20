@@ -81,6 +81,7 @@ describe('OpenAPI contract', () => {
       ['delete', '/api/admin/events/{eventId}'],
       ['delete', '/api/admin/retirement-messages/{messageId}'],
       ['delete', '/api/admin/retirement-comments/{commentId}'],
+      ['patch', '/api/admin/retirement-comments/{commentId}'],
       ['get', '/api/admin/content/{contentType}/{contentId}/revisions'],
       ['get', '/api/admin/content'],
       ['patch', '/api/admin/last-posts/{lastPostId}/hide'],

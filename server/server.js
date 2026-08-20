@@ -185,6 +185,18 @@ app.get('/vendor/plausible-tracker.js', (req, res) => {
 app.get('/notifications', (req, res) =>
   res.redirect(301, `/dashboard${req.url.slice(req.path.length)}`),
 );
+app.get('/review-submissions', (req, res) => {
+  const typeByLegacyTab = {
+    events: 'event',
+    retirements: 'retirementMessage',
+    'last-posts': 'lastPost',
+    comments: 'retirementComment',
+  };
+  const type = typeByLegacyTab[String(req.query.tab || '')] || 'all';
+  const query = new URLSearchParams({ type, status: 'pending' });
+
+  res.redirect(302, `/content-workspace?${query}`);
+});
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api', authRoutes);

@@ -24,15 +24,15 @@
             Editorial workspace
           </p>
           <h1 id="contentWorkspaceTitle" data-i18n="content_workspace_title">
-            Manage published content
+            Manage content
           </h1>
           <p data-i18n="content_workspace_intro">
-            Correct bilingual public copy, review revisions, and remove or restore submissions without losing their history.
+            Review pending submissions, correct bilingual public copy, and publish, reject, remove, or restore content without losing its history.
           </p>
         </header>
 
         <section class="content-workspace-controls" aria-label="Content filters" data-i18n-aria-label="content_workspace_filters">
-          <form class="content-workspace-filters" id="contentWorkspaceFilters">
+          <div class="content-workspace-filters" id="contentWorkspaceFilters">
             <label>
               <span data-i18n="content_workspace_type">Content type</span>
               <select id="contentWorkspaceType" name="type">
@@ -46,7 +46,7 @@
 
             <label>
               <span data-i18n="content_workspace_status">Status</span>
-              <select id="contentWorkspaceStatusFilter" name="status">
+              <select id="contentWorkspaceStatusFilter" class="content-workspace-status-filter is-all" name="status">
                 <option value="all" data-i18n="content_workspace_all_statuses">All statuses</option>
                 <option value="pending" data-i18n="content_workspace_pending">Pending</option>
                 <option value="published" data-i18n="content_workspace_published">Published</option>
@@ -55,11 +55,7 @@
                 <option value="draft" data-i18n="content_workspace_draft">Draft</option>
               </select>
             </label>
-
-            <button class="admin-work-zone-button is-secondary" type="submit" data-i18n="content_workspace_refresh">
-              Refresh
-            </button>
-          </form>
+          </div>
 
           <p class="content-workspace-status" id="contentWorkspaceMessage" role="status" aria-live="polite"></p>
         </section>
@@ -84,6 +80,7 @@
     <script src="/timers.js"></script>
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
+    <script src="/date-time-picker.js"></script>
     <script src="/content-workspace.js"></script>
   </body>
 </html>

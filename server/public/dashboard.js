@@ -1075,8 +1075,8 @@ function getReviewWorkTotal({
 }
 
 function createReviewQueueLink({
-  tab,
   type,
+  contentType,
   labelKey,
   count,
   href,
@@ -1085,7 +1085,9 @@ function createReviewQueueLink({
   const reviewCount = Number.isInteger(count) && count >= 0 ? count : 0;
   const link = document.createElement("a");
   link.className = "dashboard-review-queue-link";
-  link.href = href || `/review-submissions.html?tab=${encodeURIComponent(tab)}`;
+  link.href =
+    href ||
+    `/content-workspace?type=${encodeURIComponent(contentType)}&status=pending`;
   link.setAttribute(
     "aria-label",
     translate(ariaLabelKey, {
@@ -1112,7 +1114,7 @@ function createReviewQueuesUnavailable() {
 
   const link = document.createElement("a");
   link.className = "dashboard-review-open-link";
-  link.href = "/review-submissions.html";
+  link.href = "/content-workspace?status=pending";
   link.textContent = translate("dashboard_review_open_queues");
 
   return [message, link];
@@ -1262,26 +1264,26 @@ function renderDashboard(user) {
     if (canReviewSubmissions && currentReviewCounts) {
       reviewQueues.push(
         createReviewQueueLink({
-          tab: "events",
           type: "events",
+          contentType: "event",
           labelKey: "review_events_tab",
           count: currentReviewCounts.events,
         }),
         createReviewQueueLink({
-          tab: "retirements",
           type: "retirement_messages",
+          contentType: "retirementMessage",
           labelKey: "review_retirements_tab",
           count: currentReviewCounts.retirementMessages,
         }),
         createReviewQueueLink({
-          tab: "last-posts",
           type: "last_posts",
+          contentType: "lastPost",
           labelKey: "review_last_posts_tab",
           count: currentReviewCounts.lastPosts,
         }),
         createReviewQueueLink({
-          tab: "comments",
           type: "comments",
+          contentType: "retirementComment",
           labelKey: "review_comments_tab",
           count: currentReviewCounts.comments,
         }),

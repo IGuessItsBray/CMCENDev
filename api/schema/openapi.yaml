@@ -1003,7 +1003,7 @@ paths:
     patch:
       tags: [Admin, LastPost]
       summary: Partially edit a Last Post notice.
-      description: Requires canReviewAndPublish. Supports deceased metadata, bilingual messages, and image URLs without returning the notice to review. Changes are audited and legacy deceased fields may be blank.
+      description: Requires canReviewAndPublish. Supports an internal title and slug, deceased metadata, bilingual messages, and image URLs without returning the notice to review. Changes are audited and legacy deceased fields may be blank.
       x-permission: canReviewAndPublish
       parameters:
         - name: lastPostId
@@ -1040,7 +1040,7 @@ paths:
     patch:
       tags: [Admin, LastPost]
       summary: Remove a Last Post notice from public view.
-      description: Allowed for content editors or the original submitter with own-content deletion permission. The notice and attached media are retained for restoration; an optional reason is recorded in the audit log.
+      description: Allowed for content editors or the original submitter with own-content deletion permission. Pending notices cannot be removed because they are not public; they must be published, rejected, or deleted. The notice and attached media are retained for restoration; an optional reason is recorded in the audit log.
       x-permission: canHideContent
       parameters:
         - name: lastPostId
@@ -1051,6 +1051,8 @@ paths:
         "200":
           description: Last Post notice removed from public view.
         "403":
+          $ref: "#/components/responses/Error"
+        "409":
           $ref: "#/components/responses/Error"
   /api/admin/content/{contentType}/{contentId}/revisions:
     get:
@@ -1111,7 +1113,7 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List content in the staff editorial workspace.
-      description: Returns compact public-content records without submitter contact details. Results can be filtered by type and lifecycle status.
+      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type and lifecycle status, and include the original status for removed records plus a rejection reason when applicable.
       x-permission: canReviewAndPublish
       parameters:
         - name: type
@@ -1160,13 +1162,15 @@ paths:
     patch:
       tags: [Admin, Events]
       summary: Remove an event from public view.
-      description: Allowed for content editors or the original submitter with own-content deletion permission. The event and attached media are retained for restoration; an optional reason is recorded in the audit log.
+      description: Allowed for content editors or the original submitter with own-content deletion permission. Pending events cannot be removed because they are not public; they must be published, rejected, or deleted. The event and attached media are retained for restoration; an optional reason is recorded in the audit log.
       x-permission: canHideContent
       parameters:
         - $ref: "#/components/parameters/EventId"
       responses:
         "200":
           description: Event removed from public view.
+        "409":
+          $ref: "#/components/responses/Error"
   /api/admin/events/{eventId}/restore:
     patch:
       tags: [Admin, Events]
@@ -1216,13 +1220,15 @@ paths:
     patch:
       tags: [Admin, Retirements]
       summary: Remove a retirement message from public view.
-      description: Allowed for content editors or the original submitter with own-content deletion permission. The message, comments, and attached media are retained for restoration; an optional reason is recorded in the audit log.
+      description: Allowed for content editors or the original submitter with own-content deletion permission. Pending messages cannot be removed because they are not public; they must be published, rejected, or deleted. The message, comments, and attached media are retained for restoration; an optional reason is recorded in the audit log.
       x-permission: canHideContent
       parameters:
         - $ref: "#/components/parameters/MessageId"
       responses:
         "200":
           description: Retirement message removed from public view.
+        "409":
+          $ref: "#/components/responses/Error"
   /api/admin/retirement-messages/{messageId}/restore:
     patch:
       tags: [Admin, Retirements]
@@ -1240,6 +1246,24 @@ paths:
         "409":
           $ref: "#/components/responses/Error"
   /api/admin/retirement-comments/{commentId}:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Edit a retirement comment.
+      description: Requires canReviewAndPublish. Corrects the comment body without changing its lifecycle state. Changes are audited.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Retirement comment updated.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Admin, Retirements]
       summary: Delete any retirement comment.
@@ -1253,13 +1277,15 @@ paths:
     patch:
       tags: [Admin, Retirements]
       summary: Remove a retirement comment from public view.
-      description: Allowed for content editors or the original author with own-content deletion permission. The comment is retained for restoration; an optional reason is recorded in the audit log.
+      description: Allowed for content editors or the original author with own-content deletion permission. Pending comments cannot be removed because they are not public; they must be published, rejected, or deleted. The comment is retained for restoration; an optional reason is recorded in the audit log.
       x-permission: canHideContent
       parameters:
         - $ref: "#/components/parameters/CommentId"
       responses:
         "200":
           description: Retirement comment removed from public view.
+        "409":
+          $ref: "#/components/responses/Error"
   /api/admin/retirement-comments/{commentId}/restore:
     patch:
       tags: [Admin, Retirements]

@@ -987,6 +987,27 @@ paths:
         "200":
           description: Promotion result.
   /api/admin/last-posts/{lastPostId}:
+    patch:
+      tags: [Admin, LastPost]
+      summary: Partially edit a Last Post notice.
+      description: Requires canReviewAndPublish. Supports deceased metadata, bilingual messages, and image URLs without returning the notice to review. Changes are audited and legacy deceased fields may be blank.
+      x-permission: canReviewAndPublish
+      parameters:
+        - name: lastPostId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Last Post notice updated.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Admin, LastPost]
       summary: Delete a Last Post notice.
@@ -1002,6 +1023,24 @@ paths:
         "403":
           $ref: "#/components/responses/Error"
   /api/admin/events/{eventId}:
+    patch:
+      tags: [Admin, Events]
+      summary: Partially edit an event.
+      description: Requires canReviewAndPublish. Supports bilingual copy, event metadata, image path, and dates without changing publication state. Changes are audited.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Event updated.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Admin, Events]
       summary: Delete any event.
@@ -1013,6 +1052,24 @@ paths:
         "200":
           description: Delete result.
   /api/admin/retirement-messages/{messageId}:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Partially edit a retirement message.
+      description: Requires canReviewAndPublish. Supports retiree metadata, bilingual messages, and photo URLs without resubmission. Legacy rank, name, and role fields may be blank. Changes are audited.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Retirement message updated.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Admin, Retirements]
       summary: Delete any retirement message.

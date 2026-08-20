@@ -5,21 +5,18 @@ const retirementMessageSchema = new mongoose.Schema(
     retiree: {
       rank: {
         type: String,
-        required: true,
         trim: true,
         maxlength: 40,
       },
 
       firstName: {
         type: String,
-        required: true,
         trim: true,
         maxlength: 80,
       },
 
       lastName: {
         type: String,
-        required: true,
         trim: true,
         maxlength: 80,
       },

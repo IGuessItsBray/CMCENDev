@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const speakeasy = require('speakeasy');
 const crypto = require('crypto');
 const {
@@ -24,6 +25,7 @@ const {
 } = require('../config/permissions');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog, snapshotUser } = require('../services/audit-log');
+const { cleanLocalizedText, cleanString } = require('../services/content-utils');
 const { isEmailSendingDisabled, sendMail } = require('../services/mailer');
 const {
   createUnsubscribeToken,
@@ -45,6 +47,96 @@ const {
 const s3Client = require('../storage');
 
 const router = express.Router();
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function applyAdminStringFields(document, updates, fieldNames, changedFields) {
+  for (const fieldName of fieldNames) {
+    if (!Object.prototype.hasOwnProperty.call(updates, fieldName)) continue;
+    if (typeof updates[fieldName] !== 'string') {
+      return `${fieldName} must be a string`;
+    }
+    document[fieldName] = cleanString(updates[fieldName]);
+    changedFields.push(fieldName);
+  }
+  return '';
+}
+
+function applyAdminLocalizedFields(document, updates, fieldNames, changedFields) {
+  for (const fieldName of fieldNames) {
+    if (!Object.prototype.hasOwnProperty.call(updates, fieldName)) continue;
+    if (!isPlainObject(updates[fieldName])) {
+      return `${fieldName} must be an English/French text object`;
+    }
+    document[fieldName] = cleanLocalizedText(updates[fieldName]);
+    changedFields.push(fieldName);
+  }
+  return '';
+}
+
+function getLastPostAdminSnapshot(lastPost) {
+  const deceased = lastPost.deceased || {};
+  const name = [deceased.fullRank, deceased.firstName, deceased.surname]
+    .filter(Boolean)
+    .join(' ');
+  return { title: name || 'In Memoriam', status: lastPost.status };
+}
+
+function getNewsAdminSnapshot(article) {
+  return {
+    title: article.title?.en || article.title?.fr || 'Untitled news story',
+    status: article.status,
+    publishedAt: article.publishedAt || null,
+  };
+}
+
+async function saveAdminContentEdit({
+  req,
+  res,
+  model,
+  id,
+  targetType,
+  notFoundMessage,
+  applyUpdates,
+  getSnapshot,
+  responseKey,
+}) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(404).json({ error: notFoundMessage });
+  }
+
+  const document = await model.findById(id);
+  if (!document) return res.status(404).json({ error: notFoundMessage });
+
+  const changedFields = [];
+  const validationError = applyUpdates(document, req.body, changedFields);
+  if (validationError) return res.status(400).json({ error: validationError });
+  if (!changedFields.length) {
+    return res.status(400).json({ error: 'Provide at least one editable field' });
+  }
+
+  if (document.schema.path('updatedBy')) {
+    document.updatedBy = req.user._id;
+  }
+  await document.save();
+
+  await writeAuditLog({
+    req,
+    action: 'content.admin_updated',
+    actor: req.user,
+    targetType,
+    target: document._id,
+    targetSnapshot: getSnapshot(document),
+    metadata: { fields: changedFields, source: 'admin-content-edit' },
+  });
+
+  return res.json({
+    message: 'Content updated',
+    [responseKey]: document,
+  });
+}
 
 const CONTENT_AREAS = Object.freeze([
   'general',
@@ -3305,6 +3397,228 @@ router.patch(
     } catch (err) {
       console.error('Developer promotion failed:', err);
       res.status(500).json({ error: 'Failed to promote user to developer' });
+    }
+  },
+);
+
+// PATCH /api/admin/last-posts/:lastPostId
+// Correct published or legacy Last Post metadata without resubmitting it.
+router.patch(
+  '/last-posts/:lastPostId',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      return await saveAdminContentEdit({
+        req,
+        res,
+        model: LastPostMessage,
+        id: req.params.lastPostId,
+        targetType: 'lastPost',
+        notFoundMessage: 'Last Post notice not found',
+        responseKey: 'lastPost',
+        getSnapshot: getLastPostAdminSnapshot,
+        applyUpdates(lastPost, body, changedFields) {
+          if (!isPlainObject(body)) return 'Request body must be an object';
+          if (Object.prototype.hasOwnProperty.call(body, 'deceased')) {
+            if (!isPlainObject(body.deceased)) return 'deceased must be an object';
+            const error = applyAdminStringFields(
+              lastPost.deceased,
+              body.deceased,
+              ['fullRank', 'firstName', 'surname', 'postNominal'],
+              changedFields,
+            );
+            if (error) return error;
+          }
+          const localizedError = applyAdminLocalizedFields(
+            lastPost,
+            body,
+            ['messages'],
+            changedFields,
+          );
+          if (localizedError) return localizedError;
+          return applyAdminStringFields(
+            lastPost,
+            body,
+            ['imageUrl', 'imageDisplayUrl'],
+            changedFields,
+          );
+        },
+      });
+    } catch (error) {
+      console.error('Admin Last Post update failed:', error);
+      return res.status(500).json({ error: 'Could not update Last Post notice' });
+    }
+  },
+);
+
+// PATCH /api/admin/retirement-messages/:messageId
+// Correct legacy retirement metadata while permitting intentionally blank values.
+router.patch(
+  '/retirement-messages/:messageId',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      return await saveAdminContentEdit({
+        req,
+        res,
+        model: RetirementMessage,
+        id: req.params.messageId,
+        targetType: 'retirementMessage',
+        notFoundMessage: 'Retirement message not found',
+        responseKey: 'retirementMessage',
+        getSnapshot: getRetirementMessageSnapshot,
+        applyUpdates(message, body, changedFields) {
+          if (!isPlainObject(body)) return 'Request body must be an object';
+          if (Object.prototype.hasOwnProperty.call(body, 'retiree')) {
+            if (!isPlainObject(body.retiree)) return 'retiree must be an object';
+            const error = applyAdminStringFields(
+              message.retiree,
+              body.retiree,
+              ['rank', 'firstName', 'lastName', 'postNominals', 'tradeRole'],
+              changedFields,
+            );
+            if (error) return error;
+            if (Object.prototype.hasOwnProperty.call(body.retiree, 'retirementDate')) {
+              const value = body.retiree.retirementDate;
+              if (value !== null && typeof value !== 'string') {
+                return 'retirementDate must be an ISO date string or null';
+              }
+              const date = value ? new Date(value) : null;
+              if (date && Number.isNaN(date.getTime())) {
+                return 'retirementDate must be a valid date';
+              }
+              message.retiree.retirementDate = date;
+              changedFields.push('retirementDate');
+            }
+          }
+          const localizedError = applyAdminLocalizedFields(
+            message,
+            body,
+            ['messages'],
+            changedFields,
+          );
+          if (localizedError) return localizedError;
+          return applyAdminStringFields(
+            message,
+            body,
+            ['photoUrl', 'photoDisplayUrl'],
+            changedFields,
+          );
+        },
+      });
+    } catch (error) {
+      console.error('Admin retirement message update failed:', error);
+      return res.status(500).json({ error: 'Could not update retirement message' });
+    }
+  },
+);
+
+// PATCH /api/admin/news/:articleId
+router.patch(
+  '/news/:articleId',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      return await saveAdminContentEdit({
+        req,
+        res,
+        model: NewsArticle,
+        id: req.params.articleId,
+        targetType: 'newsArticle',
+        notFoundMessage: 'News story not found',
+        responseKey: 'article',
+        getSnapshot: getNewsAdminSnapshot,
+        applyUpdates(article, body, changedFields) {
+          if (!isPlainObject(body)) return 'Request body must be an object';
+          const localizedError = applyAdminLocalizedFields(
+            article,
+            body,
+            ['title', 'content'],
+            changedFields,
+          );
+          if (localizedError) return localizedError;
+          return applyAdminStringFields(
+            article,
+            body,
+            ['imageUrl', 'imageDisplayUrl'],
+            changedFields,
+          );
+        },
+      });
+    } catch (error) {
+      console.error('Admin news update failed:', error);
+      return res.status(500).json({ error: 'Could not update news story' });
+    }
+  },
+);
+
+// PATCH /api/admin/events/:eventId
+router.patch(
+  '/events/:eventId',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      return await saveAdminContentEdit({
+        req,
+        res,
+        model: Event,
+        id: req.params.eventId,
+        targetType: 'event',
+        notFoundMessage: 'Event not found',
+        responseKey: 'event',
+        getSnapshot: getEventSnapshot,
+        applyUpdates(event, body, changedFields) {
+          if (!isPlainObject(body)) return 'Request body must be an object';
+          const localizedError = applyAdminLocalizedFields(
+            event,
+            body,
+            ['title', 'description', 'location', 'registration'],
+            changedFields,
+          );
+          if (localizedError) return localizedError;
+          const stringError = applyAdminStringFields(
+            event,
+            body,
+            [
+              'city',
+              'provinceRegion',
+              'organizingEntity',
+              'eventType',
+              'timezone',
+              'imagePath',
+              'contentArea',
+            ],
+            changedFields,
+          );
+          if (stringError) return stringError;
+          if (Object.prototype.hasOwnProperty.call(body, 'allDay')) {
+            if (typeof body.allDay !== 'boolean') return 'allDay must be a boolean';
+            event.allDay = body.allDay;
+            changedFields.push('allDay');
+          }
+          for (const fieldName of ['startDate', 'endDate']) {
+            if (!Object.prototype.hasOwnProperty.call(body, fieldName)) continue;
+            const value = body[fieldName];
+            if (value !== null && typeof value !== 'string') {
+              return `${fieldName} must be an ISO date string or null`;
+            }
+            const date = value ? new Date(value) : null;
+            if (date && Number.isNaN(date.getTime())) {
+              return `${fieldName} must be a valid date`;
+            }
+            event[fieldName] = date;
+            changedFields.push(fieldName);
+          }
+          return '';
+        },
+      });
+    } catch (error) {
+      console.error('Admin event update failed:', error);
+      return res.status(500).json({ error: 'Could not update event' });
     }
   },
 );

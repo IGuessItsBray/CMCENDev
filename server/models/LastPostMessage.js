@@ -56,13 +56,13 @@ const LastPostMessageSchema = new mongoose.Schema(
       },
       firstName: {
         type: String,
-        required: true,
         trim: true,
         maxlength: 80,
       },
       surname: {
         type: String,
-        required: true,
+        // Legacy notices may omit a name component. New submissions are
+        // validated by the Last Post route before they are stored.
         trim: true,
         maxlength: 80,
       },

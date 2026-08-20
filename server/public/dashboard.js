@@ -4,10 +4,15 @@ const dashboardStatus = document.getElementById("dashboardStatus");
 const dashboardLoadingTemplate = document.getElementById(
   "dashboardLoadingTemplate",
 );
+const dashboardShell = document.querySelector(".dashboard-shell");
+const dashboardHeading = document.querySelector(".dashboard-heading");
 const dashboardContent = document.getElementById("dashboardContent");
 const dashboardDetails = document.getElementById("dashboardDetails");
 const dashboardWorkspace = document.getElementById("dashboardWorkspace");
 const dashboardActions = document.getElementById("dashboardActions");
+const dashboardAdminToolsPanel = document.getElementById(
+  "dashboardAdminToolsPanel",
+);
 const dashboardTitle = document.getElementById("dashboardTitle");
 const dashboardMemberName = document.getElementById("dashboardMemberName");
 const dashboardRoleSummary = document.getElementById("dashboardRoleSummary");
@@ -36,7 +41,308 @@ const weeklyBriefPreference = document.getElementById("weeklyBriefPreference");
 let currentDashboardUser = null;
 let currentReviewCounts = null;
 let currentCertificateRequestCount = null;
+const adminToolFrames = new Map();
+let activeAdminTool = "main";
 const profileSaveSuccessDisplayMs = 2200;
+
+const adminToolPaths = {
+  users: "/admin-users",
+  subscriptions: "/admin-users?view=subscriptions",
+  roles: "/admin-users?view=roles",
+  pages: "/pages-admin",
+  timers: "/timers-admin",
+  translations: "/translations-admin",
+  media: "/admin-users?view=media",
+  analytics: "/analytics",
+  "audit-log": "/audit-log",
+};
+const dashboardAdminLayoutStorageKey = "cmcen.dashboard.has-admin-tools";
+
+function applyDashboardAdminToolsLayout(hasAdminTools) {
+  dashboardShell?.classList.toggle("has-admin-tools-layout", hasAdminTools);
+}
+
+function getCachedDashboardAdminToolsLayout() {
+  try {
+    return window.sessionStorage.getItem(dashboardAdminLayoutStorageKey) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function rememberDashboardAdminToolsLayout(hasAdminTools) {
+  applyDashboardAdminToolsLayout(hasAdminTools);
+
+  try {
+    window.sessionStorage.setItem(
+      dashboardAdminLayoutStorageKey,
+      String(hasAdminTools),
+    );
+  } catch {
+    // The layout remains correct for this page even if session storage is unavailable.
+  }
+}
+
+function getRequestedAdminTool() {
+  const tool = new URLSearchParams(window.location.search).get("adminTool");
+  return Object.hasOwn(adminToolPaths, tool) ? tool : "main";
+}
+
+function getEmbeddedAdminToolUrl(tool) {
+  const url = new URL(adminToolPaths[tool], window.location.origin);
+  url.searchParams.set("embeddedAdminTool", "1");
+  return `${url.pathname}${url.search}`;
+}
+
+function syncEmbeddedAdminToolTheme(frame) {
+  const embeddedDocument = frame.contentDocument;
+  if (!embeddedDocument) return;
+
+  const theme = document.documentElement.dataset.theme;
+  if (theme) embeddedDocument.documentElement.dataset.theme = theme;
+  else embeddedDocument.documentElement.removeAttribute("data-theme");
+}
+
+function showAdminToolLoading(frame, tool) {
+  if (!dashboardAdminToolsPanel) return;
+
+  const loading = document.createElement("div");
+  loading.className = `admin-tool-loading admin-tool-loading--${tool}`;
+  loading.setAttribute("aria-label", translate("loading_text"));
+  loading.setAttribute("role", "status");
+  loading.innerHTML = getAdminToolLoadingMarkup(tool);
+  frame.adminToolLoading = loading;
+  dashboardAdminToolsPanel.append(loading);
+}
+
+function getAdminToolLoadingMarkup(tool) {
+  const line = (className = "") => `<span class="skeleton ${className}"></span>`;
+  const rows = (count, className = "") =>
+    Array.from({ length: count }, () => `<div class="admin-tool-skeleton-row ${className}">${line("admin-tool-skeleton-row-title")}${line("admin-tool-skeleton-row-copy")}</div>`).join("");
+
+  if (tool === "users") {
+    return `<div class="admin-tool-skeleton admin-tool-skeleton--split">
+      <section class="admin-tool-skeleton-list">
+        <div class="admin-tool-skeleton-toolbar">${line("admin-tool-skeleton-heading")}${line("admin-tool-skeleton-button")}</div>
+        ${line("admin-tool-skeleton-search")}
+        <div class="admin-tool-skeleton-user-list">${Array.from({ length: 5 }, () => `<div class="admin-tool-skeleton-user-card"><span class="skeleton admin-tool-skeleton-avatar"></span><div>${line("admin-tool-skeleton-row-title")}${line("admin-tool-skeleton-row-copy")}</div></div>`).join("")}</div>
+      </section>
+      <section class="admin-tool-skeleton-detail">${line("admin-tool-skeleton-detail-title")}${line("admin-tool-skeleton-detail-copy")}${line("admin-tool-skeleton-detail-copy is-short")}</section>
+    </div>`;
+  }
+
+  if (tool === "roles") {
+    return `<div class="admin-tool-skeleton admin-tool-skeleton--split">
+      <section class="admin-tool-skeleton-list"><div class="admin-tool-skeleton-toolbar">${line("admin-tool-skeleton-heading")}${line("admin-tool-skeleton-button")}</div>${rows(6, "is-role")}</section>
+      <section class="admin-tool-skeleton-role-editor">${line("admin-tool-skeleton-detail-title")}${line("admin-tool-skeleton-input")}<div class="admin-tool-skeleton-permissions">${Array.from({ length: 9 }, () => `<span class="skeleton admin-tool-skeleton-permission"></span>`).join("")}</div></section>
+    </div>`;
+  }
+
+  if (tool === "subscriptions") {
+    return `<div class="admin-tool-skeleton admin-tool-skeleton--subscriptions">
+      <div class="admin-tool-skeleton-toolbar">${line("admin-tool-skeleton-heading")}${line("admin-tool-skeleton-button")}</div>
+      <div class="admin-tool-skeleton-table">${rows(6, "is-table")}</div>
+      <div class="admin-tool-skeleton-form">${line("admin-tool-skeleton-heading")}${line("admin-tool-skeleton-input")}${line("admin-tool-skeleton-textarea")}</div>
+    </div>`;
+  }
+
+  if (tool === "media") {
+    return `<div class="admin-tool-skeleton admin-tool-skeleton--media"><div class="admin-tool-skeleton-toolbar">${line("admin-tool-skeleton-heading")}${line("admin-tool-skeleton-button")}</div><div class="admin-tool-skeleton-media-grid">${Array.from({ length: 8 }, () => `<div class="skeleton admin-tool-skeleton-media-card"></div>`).join("")}</div></div>`;
+  }
+
+  if (tool === "pages") {
+    return `<div class="admin-tool-skeleton admin-tool-skeleton--pages"><aside>${line("admin-tool-skeleton-heading")}${rows(6, "is-page")}</aside><section>${line("admin-tool-skeleton-detail-title")}${line("admin-tool-skeleton-input")}<div class="admin-tool-skeleton-page-blocks">${Array.from({ length: 4 }, () => `<div class="skeleton admin-tool-skeleton-page-block"></div>`).join("")}</div></section></div>`;
+  }
+
+  if (tool === "translations") {
+    return `<div class="admin-tool-skeleton admin-tool-skeleton--translations"><div class="admin-tool-skeleton-toolbar">${line("admin-tool-skeleton-search")}${line("admin-tool-skeleton-button")}</div><div class="admin-tool-skeleton-translation-header">${line()}${line()}${line()}</div>${Array.from({ length: 7 }, () => `<div class="admin-tool-skeleton-translation-row">${line("admin-tool-skeleton-row-title")}${line("admin-tool-skeleton-translation-copy")}${line("admin-tool-skeleton-translation-copy")}</div>`).join("")}</div>`;
+  }
+
+  if (tool === "analytics") {
+    return `<div class="admin-tool-skeleton admin-tool-skeleton--analytics"><div class="admin-tool-skeleton-stat-grid">${Array.from({ length: 4 }, () => `<div class="skeleton admin-tool-skeleton-stat"></div>`).join("")}</div><div class="skeleton admin-tool-skeleton-chart"></div></div>`;
+  }
+
+  if (tool === "audit-log") {
+    return `<div class="admin-tool-skeleton admin-tool-skeleton--audit"><div class="admin-tool-skeleton-toolbar">${line("admin-tool-skeleton-search")}${line("admin-tool-skeleton-button")}</div>${rows(8, "is-audit")}</div>`;
+  }
+
+  return `<div class="admin-tool-skeleton admin-tool-skeleton--timers"><div class="admin-tool-skeleton-toolbar">${line("admin-tool-skeleton-heading")}${line("admin-tool-skeleton-button")}</div><div class="admin-tool-skeleton-banner-list">${Array.from({ length: 5 }, () => `<div class="admin-tool-skeleton-banner">${line("admin-tool-skeleton-row-title")}${line("admin-tool-skeleton-banner-badge")}${line("admin-tool-skeleton-row-copy")}</div>`).join("")}</div></div>`;
+}
+
+function prepareEmbeddedAdminTool(frame) {
+  const document = frame.contentDocument;
+  if (!document) return;
+
+  document.addEventListener("click", (event) => {
+    const tab = event.target.closest("[data-admin-tab]");
+    const tool = tab?.dataset.adminTab;
+    if (!tool || !window.CMCENAdminTools) return;
+
+    event.preventDefault();
+    window.CMCENAdminTools.activate(tool);
+  });
+}
+
+function finishAdminToolLoading(frame) {
+  frame.adminToolLoading?.remove();
+  frame.adminToolLoading = null;
+  frame.classList.add("is-ready");
+}
+
+function waitForEmbeddedAdminTool(frame, tool) {
+  const document = frame.contentDocument;
+  if (!document) return;
+
+  const readySelectors = [
+    "#pagesAdminPage:not([hidden])",
+    "#timersAdminPage:not([hidden])",
+    "#analyticsPage:not([hidden])",
+    "#auditLogPage:not([hidden])",
+    "#translationsList:not([hidden])",
+    "#translationsMessage.is-empty",
+    ".dashboard-status.is-error",
+  ];
+  readySelectors.unshift(
+    tool === "subscriptions"
+      ? ".admin-subscriptions-panel"
+      : "#adminWorkZone:not([hidden])",
+  );
+  const readySelector = readySelectors.join(", ");
+  let observer = null;
+  const complete = () => {
+    observer?.disconnect();
+    finishAdminToolLoading(frame);
+  };
+  const check = () => {
+    if (document.querySelector(readySelector)) complete();
+  };
+
+  observer = new MutationObserver(check);
+  observer.observe(document.body, {
+    attributes: true,
+    childList: true,
+    subtree: true,
+  });
+  check();
+  window.setTimeout(complete, 12000);
+}
+
+async function loadAdminToolFrame(frame, tool) {
+  try {
+    const response = await fetch(getEmbeddedAdminToolUrl(tool), {
+      credentials: "same-origin",
+    });
+    if (!response.ok) throw new Error(`Could not load ${tool}`);
+
+    const document = new DOMParser().parseFromString(
+      await response.text(),
+      "text/html",
+    );
+    document.documentElement.classList.add("embedded-admin-tool");
+    const theme = window.document.documentElement.dataset.theme;
+    if (theme) document.documentElement.dataset.theme = theme;
+
+    const base = document.createElement("base");
+    base.href = `${window.location.origin}/`;
+    document.head.prepend(base);
+
+    const embeddedStyles = document.createElement("style");
+    embeddedStyles.textContent = `
+      #header, footer, #adminWorkZoneTabs { display: none !important; }
+      .dashboard-heading { display: none !important; }
+      .dashboard-main, .translations-admin-main { padding: 0 !important; }
+      .dashboard-shell, .admin-work-zone-dashboard-shell { width: 100% !important; }
+    `;
+    document.head.append(embeddedStyles);
+
+    const embeddedContext = document.createElement("script");
+    embeddedContext.textContent = `window.CMCENEmbeddedAdminTool = ${JSON.stringify(tool)};`;
+    document.head.prepend(embeddedContext);
+
+    frame.addEventListener(
+      "load",
+      () => {
+        syncEmbeddedAdminToolTheme(frame);
+        prepareEmbeddedAdminTool(frame);
+        waitForEmbeddedAdminTool(frame, tool);
+      },
+      { once: true },
+    );
+    frame.srcdoc = `<!doctype html>\n${document.documentElement.outerHTML}`;
+  } catch (error) {
+    frame.addEventListener(
+      "load",
+      () => {
+        finishAdminToolLoading(frame);
+      },
+      { once: true },
+    );
+    frame.srcdoc = `<!doctype html><html><body><p class="dashboard-status is-error">${
+      error.message || "Could not load this admin tool."
+    }</p></body></html>`;
+  }
+}
+
+function activateAdminTool(tool, { updateHistory = true } = {}) {
+  const nextTool = Object.hasOwn(adminToolPaths, tool) ? tool : "main";
+  if (!dashboardAdminToolsPanel) return;
+  activeAdminTool = nextTool;
+
+  dashboardAdminToolsPanel.hidden = nextTool === "main";
+  dashboardAdminToolsPanel.classList.toggle("is-active", nextTool !== "main");
+  dashboardContent.classList.toggle("is-admin-tool-active", nextTool !== "main");
+
+  adminToolFrames.forEach((frame, key) => {
+    frame.hidden = key !== nextTool;
+    frame.adminToolLoading?.toggleAttribute("hidden", key !== nextTool);
+  });
+
+  if (nextTool !== "main" && !adminToolFrames.has(nextTool)) {
+    const frame = document.createElement("iframe");
+    frame.className = "dashboard-admin-tool-frame";
+    frame.title = document.querySelector(
+      `[data-admin-tab="${CSS.escape(nextTool)}"]`,
+    )?.textContent || "Admin tool";
+    adminToolFrames.set(nextTool, frame);
+    showAdminToolLoading(frame, nextTool);
+    dashboardAdminToolsPanel.append(frame);
+    loadAdminToolFrame(frame, nextTool);
+  }
+
+  const activeFrame = adminToolFrames.get(nextTool);
+  if (activeFrame) activeFrame.hidden = false;
+  window.renderAdminWorkZoneTabs?.({ active: nextTool });
+
+  if (updateHistory) {
+    const url = new URL(window.location.href);
+    if (nextTool === "main") url.searchParams.delete("adminTool");
+    else url.searchParams.set("adminTool", nextTool);
+    window.history.pushState({ adminTool: nextTool }, "", url);
+  }
+}
+
+window.CMCENAdminTools = { activate: activateAdminTool };
+
+document.addEventListener("click", (event) => {
+  const tab = event.target.closest("[data-admin-tab]");
+  const tool = tab?.dataset.adminTab;
+  if (!tool) return;
+
+  event.preventDefault();
+  tab.closest(".admin-work-zone-section-options")?.remove();
+  activateAdminTool(tool);
+});
+
+window.addEventListener("popstate", () => {
+  activateAdminTool(getRequestedAdminTool(), { updateHistory: false });
+});
+
+new MutationObserver(() => {
+  adminToolFrames.forEach((frame) => syncEmbeddedAdminToolTheme(frame));
+}).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ["data-theme"],
+});
 
 const profileSelectOptions = {
   status: [
@@ -54,6 +360,13 @@ const profileSelectOptions = {
 
 function showDashboardLoading() {
   const message = translate("loading_text");
+  const hasAdminToolsLayout =
+    getRequestedAdminTool() !== "main" || getCachedDashboardAdminToolsLayout();
+
+  applyDashboardAdminToolsLayout(hasAdminToolsLayout);
+  dashboardHeading?.classList.add("is-loading");
+  dashboardHeading?.setAttribute("aria-busy", "true");
+  dashboardRoleSummary.hidden = true;
 
   dashboardStatus.replaceChildren(
     dashboardLoadingTemplate.content.cloneNode(true),
@@ -61,6 +374,9 @@ function showDashboardLoading() {
   dashboardStatus.className = "dashboard-status is-loading";
   dashboardStatus.setAttribute("aria-label", message);
   dashboardStatus.hidden = false;
+  dashboardStatus
+    .querySelector(".dashboard-loading-skeleton")
+    ?.classList.toggle("has-admin-tools", hasAdminToolsLayout);
   dashboardStatus.querySelector(".visually-hidden").textContent = message;
   dashboardContent.hidden = true;
 }
@@ -1122,7 +1438,7 @@ function createReviewQueuesUnavailable() {
 
 function createContentWorkspaceLink() {
   const link = document.createElement("a");
-  link.className = "dashboard-review-open-link";
+  link.className = "dashboard-review-manage-content";
   link.href = "/content-workspace";
   link.textContent = translate("dashboard_review_manage_content");
 
@@ -1133,6 +1449,8 @@ function renderDashboard(user) {
   const profileWasOpen = dashboardProfileDetails?.open === true;
 
   currentDashboardUser = user;
+  dashboardHeading?.classList.remove("is-loading");
+  dashboardHeading?.setAttribute("aria-busy", "false");
 
   const role = getRoleKey(user.role);
   const roleTitle = translate(`role_${role}`);
@@ -1181,6 +1499,23 @@ function renderDashboard(user) {
   );
 
   const actions = [];
+  const hasAdminToolsAccess =
+    !isGhost &&
+    [
+      "canReadUsers",
+      "canManageUsers",
+      "canManageRoles",
+      "canManagePages",
+      "canManageTimers",
+      "canViewMediaLibrary",
+      "canManageTranslations",
+      "canViewAuditLog",
+      "canViewAnalytics",
+      "canManageSubscriptions",
+    ].some((permission) => user.permissions?.[permission] === true);
+
+  rememberDashboardAdminToolsLayout(hasAdminToolsAccess);
+
   if (isGhost) {
     actions.push({
       href: "/submit-event",
@@ -1204,48 +1539,23 @@ function renderDashboard(user) {
       });
     }
 
-    const hasAdminWorkZoneAccess = [
-      "canReadUsers",
-      "canManageUsers",
-      "canManageRoles",
-      "canManagePages",
-      "canManageTimers",
-      "canViewMediaLibrary",
-      "canViewAuditLog",
-    ].some((permission) => user.permissions?.[permission] === true);
-
-    if (
-      user.permissions?.canManageTranslations === true &&
-      !hasAdminWorkZoneAccess
-    ) {
+    if (user.permissions?.canCreateDrafts === true) {
       actions.push({
-        href: "/translations-admin",
-        titleKey: "dashboard_action_manage_translations",
-        descriptionKey: "dashboard_action_manage_translations_description",
+        href: "/submit-last-post",
+        titleKey: "dashboard_action_submit_last_post",
+        descriptionKey: "dashboard_action_submit_last_post_description",
       });
     }
 
-    if (hasAdminWorkZoneAccess) {
-      actions.push({
-        href:
-          user.permissions?.canReadUsers === true ||
-          user.permissions?.canManageUsers === true
-            ? "/admin-users"
-            : user.permissions?.canManageRoles === true
-              ? "/admin-users?view=roles"
-              : user.permissions?.canManagePages === true
-                ? "/pages-admin"
-                : user.permissions?.canViewMediaLibrary === true
-                  ? "/admin-users?view=media"
-                  : user.permissions?.canViewAuditLog === true
-                    ? "/audit-log"
-                    : user.permissions?.canViewAnalytics === true
-                      ? "/analytics"
-                      : "/timers-admin",
-        titleKey: "dashboard_action_admin_work_zone",
-        descriptionKey: "dashboard_action_admin_work_zone_description",
-      });
+    if (hasAdminToolsAccess) {
+      window.updateAdminWorkZoneTabsForUser?.(user);
+      activateAdminTool(getRequestedAdminTool(), { updateHistory: false });
     }
+  }
+
+  if (!hasAdminToolsAccess) {
+    document.getElementById("adminWorkZoneTabs")?.replaceChildren();
+    document.getElementById("adminWorkZoneTabs")?.setAttribute("hidden", "");
   }
 
   dashboardActions.replaceChildren(...actions.map(createActionLink));
@@ -1336,6 +1646,8 @@ function renderDashboard(user) {
 }
 
 function showDashboardError(message) {
+  dashboardHeading?.classList.remove("is-loading");
+  dashboardHeading?.setAttribute("aria-busy", "false");
   dashboardStatus.replaceChildren();
   dashboardStatus.className = "dashboard-status";
   dashboardStatus.removeAttribute("aria-label");

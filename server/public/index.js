@@ -1770,7 +1770,7 @@ function updateAuthButtons() {
         class="utility-link account-link"
       >
         ${getAccountIcon()}
-        <span data-i18n="account">Account</span>
+        <span data-i18n="navbar_dashboard">Dashboard</span>
       </a>
     `;
 
@@ -1791,7 +1791,7 @@ function updateAuthButtons() {
         class="mobile-menu-account-link"
       >
         ${getAccountIcon()}
-        <span data-i18n="account">Account</span>
+        <span data-i18n="navbar_dashboard">Dashboard</span>
       </a>
 
       <button

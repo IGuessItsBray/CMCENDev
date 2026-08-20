@@ -721,6 +721,22 @@ async function loadTranslationsForEditing() {
   }
 }
 
+async function loadAdminToolsTabs() {
+  const token = getTranslationAdminToken();
+  if (!token || typeof window.updateAdminWorkZoneTabsForUser !== "function") {
+    return;
+  }
+
+  try {
+    const user = await translationApiJson("/api/me", token, {
+      errorMessage: translate("admin_verify_error"),
+    });
+    window.updateAdminWorkZoneTabsForUser(user);
+  } catch {
+    // The translations endpoint will present the relevant access error.
+  }
+}
+
 translationsSearch.addEventListener("input", () => {
   if (translationsSearch.value.trim()) {
     selectedTranslationCategory = "";
@@ -749,4 +765,5 @@ document.addEventListener("languagechange", () => {
   }
 });
 
+loadAdminToolsTabs();
 loadTranslationsForEditing();

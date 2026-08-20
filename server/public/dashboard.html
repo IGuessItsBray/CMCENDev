@@ -21,7 +21,17 @@
 
     <main class="dashboard-main account-dashboard-main">
       <section class="dashboard-shell" aria-labelledby="dashboardTitle">
-        <header class="dashboard-heading">
+        <header class="dashboard-heading is-loading" aria-busy="true">
+          <div class="dashboard-heading-loading" aria-hidden="true">
+            <span class="skeleton dashboard-heading-loading-eyebrow"></span>
+            <span class="skeleton dashboard-heading-loading-title"></span>
+          </div>
+
+          <div class="dashboard-heading-loading-role" aria-hidden="true">
+            <span class="skeleton dashboard-heading-loading-badge"></span>
+            <span class="skeleton dashboard-heading-loading-role-copy"></span>
+          </div>
+
           <div class="dashboard-heading-copy">
             <p class="dashboard-eyebrow" data-i18n="dashboard_member_account">
               Member account
@@ -60,6 +70,17 @@
 
         <template id="dashboardLoadingTemplate">
           <div class="dashboard-loading-skeleton" aria-hidden="true">
+            <div class="dashboard-loading-admin-tabs">
+              <span class="skeleton"></span>
+              <span class="skeleton"></span>
+              <span class="skeleton"></span>
+              <span class="skeleton"></span>
+              <span class="skeleton"></span>
+              <span class="skeleton"></span>
+              <span class="skeleton"></span>
+              <span class="skeleton"></span>
+            </div>
+
             <div class="dashboard-loading-workspace">
               <section class="dashboard-loading-review-work">
                 <div class="dashboard-loading-section-heading">
@@ -110,6 +131,9 @@
                       class="skeleton dashboard-loading-review-label"
                     ></span>
                   </div>
+                  <span
+                    class="skeleton dashboard-loading-review-manage-content"
+                  ></span>
                 </div>
               </section>
 
@@ -170,6 +194,21 @@
         </template>
 
         <div class="dashboard-content" id="dashboardContent" hidden>
+          <nav
+            class="admin-work-zone-tabs dashboard-admin-tools-tabs"
+            id="adminWorkZoneTabs"
+            aria-label="Admin tools"
+            data-i18n-aria-label="admin_tools_tabs_label"
+            hidden
+          ></nav>
+
+          <section
+            class="dashboard-admin-tools-panel"
+            id="dashboardAdminToolsPanel"
+            aria-live="polite"
+            hidden
+          ></section>
+
           <section class="dashboard-workspace" id="dashboardWorkspace">
             <section
               class="dashboard-review-work"
@@ -483,6 +522,7 @@
     <script src="/timers.js"></script>
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
+    <script src="/admin-work-zone-tabs.js"></script>
     <script src="/validation-i18n.js"></script>
     <script src="/trade-options.js"></script>
     <script src="/dashboard.js"></script>

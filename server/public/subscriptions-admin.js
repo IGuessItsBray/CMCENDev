@@ -1,5 +1,6 @@
 (function () {
   if (
+    window.CMCENEmbeddedAdminTool !== "subscriptions" &&
     new URLSearchParams(window.location.search).get("view") !== "subscriptions"
   )
     return;
@@ -35,6 +36,7 @@
   }
   function render(data) {
     root.replaceChildren();
+    root.classList.add("is-subscriptions-view");
     const panel = document.createElement("section");
     panel.className = "admin-subscriptions-panel";
     const heading = document.createElement("div");
@@ -75,7 +77,11 @@
       body.append(row);
     });
     table.append(body);
-    panel.append(table);
+    const subscribers = document.createElement("section");
+    subscribers.className = "admin-subscriptions-members";
+    const subscribersTitle = document.createElement("h3");
+    subscribersTitle.textContent = "Subscribed members";
+    subscribers.append(subscribersTitle, table);
     const history = document.createElement("section");
     const historyTitle = document.createElement("h3");
     historyTitle.textContent = "Sent newsletters";
@@ -134,7 +140,10 @@
       "is-primary",
     );
     blast.append(blastTitle, subject, message, send);
-    panel.append(blast);
+    const newsletterTools = document.createElement("div");
+    newsletterTools.className = "admin-subscriptions-newsletter-tools";
+    newsletterTools.append(history, blast);
+    panel.append(subscribers, newsletterTools);
     root.append(panel);
   }
   async function load() {
@@ -144,6 +153,8 @@
       document.getElementById("adminWorkZone").hidden = false;
       render(data);
     } catch (error) {
+      status.className = "dashboard-status is-error";
+      status.hidden = false;
       status.textContent = error.message || "Could not load subscriptions";
     }
   }

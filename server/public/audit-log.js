@@ -719,15 +719,16 @@ function createAuditRefreshButton() {
   refresh.title = translate("admin_refresh");
   refresh.disabled = auditState.isLoading;
 
-  if (auditState.isLoading) {
-    const label = document.createElement("span");
-    label.className = "visually-hidden";
-    label.textContent = translate("audit_refreshing_label");
+  const label = document.createElement("span");
+  label.className = "audit-log-refresh-label";
+  label.textContent = translate(
+    auditState.isLoading ? "audit_refreshing_label" : "admin_refresh",
+  );
 
+  if (auditState.isLoading) {
     refresh.classList.add("is-loading");
     refresh.setAttribute("aria-label", translate("audit_refreshing_label"));
     refresh.title = translate("audit_refreshing_title");
-    refresh.append(label);
   }
 
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -764,7 +765,7 @@ function createAuditRefreshButton() {
   bottomArrow.setAttribute("d", "M21 21v-5h-5");
 
   icon.append(topPath, topArrow, bottomPath, bottomArrow);
-  refresh.prepend(icon);
+  refresh.append(icon, label);
   refresh.addEventListener("click", () => loadAuditLogs());
   return refresh;
 }

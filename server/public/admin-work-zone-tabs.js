@@ -1,6 +1,7 @@
 (function () {
   function translateAdminTab(key) {
     const fallbacks = {
+      admin_tab_main: "Account",
       admin_tab_users: "Users",
       admin_tab_roles: "Roles",
       admin_tab_pages: "Pages",
@@ -10,6 +11,7 @@
       admin_tab_analytics: "Analytics",
       admin_tab_timers: "Banners",
       admin_tab_subscriptions: "Subscriptions",
+      admin_tools_tabs_label: "Admin tools",
     };
     const translated =
       typeof window.translate === "function" ? window.translate(key) : key;
@@ -19,16 +21,21 @@
 
   const tabItems = [
     {
-      key: "subscriptions",
-      href: "/admin-users?view=subscriptions",
-      labelKey: "admin_tab_subscriptions",
-      permission: "canManageSubscriptions",
+      key: "main",
+      href: "/dashboard",
+      labelKey: "admin_tab_main",
     },
     {
       key: "users",
       href: "/admin-users",
       labelKey: "admin_tab_users",
       permission: "canReadUsers",
+    },
+    {
+      key: "subscriptions",
+      href: "/admin-users?view=subscriptions",
+      labelKey: "admin_tab_subscriptions",
+      permission: "canManageSubscriptions",
     },
     {
       key: "roles",
@@ -41,12 +48,13 @@
       href: "/pages-admin",
       labelKey: "admin_tab_pages",
       permission: "canManagePages",
+      hideOnMobile: true,
     },
     {
-      key: "media",
-      href: "/admin-users?view=media",
-      labelKey: "admin_tab_media",
-      permission: "canViewMediaLibrary",
+      key: "timers",
+      href: "/timers-admin",
+      labelKey: "admin_tab_timers",
+      permission: "canManageTimers",
     },
     {
       key: "translations",
@@ -55,10 +63,11 @@
       permission: "canManageTranslations",
     },
     {
-      key: "audit-log",
-      href: "/audit-log",
-      labelKey: "admin_tab_audit_log",
-      permission: "canViewAuditLog",
+      key: "media",
+      href: "/admin-users?view=media",
+      labelKey: "admin_tab_media",
+      permission: "canViewMediaLibrary",
+      hideOnMobile: true,
     },
     {
       key: "analytics",
@@ -67,10 +76,10 @@
       permission: "canViewAnalytics",
     },
     {
-      key: "timers",
-      href: "/timers-admin",
-      labelKey: "admin_tab_timers",
-      permission: "canManageTimers",
+      key: "audit-log",
+      href: "/audit-log",
+      labelKey: "admin_tab_audit_log",
+      permission: "canViewAuditLog",
     },
   ];
 
@@ -113,6 +122,10 @@
   function getActiveAdminWorkZoneTab() {
     const path = window.location.pathname;
     const params = new URLSearchParams(window.location.search);
+
+    if (path === "/dashboard") {
+      return params.get("adminTool") || "main";
+    }
 
     if (path === "/admin-users" && params.get("view") === "media") {
       return "media";
@@ -169,13 +182,23 @@
     )
       ? options.permissions
       : currentPermissions;
-    const visibleItems = tabItems.filter(
-      (item) =>
-        (!item.permission || !permissions || permissions[item.permission] === true) &&
-        (!compactAdminTabs.matches || !["pages", "media"].includes(item.key)),
+    const hasPermissions = permissions && typeof permissions === "object";
+    if (!hasPermissions) {
+      tabs.replaceChildren();
+      tabs.hidden = true;
+      return;
+    }
+
+    const permittedItems = tabItems.filter(
+      (item) => !item.permission || permissions[item.permission] === true,
     );
+    const visibleItems = compactAdminTabs.matches
+      ? permittedItems.filter((item) => item.hideOnMobile !== true)
+      : permittedItems;
 
     tabs.replaceChildren();
+    tabs.hidden = visibleItems.length <= 1;
+    if (tabs.hidden) return;
 
     if (compactAdminTabs.matches) {
       tabs.classList.add("is-mobile-select");
@@ -187,7 +210,7 @@
 
       const label = document.createElement("span");
       label.className = "admin-work-zone-tab-select-label";
-      label.textContent = "Admin section";
+      label.textContent = translateAdminTab("admin_tools_tabs_label");
 
       const menu = document.createElement("div");
       menu.className = "admin-work-zone-section-menu";
@@ -202,7 +225,7 @@
       const toggleLabel = document.createElement("span");
       toggleLabel.textContent = activeItem
         ? translateAdminTab(activeItem.labelKey)
-        : "Admin section";
+        : translateAdminTab("admin_tools_tabs_label");
       const chevron = document.createElement("span");
       chevron.className = "admin-work-zone-section-chevron";
       chevron.setAttribute("aria-hidden", "true");
@@ -216,7 +239,10 @@
       visibleItems.forEach((item) => {
         const option = document.createElement("a");
         option.className = "admin-work-zone-section-option";
-        option.href = item.href;
+        option.href =
+          item.key === "main"
+            ? "/dashboard"
+            : `/dashboard?adminTool=${encodeURIComponent(item.key)}`;
         option.textContent = translateAdminTab(item.labelKey);
         option.dataset.adminTab = item.key;
         if (item.key === active) {
@@ -227,12 +253,30 @@
 
       const positionOptions = () => {
         const rect = toggle.getBoundingClientRect();
+        const viewportPadding = 12;
+        const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+        const spaceAbove = rect.top - viewportPadding;
+        const menuHeight = optionsList.scrollHeight;
+        const openAbove =
+          menuHeight > spaceBelow && spaceAbove > spaceBelow;
+        const availableHeight = Math.max(
+          120,
+          openAbove ? spaceAbove : spaceBelow,
+        );
+        const top = openAbove
+          ? Math.max(viewportPadding, rect.top - 6 - Math.min(menuHeight, availableHeight))
+          : Math.min(
+              rect.bottom + 6,
+              window.innerHeight - viewportPadding - Math.min(menuHeight, availableHeight),
+            );
 
         Object.assign(optionsList.style, {
           position: "fixed",
-          top: `${Math.round(rect.bottom + 6)}px`,
+          top: `${Math.round(top)}px`,
           left: `${Math.round(rect.left)}px`,
           width: `${Math.round(rect.width)}px`,
+          maxHeight: `${Math.floor(availableHeight)}px`,
+          overflowY: "auto",
           zIndex: "2000",
         });
       };
@@ -253,9 +297,28 @@
         optionsList.removeAttribute("style");
       };
 
+      const repositionOpenMenu = () => {
+        if (optionsList.hidden) return;
+
+        const rect = toggle.getBoundingClientRect();
+        if (rect.bottom < 0 || rect.top > window.innerHeight) {
+          setMenuOpen(false);
+          return;
+        }
+
+        positionOptions();
+      };
+
       toggle.addEventListener("click", () => {
         setMenuOpen(toggle.getAttribute("aria-expanded") !== "true");
       });
+
+      window.addEventListener("scroll", repositionOpenMenu, {
+        capture: true,
+        passive: true,
+        signal,
+      });
+      window.addEventListener("resize", repositionOpenMenu, { signal });
 
       document.addEventListener(
         "pointerdown",
@@ -289,7 +352,10 @@
         const isActive = item.key === active;
 
         link.className = "admin-work-zone-tab";
-        link.href = item.href;
+        link.href =
+          item.key === "main"
+            ? "/dashboard"
+            : `/dashboard?adminTool=${encodeURIComponent(item.key)}`;
         link.dataset.adminTab = item.key;
         link.setAttribute("role", "tab");
         link.setAttribute("aria-selected", String(isActive));

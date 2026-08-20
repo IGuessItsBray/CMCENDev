@@ -305,6 +305,25 @@ svg {
   line-height: 1.65;
 }
 
+.footer-partner-link {
+  width: fit-content;
+  display: block;
+  margin-top: 22px;
+  border: 2px solid transparent;
+  line-height: 0;
+}
+
+.footer-partner-link:focus-visible {
+  border-color: var(--gold-500);
+  outline: 0;
+}
+
+.footer-partner-image {
+  width: 200px;
+  height: 200px;
+  display: block;
+}
+
 .footer-column h2 {
   position: relative;
   margin-bottom: 20px;
@@ -377,9 +396,18 @@ svg {
   margin-top: 24px;
 }
 
+@font-face {
+  font-family: 'ETmodules';
+  font-display: block;
+  src: url('/fonts/etmodules.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+}
+
 .footer-social-link {
+  width: 32px;
   min-height: 32px;
-  padding: 0 11px;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -393,9 +421,17 @@ svg {
 
 .footer-social-link:hover,
 .footer-social-link:focus-visible {
-  padding-left: 11px !important;
+  padding-left: 0 !important;
   border-color: var(--gold-500);
   color: var(--gold-200) !important;
+}
+
+.footer-social-icon {
+  font-family: 'ETmodules';
+  font-size: 17px;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
 }
 
 .footer-bottom {

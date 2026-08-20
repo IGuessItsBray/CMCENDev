@@ -40,6 +40,8 @@ let emailVerificationToken = "";
 let guestVerificationToken = "";
 const resetToken =
   new URLSearchParams(window.location.search).get("resetToken") || "";
+const loginNotice =
+  new URLSearchParams(window.location.search).get("notice") || "";
 
 function setLoginMessage(message, type = "error") {
   errorElement.textContent = message;
@@ -669,4 +671,11 @@ loginForm.addEventListener("submit", async (event) => {
 
 if (resetToken) {
   showResetPasswordForm("Choose a new password for your account.", "info");
+} else if (loginNotice === "td-insurance-members-only") {
+  setLoginMessage(
+    getLoginTranslation(
+      "td_insurance_login_required",
+      "You need to be logged in to view this item.",
+    ),
+  );
 }

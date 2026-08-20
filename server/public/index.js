@@ -467,8 +467,10 @@ function loadHeader() {
           </button>
 
           <a
-            href="/donate.html"
+            href="https://www.zeffy.com/en-CA/donation-form/be-a-monthly-donor-to-make-a-huge-difference-2"
             class="donate-link"
+            target="_blank"
+            rel="noopener"
             data-i18n="donate_now"
           >
             Donate
@@ -743,13 +745,24 @@ function loadHeader() {
 const footerSocialLinks = [
   {
     label: "Facebook",
-    url: "https://www.facebook.com/",
+    url: "https://www.facebook.com/RCMCE.CMCEN",
+    icon: "\ue093",
   },
   {
     label: "Instagram",
-    url: "https://www.instagram.com/",
+    url: "https://www.instagram.com/cmcen_rcmce/",
+    icon: "\ue09a",
+  },
+  {
+    label: "X (Twitter)",
+    url: "https://x.com/CMCEN_RCMCE",
+    icon: "\ue094",
   },
 ];
+
+const tdInsuranceUrl =
+  "https://www.tdinsurance.com/affinity/cmcen?campaignid=PONMEBAN179135";
+const tdInsuranceLoginUrl = "/login?notice=td-insurance-members-only";
 
 function loadFooter() {
   const footer = document.getElementById("footer");
@@ -764,8 +777,9 @@ function loadFooter() {
         class="footer-social-link"
         target="_blank"
         rel="noopener"
+        aria-label="${link.label}"
       >
-        ${link.label}
+        <span class="footer-social-icon" aria-hidden="true">${link.icon}</span>
       </a>
     `,
     )
@@ -822,6 +836,18 @@ function loadFooter() {
             Connecting members, supporting veterans,
             and preserving the history of the Branch.
           </p>
+
+          <a
+            class="footer-partner-link"
+            data-td-insurance-link
+            href="${tdInsuranceLoginUrl}"
+          >
+            <img
+              src="/images/td-insurance-membership.gif"
+              alt="TD Insurance: Get more out of your membership."
+              class="footer-partner-image"
+            />
+          </a>
             <button
   id="themeToggle"
   class="theme-toggle"
@@ -869,7 +895,12 @@ function loadFooter() {
             </li>
 
             <li>
-              <a href="/donate.html" data-i18n="donate_now">
+              <a
+                href="https://www.zeffy.com/en-CA/donation-form/be-a-monthly-donor-to-make-a-huge-difference-2"
+                target="_blank"
+                rel="noopener"
+                data-i18n="donate_now"
+              >
                 Donate
               </a>
             </li>
@@ -1054,6 +1085,27 @@ async function updateFooterVersion() {
 
 loadHeader();
 loadFooter();
+
+function updateTdInsuranceLink() {
+  const link = document.querySelector("[data-td-insurance-link]");
+
+  if (!link) {
+    return;
+  }
+
+  if (getStoredAuthToken()) {
+    link.href = tdInsuranceUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    return;
+  }
+
+  link.href = tdInsuranceLoginUrl;
+  link.removeAttribute("target");
+  link.removeAttribute("rel");
+}
+
+updateTdInsuranceLink();
 
 async function loadCustomNavigationItems() {
   try {
@@ -1774,6 +1826,7 @@ function updateAuthButtons() {
   }
 
   headerNotifications.hidden = !token;
+  updateTdInsuranceLink();
   applyCurrentLanguage();
 
   updateHeaderNotifications(

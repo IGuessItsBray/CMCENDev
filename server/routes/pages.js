@@ -24,12 +24,19 @@ const s3Client = require('../storage');
 const router = express.Router();
 const PAGE_SHELL_PATH = path.join(__dirname, '..', 'public', 'page.html');
 const PUBLIC_DIRECTORY = path.join(__dirname, '..', 'public');
+const CHANGELOG_PATH = path.join(__dirname, '..', '..', 'CHANGELOG.md');
 const NAV_GROUPS = Object.freeze(['about', 'doctrine', 'news', 'benefits']);
 const NAV_GROUP_LABELS = Object.freeze({
   about: { en: 'About', fr: 'À propos' },
   doctrine: { en: 'Doctrine', fr: 'Doctrine' },
   news: { en: 'News', fr: 'Nouvelles' },
   benefits: { en: 'Benefits', fr: 'Avantages' },
+});
+
+router.get('/changelog.md', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=300');
+  res.type('text/markdown');
+  res.sendFile(CHANGELOG_PATH);
 });
 const BLOCK_TYPES = new Set([
   'heading',

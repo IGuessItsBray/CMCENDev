@@ -183,6 +183,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VersionResponse"
+  /changelog.md:
+    get:
+      tags: [Site]
+      summary: Get the project changelog.
+      description: Serves the repository CHANGELOG.md used by the developer page.
+      security: []
+      responses:
+        "200":
+          description: Changelog in Markdown format.
+          content:
+            text/markdown:
+              schema:
+                type: string
   /api/client-config/plausible:
     get:
       tags: [System]

@@ -43,6 +43,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | Method | Path                   | Access        | Purpose                                                          |
 | ------ | ---------------------- | ------------- | ---------------------------------------------------------------- |
 | `GET`  | `/api/version`         | Public        | Return running build commit metadata: `{ commit, shortCommit }`. |
+| `GET`  | `/changelog.md`        | Public        | Return the repository changelog in Markdown for the developer page. |
 | `GET`  | `/api/data`            | Public        | Smoke-test response.                                             |
 | `GET`  | `/api/protected_data`  | Authenticated | Authenticated smoke-test response.                               |
 | `GET`  | `/trade-options.js`    | Public        | Browser runtime for shared trade option config.                  |

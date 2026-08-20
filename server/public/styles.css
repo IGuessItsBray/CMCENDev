@@ -2229,6 +2229,140 @@ a.dropdown-toggle {
   );
 }
 
+.developers-changelog > summary,
+.developers-changelog-release > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.developers-changelog {
+  max-width: 820px;
+}
+
+.developers-changelog > summary::-webkit-details-marker,
+.developers-changelog-release > summary::-webkit-details-marker {
+  display: none;
+}
+
+.developers-changelog > summary {
+  padding: 18px 20px;
+  border-left: 4px solid var(--gold-500);
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(213, 155, 39, 0.13),
+    rgba(238, 240, 242, 0.88)
+  );
+}
+
+.developers-changelog > summary::after,
+.developers-changelog-release > summary::after {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-right: 2px solid var(--navy-800);
+  border-bottom: 2px solid var(--navy-800);
+  content: '';
+  transform: rotate(45deg) translateY(-3px);
+  transition: transform 150ms ease;
+}
+
+.developers-changelog[open] > summary::after,
+.developers-changelog-release[open] > summary::after {
+  transform: rotate(225deg) translate(-2px, -1px);
+}
+
+.developers-changelog > summary:focus-visible,
+.developers-changelog-release > summary:focus-visible {
+  outline: 2px solid rgba(213, 155, 39, 0.7);
+  outline-offset: 3px;
+}
+
+.developers-changelog-summary-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.developers-changelog-title {
+  color: var(--navy-900);
+  font-family: var(--font-heading);
+  font-size: 24px;
+  line-height: 1.12;
+}
+
+.developers-changelog-description {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.developers-changelog-content {
+  padding: 18px 4px 0;
+}
+
+.developers-changelog-list {
+  display: grid;
+  gap: 10px;
+}
+
+.developers-changelog-release {
+  overflow: hidden;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 4px;
+}
+
+.developers-changelog-release > summary {
+  padding: 13px 16px;
+  background: var(--branch-grey-100);
+}
+
+.developers-changelog-version {
+  color: var(--navy-900);
+  font-weight: 900;
+}
+
+.developers-changelog-date {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.developers-changelog-release-content {
+  padding: 16px;
+}
+
+.developers-changelog-release-content h3 {
+  margin: 14px 0 8px;
+  color: var(--navy-900);
+  font-size: 16px;
+}
+
+.developers-changelog-release-content h3:first-child {
+  margin-top: 0;
+}
+
+.developers-changelog-release-content p {
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.developers-changelog-release-content ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.developers-changelog-release-content li + li {
+  margin-top: 5px;
+}
+
 /* ─────────────────────────────────────────────
    Public events calendar
    ───────────────────────────────────────────── */
@@ -20935,6 +21069,40 @@ html[data-theme='dark'] .developers-team-list li {
     rgba(69, 88, 142, 0.48),
     rgba(34, 45, 64, 0.88)
   );
+}
+
+html[data-theme='dark'] .developers-changelog > summary {
+  background: linear-gradient(
+    90deg,
+    rgba(213, 155, 39, 0.16),
+    rgba(34, 45, 64, 0.88)
+  );
+}
+
+html[data-theme='dark'] .developers-changelog-title,
+html[data-theme='dark'] .developers-changelog-version,
+html[data-theme='dark'] .developers-changelog-release-content h3 {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .developers-changelog-description,
+html[data-theme='dark'] .developers-changelog-date,
+html[data-theme='dark'] .developers-changelog-release-content p,
+html[data-theme='dark'] .developers-changelog-release-content ul {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .developers-changelog-release {
+  border-color: var(--dark-border);
+}
+
+html[data-theme='dark'] .developers-changelog-release > summary {
+  background: var(--dark-surface-2);
+}
+
+html[data-theme='dark'] .developers-changelog > summary::after,
+html[data-theme='dark'] .developers-changelog-release > summary::after {
+  border-color: var(--dark-text);
 }
 
 .theme-toggle {

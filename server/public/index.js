@@ -550,15 +550,6 @@ function loadHeader() {
 
   const mobileMenuToggle = document.getElementById("mobileMenuToggle");
   const primaryNavigation = document.getElementById("primaryNavigation");
-  const headerInner = header.querySelector(".header-identity-row .header-inner");
-  const headerUtilities = header.querySelector(".header-utilities");
-  const headerNotifications = document.getElementById("headerNotifications");
-
-  // Make notifications a top-level header control. Nested display: contents
-  // layouts can otherwise place it in a separate row on mobile Safari.
-  if (headerInner && headerUtilities && headerNotifications) {
-    headerInner.insertBefore(headerNotifications, headerUtilities);
-  }
 
   let suppressNextDesktopDropdownFocusOpen = false;
 

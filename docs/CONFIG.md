@@ -833,7 +833,7 @@ ENABLE_API_DOCS=true
 
 Do not copy development credentials into staging or production.
 
-## Docker Deployment Example
+## Docker Compose Deployment Example
 
 When CMCEN, MongoDB, and MinIO share a Docker network, internal service names
 may be used:
@@ -842,6 +842,17 @@ may be used:
 MONGO_URI=mongodb://mongo:27017/cmcen
 MINIO_ENDPOINT=http://minio:9000
 ```
+
+The repository's complete `compose.yml` supplies these internal values to the
+CMCEN container automatically. Keep the remaining CMCEN configuration in
+`server/.env`, and keep Compose-stack settings such as `CMCEN_IMAGE`, MinIO root
+credentials, and Plausible's `BASE_URL` and secret in the ignored root `.env`
+created from `compose.env.example`.
+
+The Compose stack creates the configured MinIO bucket and uses the same MinIO
+credentials for CMCEN. `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`,
+`MINIO_BUCKET_NAME`, `MONGO_URI`, and `MINIO_ENDPOINT` in `server/.env` are
+therefore overridden while that stack is running.
 
 Public browser-facing URLs must still use addresses reachable by end users:
 

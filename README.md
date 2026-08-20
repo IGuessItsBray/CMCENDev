@@ -102,6 +102,8 @@ dependency of the CMCEN application.
 | `server/scripts/migration/` | Current-site WordPress migration tools |
 | `api/schema/openapi.yaml` | OpenAPI schema |
 | `docs/CONFIG.md` | Environment-variable and deployment configuration reference |
+| `compose.yml` | Complete CMCEN, MongoDB, MinIO, and Plausible deployment stack |
+| `compose.env.example` | Safe template for the complete deployment stack's settings |
 | `docs/` | Developer and operational documentation |
 | `compose.dev.yml` | Local MongoDB and MinIO infrastructure |
 
@@ -132,6 +134,80 @@ http://localhost:3000
 
 The local infrastructure stack provides MongoDB and MinIO. Plausible is
 optional and does not need to be running for CMCEN development.
+
+## Complete Docker Compose Deployment
+
+`compose.yml` runs the complete single-host CMCEN stack from the published
+Forgejo package image:
+
+```text
+CMCEN, MongoDB, MinIO, Plausible, Plausible PostgreSQL, and ClickHouse
+```
+
+It is the supported container run method for an evaluation or a single-host
+deployment. It creates persistent Docker volumes for every data-bearing service
+and creates the CMCEN MinIO bucket automatically on first start.
+
+The CMCEN image is version-pinned in `compose.env.example`. Choose the intended
+published release tag before starting a new deployment; do not use an unpinned
+image tag for a persistent deployment.
+
+### Start the Complete Stack
+
+From the repository root:
+
+```sh
+cp compose.env.example .env
+cp .env.example server/.env
+```
+
+Edit `.env` and replace every MinIO and Plausible placeholder. Generate the
+Plausible secret with:
+
+```sh
+openssl rand -base64 48
+```
+
+Then configure `server/.env` according to [docs/CONFIG.md](docs/CONFIG.md).
+At minimum, set a strong `JWT_SECRET`, the public `APP_BASE_URL`, and the
+browser-accessible `MINIO_PUBLIC_ENDPOINT`. To enable analytics, also set:
+
+```dotenv
+PLAUSIBLE_DOMAIN=cmcen.example.ca
+PLAUSIBLE_API_URL=https://analytics.example.ca/api/event
+```
+
+The complete Compose stack overrides CMCEN's internal MongoDB and MinIO
+connection settings. Do not set those internal endpoints to host loopback
+addresses in `server/.env`; the Compose service names are used automatically.
+
+Start the services and check their state:
+
+```sh
+docker compose pull
+docker compose up -d
+docker compose ps
+```
+
+CMCEN is available at `http://127.0.0.1:3000` by default. Plausible is
+available at `http://127.0.0.1:8000`, MinIO's S3 endpoint at
+`http://127.0.0.1:9000`, and the MinIO console at `http://127.0.0.1:9001`.
+
+The default loopback bindings are deliberate. In a public deployment, configure
+an HTTPS reverse proxy for the CMCEN public URL, the Plausible `BASE_URL`, and
+the `MINIO_PUBLIC_ENDPOINT`. Do not expose MongoDB, the MinIO console,
+PostgreSQL, or ClickHouse to the public internet. Directly exposing the MinIO
+S3 endpoint requires careful access-policy review; this stack makes only the
+CMCEN media bucket anonymously readable so browsers can load published media.
+
+Stop the stack without removing data:
+
+```sh
+docker compose down
+```
+
+Do not use `docker compose down -v` unless you intentionally want to delete
+all CMCEN, MinIO, Plausible PostgreSQL, and ClickHouse data.
 
 ## Local Infrastructure
 
@@ -350,110 +426,23 @@ For CMCEN-side Plausible environment-variable configuration, see
 
 ### Deployment Model
 
-Plausible Community Edition maintains its own infrastructure stack.
+The complete repository Compose stack includes Plausible, PostgreSQL, and
+ClickHouse alongside the CMCEN services. It pins Plausible Community Edition to
+the upstream `v3.2.1` release and carries the upstream low-resource ClickHouse
+configuration needed for a small deployment.
 
-Do not add PostgreSQL or ClickHouse to the CMCEN MongoDB/MinIO Compose file
-solely for Plausible.
+Set `PLAUSIBLE_BASE_URL` and `PLAUSIBLE_SECRET_KEY_BASE` in the root `.env`
+before starting the stack. `PLAUSIBLE_SECRET_KEY_BASE` is a secret and must not
+be committed. Use the browser-accessible Plausible URL for `PLAUSIBLE_API_URL`,
+not an internal Docker address.
 
-Instead, run the official version-pinned Plausible Community Edition Compose
-project alongside CMCEN's infrastructure.
+After startup, open the configured Plausible `BASE_URL`, create the first user,
+and add the public CMCEN hostname as a site. The site domain must match
+`PLAUSIBLE_DOMAIN`; enter the hostname only, without `https://` or a path.
 
-A typical Docker host therefore contains:
-
-```text
-CMCEN infrastructure
-├── MongoDB
-└── MinIO
-
-Plausible infrastructure
-├── Plausible
-├── PostgreSQL
-└── ClickHouse
-```
-
-These can run on the same Docker host while remaining separate Compose projects
-and separate persistence domains.
-
-For larger or higher-availability deployments, they may instead run on
-different hosts.
-
-### Install Plausible Community Edition
-
-Use a version-pinned official Community Edition release.
-
-For example:
-
-```sh
-git clone -b v3.2.1 --single-branch \
-  https://github.com/plausible/community-edition.git plausible-ce
-
-cd plausible-ce
-```
-
-Create its environment file:
-
-```sh
-printf 'BASE_URL=https://analytics.example.ca\n' > .env
-printf 'SECRET_KEY_BASE=%s\n' "$(openssl rand -base64 48)" >> .env
-```
-
-`SECRET_KEY_BASE` is a Plausible secret. Protect the Plausible `.env` file and
-do not commit it.
-
-For local evaluation, Plausible can instead use a localhost `BASE_URL`.
-
-### Reverse Proxy Deployment
-
-When an existing reverse proxy handles HTTPS, expose Plausible only on a local
-host port.
-
-For example, create `compose.override.yml` in the Plausible checkout:
-
-```yaml
-services:
-  plausible:
-    ports:
-      - "127.0.0.1:8000:8000"
-```
-
-The exact internal port must match the Plausible `HTTP_PORT` configuration.
-
-Configure the reverse proxy so:
-
-```text
-https://analytics.example.ca
-```
-
-forwards to:
-
-```text
-http://127.0.0.1:8000
-```
-
-The public hostname must match Plausible's configured `BASE_URL`.
-
-Do not publicly expose Plausible's PostgreSQL or ClickHouse services.
-
-### Start Plausible
-
-From the Plausible checkout:
-
-```sh
-docker compose up -d
-```
-
-Check its status:
-
-```sh
-docker compose ps
-```
-
-Then open its configured `BASE_URL`, create the first Plausible user, and add
-the public CMCEN hostname as a site.
-
-The site domain must match `PLAUSIBLE_DOMAIN`.
-
-Enter the hostname only, without `https://` or a path.
+For larger or higher-availability deployments, the analytics services may run
+on separate infrastructure. Keep their PostgreSQL and ClickHouse data isolated
+from CMCEN's MongoDB data in all cases.
 
 ### Configure CMCEN
 
@@ -520,15 +509,15 @@ Before upgrading:
 2. Read any migration instructions.
 3. Back up Plausible's persistent data.
 4. Review PostgreSQL or ClickHouse version changes.
-5. Update the version-pinned Plausible checkout.
-6. Run the upstream upgrade procedure.
+5. Update the version-pinned Plausible, PostgreSQL, or ClickHouse images in
+   `compose.yml` only when the upstream upgrade instructions require it.
+6. Run the applicable upstream upgrade procedure against the persistent
+   Compose volumes.
 7. Verify the dashboard and event ingestion after the upgrade.
 
-Plausible's Compose configuration should remain owned by the upstream
-Community Edition project whenever practical.
-
-Use `compose.override.yml` for local deployment customization rather than
-maintaining a modified copy of the upstream Compose file.
+The Plausible services and ClickHouse tuning files in this repository are based
+on the matching upstream Community Edition release. Review upstream Compose and
+configuration changes as part of every Plausible upgrade.
 
 ## Persistent Data And Backups
 
@@ -632,9 +621,9 @@ every 30 seconds.
 
 ## Production Deployment
 
-The development Compose examples in this repository are intended for local
-development and evaluation. They are not a complete production deployment
-configuration.
+`compose.dev.yml` is intended only for local development. The complete
+`compose.yml` stack is suitable for evaluation or a single-host deployment, but
+it still requires production operations around it.
 
 The production deployment should provide:
 

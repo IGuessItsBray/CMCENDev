@@ -1,0 +1,132 @@
+services:
+  cmcen:
+    image: ${CMCEN_IMAGE:?Set CMCEN_IMAGE in .env before starting the stack.}
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    environment:
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongo:27017/cmcen
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env.}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-cmcen}
+      MINIO_ENDPOINT: http://minio:9000
+    depends_on:
+      mongo:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "${CMCEN_BIND_ADDRESS:-127.0.0.1}:${CMCEN_PORT:-3000}:3000"
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env.}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.}
+    ports:
+      - "${MINIO_BIND_ADDRESS:-127.0.0.1}:${MINIO_PORT:-9000}:9000"
+      - "${MINIO_BIND_ADDRESS:-127.0.0.1}:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    image: minio/mc
+    restart: "no"
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env.}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-cmcen}
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        until mc alias set cmcen http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"; do
+          sleep 2
+        done
+        mc mb --ignore-existing "cmcen/$${MINIO_BUCKET_NAME}"
+        mc anonymous set download "cmcen/$${MINIO_BUCKET_NAME}"
+
+  plausible-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - plausible-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  plausible-events-db:
+    image: clickhouse/clickhouse-server:24.12-alpine
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_SKIP_USER_SETUP: "1"
+    volumes:
+      - plausible-event-data:/var/lib/clickhouse
+      - plausible-event-logs:/var/log/clickhouse-server
+      - ./plausible/clickhouse/logs.xml:/etc/clickhouse-server/config.d/logs.xml:ro
+      - ./plausible/clickhouse/ipv4-only.xml:/etc/clickhouse-server/config.d/ipv4-only.xml:ro
+      - ./plausible/clickhouse/low-resources.xml:/etc/clickhouse-server/config.d/low-resources.xml:ro
+      - ./plausible/clickhouse/default-profile-low-resources-overrides.xml:/etc/clickhouse-server/users.d/default-profile-low-resources-overrides.xml:ro
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 -O - http://127.0.0.1:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  plausible:
+    image: ghcr.io/plausible/community-edition:v3.2.1
+    restart: unless-stopped
+    command: sh -c "/entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
+    depends_on:
+      plausible-db:
+        condition: service_healthy
+      plausible-events-db:
+        condition: service_healthy
+    environment:
+      TMPDIR: /var/lib/plausible/tmp
+      BASE_URL: ${PLAUSIBLE_BASE_URL:?Set PLAUSIBLE_BASE_URL in .env.}
+      SECRET_KEY_BASE: ${PLAUSIBLE_SECRET_KEY_BASE:?Set PLAUSIBLE_SECRET_KEY_BASE in .env.}
+      HTTP_PORT: "8000"
+    ports:
+      - "${PLAUSIBLE_BIND_ADDRESS:-127.0.0.1}:${PLAUSIBLE_PORT:-8000}:8000"
+    volumes:
+      - plausible-data:/var/lib/plausible
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+
+volumes:
+  mongo-data:
+  minio-data:
+  plausible-db-data:
+  plausible-event-data:
+  plausible-event-logs:
+  plausible-data:

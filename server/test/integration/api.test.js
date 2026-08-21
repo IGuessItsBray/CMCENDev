@@ -264,6 +264,13 @@ describe('system and authentication', () => {
     assert.equal(missing.body.error, 'Endpoint not found');
   });
 
+  test('serves the public changelog as Markdown', async () => {
+    const response = await request(app).get('/changelog.md').expect(200);
+
+    assert.match(response.headers['content-type'], /^text\/markdown/u);
+    assert.match(response.text, /^# Changelog/mu);
+  });
+
   test('does not expose Plausible tracking until it is configured', async () => {
     const response = await request(app)
       .get('/api/client-config/plausible')

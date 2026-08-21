@@ -1352,6 +1352,38 @@ describe('authorization matrix and account integrity', () => {
     }
   });
 
+  test('excludes legacy cmcen.local accounts from user lists and exports', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const visibleUser = await createUser({
+      email: 'visible.member@example.test',
+      username: 'visible.member@example.test',
+    });
+    const legacyGhost = await createUser({
+      accountType: 'ghost',
+      role: 'ghost',
+      email: 'legacy-commenter@cmcen.local',
+      username: 'legacy-commenter',
+    });
+    const session = await login(administrator);
+
+    const list = await request(app)
+      .get('/api/admin/users?limit=100')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    const listedUserIds = list.body.users.map((user) => String(user._id));
+
+    assert.ok(listedUserIds.includes(String(visibleUser._id)));
+    assert.ok(!listedUserIds.includes(String(legacyGhost._id)));
+
+    const exportResponse = await request(app)
+      .get('/api/admin/users/export?format=csv')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    assert.match(exportResponse.text, /visible\.member@example\.test/);
+    assert.doesNotMatch(exportResponse.text, /legacy-commenter@cmcen\.local/);
+  });
+
   test('restricts Internal Beta role changes to developers', async () => {
     const administrator = await createUser({ role: 'administrator' });
     const developer = await createUser({ role: 'developer' });

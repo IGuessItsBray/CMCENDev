@@ -905,7 +905,7 @@ paths:
     get:
       tags: [Admin]
       summary: List users.
-      description: Returns lightweight user rows for the admin user manager. Use the user detail endpoint to load post summaries and editable detail for a selected user.
+      description: Returns lightweight user rows for the admin user manager, excluding legacy `@cmcen.local` attribution accounts. Use the user detail endpoint to load post summaries and editable detail for a selected user.
       x-permission: canReadUsers
       parameters:
         - name: query
@@ -920,6 +920,27 @@ paths:
       responses:
         "200":
           description: Users.
+  /api/admin/users/export:
+    get:
+      tags: [Admin]
+      summary: Export users.
+      description: Exports user records as CSV or PDF, excluding legacy `@cmcen.local` attribution accounts.
+      x-permission: canReadUsers
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv, pdf]
+        - name: includeRoles
+          in: query
+          schema: { type: string }
+        - name: includeAccountTypes
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: User export.
   /api/admin/users/{userId}:
     delete:
       tags: [Admin]

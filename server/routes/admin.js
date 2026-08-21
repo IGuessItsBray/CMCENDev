@@ -154,6 +154,7 @@ const MAX_MEDIA_PAGE_SIZE = 500;
 const MAX_MEDIA_LIST_OBJECTS = 5000;
 const DEFAULT_USER_PAGE_SIZE = 50;
 const MAX_USER_PAGE_SIZE = 100;
+const LEGACY_GHOST_EMAIL_SUFFIX = /@cmcen\.local$/i;
 const INVITATION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_INVITATION_MESSAGE_LENGTH = 2000;
 const USER_EXPORT_FORMATS = Object.freeze(['csv', 'pdf']);
@@ -1632,7 +1633,9 @@ function getUserExportCriteria(query = {}) {
     query.includeAccountTypes,
     USER_EXPORT_FILTER_OPTIONS.accountTypes,
   );
-  const filter = {};
+  const filter = {
+    email: { $not: LEGACY_GHOST_EMAIL_SUFFIX },
+  };
 
   if (hasIncludeRoles) {
     filter.role = { $in: includedRoles };
@@ -3001,6 +3004,7 @@ router.get(
 
       const filter = query
         ? {
+            email: { $not: LEGACY_GHOST_EMAIL_SUFFIX },
             $or: [
               { username: { $regex: query, $options: 'i' } },
               { accountName: { $regex: query, $options: 'i' } },
@@ -3009,7 +3013,7 @@ router.get(
               { lastName: { $regex: query, $options: 'i' } },
             ],
           }
-        : {};
+        : { email: { $not: LEGACY_GHOST_EMAIL_SUFFIX } };
 
       const users = await User.find(filter)
         .select(

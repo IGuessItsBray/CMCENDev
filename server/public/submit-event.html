@@ -12,6 +12,23 @@
       href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
     />
     <link rel="stylesheet" href="/styles.css" />
+    <script>
+      (() => {
+        const current = new URL(window.location.href);
+        const destination = new URL("/content-workspace", window.location.origin);
+        destination.searchParams.set("view", "mine");
+        destination.searchParams.set("type", "event");
+
+        const eventId = current.searchParams.get("id");
+        if (eventId) {
+          destination.searchParams.set("id", eventId);
+        } else {
+          destination.searchParams.set("new", "event");
+        }
+
+        window.location.replace(destination.pathname + destination.search);
+      })();
+    </script>
   </head>
 
   <body>

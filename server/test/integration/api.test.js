@@ -1676,6 +1676,88 @@ describe('event, page, and comment workflows', () => {
     assert.equal(publishedNotification.href, `/event?id=${event._id}`);
   });
 
+  test('keeps removed events unavailable to their original submitter', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorSession = await login(contributor);
+    const editorSession = await login(editor);
+    const now = new Date();
+    const pendingEvent = await Event.create({
+      ...eventPayload({
+        title: { en: 'Visible pending event', fr: 'Événement visible en attente' },
+      }),
+      createdBy: contributor._id,
+      status: 'pending',
+    });
+    const rejectedEvent = await Event.create({
+      ...eventPayload({
+        title: { en: 'Rejected event', fr: 'Événement refusé' },
+      }),
+      createdBy: contributor._id,
+      status: 'rejected',
+      rejectionReason: 'Please add the missing details.',
+      reviewedBy: editor._id,
+      reviewedAt: now,
+    });
+    const publishedEvent = await Event.create({
+      ...eventPayload({
+        title: { en: 'Published event', fr: 'Événement publié' },
+      }),
+      createdBy: contributor._id,
+      status: 'published',
+      reviewedBy: editor._id,
+      reviewedAt: now,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+    const hiddenEvent = await Event.create({
+      ...eventPayload({
+        title: { en: 'Removed event', fr: 'Événement retiré' },
+      }),
+      createdBy: contributor._id,
+      status: 'hidden',
+      hiddenFromStatus: 'pending',
+    });
+
+    const mine = await request(app)
+      .get('/api/events/mine')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    const eventIds = mine.body.events.map((event) => String(event._id));
+    assert.equal(eventIds.includes(String(pendingEvent._id)), true);
+    assert.equal(eventIds.includes(String(rejectedEvent._id)), true);
+    assert.equal(eventIds.includes(String(publishedEvent._id)), true);
+    assert.equal(eventIds.includes(String(hiddenEvent._id)), false);
+
+    await request(app)
+      .get(`/api/events/${hiddenEvent._id}/edit`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(404);
+
+    await request(app)
+      .get(`/api/events/${hiddenEvent._id}/edit`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+
+    await request(app)
+      .patch(`/api/events/${publishedEvent._id}`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(409);
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    const rejectedNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(rejectedEvent._id),
+    );
+    assert.equal(
+      rejectedNotification.href,
+      `/content-workspace?view=mine&type=event&id=${rejectedEvent._id}`,
+    );
+  });
+
   test('lets reviewers update one pending event language without changing its review state', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
@@ -1743,6 +1825,45 @@ describe('event, page, and comment workflows', () => {
       createdBy: editor._id,
       publishedBy: editor._id,
       publishedAt: now,
+    });
+    const missingFrenchLastPost = await LastPostMessage.create({
+      submitter: {
+        rank: 'Captain',
+        firstName: 'Editor',
+        lastName: 'Example',
+        email: 'editor@example.test',
+      },
+      deceased: {
+        fullRank: 'Corporal',
+        firstName: 'French',
+        surname: 'Missing',
+      },
+      messageLanguage: 'en',
+      messages: {
+        en: 'This Last Post notice is intentionally missing its French public copy.',
+        fr: '',
+      },
+      status: 'pending',
+      createdBy: editor._id,
+    });
+    const missingEnglishRetirementBase = retirementPayload();
+    const missingEnglishRetirement = await RetirementMessage.create({
+      ...missingEnglishRetirementBase,
+      retiree: {
+        ...missingEnglishRetirementBase.retiree,
+        firstName: 'English',
+        lastName: 'Missing',
+      },
+      message: translatedMessage('French-only content workspace'),
+      messageLanguage: 'fr',
+      messages: {
+        en: '',
+        fr: translatedMessage('French-only content workspace'),
+      },
+      status: 'pending',
+      createdBy: editor._id,
+      publicationConsent: { confirmed: true, confirmedAt: now },
+      memberReviewConfirmation: { confirmed: true, confirmedAt: now },
     });
     const retirementBase = retirementPayload();
     const retirementMessage = await RetirementMessage.create({
@@ -1871,8 +1992,56 @@ describe('event, page, and comment workflows', () => {
     assert.equal(focusedWorkspace.body.items.length, 1);
     assert.equal(String(focusedWorkspace.body.items[0]._id), String(event._id));
 
+    const searchedWorkspace = await request(app)
+      .get('/api/admin/content?type=event&search=published%20event%20correction')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(searchedWorkspace.body.items.length, 1);
+    assert.equal(String(searchedWorkspace.body.items[0]._id), String(event._id));
+
+    const missingEnglishWorkspace = await request(app)
+      .get('/api/admin/content?type=retirementMessage&translation=missing-en')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.deepEqual(
+      missingEnglishWorkspace.body.items.map((item) => String(item._id)),
+      [String(missingEnglishRetirement._id)],
+    );
+
+    const missingFrenchWorkspace = await request(app)
+      .get('/api/admin/content?type=lastPost&translation=missing-fr')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.deepEqual(
+      missingFrenchWorkspace.body.items.map((item) => String(item._id)),
+      [String(missingFrenchLastPost._id)],
+    );
+
+    const missingAnyWorkspace = await request(app)
+      .get('/api/admin/content?translation=missing-any&status=pending')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.deepEqual(
+      new Set(missingAnyWorkspace.body.items.map((item) => String(item._id))),
+      new Set([
+        String(missingEnglishRetirement._id),
+        String(missingFrenchLastPost._id),
+      ]),
+    );
+
+    const commentTranslationWorkspace = await request(app)
+      .get('/api/admin/content?type=retirementComment&translation=missing-any')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(commentTranslationWorkspace.body.items.length, 0);
+
     await request(app)
       .get('/api/admin/content?id=' + event._id)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(400);
+
+    await request(app)
+      .get('/api/admin/content?translation=unknown')
       .set('Authorization', bearer(editorSession.body.token))
       .expect(400);
 
@@ -3048,7 +3217,7 @@ describe('media lifecycle', () => {
       .patch(`/api/events/${event._id}`)
       .set('Authorization', bearer(contributorSession.body.token))
       .send(eventPayload())
-      .expect(409);
+      .expect(404);
 
     await request(app)
       .patch(`/api/admin/events/${event._id}/restore`)

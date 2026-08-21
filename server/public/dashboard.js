@@ -1569,7 +1569,7 @@ function renderDashboard(user) {
 
   if (isGhost) {
     actions.push({
-      href: "/submit-event",
+      href: "/content-workspace?view=mine",
       titleKey: "dashboard_action_my_submissions",
       descriptionKey: "dashboard_action_my_submissions_description",
     });
@@ -1584,7 +1584,7 @@ function renderDashboard(user) {
 
     if (user.permissions?.canCreateDrafts === true) {
       actions.push({
-        href: "/submit-event",
+        href: "/content-workspace?view=mine&new=event",
         titleKey: "dashboard_action_submit_event",
         descriptionKey: "dashboard_action_submit_event_description",
       });

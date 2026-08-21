@@ -179,7 +179,7 @@ const navLinks = {
     items: [
       { route: "/calendar", i18n: "menu_news_option_1" },
       {
-        route: "/submit-event",
+        route: "/content-workspace?view=mine&new=event",
         i18n: "menu_news_option_2",
         permission: "canCreateDrafts",
       },

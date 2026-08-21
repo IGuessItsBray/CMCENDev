@@ -1134,7 +1134,7 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List content in the staff editorial workspace.
-      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type and lifecycle status, or narrowed to one record with `id` and a specific type. Includes the original status for removed records plus a rejection reason when applicable.
+      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, or narrowed to one record with `id` and a specific type. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable.
       x-permission: canReviewAndPublish
       parameters:
         - name: type
@@ -1147,6 +1147,18 @@ paths:
           schema:
             type: string
             enum: [all, draft, pending, published, rejected, hidden]
+        - name: translation
+          in: query
+          description: Filter for public copy with a missing English or French equivalent. Retirement comments have no bilingual public copy and are excluded when this filter is used.
+          schema:
+            type: string
+            enum: [all, missing-any, missing-en, missing-fr]
+        - name: search
+          in: query
+          description: Case-insensitive match against searchable titles, names, identifiers, and public text.
+          schema:
+            type: string
+            maxLength: 120
         - name: id
           in: query
           description: MongoDB ObjectId for a single record. Requires a specific `type` value.
@@ -1766,7 +1778,9 @@ paths:
   /api/events/mine:
     get:
       tags: [Events]
-      summary: List current user's events.
+      summary: List current user's non-hidden events.
+      description: Hidden events are not exposed to the original submitter.
+      x-permission: canCreateDrafts
       responses:
         "200":
           description: User events.
@@ -1783,7 +1797,7 @@ paths:
     patch:
       tags: [Events]
       summary: Update event.
-      description: Updates event content while preserving the original submitter record. Descriptions and registration instructions are limited to 10,000 characters per language.
+      description: Updates event content while preserving the original submitter record. Owners may update draft, pending, or rejected events only; published events require site staff, and hidden events return not found to a non-reviewer owner. Descriptions and registration instructions are limited to 10,000 characters per language.
       parameters:
         - $ref: "#/components/parameters/Id"
       requestBody:
@@ -1791,15 +1805,22 @@ paths:
       responses:
         "200":
           description: Updated event.
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/events/{id}/edit:
     get:
       tags: [Events]
       summary: Get event edit payload.
+      description: Hidden events return not found to a non-reviewer owner; reviewers retain access for moderation and restoration.
       parameters:
         - $ref: "#/components/parameters/Id"
       responses:
         "200":
           description: Event edit payload.
+        "404":
+          $ref: "#/components/responses/Error"
   /api/events/{eventId}/review-content:
     patch:
       tags: [Events]

@@ -270,12 +270,116 @@ const CONTENT_WORKSPACE_STATUSES = Object.freeze([
   'rejected',
   'hidden',
 ]);
+const CONTENT_WORKSPACE_TRANSLATION_FILTERS = Object.freeze([
+  'all',
+  'missing-any',
+  'missing-en',
+  'missing-fr',
+]);
+const CONTENT_WORKSPACE_SEARCH_MAX_LENGTH = 120;
 
 function getContentWorkspaceLimit(value) {
   const limit = Number.parseInt(value, 10);
 
   if (!Number.isInteger(limit) || limit < 1) return 50;
   return Math.min(limit, 100);
+}
+
+function cleanContentWorkspaceSearch(value) {
+  return String(value || '')
+    .trim()
+    .slice(0, CONTENT_WORKSPACE_SEARCH_MAX_LENGTH);
+}
+
+function getContentWorkspaceSearchFilter(type, searchPattern) {
+  if (!searchPattern) return {};
+
+  const searchFields = {
+    event: [
+      'title.en',
+      'title.fr',
+      'location.en',
+      'location.fr',
+      'description.en',
+      'description.fr',
+      'registration.en',
+      'registration.fr',
+      'city',
+      'provinceRegion',
+      'organizingEntity',
+      'eventType',
+    ],
+    retirementMessage: [
+      'retiree.rank',
+      'retiree.firstName',
+      'retiree.lastName',
+      'retiree.postNominals',
+      'retiree.tradeRole',
+      'messages.en',
+      'messages.fr',
+    ],
+    lastPost: [
+      'title',
+      'slug',
+      'deceased.fullRank',
+      'deceased.firstName',
+      'deceased.surname',
+      'deceased.postNominal',
+      'messages.en',
+      'messages.fr',
+    ],
+    retirementComment: ['body'],
+  }[type];
+
+  return searchFields
+    ? { $or: searchFields.map((field) => ({ [field]: searchPattern })) }
+    : {};
+}
+
+function getContentWorkspaceTranslationFilter(type, translation) {
+  const languages = {
+    'missing-any': ['en', 'fr'],
+    'missing-en': ['en'],
+    'missing-fr': ['fr'],
+  }[translation];
+  const localizedFields = {
+    event: ['title', 'location', 'description', 'registration'],
+    retirementMessage: ['messages'],
+    lastPost: ['messages'],
+  }[type];
+
+  if (!languages || !localizedFields) return {};
+
+  return {
+    $or: localizedFields.flatMap((field) =>
+      languages.map((language) => {
+        const sourceLanguage = language === 'en' ? 'fr' : 'en';
+
+        return {
+          [`${field}.${language}`]: { $in: ['', null] },
+          [`${field}.${sourceLanguage}`]: {
+            $exists: true,
+            $nin: ['', null],
+          },
+        };
+      }),
+    ),
+  };
+}
+
+function getContentWorkspaceRecordFilter(
+  contentFilter,
+  type,
+  searchPattern,
+  translation,
+) {
+  const filters = [
+    contentFilter,
+    getContentWorkspaceSearchFilter(type, searchPattern),
+    getContentWorkspaceTranslationFilter(type, translation),
+  ].filter((filter) => Object.keys(filter).length);
+
+  return filters.length === 1 ? filters[0] : { $and: filters };
 }
 
 function toContentWorkspaceItem(type, content) {
@@ -373,6 +477,8 @@ function toContentWorkspaceItem(type, content) {
 // GET /api/admin/content
 // Return a staff-only cross-content workspace, including submission metadata
 // needed to review the record without returning to the legacy review page.
+// Search and bilingual-completion filters are applied before each content type
+// is limited so staff can find records beyond the first mixed result set.
 router.get(
   '/content',
   authMiddleware,
@@ -381,6 +487,8 @@ router.get(
     try {
       const type = String(req.query.type || 'all');
       const status = String(req.query.status || 'all');
+      const translation = String(req.query.translation || 'all');
+      const search = cleanContentWorkspaceSearch(req.query.search);
       const contentId = String(req.query.id || '').trim();
       const limit = getContentWorkspaceLimit(req.query.limit);
 
@@ -390,6 +498,10 @@ router.get(
 
       if (status !== 'all' && !CONTENT_WORKSPACE_STATUSES.includes(status)) {
         return res.status(400).json({ error: 'Unsupported content status' });
+      }
+
+      if (!CONTENT_WORKSPACE_TRANSLATION_FILTERS.includes(translation)) {
+        return res.status(400).json({ error: 'Unsupported translation status' });
       }
 
       if (contentId && type === 'all') {
@@ -406,12 +518,25 @@ router.get(
         ...(status === 'all' ? {} : { status }),
         ...(contentId ? { _id: contentId } : {}),
       };
-      const types = type === 'all' ? CONTENT_WORKSPACE_TYPES : [type];
+      const searchPattern = search
+        ? new RegExp(escapeRegex(search), 'i')
+        : null;
+      const types = (type === 'all' ? CONTENT_WORKSPACE_TYPES : [type]).filter(
+        (contentType) =>
+          translation === 'all' || contentType !== 'retirementComment',
+      );
       const queries = [];
 
       if (types.includes('event')) {
         queries.push(
-          Event.find(contentFilter)
+          Event.find(
+            getContentWorkspaceRecordFilter(
+              contentFilter,
+              'event',
+              searchPattern,
+              translation,
+            ),
+          )
             .select(
               'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -434,7 +559,14 @@ router.get(
 
       if (types.includes('retirementMessage')) {
         queries.push(
-          RetirementMessage.find(contentFilter)
+          RetirementMessage.find(
+            getContentWorkspaceRecordFilter(
+              contentFilter,
+              'retirementMessage',
+              searchPattern,
+              translation,
+            ),
+          )
             .select(
               'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -455,7 +587,14 @@ router.get(
 
       if (types.includes('lastPost')) {
         queries.push(
-          LastPostMessage.find(contentFilter)
+          LastPostMessage.find(
+            getContentWorkspaceRecordFilter(
+              contentFilter,
+              'lastPost',
+              searchPattern,
+              translation,
+            ),
+          )
             .select(
               'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -480,7 +619,14 @@ router.get(
 
       if (types.includes('retirementComment')) {
         queries.push(
-          RetirementComment.find(contentFilter)
+          RetirementComment.find(
+            getContentWorkspaceRecordFilter(
+              contentFilter,
+              'retirementComment',
+              searchPattern,
+              translation,
+            ),
+          )
             .select(
               'retirementMessage author body status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -885,7 +1031,7 @@ function getMediaAttachmentMap(
       title: getEventTitle(event),
       status: event.status,
       field: 'imagePath',
-      href: `/submit-event?id=${encodeURIComponent(event._id)}`,
+      href: `/content-workspace?type=event&id=${encodeURIComponent(event._id)}`,
     });
   });
 
@@ -3180,7 +3326,7 @@ router.get(
           date: event.startDate,
           updatedAt: event.updatedAt,
           createdAt: event.createdAt,
-          href: `/submit-event?id=${encodeURIComponent(event._id)}`,
+          href: `/content-workspace?type=event&id=${encodeURIComponent(event._id)}`,
         })),
         ...retirementMessages.map((message) => ({
           _id: message._id,

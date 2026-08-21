@@ -303,7 +303,9 @@ function getReviewResultHref(type, item) {
   const id = encodeURIComponent(String(item._id));
 
   if (item.status === 'rejected') {
-    if (type === 'event') return `/submit-event?id=${id}`;
+    if (type === 'event') {
+      return `/content-workspace?view=mine&type=event&id=${id}`;
+    }
     if (type === 'retirementMessage') return `/submit-retirement?id=${id}`;
 
     const messageId = encodeURIComponent(

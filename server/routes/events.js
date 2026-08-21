@@ -877,6 +877,7 @@ router.get('/mine', authMiddleware, async (req, res) => {
 
     const events = await Event.find({
       createdBy: req.user._id,
+      status: { $ne: 'hidden' },
     })
       .select(
         [
@@ -969,6 +970,10 @@ router.get('/:id/edit', authMiddleware, async (req, res) => {
       });
     }
 
+    if (isOwner && !canReview && event.status === 'hidden') {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
     return res.json({
       event,
     });
@@ -1025,8 +1030,18 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     }
 
     if (event.status === 'hidden') {
+      if (isOwner && !canReview) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+
       return res.status(409).json({
         error: 'Restore this event before editing or publishing it',
+      });
+    }
+
+    if (isOwner && !canReview && event.status === 'published') {
+      return res.status(409).json({
+        error: 'Published events can only be changed by site staff',
       });
     }
 

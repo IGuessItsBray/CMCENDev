@@ -19471,7 +19471,7 @@ html[data-theme='dark'] .last-post-submit-button {
   font-weight: 700;
 }
 
-.content-workspace-filters select {
+.content-workspace-filters :is(input, select) {
   width: 100%;
   height: 32px;
   min-height: 32px;
@@ -19572,6 +19572,27 @@ html[data-theme='dark'] .last-post-submit-button {
   text-transform: none;
 }
 
+.content-workspace-new-event {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid var(--navy-800);
+  border-radius: 4px;
+  background: var(--navy-800);
+  color: var(--white);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.content-workspace-new-event:hover,
+.content-workspace-new-event:focus-visible {
+  border-color: var(--navy-950);
+  background: var(--navy-950);
+}
+
 .content-workspace-list-heading .content-workspace-filters {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -19636,6 +19657,7 @@ html[data-theme='dark'] .last-post-submit-button {
 }
 
 .content-workspace-record strong {
+  grid-column: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -19649,7 +19671,13 @@ html[data-theme='dark'] .last-post-submit-button {
   line-height: 1.35;
 }
 
+.content-workspace-translation-status {
+  grid-column: 1 / -1;
+}
+
 .content-workspace-status-badge {
+  grid-column: 2;
+  grid-row: 1;
   justify-self: start;
   align-self: start;
   padding: 7px 11px;
@@ -19896,6 +19924,24 @@ html[data-theme='dark'] .last-post-submit-button {
   margin: 0;
   color: var(--navy-900);
   font-size: 20px;
+}
+
+.content-workspace-member-event-intro {
+  max-width: 680px;
+  margin: -4px 0 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.content-workspace-member-published-notice {
+  max-width: 760px;
+  margin: 0;
+  padding: 13px 15px;
+  border-left: 3px solid var(--navy-800);
+  background: var(--branch-grey-100);
+  color: var(--navy-900);
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .content-workspace-record-form {
@@ -21017,6 +21063,19 @@ html[data-theme='dark'] .content-workspace-list-heading strong {
   color: var(--dark-text-soft);
 }
 
+html[data-theme='dark'] .content-workspace-new-event {
+  border-color: var(--gold-500);
+  background: rgba(213, 155, 39, 0.16);
+  color: var(--gold-200);
+}
+
+html[data-theme='dark'] .content-workspace-new-event:hover,
+html[data-theme='dark'] .content-workspace-new-event:focus-visible {
+  border-color: var(--gold-200);
+  background: var(--gold-500);
+  color: var(--navy-950);
+}
+
 html[data-theme='dark'] .content-workspace-record {
   border-color: var(--dark-border);
 }
@@ -21041,6 +21100,7 @@ html[data-theme='dark'] .content-workspace-review-prompt {
 
 html[data-theme='dark'] .content-workspace-record-meta,
 html[data-theme='dark'] .content-workspace-detail-info,
+html[data-theme='dark'] .content-workspace-member-event-intro,
 html[data-theme='dark'] .content-workspace-revision-meta,
 html[data-theme='dark'] .content-workspace-revisions,
 html[data-theme='dark'] .content-workspace-read-only,
@@ -21185,6 +21245,12 @@ html[data-theme='dark'] .content-workspace-record.is-selected {
 html[data-theme='dark'] .content-workspace-note {
   border-left-color: var(--gold-500);
   background: rgba(213, 155, 39, 0.1);
+}
+
+html[data-theme='dark'] .content-workspace-member-published-notice {
+  border-left-color: var(--gold-500);
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
 }
 
 html[data-theme='dark'] .content-workspace-shortcut {

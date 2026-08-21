@@ -20,13 +20,13 @@
     <main class="content-workspace-page">
       <section class="content-workspace-shell" aria-labelledby="contentWorkspaceTitle">
         <header class="content-workspace-heading">
-          <p class="content-workspace-eyebrow" data-i18n="content_workspace_eyebrow">
+          <p class="content-workspace-eyebrow" id="contentWorkspaceEyebrow" data-i18n="content_workspace_eyebrow">
             Editorial workspace
           </p>
           <h1 id="contentWorkspaceTitle" data-i18n="content_workspace_title">
             Manage content
           </h1>
-          <p data-i18n="content_workspace_intro">
+          <p id="contentWorkspaceIntro" data-i18n="content_workspace_intro">
             Review pending submissions, correct bilingual public copy, and publish, reject, remove, or restore content without losing its history.
           </p>
         </header>
@@ -37,6 +37,11 @@
           <aside class="content-workspace-list-panel" aria-label="Content records" data-i18n-aria-label="content_workspace_records">
             <div class="content-workspace-list-heading">
               <div class="content-workspace-filters" id="contentWorkspaceFilters" role="group" aria-label="Content filters" data-i18n-aria-label="content_workspace_filters">
+                <label>
+                  <span data-i18n="content_workspace_search">Search</span>
+                  <input id="contentWorkspaceSearch" name="search" type="search" maxlength="120" autocomplete="off" placeholder="Search title, name, or text" data-i18n-placeholder="content_workspace_search_placeholder" />
+                </label>
+
                 <label>
                   <span data-i18n="content_workspace_type">Content type</span>
                   <select id="contentWorkspaceType" name="type">
@@ -59,7 +64,20 @@
                     <option value="draft" data-i18n="content_workspace_draft">Draft</option>
                   </select>
                 </label>
+
+                <label>
+                  <span data-i18n="content_workspace_translation_status">Translation</span>
+                  <select id="contentWorkspaceTranslationFilter" name="translation">
+                    <option value="all" data-i18n="content_workspace_all_translation_statuses">All translation states</option>
+                    <option value="missing-any" data-i18n="translations_filter_missing_any">Needs a translation</option>
+                    <option value="missing-en" data-i18n="translations_filter_missing_english">Needs English</option>
+                    <option value="missing-fr" data-i18n="translations_filter_missing_french">Needs French</option>
+                  </select>
+                </label>
               </div>
+              <button class="content-workspace-new-event" id="contentWorkspaceNewEvent" type="button" hidden data-i18n="submit_new_event_tab">
+                Submit New Event
+              </button>
               <strong id="contentWorkspaceCount" aria-live="polite"></strong>
             </div>
             <div class="content-workspace-list" id="contentWorkspaceList"></div>

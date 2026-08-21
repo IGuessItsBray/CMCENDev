@@ -2,6 +2,18 @@ const contentWorkspaceType = document.getElementById("contentWorkspaceType");
 const contentWorkspaceStatusFilter = document.getElementById(
   "contentWorkspaceStatusFilter",
 );
+const contentWorkspaceSearch = document.getElementById("contentWorkspaceSearch");
+const contentWorkspaceTranslationFilter = document.getElementById(
+  "contentWorkspaceTranslationFilter",
+);
+const contentWorkspaceEyebrow = document.getElementById(
+  "contentWorkspaceEyebrow",
+);
+const contentWorkspaceTitle = document.getElementById("contentWorkspaceTitle");
+const contentWorkspaceIntro = document.getElementById("contentWorkspaceIntro");
+const contentWorkspaceNewEvent = document.getElementById(
+  "contentWorkspaceNewEvent",
+);
 const contentWorkspaceMessage = document.getElementById(
   "contentWorkspaceMessage",
 );
@@ -15,6 +27,8 @@ const contentWorkspaceState = {
   items: [],
   selectedId: "",
   requestedContentId: "",
+  mode: "review",
+  isCreatingEvent: false,
   user: null,
   isLoading: false,
   loadRequestId: 0,
@@ -61,6 +75,13 @@ const contentWorkspaceStatuses = new Set([
   "rejected",
   "hidden",
 ]);
+const contentWorkspaceTranslationStatuses = new Set([
+  "all",
+  "missing-any",
+  "missing-en",
+  "missing-fr",
+]);
+let contentWorkspaceSearchTimeout;
 
 function getText(key, fallback, replacements = {}) {
   const translated =
@@ -74,6 +95,63 @@ function getText(key, fallback, replacements = {}) {
 function setWorkspaceTranslatedText(element, key, fallback) {
   element.dataset.i18n = key;
   element.textContent = getText(key, fallback);
+}
+
+function isMemberContentWorkspace() {
+  return contentWorkspaceState.mode === "mine";
+}
+
+function updateContentWorkspaceModePresentation() {
+  const isMemberWorkspace = isMemberContentWorkspace();
+  const typeFilter = contentWorkspaceType.closest("label");
+  const translationFilter = contentWorkspaceTranslationFilter.closest("label");
+  const hiddenStatusOption = contentWorkspaceStatusFilter.querySelector(
+    'option[value="hidden"]',
+  );
+
+  typeFilter.hidden = isMemberWorkspace;
+  translationFilter.hidden = isMemberWorkspace;
+  contentWorkspaceNewEvent.hidden = !isMemberWorkspace;
+  hiddenStatusOption.hidden = isMemberWorkspace;
+
+  if (isMemberWorkspace && contentWorkspaceStatusFilter.value === "hidden") {
+    contentWorkspaceStatusFilter.value = "all";
+  }
+
+  if (isMemberWorkspace) {
+    setWorkspaceTranslatedText(
+      contentWorkspaceEyebrow,
+      "my_events_eyebrow",
+      "Event management",
+    );
+    setWorkspaceTranslatedText(
+      contentWorkspaceTitle,
+      "my_events_heading",
+      "My Events",
+    );
+    setWorkspaceTranslatedText(
+      contentWorkspaceIntro,
+      "my_events_intro",
+      "View and update events you have previously submitted.",
+    );
+    return;
+  }
+
+  setWorkspaceTranslatedText(
+    contentWorkspaceEyebrow,
+    "content_workspace_eyebrow",
+    "Editorial workspace",
+  );
+  setWorkspaceTranslatedText(
+    contentWorkspaceTitle,
+    "content_workspace_title",
+    "Manage content",
+  );
+  setWorkspaceTranslatedText(
+    contentWorkspaceIntro,
+    "content_workspace_intro",
+    "Review pending submissions, correct bilingual public copy, and publish, reject, remove, or restore content without losing its history.",
+  );
 }
 
 function getContentWorkspaceLanguage() {
@@ -125,6 +203,9 @@ function applyContentWorkspaceSearchParameters() {
   const searchParameters = new URLSearchParams(window.location.search);
   const type = searchParameters.get("type");
   const status = searchParameters.get("status");
+  const translation = searchParameters.get("translation");
+  const search = String(searchParameters.get("search") || "").slice(0, 120);
+  const createEvent = searchParameters.get("new") === "event";
   const contentId = String(searchParameters.get("id") || "").trim();
 
   if (contentWorkspaceTypes.has(type)) {
@@ -134,6 +215,16 @@ function applyContentWorkspaceSearchParameters() {
   if (contentWorkspaceStatuses.has(status)) {
     contentWorkspaceStatusFilter.value = status;
   }
+
+  if (contentWorkspaceTranslationStatuses.has(translation)) {
+    contentWorkspaceTranslationFilter.value = translation;
+  }
+
+  if (search) {
+    contentWorkspaceSearch.value = search;
+  }
+
+  contentWorkspaceState.isCreatingEvent = createEvent;
 
   if (contentId) {
     contentWorkspaceState.selectedId = contentId;
@@ -146,8 +237,21 @@ function updateContentWorkspaceSearchParameters({ includeSelection = false } = {
   const searchParameters = new URLSearchParams({
     type: contentWorkspaceType.value || "all",
     status: contentWorkspaceStatusFilter.value || "all",
+    translation: contentWorkspaceTranslationFilter.value || "all",
   });
-  if (includeSelection && contentWorkspaceState.selectedId) {
+  if (isMemberContentWorkspace()) {
+    searchParameters.set("view", "mine");
+    searchParameters.set("type", "event");
+    searchParameters.delete("translation");
+  }
+  const search = contentWorkspaceSearch.value.trim();
+
+  if (search) {
+    searchParameters.set("search", search);
+  }
+  if (isMemberContentWorkspace() && contentWorkspaceState.isCreatingEvent) {
+    searchParameters.set("new", "event");
+  } else if (includeSelection && contentWorkspaceState.selectedId) {
     searchParameters.set("id", contentWorkspaceState.selectedId);
   }
   url.search = searchParameters.toString();
@@ -165,6 +269,52 @@ function getItemTitle(item) {
   return String(item?.title || "").trim() || getText("content_workspace_untitled", "Untitled content");
 }
 
+function toMemberEventWorkspaceItem(event) {
+  const content = {
+    title: event.title || {},
+    location: event.location || {},
+    description: event.description || {},
+    registration: event.registration || {},
+    city: event.city || "",
+    provinceRegion: event.provinceRegion || "",
+    organizingEntity: event.organizingEntity || "",
+    eventType: event.eventType || "",
+    timezone: event.timezone || "",
+    startDate: event.startDate || null,
+    endDate: event.endDate || null,
+    allDay: event.allDay === true,
+    imagePath: event.imagePath || "",
+    publicationPermission: event.publicationPermission || {},
+  };
+
+  return {
+    _id: event._id,
+    type: "event",
+    status: event.status,
+    rejectionReason: event.rejectionReason || "",
+    updatedAt: event.updatedAt,
+    createdAt: event.createdAt,
+    title:
+      getLocalizedValue(content.title) ||
+      getText("my_events_untitled", "Untitled event"),
+    content,
+  };
+}
+
+function getMemberContentWorkspaceItems(items) {
+  const status = contentWorkspaceStatusFilter.value || "all";
+  const search = contentWorkspaceSearch.value.trim().toLocaleLowerCase();
+
+  return items.filter((item) => {
+    if (status !== "all" && item.status !== status) return false;
+
+    if (!search) return true;
+
+    return [item.title, item.content?.city, item.content?.provinceRegion]
+      .some((value) => String(value || "").toLocaleLowerCase().includes(search));
+  });
+}
+
 function getListItemTitle(item) {
   if (item?.type === "retirementMessage") {
     const retiree = item.content?.retiree || {};
@@ -176,6 +326,58 @@ function getListItemTitle(item) {
   }
 
   return getItemTitle(item);
+}
+
+function getContentWorkspaceMissingLanguages(item) {
+  const localizedFields = {
+    event: [
+      item.content?.title,
+      item.content?.location,
+      item.content?.description,
+      item.content?.registration,
+    ],
+    retirementMessage: [item.content?.messages],
+    lastPost: [item.content?.messages],
+  }[item?.type];
+
+  if (!localizedFields) return [];
+
+  return ["en", "fr"].filter((language) => {
+    const sourceLanguage = language === "en" ? "fr" : "en";
+
+    return localizedFields.some((field) => {
+      const value = String(field?.[language] || "").trim();
+      const sourceValue = String(field?.[sourceLanguage] || "").trim();
+
+      return !value && Boolean(sourceValue);
+    });
+  });
+}
+
+function setContentWorkspaceTranslationStatus(status, item) {
+  const missing = getContentWorkspaceMissingLanguages(item);
+  const languages = missing.map((language) =>
+    getText(
+      language === "en" ? "language_en" : "language_fr",
+      language === "en" ? "English" : "French",
+    ),
+  );
+
+  status.textContent = languages.length
+    ? `${getText("translations_missing_label", "Missing translation")}: ${languages.join(", ")}`
+    : "";
+}
+
+function createContentWorkspaceTranslationStatus(item) {
+  const missing = getContentWorkspaceMissingLanguages(item);
+
+  if (!missing.length) return null;
+
+  const status = document.createElement("p");
+  status.className =
+    "translation-row-status content-workspace-translation-status is-warning";
+  setContentWorkspaceTranslationStatus(status, item);
+  return status;
 }
 
 function formatWorkspaceDate(value) {
@@ -372,8 +574,16 @@ function renderContentWorkspaceList() {
     metadata.className = "content-workspace-record-meta";
     setRecordMetadata(metadata, item);
 
-    button.append(title, metadata, createStatusBadge(item.status));
+    button.append(title, metadata);
+    const translationStatus = createContentWorkspaceTranslationStatus(item);
+
+    if (translationStatus) {
+      button.append(translationStatus);
+    }
+
+    button.append(createStatusBadge(item.status));
     button.addEventListener("click", () => {
+      contentWorkspaceState.isCreatingEvent = false;
       contentWorkspaceState.selectedId = String(item._id);
       contentWorkspaceState.requestedContentId = "";
       updateContentWorkspaceSearchParameters({ includeSelection: true });
@@ -1100,6 +1310,272 @@ function createContentWorkspaceRecordEditor(item) {
   return section;
 }
 
+function getMemberEventEditorFields(item) {
+  const content = item?.content || {};
+  const localizedFields = [
+    ["title", "content_workspace_field_title", "Title", false],
+    ["location", "content_workspace_field_location", "Location", false],
+    [
+      "description",
+      "content_workspace_field_description",
+      "Description",
+      true,
+    ],
+    [
+      "registration",
+      "content_workspace_field_registration",
+      "Registration details",
+      true,
+    ],
+  ];
+  const fields = [];
+
+  ["en", "fr"].forEach((language) => {
+    localizedFields.forEach(([field, labelKey, label, multiline]) => {
+      fields.push(
+        createWorkspaceEditorField({
+          field: `${field}${language.toUpperCase()}`,
+          label: `${label} (${getText(
+            language === "en" ? "language_en" : "language_fr",
+            language === "en" ? "English" : "French",
+          )})`,
+          labelKey,
+          value: content[field]?.[language] || "",
+          multiline,
+        }),
+      );
+    });
+  });
+
+  const eventOptions = {
+    provinceRegion: [
+      "AB",
+      "BC",
+      "MB",
+      "NB",
+      "NL",
+      "NS",
+      "NT",
+      "NU",
+      "ON",
+      "PE",
+      "QC",
+      "SK",
+      "YT",
+      "International",
+    ].map((value) => getWorkspaceOption(value, `region_${value.toLowerCase()}`, value)),
+    organizingEntity: ["branch", "association", "foundation", "museum"].map(
+      (value) => getWorkspaceOption(value, `entity_${value}`, value),
+    ),
+    eventType: [
+      "conference",
+      "mess-function",
+      "ceremony",
+      "training",
+      "social",
+      "other",
+    ].map((value) =>
+      getWorkspaceOption(value, `event_type_${value.replace(/-/gu, "_")}`, value),
+    ),
+    timezone: [
+      "America/St_Johns",
+      "America/Halifax",
+      "America/Toronto",
+      "America/Winnipeg",
+      "America/Edmonton",
+      "America/Vancouver",
+    ].map((value) => getWorkspaceOption(value, "", value)),
+  };
+
+  fields.push(
+    createWorkspaceEditorField({
+      field: "city",
+      label: "City",
+      labelKey: "event_city",
+      value: content.city,
+      required: true,
+    }),
+    createWorkspaceEditorField({
+      field: "provinceRegion",
+      label: "Province or region",
+      labelKey: "event_province_region",
+      value: content.provinceRegion,
+      options: [getWorkspaceOption("", "event_select_option", "Select an option"), ...eventOptions.provinceRegion],
+      required: true,
+    }),
+    createWorkspaceEditorField({
+      field: "organizingEntity",
+      label: "Organizing entity",
+      labelKey: "event_organizing_entity",
+      value: content.organizingEntity,
+      options: [getWorkspaceOption("", "event_select_option", "Select an option"), ...eventOptions.organizingEntity],
+      required: true,
+    }),
+    createWorkspaceEditorField({
+      field: "eventType",
+      label: "Event type",
+      labelKey: "event_type",
+      value: content.eventType,
+      options: [getWorkspaceOption("", "event_select_option", "Select an option"), ...eventOptions.eventType],
+      required: true,
+    }),
+    createWorkspaceDateTimeField({
+      field: "startDate",
+      label: "Start date and time",
+      labelKey: "content_workspace_start_date_time",
+      value: content.startDate,
+      required: true,
+    }),
+    createWorkspaceDateTimeField({
+      field: "endDate",
+      label: "End date and time",
+      labelKey: "content_workspace_end_date_time",
+      value: content.endDate,
+    }),
+    createWorkspaceEditorField({
+      field: "timezone",
+      label: "Event timezone",
+      labelKey: "event_timezone",
+      value: content.timezone,
+      options: [getWorkspaceOption("", "event_select_option", "Select an option"), ...eventOptions.timezone],
+    }),
+    createWorkspaceEditorField({
+      field: "allDay",
+      label: "All-day event",
+      labelKey: "event_all_day",
+      type: "checkbox",
+      checked: content.allDay !== false,
+    }),
+    createWorkspaceEditorField({
+      field: "publicationPermissionConfirmed",
+      label:
+        "I confirm I have permission from the chain of command to publish this event.",
+      labelKey: "event_permission_confirmation",
+      type: "checkbox",
+      checked: content.publicationPermission?.confirmed === true,
+      required: true,
+    }),
+  );
+
+  return fields;
+}
+
+function getMemberEventPayload(formData) {
+  const allDay = formData.get("allDay") === "true";
+
+  return {
+    title: {
+      en: String(formData.get("titleEn") || ""),
+      fr: String(formData.get("titleFr") || ""),
+    },
+    location: {
+      en: String(formData.get("locationEn") || ""),
+      fr: String(formData.get("locationFr") || ""),
+    },
+    description: {
+      en: String(formData.get("descriptionEn") || ""),
+      fr: String(formData.get("descriptionFr") || ""),
+    },
+    registration: {
+      en: String(formData.get("registrationEn") || ""),
+      fr: String(formData.get("registrationFr") || ""),
+    },
+    city: String(formData.get("city") || ""),
+    provinceRegion: String(formData.get("provinceRegion") || ""),
+    organizingEntity: String(formData.get("organizingEntity") || ""),
+    eventType: String(formData.get("eventType") || ""),
+    timezone: allDay ? "" : String(formData.get("timezone") || ""),
+    startDate: getWorkspaceIsoDate(formData.get("startDate"), {
+      includeTime: !allDay,
+    }),
+    endDate: getWorkspaceIsoDate(formData.get("endDate"), {
+      includeTime: !allDay,
+    }),
+    allDay,
+    publicationPermissionConfirmed:
+      formData.get("publicationPermissionConfirmed") === "true",
+    contentArea: "general",
+    publishNow: false,
+  };
+}
+
+async function saveMemberEvent(item, form, button) {
+  const isNew = !item?._id;
+  const body = getMemberEventPayload(new FormData(form));
+
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  try {
+    const result = await contentWorkspaceApiJson(
+      isNew ? "/api/events" : `/api/events/${encodeURIComponent(item._id)}`,
+      {
+        method: isNew ? "POST" : "PATCH",
+        body,
+      },
+    );
+    contentWorkspaceState.isCreatingEvent = false;
+    contentWorkspaceState.selectedId = String(result.event?._id || "");
+    contentWorkspaceState.requestedContentId = contentWorkspaceState.selectedId;
+    updateContentWorkspaceSearchParameters({ includeSelection: true });
+    setWorkspaceMessage(
+      result.message ||
+        getText(
+          isNew ? "event_submit_success_pending" : "event_update_success_pending",
+          isNew
+            ? "Event submitted for review."
+            : "Event updated and submitted for review.",
+        ),
+      "success",
+    );
+    await loadContentWorkspace({ preserveSelection: true });
+  } catch (error) {
+    setWorkspaceMessage(error.message, "error");
+  } finally {
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+  }
+}
+
+function createMemberEventEditor(item = null) {
+  const section = document.createElement("section");
+  section.className = "content-workspace-record-editor";
+  const heading = document.createElement("h2");
+  setWorkspaceTranslatedText(
+    heading,
+    item ? "edit_event_heading" : "submit_event_heading",
+    item ? "Edit Event" : "Submit an Event",
+  );
+  const intro = document.createElement("p");
+  intro.className = "content-workspace-member-event-intro";
+  setWorkspaceTranslatedText(
+    intro,
+    item ? "edit_event_intro" : "submit_event_intro",
+    item
+      ? "Update this event and submit the changes for review."
+      : "Submit an event for review.",
+  );
+
+  const form = document.createElement("form");
+  form.className = "content-workspace-record-form";
+  form.append(...getMemberEventEditorFields(item));
+  const save = document.createElement("button");
+  save.type = "submit";
+  save.className = "admin-work-zone-button is-primary";
+  setWorkspaceTranslatedText(
+    save,
+    item ? "save_event_changes" : "submit_event_button",
+    item ? "Save Changes" : "Submit Event",
+  );
+  form.append(createWorkspaceFormActions(save));
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveMemberEvent(item, form, save);
+  });
+
+  section.append(heading, intro, form);
+  return section;
+}
+
 function createReadOnlyComment(item) {
   const notice = document.createElement("p");
   notice.className = "content-workspace-read-only";
@@ -1726,7 +2202,72 @@ function createRemovalActions(item) {
   return actions;
 }
 
+function createMemberPublishedNotice() {
+  const notice = document.createElement("p");
+  notice.className = "content-workspace-member-published-notice";
+  setWorkspaceTranslatedText(
+    notice,
+    "content_workspace_member_published_notice",
+    "Published events can only be changed by site staff.",
+  );
+  return notice;
+}
+
+function renderMemberContentWorkspaceDetail() {
+  contentWorkspaceDetail.replaceChildren();
+
+  if (contentWorkspaceState.isCreatingEvent) {
+    contentWorkspaceDetail.append(createMemberEventEditor());
+    return;
+  }
+
+  const item = getSelectedContentWorkspaceItem();
+
+  if (!item) {
+    const empty = document.createElement("p");
+    empty.className = "content-workspace-detail-empty";
+    setWorkspaceTranslatedText(
+      empty,
+      "my_events_empty",
+      "You have not submitted any events yet.",
+    );
+    contentWorkspaceDetail.append(empty);
+    return;
+  }
+
+  const header = document.createElement("header");
+  header.className = "content-workspace-detail-heading";
+  const title = document.createElement("h2");
+  title.textContent = getItemTitle(item);
+  const actions = document.createElement("div");
+  actions.className = "content-workspace-detail-actions";
+  actions.append(createStatusBadge(item.status));
+  const publicContentLink = createPublicContentLink(item);
+
+  header.append(title, createDetailInfo(item), actions);
+  if (publicContentLink) header.append(publicContentLink);
+  contentWorkspaceDetail.append(header);
+
+  const rejectionReason = createRejectionReason(item);
+  if (rejectionReason) {
+    contentWorkspaceDetail.append(rejectionReason);
+  }
+
+  if (["draft", "pending", "rejected"].includes(item.status)) {
+    contentWorkspaceDetail.append(createMemberEventEditor(item));
+    return;
+  }
+
+  contentWorkspaceDetail.append(createReadOnlyCopy(item));
+  contentWorkspaceDetail.append(createMemberPublishedNotice());
+}
+
 function renderContentWorkspaceDetail() {
+  if (isMemberContentWorkspace()) {
+    renderMemberContentWorkspaceDetail();
+    return;
+  }
+
   contentWorkspaceDetail.replaceChildren();
   const item = getSelectedContentWorkspaceItem();
 
@@ -2233,7 +2774,7 @@ async function changeContentVisibility(item, action) {
   }
 }
 
-async function loadContentWorkspace({
+async function loadMemberContentWorkspace({
   preserveSelection = false,
   updateSearchParameters = false,
 } = {}) {
@@ -2245,11 +2786,88 @@ async function loadContentWorkspace({
   contentWorkspaceState.isLoading = true;
   renderContentWorkspaceList();
 
+  try {
+    const data = await contentWorkspaceApiJson("/api/events/mine");
+    if (requestId !== contentWorkspaceState.loadRequestId) return;
+
+    const allItems = Array.isArray(data.events)
+      ? data.events.map(toMemberEventWorkspaceItem)
+      : [];
+    const previousSelection =
+      contentWorkspaceState.requestedContentId ||
+      (preserveSelection ? contentWorkspaceState.selectedId : "");
+    contentWorkspaceState.items = getMemberContentWorkspaceItems(allItems);
+    contentWorkspaceState.selectedId = contentWorkspaceState.isCreatingEvent
+      ? ""
+      : contentWorkspaceState.items.some(
+            (item) => String(item._id) === previousSelection,
+          )
+        ? previousSelection
+        : String(contentWorkspaceState.items[0]?._id || "");
+    contentWorkspaceState.requestedContentId = "";
+
+    if (contentWorkspaceState.selectedId) {
+      const detail = await contentWorkspaceApiJson(
+        `/api/events/${encodeURIComponent(contentWorkspaceState.selectedId)}/edit`,
+      );
+      if (requestId !== contentWorkspaceState.loadRequestId) return;
+
+      const detailItem = toMemberEventWorkspaceItem(detail.event || {});
+      contentWorkspaceState.items = contentWorkspaceState.items.map((item) =>
+        String(item._id) === String(detailItem._id) ? detailItem : item,
+      );
+    }
+
+    setWorkspaceMessage(
+      contentWorkspaceState.items.length || contentWorkspaceState.isCreatingEvent
+        ? ""
+        : getText("my_events_empty", "You have not submitted any events yet."),
+    );
+  } catch (error) {
+    if (requestId !== contentWorkspaceState.loadRequestId) return;
+
+    contentWorkspaceState.items = [];
+    contentWorkspaceState.selectedId = "";
+    setWorkspaceMessage(error.message, "error");
+  } finally {
+    if (requestId === contentWorkspaceState.loadRequestId) {
+      contentWorkspaceState.isLoading = false;
+      renderContentWorkspaceList();
+      renderContentWorkspaceDetail();
+    }
+  }
+}
+
+async function loadContentWorkspace({
+  preserveSelection = false,
+  updateSearchParameters = false,
+} = {}) {
+  if (isMemberContentWorkspace()) {
+    return loadMemberContentWorkspace({
+      preserveSelection,
+      updateSearchParameters,
+    });
+  }
+
+  if (updateSearchParameters) {
+    updateContentWorkspaceSearchParameters();
+  }
+
+  const requestId = ++contentWorkspaceState.loadRequestId;
+  contentWorkspaceState.isLoading = true;
+  renderContentWorkspaceList();
+
   const query = new URLSearchParams({
     type: contentWorkspaceType.value || "all",
     status: contentWorkspaceStatusFilter.value || "all",
+    translation: contentWorkspaceTranslationFilter.value || "all",
     limit: "100",
   });
+  const search = contentWorkspaceSearch.value.trim();
+
+  if (search) {
+    query.set("search", search);
+  }
   if (contentWorkspaceState.requestedContentId) {
     query.set("id", contentWorkspaceState.requestedContentId);
   }
@@ -2291,14 +2909,29 @@ async function loadContentWorkspace({
 async function initializeContentWorkspace() {
   try {
     const user = await contentWorkspaceApiJson("/api/me");
+    const canReview = user.permissions?.canReviewAndPublish === true;
+    const canCreateEvents = user.permissions?.canCreateDrafts === true;
+    const requestedView = new URLSearchParams(window.location.search).get(
+      "view",
+    );
 
-    if (user.permissions?.canReviewAndPublish !== true) {
+    if (!canReview && !canCreateEvents) {
       window.location.replace("/dashboard");
       return;
     }
 
     contentWorkspaceState.user = user;
+    contentWorkspaceState.mode =
+      !canReview || (requestedView === "mine" && canCreateEvents)
+        ? "mine"
+        : "review";
     applyContentWorkspaceSearchParameters();
+    if (isMemberContentWorkspace()) {
+      contentWorkspaceType.value = "event";
+    } else {
+      contentWorkspaceState.isCreatingEvent = false;
+    }
+    updateContentWorkspaceModePresentation();
     updateContentWorkspaceStatusFilterAppearance();
     await loadContentWorkspace();
   } catch (error) {
@@ -2307,6 +2940,7 @@ async function initializeContentWorkspace() {
 }
 
 function updateContentWorkspaceLanguage() {
+  updateContentWorkspaceModePresentation();
   updateContentWorkspaceStatusFilterAppearance();
   updateContentWorkspaceCount();
 
@@ -2321,6 +2955,14 @@ function updateContentWorkspaceLanguage() {
 
       if (item && metadata) {
         setRecordMetadata(metadata, item);
+      }
+
+      const translationStatus = record.querySelector(
+        ".content-workspace-translation-status",
+      );
+
+      if (item && translationStatus) {
+        setContentWorkspaceTranslationStatus(translationStatus, item);
       }
     });
 
@@ -2341,20 +2983,48 @@ function updateContentWorkspaceLanguage() {
 }
 
 contentWorkspaceType.addEventListener("change", () => {
+  contentWorkspaceState.isCreatingEvent = false;
   contentWorkspaceState.selectedId = "";
   contentWorkspaceState.requestedContentId = "";
   loadContentWorkspace({ updateSearchParameters: true });
 });
 
 contentWorkspaceStatusFilter.addEventListener("change", () => {
+  contentWorkspaceState.isCreatingEvent = false;
   contentWorkspaceState.selectedId = "";
   contentWorkspaceState.requestedContentId = "";
   updateContentWorkspaceStatusFilterAppearance();
   loadContentWorkspace({ updateSearchParameters: true });
 });
 
+contentWorkspaceTranslationFilter.addEventListener("change", () => {
+  contentWorkspaceState.isCreatingEvent = false;
+  contentWorkspaceState.selectedId = "";
+  contentWorkspaceState.requestedContentId = "";
+  loadContentWorkspace({ updateSearchParameters: true });
+});
+
+contentWorkspaceSearch.addEventListener("input", () => {
+  window.clearTimeout(contentWorkspaceSearchTimeout);
+  contentWorkspaceSearchTimeout = window.setTimeout(() => {
+    contentWorkspaceState.selectedId = "";
+    contentWorkspaceState.requestedContentId = "";
+    loadContentWorkspace({ updateSearchParameters: true });
+  }, 250);
+});
+
+contentWorkspaceNewEvent.addEventListener("click", () => {
+  contentWorkspaceState.isCreatingEvent = true;
+  contentWorkspaceState.selectedId = "";
+  contentWorkspaceState.requestedContentId = "";
+  updateContentWorkspaceSearchParameters();
+  renderContentWorkspaceList();
+  renderContentWorkspaceDetail();
+});
+
 document.addEventListener("languagechange", updateContentWorkspaceLanguage);
 
+updateContentWorkspaceModePresentation();
 updateContentWorkspaceStatusFilterAppearance();
 renderContentWorkspaceDetail();
 initializeContentWorkspace();

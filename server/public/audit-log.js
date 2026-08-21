@@ -354,7 +354,7 @@ function getAuditTargetHref(log) {
   if (log.targetType === "event" && targetId) {
     return log.action === "content.published"
       ? `/event?id=${encodeURIComponent(targetId)}`
-      : `/submit-event?id=${encodeURIComponent(targetId)}`;
+      : `/content-workspace?type=event&id=${encodeURIComponent(targetId)}`;
   }
 
   if (log.targetType === "retirementMessage" && targetId) {

@@ -6731,7 +6731,7 @@ html[data-theme='dark'] .admin-subscriptions-panel p {
 
 .admin-work-zone-shell {
   display: grid;
-  grid-template-columns: minmax(300px, 0.72fr) minmax(520px, 1.28fr);
+  grid-template-columns: minmax(340px, 1fr) minmax(500px, 1.27fr);
   gap: 24px;
   align-items: start;
 }
@@ -6931,7 +6931,7 @@ html[data-theme='dark'] .admin-subscriptions-panel p {
 
 .admin-user-list {
   display: grid;
-  max-height: min(680px, calc(100vh - 360px));
+  max-height: min(736px, calc(100vh - 304px));
   overflow: auto;
   padding: 8px;
   gap: 6px;

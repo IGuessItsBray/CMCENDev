@@ -410,7 +410,7 @@ paths:
       summary: Get current rejections and unread externally reviewed approvals.
       responses:
         "200":
-          description: Notification summary with current action items, unread approval items, direct destinations, and read-through snapshot.
+          description: Notification summary with current action items, unread approval items, direct destinations, and read-through snapshot. Rejected events, retirement messages, and Last Post notices target their original submit form in edit mode.
   /api/notifications/read:
     post:
       tags: [Auth]
@@ -1134,7 +1134,7 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List content in the staff editorial workspace.
-      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, or narrowed to one record with `id` and a specific type. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable.
+      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, or narrowed to one record with `id`; when type is `all`, the record is resolved across all content types. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable.
       x-permission: canReviewAndPublish
       parameters:
         - name: type
@@ -1161,7 +1161,7 @@ paths:
             maxLength: 120
         - name: id
           in: query
-          description: MongoDB ObjectId for a single record. Requires a specific `type` value.
+          description: MongoDB ObjectId for a single record. May be used with a specific type or with `type=all`.
           schema:
             type: string
         - name: limit
@@ -1824,9 +1824,9 @@ paths:
   /api/events/{eventId}/review-content:
     patch:
       tags: [Events]
-      summary: Update one language of event content during review or publication.
-      description: Updates title, location, description, and registration text for one language on a pending or published event. A public-field revision and audit entry retain the before/after values.
-      x-permission: canReviewAndPublish
+      summary: Update one language of event content.
+      description: Reviewers may update title, location, description, and registration text for one language on a pending or published event. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected event; updating a rejected event sends it back to the review queue. A public-field revision and audit entry retain the before/after values.
+      x-permission: canReviewAndPublish or owner of a pending or rejected event
       parameters:
         - $ref: "#/components/parameters/EventId"
       requestBody:
@@ -1965,6 +1965,14 @@ paths:
       responses:
         "200":
           description: Last Post review queue.
+  /api/last-posts/mine:
+    get:
+      tags: [Last Posts]
+      summary: List current user's non-hidden Last Post notices.
+      x-permission: canCreateDrafts
+      responses:
+        "200":
+          description: User Last Post notices.
   /api/last-posts/{messageId}:
     get:
       tags: [Last Posts]
@@ -1977,12 +1985,45 @@ paths:
           description: Last Post notice.
         "404":
           $ref: "#/components/responses/Error"
+    patch:
+      tags: [Last Posts]
+      summary: Update a Last Post notice.
+      description: Owners may update pending or rejected notices only; published notices require site staff, and hidden notices return not found to a non-reviewer owner. The update may include deceased-member details, image, internal title, and slug. Saving a rejected notice clears its rejection result and submits the revised notice for review.
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/LastPostSubmission"
+      responses:
+        "200":
+          description: Updated Last Post notice.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/last-posts/{messageId}/edit:
+    get:
+      tags: [Last Posts]
+      summary: Get a Last Post notice for editing.
+      description: The original submitter may retrieve a non-hidden notice; reviewers may retrieve any notice for moderation.
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Last Post edit payload.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/last-posts/{messageId}/review-content:
     patch:
       tags: [Last Posts]
-      summary: Update one language of a Last Post notice during review or publication.
-      description: Updates one translation on a pending or published Last Post notice. A public-field revision and audit entry retain the before/after values.
-      x-permission: canReviewAndPublish
+      summary: Update one language of a Last Post notice.
+      description: Reviewers may update one translation on a pending or published Last Post notice. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected notice; updating a rejected notice sends it back to the review queue. A public-field revision and audit entry retain the before/after values.
+      x-permission: canReviewAndPublish or owner of a pending or rejected notice
       parameters:
         - $ref: "#/components/parameters/MessageId"
       requestBody:
@@ -2032,6 +2073,14 @@ paths:
       responses:
         "200":
           description: Review messages.
+  /api/retirement-messages/mine:
+    get:
+      tags: [Retirements]
+      summary: List current user's non-hidden retirement messages.
+      x-permission: canSubmitRetirementMessages
+      responses:
+        "200":
+          description: User retirement messages.
   /api/retirement-messages/comments/review:
     get:
       tags: [Retirements]
@@ -2094,7 +2143,7 @@ paths:
     patch:
       tags: [Retirements]
       summary: Update retirement message.
-      description: Updates retirement content while preserving the original submitter contact record; missing legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`. An optional complete `certificateRequest` creates a separate pending certificate-request record associated with the retirement message.
+      description: Updates retirement content while preserving the original submitter contact record and any existing text in the other language; missing legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`. An optional complete `certificateRequest` creates a separate pending certificate-request record associated with the retirement message.
       parameters:
         - $ref: "#/components/parameters/MessageId"
       requestBody:
@@ -2125,9 +2174,9 @@ paths:
   /api/retirement-messages/{messageId}/review-content:
     patch:
       tags: [Retirements]
-      summary: Update one language of a retirement message during review or publication.
-      description: Updates one translation on a pending or published retirement message. A public-field revision and audit entry retain the before/after values. Each saved message must contain at least 100 characters.
-      x-permission: canReviewAndPublish
+      summary: Update one language of a retirement message.
+      description: Reviewers may update one translation on a pending or published retirement message. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected message; updating a rejected message sends it back to the review queue. A public-field revision and audit entry retain the before/after values. Each saved message must contain at least 100 characters.
+      x-permission: canReviewAndPublish or owner of a pending or rejected message
       parameters:
         - $ref: "#/components/parameters/MessageId"
       requestBody:

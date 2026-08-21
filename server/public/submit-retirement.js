@@ -13,6 +13,13 @@ const retirementPublishNow = document.getElementById("retirementPublishNow");
 const retirementReviewNote = document.getElementById("retirementReviewNote");
 const retirementSubmitTitle = document.getElementById("submitEventTitle");
 const retirementSubmitIntro = document.getElementById("submitEventIntro");
+const retirementEditContext = document.getElementById("retirementEditContext");
+const retirementEditRejection = document.getElementById(
+  "retirementEditRejection",
+);
+const retirementEditRejectionReason = document.getElementById(
+  "retirementEditRejectionReason",
+);
 const retirementMessageLanguage = document.getElementById(
   "retirementMessageLanguage",
 );
@@ -74,6 +81,8 @@ const retirementPhotoCrop = CMCENUtils.createImageCropController({
 });
 
 let editingRetirementMessage = null;
+let editingRetirementMessages = {};
+let activeRetirementMessageLanguage = retirementMessageLanguage?.value || "en";
 let currentRetirementUser = null;
 let certificateFamilyMemberSequence = 0;
 
@@ -237,6 +246,8 @@ function updateRetirementFormModeText() {
       isEditing ? "retirement_save_changes" : "retirement_submit_button",
     );
   }
+
+  updateRetirementEditContext();
 }
 
 function getRetirementLanguage() {
@@ -757,6 +768,9 @@ async function uploadRetirementPhoto() {
 
 function buildRetirementMessageData(photoUrl = "", photoDisplayUrl = "") {
   const message = getFieldValue("retirementMessageText");
+  if (editingRetirementMessage) {
+    editingRetirementMessages[retirementMessageLanguage.value] = message;
+  }
   const memberReviewConfirmed = document.getElementById(
     "retirementMemberReviewConfirmed",
   ).checked;
@@ -968,16 +982,6 @@ function selectRetirementTradeRole(tradeRole) {
   }
 }
 
-function getRetirementMessageText(retirementMessage) {
-  return (
-    retirementMessage.message ||
-    retirementMessage.messages?.[retirementMessage.messageLanguage] ||
-    retirementMessage.messages?.en ||
-    retirementMessage.messages?.fr ||
-    ""
-  );
-}
-
 function populateRetirementForm(retirementMessage) {
   const retiree = retirementMessage.retiree || {};
   const submitter = retirementMessage.submitter || {};
@@ -991,18 +995,60 @@ function populateRetirementForm(retirementMessage) {
     formatDateInputValue(retiree.retirementDate),
   );
   selectRetirementTradeRole(retiree.tradeRole);
+  editingRetirementMessages = { ...(retirementMessage.messages || {}) };
+  activeRetirementMessageLanguage =
+    retirementMessage.messageLanguage || getRetirementLanguage();
   setRetirementField(
     "retirementMessageLanguage",
-    retirementMessage.messageLanguage || getRetirementLanguage(),
+    activeRetirementMessageLanguage,
   );
   setRetirementField(
     "retirementMessageText",
-    getRetirementMessageText(retirementMessage),
+    editingRetirementMessages[activeRetirementMessageLanguage] ||
+      retirementMessage.message ||
+      editingRetirementMessages.en ||
+      editingRetirementMessages.fr ||
+      "",
   );
   CMCENUtils.bindCharacterCounters();
+  setRetirementField("retirementSubmitterFirstName", submitter.firstName);
+  setRetirementField("retirementSubmitterLastName", submitter.lastName);
+  setRetirementField("retirementSubmitterEmail", submitter.email);
+  setRetirementField("retirementSubmitterUnit", submitter.unit);
   setRetirementField("retirementSubmitterRelationship", submitter.relationship);
   setRetirementCheckbox("retirementMemberReviewConfirmed", true);
   setRetirementCheckbox("retirementPublicationConsent", true);
+}
+
+function updateRetirementEditContext() {
+  const isEditing = Boolean(editingRetirementMessageId);
+  retirementEditContext.hidden = !isEditing;
+
+  const rejectionReason =
+    editingRetirementMessage?.status === "rejected"
+      ? String(editingRetirementMessage.rejectionReason || "").trim()
+      : "";
+  retirementEditRejection.hidden = !rejectionReason;
+  retirementEditRejectionReason.textContent = rejectionReason;
+}
+
+function switchRetirementMessageLanguage() {
+  const nextLanguage = retirementMessageLanguage.value;
+
+  if (!editingRetirementMessage || !["en", "fr"].includes(nextLanguage)) {
+    activeRetirementMessageLanguage = nextLanguage;
+    return;
+  }
+
+  editingRetirementMessages[activeRetirementMessageLanguage] = getFieldValue(
+    "retirementMessageText",
+  );
+  activeRetirementMessageLanguage = nextLanguage;
+  setRetirementField(
+    "retirementMessageText",
+    editingRetirementMessages[nextLanguage] || "",
+  );
+  CMCENUtils.bindCharacterCounters();
 }
 
 async function loadRetirementMessageForEditing() {
@@ -1018,15 +1064,8 @@ async function loadRetirementMessageForEditing() {
   editingRetirementMessage = data.retirementMessage;
   populateRetirementForm(editingRetirementMessage);
   renderRetirementDeleteAction();
-
-  if (editingRetirementMessage.rejectionReason) {
-    showRetirementFormMessage(
-      `${translate("my_events_rejection_reason")}: ${editingRetirementMessage.rejectionReason}`,
-      "error",
-    );
-  } else {
-    clearRetirementFormMessage();
-  }
+  updateRetirementEditContext();
+  clearRetirementFormMessage();
 }
 
 retirementSubmitForm.addEventListener("submit", async (event) => {
@@ -1091,9 +1130,26 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
       "success",
     );
 
+    if (editingRetirementMessageId) {
+      editingRetirementMessage = {
+        ...editingRetirementMessage,
+        ...(data.retirementMessage || {}),
+        messages: {
+          ...editingRetirementMessages,
+          ...(data.retirementMessage?.messages || {}),
+        },
+        status: data.retirementMessage?.status || "pending",
+        rejectionReason: "",
+      };
+      editingRetirementMessages = { ...editingRetirementMessage.messages };
+      updateRetirementEditContext();
+      renderRetirementDeleteAction();
+    }
+
     if (typeof window.refreshAuthUI === "function") {
       window.refreshAuthUI();
     }
+
   } catch (error) {
     showRetirementSubmissionToast(
       error.message || translate("retirement_submit_error"),
@@ -1111,6 +1167,11 @@ retireeTradeCategory.addEventListener("change", () => {
 certificateRequested.addEventListener("change", () => {
   setCertificateRequestActive(isCertificateRequestActive());
 });
+
+retirementMessageLanguage.addEventListener(
+  "change",
+  switchRetirementMessageLanguage,
+);
 
 addCertificateFamilyMember.addEventListener("click", () => {
   const card = createCertificateFamilyMemberCard();

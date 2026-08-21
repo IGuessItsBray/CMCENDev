@@ -303,10 +303,11 @@ function getReviewResultHref(type, item) {
   const id = encodeURIComponent(String(item._id));
 
   if (item.status === 'rejected') {
-    if (type === 'event') {
-      return `/content-workspace?view=mine&type=event&id=${id}`;
-    }
+    if (type === 'event') return `/submit-event?id=${id}`;
+
     if (type === 'retirementMessage') return `/submit-retirement?id=${id}`;
+
+    if (type === 'lastPost') return `/submit-last-post?id=${id}`;
 
     const messageId = encodeURIComponent(
       String(item.retirementMessage?._id || item.retirementMessage || ''),
@@ -385,6 +386,41 @@ async function getRetirementMessageReviewNotifications(user, lastReadAt) {
   };
 }
 
+function getLastPostNotificationTitle(lastPost) {
+  const deceased = lastPost.deceased || {};
+  const name = [deceased.fullRank, deceased.firstName, deceased.surname]
+    .filter(Boolean)
+    .join(' ');
+
+  return name ? `Last Post for ${name}` : 'Last Post notice';
+}
+
+async function getLastPostReviewNotifications(user, lastReadAt) {
+  const lastPosts = await LastPostMessage.find(
+    getReviewResultQuery('createdBy', user, lastReadAt),
+  )
+    .select('deceased status rejectionReason reviewedAt updatedAt')
+    .sort({ reviewedAt: -1 })
+    .lean();
+
+  return {
+    actionCount: lastPosts.filter((lastPost) => lastPost.status === 'rejected')
+      .length,
+    unreadCount: lastPosts.filter((lastPost) => lastPost.status === 'published')
+      .length,
+    items: lastPosts.map((lastPost) => ({
+      type: 'lastPost',
+      id: lastPost._id,
+      title: getLastPostNotificationTitle(lastPost),
+      status: lastPost.status,
+      reason: lastPost.rejectionReason || '',
+      updatedAt: lastPost.reviewedAt || lastPost.updatedAt,
+      editHref: getReviewResultHref('lastPost', lastPost),
+      href: getReviewResultHref('lastPost', lastPost),
+    })),
+  };
+}
+
 async function getRetirementCommentReviewNotifications(user, lastReadAt) {
   const comments = await RetirementComment.find(
     getReviewResultQuery('author', user, lastReadAt),
@@ -422,13 +458,14 @@ async function getNotificationSummary(user) {
   let actionCount = 0;
   let unreadCount = 0;
 
-  const [events, retirementMessages, retirementComments] = await Promise.all([
+  const [events, retirementMessages, lastPosts, retirementComments] = await Promise.all([
     getEventReviewNotifications(user, lastReadAt),
     getRetirementMessageReviewNotifications(user, lastReadAt),
+    getLastPostReviewNotifications(user, lastReadAt),
     getRetirementCommentReviewNotifications(user, lastReadAt),
   ]);
 
-  [events, retirementMessages, retirementComments].forEach((result) => {
+  [events, retirementMessages, lastPosts, retirementComments].forEach((result) => {
     actionCount += result.actionCount;
     unreadCount += result.unreadCount;
     items.push(...result.items);
@@ -464,19 +501,22 @@ async function getReviewResultCounts(Model, ownerField, user, lastReadAt) {
 
 async function getNotificationCounts(user) {
   const lastReadAt = user.notificationState?.lastReadAt || null;
-  const [events, retirementMessages, retirementComments] = await Promise.all([
+  const [events, retirementMessages, lastPosts, retirementComments] = await Promise.all([
     getReviewResultCounts(Event, 'createdBy', user, lastReadAt),
     getReviewResultCounts(RetirementMessage, 'createdBy', user, lastReadAt),
+    getReviewResultCounts(LastPostMessage, 'createdBy', user, lastReadAt),
     getReviewResultCounts(RetirementComment, 'author', user, lastReadAt),
   ]);
 
   const actionCount =
     events.actionCount +
     retirementMessages.actionCount +
+    lastPosts.actionCount +
     retirementComments.actionCount;
   const unreadCount =
     events.unreadCount +
     retirementMessages.unreadCount +
+    lastPosts.unreadCount +
     retirementComments.unreadCount;
 
   return {

@@ -11,9 +11,6 @@ const contentWorkspaceEyebrow = document.getElementById(
 );
 const contentWorkspaceTitle = document.getElementById("contentWorkspaceTitle");
 const contentWorkspaceIntro = document.getElementById("contentWorkspaceIntro");
-const contentWorkspaceNewEvent = document.getElementById(
-  "contentWorkspaceNewEvent",
-);
 const contentWorkspaceMessage = document.getElementById(
   "contentWorkspaceMessage",
 );
@@ -27,8 +24,6 @@ const contentWorkspaceState = {
   items: [],
   selectedId: "",
   requestedContentId: "",
-  mode: "review",
-  isCreatingEvent: false,
   user: null,
   isLoading: false,
   loadRequestId: 0,
@@ -97,46 +92,11 @@ function setWorkspaceTranslatedText(element, key, fallback) {
   element.textContent = getText(key, fallback);
 }
 
-function isMemberContentWorkspace() {
-  return contentWorkspaceState.mode === "mine";
+function canReviewContentWorkspace() {
+  return contentWorkspaceState.user?.permissions?.canReviewAndPublish === true;
 }
 
 function updateContentWorkspaceModePresentation() {
-  const isMemberWorkspace = isMemberContentWorkspace();
-  const typeFilter = contentWorkspaceType.closest("label");
-  const translationFilter = contentWorkspaceTranslationFilter.closest("label");
-  const hiddenStatusOption = contentWorkspaceStatusFilter.querySelector(
-    'option[value="hidden"]',
-  );
-
-  typeFilter.hidden = isMemberWorkspace;
-  translationFilter.hidden = isMemberWorkspace;
-  contentWorkspaceNewEvent.hidden = !isMemberWorkspace;
-  hiddenStatusOption.hidden = isMemberWorkspace;
-
-  if (isMemberWorkspace && contentWorkspaceStatusFilter.value === "hidden") {
-    contentWorkspaceStatusFilter.value = "all";
-  }
-
-  if (isMemberWorkspace) {
-    setWorkspaceTranslatedText(
-      contentWorkspaceEyebrow,
-      "my_events_eyebrow",
-      "Event management",
-    );
-    setWorkspaceTranslatedText(
-      contentWorkspaceTitle,
-      "my_events_heading",
-      "My Events",
-    );
-    setWorkspaceTranslatedText(
-      contentWorkspaceIntro,
-      "my_events_intro",
-      "View and update events you have previously submitted.",
-    );
-    return;
-  }
-
   setWorkspaceTranslatedText(
     contentWorkspaceEyebrow,
     "content_workspace_eyebrow",
@@ -164,6 +124,10 @@ function getContentWorkspaceLocale() {
 
 function getContentWorkspaceToken() {
   return CMCENUtils.requireAuthToken();
+}
+
+function refreshContentWorkspaceNotifications() {
+  window.dispatchEvent(new Event("cmcen:content-updated"));
 }
 
 async function contentWorkspaceApiJson(path, options = {}) {
@@ -205,7 +169,6 @@ function applyContentWorkspaceSearchParameters() {
   const status = searchParameters.get("status");
   const translation = searchParameters.get("translation");
   const search = String(searchParameters.get("search") || "").slice(0, 120);
-  const createEvent = searchParameters.get("new") === "event";
   const contentId = String(searchParameters.get("id") || "").trim();
 
   if (contentWorkspaceTypes.has(type)) {
@@ -224,8 +187,6 @@ function applyContentWorkspaceSearchParameters() {
     contentWorkspaceSearch.value = search;
   }
 
-  contentWorkspaceState.isCreatingEvent = createEvent;
-
   if (contentId) {
     contentWorkspaceState.selectedId = contentId;
     contentWorkspaceState.requestedContentId = contentId;
@@ -239,19 +200,12 @@ function updateContentWorkspaceSearchParameters({ includeSelection = false } = {
     status: contentWorkspaceStatusFilter.value || "all",
     translation: contentWorkspaceTranslationFilter.value || "all",
   });
-  if (isMemberContentWorkspace()) {
-    searchParameters.set("view", "mine");
-    searchParameters.set("type", "event");
-    searchParameters.delete("translation");
-  }
   const search = contentWorkspaceSearch.value.trim();
 
   if (search) {
     searchParameters.set("search", search);
   }
-  if (isMemberContentWorkspace() && contentWorkspaceState.isCreatingEvent) {
-    searchParameters.set("new", "event");
-  } else if (includeSelection && contentWorkspaceState.selectedId) {
+  if (includeSelection && contentWorkspaceState.selectedId) {
     searchParameters.set("id", contentWorkspaceState.selectedId);
   }
   url.search = searchParameters.toString();
@@ -269,56 +223,24 @@ function getItemTitle(item) {
   return String(item?.title || "").trim() || getText("content_workspace_untitled", "Untitled content");
 }
 
-function toMemberEventWorkspaceItem(event) {
-  const content = {
-    title: event.title || {},
-    location: event.location || {},
-    description: event.description || {},
-    registration: event.registration || {},
-    city: event.city || "",
-    provinceRegion: event.provinceRegion || "",
-    organizingEntity: event.organizingEntity || "",
-    eventType: event.eventType || "",
-    timezone: event.timezone || "",
-    startDate: event.startDate || null,
-    endDate: event.endDate || null,
-    allDay: event.allDay === true,
-    imagePath: event.imagePath || "",
-    publicationPermission: event.publicationPermission || {},
-  };
-
-  return {
-    _id: event._id,
-    type: "event",
-    status: event.status,
-    rejectionReason: event.rejectionReason || "",
-    updatedAt: event.updatedAt,
-    createdAt: event.createdAt,
-    title:
-      getLocalizedValue(content.title) ||
-      getText("my_events_untitled", "Untitled event"),
-    content,
-  };
-}
-
-function getMemberContentWorkspaceItems(items) {
-  const status = contentWorkspaceStatusFilter.value || "all";
-  const search = contentWorkspaceSearch.value.trim().toLocaleLowerCase();
-
-  return items.filter((item) => {
-    if (status !== "all" && item.status !== status) return false;
-
-    if (!search) return true;
-
-    return [item.title, item.content?.city, item.content?.provinceRegion]
-      .some((value) => String(value || "").toLocaleLowerCase().includes(search));
-  });
-}
-
 function getListItemTitle(item) {
   if (item?.type === "retirementMessage") {
     const retiree = item.content?.retiree || {};
     const name = [retiree.rank, retiree.firstName, retiree.lastName]
+      .filter(Boolean)
+      .join(" ");
+
+    if (name) return name;
+  }
+
+  if (item?.type === "lastPost") {
+    const deceased = item.content?.deceased || {};
+    const name = [
+      deceased.fullRank,
+      deceased.firstName,
+      deceased.surname,
+      deceased.postNominal,
+    ]
       .filter(Boolean)
       .join(" ");
 
@@ -583,7 +505,6 @@ function renderContentWorkspaceList() {
 
     button.append(createStatusBadge(item.status));
     button.addEventListener("click", () => {
-      contentWorkspaceState.isCreatingEvent = false;
       contentWorkspaceState.selectedId = String(item._id);
       contentWorkspaceState.requestedContentId = "";
       updateContentWorkspaceSearchParameters({ includeSelection: true });
@@ -695,7 +616,7 @@ function getMessageForLanguage(item, language) {
   return String(messages[language] || "").trim();
 }
 
-function createLanguageEditor(item, language) {
+function createLanguageEditor(item, language, { resubmitting = false } = {}) {
   const languageName = getText(
     language === "en" ? "language_en" : "language_fr",
     language === "en" ? "English" : "French",
@@ -778,14 +699,16 @@ function createLanguageEditor(item, language) {
     );
   }
 
-  const noteField = createEditNoteField();
-  noteField.querySelector("textarea").value = getEditorDraftValue(
-    item,
-    language,
-    "revisionNote",
-    "",
-  );
-  group.append(noteField);
+  if (!resubmitting) {
+    const noteField = createEditNoteField();
+    noteField.querySelector("textarea").value = getEditorDraftValue(
+      item,
+      language,
+      "revisionNote",
+      "",
+    );
+    group.append(noteField);
+  }
 
   const actions = document.createElement("div");
   actions.className = "content-workspace-form-actions";
@@ -794,10 +717,16 @@ function createLanguageEditor(item, language) {
   save.type = "submit";
   setWorkspaceTranslatedText(
     save,
-    language === "en"
-      ? "content_workspace_save_english"
-      : "content_workspace_save_french",
-    language === "en" ? "Save English" : "Save French",
+    resubmitting
+      ? "content_workspace_save_and_resubmit"
+      : language === "en"
+        ? "content_workspace_save_english"
+        : "content_workspace_save_french",
+    resubmitting
+      ? "Save and resubmit"
+      : language === "en"
+        ? "Save English"
+        : "Save French",
   );
   actions.append(save);
   group.append(actions);
@@ -941,6 +870,7 @@ function createWorkspaceEditorField({
   options = [],
   checked = false,
   required = false,
+  disabled = false,
 }) {
   const labelElement = document.createElement("label");
   labelElement.className = "content-workspace-field";
@@ -985,6 +915,7 @@ function createWorkspaceEditorField({
 
   control.name = field;
   control.required = required;
+  control.disabled = disabled;
   if (type === "checkbox") {
     control.type = "checkbox";
     control.checked = checked;
@@ -1335,10 +1266,7 @@ function getMemberEventEditorFields(item) {
       fields.push(
         createWorkspaceEditorField({
           field: `${field}${language.toUpperCase()}`,
-          label: `${label} (${getText(
-            language === "en" ? "language_en" : "language_fr",
-            language === "en" ? "English" : "French",
-          )})`,
+          label,
           labelKey,
           value: content[field]?.[language] || "",
           multiline,
@@ -1513,7 +1441,6 @@ async function saveMemberEvent(item, form, button) {
         body,
       },
     );
-    contentWorkspaceState.isCreatingEvent = false;
     contentWorkspaceState.selectedId = String(result.event?._id || "");
     contentWorkspaceState.requestedContentId = contentWorkspaceState.selectedId;
     updateContentWorkspaceSearchParameters({ includeSelection: true });
@@ -1536,43 +1463,183 @@ async function saveMemberEvent(item, form, button) {
   }
 }
 
-function createMemberEventEditor(item = null) {
+function createMemberEventFormSection({
+  index,
+  headingKey,
+  heading,
+  introKey,
+  intro,
+  fields,
+}) {
   const section = document.createElement("section");
-  section.className = "content-workspace-record-editor";
-  const heading = document.createElement("h2");
-  setWorkspaceTranslatedText(
-    heading,
-    item ? "edit_event_heading" : "submit_event_heading",
-    item ? "Edit Event" : "Submit an Event",
-  );
-  const intro = document.createElement("p");
-  intro.className = "content-workspace-member-event-intro";
-  setWorkspaceTranslatedText(
-    intro,
-    item ? "edit_event_intro" : "submit_event_intro",
-    item
-      ? "Update this event and submit the changes for review."
-      : "Submit an event for review.",
-  );
+  section.className = "event-form-section event-section--full-bleed-heading";
+  const sectionHeading = document.createElement("header");
+  sectionHeading.className = "event-section-heading";
+  const sectionIndex = document.createElement("span");
+  sectionIndex.className = "event-section-index";
+  sectionIndex.textContent = index;
+  const copy = document.createElement("div");
+  const title = document.createElement("h2");
+  setWorkspaceTranslatedText(title, headingKey, heading);
+  const description = document.createElement("p");
+  setWorkspaceTranslatedText(description, introKey, intro);
+  copy.append(title, description);
+  sectionHeading.append(sectionIndex, copy);
 
+  const sectionContent = document.createElement("div");
+  sectionContent.className = "event-section-content";
+  const grid = document.createElement("div");
+  grid.className = "event-form-grid";
+  fields.forEach((field) => {
+    field.classList.add("event-field");
+    grid.append(field);
+  });
+  sectionContent.append(grid);
+  section.append(sectionHeading, sectionContent);
+  return section;
+}
+
+function createMemberEventCopySection(fields) {
+  const section = document.createElement("section");
+  section.className = "event-form-section event-section--full-bleed-heading";
+  const sectionHeading = document.createElement("header");
+  sectionHeading.className = "event-section-heading";
+  const sectionIndex = document.createElement("span");
+  sectionIndex.className = "event-section-index";
+  sectionIndex.textContent = "01";
+  const copy = document.createElement("div");
+  const title = document.createElement("h2");
+  setWorkspaceTranslatedText(
+    title,
+    "content_workspace_public_copy",
+    "Public copy",
+  );
+  const description = document.createElement("p");
+  setWorkspaceTranslatedText(
+    description,
+    "content_workspace_event_copy_intro",
+    "Provide the event content in English and French.",
+  );
+  copy.append(title, description);
+  sectionHeading.append(sectionIndex, copy);
+
+  const sectionContent = document.createElement("div");
+  sectionContent.className = "event-section-content";
+  const languages = document.createElement("div");
+  languages.className = "event-language-grid";
+
+  ["en", "fr"].forEach((language, index) => {
+    const panel = document.createElement("section");
+    panel.className = "event-language-panel";
+    const panelHeading = document.createElement("header");
+    panelHeading.className = "event-language-heading";
+    const panelHeadingCopy = document.createElement("div");
+    const languageCode = document.createElement("span");
+    languageCode.className = "event-language-code";
+    languageCode.textContent = language.toUpperCase();
+    const languageName = document.createElement("h2");
+    setWorkspaceTranslatedText(
+      languageName,
+      language === "en" ? "language_en" : "language_fr",
+      language === "en" ? "English" : "French",
+    );
+    panelHeadingCopy.append(languageCode, languageName);
+    panelHeading.append(panelHeadingCopy);
+    panel.append(panelHeading);
+
+    fields.slice(index * 4, index * 4 + 4).forEach((field) => {
+      field.classList.add("event-field");
+      panel.append(field);
+    });
+    languages.append(panel);
+  });
+
+  sectionContent.append(languages);
+  section.append(sectionHeading, sectionContent);
+  return section;
+}
+
+function createMemberEventAuthorization(item) {
+  const section = document.createElement("section");
+  section.className = "event-authorization-section";
+  const heading = document.createElement("header");
+  heading.className = "event-authorization-heading";
+  const copy = document.createElement("div");
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "event-section-eyebrow";
+  setWorkspaceTranslatedText(
+    eyebrow,
+    "event_authorization_eyebrow",
+    "Publication authorization",
+  );
+  const title = document.createElement("h2");
+  setWorkspaceTranslatedText(
+    title,
+    "event_authorization_heading",
+    "Chain-of-command confirmation",
+  );
+  copy.append(eyebrow, title);
+  heading.append(copy);
+
+  const label = document.createElement("label");
+  label.className = "event-authorization-checkbox";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.name = "publicationPermissionConfirmed";
+  input.value = "true";
+  input.required = true;
+  input.checked = item?.content?.publicationPermission?.confirmed === true;
+  const text = document.createElement("span");
+  const confirmation = document.createElement("strong");
+  setWorkspaceTranslatedText(
+    confirmation,
+    "event_permission_confirmation",
+    "I confirm I have permission from the chain of command to publish this event.",
+  );
+  text.append(confirmation);
+  label.append(input, text);
+  section.append(heading, label);
+  return section;
+}
+
+function createMemberEventEditor(item = null) {
+  const fields = getMemberEventEditorFields(item);
+  const copyFields = fields.slice(0, 8);
+  const detailsFields = fields.slice(8, -1);
+  const section = document.createElement("section");
+  section.className = "content-workspace-member-event-editor";
   const form = document.createElement("form");
-  form.className = "content-workspace-record-form";
-  form.append(...getMemberEventEditorFields(item));
+  form.className = "event-submit-form content-workspace-member-event-form";
+  form.append(
+    createMemberEventCopySection(copyFields),
+    createMemberEventFormSection({
+      index: "02",
+      headingKey: "content_workspace_event_details",
+      heading: "Event details",
+      introKey: "content_workspace_event_details_intro",
+      intro: "Add the location, schedule, and event information.",
+      fields: detailsFields,
+    }),
+    createMemberEventAuthorization(item),
+  );
   const save = document.createElement("button");
   save.type = "submit";
-  save.className = "admin-work-zone-button is-primary";
+  save.className = "event-submit-button";
   setWorkspaceTranslatedText(
     save,
     item ? "save_event_changes" : "submit_event_button",
     item ? "Save Changes" : "Submit Event",
   );
-  form.append(createWorkspaceFormActions(save));
+  const submitOptions = document.createElement("footer");
+  submitOptions.className = "event-submit-options";
+  submitOptions.append(save);
+  form.append(submitOptions);
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveMemberEvent(item, form, save);
   });
 
-  section.append(heading, intro, form);
+  section.append(form);
   return section;
 }
 
@@ -1973,7 +2040,7 @@ function createRejectionReason(item) {
 }
 
 function createContentWorkspaceReviewActions(item) {
-  if (item.status !== "pending") return null;
+  if (!canReviewContentWorkspace() || item.status !== "pending") return null;
 
   const route = contentWorkspaceReviewRoutes[item.type];
   if (!route) return null;
@@ -2202,72 +2269,7 @@ function createRemovalActions(item) {
   return actions;
 }
 
-function createMemberPublishedNotice() {
-  const notice = document.createElement("p");
-  notice.className = "content-workspace-member-published-notice";
-  setWorkspaceTranslatedText(
-    notice,
-    "content_workspace_member_published_notice",
-    "Published events can only be changed by site staff.",
-  );
-  return notice;
-}
-
-function renderMemberContentWorkspaceDetail() {
-  contentWorkspaceDetail.replaceChildren();
-
-  if (contentWorkspaceState.isCreatingEvent) {
-    contentWorkspaceDetail.append(createMemberEventEditor());
-    return;
-  }
-
-  const item = getSelectedContentWorkspaceItem();
-
-  if (!item) {
-    const empty = document.createElement("p");
-    empty.className = "content-workspace-detail-empty";
-    setWorkspaceTranslatedText(
-      empty,
-      "my_events_empty",
-      "You have not submitted any events yet.",
-    );
-    contentWorkspaceDetail.append(empty);
-    return;
-  }
-
-  const header = document.createElement("header");
-  header.className = "content-workspace-detail-heading";
-  const title = document.createElement("h2");
-  title.textContent = getItemTitle(item);
-  const actions = document.createElement("div");
-  actions.className = "content-workspace-detail-actions";
-  actions.append(createStatusBadge(item.status));
-  const publicContentLink = createPublicContentLink(item);
-
-  header.append(title, createDetailInfo(item), actions);
-  if (publicContentLink) header.append(publicContentLink);
-  contentWorkspaceDetail.append(header);
-
-  const rejectionReason = createRejectionReason(item);
-  if (rejectionReason) {
-    contentWorkspaceDetail.append(rejectionReason);
-  }
-
-  if (["draft", "pending", "rejected"].includes(item.status)) {
-    contentWorkspaceDetail.append(createMemberEventEditor(item));
-    return;
-  }
-
-  contentWorkspaceDetail.append(createReadOnlyCopy(item));
-  contentWorkspaceDetail.append(createMemberPublishedNotice());
-}
-
 function renderContentWorkspaceDetail() {
-  if (isMemberContentWorkspace()) {
-    renderMemberContentWorkspaceDetail();
-    return;
-  }
-
   contentWorkspaceDetail.replaceChildren();
   const item = getSelectedContentWorkspaceItem();
 
@@ -2298,6 +2300,7 @@ function renderContentWorkspaceDetail() {
 
   const canEditPublicCopy =
     item.type !== "retirementComment" &&
+    canReviewContentWorkspace() &&
     ["pending", "published"].includes(item.status);
 
   if (canEditPublicCopy) {
@@ -2335,7 +2338,9 @@ function renderContentWorkspaceDetail() {
     contentWorkspaceDetail.append(createReadOnlyCopy(item));
   }
 
-  const recordEditor = createContentWorkspaceRecordEditor(item);
+  const recordEditor = canReviewContentWorkspace()
+    ? createContentWorkspaceRecordEditor(item)
+    : null;
   if (recordEditor) {
     contentWorkspaceDetail.append(recordEditor);
   }
@@ -2352,30 +2357,32 @@ function renderContentWorkspaceDetail() {
     contentWorkspaceDetail.append(rejectionReason);
   }
 
-  const history = document.createElement("section");
-  history.className = "content-workspace-history";
-  const historyHeading = document.createElement("h2");
-  setWorkspaceTranslatedText(
-    historyHeading,
-    "content_workspace_history",
-    "Revision history",
-  );
-  const revisions = document.createElement("div");
-  revisions.className = "content-workspace-revisions";
-  setWorkspaceTranslatedText(
-    revisions,
-    "content_workspace_history_loading",
-    "Loading revision history…",
-  );
-  history.append(historyHeading, revisions);
-  contentWorkspaceDetail.append(history);
+  if (canReviewContentWorkspace()) {
+    const history = document.createElement("section");
+    history.className = "content-workspace-history";
+    const historyHeading = document.createElement("h2");
+    setWorkspaceTranslatedText(
+      historyHeading,
+      "content_workspace_history",
+      "Revision history",
+    );
+    const revisions = document.createElement("div");
+    revisions.className = "content-workspace-revisions";
+    setWorkspaceTranslatedText(
+      revisions,
+      "content_workspace_history_loading",
+      "Loading revision history…",
+    );
+    history.append(historyHeading, revisions);
+    contentWorkspaceDetail.append(history);
+    loadRevisionHistory(item, revisions);
+  }
 
   const removalActions = createRemovalActions(item);
   if (removalActions.childElementCount) {
     contentWorkspaceDetail.append(removalActions);
   }
 
-  loadRevisionHistory(item, revisions);
 }
 
 function getRevisionActor(revision) {
@@ -2601,19 +2608,21 @@ function getWorkspaceIsoDate(value, { includeTime = false } = {}) {
 
 function getContentWorkspaceRecordPayload(item, formData) {
   if (item.type === "event") {
+    const allDay = formData.get("allDay") === "true";
+
     return {
       city: String(formData.get("city") || ""),
       provinceRegion: String(formData.get("provinceRegion") || ""),
       organizingEntity: String(formData.get("organizingEntity") || ""),
       eventType: String(formData.get("eventType") || ""),
       startDate: getWorkspaceIsoDate(formData.get("startDate"), {
-        includeTime: true,
+        includeTime: !allDay,
       }),
       endDate: getWorkspaceIsoDate(formData.get("endDate"), {
-        includeTime: true,
+        includeTime: !allDay,
       }),
       timezone: String(formData.get("timezone") || ""),
-      allDay: formData.get("allDay") === "true",
+      allDay,
       contentArea: String(formData.get("contentArea") || "general"),
       imagePath: String(formData.get("imagePath") || ""),
     };
@@ -2657,9 +2666,76 @@ function getContentWorkspaceRecordPayload(item, formData) {
   return null;
 }
 
+function getSubmitterContentWorkspaceRecordPayload(item, formData) {
+  const details = getContentWorkspaceRecordPayload(item, formData);
+  if (!details) return null;
+
+  if (item.type === "event") {
+    return {
+      ...details,
+      title: { ...(item.content?.title || {}) },
+      description: { ...(item.content?.description || {}) },
+      location: { ...(item.content?.location || {}) },
+      registration: { ...(item.content?.registration || {}) },
+      publicationPermissionConfirmed: true,
+      publishNow: false,
+    };
+  }
+
+  if (item.type === "retirementMessage") {
+    const messages = item.content?.messages || {};
+    const messageLanguage = ["en", "fr"].includes(item.content?.messageLanguage)
+      ? item.content.messageLanguage
+      : messages.en
+        ? "en"
+        : "fr";
+
+    return {
+      ...details,
+      messageLanguage,
+      message: String(messages[messageLanguage] || ""),
+      submitter: {
+        relationship: String(item.content?.submitter?.relationship || "self"),
+      },
+      publicationConsentConfirmed: true,
+      memberReviewConfirmed: true,
+      publishNow: false,
+    };
+  }
+
+  if (item.type === "lastPost") {
+    const messages = item.content?.messages || {};
+    const messageLanguage = ["en", "fr"].includes(item.content?.messageLanguage)
+      ? item.content.messageLanguage
+      : messages.en
+        ? "en"
+        : "fr";
+
+    return {
+      deceased: details.deceased,
+      imageUrl: details.imageUrl,
+      imageDisplayUrl: details.imageDisplayUrl,
+      photoUrl: details.photoUrl,
+      title: details.title,
+      slug: details.slug,
+      messageLanguage,
+      message: String(messages[messageLanguage] || ""),
+      publicationPermissionConfirmed: true,
+      publishNow: false,
+    };
+  }
+
+  return null;
+}
+
+function getContentWorkspaceRecordSaveRoute(item) {
+  return contentWorkspaceEditRoutes[item.type];
+}
+
 async function saveContentWorkspaceRecord(item, form, button) {
-  const route = contentWorkspaceEditRoutes[item.type];
-  const body = getContentWorkspaceRecordPayload(item, new FormData(form));
+  const formData = new FormData(form);
+  const route = getContentWorkspaceRecordSaveRoute(item);
+  const body = getContentWorkspaceRecordPayload(item, formData);
   if (!route || !body) return;
 
   button.disabled = true;
@@ -2673,6 +2749,7 @@ async function saveContentWorkspaceRecord(item, form, button) {
       result.message || getText("content_workspace_details_saved", "Details saved."),
       "success",
     );
+    refreshContentWorkspaceNotifications();
     await loadContentWorkspace({ preserveSelection: true });
   } catch (error) {
     setWorkspaceMessage(error.message, "error");
@@ -2717,6 +2794,7 @@ async function saveContentLanguage(item, language, form, button) {
       result.message || getText("content_workspace_saved", "Content saved."),
       "success",
     );
+    refreshContentWorkspaceNotifications();
     contentWorkspaceState.editorDrafts.delete(
       getEditorDraftKey(item, language),
     );
@@ -2774,81 +2852,10 @@ async function changeContentVisibility(item, action) {
   }
 }
 
-async function loadMemberContentWorkspace({
-  preserveSelection = false,
-  updateSearchParameters = false,
-} = {}) {
-  if (updateSearchParameters) {
-    updateContentWorkspaceSearchParameters();
-  }
-
-  const requestId = ++contentWorkspaceState.loadRequestId;
-  contentWorkspaceState.isLoading = true;
-  renderContentWorkspaceList();
-
-  try {
-    const data = await contentWorkspaceApiJson("/api/events/mine");
-    if (requestId !== contentWorkspaceState.loadRequestId) return;
-
-    const allItems = Array.isArray(data.events)
-      ? data.events.map(toMemberEventWorkspaceItem)
-      : [];
-    const previousSelection =
-      contentWorkspaceState.requestedContentId ||
-      (preserveSelection ? contentWorkspaceState.selectedId : "");
-    contentWorkspaceState.items = getMemberContentWorkspaceItems(allItems);
-    contentWorkspaceState.selectedId = contentWorkspaceState.isCreatingEvent
-      ? ""
-      : contentWorkspaceState.items.some(
-            (item) => String(item._id) === previousSelection,
-          )
-        ? previousSelection
-        : String(contentWorkspaceState.items[0]?._id || "");
-    contentWorkspaceState.requestedContentId = "";
-
-    if (contentWorkspaceState.selectedId) {
-      const detail = await contentWorkspaceApiJson(
-        `/api/events/${encodeURIComponent(contentWorkspaceState.selectedId)}/edit`,
-      );
-      if (requestId !== contentWorkspaceState.loadRequestId) return;
-
-      const detailItem = toMemberEventWorkspaceItem(detail.event || {});
-      contentWorkspaceState.items = contentWorkspaceState.items.map((item) =>
-        String(item._id) === String(detailItem._id) ? detailItem : item,
-      );
-    }
-
-    setWorkspaceMessage(
-      contentWorkspaceState.items.length || contentWorkspaceState.isCreatingEvent
-        ? ""
-        : getText("my_events_empty", "You have not submitted any events yet."),
-    );
-  } catch (error) {
-    if (requestId !== contentWorkspaceState.loadRequestId) return;
-
-    contentWorkspaceState.items = [];
-    contentWorkspaceState.selectedId = "";
-    setWorkspaceMessage(error.message, "error");
-  } finally {
-    if (requestId === contentWorkspaceState.loadRequestId) {
-      contentWorkspaceState.isLoading = false;
-      renderContentWorkspaceList();
-      renderContentWorkspaceDetail();
-    }
-  }
-}
-
 async function loadContentWorkspace({
   preserveSelection = false,
   updateSearchParameters = false,
 } = {}) {
-  if (isMemberContentWorkspace()) {
-    return loadMemberContentWorkspace({
-      preserveSelection,
-      updateSearchParameters,
-    });
-  }
-
   if (updateSearchParameters) {
     updateContentWorkspaceSearchParameters();
   }
@@ -2910,27 +2917,14 @@ async function initializeContentWorkspace() {
   try {
     const user = await contentWorkspaceApiJson("/api/me");
     const canReview = user.permissions?.canReviewAndPublish === true;
-    const canCreateEvents = user.permissions?.canCreateDrafts === true;
-    const requestedView = new URLSearchParams(window.location.search).get(
-      "view",
-    );
 
-    if (!canReview && !canCreateEvents) {
+    if (!canReview) {
       window.location.replace("/dashboard");
       return;
     }
 
     contentWorkspaceState.user = user;
-    contentWorkspaceState.mode =
-      !canReview || (requestedView === "mine" && canCreateEvents)
-        ? "mine"
-        : "review";
     applyContentWorkspaceSearchParameters();
-    if (isMemberContentWorkspace()) {
-      contentWorkspaceType.value = "event";
-    } else {
-      contentWorkspaceState.isCreatingEvent = false;
-    }
     updateContentWorkspaceModePresentation();
     updateContentWorkspaceStatusFilterAppearance();
     await loadContentWorkspace();
@@ -2983,14 +2977,12 @@ function updateContentWorkspaceLanguage() {
 }
 
 contentWorkspaceType.addEventListener("change", () => {
-  contentWorkspaceState.isCreatingEvent = false;
   contentWorkspaceState.selectedId = "";
   contentWorkspaceState.requestedContentId = "";
   loadContentWorkspace({ updateSearchParameters: true });
 });
 
 contentWorkspaceStatusFilter.addEventListener("change", () => {
-  contentWorkspaceState.isCreatingEvent = false;
   contentWorkspaceState.selectedId = "";
   contentWorkspaceState.requestedContentId = "";
   updateContentWorkspaceStatusFilterAppearance();
@@ -2998,7 +2990,6 @@ contentWorkspaceStatusFilter.addEventListener("change", () => {
 });
 
 contentWorkspaceTranslationFilter.addEventListener("change", () => {
-  contentWorkspaceState.isCreatingEvent = false;
   contentWorkspaceState.selectedId = "";
   contentWorkspaceState.requestedContentId = "";
   loadContentWorkspace({ updateSearchParameters: true });
@@ -3011,15 +3002,6 @@ contentWorkspaceSearch.addEventListener("input", () => {
     contentWorkspaceState.requestedContentId = "";
     loadContentWorkspace({ updateSearchParameters: true });
   }, 250);
-});
-
-contentWorkspaceNewEvent.addEventListener("click", () => {
-  contentWorkspaceState.isCreatingEvent = true;
-  contentWorkspaceState.selectedId = "";
-  contentWorkspaceState.requestedContentId = "";
-  updateContentWorkspaceSearchParameters();
-  renderContentWorkspaceList();
-  renderContentWorkspaceDetail();
 });
 
 document.addEventListener("languagechange", updateContentWorkspaceLanguage);

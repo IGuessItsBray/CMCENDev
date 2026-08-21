@@ -504,12 +504,6 @@ router.get(
         return res.status(400).json({ error: 'Unsupported translation status' });
       }
 
-      if (contentId && type === 'all') {
-        return res.status(400).json({
-          error: 'Choose a content type when selecting a specific record',
-        });
-      }
-
       if (contentId && !mongoose.Types.ObjectId.isValid(contentId)) {
         return res.status(400).json({ error: 'Invalid content ID' });
       }

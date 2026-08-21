@@ -20,15 +20,18 @@
     <main class="content-workspace-page">
       <section class="content-workspace-shell" aria-labelledby="contentWorkspaceTitle">
         <header class="content-workspace-heading">
-          <p class="content-workspace-eyebrow" id="contentWorkspaceEyebrow" data-i18n="content_workspace_eyebrow">
-            Editorial workspace
-          </p>
-          <h1 id="contentWorkspaceTitle" data-i18n="content_workspace_title">
-            Manage content
-          </h1>
-          <p id="contentWorkspaceIntro" data-i18n="content_workspace_intro">
-            Review pending submissions, correct bilingual public copy, and publish, reject, remove, or restore content without losing its history.
-          </p>
+          <div class="content-workspace-heading-copy">
+            <p class="content-workspace-eyebrow" id="contentWorkspaceEyebrow" data-i18n="content_workspace_eyebrow">
+              Editorial workspace
+            </p>
+            <h1 id="contentWorkspaceTitle" data-i18n="content_workspace_title">
+              Manage content
+            </h1>
+            <p id="contentWorkspaceIntro" data-i18n="content_workspace_intro">
+              Review pending submissions, correct bilingual public copy, and publish, reject, remove, or restore content without losing its history.
+            </p>
+          </div>
+
         </header>
 
         <p class="content-workspace-status" id="contentWorkspaceMessage" role="status" aria-live="polite"></p>
@@ -75,9 +78,6 @@
                   </select>
                 </label>
               </div>
-              <button class="content-workspace-new-event" id="contentWorkspaceNewEvent" type="button" hidden data-i18n="submit_new_event_tab">
-                Submit New Event
-              </button>
               <strong id="contentWorkspaceCount" aria-live="polite"></strong>
             </div>
             <div class="content-workspace-list" id="contentWorkspaceList"></div>

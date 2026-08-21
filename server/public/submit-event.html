@@ -12,140 +12,54 @@
       href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
     />
     <link rel="stylesheet" href="/styles.css" />
-    <script>
-      (() => {
-        const current = new URL(window.location.href);
-        const destination = new URL("/content-workspace", window.location.origin);
-        destination.searchParams.set("view", "mine");
-        destination.searchParams.set("type", "event");
-
-        const eventId = current.searchParams.get("id");
-        if (eventId) {
-          destination.searchParams.set("id", eventId);
-        } else {
-          destination.searchParams.set("new", "event");
-        }
-
-        window.location.replace(destination.pathname + destination.search);
-      })();
-    </script>
   </head>
 
   <body>
     <header id="header"></header>
     <main class="event-submit-main submit-event-main">
-      <div class="event-submit-layout">
-        <section class="event-submit-shell" aria-labelledby="submitEventTitle">
+      <section class="event-submit-shell" aria-labelledby="submitEventTitle">
           <header class="event-submit-heading">
             <div class="event-submit-heading-copy">
               <p
                 class="event-submit-eyebrow"
                 id="eventPageEyebrow"
-                data-i18n="my_events_eyebrow"
+                data-i18n="event_submission_eyebrow"
               >
-                Event management
+                Event submission
               </p>
 
-              <h1 id="submitEventTitle" data-i18n="my_events_heading">
-                My Events
+              <h1 id="submitEventTitle" data-i18n="submit_event_heading">
+                Submit an Event
               </h1>
 
-              <p id="submitEventIntro" data-i18n="my_events_intro">
-                View and update events you have previously submitted.
+              <p id="submitEventIntro" data-i18n="submit_event_intro">
+                Submit an event for publication in the C&amp;E Calendar.
               </p>
-            </div>
-
-            <div class="event-submit-heading-actions">
-              <span class="my-events-count" id="myEventsCount" hidden></span>
             </div>
           </header>
 
-          <div
-            class="event-management-tabs"
-            role="tablist"
-            aria-label="Event management"
-          >
-            <button
-              class="event-management-tab is-active"
-              id="myEventsTab"
-              type="button"
-              role="tab"
-              aria-selected="true"
-              aria-controls="myEventsPanel"
-              data-event-tab="events"
-            >
-              <span data-i18n="my_events_heading"> My Events </span>
-            </button>
-            <button
-              class="event-management-tab"
-              id="eventFormTab"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="eventFormPanel"
-              data-event-tab="form"
-            >
-              <span id="eventFormTabLabel" data-i18n="submit_new_event_tab">
-                Submit New Event
-              </span>
-            </button>
-          </div>
-          <div
-            class="event-management-panel is-active"
-            id="myEventsPanel"
-            role="tabpanel"
-            aria-labelledby="myEventsTab"
-            data-event-panel="events"
-          >
-            <section
-              class="my-events-section"
-              id="myEventsSection"
-              aria-labelledby="myEventsHeading"
-              hidden
-            >
-              <h2
-                class="visually-hidden"
-                id="myEventsHeading"
-                data-i18n="my_events_heading"
-              >
-                My Events
-              </h2>
-              <div class="my-events-list" id="myEventsList"></div>
-            </section>
-          </div>
-          <div
-            class="event-management-panel"
-            id="eventFormPanel"
-            role="tabpanel"
-            aria-labelledby="eventFormTab"
-            data-event-panel="form"
-            hidden
-          >
-            <p
-              class="event-page-message"
-              id="eventPageMessage"
-              role="alert"
-              aria-live="polite"
-              hidden
-            ></p>
+        <p
+          class="event-page-message"
+          id="eventPageMessage"
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></p>
 
-            <div
-              class="event-edit-loading"
-              id="eventEditLoading"
-              role="status"
-              aria-live="polite"
-              hidden
-            >
-              <span
-                class="event-edit-loading-spinner"
-                aria-hidden="true"
-              ></span>
-              <p class="visually-hidden" data-i18n="event_edit_loading">
-                Loading event details...
-              </p>
-            </div>
+        <div
+          class="event-edit-loading"
+          id="eventEditLoading"
+          role="status"
+          aria-live="polite"
+          hidden
+        >
+          <span class="event-edit-loading-spinner" aria-hidden="true"></span>
+          <p class="visually-hidden" data-i18n="event_edit_loading">
+            Loading event details...
+          </p>
+        </div>
 
-            <form class="event-submit-form" id="eventForm" hidden>
+        <form class="event-submit-form" id="eventForm" hidden>
               <section
                 class="event-edit-context"
                 id="eventEditContext"
@@ -347,6 +261,7 @@
                 aria-labelledby="eventDetailsHeading"
               >
                 <header class="event-section-heading">
+                  <span class="event-section-index">02</span>
                   <div>
                     <p
                       class="event-section-eyebrow"
@@ -568,6 +483,7 @@
                 aria-labelledby="eventScheduleHeading"
               >
                 <header class="event-section-heading">
+                  <span class="event-section-index">03</span>
                   <div>
                     <p
                       class="event-section-eyebrow"
@@ -722,6 +638,7 @@
                 aria-labelledby="eventAuthorizationHeading"
               >
                 <header class="event-authorization-heading">
+                  <span class="event-section-index">04</span>
                   <div>
                     <p
                       class="event-section-eyebrow"
@@ -802,10 +719,8 @@
                   <span id="eventSubmitButtonLabel"> Submit Event </span>
                 </button>
               </section>
-            </form>
-          </div>
-        </section>
-      </div>
+        </form>
+      </section>
     </main>
 
     <footer id="footer"></footer>

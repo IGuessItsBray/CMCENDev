@@ -1225,7 +1225,6 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 router.patch(
   '/:eventId/review-content',
   authMiddleware,
-  requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
       const { language, content } = req.body;
@@ -1262,7 +1261,23 @@ router.patch(
         });
       }
 
-      if (!['pending', 'published'].includes(event.status)) {
+      const permissions = getUserPermissions(req.user);
+      const canReview = permissions.canReviewAndPublish === true;
+      const isOwner =
+        event.createdBy && String(event.createdBy) === String(req.user._id);
+      const canSubmitterEdit =
+        isOwner && ['pending', 'rejected'].includes(event.status);
+      const canReviewerEdit =
+        canReview && ['pending', 'published'].includes(event.status);
+      const wasRejected = isOwner && event.status === 'rejected';
+
+      if (!canReview && !isOwner) {
+        return res.status(403).json({
+          error: 'You do not have permission to update this event',
+        });
+      }
+
+      if (!canSubmitterEdit && !canReviewerEdit) {
         return res.status(409).json({
           error: 'Only pending or published events can have content updated',
         });
@@ -1276,6 +1291,16 @@ router.patch(
         event.set(`${field}.${language}`, cleanString(content[field]));
       });
       event.updatedBy = req.user._id;
+
+      if (wasRejected) {
+        event.status = 'pending';
+        event.rejectionReason = '';
+        event.reviewedBy = undefined;
+        event.reviewedAt = undefined;
+        event.publishedBy = undefined;
+        event.publishedAt = undefined;
+        event.lastSubmittedAt = new Date();
+      }
 
       await event.save();
 
@@ -1297,7 +1322,9 @@ router.patch(
       await writeAuditLog({
         req,
         action:
-          event.status === 'pending'
+          wasRejected
+            ? 'content.review_content_updated'
+            : event.status === 'pending'
             ? 'content.review_content_updated'
             : 'content.staff_content_updated',
         actor: req.user,
@@ -1305,7 +1332,7 @@ router.patch(
         target: event._id,
         targetSnapshot: getEventSnapshot(event),
         metadata: {
-          source: 'review-content',
+          source: wasRejected ? 'submitter-resubmit' : 'review-content',
           status: event.status,
           language,
           fields: editableFields,
@@ -1314,7 +1341,9 @@ router.patch(
 
       return res.json({
         message:
-          event.status === 'published'
+          wasRejected
+            ? 'Event content updated and submitted for review'
+            : event.status === 'published'
             ? 'Published event content updated'
             : 'Event review content updated',
         event,

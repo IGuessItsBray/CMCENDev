@@ -72,6 +72,44 @@
           novalidate
           hidden
         >
+          <section
+            class="event-edit-context"
+            id="retirementEditContext"
+            aria-labelledby="retirementEditContextTitle"
+            hidden
+          >
+            <div>
+              <p
+                class="event-edit-context-eyebrow"
+                data-i18n="event_edit_context_eyebrow"
+              >
+                Edit mode
+              </p>
+              <h2
+                id="retirementEditContextTitle"
+                data-i18n="retirement_edit_context_heading"
+              >
+                You are editing an existing retirement message
+              </h2>
+              <p
+                class="event-edit-context-intro"
+                data-i18n="retirement_edit_context_intro"
+              >
+                Update the details below, then save the revised message for review.
+              </p>
+            </div>
+            <div
+              class="event-edit-rejection"
+              id="retirementEditRejection"
+              hidden
+            >
+              <strong data-i18n="event_edit_rejection_heading">
+                Rejection reason
+              </strong>
+              <p id="retirementEditRejectionReason"></p>
+            </div>
+          </section>
+
           <section class="event-form-section event-section--full-bleed-heading">
             <header class="event-section-heading">
               <span class="event-section-index">01</span>

@@ -29,7 +29,7 @@
             <h1 id="lastPostSubmitTitle" data-i18n="last_post_submit_title">
               Submit a Last Post
             </h1>
-            <p data-i18n="last_post_submit_intro">
+            <p id="lastPostSubmitIntro" data-i18n="last_post_submit_intro">
               Submit a memorial notice for review before publication.
             </p>
           </div>
@@ -49,6 +49,40 @@
           novalidate
           hidden
         >
+          <section
+            class="event-edit-context"
+            id="lastPostEditContext"
+            aria-labelledby="lastPostEditContextTitle"
+            hidden
+          >
+            <div>
+              <p
+                class="event-edit-context-eyebrow"
+                data-i18n="event_edit_context_eyebrow"
+              >
+                Edit mode
+              </p>
+              <h2
+                id="lastPostEditContextTitle"
+                data-i18n="last_post_edit_context_heading"
+              >
+                You are editing an existing Last Post notice
+              </h2>
+              <p
+                class="event-edit-context-intro"
+                data-i18n="last_post_edit_context_intro"
+              >
+                Update the details below, then save the revised notice for review.
+              </p>
+            </div>
+            <div class="event-edit-rejection" id="lastPostEditRejection" hidden>
+              <strong data-i18n="event_edit_rejection_heading">
+                Rejection reason
+              </strong>
+              <p id="lastPostEditRejectionReason"></p>
+            </div>
+          </section>
+
           <section
             class="event-form-section event-section--full-bleed-heading"
             aria-labelledby="deceasedMemberHeading"

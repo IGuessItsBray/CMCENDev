@@ -1004,6 +1004,45 @@ describe('retirement message lifecycle', () => {
     assert.equal(published.body.status, 'published');
   });
 
+  test('lists the current user’s non-hidden retirement messages', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const otherContributor = await createUser({ role: 'contributor' });
+    const contributorLogin = await login(contributor);
+    const otherContributorLogin = await login(otherContributor);
+
+    const submitted = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(retirementPayload())
+      .expect(201);
+    const otherSubmitted = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(otherContributorLogin.body.token))
+      .send(retirementPayload())
+      .expect(201);
+
+    const mine = await request(app)
+      .get('/api/retirement-messages/mine')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.deepEqual(
+      mine.body.retirementMessages.map((message) => String(message._id)),
+      [String(submitted.body.retirementMessage._id)],
+    );
+
+    await RetirementMessage.updateOne(
+      { _id: submitted.body.retirementMessage._id },
+      { $set: { status: 'hidden' } },
+    );
+
+    const afterRemoval = await request(app)
+      .get('/api/retirement-messages/mine')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(afterRemoval.body.retirementMessages.length, 0);
+    assert.ok(otherSubmitted.body.retirementMessage._id);
+  });
+
   test('requires bilingual review content, publishes, and exposes the message publicly', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
@@ -1061,7 +1100,7 @@ describe('retirement message lifecycle', () => {
     assert.equal(String(publishedAudit.target), String(message._id));
   });
 
-  test('lets reviewers save a retirement translation before publication', async () => {
+  test('lets owners and reviewers save retirement translations before publication', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
     const contributorLogin = await login(contributor);
@@ -1074,13 +1113,19 @@ describe('retirement message lifecycle', () => {
       .expect(201);
 
     const messageId = (await RetirementMessage.findOne())._id;
+    const ownerTranslation = translatedMessage('English submitter');
     const frenchTranslation = translatedMessage('French reviewer');
 
-    await request(app)
+    const ownerResponse = await request(app)
       .patch(`/api/retirement-messages/${messageId}/review-content`)
       .set('Authorization', bearer(contributorLogin.body.token))
-      .send({ language: 'fr', message: frenchTranslation })
-      .expect(403);
+      .send({ language: 'en', message: ownerTranslation })
+      .expect(200);
+    assert.equal(ownerResponse.body.retirementMessage.status, 'pending');
+    assert.equal(
+      ownerResponse.body.retirementMessage.messages.en,
+      ownerTranslation,
+    );
 
     const response = await request(app)
       .patch(`/api/retirement-messages/${messageId}/review-content`)
@@ -1101,6 +1146,7 @@ describe('retirement message lifecycle', () => {
     const auditEntry = await AuditLog.findOne({
       action: 'content.review_content_updated',
       target: savedMessage._id,
+      'metadata.language': 'fr',
     });
     assert.equal(auditEntry.targetType, 'retirementMessage');
     assert.equal(auditEntry.metadata.language, 'fr');
@@ -1108,6 +1154,7 @@ describe('retirement message lifecycle', () => {
     const revision = await ContentRevision.findOne({
       contentType: 'retirementMessage',
       contentId: savedMessage._id,
+      language: 'fr',
     }).lean();
     assert.equal(revision.language, 'fr');
     assert.equal(revision.before.message, '');
@@ -1151,6 +1198,53 @@ describe('retirement message lifecycle', () => {
     assert.equal(
       (await RetirementMessage.findById(message._id)).status,
       'rejected',
+    );
+
+    const frenchMessage = translatedMessage('Retirement message preserved in French');
+    await RetirementMessage.findByIdAndUpdate(message._id, {
+      $set: { 'messages.fr': frenchMessage },
+    });
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    const rejectionNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(message._id),
+    );
+    assert.equal(
+      rejectionNotification.href,
+      `/submit-retirement?id=${message._id}`,
+    );
+
+    const editPayload = await request(app)
+      .get(`/api/retirement-messages/${message._id}/edit`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(editPayload.body.retirementMessage.status, 'rejected');
+    assert.equal(editPayload.body.retirementMessage.messages.fr, frenchMessage);
+
+    const revisedSubmission = retirementPayload();
+    revisedSubmission.message = translatedMessage('Retirement resubmission');
+
+    const resubmitted = await request(app)
+      .patch(`/api/retirement-messages/${message._id}`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(revisedSubmission)
+      .expect(200);
+    assert.equal(resubmitted.body.retirementMessage.status, 'pending');
+    assert.equal(resubmitted.body.retirementMessage.rejectionReason, '');
+    assert.equal(resubmitted.body.retirementMessage.messages.fr, frenchMessage);
+
+    const resolvedNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(
+      resolvedNotifications.body.notifications.items.some(
+        (item) => String(item.id) === String(message._id),
+      ),
+      false,
     );
   });
 });
@@ -1204,7 +1298,143 @@ describe('Last Post lifecycle', () => {
     assert.equal(list.body.lastPosts[0].deceased.surname, 'Example');
   });
 
-  test('lets reviewers save a Last Post translation before publication', async () => {
+  test('lists the current user’s non-hidden Last Post notices', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const otherContributor = await createUser({ role: 'contributor' });
+    const contributorLogin = await login(contributor);
+    const otherContributorLogin = await login(otherContributor);
+    const submission = {
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Workspace',
+        surname: 'Notice',
+      },
+      messageLanguage: 'en',
+      message: 'A Last Post notice listed in the current user content workspace.',
+      publicationPermissionConfirmed: true,
+    };
+
+    const submitted = await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(submission)
+      .expect(201);
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(otherContributorLogin.body.token))
+      .send(submission)
+      .expect(201);
+
+    const mine = await request(app)
+      .get('/api/last-posts/mine')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.deepEqual(
+      mine.body.lastPosts.map((notice) => String(notice._id)),
+      [String(submitted.body.lastPost._id)],
+    );
+
+    await LastPostMessage.updateOne(
+      { _id: submitted.body.lastPost._id },
+      { $set: { status: 'hidden' } },
+    );
+
+    const afterRemoval = await request(app)
+      .get('/api/last-posts/mine')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(afterRemoval.body.lastPosts.length, 0);
+  });
+
+  test('lets an owner revise a rejected Last Post notice without exposing it to other contributors', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const otherContributor = await createUser({ role: 'contributor' });
+    const contributorLogin = await login(contributor);
+    const otherContributorLogin = await login(otherContributor);
+    const submission = {
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Rejected',
+        surname: 'Notice',
+      },
+      messageLanguage: 'en',
+      message: 'A Last Post notice that needs a contributor revision.',
+      publicationPermissionConfirmed: true,
+    };
+
+    const created = await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(submission)
+      .expect(201);
+    const lastPostId = created.body.lastPost._id;
+
+    await LastPostMessage.findByIdAndUpdate(lastPostId, {
+      $set: {
+        status: 'rejected',
+        rejectionReason: 'Please add the missing service details.',
+        'messages.fr': 'Un avis du Dernier appel qui doit être préservé.',
+      },
+    });
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    const rejectionNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(lastPostId),
+    );
+    assert.equal(rejectionNotification.href, `/submit-last-post?id=${lastPostId}`);
+
+    const editPayload = await request(app)
+      .get(`/api/last-posts/${lastPostId}/edit`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(editPayload.body.lastPost.status, 'rejected');
+    assert.equal(
+      editPayload.body.lastPost.messages.fr,
+      'Un avis du Dernier appel qui doit être préservé.',
+    );
+
+    await request(app)
+      .get(`/api/last-posts/${lastPostId}/edit`)
+      .set('Authorization', bearer(otherContributorLogin.body.token))
+      .expect(403);
+
+    await request(app)
+      .patch(`/api/last-posts/${lastPostId}`)
+      .set('Authorization', bearer(otherContributorLogin.body.token))
+      .send(submission)
+      .expect(403);
+
+    const updated = await request(app)
+      .patch(`/api/last-posts/${lastPostId}`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        ...submission,
+        message: 'A revised Last Post notice with the requested service details.',
+      })
+      .expect(200);
+    assert.equal(updated.body.lastPost.status, 'pending');
+    assert.equal(updated.body.lastPost.rejectionReason, '');
+    assert.equal(
+      updated.body.lastPost.messages.fr,
+      'Un avis du Dernier appel qui doit être préservé.',
+    );
+
+    const resolvedNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(
+      resolvedNotifications.body.notifications.items.some(
+        (item) => String(item.id) === String(lastPostId),
+      ),
+      false,
+    );
+  });
+
+  test('lets owners and reviewers save Last Post translations before publication', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
     const contributorLogin = await login(contributor);
@@ -1227,13 +1457,16 @@ describe('Last Post lifecycle', () => {
       .expect(201);
 
     const notice = await LastPostMessage.findOne();
+    const ownerTranslation = 'Corrected English Last Post notice from its submitter.';
     const frenchTranslation = 'Avis du Dernier appel ajouté par le réviseur.';
 
-    await request(app)
+    const ownerResponse = await request(app)
       .patch(`/api/last-posts/${notice._id}/review-content`)
       .set('Authorization', bearer(contributorLogin.body.token))
-      .send({ language: 'fr', message: frenchTranslation })
-      .expect(403);
+      .send({ language: 'en', message: ownerTranslation })
+      .expect(200);
+    assert.equal(ownerResponse.body.lastPost.status, 'pending');
+    assert.equal(ownerResponse.body.lastPost.messages.en, ownerTranslation);
 
     const response = await request(app)
       .patch(`/api/last-posts/${notice._id}/review-content`)
@@ -1251,6 +1484,7 @@ describe('Last Post lifecycle', () => {
     const auditEntry = await AuditLog.findOne({
       action: 'content.review_content_updated',
       target: savedNotice._id,
+      'metadata.language': 'fr',
     });
     assert.equal(auditEntry.targetType, 'lastPost');
     assert.equal(auditEntry.metadata.language, 'fr');
@@ -1258,6 +1492,7 @@ describe('Last Post lifecycle', () => {
     const revision = await ContentRevision.findOne({
       contentType: 'lastPost',
       contentId: savedNotice._id,
+      language: 'fr',
     }).lean();
     assert.equal(revision.language, 'fr');
     assert.equal(revision.before.message, '');
@@ -1754,11 +1989,63 @@ describe('event, page, and comment workflows', () => {
     );
     assert.equal(
       rejectedNotification.href,
-      `/content-workspace?view=mine&type=event&id=${rejectedEvent._id}`,
+      `/submit-event?id=${rejectedEvent._id}`,
+    );
+
+    await request(app)
+      .post('/api/notifications/read')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({ readThrough: notifications.body.notifications.readThrough })
+      .expect(200);
+
+    const actionableNotification = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    assert.equal(
+      actionableNotification.body.notifications.items.some(
+        (item) => String(item.id) === String(rejectedEvent._id),
+      ),
+      true,
+    );
+
+    const correctedStartDate = new Date(
+      Date.now() + 45 * 24 * 60 * 60 * 1000,
+    )
+      .toISOString()
+      .slice(0, 10);
+    const resubmitted = await request(app)
+      .patch(`/api/events/${rejectedEvent._id}`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload({
+        title: { en: 'Corrected event title', fr: 'Événement corrigé' },
+        startDate: correctedStartDate,
+        city: 'Kingston',
+        allDay: true,
+      })
+      )
+      .expect(200);
+    assert.equal(resubmitted.body.event.status, 'pending');
+    assert.equal(resubmitted.body.event.rejectionReason, '');
+    assert.equal(resubmitted.body.event.city, 'Kingston');
+    assert.equal(
+      new Date(resubmitted.body.event.startDate).toISOString().slice(0, 10),
+      correctedStartDate,
+    );
+
+    const resolvedNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    assert.equal(
+      resolvedNotifications.body.notifications.items.some(
+        (item) => String(item.id) === String(rejectedEvent._id),
+      ),
+      false,
     );
   });
 
-  test('lets reviewers update one pending event language without changing its review state', async () => {
+  test('lets owners and reviewers update one pending event language without changing its review state', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
     const contributorSession = await login(contributor);
@@ -1782,7 +2069,7 @@ describe('event, page, and comment workflows', () => {
       .patch(`/api/events/${eventId}/review-content`)
       .set('Authorization', bearer(contributorSession.body.token))
       .send({ language: 'fr', content: changes })
-      .expect(403);
+      .expect(200);
 
     const response = await request(app)
       .patch(`/api/events/${eventId}/review-content`)
@@ -1809,10 +2096,53 @@ describe('event, page, and comment workflows', () => {
     const revision = await ContentRevision.findOne({
       contentType: 'event',
       contentId: updatedEvent._id,
+      actor: contributor._id,
     }).lean();
     assert.equal(revision.language, 'fr');
     assert.equal(revision.before.title, "Exercice d'integration");
     assert.equal(revision.after.title, changes.title);
+  });
+
+  test('lets a reviewer resubmit their own rejected event copy', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const editorSession = await login(editor);
+    const rejectedEvent = await Event.create({
+      ...eventPayload({
+        title: { en: 'Rejected staff event', fr: 'Événement du personnel refusé' },
+      }),
+      createdBy: editor._id,
+      status: 'rejected',
+      rejectionReason: 'Please correct the public wording.',
+      reviewedBy: editor._id,
+      reviewedAt: new Date(),
+    });
+    const correctedTitle = 'Corrected staff event';
+
+    const response = await request(app)
+      .patch(`/api/events/${rejectedEvent._id}/review-content`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        language: 'en',
+        content: {
+          title: correctedTitle,
+          location: rejectedEvent.location.en,
+          description: rejectedEvent.description.en,
+          registration: rejectedEvent.registration?.en || '',
+        },
+      })
+      .expect(200);
+
+    assert.equal(response.body.event.status, 'pending');
+    assert.equal(response.body.event.rejectionReason, '');
+    assert.equal(response.body.event.title.en, correctedTitle);
+
+    const revision = await ContentRevision.findOne({
+      contentType: 'event',
+      contentId: rejectedEvent._id,
+      actor: editor._id,
+      language: 'en',
+    }).lean();
+    assert.equal(revision.after.title, correctedTitle);
   });
 
   test('lets editors correct published content and exposes its staff revision history', async () => {
@@ -2035,10 +2365,15 @@ describe('event, page, and comment workflows', () => {
       .expect(200);
     assert.equal(commentTranslationWorkspace.body.items.length, 0);
 
-    await request(app)
+    const untypedFocusedWorkspace = await request(app)
       .get('/api/admin/content?id=' + event._id)
       .set('Authorization', bearer(editorSession.body.token))
-      .expect(400);
+      .expect(200);
+    assert.equal(untypedFocusedWorkspace.body.items.length, 1);
+    assert.equal(
+      String(untypedFocusedWorkspace.body.items[0]._id),
+      String(event._id),
+    );
 
     await request(app)
       .get('/api/admin/content?translation=unknown')

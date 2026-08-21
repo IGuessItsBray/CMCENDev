@@ -87,6 +87,7 @@ test('defines crawler routes and applies baseline response headers', () => {
   assert.equal(AI_CRAWLERS.includes('Google-Extended'), true);
   assert.equal(AI_CRAWLERS.includes('ClaudeBot'), true);
   assert.equal(headers['X-Content-Type-Options'], 'nosniff');
+  assert.equal(headers['X-Frame-Options'], 'DENY');
   assert.equal(headers['X-Robots-Tag'], 'noindex, nofollow, noarchive');
   assert.equal(nextCalled, true);
 });

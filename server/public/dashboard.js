@@ -1567,13 +1567,7 @@ function renderDashboard(user) {
 
   rememberDashboardAdminToolsLayout(hasAdminToolsAccess);
 
-  if (isGhost) {
-    actions.push({
-      href: "/content-workspace?view=mine",
-      titleKey: "dashboard_action_my_submissions",
-      descriptionKey: "dashboard_action_my_submissions_description",
-    });
-  } else {
+  if (!isGhost) {
     if (user.permissions?.canSubmitRetirementMessages === true) {
       actions.push({
         href: "/submit-retirement",
@@ -1584,7 +1578,7 @@ function renderDashboard(user) {
 
     if (user.permissions?.canCreateDrafts === true) {
       actions.push({
-        href: "/content-workspace?view=mine&new=event",
+        href: "/submit-event",
         titleKey: "dashboard_action_submit_event",
         descriptionKey: "dashboard_action_submit_event_description",
       });

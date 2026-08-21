@@ -7,11 +7,12 @@ until the submission is resubmitted or otherwise leaves the rejected state.
 Published items are informational: opening the bell marks those review results
 read without dismissing any outstanding rejection.
 
-Selecting a rejected item opens its correction view directly: events open the
-event form, retirement messages open the retirement form, and comments open
-the associated retirement message with its comment editor ready. Published
-items instead open their public detail view. Content that the submitter was
-authorized to publish immediately does not create an approval notification.
+Selecting a rejected item opens its correction view directly: events,
+retirement messages, and Last Post notices open their original submission
+forms in edit mode; comments open the associated retirement message with its
+comment editor ready. Published items instead open their public detail view.
+Content that the submitter was authorized to publish immediately does not
+create an approval notification.
 
 Accounts that predate this feature see reviewer approvals from the prior 30
 days the first time their bell is opened, then establish their normal
@@ -74,9 +75,12 @@ falls outside that snapshot. The badge retains `actionCount` after that call.
 When the tab becomes visible again, the header refreshes its lightweight badge
 count through `GET /api/me`; it never polls in the background. Those count
 refreshes never mark an approval as read.
-Supported item types include events, retirement messages, and retirement
-comments. The header uses DOM-created links and text so notification titles and
-rejection reasons are never inserted as HTML.
+Supported item types include events, retirement messages, Last Post notices,
+and retirement comments. Rejected event, retirement-message, and Last Post
+links use `/submit-event?id=<id>`, `/submit-retirement?id=<id>`, and
+`/submit-last-post?id=<id>` respectively. The header uses DOM-created links
+and text so notification titles and rejection reasons are never inserted as
+HTML.
 
 Rejected retirement comments use
 `/retirement-message?id=<message-id>&editComment=<comment-id>`. The detail

@@ -96,9 +96,11 @@ describe('OpenAPI contract', () => {
       ['patch', '/api/events/{eventId}/review-content'],
       ['patch', '/api/events/{eventId}/review'],
       ['post', '/api/retirement-messages'],
+      ['get', '/api/retirement-messages/mine'],
       ['patch', '/api/retirement-messages/{messageId}/review-content'],
       ['patch', '/api/retirement-messages/{messageId}/review'],
       ['post', '/api/last-posts'],
+      ['get', '/api/last-posts/mine'],
       ['patch', '/api/last-posts/{messageId}/review-content'],
       ['patch', '/api/last-posts/{messageId}/review'],
     ];

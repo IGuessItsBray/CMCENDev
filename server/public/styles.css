@@ -779,6 +779,11 @@ svg {
   color: var(--gold-200);
 }
 
+.notification-dropdown-type.is-lastPost {
+  background: rgba(120, 188, 159, 0.16);
+  color: #b5e7d0;
+}
+
 .notification-dropdown-type.is-retirementComment {
   background: rgba(177, 159, 227, 0.16);
   color: #d9cbff;
@@ -14068,8 +14073,14 @@ a.my-event-card-row:focus-visible {
 
 .event-authorization-heading {
   padding: 17px 20px 14px;
+  display: flex;
+  gap: 10px;
   border-bottom: 1px solid var(--branch-grey-200);
   background: linear-gradient(180deg, var(--branch-grey-100), var(--white));
+}
+
+.event-authorization-heading .event-section-index {
+  flex: 0 0 32px;
 }
 
 .event-authorization-heading h2 {
@@ -19416,7 +19427,7 @@ html[data-theme='dark'] .last-post-submit-button {
 .content-workspace-shell {
   position: relative;
   z-index: 1;
-  width: min(100%, 1240px);
+  width: min(100%, 1480px);
   margin: 0 auto;
   border: 1px solid var(--branch-grey-300);
   background: var(--white);
@@ -19424,6 +19435,10 @@ html[data-theme='dark'] .last-post-submit-button {
 }
 
 .content-workspace-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
   min-height: 144px;
   padding: 28px 34px 26px;
   border: 0;
@@ -19447,6 +19462,15 @@ html[data-theme='dark'] .last-post-submit-button {
 }
 
 .content-workspace-heading > p:last-child {
+  max-width: 720px;
+  color: var(--branch-grey-200);
+}
+
+.content-workspace-heading-copy {
+  min-width: 0;
+}
+
+.content-workspace-heading-copy > p:last-child {
   max-width: 720px;
   color: var(--branch-grey-200);
 }
@@ -19799,7 +19823,8 @@ html[data-theme='dark'] .last-post-submit-button {
 
 .content-workspace-language-editors {
   display: grid;
-  max-width: 760px;
+  width: 100%;
+  max-width: none;
   gap: 18px;
 }
 
@@ -19910,13 +19935,15 @@ html[data-theme='dark'] .last-post-submit-button {
 .content-workspace-form-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 10px;
   padding-top: 2px;
 }
 
 .content-workspace-record-editor {
   display: grid;
-  max-width: 760px;
+  width: 100%;
+  max-width: none;
   gap: 12px;
 }
 
@@ -19934,7 +19961,7 @@ html[data-theme='dark'] .last-post-submit-button {
 }
 
 .content-workspace-member-published-notice {
-  max-width: 760px;
+  max-width: none;
   margin: 0;
   padding: 13px 15px;
   border-left: 3px solid var(--navy-800);
@@ -19980,8 +20007,45 @@ html[data-theme='dark'] .last-post-submit-button {
   accent-color: var(--navy-900);
 }
 
+.content-workspace-member-event-form
+  .content-workspace-field:not(.is-checkbox) {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.content-workspace-member-event-form .content-workspace-field > span {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.content-workspace-member-event-form .content-workspace-field input,
+.content-workspace-member-event-form .content-workspace-field select {
+  height: 45px;
+  padding: 0 12px;
+  border-color: var(--branch-grey-200);
+  border-radius: 2px;
+  background: var(--white);
+}
+
+.content-workspace-member-event-form .content-workspace-field textarea {
+  min-height: 138px;
+  padding: 11px 12px;
+  border-color: var(--branch-grey-200);
+  border-radius: 2px;
+  background: var(--white);
+  line-height: 1.5;
+}
+
+.content-workspace-member-event-form
+  .content-workspace-field.is-checkbox
+  input {
+  height: 18px;
+}
+
 .content-workspace-submission-details {
-  max-width: 760px;
+  max-width: none;
   overflow: hidden;
   border: 1px solid var(--branch-grey-300);
   background: #f8f9fa;
@@ -20052,7 +20116,7 @@ html[data-theme='dark'] .last-post-submit-button {
 .content-workspace-review-decision,
 .content-workspace-rejection-reason {
   display: grid;
-  max-width: 760px;
+  max-width: none;
   gap: 12px;
   padding: 18px;
   border: 1px solid var(--branch-grey-300);
@@ -20282,6 +20346,8 @@ html[data-theme='dark'] .last-post-submit-button {
   .content-workspace-heading {
     min-height: auto;
     padding: 22px 23px;
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .content-workspace-layout {
@@ -20299,6 +20365,7 @@ html[data-theme='dark'] .last-post-submit-button {
   .content-workspace-detail {
     padding: 26px 20px 32px;
   }
+
 }
 
 @media (max-width: 560px) {

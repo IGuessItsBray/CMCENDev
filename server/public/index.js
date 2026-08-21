@@ -179,7 +179,7 @@ const navLinks = {
     items: [
       { route: "/calendar", i18n: "menu_news_option_1" },
       {
-        route: "/content-workspace?view=mine&new=event",
+        route: "/submit-event",
         i18n: "menu_news_option_2",
         permission: "canCreateDrafts",
       },
@@ -1746,6 +1746,10 @@ function setupHeaderNotifications() {
     { signal },
   );
 }
+
+window.addEventListener("cmcen:content-updated", () => {
+  refreshHeaderNotificationCount();
+});
 
 function updateAuthButtons() {
   const token = getStoredAuthToken();

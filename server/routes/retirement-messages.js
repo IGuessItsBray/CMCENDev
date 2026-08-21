@@ -243,9 +243,9 @@ function getCleanRetirementMessagePayload(body = {}, submitterDetails = {}) {
   return {
     cleanRetiree,
     cleanMessage,
-    cleanMessages: cleanLocalizedText({
-      [messageLanguage]: cleanMessage,
-    }),
+    cleanMessages: ALLOWED_LANGUAGES.includes(messageLanguage)
+      ? { [messageLanguage]: cleanMessage }
+      : {},
     cleanPhotoUrl: cleanString(photoUrl),
     cleanPhotoDisplayUrl: cleanString(photoDisplayUrl),
     cleanSubmitter,
@@ -592,6 +592,10 @@ router.post(
           : 'Retirement message submitted for review',
 
         status: retirementMessage.status,
+        retirementMessage: {
+          _id: retirementMessage._id,
+          status: retirementMessage.status,
+        },
         certificateRequest: certificateRequest
           ? {
               id: certificateRequest._id,
@@ -604,6 +608,42 @@ router.post(
 
       return res.status(500).json({
         error: 'Could not submit retirement message',
+      });
+    }
+  },
+);
+
+router.get(
+  '/mine',
+  authMiddleware,
+  requirePermission('canSubmitRetirementMessages'),
+  async (req, res) => {
+    try {
+      const retirementMessages = await RetirementMessage.find({
+        createdBy: req.user._id,
+        status: { $ne: 'hidden' },
+      })
+        .select(
+          [
+            'retiree',
+            'messages',
+            'messageLanguage',
+            'photoUrl',
+            'photoDisplayUrl',
+            'status',
+            'rejectionReason',
+            'createdAt',
+            'updatedAt',
+          ].join(' '),
+        )
+        .sort({ updatedAt: -1 })
+        .lean();
+
+      return res.json({ retirementMessages });
+    } catch (error) {
+      console.error('Could not load user retirement messages:', error);
+      return res.status(500).json({
+        error: 'Could not load your retirement messages',
       });
     }
   },
@@ -1157,7 +1197,10 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     retirementMessage.retiree = cleanRetiree;
     retirementMessage.message = cleanMessage;
     retirementMessage.messageLanguage = messageLanguage;
-    retirementMessage.messages = cleanMessages;
+    retirementMessage.messages = {
+      ...getLocalizedMessages(retirementMessage),
+      ...cleanMessages,
+    };
     retirementMessage.photoUrl = cleanPhotoUrl;
     retirementMessage.photoDisplayUrl = cleanPhotoDisplayUrl;
     retirementMessage.submitter = cleanSubmitter;
@@ -1461,7 +1504,6 @@ router.get('/:messageId', async (req, res) => {
 router.patch(
   '/:messageId/review-content',
   authMiddleware,
-  requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
       const { language, message } = req.body;
@@ -1497,10 +1539,26 @@ router.patch(
         });
       }
 
-      if (!['pending', 'published'].includes(retirementMessage.status)) {
+      const permissions = getUserPermissions(req.user);
+      const canReview = permissions.canReviewAndPublish === true;
+      const isOwner =
+        retirementMessage.createdBy &&
+        String(retirementMessage.createdBy) === String(req.user._id);
+      const canSubmitterEdit =
+        isOwner && ['pending', 'rejected'].includes(retirementMessage.status);
+      const canReviewerEdit =
+        canReview && ['pending', 'published'].includes(retirementMessage.status);
+      const wasRejected = isOwner && retirementMessage.status === 'rejected';
+
+      if (!canReview && !isOwner) {
+        return res.status(403).json({
+          error: 'You do not have permission to update this retirement message',
+        });
+      }
+
+      if (!canSubmitterEdit && !canReviewerEdit) {
         return res.status(409).json({
-          error:
-            'Only pending or published retirement messages can have content updated',
+          error: 'Only pending or published retirement messages can have content updated',
         });
       }
 
@@ -1516,6 +1574,15 @@ router.patch(
       }
 
       retirementMessage.updatedBy = req.user._id;
+
+      if (wasRejected) {
+        retirementMessage.status = 'pending';
+        retirementMessage.rejectionReason = '';
+        retirementMessage.reviewedBy = null;
+        retirementMessage.reviewedAt = null;
+        retirementMessage.publishedBy = null;
+        retirementMessage.publishedAt = null;
+      }
 
       await retirementMessage.save();
 
@@ -1534,7 +1601,9 @@ router.patch(
       await writeAuditLog({
         req,
         action:
-          retirementMessage.status === 'pending'
+          wasRejected
+            ? 'content.review_content_updated'
+            : retirementMessage.status === 'pending'
             ? 'content.review_content_updated'
             : 'content.staff_content_updated',
         actor: req.user,
@@ -1542,7 +1611,7 @@ router.patch(
         target: retirementMessage._id,
         targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
         metadata: {
-          source: 'review-content',
+          source: wasRejected ? 'submitter-resubmit' : 'review-content',
           status: retirementMessage.status,
           language,
           fields: ['message'],
@@ -1551,7 +1620,9 @@ router.patch(
 
       return res.json({
         message:
-          retirementMessage.status === 'published'
+          wasRejected
+            ? 'Retirement message content updated and submitted for review'
+            : retirementMessage.status === 'published'
             ? 'Published retirement message content updated'
             : 'Retirement review content updated',
         retirementMessage,

@@ -4,6 +4,79 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.1.0-rc.1] - 2026-08-21
+
+
+
+### Bug Fixes
+
+
+- frontend: Improve mobile layouts
+
+- header: Align desktop notification bell
+
+- content: Linkify retirement and last post messages
+
+- logging: Redact server output and silence client consoles
+
+- editor: Improve content and translation editing
+
+- admin: Hide legacy attribution accounts
+
+- admin: Enlarge users list
+
+- docker: Include changelog in production image
+
+
+
+### Documentation
+
+
+- accessibility: Add public accessibility guidance
+
+
+
+### Features
+
+
+- docker: Add full-stack compose deployment
+
+- footer: Add member partnership links
+
+- analytics: Embed plausible dashboard
+
+- contact: Add member contact form
+
+- translations: Organize admin translation editor
+
+- admin: Add protected content edit routes
+
+- frontend: Add developer changelog
+
+- content: Add editorial workspace
+
+- content: Consolidate review submissions in workspace
+
+- dashboard: Embed permission-aware admin tools
+
+- content-workspace: Add content navigation shortcuts
+
+- pages: Add visual page builder
+
+- content-workspace: Move event submissions into workspace
+
+- content: Add staff workspace and contributor resubmission
+
+
+
+### Maintenance
+
+
+- Remove site config
+
+- Clean workbook import placeholders
+
+
 ## [0.1.0-beta.6] - 2026-08-19
 
 

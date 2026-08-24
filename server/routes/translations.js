@@ -11,6 +11,13 @@ const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
 
+function setTranslationRuntimeCacheHeaders(res) {
+  // The runtime carries the selected-language state used by every localized
+  // public page. It must be updated with the other stable-url client bundles
+  // after a deployment so calendar links and event details agree on language.
+  res.set('Cache-Control', 'no-store');
+}
+
 function getEditableValues(body) {
   const values = {};
 
@@ -44,7 +51,7 @@ router.get('/translations.js', async (req, res) => {
     const translations = await readTranslations();
 
     res.type('application/javascript');
-    res.set('Cache-Control', 'public, max-age=0, must-revalidate');
+    setTranslationRuntimeCacheHeaders(res);
     res.send(createTranslationsRuntime(translations));
   } catch (error) {
     console.error('Translation runtime generation failed:', error);
@@ -166,3 +173,5 @@ router.patch(
 );
 
 module.exports = router;
+module.exports.setTranslationRuntimeCacheHeaders =
+  setTranslationRuntimeCacheHeaders;

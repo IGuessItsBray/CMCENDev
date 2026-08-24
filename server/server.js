@@ -40,6 +40,9 @@ const { requestDiagnostics } = require('./middleware/request-diagnostics');
 const { getPlausibleConfig } = require('./services/plausible');
 const logger = require('./services/logger');
 const { startWeeklyBriefScheduler } = require('./services/weekly-brief');
+const {
+  hidePublicTestRetirementNotices,
+} = require('./services/public-content-sanitization');
 
 logger.installConsole();
 
@@ -273,6 +276,11 @@ async function startServer() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
+
+    const hiddenTestNotices = await hidePublicTestRetirementNotices();
+    if (hiddenTestNotices) {
+      console.log(`Hid ${hiddenTestNotices} public test retirement notice(s)`);
+    }
 
     startWeeklyBriefScheduler();
 

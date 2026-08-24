@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Page not found | CMCEN / RCMCE</title>
+    <title data-i18n="error_404_page_title">Page not found | CMCEN / RCMCE</title>
     <link
       rel="icon"
       type="image/png"
@@ -16,15 +16,27 @@
     <main class="error-page-main">
       <section class="error-page" aria-labelledby="errorPageTitle">
         <p class="error-page-code" aria-hidden="true">404</p>
-        <p class="error-page-eyebrow">Page not found</p>
-        <h1 id="errorPageTitle">We could not find that page.</h1>
-        <p>
+        <p class="error-page-eyebrow" data-i18n="error_404_eyebrow">
+          Page not found
+        </p>
+        <h1 id="errorPageTitle" data-i18n="error_404_heading">
+          We could not find that page.
+        </h1>
+        <p data-i18n="error_404_message">
           The page may have moved, been removed, or the address may be
           incorrect.
         </p>
         <div class="error-page-actions">
-          <a class="error-page-primary-action" href="/index">Return home</a>
-          <a class="error-page-secondary-action" href="/search"
+          <a
+            class="error-page-primary-action"
+            href="/index"
+            data-i18n="error_404_return_home"
+            >Return home</a
+          >
+          <a
+            class="error-page-secondary-action"
+            href="/search"
+            data-i18n="error_404_search_site"
             >Search the site</a
           >
         </div>

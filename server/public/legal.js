@@ -70,14 +70,34 @@ function renderLegalPage() {
   const content = copy[type][language];
   document.title = `${content.title} | CMCEN / RCMCE`;
   legalPage.replaceChildren();
-  const heading = document.createElement('header');
-  heading.innerHTML = `<p class="register-eyebrow">CMCEN / RCMCE</p><h1>${content.title}</h1><p>${content.intro}</p>`;
-  legalPage.append(heading);
-  content.sections.forEach(([title, body]) => {
+  legalPage.className = 'legal-document';
+
+  const hero = document.createElement('header');
+  hero.className = 'legal-document__hero';
+  hero.innerHTML = `<p class="legal-document__eyebrow">CMCEN / RCMCE</p><h1>${content.title}</h1><p class="legal-document__meta">${content.intro}</p>`;
+
+  const navigation = document.createElement('nav');
+  navigation.className = 'legal-document__navigation';
+  navigation.setAttribute('aria-label', language === 'fr' ? 'Dans cette page' : 'On this page');
+  const navigationTitle = document.createElement('p');
+  navigationTitle.textContent = language === 'fr' ? 'Dans cette page' : 'On this page';
+  const navigationList = document.createElement('ol');
+  navigation.append(navigationTitle, navigationList);
+
+  const contentColumn = document.createElement('div');
+  contentColumn.className = 'legal-document__content';
+  content.sections.forEach(([title, body], index) => {
+    const id = `legal-section-${index + 1}`;
+    const navigationItem = document.createElement('li');
+    navigationItem.innerHTML = `<a href="#${id}">${title}</a>`;
+    navigationList.append(navigationItem);
     const section = document.createElement('section');
-    section.innerHTML = `<h2>${title}</h2><p>${body}</p>`;
-    legalPage.append(section);
+    section.id = id;
+    section.className = 'legal-document__section';
+    section.innerHTML = `<p class="legal-document__number">${String(index + 1).padStart(2, '0')}</p><div><h2>${title}</h2><p>${body}</p></div>`;
+    contentColumn.append(section);
   });
+  legalPage.append(hero, navigation, contentColumn);
 }
 
 renderLegalPage();

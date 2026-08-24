@@ -35,14 +35,18 @@ assign or remove it.
 
 - `GET /api/admin/users` lists user summaries.
 - `GET /api/admin/users/:userId` returns editable detail.
-- `PATCH /api/admin/users/:userId` updates built-in role, custom roles, and
-  content areas.
+- `PATCH /api/admin/users/:userId` updates another member's built-in role,
+  custom roles, and content areas. A user-management permission never permits
+  a member to change their own built-in role or custom-role assignments.
 - `PATCH /api/admin/users/:userId/developer` promotes an administrator to
   developer after explicit `DEVELOPER` confirmation. Only an existing developer
   may perform this operation.
 
 The client maps `customRoleIds` to loaded role records for display, but the
 server validates assignments and computes effective permissions.
+Members with assigned custom roles see those role names in their dashboard
+access summary, alongside their built-in role, so elevated access is not
+presented as ordinary subscriber or contributor access.
 
 ## Maintenance
 

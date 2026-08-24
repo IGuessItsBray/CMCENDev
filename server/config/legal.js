@@ -22,6 +22,7 @@ function getLegalContact() {
     ].filter(Boolean),
     legalEmail: readSetting('LEGAL_CONTACT_EMAIL', 'legal@cmcen.ca'),
     privacyEmail: readSetting('PRIVACY_CONTACT_EMAIL', 'privacy@cmcen.ca'),
+    supportEmail: readSetting('SUPPORT_CONTACT_EMAIL', 'support@cmcen.ca'),
     securityEmail: readSetting('SECURITY_CONTACT_EMAIL', 'security@cmcen.ca'),
   };
 }

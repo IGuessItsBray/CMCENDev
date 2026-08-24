@@ -4,14 +4,15 @@
 **Last updated:** August 24, 2026<br>
 **Organization:** Communications & Electronics Association: Care of C&E Branch Office ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
-**Privacy Contact:** privacy@cmcen.ca<br>
-**Legal Contact:** legal@cmcen.ca<br>
+**Privacy Contact:** [privacy@cmcen.ca](mailto:privacy@cmcen.ca)<br>
+**Legal Contact:** [legal@cmcen.ca](mailto:legal@cmcen.ca)<br>
+**General Support:** [support@cmcen.ca](mailto:support@cmcen.ca)<br>
+**Website and Account Security:** [security@cmcen.ca](mailto:security@cmcen.ca)<br>
 **Mailing Address:**<br>
-Care Of: C&E Branch Office<br>
-Communications & Electronics Association,<br>
-Forde Building, Rm 217,<br>
-9 Byng Ave<br>
-Kingston, ON, K7K 5L3
+Care Of: C&E Branch Office\
+**Communications & Electronics Association,**\
+Forde Building, Rm 217,\
+9 Byng Ave Kingston, ON, K7K 5L3
 
 > These Terms are published by the Communications & Electronics Association and should be reviewed by qualified legal counsel before any material change to the service or legal requirements.
 
@@ -147,15 +148,14 @@ These Terms, together with the Privacy Policy and any specific terms presented f
 
 ## 16. Contact us
 
-Questions, account-closure requests, copyright notices, and legal notices about these Terms should be directed to **legal@cmcen.ca**. Privacy requests should be directed to **privacy@cmcen.ca**. You may also write to:
+Questions, account-closure requests, copyright notices, and legal notices about these Terms should be directed to [legal@cmcen.ca](mailto:legal@cmcen.ca). Privacy requests should be directed to [privacy@cmcen.ca](mailto:privacy@cmcen.ca). You may also write to:
 
-Care Of: C&E Branch Office<br>
-**Communications & Electronics Association,**<br>
-Forde Building, Rm 217,<br>
-9 Byng Ave<br>
-Kingston, ON, K7K 5L3
+Care Of: C&E Branch Office\
+**Communications & Electronics Association,**\
+Forde Building, Rm 217,\
+9 Byng Ave Kingston, ON, K7K 5L3
 
-For privacy matters, use the privacy-request process in the Privacy Policy. For website-security concerns, general website questions, and legal notices, use the same mailing address unless CMCEN publishes a more specific monitored contact channel.
+For general website or account support, use [support@cmcen.ca](mailto:support@cmcen.ca). For privacy matters, use [privacy@cmcen.ca](mailto:privacy@cmcen.ca). For suspected account compromise or any website/account-security concern, use [security@cmcen.ca](mailto:security@cmcen.ca).
 
 ---
 

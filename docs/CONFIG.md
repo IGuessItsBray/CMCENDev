@@ -663,11 +663,14 @@ FOOTER_ADDRESS_LINE_3=9 Byng Ave
 FOOTER_ADDRESS_LINE_4=Kingston, ON, K7K 5L3
 LEGAL_CONTACT_EMAIL=legal@cmcen.ca
 PRIVACY_CONTACT_EMAIL=privacy@cmcen.ca
+SUPPORT_CONTACT_EMAIL=support@cmcen.ca
 SECURITY_CONTACT_EMAIL=security@cmcen.ca
 ```
 
 `LEGAL_CONTACT_EMAIL` receives Terms, copyright, account-closure, and legal
 notices. `PRIVACY_CONTACT_EMAIL` receives privacy requests and complaints.
+`SUPPORT_CONTACT_EMAIL` receives general website and account support requests.
+`SECURITY_CONTACT_EMAIL` receives website and account-security concerns.
 These addresses are public and must be actively monitored. Do not put any
 credentials in these values.
 

@@ -983,6 +983,12 @@ function loadFooter() {
             </li>
 
             <li>
+              <a href="mailto:support@cmcen.ca" data-legal-contact-email="supportEmail">
+                General support
+              </a>
+            </li>
+
+            <li>
               <a href="mailto:security@cmcen.ca" data-legal-contact-email="securityEmail" data-i18n="security_contact">
                 Security concerns
               </a>

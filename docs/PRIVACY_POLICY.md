@@ -4,14 +4,15 @@
 **Last updated:** August 24, 2026<br>
 **Organization:** Communications & Electronics Association: Care of C&E Branch Office ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
-**Privacy Contact:** privacy@cmcen.ca<br>
-**Legal Contact:** legal@cmcen.ca<br>
+**Privacy Contact:** [privacy@cmcen.ca](mailto:privacy@cmcen.ca)<br>
+**Legal Contact:** [legal@cmcen.ca](mailto:legal@cmcen.ca)<br>
+**General Support:** [support@cmcen.ca](mailto:support@cmcen.ca)<br>
+**Website and Account Security:** [security@cmcen.ca](mailto:security@cmcen.ca)<br>
 **Mailing Address:**<br>
-Care Of: C&E Branch Office<br>
-Communications & Electronics Association,<br>
-Forde Building, Rm 217,<br>
-9 Byng Ave<br>
-Kingston, ON, K7K 5L3
+Care Of: C&E Branch Office\
+**Communications & Electronics Association,**\
+Forde Building, Rm 217,\
+9 Byng Ave Kingston, ON, K7K 5L3
 
 > This policy is published by the Communications & Electronics Association. It should be reviewed by qualified Canadian privacy counsel before any material change to the organization, processing arrangements, or legal requirements.
 
@@ -184,15 +185,14 @@ We may update this Policy to reflect changes to the website, our practices, or a
 
 ## 16. Contact us
 
-Questions, access requests, correction requests, consent withdrawals, complaints, and concerns about this Policy should be directed to **privacy@cmcen.ca**. Legal notices should be directed to **legal@cmcen.ca**. You may also write to:
+Questions, access requests, correction requests, consent withdrawals, complaints, and concerns about this Policy should be directed to [privacy@cmcen.ca](mailto:privacy@cmcen.ca). Legal notices should be directed to [legal@cmcen.ca](mailto:legal@cmcen.ca). You may also write to:
 
-Care Of: C&E Branch Office<br>
-**Communications & Electronics Association,**<br>
-Forde Building, Rm 217,<br>
-9 Byng Ave<br>
-Kingston, ON, K7K 5L3
+Care Of: C&E Branch Office\
+**Communications & Electronics Association,**\
+Forde Building, Rm 217,\
+9 Byng Ave Kingston, ON, K7K 5L3
 
-For suspected account compromise or another website-security concern, use security@cmcen.ca.
+For general website or account support, use [support@cmcen.ca](mailto:support@cmcen.ca). For suspected account compromise or any website/account-security concern, use [security@cmcen.ca](mailto:security@cmcen.ca).
 
 ---
 

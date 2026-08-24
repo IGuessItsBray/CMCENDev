@@ -795,6 +795,9 @@ router.get('/invitations/activate', async (req, res) => {
 // POST /api/register
 // Create a subscriber account from the public registration form.
 router.post('/register', async (req, res) => {
+  let activationUser = null;
+  let isInvitationActivation = false;
+
   try {
     const {
       firstName,
@@ -848,6 +851,7 @@ router.post('/register', async (req, res) => {
       ? incomingPreferredLanguage
       : 'en';
     const cleanInvitationToken = String(invitationToken || '').trim();
+    isInvitationActivation = Boolean(cleanInvitationToken);
     const invitedUser = cleanInvitationToken
       ? await User.findOne({
           accountType: 'invited',
@@ -855,6 +859,25 @@ router.post('/register', async (req, res) => {
           'invitation.expiresAt': { $gt: new Date() },
         }).select('+password +invitation.tokenHash +invitation.expiresAt')
       : null;
+
+    activationUser = invitedUser;
+
+    if (isInvitationActivation) {
+      await writeAuditLog({
+        req,
+        action: invitedUser
+          ? 'user.invitation_activation_attempted'
+          : 'user.invitation_activation_rejected',
+        actor: invitedUser,
+        targetType: 'user',
+        target: invitedUser?._id || null,
+        targetSnapshot: invitedUser ? getUserSnapshot(invitedUser) : {},
+        metadata: {
+          stage: 'registration',
+          outcome: invitedUser ? 'matched_invitation' : 'invalid_or_expired',
+        },
+      });
+    }
 
     if (cleanInvitationToken && !invitedUser) {
       return res
@@ -990,10 +1013,25 @@ router.post('/register', async (req, res) => {
       verificationToken: verification.tempToken,
     });
   } catch (err) {
-    console.error('--- FULL ERROR DETAILS ---');
-    console.error('Name:', err.name);
-    console.error('Message:', err.message);
-    console.error('Stack:', err.stack);
+    if (isInvitationActivation && activationUser) {
+      await writeAuditLog({
+        req,
+        action: 'user.invitation_activation_failed',
+        actor: activationUser,
+        targetType: 'user',
+        target: activationUser._id,
+        targetSnapshot: getUserSnapshot(activationUser),
+        metadata: {
+          stage: 'registration',
+          errorType: err?.name || 'Error',
+        },
+      });
+    }
+
+    console.error('Account registration failed:', {
+      flow: isInvitationActivation ? 'invitation-activation' : 'registration',
+      error: err,
+    });
 
     res.status(400).json({ error: 'Could not create account' });
   }

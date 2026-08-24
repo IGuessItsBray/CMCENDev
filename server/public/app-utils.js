@@ -312,6 +312,27 @@
     return error;
   }
 
+  function getSafeRequestPath(path) {
+    try {
+      return new URL(String(path), window.location.origin).pathname;
+    } catch (error) {
+      return "[unavailable]";
+    }
+  }
+
+  function createNetworkError(errorMessage, error) {
+    const message = errorMessage
+      ? `${errorMessage}. Check your connection and try again.`
+      : "Could not reach CMCEN. Check your connection and try again.";
+    const networkError = new Error(message);
+
+    networkError.name = "NetworkError";
+    networkError.cause = error;
+    networkError.isNetworkError = true;
+
+    return networkError;
+  }
+
   async function apiFetch(path, options = {}) {
     const {
       auth = false,
@@ -350,14 +371,27 @@
       requestHeaders["x-temp-token"] = tempToken;
     }
 
-    const response = await fetch(path, {
-      ...fetchOptions,
-      body: requestBody,
-      headers:
-        requestToken !== undefined
-          ? authHeaders(requestToken, requestHeaders)
-          : requestHeaders,
-    });
+    let response;
+
+    try {
+      response = await fetch(path, {
+        ...fetchOptions,
+        body: requestBody,
+        headers:
+          requestToken !== undefined
+            ? authHeaders(requestToken, requestHeaders)
+            : requestHeaders,
+      });
+    } catch (error) {
+      // Keep this diagnostic free of query parameters, request bodies, and tokens.
+      console.warn("Network request failed before a response was received", {
+        method: fetchOptions.method || "GET",
+        path: getSafeRequestPath(path),
+        errorName: error?.name || "Error",
+        errorMessage: error?.message || "Request failed",
+      });
+      throw createNetworkError(errorMessage, error);
+    }
 
     if (
       response.status === 401 &&

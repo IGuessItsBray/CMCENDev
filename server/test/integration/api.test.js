@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const { after, before, beforeEach, describe, test } = require('node:test');
 
 process.env.JWT_SECRET = 'integration-test-jwt-secret';
@@ -350,6 +351,78 @@ describe('system and authentication', () => {
 
     assert.equal(typeof consentedLogin.body.token, 'string');
     assert.match(consentedLogin.headers['set-cookie'][0], /cmcen_refresh=/);
+  });
+
+  test('audits invitation activation attempts without storing the invitation token', async () => {
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+    const email = 'activation.audit@example.test';
+    const invitedUser = await User.create({
+      accountType: 'invited',
+      profileComplete: false,
+      username: email,
+      email,
+      password: 'Temporary-Password-1!',
+      firstName: 'Activation',
+      lastName: 'Audit',
+      role: 'subscriber',
+      invitation: {
+        tokenHash: crypto
+          .createHash('sha256')
+          .update(invitationToken)
+          .digest('hex'),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+
+    const activation = await request(app)
+      .post('/api/register')
+      .send({
+        email,
+        password: 'Activated-Password-1!',
+        passwordConfirmation: 'Activated-Password-1!',
+        invitationToken,
+        sessionCookieConsent: true,
+      })
+      .expect(201);
+
+    assert.equal(typeof activation.body.token, 'string');
+    assert.ok(
+      await AuditLog.exists({
+        action: 'user.invitation_activation_attempted',
+        target: invitedUser._id,
+        'metadata.outcome': 'matched_invitation',
+      }),
+    );
+    assert.ok(
+      await AuditLog.exists({
+        action: 'user.invitation_activated',
+        target: invitedUser._id,
+      }),
+    );
+    const auditText = JSON.stringify(
+      await AuditLog.find({ target: invitedUser._id }).lean(),
+    );
+    assert.equal(auditText.includes(invitationToken), false);
+  });
+
+  test('audits a rejected invitation activation without exposing its token', async () => {
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+
+    await request(app)
+      .post('/api/register')
+      .send({
+        email: 'not-an-invitation@example.test',
+        password: 'Rejected-Password-1!',
+        passwordConfirmation: 'Rejected-Password-1!',
+        invitationToken,
+      })
+      .expect(400);
+
+    const rejectedAudit = await AuditLog.findOne({
+      action: 'user.invitation_activation_rejected',
+    }).lean();
+    assert.equal(rejectedAudit.metadata.outcome, 'invalid_or_expired');
+    assert.equal(JSON.stringify(rejectedAudit).includes(invitationToken), false);
   });
 
   test('records express weekly-brief consent and permits immediate email-link withdrawal', async () => {

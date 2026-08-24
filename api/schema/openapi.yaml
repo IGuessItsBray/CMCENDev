@@ -311,7 +311,7 @@ paths:
   /api/register:
     post:
       tags: [Auth]
-      summary: Register a user account; invitation activation issues a session only after cookie consent.
+      summary: Register a user account; invitation activation issues a session only after cookie consent and records a token-free audit event for each activation attempt.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/AuthRegister"

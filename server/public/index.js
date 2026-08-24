@@ -366,8 +366,11 @@ function loadHeader() {
     skipLink.href = `#${main.id}`;
     skipLink.dataset.i18n = "skip_to_main_content";
     skipLink.textContent = "Skip to main content";
-    skipLink.addEventListener("click", () => {
-      window.requestAnimationFrame(() => main.focus());
+    skipLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      window.history.pushState(null, "", `#${main.id}`);
+      main.scrollIntoView();
+      main.focus({ preventScroll: true });
     });
     document.body.prepend(skipLink);
   }

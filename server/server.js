@@ -106,6 +106,7 @@ if (isApiDocsEnabled) {
   });
 
   app.get('/api-docs', (req, res) => {
+    const cspNonce = res.locals.cspNonce;
     res.type('html').send(`<!doctype html>
 <html lang="en">
   <head>
@@ -113,7 +114,7 @@ if (isApiDocsEnabled) {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CMCEN API Docs</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
-    <style>
+    <style nonce="${cspNonce}">
       body {
         margin: 0;
         background: #f7f7f7;
@@ -123,7 +124,7 @@ if (isApiDocsEnabled) {
   <body>
     <div id="swagger-ui"></div>
     <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-    <script>
+    <script nonce="${cspNonce}">
       window.ui = SwaggerUIBundle({
         url: "/api-docs/openapi.yaml",
         dom_id: "#swagger-ui",

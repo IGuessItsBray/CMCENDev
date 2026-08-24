@@ -3,6 +3,7 @@ const test = require('node:test');
 const {
   AI_CRAWLERS,
   blockKnownAiCrawlers,
+  buildContentSecurityPolicy,
   buildRobotsTxt,
   escapeXml,
   getPublicBaseUrl,
@@ -64,19 +65,20 @@ test('defines crawler routes and applies baseline response headers', () => {
     .filter((layer) => layer.route)
     .map((layer) => layer.route.path);
   const headers = {};
+  const response = {
+    set(nameOrHeaders, value) {
+      if (typeof nameOrHeaders === 'string') {
+        headers[nameOrHeaders] = value;
+      } else {
+        Object.assign(headers, nameOrHeaders);
+      }
+    },
+  };
   let nextCalled = false;
 
   setStandardResponseHeaders(
     { path: '/dashboard' },
-    {
-      set(nameOrHeaders, value) {
-        if (typeof nameOrHeaders === 'string') {
-          headers[nameOrHeaders] = value;
-        } else {
-          Object.assign(headers, nameOrHeaders);
-        }
-      },
-    },
+    response,
     () => {
       nextCalled = true;
     },
@@ -88,8 +90,35 @@ test('defines crawler routes and applies baseline response headers', () => {
   assert.equal(AI_CRAWLERS.includes('ClaudeBot'), true);
   assert.equal(headers['X-Content-Type-Options'], 'nosniff');
   assert.equal(headers['X-Frame-Options'], 'DENY');
+  assert.match(
+    headers['Content-Security-Policy'],
+    /^default-src 'self'; script-src 'self' 'nonce-[^']+'; style-src 'self' 'nonce-[^']+'; img-src 'self' data: blob: https:; connect-src 'self'; frame-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'$/u,
+  );
+  assert.match(response.locals.cspNonce, /^[A-Za-z0-9+/]{22}==$/u);
   assert.equal(headers['X-Robots-Tag'], 'noindex, nofollow, noarchive');
   assert.equal(nextCalled, true);
+});
+
+test('allows only configured analytics origins and API documentation assets', () => {
+  const policy = buildContentSecurityPolicy(
+    {
+      PLAUSIBLE_API_URL: 'https://analytics.example.test/api/event',
+      PLAUSIBLE_SHARE_URL: 'https://stats.example.test/share/demo',
+      ENABLE_API_DOCS: 'true',
+    },
+    'test-nonce',
+  );
+
+  assert.match(
+    policy,
+    /script-src 'self' 'nonce-test-nonce' https:\/\/stats\.example\.test https:\/\/unpkg\.com/u,
+  );
+  assert.match(
+    policy,
+    /style-src 'self' 'nonce-test-nonce' https:\/\/unpkg\.com/u,
+  );
+  assert.match(policy, /connect-src 'self' https:\/\/analytics\.example\.test/u);
+  assert.match(policy, /frame-src 'self' https:\/\/stats\.example\.test/u);
 });
 
 test('blocks declared AI crawlers without blocking public search pages', () => {

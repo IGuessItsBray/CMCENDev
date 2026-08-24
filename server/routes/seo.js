@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const fs = require('fs/promises');
 const path = require('path');
 const Page = require('../models/Page');
@@ -101,6 +102,46 @@ function isNoIndexPath(pathname) {
   return NON_INDEXABLE_PATHS.some((pattern) => pattern.test(pathname));
 }
 
+function getCspOrigin(value) {
+  try {
+    const url = new URL(String(value || '').trim());
+    return ['http:', 'https:'].includes(url.protocol) ? url.origin : '';
+  } catch {
+    return '';
+  }
+}
+
+function buildContentSecurityPolicy(environment = process.env, nonce) {
+  const plausibleApiOrigin = getCspOrigin(environment.PLAUSIBLE_API_URL);
+  const plausibleShareOrigin = getCspOrigin(environment.PLAUSIBLE_SHARE_URL);
+  const apiDocsEnabled = environment.ENABLE_API_DOCS === 'true';
+  const scriptSources = ["'self'", `'nonce-${nonce}'`];
+  const styleSources = ["'self'", `'nonce-${nonce}'`];
+
+  if (plausibleShareOrigin) {
+    scriptSources.push(plausibleShareOrigin);
+  }
+
+  if (apiDocsEnabled) {
+    scriptSources.push('https://unpkg.com');
+    styleSources.push('https://unpkg.com');
+  }
+
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSources.join(' ')}`,
+    `style-src ${styleSources.join(' ')}`,
+    "img-src 'self' data: blob: https:",
+    `connect-src 'self'${plausibleApiOrigin ? ` ${plausibleApiOrigin}` : ''}`,
+    `frame-src 'self'${plausibleShareOrigin ? ` ${plausibleShareOrigin}` : ''}`,
+    "font-src 'self' data:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
+
 function isKnownAiCrawler(userAgent) {
   const normalizedUserAgent = String(userAgent || '').toLowerCase();
   return AI_CRAWLERS.some((crawler) =>
@@ -153,7 +194,15 @@ function serializeSitemap(urls) {
 }
 
 function setStandardResponseHeaders(req, res, next) {
+  const cspNonce = crypto.randomBytes(16).toString('base64');
+  res.locals = res.locals || {};
+  res.locals.cspNonce = cspNonce;
+
   res.set({
+    'Content-Security-Policy': buildContentSecurityPolicy(
+      process.env,
+      cspNonce,
+    ),
     'Permissions-Policy':
       'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
@@ -214,6 +263,8 @@ module.exports = {
   escapeXml,
   getPublicBaseUrl,
   getSitemapUrls,
+  buildContentSecurityPolicy,
+  getCspOrigin,
   isKnownAiCrawler,
   isNoIndexPath,
   serializeSitemap,

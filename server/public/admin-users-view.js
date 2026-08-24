@@ -364,7 +364,11 @@
       invite.addEventListener("click", actions.provisionUser);
 
       search.append(searchLabel, searchInput);
-      header.append(title, invite, refresh);
+      const headerActions = document.createElement("div");
+      headerActions.className = "admin-user-list-actions";
+      headerActions.append(invite, refresh);
+
+      header.append(title, headerActions);
       panel.append(header, search, createUsersExportPanel());
 
       const list = document.createElement("div");

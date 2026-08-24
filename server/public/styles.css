@@ -6947,6 +6947,13 @@ html[data-theme='dark'] .admin-subscriptions-panel p {
   border-bottom: 1px solid var(--branch-grey-200);
 }
 
+.admin-user-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 .admin-user-search {
   display: grid;
   gap: 8px;

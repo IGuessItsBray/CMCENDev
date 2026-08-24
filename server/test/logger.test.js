@@ -27,14 +27,14 @@ test('redacts sensitive object properties before they are logged', () => {
   assert.equal(result.nested.password, '[REDACTED]');
 });
 
-test('omits error stacks while retaining a sanitized error summary', () => {
+test('retains a sanitized error stack for diagnostics', () => {
   const result = sanitize(
     new Error('Request failed with Bearer abc.def.ghi for member@example.test'),
   );
 
-  assert.deepEqual(result, {
-    name: 'Error',
-    message: 'Request failed with [REDACTED] for [REDACTED]',
-  });
-  assert.equal('stack' in result, false);
+  assert.equal(result.name, 'Error');
+  assert.equal(result.message, 'Request failed with [REDACTED] for [REDACTED]');
+  assert.match(result.stack, /^Error: Request failed with \[REDACTED\]/u);
+  assert.equal(result.stack.includes('abc.def.ghi'), false);
+  assert.equal(result.stack.includes('member@example.test'), false);
 });

@@ -107,6 +107,32 @@ const EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS = 30 * 60 * 1000;
 const GHOST_PASSWORD_BYTES = 32;
 const INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 
+function getLoginAttemptSnapshot(username) {
+  return {
+    username: String(username || '')
+      .trim()
+      .slice(0, 320),
+  };
+}
+
+async function recordLoginRejected(req, username, reason) {
+  await writeAuditLog({
+    req,
+    action: 'user.login_rejected',
+    targetType: 'user',
+    targetSnapshot: getLoginAttemptSnapshot(username),
+    metadata: { reason },
+  });
+
+  console.warn('Login rejected', {
+    reason,
+    username: String(username || '')
+      .trim()
+      .slice(0, 320),
+    ip: req.ip,
+  });
+}
+
 const passwordResetRequestIpLimit = rateLimitByIp(
   'password-reset-request-ip',
   'PASSWORD_RESET_REQUEST_RATE_LIMIT_WINDOW_SECONDS',
@@ -1040,12 +1066,18 @@ router.post('/register', async (req, res) => {
 // POST /api/login
 // Authenticate a user and return a short-lived JWT.
 router.post('/login', async (req, res) => {
-  const { username, password, sessionCookieConsent } = req.body;
-  const user = await User.findOne({ username }).select(
-    '+password +emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
-  );
+  const { username, password, sessionCookieConsent } = req.body || {};
 
-  if (user && (await bcrypt.compare(password, user.password))) {
+  try {
+    const user = await User.findOne({ username }).select(
+      '+password +emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
+    );
+
+    if (!user || !(await bcrypt.compare(password || '', user.password))) {
+      await recordLoginRejected(req, username, 'invalid_credentials');
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
     if (userRequiresEmailVerification(user)) {
       const verification = await prepareEmailVerification(user);
       await user.save();
@@ -1122,9 +1154,10 @@ router.post('/login', async (req, res) => {
       },
     });
 
-    res.json({ token });
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
+    return res.json({ token });
+  } catch (error) {
+    console.error('Login request failed:', error);
+    return res.status(500).json({ error: 'Could not sign in' });
   }
 });
 

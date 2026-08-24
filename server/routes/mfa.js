@@ -221,6 +221,30 @@ function countActiveMfaMethods(user) {
   return passkeyCount + (hasActiveTotp(user) ? 1 : 0);
 }
 
+async function recordMfaRejected(req, user, method, reason) {
+  await writeAuditLog({
+    req,
+    action: 'user.mfa_rejected',
+    actor: user,
+    targetType: 'user',
+    target: user?._id,
+    targetSnapshot: {
+      username: user?.username,
+      email: user?.email,
+      accountName: user?.accountName,
+      role: user?.role,
+    },
+    metadata: { method, reason },
+  });
+
+  console.warn('MFA verification rejected', {
+    method,
+    reason,
+    userId: String(user?._id || ''),
+    ip: req.ip,
+  });
+}
+
 // WebAuthn registration options
 router.post('/webauthn/register/options', authMiddleware, async (req, res) => {
   try {
@@ -288,6 +312,12 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
     });
 
     if (!verification.verified) {
+      await recordMfaRejected(
+        req,
+        user,
+        'webauthn_registration',
+        'not_verified',
+      );
       return res
         .status(400)
         .json({ error: 'Registration verification failed' });
@@ -309,6 +339,12 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
       : bufferToBase64(registrationInfo.credentialPublicKey);
 
     if (!idB64url) {
+      await recordMfaRejected(
+        req,
+        user,
+        'webauthn_registration',
+        'credential_id_missing',
+      );
       console.error(
         'webauthn/register/verify -> could not determine credential id from registrationInfo or body',
         { registrationInfo, body },
@@ -318,6 +354,12 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
         .json({ error: 'Could not determine credential id' });
     }
     if (!publicKeyB64) {
+      await recordMfaRejected(
+        req,
+        user,
+        'webauthn_registration',
+        'public_key_missing',
+      );
       console.error(
         'webauthn/register/verify -> could not determine credential public key',
         { registrationInfo },
@@ -354,6 +396,12 @@ router.post('/webauthn/register/verify', authMiddleware, async (req, res) => {
 
     res.json({ verified: true });
   } catch (err) {
+    await recordMfaRejected(
+      req,
+      req.user,
+      'webauthn_registration',
+      'verification_error',
+    );
     console.error('webauthn/verify error', err);
     res.status(400).json({ error: 'Could not verify registration' });
   }
@@ -447,6 +495,7 @@ router.post(
           'webauthn/auth/verify -> stored creds:',
           (user.webauthn || []).map((c) => c.credentialID),
         );
+        await recordMfaRejected(req, user, 'webauthn', 'unknown_credential');
         return res.status(400).json({ error: 'Unknown credential' });
       }
 
@@ -463,8 +512,10 @@ router.post(
         requireUserVerification: false,
       });
 
-      if (!verification.verified)
+      if (!verification.verified) {
+        await recordMfaRejected(req, user, 'webauthn', 'not_verified');
         return res.status(400).json({ error: 'Authentication failed' });
+      }
 
       // update counter
       await User.updateOne(
@@ -505,6 +556,7 @@ router.post(
 
       res.json(responsePayload);
     } catch (err) {
+      await recordMfaRejected(req, req.user, 'webauthn', 'verification_error');
       console.error('webauthn/auth/verify error', err);
       res.status(400).json({ error: 'Could not verify authentication' });
     }
@@ -606,12 +658,16 @@ router.post(
       const user = await User.findById(req.user._id);
       const token = normalizeTotpToken(req.body?.token);
 
-      if (!user.totp?.secret)
+      if (!user.totp?.secret) {
+        await recordMfaRejected(req, user, 'totp', 'not_configured');
         return res.status(400).json({ error: 'No TOTP secret set' });
-      if (!/^\d{6,8}$/.test(token))
+      }
+      if (!/^\d{6,8}$/.test(token)) {
+        await recordMfaRejected(req, user, 'totp', 'invalid_format');
         return res
           .status(400)
           .json({ error: 'Enter the six-digit authenticator code' });
+      }
 
       const verification = speakeasy.totp.verifyDelta({
         secret: user.totp.secret,
@@ -620,8 +676,10 @@ router.post(
         window: getTotpWindow(),
       });
 
-      if (!verification)
+      if (!verification) {
+        await recordMfaRejected(req, user, 'totp', 'invalid_token');
         return res.status(400).json({ error: 'Invalid token' });
+      }
 
       if (verification.delta !== 0) {
         console.warn(
@@ -666,6 +724,7 @@ router.post(
 
       res.json(responsePayload);
     } catch (err) {
+      await recordMfaRejected(req, req.user, 'totp', 'verification_error');
       console.error('totp/verify error', err);
       res.status(500).json({ error: 'Could not verify TOTP token' });
     }

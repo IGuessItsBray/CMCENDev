@@ -7,6 +7,8 @@ info:
     Schemas are intentionally broad where handlers return Mongoose documents.
     Every /api endpoint is rate limited by source IP and may return 429 with
     Retry-After and RateLimit-* headers. Sensitive endpoints have stricter limits.
+    Every response includes X-Request-ID for support correlation. Server failures
+    are logged and audited without retaining request bodies or query strings.
 servers:
   - url: http://localhost:3000
     description: Local development (Eric)
@@ -338,7 +340,7 @@ paths:
   /api/login:
     post:
       tags: [Auth]
-      summary: Login with username and password after confirming the required session cookie.
+      summary: Login with username and password after confirming the required session cookie; rejected credentials are audited without retaining the password.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/Login"
@@ -576,7 +578,7 @@ paths:
   /api/mfa/webauthn/authenticate/verify:
     post:
       tags: [MFA]
-      summary: Verify WebAuthn authentication.
+      summary: Verify WebAuthn authentication and audit rejected verification attempts without retaining credential material.
       parameters:
         - $ref: "#/components/parameters/TempTokenQuery"
       requestBody:
@@ -610,7 +612,7 @@ paths:
   /api/mfa/totp/verify:
     post:
       tags: [MFA]
-      summary: Verify TOTP code.
+      summary: Verify TOTP code and audit rejected verification attempts without retaining the code.
       parameters:
         - $ref: "#/components/parameters/TempTokenQuery"
       requestBody:

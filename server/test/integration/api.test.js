@@ -301,6 +301,15 @@ describe('system and authentication', () => {
     });
     assert.equal(invalidLogin.status, 401);
     assert.equal(invalidLogin.body.error, 'Invalid credentials');
+    const rejectedLoginAudit = await AuditLog.findOne({
+      action: 'user.login_rejected',
+    }).lean();
+    assert.equal(rejectedLoginAudit.targetType, 'user');
+    assert.equal(rejectedLoginAudit.metadata.reason, 'invalid_credentials');
+    assert.equal(
+      JSON.stringify(rejectedLoginAudit).includes('wrong-password'),
+      false,
+    );
 
     const invalidToken = await request(app)
       .get('/api/me')

@@ -25,6 +25,7 @@ function sanitize(value, key = '') {
     return {
       name: value.name,
       message: redactString(value.message),
+      ...(value.stack ? { stack: redactString(value.stack) } : {}),
     };
   }
 
@@ -60,7 +61,8 @@ function write(level, message, details) {
   }
 
   const output = JSON.stringify(entry);
-  const stream = level === 'error' || level === 'warn' ? process.stderr : process.stdout;
+  const stream =
+    level === 'error' || level === 'warn' ? process.stderr : process.stdout;
   stream.write(`${output}\n`);
 }
 

@@ -35,6 +35,7 @@ const {
   setStandardResponseHeaders,
 } = require('./routes/seo');
 const { rateLimitByIp } = require('./middleware/rate-limit');
+const { requestDiagnostics } = require('./middleware/request-diagnostics');
 const { getPlausibleConfig } = require('./services/plausible');
 const logger = require('./services/logger');
 const { startWeeklyBriefScheduler } = require('./services/weekly-brief');
@@ -50,6 +51,7 @@ const apiRateLimit = rateLimitByIp(
   { windowSeconds: 60, max: 300 },
 );
 app.set('trust proxy', true);
+app.use(requestDiagnostics);
 app.use(express.json());
 app.use(setStandardResponseHeaders);
 app.use(blockKnownAiCrawlers);
@@ -248,7 +250,12 @@ app.use((error, req, res, next) => {
       ? error.status
       : 500;
 
-  console.error('Unhandled request error:', error);
+  console.error('Unhandled request error:', {
+    requestId: req.requestId,
+    method: req.method,
+    path: req.path,
+    error,
+  });
 
   if (wantsHtmlResponse(req)) {
     return sendErrorPage(res, statusCode);

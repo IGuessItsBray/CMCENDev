@@ -27,13 +27,21 @@ async function authMiddleware(req, res, next) {
   try {
     const user = await User.findById(decoded.userId)
       .select(
-        'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions notificationState totp webauthn twoFactor createdAt updatedAt',
+        'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions notificationState totp webauthn twoFactor createdAt updatedAt sessionVersion',
       )
       .populate('customRoles', 'name slug color permissions');
 
     if (!user) {
       return res.status(401).json({
         error: 'User no longer exists',
+      });
+    }
+
+    if (
+      Number(decoded.sessionVersion || 0) !== Number(user.sessionVersion || 0)
+    ) {
+      return res.status(401).json({
+        error: 'Session has been revoked',
       });
     }
 
@@ -61,11 +69,14 @@ async function optionalAuthMiddleware(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId)
       .select(
-        'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions notificationState createdAt updatedAt',
+        'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions notificationState createdAt updatedAt sessionVersion',
       )
       .populate('customRoles', 'name slug color permissions');
 
-    if (user) {
+    if (
+      user &&
+      Number(decoded.sessionVersion || 0) === Number(user.sessionVersion || 0)
+    ) {
       req.user = user;
     }
   } catch {
@@ -156,6 +167,12 @@ async function authOrTempMiddleware(req, res, next) {
 
       if (!user)
         return res.status(401).json({ error: 'User no longer exists' });
+
+      if (
+        Number(decoded.sessionVersion || 0) !== Number(user.sessionVersion || 0)
+      ) {
+        return res.status(401).json({ error: 'Session has been revoked' });
+      }
 
       req.user = user;
       return next();

@@ -12,9 +12,14 @@ function getRefreshTokenTtlDays() {
 }
 
 function createSessionToken(user) {
-  return jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-    expiresIn: ACCESS_TOKEN_TTL,
-  });
+  return jwt.sign(
+    {
+      userId: user._id,
+      sessionVersion: Number(user.sessionVersion || 0),
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: ACCESS_TOKEN_TTL },
+  );
 }
 
 function createRefreshToken(user) {

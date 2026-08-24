@@ -340,6 +340,10 @@ describe('system and authentication', () => {
 
     await agent.post('/api/session/logout').expect(204);
     await agent.post('/api/session/refresh').expect(401);
+    await agent
+      .get('/api/me')
+      .set('Authorization', bearer(loginResponse.body.token))
+      .expect(401);
 
     const audit = await AuditLog.findOne({ action: 'user.login' }).lean();
     assert.equal(String(audit.actor), String(user._id));

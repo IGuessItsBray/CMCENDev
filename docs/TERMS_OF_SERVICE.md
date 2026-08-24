@@ -2,7 +2,7 @@
 
 **Effective date:** September 1, 2026<br>
 **Last updated:** August 24, 2026<br>
-**Organization:** Communications & Electronics Association: Care of C&E Branch Office ("CMCEN", "we", "us", or "our")<br>
+**Organization:** Communications & Electronics Association ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
 **Privacy Contact:** [privacy@cmcen.ca](mailto:privacy@cmcen.ca)<br>
 **Legal Contact:** [legal@cmcen.ca](mailto:legal@cmcen.ca)<br>
@@ -155,7 +155,7 @@ Care Of: C&E Branch Office\
 Forde Building, Rm 217,\
 9 Byng Ave Kingston, ON, K7K 5L3
 
-For general website or account support, use [support@cmcen.ca](mailto:support@cmcen.ca). For privacy matters, use [privacy@cmcen.ca](mailto:privacy@cmcen.ca). For suspected account compromise or any website/account-security concern, use [security@cmcen.ca](mailto:security@cmcen.ca).
+For general website or account support, use [support@cmcen.ca](mailto:support@cmcen.ca). For suspected account compromise or any website/account-security concern, use [security@cmcen.ca](mailto:security@cmcen.ca).
 
 ---
 

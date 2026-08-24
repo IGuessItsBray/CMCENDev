@@ -2,7 +2,7 @@
 
 **Effective date:** September 1, 2026<br>
 **Last updated:** August 24, 2026<br>
-**Organization:** Communications & Electronics Association: Care of C&E Branch Office ("CMCEN", "we", "us", or "our")<br>
+**Organization:** Communications & Electronics Association ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
 **Privacy Contact:** [privacy@cmcen.ca](mailto:privacy@cmcen.ca)<br>
 **Legal Contact:** [legal@cmcen.ca](mailto:legal@cmcen.ca)<br>

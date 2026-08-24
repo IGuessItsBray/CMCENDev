@@ -1,11 +1,19 @@
 const legalPage = document.querySelector('[data-legal-page]');
 
+function appendPlainText(container, value) {
+  const fragments = value.split('\u0000');
+  fragments.forEach((fragment, index) => {
+    if (index) container.append(document.createElement('br'));
+    container.append(document.createTextNode(fragment));
+  });
+}
+
 function appendInlineText(container, value) {
   const pattern = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^\s)]+\)|https?:\/\/[^\s<]+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,})/gu;
   let cursor = 0;
 
   for (const match of value.matchAll(pattern)) {
-    container.append(document.createTextNode(value.slice(cursor, match.index)));
+    appendPlainText(container, value.slice(cursor, match.index));
     const token = match[0];
     if (token.startsWith('**')) {
       const strong = document.createElement('strong');
@@ -33,7 +41,7 @@ function appendInlineText(container, value) {
     }
     cursor = match.index + token.length;
   }
-  container.append(document.createTextNode(value.slice(cursor)));
+  appendPlainText(container, value.slice(cursor));
 }
 
 function cleanMarkdownLine(value) {
@@ -113,7 +121,10 @@ function parseMarkdown(markdown) {
       return;
     }
     if (line && !/^---+$/u.test(line)) {
-      paragraph.push(line);
+      const hasHardBreak = line.endsWith('\\');
+      paragraph.push(
+        hasHardBreak ? `${line.slice(0, -1)}\u0000` : line,
+      );
     } else {
       flushParagraph();
       flushList();

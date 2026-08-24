@@ -942,7 +942,7 @@ function loadFooter() {
               </a>
             </li>
 
-            <li>
+            <li data-auth-required hidden>
               <a href="/contact.html" data-i18n="menu_contact">
                 Contact
               </a>

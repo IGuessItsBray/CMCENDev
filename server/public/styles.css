@@ -20227,8 +20227,147 @@ html[data-theme='dark'] .admin-work-zone-button.is-success:focus-visible:not(:di
 
 .content-workspace-record-form .content-workspace-field:has(textarea),
 .content-workspace-record-form .content-workspace-field.is-checkbox,
-.content-workspace-record-form .content-workspace-form-actions {
+.content-workspace-record-form .content-workspace-form-actions,
+.content-workspace-record-form .content-workspace-image-editor {
   grid-column: 1 / -1;
+}
+
+.content-workspace-image-editor {
+  display: grid;
+  overflow: hidden;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--branch-grey-200);
+  border-top: 3px solid var(--gold-600);
+  background: var(--white);
+}
+
+.content-workspace-image-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 0;
+}
+
+.content-workspace-image-editor h3 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 16px;
+}
+
+.content-workspace-image-state {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--branch-grey-300);
+  border-radius: 999px;
+  background: var(--branch-grey-100);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.content-workspace-image-editor.has-image .content-workspace-image-state {
+  border-color: rgba(47, 104, 64, 0.3);
+  background: rgba(47, 104, 64, 0.09);
+  color: #1d6c36;
+}
+
+.content-workspace-image-media {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+  gap: 16px;
+  align-items: stretch;
+  padding: 14px 16px 16px;
+}
+
+.content-workspace-image-preview-frame {
+  display: grid;
+  min-height: 224px;
+  overflow: hidden;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 5px;
+  background:
+    linear-gradient(45deg, rgba(17, 58, 93, 0.025) 25%, transparent 25%) 0 0 / 18px 18px,
+    linear-gradient(-45deg, rgba(17, 58, 93, 0.025) 25%, transparent 25%) 0 0 / 18px 18px,
+    var(--branch-grey-100);
+}
+
+.content-workspace-image-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 224px;
+  object-fit: contain;
+}
+
+.content-workspace-image-empty {
+  display: grid;
+  place-items: center;
+  min-height: 224px;
+  margin: 0;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.content-workspace-image-controls {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 5px;
+  background: #f8f9fa;
+}
+
+.content-workspace-image-editor.has-image .content-workspace-image-controls {
+  align-self: center;
+  grid-template-rows: auto;
+}
+
+.content-workspace-image-hint {
+  align-self: center;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.content-workspace-image-upload {
+  justify-self: start;
+  cursor: pointer;
+}
+
+.content-workspace-image-upload:has(input:focus-visible) {
+  outline: 3px solid rgba(197, 141, 35, 0.3);
+  outline-offset: 2px;
+}
+
+.content-workspace-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--branch-grey-200);
+}
+
+@media (max-width: 680px) {
+  .content-workspace-image-media {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .content-workspace-image-preview-frame,
+  .content-workspace-image-preview,
+  .content-workspace-image-empty {
+    min-height: 196px;
+  }
 }
 
 .content-workspace-field.is-checkbox {
@@ -21396,6 +21535,7 @@ html[data-theme='dark'] .content-workspace-list-panel,
 html[data-theme='dark'] .content-workspace-list-heading,
 html[data-theme='dark'] .content-workspace-language-group,
 html[data-theme='dark'] .content-workspace-record-form,
+html[data-theme='dark'] .content-workspace-image-editor,
 html[data-theme='dark'] .content-workspace-submission-details,
 html[data-theme='dark'] .content-workspace-submission-item,
 html[data-theme='dark'] .content-workspace-read-only-language,
@@ -21450,6 +21590,7 @@ html[data-theme='dark'] .content-workspace-filters label,
 html[data-theme='dark'] .content-workspace-field > span,
 html[data-theme='dark'] .content-workspace-language-group legend,
 html[data-theme='dark'] .content-workspace-record-editor h2,
+html[data-theme='dark'] .content-workspace-image-editor h3,
 html[data-theme='dark'] .content-workspace-submission-details > summary,
 html[data-theme='dark'] .content-workspace-submission-section h3,
 html[data-theme='dark'] .content-workspace-revision summary,
@@ -21467,6 +21608,7 @@ html[data-theme='dark'] .content-workspace-review-prompt {
 html[data-theme='dark'] .content-workspace-record-meta,
 html[data-theme='dark'] .content-workspace-detail-info,
 html[data-theme='dark'] .content-workspace-member-event-intro,
+html[data-theme='dark'] .content-workspace-image-hint,
 html[data-theme='dark'] .content-workspace-revision-meta,
 html[data-theme='dark'] .content-workspace-revisions,
 html[data-theme='dark'] .content-workspace-read-only,
@@ -21481,6 +21623,33 @@ html[data-theme='dark'] .content-workspace-revision-value.is-empty {
 }
 
 html[data-theme='dark'] .content-workspace-submission-body {
+  border-top-color: var(--dark-border);
+}
+
+html[data-theme='dark'] .content-workspace-image-preview {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-2);
+}
+
+html[data-theme='dark'] .content-workspace-image-preview-frame,
+html[data-theme='dark'] .content-workspace-image-controls {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-2);
+}
+
+html[data-theme='dark'] .content-workspace-image-state {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-3);
+  color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .content-workspace-image-editor.has-image .content-workspace-image-state {
+  border-color: rgba(111, 173, 126, 0.55);
+  background: rgba(79, 115, 88, 0.35);
+  color: #afe1ba;
+}
+
+html[data-theme='dark'] .content-workspace-image-actions {
   border-top-color: var(--dark-border);
 }
 

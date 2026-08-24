@@ -2668,6 +2668,124 @@ describe('event, page, and comment workflows', () => {
     assert.deepEqual(commentEditAudit.metadata.fields, ['body']);
   });
 
+  test('lets reviewers replace or remove submission images from the workspace', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const editorSession = await login(editor);
+    const now = new Date();
+    const eventAsset = await MediaAsset.create({
+      key: 'images/workspace-event/original.webp',
+      url: 'https://cdn.example.test/images/workspace-event/large.webp',
+      originalKey: 'images/workspace-event/original.webp',
+      originalUrl: 'https://cdn.example.test/images/workspace-event/original.webp',
+    });
+    const event = await Event.create({
+      ...eventPayload(),
+      imagePath: 'https://cdn.example.test/images/old-event/large.webp',
+      status: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+    const retirementBase = retirementPayload();
+    const retirementMessage = await RetirementMessage.create({
+      ...retirementBase,
+      photoUrl: 'https://cdn.example.test/images/old-retirement/large.webp',
+      photoDisplayUrl:
+        'https://cdn.example.test/images/old-retirement/display-4x3.webp',
+      status: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+      publicationConsent: { confirmed: true, confirmedAt: now },
+      memberReviewConfirmation: { confirmed: true, confirmedAt: now },
+    });
+    const lastPost = await LastPostMessage.create({
+      submitter: {
+        rank: 'Captain',
+        firstName: 'Editor',
+        lastName: 'Example',
+        email: 'editor@example.test',
+      },
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Image',
+        surname: 'Removal',
+      },
+      messageLanguage: 'en',
+      messages: {
+        en: 'A published Last Post notice whose image will be removed by a reviewer.',
+        fr: 'Un avis du Dernier appel publié dont l’image sera supprimée par le réviseur.',
+      },
+      imageUrl: 'https://cdn.example.test/images/old-last-post/large.webp',
+      imageDisplayUrl:
+        'https://cdn.example.test/images/old-last-post/display-4x3.webp',
+      status: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+
+    await request(app)
+      .patch(`/api/admin/events/${event._id}`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ imagePath: eventAsset.url })
+      .expect(200);
+    await request(app)
+      .patch(`/api/admin/retirement-messages/${retirementMessage._id}`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        photoUrl: 'https://cdn.example.test/images/new-retirement/large.webp',
+        photoDisplayUrl:
+          'https://cdn.example.test/images/new-retirement/display-4x3.webp',
+      })
+      .expect(200);
+    await request(app)
+      .patch(`/api/admin/last-posts/${lastPost._id}`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ imageUrl: '', imageDisplayUrl: '' })
+      .expect(200);
+
+    const [savedEvent, savedRetirement, savedLastPost, linkedAsset] =
+      await Promise.all([
+        Event.findById(event._id).lean(),
+        RetirementMessage.findById(retirementMessage._id).lean(),
+        LastPostMessage.findById(lastPost._id).lean(),
+        MediaAsset.findById(eventAsset._id).lean(),
+      ]);
+    assert.equal(savedEvent.imagePath, eventAsset.url);
+    assert.equal(
+      savedRetirement.photoUrl,
+      'https://cdn.example.test/images/new-retirement/large.webp',
+    );
+    assert.equal(
+      savedRetirement.photoDisplayUrl,
+      'https://cdn.example.test/images/new-retirement/display-4x3.webp',
+    );
+    assert.equal(savedLastPost.imageUrl, '');
+    assert.equal(savedLastPost.imageDisplayUrl, '');
+    assert.equal(linkedAsset.uploadContext.type, 'event');
+    assert.equal(String(linkedAsset.uploadContext.sourceId), String(event._id));
+
+    const revisions = await ContentRevision.find({
+      contentId: { $in: [event._id, retirementMessage._id, lastPost._id] },
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+    assert.deepEqual(
+      revisions.map((revision) => revision.fields),
+      [['imagePath'], ['photoUrl', 'photoDisplayUrl'], ['imageUrl', 'imageDisplayUrl']],
+    );
+    assert.equal(revisions[2].after.imageUrl, '');
+
+    const imageAudits = await AuditLog.find({
+      action: 'content.admin_updated',
+      target: { $in: [event._id, retirementMessage._id, lastPost._id] },
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+    assert.equal(imageAudits.length, 3);
+  });
+
   test('lets staff edit hidden public copy without restoring it', async () => {
     const editor = await createUser({ role: 'editor' });
     const editorSession = await login(editor);

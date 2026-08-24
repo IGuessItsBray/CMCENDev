@@ -220,6 +220,15 @@ function setWorkspaceMessage(message = "", kind = "") {
   }
 }
 
+function showWorkspaceSuccess(message) {
+  setWorkspaceMessage("");
+  CMCENUtils.showToast(message, {
+    color: "success",
+    position: "bottom-right",
+    animation: "slide",
+  });
+}
+
 function applyContentWorkspaceSearchParameters() {
   const searchParameters = new URLSearchParams(window.location.search);
   const type = searchParameters.get("type");
@@ -1111,13 +1120,6 @@ function getEventDetailsFields(item) {
         (value) => getWorkspaceOption(value, "", value),
       ),
     }),
-    createWorkspaceEditorField({
-      field: "imagePath",
-      label: "Event image URL",
-      labelKey: "content_workspace_event_image_url",
-      value: item.content?.imagePath,
-      type: "url",
-    }),
   ];
 }
 
@@ -1161,20 +1163,6 @@ function getRetirementDetailsFields(item) {
       labelKey: "retirement_trade_role",
       value: retiree.tradeRole,
     }),
-    createWorkspaceEditorField({
-      field: "photoUrl",
-      label: "Full photo URL",
-      labelKey: "content_workspace_photo_url",
-      value: item.content?.photoUrl,
-      type: "url",
-    }),
-    createWorkspaceEditorField({
-      field: "photoDisplayUrl",
-      label: "Display photo URL",
-      labelKey: "content_workspace_display_photo_url",
-      value: item.content?.photoDisplayUrl,
-      type: "url",
-    }),
   ];
 }
 
@@ -1216,20 +1204,6 @@ function getLastPostDetailsFields(item) {
       label: "Post-nominal",
       labelKey: "last_post_post_nominal",
       value: deceased.postNominal,
-    }),
-    createWorkspaceEditorField({
-      field: "imageUrl",
-      label: "Full image URL",
-      labelKey: "content_workspace_image_url",
-      value: item.content?.imageUrl,
-      type: "url",
-    }),
-    createWorkspaceEditorField({
-      field: "imageDisplayUrl",
-      label: "Display image URL",
-      labelKey: "content_workspace_display_image_url",
-      value: item.content?.imageDisplayUrl,
-      type: "url",
     }),
     createWorkspaceEditorField({
       field: "photoUrl",
@@ -1281,6 +1255,235 @@ function getNewsArticleDetailsFields(item) {
   return fields;
 }
 
+function getContentWorkspaceImageConfig(item) {
+  if (item.type === "event") {
+    return {
+      field: "imagePath",
+      value: item.content?.imagePath,
+      uploadSource: "event",
+      uploadContext: "event",
+      sourceField: "imagePath",
+    };
+  }
+
+  if (item.type === "retirementMessage") {
+    return {
+      field: "photoUrl",
+      displayField: "photoDisplayUrl",
+      value: item.content?.photoUrl,
+      displayValue: item.content?.photoDisplayUrl,
+      uploadSource: "retirementMessage",
+      uploadContext: "retirement-message",
+      sourceField: "photoUrl",
+      displayAspectRatio: "4:3",
+    };
+  }
+
+  if (item.type === "lastPost") {
+    return {
+      field: "imageUrl",
+      displayField: "imageDisplayUrl",
+      value: item.content?.imageUrl,
+      displayValue: item.content?.imageDisplayUrl,
+      uploadSource: "lastPostMessage",
+      uploadContext: "last-post",
+      sourceField: "imageUrl",
+      displayAspectRatio: "4:3",
+    };
+  }
+
+  return null;
+}
+
+function setContentWorkspaceImageEditorPreview(editor, imageUrl = "") {
+  const preview = editor.querySelector("[data-content-workspace-image-preview]");
+  const empty = editor.querySelector("[data-content-workspace-image-empty]");
+  const state = editor.querySelector("[data-content-workspace-image-state]");
+  const remove = editor.querySelector("[data-content-workspace-image-remove]");
+  const hasImage = Boolean(imageUrl);
+
+  editor.classList.toggle("has-image", hasImage);
+  preview.hidden = !hasImage;
+  empty.hidden = hasImage;
+  remove.disabled = !hasImage;
+
+  if (state) {
+    setWorkspaceTranslatedText(
+      state,
+      hasImage
+        ? "content_workspace_current_image"
+        : "content_workspace_no_image_short",
+      hasImage ? "Current image" : "No image",
+    );
+  }
+
+  if (hasImage) {
+    preview.src = imageUrl;
+  } else {
+    preview.removeAttribute("src");
+  }
+}
+
+function getContentWorkspaceImageSourceName(item, form) {
+  const getValue = (field) => String(form.elements.namedItem(field)?.value || "").trim();
+
+  if (item.type === "event") {
+    return getValue("titleEN") || getValue("titleFR") || item.title;
+  }
+
+  if (item.type === "retirementMessage") {
+    return [
+      getValue("retireeRank"),
+      getValue("retireeFirstName"),
+      getValue("retireeLastName"),
+    ].filter(Boolean).join(" ") || item.title;
+  }
+
+  if (item.type === "lastPost") {
+    return [
+      getValue("deceasedFullRank"),
+      getValue("deceasedFirstName"),
+      getValue("deceasedSurname"),
+    ].filter(Boolean).join(" ") || item.title;
+  }
+
+  return item.title;
+}
+
+function createContentWorkspaceImageEditor(item) {
+  const config = getContentWorkspaceImageConfig(item);
+  if (!config) return null;
+
+  const section = document.createElement("section");
+  section.className = "content-workspace-image-editor";
+  section.dataset.contentWorkspaceImageEditor = "true";
+  section.dataset.uploadSource = config.uploadSource;
+  section.dataset.uploadContext = config.uploadContext;
+  section.dataset.sourceField = config.sourceField;
+  if (config.displayAspectRatio) {
+    section.dataset.displayAspectRatio = config.displayAspectRatio;
+  }
+
+  const header = document.createElement("div");
+  header.className = "content-workspace-image-heading";
+  const heading = document.createElement("h3");
+  setWorkspaceTranslatedText(heading, "content_workspace_image", "Image");
+  const state = document.createElement("span");
+  state.className = "content-workspace-image-state";
+  state.dataset.contentWorkspaceImageState = "true";
+  header.append(heading, state);
+
+  const previewFrame = document.createElement("div");
+  previewFrame.className = "content-workspace-image-preview-frame";
+
+  const preview = document.createElement("img");
+  preview.className = "content-workspace-image-preview";
+  preview.alt = getText("content_workspace_current_image", "Current image");
+  preview.dataset.contentWorkspaceImagePreview = "true";
+
+  const empty = document.createElement("p");
+  empty.className = "content-workspace-image-empty";
+  empty.dataset.contentWorkspaceImageEmpty = "true";
+  setWorkspaceTranslatedText(
+    empty,
+    "content_workspace_no_image",
+    "No image is attached to this submission.",
+  );
+  previewFrame.append(preview, empty);
+
+  const primaryValue = document.createElement("input");
+  primaryValue.type = "hidden";
+  primaryValue.name = config.field;
+  primaryValue.value = String(config.value || "");
+
+  const displayValue = config.displayField
+    ? document.createElement("input")
+    : null;
+  if (displayValue) {
+    displayValue.type = "hidden";
+    displayValue.name = config.displayField;
+    displayValue.value = String(config.displayValue || "");
+  }
+
+  const uploadLabel = document.createElement("label");
+  uploadLabel.className = "admin-work-zone-button is-secondary content-workspace-image-upload";
+  const uploadText = document.createElement("span");
+  setWorkspaceTranslatedText(
+    uploadText,
+    "content_workspace_choose_image",
+    "Choose an image",
+  );
+  const file = document.createElement("input");
+  file.type = "file";
+  file.accept = "image/*";
+  file.className = "visually-hidden";
+  file.dataset.contentWorkspaceImageFile = "true";
+  uploadLabel.append(uploadText, file);
+
+  const hint = document.createElement("p");
+  hint.className = "content-workspace-image-hint";
+  setWorkspaceTranslatedText(
+    hint,
+    "content_workspace_image_save_hint",
+    "Image changes are applied when you save changes.",
+  );
+
+  const actions = document.createElement("div");
+  actions.className = "content-workspace-image-actions";
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "admin-work-zone-button is-danger";
+  remove.dataset.contentWorkspaceImageRemove = "true";
+  setWorkspaceTranslatedText(
+    remove,
+    "content_workspace_remove_image",
+    "Remove image",
+  );
+  actions.append(remove, uploadLabel);
+
+  const controls = document.createElement("div");
+  controls.className = "content-workspace-image-controls";
+  controls.append(hint, actions);
+
+  const media = document.createElement("div");
+  media.className = "content-workspace-image-media";
+  media.append(previewFrame, controls);
+
+  const initialImageUrl = String(config.displayValue || config.value || "");
+  let previewObjectUrl = "";
+  file.addEventListener("change", () => {
+    const selectedFile = file.files?.[0];
+    const form = section.closest(".content-workspace-record-form");
+    if (form) {
+      form.dataset.hasPendingImageUpload = String(Boolean(selectedFile));
+    }
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = selectedFile ? URL.createObjectURL(selectedFile) : "";
+    setContentWorkspaceImageEditorPreview(
+      section,
+      previewObjectUrl || (primaryValue.value ? initialImageUrl : ""),
+    );
+  });
+  remove.addEventListener("click", () => {
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = "";
+    file.value = "";
+    primaryValue.value = "";
+    if (displayValue) displayValue.value = "";
+    setContentWorkspaceImageEditorPreview(section, "");
+    file.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  section.append(
+    header,
+    media,
+    primaryValue,
+    ...(displayValue ? [displayValue] : []),
+  );
+  setContentWorkspaceImageEditorPreview(section, initialImageUrl);
+  return section;
+}
+
 function createContentWorkspaceRecordEditor(item) {
   const fields = {
     event: getEventDetailsFields,
@@ -1318,6 +1521,8 @@ function createContentWorkspaceRecordEditor(item) {
   const form = document.createElement("form");
   form.className = "content-workspace-record-form";
   form.append(...fields);
+  const imageEditor = createContentWorkspaceImageEditor(item);
+  if (imageEditor) form.append(imageEditor);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
   });
@@ -1530,7 +1735,7 @@ async function saveMemberEvent(item, form, button) {
     contentWorkspaceState.selectedId = String(result.event?._id || "");
     contentWorkspaceState.requestedContentId = contentWorkspaceState.selectedId;
     updateContentWorkspaceSearchParameters({ includeSelection: true });
-    setWorkspaceMessage(
+    showWorkspaceSuccess(
       result.message ||
         getText(
           isNew ? "event_submit_success_pending" : "event_update_success_pending",
@@ -1538,7 +1743,6 @@ async function saveMemberEvent(item, form, button) {
             ? "Event submitted for review."
             : "Event updated and submitted for review.",
         ),
-      "success",
     );
     await loadContentWorkspace({ preserveSelection: true });
   } catch (error) {
@@ -2289,7 +2493,7 @@ function createContentWorkspaceReviewActions(item) {
       });
       contentWorkspaceState.editorDrafts.delete(getEditorDraftKey(item, "en"));
       contentWorkspaceState.editorDrafts.delete(getEditorDraftKey(item, "fr"));
-      setWorkspaceMessage(
+      showWorkspaceSuccess(
         getText(
           action === "publish"
             ? "content_workspace_publish_success"
@@ -2298,7 +2502,6 @@ function createContentWorkspaceReviewActions(item) {
             ? "Content published successfully."
             : "Content rejected successfully.",
         ),
-        "success",
       );
       await loadContentWorkspace({ preserveSelection: true });
     } catch (error) {
@@ -2565,6 +2768,12 @@ function getRevisionFieldTranslation(field) {
     ],
     message: ["content_workspace_field_message", "Message"],
     content: ["content_workspace_field_content", "Story"],
+    imagePath: ["content_workspace_event_image_url", "Event image URL"],
+    photoUrl: ["content_workspace_photo_url", "Full photo URL"],
+    photoDisplayUrl: [
+      "content_workspace_display_photo_url",
+      "Display photo URL",
+    ],
     imageUrl: ["content_workspace_image_url", "Full image URL"],
     imageDisplayUrl: [
       "content_workspace_display_image_url",
@@ -2911,7 +3120,71 @@ function getContentWorkspaceRecordSaveRoute(item) {
   return contentWorkspaceEditRoutes[item.type];
 }
 
-function getContentWorkspaceRecordSaveRequest(item, form) {
+async function uploadContentWorkspaceImage(item, form) {
+  const imageEditor = form.querySelector("[data-content-workspace-image-editor]");
+  const file = imageEditor?.querySelector("[data-content-workspace-image-file]");
+  const selectedFile = file?.files?.[0];
+  if (!imageEditor || !selectedFile) return;
+
+  if (!selectedFile.type.startsWith("image/")) {
+    throw new Error(
+      getText("content_workspace_image_invalid", "Choose a valid image file."),
+    );
+  }
+
+  if (selectedFile.size > 10 * 1024 * 1024) {
+    throw new Error(
+      getText(
+        "content_workspace_image_too_large",
+        "Images must be 10 MB or smaller.",
+      ),
+    );
+  }
+
+  const uploadData = new FormData();
+  uploadData.append(
+    "image",
+    await CMCENUtils.prepareImageUploadFile(selectedFile),
+  );
+  uploadData.append("uploadSource", imageEditor.dataset.uploadSource);
+  uploadData.append("uploadContext", imageEditor.dataset.uploadContext);
+  uploadData.append("sourceField", imageEditor.dataset.sourceField);
+  if (imageEditor.dataset.displayAspectRatio) {
+    uploadData.append(
+      "displayAspectRatio",
+      imageEditor.dataset.displayAspectRatio,
+    );
+  }
+  uploadData.append("sourceName", getContentWorkspaceImageSourceName(item, form));
+
+  const result = await contentWorkspaceApiJson("/api/upload", {
+    method: "POST",
+    body: uploadData,
+  });
+  if (!result.url) {
+    throw new Error(
+      getText("content_workspace_image_upload_error", "Could not upload image."),
+    );
+  }
+
+  const primaryValue = form.elements.namedItem(imageEditor.dataset.sourceField);
+  if (primaryValue instanceof HTMLInputElement) {
+    primaryValue.value = result.url;
+  }
+
+  const displayFieldBySource = {
+    photoUrl: "photoDisplayUrl",
+    imageUrl: "imageDisplayUrl",
+  };
+  const displayField = displayFieldBySource[imageEditor.dataset.sourceField];
+  const displayValue = displayField ? form.elements.namedItem(displayField) : null;
+  if (displayValue instanceof HTMLInputElement) {
+    displayValue.value = result.display?.url || "";
+  }
+}
+
+async function getContentWorkspaceRecordSaveRequest(item, form) {
+  await uploadContentWorkspaceImage(item, form);
   const formData = new FormData(form);
   const route = getContentWorkspaceRecordSaveRoute(item);
   const body = getContentWorkspaceRecordPayload(item, formData);
@@ -3019,6 +3292,7 @@ function getContentWorkspaceFormState(form) {
 function isContentWorkspaceFormDirty(form) {
   return (
     form.dataset.hasUnsavedDraft === "true" ||
+    form.dataset.hasPendingImageUpload === "true" ||
     form.dataset.initialState !== getContentWorkspaceFormState(form)
   );
 }
@@ -3146,21 +3420,6 @@ async function saveContentWorkspaceChanges(item, button) {
   const recordForm = forms.find((form) =>
     form.classList.contains("content-workspace-record-form"),
   );
-  const saveRequests = item.type === "newsArticle"
-    ? [getNewsArticleSaveRequest(item)]
-    : [
-        ...(recordForm
-          ? [getContentWorkspaceRecordSaveRequest(item, recordForm)]
-          : []),
-        ...forms
-          .filter((form) =>
-            form.classList.contains("content-workspace-language-editor"),
-          )
-          .map((form) => getContentLanguageSaveRequest(item, form)),
-      ].filter(Boolean);
-
-  if (!saveRequests.length) return false;
-
   let savedRequests = 0;
   button.disabled = true;
   button.setAttribute("aria-busy", "true");
@@ -3170,6 +3429,21 @@ async function saveContentWorkspaceChanges(item, button) {
     "Saving…",
   );
   try {
+    const saveRequests = item.type === "newsArticle"
+      ? [getNewsArticleSaveRequest(item)]
+      : [
+          ...(recordForm
+            ? [await getContentWorkspaceRecordSaveRequest(item, recordForm)]
+            : []),
+          ...forms
+            .filter((form) =>
+              form.classList.contains("content-workspace-language-editor"),
+            )
+            .map((form) => getContentLanguageSaveRequest(item, form)),
+        ].filter(Boolean);
+
+    if (!saveRequests.length) return false;
+
     for (const request of saveRequests) {
       await contentWorkspaceApiJson(request.path, {
         method: "PATCH",
@@ -3194,9 +3468,15 @@ async function saveContentWorkspaceChanges(item, button) {
 
     refreshContentWorkspaceNotifications();
     await loadContentWorkspace({ preserveSelection: true });
-    setWorkspaceMessage(
-      getText("content_workspace_changes_saved", "Changes saved."),
-      "success",
+    showWorkspaceSuccess(
+      getText(
+        recordForm?.dataset.hasPendingImageUpload === "true"
+          ? "content_workspace_image_uploaded"
+          : "content_workspace_changes_saved",
+        recordForm?.dataset.hasPendingImageUpload === "true"
+          ? "Image uploaded and changes saved."
+          : "Changes saved.",
+      ),
     );
     return true;
   } catch (error) {
@@ -3259,12 +3539,11 @@ async function changeContentVisibility(item, action) {
 
   try {
     const result = await contentWorkspaceApiJson(route, { method: "PATCH" });
-    setWorkspaceMessage(
+    showWorkspaceSuccess(
       result.message ||
         (isRestore
           ? getText("content_workspace_restored", "Content restored.")
           : getText("content_workspace_removed", "Content removed from public view.")),
-      "success",
     );
     await loadContentWorkspace({ preserveSelection: true });
   } catch (error) {

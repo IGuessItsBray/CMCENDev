@@ -46,6 +46,8 @@ const {
   getRetirementMessageTitle,
 } = require('../services/content-snapshots');
 const { hideContent, restoreContent } = require('../services/content-lifecycle');
+const { recordContentRevision } = require('../services/content-revisions');
+const { linkMediaAssetToSource } = require('../services/media-assets');
 const s3Client = require('../storage');
 
 const router = express.Router();
@@ -94,6 +96,58 @@ function getNewsAdminSnapshot(article) {
   };
 }
 
+function getAdminContentMediaDetails(targetType, document) {
+  if (targetType === 'event') {
+    return {
+      fields: ['imagePath'],
+      values: { imagePath: cleanString(document.imagePath) },
+      mediaUrl: cleanString(document.imagePath),
+      sourceType: 'event',
+      context: 'event',
+      sourceModel: 'Event',
+      sourceField: 'imagePath',
+      sourceUrl: `/event?id=${encodeURIComponent(String(document._id))}`,
+      inferredName: getEventTitle(document),
+    };
+  }
+
+  if (targetType === 'retirementMessage') {
+    return {
+      fields: ['photoUrl', 'photoDisplayUrl'],
+      values: {
+        photoUrl: cleanString(document.photoUrl),
+        photoDisplayUrl: cleanString(document.photoDisplayUrl),
+      },
+      mediaUrl: cleanString(document.photoUrl),
+      sourceType: 'retirementMessage',
+      context: 'retirement-message',
+      sourceModel: 'RetirementMessage',
+      sourceField: 'photoUrl',
+      sourceUrl: `/retirement-message?id=${encodeURIComponent(String(document._id))}`,
+      inferredName: getRetirementMessageTitle(document),
+    };
+  }
+
+  if (targetType === 'lastPost') {
+    return {
+      fields: ['imageUrl', 'imageDisplayUrl'],
+      values: {
+        imageUrl: cleanString(document.imageUrl),
+        imageDisplayUrl: cleanString(document.imageDisplayUrl),
+      },
+      mediaUrl: cleanString(document.imageUrl),
+      sourceType: 'lastPostMessage',
+      context: 'last-post',
+      sourceModel: 'LastPostMessage',
+      sourceField: 'imageUrl',
+      sourceUrl: `/last-post-message?id=${encodeURIComponent(String(document._id))}`,
+      inferredName: getLastPostMessageTitle(document),
+    };
+  }
+
+  return null;
+}
+
 async function saveAdminContentEdit({
   req,
   res,
@@ -112,6 +166,7 @@ async function saveAdminContentEdit({
   const document = await model.findById(id);
   if (!document) return res.status(404).json({ error: notFoundMessage });
 
+  const mediaBefore = getAdminContentMediaDetails(targetType, document);
   const changedFields = [];
   const validationError = applyUpdates(document, req.body, changedFields);
   if (validationError) return res.status(400).json({ error: validationError });
@@ -123,6 +178,38 @@ async function saveAdminContentEdit({
     document.updatedBy = req.user._id;
   }
   await document.save();
+
+  const mediaAfter = getAdminContentMediaDetails(targetType, document);
+  if (mediaBefore && mediaAfter) {
+    const mediaFields = mediaAfter.fields.filter(
+      (field) => mediaBefore.values[field] !== mediaAfter.values[field],
+    );
+
+    if (mediaFields.length) {
+      if (mediaAfter.mediaUrl) {
+        await linkMediaAssetToSource({
+          mediaUrl: mediaAfter.mediaUrl,
+          sourceType: mediaAfter.sourceType,
+          context: mediaAfter.context,
+          sourceModel: mediaAfter.sourceModel,
+          sourceId: document._id,
+          sourceField: mediaAfter.sourceField,
+          sourceUrl: mediaAfter.sourceUrl,
+          inferredName: mediaAfter.inferredName,
+        });
+      }
+
+      await recordContentRevision({
+        contentType: targetType,
+        content: document,
+        actor: req.user,
+        status: document.status,
+        fields: mediaFields,
+        before: mediaBefore.values,
+        after: mediaAfter.values,
+      });
+    }
+  }
 
   await writeAuditLog({
     req,

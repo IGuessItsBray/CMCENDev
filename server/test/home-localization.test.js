@@ -39,6 +39,8 @@ test('localizes the homepage news section and shared navigation labels', () => {
     'home_news_loading',
     'home_news_aria_label',
     'mobile_menu_open',
+    'search_button_label',
+    'social_media',
     'terms_of_use',
     'footer_credit',
   ].forEach((key) => {
@@ -53,6 +55,27 @@ test('localizes the homepage news section and shared navigation labels', () => {
   );
   assert.ok(translations.en.mobile_menu_close?.trim());
   assert.ok(translations.fr.mobile_menu_close?.trim());
+});
+
+test('uses French translations for the reported shared homepage controls', () => {
+  const sharedNavigation = fs.readFileSync(
+    path.join(publicDirectory, 'index.js'),
+    'utf8',
+  );
+
+  [
+    ['search_button_label', 'Rechercher'],
+    ['social_media', 'Médias sociaux'],
+    ['terms_of_use', 'Conditions d’utilisation'],
+    ['footer_credit', 'Fait avec ♥ par Bray et Eric'],
+  ].forEach(([key, expectedFrenchText]) => {
+    assert.match(
+      sharedNavigation,
+      new RegExp(`data-i18n(?:-aria-label)?="${key}"`, 'u'),
+      `${key} is applied by the shared header or footer`,
+    );
+    assert.equal(translations.fr[key], expectedFrenchText);
+  });
 });
 
 test('keeps legacy banner copy visible when French contains the countdown placeholder', () => {

@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('fs/promises');
 const path = require('path');
 const { LEGAL_VERSIONS, getLegalContact } = require('../config/legal');
 
@@ -15,16 +16,30 @@ router.get('/api/client-config/legal', (req, res) => {
   res.json({ ...getLegalContact(), versions: LEGAL_VERSIONS });
 });
 
-function sendDocument(document, req, res) {
+function removeInternalLaunchChecklist(markdown) {
+  return markdown.replace(
+    /\n### Internal launch checklist \(remove before publishing\)[\s\S]*?(?=\n### |$)/u,
+    '\n',
+  );
+}
+
+async function sendDocument(document, req, res) {
   const baseName = DOCUMENTS[document];
   const language = req.query.lang === 'fr' ? '.fr' : '';
+  let sourcePath = path.join(DOCS_DIRECTORY, `${baseName}${language}.md`);
+
+  try {
+    await fs.access(sourcePath);
+  } catch (error) {
+    sourcePath = path.join(DOCS_DIRECTORY, `${baseName}.md`);
+  }
+
+  const markdown = removeInternalLaunchChecklist(
+    await fs.readFile(sourcePath, 'utf8'),
+  );
   res.set('Cache-Control', 'public, max-age=300');
   res.type('text/markdown');
-  res.sendFile(path.join(DOCS_DIRECTORY, `${baseName}${language}.md`), (error) => {
-    if (!error || language !== '.fr') return;
-    res.type('text/markdown');
-    res.sendFile(path.join(DOCS_DIRECTORY, `${baseName}.md`));
-  });
+  res.send(markdown);
 }
 
 router.get('/api/privacy', (req, res) => {

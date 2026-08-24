@@ -1,7 +1,7 @@
 const legalPage = document.querySelector('[data-legal-page]');
 
 function appendInlineText(container, value) {
-  const pattern = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^\s)]+\))/gu;
+  const pattern = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^\s)]+\)|https?:\/\/[^\s<]+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,})/gu;
   let cursor = 0;
 
   for (const match of value.matchAll(pattern)) {
@@ -11,12 +11,21 @@ function appendInlineText(container, value) {
       const strong = document.createElement('strong');
       strong.textContent = token.slice(2, -2);
       container.append(strong);
-    } else {
+    } else if (token.startsWith('[')) {
       const separator = token.lastIndexOf('](');
       const link = document.createElement('a');
       link.textContent = token.slice(1, separator);
       link.href = token.slice(separator + 2, -1);
       if (/^https?:/u.test(link.href)) {
+        link.target = '_blank';
+        link.rel = 'noopener';
+      }
+      container.append(link);
+    } else {
+      const link = document.createElement('a');
+      link.textContent = token;
+      link.href = token.includes('@') ? `mailto:${token}` : token;
+      if (/^https?:/u.test(token)) {
         link.target = '_blank';
         link.rel = 'noopener';
       }
@@ -68,7 +77,10 @@ function parseMarkdown(markdown) {
     if (line.startsWith('## ')) {
       flushParagraph();
       flushList();
-      currentSection = { title: line.slice(3), blocks: [] };
+      currentSection = {
+        title: line.slice(3).replace(/^\d+\.\s+/u, ''),
+        blocks: [],
+      };
       documentModel.sections.push(currentSection);
       return;
     }

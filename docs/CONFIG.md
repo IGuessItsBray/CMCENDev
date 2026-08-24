@@ -655,10 +655,12 @@ They should name the organization that operates the website and provide
 monitored request-handling addresses.
 
 ```dotenv
-FOOTER_ORGANIZATION_NAME=Communications & Electronics Association
-FOOTER_CONTACT_NAME=C&E Association
-FOOTER_ADDRESS_LINE_1=9 Byng Ave
-FOOTER_ADDRESS_LINE_2=Kingston, ON K7K 5L3
+FOOTER_ORGANIZATION_NAME=Communications & Electronics Association: Care of C&E Branch Office
+FOOTER_CONTACT_NAME=Care Of: C&E Branch Office
+FOOTER_ADDRESS_LINE_1=Communications & Electronics Association,
+FOOTER_ADDRESS_LINE_2=Forde Building, Rm 217,
+FOOTER_ADDRESS_LINE_3=9 Byng Ave
+FOOTER_ADDRESS_LINE_4=Kingston, ON, K7K 5L3
 LEGAL_CONTACT_EMAIL=legal@cmcen.ca
 PRIVACY_CONTACT_EMAIL=privacy@cmcen.ca
 SECURITY_CONTACT_EMAIL=security@cmcen.ca

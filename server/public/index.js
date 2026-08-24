@@ -1044,7 +1044,15 @@ function loadFooter() {
       if (!legal) return;
       footer.querySelectorAll('[data-legal-contact]').forEach((element) => {
         const key = element.dataset.legalContact;
-        element.textContent = key === 'address' ? (legal.addressLines || []).join(', ') : legal[key] || '';
+        if (key === 'address') {
+          element.replaceChildren();
+          (legal.addressLines || []).forEach((line, index) => {
+            if (index) element.append(document.createElement('br'));
+            element.append(document.createTextNode(line));
+          });
+          return;
+        }
+        element.textContent = legal[key] || '';
       });
       footer.querySelectorAll('[data-legal-contact-email]').forEach((element) => {
         const email = legal[element.dataset.legalContactEmail];

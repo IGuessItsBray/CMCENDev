@@ -19643,7 +19643,7 @@ html[data-theme='dark'] .last-post-submit-button {
   margin: 14px 0 10px;
   color: var(--heading-color);
   font-family: var(--font-heading);
-  font-size: clamp(2.35rem, 5vw, 4.5rem);
+  font-size: clamp(2.25rem, 4vw, 3.75rem);
   line-height: 0.98;
   letter-spacing: -0.045em;
 }
@@ -19758,6 +19758,10 @@ html[data-theme='dark'] .legal-document__content {
   background: var(--dark-surface);
 }
 
+html[data-theme='dark'] .legal-document {
+  color: var(--dark-text);
+}
+
 html[data-theme='dark'] .legal-document__navigation {
   border-color: var(--dark-border-strong);
   background: var(--dark-surface-2);
@@ -19770,8 +19774,20 @@ html[data-theme='dark'] .legal-document__section h2 {
 
 html[data-theme='dark'] .legal-document__meta,
 html[data-theme='dark'] .legal-document__navigation a,
-html[data-theme='dark'] .legal-document__section p:not(.legal-document__number) {
+html[data-theme='dark'] .legal-document__section p:not(.legal-document__number),
+html[data-theme='dark'] .legal-document__hero > p:not(.legal-document__eyebrow),
+html[data-theme='dark'] .legal-document__hero blockquote {
   color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .legal-document a {
+  color: var(--gold-300);
+  text-decoration-color: color-mix(in srgb, var(--gold-300) 60%, transparent);
+}
+
+html[data-theme='dark'] .legal-document a:hover,
+html[data-theme='dark'] .legal-document a:focus-visible {
+  color: var(--gold-100);
 }
 
 html[data-theme='dark'] .legal-document__section {

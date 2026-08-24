@@ -2,11 +2,16 @@
 
 **Effective date:** September 1, 2026<br>
 **Last updated:** August 24, 2026<br>
-**Organization:** Communications & Electronics Association ("CMCEN", "we", "us", or "our")<br>
+**Organization:** Communications & Electronics Association: Care of C&E Branch Office ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
 **Privacy Contact:** privacy@cmcen.ca<br>
 **Legal Contact:** legal@cmcen.ca<br>
-**Mailing Address:** 9 Byng Ave, Kingston, ON K7K 5L3
+**Mailing Address:**<br>
+Care Of: C&E Branch Office<br>
+Communications & Electronics Association,<br>
+Forde Building, Rm 217,<br>
+9 Byng Ave<br>
+Kingston, ON, K7K 5L3
 
 > These Terms are published by the Communications & Electronics Association and should be reviewed by qualified legal counsel before any material change to the service or legal requirements.
 
@@ -144,9 +149,11 @@ These Terms, together with the Privacy Policy and any specific terms presented f
 
 Questions, account-closure requests, copyright notices, and legal notices about these Terms should be directed to **legal@cmcen.ca**. Privacy requests should be directed to **privacy@cmcen.ca**. You may also write to:
 
-**Communications & Electronics Association**<br>
+Care Of: C&E Branch Office<br>
+**Communications & Electronics Association,**<br>
+Forde Building, Rm 217,<br>
 9 Byng Ave<br>
-Kingston, ON K7K 5L3
+Kingston, ON, K7K 5L3
 
 For privacy matters, use the privacy-request process in the Privacy Policy. For website-security concerns, general website questions, and legal notices, use the same mailing address unless CMCEN publishes a more specific monitored contact channel.
 

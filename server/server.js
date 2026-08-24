@@ -201,7 +201,19 @@ app.get('/review-submissions', (req, res) => {
 
   res.redirect(302, `/content-workspace?${query}`);
 });
-app.use(express.static(path.join(__dirname, 'public')));
+function setPublicAssetCacheHeaders(res, filePath) {
+  if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+    // Shared client code uses stable URLs. Do not allow browsers or CDNs to
+    // keep an older bundle after a deployment updates its behavior.
+    res.set('Cache-Control', 'no-store');
+  }
+}
+
+app.use(
+  express.static(path.join(__dirname, 'public'), {
+    setHeaders: setPublicAssetCacheHeaders,
+  }),
+);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api', authRoutes);
 app.use('/api/mfa', mfaRoutes);
@@ -292,4 +304,5 @@ if (require.main === module) {
 module.exports = {
   app,
   startServer,
+  setPublicAssetCacheHeaders,
 };

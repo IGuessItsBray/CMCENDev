@@ -37,6 +37,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `routes/pages.js`               | root                       |
 | `routes/translations.js`        | root                       |
 | `routes/content-options.js`     | root                       |
+| `routes/branding.js`            | root                       |
 | `routes/contact.js`             | `/api/contact`             |
 
 ## Public and System
@@ -49,6 +50,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `GET`  | `/api/protected_data`  | Authenticated | Authenticated smoke-test response.                               |
 | `GET`  | `/trade-options.js`    | Public        | Browser runtime for shared trade option config.                  |
 | `GET`  | `/api/content-options` | Public        | JSON trade options and retirement trade groups.                  |
+| `GET`  | `/api/branding`        | Public        | JSON branding catalogue: supported fonts, official light and dark colour tokens, and theming metadata. |
 | `GET`  | `/translations.json`   | Public        | Translation dictionary.                                          |
 | `GET`  | `/translations.js`     | Public        | Browser translation runtime generated from the dictionary.       |
 

@@ -249,6 +249,19 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
+  /api/branding:
+    get:
+      tags: [Site]
+      summary: Get the CMCEN branding catalogue.
+      description: Returns supported fonts, official light and dark colour tokens, and theming metadata. This is the data source for the unlinked `/branding` reference page.
+      security: []
+      responses:
+        "200":
+          description: Branding catalogue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandingResponse"
   /translations.json:
     get:
       tags: [Translations]
@@ -2675,6 +2688,55 @@ components:
       properties:
         commit: { type: string }
         shortCommit: { type: string }
+    BrandingResponse:
+      type: object
+      required: [version, fonts, colors, theming]
+      properties:
+        version: { type: string }
+        fonts:
+          type: array
+          items:
+            type: object
+            required: [token, name, family, usage]
+            properties:
+              token: { type: string }
+              name: { type: string }
+              family: { type: string }
+              usage: { type: string }
+        colors:
+          type: object
+          required: [light, dark]
+          properties:
+            light:
+              type: array
+              items:
+                $ref: "#/components/schemas/BrandingColor"
+            dark:
+              type: array
+              items:
+                $ref: "#/components/schemas/BrandingColor"
+        theming:
+          type: object
+          required: [supportedThemes, colorPicker]
+          properties:
+            supportedThemes:
+              type: array
+              items:
+                type: string
+                enum: [light, dark]
+            colorPicker: { type: string }
+    BrandingColor:
+      type: array
+      minItems: 3
+      maxItems: 3
+      prefixItems:
+        - type: string
+          description: CSS custom-property token.
+        - type: string
+          pattern: "^#[0-9a-fA-F]{6}$"
+          description: Hex colour value.
+        - type: string
+          description: Human-readable usage label.
     PlausibleConfig:
       type: object
       required: [enabled]

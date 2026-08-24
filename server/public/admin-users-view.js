@@ -523,7 +523,7 @@
 
         const swatch = document.createElement("span");
         swatch.className = "admin-role-color-swatch";
-        swatch.style.backgroundColor = role.color || "#4F46E5";
+        swatch.style.backgroundColor = role.color || "#2c2f55";
 
         const text = document.createElement("span");
         text.textContent = role.name;
@@ -883,7 +883,7 @@
 
       const swatch = document.createElement("span");
       swatch.className = "admin-role-color-swatch";
-      swatch.style.backgroundColor = role.color || "#4F46E5";
+      swatch.style.backgroundColor = role.color || "#2c2f55";
 
       const name = document.createElement("strong");
       name.textContent = role.name;
@@ -917,7 +917,7 @@
 
         actions.createRole({
           name: `New role ${roleNumber}`,
-          color: "#4F46E5",
+          color: "#2c2f55",
           permissions: [],
         });
       });
@@ -993,8 +993,8 @@
         colorLabel.textContent = "Badge color";
         const colorInput = window.CMCENColorPicker.create({
           name: "color",
-          value: selectedRole.color || "#4F46E5",
-          fallback: "#4F46E5",
+          value: selectedRole.color || "#2c2f55",
+          fallback: "#2c2f55",
           label: "Badge color",
         });
         colorField.append(colorLabel, colorInput);

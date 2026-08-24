@@ -89,6 +89,10 @@ function applyTheme(nextTheme, { persist = true } = {}) {
   const isDark = nextTheme === "dark";
 
   document.documentElement.dataset.theme = nextTheme;
+  setHeadElement('meta[name="theme-color"]', {
+    name: "theme-color",
+    content: isDark ? "#080d18" : "#202642",
+  });
 
   const themeToggle = document.getElementById("themeToggle");
 

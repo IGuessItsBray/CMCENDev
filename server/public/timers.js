@@ -156,7 +156,7 @@
   function createTimerElement(timer) {
     const banner = document.createElement("aside");
     banner.className = "site-timer";
-    banner.style.setProperty("--timer-background", timer.color || "#1d4ed8");
+    banner.style.setProperty("--timer-background", timer.color || "#202642");
     banner.style.setProperty("--timer-text", timer.textColor || "#ffffff");
 
     const track = document.createElement("div");

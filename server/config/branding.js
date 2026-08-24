@@ -1,0 +1,87 @@
+const BRANDING = Object.freeze({
+  version: '1.0',
+  fonts: Object.freeze([
+    Object.freeze({
+      token: '--font-body',
+      name: 'Body and interface',
+      family:
+        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      usage: 'Body copy, controls, navigation, and interface labels.',
+    }),
+    Object.freeze({
+      token: '--font-heading',
+      name: 'Headings',
+      family: "Georgia, 'Times New Roman', serif",
+      usage: 'Page titles and editorial headings.',
+    }),
+    Object.freeze({
+      token: 'ETmodules',
+      name: 'Icon font',
+      family: 'ETmodules',
+      usage: 'Local icon glyphs only.',
+    }),
+    Object.freeze({
+      token: '--font-mono',
+      name: 'Monospace',
+      family:
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
+      usage: 'Code-like and technical content.',
+    }),
+  ]),
+  colors: Object.freeze({
+    light: Object.freeze([
+      ['--navy-950', '#171c32', 'Deep navy'],
+      ['--navy-900', '#202642', 'Brand navy'],
+      ['--navy-800', '#2c2f55', 'Navy hover'],
+      ['--navy-700', '#3a416d', 'Supporting navy'],
+      ['--branch-grey-900', '#414854', 'Strong grey text'],
+      ['--branch-grey-800', '#5f6772', 'Dark grey'],
+      ['--branch-grey-700', '#757d89', 'Muted grey'],
+      ['--branch-grey-600', '#858d97', 'Medium grey'],
+      ['--branch-grey-500', '#969da6', 'Control grey'],
+      ['--branch-grey-400', '#afb6bf', 'Light control grey'],
+      ['--branch-grey-300', '#c4cad1', 'Border grey'],
+      ['--branch-grey-200', '#d9dde2', 'Light border grey'],
+      ['--branch-grey-100', '#eef0f2', 'Surface grey'],
+      ['--branch-grey-50', '#f7f8f9', 'Subtle surface grey'],
+      ['--gold-700', '#a97518', 'Deep gold'],
+      ['--gold-600', '#c58d23', 'Gold hover'],
+      ['--gold-500', '#d59b27', 'Brand gold'],
+      ['--gold-400', '#dfb35d', 'Supporting gold'],
+      ['--gold-300', '#e5c47c', 'Light gold'],
+      ['--gold-200', '#ead3a3', 'Soft gold'],
+      ['--gold-100', '#f5e7c4', 'Pale gold'],
+      ['--white', '#ffffff', 'White'],
+      ['--ink', '#23252b', 'Body ink'],
+      ['--text-muted', '#646873', 'Muted text'],
+      ['--branch-green', '#25694a', 'Success and published state'],
+      ['--danger', '#a63c35', 'Danger and error state'],
+      ['--success-border', '#4f7358', 'Success border'],
+    ]),
+    dark: Object.freeze([
+      ['--dark-bg', '#080d18', 'Page background'],
+      ['--dark-bg-elevated', '#0f1625', 'Elevated background'],
+      ['--dark-surface', '#151d2d', 'Primary surface'],
+      ['--dark-surface-2', '#1b2536', 'Secondary surface'],
+      ['--dark-surface-3', '#222d40', 'Raised surface'],
+      ['--dark-border', '#334057', 'Border'],
+      ['--dark-border-strong', '#46556f', 'Strong border'],
+      ['--dark-text', '#edf2fa', 'Primary text'],
+      ['--dark-text-soft', '#c8d0dd', 'Supporting text'],
+      ['--dark-text-muted', '#aab4c4', 'Muted text'],
+      ['--dark-link', '#f0c76c', 'Link gold'],
+      ['--dark-danger-bg', '#341714', 'Danger surface'],
+      ['--dark-danger-text', '#ffb4ad', 'Danger text'],
+      ['--dark-success-bg', '#10271a', 'Success surface'],
+      ['--dark-success-text', '#bde8ca', 'Success text'],
+      ['--branch-green', '#8bd0a6', 'Success and published state'],
+    ]),
+  }),
+  theming: Object.freeze({
+    supportedThemes: Object.freeze(['light', 'dark']),
+    colorPicker:
+      'Use the listed palette presets; existing custom hex values remain supported.',
+  }),
+});
+
+module.exports = { BRANDING };

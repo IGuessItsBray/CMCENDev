@@ -14,6 +14,7 @@ const mongoose = require('mongoose');
 const adminRoutes = require('./routes/admin');
 const analyticsRoutes = require('./routes/analytics');
 const auditLogRoutes = require('./routes/audit-logs');
+const brandingRoutes = require('./routes/branding');
 const authRoutes = require('./routes/auth');
 const certificateRequestRoutes = require('./routes/certificate-requests');
 const contentOptionRoutes = require('./routes/content-options');
@@ -58,6 +59,7 @@ app.use(blockKnownAiCrawlers);
 app.use('/api', apiRateLimit);
 app.use(translationRoutes);
 app.use(contentOptionRoutes);
+app.use(brandingRoutes);
 
 function getBuildCommit() {
   const envCommit =

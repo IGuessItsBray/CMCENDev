@@ -17,41 +17,18 @@
 
   const DARK_THEME_COLORS = Object.freeze([
     ["Dark bg", "#080d18"],
-    ["Surface", "#0d1422"],
-    ["Surface 2", "#141b2d"],
-    ["Surface 3", "#1d293d"],
-    ["Border", "#334155"],
-    ["Text", "#e5edf8"],
-    ["Text soft", "#b9c4d6"],
-    ["Muted", "#94a3b8"],
-    ["Link", "#93c5fd"],
-    ["Gold", "#facc15"],
-    ["Teal", "#2dd4bf"],
-    ["Red", "#ef4444"],
+    ["Surface", "#151d2d"],
+    ["Surface 2", "#1b2536"],
+    ["Surface 3", "#222d40"],
+    ["Border", "#334057"],
+    ["Text", "#edf2fa"],
+    ["Text soft", "#c8d0dd"],
+    ["Muted", "#aab4c4"],
+    ["Gold", "#d59b27"],
+    ["Danger", "#ef4444"],
   ]);
 
-  const RGB_COLORS = Object.freeze([
-    ["Red", "#ef4444"],
-    ["Orange", "#f97316"],
-    ["Amber", "#f59e0b"],
-    ["Yellow", "#eab308"],
-    ["Lime", "#84cc16"],
-    ["Green", "#22c55e"],
-    ["Emerald", "#10b981"],
-    ["Teal", "#14b8a6"],
-    ["Cyan", "#06b6d4"],
-    ["Sky", "#0ea5e9"],
-    ["Blue", "#3b82f6"],
-    ["Indigo", "#6366f1"],
-    ["Violet", "#8b5cf6"],
-    ["Purple", "#a855f7"],
-    ["Fuchsia", "#d946ef"],
-    ["Pink", "#ec4899"],
-    ["Rose", "#f43f5e"],
-    ["Slate", "#64748b"],
-  ]);
-
-  function normalizeColor(value, fallback = "#1d4ed8") {
+  function normalizeColor(value, fallback = "#202642") {
     const color = String(value || "").trim();
     return /^#[0-9a-f]{6}$/iu.test(color)
       ? color.toLowerCase()
@@ -104,7 +81,7 @@
 
   function createColorPicker(options = {}) {
     const name = options.name || "color";
-    const fallback = normalizeColor(options.fallback || "#1d4ed8");
+    const fallback = normalizeColor(options.fallback || "#202642");
     const value = normalizeColor(options.value, fallback);
     const sectionLabels = options.sectionLabels || {};
 
@@ -188,20 +165,6 @@
       createRow(
         sectionLabels.dark || "Dark theme",
         DARK_THEME_COLORS,
-        input,
-        textInput,
-        () => setPickerOpen(false),
-      ),
-      createRow(
-        sectionLabels.rgb || "RGB",
-        RGB_COLORS.slice(0, 9),
-        input,
-        textInput,
-        () => setPickerOpen(false),
-      ),
-      createRow(
-        sectionLabels.rgb || "RGB",
-        RGB_COLORS.slice(9),
         input,
         textInput,
         () => setPickerOpen(false),

@@ -24441,6 +24441,26 @@ html[data-theme='dark'] .pages-palette-block {
   color: var(--dark-text);
 }
 
+html[data-theme='dark'] .pages-palette-block.is-heading,
+html[data-theme='dark'] .pages-palette-block.is-button {
+  --page-palette-accent: #5fb180;
+}
+
+html[data-theme='dark'] .pages-palette-block.is-text,
+html[data-theme='dark'] .pages-palette-block.is-columns,
+html[data-theme='dark'] .pages-palette-block.is-image,
+html[data-theme='dark'] .pages-palette-block.is-carousel {
+  --page-palette-accent: #8aa9e8;
+}
+
+html[data-theme='dark'] .pages-palette-block.is-callout {
+  --page-palette-accent: #f0bd59;
+}
+
+html[data-theme='dark'] .pages-palette-block.is-divider {
+  --page-palette-accent: #a5b4cf;
+}
+
 html[data-theme='dark'] .pages-palette-block:hover,
 html[data-theme='dark'] .pages-palette-block:focus-visible {
   border-color: var(--page-palette-accent);

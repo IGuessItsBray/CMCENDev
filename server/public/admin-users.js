@@ -1,14 +1,22 @@
 const adminToken = CMCENUtils.requireAuthToken();
 const adminWorkZone = document.getElementById("adminWorkZone");
 const adminWorkZoneStatus = document.getElementById("adminWorkZoneStatus");
+const embeddedAdminView = {
+  users: "users",
+  subscriptions: "subscriptions",
+  roles: "roles",
+  media: "media",
+}[window.CMCENEmbeddedAdminTool];
+const requestedAdminView = new URLSearchParams(window.location.search).get("view");
 
 let adminWorkZoneState = {
-  activeView: ["media", "roles"].includes(
-    new URLSearchParams(window.location.search).get("view"),
-  )
-    ? new URLSearchParams(window.location.search).get("view")
-    : "users",
+  activeView:
+    embeddedAdminView ||
+    (["media", "roles", "subscriptions"].includes(requestedAdminView)
+      ? requestedAdminView
+      : "users"),
   currentUserId: "",
+  currentUserRole: "",
   currentUserPermissions: {},
   currentUserMfa: {},
   users: [],
@@ -57,6 +65,7 @@ const adminUsersView = CMCENAdminUsersView.create({
     exportUsers: exportAdminUsers,
     provisionUser: provisionAdminUser,
     saveUser: saveAdminUser,
+    resendInvitation: resendAdminInvitation,
     resetMfa: resetAdminUserMfa,
     deleteUser: deleteAdminUser,
     promoteDeveloper: promoteAdminUserToDeveloper,
@@ -65,6 +74,7 @@ const adminUsersView = CMCENAdminUsersView.create({
     saveRole: saveAdminRole,
     deleteRole: deleteAdminRole,
     deletePost: deleteAdminPost,
+    restorePost: restoreAdminPost,
     refreshMedia: () => loadAdminMedia(),
     loadMoreMedia: (cursor) =>
       loadAdminMedia({
@@ -763,6 +773,7 @@ async function loadCurrentAdmin() {
       media: "canViewMediaLibrary",
       roles: "canManageRoles",
       users: "canReadUsers",
+      subscriptions: "canManageSubscriptions",
     }[adminWorkZoneState.activeView] || "canReadUsers";
 
   if (user.permissions?.[requiredPermission] !== true) {
@@ -770,11 +781,15 @@ async function loadCurrentAdmin() {
     return null;
   }
 
-  setAdminWorkZoneState({
-    currentUserId: user._id || user.id || "",
-    currentUserPermissions: user.permissions || {},
-    currentUserMfa: user.mfa || {},
-  });
+  setAdminWorkZoneState(
+    {
+      currentUserId: user._id || user.id || "",
+      currentUserRole: user.role || "",
+      currentUserPermissions: user.permissions || {},
+      currentUserMfa: user.mfa || {},
+    },
+    { render: adminWorkZoneState.activeView !== "subscriptions" },
+  );
 
   window.updateAdminWorkZoneTabsForUser(user);
 
@@ -867,34 +882,69 @@ async function saveAdminUser(userId, payload) {
 }
 
 async function provisionAdminUser() {
-  const firstName = await CMCENModal.prompt("Enter the member's first name.", {
-    title: "Create account",
-    inputLabel: "First name",
-    confirmText: "Continue",
-  });
-  if (!firstName) return;
-
-  const lastName = await CMCENModal.prompt("Enter the member's last name.", {
-    title: "Create account",
-    inputLabel: "Last name",
-    confirmText: "Continue",
-  });
-  if (!lastName) return;
-
-  const email = await CMCENModal.prompt(
-    "Enter the email address that will receive the activation link.",
+  const canAssignInternalBeta =
+    adminWorkZoneState.currentUserRole === "developer";
+  const availableRoles = adminWorkZoneState.roles.filter(
+    (role) =>
+      !["ghost", "developer"].includes(role) &&
+      (canAssignInternalBeta || role !== "internal_beta"),
+  );
+  const invitation = await CMCENModal.form(
+    "Send a seven-day account activation link. The recipient will set their own password.",
     {
-      title: "Create account",
-      inputLabel: "Email address",
+      title: "Invite user",
       confirmText: "Send invitation",
+      fields: [
+        {
+          name: "firstName",
+          label: "First name",
+          required: true,
+          autocomplete: "given-name",
+          maxLength: 80,
+        },
+        {
+          name: "lastName",
+          label: "Last name",
+          required: true,
+          autocomplete: "family-name",
+          maxLength: 80,
+        },
+        {
+          name: "email",
+          label: "Email",
+          type: "email",
+          required: true,
+          autocomplete: "email",
+        },
+        {
+          name: "message",
+          label: "Message (optional)",
+          type: "textarea",
+          maxLength: 2000,
+          hint: "Replaces the standard account-creation message in the invitation email.",
+        },
+        {
+          name: "role",
+          label: "Role",
+          type: "select",
+          required: true,
+          defaultValue: availableRoles.includes("subscriber")
+            ? "subscriber"
+            : availableRoles[0],
+          options: availableRoles.map((role) => ({
+            value: role,
+            label: translate(`role_${role}`),
+          })),
+        },
+      ],
     },
   );
-  if (!email) return;
+  if (!invitation) return;
 
   try {
     const data = await adminApiJson("/api/admin/users", {
       method: "POST",
-      body: { firstName, lastName, email },
+      body: invitation,
       errorMessage: "Could not send invitation",
     });
 
@@ -906,7 +956,69 @@ async function provisionAdminUser() {
     });
     showAdminActionToast("Invitation sent", "success");
   } catch (error) {
+    const failedUser = error.data?.user;
+    if (failedUser) {
+      setAdminWorkZoneState({
+        users: [failedUser, ...adminWorkZoneState.users],
+        selectedUserId: String(failedUser._id),
+        selectedUser: failedUser,
+        posts: [],
+      });
+    }
     showAdminActionToast(error.message || "Could not send invitation", "error");
+  }
+}
+
+async function resendAdminInvitation(user) {
+  if (!user?._id) return;
+
+  const displayName = CMCENUtils.getUserDisplayName(
+    user,
+    translate("unknown_user"),
+  );
+  const confirmed = await CMCENModal.confirm(
+    `Send a new activation link to ${displayName}? The current link will stop working.`,
+    {
+      title: "Resend invitation",
+      confirmText: "Resend invitation",
+    },
+  );
+  if (!confirmed) return;
+
+  try {
+    const data = await adminApiJson(
+      `/api/admin/users/${encodeURIComponent(user._id)}/invitation/resend`,
+      {
+        method: "POST",
+        errorMessage: "Could not resend invitation",
+      },
+    );
+    const updatedUser = data.user;
+    setAdminWorkZoneState({
+      selectedUser: updatedUser,
+      users: adminWorkZoneState.users.map((existingUser) =>
+        String(existingUser._id) === String(updatedUser._id)
+          ? updatedUser
+          : existingUser,
+      ),
+    });
+    showAdminActionToast("Invitation resent", "success");
+  } catch (error) {
+    const updatedUser = error.data?.user;
+    if (updatedUser) {
+      setAdminWorkZoneState({
+        selectedUser: updatedUser,
+        users: adminWorkZoneState.users.map((existingUser) =>
+          String(existingUser._id) === String(updatedUser._id)
+            ? updatedUser
+            : existingUser,
+        ),
+      });
+    }
+    showAdminActionToast(
+      error.message || "Could not resend invitation",
+      "error",
+    );
   }
 }
 
@@ -1407,22 +1519,27 @@ function getAdminDeleteEndpoint(post) {
   return "";
 }
 
+function getAdminRestoreEndpoint(post) {
+  const endpoint = getAdminDeleteEndpoint(post);
+  return endpoint ? `${endpoint}/restore` : "";
+}
+
 async function deleteAdminPost(post) {
   const endpoint = getAdminDeleteEndpoint(post);
 
   if (!endpoint) {
-    showAdminActionToast(translate("admin_content_delete_type_error"), "error");
+    showAdminActionToast(translate("admin_content_remove_type_error"), "error");
     return;
   }
 
   if (
     !(await CMCENModal.confirm(
-      translate("admin_content_delete_confirm", {
+      translate("admin_content_remove_confirm", {
         title: post.title || translate("admin_content_this_item"),
       }),
       {
-        title: translate("mfa_delete"),
-        confirmText: translate("mfa_delete"),
+        title: translate("admin_content_remove"),
+        confirmText: translate("admin_content_remove"),
         destructive: true,
       },
     ))
@@ -1437,16 +1554,11 @@ async function deleteAdminPost(post) {
   try {
     const data = await adminApiJson(endpoint, {
       method: "DELETE",
-      errorMessage: translate("admin_content_delete_error"),
+      errorMessage: translate("admin_content_remove_error"),
     });
 
-    setAdminWorkZoneState({
-      posts: adminWorkZoneState.posts.filter(
-        (item) => String(item._id) !== String(post._id),
-      ),
-    });
     showAdminActionToast(
-      data.message || translate("admin_content_delete_success"),
+      data.message || translate("admin_content_remove_success"),
       "success",
     );
 
@@ -1455,7 +1567,51 @@ async function deleteAdminPost(post) {
     });
   } catch (error) {
     showAdminActionToast(
-      error.message || translate("admin_content_delete_error"),
+      error.message || translate("admin_content_remove_error"),
+      "error",
+    );
+  }
+}
+
+async function restoreAdminPost(post) {
+  const endpoint = getAdminRestoreEndpoint(post);
+
+  if (!endpoint) {
+    showAdminActionToast(translate("admin_content_restore_type_error"), "error");
+    return;
+  }
+
+  if (
+    !(await CMCENModal.confirm(
+      translate("admin_content_restore_confirm", {
+        title: post.title || translate("admin_content_this_item"),
+      }),
+      {
+        title: translate("admin_content_restore"),
+        confirmText: translate("admin_content_restore"),
+      },
+    ))
+  ) {
+    return;
+  }
+
+  try {
+    const data = await adminApiJson(endpoint, {
+      method: "PATCH",
+      errorMessage: translate("admin_content_restore_error"),
+    });
+
+    showAdminActionToast(
+      data.message || translate("admin_content_restore_success"),
+      "success",
+    );
+
+    await loadAdminUsers({
+      preserveSelection: true,
+    });
+  } catch (error) {
+    showAdminActionToast(
+      error.message || translate("admin_content_restore_error"),
       "error",
     );
   }
@@ -1479,7 +1635,9 @@ async function initializeAdminUsersPage() {
 
     if (!user) return;
 
-    if (adminWorkZoneState.activeView === "roles") {
+    if (adminWorkZoneState.activeView === "subscriptions") {
+      showAdminWorkZone();
+    } else if (adminWorkZoneState.activeView === "roles") {
       await loadAdminRoles();
     } else if (adminWorkZoneState.activeView === "media") {
       await loadAdminMedia();

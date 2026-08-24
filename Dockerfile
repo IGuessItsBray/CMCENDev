@@ -14,6 +14,8 @@ RUN npm ci --omit=dev
 # Copy the application and the OpenAPI schema served in development mode.
 COPY --chown=nodeuser:nodeuser server/ .
 COPY --chown=nodeuser:nodeuser api/schema/ /usr/src/app/api/schema/
+# The developer page serves this repository-level file at /changelog.md.
+COPY --chown=nodeuser:nodeuser CHANGELOG.md /usr/src/app/CHANGELOG.md
 
 USER nodeuser
 

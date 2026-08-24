@@ -3,7 +3,43 @@ const lastPostPageMessage = document.getElementById("lastPostPageMessage");
 const lastPostSubmitButton = document.getElementById("lastPostSubmitButton");
 const lastPostSubmitButtonLabel = lastPostSubmitButton.querySelector("span");
 const lastPostImage = document.getElementById("lastPostImage");
+const lastPostPublicationPermission = document.getElementById(
+  "lastPostPublicationPermission",
+);
+const lastPostPublishNowContainer = document.getElementById(
+  "lastPostPublishNowContainer",
+);
+const lastPostPublishNow = document.getElementById("lastPostPublishNow");
+const lastPostReviewNote = document.getElementById("lastPostReviewNote");
+const lastPostSubmitTitle = document.getElementById("lastPostSubmitTitle");
+const lastPostSubmitIntro = document.getElementById("lastPostSubmitIntro");
+const lastPostEditContext = document.getElementById("lastPostEditContext");
+const lastPostEditRejection = document.getElementById(
+  "lastPostEditRejection",
+);
+const lastPostEditRejectionReason = document.getElementById(
+  "lastPostEditRejectionReason",
+);
+const lastPostMessageLanguage = document.getElementById(
+  "lastPostMessageLanguage",
+);
 const LAST_POST_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+const lastPostPageParams = new URLSearchParams(window.location.search);
+const editingLastPostId = lastPostPageParams.get("id");
+let editingLastPost = null;
+let editingLastPostMessages = {};
+let activeLastPostMessageLanguage = lastPostMessageLanguage?.value || "en";
+const lastPostImageCrop = CMCENUtils.createImageCropController({
+  input: lastPostImage,
+  container: document.getElementById("lastPostImageCrop"),
+  labels: {
+    heading: translate("image_crop_heading"),
+    hint: translate("image_crop_hint"),
+    horizontal: translate("image_crop_horizontal"),
+    vertical: translate("image_crop_vertical"),
+    previewAlt: translate("image_crop_preview_alt"),
+  },
+});
 
 function getFieldValue(id) {
   return String(document.getElementById(id)?.value || "").trim();
@@ -30,12 +66,24 @@ function setSubmitting(isSubmitting) {
   lastPostSubmitButton.disabled = isSubmitting;
   lastPostSubmitButton.setAttribute("aria-busy", String(isSubmitting));
   lastPostSubmitButtonLabel.textContent = translate(
-    isSubmitting ? "last_post_submitting" : "last_post_submit_button",
+    isSubmitting
+      ? "last_post_submitting"
+      : editingLastPostId
+        ? "last_post_save_changes"
+        : "last_post_submit_button",
   );
 }
 
-function getSubmissionPayload(imageUrl = "") {
+function getSubmissionPayload(imageUrl = "", imageDisplayUrl = "") {
   const messageLanguage = getFieldValue("lastPostMessageLanguage");
+  if (editingLastPost) {
+    editingLastPostMessages[messageLanguage] = getFieldValue("lastPostMessage");
+  }
+  const publicationPermissionConfirmed = lastPostPublicationPermission.checked;
+
+  if (!publicationPermissionConfirmed) {
+    throw new Error(translate("last_post_permission_confirmation_required"));
+  }
 
   return {
     deceased: {
@@ -46,8 +94,75 @@ function getSubmissionPayload(imageUrl = "") {
     },
     messageLanguage,
     message: getFieldValue("lastPostMessage"),
-    imageUrl,
+    imageUrl: imageUrl || editingLastPost?.imageUrl || "",
+    imageDisplayUrl:
+      imageDisplayUrl || editingLastPost?.imageDisplayUrl || "",
+    publicationPermissionConfirmed,
+    publishNow:
+      !lastPostPublishNowContainer.hidden && lastPostPublishNow.checked,
   };
+}
+
+function updateLastPostFormMode() {
+  const isEditing = Boolean(editingLastPostId);
+  lastPostSubmitTitle.textContent = translate(
+    isEditing ? "last_post_edit_title" : "last_post_submit_title",
+  );
+  lastPostSubmitIntro.textContent = translate(
+    isEditing ? "last_post_edit_intro" : "last_post_submit_intro",
+  );
+  lastPostSubmitButtonLabel.textContent = translate(
+    isEditing ? "last_post_save_changes" : "last_post_submit_button",
+  );
+  updateLastPostEditContext();
+}
+
+function populateLastPostForm(lastPost) {
+  const deceased = lastPost.deceased || {};
+  document.getElementById("lastPostDeceasedRank").value = deceased.fullRank || "";
+  document.getElementById("lastPostDeceasedFirstName").value = deceased.firstName || "";
+  document.getElementById("lastPostDeceasedSurname").value = deceased.surname || "";
+  document.getElementById("lastPostDeceasedPostNominal").value = deceased.postNominal || "";
+  editingLastPostMessages = { ...(lastPost.messages || {}) };
+  activeLastPostMessageLanguage =
+    lastPost.messageLanguage || CMCENUtils.getCurrentLanguage();
+  lastPostMessageLanguage.value = activeLastPostMessageLanguage;
+  document.getElementById("lastPostMessage").value =
+    editingLastPostMessages[activeLastPostMessageLanguage] ||
+    editingLastPostMessages.en ||
+    editingLastPostMessages.fr ||
+    "";
+  lastPostPublicationPermission.checked = true;
+  CMCENUtils.bindCharacterCounters();
+}
+
+function updateLastPostEditContext() {
+  const isEditing = Boolean(editingLastPostId);
+  lastPostEditContext.hidden = !isEditing;
+
+  const rejectionReason =
+    editingLastPost?.status === "rejected"
+      ? String(editingLastPost.rejectionReason || "").trim()
+      : "";
+  lastPostEditRejection.hidden = !rejectionReason;
+  lastPostEditRejectionReason.textContent = rejectionReason;
+}
+
+function switchLastPostMessageLanguage() {
+  const nextLanguage = lastPostMessageLanguage.value;
+
+  if (!editingLastPost || !["en", "fr"].includes(nextLanguage)) {
+    activeLastPostMessageLanguage = nextLanguage;
+    return;
+  }
+
+  editingLastPostMessages[activeLastPostMessageLanguage] = getFieldValue(
+    "lastPostMessage",
+  );
+  activeLastPostMessageLanguage = nextLanguage;
+  document.getElementById("lastPostMessage").value =
+    editingLastPostMessages[nextLanguage] || "";
+  CMCENUtils.bindCharacterCounters();
 }
 
 function validateLastPostImage(file) {
@@ -73,6 +188,10 @@ async function uploadLastPostImage(token) {
   uploadData.append("uploadSource", "lastPostMessage");
   uploadData.append("uploadContext", "last-post");
   uploadData.append("sourceField", "imageUrl");
+  uploadData.append("displayAspectRatio", "4:3");
+  const crop = lastPostImageCrop.getCrop();
+  uploadData.append("displayCropX", String(crop.x));
+  uploadData.append("displayCropY", String(crop.y));
   uploadData.append(
     "sourceName",
     [
@@ -97,7 +216,10 @@ async function uploadLastPostImage(token) {
     throw new Error(translate("last_post_image_upload_error"));
   }
 
-  return data.url;
+  return {
+    imageUrl: data.url,
+    imageDisplayUrl: data.display?.url || "",
+  };
 }
 
 async function initializeLastPostSubmission() {
@@ -118,6 +240,28 @@ async function initializeLastPostSubmission() {
 
     document.getElementById("lastPostMessageLanguage").value =
       CMCENUtils.getCurrentLanguage();
+    const canPublishImmediately =
+      currentUser.permissions?.canReviewAndPublish === true;
+    lastPostPublishNowContainer.hidden = !canPublishImmediately;
+    lastPostReviewNote.hidden = canPublishImmediately;
+
+    updateLastPostFormMode();
+
+    if (editingLastPostId) {
+      const data = await CMCENUtils.apiJson(
+        `/api/last-posts/${encodeURIComponent(editingLastPostId)}/edit`,
+        {
+          token,
+          redirectOnUnauthorized: true,
+          unauthorizedMessage: translate("last_post_permission_error"),
+          errorMessage: translate("last_post_edit_load_error"),
+        },
+      );
+      editingLastPost = data.lastPost;
+      populateLastPostForm(editingLastPost);
+      updateLastPostEditContext();
+    }
+
     lastPostSubmitForm.hidden = false;
   } catch (error) {
     showPageMessage(error.message || translate("last_post_permission_error"));
@@ -138,26 +282,67 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
 
   setSubmitting(true);
   try {
-    const imageUrl = await uploadLastPostImage(token);
-    const data = await CMCENUtils.apiJson("/api/last-posts", {
-      method: "POST",
+    const uploadResult = await uploadLastPostImage(token);
+    const submissionPayload = getSubmissionPayload(
+      uploadResult?.imageUrl || "",
+      uploadResult?.imageDisplayUrl || "",
+    );
+    const data = await CMCENUtils.apiJson(
+      editingLastPostId
+        ? `/api/last-posts/${encodeURIComponent(editingLastPostId)}`
+        : "/api/last-posts",
+      {
+      method: editingLastPostId ? "PATCH" : "POST",
       token,
-      body: getSubmissionPayload(imageUrl),
+      body: submissionPayload,
       redirectOnUnauthorized: true,
       unauthorizedMessage: translate("last_post_permission_error"),
-    });
-    lastPostSubmitForm.reset();
-    document.getElementById("lastPostMessageLanguage").value =
-      CMCENUtils.getCurrentLanguage();
+      },
+    );
+    if (!editingLastPostId) {
+      lastPostSubmitForm.reset();
+      lastPostImageCrop.reset();
+      CMCENUtils.bindCharacterCounters();
+      document.getElementById("lastPostMessageLanguage").value =
+        CMCENUtils.getCurrentLanguage();
+    }
     showFormMessage(
-      data.message || translate("last_post_submit_success"),
+      data.message ||
+        translate(
+          editingLastPostId
+            ? "last_post_update_success"
+            : submissionPayload.publishNow
+            ? "last_post_submit_success_published"
+            : "last_post_submit_success",
+      ),
       "success",
     );
+    if (editingLastPostId) {
+      editingLastPost = {
+        ...editingLastPost,
+        ...(data.lastPost || {}),
+        messages: {
+          ...editingLastPostMessages,
+          ...(data.lastPost?.messages || {}),
+        },
+        status: data.lastPost?.status || "pending",
+        rejectionReason: "",
+      };
+      editingLastPostMessages = { ...editingLastPost.messages };
+      updateLastPostEditContext();
+    }
+
+    if (typeof window.refreshAuthUI === "function") {
+      window.refreshAuthUI();
+    }
   } catch (error) {
     showFormMessage(error.message || translate("last_post_submit_error"));
   } finally {
     setSubmitting(false);
   }
 });
+
+document.addEventListener("languagechange", updateLastPostFormMode);
+lastPostMessageLanguage.addEventListener("change", switchLastPostMessageLanguage);
 
 initializeLastPostSubmission();

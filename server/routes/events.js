@@ -17,6 +17,7 @@ const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
 const { sendMail } = require('../services/mailer');
 const { getEventSnapshot } = require('../services/content-snapshots');
+const { recordContentRevision } = require('../services/content-revisions');
 const {
   cleanLocalizedText,
   cleanString,
@@ -407,9 +408,46 @@ function getPublicEventRange(query = {}) {
   };
 }
 
-function getPublicEventsQuery(range) {
+function getPublicEventFilterValue(query, parameterName, allowedValues) {
+  const rawValue = query?.[parameterName];
+
+  if (rawValue === undefined || rawValue === null || rawValue === '') {
+    return '';
+  }
+
+  const value = typeof rawValue === 'string' ? rawValue.trim() : '';
+
+  if (!value || !allowedValues.includes(value)) {
+    const error = new Error(`The ${parameterName} parameter is invalid`);
+
+    error.status = 400;
+    throw error;
+  }
+
+  return value;
+}
+
+function getPublicEventFilters(query = {}) {
+  return {
+    eventType: getPublicEventFilterValue(query, 'eventType', EVENT_TYPES),
+    organizingEntity: getPublicEventFilterValue(
+      query,
+      'organizingEntity',
+      EVENT_ORGANIZING_ENTITIES,
+    ),
+    provinceRegion: getPublicEventFilterValue(
+      query,
+      'provinceRegion',
+      CANADIAN_REGIONS,
+    ),
+  };
+}
+
+function getPublicEventsQuery(range, filters = {}) {
+  let query;
+
   if (range) {
-    return {
+    query = {
       status: 'published',
 
       // Include events that begin in the requested dates and
@@ -431,35 +469,50 @@ function getPublicEventsQuery(range) {
         },
       ],
     };
+  } else {
+    const startOfToday = new Date();
+
+    startOfToday.setUTCHours(0, 0, 0, 0);
+
+    query = {
+      status: 'published',
+
+      // Preserve the legacy public list: future events and multi-day
+      // events still underway.
+      $or: [
+        {
+          endDate: { $gte: startOfToday },
+        },
+        {
+          endDate: null,
+          startDate: { $gte: startOfToday },
+        },
+      ],
+    };
   }
 
-  const startOfToday = new Date();
+  if (filters.eventType) {
+    query.eventType = filters.eventType;
+  }
 
-  startOfToday.setUTCHours(0, 0, 0, 0);
+  if (filters.organizingEntity) {
+    query.organizingEntity = filters.organizingEntity;
+  }
 
-  return {
-    status: 'published',
+  if (filters.provinceRegion) {
+    query.provinceRegion = filters.provinceRegion;
+  }
 
-    // Preserve the legacy public list: future events and multi-day
-    // events still underway.
-    $or: [
-      {
-        endDate: { $gte: startOfToday },
-      },
-      {
-        endDate: null,
-        startDate: { $gte: startOfToday },
-      },
-    ],
-  };
+  return query;
 }
 
 // Only published events are returned publicly.
 router.get('/', async (req, res) => {
   try {
     const range = getPublicEventRange(req.query);
+    const filters = getPublicEventFilters(req.query);
 
-    const events = await Event.find(getPublicEventsQuery(range))
+    const events = await Event.find(getPublicEventsQuery(range, filters))
       .select(PUBLIC_EVENT_FIELDS)
       .sort({
         startDate: 1,
@@ -824,6 +877,7 @@ router.get('/mine', authMiddleware, async (req, res) => {
 
     const events = await Event.find({
       createdBy: req.user._id,
+      status: { $ne: 'hidden' },
     })
       .select(
         [
@@ -916,6 +970,10 @@ router.get('/:id/edit', authMiddleware, async (req, res) => {
       });
     }
 
+    if (isOwner && !canReview && event.status === 'hidden') {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
     return res.json({
       event,
     });
@@ -968,6 +1026,22 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     if (!isOwner && !canReview) {
       return res.status(403).json({
         error: 'You do not have permission to edit this event',
+      });
+    }
+
+    if (event.status === 'hidden') {
+      if (isOwner && !canReview) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+
+      return res.status(409).json({
+        error: 'Restore this event before editing or publishing it',
+      });
+    }
+
+    if (isOwner && !canReview && event.status === 'published') {
+      return res.status(409).json({
+        error: 'Published events can only be changed by site staff',
       });
     }
 
@@ -1146,6 +1220,155 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     });
   }
 });
+
+// Update one language of event copy while it is pending review, published, or hidden.
+router.patch(
+  '/:eventId/review-content',
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { language, content } = req.body;
+      const editableFields = [
+        'title',
+        'location',
+        'description',
+        'registration',
+      ];
+
+      if (!['en', 'fr'].includes(language)) {
+        return res.status(400).json({
+          error: 'Review content language must be English or French',
+        });
+      }
+
+      if (
+        !content ||
+        typeof content !== 'object' ||
+        Array.isArray(content) ||
+        editableFields.some((field) => typeof content[field] !== 'string')
+      ) {
+        return res.status(400).json({
+          error:
+            'Review content must include title, location, description, and registration text',
+        });
+      }
+
+      const event = await Event.findById(req.params.eventId);
+
+      if (!event) {
+        return res.status(404).json({
+          error: 'Event not found',
+        });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const canReview = permissions.canReviewAndPublish === true;
+      const isOwner =
+        event.createdBy && String(event.createdBy) === String(req.user._id);
+      const canSubmitterEdit =
+        isOwner && ['pending', 'rejected'].includes(event.status);
+      const canReviewerEdit =
+        canReview && ['pending', 'published', 'hidden'].includes(event.status);
+      const wasRejected = isOwner && event.status === 'rejected';
+
+      if (!canReview && !isOwner) {
+        return res.status(403).json({
+          error: 'You do not have permission to update this event',
+        });
+      }
+
+      if (!canSubmitterEdit && !canReviewerEdit) {
+        return res.status(409).json({
+          error: 'Only pending, published, or hidden events can have content updated',
+        });
+      }
+
+      const before = Object.fromEntries(
+        editableFields.map((field) => [field, event.get(`${field}.${language}`) || '']),
+      );
+
+      editableFields.forEach((field) => {
+        event.set(`${field}.${language}`, cleanString(content[field]));
+      });
+      event.updatedBy = req.user._id;
+
+      if (wasRejected) {
+        event.status = 'pending';
+        event.rejectionReason = '';
+        event.reviewedBy = undefined;
+        event.reviewedAt = undefined;
+        event.publishedBy = undefined;
+        event.publishedAt = undefined;
+        event.lastSubmittedAt = new Date();
+      }
+
+      await event.save();
+
+      const after = Object.fromEntries(
+        editableFields.map((field) => [field, event.get(`${field}.${language}`) || '']),
+      );
+      await recordContentRevision({
+        contentType: 'event',
+        content: event,
+        actor: req.user,
+        status: event.status,
+        language,
+        fields: editableFields,
+        before,
+        after,
+        note: req.body.note,
+      });
+
+      await writeAuditLog({
+        req,
+        action:
+          wasRejected
+            ? 'content.review_content_updated'
+            : event.status === 'pending'
+            ? 'content.review_content_updated'
+            : 'content.staff_content_updated',
+        actor: req.user,
+        targetType: 'event',
+        target: event._id,
+        targetSnapshot: getEventSnapshot(event),
+        metadata: {
+          source: wasRejected ? 'submitter-resubmit' : 'review-content',
+          status: event.status,
+          language,
+          fields: editableFields,
+        },
+      });
+
+      return res.json({
+        message:
+          wasRejected
+            ? 'Event content updated and submitted for review'
+            : event.status === 'published'
+            ? 'Published event content updated'
+            : 'Event review content updated',
+        event,
+      });
+    } catch (error) {
+      console.error('Could not update event review content:', error);
+
+      if (error.name === 'CastError') {
+        return res.status(400).json({
+          error: 'Invalid event ID',
+        });
+      }
+
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({
+          error: getValidationErrorMessage(error),
+        });
+      }
+
+      return res.status(500).json({
+        error: 'Could not update event review content',
+      });
+    }
+  },
+);
 
 // publish or reject an event
 router.patch(

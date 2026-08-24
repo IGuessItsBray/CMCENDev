@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Branding | CMCEN / RCMCE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main class="branding-main">
+      <section class="branding-shell" aria-labelledby="brandingTitle">
+        <header class="branding-heading">
+          <p class="branding-kicker">CMCEN / RCMCE</p>
+          <h1 id="brandingTitle">Branding reference</h1>
+          <p>
+            The approved typography, colour tokens, and light/dark theme values
+            used throughout CMCEN.
+          </p>
+        </header>
+
+        <section class="branding-section" aria-labelledby="brandingFontsTitle">
+          <div class="branding-section-heading">
+            <div>
+              <p class="branding-kicker">Typography</p>
+              <h2 id="brandingFontsTitle">Fonts</h2>
+            </div>
+          </div>
+          <div
+            class="branding-font-grid"
+            id="brandingFonts"
+            aria-live="polite"
+          ></div>
+        </section>
+
+        <section class="branding-section" aria-labelledby="brandingLightTitle">
+          <div class="branding-section-heading">
+            <div>
+              <p class="branding-kicker">Light theme</p>
+              <h2 id="brandingLightTitle">Colour palette</h2>
+            </div>
+          </div>
+          <div
+            class="branding-colour-grid"
+            id="brandingLightColours"
+            aria-live="polite"
+          ></div>
+        </section>
+
+        <section class="branding-section" aria-labelledby="brandingDarkTitle">
+          <div class="branding-section-heading">
+            <div>
+              <p class="branding-kicker">Dark theme</p>
+              <h2 id="brandingDarkTitle">Colour palette</h2>
+            </div>
+          </div>
+          <div
+            class="branding-colour-grid"
+            id="brandingDarkColours"
+            aria-live="polite"
+          ></div>
+        </section>
+
+      </section>
+    </main>
+    <footer id="footer"></footer>
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/branding.js"></script>
+  </body>
+</html>

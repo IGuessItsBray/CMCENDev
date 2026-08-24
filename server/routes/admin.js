@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const speakeasy = require('speakeasy');
 const crypto = require('crypto');
 const {
@@ -10,8 +11,13 @@ const Role = require('../models/Role');
 const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
+const NewsArticle = require('../models/NewsArticle');
+const Page = require('../models/Page');
+const ContentRevision = require('../models/ContentRevision');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
+const WeeklyBriefRun = require('../models/WeeklyBriefRun');
+const NewsBlast = require('../models/NewsBlast');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
@@ -20,7 +26,12 @@ const {
 } = require('../config/permissions');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog, snapshotUser } = require('../services/audit-log');
-const { sendMail } = require('../services/mailer');
+const { cleanLocalizedText, cleanString } = require('../services/content-utils');
+const { isEmailSendingDisabled, sendMail } = require('../services/mailer');
+const {
+  createUnsubscribeToken,
+  getCaslSenderInfo,
+} = require('../services/weekly-brief');
 const {
   buildPublicMediaUrl,
   getMediaKeyFromValue,
@@ -28,14 +39,106 @@ const {
 const {
   getEventSnapshot,
   getEventTitle,
+  getLastPostMessageSnapshot,
   getRetirementCommentSnapshot,
   getRetirementCommentTitle,
   getRetirementMessageSnapshot,
   getRetirementMessageTitle,
 } = require('../services/content-snapshots');
+const { hideContent, restoreContent } = require('../services/content-lifecycle');
 const s3Client = require('../storage');
 
 const router = express.Router();
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function applyAdminStringFields(document, updates, fieldNames, changedFields) {
+  for (const fieldName of fieldNames) {
+    if (!Object.prototype.hasOwnProperty.call(updates, fieldName)) continue;
+    if (typeof updates[fieldName] !== 'string') {
+      return `${fieldName} must be a string`;
+    }
+    document[fieldName] = cleanString(updates[fieldName]);
+    changedFields.push(fieldName);
+  }
+  return '';
+}
+
+function applyAdminLocalizedFields(document, updates, fieldNames, changedFields) {
+  for (const fieldName of fieldNames) {
+    if (!Object.prototype.hasOwnProperty.call(updates, fieldName)) continue;
+    if (!isPlainObject(updates[fieldName])) {
+      return `${fieldName} must be an English/French text object`;
+    }
+    document[fieldName] = cleanLocalizedText(updates[fieldName]);
+    changedFields.push(fieldName);
+  }
+  return '';
+}
+
+function getLastPostAdminSnapshot(lastPost) {
+  const deceased = lastPost.deceased || {};
+  const name = [deceased.fullRank, deceased.firstName, deceased.surname]
+    .filter(Boolean)
+    .join(' ');
+  return { title: name || 'In Memoriam', status: lastPost.status };
+}
+
+function getNewsAdminSnapshot(article) {
+  return {
+    title: article.title?.en || article.title?.fr || 'Untitled news story',
+    status: article.status,
+    publishedAt: article.publishedAt || null,
+  };
+}
+
+async function saveAdminContentEdit({
+  req,
+  res,
+  model,
+  id,
+  targetType,
+  notFoundMessage,
+  applyUpdates,
+  getSnapshot,
+  responseKey,
+}) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(404).json({ error: notFoundMessage });
+  }
+
+  const document = await model.findById(id);
+  if (!document) return res.status(404).json({ error: notFoundMessage });
+
+  const changedFields = [];
+  const validationError = applyUpdates(document, req.body, changedFields);
+  if (validationError) return res.status(400).json({ error: validationError });
+  if (!changedFields.length) {
+    return res.status(400).json({ error: 'Provide at least one editable field' });
+  }
+
+  if (document.schema.path('updatedBy')) {
+    document.updatedBy = req.user._id;
+  }
+  await document.save();
+
+  await writeAuditLog({
+    req,
+    action: 'content.admin_updated',
+    actor: req.user,
+    targetType,
+    target: document._id,
+    targetSnapshot: getSnapshot(document),
+    metadata: { fields: changedFields, source: 'admin-content-edit' },
+  });
+
+  return res.json({
+    message: 'Content updated',
+    [responseKey]: document,
+  });
+}
 
 const CONTENT_AREAS = Object.freeze([
   'general',
@@ -51,7 +154,9 @@ const MAX_MEDIA_PAGE_SIZE = 500;
 const MAX_MEDIA_LIST_OBJECTS = 5000;
 const DEFAULT_USER_PAGE_SIZE = 50;
 const MAX_USER_PAGE_SIZE = 100;
+const LEGACY_GHOST_EMAIL_SUFFIX = /@cmcen\.local$/i;
 const INVITATION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_INVITATION_MESSAGE_LENGTH = 2000;
 const USER_EXPORT_FORMATS = Object.freeze(['csv', 'pdf']);
 const USER_EXPORT_FILTER_OPTIONS = Object.freeze({
   roles: USER_ROLES,
@@ -141,6 +246,456 @@ router.get(
       res.status(500).json({
         error: 'Could not load review submission counts',
       });
+    }
+  },
+);
+
+const REVISION_CONTENT_MODELS = Object.freeze({
+  event: Event,
+  retirementMessage: RetirementMessage,
+  lastPost: LastPostMessage,
+  retirementComment: RetirementComment,
+});
+
+const CONTENT_WORKSPACE_TYPES = Object.freeze([
+  'event',
+  'retirementMessage',
+  'lastPost',
+  'retirementComment',
+]);
+const CONTENT_WORKSPACE_STATUSES = Object.freeze([
+  'draft',
+  'pending',
+  'published',
+  'rejected',
+  'hidden',
+]);
+const CONTENT_WORKSPACE_TRANSLATION_FILTERS = Object.freeze([
+  'all',
+  'missing-any',
+  'missing-en',
+  'missing-fr',
+]);
+const CONTENT_WORKSPACE_SEARCH_MAX_LENGTH = 120;
+
+function getContentWorkspaceLimit(value) {
+  const limit = Number.parseInt(value, 10);
+
+  if (!Number.isInteger(limit) || limit < 1) return 50;
+  return Math.min(limit, 100);
+}
+
+function cleanContentWorkspaceSearch(value) {
+  return String(value || '')
+    .trim()
+    .slice(0, CONTENT_WORKSPACE_SEARCH_MAX_LENGTH);
+}
+
+function getContentWorkspaceSearchFilter(type, searchPattern) {
+  if (!searchPattern) return {};
+
+  const searchFields = {
+    event: [
+      'title.en',
+      'title.fr',
+      'location.en',
+      'location.fr',
+      'description.en',
+      'description.fr',
+      'registration.en',
+      'registration.fr',
+      'city',
+      'provinceRegion',
+      'organizingEntity',
+      'eventType',
+    ],
+    retirementMessage: [
+      'retiree.rank',
+      'retiree.firstName',
+      'retiree.lastName',
+      'retiree.postNominals',
+      'retiree.tradeRole',
+      'messages.en',
+      'messages.fr',
+    ],
+    lastPost: [
+      'title',
+      'slug',
+      'deceased.fullRank',
+      'deceased.firstName',
+      'deceased.surname',
+      'deceased.postNominal',
+      'messages.en',
+      'messages.fr',
+    ],
+    retirementComment: ['body'],
+  }[type];
+
+  return searchFields
+    ? { $or: searchFields.map((field) => ({ [field]: searchPattern })) }
+    : {};
+}
+
+function getContentWorkspaceTranslationFilter(type, translation) {
+  const languages = {
+    'missing-any': ['en', 'fr'],
+    'missing-en': ['en'],
+    'missing-fr': ['fr'],
+  }[translation];
+  const localizedFields = {
+    event: ['title', 'location', 'description', 'registration'],
+    retirementMessage: ['messages'],
+    lastPost: ['messages'],
+  }[type];
+
+  if (!languages || !localizedFields) return {};
+
+  return {
+    $or: localizedFields.flatMap((field) =>
+      languages.map((language) => {
+        const sourceLanguage = language === 'en' ? 'fr' : 'en';
+
+        return {
+          [`${field}.${language}`]: { $in: ['', null] },
+          [`${field}.${sourceLanguage}`]: {
+            $exists: true,
+            $nin: ['', null],
+          },
+        };
+      }),
+    ),
+  };
+}
+
+function getContentWorkspaceRecordFilter(
+  contentFilter,
+  type,
+  searchPattern,
+  translation,
+) {
+  const filters = [
+    contentFilter,
+    getContentWorkspaceSearchFilter(type, searchPattern),
+    getContentWorkspaceTranslationFilter(type, translation),
+  ].filter((filter) => Object.keys(filter).length);
+
+  return filters.length === 1 ? filters[0] : { $and: filters };
+}
+
+function toContentWorkspaceItem(type, content) {
+  const base = {
+    _id: content._id,
+    type,
+    status: content.status,
+    hiddenFromStatus: content.hiddenFromStatus || '',
+    rejectionReason: content.rejectionReason || '',
+    updatedAt: content.updatedAt,
+    createdAt: content.createdAt,
+  };
+
+  if (type === 'event') {
+    return {
+      ...base,
+      title: getEventTitle(content),
+      content: {
+        title: content.title || {},
+        location: content.location || {},
+        description: content.description || {},
+        registration: content.registration || {},
+        city: content.city || '',
+        provinceRegion: content.provinceRegion || '',
+        organizingEntity: content.organizingEntity || '',
+        eventType: content.eventType || '',
+        timezone: content.timezone || '',
+        startDate: content.startDate || null,
+        endDate: content.endDate || null,
+        allDay: content.allDay === true,
+        imagePath: content.imagePath || '',
+        contentArea: content.contentArea || 'general',
+        submitter: content.submitter || {},
+        publicationPermission: content.publicationPermission || {},
+        createdBy: content.createdBy || null,
+      },
+    };
+  }
+
+  if (type === 'retirementMessage') {
+    return {
+      ...base,
+      title: getRetirementMessageTitle(content),
+      content: {
+        messages: content.messages || {},
+        messageLanguage: content.messageLanguage || '',
+        retiree: content.retiree || {},
+        photoUrl: content.photoUrl || '',
+        photoDisplayUrl: content.photoDisplayUrl || '',
+        submitter: content.submitter || {},
+        publicationConsent: content.publicationConsent || {},
+        memberReviewConfirmation: content.memberReviewConfirmation || {},
+        createdBy: content.createdBy || null,
+      },
+    };
+  }
+
+  if (type === 'lastPost') {
+    return {
+      ...base,
+      title: getLastPostMessageTitle(content),
+      content: {
+        messages: content.messages || {},
+        messageLanguage: content.messageLanguage || '',
+        deceased: content.deceased || {},
+        title: content.title || '',
+        slug: content.slug || '',
+        imageUrl: content.imageUrl || '',
+        imageDisplayUrl: content.imageDisplayUrl || '',
+        photoUrl: content.photoUrl || '',
+        submitter: content.submitter || {},
+        publicationPermission: content.publicationPermission || {},
+        createdBy: content.createdBy || null,
+      },
+    };
+  }
+
+  return {
+    ...base,
+    title: getRetirementCommentTitle(content),
+    content: {
+      body: content.body || '',
+      author: content.author || null,
+      createdAt: content.createdAt || null,
+      retirementMessage: content.retirementMessage
+        ? {
+            _id: content.retirementMessage._id,
+            title: getRetirementMessageTitle(content.retirementMessage),
+          }
+        : null,
+    },
+  };
+}
+
+// GET /api/admin/content
+// Return a staff-only cross-content workspace, including submission metadata
+// needed to review the record without returning to the legacy review page.
+// Search and bilingual-completion filters are applied before each content type
+// is limited so staff can find records beyond the first mixed result set.
+router.get(
+  '/content',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      const type = String(req.query.type || 'all');
+      const status = String(req.query.status || 'all');
+      const translation = String(req.query.translation || 'all');
+      const search = cleanContentWorkspaceSearch(req.query.search);
+      const contentId = String(req.query.id || '').trim();
+      const limit = getContentWorkspaceLimit(req.query.limit);
+
+      if (type !== 'all' && !CONTENT_WORKSPACE_TYPES.includes(type)) {
+        return res.status(400).json({ error: 'Unsupported content type' });
+      }
+
+      if (status !== 'all' && !CONTENT_WORKSPACE_STATUSES.includes(status)) {
+        return res.status(400).json({ error: 'Unsupported content status' });
+      }
+
+      if (!CONTENT_WORKSPACE_TRANSLATION_FILTERS.includes(translation)) {
+        return res.status(400).json({ error: 'Unsupported translation status' });
+      }
+
+      if (contentId && !mongoose.Types.ObjectId.isValid(contentId)) {
+        return res.status(400).json({ error: 'Invalid content ID' });
+      }
+
+      const contentFilter = {
+        ...(status === 'all' ? {} : { status }),
+        ...(contentId ? { _id: contentId } : {}),
+      };
+      const searchPattern = search
+        ? new RegExp(escapeRegex(search), 'i')
+        : null;
+      const types = (type === 'all' ? CONTENT_WORKSPACE_TYPES : [type]).filter(
+        (contentType) =>
+          translation === 'all' || contentType !== 'retirementComment',
+      );
+      const queries = [];
+
+      if (types.includes('event')) {
+        queries.push(
+          Event.find(
+            getContentWorkspaceRecordFilter(
+              contentFilter,
+              'event',
+              searchPattern,
+              translation,
+            ),
+          )
+            .select(
+              'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
+            )
+            .populate([
+              {
+                path: 'createdBy',
+                select: 'username accountName firstName lastName email role',
+              },
+              {
+                path: 'publicationPermission.confirmedBy',
+                select: 'username accountName firstName lastName email role',
+              },
+            ])
+            .sort({ updatedAt: -1, _id: -1 })
+            .limit(limit)
+            .lean()
+            .then((records) => records.map((record) => toContentWorkspaceItem('event', record))),
+        );
+      }
+
+      if (types.includes('retirementMessage')) {
+        queries.push(
+          RetirementMessage.find(
+            getContentWorkspaceRecordFilter(
+              contentFilter,
+              'retirementMessage',
+              searchPattern,
+              translation,
+            ),
+          )
+            .select(
+              'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
+            )
+            .populate({
+              path: 'createdBy',
+              select: 'username accountName firstName lastName email role',
+            })
+            .sort({ updatedAt: -1, _id: -1 })
+            .limit(limit)
+            .lean()
+            .then((records) =>
+              records.map((record) =>
+                toContentWorkspaceItem('retirementMessage', record),
+              ),
+            ),
+        );
+      }
+
+      if (types.includes('lastPost')) {
+        queries.push(
+          LastPostMessage.find(
+            getContentWorkspaceRecordFilter(
+              contentFilter,
+              'lastPost',
+              searchPattern,
+              translation,
+            ),
+          )
+            .select(
+              'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
+            )
+            .populate([
+              {
+                path: 'createdBy',
+                select: 'username accountName firstName lastName email role',
+              },
+              {
+                path: 'publicationPermission.confirmedBy',
+                select: 'username accountName firstName lastName email role',
+              },
+            ])
+            .sort({ updatedAt: -1, _id: -1 })
+            .limit(limit)
+            .lean()
+            .then((records) =>
+              records.map((record) => toContentWorkspaceItem('lastPost', record)),
+            ),
+        );
+      }
+
+      if (types.includes('retirementComment')) {
+        queries.push(
+          RetirementComment.find(
+            getContentWorkspaceRecordFilter(
+              contentFilter,
+              'retirementComment',
+              searchPattern,
+              translation,
+            ),
+          )
+            .select(
+              'retirementMessage author body status hiddenFromStatus rejectionReason updatedAt createdAt',
+            )
+            .populate([
+              { path: 'retirementMessage', select: 'retiree' },
+              {
+                path: 'author',
+                select: 'username accountName firstName lastName email role',
+              },
+            ])
+            .sort({ updatedAt: -1, _id: -1 })
+            .limit(limit)
+            .lean()
+            .then((records) =>
+              records.map((record) =>
+                toContentWorkspaceItem('retirementComment', record),
+              ),
+            ),
+        );
+      }
+
+      const items = (await Promise.all(queries))
+        .flat()
+        .sort(
+          (left, right) =>
+            new Date(right.updatedAt || right.createdAt || 0) -
+            new Date(left.updatedAt || left.createdAt || 0),
+        )
+        .slice(0, limit);
+
+      return res.json({ items });
+    } catch (error) {
+      console.error('Could not load content workspace:', error);
+      return res.status(500).json({ error: 'Could not load content workspace' });
+    }
+  },
+);
+
+// GET /api/admin/content/:contentType/:contentId/revisions
+// Return staff-authored revisions without exposing submitter contact details.
+router.get(
+  '/content/:contentType/:contentId/revisions',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      const { contentType, contentId } = req.params;
+      const Model = REVISION_CONTENT_MODELS[contentType];
+
+      if (!Model) {
+        return res.status(400).json({ error: 'Unsupported content type' });
+      }
+
+      const exists = await Model.exists({ _id: contentId });
+
+      if (!exists) {
+        return res.status(404).json({ error: 'Content not found' });
+      }
+
+      const revisions = await ContentRevision.find({
+        contentType,
+        contentId,
+      })
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(100)
+        .lean();
+
+      return res.json({ revisions });
+    } catch (error) {
+      if (error.name === 'CastError') {
+        return res.status(400).json({ error: 'Invalid content ID' });
+      }
+
+      console.error('Could not load content revisions:', error);
+      return res.status(500).json({ error: 'Could not load content revisions' });
     }
   },
 );
@@ -398,7 +953,50 @@ function getLastPostMessageTitle(message) {
   );
 }
 
-function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
+function getNewsArticleTitle(article) {
+  return article.title?.en || article.title?.fr || 'News story';
+}
+
+function getPageTitle(page) {
+  return page.title?.en || page.title?.fr || page.slug || 'Page';
+}
+
+function getPageMediaReferences(blocks = []) {
+  const references = [];
+  const addMediaItem = (item, fieldPrefix) => {
+    if (!item || typeof item !== 'object') return;
+
+    const values = [item.mediaKey, item.mediaUrl];
+
+    Object.entries(item.mediaVariants || {}).forEach(
+      ([, variant]) => {
+        values.push(variant?.key, variant?.url);
+      },
+    );
+
+    references.push([values, fieldPrefix]);
+  };
+
+  blocks.forEach((block, blockIndex) => {
+    addMediaItem(block, `blocks.${blockIndex}`);
+    (block.columns || []).forEach((column, columnIndex) => {
+      addMediaItem(column, `blocks.${blockIndex}.columns.${columnIndex}`);
+    });
+    (block.items || []).forEach((item, itemIndex) => {
+      addMediaItem(item, `blocks.${blockIndex}.items.${itemIndex}`);
+    });
+  });
+
+  return references;
+}
+
+function getMediaAttachmentMap(
+  events,
+  retirementMessages,
+  lastPostMessages,
+  newsArticles,
+  pages,
+) {
   const attachmentMap = new Map();
 
   function addAttachment(key, attachment) {
@@ -408,7 +1006,16 @@ function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
       attachmentMap.set(key, []);
     }
 
-    attachmentMap.get(key).push(attachment);
+    const attachments = attachmentMap.get(key);
+    if (
+      !attachments.some(
+        (existing) =>
+          existing.type === attachment.type &&
+          String(existing._id) === String(attachment._id),
+      )
+    ) {
+      attachments.push(attachment);
+    }
   }
 
   events.forEach((event) => {
@@ -418,7 +1025,7 @@ function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
       title: getEventTitle(event),
       status: event.status,
       field: 'imagePath',
-      href: `/submit-event?id=${encodeURIComponent(event._id)}`,
+      href: `/content-workspace?type=event&id=${encodeURIComponent(event._id)}`,
     });
   });
 
@@ -450,6 +1057,40 @@ function getMediaAttachmentMap(events, retirementMessages, lastPostMessages) {
     });
   });
 
+  newsArticles.forEach((article) => {
+    const attachment = {
+      _id: article._id,
+      type: 'newsArticle',
+      title: getNewsArticleTitle(article),
+      status: article.status,
+      href: `/news_stories?edit=${encodeURIComponent(article._id)}`,
+    };
+
+    addAttachment(getMediaKeyFromValue(article.imageUrl), {
+      ...attachment,
+      field: 'imageUrl',
+    });
+    addAttachment(getMediaKeyFromValue(article.imageDisplayUrl), {
+      ...attachment,
+      field: 'imageDisplayUrl',
+    });
+  });
+
+  pages.forEach((page) => {
+    const attachment = {
+      _id: page._id,
+      type: 'page',
+      title: getPageTitle(page),
+      status: page.status,
+    };
+
+    getPageMediaReferences(page.blocks).forEach(([values, field]) => {
+      values.forEach((value) => {
+        addAttachment(getMediaKeyFromValue(value), { ...attachment, field });
+      });
+    });
+  });
+
   return attachmentMap;
 }
 
@@ -458,7 +1099,7 @@ function addAttachmentAliases(attachmentMap, aliasKeys) {
   const uniqueAttachments = Array.from(
     new Map(
       attachments.map((attachment) => [
-        `${attachment.type}:${attachment._id}:${attachment.field}`,
+        `${attachment.type}:${attachment._id}`,
         attachment,
       ]),
     ).values(),
@@ -472,22 +1113,38 @@ function addAttachmentAliases(attachmentMap, aliasKeys) {
 }
 
 function getMediaAssetAttachmentKeys(asset) {
+  const originalKey = asset?.originalKey || asset?.key || '';
+  const originalMatch = originalKey.match(
+    /^(.*)\/original\.[a-z0-9]+$/iu,
+  );
+  const generatedVariantKeys = originalMatch
+    ? ['thumb', 'medium', 'large', 'hero'].map(
+        (name) => `${originalMatch[1]}/${name}.webp`,
+      )
+    : [];
+
   return [
     ...new Set(
       [
         asset?.key,
         asset?.originalKey,
-        getMediaVariantKey(asset, 'thumb'),
-        getMediaVariantKey(asset, 'medium'),
-        getMediaVariantKey(asset, 'large'),
-        getMediaVariantKey(asset, 'hero'),
+        getMediaKeyFromValue(asset?.url),
+        getMediaKeyFromValue(asset?.originalUrl),
+        asset?.display?.key,
+        getMediaKeyFromValue(asset?.display?.url),
+        ...Object.values(asset?.variants || {}).flatMap((variant) => [
+          variant?.key,
+          getMediaKeyFromValue(variant?.url),
+        ]),
+        ...generatedVariantKeys,
       ].filter(Boolean),
     ),
   ];
 }
 
 async function getMediaAttachments() {
-  const [events, retirementMessages, lastPostMessages] = await Promise.all([
+  const [events, retirementMessages, lastPostMessages, newsArticles, pages] =
+    await Promise.all([
     Event.find({
       imagePath: { $nin: [null, ''] },
     })
@@ -506,9 +1163,24 @@ async function getMediaAttachments() {
     })
       .select('title deceased status imageUrl photoUrl updatedAt createdAt')
       .lean(),
+    NewsArticle.find({
+      $or: [
+        { imageUrl: { $nin: [null, ''] } },
+        { imageDisplayUrl: { $nin: [null, ''] } },
+      ],
+    })
+      .select('title status imageUrl imageDisplayUrl')
+      .lean(),
+    Page.find({}).select('title slug status blocks').lean(),
   ]);
 
-  return getMediaAttachmentMap(events, retirementMessages, lastPostMessages);
+  return getMediaAttachmentMap(
+    events,
+    retirementMessages,
+    lastPostMessages,
+    newsArticles,
+    pages,
+  );
 }
 
 function toAdminMediaItem(object, attachmentMap) {
@@ -534,10 +1206,6 @@ function toAdminMediaItem(object, attachmentMap) {
     attachedPosts: attachments,
     attachedPostCount: attachments.length,
   };
-}
-
-function getMediaVariantKey(asset, name) {
-  return asset?.variants?.[name]?.key || '';
 }
 
 function toAdminMediaAssetItem(asset, attachmentMap) {
@@ -602,7 +1270,9 @@ function getMediaSortKey(value) {
 }
 
 function cleanMediaSearch(value) {
-  return String(value || '').trim().slice(0, 120);
+  return String(value || '')
+    .trim()
+    .slice(0, 120);
 }
 
 function getMediaTypeFilter(value) {
@@ -639,14 +1309,16 @@ function matchesMediaType(asset, type) {
   if (matchesAttachment) return true;
 
   const uploadType = asset.uploadContext?.type;
-  return {
-    retirement: uploadType === 'retirementMessage',
-    'last-post': uploadType === 'lastPostMessage',
-    event: uploadType === 'event',
-    page: uploadType === 'pageBuilder',
-    upload: uploadType === 'mediaManager' || uploadType === 'directUpload',
-    migration: uploadType === 'migration' || uploadType === 'legacyStorage',
-  }[type] === true;
+  return (
+    {
+      retirement: uploadType === 'retirementMessage',
+      'last-post': uploadType === 'lastPostMessage',
+      event: uploadType === 'event',
+      page: uploadType === 'pageBuilder',
+      upload: uploadType === 'mediaManager' || uploadType === 'directUpload',
+      migration: uploadType === 'migration' || uploadType === 'legacyStorage',
+    }[type] === true
+  );
 }
 
 function sortStorageObjectsNewestFirst(objects = []) {
@@ -867,6 +1539,14 @@ function toAdminUser(user, postSummary = null) {
         ? {
             sentAt: plainUser.invitation?.sentAt || null,
             expiresAt: plainUser.invitation?.expiresAt || null,
+            delivery: {
+              status: plainUser.invitation?.delivery?.status || 'pending',
+              attemptedAt: plainUser.invitation?.delivery?.attemptedAt || null,
+              messageId: plainUser.invitation?.delivery?.messageId || '',
+              accepted: plainUser.invitation?.delivery?.accepted || [],
+              rejected: plainUser.invitation?.delivery?.rejected || [],
+              error: plainUser.invitation?.delivery?.error || '',
+            },
           }
         : null,
     emailVerification: {
@@ -907,23 +1587,136 @@ function getBaseUrl(req) {
     : `${req.protocol}://${req.get('host')}`;
 }
 
-async function sendInvitationEmail(req, user, token) {
-  const activationUrl = `${getBaseUrl(req)}/register?inviteToken=${encodeURIComponent(token)}`;
-  const accountName = String(user.accountName || user.firstName || 'there')
+function escapeHtml(value) {
+  return String(value || '')
     .replace(/&/gu, '&amp;')
     .replace(/</gu, '&lt;')
-    .replace(/>/gu, '&gt;');
+    .replace(/>/gu, '&gt;')
+    .replace(/"/gu, '&quot;')
+    .replace(/'/gu, '&#39;');
+}
 
-  await sendMail({
+async function sendInvitationEmail(req, user, token) {
+  const activationUrl = `${getBaseUrl(req)}/register?inviteToken=${encodeURIComponent(token)}`;
+  const accountName = escapeHtml(user.accountName || user.firstName || 'there');
+  const invitationMessage = String(user.invitation?.message || '').trim();
+  const emailMessage = invitationMessage
+    ? escapeHtml(invitationMessage).replace(/\r?\n/gu, '<br>')
+    : 'An admin has created a CMCEN account for you.';
+
+  return sendMail({
     to: user.email,
     subject: 'Activate your CMCEN / RCMCE account',
     html: `
       <p>Hello ${accountName},</p>
-      <p>An administrator has created a CMCEN / RCMCE account for you.</p>
+      <p>${emailMessage}</p>
       <p><a href="${activationUrl}">Activate your account</a></p>
       <p>This link expires in 7 days. You will set your own password and complete your profile.</p>
     `,
   });
+}
+
+function cleanInvitationDeliveryList(value) {
+  return (Array.isArray(value) ? value : [])
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+function getInvitationDeliveryError(error) {
+  const parts = [error?.code, error?.responseCode, error?.message]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+
+  return [...new Set(parts)].join(': ').slice(0, 240);
+}
+
+function getInvitationDeliveryMetadata(user) {
+  const delivery = user?.invitation?.delivery || {};
+
+  return {
+    status: delivery.status || 'pending',
+    attemptedAt: delivery.attemptedAt || null,
+    messageId: delivery.messageId || '',
+    accepted: delivery.accepted || [],
+    rejected: delivery.rejected || [],
+    error: delivery.error || '',
+  };
+}
+
+async function recordInvitationDelivery(user, result) {
+  const attemptedAt = new Date();
+  const skipped = result?.mailResult?.skipped === true;
+  const succeeded = result?.ok === true && !skipped;
+  const mailResult = result?.mailResult || {};
+
+  user.invitation.delivery = {
+    status: skipped ? 'skipped' : succeeded ? 'sent' : 'failed',
+    attemptedAt,
+    messageId: String(mailResult.messageId || '')
+      .trim()
+      .slice(0, 240),
+    accepted: cleanInvitationDeliveryList(mailResult.accepted),
+    rejected: cleanInvitationDeliveryList(mailResult.rejected),
+    error: skipped
+      ? String(mailResult.reason || 'Email delivery is disabled').slice(0, 240)
+      : succeeded
+        ? ''
+        : getInvitationDeliveryError(result?.error),
+  };
+
+  if (succeeded) {
+    user.invitation.sentAt = attemptedAt;
+  }
+
+  await user.save();
+  return getInvitationDeliveryMetadata(user);
+}
+
+async function deliverInvitation({ req, user, token, actor, action }) {
+  try {
+    const mailResult = await sendInvitationEmail(req, user, token);
+    const delivery = await recordInvitationDelivery(user, {
+      ok: true,
+      mailResult,
+    });
+
+    await writeAuditLog({
+      req,
+      action,
+      actor,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: toAdminUser(user),
+      metadata: {
+        role: user.role,
+        delivery,
+      },
+    });
+
+    return { delivery };
+  } catch (error) {
+    const delivery = await recordInvitationDelivery(user, {
+      ok: false,
+      error,
+    });
+
+    await writeAuditLog({
+      req,
+      action: 'user.invitation_delivery_failed',
+      actor,
+      targetType: 'user',
+      target: user._id,
+      targetSnapshot: toAdminUser(user),
+      metadata: {
+        invitationAction: action,
+        role: user.role,
+        delivery,
+      },
+    });
+
+    return { delivery, error };
+  }
 }
 
 function getMfaAuditSnapshot(user) {
@@ -980,7 +1773,9 @@ function getUserExportCriteria(query = {}) {
     query.includeAccountTypes,
     USER_EXPORT_FILTER_OPTIONS.accountTypes,
   );
-  const filter = {};
+  const filter = {
+    email: { $not: LEGACY_GHOST_EMAIL_SUFFIX },
+  };
 
   if (hasIncludeRoles) {
     filter.role = { $in: includedRoles };
@@ -1314,6 +2109,16 @@ async function validateStandardRoleChange(userId, currentUser, role) {
 
   if (!targetUser) {
     return { status: 404, error: 'User not found' };
+  }
+
+  if (
+    (role === 'internal_beta' || targetUser.role === 'internal_beta') &&
+    currentUser?.role !== 'developer'
+  ) {
+    return {
+      status: 403,
+      error: 'Developer access is required to change the Internal Beta role',
+    };
   }
 
   if (targetUser.role === 'developer') {
@@ -1689,7 +2494,9 @@ router.get(
       const sort = getMediaSort(sortKey);
       const typeFilter = getMediaTypeFilter(req.query.type);
       const search = cleanMediaSearch(req.query.search);
-      const searchPattern = search ? new RegExp(escapeRegex(search), 'i') : null;
+      const searchPattern = search
+        ? new RegExp(escapeRegex(search), 'i')
+        : null;
       const mediaFilter = searchPattern
         ? {
             $or: [
@@ -1710,20 +2517,18 @@ router.get(
       const mediaQuery = MediaAsset.find(mediaFilter).sort(sort);
       const requiresInMemoryFiltering =
         sortKey === 'orphaned' || typeFilter !== 'all';
-      const mediaAssets =
-        requiresInMemoryFiltering
-          ? await mediaQuery.lean()
-          : await mediaQuery.skip(offset).limit(maxKeys).lean();
+      const mediaAssets = requiresInMemoryFiltering
+        ? await mediaQuery.lean()
+        : await mediaQuery.skip(offset).limit(maxKeys).lean();
       const sortedMedia = sortAdminMediaItems(
         mediaAssets
           .map((asset) => toAdminMediaAssetItem(asset, attachmentMap))
           .filter((asset) => matchesMediaType(asset, typeFilter)),
         sortKey,
       );
-      const media =
-        requiresInMemoryFiltering
-          ? sortedMedia.slice(offset, offset + maxKeys)
-          : sortedMedia;
+      const media = requiresInMemoryFiltering
+        ? sortedMedia.slice(offset, offset + maxKeys)
+        : sortedMedia;
       const totalMedia = requiresInMemoryFiltering
         ? sortedMedia.length
         : await MediaAsset.countDocuments(mediaFilter);
@@ -1920,7 +2725,7 @@ router.post(
         .trim()
         .toLowerCase();
       const role = String(req.body?.role || 'subscriber').trim();
-      const contentAreas = cleanContentAreas(req.body?.contentAreas);
+      const invitationMessage = String(req.body?.message || '').trim();
 
       if (!firstName || !lastName || !email) {
         return res
@@ -1932,19 +2737,27 @@ router.post(
         return res.status(400).json({ error: 'Enter a valid email address' });
       }
 
+      if (invitationMessage.length > MAX_INVITATION_MESSAGE_LENGTH) {
+        return res.status(400).json({
+          error: `Invitation message must be ${MAX_INVITATION_MESSAGE_LENGTH} characters or fewer`,
+        });
+      }
+
       if (!USER_ROLES.includes(role) || ['ghost', 'developer'].includes(role)) {
         return res.status(400).json({ error: 'Choose a valid initial role' });
       }
 
-      if (!validateContentAreas(contentAreas)) {
-        return res.status(400).json({ error: 'Invalid content area provided' });
+      if (role === 'internal_beta' && req.user?.role !== 'developer') {
+        return res.status(403).json({
+          error:
+            'Developer access is required to assign the Internal Beta role',
+        });
       }
 
-      const customRoleValidation = await validateCustomRoleIds(
-        req.body?.customRoleIds,
-      );
-      if (customRoleValidation.error) {
-        return res.status(400).json({ error: customRoleValidation.error });
+      if (cleanRoleIds(req.body?.customRoleIds).length) {
+        return res.status(400).json({
+          error: 'Custom roles cannot be assigned when inviting a user',
+        });
       }
 
       if (await User.exists({ email })) {
@@ -1964,33 +2777,39 @@ router.post(
         lastName,
         password: crypto.randomBytes(32).toString('hex'),
         role,
-        customRoles: customRoleValidation.roleIds,
-        contentAreas,
+        customRoles: [],
+        contentAreas: [],
         emailVerification: { required: true, verified: false },
         invitation: {
           tokenHash: hashInvitationToken(token),
           expiresAt: new Date(now.getTime() + INVITATION_TOKEN_TTL_MS),
+          message: invitationMessage,
           invitedBy: req.user._id,
-          sentAt: now,
+          sentAt: null,
         },
       });
 
       await user.save();
-      await sendInvitationEmail(req, user, token);
 
-      await writeAuditLog({
+      const deliveryResult = await deliverInvitation({
         req,
-        action: 'user.invited',
+        user,
+        token,
         actor: req.user,
-        targetType: 'user',
-        target: user._id,
-        targetSnapshot: toAdminUser(user),
-        metadata: {
-          role,
-          customRoleIds: customRoleValidation.roleIds,
-          contentAreas,
-        },
+        action: 'user.invited',
       });
+
+      if (deliveryResult.error) {
+        console.error(
+          'User invitation email delivery failed:',
+          deliveryResult.error,
+        );
+        return res.status(502).json({
+          error:
+            'Invitation was created, but the email could not be delivered. Fix the mail issue, then resend the invitation.',
+          user: toAdminUser(user),
+        });
+      }
 
       res.status(201).json({
         message: 'Invitation sent',
@@ -1999,6 +2818,315 @@ router.post(
     } catch (error) {
       console.error('User invitation failed:', error);
       res.status(500).json({ error: 'Could not send invitation' });
+    }
+  },
+);
+
+// POST /api/admin/users/:userId/invitation/resend
+// Rotate an invited user's activation token and retry email delivery.
+router.post(
+  '/users/:userId/invitation/resend',
+  authMiddleware,
+  requirePermission('canProvisionUsers'),
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.params.userId).select(
+        'accountType username email accountName firstName lastName role invitation customRoles contentAreas emailVerification createdAt updatedAt',
+      );
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (user.accountType !== 'invited') {
+        return res
+          .status(400)
+          .json({ error: 'User does not have an invitation' });
+      }
+
+      if (user.role === 'internal_beta' && req.user?.role !== 'developer') {
+        return res.status(403).json({
+          error:
+            'Developer access is required to resend an Internal Beta invitation',
+        });
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const now = new Date();
+      user.invitation.tokenHash = hashInvitationToken(token);
+      user.invitation.expiresAt = new Date(
+        now.getTime() + INVITATION_TOKEN_TTL_MS,
+      );
+      user.invitation.sentAt = null;
+      user.invitation.delivery = {
+        status: 'pending',
+        attemptedAt: null,
+        messageId: '',
+        accepted: [],
+        rejected: [],
+        error: '',
+      };
+      await user.save();
+
+      const deliveryResult = await deliverInvitation({
+        req,
+        user,
+        token,
+        actor: req.user,
+        action: 'user.invitation_resent',
+      });
+
+      if (deliveryResult.error) {
+        console.error(
+          'Invitation resend email delivery failed:',
+          deliveryResult.error,
+        );
+        return res.status(502).json({
+          error:
+            'The invitation was renewed, but the email could not be delivered. Fix the mail issue, then resend it again.',
+          user: toAdminUser(user),
+        });
+      }
+
+      res.json({
+        message: 'Invitation resent',
+        user: toAdminUser(user),
+      });
+    } catch (error) {
+      console.error('Invitation resend failed:', error);
+      res.status(500).json({ error: 'Could not resend invitation' });
+    }
+  },
+);
+
+// GET /api/admin/subscriptions
+// List consented weekly/news subscribers and recent delivery records.
+router.get(
+  '/subscriptions',
+  authMiddleware,
+  requirePermission('canManageSubscriptions'),
+  async (req, res) => {
+    try {
+      const [users, weeklyBriefs, newsBlasts] = await Promise.all([
+        User.find({
+          $or: [
+            { 'emailSubscriptions.weeklyBrief.subscribed': true },
+            { 'emailSubscriptions.newsAnnouncements.subscribed': true },
+          ],
+        })
+          .select(
+            'email accountName firstName lastName preferredLanguage emailSubscriptions createdAt',
+          )
+          .sort({ accountName: 1, email: 1 })
+          .lean(),
+        WeeklyBriefRun.find({ state: 'completed' })
+          .select(
+            'weekKey windowStart windowEnd recipientCount sentCount failedCount completedAt',
+          )
+          .sort({ completedAt: -1 })
+          .limit(52)
+          .lean(),
+        NewsBlast.find({})
+          .select(
+            'subject recipientCount sentCount failedCount sentAt createdAt',
+          )
+          .sort({ createdAt: -1 })
+          .limit(52)
+          .lean(),
+      ]);
+      res.json({
+        subscribers: users.map((user) => ({
+          id: user._id,
+          email: user.email,
+          name:
+            user.accountName ||
+            [user.firstName, user.lastName].filter(Boolean).join(' '),
+          preferredLanguage: user.preferredLanguage || 'en',
+          weeklyBrief:
+            user.emailSubscriptions?.weeklyBrief?.subscribed === true,
+          newsAnnouncements:
+            user.emailSubscriptions?.newsAnnouncements?.subscribed === true,
+          weeklyBriefConsentedAt:
+            user.emailSubscriptions?.weeklyBrief?.consentedAt || null,
+          newsAnnouncementsConsentedAt:
+            user.emailSubscriptions?.newsAnnouncements?.consentedAt || null,
+        })),
+        newsletters: [
+          ...weeklyBriefs.map((item) => ({
+            ...item,
+            type: 'weeklyBrief',
+            label: `Weekly brief — ${item.weekKey}`,
+          })),
+          ...newsBlasts.map((item) => ({
+            ...item,
+            type: 'newsBlast',
+            label: `News blast — ${item.subject}`,
+          })),
+        ].sort(
+          (first, second) =>
+            new Date(second.completedAt || second.sentAt || second.createdAt) -
+            new Date(first.completedAt || first.sentAt || first.createdAt),
+        ),
+      });
+    } catch (error) {
+      console.error('Subscription admin list failed:', error);
+      res.status(500).json({ error: 'Could not load subscriptions' });
+    }
+  },
+);
+
+router.get(
+  '/subscriptions/export.csv',
+  authMiddleware,
+  requirePermission('canManageSubscriptions'),
+  async (req, res) => {
+    try {
+      const users = await User.find({
+        $or: [
+          { 'emailSubscriptions.weeklyBrief.subscribed': true },
+          { 'emailSubscriptions.newsAnnouncements.subscribed': true },
+        ],
+      })
+        .select(
+          'email accountName firstName lastName preferredLanguage emailSubscriptions',
+        )
+        .sort({ accountName: 1, email: 1 })
+        .lean();
+      const header = [
+        'Email',
+        'Name',
+        'Preferred language',
+        'Weekly brief subscribed',
+        'Weekly brief consented at',
+        'News announcements subscribed',
+        'News announcements consented at',
+      ];
+      const rows = users.map((user) => [
+        user.email,
+        user.accountName ||
+          [user.firstName, user.lastName].filter(Boolean).join(' '),
+        user.preferredLanguage || 'en',
+        user.emailSubscriptions?.weeklyBrief?.subscribed === true
+          ? 'Yes'
+          : 'No',
+        user.emailSubscriptions?.weeklyBrief?.consentedAt || '',
+        user.emailSubscriptions?.newsAnnouncements?.subscribed === true
+          ? 'Yes'
+          : 'No',
+        user.emailSubscriptions?.newsAnnouncements?.consentedAt || '',
+      ]);
+      await writeAuditLog({
+        req,
+        action: 'subscriptions.exported',
+        actor: req.user,
+        targetType: 'subscription',
+        targetSnapshot: { name: 'Subscription export' },
+        metadata: { subscriberCount: rows.length },
+      });
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="cmcen-subscribers-${new Date().toISOString().slice(0, 10)}.csv"`,
+      );
+      res
+        .type('text/csv; charset=utf-8')
+        .send(
+          [header, ...rows]
+            .map((row) => row.map(escapeCsvValue).join(','))
+            .join('\n'),
+        );
+    } catch (error) {
+      console.error('Subscription export failed:', error);
+      res.status(500).json({ error: 'Could not export subscriptions' });
+    }
+  },
+);
+
+router.post(
+  '/subscriptions/news-blasts',
+  authMiddleware,
+  requirePermission('canManageSubscriptions'),
+  async (req, res) => {
+    const subject = String(req.body?.subject || '').trim();
+    const body = String(req.body?.body || '').trim();
+    if (isEmailSendingDisabled()) {
+      return res.status(202).json({
+        message: 'News blast delivery skipped because email sending is disabled',
+        skipped: true,
+      });
+    }
+    const sender = getCaslSenderInfo();
+    const baseUrl = String(process.env.APP_BASE_URL || '').replace(/\/+$/u, '');
+    if (!subject || !body)
+      return res
+        .status(400)
+        .json({ error: 'A subject and message are required' });
+    if (!sender.ready || !baseUrl)
+      return res
+        .status(503)
+        .json({
+          error:
+            'CASL sender details and APP_BASE_URL must be configured before sending a news blast',
+        });
+    try {
+      const recipients = await User.find({
+        'emailSubscriptions.newsAnnouncements.subscribed': true,
+        'emailSubscriptions.newsAnnouncements.consentedAt': { $ne: null },
+        'emailSubscriptions.newsAnnouncements.unsubscribedAt': null,
+      }).select('email accountName preferredLanguage');
+      if (!recipients.length)
+        return res
+          .status(400)
+          .json({
+            error: 'There are no members subscribed to news announcements',
+          });
+      const blast = await NewsBlast.create({
+        subject,
+        body,
+        createdBy: req.user._id,
+        recipientCount: recipients.length,
+      });
+      let sentCount = 0;
+      let failedCount = 0;
+      for (const recipient of recipients) {
+        try {
+          const token = await createUnsubscribeToken(
+            recipient,
+            'newsAnnouncements',
+          );
+          const unsubscribeUrl = `${baseUrl}/api/subscriptions/news-announcements/unsubscribe?token=${encodeURIComponent(token)}`;
+          await sendMail({
+            to: recipient.email,
+            subject,
+            text: `${body}\n\n${sender.name}\n${sender.mailingAddress}\n${sender.contact}\n\nUnsubscribe: ${unsubscribeUrl}`,
+            html: `<p>${escapeHtml(body).replace(/\n/gu, '<br>')}</p><hr><p><strong>${escapeHtml(sender.name)}</strong><br>${escapeHtml(sender.mailingAddress)}<br><a href="${escapeHtml(sender.contact)}">${escapeHtml(sender.contact)}</a></p><p><a href="${escapeHtml(unsubscribeUrl)}">Unsubscribe from news announcements</a></p>`,
+            headers: {
+              'List-Unsubscribe': `<${unsubscribeUrl}>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+          });
+          sentCount += 1;
+        } catch (error) {
+          failedCount += 1;
+          console.error('News blast delivery failed:', error);
+        }
+      }
+      blast.sentCount = sentCount;
+      blast.failedCount = failedCount;
+      blast.sentAt = new Date();
+      await blast.save();
+      await writeAuditLog({
+        req,
+        action: 'subscriptions.news_blast_sent',
+        actor: req.user,
+        targetType: 'newsBlast',
+        target: blast._id,
+        targetSnapshot: { subject },
+        metadata: { recipientCount: recipients.length, sentCount, failedCount },
+      });
+      res.status(201).json({ message: 'News blast sent', blast });
+    } catch (error) {
+      console.error('News blast failed:', error);
+      res.status(500).json({ error: 'Could not send news blast' });
     }
   },
 );
@@ -2016,6 +3144,7 @@ router.get(
 
       const filter = query
         ? {
+            email: { $not: LEGACY_GHOST_EMAIL_SUFFIX },
             $or: [
               { username: { $regex: query, $options: 'i' } },
               { accountName: { $regex: query, $options: 'i' } },
@@ -2024,11 +3153,11 @@ router.get(
               { lastName: { $regex: query, $options: 'i' } },
             ],
           }
-        : {};
+        : { email: { $not: LEGACY_GHOST_EMAIL_SUFFIX } };
 
       const users = await User.find(filter)
         .select(
-          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt',
+          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt invitation.delivery emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt',
         )
         .sort({ accountName: 1, username: 1 })
         .limit(limit + 1)
@@ -2135,7 +3264,7 @@ router.get(
 
       const user = await User.findById(userId)
         .select(
-          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
+          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt invitation.delivery emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
         )
         .populate('customRoles', 'name slug color permissions');
 
@@ -2191,7 +3320,7 @@ router.get(
           date: event.startDate,
           updatedAt: event.updatedAt,
           createdAt: event.createdAt,
-          href: `/submit-event?id=${encodeURIComponent(event._id)}`,
+          href: `/content-workspace?type=event&id=${encodeURIComponent(event._id)}`,
         })),
         ...retirementMessages.map((message) => ({
           _id: message._id,
@@ -2719,6 +3848,270 @@ router.patch(
   },
 );
 
+// PATCH /api/admin/last-posts/:lastPostId
+// Correct published or legacy Last Post metadata without resubmitting it.
+router.patch(
+  '/last-posts/:lastPostId',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      return await saveAdminContentEdit({
+        req,
+        res,
+        model: LastPostMessage,
+        id: req.params.lastPostId,
+        targetType: 'lastPost',
+        notFoundMessage: 'Last Post notice not found',
+        responseKey: 'lastPost',
+        getSnapshot: getLastPostAdminSnapshot,
+        applyUpdates(lastPost, body, changedFields) {
+          if (!isPlainObject(body)) return 'Request body must be an object';
+          if (Object.prototype.hasOwnProperty.call(body, 'deceased')) {
+            if (!isPlainObject(body.deceased)) return 'deceased must be an object';
+            const error = applyAdminStringFields(
+              lastPost.deceased,
+              body.deceased,
+              ['fullRank', 'firstName', 'surname', 'postNominal'],
+              changedFields,
+            );
+            if (error) return error;
+          }
+          const localizedError = applyAdminLocalizedFields(
+            lastPost,
+            body,
+            ['messages'],
+            changedFields,
+          );
+          if (localizedError) return localizedError;
+          return applyAdminStringFields(
+            lastPost,
+            body,
+            ['title', 'slug', 'imageUrl', 'imageDisplayUrl', 'photoUrl'],
+            changedFields,
+          );
+        },
+      });
+    } catch (error) {
+      console.error('Admin Last Post update failed:', error);
+      return res.status(500).json({ error: 'Could not update Last Post notice' });
+    }
+  },
+);
+
+// PATCH /api/admin/retirement-comments/:commentId
+// Correct a retirement comment from the staff content workspace.
+router.patch(
+  '/retirement-comments/:commentId',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      return await saveAdminContentEdit({
+        req,
+        res,
+        model: RetirementComment,
+        id: req.params.commentId,
+        targetType: 'retirementComment',
+        notFoundMessage: 'Retirement comment not found',
+        responseKey: 'comment',
+        getSnapshot: (comment) =>
+          getRetirementCommentSnapshot(comment, { includeBody: true }),
+        applyUpdates(comment, body, changedFields) {
+          if (!isPlainObject(body)) return 'Request body must be an object';
+          if (!Object.prototype.hasOwnProperty.call(body, 'body')) {
+            return 'Provide at least one editable field';
+          }
+          if (typeof body.body !== 'string') return 'body must be a string';
+
+          const cleanBody = cleanString(body.body);
+          if (cleanBody.length < 2 || cleanBody.length > 2000) {
+            return 'Comment text must contain between 2 and 2000 characters';
+          }
+
+          comment.body = cleanBody;
+          changedFields.push('body');
+          return '';
+        },
+      });
+    } catch (error) {
+      console.error('Admin retirement comment update failed:', error);
+      return res.status(500).json({ error: 'Could not update retirement comment' });
+    }
+  },
+);
+
+// PATCH /api/admin/retirement-messages/:messageId
+// Correct legacy retirement metadata while permitting intentionally blank values.
+router.patch(
+  '/retirement-messages/:messageId',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      return await saveAdminContentEdit({
+        req,
+        res,
+        model: RetirementMessage,
+        id: req.params.messageId,
+        targetType: 'retirementMessage',
+        notFoundMessage: 'Retirement message not found',
+        responseKey: 'retirementMessage',
+        getSnapshot: getRetirementMessageSnapshot,
+        applyUpdates(message, body, changedFields) {
+          if (!isPlainObject(body)) return 'Request body must be an object';
+          if (Object.prototype.hasOwnProperty.call(body, 'retiree')) {
+            if (!isPlainObject(body.retiree)) return 'retiree must be an object';
+            const error = applyAdminStringFields(
+              message.retiree,
+              body.retiree,
+              ['rank', 'firstName', 'lastName', 'postNominals', 'tradeRole'],
+              changedFields,
+            );
+            if (error) return error;
+            if (Object.prototype.hasOwnProperty.call(body.retiree, 'retirementDate')) {
+              const value = body.retiree.retirementDate;
+              if (value !== null && typeof value !== 'string') {
+                return 'retirementDate must be an ISO date string or null';
+              }
+              const date = value ? new Date(value) : null;
+              if (date && Number.isNaN(date.getTime())) {
+                return 'retirementDate must be a valid date';
+              }
+              message.retiree.retirementDate = date;
+              changedFields.push('retirementDate');
+            }
+          }
+          const localizedError = applyAdminLocalizedFields(
+            message,
+            body,
+            ['messages'],
+            changedFields,
+          );
+          if (localizedError) return localizedError;
+          return applyAdminStringFields(
+            message,
+            body,
+            ['photoUrl', 'photoDisplayUrl'],
+            changedFields,
+          );
+        },
+      });
+    } catch (error) {
+      console.error('Admin retirement message update failed:', error);
+      return res.status(500).json({ error: 'Could not update retirement message' });
+    }
+  },
+);
+
+// PATCH /api/admin/news/:articleId
+router.patch(
+  '/news/:articleId',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      return await saveAdminContentEdit({
+        req,
+        res,
+        model: NewsArticle,
+        id: req.params.articleId,
+        targetType: 'newsArticle',
+        notFoundMessage: 'News story not found',
+        responseKey: 'article',
+        getSnapshot: getNewsAdminSnapshot,
+        applyUpdates(article, body, changedFields) {
+          if (!isPlainObject(body)) return 'Request body must be an object';
+          const localizedError = applyAdminLocalizedFields(
+            article,
+            body,
+            ['title', 'content'],
+            changedFields,
+          );
+          if (localizedError) return localizedError;
+          return applyAdminStringFields(
+            article,
+            body,
+            ['imageUrl', 'imageDisplayUrl'],
+            changedFields,
+          );
+        },
+      });
+    } catch (error) {
+      console.error('Admin news update failed:', error);
+      return res.status(500).json({ error: 'Could not update news story' });
+    }
+  },
+);
+
+// PATCH /api/admin/events/:eventId
+router.patch(
+  '/events/:eventId',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    try {
+      return await saveAdminContentEdit({
+        req,
+        res,
+        model: Event,
+        id: req.params.eventId,
+        targetType: 'event',
+        notFoundMessage: 'Event not found',
+        responseKey: 'event',
+        getSnapshot: getEventSnapshot,
+        applyUpdates(event, body, changedFields) {
+          if (!isPlainObject(body)) return 'Request body must be an object';
+          const localizedError = applyAdminLocalizedFields(
+            event,
+            body,
+            ['title', 'description', 'location', 'registration'],
+            changedFields,
+          );
+          if (localizedError) return localizedError;
+          const stringError = applyAdminStringFields(
+            event,
+            body,
+            [
+              'city',
+              'provinceRegion',
+              'organizingEntity',
+              'eventType',
+              'timezone',
+              'imagePath',
+              'contentArea',
+            ],
+            changedFields,
+          );
+          if (stringError) return stringError;
+          if (Object.prototype.hasOwnProperty.call(body, 'allDay')) {
+            if (typeof body.allDay !== 'boolean') return 'allDay must be a boolean';
+            event.allDay = body.allDay;
+            changedFields.push('allDay');
+          }
+          for (const fieldName of ['startDate', 'endDate']) {
+            if (!Object.prototype.hasOwnProperty.call(body, fieldName)) continue;
+            const value = body[fieldName];
+            if (value !== null && typeof value !== 'string') {
+              return `${fieldName} must be an ISO date string or null`;
+            }
+            const date = value ? new Date(value) : null;
+            if (date && Number.isNaN(date.getTime())) {
+              return `${fieldName} must be a valid date`;
+            }
+            event[fieldName] = date;
+            changedFields.push(fieldName);
+          }
+          return '';
+        },
+      });
+    } catch (error) {
+      console.error('Admin event update failed:', error);
+      return res.status(500).json({ error: 'Could not update event' });
+    }
+  },
+);
+
 router.delete('/events/:eventId', authMiddleware, async (req, res) => {
   try {
     const event = await Event.findById(req.params.eventId);
@@ -2739,6 +4132,12 @@ router.delete('/events/:eventId', authMiddleware, async (req, res) => {
     }
 
     const snapshot = getEventSnapshot(event);
+    const mediaCleanup = permissions.canDeleteContent
+      ? await deleteContentMediaAssets({
+          mediaUrls: [event.imagePath],
+          source: { type: 'event', id: event._id },
+        })
+      : [];
 
     await event.deleteOne();
     await writeAuditLog({
@@ -2748,6 +4147,9 @@ router.delete('/events/:eventId', authMiddleware, async (req, res) => {
       targetType: 'event',
       target: event._id,
       targetSnapshot: snapshot,
+      metadata: {
+        mediaCleanup: getContentMediaCleanupMetadata(mediaCleanup),
+      },
     });
 
     res.json({ message: 'Event deleted' });
@@ -2788,6 +4190,12 @@ router.delete(
       const deletedComments = await RetirementComment.countDocuments({
         retirementMessage: message._id,
       });
+      const mediaCleanup = permissions.canDeleteContent
+        ? await deleteContentMediaAssets({
+            mediaUrls: [message.photoUrl],
+            source: { type: 'retirementMessage', id: message._id },
+          })
+        : [];
 
       await RetirementComment.deleteMany({
         retirementMessage: message._id,
@@ -2800,7 +4208,10 @@ router.delete(
         targetType: 'retirementMessage',
         target: message._id,
         targetSnapshot: snapshot,
-        metadata: { deletedComments },
+        metadata: {
+          deletedComments,
+          mediaCleanup: getContentMediaCleanupMetadata(mediaCleanup),
+        },
       });
 
       res.json({ message: 'Retirement message deleted', deletedComments });
@@ -2902,6 +4313,12 @@ router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
       deceased: lastPost.deceased,
       submitter: lastPost.submitter,
     };
+    const mediaCleanup = permissions.canDeleteContent
+      ? await deleteContentMediaAssets({
+          mediaUrls: [lastPost.imageUrl, lastPost.photoUrl],
+          source: { type: 'lastPostMessage', id: lastPost._id },
+        })
+      : [];
     await lastPost.deleteOne();
     await writeAuditLog({
       req,
@@ -2910,7 +4327,10 @@ router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
       targetType: 'lastPost',
       target: lastPost._id,
       targetSnapshot: snapshot,
-      metadata: { deletedByOwner: isOwner },
+      metadata: {
+        deletedByOwner: isOwner,
+        mediaCleanup: getContentMediaCleanupMetadata(mediaCleanup),
+      },
     });
 
     return res.json({ message: 'Last Post notice deleted' });
@@ -2922,6 +4342,199 @@ router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
     console.error('Last Post deletion failed:', error);
     return res.status(500).json({ error: 'Could not delete Last Post notice' });
   }
+});
+
+function buildContentRemovalHandler({
+  Model,
+  idParam,
+  targetType,
+  displayName,
+  getSnapshot,
+  getOwner = (content) => content.createdBy,
+  load = (id) => Model.findById(id),
+}) {
+  return async (req, res) => {
+    try {
+      const content = await load(req.params[idParam]);
+
+      if (!content) {
+        return res.status(404).json({ error: `${displayName} not found` });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const isOwner = String(getOwner(content) || '') === String(req.user._id);
+      if (
+        !permissions.canHideContent &&
+        !(permissions.canDeleteOwnContent && isOwner)
+      ) {
+        return res.status(403).json({
+          error: `You do not have permission to remove this ${displayName.toLowerCase()}`,
+        });
+      }
+
+      const snapshot = getSnapshot(content);
+      if (content.status === 'pending') {
+        return res.status(409).json({
+          error: `Pending ${displayName.toLowerCase()} must be published, rejected, or deleted instead`,
+        });
+      }
+      const removal = hideContent(content, {
+        actor: req.user,
+        reason: req.body?.reason,
+      });
+
+      if (!removal) {
+        return res.status(409).json({
+          error: `${displayName} is already removed or cannot be removed`,
+        });
+      }
+
+      await content.save();
+      await writeAuditLog({
+        req,
+        action: 'content.hidden',
+        actor: req.user,
+        targetType,
+        target: content._id,
+        targetSnapshot: snapshot,
+        metadata: {
+          previousStatus: removal.previousStatus,
+          reason: removal.reason,
+          removedByOwner: isOwner,
+        },
+      });
+
+      return res.json({
+        message: `${displayName} removed from public view`,
+        content,
+      });
+    } catch (error) {
+      if (error.name === 'CastError') {
+        return res.status(400).json({ error: `Invalid ${displayName} ID` });
+      }
+
+      console.error(`Admin ${displayName} removal failed:`, error);
+      return res.status(500).json({ error: `Failed to remove ${displayName}` });
+    }
+  };
+}
+
+function buildContentRestoreHandler({
+  Model,
+  idParam,
+  targetType,
+  displayName,
+  getSnapshot,
+  load = (id) => Model.findById(id),
+}) {
+  return async (req, res) => {
+    try {
+      const content = await load(req.params[idParam]);
+
+      if (!content) {
+        return res.status(404).json({ error: `${displayName} not found` });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      if (!permissions.canRestoreContent) {
+        return res.status(403).json({
+          error: `You do not have permission to restore this ${displayName.toLowerCase()}`,
+        });
+      }
+
+      const snapshot = getSnapshot(content);
+      const restoration = restoreContent(content);
+
+      if (!restoration) {
+        return res.status(409).json({
+          error: `${displayName} is not available to restore`,
+        });
+      }
+
+      await content.save();
+      await writeAuditLog({
+        req,
+        action: 'content.restored',
+        actor: req.user,
+        targetType,
+        target: content._id,
+        targetSnapshot: snapshot,
+        metadata: {
+          restoredStatus: restoration.restoredStatus,
+        },
+      });
+
+      return res.json({
+        message: `${displayName} restored`,
+        content,
+      });
+    } catch (error) {
+      if (error.name === 'CastError') {
+        return res.status(400).json({ error: `Invalid ${displayName} ID` });
+      }
+
+      console.error(`Admin ${displayName} restore failed:`, error);
+      return res.status(500).json({ error: `Failed to restore ${displayName}` });
+    }
+  };
+}
+
+const contentRemovalRoutes = [
+  {
+    path: '/events/:eventId',
+    Model: Event,
+    idParam: 'eventId',
+    targetType: 'event',
+    displayName: 'Event',
+    getSnapshot: getEventSnapshot,
+  },
+  {
+    path: '/retirement-messages/:messageId',
+    Model: RetirementMessage,
+    idParam: 'messageId',
+    targetType: 'retirementMessage',
+    displayName: 'Retirement message',
+    getSnapshot: getRetirementMessageSnapshot,
+  },
+  {
+    path: '/retirement-comments/:commentId',
+    Model: RetirementComment,
+    idParam: 'commentId',
+    targetType: 'retirementComment',
+    displayName: 'Retirement comment',
+    getSnapshot: (comment) =>
+      getRetirementCommentSnapshot(comment, {
+        includeBody: true,
+        includeRetirementMessageTitle: true,
+      }),
+    getOwner: (comment) => comment.author,
+    load: (id) =>
+      RetirementComment.findById(id).populate(
+        'retirementMessage',
+        'retiree status',
+      ),
+  },
+  {
+    path: '/last-posts/:lastPostId',
+    Model: LastPostMessage,
+    idParam: 'lastPostId',
+    targetType: 'lastPost',
+    displayName: 'Last Post notice',
+    getSnapshot: getLastPostMessageSnapshot,
+  },
+];
+
+contentRemovalRoutes.forEach((route) => {
+  router.patch(
+    `${route.path}/hide`,
+    authMiddleware,
+    buildContentRemovalHandler(route),
+  );
+  router.patch(
+    `${route.path}/restore`,
+    authMiddleware,
+    buildContentRestoreHandler(route),
+  );
 });
 
 module.exports = router;

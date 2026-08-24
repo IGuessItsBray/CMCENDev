@@ -5,21 +5,18 @@ const retirementMessageSchema = new mongoose.Schema(
     retiree: {
       rank: {
         type: String,
-        required: true,
         trim: true,
         maxlength: 40,
       },
 
       firstName: {
         type: String,
-        required: true,
         trim: true,
         maxlength: 80,
       },
 
       lastName: {
         type: String,
-        required: true,
         trim: true,
         maxlength: 80,
       },
@@ -49,6 +46,7 @@ const retirementMessageSchema = new mongoose.Schema(
       required: true,
       trim: true,
       minlength: 100,
+      maxlength: 10000,
     },
 
     messageLanguage: {
@@ -61,17 +59,28 @@ const retirementMessageSchema = new mongoose.Schema(
       en: {
         type: String,
         trim: true,
+        maxlength: 10000,
         default: '',
       },
 
       fr: {
         type: String,
         trim: true,
+        maxlength: 10000,
         default: '',
       },
     },
 
     photoUrl: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
+
+    // Cropped 4:3 derivative used in consistently sized public card layouts.
+    // The original photoUrl remains available for the full message view.
+    photoDisplayUrl: {
       type: String,
       trim: true,
       maxlength: 2000,
@@ -147,7 +156,7 @@ const retirementMessageSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['pending', 'published', 'rejected'],
+      enum: ['pending', 'published', 'rejected', 'hidden'],
       default: 'pending',
       index: true,
     },
@@ -194,6 +203,30 @@ const retirementMessageSchema = new mongoose.Schema(
       default: '',
     },
 
+    hiddenFromStatus: {
+      type: String,
+      enum: ['pending', 'published', 'rejected', ''],
+      default: '',
+    },
+
+    hiddenAt: {
+      type: Date,
+      default: null,
+    },
+
+    hiddenBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    hiddenReason: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
+
     legacy: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
@@ -217,6 +250,12 @@ retirementMessageSchema.index({
 retirementMessageSchema.index({
   createdBy: 1,
   updatedAt: -1,
+});
+
+retirementMessageSchema.index({
+  createdBy: 1,
+  status: 1,
+  reviewedAt: -1,
 });
 
 retirementMessageSchema.index({

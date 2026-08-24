@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title data-i18n="title">CMCEN</title>
+    <meta
+      name="description"
+      content="CMCEN connects Canada's Communications and Electronics community: serving members, veterans, families, associations, and organizations."
+    />
+    <meta name="theme-color" content="#202642" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link
       rel="icon"
       type="image/png"
@@ -168,11 +174,11 @@
 
             <span class="home-family-number"> 03 </span>
 
-            <h3>The Museum &amp; Foundation</h3>
+            <h3 data-i18n="home_foundation_title">The Foundation</h3>
 
-            <p>
-              Discover the foundation that supports the C&amp;E Museum, its
-              programs, and the preservation of C&amp;E heritage.
+            <p data-i18n="home_foundation_text">
+              See how the Foundation supports education, remembrance, and
+              community initiatives.
             </p>
 
             <span class="home-family-link" data-i18n="home_learn_more">
@@ -180,8 +186,12 @@
             </span>
           </a>
 
-          <!-- Museum and Foundation share a single About destination. -->
-          <!--
+          <a
+            href="https://www.candemuseum.org"
+            class="home-family-card"
+            target="_blank"
+            rel="noopener"
+          >
             <div class="home-family-icon" aria-hidden="true">
               <svg
                 viewBox="0 0 64 64"
@@ -213,7 +223,6 @@
               Learn more
             </span>
           </a>
-          -->
         </div>
       </section>
 
@@ -290,6 +299,32 @@
             Browse retirement messages
           </a>
         </article>
+      </section>
+
+      <section class="home-latest-news" aria-labelledby="homeLatestNewsTitle">
+        <header class="home-latest-news-heading">
+          <div>
+            <p class="home-section-eyebrow">Latest updates</p>
+            <h2 id="homeLatestNewsTitle">News &amp; stories</h2>
+            <p>
+              Recent C&amp;E Family news alongside the latest Last Post notices.
+            </p>
+          </div>
+          <a href="/news_stories" class="home-text-link">Browse all news</a>
+        </header>
+        <p
+          class="home-feed-message"
+          id="homeNewsMessage"
+          role="status"
+          aria-live="polite"
+        >
+          Loading news and stories...
+        </p>
+        <div
+          class="home-news-rail"
+          id="homeNewsRail"
+          aria-label="Latest news and stories"
+        ></div>
       </section>
     </main>
     <footer id="footer"></footer>

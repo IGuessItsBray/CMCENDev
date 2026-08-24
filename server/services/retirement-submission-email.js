@@ -90,22 +90,7 @@ function getRetirementSubmissionSubject(retirementMessage = {}) {
   return `Retirement submission: ${displayName || 'Unnamed member'}`;
 }
 
-function isRetirementSubmissionEmailEnabled() {
-  return (
-    String(process.env.SEND_EMAIL_ON_RETIREMENT_SUBMISSION || '')
-      .trim()
-      .toLowerCase() === 'true'
-  );
-}
-
 async function sendRetirementSubmissionEmail(retirementMessage) {
-  if (!isRetirementSubmissionEmailEnabled()) {
-    return {
-      skipped: true,
-      reason: 'SEND_EMAIL_ON_RETIREMENT_SUBMISSION is not true',
-    };
-  }
-
   const to = cleanEmailValue(process.env.MAIL_TO_BRANCH);
 
   if (!to) {
@@ -115,7 +100,7 @@ async function sendRetirementSubmissionEmail(retirementMessage) {
   const cc = cleanEmailValue(process.env.MAIL_TO_ADMIN);
   const { text, html } = formatRetirementSubmissionEmail(retirementMessage);
 
-  await sendMail({
+  const result = await sendMail({
     to,
     cc: cc || undefined,
     subject: getRetirementSubmissionSubject(retirementMessage),
@@ -123,7 +108,7 @@ async function sendRetirementSubmissionEmail(retirementMessage) {
     html,
   });
 
-  return { skipped: false };
+  return result?.skipped ? result : { skipped: false };
 }
 
 module.exports = {

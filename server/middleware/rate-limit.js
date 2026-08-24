@@ -41,6 +41,7 @@ function createRateLimit({ name, windowMs, max, keyGenerator = getClientIp }) {
     }
 
     if (entry.count > max) {
+      res.locals.diagnosticReason = 'rate_limited';
       res.set('Retry-After', String(retryAfterSeconds));
       return res.status(429).json({
         error: 'Too many requests. Please try again later.',

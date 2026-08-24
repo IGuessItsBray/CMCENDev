@@ -8,10 +8,17 @@ const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const LastPostMessage = require('../models/LastPostMessage');
+const EmailUnsubscribeToken = require('../models/EmailUnsubscribeToken');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
 const { sendMail } = require('../services/mailer');
+const {
+  CASL_CONSENT_TEXT_VERSION,
+  getCaslSenderInfo,
+  getNewsAnnouncementsSubscription,
+  getWeeklyBriefSubscription,
+} = require('../services/weekly-brief');
 const {
   REFRESH_COOKIE_NAME,
   clearRefreshTokenCookie,
@@ -29,7 +36,7 @@ const {
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas createdAt updatedAt';
+  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions notificationState createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -88,12 +95,43 @@ const VALID_AFFILIATION_ELEMENTS = new Set([
 ]);
 
 const VALID_PREFERRED_LANGUAGES = new Set(['en', 'fr']);
+
+function hasSessionCookieConsent(req) {
+  return req.body?.sessionCookieConsent === true;
+}
 const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 const PASSWORD_RESET_GENERIC_MESSAGE =
   'If an account exists for that email address, a password reset link has been sent.';
 const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
 const EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS = 30 * 60 * 1000;
 const GHOST_PASSWORD_BYTES = 32;
+const INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
+
+function getLoginAttemptSnapshot(username) {
+  return {
+    username: String(username || '')
+      .trim()
+      .slice(0, 320),
+  };
+}
+
+async function recordLoginRejected(req, username, reason) {
+  await writeAuditLog({
+    req,
+    action: 'user.login_rejected',
+    targetType: 'user',
+    targetSnapshot: getLoginAttemptSnapshot(username),
+    metadata: { reason },
+  });
+
+  console.warn('Login rejected', {
+    reason,
+    username: String(username || '')
+      .trim()
+      .slice(0, 320),
+    ip: req.ip,
+  });
+}
 
 const passwordResetRequestIpLimit = rateLimitByIp(
   'password-reset-request-ip',
@@ -261,30 +299,78 @@ function createGhostPassword() {
   return crypto.randomBytes(GHOST_PASSWORD_BYTES).toString('hex');
 }
 
-async function getRejectedEventNotifications(user) {
-  const query = {
-    createdBy: user._id,
-    status: 'rejected',
+function getReviewResultQuery(ownerField, user, lastReadAt) {
+  return {
+    [ownerField]: user._id,
+    $or: [
+      getRejectedReviewResultQuery(),
+      getUnreadApprovalReviewResultQuery(user, lastReadAt),
+    ],
   };
-  const [count, events] = await Promise.all([
-    Event.countDocuments(query),
-    Event.find(query)
-      .select('title rejectionReason updatedAt')
-      .sort({ updatedAt: -1 })
-      .limit(10)
-      .lean(),
-  ]);
+}
+
+function getRejectedReviewResultQuery() {
+  return { status: 'rejected' };
+}
+
+function getUnreadApprovalReviewResultQuery(user, lastReadAt) {
+  const approvalReadAt =
+    lastReadAt ||
+    new Date(Date.now() - INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS);
 
   return {
-    count,
+    status: 'published',
+    reviewedAt: { $gt: approvalReadAt },
+    reviewedBy: { $ne: user._id },
+  };
+}
+
+function getReviewResultHref(type, item) {
+  const id = encodeURIComponent(String(item._id));
+
+  if (item.status === 'rejected') {
+    if (type === 'event') return `/submit-event?id=${id}`;
+
+    if (type === 'retirementMessage') return `/submit-retirement?id=${id}`;
+
+    if (type === 'lastPost') return `/submit-last-post?id=${id}`;
+
+    const messageId = encodeURIComponent(
+      String(item.retirementMessage?._id || item.retirementMessage || ''),
+    );
+    return `/retirement-message?id=${messageId}&editComment=${id}`;
+  }
+
+  if (type === 'event') return `/event?id=${id}`;
+
+  if (type === 'retirementMessage') return `/retirement-message?id=${id}`;
+
+  const messageId = encodeURIComponent(
+    String(item.retirementMessage?._id || item.retirementMessage || ''),
+  );
+  return `/retirement-message?id=${messageId}#comments`;
+}
+
+async function getEventReviewNotifications(user, lastReadAt) {
+  const events = await Event.find(
+    getReviewResultQuery('createdBy', user, lastReadAt),
+  )
+    .select('title status rejectionReason reviewedAt updatedAt')
+    .sort({ reviewedAt: -1 })
+    .lean();
+
+  return {
+    actionCount: events.filter((event) => event.status === 'rejected').length,
+    unreadCount: events.filter((event) => event.status === 'published').length,
     items: events.map((event) => ({
       type: 'event',
       id: event._id,
       title: event.title,
+      status: event.status,
       reason: event.rejectionReason || '',
-      updatedAt: event.updatedAt,
-      editHref: `/submit-event?id=${encodeURIComponent(String(event._id))}`,
-      href: `/submit-event?id=${encodeURIComponent(String(event._id))}`,
+      updatedAt: event.reviewedAt || event.updatedAt,
+      editHref: getReviewResultHref('event', event),
+      href: getReviewResultHref('event', event),
     })),
   };
 }
@@ -298,51 +384,83 @@ function getRetirementMessageNotificationTitle(retirementMessage) {
   return name ? `Retirement message for ${name}` : 'Retirement message';
 }
 
-async function getRejectedRetirementMessageNotifications(user) {
-  const query = {
-    createdBy: user._id,
-    status: 'rejected',
-  };
-  const [count, retirementMessages] = await Promise.all([
-    RetirementMessage.countDocuments(query),
-    RetirementMessage.find(query)
-      .select('retiree rejectionReason updatedAt')
-      .sort({ updatedAt: -1 })
-      .limit(10)
-      .lean(),
-  ]);
+async function getRetirementMessageReviewNotifications(user, lastReadAt) {
+  const retirementMessages = await RetirementMessage.find(
+    getReviewResultQuery('createdBy', user, lastReadAt),
+  )
+    .select('retiree status rejectionReason reviewedAt updatedAt')
+    .sort({ reviewedAt: -1 })
+    .lean();
 
   return {
-    count,
+    actionCount: retirementMessages.filter(
+      (retirementMessage) => retirementMessage.status === 'rejected',
+    ).length,
+    unreadCount: retirementMessages.filter(
+      (retirementMessage) => retirementMessage.status === 'published',
+    ).length,
     items: retirementMessages.map((retirementMessage) => ({
       type: 'retirementMessage',
       id: retirementMessage._id,
       title: getRetirementMessageNotificationTitle(retirementMessage),
+      status: retirementMessage.status,
       reason: retirementMessage.rejectionReason || '',
-      updatedAt: retirementMessage.updatedAt,
-      editHref: `/submit-retirement?id=${encodeURIComponent(String(retirementMessage._id))}`,
-      href: `/submit-retirement?id=${encodeURIComponent(String(retirementMessage._id))}`,
+      updatedAt: retirementMessage.reviewedAt || retirementMessage.updatedAt,
+      editHref: getReviewResultHref('retirementMessage', retirementMessage),
+      href: getReviewResultHref('retirementMessage', retirementMessage),
     })),
   };
 }
 
-async function getRejectedRetirementCommentNotifications(user) {
-  const query = {
-    author: user._id,
-    status: 'rejected',
-  };
-  const [count, comments] = await Promise.all([
-    RetirementComment.countDocuments(query),
-    RetirementComment.find(query)
-      .select('body rejectionReason updatedAt retirementMessage')
-      .populate('retirementMessage', 'retiree status')
-      .sort({ updatedAt: -1 })
-      .limit(10)
-      .lean(),
-  ]);
+function getLastPostNotificationTitle(lastPost) {
+  const deceased = lastPost.deceased || {};
+  const name = [deceased.fullRank, deceased.firstName, deceased.surname]
+    .filter(Boolean)
+    .join(' ');
+
+  return name ? `Last Post for ${name}` : 'Last Post notice';
+}
+
+async function getLastPostReviewNotifications(user, lastReadAt) {
+  const lastPosts = await LastPostMessage.find(
+    getReviewResultQuery('createdBy', user, lastReadAt),
+  )
+    .select('deceased status rejectionReason reviewedAt updatedAt')
+    .sort({ reviewedAt: -1 })
+    .lean();
 
   return {
-    count,
+    actionCount: lastPosts.filter((lastPost) => lastPost.status === 'rejected')
+      .length,
+    unreadCount: lastPosts.filter((lastPost) => lastPost.status === 'published')
+      .length,
+    items: lastPosts.map((lastPost) => ({
+      type: 'lastPost',
+      id: lastPost._id,
+      title: getLastPostNotificationTitle(lastPost),
+      status: lastPost.status,
+      reason: lastPost.rejectionReason || '',
+      updatedAt: lastPost.reviewedAt || lastPost.updatedAt,
+      editHref: getReviewResultHref('lastPost', lastPost),
+      href: getReviewResultHref('lastPost', lastPost),
+    })),
+  };
+}
+
+async function getRetirementCommentReviewNotifications(user, lastReadAt) {
+  const comments = await RetirementComment.find(
+    getReviewResultQuery('author', user, lastReadAt),
+  )
+    .select('body status rejectionReason reviewedAt updatedAt retirementMessage')
+    .populate('retirementMessage', 'retiree status')
+    .sort({ reviewedAt: -1 })
+    .lean();
+
+  return {
+    actionCount: comments.filter((comment) => comment.status === 'rejected')
+      .length,
+    unreadCount: comments.filter((comment) => comment.status === 'published')
+      .length,
     items: comments.map((comment) => ({
       type: 'retirementComment',
       id: comment._id,
@@ -350,43 +468,87 @@ async function getRejectedRetirementCommentNotifications(user) {
         comment.retirementMessage || {},
       ),
       body: comment.body || '',
+      status: comment.status,
       reason: comment.rejectionReason || '',
-      updatedAt: comment.updatedAt,
-      editHref: `/notifications?comment=${encodeURIComponent(String(comment._id))}`,
-      href: `/notifications?comment=${encodeURIComponent(String(comment._id))}`,
+      updatedAt: comment.reviewedAt || comment.updatedAt,
+      editHref: getReviewResultHref('retirementComment', comment),
+      href: getReviewResultHref('retirementComment', comment),
     })),
   };
 }
 
 async function getNotificationSummary(user) {
-  const permissions = getUserPermissions(user);
+  const readThrough = new Date();
+  const lastReadAt = user.notificationState?.lastReadAt || null;
   const items = [];
-  let count = 0;
+  let actionCount = 0;
+  let unreadCount = 0;
 
-  if (permissions.canCreateDrafts === true) {
-    const rejectedEvents = await getRejectedEventNotifications(user);
-    count += rejectedEvents.count;
-    items.push(...rejectedEvents.items);
-  }
+  const [events, retirementMessages, lastPosts, retirementComments] = await Promise.all([
+    getEventReviewNotifications(user, lastReadAt),
+    getRetirementMessageReviewNotifications(user, lastReadAt),
+    getLastPostReviewNotifications(user, lastReadAt),
+    getRetirementCommentReviewNotifications(user, lastReadAt),
+  ]);
 
-  if (permissions.canSubmitRetirementMessages === true) {
-    const rejectedRetirementMessages =
-      await getRejectedRetirementMessageNotifications(user);
-    count += rejectedRetirementMessages.count;
-    items.push(...rejectedRetirementMessages.items);
-  }
-
-  const rejectedRetirementComments =
-    await getRejectedRetirementCommentNotifications(user);
-  count += rejectedRetirementComments.count;
-  items.push(...rejectedRetirementComments.items);
+  [events, retirementMessages, lastPosts, retirementComments].forEach((result) => {
+    actionCount += result.actionCount;
+    unreadCount += result.unreadCount;
+    items.push(...result.items);
+  });
 
   items.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
   return {
-    count,
+    count: actionCount + unreadCount,
+    actionCount,
+    unreadCount,
+    shouldMarkRead: !lastReadAt || unreadCount > 0,
     items,
-    href: '/notifications',
+    readThrough: readThrough.toISOString(),
+  };
+}
+
+async function getReviewResultCounts(Model, ownerField, user, lastReadAt) {
+  const ownerQuery = { [ownerField]: user._id };
+  const [actionCount, unreadCount] = await Promise.all([
+    Model.countDocuments({
+      ...ownerQuery,
+      ...getRejectedReviewResultQuery(),
+    }),
+    Model.countDocuments({
+      ...ownerQuery,
+      ...getUnreadApprovalReviewResultQuery(user, lastReadAt),
+    }),
+  ]);
+
+  return { actionCount, unreadCount };
+}
+
+async function getNotificationCounts(user) {
+  const lastReadAt = user.notificationState?.lastReadAt || null;
+  const [events, retirementMessages, lastPosts, retirementComments] = await Promise.all([
+    getReviewResultCounts(Event, 'createdBy', user, lastReadAt),
+    getReviewResultCounts(RetirementMessage, 'createdBy', user, lastReadAt),
+    getReviewResultCounts(LastPostMessage, 'createdBy', user, lastReadAt),
+    getReviewResultCounts(RetirementComment, 'author', user, lastReadAt),
+  ]);
+
+  const actionCount =
+    events.actionCount +
+    retirementMessages.actionCount +
+    lastPosts.actionCount +
+    retirementComments.actionCount;
+  const unreadCount =
+    events.unreadCount +
+    retirementMessages.unreadCount +
+    lastPosts.unreadCount +
+    retirementComments.unreadCount;
+
+  return {
+    count: actionCount + unreadCount,
+    actionCount,
+    unreadCount,
   };
 }
 
@@ -406,18 +568,20 @@ async function getProfileResponse(user) {
   const permissions = getUserPermissions(profile);
   let notifications = {
     count: 0,
-    items: [],
-    href: '/notifications',
+    actionCount: 0,
+    unreadCount: 0,
   };
 
   try {
-    notifications = await getNotificationSummary(profile);
+    notifications = await getNotificationCounts(profile);
   } catch (error) {
-    console.error('Could not load notification summary:', error);
+    console.error('Could not load notification counts:', error);
   }
 
   return {
     ...profile,
+    weeklyBrief: getWeeklyBriefSubscription(profile),
+    newsAnnouncements: getNewsAnnouncementsSubscription(profile),
     mfa,
     permissions,
     notifications,
@@ -600,6 +764,13 @@ router.post('/ghost/confirm', async (req, res) => {
       targetSnapshot: getUserSnapshot(user),
     });
 
+    if (!hasSessionCookieConsent(req)) {
+      return res.json({
+        message: 'Guest access confirmed. Sign in to continue.',
+        sessionCookieConsentRequired: true,
+      });
+    }
+
     setRefreshTokenCookie(req, res, user);
     res.json({
       message: 'Guest access confirmed',
@@ -650,6 +821,9 @@ router.get('/invitations/activate', async (req, res) => {
 // POST /api/register
 // Create a subscriber account from the public registration form.
 router.post('/register', async (req, res) => {
+  let activationUser = null;
+  let isInvitationActivation = false;
+
   try {
     const {
       firstName,
@@ -703,6 +877,7 @@ router.post('/register', async (req, res) => {
       ? incomingPreferredLanguage
       : 'en';
     const cleanInvitationToken = String(invitationToken || '').trim();
+    isInvitationActivation = Boolean(cleanInvitationToken);
     const invitedUser = cleanInvitationToken
       ? await User.findOne({
           accountType: 'invited',
@@ -710,6 +885,25 @@ router.post('/register', async (req, res) => {
           'invitation.expiresAt': { $gt: new Date() },
         }).select('+password +invitation.tokenHash +invitation.expiresAt')
       : null;
+
+    activationUser = invitedUser;
+
+    if (isInvitationActivation) {
+      await writeAuditLog({
+        req,
+        action: invitedUser
+          ? 'user.invitation_activation_attempted'
+          : 'user.invitation_activation_rejected',
+        actor: invitedUser,
+        targetType: 'user',
+        target: invitedUser?._id || null,
+        targetSnapshot: invitedUser ? getUserSnapshot(invitedUser) : {},
+        metadata: {
+          stage: 'registration',
+          outcome: invitedUser ? 'matched_invitation' : 'invalid_or_expired',
+        },
+      });
+    }
 
     if (cleanInvitationToken && !invitedUser) {
       return res
@@ -820,13 +1014,21 @@ router.post('/register', async (req, res) => {
       },
     });
 
-    if (invitedUser) {
+    if (invitedUser && hasSessionCookieConsent(req)) {
       setRefreshTokenCookie(req, res, user);
       return res.status(201).json({
         message:
           'Account activated. Complete your profile from your account page.',
         token: createSessionToken(user),
         user: await getProfileResponse(user),
+      });
+    }
+
+    if (invitedUser) {
+      return res.status(201).json({
+        message:
+          'Account activated. Sign in to complete your profile and security setup.',
+        sessionCookieConsentRequired: true,
       });
     }
 
@@ -837,10 +1039,25 @@ router.post('/register', async (req, res) => {
       verificationToken: verification.tempToken,
     });
   } catch (err) {
-    console.error('--- FULL ERROR DETAILS ---');
-    console.error('Name:', err.name);
-    console.error('Message:', err.message);
-    console.error('Stack:', err.stack);
+    if (isInvitationActivation && activationUser) {
+      await writeAuditLog({
+        req,
+        action: 'user.invitation_activation_failed',
+        actor: activationUser,
+        targetType: 'user',
+        target: activationUser._id,
+        targetSnapshot: getUserSnapshot(activationUser),
+        metadata: {
+          stage: 'registration',
+          errorType: err?.name || 'Error',
+        },
+      });
+    }
+
+    console.error('Account registration failed:', {
+      flow: isInvitationActivation ? 'invitation-activation' : 'registration',
+      error: err,
+    });
 
     res.status(400).json({ error: 'Could not create account' });
   }
@@ -849,12 +1066,18 @@ router.post('/register', async (req, res) => {
 // POST /api/login
 // Authenticate a user and return a short-lived JWT.
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username }).select(
-    '+password +emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
-  );
+  const { username, password, sessionCookieConsent } = req.body || {};
 
-  if (user && (await bcrypt.compare(password, user.password))) {
+  try {
+    const user = await User.findOne({ username }).select(
+      '+password +emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
+    );
+
+    if (!user || !(await bcrypt.compare(password || '', user.password))) {
+      await recordLoginRejected(req, username, 'invalid_credentials');
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
     if (userRequiresEmailVerification(user)) {
       const verification = await prepareEmailVerification(user);
       await user.save();
@@ -866,6 +1089,10 @@ router.post('/login', async (req, res) => {
         verificationToken: verification.tempToken,
         message: 'Check your email for a verification code.',
       });
+    }
+
+    if (sessionCookieConsent !== true) {
+      return res.json({ sessionCookieConsentRequired: true });
     }
 
     const hasWebAuthn =
@@ -927,9 +1154,10 @@ router.post('/login', async (req, res) => {
       },
     });
 
-    res.json({ token });
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
+    return res.json({ token });
+  } catch (error) {
+    console.error('Login request failed:', error);
+    return res.status(500).json({ error: 'Could not sign in' });
   }
 });
 
@@ -985,6 +1213,13 @@ router.post('/email-verification/confirm', async (req, res) => {
         role: user.role,
       },
     });
+
+    if (!hasSessionCookieConsent(req)) {
+      return res.json({
+        message: 'Email verified. Sign in to continue.',
+        sessionCookieConsentRequired: true,
+      });
+    }
 
     setRefreshTokenCookie(req, res, user);
     res.json({
@@ -1150,6 +1385,256 @@ router.get('/notifications', authMiddleware, async (req, res) => {
     notifications: await getNotificationSummary(req.user),
   });
 });
+
+router.post('/notifications/read', authMiddleware, async (req, res) => {
+  const readThrough = new Date(req.body?.readThrough);
+
+  if (Number.isNaN(readThrough.getTime())) {
+    return res.status(400).json({
+      error: 'A valid notification read time is required',
+    });
+  }
+
+  const currentReadAt = req.user.notificationState?.lastReadAt;
+  const lastReadAt =
+    currentReadAt && currentReadAt > readThrough ? currentReadAt : readThrough;
+
+  if (!currentReadAt || currentReadAt < readThrough) {
+    await User.updateOne(
+      { _id: req.user._id },
+      { $set: { 'notificationState.lastReadAt': lastReadAt } },
+    );
+
+    await writeAuditLog({
+      req,
+      action: 'user.notifications_read',
+      actor: req.user,
+      targetType: 'user',
+      target: req.user._id,
+      metadata: { readThrough: readThrough.toISOString() },
+    });
+  }
+
+  res.json({ lastReadAt });
+});
+
+// PUT /api/subscriptions/weekly-brief
+// Capture an explicit, account-page opt-in or immediately withdraw it.
+router.put('/subscriptions/weekly-brief', authMiddleware, async (req, res) => {
+  const subscribed = req.body?.subscribed;
+
+  if (typeof subscribed !== 'boolean') {
+    return res.status(400).json({ error: 'A subscription choice is required' });
+  }
+
+  const sender = getCaslSenderInfo();
+  if (subscribed && (!sender.ready || req.body?.expressConsent !== true)) {
+    return res.status(400).json({
+      error:
+        'You must provide express consent after reviewing the sender information',
+    });
+  }
+
+  try {
+    const user = await User.findById(req.user._id)
+      .select(PROFILE_SELECT)
+      .populate('customRoles', 'name slug color permissions');
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const weeklyBrief = user.emailSubscriptions?.weeklyBrief;
+    const currentlySubscribed = weeklyBrief?.subscribed === true;
+    const now = new Date();
+
+    if (subscribed && !currentlySubscribed) {
+      user.emailSubscriptions.weeklyBrief = {
+        subscribed: true,
+        consentedAt: now,
+        consentSource: 'account_dashboard',
+        consentTextVersion: CASL_CONSENT_TEXT_VERSION,
+        unsubscribedAt: null,
+      };
+      await user.save();
+      await writeAuditLog({
+        req,
+        action: 'user.weekly_brief_subscribed',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: getUserSnapshot(user),
+        metadata: {
+          consentSource: 'account_dashboard',
+          consentTextVersion: CASL_CONSENT_TEXT_VERSION,
+        },
+      });
+    } else if (!subscribed && currentlySubscribed) {
+      user.emailSubscriptions.weeklyBrief.subscribed = false;
+      user.emailSubscriptions.weeklyBrief.unsubscribedAt = now;
+      await user.save();
+      await writeAuditLog({
+        req,
+        action: 'user.weekly_brief_unsubscribed',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: getUserSnapshot(user),
+        metadata: { source: 'account_dashboard' },
+      });
+    }
+
+    return res.json(await getProfileResponse(user));
+  } catch (error) {
+    console.error('Weekly brief subscription update failed:', error);
+    return res.status(500).json({ error: 'Could not update email preference' });
+  }
+});
+
+router.put(
+  '/subscriptions/news-announcements',
+  authMiddleware,
+  async (req, res) => {
+    const subscribed = req.body?.subscribed;
+    if (typeof subscribed !== 'boolean') {
+      return res
+        .status(400)
+        .json({ error: 'A subscription choice is required' });
+    }
+    if (
+      subscribed &&
+      (!getCaslSenderInfo().ready || req.body?.expressConsent !== true)
+    ) {
+      return res.status(400).json({
+        error:
+          'You must provide express consent after reviewing the sender information',
+      });
+    }
+    try {
+      const user = await User.findById(req.user._id)
+        .select(PROFILE_SELECT)
+        .populate('customRoles', 'name slug color permissions');
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      const current =
+        user.emailSubscriptions?.newsAnnouncements?.subscribed === true;
+      const now = new Date();
+      if (subscribed && !current) {
+        user.emailSubscriptions.newsAnnouncements = {
+          subscribed: true,
+          consentedAt: now,
+          consentSource: 'account_dashboard',
+          consentTextVersion: 'news-announcements-v2-2026-08-17',
+          unsubscribedAt: null,
+        };
+      } else if (!subscribed && current) {
+        user.emailSubscriptions.newsAnnouncements.subscribed = false;
+        user.emailSubscriptions.newsAnnouncements.unsubscribedAt = now;
+      }
+      await user.save();
+      if (subscribed !== current) {
+        await writeAuditLog({
+          req,
+          action: subscribed
+            ? 'user.news_announcements_subscribed'
+            : 'user.news_announcements_unsubscribed',
+          actor: user,
+          targetType: 'user',
+          target: user._id,
+          targetSnapshot: getUserSnapshot(user),
+          metadata: { source: 'account_dashboard' },
+        });
+      }
+      return res.json(await getProfileResponse(user));
+    } catch (error) {
+      console.error('News announcement subscription update failed:', error);
+      return res
+        .status(500)
+        .json({ error: 'Could not update email preference' });
+    }
+  },
+);
+
+// This opaque-token endpoint is intentionally public: a recipient must be
+// able to unsubscribe without signing in. It performs the request immediately
+// and keeps the result token out of caches and referrer headers.
+async function unsubscribeWeeklyBrief(req, res) {
+  const token = String(req.query?.token || '').trim();
+  const tokenHash = hashToken(token);
+
+  res.set({
+    'Cache-Control': 'no-store',
+    'Referrer-Policy': 'no-referrer',
+  });
+
+  if (!token) {
+    return res
+      .status(400)
+      .type('html')
+      .send('<p>This unsubscribe link is invalid.</p>');
+  }
+
+  try {
+    const unsubscribeToken = await EmailUnsubscribeToken.findOne({
+      tokenHash,
+      subscriptionType: 'weeklyBrief',
+      expiresAt: { $gt: new Date() },
+    }).select('+tokenHash');
+
+    if (!unsubscribeToken) {
+      return res
+        .status(404)
+        .type('html')
+        .send('<p>This unsubscribe link is invalid or has expired.</p>');
+    }
+
+    const user = await User.findById(unsubscribeToken.user);
+    const subscriptionType = unsubscribeToken.subscriptionType;
+    const subscription = user?.emailSubscriptions?.[subscriptionType];
+    if (subscription?.subscribed === true) {
+      subscription.subscribed = false;
+      subscription.unsubscribedAt = new Date();
+      await user.save();
+      await writeAuditLog({
+        req,
+        action:
+          subscriptionType === 'newsAnnouncements'
+            ? 'user.news_announcements_unsubscribed'
+            : 'user.weekly_brief_unsubscribed',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: getUserSnapshot(user),
+        metadata: { source: 'email_unsubscribe_link', subscriptionType },
+      });
+    }
+
+    if (!unsubscribeToken.usedAt) {
+      unsubscribeToken.usedAt = new Date();
+      await unsubscribeToken.save();
+    }
+
+    return res
+      .type('html')
+      .send(
+        `<!doctype html><html><head><meta charset="utf-8"><title>Unsubscribed</title></head><body><main><h1>Unsubscribed</h1><p>You will no longer receive the CMCEN / RCMCE weekly email brief at this address.</p></main></body></html>`,
+      );
+  } catch (error) {
+    console.error('Weekly brief unsubscribe failed:', error);
+    return res
+      .status(500)
+      .type('html')
+      .send(
+        '<p>We could not complete your unsubscribe request. Please try the link again.</p>',
+      );
+  }
+}
+
+router
+  .route('/subscriptions/weekly-brief/unsubscribe')
+  .get(unsubscribeWeeklyBrief)
+  .post(unsubscribeWeeklyBrief);
+router
+  .route('/subscriptions/news-announcements/unsubscribe')
+  .get(unsubscribeWeeklyBrief)
+  .post(unsubscribeWeeklyBrief);
 
 // Exchange the HTTP-only, long-lived refresh cookie for a new short-lived API token.
 router.post('/session/refresh', async (req, res) => {

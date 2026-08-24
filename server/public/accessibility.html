@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Accessibility | CMCEN / RCMCE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main id="mainContent" class="about-family-main">
+      <article class="about-family-shell">
+        <header class="about-family-hero">
+          <div class="about-family-hero-copy">
+            <p class="about-family-kicker">CMCEN / RCMCE</p>
+            <h1>Accessibility</h1>
+            <p class="about-family-intro">
+              CMCEN is designed to make information and services usable by as
+              many people as possible.
+            </p>
+          </div>
+          <img
+            src="/images/logo.png"
+            alt=""
+            class="about-family-emblem"
+            aria-hidden="true"
+          />
+        </header>
+
+        <div class="about-family-body">
+          <section
+            class="about-family-section"
+            aria-labelledby="accessKeyboard"
+          >
+            <h2 id="accessKeyboard">Keyboard navigation</h2>
+            <p>
+              You can use the site without a mouse. Press the Tab key to move
+              through links, buttons, form fields, and menus; Shift + Tab moves
+              backwards. The current keyboard focus is shown with a visible
+              outline.
+            </p>
+            <p>
+              At the beginning of each page, a “Skip to main content” link lets
+              keyboard users move past the site header and navigation. Menu and
+              disclosure controls report whether they are expanded, and can be
+              operated with the keyboard.
+            </p>
+          </section>
+
+          <section class="about-family-section" aria-labelledby="accessDisplay">
+            <h2 id="accessDisplay">Display and motion</h2>
+            <p>
+              Use the appearance control in the site footer to switch between
+              light and dark colour themes. The site adapts to phones, tablets,
+              and desktop screens, so content can be read without relying on a
+              fixed screen size.
+            </p>
+            <p>
+              When your device is set to reduce motion, the site reduces
+              non-essential visual motion and transitions.
+            </p>
+          </section>
+
+          <section
+            class="about-family-section"
+            aria-labelledby="accessLanguage"
+          >
+            <h2 id="accessLanguage">Language</h2>
+            <p>
+              Use the language control in the site header to switch between
+              English and French. Dates and other localized information follow
+              the selected language where available.
+            </p>
+          </section>
+
+          <section class="about-family-section" aria-labelledby="accessForms">
+            <h2 id="accessForms">Forms and updates</h2>
+            <p>
+              Form fields have labels and validation messages. Where a page
+              updates without reloading, such as while content is loading or a
+              character count changes, status information is announced to
+              assistive technology.
+            </p>
+          </section>
+
+          <section
+            class="about-family-section"
+            aria-labelledby="accessFeedback"
+          >
+            <h2 id="accessFeedback">Feedback and assistance</h2>
+            <p>
+              If you have difficulty using a page, need information in another
+              format, or want to report an accessibility issue, please
+              <a href="/contact">contact us</a>. Include the page address and a
+              brief description of the problem so we can help.
+            </p>
+          </section>
+        </div>
+      </article>
+    </main>
+    <footer id="footer"></footer>
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+  </body>
+</html>

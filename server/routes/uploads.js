@@ -5,22 +5,18 @@ const {
   GetObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
-  S3Client,
 } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { randomUUID } = require('crypto');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
-const {
-  buildPublicMediaUrl,
-  getCdnBaseUrl,
-} = require('../services/media-library');
+const { buildPublicMediaUrl } = require('../services/media-library');
 const MediaAsset = require('../models/MediaAsset');
 const {
   buildUploadContextFromBody,
-  createDirectUploadMediaAssetRecord,
   createMediaAssetRecord,
   sanitizeImageMetadata,
 } = require('../services/media-assets');
+const { sanitizeImageBuffer } = require('../services/media-sanitization');
 const { writeAuditLog } = require('../services/audit-log');
 const s3Client = require('../storage');
 
@@ -34,49 +30,10 @@ const IMAGE_VARIANTS = Object.freeze([
 ]);
 const CDN_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MAX_CDN_SLUG_LENGTH = 80;
-
-function getPublicUploadEndpoint() {
-  if (process.env.MINIO_PUBLIC_ENDPOINT) {
-    return process.env.MINIO_PUBLIC_ENDPOINT;
-  }
-
-  try {
-    return new URL(getCdnBaseUrl()).origin;
-  } catch {
-    return process.env.MINIO_ENDPOINT;
-  }
-}
-
-function createPublicUploadClient() {
-  return new S3Client({
-    region: 'us-east-1',
-    endpoint: getPublicUploadEndpoint(),
-    credentials: {
-      accessKeyId: process.env.MINIO_ACCESS_KEY,
-      secretAccessKey: process.env.MINIO_SECRET_KEY,
-    },
-    forcePathStyle: true,
-  });
-}
-
-function getCleanExtension(value, fallback = 'bin') {
-  return (
-    String(value || fallback)
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '') || fallback
-  );
-}
-
-function getOriginalExtension(file) {
-  const originalName = String(file?.originalname || '');
-  const rawExtension = originalName.includes('.')
-    ? originalName.split('.').pop()
-    : String(file?.mimetype || '')
-        .split('/')
-        .pop();
-
-  return getCleanExtension(rawExtension, 'bin');
-}
+const MESSAGE_DISPLAY_ASPECT_RATIO = 4 / 3;
+const MESSAGE_DISPLAY_MAX_WIDTH = 1200;
+const NEWS_DISPLAY_ASPECT_RATIO = 16 / 9;
+const NEWS_DISPLAY_MAX_WIDTH = 1600;
 
 function cleanCdnSlug(value) {
   const slug = String(value || '')
@@ -153,17 +110,108 @@ function toVariantResponse(variants) {
   );
 }
 
-async function processImageUpload(file, cdnSlug = '') {
+function parseCropPosition(value) {
+  const parsed = Number.parseFloat(value);
+
+  if (!Number.isFinite(parsed)) return 0.5;
+
+  return Math.min(1, Math.max(0, parsed));
+}
+
+function getDisplayVariantConfig(input = {}) {
+  if (
+    ['retirementMessage', 'lastPostMessage'].includes(input.uploadSource) &&
+    input.displayAspectRatio === '4:3'
+  ) {
+    return {
+      aspectRatio: MESSAGE_DISPLAY_ASPECT_RATIO,
+      maxWidth: MESSAGE_DISPLAY_MAX_WIDTH,
+      filename: 'display-4x3.webp',
+    };
+  }
+
+  if (
+    input.uploadSource === 'newsArticle' &&
+    input.displayAspectRatio === '16:9'
+  ) {
+    return {
+      aspectRatio: NEWS_DISPLAY_ASPECT_RATIO,
+      maxWidth: NEWS_DISPLAY_MAX_WIDTH,
+      filename: 'display-16x9.webp',
+    };
+  }
+
+  return null;
+}
+
+async function createDisplayVariant({ buffer, baseKey, cropPosition, config }) {
+  const image = sharp(buffer).rotate();
+  const metadata = await image.metadata();
+  const sourceWidth = metadata.width || 0;
+  const sourceHeight = metadata.height || 0;
+
+  if (!sourceWidth || !sourceHeight) {
+    throw new Error('Could not determine uploaded image dimensions');
+  }
+
+  const sourceAspectRatio = sourceWidth / sourceHeight;
+  const cropWidth = Math.max(
+    1,
+    Math.round(
+      sourceAspectRatio > config.aspectRatio
+        ? sourceHeight * config.aspectRatio
+        : sourceWidth,
+    ),
+  );
+  const cropHeight = Math.max(
+    1,
+    Math.round(
+      sourceAspectRatio > config.aspectRatio
+        ? sourceHeight
+        : sourceWidth / config.aspectRatio,
+    ),
+  );
+  const left = Math.round((sourceWidth - cropWidth) * cropPosition.x);
+  const top = Math.round((sourceHeight - cropHeight) * cropPosition.y);
+  const rendered = await image
+    .extract({ left, top, width: cropWidth, height: cropHeight })
+    .resize({ width: config.maxWidth, withoutEnlargement: true })
+    .webp({ quality: 84 })
+    .toBuffer({ resolveWithObject: true });
+  const key = `${baseKey}/${config.filename}`;
+
+  await putObject({
+    key,
+    body: rendered.data,
+    contentType: 'image/webp',
+  });
+
+  return {
+    key,
+    url: buildPublicMediaUrl(key),
+    width: rendered.info.width,
+    height: rendered.info.height,
+    size: rendered.info.size,
+    mimeType: 'image/webp',
+  };
+}
+
+async function processImageUpload(file, cdnSlug = '', options = {}) {
   const baseKey = getImageBaseKey(cdnSlug);
-  const originalKey = `${baseKey}/original.${getOriginalExtension(file)}`;
-  const metadata = await sharp(file.buffer).metadata();
+  const sanitizedImage = await sanitizeImageBuffer(file.buffer);
+  const originalKey = `${baseKey}/original.webp`;
+  const metadata = sanitizedImage.metadata;
   const sourceWidth = metadata.width || 0;
   const variants = {};
+  const cropPosition = {
+    x: parseCropPosition(options.displayCropX),
+    y: parseCropPosition(options.displayCropY),
+  };
 
   await putObject({
     key: originalKey,
-    body: file.buffer,
-    contentType: file.mimetype,
+    body: sanitizedImage.buffer,
+    contentType: sanitizedImage.mimeType,
   });
 
   await Promise.all(
@@ -171,7 +219,7 @@ async function processImageUpload(file, cdnSlug = '') {
       const width = sourceWidth
         ? Math.min(sourceWidth, variant.width)
         : variant.width;
-      const buffer = await sharp(file.buffer)
+      const buffer = await sharp(sanitizedImage.buffer)
         .rotate()
         .resize({
           width,
@@ -197,6 +245,16 @@ async function processImageUpload(file, cdnSlug = '') {
     }),
   );
 
+  const displayConfig = getDisplayVariantConfig(options);
+  const display = displayConfig
+    ? await createDisplayVariant({
+        buffer: sanitizedImage.buffer,
+        baseKey,
+        cropPosition,
+        config: displayConfig,
+      })
+    : null;
+
   return {
     key: originalKey,
     url: buildPublicMediaUrl(
@@ -207,10 +265,11 @@ async function processImageUpload(file, cdnSlug = '') {
       url: buildPublicMediaUrl(originalKey),
       width: metadata.width || null,
       height: metadata.height || null,
-      size: file.size,
-      mimeType: file.mimetype,
+      size: sanitizedImage.buffer.length,
+      mimeType: sanitizedImage.mimeType,
     },
     variants: toVariantResponse(variants),
+    ...(display ? { display } : {}),
     imageMetadata: sanitizeImageMetadata(metadata),
     cdnSlug,
   };
@@ -231,7 +290,11 @@ router.post(
 
       const cdnSlug = cleanCdnSlug(req.body?.cdnSlug);
       await assertCdnSlugAvailable(cdnSlug);
-      const uploadResult = await processImageUpload(req.file, cdnSlug);
+      const uploadResult = await processImageUpload(
+        req.file,
+        cdnSlug,
+        req.body,
+      );
       const mediaAsset = await createMediaAssetRecord({
         uploadResult,
         file: req.file,
@@ -276,61 +339,15 @@ router.post(
 );
 
 // POST /api/upload-url
-// Create a short-lived signed URL so browsers can upload directly to object storage.
+// Direct uploads are intentionally disabled: they bypass server-side metadata removal.
 router.post(
   '/upload-url',
   authMiddleware,
   requirePermission('canUploadMedia'),
   async (req, res) => {
-    try {
-      const originalName = String(req.body?.filename || 'image').trim();
-      const contentType = String(
-        req.body?.contentType || 'application/octet-stream',
-      ).trim();
-      const rawExtension = originalName.includes('.')
-        ? originalName.split('.').pop()
-        : contentType.split('/').pop() || 'bin';
-      const fileExtension = getCleanExtension(rawExtension, 'bin');
-      const fileKey = `${randomUUID()}.${fileExtension}`;
-      const mediaAsset = await createDirectUploadMediaAssetRecord({
-        key: fileKey,
-        originalName,
-        contentType,
-        size: req.body?.size,
-        user: req.user,
-        uploadContext: buildUploadContextFromBody(req.body),
-      });
-
-      const command = new PutObjectCommand({
-        Bucket: process.env.MINIO_BUCKET_NAME,
-        Key: fileKey,
-        ContentType: contentType,
-      });
-
-      const uploadUrl = await getSignedUrl(
-        createPublicUploadClient(),
-        command,
-        {
-          expiresIn: 900,
-        },
-      );
-
-      res.status(201).json({
-        key: fileKey,
-        url: buildPublicMediaUrl(fileKey),
-        uploadUrl,
-        mediaAsset: {
-          _id: mediaAsset._id,
-          uuid: mediaAsset.uuid,
-        },
-        headers: {
-          'Content-Type': contentType,
-        },
-      });
-    } catch (err) {
-      console.error('Upload URL Error:', err);
-      res.status(500).json({ error: 'Could not prepare upload' });
-    }
+    res.status(410).json({
+      error: 'Direct uploads are disabled. Upload media through /api/upload.',
+    });
   },
 );
 

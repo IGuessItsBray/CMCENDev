@@ -14,6 +14,26 @@
     if (!sitemapStatus) return;
     sitemapStatus.textContent = message;
     sitemapStatus.classList.toggle("is-error", Boolean(isError));
+    sitemapStatus.classList.remove("is-loading");
+  }
+
+  function renderSitemapSkeletons() {
+    if (!sitemapGrid) return;
+
+    sitemapGrid.replaceChildren(
+      ...Array.from({ length: 4 }, () => {
+        const section = document.createElement("section");
+        section.className = "sitemap-section sitemap-section--skeleton";
+        section.setAttribute("aria-hidden", "true");
+        section.append(
+          CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
+          CMCENUtils.createSkeleton("skeleton--line skeleton--line-title"),
+          CMCENUtils.createSkeleton("skeleton--line"),
+          CMCENUtils.createSkeleton("skeleton--line skeleton--line-short"),
+        );
+        return section;
+      }),
+    );
   }
 
   function createSitemapLink(item) {
@@ -86,11 +106,14 @@
   }
 
   async function loadSitemap() {
+    sitemapStatus.classList.add("is-loading");
+    sitemapStatus.textContent = "Loading site map…";
+    renderSitemapSkeletons();
+
     try {
       const data = await CMCENUtils.apiJson("/api/sitemap");
       renderSitemap(data);
     } catch (error) {
-      console.error("Sitemap load failed:", error);
       setStatus("The site map could not be loaded right now.", true);
     }
   }

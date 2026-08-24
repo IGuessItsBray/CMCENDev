@@ -1,6 +1,7 @@
 (function () {
   function translateAdminTab(key) {
     const fallbacks = {
+      admin_tab_main: "Account",
       admin_tab_users: "Users",
       admin_tab_roles: "Roles",
       admin_tab_pages: "Pages",
@@ -9,7 +10,8 @@
       admin_tab_audit_log: "Audit Log",
       admin_tab_analytics: "Analytics",
       admin_tab_timers: "Banners",
-      admin_tab_site_config: "Site Config",
+      admin_tab_subscriptions: "Subscriptions",
+      admin_tools_tabs_label: "Admin tools",
     };
     const translated =
       typeof window.translate === "function" ? window.translate(key) : key;
@@ -19,10 +21,21 @@
 
   const tabItems = [
     {
+      key: "main",
+      href: "/dashboard",
+      labelKey: "admin_tab_main",
+    },
+    {
       key: "users",
       href: "/admin-users",
       labelKey: "admin_tab_users",
       permission: "canReadUsers",
+    },
+    {
+      key: "subscriptions",
+      href: "/admin-users?view=subscriptions",
+      labelKey: "admin_tab_subscriptions",
+      permission: "canManageSubscriptions",
     },
     {
       key: "roles",
@@ -35,30 +48,7 @@
       href: "/pages-admin",
       labelKey: "admin_tab_pages",
       permission: "canManagePages",
-    },
-    {
-      key: "media",
-      href: "/admin-users?view=media",
-      labelKey: "admin_tab_media",
-      permission: "canViewMediaLibrary",
-    },
-    {
-      key: "translations",
-      href: "/translations-admin",
-      labelKey: "admin_tab_translations",
-      permission: "canManageTranslations",
-    },
-    {
-      key: "audit-log",
-      href: "/audit-log",
-      labelKey: "admin_tab_audit_log",
-      permission: "canViewAuditLog",
-    },
-    {
-      key: "analytics",
-      href: "/analytics",
-      labelKey: "admin_tab_analytics",
-      permission: "canViewAnalytics",
+      hideOnMobile: true,
     },
     {
       key: "timers",
@@ -67,15 +57,36 @@
       permission: "canManageTimers",
     },
     {
-      key: "site-config",
-      href: "/site-config",
-      labelKey: "admin_tab_site_config",
-      permission: "canAccessSiteConfig",
+      key: "translations",
+      href: "/translations-admin",
+      labelKey: "admin_tab_translations",
+      permission: "canManageTranslations",
+    },
+    {
+      key: "media",
+      href: "/admin-users?view=media",
+      labelKey: "admin_tab_media",
+      permission: "canViewMediaLibrary",
+      hideOnMobile: true,
+    },
+    {
+      key: "analytics",
+      href: "/analytics",
+      labelKey: "admin_tab_analytics",
+      permission: "canViewAnalytics",
+    },
+    {
+      key: "audit-log",
+      href: "/audit-log",
+      labelKey: "admin_tab_audit_log",
+      permission: "canViewAuditLog",
     },
   ];
 
   let currentPermissions = null;
   let activeTooltip = null;
+  let mobileSectionMenuController = null;
+  const compactAdminTabs = window.matchMedia("(max-width: 700px)");
 
   function removeTooltip() {
     if (activeTooltip) {
@@ -112,6 +123,10 @@
     const path = window.location.pathname;
     const params = new URLSearchParams(window.location.search);
 
+    if (path === "/dashboard") {
+      return params.get("adminTool") || "main";
+    }
+
     if (path === "/admin-users" && params.get("view") === "media") {
       return "media";
     }
@@ -119,6 +134,8 @@
     if (path === "/admin-users" && params.get("view") === "roles") {
       return "roles";
     }
+    if (path === "/admin-users" && params.get("view") === "subscriptions")
+      return "subscriptions";
 
     if (path === "/admin-users") {
       return "users";
@@ -144,10 +161,6 @@
       return "timers";
     }
 
-    if (path === "/site-config") {
-      return "site-config";
-    }
-
     return "";
   }
 
@@ -169,30 +182,180 @@
     )
       ? options.permissions
       : currentPermissions;
-    const includeSiteConfig = permissions
-      ? permissions.canAccessSiteConfig === true
-      : options.includeSiteConfig === true ||
-        tabs.dataset.includeSiteConfig === "true" ||
-        active === "site-config";
+    const hasPermissions = permissions && typeof permissions === "object";
+    if (!hasPermissions) {
+      tabs.replaceChildren();
+      tabs.hidden = true;
+      return;
+    }
 
-    tabs.dataset.includeSiteConfig = includeSiteConfig ? "true" : "false";
-    tabs.setAttribute("role", "tablist");
+    const permittedItems = tabItems.filter(
+      (item) => !item.permission || permissions[item.permission] === true,
+    );
+    const visibleItems = compactAdminTabs.matches
+      ? permittedItems.filter((item) => item.hideOnMobile !== true)
+      : permittedItems;
+
     tabs.replaceChildren();
+    tabs.hidden = visibleItems.length <= 1;
+    if (tabs.hidden) return;
 
-    tabItems
-      .filter(
-        (item) =>
-          !item.permission ||
-          !permissions ||
-          permissions[item.permission] === true,
-      )
-      .filter((item) => item.key !== "site-config" || includeSiteConfig)
-      .forEach((item) => {
+    if (compactAdminTabs.matches) {
+      tabs.classList.add("is-mobile-select");
+      tabs.removeAttribute("role");
+
+      mobileSectionMenuController?.abort();
+      mobileSectionMenuController = new AbortController();
+      const { signal } = mobileSectionMenuController;
+
+      const label = document.createElement("span");
+      label.className = "admin-work-zone-tab-select-label";
+      label.textContent = translateAdminTab("admin_tools_tabs_label");
+
+      const menu = document.createElement("div");
+      menu.className = "admin-work-zone-section-menu";
+
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "admin-work-zone-section-toggle";
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-controls", "adminWorkZoneSectionOptions");
+
+      const activeItem = visibleItems.find((item) => item.key === active);
+      const toggleLabel = document.createElement("span");
+      toggleLabel.textContent = activeItem
+        ? translateAdminTab(activeItem.labelKey)
+        : translateAdminTab("admin_tools_tabs_label");
+      const chevron = document.createElement("span");
+      chevron.className = "admin-work-zone-section-chevron";
+      chevron.setAttribute("aria-hidden", "true");
+      toggle.append(toggleLabel, chevron);
+
+      const optionsList = document.createElement("div");
+      optionsList.className = "admin-work-zone-section-options";
+      optionsList.id = "adminWorkZoneSectionOptions";
+      optionsList.hidden = true;
+
+      visibleItems.forEach((item) => {
+        const option = document.createElement("a");
+        option.className = "admin-work-zone-section-option";
+        option.href =
+          item.key === "main"
+            ? "/dashboard"
+            : `/dashboard?adminTool=${encodeURIComponent(item.key)}`;
+        option.textContent = translateAdminTab(item.labelKey);
+        option.dataset.adminTab = item.key;
+        if (item.key === active) {
+          option.setAttribute("aria-current", "page");
+        }
+        optionsList.append(option);
+      });
+
+      const positionOptions = () => {
+        const rect = toggle.getBoundingClientRect();
+        const viewportPadding = 12;
+        const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+        const spaceAbove = rect.top - viewportPadding;
+        const menuHeight = optionsList.scrollHeight;
+        const openAbove =
+          menuHeight > spaceBelow && spaceAbove > spaceBelow;
+        const availableHeight = Math.max(
+          120,
+          openAbove ? spaceAbove : spaceBelow,
+        );
+        const top = openAbove
+          ? Math.max(viewportPadding, rect.top - 6 - Math.min(menuHeight, availableHeight))
+          : Math.min(
+              rect.bottom + 6,
+              window.innerHeight - viewportPadding - Math.min(menuHeight, availableHeight),
+            );
+
+        Object.assign(optionsList.style, {
+          position: "fixed",
+          top: `${Math.round(top)}px`,
+          left: `${Math.round(rect.left)}px`,
+          width: `${Math.round(rect.width)}px`,
+          maxHeight: `${Math.floor(availableHeight)}px`,
+          overflowY: "auto",
+          zIndex: "2000",
+        });
+      };
+
+      const setMenuOpen = (isOpen) => {
+        menu.classList.toggle("is-open", isOpen);
+        toggle.setAttribute("aria-expanded", String(isOpen));
+
+        if (isOpen) {
+          document.body.append(optionsList);
+          optionsList.hidden = false;
+          positionOptions();
+          return;
+        }
+
+        optionsList.hidden = true;
+        menu.append(optionsList);
+        optionsList.removeAttribute("style");
+      };
+
+      const repositionOpenMenu = () => {
+        if (optionsList.hidden) return;
+
+        const rect = toggle.getBoundingClientRect();
+        if (rect.bottom < 0 || rect.top > window.innerHeight) {
+          setMenuOpen(false);
+          return;
+        }
+
+        positionOptions();
+      };
+
+      toggle.addEventListener("click", () => {
+        setMenuOpen(toggle.getAttribute("aria-expanded") !== "true");
+      });
+
+      window.addEventListener("scroll", repositionOpenMenu, {
+        capture: true,
+        passive: true,
+        signal,
+      });
+      window.addEventListener("resize", repositionOpenMenu, { signal });
+
+      document.addEventListener(
+        "pointerdown",
+        (event) => {
+          if (!menu.contains(event.target) && !optionsList.contains(event.target)) {
+            setMenuOpen(false);
+          }
+        },
+        { signal },
+      );
+      document.addEventListener(
+        "keydown",
+        (event) => {
+          if (event.key === "Escape") setMenuOpen(false);
+        },
+        { signal },
+      );
+
+      menu.append(toggle, optionsList);
+      tabs.append(label, menu);
+      return;
+    }
+
+    mobileSectionMenuController?.abort();
+    mobileSectionMenuController = null;
+    tabs.classList.remove("is-mobile-select");
+    tabs.setAttribute("role", "tablist");
+
+    visibleItems.forEach((item) => {
         const link = document.createElement("a");
         const isActive = item.key === active;
 
         link.className = "admin-work-zone-tab";
-        link.href = item.href;
+        link.href =
+          item.key === "main"
+            ? "/dashboard"
+            : `/dashboard?adminTool=${encodeURIComponent(item.key)}`;
         link.dataset.adminTab = item.key;
         link.setAttribute("role", "tab");
         link.setAttribute("aria-selected", String(isActive));
@@ -240,6 +403,10 @@
     };
 
   document.addEventListener("languagechange", () => {
+    renderAdminWorkZoneTabs({ permissions: currentPermissions });
+  });
+
+  compactAdminTabs.addEventListener("change", () => {
     renderAdminWorkZoneTabs({ permissions: currentPermissions });
   });
 

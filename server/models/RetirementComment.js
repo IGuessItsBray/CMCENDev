@@ -26,7 +26,7 @@ const retirementCommentSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['pending', 'published', 'rejected'],
+      enum: ['pending', 'published', 'rejected', 'hidden'],
       default: 'pending',
       index: true,
     },
@@ -60,6 +60,30 @@ const retirementCommentSchema = new mongoose.Schema(
       default: '',
     },
 
+    hiddenFromStatus: {
+      type: String,
+      enum: ['pending', 'published', 'rejected', ''],
+      default: '',
+    },
+
+    hiddenAt: {
+      type: Date,
+      default: null,
+    },
+
+    hiddenBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    hiddenReason: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
+
     legacy: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
@@ -79,6 +103,12 @@ retirementCommentSchema.index({
 retirementCommentSchema.index({
   status: 1,
   createdAt: 1,
+});
+
+retirementCommentSchema.index({
+  author: 1,
+  status: 1,
+  reviewedAt: -1,
 });
 
 retirementCommentSchema.index({

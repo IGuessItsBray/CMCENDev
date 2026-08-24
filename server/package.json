@@ -22,7 +22,8 @@
     "test": "npm run check && npm run test:unit && npm run test:contract && npm run test:integration",
     "test:unit": "node --test test/*.test.js",
     "test:contract": "node --test test/contract/*.test.js",
-    "test:integration": "node --test --test-concurrency=1 test/integration/*.test.js",
+    "test:integration": "node scripts/quality/run-integration-tests.js",
+    "test:integration:serial": "node --test --test-concurrency=1 test/integration/*.test.js",
     "test:integration:watch": "node --test --watch --test-concurrency=1 test/integration/*.test.js"
   },
   "keywords": [],
@@ -32,6 +33,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1073.0",
     "@aws-sdk/s3-request-presigner": "^3.1073.0",
+    "@plausible-analytics/tracker": "^0.4.6",
     "@simplewebauthn/server": "^13.3.2",
     "axios": "^1.18.0",
     "base64url": "^3.0.1",
@@ -44,7 +46,8 @@
     "nodemailer": "^9.0.3",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.3",
-    "speakeasy": "^2.0.0"
+    "speakeasy": "^2.0.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "eslint": "^10.8.0",

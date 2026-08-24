@@ -2,6 +2,7 @@ const auditToken = CMCENUtils.requireAuthToken();
 const auditLogStatus = document.getElementById("auditLogStatus");
 const auditLogPage = document.getElementById("auditLogPage");
 const auditLogContent = document.getElementById("auditLogContent");
+const auditDuplicateWindowMs = 60 * 1000;
 
 let auditState = {
   logs: [],
@@ -26,8 +27,14 @@ const auditActions = [
   ["", "audit_action_all"],
   ["audit.exported", "audit_action_audit_exported"],
   ["user.created", "audit_action_user_created"],
+  ["user.invited", "audit_action_user_invited"],
+  ["user.invitation_resent", "audit_action_user_invitation_resent"],
+  ["user.invitation_delivery_failed", "audit_action_user_invitation_delivery_failed"],
   ["user.login", "audit_action_user_login"],
+  ["user.login_rejected", "audit_action_user_login_rejected"],
   ["user.login_mfa_required", "audit_action_mfa_required"],
+  ["user.mfa_rejected", "audit_action_mfa_rejected"],
+  ["diagnostic.request_failed", "audit_action_request_failed"],
   ["user.exported", "audit_action_user_exported"],
   ["user.mfa_reset", "audit_action_user_mfa_reset"],
   ["user.email_verified", "audit_action_email_verified"],
@@ -35,11 +42,15 @@ const auditActions = [
   ["user.ghost_upgraded", "audit_action_ghost_upgraded"],
   ["user.password_reset_requested", "audit_action_password_reset_requested"],
   ["user.password_reset_completed", "audit_action_password_reset_completed"],
+  ["contact.submitted", "audit_action_contact_submitted"],
   ["content.created", "audit_action_content_created"],
   ["content.published", "audit_action_content_published"],
   ["content.rejected", "audit_action_content_rejected"],
   ["content.drafted", "audit_action_content_drafted"],
   ["content.deleted", "audit_action_content_deleted"],
+  ["content.hidden", "audit_action_content_hidden"],
+  ["content.restored", "audit_action_content_restored"],
+  ["content.staff_content_updated", "audit_action_content_staff_content_updated"],
   ["analytics.purged", "audit_action_analytics_purged"],
   ["config.access_requested", "audit_action_config_access_requested"],
   ["config.token_accepted", "audit_action_config_token_accepted"],
@@ -81,6 +92,7 @@ const auditTargetTypes = [
   ["audit", "audit_target_audit"],
   ["analytics", "audit_target_analytics"],
   ["user", "audit_target_users"],
+  ["request", "audit_target_requests"],
   ["event", "audit_target_events"],
   ["config", "audit_target_config"],
   ["migration", "audit_target_migration"],
@@ -90,6 +102,7 @@ const auditTargetTypes = [
   ["timer", "audit_target_timers"],
   ["role", "audit_target_roles"],
   ["translation", "audit_target_translations"],
+  ["contactMessage", "audit_target_contact_messages"],
   ["retirementMessage", "audit_target_retirement_posts"],
   ["retirementComment", "audit_target_comments"],
 ];
@@ -310,6 +323,72 @@ function getTargetId(value) {
   return "";
 }
 
+function getAuditActorGroupKey(log) {
+  const actorId = getActorId(log.actor);
+
+  if (actorId) {
+    return `id:${normalizeAuditIdentity(actorId)}`;
+  }
+
+  const actor = log.actorSnapshot || {};
+  return `snapshot:${normalizeAuditIdentity(
+    actor.accountName || actor.username || actor.email,
+  )}`;
+}
+
+function getAuditTargetGroupKey(log) {
+  const targetId = getTargetId(log.target);
+
+  if (targetId) {
+    return `id:${normalizeAuditIdentity(targetId)}`;
+  }
+
+  const target = log.targetSnapshot || {};
+  return `snapshot:${normalizeAuditIdentity(
+    target.slug || target.key || target.title || target.name,
+  )}`;
+}
+
+function getAuditDuplicateGroupKey(log) {
+  return [
+    log.action || "",
+    log.targetType || "",
+    getAuditActorGroupKey(log),
+    getAuditTargetGroupKey(log),
+  ].join("|");
+}
+
+function getAuditTimestamp(log) {
+  const timestamp = new Date(log.createdAt).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
+function collapseDuplicateAuditLogs(logs) {
+  return logs.reduce((collapsed, log) => {
+    const previous = collapsed.at(-1);
+    const previousTimestamp = previous ? getAuditTimestamp(previous) : null;
+    const timestamp = getAuditTimestamp(log);
+    const matchesPrevious =
+      previous &&
+      previous._duplicateGroupKey === getAuditDuplicateGroupKey(log) &&
+      previousTimestamp !== null &&
+      timestamp !== null &&
+      previousTimestamp - timestamp <= auditDuplicateWindowMs;
+
+    if (matchesPrevious) {
+      previous.duplicateCount = (previous.duplicateCount || 1) + 1;
+      return collapsed;
+    }
+
+    collapsed.push({
+      ...log,
+      duplicateCount: 1,
+      _duplicateGroupKey: getAuditDuplicateGroupKey(log),
+    });
+    return collapsed;
+  }, []);
+}
+
 function normalizeAuditIdentity(value) {
   return String(value || "")
     .trim()
@@ -336,7 +415,7 @@ function shouldRenderAuditTarget(log) {
 }
 
 function getAuditTargetHref(log) {
-  if (log.action === "content.deleted") {
+  if (["content.deleted", "content.hidden"].includes(log.action)) {
     return "";
   }
 
@@ -346,7 +425,7 @@ function getAuditTargetHref(log) {
   if (log.targetType === "event" && targetId) {
     return log.action === "content.published"
       ? `/event?id=${encodeURIComponent(targetId)}`
-      : `/submit-event?id=${encodeURIComponent(targetId)}`;
+      : `/content-workspace?type=event&id=${encodeURIComponent(targetId)}`;
   }
 
   if (log.targetType === "retirementMessage" && targetId) {
@@ -711,15 +790,16 @@ function createAuditRefreshButton() {
   refresh.title = translate("admin_refresh");
   refresh.disabled = auditState.isLoading;
 
-  if (auditState.isLoading) {
-    const label = document.createElement("span");
-    label.className = "visually-hidden";
-    label.textContent = translate("audit_refreshing_label");
+  const label = document.createElement("span");
+  label.className = "audit-log-refresh-label";
+  label.textContent = translate(
+    auditState.isLoading ? "audit_refreshing_label" : "admin_refresh",
+  );
 
+  if (auditState.isLoading) {
     refresh.classList.add("is-loading");
     refresh.setAttribute("aria-label", translate("audit_refreshing_label"));
     refresh.title = translate("audit_refreshing_title");
-    refresh.append(label);
   }
 
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -756,7 +836,7 @@ function createAuditRefreshButton() {
   bottomArrow.setAttribute("d", "M21 21v-5h-5");
 
   icon.append(topPath, topArrow, bottomPath, bottomArrow);
-  refresh.prepend(icon);
+  refresh.append(icon, label);
   refresh.addEventListener("click", () => loadAuditLogs());
   return refresh;
 }
@@ -779,6 +859,15 @@ function createAuditRow(log) {
   type.textContent = formatAuditTargetType(log.targetType);
 
   badges.append(type);
+
+  if (log.duplicateCount > 1) {
+    const duplicateCount = document.createElement("span");
+    duplicateCount.className = "audit-log-duplicate-count";
+    duplicateCount.textContent = `×${log.duplicateCount}`;
+    duplicateCount.setAttribute("aria-label", `×${log.duplicateCount}`);
+    badges.append(duplicateCount);
+  }
+
   header.append(title, badges);
 
   const details = document.createElement("p");
@@ -840,6 +929,7 @@ function createAuditRow(log) {
 
 function renderAuditLog() {
   auditLogContent.replaceChildren();
+  const visibleLogs = collapseDuplicateAuditLogs(auditState.logs);
 
   const panel = document.createElement("div");
   panel.className = "audit-log-panel";
@@ -850,7 +940,7 @@ function renderAuditLog() {
   const titleWrapper = document.createElement("div");
   const title = document.createElement("h3");
   title.textContent = translate("audit_entries_heading", {
-    count: auditState.logs.length,
+    count: visibleLogs.length,
   });
   titleWrapper.append(title);
   heading.append(titleWrapper, createAuditRefreshButton());
@@ -864,7 +954,7 @@ function renderAuditLog() {
     panel.append(message);
   }
 
-  if (!auditState.logs.length) {
+  if (!visibleLogs.length) {
     const empty = document.createElement("p");
     empty.className = "admin-empty-state";
     empty.textContent = auditState.isLoading
@@ -872,7 +962,7 @@ function renderAuditLog() {
       : translate("audit_entries_empty");
     panel.append(empty);
   } else {
-    auditState.logs.forEach((log) => {
+    visibleLogs.forEach((log) => {
       panel.append(createAuditRow(log));
     });
   }

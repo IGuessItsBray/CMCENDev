@@ -32,11 +32,9 @@ const eventDetailRegistration = document.getElementById(
   "eventDetailRegistration",
 );
 
-const eventDetailHero = document.querySelector(".event-detail-hero");
-
 let currentEvent = null;
 let currentEventId = "";
-let canManageEvents = false;
+let canOpenEventWorkspace = false;
 let visibleEventMessageKey = "";
 let visibleEventMessageType = "neutral";
 
@@ -61,113 +59,34 @@ function getStoredToken() {
 }
 
 function removeEventAdminActions() {
-  eventDetailHero?.querySelector(".event-detail-admin-actions")?.remove();
-}
-
-async function deletePublishedEvent() {
-  const token = getStoredToken();
-
-  if (!token) {
-    await setupEventAdminAccess();
-    return;
-  }
-
-  if (
-    !(await CMCENModal.confirm(
-      "Delete this event? This will be recorded in the audit log.",
-      {
-        title: "Delete event",
-        confirmText: "Delete",
-        destructive: true,
-      },
-    ))
-  ) {
-    return;
-  }
-
-  const button = eventDetailHero?.querySelector("[data-action='delete-event']");
-
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Deleting...";
-  }
-
-  try {
-    const response = await fetch(
-      `/api/admin/events/${encodeURIComponent(currentEventId)}`,
-      {
-        method: "DELETE",
-        headers: CMCENUtils.authHeaders(token),
-      },
-    );
-
-    const data = await response.json().catch(() => ({}));
-
-    if (response.status === 401) {
-      CMCENUtils.clearAuthToken();
-      await setupEventAdminAccess();
-      throw new Error("Sign in again to delete events.");
-    }
-
-    if (response.status === 403) {
-      canManageEvents = false;
-      removeEventAdminActions();
-      throw new Error("You do not have permission to delete events.");
-    }
-
-    if (!response.ok) {
-      throw new Error(data.error || "Could not delete event");
-    }
-
-    CMCENUtils.showToast("Event deleted and recorded in the audit log.", {
-      color: "success",
-      position: "bottom-right",
-      animation: "slide",
-    });
-
-    setTimeout(() => {
-      window.location.href = "/calendar";
-    }, 900);
-  } catch (error) {
-    CMCENUtils.showToast(error.message || "Could not delete event", {
-      color: "error",
-      position: "bottom-right",
-      animation: "slide",
-    });
-
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Delete event";
-    }
-  }
+  document
+    .querySelector("[data-content-workspace-shortcut='event']")
+    ?.remove();
 }
 
 function renderEventAdminActions() {
   removeEventAdminActions();
 
-  if (!canManageEvents || !currentEventId) {
+  if (!canOpenEventWorkspace || !currentEventId) {
     return;
   }
 
-  const actions = document.createElement("div");
-  actions.className = "event-detail-admin-actions";
-
-  const deleteButton = document.createElement("button");
-  deleteButton.type = "button";
-  deleteButton.className = "published-content-delete event-delete";
-  deleteButton.dataset.action = "delete-event";
-  deleteButton.textContent = "Delete event";
-  deleteButton.addEventListener("click", deletePublishedEvent);
-
-  actions.append(deleteButton);
-  eventDetailHero?.append(actions);
+  const shortcut = CMCENUtils.createContentWorkspaceShortcut({
+    contentType: "event",
+    contentId: currentEventId,
+    label: getEventTranslation(
+      "content_workspace_open_record",
+      "Open in Content Workspace",
+    ),
+  });
+  if (shortcut) document.body.append(shortcut);
 }
 
 async function setupEventAdminAccess() {
   const token = getStoredToken();
 
   if (!token) {
-    canManageEvents = false;
+    canOpenEventWorkspace = false;
     removeEventAdminActions();
     return;
   }
@@ -180,25 +99,10 @@ async function setupEventAdminAccess() {
       errorMessage: "Could not verify event permissions",
     });
 
-    const canDeleteAnyEvent = user.permissions?.canDeleteContent === true;
-    const canDeleteOwnEvent = user.permissions?.canDeleteOwnContent === true;
-
-    canManageEvents = canDeleteAnyEvent;
-
-    if (!canManageEvents && canDeleteOwnEvent && currentEventId) {
-      const detail = await CMCENUtils.apiJson(
-        `/api/events/${encodeURIComponent(currentEventId)}/edit`,
-        {
-          token,
-          errorMessage: "Could not verify event ownership",
-        },
-      );
-      canManageEvents =
-        String(detail.event?.createdBy || "") === String(user._id);
-    }
+    canOpenEventWorkspace = user.permissions?.canReviewAndPublish === true;
     renderEventAdminActions();
   } catch (error) {
-    canManageEvents = false;
+    canOpenEventWorkspace = false;
     removeEventAdminActions();
   }
 }
@@ -208,9 +112,22 @@ function getLocalizedEventText(value) {
 }
 
 function createEventLoadingContent(message) {
-  const loading = CMCENUtils.createLoadingSpinner(message);
+  const skeleton = document.createElement("div");
+  skeleton.className = "content-detail-skeleton content-detail-skeleton--event";
+  skeleton.setAttribute("aria-hidden", "true");
+  skeleton.append(
+    CMCENUtils.createSkeleton("skeleton--detail-date"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-title"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
+    CMCENUtils.createSkeleton("skeleton--detail-block"),
+    CMCENUtils.createSkeleton("skeleton--detail-block skeleton--detail-block-short"),
+  );
 
-  return Array.from(loading.childNodes);
+  const accessibleLabel = document.createElement("span");
+  accessibleLabel.className = "visually-hidden";
+  accessibleLabel.textContent = message;
+
+  return [skeleton, accessibleLabel];
 }
 
 function showEventDetailMessage(message, type = "neutral") {
@@ -551,6 +468,7 @@ async function loadEvent() {
 document.addEventListener("languagechange", () => {
   if (currentEvent) {
     renderEvent(currentEvent);
+    renderEventAdminActions();
   } else if (visibleEventMessageKey) {
     showEventDetailMessageKey(visibleEventMessageKey, visibleEventMessageType);
   }

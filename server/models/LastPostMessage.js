@@ -56,13 +56,13 @@ const LastPostMessageSchema = new mongoose.Schema(
       },
       firstName: {
         type: String,
-        required: true,
         trim: true,
         maxlength: 80,
       },
       surname: {
         type: String,
-        required: true,
+        // Legacy notices may omit a name component. New submissions are
+        // validated by the Last Post route before they are stored.
         trim: true,
         maxlength: 80,
       },
@@ -85,11 +85,13 @@ const LastPostMessageSchema = new mongoose.Schema(
       en: {
         type: String,
         trim: true,
+        maxlength: 10000,
         default: '',
       },
       fr: {
         type: String,
         trim: true,
+        maxlength: 10000,
         default: '',
       },
     },
@@ -99,6 +101,31 @@ const LastPostMessageSchema = new mongoose.Schema(
       trim: true,
       maxlength: 2000,
       default: '',
+    },
+
+    // Cropped 4:3 derivative for any compact Last Post presentation. The
+    // full memorial image remains in imageUrl for the public notice.
+    imageDisplayUrl: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
+
+    publicationPermission: {
+      confirmed: {
+        type: Boolean,
+        default: false,
+      },
+      confirmedAt: {
+        type: Date,
+        default: null,
+      },
+      confirmedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
     },
 
     photoUrl: {
@@ -111,7 +138,7 @@ const LastPostMessageSchema = new mongoose.Schema(
     // Publication metadata is needed for review and for the public archive.
     status: {
       type: String,
-      enum: ['pending', 'published', 'rejected'],
+      enum: ['pending', 'published', 'rejected', 'hidden'],
       default: 'pending',
       index: true,
     },
@@ -121,12 +148,55 @@ const LastPostMessageSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
+    publishedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     publishedAt: {
       type: Date,
       default: null,
       index: true,
     },
     rejectionReason: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
+    },
+
+    hiddenFromStatus: {
+      type: String,
+      enum: ['pending', 'published', 'rejected', ''],
+      default: '',
+    },
+
+    hiddenAt: {
+      type: Date,
+      default: null,
+    },
+
+    hiddenBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    hiddenReason: {
       type: String,
       trim: true,
       maxlength: 2000,

@@ -2,201 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title data-i18n="review_events_page_title">
-      Review Submissions | CMCEN / RCMCE
-    </title>
-    <link
-      rel="icon"
-      type="image/png"
-      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
-    />
-    <link rel="stylesheet" href="/styles.css" />
+    <meta http-equiv="refresh" content="0; url=/content-workspace?status=pending" />
+    <title>Content Workspace | CMCEN / RCMCE</title>
+    <script>
+      (() => {
+        const types = {
+          events: "event",
+          retirements: "retirementMessage",
+          "last-posts": "lastPost",
+          comments: "retirementComment",
+        };
+        const query = new URLSearchParams(window.location.search);
+        const type = types[query.get("tab")] || "all";
+        window.location.replace(`/content-workspace?type=${type}&status=pending`);
+      })();
+    </script>
   </head>
-
-  <body>
-    <header id="header"></header>
-
-    <main class="event-review-main">
-      <section class="event-review-shell" aria-labelledby="reviewEventsTitle">
-        <header class="event-review-heading">
-          <div class="event-review-heading-main">
-            <div class="event-review-heading-copy">
-              <p
-                class="event-review-eyebrow"
-                data-i18n="review_workflow_eyebrow"
-              >
-                Editorial workflow
-              </p>
-
-              <h1 id="reviewEventsTitle" data-i18n="review_events_title">
-                Review Submissions
-              </h1>
-
-              <p data-i18n="review_events_intro">
-                Review pending event, retirement message, Last Post, and comment
-                submissions.
-              </p>
-            </div>
-          </div>
-        </header>
-
-        <div
-          class="event-management-tabs"
-          role="tablist"
-          aria-label="Review queues"
-          data-i18n-aria-label="review_queues_label"
-        >
-          <button
-            class="event-management-tab is-active"
-            id="reviewEventsTab"
-            type="button"
-            role="tab"
-            aria-selected="true"
-            aria-controls="reviewEventsPanel"
-            data-review-tab="events"
-          >
-            <span data-i18n="review_events_tab"> Events </span>
-          </button>
-
-          <button
-            class="event-management-tab"
-            id="reviewRetirementsTab"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            aria-controls="reviewRetirementsPanel"
-            data-review-tab="retirements"
-          >
-            <span data-i18n="review_retirements_tab">
-              Retirement Messages
-            </span>
-          </button>
-
-          <button
-            class="event-management-tab"
-            id="reviewCommentsTab"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            aria-controls="reviewCommentsPanel"
-            data-review-tab="comments"
-          >
-            <span data-i18n="review_comments_tab"> Comments </span>
-          </button>
-
-          <button
-            class="event-management-tab"
-            id="reviewLastPostsTab"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            aria-controls="reviewLastPostsPanel"
-            data-review-tab="last-posts"
-          >
-            <span data-i18n="review_last_posts_tab"> Last Post </span>
-          </button>
-        </div>
-
-        <div
-          class="event-management-panel is-active"
-          id="reviewEventsPanel"
-          role="tabpanel"
-          aria-labelledby="reviewEventsTab"
-          data-review-panel="events"
-        >
-          <p
-            class="review-page-message is-loading"
-            id="reviewPageMessage"
-            role="status"
-            aria-live="polite"
-            aria-label="Loading events..."
-          >
-            <span class="loading-state-spinner" aria-hidden="true"></span>
-            <span class="visually-hidden"> Loading events... </span>
-          </p>
-
-          <div class="review-queue" id="reviewQueue" hidden></div>
-        </div>
-
-        <div
-          class="event-management-panel"
-          id="reviewRetirementsPanel"
-          role="tabpanel"
-          aria-labelledby="reviewRetirementsTab"
-          data-review-panel="retirements"
-          hidden
-        >
-          <p
-            class="review-page-message is-loading"
-            id="retirementReviewPageMessage"
-            role="status"
-            aria-live="polite"
-            aria-label="Loading retirement messages..."
-          >
-            <span class="loading-state-spinner" aria-hidden="true"></span>
-            <span class="visually-hidden">
-              Loading retirement messages...
-            </span>
-          </p>
-
-          <div class="review-queue" id="retirementReviewQueue" hidden></div>
-        </div>
-
-        <div
-          class="event-management-panel"
-          id="reviewLastPostsPanel"
-          role="tabpanel"
-          aria-labelledby="reviewLastPostsTab"
-          data-review-panel="last-posts"
-          hidden
-        >
-          <p
-            class="review-page-message is-loading"
-            id="lastPostReviewPageMessage"
-            role="status"
-            aria-live="polite"
-            aria-label="Loading Last Post notices..."
-          >
-            <span class="loading-state-spinner" aria-hidden="true"></span>
-            <span class="visually-hidden"> Loading Last Post notices... </span>
-          </p>
-
-          <div class="review-queue" id="lastPostReviewQueue" hidden></div>
-        </div>
-
-        <div
-          class="event-management-panel"
-          id="reviewCommentsPanel"
-          role="tabpanel"
-          aria-labelledby="reviewCommentsTab"
-          data-review-panel="comments"
-          hidden
-        >
-          <p
-            class="review-page-message is-loading"
-            id="commentReviewPageMessage"
-            role="status"
-            aria-live="polite"
-            aria-label="Loading comments..."
-          >
-            <span class="loading-state-spinner" aria-hidden="true"></span>
-            <span class="visually-hidden"> Loading comments... </span>
-          </p>
-
-          <div class="review-queue" id="commentReviewQueue" hidden></div>
-        </div>
-      </section>
-    </main>
-
-    <footer id="footer"></footer>
-
-    <script src="/app-utils.js"></script>
-    <script src="/timers.js"></script>
-    <script src="/index.js"></script>
-    <script src="/translations.js"></script>
-    <script src="/review-submissions.js"></script>
-  </body>
+  <body></body>
 </html>

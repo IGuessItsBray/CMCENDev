@@ -4,6 +4,7 @@ const CONTENT_STATUSES = Object.freeze([
   'pending',
   'published',
   'rejected',
+  'hidden',
 ]);
 
 const EVENT_ORGANIZING_ENTITIES = Object.freeze([

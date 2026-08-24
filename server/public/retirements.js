@@ -36,6 +36,7 @@ function showRetirementsMessage(message, type = "neutral") {
   retirementsMessage.removeAttribute("aria-label");
   retirementsMessage.hidden = false;
   retirementsGrid.hidden = true;
+  retirementsGrid.classList.remove("is-skeleton-loading");
   retirementsLoadMore.hidden = true;
 }
 
@@ -45,10 +46,10 @@ function showRetirementsLoading() {
   retirementsMessage.replaceChildren(
     ...createRetirementLoadingContent(message),
   );
-  retirementsMessage.className = "retirements-message is-loading";
+  retirementsMessage.className = "retirements-message is-loading visually-hidden";
   retirementsMessage.setAttribute("aria-label", message);
   retirementsMessage.hidden = false;
-  retirementsGrid.hidden = true;
+  renderRetirementsSkeletons();
   retirementsLoadMore.hidden = true;
 }
 
@@ -123,6 +124,7 @@ function isRetirementPlaceholderPhoto(photoUrl) {
     return (
       fileName === "logo.png" ||
       fileName.includes("cmcen-crest") ||
+      pathname.includes("/branch-crest/") ||
       pathname.includes("/legacy/wordpress/348036/")
     );
   } catch (error) {
@@ -132,6 +134,7 @@ function isRetirementPlaceholderPhoto(photoUrl) {
     return (
       fileName === "logo.png" ||
       fileName.includes("cmcen-crest") ||
+      pathname.includes("/branch-crest/") ||
       pathname.includes("/legacy/wordpress/348036/")
     );
   }
@@ -152,13 +155,15 @@ function createRetirementPlaceholderImage(className) {
 function createPhotoElement(retirementMessage, name) {
   if (retirementMessage.photoUrl) {
     const image = document.createElement("img");
+    const displayPhotoUrl =
+      retirementMessage.photoDisplayUrl || retirementMessage.photoUrl;
     const isPlaceholderPhoto = isRetirementPlaceholderPhoto(
       retirementMessage.photoUrl,
     );
 
     image.src = isPlaceholderPhoto
       ? RETIREMENT_PLACEHOLDER_PHOTO_URL
-      : retirementMessage.photoUrl;
+      : displayPhotoUrl;
     image.alt = isPlaceholderPhoto
       ? ""
       : translate("retirement_photo_alt", { name });
@@ -213,6 +218,35 @@ function createRetirementCard(retirementMessage) {
   return card;
 }
 
+function createRetirementSkeletonCard() {
+  const card = document.createElement("div");
+  card.className = "retirement-card retirement-card--skeleton";
+  card.setAttribute("aria-hidden", "true");
+
+  const header = document.createElement("div");
+  header.className = "retirement-card-header";
+  header.append(
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-title"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
+  );
+
+  card.append(
+    header,
+    CMCENUtils.createSkeleton("skeleton--retirement-photo"),
+    CMCENUtils.createSkeleton("skeleton--retirement-footer"),
+  );
+
+  return card;
+}
+
+function renderRetirementsSkeletons() {
+  retirementsGrid.replaceChildren(
+    ...Array.from({ length: 6 }, createRetirementSkeletonCard),
+  );
+  retirementsGrid.classList.add("is-skeleton-loading");
+  retirementsGrid.hidden = false;
+}
+
 function renderRetirements(retirementMessages) {
   retirementsGrid.replaceChildren();
 
@@ -226,6 +260,7 @@ function renderRetirements(retirementMessages) {
   });
 
   retirementsMessage.hidden = true;
+  retirementsGrid.classList.remove("is-skeleton-loading");
   retirementsGrid.hidden = false;
   updateRetirementsLoadMore();
 }

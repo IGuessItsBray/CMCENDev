@@ -6,6 +6,55 @@ const lastPostDetailImage = document.getElementById("lastPostDetailImage");
 const lastPostDetailText = document.getElementById("lastPostDetailText");
 
 let currentLastPost = null;
+let currentLastPostId = "";
+let canOpenLastPostWorkspace = false;
+
+function removeLastPostAdminActions() {
+  document
+    .querySelector("[data-content-workspace-shortcut='lastPost']")
+    ?.remove();
+}
+
+function renderLastPostAdminActions() {
+  removeLastPostAdminActions();
+
+  if (!canOpenLastPostWorkspace || !currentLastPostId) return;
+
+  const shortcut = CMCENUtils.createContentWorkspaceShortcut({
+    contentType: "lastPost",
+    contentId: currentLastPostId,
+    label: translate(
+      "content_workspace_open_record",
+      "Open in Content Workspace",
+    ),
+  });
+  if (shortcut) document.body.append(shortcut);
+}
+
+async function setupLastPostAdminAccess() {
+  const token = CMCENUtils.getStoredAuthToken();
+
+  if (!token) {
+    canOpenLastPostWorkspace = false;
+    removeLastPostAdminActions();
+    return;
+  }
+
+  CMCENUtils.storeAuthToken(token);
+
+  try {
+    const user = await CMCENUtils.apiJson("/api/me", {
+      token,
+      errorMessage: "Could not verify Last Post permissions",
+    });
+    canOpenLastPostWorkspace =
+      user.permissions?.canReviewAndPublish === true;
+    renderLastPostAdminActions();
+  } catch {
+    canOpenLastPostWorkspace = false;
+    removeLastPostAdminActions();
+  }
+}
 
 function showDetailMessage(message, type = "neutral") {
   lastPostDetailMessage.textContent = message;
@@ -16,8 +65,23 @@ function showDetailMessage(message, type = "neutral") {
 
 function showDetailLoading() {
   const message = translate("last_post_detail_loading");
+  const skeleton = document.createElement("div");
+  skeleton.className = "content-detail-skeleton content-detail-skeleton--last-post";
+  skeleton.setAttribute("aria-hidden", "true");
+  skeleton.append(
+    CMCENUtils.createSkeleton("skeleton--detail-title"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-short"),
+    CMCENUtils.createSkeleton("skeleton--detail-photo"),
+    CMCENUtils.createSkeleton("skeleton--detail-block"),
+    CMCENUtils.createSkeleton("skeleton--detail-block skeleton--detail-block-short"),
+  );
+  const accessibleLabel = document.createElement("span");
+  accessibleLabel.className = "visually-hidden";
+  accessibleLabel.textContent = message;
+
   lastPostDetailMessage.replaceChildren(
-    ...Array.from(CMCENUtils.createLoadingSpinner(message).childNodes),
+    skeleton,
+    accessibleLabel,
   );
   lastPostDetailMessage.className = "last-post-message is-loading";
   lastPostDetailMessage.setAttribute("aria-label", message);
@@ -59,12 +123,15 @@ function renderImage(lastPost, name) {
 
 function renderLastPost(lastPost) {
   currentLastPost = lastPost;
+  currentLastPostId = String(lastPost?._id || currentLastPostId);
   const name = getLastPostName(lastPost);
   document.title = `${name} | ${translate("last_post_heading")} | CMCEN / RCMCE`;
   lastPostDetailTitle.textContent = name;
   lastPostDetailDate.textContent = formatPublishedDate(lastPost.publishedAt);
-  lastPostDetailText.textContent =
-    CMCENUtils.getLocalizedText(lastPost.messages) || "";
+  CMCENUtils.setLinkifiedText(
+    lastPostDetailText,
+    CMCENUtils.getLocalizedText(lastPost.messages),
+  );
   renderImage(lastPost, name);
   lastPostDetailMessage.hidden = true;
   lastPostDetailContent.hidden = false;
@@ -86,6 +153,7 @@ async function loadLastPost() {
     if (!data.lastPost)
       throw new Error(translate("last_post_detail_load_error"));
     renderLastPost(data.lastPost);
+    await setupLastPostAdminAccess();
   } catch (error) {
     showDetailMessage(
       error.message || translate("last_post_detail_load_error"),
@@ -95,7 +163,10 @@ async function loadLastPost() {
 }
 
 document.addEventListener("languagechange", () => {
-  if (currentLastPost) renderLastPost(currentLastPost);
+  if (currentLastPost) {
+    renderLastPost(currentLastPost);
+    renderLastPostAdminActions();
+  }
 });
 
 loadLastPost();

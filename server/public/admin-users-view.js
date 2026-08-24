@@ -135,6 +135,18 @@
       );
     }
 
+    function canResendInvitation(user) {
+      const state = getState();
+
+      return Boolean(
+        user?._id &&
+          user.accountType === "invited" &&
+          state.currentUserPermissions?.canProvisionUsers === true &&
+          (user.role !== "internal_beta" ||
+            state.currentUserRole === "developer"),
+      );
+    }
+
     function getStandardRoles() {
       return getState().roles.filter((role) => role !== "developer");
     }
@@ -352,7 +364,11 @@
       invite.addEventListener("click", actions.provisionUser);
 
       search.append(searchLabel, searchInput);
-      header.append(title, invite, refresh);
+      const headerActions = document.createElement("div");
+      headerActions.className = "admin-user-list-actions";
+      headerActions.append(invite, refresh);
+
+      header.append(title, headerActions);
       panel.append(header, search, createUsersExportPanel());
 
       const list = document.createElement("div");
@@ -426,11 +442,25 @@
 
     function createRoleSelect(user) {
       const select = document.createElement("select");
+      const state = getState();
+      const canManageInternalBeta = state.currentUserRole === "developer";
+      const isInternalBetaUser = user?.role === "internal_beta";
       select.id = "adminUserRole";
       select.name = "role";
-      select.disabled = isSelectedSelf(user) || isDeveloper(user);
+      select.disabled =
+        isSelectedSelf(user) ||
+        isDeveloper(user) ||
+        (isInternalBetaUser && !canManageInternalBeta);
 
-      const roles = isDeveloper(user) ? ["developer"] : getStandardRoles();
+      const roles = isDeveloper(user)
+        ? ["developer"]
+        : getStandardRoles().filter(
+            (role) => canManageInternalBeta || role !== "internal_beta",
+          );
+
+      if (isInternalBetaUser && !roles.includes("internal_beta")) {
+        roles.push("internal_beta");
+      }
 
       roles.forEach((role) => {
         const option = document.createElement("option");
@@ -497,7 +527,7 @@
 
         const swatch = document.createElement("span");
         swatch.className = "admin-role-color-swatch";
-        swatch.style.backgroundColor = role.color || "#4F46E5";
+        swatch.style.backgroundColor = role.color || "#2c2f55";
 
         const text = document.createElement("span");
         text.textContent = role.name;
@@ -561,6 +591,84 @@
       }
 
       panel.append(heading, details, reset);
+
+      return panel;
+    }
+
+    function createInvitationPanel(user) {
+      if (user?.accountType !== "invited") {
+        return null;
+      }
+
+      const invitation = user.invitation || {};
+      const delivery = invitation.delivery || {};
+      const panel = document.createElement("section");
+      panel.className = "admin-invitation-panel";
+
+      const heading = document.createElement("div");
+      heading.className = "admin-panel-heading";
+      const title = document.createElement("h4");
+      title.textContent = "Invitation delivery";
+      const status = document.createElement("span");
+      const statusValue = delivery.status || "pending";
+      status.className = `admin-invitation-status is-${statusValue}`;
+      status.textContent = statusValue.charAt(0).toUpperCase() + statusValue.slice(1);
+      heading.append(title, status);
+
+      const summary = document.createElement("p");
+      summary.className = "admin-invitation-summary";
+      summary.textContent =
+        statusValue === "failed"
+          ? "The mail service did not accept this invitation. Review the diagnostic, then resend it."
+          : statusValue === "sent"
+            ? "The activation link was handed to the mail service."
+            : "This invitation has not been sent yet.";
+
+      const details = document.createElement("div");
+      details.className = "admin-invitation-details";
+      [
+        ["Delivery", invitation.sentAt ? `Sent ${formatDate(invitation.sentAt)}` : "Not sent"],
+        [
+          "Expires",
+          invitation.expiresAt ? formatDate(invitation.expiresAt) : "No expiration set",
+        ],
+        [
+          "Last attempt",
+          delivery.attemptedAt ? formatDate(delivery.attemptedAt) : "No delivery attempt yet",
+        ],
+      ].forEach(([label, value]) => {
+        const item = document.createElement("div");
+        const itemLabel = document.createElement("span");
+        itemLabel.textContent = label;
+        const itemValue = document.createElement("strong");
+        itemValue.textContent = value;
+        item.append(itemLabel, itemValue);
+        details.append(item);
+      });
+
+      panel.append(heading, summary, details);
+
+      if (delivery.error) {
+        const diagnostic = document.createElement("details");
+        diagnostic.className = "admin-invitation-diagnostic";
+        const diagnosticTitle = document.createElement("summary");
+        diagnosticTitle.textContent = "View mail-service diagnostic";
+        const error = document.createElement("code");
+        error.textContent = delivery.error;
+        diagnostic.append(diagnosticTitle, error);
+        panel.append(diagnostic);
+      }
+
+      const actionsRow = document.createElement("div");
+      actionsRow.className = "admin-invitation-actions";
+      const resend = document.createElement("button");
+      resend.type = "button";
+      resend.className = "admin-work-zone-button is-secondary";
+      resend.textContent = "Resend invitation";
+      resend.disabled = !canResendInvitation(user);
+      resend.addEventListener("click", () => actions.resendInvitation(user));
+      actionsRow.append(resend);
+      panel.append(actionsRow);
 
       return panel;
     }
@@ -664,13 +772,30 @@
         item.append(excerpt);
       }
 
-      const deleteButton = document.createElement("button");
-      deleteButton.type = "button";
-      deleteButton.className = "admin-work-zone-button is-danger";
-      deleteButton.textContent = translate("admin_delete");
-      deleteButton.addEventListener("click", () => actions.deletePost(post));
+      const contentActionButton = document.createElement("button");
+      contentActionButton.type = "button";
 
-      item.append(deleteButton);
+      if (post.status === "hidden") {
+        contentActionButton.className = "admin-work-zone-button";
+        contentActionButton.textContent = getText(
+          "admin_content_restore",
+          "Restore",
+        );
+        contentActionButton.addEventListener("click", () =>
+          actions.restorePost(post),
+        );
+      } else {
+        contentActionButton.className = "admin-work-zone-button is-danger";
+        contentActionButton.textContent = getText(
+          "admin_content_remove",
+          "Remove",
+        );
+        contentActionButton.addEventListener("click", () =>
+          actions.deletePost(post),
+        );
+      }
+
+      item.append(contentActionButton);
 
       return item;
     }
@@ -762,7 +887,7 @@
 
       const swatch = document.createElement("span");
       swatch.className = "admin-role-color-swatch";
-      swatch.style.backgroundColor = role.color || "#4F46E5";
+      swatch.style.backgroundColor = role.color || "#2c2f55";
 
       const name = document.createElement("strong");
       name.textContent = role.name;
@@ -796,7 +921,7 @@
 
         actions.createRole({
           name: `New role ${roleNumber}`,
-          color: "#4F46E5",
+          color: "#2c2f55",
           permissions: [],
         });
       });
@@ -872,8 +997,8 @@
         colorLabel.textContent = "Badge color";
         const colorInput = window.CMCENColorPicker.create({
           name: "color",
-          value: selectedRole.color || "#4F46E5",
-          fallback: "#4F46E5",
+          value: selectedRole.color || "#2c2f55",
+          fallback: "#2c2f55",
           label: "Badge color",
         });
         colorField.append(colorLabel, colorInput);
@@ -1101,7 +1226,12 @@
         });
       }
 
-      panel.append(header, form, createMfaPanel(user));
+      panel.append(header, form);
+      const invitationPanel = createInvitationPanel(user);
+      if (invitationPanel) {
+        panel.append(invitationPanel);
+      }
+      panel.append(createMfaPanel(user));
       const dangerZone = createDangerZone(user);
       if (dangerZone) panel.append(dangerZone);
       panel.append(postsPanel);
@@ -1218,11 +1348,19 @@
       attachments.append(attachmentHeading);
 
       if (attachmentCount) {
+        const attachmentDetails = document.createElement("details");
+        attachmentDetails.className = "admin-media-attachment-details";
+
+        const attachmentSummary = document.createElement("summary");
+        attachmentSummary.textContent = attachmentHeading.textContent;
+
         const list = document.createElement("ul");
         (mediaItem.attachedPosts || []).forEach((attachment) => {
           list.append(createMediaAttachment(attachment));
         });
-        attachments.append(list);
+
+        attachmentDetails.append(attachmentSummary, list);
+        attachments.replaceChildren(attachmentDetails);
       }
 
       const actionsWrapper = document.createElement("div");
@@ -1445,7 +1583,8 @@
 
       const uploadInput = document.createElement("input");
       uploadInput.type = "file";
-      uploadInput.accept = "image/*";
+      uploadInput.accept =
+        ".jpg,.jpeg,.png,.webp,.gif,.heic,image/jpeg,image/png,image/webp,image/gif,image/heic";
       uploadInput.multiple = true;
       uploadInput.hidden = true;
       uploadInput.disabled = state.mediaIsUploading || state.mediaIsDeleting;

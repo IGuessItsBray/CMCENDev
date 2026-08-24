@@ -5,8 +5,55 @@
       .replace(/^Bearer\s+/i, "");
   }
 
+  function translateText(key, fallback = key, replacements = {}) {
+    if (typeof window.translate !== "function") {
+      return fallback;
+    }
+
+    const translated = window.translate(key, replacements);
+    return translated && translated !== key ? translated : fallback;
+  }
+
   function escapeRegExp(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function setLinkifiedText(element, value) {
+    const text = String(value || "");
+    const fragment = document.createDocumentFragment();
+    const urlPattern = /https?:\/\/[^\s<>"']+/gi;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = urlPattern.exec(text))) {
+      const urlText = match[0].replace(/[.,;:!?]+$/, "");
+      const linkEnd = match.index + urlText.length;
+
+      if (!urlText) continue;
+
+      fragment.append(document.createTextNode(text.slice(lastIndex, match.index)));
+
+      try {
+        const url = new URL(urlText);
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          throw new Error("Unsupported URL protocol");
+        }
+
+        const link = document.createElement("a");
+        link.href = url.href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = urlText;
+        fragment.append(link);
+      } catch {
+        fragment.append(document.createTextNode(urlText));
+      }
+
+      lastIndex = linkEnd;
+    }
+
+    fragment.append(document.createTextNode(text.slice(lastIndex)));
+    element.replaceChildren(fragment);
   }
 
   function getRetireeNameParts(retiree = {}) {
@@ -73,6 +120,61 @@
       window.clearTimeout(tokenRefreshTimer);
       tokenRefreshTimer = null;
     }
+  }
+
+  const sessionCookieConsentKey = "cmcen_session_cookie_consent";
+  const sessionCookieConsentValue = "accepted";
+
+  function getSessionCookieConsentTranslation(key, fallback) {
+    return translateText(key, fallback);
+  }
+
+  function hasSessionCookieConsent() {
+    try {
+      return (
+        localStorage.getItem(sessionCookieConsentKey) ===
+        sessionCookieConsentValue
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  function rememberSessionCookieConsent() {
+    try {
+      localStorage.setItem(sessionCookieConsentKey, sessionCookieConsentValue);
+    } catch {
+      // A visitor can still sign in; their browser will ask again next time.
+    }
+  }
+
+  async function requestSessionCookieConsent() {
+    const consented = await window.CMCENModal.confirm(
+      getSessionCookieConsentTranslation(
+        "session_cookie_consent_message",
+        "To sign in, CMCEN needs one secure cookie to protect your account and keep your session active. We do not use advertising or third-party cookies. Without it, you can still browse the public site but cannot sign in.",
+      ),
+      {
+        title: getSessionCookieConsentTranslation(
+          "session_cookie_consent_title",
+          "Sign in securely",
+        ),
+        cancelText: getSessionCookieConsentTranslation(
+          "session_cookie_consent_decline",
+          "Stay on the public site",
+        ),
+        confirmText: getSessionCookieConsentTranslation(
+          "session_cookie_consent_accept",
+          "Sign in securely",
+        ),
+      },
+    );
+
+    if (consented) {
+      rememberSessionCookieConsent();
+    }
+
+    return consented;
   }
 
   let tokenRefreshPromise = null;
@@ -210,6 +312,27 @@
     return error;
   }
 
+  function getSafeRequestPath(path) {
+    try {
+      return new URL(String(path), window.location.origin).pathname;
+    } catch (error) {
+      return "[unavailable]";
+    }
+  }
+
+  function createNetworkError(errorMessage, error) {
+    const message = errorMessage
+      ? `${errorMessage}. Check your connection and try again.`
+      : "Could not reach CMCEN. Check your connection and try again.";
+    const networkError = new Error(message);
+
+    networkError.name = "NetworkError";
+    networkError.cause = error;
+    networkError.isNetworkError = true;
+
+    return networkError;
+  }
+
   async function apiFetch(path, options = {}) {
     const {
       auth = false,
@@ -248,14 +371,27 @@
       requestHeaders["x-temp-token"] = tempToken;
     }
 
-    const response = await fetch(path, {
-      ...fetchOptions,
-      body: requestBody,
-      headers:
-        requestToken !== undefined
-          ? authHeaders(requestToken, requestHeaders)
-          : requestHeaders,
-    });
+    let response;
+
+    try {
+      response = await fetch(path, {
+        ...fetchOptions,
+        body: requestBody,
+        headers:
+          requestToken !== undefined
+            ? authHeaders(requestToken, requestHeaders)
+            : requestHeaders,
+      });
+    } catch (error) {
+      // Keep this diagnostic free of query parameters, request bodies, and tokens.
+      console.warn("Network request failed before a response was received", {
+        method: fetchOptions.method || "GET",
+        path: getSafeRequestPath(path),
+        errorName: error?.name || "Error",
+        errorMessage: error?.message || "Request failed",
+      });
+      throw createNetworkError(errorMessage, error);
+    }
 
     if (
       response.status === 401 &&
@@ -571,6 +707,36 @@
     return loading;
   }
 
+  function createSkeleton(className = "") {
+    const skeleton = document.createElement("span");
+    skeleton.className = ["skeleton", className].filter(Boolean).join(" ");
+    skeleton.setAttribute("aria-hidden", "true");
+    return skeleton;
+  }
+
+  function trackMediaLoading(image) {
+    if (!(image instanceof HTMLImageElement)) return;
+
+    const clearLoadingState = () => image.classList.remove("is-media-loading");
+
+    image.classList.add("is-media-loading");
+    image.addEventListener("load", clearLoadingState, { once: true });
+    image.addEventListener("error", clearLoadingState, { once: true });
+
+    if (image.complete) {
+      clearLoadingState();
+    }
+  }
+
+  function bindMediaSkeletons(root = document) {
+    if (root instanceof HTMLImageElement) {
+      trackMediaLoading(root);
+      return;
+    }
+
+    root.querySelectorAll?.("img").forEach(trackMediaLoading);
+  }
+
   function getElementList(value) {
     if (!value) {
       return [];
@@ -592,6 +758,7 @@
       tabs,
       tabKey = "tab",
     } = options;
+    const managesPanels = getElementList(panels).length > 0;
 
     getElementList(tabs).forEach((tab) => {
       const isActive = tab.dataset[tabKey] === active;
@@ -603,6 +770,9 @@
         tab.hasAttribute("aria-selected")
       ) {
         tab.setAttribute("aria-selected", String(isActive));
+        if (managesPanels) {
+          tab.tabIndex = isActive ? 0 : -1;
+        }
       }
     });
 
@@ -618,12 +788,16 @@
     const tabs = getElementList(options.tabs);
     const tabKey = options.tabKey || "tab";
 
-    function activate(active) {
+    function activate(active, tab, event, notify = false) {
       activateTabs({
         ...options,
         active,
         tabs,
       });
+
+      if (notify && typeof options.onActivate === "function") {
+        options.onActivate(active, tab, event);
+      }
     }
 
     tabs.forEach((tab) => {
@@ -634,16 +808,40 @@
           event.preventDefault();
         }
 
-        activate(active);
+        activate(active, tab, event, true);
+      });
 
-        if (typeof options.onActivate === "function") {
-          options.onActivate(active, tab, event);
+      tab.addEventListener("keydown", (event) => {
+        const currentIndex = tabs.indexOf(tab);
+        let nextIndex = currentIndex;
+
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+          nextIndex = (currentIndex + 1) % tabs.length;
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+          nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        } else if (event.key === "Home") {
+          nextIndex = 0;
+        } else if (event.key === "End") {
+          nextIndex = tabs.length - 1;
+        } else {
+          return;
         }
+
+        event.preventDefault();
+        const nextTab = tabs[nextIndex];
+        nextTab.focus();
+        activate(nextTab.dataset[tabKey], nextTab, event, true);
       });
     });
 
-    if (options.active) {
-      activate(options.active);
+    const initiallyActive =
+      options.active ||
+      tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.dataset[
+        tabKey
+      ];
+
+    if (initiallyActive) {
+      activate(initiallyActive);
     }
 
     return { activate };
@@ -710,12 +908,7 @@
   }
 
   function getToastDismissLabel(fallback) {
-    if (typeof window.translate !== "function") {
-      return fallback;
-    }
-
-    const translated = window.translate("toast_dismiss");
-    return translated && translated !== "toast_dismiss" ? translated : fallback;
+    return translateText("toast_dismiss", fallback);
   }
 
   /**
@@ -812,6 +1005,8 @@
   let modalInputGroup = null;
   let modalInputLabel = null;
   let modalInput = null;
+  let modalFormFields = null;
+  let modalChecklist = null;
   let modalChoiceActions = null;
   let modalActions = null;
   let modalCancelButton = null;
@@ -819,14 +1014,10 @@
   let modalCloseButton = null;
   let modalActiveRequest = null;
   let modalQueue = Promise.resolve();
+  let modalEmbeddedPositionCleanup = null;
 
   function getModalTranslation(key, fallback) {
-    if (typeof window.translate !== "function") {
-      return fallback;
-    }
-
-    const translated = window.translate(key);
-    return translated && translated !== key ? translated : fallback;
+    return translateText(key, fallback);
   }
 
   function getFocusableModalElements() {
@@ -841,12 +1032,46 @@
     );
   }
 
+  function positionModalInEmbeddedViewport() {
+    modalEmbeddedPositionCleanup?.();
+    modalEmbeddedPositionCleanup = null;
+
+    try {
+      if (window.parent === window || !window.frameElement) return;
+
+      modalOverlay.classList.add("is-embedded");
+      const position = () => {
+        const frameRect = window.frameElement.getBoundingClientRect();
+        const modalHeight = modalDialog.getBoundingClientRect().height;
+        const top = Math.max(
+          16,
+          window.parent.innerHeight / 2 - frameRect.top - modalHeight / 2,
+        );
+        modalDialog.style.setProperty("--cmcen-modal-top", `${top}px`);
+      };
+      const schedulePosition = () => window.requestAnimationFrame(position);
+      schedulePosition();
+      window.parent.addEventListener("scroll", schedulePosition, { passive: true });
+      window.parent.addEventListener("resize", schedulePosition);
+      modalEmbeddedPositionCleanup = () => {
+        window.parent.removeEventListener("scroll", schedulePosition);
+        window.parent.removeEventListener("resize", schedulePosition);
+        modalOverlay.classList.remove("is-embedded");
+        modalDialog.style.removeProperty("--cmcen-modal-top");
+      };
+    } catch {
+      modalOverlay.classList.remove("is-embedded");
+    }
+  }
+
   function closeModal(value) {
     const request = modalActiveRequest;
 
     if (!request) return;
 
     modalActiveRequest = null;
+    modalEmbeddedPositionCleanup?.();
+    modalEmbeddedPositionCleanup = null;
     modalOverlay.hidden = true;
     document.body.classList.remove("cmcen-modal-lock");
     request.restoreFocus?.focus();
@@ -908,6 +1133,14 @@
 
     modalInputGroup.append(modalInputLabel, modalInput);
 
+    modalFormFields = document.createElement("div");
+    modalFormFields.className = "cmcen-modal-form";
+    modalFormFields.hidden = true;
+
+    modalChecklist = document.createElement("fieldset");
+    modalChecklist.className = "cmcen-modal-checklist";
+    modalChecklist.hidden = true;
+
     modalChoiceActions = document.createElement("div");
     modalChoiceActions.className = "cmcen-modal-choices";
     modalChoiceActions.hidden = true;
@@ -928,7 +1161,9 @@
     modalActions.append(modalCancelButton, modalConfirmButton);
     body.append(
       modalMessage,
+      modalFormFields,
       modalInputGroup,
+      modalChecklist,
       modalChoiceActions,
       modalActions,
     );
@@ -958,9 +1193,20 @@
 
     modalConfirmButton.addEventListener("click", () => {
       if (!modalActiveRequest) return;
+      if (modalActiveRequest.type === "form") {
+        const fields = Array.from(
+          modalFormFields.querySelectorAll("input, select, textarea"),
+        );
+
+        if (!fields.every((field) => field.reportValidity())) return;
+        closeModal(modalActiveRequest.getFormValues());
+        return;
+      }
       closeModal(
         modalActiveRequest.type === "prompt"
           ? modalInput.value
+          : modalActiveRequest.type === "checklist"
+            ? modalActiveRequest.getCheckedValues()
           : modalActiveRequest.confirmValue,
       );
     });
@@ -974,9 +1220,26 @@
         return;
       }
 
-      if (event.key === "Enter" && modalActiveRequest.type === "prompt") {
+      if (
+        event.key === "Enter" &&
+        ["prompt", "form"].includes(modalActiveRequest.type)
+      ) {
+        if (
+          modalActiveRequest.type === "form" &&
+          document.activeElement?.tagName === "TEXTAREA"
+        ) {
+          return;
+        }
         event.preventDefault();
-        closeModal(modalInput.value);
+        if (modalActiveRequest.type === "form") {
+          const fields = Array.from(
+            modalFormFields.querySelectorAll("input, select, textarea"),
+          );
+          if (!fields.every((field) => field.reportValidity())) return;
+          closeModal(modalActiveRequest.getFormValues());
+        } else {
+          closeModal(modalInput.value);
+        }
         return;
       }
 
@@ -1007,8 +1270,11 @@
         createModal();
 
         const isPrompt = type === "prompt";
+        const isForm = type === "form";
         const isChoice = type === "choice";
+        const isChecklist = type === "checklist";
         const isAlert = type === "alert";
+        const checklist = isChecklist ? options.checklist || [] : [];
         const titleKey = isPrompt
           ? "modal_input_title"
           : isAlert
@@ -1029,6 +1295,18 @@
               : null,
           cancelValue: isPrompt ? null : false,
           confirmValue: isAlert ? undefined : true,
+          getCheckedValues: () =>
+            Array.from(
+              modalChecklist.querySelectorAll(
+                'input[type="checkbox"]:checked',
+              ),
+            ).map((input) => input.value),
+          getFormValues: () =>
+            Object.fromEntries(
+              Array.from(
+                modalFormFields.querySelectorAll("input, select, textarea"),
+              ).map((field) => [field.name, field.value]),
+            ),
           closeOnBackdrop: options.closeOnBackdrop !== false,
         };
 
@@ -1041,8 +1319,108 @@
           options.closeLabel || getModalTranslation("modal_close", "Close"),
         );
         modalInputGroup.hidden = !isPrompt;
+        modalFormFields.hidden = !isForm;
+        modalFormFields.replaceChildren();
+        modalChecklist.hidden = !isChecklist;
+        modalChecklist.replaceChildren();
         modalChoiceActions.hidden = !isChoice;
         modalChoiceActions.replaceChildren();
+
+        if (isChecklist) {
+          const legend = document.createElement("legend");
+          legend.className = "cmcen-modal-checklist-title";
+          legend.textContent =
+            options.checklistLabel ||
+            getModalTranslation("modal_checklist_label", "Confirm each item");
+          modalChecklist.append(legend);
+
+          const updateChecklistConfirmation = () => {
+            modalConfirmButton.disabled =
+              !checklist.length ||
+              !Array.from(
+                modalChecklist.querySelectorAll('input[type="checkbox"]'),
+              ).every((input) => input.checked);
+          };
+
+          checklist.forEach((item, index) => {
+            const label = document.createElement("label");
+            label.className = "cmcen-modal-checklist-item";
+
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.value = String(item.value || index);
+            input.addEventListener("change", updateChecklistConfirmation);
+
+            const copy = document.createElement("span");
+            const itemLabel = document.createElement("strong");
+            itemLabel.textContent = String(item.label || item.value || "");
+            copy.append(itemLabel);
+
+            if (item.description) {
+              const description = document.createElement("small");
+              description.textContent = String(item.description);
+              copy.append(description);
+            }
+
+            label.append(input, copy);
+            modalChecklist.append(label);
+          });
+
+          updateChecklistConfirmation();
+        } else {
+          modalConfirmButton.disabled = false;
+        }
+
+        if (isForm) {
+          (options.fields || []).forEach((field) => {
+            const group = document.createElement("label");
+            group.className = "cmcen-modal-field";
+
+            const label = document.createElement("span");
+            label.textContent = field.label || field.name || "Field";
+
+            const control = document.createElement(
+              field.type === "select"
+                ? "select"
+                : field.type === "textarea"
+                  ? "textarea"
+                  : "input",
+            );
+            control.className = "cmcen-modal-input";
+            control.name = field.name || "";
+            control.id = `cmcenModalField-${field.name || "input"}`;
+            control.required = field.required === true;
+            control.autocomplete = field.autocomplete || "off";
+
+            if (field.type === "select") {
+              (field.options || []).forEach((option) => {
+                const optionElement = document.createElement("option");
+                optionElement.value = String(option.value || "");
+                optionElement.textContent = String(option.label || option.value || "");
+                optionElement.selected = option.value === field.defaultValue;
+                control.append(optionElement);
+              });
+            } else {
+              if (field.type !== "textarea") {
+                control.type = field.type || "text";
+              }
+              control.value = String(field.defaultValue || "");
+              control.placeholder = field.placeholder || "";
+              if (field.maxLength) control.maxLength = field.maxLength;
+            }
+
+            group.append(label, control);
+
+            if (field.hint) {
+              const hint = document.createElement("small");
+              hint.className = "cmcen-modal-field-hint";
+              hint.textContent = field.hint;
+              group.append(hint);
+            }
+
+            modalFormFields.append(group);
+          });
+        }
 
         if (isChoice) {
           (options.choices || []).forEach((choice) => {
@@ -1086,16 +1464,21 @@
 
         modalOverlay.hidden = false;
         document.body.classList.add("cmcen-modal-lock");
+        positionModalInEmbeddedViewport();
 
         window.requestAnimationFrame(() => {
           if (modalActiveRequest?.resolve !== resolve) return;
 
-          const focusTarget = isPrompt
+          const focusTarget = isForm
+            ? modalFormFields.querySelector("input, select, textarea")
+            : isPrompt
             ? modalInput
             : isChoice
               ? modalChoiceActions.querySelector("button")
+              : isChecklist
+                ? modalChecklist.querySelector('input[type="checkbox"]')
               : modalConfirmButton;
-          focusTarget.focus();
+          focusTarget?.focus();
           if (isPrompt) modalInput.select();
         });
       });
@@ -1115,8 +1498,14 @@
     prompt(message, options) {
       return showModal("prompt", message, options);
     },
+    form(message, options) {
+      return showModal("form", message, options);
+    },
     choose(message, options) {
       return showModal("choice", message, options);
+    },
+    confirmChecklist(message, options) {
+      return showModal("checklist", message, options);
     },
   };
 
@@ -1145,6 +1534,19 @@
       body: payload,
       keepalive: true,
     }).catch(() => {});
+  }
+
+  function initializePlausibleAnalytics() {
+    fetch('/api/client-config/plausible')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((config) => {
+        if (!config?.enabled || !config.domain || !config.endpoint) return;
+
+        return import('/vendor/plausible-tracker.js').then(({ init }) => {
+          init({ domain: config.domain, endpoint: config.endpoint });
+        });
+      })
+      .catch(() => {});
   }
 
   function getCompressedImageName(file, mimeType) {
@@ -1226,6 +1628,147 @@
     });
   }
 
+  function createImageCropController({ input, container, labels = {} } = {}) {
+    if (!input || !container) {
+      return {
+        getCrop: () => ({ x: 0.5, y: 0.5 }),
+        reset: () => {},
+      };
+    }
+
+    let previewUrl = "";
+    let cropX = 0.5;
+    let cropY = 0.5;
+    const preview = document.createElement("img");
+    const horizontal = document.createElement("input");
+    const vertical = document.createElement("input");
+
+    function updatePreview() {
+      preview.style.objectPosition = `${cropX * 100}% ${cropY * 100}%`;
+    }
+
+    function makeControl(labelText, control, onChange) {
+      const label = document.createElement("label");
+      label.className = "image-crop-control-label";
+      label.textContent = labelText;
+      control.type = "range";
+      control.min = "0";
+      control.max = "100";
+      control.value = "50";
+      control.addEventListener("input", () => {
+        onChange(Number(control.value) / 100);
+        updatePreview();
+      });
+      label.appendChild(control);
+      return label;
+    }
+
+    const heading = document.createElement("p");
+    heading.className = "image-crop-heading";
+    heading.textContent = labels.heading || "Position the photo in the card";
+    const hint = document.createElement("p");
+    hint.className = "image-crop-hint";
+    hint.textContent =
+      labels.hint ||
+      "The original photo is kept in full for the message page.";
+    const controls = document.createElement("div");
+    controls.className = "image-crop-controls";
+    controls.append(
+      makeControl(labels.horizontal || "Horizontal position", horizontal, (value) => {
+        cropX = value;
+      }),
+      makeControl(labels.vertical || "Vertical position", vertical, (value) => {
+        cropY = value;
+      }),
+    );
+    const previewFrame = document.createElement("div");
+    previewFrame.className = "image-crop-preview";
+    preview.alt = labels.previewAlt || "Photo crop preview";
+    previewFrame.appendChild(preview);
+    container.replaceChildren(heading, hint, previewFrame, controls);
+    container.hidden = true;
+
+    function reset() {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = "";
+      cropX = 0.5;
+      cropY = 0.5;
+      horizontal.value = "50";
+      vertical.value = "50";
+      preview.removeAttribute("src");
+      container.hidden = true;
+    }
+
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      reset();
+      if (!file?.type?.startsWith("image/")) return;
+
+      previewUrl = URL.createObjectURL(file);
+      preview.src = previewUrl;
+      updatePreview();
+      container.hidden = false;
+    });
+
+    return {
+      getCrop: () => ({ x: cropX, y: cropY }),
+      reset,
+    };
+  }
+
+  function bindCharacterCounters(root = document) {
+    root.querySelectorAll("textarea[data-character-counter]").forEach((textarea) => {
+      if (textarea.dataset.characterCounterBound === "true") {
+        textarea.characterCounterUpdate?.();
+        return;
+      }
+
+      const maximum = Number.parseInt(textarea.maxLength, 10);
+      if (!Number.isInteger(maximum) || maximum < 1) return;
+
+      const counter = document.createElement("small");
+      counter.className = "character-counter";
+      counter.setAttribute("aria-live", "polite");
+
+      const updateCounter = () => {
+        counter.textContent = `${textarea.value.length.toLocaleString()} / ${maximum.toLocaleString()} characters`;
+      };
+
+      textarea.insertAdjacentElement("afterend", counter);
+      textarea.addEventListener("input", updateCounter);
+      textarea.dataset.characterCounterBound = "true";
+      textarea.characterCounterUpdate = updateCounter;
+      updateCounter();
+    });
+  }
+
+  function createContentWorkspaceShortcut({
+    contentType,
+    contentId,
+    label = "Open in Content Workspace",
+  } = {}) {
+    if (!contentType || !contentId) return null;
+
+    const shortcut = document.createElement("a");
+    shortcut.className = "content-workspace-shortcut";
+    shortcut.href =
+      "/content-workspace?" +
+      new URLSearchParams({
+        type: contentType,
+        id: String(contentId),
+      });
+    shortcut.dataset.contentWorkspaceShortcut = contentType;
+    shortcut.setAttribute("aria-label", label);
+    shortcut.title = label;
+    shortcut.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+      '<path d="M5 4.75h14v14.5H5z"></path>' +
+      '<path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"></path>' +
+      "</svg>";
+
+    return shortcut;
+  }
+
   window.CMCENUtils = {
     activateTabs,
     apiFetch,
@@ -1233,10 +1776,15 @@
     arrayBufferToBase64url,
     authHeaders,
     base64urlToArrayBuffer,
+    bindCharacterCounters,
+    bindMediaSkeletons,
     bindTabs,
     clearAuthToken,
     clearMfaSession,
+    createContentWorkspaceShortcut,
+    createImageCropController,
     createLoadingSpinner,
+    createSkeleton,
     ensureWebAuthnAvailable,
     formatDate,
     formatTitleCaseValue,
@@ -1245,6 +1793,7 @@
     getCurrentLocale,
     getLocalizedText,
     getRetireeNameParts,
+    hasSessionCookieConsent,
     getStoredAuthToken,
     getUserDisplayName,
     normalizeToken,
@@ -1252,10 +1801,12 @@
     preparePublicKeyRequestOptions,
     prepareImageUploadFile,
     redirectToLogin,
+    requestSessionCookieConsent,
     refreshAuthToken,
     requireAuthToken,
     serializeAssertionCredential,
     serializeAttestationCredential,
+    setLinkifiedText,
     showToast,
     signOut,
     setStatusLoading,
@@ -1265,7 +1816,17 @@
     toLocalDateTimeInput,
     toLocalTimeInput,
     trackPageVisit,
+    translateText,
   };
 
   window.addEventListener("load", trackPageVisit, { once: true });
+  initializePlausibleAnalytics();
+  bindCharacterCounters();
+  bindMediaSkeletons();
+
+  new MutationObserver((records) => {
+    records.forEach((record) => {
+      record.addedNodes.forEach((node) => bindMediaSkeletons(node));
+    });
+  }).observe(document.documentElement, { childList: true, subtree: true });
 })();

@@ -31,6 +31,15 @@ function getRetirementCommentTitle(comment) {
   return name ? `Retirement comment for ${name}` : 'Retirement comment';
 }
 
+function getLastPostMessageTitle(message) {
+  const deceased = message.deceased || {};
+  const name = [deceased.fullRank, deceased.firstName, deceased.surname]
+    .filter(Boolean)
+    .join(' ');
+
+  return name ? `Last Post notice for ${name}` : 'Last Post notice';
+}
+
 function getRetirementMessageSnapshot(message) {
   return {
     title: getRetirementMessageTitle(message),
@@ -38,6 +47,16 @@ function getRetirementMessageSnapshot(message) {
     createdBy: message.createdBy,
     publishedBy: message.publishedBy,
     retiree: message.retiree,
+  };
+}
+
+function getLastPostMessageSnapshot(message) {
+  return {
+    title: message.title || getLastPostMessageTitle(message),
+    status: message.status,
+    createdBy: message.createdBy,
+    publishedBy: message.publishedBy,
+    deceased: message.deceased,
   };
 }
 
@@ -62,9 +81,27 @@ function getRetirementCommentSnapshot(comment, options = {}) {
   return snapshot;
 }
 
+function getCertificateRequestSnapshot(certificateRequest) {
+  const member = certificateRequest.member || {};
+  const fullName = String(member.fullName || '').trim();
+
+  return {
+    title: fullName
+      ? `${certificateRequest.certificateType} certificate request for ${fullName}`
+      : 'Certificate request',
+    certificateType: certificateRequest.certificateType,
+    status: certificateRequest.status,
+    source: certificateRequest.source,
+    createdBy: certificateRequest.createdBy,
+  };
+}
+
 module.exports = {
+  getCertificateRequestSnapshot,
   getEventSnapshot,
   getEventTitle,
+  getLastPostMessageSnapshot,
+  getLastPostMessageTitle,
   getRetirementCommentSnapshot,
   getRetirementCommentTitle,
   getRetirementMessageSnapshot,

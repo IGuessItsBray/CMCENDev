@@ -7,6 +7,8 @@ info:
     Schemas are intentionally broad where handlers return Mongoose documents.
     Every /api endpoint is rate limited by source IP and may return 429 with
     Retry-After and RateLimit-* headers. Sensitive endpoints have stricter limits.
+    Every response includes X-Request-ID for support correlation. Server failures
+    are logged and audited without retaining request bodies or query strings.
 servers:
   - url: http://localhost:3000
     description: Local development (Eric)
@@ -19,22 +21,158 @@ servers:
 security:
   - bearerAuth: []
 tags:
+  - name: Site
   - name: System
   - name: Auth
   - name: MFA
   - name: Analytics
   - name: Audit Log
   - name: Admin
-  - name: Site Config
   - name: Uploads
   - name: Banners
   - name: Translations
   - name: Search
   - name: Pages
   - name: Events
+  - name: News
   - name: Last Posts
   - name: Retirements
+  - name: Certificates
+  - name: Contact
 paths:
+  /api/contact:
+    post:
+      tags: [Contact]
+      summary: Send a member contact message.
+      description: >-
+        Sends the message to MAIL_TO_BRANCH. The server derives the member's
+        account name, email, phone, rank, unit, company, and address from the
+        authenticated account, then uses the member email as the reply-to address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, message]
+              properties:
+                subject:
+                  type: string
+                  maxLength: 160
+                message:
+                  type: string
+                  maxLength: 10000
+      responses:
+        "202":
+          description: Contact message accepted for delivery.
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+  /api/certificate-requests:
+    get:
+      tags: [Certificates]
+      summary: List certificate requests for fulfillment.
+      description: Returns requests that still need printing or mailing by default. Supply a status or `status=all` to include completed requests.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, ready_to_mail, mailed, printed, actionable, all]
+      responses:
+        "200":
+          description: Certificate request worklist.
+  /api/certificate-requests/count:
+    get:
+      tags: [Certificates]
+      summary: Count actionable certificate requests.
+      x-permission: canManageCertificateRequests
+      responses:
+        "200":
+          description: Returns `pending`, `readyToMail`, and total `actionable` counts.
+  /api/certificate-requests/{certificateRequestId}/status:
+    patch:
+      tags: [Certificates]
+      summary: Advance certificate fulfillment.
+      description: Confirm every requested certificate is printed to move from `pending` to `ready_to_mail`, then confirm mailing to move to `mailed`. The actor and timestamp are recorded in the audit log.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - $ref: "#/components/parameters/CertificateRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [ready_to_mail, mailed]
+                printedCertificateKeys:
+                  type: array
+                  description: Required for the `ready_to_mail` transition. Must contain `member` and every requested `family:{index}` key.
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Certificate request fulfillment status updated.
+  /robots.txt:
+    get:
+      tags: [Site]
+      summary: Get crawler directives.
+      security: []
+      responses:
+        "200":
+          description: Robots.txt content with the absolute XML sitemap location.
+          content:
+            text/plain:
+              schema:
+                type: string
+  /sitemap.xml:
+    get:
+      tags: [Site]
+      summary: Get the crawler XML sitemap.
+      security: []
+      responses:
+        "200":
+          description: Public static pages and published public custom pages.
+          content:
+            application/xml:
+              schema:
+                type: string
+  /site.webmanifest:
+    get:
+      tags: [Site]
+      summary: Get web application metadata.
+      security: []
+      responses:
+        "200":
+          description: Web application manifest.
+          content:
+            application/manifest+json:
+              schema:
+                type: object
+  /llms.txt:
+    get:
+      tags: [Site]
+      summary: Get the AI access-policy notice.
+      security: []
+      responses:
+        "200":
+          description: Plain-text notice that does not grant AI systems permission to use site content.
+          content:
+            text/plain:
+              schema:
+                type: string
   /api/version:
     get:
       tags: [System]
@@ -47,6 +185,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VersionResponse"
+  /changelog.md:
+    get:
+      tags: [Site]
+      summary: Get the project changelog.
+      description: Serves the repository CHANGELOG.md used by the developer page.
+      security: []
+      responses:
+        "200":
+          description: Changelog in Markdown format.
+          content:
+            text/markdown:
+              schema:
+                type: string
+  /api/client-config/plausible:
+    get:
+      tags: [System]
+      summary: Get public Plausible tracker configuration.
+      description: "Returns `{ enabled: false }` unless both self-hosted Plausible environment settings are configured."
+      security: []
+      responses:
+        "200":
+          description: Public Plausible tracker configuration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlausibleConfig"
   /api/data:
     get:
       tags: [System]
@@ -85,6 +249,19 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
+  /api/branding:
+    get:
+      tags: [Site]
+      summary: Get the CMCEN branding catalogue.
+      description: Returns supported fonts, official light and dark colour tokens, and theming metadata. This is the data source for the unlinked `/branding` reference page.
+      security: []
+      responses:
+        "200":
+          description: Branding catalogue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandingResponse"
   /translations.json:
     get:
       tags: [Translations]
@@ -139,7 +316,7 @@ paths:
   /api/ghost/confirm:
     post:
       tags: [Auth]
-      summary: Confirm ghost-account claim.
+      summary: Confirm ghost-account claim and issue a session only after cookie consent.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
@@ -149,7 +326,7 @@ paths:
   /api/register:
     post:
       tags: [Auth]
-      summary: Register a user account.
+      summary: Register a user account; invitation activation issues a session only after cookie consent and records a token-free audit event for each activation attempt.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/AuthRegister"
@@ -176,7 +353,7 @@ paths:
   /api/login:
     post:
       tags: [Auth]
-      summary: Login with username and password.
+      summary: Login with username and password after confirming the required session cookie; rejected credentials are audited without retaining the password.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/Login"
@@ -204,7 +381,7 @@ paths:
   /api/email-verification/confirm:
     post:
       tags: [Auth]
-      summary: Confirm email verification token.
+      summary: Confirm email verification token and issue a session only after cookie consent.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
@@ -241,14 +418,105 @@ paths:
       summary: Get current user.
       responses:
         "200":
-          description: Current user, permissions, and notifications.
+          description: Current user, permissions, and lightweight notification counts for the header badge. Full notification entries are available from GET /api/notifications.
   /api/notifications:
     get:
       tags: [Auth]
-      summary: Get user notifications.
+      summary: Get current rejections and unread externally reviewed approvals.
       responses:
         "200":
-          description: Notification summary.
+          description: Notification summary with current action items, unread approval items, direct destinations, and read-through snapshot. Rejected events, retirement messages, and Last Post notices target their original submit form in edit mode.
+  /api/notifications/read:
+    post:
+      tags: [Auth]
+      summary: Mark informational approval notifications as read through a snapshot time.
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Saved notification read time.
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/subscriptions/weekly-brief:
+    put:
+      tags: [Auth]
+      summary: Set the current user's weekly email brief subscription.
+      description: "Express opt-in requires `subscribed: true` and `expressConsent: true`. Withdrawal is immediate and is recorded in the audit log."
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated current user profile and subscription state.
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/subscriptions/weekly-brief/unsubscribe:
+    get:
+      tags: [Auth]
+      security: []
+      summary: Unsubscribe a recipient using an opaque email token.
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: HTML confirmation that the weekly brief has been unsubscribed.
+        "404":
+          description: The token is invalid or expired.
+    post:
+      tags: [Auth]
+      security: []
+      summary: Process an RFC 8058 one-click unsubscribe request.
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: HTML confirmation that the weekly brief has been unsubscribed.
+        "404":
+          description: The token is invalid or expired.
+  /api/subscriptions/news-announcements:
+    put:
+      tags: [Auth]
+      summary: Set the current user's news-announcement subscription.
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated profile and subscription state.
+  /api/admin/subscriptions:
+    get:
+      tags: [Admin]
+      summary: List email subscribers and sent newsletter history.
+      x-permission: canManageSubscriptions
+      responses:
+        "200":
+          description: Subscriber list and newsletter history.
+  /api/admin/subscriptions/export.csv:
+    get:
+      tags: [Admin]
+      summary: Export subscribed users to CSV.
+      x-permission: canManageSubscriptions
+      responses:
+        "200":
+          description: Subscription CSV export.
+  /api/admin/subscriptions/news-blasts:
+    post:
+      tags: [Admin]
+      summary: Send an announcement to express news-announcement subscribers.
+      x-permission: canManageSubscriptions
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "201":
+          description: News blast delivery result.
+        "202":
+          description: News blast delivery skipped because global email sending is disabled.
   /api/ghost/upgrade:
     post:
       tags: [Auth]
@@ -323,7 +591,7 @@ paths:
   /api/mfa/webauthn/authenticate/verify:
     post:
       tags: [MFA]
-      summary: Verify WebAuthn authentication.
+      summary: Verify WebAuthn authentication and audit rejected verification attempts without retaining credential material.
       parameters:
         - $ref: "#/components/parameters/TempTokenQuery"
       requestBody:
@@ -357,7 +625,7 @@ paths:
   /api/mfa/totp/verify:
     post:
       tags: [MFA]
-      summary: Verify TOTP code.
+      summary: Verify TOTP code and audit rejected verification attempts without retaining the code.
       parameters:
         - $ref: "#/components/parameters/TempTokenQuery"
       requestBody:
@@ -423,6 +691,14 @@ paths:
       responses:
         "200":
           description: Analytics summary.
+  /api/analytics/embed:
+    get:
+      tags: [Analytics]
+      summary: Get the administrator Plausible dashboard embed configuration.
+      x-permission: canViewAnalytics
+      responses:
+        "200":
+          description: Whether the Plausible dashboard embed is configured, plus its URLs when enabled.
   /api/analytics/visit:
     post:
       tags: [Analytics]
@@ -553,7 +829,17 @@ paths:
           in: query
           schema:
             type: string
-            enum: [all, retirement, last-post, event, page, upload, migration, unattached]
+            enum:
+              [
+                all,
+                retirement,
+                last-post,
+                event,
+                page,
+                upload,
+                migration,
+                unattached,
+              ]
         - name: search
           in: query
           description: Case-insensitive match against filename, image name, key, CDN slug, or upload label.
@@ -588,10 +874,42 @@ paths:
     post:
       tags: [Admin]
       summary: Provision an invited user account.
-      description: Creates an invited account and emails a seven-day activation link. The recipient sets their own password and completes their profile. Developer accounts cannot be provisioned through this endpoint.
+      description: Creates an invited account and emails a seven-day activation link. The recipient sets their own password and completes their profile. An optional `message` replaces the standard account-creation message in the email and is retained for a resend. Developer accounts cannot be provisioned through this endpoint, and only a developer may choose the `internal_beta` role.
       x-permission: canProvisionUsers
       requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, email, role]
+              properties:
+                firstName:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                lastName:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                email:
+                  type: string
+                  format: email
+                message:
+                  type: string
+                  maxLength: 2000
+                  description: Optional plain-text message that replaces the standard account-creation message in the invitation email.
+                role:
+                  type: string
+                  enum:
+                    [
+                      subscriber,
+                      internal_beta,
+                      contributor,
+                      author,
+                      editor,
+                      administrator,
+                    ]
       responses:
         "201":
           description: Invitation sent.
@@ -602,7 +920,7 @@ paths:
     get:
       tags: [Admin]
       summary: List users.
-      description: Returns lightweight user rows for the admin user manager. Use the user detail endpoint to load post summaries and editable detail for a selected user.
+      description: Returns lightweight user rows for the admin user manager, excluding legacy `@cmcen.local` attribution accounts. Use the user detail endpoint to load post summaries and editable detail for a selected user.
       x-permission: canReadUsers
       parameters:
         - name: query
@@ -617,6 +935,27 @@ paths:
       responses:
         "200":
           description: Users.
+  /api/admin/users/export:
+    get:
+      tags: [Admin]
+      summary: Export users.
+      description: Exports user records as CSV or PDF, excluding legacy `@cmcen.local` attribution accounts.
+      x-permission: canReadUsers
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv, pdf]
+        - name: includeRoles
+          in: query
+          schema: { type: string }
+        - name: includeAccountTypes
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: User export.
   /api/admin/users/{userId}:
     delete:
       tags: [Admin]
@@ -655,14 +994,34 @@ paths:
     patch:
       tags: [Admin]
       summary: Update built-in role.
+      description: Assigns a built-in role. `internal_beta` has the same site permissions as a subscriber and identifies members approved for internal beta software; only a developer may assign or remove it.
       x-permission: canManageUsers
       parameters:
         - $ref: "#/components/parameters/UserId"
       requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
+        $ref: "#/components/requestBodies/BuiltInRole"
       responses:
         "200":
           description: Updated role.
+  /api/admin/users/{userId}/invitation/resend:
+    post:
+      tags: [Admin]
+      summary: Resend an invited user's activation email.
+      description: Rotates the activation token, extends the invitation by seven days, and retries email delivery. Resending an `internal_beta` invitation requires a developer.
+      x-permission: canProvisionUsers
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Invitation resent.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
   /api/admin/users/{userId}/developer:
     patch:
       tags: [Admin]
@@ -677,10 +1036,32 @@ paths:
         "200":
           description: Promotion result.
   /api/admin/last-posts/{lastPostId}:
+    patch:
+      tags: [Admin, LastPost]
+      summary: Partially edit a Last Post notice.
+      description: Requires canReviewAndPublish. Supports an internal title and slug, deceased metadata, bilingual messages, and image URLs without returning the notice to review. Changes are audited and legacy deceased fields may be blank.
+      x-permission: canReviewAndPublish
+      parameters:
+        - name: lastPostId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Last Post notice updated.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Admin, LastPost]
       summary: Delete a Last Post notice.
-      description: Allowed for administrators/developers or the original submitter with own-content deletion permission.
+      description: Allowed for administrators/developers or the original submitter with own-content deletion permission. Administrator deletion removes an attached image and its generated variants when no other content still references that asset.
+      x-permission: canDeleteContent
       parameters:
         - name: lastPostId
           in: path
@@ -691,27 +1072,251 @@ paths:
           description: Last Post notice deleted.
         "403":
           $ref: "#/components/responses/Error"
+  /api/admin/last-posts/{lastPostId}/hide:
+    patch:
+      tags: [Admin, LastPost]
+      summary: Remove a Last Post notice from public view.
+      description: Allowed for content editors or the original submitter with own-content deletion permission. Pending notices cannot be removed because they are not public; they must be published, rejected, or deleted. The notice and attached media are retained for restoration; an optional reason is recorded in the audit log.
+      x-permission: canHideContent
+      parameters:
+        - name: lastPostId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Last Post notice removed from public view.
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/admin/content/{contentType}/{contentId}/revisions:
+    get:
+      tags: [Admin, Content]
+      summary: List staff-authored content revisions.
+      description: Returns up to 100 public-field revisions for an event, retirement message, Last Post notice, or retirement comment. Submitter contact details are excluded.
+      x-permission: canReviewAndPublish
+      parameters:
+        - name: contentType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [event, retirementMessage, lastPost, retirementComment]
+        - name: contentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Content revisions.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/admin/events/{eventId}:
+    patch:
+      tags: [Admin, Events]
+      summary: Partially edit an event.
+      description: Requires canReviewAndPublish. Supports bilingual copy, event metadata, image path, and dates without changing publication state. Changes are audited.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Event updated.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Admin, Events]
       summary: Delete any event.
+      description: Administrator deletion removes an attached image and its generated variants when no other content still references that asset.
       x-permission: canDeleteContent
       parameters:
         - $ref: "#/components/parameters/EventId"
       responses:
         "200":
           description: Delete result.
+  /api/admin/content:
+    get:
+      tags: [Admin, Content]
+      summary: List content in the staff editorial workspace.
+      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, or narrowed to one record with `id`; when type is `all`, the record is resolved across all content types. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable.
+      x-permission: canReviewAndPublish
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, event, retirementMessage, lastPost, retirementComment]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, draft, pending, published, rejected, hidden]
+        - name: translation
+          in: query
+          description: Filter for public copy with a missing English or French equivalent. Retirement comments have no bilingual public copy and are excluded when this filter is used.
+          schema:
+            type: string
+            enum: [all, missing-any, missing-en, missing-fr]
+        - name: search
+          in: query
+          description: Case-insensitive match against searchable titles, names, identifiers, and public text.
+          schema:
+            type: string
+            maxLength: 120
+        - name: id
+          in: query
+          description: MongoDB ObjectId for a single record. May be used with a specific type or with `type=all`.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Editorial workspace content.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/admin/last-posts/{lastPostId}/restore:
+    patch:
+      tags: [Admin, LastPost]
+      summary: Restore a removed Last Post notice.
+      x-permission: canRestoreContent
+      parameters:
+        - name: lastPostId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Restored Last Post notice.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/admin/events/{eventId}/hide:
+    patch:
+      tags: [Admin, Events]
+      summary: Remove an event from public view.
+      description: Allowed for content editors or the original submitter with own-content deletion permission. Pending events cannot be removed because they are not public; they must be published, rejected, or deleted. The event and attached media are retained for restoration; an optional reason is recorded in the audit log.
+      x-permission: canHideContent
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Event removed from public view.
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/admin/events/{eventId}/restore:
+    patch:
+      tags: [Admin, Events]
+      summary: Restore a removed event.
+      x-permission: canRestoreContent
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "200":
+          description: Restored event.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/admin/retirement-messages/{messageId}:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Partially edit a retirement message.
+      description: Requires canReviewAndPublish. Supports retiree metadata, bilingual messages, and photo URLs without resubmission. Legacy rank, name, and role fields may be blank. Changes are audited.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Retirement message updated.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Admin, Retirements]
       summary: Delete any retirement message.
+      description: Administrator deletion removes an attached image and its generated variants when no other content still references that asset.
       x-permission: canDeleteContent
       parameters:
         - $ref: "#/components/parameters/MessageId"
       responses:
         "200":
           description: Delete result.
+  /api/admin/retirement-messages/{messageId}/hide:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Remove a retirement message from public view.
+      description: Allowed for content editors or the original submitter with own-content deletion permission. Pending messages cannot be removed because they are not public; they must be published, rejected, or deleted. The message, comments, and attached media are retained for restoration; an optional reason is recorded in the audit log.
+      x-permission: canHideContent
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Retirement message removed from public view.
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/admin/retirement-messages/{messageId}/restore:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Restore a removed retirement message.
+      x-permission: canRestoreContent
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Restored retirement message.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/admin/retirement-comments/{commentId}:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Edit a retirement comment.
+      description: Requires canReviewAndPublish. Corrects the comment body without changing its lifecycle state. Changes are audited.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Retirement comment updated.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Admin, Retirements]
       summary: Delete any retirement comment.
@@ -721,62 +1326,40 @@ paths:
       responses:
         "200":
           description: Delete result.
-  /api/admin/site-config/access:
-    post:
-      tags: [Site Config]
-      summary: Log site config access request.
-      x-permission: canAccessSiteConfig
-      responses:
-        "200":
-          description: Access recorded.
-  /api/admin/site-config/verify:
-    post:
-      tags: [Site Config]
-      summary: Verify site-config token.
-      x-permission: canAccessSiteConfig
-      requestBody:
-        $ref: "#/components/requestBodies/SiteConfigToken"
-      responses:
-        "200":
-          description: Verification result.
-  /api/admin/site-config:
-    get:
-      tags: [Site Config]
-      summary: Read available site operations.
-      x-permission: canAccessSiteConfig
-      responses:
-        "200":
-          description: Available protected operations.
-  /api/admin/site-config/migrations/{migrationKey}:
-    post:
-      tags: [Site Config]
-      summary: Run a site migration.
-      description: Streams newline-delimited JSON progress events while the migration process runs.
-      x-permission: canManageSiteConfig
+  /api/admin/retirement-comments/{commentId}/hide:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Remove a retirement comment from public view.
+      description: Allowed for content editors or the original author with own-content deletion permission. Pending comments cannot be removed because they are not public; they must be published, rejected, or deleted. The comment is retained for restoration; an optional reason is recorded in the audit log.
+      x-permission: canHideContent
       parameters:
-        - $ref: "#/components/parameters/MigrationKey"
-      requestBody:
-        $ref: "#/components/requestBodies/SiteConfigMigrationRun"
+        - $ref: "#/components/parameters/CommentId"
       responses:
         "200":
-          description: Newline-delimited migration events.
-          content:
-            application/x-ndjson:
-              schema:
-                type: string
-  /api/admin/site-config/analytics:
-    delete:
-      tags: [Site Config, Analytics]
-      summary: Purge analytics history.
-      description: Token-gated protected maintenance action.
-      x-permission: canManageSiteConfig
+          description: Retirement comment removed from public view.
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/admin/retirement-comments/{commentId}/restore:
+    patch:
+      tags: [Admin, Retirements]
+      summary: Restore a removed retirement comment.
+      x-permission: canRestoreContent
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
       responses:
         "200":
-          description: Purge result.
+          description: Restored retirement comment.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/upload:
     post:
       tags: [Uploads]
-      summary: Upload image through server.
+      summary: Upload and sanitize image through server.
+      description: Every stored image is validated and re-encoded as metadata-free WebP before it is written to object storage. Direct-to-storage uploads are not supported. Retirement and Last Post uploads may request a 4:3 display derivative while preserving the original image.
       x-permission: canUploadMedia
       requestBody:
         required: true
@@ -825,6 +1408,22 @@ paths:
                 sourceName:
                   type: string
                   description: Name inferred from the source content, such as retiree, deceased member, or event title.
+                displayAspectRatio:
+                  type: string
+                  enum: ["4:3"]
+                  description: Creates a cropped display derivative for retirement or Last Post uploads.
+                displayCropX:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  default: 0.5
+                  description: Horizontal focal position in the requested display derivative.
+                displayCropY:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  default: 0.5
+                  description: Vertical focal position in the requested display derivative.
                 cdnSlug:
                   type: string
                   pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
@@ -836,13 +1435,12 @@ paths:
   /api/upload-url:
     post:
       tags: [Uploads]
-      summary: Create signed direct-upload URL.
+      summary: Retired direct-upload endpoint.
+      description: Always returns 410 because direct-to-storage uploads bypass mandatory metadata removal. Use POST /api/upload instead.
       x-permission: canUploadMedia
-      requestBody:
-        $ref: "#/components/requestBodies/UploadUrl"
       responses:
-        "201":
-          description: Signed upload URL.
+        "410":
+          description: Direct uploads are permanently disabled.
   /api/image/{key}:
     get:
       tags: [Uploads]
@@ -909,7 +1507,7 @@ paths:
   /api/search:
     get:
       tags: [Search]
-      summary: Search public content.
+      summary: Search published news stories and non-Home public content with singular/plural-aware title ranking.
       security: []
       parameters:
         - name: q
@@ -936,7 +1534,14 @@ paths:
                       properties:
                         type:
                           type: string
-                          enum: [event, retirement-message, last-post-message, page]
+                          enum:
+                            [
+                              event,
+                              retirement-message,
+                              last-post-message,
+                              news-story,
+                              page,
+                            ]
                         sourceId:
                           type: string
                         title:
@@ -1072,6 +1677,8 @@ paths:
       responses:
         "201":
           description: Created navigation item.
+        "409":
+          $ref: "#/components/responses/Error"
   /api/admin/navigation-items/{itemId}:
     patch:
       tags: [Pages]
@@ -1084,6 +1691,8 @@ paths:
       responses:
         "200":
           description: Updated navigation item.
+        "409":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Pages]
       summary: Delete navigation item.
@@ -1119,6 +1728,43 @@ paths:
             type: string
             format: date
             pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: eventType
+          in: query
+          required: false
+          description: Only return events with this event type.
+          schema:
+            type: string
+            enum: [conference, mess-function, ceremony, training, social, other]
+        - name: organizingEntity
+          in: query
+          required: false
+          description: Only return events organized by this entity.
+          schema:
+            type: string
+            enum: [branch, association, foundation, museum]
+        - name: provinceRegion
+          in: query
+          required: false
+          description: Only return events in this province or region.
+          schema:
+            type: string
+            enum:
+              [
+                AB,
+                BC,
+                MB,
+                NB,
+                NL,
+                NS,
+                NT,
+                NU,
+                ON,
+                PE,
+                QC,
+                SK,
+                YT,
+                International,
+              ]
       responses:
         "200":
           description: >
@@ -1129,7 +1775,7 @@ paths:
     post:
       tags: [Events]
       summary: Submit event.
-      description: Submitter details are copied from the authenticated user's profile.
+      description: Submitter details are copied from the authenticated user's profile. Descriptions and registration instructions are limited to 10,000 characters per language.
       x-permission: canCreateDrafts
       requestBody:
         $ref: "#/components/requestBodies/Event"
@@ -1147,7 +1793,9 @@ paths:
   /api/events/mine:
     get:
       tags: [Events]
-      summary: List current user's events.
+      summary: List current user's non-hidden events.
+      description: Hidden events are not exposed to the original submitter.
+      x-permission: canCreateDrafts
       responses:
         "200":
           description: User events.
@@ -1164,7 +1812,7 @@ paths:
     patch:
       tags: [Events]
       summary: Update event.
-      description: Updates event content while preserving the original submitter record.
+      description: Updates event content while preserving the original submitter record. Owners may update draft, pending, or rejected events only; published events require site staff, and hidden events return not found to a non-reviewer owner. Descriptions and registration instructions are limited to 10,000 characters per language.
       parameters:
         - $ref: "#/components/parameters/Id"
       requestBody:
@@ -1172,15 +1820,41 @@ paths:
       responses:
         "200":
           description: Updated event.
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/events/{id}/edit:
     get:
       tags: [Events]
       summary: Get event edit payload.
+      description: Hidden events return not found to a non-reviewer owner; reviewers retain access for moderation and restoration.
       parameters:
         - $ref: "#/components/parameters/Id"
       responses:
         "200":
           description: Event edit payload.
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/events/{eventId}/review-content:
+    patch:
+      tags: [Events]
+      summary: Update one language of event content.
+      description: Reviewers may update title, location, description, and registration text for one language on a pending, published, or removed (hidden) event. Editing a removed event preserves its hidden status until it is explicitly restored. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected event; updating a rejected event sends it back to the review queue. A public-field revision and audit entry retain the before/after values.
+      x-permission: canReviewAndPublish or owner of a pending or rejected event
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        $ref: "#/components/requestBodies/EventReviewContent"
+      responses:
+        "200":
+          description: Updated event review content.
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/events/{eventId}/review:
     patch:
       tags: [Events]
@@ -1193,6 +1867,93 @@ paths:
       responses:
         "200":
           description: Review result.
+  /api/news:
+    get:
+      tags: [News]
+      summary: List published bilingual news stories.
+      security: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 48
+      responses:
+        "200":
+          description: Published news stories.
+    post:
+      tags: [News]
+      summary: Create a bilingual news story.
+      x-permission: canManageNews
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsArticleInput"
+      responses:
+        "201":
+          description: Created news story.
+  /api/news/feed:
+    get:
+      tags: [News]
+      summary: List newest published news stories, Last Post notices, and featured public custom pages together.
+      security: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 24
+      responses:
+        "200":
+          description: Combined public news feed.
+  /api/news/manage:
+    get:
+      tags: [News]
+      summary: List all news stories, including drafts, for editorial management.
+      x-permission: canManageNews
+      responses:
+        "200":
+          description: Managed news stories.
+  /api/news/{articleId}:
+    get:
+      tags: [News]
+      summary: Get one published bilingual news story for its full article page.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: Published news story.
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [News]
+      summary: Update a bilingual news story or its publication state.
+      x-permission: canManageNews
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsArticleInput"
+      responses:
+        "200":
+          description: Updated news story.
+    delete:
+      tags: [News]
+      summary: Delete a news story.
+      x-permission: canManageNews
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: Deleted news story.
   /api/last-posts:
     get:
       tags: [Last Posts]
@@ -1204,9 +1965,10 @@ paths:
     post:
       tags: [Last Posts]
       summary: Submit a Last Post notice.
+      description: Chain-of-command consent is required. The notice enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canReviewAndPublish`. Notice text is limited to 10,000 characters.
       x-permission: canCreateDrafts
       requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
+        $ref: "#/components/requestBodies/LastPostSubmission"
       responses:
         "201":
           description: Created Last Post notice.
@@ -1218,6 +1980,14 @@ paths:
       responses:
         "200":
           description: Last Post review queue.
+  /api/last-posts/mine:
+    get:
+      tags: [Last Posts]
+      summary: List current user's non-hidden Last Post notices.
+      x-permission: canCreateDrafts
+      responses:
+        "200":
+          description: User Last Post notices.
   /api/last-posts/{messageId}:
     get:
       tags: [Last Posts]
@@ -1228,6 +1998,56 @@ paths:
       responses:
         "200":
           description: Last Post notice.
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Last Posts]
+      summary: Update a Last Post notice.
+      description: Owners may update pending or rejected notices only; published notices require site staff, and hidden notices return not found to a non-reviewer owner. The update may include deceased-member details, image, internal title, and slug. Saving a rejected notice clears its rejection result and submits the revised notice for review.
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/LastPostSubmission"
+      responses:
+        "200":
+          description: Updated Last Post notice.
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/last-posts/{messageId}/edit:
+    get:
+      tags: [Last Posts]
+      summary: Get a Last Post notice for editing.
+      description: The original submitter may retrieve a non-hidden notice; reviewers may retrieve any notice for moderation.
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Last Post edit payload.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/last-posts/{messageId}/review-content:
+    patch:
+      tags: [Last Posts]
+      summary: Update one language of a Last Post notice.
+      description: Reviewers may update one translation on a pending, published, or removed (hidden) Last Post notice. Editing a removed notice preserves its hidden status until it is explicitly restored. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected notice; updating a rejected notice sends it back to the review queue. A public-field revision and audit entry retain the before/after values.
+      x-permission: canReviewAndPublish or owner of a pending or rejected notice
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/LastPostReviewContent"
+      responses:
+        "200":
+          description: Updated Last Post review content.
+        "400":
+          $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
   /api/last-posts/{messageId}/review:
@@ -1246,7 +2066,7 @@ paths:
     post:
       tags: [Retirements]
       summary: Submit retirement message.
-      description: Submitter name, email, and unit are copied from the authenticated profile; the request supplies only `submitter.relationship`. When `MAIL_TO_BRANCH` is configured, the server emails the normalized submission and canonical public photo URL to the internal branch mailbox for Power Automate processing. The submission enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canBypassReviewStages`.
+      description: Submitter name, email, and unit are copied from the authenticated profile; the request supplies only `submitter.relationship`. An optional complete `certificateRequest` also creates a separate pending certificate-request record associated with the retirement message. When `MAIL_TO_BRANCH` is configured, the server emails the normalized submission and canonical public photo URL to the internal branch mailbox for Power Automate processing. The submission enters the review queue by default. Set `publishNow` to `true` only when the authenticated user has `canBypassReviewStages`.
       x-permission: canSubmitRetirementMessages
       requestBody:
         $ref: "#/components/requestBodies/RetirementMessage"
@@ -1268,6 +2088,14 @@ paths:
       responses:
         "200":
           description: Review messages.
+  /api/retirement-messages/mine:
+    get:
+      tags: [Retirements]
+      summary: List current user's non-hidden retirement messages.
+      x-permission: canSubmitRetirementMessages
+      responses:
+        "200":
+          description: User retirement messages.
   /api/retirement-messages/comments/review:
     get:
       tags: [Retirements]
@@ -1330,7 +2158,7 @@ paths:
     patch:
       tags: [Retirements]
       summary: Update retirement message.
-      description: Updates retirement content while preserving the original submitter contact record; missing legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`.
+      description: Updates retirement content while preserving the original submitter contact record and any existing text in the other language; missing legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`. An optional complete `certificateRequest` creates a separate pending certificate-request record associated with the retirement message.
       parameters:
         - $ref: "#/components/parameters/MessageId"
       requestBody:
@@ -1358,6 +2186,25 @@ paths:
       responses:
         "201":
           description: Created comment.
+  /api/retirement-messages/{messageId}/review-content:
+    patch:
+      tags: [Retirements]
+      summary: Update one language of a retirement message.
+      description: Reviewers may update one translation on a pending, published, or removed (hidden) retirement message. Editing a removed message preserves its hidden status until it is explicitly restored. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected message; updating a rejected message sends it back to the review queue. A public-field revision and audit entry retain the before/after values. Each saved message must contain at least 100 characters.
+      x-permission: canReviewAndPublish or owner of a pending or rejected message
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      requestBody:
+        $ref: "#/components/requestBodies/RetirementReviewContent"
+      responses:
+        "200":
+          description: Updated retirement review content.
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/retirement-messages/{messageId}/review:
     patch:
       tags: [Retirements]
@@ -1382,6 +2229,11 @@ components:
       in: path
       required: true
       schema: { type: string }
+    ArticleId:
+      name: articleId
+      in: path
+      required: true
+      schema: { type: string }
     EventId:
       name: eventId
       in: path
@@ -1394,6 +2246,11 @@ components:
       schema: { type: string }
     CommentId:
       name: commentId
+      in: path
+      required: true
+      schema: { type: string }
+    CertificateRequestId:
+      name: certificateRequestId
       in: path
       required: true
       schema: { type: string }
@@ -1442,13 +2299,6 @@ components:
       in: path
       required: true
       schema: { type: string }
-    MigrationKey:
-      name: migrationKey
-      in: path
-      required: true
-      schema:
-        type: string
-        enum: [retirement, comments, lastPost]
     TempTokenQuery:
       name: tempToken
       in: query
@@ -1472,6 +2322,9 @@ components:
             properties:
               username: { type: string }
               password: { type: string, format: password }
+              sessionCookieConsent:
+                type: boolean
+                description: Must be true before the API issues the secure refresh-session cookie.
     AuthRegister:
       required: true
       content:
@@ -1479,6 +2332,10 @@ components:
           schema:
             type: object
             additionalProperties: true
+            properties:
+              sessionCookieConsent:
+                type: boolean
+                description: Required when activating an invitation that immediately creates a secure session.
     TotpVerify:
       required: true
       content:
@@ -1502,31 +2359,6 @@ components:
               referrer: { type: string }
               locale: { type: string, example: en-CA }
               timeZone: { type: string, example: America/Toronto }
-    SiteConfigToken:
-      required: false
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              configToken: { type: string }
-    SiteConfigMigrationRun:
-      required: false
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              mode:
-                type: string
-                enum: [dry-run, apply]
-                default: dry-run
-              limit:
-                type: integer
-                minimum: 1
-                maximum: 1000
-                nullable: true
-                description: Optional maximum number of migration source records to process. Omit or send null to process all records.
     UploadUrl:
       required: true
       content:
@@ -1570,12 +2402,22 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/RoleInput"
+    BuiltInRole:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BuiltInRoleInput"
     Page:
       required: true
       content:
         application/json:
           schema:
             type: object
+            description: >-
+              Page content. Blocks may include free-grid `layout` coordinates:
+              `column`, `row`, `span` (1–12), and `rowSpan`; divider blocks
+              always use a rowSpan of 1.
             additionalProperties: true
     PageStatus:
       required: true
@@ -1588,12 +2430,19 @@ components:
               status:
                 type: string
                 enum: [draft, published, archived]
+              featureOnHome:
+                type: boolean
+                description: >-
+                  When publishing, administrators, developers, or users with
+                  canFeaturePagesOnHome may set this to true for public pages
+                  to include them in the homepage news feed.
     NavigationItem:
       required: true
       content:
         application/json:
           schema:
             type: object
+            description: A navigation item may reference a draft page; draft-linked items are not returned from the public navigation endpoint until the page is published. For page-linked items without a stored route, public navigation derives the route from the page slug.
             additionalProperties: true
     Event:
       required: true
@@ -1601,19 +2450,78 @@ components:
         application/json:
           schema:
             type: object
+            description: Event descriptions and registration instructions are limited to 10,000 characters per language.
             additionalProperties: true
     RetirementMessage:
       description: >-
-        The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates. The message enters the review queue by default. Set `publishNow: true` only when the authenticated user has `canBypassReviewStages`.
+        The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates. Message text is limited to 10,000 characters. A complete optional `certificateRequest` creates a separate pending certificate-request record. The retirement member's rank and MOSID/role are copied from `retiree`, and every certificate field is required except `member.ceBranchEnrollmentDate`. The message enters the review queue by default. Set `publishNow: true` only when the authenticated user has `canBypassReviewStages`.
       required: true
       content:
         application/json:
           schema:
             type: object
             properties:
+              photoUrl:
+                type: string
+                format: uri
+                description: Full original photo URL for the retirement message.
+              photoDisplayUrl:
+                type: string
+                format: uri
+                description: Optional 4:3 display derivative returned by POST /api/upload for card layouts.
               publishNow:
                 type: boolean
                 description: Publish immediately when the authenticated user has `canBypassReviewStages`.
+              certificateRequest:
+                type: object
+                required: [member, familyMembers, mailingAddress]
+                properties:
+                  member:
+                    type: object
+                    required:
+                      [
+                        fullName,
+                        rankLanguage,
+                        decorations,
+                        lastUnit,
+                        cafEnrollmentDate,
+                        releaseDate,
+                        neededByDate,
+                        dwdParadeRequested,
+                      ]
+                    properties:
+                      fullName: { type: string }
+                      rankLanguage: { type: string, enum: [en, fr] }
+                      decorations:
+                        type: array
+                        minItems: 1
+                        items: { type: string }
+                      lastUnit: { type: string }
+                      cafEnrollmentDate: { type: string, format: date }
+                      releaseDate: { type: string, format: date }
+                      ceBranchEnrollmentDate: { type: string, format: date }
+                      neededByDate: { type: string, format: date }
+                      dwdParadeRequested: { type: boolean }
+                  familyMembers:
+                    type: array
+                    items:
+                      type: object
+                      required: [relationship, fullName]
+                      properties:
+                        relationship: { type: string }
+                        relationshipOther: { type: string }
+                        fullName: { type: string }
+                  mailingAddress:
+                    type: object
+                    required:
+                      [line1, line2, city, province, postalCode, country]
+                    properties:
+                      line1: { type: string }
+                      line2: { type: string }
+                      city: { type: string }
+                      province: { type: string }
+                      postalCode: { type: string }
+                      country: { type: string }
             additionalProperties: true
     ReviewDecision:
       required: true
@@ -1629,6 +2537,112 @@ components:
                 type: string
               reason:
                 type: string
+    EventReviewContent:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [language, content]
+            properties:
+              language:
+                type: string
+                enum: [en, fr]
+              content:
+                type: object
+                required: [title, location, description, registration]
+                properties:
+                  title:
+                    type: string
+                    maxLength: 500
+                  location:
+                    type: string
+                    maxLength: 500
+                  description:
+                    type: string
+                    maxLength: 10000
+                  registration:
+                    type: string
+                    maxLength: 10000
+    RetirementReviewContent:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [language, message]
+            properties:
+              language:
+                type: string
+                enum: [en, fr]
+              message:
+                type: string
+                minLength: 100
+                maxLength: 10000
+    LastPostSubmission:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              [
+                deceased,
+                messageLanguage,
+                message,
+                publicationPermissionConfirmed,
+              ]
+            properties:
+              deceased:
+                type: object
+                required: [fullRank, firstName, surname]
+                properties:
+                  fullRank:
+                    type: string
+                    maxLength: 80
+                  firstName:
+                    type: string
+                    maxLength: 80
+                  surname:
+                    type: string
+                    maxLength: 80
+                  postNominal:
+                    type: string
+                    maxLength: 120
+              messageLanguage:
+                type: string
+                enum: [en, fr]
+              message:
+                type: string
+                minLength: 1
+                maxLength: 10000
+              imageUrl:
+                type: string
+                format: uri
+              imageDisplayUrl:
+                type: string
+                format: uri
+                description: Optional 4:3 display derivative returned by POST /api/upload; imageUrl remains the full original.
+              publicationPermissionConfirmed:
+                type: boolean
+                description: Must be true to confirm chain-of-command consent.
+              publishNow:
+                type: boolean
+                description: Allowed only with canReviewAndPublish.
+    LastPostReviewContent:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [language, message]
+            properties:
+              language:
+                type: string
+                enum: [en, fr]
+              message:
+                type: string
+                maxLength: 10000
     TranslationUpdate:
       required: true
       content:
@@ -1674,17 +2688,98 @@ components:
       properties:
         commit: { type: string }
         shortCommit: { type: string }
+    BrandingResponse:
+      type: object
+      required: [version, fonts, colors, theming]
+      properties:
+        version: { type: string }
+        fonts:
+          type: array
+          items:
+            type: object
+            required: [token, name, family, usage]
+            properties:
+              token: { type: string }
+              name: { type: string }
+              family: { type: string }
+              usage: { type: string }
+        colors:
+          type: object
+          required: [light, dark]
+          properties:
+            light:
+              type: array
+              items:
+                $ref: "#/components/schemas/BrandingColor"
+            dark:
+              type: array
+              items:
+                $ref: "#/components/schemas/BrandingColor"
+        theming:
+          type: object
+          required: [supportedThemes, colorPicker]
+          properties:
+            supportedThemes:
+              type: array
+              items:
+                type: string
+                enum: [light, dark]
+            colorPicker: { type: string }
+    BrandingColor:
+      type: array
+      minItems: 3
+      maxItems: 3
+      prefixItems:
+        - type: string
+          description: CSS custom-property token.
+        - type: string
+          pattern: "^#[0-9a-fA-F]{6}$"
+          description: Hex colour value.
+        - type: string
+          description: Human-readable usage label.
+    PlausibleConfig:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        domain: { type: string }
+        endpoint:
+          type: string
+          format: uri
     LocalizedText:
       type: object
       properties:
         en: { type: string }
         fr: { type: string }
+    NewsArticleInput:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          $ref: "#/components/schemas/LocalizedText"
+          description: English and French titles are both required; each is at most 240 characters.
+        content:
+          $ref: "#/components/schemas/LocalizedText"
+          description: English and French content are both required; each is at most 20,000 characters.
+        imageUrl:
+          type: string
+          format: uri
+          description: Optional uploaded image URL. When omitted, the canonical CMCEN crest is used.
+        imageDisplayUrl:
+          type: string
+          format: uri
+          description: Optional server-generated 16:9 crop used by news cards and the homepage rail.
+        status:
+          type: string
+          enum: [published, draft]
+          default: published
     BannerInput:
       type: object
       properties:
         title: { type: string, maxLength: 120 }
         text:
           $ref: "#/components/schemas/LocalizedText"
+          description: Localized banner text. HTTP and HTTPS URLs in the text render as clickable links.
         color:
           type: string
           pattern: "^#[0-9a-fA-F]{6}$"
@@ -1722,3 +2817,20 @@ components:
         permissions:
           type: array
           items: { type: string }
+    BuiltInRoleInput:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum:
+            [
+              ghost,
+              subscriber,
+              internal_beta,
+              contributor,
+              author,
+              editor,
+              administrator,
+              developer,
+            ]

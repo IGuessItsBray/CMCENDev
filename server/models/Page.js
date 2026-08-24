@@ -47,6 +47,16 @@ const ImageVariantsSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const PageBlockLayoutSchema = new mongoose.Schema(
+  {
+    span: { type: Number, min: 1, max: 12, default: 12 },
+    column: { type: Number, min: 1, max: 12, default: 1 },
+    row: { type: Number, min: 1, default: 1 },
+    rowSpan: { type: Number, min: 1, max: 24, default: 3 },
+  },
+  { _id: false },
+);
+
 const PageBlockSchema = new mongoose.Schema(
   {
     type: {
@@ -112,6 +122,10 @@ const PageBlockSchema = new mongoose.Schema(
       type: String,
       enum: ['standard', 'important'],
       default: 'standard',
+    },
+    layout: {
+      type: PageBlockLayoutSchema,
+      default: () => ({}),
     },
     columns: {
       type: [
@@ -250,6 +264,10 @@ const PageSchema = new mongoose.Schema(
       type: String,
       enum: ['draft', 'published', 'archived'],
       default: 'draft',
+    },
+    featuredOnHome: {
+      type: Boolean,
+      default: false,
     },
     blocks: {
       type: [PageBlockSchema],

@@ -2,6 +2,79 @@
 const themeStorageKey = "theme";
 const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
+function setHeadElement(selector, attributes) {
+  let element = document.head.querySelector(selector);
+
+  if (!element) {
+    element = document.createElement("meta");
+    document.head.append(element);
+  }
+
+  Object.entries(attributes).forEach(([name, value]) => {
+    element.setAttribute(name, value);
+  });
+}
+
+function configureSiteMetadata() {
+  const url = new URL(window.location.href);
+  ["fbclid", "gclid"].forEach((name) => url.searchParams.delete(name));
+  [...url.searchParams.keys()]
+    .filter((name) => name.toLowerCase().startsWith("utm_"))
+    .forEach((name) => url.searchParams.delete(name));
+  url.hash = "";
+
+  let canonical = document.head.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement("link");
+    canonical.rel = "canonical";
+    document.head.append(canonical);
+  }
+  canonical.href = url.href;
+
+  if (!document.head.querySelector('link[rel="manifest"]')) {
+    const manifest = document.createElement("link");
+    manifest.rel = "manifest";
+    manifest.href = "/site.webmanifest";
+    document.head.append(manifest);
+  }
+
+  setHeadElement('meta[name="theme-color"]', {
+    name: "theme-color",
+    content: "#202642",
+  });
+
+  const description =
+    document.head.querySelector('meta[name="description"]')?.content ||
+    document.querySelector("main h1 + p")?.textContent?.trim() ||
+    "Canadian Military Communications and Electronics Network.";
+  setHeadElement('meta[name="description"]', {
+    name: "description",
+    content: description,
+  });
+  setHeadElement('meta[property="og:title"]', {
+    property: "og:title",
+    content: document.title,
+  });
+  setHeadElement('meta[property="og:description"]', {
+    property: "og:description",
+    content: description,
+  });
+  setHeadElement('meta[property="og:type"]', {
+    property: "og:type",
+    content: "website",
+  });
+  setHeadElement('meta[property="og:url"]', {
+    property: "og:url",
+    content: canonical.href,
+  });
+  setHeadElement('meta[property="og:image"]', {
+    property: "og:image",
+    content: `${window.location.origin}/images/logo.png`,
+  });
+}
+
+configureSiteMetadata();
+
 function getPreferredTheme() {
   const savedTheme = localStorage.getItem(themeStorageKey);
 
@@ -16,6 +89,10 @@ function applyTheme(nextTheme, { persist = true } = {}) {
   const isDark = nextTheme === "dark";
 
   document.documentElement.dataset.theme = nextTheme;
+  setHeadElement('meta[name="theme-color"]', {
+    name: "theme-color",
+    content: isDark ? "#080d18" : "#202642",
+  });
 
   const themeToggle = document.getElementById("themeToggle");
 
@@ -87,7 +164,10 @@ const navLinks = {
       { route: "/about_association.html", i18n: "menu_about_option_3" },
       {
         route: "/about_museum_foundation.html",
-        label: { en: "About the C&E Museum & Foundation", fr: "Musée et Fondation des C et E" },
+        label: {
+          en: "About the C&E Museum & Foundation",
+          fr: "Musée et Fondation des C et E",
+        },
       },
     ],
   },
@@ -108,8 +188,8 @@ const navLinks = {
         permission: "canCreateDrafts",
       },
       {
-        route: "/review-submissions",
-        i18n: "menu_review_events",
+        route: "/content-workspace",
+        i18n: "menu_content_workspace",
         permission: "canReviewAndPublish",
       },
       { route: "/news_stories.html", i18n: "menu_news_option_3" },
@@ -118,7 +198,6 @@ const navLinks = {
       { route: "/certificates.html", i18n: "menu_news_option_6" },
       { route: "/promotions.html", i18n: "menu_news_option_7" },
       { route: "/history.html", i18n: "menu_news_option_8" },
-      { route: "/gallery.html", i18n: "menu_news_option_9" },
     ],
   },
   benefits: {
@@ -138,6 +217,10 @@ const standaloneLinks = [
   //{ route: "/contact.html", i18n: "menu_connections", protected: true },
 ];
 let customNavigationItems = [];
+let headerNotificationItems = [];
+let headerNotificationCount = 0;
+let headerNotificationListeners = null;
+const headerNotificationCachePrefix = "cmcen_header_notifications_";
 
 function escapeHtml(value) {
   return String(value || "")
@@ -146,14 +229,6 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-function escapeCssIdentifier(value) {
-  if (window.CSS?.escape) {
-    return window.CSS.escape(value);
-  }
-
-  return String(value || "").replace(/[^a-zA-Z0-9_-]/g, "\\$&");
 }
 
 function getLocalizedNavigationLabel(label) {
@@ -189,9 +264,9 @@ function applyCurrentLanguage() {
 // list of only protected pages
 const protectedPages = new Set([
   "/dashboard",
-  "/notifications",
   "/submit-event",
   "/review-submissions",
+  "/content-workspace",
   "/translations-admin",
   "/pages-admin",
   "/timers-admin",
@@ -242,6 +317,7 @@ function renderDropdown(dropdown, index) {
         data-i18n="${dropdown.titleKey}"
         aria-controls="${menuId}"
         aria-expanded="false"
+        aria-haspopup="true"
       ></button>
 
       <ul
@@ -273,6 +349,25 @@ function loadHeader() {
   const standaloneHtml = standaloneLinks.map(renderStandaloneLink).join("");
 
   const header = document.getElementById("header");
+  const main = document.querySelector("main");
+
+  if (main) {
+    main.id ||= "mainContent";
+    main.tabIndex = -1;
+  }
+
+  if (main && !document.querySelector(".skip-link")) {
+    const skipLink = document.createElement("a");
+    skipLink.className = "skip-link";
+    skipLink.href = `#${main.id}`;
+    skipLink.dataset.i18n = "skip_to_main_content";
+    skipLink.textContent = "Skip to main content";
+    skipLink.addEventListener("click", () => {
+      window.requestAnimationFrame(() => main.focus());
+    });
+    document.body.prepend(skipLink);
+  }
+
   header.className = "site-header";
   header.innerHTML = `
     <div class="header-identity-row">
@@ -301,20 +396,78 @@ function loadHeader() {
         </a>
 
         <div class="header-utilities">
-          <div class="auth-buttons"></div>
+          <div class="header-account-controls">
+            <div class="auth-buttons"></div>
+          </div>
+
+          <div
+            class="header-notifications"
+            id="headerNotifications"
+            hidden
+          >
+              <button
+                type="button"
+                class="notification-toggle"
+                id="notificationToggle"
+                aria-controls="notificationDropdown"
+                aria-expanded="false"
+              >
+                ${getNotificationBellIcon()}
+                <span
+                  class="visually-hidden"
+                  data-i18n="notifications_heading"
+                >
+                  Notifications
+                </span>
+              </button>
+
+              <section
+                class="notification-dropdown"
+                id="notificationDropdown"
+                aria-labelledby="notificationDropdownTitle"
+                hidden
+              >
+                <header class="notification-dropdown-header">
+                  <h2
+                    id="notificationDropdownTitle"
+                    data-i18n="notifications_heading"
+                  >
+                    Notifications
+                  </h2>
+                </header>
+
+                <p
+                  class="notification-dropdown-status"
+                  id="notificationDropdownStatus"
+                  role="status"
+                  aria-live="polite"
+                  hidden
+                ></p>
+
+                <div
+                  class="notification-dropdown-list"
+                  id="notificationDropdownList"
+                ></div>
+              </section>
+          </div>
+
+          <div class="header-signout" id="headerSignOut"></div>
 
           <button
             type="button"
             class="lang-toggle"
             id="langToggle"
             aria-label="Change language"
+            data-i18n-aria-label="change_language"
           >
             FR
           </button>
 
           <a
-            href="/donate.html"
+            href="https://www.zeffy.com/en-CA/donation-form/be-a-monthly-donor-to-make-a-huge-difference-2"
             class="donate-link"
+            target="_blank"
+            rel="noopener"
             data-i18n="donate_now"
           >
             Donate
@@ -395,12 +548,35 @@ function loadHeader() {
   const mobileMenuToggle = document.getElementById("mobileMenuToggle");
   const primaryNavigation = document.getElementById("primaryNavigation");
 
+  let suppressNextDesktopDropdownFocusOpen = false;
+
+  setupHeaderNotifications();
+
   function isMobileNavigation() {
     return window.matchMedia("(max-width: 700px)").matches;
   }
 
   function setMobileDropdownOpen(dropdown, isOpen) {
+    if (isOpen) {
+      primaryNavigation
+        ?.querySelectorAll(".dropdown.is-mobile-dropdown-open")
+        .forEach((openDropdown) => {
+          if (openDropdown !== dropdown) {
+            setMobileDropdownOpen(openDropdown, false);
+          }
+        });
+    }
+
     dropdown.classList.toggle("is-mobile-dropdown-open", isOpen);
+    dropdown
+      .querySelector(".dropdown-toggle")
+      ?.setAttribute("aria-expanded", String(isOpen));
+  }
+
+  function setDesktopDropdownOpen(dropdown, isOpen) {
+    if (isMobileNavigation()) return;
+
+    dropdown.classList.toggle("is-dropdown-open", isOpen);
     dropdown
       .querySelector(".dropdown-toggle")
       ?.setAttribute("aria-expanded", String(isOpen));
@@ -441,6 +617,10 @@ function loadHeader() {
 
     if (isOpen) {
       openCurrentMobileDropdown();
+    } else {
+      primaryNavigation
+        ?.querySelectorAll(".dropdown")
+        .forEach((dropdown) => setMobileDropdownOpen(dropdown, false));
     }
   }
 
@@ -458,18 +638,102 @@ function loadHeader() {
   primaryNavigation?.addEventListener("click", (event) => {
     const dropdownToggle = event.target.closest(".dropdown-toggle");
 
-    if (dropdownToggle && isMobileNavigation()) {
+    if (dropdownToggle) {
       event.preventDefault();
 
       const dropdown = dropdownToggle.closest(".dropdown");
-      const isOpen = dropdown.classList.contains("is-mobile-dropdown-open");
+      const activeClass = isMobileNavigation()
+        ? "is-mobile-dropdown-open"
+        : "is-dropdown-open";
+      const isOpen = dropdown.classList.contains(activeClass);
 
-      setMobileDropdownOpen(dropdown, !isOpen);
+      if (isMobileNavigation()) {
+        setMobileDropdownOpen(dropdown, !isOpen);
+      } else {
+        setDesktopDropdownOpen(dropdown, !isOpen);
+      }
       return;
     }
 
     if (event.target.closest("a")) {
       setMobileMenuOpen(false);
+    }
+  });
+
+  primaryNavigation?.querySelectorAll(".dropdown").forEach((dropdown) => {
+    const toggle = dropdown.querySelector(".dropdown-toggle");
+
+    dropdown.addEventListener("mouseenter", () => {
+      setDesktopDropdownOpen(dropdown, true);
+    });
+
+    dropdown.addEventListener("mouseleave", () => {
+      if (!dropdown.contains(document.activeElement)) {
+        setDesktopDropdownOpen(dropdown, false);
+      }
+    });
+
+    dropdown.addEventListener("focusin", () => {
+      if (suppressNextDesktopDropdownFocusOpen) {
+        suppressNextDesktopDropdownFocusOpen = false;
+        return;
+      }
+
+      setDesktopDropdownOpen(dropdown, true);
+    });
+
+    dropdown.addEventListener("focusout", () => {
+      window.setTimeout(() => {
+        if (!dropdown.contains(document.activeElement)) {
+          setDesktopDropdownOpen(dropdown, false);
+        }
+      });
+    });
+
+    toggle?.addEventListener("keydown", (event) => {
+      if (isMobileNavigation()) return;
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setDesktopDropdownOpen(dropdown, true);
+        dropdown.querySelector(".dropdown-menu a")?.focus();
+      }
+    });
+
+    dropdown.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+
+      event.preventDefault();
+      if (isMobileNavigation()) {
+        setMobileDropdownOpen(dropdown, false);
+      } else {
+        setDesktopDropdownOpen(dropdown, false);
+      }
+      suppressNextDesktopDropdownFocusOpen = true;
+      toggle?.focus();
+    });
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (isMobileNavigation() || primaryNavigation?.contains(event.target)) {
+      return;
+    }
+
+    primaryNavigation
+      ?.querySelectorAll(".dropdown")
+      .forEach((dropdown) => setDesktopDropdownOpen(dropdown, false));
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (
+      !event.defaultPrevented &&
+      event.key === "Escape" &&
+      isMobileNavigation() &&
+      header.classList.contains("is-mobile-menu-open")
+    ) {
+      event.preventDefault();
+      setMobileMenuOpen(false);
+      mobileMenuToggle?.focus();
     }
   });
 
@@ -483,19 +747,36 @@ function loadHeader() {
     }
   });
 
+  window.visualViewport?.addEventListener("resize", () => {
+    if (header.classList.contains("is-mobile-menu-open")) {
+      updateMobileMenuOffset();
+    }
+  });
+
   document.dispatchEvent(new Event("cmcenheaderready"));
 }
 
 const footerSocialLinks = [
   {
     label: "Facebook",
-    url: "https://www.facebook.com/",
+    url: "https://www.facebook.com/RCMCE.CMCEN",
+    icon: "\ue093",
   },
   {
     label: "Instagram",
-    url: "https://www.instagram.com/",
+    url: "https://www.instagram.com/cmcen_rcmce/",
+    icon: "\ue09a",
+  },
+  {
+    label: "X (Twitter)",
+    url: "https://x.com/CMCEN_RCMCE",
+    icon: "\ue094",
   },
 ];
+
+const tdInsuranceUrl =
+  "https://www.tdinsurance.com/affinity/cmcen?campaignid=PONMEBAN179135";
+const tdInsuranceLoginUrl = "/login?notice=td-insurance-members-only";
 
 function loadFooter() {
   const footer = document.getElementById("footer");
@@ -510,8 +791,9 @@ function loadFooter() {
         class="footer-social-link"
         target="_blank"
         rel="noopener"
+        aria-label="${link.label}"
       >
-        ${link.label}
+        <span class="footer-social-icon" aria-hidden="true">${link.icon}</span>
       </a>
     `,
     )
@@ -568,6 +850,18 @@ function loadFooter() {
             Connecting members, supporting veterans,
             and preserving the history of the Branch.
           </p>
+
+          <a
+            class="footer-partner-link"
+            data-td-insurance-link
+            href="${tdInsuranceLoginUrl}"
+          >
+            <img
+              src="/images/td-insurance-membership.gif"
+              alt="TD Insurance: Get more out of your membership."
+              class="footer-partner-image"
+            />
+          </a>
             <button
   id="themeToggle"
   class="theme-toggle"
@@ -615,7 +909,12 @@ function loadFooter() {
             </li>
 
             <li>
-              <a href="/donate.html" data-i18n="donate_now">
+              <a
+                href="https://www.zeffy.com/en-CA/donation-form/be-a-monthly-donor-to-make-a-huge-difference-2"
+                target="_blank"
+                rel="noopener"
+                data-i18n="donate_now"
+              >
                 Donate
               </a>
             </li>
@@ -627,12 +926,6 @@ function loadFooter() {
             </li>
 
             <li>
-              <a href="/subscribe.html" data-i18n="subscribe">
-                Subscribe
-              </a>
-            </li>
-
-            <li>
               <a href="/contact.html" data-i18n="menu_contact">
                 Contact
               </a>
@@ -640,7 +933,7 @@ function loadFooter() {
           </ul>
         </nav>
 
-        <section class="footer-column">
+        <section class="footer-column footer-contact-column">
           <h2 data-i18n="footer_contact">
             Contact
           </h2>
@@ -648,21 +941,20 @@ function loadFooter() {
           <address class="footer-contact">
             <p>
               <span data-i18n="footer_address_label">Address</span><br />
-              <span>Association address to be confirmed</span>
+              <span>CAF Communications &amp; Electronics Branch Office<br />9 Byng Ave<br />Kingston, ON K7K 5L3</span>
             </p>
 
             <p>
-              <a href="mailto:contact@example.ca">
-                contact@example.ca
-              </a>
-            </p>
-
-            <p>
-              <a href="/contact.html" data-i18n="contact_form_link">
-                Contact form
-              </a>
+              Contact: MWO Terry Cadieux
             </p>
           </address>
+
+          <div
+            class="footer-social"
+            aria-label="Social media"
+          >
+            ${socialLinksHtml}
+          </div>
         </section>
 
         <section class="footer-column footer-legal">
@@ -672,19 +964,37 @@ function loadFooter() {
 
           <ul>
             <li>
-              <a href="/privacy.html" data-i18n="privacy_policy">
+              <a href="/privacy" data-i18n="privacy_policy">
                 Privacy Policy
               </a>
             </li>
 
             <li>
-              <a href="/casl.html" data-i18n="casl_disclosure">
+              <a href="/terms">
+                Terms of Use
+              </a>
+            </li>
+
+            <li>
+              <a href="/privacy#contact" data-i18n="privacy_contact">
+                Privacy inquiries
+              </a>
+            </li>
+
+            <li>
+              <a href="mailto:security@cmcen.ca" data-i18n="security_contact">
+                Security concerns
+              </a>
+            </li>
+
+            <li>
+              <a href="/casl" data-i18n="casl_disclosure">
                 CASL Disclosure
               </a>
             </li>
 
             <li>
-              <a href="/accessibility.html" data-i18n="accessibility">
+              <a href="/accessibility" data-i18n="accessibility">
                 Accessibility
               </a>
             </li>
@@ -696,13 +1006,6 @@ function loadFooter() {
             </li>
           </ul>
 
-          <div
-            class="footer-social"
-            aria-label="Social media"
-          >
-            ${socialLinksHtml}
-          </div>
-  
         </section>
       </div>
     </div>
@@ -722,7 +1025,7 @@ function loadFooter() {
         </p>
 
         <p class="footer-credit">
-          Made with ♥ by Bray &amp; Eric
+          <a class="footer-credit-link" href="/devs">Made with ♥ by Bray &amp; Eric</a>
         </p>
 
         <p
@@ -784,12 +1087,32 @@ async function updateFooterVersion() {
       versionElement.hidden = false;
     }
   } catch (error) {
-    console.warn("Version unavailable:", error);
   }
 }
 
 loadHeader();
 loadFooter();
+
+function updateTdInsuranceLink() {
+  const link = document.querySelector("[data-td-insurance-link]");
+
+  if (!link) {
+    return;
+  }
+
+  if (getStoredAuthToken()) {
+    link.href = tdInsuranceUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    return;
+  }
+
+  link.href = tdInsuranceLoginUrl;
+  link.removeAttribute("target");
+  link.removeAttribute("rel");
+}
+
+updateTdInsuranceLink();
 
 async function loadCustomNavigationItems() {
   try {
@@ -805,7 +1128,6 @@ async function loadCustomNavigationItems() {
     renderCustomNavigationItems();
     updateAuthRestrictedItems();
   } catch (error) {
-    console.warn("Custom navigation unavailable:", error);
   }
 }
 
@@ -817,8 +1139,17 @@ function renderCustomNavigationItems() {
 
   const groupKeys = Object.keys(navLinks);
   const customGroups = customNavigationItems.filter(
-    (item) => item.type === "group" && !groupKeys.includes(item.group),
+    (item) =>
+      item.type === "group" &&
+      !groupKeys.includes(item.group) &&
+      customNavigationItems.some(
+        (candidate) =>
+          candidate.type !== "group" &&
+          candidate.group === item.group &&
+          Boolean(candidate.route),
+      ),
   );
+  const customMenus = new Map();
 
   customGroups.forEach((group) => {
     const wrapper = document.createElement("div");
@@ -842,6 +1173,7 @@ function renderCustomNavigationItems() {
     `;
 
     primaryNavigation?.append(wrapper);
+    customMenus.set(group.group, wrapper.querySelector(".dropdown-menu"));
   });
 
   customNavigationItems.forEach((item) => {
@@ -851,9 +1183,7 @@ function renderCustomNavigationItems() {
     const menu =
       groupIndex >= 0
         ? document.getElementById(`primaryNavigationDropdown${groupIndex}`)
-        : document.querySelector(
-            `[data-custom-nav-group="${escapeCssIdentifier(item.group)}"] .dropdown-menu`,
-          );
+        : customMenus.get(item.group);
 
     if (!menu || !item.route) return;
 
@@ -903,13 +1233,21 @@ function getAccountIcon() {
   `;
 }
 
-function getSignOutTranslation(key, fallback) {
-  if (typeof window.translate !== "function") {
-    return fallback;
-  }
+function getNotificationBellIcon() {
+  return `
+    <svg
+      class="utility-icon notification-bell-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path d="M18 10.2c0-3.6-2.1-6.2-6-6.2s-6 2.6-6 6.2c0 4.2-1.6 5.6-2.4 6.4h16.8c-.8-.8-2.4-2.2-2.4-6.4Z"></path>
+      <path d="M9.7 20h4.6"></path>
+    </svg>
+  `;
+}
 
-  const translated = window.translate(key);
-  return translated && translated !== key ? translated : fallback;
+function getSignOutTranslation(key, fallback) {
+  return CMCENUtils.translateText(key, fallback);
 }
 
 async function showSignOutModal() {
@@ -958,40 +1296,478 @@ function getNotificationBadge(count) {
     return "";
   }
 
-  const label = `${notificationCount} notification${notificationCount === 1 ? "" : "s"}`;
-
   return `
     <span
       class="notification-badge"
-      aria-label="${label}"
+      aria-hidden="true"
     >${notificationCount}</span>
   `;
 }
 
+function normalizeHeaderNotificationCount(value) {
+  const count = Number(value);
+  return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+}
+
+function getHeaderNotificationCacheKey(token) {
+  const tokenParts = String(token || "").split(".");
+  let cacheScope = token;
+
+  if (tokenParts.length === 3) {
+    try {
+      const payload = JSON.parse(
+        atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")),
+      );
+      const userId = String(payload?.userId || "").trim();
+
+      if (userId) {
+        cacheScope = userId;
+      }
+    } catch {
+      // Keep the cache isolated to this token if it cannot be decoded.
+    }
+  }
+
+  let hash = 0;
+
+  for (let index = 0; index < cacheScope.length; index += 1) {
+    hash = (hash * 31 + cacheScope.charCodeAt(index)) | 0;
+  }
+
+  return `${headerNotificationCachePrefix}${hash >>> 0}`;
+}
+
+function getCachedHeaderNotifications(token) {
+  const emptyNotifications = {
+    count: 0,
+    actionCount: 0,
+    unreadCount: 0,
+    items: [],
+  };
+
+  if (!token) {
+    return emptyNotifications;
+  }
+
+  try {
+    const cached = JSON.parse(
+      sessionStorage.getItem(getHeaderNotificationCacheKey(token)) || "",
+    );
+
+    if (!cached || typeof cached !== "object") {
+      return emptyNotifications;
+    }
+
+    return {
+      count: normalizeHeaderNotificationCount(cached.count),
+      actionCount: normalizeHeaderNotificationCount(cached.actionCount),
+      unreadCount: normalizeHeaderNotificationCount(cached.unreadCount),
+      items: Array.isArray(cached.items) ? cached.items : [],
+    };
+  } catch {
+    return emptyNotifications;
+  }
+}
+
+function cacheHeaderNotifications(notifications, token) {
+  if (!token) {
+    return;
+  }
+
+  const cached = getCachedHeaderNotifications(token);
+  const hasItems = Array.isArray(notifications.items);
+  const count = normalizeHeaderNotificationCount(
+    notifications.count ?? cached.count,
+  );
+
+  try {
+    sessionStorage.setItem(
+      getHeaderNotificationCacheKey(token),
+      JSON.stringify({
+        count,
+        actionCount: normalizeHeaderNotificationCount(
+          notifications.actionCount ?? cached.actionCount,
+        ),
+        unreadCount: normalizeHeaderNotificationCount(
+          notifications.unreadCount ?? cached.unreadCount,
+        ),
+        items: count === 0 ? [] : hasItems ? notifications.items : cached.items,
+      }),
+    );
+  } catch {
+    // The live response remains usable when session storage is unavailable.
+  }
+}
+
 function updateNotificationBadges(count = 0) {
+  const notificationCount = Number(count) || 0;
+  const notificationsHeading = CMCENUtils.translateText(
+    "notifications_heading",
+    "Notifications",
+  );
+
   document
     .querySelectorAll(".notification-badge")
     .forEach((badge) => badge.remove());
 
-  const badgeHtml = getNotificationBadge(count);
+  document.querySelectorAll(".notification-toggle").forEach((toggle) => {
+    toggle.setAttribute(
+      "aria-label",
+      notificationCount > 0
+        ? `${notificationsHeading} (${notificationCount})`
+        : notificationsHeading,
+    );
+  });
+
+  const badgeHtml = getNotificationBadge(notificationCount);
 
   if (!badgeHtml) {
     return;
   }
 
   document
-    .querySelectorAll(".account-link, .mobile-menu-account-link")
-    .forEach((link) => {
-      link.insertAdjacentHTML("beforeend", badgeHtml);
-    });
+    .querySelectorAll(".notification-toggle")
+    .forEach((toggle) => toggle.insertAdjacentHTML("beforeend", badgeHtml));
 }
+
+function getHeaderNotificationTitle(item) {
+  const notificationState = getHeaderNotificationState(item);
+
+  if (item?.type === "event") {
+    const eventTitle =
+      CMCENUtils.getLocalizedText(item.title) ||
+      translate("notifications_type_event");
+
+    if (notificationState === "published") {
+      return translate("notifications_event_published_message").replace(
+        "{title}",
+        eventTitle,
+      );
+    }
+
+    return eventTitle;
+  }
+
+  return item?.title || translate(`notifications_type_${item?.type}`);
+}
+
+function getHeaderNotificationSummary(item) {
+  if (getHeaderNotificationState(item) !== "rejected") {
+    return "";
+  }
+
+  const reason = String(item?.reason || "").trim();
+
+  if (!reason) {
+    return "";
+  }
+
+  return `${translate("my_events_rejection_reason")}: ${reason}`;
+}
+
+function getHeaderNotificationState(item) {
+  return item?.status === "published" ? "published" : "rejected";
+}
+
+function getHeaderNotificationStatus(item) {
+  return translate(`notifications_status_${getHeaderNotificationState(item)}`);
+}
+
+function renderHeaderNotifications(items = headerNotificationItems) {
+  const list = document.getElementById("notificationDropdownList");
+  const status = document.getElementById("notificationDropdownStatus");
+
+  if (!list || !status) {
+    return;
+  }
+
+  list.replaceChildren();
+  status.hidden = true;
+
+  if (!items.length) {
+    status.textContent = translate("notifications_empty");
+    status.className = "notification-dropdown-status is-empty";
+    status.hidden = false;
+    return;
+  }
+
+  items.forEach((item) => {
+    const notification = document.createElement("a");
+    notification.className = "notification-dropdown-item";
+    notification.href = item.editHref || item.href || "/dashboard";
+
+    const badges = document.createElement("div");
+    badges.className = "notification-dropdown-badges";
+
+    const type = document.createElement("span");
+    type.className = `notification-dropdown-type is-${item.type}`;
+    type.textContent = translate(`notifications_type_${item.type}`);
+
+    const status = document.createElement("span");
+    status.className = `notification-dropdown-status-badge is-${getHeaderNotificationState(item)}`;
+    status.textContent = getHeaderNotificationStatus(item);
+
+    badges.append(type, status);
+
+    const title = document.createElement("strong");
+    title.className = "notification-dropdown-title";
+    title.textContent = getHeaderNotificationTitle(item);
+
+    notification.append(badges, title);
+
+    const summary = getHeaderNotificationSummary(item);
+
+    if (summary) {
+      const reason = document.createElement("span");
+      reason.className = "notification-dropdown-reason";
+      reason.textContent = summary;
+      notification.appendChild(reason);
+    }
+
+    list.appendChild(notification);
+  });
+}
+
+function showHeaderNotificationStatus(message, type = "neutral") {
+  const list = document.getElementById("notificationDropdownList");
+  const status = document.getElementById("notificationDropdownStatus");
+
+  if (!list || !status) {
+    return;
+  }
+
+  list.replaceChildren();
+  status.textContent = message;
+  status.className = `notification-dropdown-status is-${type}`;
+  status.hidden = false;
+}
+
+function setHeaderNotificationOpen(isOpen) {
+  const toggle = document.getElementById("notificationToggle");
+  const dropdown = document.getElementById("notificationDropdown");
+
+  if (!toggle || !dropdown) {
+    return;
+  }
+
+  toggle.setAttribute("aria-expanded", String(isOpen));
+  dropdown.hidden = !isOpen;
+}
+
+function updateHeaderNotifications(notifications = {}) {
+  if (Array.isArray(notifications.items)) {
+    headerNotificationItems = notifications.items;
+  }
+
+  headerNotificationCount = normalizeHeaderNotificationCount(
+    notifications.count,
+  );
+
+  if (!Array.isArray(notifications.items) && headerNotificationCount === 0) {
+    headerNotificationItems = [];
+  }
+
+  cacheHeaderNotifications(notifications, getStoredAuthToken());
+  updateNotificationBadges(headerNotificationCount);
+
+  if (
+    document.getElementById("notificationToggle")?.getAttribute(
+      "aria-expanded",
+    ) === "true"
+  ) {
+    renderHeaderNotifications();
+  }
+}
+
+async function markHeaderNotificationsRead(
+  readThrough,
+  token,
+  remainingActionCount = 0,
+) {
+  if (!readThrough || getStoredAuthToken() !== token) {
+    return;
+  }
+
+  try {
+    await CMCENUtils.apiJson("/api/notifications/read", {
+      method: "POST",
+      token,
+      body: { readThrough },
+      errorMessage: translate("notifications_load_error"),
+    });
+
+    if (getStoredAuthToken() === token) {
+      updateHeaderNotifications({
+        count: remainingActionCount,
+        actionCount: remainingActionCount,
+        unreadCount: 0,
+      });
+    }
+  } catch (error) {
+  }
+}
+
+async function loadHeaderNotifications() {
+  const token = getStoredAuthToken();
+
+  if (!token) {
+    renderHeaderNotifications([]);
+    return;
+  }
+
+  if (headerNotificationCount === 0) {
+    renderHeaderNotifications([]);
+    return;
+  }
+
+  if (headerNotificationItems.length) {
+    renderHeaderNotifications();
+  } else {
+    showHeaderNotificationStatus(translate("notifications_loading"), "loading");
+  }
+
+  try {
+    const data = await CMCENUtils.apiJson("/api/notifications", {
+      token,
+      errorMessage: translate("notifications_load_error"),
+    });
+
+    if (getStoredAuthToken() !== token) {
+      return;
+    }
+
+    updateHeaderNotifications(data.notifications || {});
+    renderHeaderNotifications();
+    if (data.notifications?.shouldMarkRead) {
+      markHeaderNotificationsRead(
+        data.notifications.readThrough,
+        token,
+        data.notifications.actionCount,
+      );
+    }
+  } catch (error) {
+    showHeaderNotificationStatus(
+      error.message || translate("notifications_load_error"),
+      "error",
+    );
+  }
+}
+
+async function refreshHeaderNotificationCount() {
+  const token = getStoredAuthToken();
+
+  if (!token) {
+    return;
+  }
+
+  try {
+    const user = await CMCENUtils.apiJson("/api/me", {
+      token,
+      errorMessage: translate("notifications_load_error"),
+    });
+
+    if (getStoredAuthToken() === token) {
+      updateHeaderNotifications(user.notifications || {});
+    }
+  } catch (error) {
+  }
+}
+
+function setupHeaderNotifications() {
+  headerNotificationListeners?.abort();
+  headerNotificationListeners = new AbortController();
+
+  const { signal } = headerNotificationListeners;
+  const container = document.getElementById("headerNotifications");
+  const toggle = document.getElementById("notificationToggle");
+
+  if (!container || !toggle) {
+    return;
+  }
+
+  toggle.addEventListener(
+    "click",
+    () => {
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
+      setHeaderNotificationOpen(!isOpen);
+
+      if (!isOpen) {
+        loadHeaderNotifications();
+      }
+    },
+    { signal },
+  );
+
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (
+        !document.body.contains(container) ||
+        container.contains(event.target)
+      ) {
+        return;
+      }
+
+      setHeaderNotificationOpen(false);
+    },
+    { signal },
+  );
+
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key !== "Escape" || !document.body.contains(container)) {
+        return;
+      }
+
+      if (toggle.getAttribute("aria-expanded") !== "true") {
+        return;
+      }
+
+      event.preventDefault();
+      setHeaderNotificationOpen(false);
+      toggle.focus();
+    },
+    { signal },
+  );
+
+  document.addEventListener(
+    "languagechange",
+    () => {
+      updateNotificationBadges(headerNotificationCount);
+      renderHeaderNotifications();
+    },
+    { signal },
+  );
+
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (document.visibilityState === "visible") {
+        refreshHeaderNotificationCount();
+      }
+    },
+    { signal },
+  );
+}
+
+window.addEventListener("cmcen:content-updated", () => {
+  refreshHeaderNotificationCount();
+});
 
 function updateAuthButtons() {
   const token = getStoredAuthToken();
   const authButtons = document.querySelector(".auth-buttons");
   const mobileMenuAccount = document.getElementById("mobileMenuAccount");
+  const headerNotifications = document.getElementById("headerNotifications");
+  const headerSignOut = document.getElementById("headerSignOut");
 
-  if (!authButtons || !mobileMenuAccount) {
+  if (
+    !authButtons ||
+    !mobileMenuAccount ||
+    !headerNotifications ||
+    !headerSignOut
+  ) {
     return;
   }
 
@@ -1002,9 +1778,11 @@ function updateAuthButtons() {
         class="utility-link account-link"
       >
         ${getAccountIcon()}
-        <span data-i18n="account">Account</span>
+        <span data-i18n="navbar_dashboard">Dashboard</span>
       </a>
+    `;
 
+    headerSignOut.innerHTML = `
       <button
         type="button"
         class="utility-link signout-link"
@@ -1021,7 +1799,7 @@ function updateAuthButtons() {
         class="mobile-menu-account-link"
       >
         ${getAccountIcon()}
-        <span data-i18n="account">Account</span>
+        <span data-i18n="navbar_dashboard">Dashboard</span>
       </a>
 
       <button
@@ -1060,11 +1838,19 @@ function updateAuthButtons() {
         <span data-i18n="login_btn">Login</span>
       </a>
     `;
+
+    headerSignOut.replaceChildren();
   }
 
+  // Keep the control visible for cookie-authenticated sessions and guests so
+  // the compact header layout remains stable on every page.
+  headerNotifications.hidden = false;
+  updateTdInsuranceLink();
   applyCurrentLanguage();
 
-  updateNotificationBadges(0);
+  updateHeaderNotifications(
+    token ? getCachedHeaderNotifications(token) : { count: 0, items: [] },
+  );
 }
 
 async function updateAuthRestrictedItems() {
@@ -1091,7 +1877,7 @@ async function updateAuthRestrictedItems() {
       errorMessage: "Could not verify navigation permissions",
     });
 
-    updateNotificationBadges(user.notifications?.count || 0);
+    updateHeaderNotifications(user.notifications || {});
 
     authRequiredItems.forEach((element) => {
       element.hidden = false;
@@ -1112,7 +1898,6 @@ async function updateAuthRestrictedItems() {
       return;
     }
 
-    console.error("Navigation permission check failed:", error);
   }
 }
 
@@ -1123,3 +1908,106 @@ window.refreshAuthUI = function refreshAuthUI() {
 
 updateAuthButtons();
 updateAuthRestrictedItems();
+
+const betaNoticeStorageKey = "cmcen_beta_notice_2026_acknowledged";
+
+function hasAcknowledgedBetaNotice() {
+  try {
+    return localStorage.getItem(betaNoticeStorageKey) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function showBetaNotice() {
+  if (hasAcknowledgedBetaNotice()) {
+    return;
+  }
+
+  const previouslyFocusedElement = document.activeElement;
+  const overlay = document.createElement("div");
+  overlay.className = "beta-notice-overlay";
+  overlay.setAttribute("role", "presentation");
+
+  const notice = document.createElement("section");
+  notice.className = "beta-notice";
+  notice.setAttribute("role", "dialog");
+  notice.setAttribute("aria-modal", "true");
+  notice.setAttribute("aria-labelledby", "betaNoticeTitle");
+  notice.setAttribute("aria-describedby", "betaNoticeMessage");
+  notice.innerHTML = `
+    <div class="beta-notice-brand" aria-hidden="true">
+      <img src="/images/logo.png" alt="" />
+      <span>CMCEN</span>
+    </div>
+    <div class="beta-notice-content">
+      <p class="beta-notice-kicker">Internal beta</p>
+      <h1 id="betaNoticeTitle">Welcome to CMCEN</h1>
+      <div class="beta-notice-message" id="betaNoticeMessage">
+        <p>Welcome to the internal beta for CMCEN. This beta will run from 21 August 2026 until 2 October 2026.</p>
+        <p>For any feedback or ideas, please email <a href="mailto:support@cmcen.ca">support@cmcen.ca</a>.</p>
+        <p>For any bugs or issues, please either email <a href="mailto:support@cmcen.ca">support@cmcen.ca</a> or file a bug report at <a href="https://git.corebot.ca/Eric/CMCENDev/issues" target="_blank" rel="noopener noreferrer">git.corebot.ca/Eric/CMCENDev/issues</a>.</p>
+        <p>Happy beta testing!</p>
+        <p class="beta-notice-signature">&ndash; Bray &amp; Eric</p>
+      </div>
+      <button class="beta-notice-continue" type="button">Continue to CMCEN</button>
+    </div>
+  `;
+
+  const continueButton = notice.querySelector(".beta-notice-continue");
+
+  function dismissNotice() {
+    try {
+      localStorage.setItem(betaNoticeStorageKey, "true");
+    } catch {
+      // The notice will be displayed again when browser storage is unavailable.
+    }
+
+    document.removeEventListener("keydown", trapFocus);
+    document.body.classList.remove("beta-notice-lock");
+    overlay.remove();
+
+    if (previouslyFocusedElement instanceof HTMLElement) {
+      previouslyFocusedElement.focus();
+    }
+  }
+
+  function trapFocus(event) {
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    const focusableElements = [
+      ...notice.querySelectorAll(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ];
+    const firstFocusableElement = focusableElements[0];
+    const lastFocusableElement = focusableElements.at(-1);
+
+    if (!firstFocusableElement || !lastFocusableElement) {
+      event.preventDefault();
+      return;
+    }
+
+    if (event.shiftKey && document.activeElement === firstFocusableElement) {
+      event.preventDefault();
+      lastFocusableElement.focus();
+    } else if (
+      !event.shiftKey &&
+      document.activeElement === lastFocusableElement
+    ) {
+      event.preventDefault();
+      firstFocusableElement.focus();
+    }
+  }
+
+  continueButton.addEventListener("click", dismissNotice);
+  overlay.append(notice);
+  document.body.append(overlay);
+  document.body.classList.add("beta-notice-lock");
+  document.addEventListener("keydown", trapFocus);
+  continueButton.focus();
+}
+
+showBetaNotice();

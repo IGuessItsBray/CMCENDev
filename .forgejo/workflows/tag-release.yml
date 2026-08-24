@@ -1,0 +1,106 @@
+name: Tag release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  tag-release:
+    name: Tag prepared release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Verify release automation token
+        env:
+          RELEASE_AUTOMATION_TOKEN: ${{ secrets.RELEASE_AUTOMATION_TOKEN }}
+        run: |
+          set -eu
+
+          if [ -z "${RELEASE_AUTOMATION_TOKEN:-}" ]; then
+            echo "RELEASE_AUTOMATION_TOKEN is not configured."
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_AUTOMATION_TOKEN }}
+
+      - name: Detect release preparation commit
+        id: release
+        run: |
+          set -eu
+
+          SUBJECT="$(git log -1 --pretty=%s)"
+
+          echo "Latest commit:"
+          echo "$SUBJECT"
+
+          if ! printf '%s\n' "$SUBJECT" |
+            grep -Eq '^chore\(release\): prepare v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "Not a release preparation commit."
+            echo "should_tag=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          VERSION="$(
+            printf '%s\n' "$SUBJECT" |
+              sed -E 's/^chore\(release\): prepare //'
+          )"
+
+          echo "Detected release: $VERSION"
+          echo "should_tag=true" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Configure Git
+        if: steps.release.outputs.should_tag == 'true'
+        run: |
+          set -eu
+
+          git config user.name "CMCEN Release Automation"
+          git config user.email "release-automation@users.noreply.local"
+
+      - name: Verify tag does not already exist
+        if: steps.release.outputs.should_tag == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -eu
+
+          if git ls-remote \
+            --exit-code \
+            --tags \
+            origin \
+            "refs/tags/$VERSION" \
+            >/dev/null 2>&1; then
+            echo "Release tag already exists: $VERSION"
+            exit 1
+          fi
+
+      - name: Create release tag
+        if: steps.release.outputs.should_tag == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -eu
+
+          git tag -a "$VERSION" -m "$VERSION"
+
+          echo "Created tag $VERSION"
+
+      - name: Push release tag
+        if: steps.release.outputs.should_tag == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -eu
+
+          git push origin "$VERSION"
+
+          echo "Published release tag $VERSION"

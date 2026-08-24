@@ -1,3 +1,132 @@
+# Changelog: August 17-23, 2026
+
+Date range: 2026-08-17 through 2026-08-23
+Source: git history after commit `94d7cbc` through `174817b`.
+
+This entry summarizes the changes added after the previous August 10-16
+snapshot. Commits landed from August 17 through August 21; no commits were found
+for August 22 or August 23.
+
+## Summary
+
+Recent work expanded public content and admin publishing workflows, added CASL
+email subscriptions and a notification center, introduced the visual page
+builder and editorial/staff workspaces, improved Plausible analytics and Docker
+deployment support, and tightened release automation, media handling,
+invitation delivery, accessibility, and mobile UI behavior.
+
+## Added
+
+- Added news stories and search, a beta notice, public accessibility guidance,
+  member partnership footer links, and a member contact form.
+- Added CASL email subscriptions with refined consent details and related
+  subscription integration work.
+- Added workbook migration tooling and later consolidated the migration helpers.
+- Added self-hosted Plausible analytics documentation and embedded Plausible
+  dashboard support.
+- Added a notification center with optimized badge loading.
+- Added release preparation and publishing workflows, automatic release tagging,
+  generated changelogs, and Docker image publishing to Forgejo Packages.
+- Added a full-stack Docker Compose deployment and ensured the changelog is
+  included in the production image.
+- Added protected content edit routes, a developer changelog, organized
+  translation editing, permission-aware admin dashboard tools, editorial and
+  staff workspaces, contributor resubmission support, content navigation
+  shortcuts, event-submission workspace handling, freeform page publishing, and
+  the visual page builder.
+
+## Changed
+
+- Moved account details into their own dashboard accordion and added animated
+  account accordions.
+- Collapsed media attachment lists and improved calendar/media manager
+  presentation.
+- Reworked public and admin content flows around the consolidated review and
+  editorial workspaces.
+- Updated repository process documentation for PR naming, contributor guidance,
+  automatic release tagging, and project configuration.
+- Removed legacy site configuration behavior as part of the newer analytics and
+  deployment workflow.
+- Parallelized the integration suite.
+
+## Fixed
+
+- Fixed invitation delivery diagnostics, invitation delivery panel behavior,
+  SMTP HELO parsing, and SMTP security-mode handling.
+- Fixed footer contact and policy links plus public contact email links.
+- Fixed banner link clickability and retirement detail stylesheet cache
+  behavior.
+- Fixed retirement photo and crest rendering, including native aspect ratio,
+  transparent crest frames, contained crest images, and workbook placeholder
+  crest reuse.
+- Fixed SheetJS dependency handling by updating the security dependency,
+  copying the vendored package before install, and installing from the CDN.
+- Fixed dashboard loading skeleton alignment.
+- Fixed release and CI workflow issues around git-cliff usage, release
+  changelog generation, workflow YAML, release PR assignment, and tag
+  publishing tokens.
+- Fixed server/client logging exposure by redacting server output and silencing
+  client consoles.
+- Fixed mobile layouts, desktop notification bell alignment, retirement and
+  Last Post message linkification, content/translation editing, legacy
+  attribution account visibility, and admin user-list sizing.
+
+## Admin And CMS Notes
+
+- Admin users now have broader content workspace tools for editorial review,
+  staff workflows, contributor resubmissions, event submissions, translations,
+  protected content editing, and page publishing.
+- The visual page builder and freeform publishing work give admins a more
+  flexible path for managing public pages.
+- Dashboard tools are more permission-aware, notification-aware, and organized
+  around expandable account sections.
+- Public content management expanded around news, member contact, accessibility,
+  footer partnerships, and retirement/Last Post message presentation.
+
+## Developer Notes
+
+- Release engineering was expanded with PR-title validation, squash-merge
+  template configuration, generated changelogs, release preparation, release
+  publishing, automatic tagging, and Forgejo package image publishing.
+- Docker deployment now has full-stack Compose support and production image
+  inclusion for the changelog artifact.
+- Plausible integration now includes both a self-hosting guide and embedded
+  dashboard support.
+- Security and operations work included logging redaction, SheetJS dependency
+  remediation, SMTP handling fixes, and updated project/agent documentation.
+
+## Commit Reference
+
+- `174817b` - Prepare v0.1.0-rc.1
+- `5ddc6e2` - Include changelog in production image
+- `86ee9df` - Add staff workspace and contributor resubmission
+- `56118e3` - Move event submissions into workspace
+- `5abf96b` - Add visual page builder
+- `38104ac` - Support freeform page publishing
+- `8b24ed8` - Embed permission-aware admin tools
+- `7fa8cba` - Consolidate review submissions in workspace
+- `b96b87c` - Add editorial workspace
+- `2876f7b` - Add developer changelog
+- `deb83e1` - Add protected content edit routes
+- `93a6e98` - Organize admin translation editor
+- `81c696a` - Add member contact form
+- `6f6eafe` - Embed Plausible dashboard
+- `4f590e6` - Add full-stack Compose deployment
+- `cafe0aa` - Add notification center
+- `85a1fe4` - Publish Docker images to Forgejo Packages
+- `86fdd65` - Add release preparation workflow
+- `10c4c15` - Add self-hosted Plausible analytics
+- `914ea05` - Collapse media attachment lists
+- `61df666` - Polish calendar and media manager
+- `6f880fd` - Add workbook migration tools
+- `af1372c` - Add CASL email subscriptions
+- `a3269ae` - Add news stories and search
+- `5b468c7` - Improve accessibility controls
+- `9581482` - Customize invitation message
+- `23fe605` - Add invitation delivery diagnostics
+
+---
+
 # Changelog: July 21-22, 2026
 
 Date range: 2026-07-21 through 2026-07-22

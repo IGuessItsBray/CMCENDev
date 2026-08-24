@@ -16,10 +16,6 @@ const retirementDetailPhoto = document.getElementById("retirementDetailPhoto");
 
 const retirementDetailText = document.getElementById("retirementDetailText");
 
-const retirementDetailHeading = document.querySelector(
-  ".retirement-detail-heading",
-);
-
 const retirementCommentMessage = document.getElementById(
   "retirementCommentMessage",
 );
@@ -34,6 +30,18 @@ const retirementCommentSubmit = document.getElementById(
   "retirementCommentSubmit",
 );
 
+const retirementCommentLabel = document.getElementById(
+  "retirementCommentLabel",
+);
+
+const retirementCommentEditContext = document.getElementById(
+  "retirementCommentEditContext",
+);
+
+const retirementCommentCancel = document.getElementById(
+  "retirementCommentCancel",
+);
+
 const retirementCommentLogin = document.getElementById(
   "retirementCommentLogin",
 );
@@ -44,18 +52,35 @@ let currentRetirementMessageId = "";
 let currentRetirementMessage = null;
 let loadedComments = [];
 let canManageRetirementComments = false;
-let canManageRetirementMessages = false;
+let canOpenRetirementWorkspace = false;
 let canDeleteOwnRetirementComments = false;
 let currentRetirementViewerId = "";
 let visibleDetailMessageKey = "";
 let visibleDetailMessageType = "neutral";
 let visibleCommentMessageKey = "";
 let visibleCommentMessageType = "neutral";
+let requestedRetirementCommentEditId = new URLSearchParams(
+  window.location.search,
+).get("editComment");
+let editingRetirementComment = null;
 
 function createRetirementLoadingContent(message) {
-  const loading = CMCENUtils.createLoadingSpinner(message);
+  const skeleton = document.createElement("div");
+  skeleton.className = "content-detail-skeleton content-detail-skeleton--retirement";
+  skeleton.setAttribute("aria-hidden", "true");
+  skeleton.append(
+    CMCENUtils.createSkeleton("skeleton--detail-title"),
+    CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
+    CMCENUtils.createSkeleton("skeleton--detail-photo"),
+    CMCENUtils.createSkeleton("skeleton--detail-block"),
+    CMCENUtils.createSkeleton("skeleton--detail-block skeleton--detail-block-short"),
+  );
 
-  return Array.from(loading.childNodes);
+  const accessibleLabel = document.createElement("span");
+  accessibleLabel.className = "visually-hidden";
+  accessibleLabel.textContent = message;
+
+  return [skeleton, accessibleLabel];
 }
 
 function showRetirementDetailMessage(message, type = "neutral") {
@@ -125,6 +150,7 @@ function isRetirementPlaceholderPhoto(photoUrl) {
     return (
       fileName === "logo.png" ||
       fileName.includes("cmcen-crest") ||
+      pathname.includes("/branch-crest/") ||
       pathname.includes("/legacy/wordpress/348036/")
     );
   } catch (error) {
@@ -134,6 +160,7 @@ function isRetirementPlaceholderPhoto(photoUrl) {
     return (
       fileName === "logo.png" ||
       fileName.includes("cmcen-crest") ||
+      pathname.includes("/branch-crest/") ||
       pathname.includes("/legacy/wordpress/348036/")
     );
   }
@@ -148,8 +175,9 @@ function formatRetirementMessageText(text) {
 }
 
 function setRetirementMessageText(retirementMessage) {
-  retirementDetailText.textContent = formatRetirementMessageText(
-    getRetirementMessageText(retirementMessage),
+  CMCENUtils.setLinkifiedText(
+    retirementDetailText,
+    formatRetirementMessageText(getRetirementMessageText(retirementMessage)),
   );
 }
 
@@ -219,13 +247,15 @@ function renderPhoto(retirementMessage, name) {
 
   if (retirementMessage.photoUrl) {
     const image = document.createElement("img");
+    const displayPhotoUrl =
+      retirementMessage.photoDisplayUrl || retirementMessage.photoUrl;
     const isPlaceholderPhoto = isRetirementPlaceholderPhoto(
       retirementMessage.photoUrl,
     );
 
     image.src = isPlaceholderPhoto
       ? RETIREMENT_PLACEHOLDER_PHOTO_URL
-      : retirementMessage.photoUrl;
+      : displayPhotoUrl;
     image.alt = isPlaceholderPhoto
       ? ""
       : translate("retirement_photo_alt", { name });
@@ -290,111 +320,127 @@ function getStoredToken() {
   return CMCENUtils.getStoredAuthToken();
 }
 
-function removeRetirementAdminActions() {
-  retirementDetailHeading
-    ?.querySelector(".retirement-detail-admin-actions")
-    ?.remove();
+function getRetirementCommentEditHref() {
+  return `/retirement-message?id=${encodeURIComponent(currentRetirementMessageId)}`;
 }
 
-async function deleteRetirementMessage() {
-  const token = getStoredToken();
+function updateRetirementCommentFormCopy() {
+  const isEditing = Boolean(editingRetirementComment);
+  const labelKey = isEditing
+    ? "retirement_comment_edit"
+    : "retirement_comment_add";
+  const noteKey = isEditing
+    ? "retirement_comment_resubmit_note"
+    : "retirement_comment_review_note";
+  const submitKey = isEditing
+    ? "retirement_comment_resubmit"
+    : "retirement_comment_post";
+  const note = retirementCommentForm?.querySelector("small");
 
-  if (!token) {
-    await setupCommentAccess();
-    return;
+  if (retirementCommentLabel) {
+    retirementCommentLabel.dataset.i18n = labelKey;
+    retirementCommentLabel.textContent = translate(labelKey);
   }
 
-  if (
-    !(await CMCENModal.confirm(
-      "Delete this retirement message and its comments? This will be recorded in the audit log.",
-      {
-        title: "Delete retirement message",
-        confirmText: "Delete",
-        destructive: true,
-      },
-    ))
-  ) {
-    return;
+  if (note) {
+    note.dataset.i18n = noteKey;
+    note.textContent = translate(noteKey);
   }
 
-  const button = retirementDetailHeading?.querySelector(
-    "[data-action='delete-retirement-message']",
-  );
+  if (retirementCommentSubmit && !retirementCommentSubmit.disabled) {
+    retirementCommentSubmit.dataset.i18n = submitKey;
+    retirementCommentSubmit.textContent = translate(submitKey);
+  }
 
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Deleting...";
+  if (retirementCommentCancel) {
+    retirementCommentCancel.href = getRetirementCommentEditHref();
+    retirementCommentCancel.hidden = !isEditing;
+  }
+
+  if (retirementCommentEditContext) {
+    const reason = String(
+      editingRetirementComment?.rejectionReason || "",
+    ).trim();
+    retirementCommentEditContext.textContent = reason
+      ? `${translate("my_events_rejection_reason")}: ${reason}`
+      : "";
+    retirementCommentEditContext.hidden = !isEditing || !reason;
+  }
+}
+
+function setRetirementCommentEditor(comment = null) {
+  editingRetirementComment = comment;
+
+  if (comment) {
+    retirementCommentText.value = comment.body || "";
+  }
+
+  updateRetirementCommentFormCopy();
+  CMCENUtils.bindCharacterCounters();
+}
+
+async function loadRetirementCommentEditor(token) {
+  if (!requestedRetirementCommentEditId || !currentRetirementMessageId) {
+    setRetirementCommentEditor();
+    return;
   }
 
   try {
-    const response = await fetch(
-      `/api/admin/retirement-messages/${encodeURIComponent(currentRetirementMessageId)}`,
+    const data = await CMCENUtils.apiJson(
+      `/api/retirement-messages/comments/${encodeURIComponent(requestedRetirementCommentEditId)}/edit`,
       {
-        method: "DELETE",
-        headers: CMCENUtils.authHeaders(token),
+        token,
+        errorMessage: translate("retirement_comment_edit_load_error"),
       },
     );
+    const comment = data.comment;
+    const messageId =
+      comment?.retirementMessage?._id || comment?.retirementMessage;
 
-    const data = await response.json().catch(() => ({}));
-
-    if (response.status === 401) {
-      CMCENUtils.clearAuthToken();
-      await setupCommentAccess();
-      throw new Error("Sign in again to delete retirement messages.");
+    if (String(messageId || "") !== String(currentRetirementMessageId)) {
+      throw new Error(translate("retirement_comment_edit_load_error"));
     }
 
-    if (response.status === 403) {
-      canManageRetirementMessages = false;
-      removeRetirementAdminActions();
-      throw new Error(
-        "You do not have permission to delete retirement messages.",
-      );
+    if (comment.status !== "rejected") {
+      throw new Error(translate("retirement_comment_no_longer_rejected"));
     }
 
-    if (!response.ok) {
-      throw new Error(data.error || "Could not delete retirement message");
-    }
-
-    CMCENUtils.showToast(
-      "Retirement message deleted and recorded in the audit log.",
-      { color: "success", position: "bottom-right", animation: "slide" },
-    );
-
-    setTimeout(() => {
-      window.location.href = "/retirements";
-    }, 900);
+    setRetirementCommentEditor(comment);
+    retirementCommentForm?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
   } catch (error) {
-    CMCENUtils.showToast(
-      error.message || "Could not delete retirement message",
-      { color: "error", position: "bottom-right", animation: "slide" },
+    setRetirementCommentEditor();
+    showRetirementCommentMessage(
+      error.message || translate("retirement_comment_edit_load_error"),
+      "error",
     );
-
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Delete retirement message";
-    }
   }
+}
+
+function removeRetirementAdminActions() {
+  document
+    .querySelector("[data-content-workspace-shortcut='retirementMessage']")
+    ?.remove();
 }
 
 function renderRetirementAdminActions() {
   removeRetirementAdminActions();
 
-  if (!canManageRetirementMessages || !currentRetirementMessageId) {
+  if (!canOpenRetirementWorkspace || !currentRetirementMessageId) {
     return;
   }
 
-  const actions = document.createElement("div");
-  actions.className = "retirement-detail-admin-actions";
-
-  const deleteButton = document.createElement("button");
-  deleteButton.type = "button";
-  deleteButton.className = "published-content-delete retirement-message-delete";
-  deleteButton.dataset.action = "delete-retirement-message";
-  deleteButton.textContent = "Delete retirement message";
-  deleteButton.addEventListener("click", deleteRetirementMessage);
-
-  actions.append(deleteButton);
-  retirementDetailHeading?.append(actions);
+  const shortcut = CMCENUtils.createContentWorkspaceShortcut({
+    contentType: "retirementMessage",
+    contentId: currentRetirementMessageId,
+    label: translate(
+      "content_workspace_open_record",
+      "Open in Content Workspace",
+    ),
+  });
+  if (shortcut) document.body.append(shortcut);
 }
 
 async function deleteRetirementComment(comment) {
@@ -407,10 +453,10 @@ async function deleteRetirementComment(comment) {
 
   if (
     !(await CMCENModal.confirm(
-      "Delete this comment? This will be recorded in the audit log.",
+      "Remove this comment from public view? It can be restored later and this will be recorded in the audit log.",
       {
-        title: "Delete comment",
-        confirmText: "Delete",
+        title: "Remove comment",
+        confirmText: "Remove",
         destructive: true,
       },
     ))
@@ -432,18 +478,18 @@ async function deleteRetirementComment(comment) {
     if (response.status === 401) {
       CMCENUtils.clearAuthToken();
       await setupCommentAccess();
-      throw new Error("Sign in again to delete comments.");
+      throw new Error("Sign in again to remove comments.");
     }
 
     if (response.status === 403) {
       canManageRetirementComments = false;
       canDeleteOwnRetirementComments = false;
       renderComments(loadedComments);
-      throw new Error("You do not have permission to delete comments.");
+      throw new Error("You do not have permission to remove comments.");
     }
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not delete comment");
+      throw new Error(data.error || "Could not remove comment");
     }
 
     loadedComments = loadedComments.filter(
@@ -451,13 +497,13 @@ async function deleteRetirementComment(comment) {
     );
 
     renderComments(loadedComments);
-    CMCENUtils.showToast("Comment deleted and recorded in the audit log.", {
+    CMCENUtils.showToast("Comment removed from public view and recorded in the audit log.", {
       color: "success",
       position: "bottom-right",
       animation: "slide",
     });
   } catch (error) {
-    CMCENUtils.showToast(error.message || "Could not delete comment", {
+    CMCENUtils.showToast(error.message || "Could not remove comment", {
       color: "error",
       position: "bottom-right",
       animation: "slide",
@@ -495,10 +541,10 @@ function createCommentElement(comment) {
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "retirement-comment-delete";
-    deleteButton.textContent = "Delete";
+    deleteButton.textContent = "Remove";
     deleteButton.setAttribute(
       "aria-label",
-      `Delete comment by ${formatCommentAuthor(comment.author)}`,
+      `Remove comment by ${formatCommentAuthor(comment.author)}`,
     );
     deleteButton.addEventListener("click", () => {
       deleteRetirementComment(comment);
@@ -569,36 +615,19 @@ async function setupCommentAccess() {
         errorMessage: "Could not verify retirement permissions",
       });
 
-      const canDeleteAnyContent = user.permissions?.canDeleteContent === true;
       const canDeleteOwnContent =
         user.permissions?.canDeleteOwnContent === true;
       currentRetirementViewerId = user._id || "";
 
-      canManageRetirementMessages = canDeleteAnyContent;
-
-      if (
-        !canManageRetirementMessages &&
-        canDeleteOwnContent &&
-        currentRetirementMessageId
-      ) {
-        const detail = await CMCENUtils.apiJson(
-          `/api/retirement-messages/${encodeURIComponent(currentRetirementMessageId)}/edit`,
-          {
-            token,
-            errorMessage: "Could not verify retirement message ownership",
-          },
-        );
-        canManageRetirementMessages =
-          String(detail.retirementMessage?.createdBy || "") ===
-          String(user._id);
-      }
-
-      canManageRetirementComments = canDeleteAnyContent;
+      canOpenRetirementWorkspace =
+        user.permissions?.canReviewAndPublish === true;
+      canManageRetirementComments = user.permissions?.canHideContent === true;
       canDeleteOwnRetirementComments = canDeleteOwnContent;
       renderRetirementAdminActions();
+      await loadRetirementCommentEditor(token);
     } catch (error) {
       canManageRetirementComments = false;
-      canManageRetirementMessages = false;
+      canOpenRetirementWorkspace = false;
       canDeleteOwnRetirementComments = false;
       currentRetirementViewerId = "";
       removeRetirementAdminActions();
@@ -608,7 +637,7 @@ async function setupCommentAccess() {
   }
 
   canManageRetirementComments = false;
-  canManageRetirementMessages = false;
+  canOpenRetirementWorkspace = false;
   canDeleteOwnRetirementComments = false;
   currentRetirementViewerId = "";
   removeRetirementAdminActions();
@@ -666,19 +695,28 @@ retirementCommentForm.addEventListener("submit", async (event) => {
   }
 
   const body = retirementCommentText.value.trim();
+  const submittingEdit = Boolean(editingRetirementComment);
+  const commentId = editingRetirementComment?._id;
 
   retirementCommentSubmit.disabled = true;
-  retirementCommentSubmit.textContent = translate("retirement_comment_posting");
+  retirementCommentSubmit.textContent = translate(
+    submittingEdit
+      ? "retirement_comment_resubmitting"
+      : "retirement_comment_posting",
+  );
   retirementCommentMessage.hidden = true;
   visibleCommentMessageKey = "";
 
   try {
+    const endpoint = submittingEdit
+      ? `/api/retirement-messages/comments/${encodeURIComponent(commentId)}`
+      : `/api/retirement-messages/${encodeURIComponent(
+          currentRetirementMessageId,
+        )}/comments`;
     const response = await fetch(
-      `/api/retirement-messages/${encodeURIComponent(
-        currentRetirementMessageId,
-      )}/comments`,
+      endpoint,
       {
-        method: "POST",
+        method: submittingEdit ? "PATCH" : "POST",
 
         headers: CMCENUtils.authHeaders(token, {
           "Content-Type": "application/json",
@@ -698,11 +736,32 @@ retirementCommentForm.addEventListener("submit", async (event) => {
 
     if (!response.ok) {
       throw new Error(
-        data.error || translate("retirement_comment_submit_error"),
+        data.error ||
+          translate(
+            submittingEdit
+              ? "retirement_comment_update_error"
+              : "retirement_comment_submit_error",
+          ),
       );
     }
 
+    if (submittingEdit) {
+      requestedRetirementCommentEditId = null;
+      setRetirementCommentEditor();
+      window.history.replaceState({}, "", getRetirementCommentEditHref());
+      await loadComments(currentRetirementMessageId);
+      window.refreshAuthUI?.();
+
+      CMCENUtils.showToast(translate("retirement_comment_updated"), {
+        color: "success",
+        position: "bottom-right",
+        animation: "slide",
+      });
+      return;
+    }
+
     retirementCommentForm.reset();
+    CMCENUtils.bindCharacterCounters();
 
     if (data.status === "published" && data.comment) {
       const empty = retirementCommentList.querySelector(
@@ -729,12 +788,17 @@ retirementCommentForm.addEventListener("submit", async (event) => {
     }
   } catch (error) {
     CMCENUtils.showToast(
-      error.message || translate("retirement_comment_submit_error"),
+      error.message ||
+        translate(
+          submittingEdit
+            ? "retirement_comment_update_error"
+            : "retirement_comment_submit_error",
+        ),
       { color: "error", position: "bottom-right", animation: "slide" },
     );
   } finally {
     retirementCommentSubmit.disabled = false;
-    retirementCommentSubmit.textContent = translate("retirement_comment_post");
+    updateRetirementCommentFormCopy();
   }
 });
 
@@ -749,6 +813,7 @@ document.addEventListener("languagechange", () => {
     retirementDetailTitle.textContent = translate("retirement_detail_title", {
       name,
     });
+    renderRetirementAdminActions();
   } else if (visibleDetailMessageKey) {
     showRetirementDetailMessageKey(
       visibleDetailMessageKey,
@@ -765,11 +830,7 @@ document.addEventListener("languagechange", () => {
     );
   }
 
-  retirementCommentSubmit.textContent = translate(
-    retirementCommentSubmit.disabled
-      ? "retirement_comment_posting"
-      : "retirement_comment_post",
-  );
+  updateRetirementCommentFormCopy();
 });
 
 loadRetirementMessage();

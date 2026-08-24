@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const { after, before, beforeEach, describe, test } = require('node:test');
 
 process.env.JWT_SECRET = 'integration-test-jwt-secret';
@@ -6,21 +7,31 @@ process.env.JWT_ACCESS_TOKEN_TTL = '15m';
 process.env.JWT_REFRESH_TOKEN_TTL_DAYS = '1';
 process.env.NODE_ENV = 'test';
 process.env.APP_BASE_URL = 'http://localhost:3000';
+process.env.CASL_SENDER_NAME = 'CMCEN / RCMCE';
+process.env.CASL_SENDER_MAILING_ADDRESS =
+  '100 Example Street, Ottawa, ON K1A 0A1';
+process.env.CASL_SENDER_CONTACT = 'https://example.test/contact';
 process.env.MINIO_ENDPOINT = 'http://127.0.0.1:9000';
 process.env.MINIO_ACCESS_KEY = 'integration-test';
 process.env.MINIO_SECRET_KEY = 'integration-test';
 process.env.MINIO_BUCKET_NAME = 'integration-test';
+process.env.PLAUSIBLE_DOMAIN = '';
+process.env.PLAUSIBLE_API_URL = '';
 
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const request = require('supertest');
 const sharp = require('sharp');
 const speakeasy = require('speakeasy');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { app } = require('../../server');
 const AuditLog = require('../../models/AuditLog');
+const CertificateRequest = require('../../models/CertificateRequest');
+const ContentRevision = require('../../models/ContentRevision');
 const Event = require('../../models/Event');
 const LastPostMessage = require('../../models/LastPostMessage');
 const MediaAsset = require('../../models/MediaAsset');
+const NewsArticle = require('../../models/NewsArticle');
 const Page = require('../../models/Page');
 const RetirementComment = require('../../models/RetirementComment');
 const RetirementMessage = require('../../models/RetirementMessage');
@@ -28,6 +39,8 @@ const Role = require('../../models/Role');
 const User = require('../../models/User');
 const s3Client = require('../../storage');
 const { RETIREMENT_TRADE_ROLES } = require('../../config/content');
+const { buildPublicMediaUrl } = require('../../services/media-library');
+const { createUnsubscribeToken } = require('../../services/weekly-brief');
 
 let mongoServer;
 let userSequence = 0;
@@ -74,6 +87,7 @@ async function login(user, options = {}) {
   const response = await agent.post('/api/login').send({
     username: user.username,
     password: options.password || 'Correct-Horse-Integration-1!',
+    sessionCookieConsent: options.sessionCookieConsent ?? true,
   });
 
   assert.equal(
@@ -114,6 +128,40 @@ function retirementPayload() {
     },
     publicationConsentConfirmed: true,
     memberReviewConfirmed: true,
+  };
+}
+
+function certificateRequestPayload() {
+  return {
+    member: {
+      fullName: 'Sergeant Alex Example, CD',
+      rankLanguage: 'en',
+      decorations: ['CD'],
+      lastUnit: 'CMBG HQ & Sigs',
+      cafEnrollmentDate: '2001-09-01',
+      releaseDate: '2026-08-01',
+      ceBranchEnrollmentDate: '',
+      neededByDate: '2026-07-15',
+      dwdParadeRequested: false,
+    },
+    familyMembers: [
+      {
+        relationship: 'son',
+        fullName: 'Jordan Example',
+      },
+      {
+        relationship: 'daughter',
+        fullName: 'Taylor Example',
+      },
+    ],
+    mailingAddress: {
+      line1: '100 Certificate Way',
+      line2: 'Unit 2',
+      city: 'Ottawa',
+      province: 'Ontario',
+      postalCode: 'K1A 0A1',
+      country: 'Canada',
+    },
   };
 }
 
@@ -217,6 +265,33 @@ describe('system and authentication', () => {
     assert.equal(missing.body.error, 'Endpoint not found');
   });
 
+  test('serves the public changelog as Markdown', async () => {
+    const response = await request(app).get('/changelog.md').expect(200);
+
+    assert.match(response.headers['content-type'], /^text\/markdown/u);
+    assert.match(response.text, /^# Changelog/mu);
+  });
+
+  test('does not expose Plausible tracking until it is configured', async () => {
+    const response = await request(app)
+      .get('/api/client-config/plausible')
+      .expect(200);
+
+    assert.deepEqual(response.body, { enabled: false });
+  });
+
+  test('redirects the retired notifications page to the dashboard', async () => {
+    await request(app)
+      .get('/notifications')
+      .expect('Location', '/dashboard')
+      .expect(301);
+
+    await request(app)
+      .get('/notifications.html')
+      .expect('Location', '/dashboard')
+      .expect(301);
+  });
+
   test('rejects invalid credentials and malformed bearer tokens', async () => {
     const user = await createUser();
 
@@ -226,6 +301,15 @@ describe('system and authentication', () => {
     });
     assert.equal(invalidLogin.status, 401);
     assert.equal(invalidLogin.body.error, 'Invalid credentials');
+    const rejectedLoginAudit = await AuditLog.findOne({
+      action: 'user.login_rejected',
+    }).lean();
+    assert.equal(rejectedLoginAudit.targetType, 'user');
+    assert.equal(rejectedLoginAudit.metadata.reason, 'invalid_credentials');
+    assert.equal(
+      JSON.stringify(rejectedLoginAudit).includes('wrong-password'),
+      false,
+    );
 
     const invalidToken = await request(app)
       .get('/api/me')
@@ -260,10 +344,138 @@ describe('system and authentication', () => {
     const audit = await AuditLog.findOne({ action: 'user.login' }).lean();
     assert.equal(String(audit.actor), String(user._id));
   });
+
+  test('requires session-cookie consent before issuing a login session', async () => {
+    const user = await createUser();
+
+    const consentRequired = await login(user, {
+      sessionCookieConsent: false,
+    });
+
+    assert.equal(consentRequired.body.sessionCookieConsentRequired, true);
+    assert.equal(consentRequired.body.token, undefined);
+    assert.equal(consentRequired.headers['set-cookie'], undefined);
+
+    const consentedLogin = await login(user, { sessionCookieConsent: true });
+
+    assert.equal(typeof consentedLogin.body.token, 'string');
+    assert.match(consentedLogin.headers['set-cookie'][0], /cmcen_refresh=/);
+  });
+
+  test('audits invitation activation attempts without storing the invitation token', async () => {
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+    const email = 'activation.audit@example.test';
+    const invitedUser = await User.create({
+      accountType: 'invited',
+      profileComplete: false,
+      username: email,
+      email,
+      password: 'Temporary-Password-1!',
+      firstName: 'Activation',
+      lastName: 'Audit',
+      role: 'subscriber',
+      invitation: {
+        tokenHash: crypto
+          .createHash('sha256')
+          .update(invitationToken)
+          .digest('hex'),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+
+    const activation = await request(app)
+      .post('/api/register')
+      .send({
+        email,
+        password: 'Activated-Password-1!',
+        passwordConfirmation: 'Activated-Password-1!',
+        invitationToken,
+        sessionCookieConsent: true,
+      })
+      .expect(201);
+
+    assert.equal(typeof activation.body.token, 'string');
+    assert.ok(
+      await AuditLog.exists({
+        action: 'user.invitation_activation_attempted',
+        target: invitedUser._id,
+        'metadata.outcome': 'matched_invitation',
+      }),
+    );
+    assert.ok(
+      await AuditLog.exists({
+        action: 'user.invitation_activated',
+        target: invitedUser._id,
+      }),
+    );
+    const auditText = JSON.stringify(
+      await AuditLog.find({ target: invitedUser._id }).lean(),
+    );
+    assert.equal(auditText.includes(invitationToken), false);
+  });
+
+  test('audits a rejected invitation activation without exposing its token', async () => {
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+
+    await request(app)
+      .post('/api/register')
+      .send({
+        email: 'not-an-invitation@example.test',
+        password: 'Rejected-Password-1!',
+        passwordConfirmation: 'Rejected-Password-1!',
+        invitationToken,
+      })
+      .expect(400);
+
+    const rejectedAudit = await AuditLog.findOne({
+      action: 'user.invitation_activation_rejected',
+    }).lean();
+    assert.equal(rejectedAudit.metadata.outcome, 'invalid_or_expired');
+    assert.equal(JSON.stringify(rejectedAudit).includes(invitationToken), false);
+  });
+
+  test('records express weekly-brief consent and permits immediate email-link withdrawal', async () => {
+    const user = await createUser();
+    const loginResponse = await login(user);
+
+    await request(app)
+      .put('/api/subscriptions/weekly-brief')
+      .set('Authorization', bearer(loginResponse.body.token))
+      .send({ subscribed: true })
+      .expect(400);
+
+    const subscribed = await request(app)
+      .put('/api/subscriptions/weekly-brief')
+      .set('Authorization', bearer(loginResponse.body.token))
+      .send({ subscribed: true, expressConsent: true })
+      .expect(200);
+
+    assert.equal(subscribed.body.weeklyBrief.subscribed, true);
+    assert.ok(subscribed.body.weeklyBrief.consentedAt);
+    assert.equal(subscribed.body.weeklyBrief.available, true);
+    assert.ok(
+      await AuditLog.exists({ action: 'user.weekly_brief_subscribed' }),
+    );
+
+    const token = await createUnsubscribeToken(user);
+    await request(app)
+      .get(`/api/subscriptions/weekly-brief/unsubscribe?token=${token}`)
+      .expect(200);
+
+    const withdrawnUser = await User.findById(user._id).lean();
+    assert.equal(
+      withdrawnUser.emailSubscriptions.weeklyBrief.subscribed,
+      false,
+    );
+    assert.ok(withdrawnUser.emailSubscriptions.weeklyBrief.unsubscribedAt);
+    assert.ok(
+      await AuditLog.exists({ action: 'user.weekly_brief_unsubscribed' }),
+    );
+  });
 });
 
 describe('public search', () => {
-  test('returns canonical destinations for event, retirement, and static page results', async () => {
+  test('returns canonical destinations for news, event, retirement, and static page results', async () => {
     const owner = await createUser({ role: 'editor' });
     const event = await Event.create({
       title: {
@@ -299,6 +511,20 @@ describe('public search', () => {
       publishedAt: new Date(),
       createdBy: owner._id,
     });
+    const newsStory = await NewsArticle.create({
+      title: {
+        en: 'Searchable Signal News',
+        fr: 'Nouvelles de transmissions recherchables',
+      },
+      content: {
+        en: 'A searchable news story for the signal community.',
+        fr: 'Une nouvelle recherchable pour la communauté des transmissions.',
+      },
+      status: 'published',
+      publishedAt: new Date(),
+      createdBy: owner._id,
+      publishedBy: owner._id,
+    });
 
     const eventSearch = await request(app)
       .get('/api/search?q=signal%20exercise')
@@ -314,10 +540,15 @@ describe('public search', () => {
     const lastPostResult = lastPostSearch.body.results.find(
       (result) => result.type === 'last-post-message',
     );
-    assert.equal(
-      lastPostResult.url,
-      `/last-post-message?id=${lastPost._id}`,
+    assert.equal(lastPostResult.url, `/last-post-message?id=${lastPost._id}`);
+
+    const newsSearch = await request(app)
+      .get('/api/search?q=signal%20news')
+      .expect(200);
+    const newsResult = newsSearch.body.results.find(
+      (result) => result.type === 'news-story',
     );
+    assert.equal(newsResult.url, `/news-story?id=${newsStory._id}`);
 
     const retirementSearch = await request(app)
       .get('/api/search?q=alex%20example')
@@ -337,6 +568,33 @@ describe('public search', () => {
       (result) => result.sourceId === '/calendar',
     );
     assert.equal(pageResult.url, '/calendar');
+
+    const historySearch = await request(app)
+      .get('/api/search?q=history')
+      .expect(200);
+    assert.equal(historySearch.body.results[0].sourceId, '/history');
+
+    const homeSearch = await request(app).get('/api/search?q=home').expect(200);
+    assert.equal(
+      homeSearch.body.results.some((result) => result.sourceId === '/index'),
+      false,
+    );
+
+    const retirementPageSearch = await request(app)
+      .get('/api/search?q=retirement')
+      .expect(200);
+    assert.equal(retirementPageSearch.body.results[0].sourceId, '/retirements');
+
+    const lastPostPageSearch = await request(app)
+      .get('/api/search?q=last%20post')
+      .expect(200);
+    assert.equal(lastPostPageSearch.body.results[0].sourceId, '/last-post');
+
+    const eventPageSearch = await request(app)
+      .get('/api/search?q=event')
+      .expect(200);
+    assert.equal(eventPageSearch.body.results[0].sourceId, '/calendar');
+
     assert.equal(
       [...eventSearch.body.results, ...lastPostSearch.body.results].every(
         (result) => Boolean(result.url),
@@ -347,6 +605,67 @@ describe('public search', () => {
 });
 
 describe('permissions and audit logs', () => {
+  test('sends contact messages using the authenticated member profile', async () => {
+    const previousMailToBranch = process.env.MAIL_TO_BRANCH;
+    process.env.MAIL_TO_BRANCH = 'branch@example.test';
+
+    try {
+      const user = await createUser({ phone: '613-555-0100' });
+      const session = await login(user);
+      const token = session.body.token;
+
+      await request(app)
+        .post('/api/contact')
+        .set('Authorization', bearer(token))
+        .send({
+          subject: 'Need assistance',
+          message: 'Please contact me about my membership.',
+          email: 'spoofed@example.test',
+          phone: '000-000-0000',
+        })
+        .expect(202);
+
+      const auditLog = await AuditLog.findOne({
+        action: 'contact.submitted',
+        actor: user._id,
+      }).lean();
+      assert.equal(auditLog.targetType, 'contactMessage');
+      assert.equal(auditLog.targetSnapshot.subject, 'Need assistance');
+      assert.equal(auditLog.metadata.messageLength, 38);
+      assert.equal(auditLog.actorSnapshot.email, user.email);
+    } finally {
+      if (previousMailToBranch === undefined) {
+        delete process.env.MAIL_TO_BRANCH;
+      } else {
+        process.env.MAIL_TO_BRANCH = previousMailToBranch;
+      }
+    }
+  });
+
+  test('requires sign-in and configured branch delivery for contact messages', async () => {
+    await request(app)
+      .post('/api/contact')
+      .send({ subject: 'Need assistance', message: 'Please contact me.' })
+      .expect(401);
+
+    const user = await createUser();
+    const session = await login(user);
+    const previousMailToBranch = process.env.MAIL_TO_BRANCH;
+    delete process.env.MAIL_TO_BRANCH;
+
+    try {
+      await request(app)
+        .post('/api/contact')
+        .set('Authorization', bearer(session.body.token))
+        .send({ subject: 'Need assistance', message: 'Please contact me.' })
+        .expect(503);
+    } finally {
+      if (previousMailToBranch !== undefined) {
+        process.env.MAIL_TO_BRANCH = previousMailToBranch;
+      }
+    }
+  });
+
   test('prevents a subscriber from reading the audit log', async () => {
     const user = await createUser({ role: 'subscriber' });
     const loginResponse = await login(user);
@@ -412,7 +731,277 @@ describe('permissions and audit logs', () => {
   });
 });
 
+describe('news stories', () => {
+  test('uses the news permission to publish bilingual stories and audit their changes', async () => {
+    const publisherRole = await Role.create({
+      name: 'News Publisher',
+      slug: 'news-publisher',
+      permissions: ['news.manage'],
+    });
+    const publisher = await createUser({
+      role: 'subscriber',
+      customRoles: [publisherRole._id],
+    });
+    const session = await login(publisher);
+    const token = session.body.token;
+    const payload = {
+      title: { en: 'Signal update', fr: 'Mise a jour des transmissions' },
+      content: {
+        en: 'An English news story for the C&E Family.',
+        fr: 'Un article francais pour la famille des C et E.',
+      },
+      imageUrl: '',
+      status: 'published',
+    };
+
+    const created = await request(app)
+      .post('/api/news')
+      .set('Authorization', bearer(token))
+      .send(payload)
+      .expect(201);
+    const articleId = created.body.article._id;
+    assert.equal(
+      created.body.article.imageUrl,
+      'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp',
+    );
+    assert.equal(
+      created.body.article.imageDisplayUrl,
+      'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp',
+    );
+
+    const publicNews = await request(app).get('/api/news').expect(200);
+    assert.equal(publicNews.body.articles.length, 1);
+    assert.equal(publicNews.body.articles[0].title.fr, payload.title.fr);
+
+    const publicArticle = await request(app)
+      .get(`/api/news/${articleId}`)
+      .expect(200);
+    assert.equal(publicArticle.body.article.content.en, payload.content.en);
+
+    const feed = await request(app).get('/api/news/feed').expect(200);
+    assert.equal(feed.body.items[0].type, 'news');
+    assert.equal(feed.body.items[0].title.en, payload.title.en);
+
+    await request(app)
+      .patch(`/api/news/${articleId}`)
+      .set('Authorization', bearer(token))
+      .send({ ...payload, status: 'draft' })
+      .expect(200);
+
+    const hiddenPublicNews = await request(app).get('/api/news').expect(200);
+    assert.equal(hiddenPublicNews.body.articles.length, 0);
+    const managedNews = await request(app)
+      .get('/api/news/manage')
+      .set('Authorization', bearer(token))
+      .expect(200);
+    assert.equal(managedNews.body.articles[0].status, 'draft');
+
+    const audits = await AuditLog.find({ target: articleId }).lean();
+    assert.deepEqual(
+      audits.map((audit) => audit.action).sort(),
+      [
+        'content.created',
+        'content.published',
+        'content.updated',
+        'content.unpublished',
+      ].sort(),
+    );
+  });
+});
+
 describe('retirement message lifecycle', () => {
+  test('creates a pending certificate request alongside a retirement submission', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const contributorLogin = await login(contributor);
+
+    const submitted = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        ...retirementPayload(),
+        certificateRequest: certificateRequestPayload(),
+      })
+      .expect(201);
+
+    assert.equal(submitted.body.status, 'pending');
+    assert.equal(submitted.body.certificateRequest.status, 'pending');
+
+    const retirementMessage = await RetirementMessage.findOne().lean();
+    const certificateRequest = await CertificateRequest.findById(
+      submitted.body.certificateRequest.id,
+    ).lean();
+
+    assert.equal(certificateRequest.certificateType, 'retirement');
+    assert.equal(certificateRequest.status, 'pending');
+    assert.equal(certificateRequest.source.type, 'retirementMessage');
+    assert.equal(
+      String(certificateRequest.source.id),
+      String(retirementMessage._id),
+    );
+    assert.equal(certificateRequest.member.rank, 'Sergeant');
+    assert.equal(
+      certificateRequest.member.tradeRole,
+      RETIREMENT_TRADE_ROLES[0],
+    );
+    assert.equal(certificateRequest.member.ceBranchEnrollmentDate, null);
+    assert.equal(certificateRequest.member.dwdParadeRequested, false);
+    assert.deepEqual(
+      certificateRequest.familyMembers.map((member) => member.relationship),
+      ['son', 'daughter'],
+    );
+
+    const auditLog = await AuditLog.findOne({
+      action: 'content.certificate_request_created',
+      target: certificateRequest._id,
+    }).lean();
+    assert.equal(auditLog.targetType, 'certificateRequest');
+    assert.equal(auditLog.metadata.status, 'pending');
+  });
+
+  test('requires every certificate field other than the C&E enrollment date', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const contributorLogin = await login(contributor);
+    const invalidCertificateRequest = certificateRequestPayload();
+    invalidCertificateRequest.mailingAddress.line2 = '';
+
+    const rejected = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        ...retirementPayload(),
+        certificateRequest: invalidCertificateRequest,
+      })
+      .expect(400);
+
+    assert.match(rejected.body.error, /mailing address field is required/);
+    assert.equal(await RetirementMessage.countDocuments(), 0);
+    assert.equal(await CertificateRequest.countDocuments(), 0);
+  });
+
+  test('requires every certificate confirmation before mailing and audits fulfillment', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorLogin = await login(contributor);
+    const editorLogin = await login(editor);
+
+    const submitted = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        ...retirementPayload(),
+        certificateRequest: certificateRequestPayload(),
+      })
+      .expect(201);
+
+    const certificateRequestId = submitted.body.certificateRequest.id;
+
+    await request(app)
+      .get('/api/certificate-requests/count')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(403);
+
+    const count = await request(app)
+      .get('/api/certificate-requests/count')
+      .set('Authorization', bearer(editorLogin.body.token))
+      .expect(200);
+    assert.equal(count.body.pending, 1);
+    assert.equal(count.body.readyToMail, 0);
+    assert.equal(count.body.actionable, 1);
+
+    const pendingRequests = await request(app)
+      .get('/api/certificate-requests?status=pending')
+      .set('Authorization', bearer(editorLogin.body.token))
+      .expect(200);
+    assert.equal(pendingRequests.body.certificateRequests.length, 1);
+    assert.equal(
+      pendingRequests.body.certificateRequests[0].mailingAddress.line1,
+      '100 Certificate Way',
+    );
+
+    await request(app)
+      .patch(`/api/certificate-requests/${certificateRequestId}/status`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ status: 'ready_to_mail', printedCertificateKeys: ['member'] })
+      .expect(400);
+
+    const printingConfirmed = await request(app)
+      .patch(`/api/certificate-requests/${certificateRequestId}/status`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({
+        status: 'ready_to_mail',
+        printedCertificateKeys: ['member', 'family:0', 'family:1'],
+      })
+      .expect(200);
+    assert.equal(
+      printingConfirmed.body.certificateRequest.status,
+      'ready_to_mail',
+    );
+
+    const printedRequest =
+      await CertificateRequest.findById(certificateRequestId).lean();
+    assert.equal(printedRequest.status, 'ready_to_mail');
+    assert.equal(String(printedRequest.printedBy), String(editor._id));
+    assert.ok(printedRequest.printedAt);
+    assert.deepEqual(
+      printedRequest.printedCertificates.map(
+        (certificate) => certificate.certificateKey,
+      ),
+      ['member', 'family:0', 'family:1'],
+    );
+
+    const readyToMailCount = await request(app)
+      .get('/api/certificate-requests/count')
+      .set('Authorization', bearer(editorLogin.body.token))
+      .expect(200);
+    assert.equal(readyToMailCount.body.pending, 0);
+    assert.equal(readyToMailCount.body.readyToMail, 1);
+    assert.equal(readyToMailCount.body.actionable, 1);
+
+    const readyToMailRequests = await request(app)
+      .get('/api/certificate-requests?status=actionable')
+      .set('Authorization', bearer(editorLogin.body.token))
+      .expect(200);
+    assert.equal(readyToMailRequests.body.certificateRequests.length, 1);
+    assert.equal(
+      readyToMailRequests.body.certificateRequests[0].status,
+      'ready_to_mail',
+    );
+
+    const printAudit = await AuditLog.findOne({
+      action: 'content.certificate_request_print_confirmed',
+      target: certificateRequestId,
+    }).lean();
+    assert.equal(printAudit.metadata.previousStatus, 'pending');
+    assert.equal(printAudit.metadata.status, 'ready_to_mail');
+    assert.equal(printAudit.metadata.certificateCount, 3);
+
+    const mailed = await request(app)
+      .patch(`/api/certificate-requests/${certificateRequestId}/status`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ status: 'mailed' })
+      .expect(200);
+    assert.equal(mailed.body.certificateRequest.status, 'mailed');
+
+    const mailedRequest =
+      await CertificateRequest.findById(certificateRequestId).lean();
+    assert.equal(mailedRequest.status, 'mailed');
+    assert.equal(String(mailedRequest.mailedBy), String(editor._id));
+    assert.ok(mailedRequest.mailedAt);
+
+    const emptyActionableRequests = await request(app)
+      .get('/api/certificate-requests?status=actionable')
+      .set('Authorization', bearer(editorLogin.body.token))
+      .expect(200);
+    assert.equal(emptyActionableRequests.body.certificateRequests.length, 0);
+
+    const mailAudit = await AuditLog.findOne({
+      action: 'content.certificate_request_mailed',
+      target: certificateRequestId,
+    }).lean();
+    assert.equal(mailAudit.metadata.previousStatus, 'ready_to_mail');
+    assert.equal(mailAudit.metadata.status, 'mailed');
+  });
+
   test('enforces submission and review permissions', async () => {
     const subscriber = await createUser({ role: 'subscriber' });
     const contributor = await createUser({ role: 'contributor' });
@@ -504,6 +1093,45 @@ describe('retirement message lifecycle', () => {
     assert.equal(published.body.status, 'published');
   });
 
+  test('lists the current user’s non-hidden retirement messages', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const otherContributor = await createUser({ role: 'contributor' });
+    const contributorLogin = await login(contributor);
+    const otherContributorLogin = await login(otherContributor);
+
+    const submitted = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(retirementPayload())
+      .expect(201);
+    const otherSubmitted = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(otherContributorLogin.body.token))
+      .send(retirementPayload())
+      .expect(201);
+
+    const mine = await request(app)
+      .get('/api/retirement-messages/mine')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.deepEqual(
+      mine.body.retirementMessages.map((message) => String(message._id)),
+      [String(submitted.body.retirementMessage._id)],
+    );
+
+    await RetirementMessage.updateOne(
+      { _id: submitted.body.retirementMessage._id },
+      { $set: { status: 'hidden' } },
+    );
+
+    const afterRemoval = await request(app)
+      .get('/api/retirement-messages/mine')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(afterRemoval.body.retirementMessages.length, 0);
+    assert.ok(otherSubmitted.body.retirementMessage._id);
+  });
+
   test('requires bilingual review content, publishes, and exposes the message publicly', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
@@ -561,6 +1189,73 @@ describe('retirement message lifecycle', () => {
     assert.equal(String(publishedAudit.target), String(message._id));
   });
 
+  test('lets owners and reviewers save retirement translations before publication', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorLogin = await login(contributor);
+    const editorLogin = await login(editor);
+
+    await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(retirementPayload())
+      .expect(201);
+
+    const messageId = (await RetirementMessage.findOne())._id;
+    const ownerTranslation = translatedMessage('English submitter');
+    const frenchTranslation = translatedMessage('French reviewer');
+
+    const ownerResponse = await request(app)
+      .patch(`/api/retirement-messages/${messageId}/review-content`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({ language: 'en', message: ownerTranslation })
+      .expect(200);
+    assert.equal(ownerResponse.body.retirementMessage.status, 'pending');
+    assert.equal(
+      ownerResponse.body.retirementMessage.messages.en,
+      ownerTranslation,
+    );
+
+    const response = await request(app)
+      .patch(`/api/retirement-messages/${messageId}/review-content`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ language: 'fr', message: frenchTranslation })
+      .expect(200);
+
+    assert.equal(response.body.retirementMessage.status, 'pending');
+    assert.equal(
+      response.body.retirementMessage.messages.fr,
+      frenchTranslation,
+    );
+
+    const savedMessage = await RetirementMessage.findById(messageId);
+    assert.equal(savedMessage.status, 'pending');
+    assert.equal(savedMessage.messages.fr, frenchTranslation);
+
+    const auditEntry = await AuditLog.findOne({
+      action: 'content.review_content_updated',
+      target: savedMessage._id,
+      'metadata.language': 'fr',
+    });
+    assert.equal(auditEntry.targetType, 'retirementMessage');
+    assert.equal(auditEntry.metadata.language, 'fr');
+
+    const revision = await ContentRevision.findOne({
+      contentType: 'retirementMessage',
+      contentId: savedMessage._id,
+      language: 'fr',
+    }).lean();
+    assert.equal(revision.language, 'fr');
+    assert.equal(revision.before.message, '');
+    assert.equal(revision.after.message, frenchTranslation);
+
+    await request(app)
+      .patch(`/api/retirement-messages/${messageId}/review`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ action: 'publish' })
+      .expect(200);
+  });
+
   test('requires a reason when rejecting a pending message', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
@@ -593,6 +1288,53 @@ describe('retirement message lifecycle', () => {
       (await RetirementMessage.findById(message._id)).status,
       'rejected',
     );
+
+    const frenchMessage = translatedMessage('Retirement message preserved in French');
+    await RetirementMessage.findByIdAndUpdate(message._id, {
+      $set: { 'messages.fr': frenchMessage },
+    });
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    const rejectionNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(message._id),
+    );
+    assert.equal(
+      rejectionNotification.href,
+      `/submit-retirement?id=${message._id}`,
+    );
+
+    const editPayload = await request(app)
+      .get(`/api/retirement-messages/${message._id}/edit`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(editPayload.body.retirementMessage.status, 'rejected');
+    assert.equal(editPayload.body.retirementMessage.messages.fr, frenchMessage);
+
+    const revisedSubmission = retirementPayload();
+    revisedSubmission.message = translatedMessage('Retirement resubmission');
+
+    const resubmitted = await request(app)
+      .patch(`/api/retirement-messages/${message._id}`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(revisedSubmission)
+      .expect(200);
+    assert.equal(resubmitted.body.retirementMessage.status, 'pending');
+    assert.equal(resubmitted.body.retirementMessage.rejectionReason, '');
+    assert.equal(resubmitted.body.retirementMessage.messages.fr, frenchMessage);
+
+    const resolvedNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(
+      resolvedNotifications.body.notifications.items.some(
+        (item) => String(item.id) === String(message._id),
+      ),
+      false,
+    );
   });
 });
 
@@ -616,11 +1358,17 @@ describe('Last Post lifecycle', () => {
         messageLanguage: 'en',
         message: 'An English Last Post notice used by the integration test.',
         imageUrl: '',
+        publicationPermissionConfirmed: true,
       })
       .expect(201);
 
     const notice = await LastPostMessage.findOne();
     assert.equal(notice.status, 'pending');
+    assert.equal(notice.publicationPermission.confirmed, true);
+    assert.equal(
+      String(notice.publicationPermission.confirmedBy),
+      String(contributor._id),
+    );
 
     await request(app)
       .patch(`/api/last-posts/${notice._id}/review`)
@@ -637,6 +1385,273 @@ describe('Last Post lifecycle', () => {
     const list = await request(app).get('/api/last-posts').expect(200);
     assert.equal(list.body.lastPosts.length, 1);
     assert.equal(list.body.lastPosts[0].deceased.surname, 'Example');
+  });
+
+  test('lists the current user’s non-hidden Last Post notices', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const otherContributor = await createUser({ role: 'contributor' });
+    const contributorLogin = await login(contributor);
+    const otherContributorLogin = await login(otherContributor);
+    const submission = {
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Workspace',
+        surname: 'Notice',
+      },
+      messageLanguage: 'en',
+      message: 'A Last Post notice listed in the current user content workspace.',
+      publicationPermissionConfirmed: true,
+    };
+
+    const submitted = await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(submission)
+      .expect(201);
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(otherContributorLogin.body.token))
+      .send(submission)
+      .expect(201);
+
+    const mine = await request(app)
+      .get('/api/last-posts/mine')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.deepEqual(
+      mine.body.lastPosts.map((notice) => String(notice._id)),
+      [String(submitted.body.lastPost._id)],
+    );
+
+    await LastPostMessage.updateOne(
+      { _id: submitted.body.lastPost._id },
+      { $set: { status: 'hidden' } },
+    );
+
+    const afterRemoval = await request(app)
+      .get('/api/last-posts/mine')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(afterRemoval.body.lastPosts.length, 0);
+  });
+
+  test('lets an owner revise a rejected Last Post notice without exposing it to other contributors', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const otherContributor = await createUser({ role: 'contributor' });
+    const contributorLogin = await login(contributor);
+    const otherContributorLogin = await login(otherContributor);
+    const submission = {
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Rejected',
+        surname: 'Notice',
+      },
+      messageLanguage: 'en',
+      message: 'A Last Post notice that needs a contributor revision.',
+      publicationPermissionConfirmed: true,
+    };
+
+    const created = await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(submission)
+      .expect(201);
+    const lastPostId = created.body.lastPost._id;
+
+    await LastPostMessage.findByIdAndUpdate(lastPostId, {
+      $set: {
+        status: 'rejected',
+        rejectionReason: 'Please add the missing service details.',
+        'messages.fr': 'Un avis du Dernier appel qui doit être préservé.',
+      },
+    });
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    const rejectionNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(lastPostId),
+    );
+    assert.equal(rejectionNotification.href, `/submit-last-post?id=${lastPostId}`);
+
+    const editPayload = await request(app)
+      .get(`/api/last-posts/${lastPostId}/edit`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(editPayload.body.lastPost.status, 'rejected');
+    assert.equal(
+      editPayload.body.lastPost.messages.fr,
+      'Un avis du Dernier appel qui doit être préservé.',
+    );
+
+    await request(app)
+      .get(`/api/last-posts/${lastPostId}/edit`)
+      .set('Authorization', bearer(otherContributorLogin.body.token))
+      .expect(403);
+
+    await request(app)
+      .patch(`/api/last-posts/${lastPostId}`)
+      .set('Authorization', bearer(otherContributorLogin.body.token))
+      .send(submission)
+      .expect(403);
+
+    const updated = await request(app)
+      .patch(`/api/last-posts/${lastPostId}`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        ...submission,
+        message: 'A revised Last Post notice with the requested service details.',
+      })
+      .expect(200);
+    assert.equal(updated.body.lastPost.status, 'pending');
+    assert.equal(updated.body.lastPost.rejectionReason, '');
+    assert.equal(
+      updated.body.lastPost.messages.fr,
+      'Un avis du Dernier appel qui doit être préservé.',
+    );
+
+    const resolvedNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .expect(200);
+    assert.equal(
+      resolvedNotifications.body.notifications.items.some(
+        (item) => String(item.id) === String(lastPostId),
+      ),
+      false,
+    );
+  });
+
+  test('lets owners and reviewers save Last Post translations before publication', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorLogin = await login(contributor);
+    const editorLogin = await login(editor);
+
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        deceased: {
+          fullRank: 'Sergeant',
+          firstName: 'Last',
+          surname: 'Post',
+          postNominal: 'CD',
+        },
+        messageLanguage: 'en',
+        message: 'Submitted English Last Post notice.',
+        publicationPermissionConfirmed: true,
+      })
+      .expect(201);
+
+    const notice = await LastPostMessage.findOne();
+    const ownerTranslation = 'Corrected English Last Post notice from its submitter.';
+    const frenchTranslation = 'Avis du Dernier appel ajouté par le réviseur.';
+
+    const ownerResponse = await request(app)
+      .patch(`/api/last-posts/${notice._id}/review-content`)
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({ language: 'en', message: ownerTranslation })
+      .expect(200);
+    assert.equal(ownerResponse.body.lastPost.status, 'pending');
+    assert.equal(ownerResponse.body.lastPost.messages.en, ownerTranslation);
+
+    const response = await request(app)
+      .patch(`/api/last-posts/${notice._id}/review-content`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ language: 'fr', message: frenchTranslation })
+      .expect(200);
+
+    assert.equal(response.body.lastPost.status, 'pending');
+    assert.equal(response.body.lastPost.messages.fr, frenchTranslation);
+
+    const savedNotice = await LastPostMessage.findById(notice._id);
+    assert.equal(savedNotice.status, 'pending');
+    assert.equal(savedNotice.messages.fr, frenchTranslation);
+
+    const auditEntry = await AuditLog.findOne({
+      action: 'content.review_content_updated',
+      target: savedNotice._id,
+      'metadata.language': 'fr',
+    });
+    assert.equal(auditEntry.targetType, 'lastPost');
+    assert.equal(auditEntry.metadata.language, 'fr');
+
+    const revision = await ContentRevision.findOne({
+      contentType: 'lastPost',
+      contentId: savedNotice._id,
+      language: 'fr',
+    }).lean();
+    assert.equal(revision.language, 'fr');
+    assert.equal(revision.before.message, '');
+    assert.equal(revision.after.message, frenchTranslation);
+
+    await request(app)
+      .patch(`/api/last-posts/${notice._id}/review`)
+      .set('Authorization', bearer(editorLogin.body.token))
+      .send({ action: 'publish' })
+      .expect(200);
+  });
+
+  test('requires chain-of-command consent and limits immediate publication to reviewers', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const administrator = await createUser({ role: 'administrator' });
+    const contributorLogin = await login(contributor);
+    const administratorLogin = await login(administrator);
+    const submission = {
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Immediate',
+        surname: 'Publication',
+      },
+      messageLanguage: 'en',
+      message:
+        'A Last Post notice used to verify consent and immediate publication.',
+    };
+
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send(submission)
+      .expect(400);
+
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorLogin.body.token))
+      .send({
+        ...submission,
+        publicationPermissionConfirmed: true,
+        publishNow: true,
+      })
+      .expect(403);
+
+    const published = await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(administratorLogin.body.token))
+      .send({
+        ...submission,
+        publicationPermissionConfirmed: true,
+        publishNow: true,
+      })
+      .expect(201);
+    assert.equal(published.body.lastPost.status, 'published');
+
+    const publishedNotice = await LastPostMessage.findOne({
+      status: 'published',
+    });
+    assert.ok(publishedNotice.publishedAt);
+    assert.equal(
+      String(publishedNotice.publishedBy),
+      String(administrator._id),
+    );
+
+    const publicationAudit = await AuditLog.findOne({
+      action: 'content.published',
+      target: publishedNotice._id,
+    });
+    assert.equal(publicationAudit.targetType, 'lastPost');
+    assert.equal(publicationAudit.metadata.source, 'create');
   });
 });
 
@@ -661,11 +1676,227 @@ describe('authorization matrix and account integrity', () => {
     }
   });
 
-  test('grants catalog permissions through a custom role but not developer-only access', async () => {
+  test('excludes legacy cmcen.local accounts from user lists and exports', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const visibleUser = await createUser({
+      email: 'visible.member@example.test',
+      username: 'visible.member@example.test',
+    });
+    const legacyGhost = await createUser({
+      accountType: 'ghost',
+      role: 'ghost',
+      email: 'legacy-commenter@cmcen.local',
+      username: 'legacy-commenter',
+    });
+    const session = await login(administrator);
+
+    const list = await request(app)
+      .get('/api/admin/users?limit=100')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    const listedUserIds = list.body.users.map((user) => String(user._id));
+
+    assert.ok(listedUserIds.includes(String(visibleUser._id)));
+    assert.ok(!listedUserIds.includes(String(legacyGhost._id)));
+
+    const exportResponse = await request(app)
+      .get('/api/admin/users/export?format=csv')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    assert.match(exportResponse.text, /visible\.member@example\.test/);
+    assert.doesNotMatch(exportResponse.text, /legacy-commenter@cmcen\.local/);
+  });
+
+  test('restricts Internal Beta role changes to developers', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const developer = await createUser({ role: 'developer' });
+    const member = await createUser({ role: 'subscriber' });
+    const administratorLogin = await login(administrator);
+    const developerLogin = await login(developer);
+
+    await request(app)
+      .patch(`/api/admin/users/${member._id}/role`)
+      .set('Authorization', bearer(administratorLogin.body.token))
+      .send({ role: 'internal_beta' })
+      .expect(403);
+
+    await request(app)
+      .patch(`/api/admin/users/${member._id}/role`)
+      .set('Authorization', bearer(developerLogin.body.token))
+      .send({ role: 'internal_beta' })
+      .expect(200);
+
+    const updatedMember = await User.findById(member._id).lean();
+    assert.equal(updatedMember.role, 'internal_beta');
+  });
+
+  test('invites a user with a built-in role and rejects custom role assignment', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const customRole = await Role.create({
+      name: 'Invite-only custom role',
+      slug: 'invite-only-custom-role',
+      permissions: ['audit.view'],
+    });
+    const token = jwt.sign(
+      { userId: administrator._id },
+      process.env.JWT_SECRET,
+    );
+
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(token))
+      .send({
+        firstName: 'Jordan',
+        lastName: 'Example',
+        email: 'jordan.example@example.test',
+        role: 'editor',
+        customRoleIds: [String(customRole._id)],
+      })
+      .expect(400);
+
+    const response = await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(token))
+      .send({
+        firstName: 'Jordan',
+        lastName: 'Example',
+        email: 'jordan.example@example.test',
+        role: 'editor',
+      })
+      .expect(201);
+
+    assert.equal(response.body.user.role, 'editor');
+    assert.deepEqual(response.body.user.customRoles, []);
+    const invitedUser = await User.findById(response.body.user._id).lean();
+    assert.equal(invitedUser.accountType, 'invited');
+    assert.equal(invitedUser.firstName, 'Jordan');
+    assert.equal(invitedUser.lastName, 'Example');
+    assert.deepEqual(invitedUser.customRoles, []);
+    assert.equal(invitedUser.invitation.delivery.status, 'sent');
+  });
+
+  test('stores an optional invitation message for delivery and resends', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const session = await login(administrator);
+    const message = 'Welcome to the team!\nPlease activate your account today.';
+
+    const response = await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        firstName: 'Message',
+        lastName: 'Recipient',
+        email: 'message.recipient@example.test',
+        role: 'subscriber',
+        message,
+      })
+      .expect(201);
+
+    const invitedUser = await User.findById(response.body.user._id).lean();
+    assert.equal(invitedUser.invitation.message, message);
+
+    await request(app)
+      .post(`/api/admin/users/${response.body.user._id}/invitation/resend`)
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    const resentUser = await User.findById(response.body.user._id).lean();
+    assert.equal(resentUser.invitation.message, message);
+  });
+
+  test('rejects an invitation message longer than 2,000 characters', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const session = await login(administrator);
+
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        firstName: 'Long',
+        lastName: 'Message',
+        email: 'long.message@example.test',
+        role: 'subscriber',
+        message: 'a'.repeat(2001),
+      })
+      .expect(400);
+  });
+
+  test('resends an invitation with a renewed token and delivery diagnostics', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const session = await login(administrator);
+    const invitation = await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        firstName: 'Resend',
+        lastName: 'Member',
+        email: 'resend.member@example.test',
+        role: 'subscriber',
+      })
+      .expect(201);
+    const invitedUserId = invitation.body.user._id;
+    const beforeResend = await User.findById(invitedUserId)
+      .select('+invitation.tokenHash')
+      .lean();
+
+    const resend = await request(app)
+      .post(`/api/admin/users/${invitedUserId}/invitation/resend`)
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    assert.equal(resend.body.user.invitation.delivery.status, 'sent');
+    assert.ok(resend.body.user.invitation.delivery.attemptedAt);
+    assert.ok(resend.body.user.invitation.sentAt);
+    const afterResend = await User.findById(invitedUserId)
+      .select('+invitation.tokenHash')
+      .lean();
+    assert.notEqual(
+      afterResend.invitation.tokenHash,
+      beforeResend.invitation.tokenHash,
+    );
+    const auditEntry = await AuditLog.findOne({
+      action: 'user.invitation_resent',
+      target: invitedUserId,
+    }).lean();
+    assert.equal(auditEntry.metadata.delivery.status, 'sent');
+  });
+
+  test('restricts Internal Beta invitations to developers', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const developer = await createUser({ role: 'developer' });
+    const administratorLogin = await login(administrator);
+    const developerLogin = await login(developer);
+    const invitation = {
+      firstName: 'Beta',
+      lastName: 'Member',
+      email: 'internal-beta@example.test',
+      role: 'internal_beta',
+    };
+
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(administratorLogin.body.token))
+      .send(invitation)
+      .expect(403);
+
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', bearer(developerLogin.body.token))
+      .send(invitation)
+      .expect(201);
+
+    const invitedMember = await User.findOne({
+      email: invitation.email,
+    }).lean();
+    assert.equal(invitedMember.role, 'internal_beta');
+  });
+
+  test('grants catalog permissions through a custom role without developer-only escalation', async () => {
     const customRole = await Role.create({
       name: 'Audit Reader',
       slug: 'audit-reader',
-      permissions: ['audit.view', 'site_config.access'],
+      permissions: ['audit.view', 'review.bypass'],
     });
     const user = await createUser({
       role: 'subscriber',
@@ -678,11 +1909,12 @@ describe('authorization matrix and account integrity', () => {
       .set('Authorization', bearer(session.body.token))
       .expect(200);
 
-    await request(app)
-      .post('/api/admin/site-config/access')
+    const profile = await request(app)
+      .get('/api/me')
       .set('Authorization', bearer(session.body.token))
-      .send({})
-      .expect(404);
+      .expect(200);
+
+    assert.equal(profile.body.permissions.canBypassReviewStages, false);
   });
 
   test('rejects an otherwise valid token after its user is deleted', async () => {
@@ -703,6 +1935,14 @@ describe('event, page, and comment workflows', () => {
   test('submits, reviews, and publicly returns a bilingual event', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
+
+    // Existing accounts created before notification tracking have no read time.
+    // Their first notification request must still include recent approvals.
+    await User.updateOne(
+      { _id: contributor._id },
+      { $unset: { notificationState: 1 } },
+    );
+
     const contributorSession = await login(contributor);
     const editorSession = await login(editor);
 
@@ -745,6 +1985,643 @@ describe('event, page, and comment workflows', () => {
     assert.equal(publicEvent.body.event.title.en, 'Integration exercise');
     assert.equal(publicEvent.body.event.title.fr, "Exercice d'integration");
     assert.equal((await Event.findById(event._id)).status, 'published');
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    const publishedNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(event._id),
+    );
+
+    assert.equal(notifications.body.notifications.unreadCount, 1);
+    assert.equal(publishedNotification.type, 'event');
+    assert.equal(publishedNotification.status, 'published');
+    assert.equal(publishedNotification.href, `/event?id=${event._id}`);
+  });
+
+  test('keeps removed events unavailable to their original submitter', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorSession = await login(contributor);
+    const editorSession = await login(editor);
+    const now = new Date();
+    const pendingEvent = await Event.create({
+      ...eventPayload({
+        title: { en: 'Visible pending event', fr: 'Événement visible en attente' },
+      }),
+      createdBy: contributor._id,
+      status: 'pending',
+    });
+    const rejectedEvent = await Event.create({
+      ...eventPayload({
+        title: { en: 'Rejected event', fr: 'Événement refusé' },
+      }),
+      createdBy: contributor._id,
+      status: 'rejected',
+      rejectionReason: 'Please add the missing details.',
+      reviewedBy: editor._id,
+      reviewedAt: now,
+    });
+    const publishedEvent = await Event.create({
+      ...eventPayload({
+        title: { en: 'Published event', fr: 'Événement publié' },
+      }),
+      createdBy: contributor._id,
+      status: 'published',
+      reviewedBy: editor._id,
+      reviewedAt: now,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+    const hiddenEvent = await Event.create({
+      ...eventPayload({
+        title: { en: 'Removed event', fr: 'Événement retiré' },
+      }),
+      createdBy: contributor._id,
+      status: 'hidden',
+      hiddenFromStatus: 'pending',
+    });
+
+    const mine = await request(app)
+      .get('/api/events/mine')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    const eventIds = mine.body.events.map((event) => String(event._id));
+    assert.equal(eventIds.includes(String(pendingEvent._id)), true);
+    assert.equal(eventIds.includes(String(rejectedEvent._id)), true);
+    assert.equal(eventIds.includes(String(publishedEvent._id)), true);
+    assert.equal(eventIds.includes(String(hiddenEvent._id)), false);
+
+    await request(app)
+      .get(`/api/events/${hiddenEvent._id}/edit`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(404);
+
+    await request(app)
+      .get(`/api/events/${hiddenEvent._id}/edit`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+
+    await request(app)
+      .patch(`/api/events/${publishedEvent._id}`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(409);
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    const rejectedNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(rejectedEvent._id),
+    );
+    assert.equal(
+      rejectedNotification.href,
+      `/submit-event?id=${rejectedEvent._id}`,
+    );
+
+    await request(app)
+      .post('/api/notifications/read')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({ readThrough: notifications.body.notifications.readThrough })
+      .expect(200);
+
+    const actionableNotification = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    assert.equal(
+      actionableNotification.body.notifications.items.some(
+        (item) => String(item.id) === String(rejectedEvent._id),
+      ),
+      true,
+    );
+
+    const correctedStartDate = new Date(
+      Date.now() + 45 * 24 * 60 * 60 * 1000,
+    )
+      .toISOString()
+      .slice(0, 10);
+    const resubmitted = await request(app)
+      .patch(`/api/events/${rejectedEvent._id}`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload({
+        title: { en: 'Corrected event title', fr: 'Événement corrigé' },
+        startDate: correctedStartDate,
+        city: 'Kingston',
+        allDay: true,
+      })
+      )
+      .expect(200);
+    assert.equal(resubmitted.body.event.status, 'pending');
+    assert.equal(resubmitted.body.event.rejectionReason, '');
+    assert.equal(resubmitted.body.event.city, 'Kingston');
+    assert.equal(
+      new Date(resubmitted.body.event.startDate).toISOString().slice(0, 10),
+      correctedStartDate,
+    );
+
+    const resolvedNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    assert.equal(
+      resolvedNotifications.body.notifications.items.some(
+        (item) => String(item.id) === String(rejectedEvent._id),
+      ),
+      false,
+    );
+  });
+
+  test('lets owners and reviewers update one pending event language without changing its review state', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorSession = await login(contributor);
+    const editorSession = await login(editor);
+
+    const submitted = await request(app)
+      .post('/api/events')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(201);
+
+    const eventId = submitted.body.event._id;
+    const changes = {
+      title: 'Exercice d’intégration révisé',
+      location: 'Ottawa, Ontario',
+      description: 'Description française ajoutée par le réviseur.',
+      registration: 'Inscription auprès de la section locale.',
+    };
+
+    await request(app)
+      .patch(`/api/events/${eventId}/review-content`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({ language: 'fr', content: changes })
+      .expect(200);
+
+    const response = await request(app)
+      .patch(`/api/events/${eventId}/review-content`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ language: 'fr', content: changes })
+      .expect(200);
+
+    assert.equal(response.body.event.status, 'pending');
+    assert.equal(response.body.event.title.en, 'Integration exercise');
+    assert.deepEqual(response.body.event.title.fr, changes.title);
+
+    const updatedEvent = await Event.findById(eventId);
+    assert.equal(updatedEvent.status, 'pending');
+    assert.equal(updatedEvent.location.fr, changes.location);
+    assert.equal(updatedEvent.description.fr, changes.description);
+    assert.equal(updatedEvent.registration.fr, changes.registration);
+
+    const auditEntry = await AuditLog.findOne({
+      action: 'content.review_content_updated',
+      target: updatedEvent._id,
+    });
+    assert.equal(auditEntry.metadata.language, 'fr');
+
+    const revision = await ContentRevision.findOne({
+      contentType: 'event',
+      contentId: updatedEvent._id,
+      actor: contributor._id,
+    }).lean();
+    assert.equal(revision.language, 'fr');
+    assert.equal(revision.before.title, "Exercice d'integration");
+    assert.equal(revision.after.title, changes.title);
+  });
+
+  test('lets a reviewer resubmit their own rejected event copy', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const editorSession = await login(editor);
+    const rejectedEvent = await Event.create({
+      ...eventPayload({
+        title: { en: 'Rejected staff event', fr: 'Événement du personnel refusé' },
+      }),
+      createdBy: editor._id,
+      status: 'rejected',
+      rejectionReason: 'Please correct the public wording.',
+      reviewedBy: editor._id,
+      reviewedAt: new Date(),
+    });
+    const correctedTitle = 'Corrected staff event';
+
+    const response = await request(app)
+      .patch(`/api/events/${rejectedEvent._id}/review-content`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        language: 'en',
+        content: {
+          title: correctedTitle,
+          location: rejectedEvent.location.en,
+          description: rejectedEvent.description.en,
+          registration: rejectedEvent.registration?.en || '',
+        },
+      })
+      .expect(200);
+
+    assert.equal(response.body.event.status, 'pending');
+    assert.equal(response.body.event.rejectionReason, '');
+    assert.equal(response.body.event.title.en, correctedTitle);
+
+    const revision = await ContentRevision.findOne({
+      contentType: 'event',
+      contentId: rejectedEvent._id,
+      actor: editor._id,
+      language: 'en',
+    }).lean();
+    assert.equal(revision.after.title, correctedTitle);
+  });
+
+  test('lets editors correct published content and exposes its staff revision history', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const editorSession = await login(editor);
+    const now = new Date();
+    const event = await Event.create({
+      ...eventPayload(),
+      status: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+    const missingFrenchLastPost = await LastPostMessage.create({
+      submitter: {
+        rank: 'Captain',
+        firstName: 'Editor',
+        lastName: 'Example',
+        email: 'editor@example.test',
+      },
+      deceased: {
+        fullRank: 'Corporal',
+        firstName: 'French',
+        surname: 'Missing',
+      },
+      messageLanguage: 'en',
+      messages: {
+        en: 'This Last Post notice is intentionally missing its French public copy.',
+        fr: '',
+      },
+      status: 'pending',
+      createdBy: editor._id,
+    });
+    const missingEnglishRetirementBase = retirementPayload();
+    const missingEnglishRetirement = await RetirementMessage.create({
+      ...missingEnglishRetirementBase,
+      retiree: {
+        ...missingEnglishRetirementBase.retiree,
+        firstName: 'English',
+        lastName: 'Missing',
+      },
+      message: translatedMessage('French-only content workspace'),
+      messageLanguage: 'fr',
+      messages: {
+        en: '',
+        fr: translatedMessage('French-only content workspace'),
+      },
+      status: 'pending',
+      createdBy: editor._id,
+      publicationConsent: { confirmed: true, confirmedAt: now },
+      memberReviewConfirmation: { confirmed: true, confirmedAt: now },
+    });
+    const retirementBase = retirementPayload();
+    const retirementMessage = await RetirementMessage.create({
+      ...retirementBase,
+      messages: {
+        en: retirementBase.message,
+        fr: translatedMessage('Retirement original French'),
+      },
+      status: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+      publicationConsent: { confirmed: true, confirmedAt: now },
+      memberReviewConfirmation: { confirmed: true, confirmedAt: now },
+    });
+    const retirementComment = await RetirementComment.create({
+      retirementMessage: retirementMessage._id,
+      author: editor._id,
+      body: 'Published retirement comment before a staff correction.',
+      status: 'published',
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+    const lastPost = await LastPostMessage.create({
+      submitter: {
+        rank: 'Captain',
+        firstName: 'Editor',
+        lastName: 'Example',
+        email: 'editor@example.test',
+      },
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Published',
+        surname: 'Notice',
+      },
+      messageLanguage: 'en',
+      messages: {
+        en: 'Published Last Post notice before a staff correction.',
+        fr: 'Avis du Dernier appel publié avant une correction.',
+      },
+      status: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+
+    const eventChanges = {
+      title: 'Published event correction',
+      location: 'Ottawa, Ontario',
+      description: 'Published event description corrected by a staff editor.',
+      registration: 'Register with the branch office.',
+    };
+    const retirementCorrection = translatedMessage('Retirement staff correction');
+    const lastPostCorrection = 'Published Last Post notice corrected by staff.';
+    const commentCorrection = 'Published retirement comment corrected by staff.';
+
+    await request(app)
+      .patch(`/api/events/${event._id}/review-content`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        language: 'en',
+        content: eventChanges,
+        note: 'Corrected public details',
+      })
+      .expect(200);
+    await request(app)
+      .patch(`/api/retirement-messages/${retirementMessage._id}/review-content`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        language: 'fr',
+        message: retirementCorrection,
+        note: 'Corrected translation',
+      })
+      .expect(200);
+    await request(app)
+      .patch(`/api/last-posts/${lastPost._id}/review-content`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        language: 'en',
+        message: lastPostCorrection,
+        note: 'Corrected memorial copy',
+      })
+      .expect(200);
+    await request(app)
+      .patch(`/api/admin/retirement-comments/${retirementComment._id}`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ body: commentCorrection })
+      .expect(200);
+
+    const [publicEvent, publicRetirement, publicLastPost] = await Promise.all([
+      request(app).get(`/api/events/${event._id}`).expect(200),
+      request(app)
+        .get(`/api/retirement-messages/${retirementMessage._id}`)
+        .expect(200),
+      request(app).get(`/api/last-posts/${lastPost._id}`).expect(200),
+    ]);
+    assert.equal(publicEvent.body.event.description.en, eventChanges.description);
+    assert.equal(
+      publicRetirement.body.retirementMessage.messages.fr,
+      retirementCorrection,
+    );
+    assert.equal(publicLastPost.body.lastPost.messages.en, lastPostCorrection);
+
+    const workspace = await request(app)
+      .get('/api/admin/content?status=published&limit=100')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    const workspaceEvent = workspace.body.items.find(
+      (item) => String(item._id) === String(event._id),
+    );
+    assert.equal(workspaceEvent.type, 'event');
+    assert.equal(workspaceEvent.content.title.en, eventChanges.title);
+    assert.equal(Object.hasOwn(workspaceEvent.content, 'submitter'), true);
+    assert.equal(workspaceEvent.content.submitter.email, 'events@example.test');
+    const workspaceComment = workspace.body.items.find(
+      (item) => String(item._id) === String(retirementComment._id),
+    );
+    assert.equal(workspaceComment.type, 'retirementComment');
+    assert.equal(workspaceComment.content.body, commentCorrection);
+    assert.equal(workspaceComment.content.author.email, editor.email);
+
+    const focusedWorkspace = await request(app)
+      .get('/api/admin/content?type=event&id=' + event._id)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(focusedWorkspace.body.items.length, 1);
+    assert.equal(String(focusedWorkspace.body.items[0]._id), String(event._id));
+
+    const searchedWorkspace = await request(app)
+      .get('/api/admin/content?type=event&search=published%20event%20correction')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(searchedWorkspace.body.items.length, 1);
+    assert.equal(String(searchedWorkspace.body.items[0]._id), String(event._id));
+
+    const missingEnglishWorkspace = await request(app)
+      .get('/api/admin/content?type=retirementMessage&translation=missing-en')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.deepEqual(
+      missingEnglishWorkspace.body.items.map((item) => String(item._id)),
+      [String(missingEnglishRetirement._id)],
+    );
+
+    const missingFrenchWorkspace = await request(app)
+      .get('/api/admin/content?type=lastPost&translation=missing-fr')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.deepEqual(
+      missingFrenchWorkspace.body.items.map((item) => String(item._id)),
+      [String(missingFrenchLastPost._id)],
+    );
+
+    const missingAnyWorkspace = await request(app)
+      .get('/api/admin/content?translation=missing-any&status=pending')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.deepEqual(
+      new Set(missingAnyWorkspace.body.items.map((item) => String(item._id))),
+      new Set([
+        String(missingEnglishRetirement._id),
+        String(missingFrenchLastPost._id),
+      ]),
+    );
+
+    const commentTranslationWorkspace = await request(app)
+      .get('/api/admin/content?type=retirementComment&translation=missing-any')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(commentTranslationWorkspace.body.items.length, 0);
+
+    const untypedFocusedWorkspace = await request(app)
+      .get('/api/admin/content?id=' + event._id)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(untypedFocusedWorkspace.body.items.length, 1);
+    assert.equal(
+      String(untypedFocusedWorkspace.body.items[0]._id),
+      String(event._id),
+    );
+
+    await request(app)
+      .get('/api/admin/content?translation=unknown')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(400);
+
+    const eventHistory = await request(app)
+      .get(`/api/admin/content/event/${event._id}/revisions`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    const retirementHistory = await request(app)
+      .get(
+        `/api/admin/content/retirementMessage/${retirementMessage._id}/revisions`,
+      )
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    const lastPostHistory = await request(app)
+      .get(`/api/admin/content/lastPost/${lastPost._id}/revisions`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+
+    assert.equal(eventHistory.body.revisions.length, 1);
+    assert.equal(eventHistory.body.revisions[0].status, 'published');
+    assert.equal(eventHistory.body.revisions[0].before.title, 'Integration exercise');
+    assert.equal(eventHistory.body.revisions[0].after.title, eventChanges.title);
+    assert.equal(eventHistory.body.revisions[0].note, 'Corrected public details');
+    assert.equal(
+      Object.hasOwn(eventHistory.body.revisions[0].actorSnapshot, 'email'),
+      false,
+    );
+    assert.equal(retirementHistory.body.revisions[0].before.message, translatedMessage('Retirement original French'));
+    assert.equal(
+      retirementHistory.body.revisions[0].after.message,
+      retirementCorrection,
+    );
+    assert.equal(lastPostHistory.body.revisions[0].before.message, 'Published Last Post notice before a staff correction.');
+    assert.equal(
+      lastPostHistory.body.revisions[0].after.message,
+      lastPostCorrection,
+    );
+
+    const staffEditAudits = await AuditLog.countDocuments({
+      action: 'content.staff_content_updated',
+    });
+    assert.equal(staffEditAudits, 3);
+    const commentEditAudit = await AuditLog.findOne({
+      action: 'content.admin_updated',
+      target: retirementComment._id,
+    }).lean();
+    assert.deepEqual(commentEditAudit.metadata.fields, ['body']);
+  });
+
+  test('lets staff edit hidden public copy without restoring it', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const editorSession = await login(editor);
+    const now = new Date();
+    const event = await Event.create({
+      ...eventPayload(),
+      status: 'hidden',
+      hiddenFromStatus: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+    const retirementBase = retirementPayload();
+    const retirementMessage = await RetirementMessage.create({
+      ...retirementBase,
+      messages: {
+        en: retirementBase.message,
+        fr: translatedMessage('Hidden retirement message'),
+      },
+      status: 'hidden',
+      hiddenFromStatus: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+      publicationConsent: { confirmed: true, confirmedAt: now },
+      memberReviewConfirmation: { confirmed: true, confirmedAt: now },
+    });
+    const lastPost = await LastPostMessage.create({
+      submitter: {
+        rank: 'Captain',
+        firstName: 'Editor',
+        lastName: 'Example',
+        email: 'editor@example.test',
+      },
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Hidden',
+        surname: 'Notice',
+      },
+      messageLanguage: 'en',
+      messages: {
+        en: 'Hidden Last Post notice before a staff correction.',
+        fr: 'Avis du Dernier appel retiré avant une correction du personnel.',
+      },
+      status: 'hidden',
+      hiddenFromStatus: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+
+    const eventChanges = {
+      title: 'Hidden event correction',
+      location: 'Ottawa, Ontario',
+      description: 'A staff editor corrected this event while it remains removed.',
+      registration: 'Contact the branch office for registration details.',
+    };
+    const retirementCorrection = translatedMessage(
+      'Hidden retirement message correction',
+    );
+    const lastPostCorrection =
+      'Hidden Last Post notice corrected while it remains removed.';
+
+    await Promise.all([
+      request(app)
+        .patch(`/api/events/${event._id}/review-content`)
+        .set('Authorization', bearer(editorSession.body.token))
+        .send({ language: 'en', content: eventChanges })
+        .expect(200),
+      request(app)
+        .patch(`/api/retirement-messages/${retirementMessage._id}/review-content`)
+        .set('Authorization', bearer(editorSession.body.token))
+        .send({ language: 'fr', message: retirementCorrection })
+        .expect(200),
+      request(app)
+        .patch(`/api/last-posts/${lastPost._id}/review-content`)
+        .set('Authorization', bearer(editorSession.body.token))
+        .send({ language: 'en', message: lastPostCorrection })
+        .expect(200),
+    ]);
+
+    const [savedEvent, savedRetirementMessage, savedLastPost] =
+      await Promise.all([
+        Event.findById(event._id).lean(),
+        RetirementMessage.findById(retirementMessage._id).lean(),
+        LastPostMessage.findById(lastPost._id).lean(),
+      ]);
+
+    assert.equal(savedEvent.status, 'hidden');
+    assert.equal(savedEvent.hiddenFromStatus, 'published');
+    assert.equal(savedEvent.title.en, eventChanges.title);
+    assert.equal(savedRetirementMessage.status, 'hidden');
+    assert.equal(savedRetirementMessage.hiddenFromStatus, 'published');
+    assert.equal(savedRetirementMessage.messages.fr, retirementCorrection);
+    assert.equal(savedLastPost.status, 'hidden');
+    assert.equal(savedLastPost.hiddenFromStatus, 'published');
+    assert.equal(savedLastPost.messages.en, lastPostCorrection);
+
+    const revisions = await ContentRevision.find({
+      contentId: { $in: [event._id, retirementMessage._id, lastPost._id] },
+    }).lean();
+    assert.equal(revisions.length, 3);
+    assert.equal(revisions.every((revision) => revision.status === 'hidden'), true);
+    assert.equal(
+      await AuditLog.countDocuments({ action: 'content.staff_content_updated' }),
+      3,
+    );
   });
 
   test('returns published events that overlap a requested calendar range', async () => {
@@ -753,6 +2630,9 @@ describe('event, page, and comment workflows', () => {
     await Event.create([
       {
         title: { en: 'Overlapping event', fr: 'Événement en cours' },
+        provinceRegion: 'ON',
+        organizingEntity: 'association',
+        eventType: 'training',
         startDate: new Date('2040-06-29T12:00:00.000Z'),
         endDate: new Date('2040-07-02T12:00:00.000Z'),
         allDay: true,
@@ -761,6 +2641,9 @@ describe('event, page, and comment workflows', () => {
       },
       {
         title: { en: 'July event', fr: 'Événement de juillet' },
+        provinceRegion: 'QC',
+        organizingEntity: 'branch',
+        eventType: 'ceremony',
         startDate: new Date('2040-07-18T12:00:00.000Z'),
         allDay: true,
         status: 'published',
@@ -768,6 +2651,9 @@ describe('event, page, and comment workflows', () => {
       },
       {
         title: { en: 'August event', fr: 'Événement d’août' },
+        provinceRegion: 'ON',
+        organizingEntity: 'association',
+        eventType: 'training',
         startDate: new Date('2040-08-01T12:00:00.000Z'),
         allDay: true,
         status: 'published',
@@ -784,6 +2670,17 @@ describe('event, page, and comment workflows', () => {
       ['Overlapping event', 'July event'],
     );
 
+    const filteredResponse = await request(app)
+      .get(
+        '/api/events?from=2040-07-01&to=2040-07-31&eventType=training&organizingEntity=association&provinceRegion=ON',
+      )
+      .expect(200);
+
+    assert.deepEqual(
+      filteredResponse.body.events.map((event) => event.title.en),
+      ['Overlapping event'],
+    );
+
     const incompleteRange = await request(app)
       .get('/api/events?from=2040-07-01')
       .expect(400);
@@ -792,10 +2689,22 @@ describe('event, page, and comment workflows', () => {
       incompleteRange.body.error,
       'The from and to parameters must be used together',
     );
+
+    const invalidFilter = await request(app)
+      .get('/api/events?eventType=invalid')
+      .expect(400);
+
+    assert.equal(
+      invalidFilter.body.error,
+      'The eventType parameter is invalid',
+    );
   });
 
   test('prevents unauthorized page management and publishes a bilingual page', async () => {
-    const subscriber = await createUser({ role: 'subscriber' });
+    const subscriber = await createUser({
+      role: 'subscriber',
+      notificationState: { lastReadAt: null },
+    });
     const editor = await createUser({ role: 'editor' });
     const subscriberSession = await login(subscriber);
     const editorSession = await login(editor);
@@ -828,6 +2737,12 @@ describe('event, page, and comment workflows', () => {
     await request(app)
       .patch(`/api/admin/pages/${pageId}/status`)
       .set('Authorization', bearer(editorSession.body.token))
+      .send({ status: 'published', featureOnHome: true })
+      .expect(403);
+
+    await request(app)
+      .patch(`/api/admin/pages/${pageId}/status`)
+      .set('Authorization', bearer(editorSession.body.token))
       .send({ status: 'published' })
       .expect(200);
 
@@ -836,6 +2751,188 @@ describe('event, page, and comment workflows', () => {
       .expect(200);
     assert.equal(publicPage.body.page.title.fr, "Page d'integration");
     assert.equal((await Page.findById(pageId)).status, 'published');
+  });
+
+  test('features authorized public pages in the homepage news feed', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const session = await login(administrator);
+    const created = await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        title: { en: 'Homepage feature', fr: 'Vedette accueil' },
+        slug: 'homepage-feature',
+        summary: { en: 'Featured page summary', fr: 'Resume de la vedette' },
+        access: { audience: 'public' },
+      })
+      .expect(201);
+    const pageId = created.body.page._id;
+
+    const published = await request(app)
+      .patch(`/api/admin/pages/${pageId}/status`)
+      .set('Authorization', bearer(session.body.token))
+      .send({ status: 'published', featureOnHome: true })
+      .expect(200);
+
+    assert.equal(published.body.page.featuredOnHome, true);
+
+    const feed = await request(app).get('/api/news/feed?limit=24').expect(200);
+    const featuredItem = feed.body.items.find(
+      (item) => String(item._id) === String(pageId),
+    );
+    assert.equal(featuredItem.type, 'page');
+    assert.equal(featuredItem.route, '/pages/homepage-feature');
+    assert.equal(featuredItem.title.fr, 'Vedette accueil');
+  });
+
+  test('keeps draft-linked navbar items private until the page is published', async () => {
+    const editor = await createUser({ role: 'developer' });
+    const session = await login(editor);
+    const created = await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        title: { en: 'Prepared navigation page' },
+        slug: 'prepared-navigation-page',
+        blocks: [
+          {
+            type: 'text',
+            body: { en: 'Prepared content.' },
+            layout: { span: 99 },
+          },
+        ],
+      })
+      .expect(201);
+
+    const pageId = created.body.page._id;
+    assert.equal(created.body.page.blocks[0].layout.span, 12);
+    assert.equal(created.body.page.blocks[0].layout.column, 1);
+    assert.equal(created.body.page.blocks[0].layout.row, 1);
+    assert.equal(created.body.page.blocks[0].layout.rowSpan, 3);
+
+    const navigationItem = await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        group: 'about',
+        page: pageId,
+        route: '/pages/prepared-navigation-page',
+        label: { en: 'Prepared navigation page' },
+        visible: true,
+      })
+      .expect(201);
+
+    await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        group: 'about',
+        page: pageId,
+        route: '/pages/prepared-navigation-page',
+        label: { en: 'Duplicate navigation page' },
+        visible: true,
+      })
+      .expect(409);
+
+    await request(app)
+      .patch(`/api/admin/navigation-items/${navigationItem.body.item._id}`)
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        group: 'news',
+        page: pageId,
+        route: '/pages/prepared-navigation-page',
+        label: { en: 'Prepared navigation page' },
+        visible: true,
+      })
+      .expect(200);
+
+    const whileDraft = await request(app).get('/api/navigation').expect(200);
+    assert.equal(
+      whileDraft.body.items.some((item) => String(item.page) === String(pageId)),
+      false,
+    );
+
+    await request(app)
+      .patch(`/api/admin/pages/${pageId}/status`)
+      .set('Authorization', bearer(session.body.token))
+      .send({ status: 'published' })
+      .expect(200);
+
+    const oncePublished = await request(app).get('/api/navigation').expect(200);
+    assert.equal(
+      oncePublished.body.items.some((item) => String(item.page) === String(pageId)),
+      true,
+    );
+  });
+
+  test('keeps divider blocks to one grid row', async () => {
+    const editor = await createUser({ role: 'developer' });
+    const session = await login(editor);
+    const created = await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        title: { en: 'Divider layout' },
+        slug: 'divider-layout',
+        blocks: [{ type: 'divider', layout: { rowSpan: 8 } }],
+      })
+      .expect(201);
+
+    const pageId = created.body.page._id;
+    assert.equal(created.body.page.blocks[0].layout.rowSpan, 1);
+
+    const updated = await request(app)
+      .patch(`/api/admin/pages/${pageId}`)
+      .set('Authorization', bearer(session.body.token))
+      .send({ blocks: [{ type: 'divider', layout: { rowSpan: 6 } }] })
+      .expect(200);
+
+    assert.equal(updated.body.page.blocks[0].layout.rowSpan, 1);
+  });
+
+  test('returns a page route for a published page linked to a custom navbar parent', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const session = await login(developer);
+    const created = await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', bearer(session.body.token))
+      .send({ title: { en: 'Custom navigation page' }, slug: 'custom-navigation-page' })
+      .expect(201);
+    const pageId = created.body.page._id;
+
+    await request(app)
+      .patch(`/api/admin/pages/${pageId}/status`)
+      .set('Authorization', bearer(session.body.token))
+      .send({ status: 'published' })
+      .expect(200);
+
+    await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        type: 'group',
+        group: 'custom',
+        label: { en: 'Custom' },
+        visible: true,
+      })
+      .expect(201);
+
+    await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        group: 'custom',
+        page: pageId,
+        label: { en: 'Custom navigation page' },
+        visible: true,
+      })
+      .expect(201);
+
+    const navigation = await request(app).get('/api/navigation').expect(200);
+    const link = navigation.body.items.find(
+      (item) => String(item.page) === String(pageId),
+    );
+    assert.equal(link.route, '/pages/custom-navigation-page');
   });
 
   test('holds subscriber comments for review and immediately publishes author comments', async () => {
@@ -868,6 +2965,134 @@ describe('event, page, and comment workflows', () => {
       await RetirementComment.countDocuments({ status: 'pending' }),
       1,
     );
+  });
+
+  test('returns unread published and rejected review results with direct destinations', async () => {
+    const message = await submitAndPublishRetirement();
+    const subscriber = await createUser({ role: 'subscriber' });
+    const reviewer = await createUser({ role: 'editor' });
+    const session = await login(subscriber);
+    const reviewDate = new Date();
+    const comment = await RetirementComment.create({
+      retirementMessage: message._id,
+      author: subscriber._id,
+      body: 'Please correct this rejected integration comment.',
+      status: 'rejected',
+      rejectionReason: 'Add the missing context.',
+      reviewedBy: reviewer._id,
+      reviewedAt: reviewDate,
+    });
+    const event = await Event.create({
+      ...eventPayload(),
+      createdBy: subscriber._id,
+      status: 'published',
+      reviewedBy: reviewer._id,
+      publishedBy: reviewer._id,
+      reviewedAt: reviewDate,
+      publishedAt: reviewDate,
+    });
+    const selfPublishedEvent = await Event.create({
+      ...eventPayload({
+        title: {
+          en: 'Self-published integration exercise',
+          fr: 'Exercice d’intégration autopublié',
+        },
+      }),
+      createdBy: subscriber._id,
+      status: 'published',
+      reviewedBy: subscriber._id,
+      publishedBy: subscriber._id,
+      reviewedAt: reviewDate,
+      publishedAt: reviewDate,
+    });
+
+    const profile = await request(app)
+      .get('/api/me')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    assert.deepEqual(profile.body.notifications, {
+      count: 2,
+      actionCount: 1,
+      unreadCount: 1,
+    });
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    const notification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(comment._id),
+    );
+    const publishedNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(event._id),
+    );
+    const expectedEditHref = `/retirement-message?id=${message._id}&editComment=${comment._id}`;
+
+    assert.equal(notifications.body.notifications.count, 2);
+    assert.equal(notifications.body.notifications.actionCount, 1);
+    assert.equal(notifications.body.notifications.unreadCount, 1);
+    assert.equal(notifications.body.notifications.shouldMarkRead, true);
+    assert.match(notifications.body.notifications.readThrough, /^\d{4}-\d{2}-\d{2}T/);
+    assert.equal(notification.type, 'retirementComment');
+    assert.equal(notification.status, 'rejected');
+    assert.equal(notification.editHref, expectedEditHref);
+    assert.equal(notification.href, expectedEditHref);
+    assert.equal(publishedNotification.type, 'event');
+    assert.equal(publishedNotification.status, 'published');
+    assert.equal(publishedNotification.href, `/event?id=${event._id}`);
+    assert.equal(
+      notifications.body.notifications.items.some(
+        (item) => String(item.id) === String(selfPublishedEvent._id),
+      ),
+      false,
+    );
+
+    const editableComment = await request(app)
+      .get(`/api/retirement-messages/comments/${comment._id}/edit`)
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    assert.equal(
+      String(editableComment.body.comment.retirementMessage._id),
+      String(message._id),
+    );
+    assert.equal(editableComment.body.comment.status, 'rejected');
+
+    await request(app)
+      .post('/api/notifications/read')
+      .set('Authorization', bearer(session.body.token))
+      .send({ readThrough: notifications.body.notifications.readThrough })
+      .expect(200);
+
+    const readNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    assert.equal(readNotifications.body.notifications.count, 1);
+    assert.equal(readNotifications.body.notifications.actionCount, 1);
+    assert.equal(readNotifications.body.notifications.unreadCount, 0);
+    assert.equal(
+      String(readNotifications.body.notifications.items[0].id),
+      String(comment._id),
+    );
+
+    const readAudit = await AuditLog.findOne({
+      action: 'user.notifications_read',
+      actor: subscriber._id,
+    }).lean();
+    assert.equal(readAudit.metadata.readThrough, notifications.body.notifications.readThrough);
+
+    await RetirementComment.findByIdAndUpdate(comment._id, {
+      status: 'pending',
+      rejectionReason: '',
+    });
+
+    const resolvedNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+    assert.equal(resolvedNotifications.body.notifications.count, 0);
   });
 });
 
@@ -1010,9 +3235,10 @@ describe('media lifecycle', () => {
       .get('/api/admin/media?search=ceremony')
       .set('Authorization', bearer(session.body.token))
       .expect(200);
-    assert.deepEqual(searched.body.media.map((asset) => asset.key), [
-      retirementAsset.key,
-    ]);
+    assert.deepEqual(
+      searched.body.media.map((asset) => asset.key),
+      [retirementAsset.key],
+    );
 
     const filtered = await request(app)
       .get('/api/admin/media?type=retirement')
@@ -1046,8 +3272,16 @@ describe('media lifecycle', () => {
           background: '#336699',
         },
       })
-        .png()
+        .jpeg()
+        .withMetadata({
+          exif: {
+            IFD0: {
+              Artist: 'Sensitive source identity',
+            },
+          },
+        })
         .toBuffer();
+      assert.ok((await sharp(image).metadata()).exif);
       const uploaded = await request(app)
         .post('/api/upload')
         .set('Authorization', bearer(contributorSession.body.token))
@@ -1055,8 +3289,8 @@ describe('media lifecycle', () => {
         .field('sourceName', 'Integration portrait')
         .field('cdnSlug', 'integration-portrait')
         .attach('image', image, {
-          filename: 'portrait.png',
-          contentType: 'image/png',
+          filename: 'portrait.jpg',
+          contentType: 'image/jpeg',
         })
         .expect(201);
 
@@ -1065,8 +3299,10 @@ describe('media lifecycle', () => {
       ).lean();
       assert.equal(asset.uploadContext.type, 'mediaManager');
       assert.equal(asset.displayName, 'Integration portrait');
-      assert.equal(asset.originalName, 'portrait.png');
+      assert.equal(asset.originalName, 'portrait.jpg');
       assert.equal(asset.cdnSlug, 'integration-portrait');
+      assert.equal(asset.mimeType, 'image/webp');
+      assert.match(asset.key, /\/original\.webp$/);
       assert.match(
         asset.url,
         /\/integration-test\/images\/integration-portrait\/large\.webp$/,
@@ -1078,6 +3314,24 @@ describe('media lifecycle', () => {
         ).length,
         5,
       );
+      const storedOriginal = sentCommands.find(
+        (command) =>
+          command.constructor.name === 'PutObjectCommand' &&
+          command.input.Key === asset.originalKey,
+      );
+      assert.ok(storedOriginal);
+      const storedMetadata = await sharp(storedOriginal.input.Body).metadata();
+      assert.equal(storedMetadata.exif, undefined);
+      assert.equal(storedMetadata.xmp, undefined);
+      assert.equal(storedMetadata.iptc, undefined);
+      assert.equal(storedMetadata.icc, undefined);
+      assert.equal(asset.imageMetadata.format, 'webp');
+      assert.equal(asset.imageMetadata.width, 32);
+      assert.equal(asset.imageMetadata.height, 24);
+      assert.equal('exif' in asset.imageMetadata, false);
+      assert.equal('xmp' in asset.imageMetadata, false);
+      assert.equal('iptc' in asset.imageMetadata, false);
+      assert.equal('icc' in asset.imageMetadata, false);
 
       const uploadAudit = await AuditLog.findOne({
         action: 'media.uploaded',
@@ -1113,6 +3367,65 @@ describe('media lifecycle', () => {
     }
   });
 
+  test('creates a positionable 16:9 display crop for news images', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const session = await login(contributor);
+    const originalSend = s3Client.send.bind(s3Client);
+    s3Client.send = async () => ({});
+
+    try {
+      const image = await sharp({
+        create: {
+          width: 320,
+          height: 240,
+          channels: 3,
+          background: '#336699',
+        },
+      })
+        .png()
+        .toBuffer();
+      const uploaded = await request(app)
+        .post('/api/upload')
+        .set('Authorization', bearer(session.body.token))
+        .field('uploadSource', 'newsArticle')
+        .field('displayAspectRatio', '16:9')
+        .field('displayCropX', '0.25')
+        .field('displayCropY', '0.75')
+        .attach('image', image, {
+          filename: 'news.png',
+          contentType: 'image/png',
+        })
+        .expect(201);
+
+      assert.match(uploaded.body.display.url, /\/display-16x9\.webp$/);
+      assert.equal(
+        Math.round(
+          (uploaded.body.display.width / uploaded.body.display.height) * 100,
+        ),
+        Math.round((16 / 9) * 100),
+      );
+    } finally {
+      s3Client.send = originalSend;
+    }
+  });
+
+  test('rejects signed direct uploads that would bypass media sanitization', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const session = await login(contributor);
+
+    const response = await request(app)
+      .post('/api/upload-url')
+      .set('Authorization', bearer(session.body.token))
+      .send({ filename: 'unsanitized.jpg', contentType: 'image/jpeg' })
+      .expect(410);
+
+    assert.match(response.body.error, /Direct uploads are disabled/u);
+    assert.equal(
+      await MediaAsset.countDocuments({ originalName: 'unsanitized.jpg' }),
+      0,
+    );
+  });
+
   test('refuses to delete media attached to a retirement message', async () => {
     const admin = await createUser({ role: 'administrator' });
     const session = await login(admin);
@@ -1137,6 +3450,332 @@ describe('media lifecycle', () => {
 
     assert.equal(response.body.error, 'Image is still attached to content');
     assert.equal(await MediaAsset.countDocuments({ _id: asset._id }), 1);
+  });
+
+  test('removes content reversibly without deleting attached media', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const contributor = await createUser({ role: 'contributor' });
+    const administratorSession = await login(administrator);
+    const contributorSession = await login(contributor);
+    const createAsset = async (slug) => {
+      const baseKey = `images/${slug}`;
+      const originalKey = `${baseKey}/original.png`;
+      const variants = Object.fromEntries(
+        ['thumb', 'medium', 'large', 'hero'].map((name) => [
+          name,
+          {
+            key: `${baseKey}/${name}.webp`,
+            url: buildPublicMediaUrl(`${baseKey}/${name}.webp`),
+          },
+        ]),
+      );
+
+      return MediaAsset.create({
+        key: originalKey,
+        url: variants.large.url,
+        originalKey,
+        originalUrl: buildPublicMediaUrl(originalKey),
+        variants,
+      });
+    };
+    const [eventAsset, retirementAsset, lastPostAsset] = await Promise.all([
+      createAsset('delete-event'),
+      createAsset('delete-retirement'),
+      createAsset('delete-last-post'),
+    ]);
+
+    await request(app)
+      .post('/api/events')
+      .set('Authorization', bearer(administratorSession.body.token))
+      .send(
+        eventPayload({
+          imagePath: eventAsset.url,
+          publishNow: true,
+        }),
+      )
+      .expect(201);
+    const event = await Event.findOne({ imagePath: eventAsset.url }).lean();
+    assert.equal(event.status, 'published');
+
+    await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({ ...retirementPayload(), photoUrl: retirementAsset.url })
+      .expect(201);
+    const retirementMessage = await RetirementMessage.findOne({
+      photoUrl: retirementAsset.url,
+    }).lean();
+    assert.equal(retirementMessage.status, 'pending');
+
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({
+        deceased: {
+          fullRank: 'Sergeant',
+          firstName: 'Image',
+          surname: 'Cleanup',
+        },
+        messageLanguage: 'en',
+        message:
+          'A Last Post notice with an image that should remain available when the notice is removed.',
+        imageUrl: lastPostAsset.url,
+        publicationPermissionConfirmed: true,
+      })
+      .expect(201);
+    const lastPost = await LastPostMessage.findOne({
+      imageUrl: lastPostAsset.url,
+    }).lean();
+    assert.equal(lastPost.status, 'pending');
+
+    await Promise.all([
+      RetirementMessage.updateOne(
+        { _id: retirementMessage._id },
+        { $set: { status: 'published', publishedAt: new Date() } },
+      ),
+      LastPostMessage.updateOne(
+        { _id: lastPost._id },
+        { $set: { status: 'published', publishedAt: new Date() } },
+      ),
+    ]);
+
+    const sentCommands = [];
+    const originalSend = s3Client.send.bind(s3Client);
+    s3Client.send = async (command) => {
+      sentCommands.push(command);
+      return {};
+    };
+
+    try {
+      await request(app)
+        .patch(`/api/admin/events/${event._id}/hide`)
+        .set('Authorization', bearer(administratorSession.body.token))
+        .expect(200);
+      await request(app)
+        .patch(`/api/admin/retirement-messages/${retirementMessage._id}/hide`)
+        .set('Authorization', bearer(administratorSession.body.token))
+        .expect(200);
+      await request(app)
+        .patch(`/api/admin/last-posts/${lastPost._id}/hide`)
+        .set('Authorization', bearer(administratorSession.body.token))
+        .expect(200);
+
+      const [removedEvent, removedRetirementMessage, removedLastPost] =
+        await Promise.all([
+          Event.findById(event._id).lean(),
+          RetirementMessage.findById(retirementMessage._id).lean(),
+          LastPostMessage.findById(lastPost._id).lean(),
+        ]);
+
+      assert.equal(removedEvent.status, 'hidden');
+      assert.equal(removedEvent.hiddenFromStatus, 'published');
+      assert.equal(removedRetirementMessage.status, 'hidden');
+      assert.equal(removedRetirementMessage.hiddenFromStatus, 'published');
+      assert.equal(removedLastPost.status, 'hidden');
+      assert.equal(removedLastPost.hiddenFromStatus, 'published');
+
+      await request(app).get(`/api/events/${event._id}`).expect(404);
+      assert.equal(
+        await RetirementMessage.countDocuments({ _id: retirementMessage._id }),
+        1,
+      );
+      assert.equal(
+        await LastPostMessage.countDocuments({ _id: lastPost._id }),
+        1,
+      );
+      assert.equal(await Event.countDocuments({ _id: event._id }), 1);
+      assert.equal(await MediaAsset.countDocuments({ _id: eventAsset._id }), 1);
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: retirementAsset._id }),
+        1,
+      );
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: lastPostAsset._id }),
+        1,
+      );
+      assert.equal(
+        sentCommands.filter(
+          (command) => command.constructor.name === 'DeleteObjectCommand',
+        ).length,
+        0,
+      );
+
+      const removalAudit = await AuditLog.findOne({
+        action: 'content.hidden',
+        target: event._id,
+      }).lean();
+      assert.equal(removalAudit.metadata.previousStatus, 'published');
+      assert.equal(removalAudit.metadata.removedByOwner, true);
+    } finally {
+      s3Client.send = originalSend;
+    }
+  });
+
+  test('preserves shared media when removed content is retained for restoration', async () => {
+    const administrator = await createUser({ role: 'administrator' });
+    const contributor = await createUser({ role: 'contributor' });
+    const administratorSession = await login(administrator);
+    const contributorSession = await login(contributor);
+    const baseKey = 'images/shared-content-image';
+    const originalKey = `${baseKey}/original.png`;
+    const sharedAsset = await MediaAsset.create({
+      key: originalKey,
+      url: buildPublicMediaUrl(`${baseKey}/large.webp`),
+      originalKey,
+      originalUrl: buildPublicMediaUrl(originalKey),
+      variants: Object.fromEntries(
+        ['thumb', 'medium', 'large', 'hero'].map((name) => [
+          name,
+          { key: `${baseKey}/${name}.webp` },
+        ]),
+      ),
+    });
+
+    await request(app)
+      .post('/api/events')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload({ imagePath: sharedAsset.url }))
+      .expect(201);
+    const event = await Event.findOne({ imagePath: sharedAsset.url }).lean();
+
+    await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({
+        deceased: {
+          fullRank: 'Sergeant',
+          firstName: 'Shared',
+          surname: 'Image',
+        },
+        messageLanguage: 'en',
+        message: 'A Last Post notice that deliberately shares an event image.',
+        imageUrl: sharedAsset.url,
+        publicationPermissionConfirmed: true,
+      })
+      .expect(201);
+    const lastPost = await LastPostMessage.findOne({
+      imageUrl: sharedAsset.url,
+    }).lean();
+
+    await Promise.all([
+      Event.updateOne(
+        { _id: event._id },
+        { $set: { status: 'published', publishedAt: new Date() } },
+      ),
+      LastPostMessage.updateOne(
+        { _id: lastPost._id },
+        { $set: { status: 'published', publishedAt: new Date() } },
+      ),
+    ]);
+
+    const sentCommands = [];
+    const originalSend = s3Client.send.bind(s3Client);
+    s3Client.send = async (command) => {
+      sentCommands.push(command);
+      return {};
+    };
+
+    try {
+      await request(app)
+        .patch(`/api/admin/events/${event._id}/hide`)
+        .set('Authorization', bearer(administratorSession.body.token))
+        .expect(200);
+
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: sharedAsset._id }),
+        1,
+      );
+      assert.equal(sentCommands.length, 0);
+
+      await request(app)
+        .patch(`/api/admin/last-posts/${lastPost._id}/hide`)
+        .set('Authorization', bearer(administratorSession.body.token))
+        .expect(200);
+
+      assert.equal(
+        await MediaAsset.countDocuments({ _id: sharedAsset._id }),
+        1,
+      );
+      assert.equal(
+        sentCommands.filter(
+          (command) => command.constructor.name === 'DeleteObjectCommand',
+        ).length,
+        0,
+      );
+    } finally {
+      s3Client.send = originalSend;
+    }
+  });
+
+  test('keeps pending content out of the removal workflow', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorSession = await login(contributor);
+    const editorSession = await login(editor);
+
+    await request(app)
+      .post('/api/events')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(201);
+    const event = await Event.findOne({ createdBy: contributor._id }).lean();
+
+    const pendingRemoval = await request(app)
+      .patch(`/api/admin/events/${event._id}/hide`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ reason: 'Duplicate submission' })
+      .expect(409);
+    assert.match(pendingRemoval.body.error, /must be published, rejected, or deleted/u);
+
+    const pendingEvent = await Event.findById(event._id).lean();
+    assert.equal(pendingEvent.status, 'pending');
+
+    await Event.updateOne(
+      { _id: event._id },
+      { $set: { status: 'published', publishedAt: new Date() } },
+    );
+
+    await request(app)
+      .patch(`/api/admin/events/${event._id}/hide`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ reason: 'Duplicate submission' })
+      .expect(200);
+
+    const removedEvent = await Event.findById(event._id).lean();
+    assert.equal(removedEvent.status, 'hidden');
+    assert.equal(removedEvent.hiddenFromStatus, 'published');
+    assert.equal(removedEvent.hiddenReason, 'Duplicate submission');
+
+    await request(app)
+      .patch(`/api/events/${event._id}`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(404);
+
+    await request(app)
+      .patch(`/api/admin/events/${event._id}/restore`)
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(403);
+
+    const restored = await request(app)
+      .patch(`/api/admin/events/${event._id}/restore`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(restored.body.content.status, 'published');
+
+    const restoredEvent = await Event.findById(event._id).lean();
+    assert.equal(restoredEvent.status, 'published');
+    assert.equal(restoredEvent.hiddenAt, null);
+    assert.equal(restoredEvent.hiddenBy, null);
+    assert.equal(restoredEvent.hiddenReason, '');
+
+    const auditActions = await AuditLog.find({ target: event._id })
+      .sort({ createdAt: 1 })
+      .lean();
+    assert.deepEqual(
+      auditActions.map((entry) => entry.action),
+      ['content.created', 'content.hidden', 'content.restored'],
+    );
   });
 
   test('bulk deletion reports deleted, attached, and missing keys independently', async () => {

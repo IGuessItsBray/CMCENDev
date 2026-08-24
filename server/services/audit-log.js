@@ -98,7 +98,9 @@ function shouldCaptureRequestIp(action) {
     normalizedAction.startsWith('timer.') ||
     normalizedAction.startsWith('translation.') ||
     normalizedAction.startsWith('content.') ||
-    normalizedAction.startsWith('migration.')
+    normalizedAction.startsWith('contact.') ||
+    normalizedAction.startsWith('migration.') ||
+    normalizedAction.startsWith('diagnostic.')
   );
 }
 

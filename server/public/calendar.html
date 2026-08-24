@@ -24,7 +24,7 @@
           <div class="calendar-submit-callout">
             <p data-i18n="calendar_submit_prompt"></p>
             <a
-              href="/submit-event?panel=form"
+              href="/submit-event"
               data-i18n="calendar_submit_button"
             ></a>
           </div>
@@ -37,6 +37,136 @@
         >
           Loading events...
         </p>
+
+        <section
+          class="calendar-tools"
+          aria-labelledby="calendarFiltersHeading"
+        >
+          <h2
+            id="calendarFiltersHeading"
+            class="calendar-tools-heading"
+            data-i18n="calendar_filters_heading"
+          >
+            Filter events
+          </h2>
+
+          <div class="calendar-filter-fields">
+            <div class="calendar-filter-field">
+              <label for="calendarEventTypeFilter" data-i18n="event_type">
+                Event type
+              </label>
+              <select id="calendarEventTypeFilter">
+                <option value="" data-i18n="calendar_filter_all_event_types">
+                  All event types
+                </option>
+                <option value="conference" data-i18n="event_type_conference">
+                  Conference
+                </option>
+                <option
+                  value="mess-function"
+                  data-i18n="event_type_mess_function"
+                >
+                  Mess function
+                </option>
+                <option value="ceremony" data-i18n="event_type_ceremony">
+                  Ceremony
+                </option>
+                <option value="training" data-i18n="event_type_training">
+                  Training
+                </option>
+                <option value="social" data-i18n="event_type_social">
+                  Social
+                </option>
+                <option value="other" data-i18n="event_type_other">
+                  Other
+                </option>
+              </select>
+            </div>
+
+            <div class="calendar-filter-field">
+              <label
+                for="calendarOrganizingEntityFilter"
+                data-i18n="event_organizing_entity"
+              >
+                Organizing entity
+              </label>
+              <select id="calendarOrganizingEntityFilter">
+                <option value="" data-i18n="calendar_filter_all_organizers">
+                  All organizing entities
+                </option>
+                <option value="branch" data-i18n="entity_branch">
+                  C&E Branch
+                </option>
+                <option value="association" data-i18n="entity_association">
+                  C&E Association
+                </option>
+                <option value="foundation" data-i18n="entity_foundation">
+                  C&E Foundation
+                </option>
+                <option value="museum" data-i18n="entity_museum">
+                  C&E Museum
+                </option>
+              </select>
+            </div>
+
+            <div class="calendar-filter-field">
+              <label
+                for="calendarProvinceRegionFilter"
+                data-i18n="event_province_region"
+              >
+                Province or region
+              </label>
+              <select id="calendarProvinceRegionFilter">
+                <option value="" data-i18n="calendar_filter_all_regions">
+                  All provinces and regions
+                </option>
+                <option value="AB" data-i18n="region_ab">Alberta</option>
+                <option value="BC" data-i18n="region_bc">
+                  British Columbia
+                </option>
+                <option value="MB" data-i18n="region_mb">Manitoba</option>
+                <option value="NB" data-i18n="region_nb">New Brunswick</option>
+                <option value="NL" data-i18n="region_nl">
+                  Newfoundland and Labrador
+                </option>
+                <option value="NS" data-i18n="region_ns">Nova Scotia</option>
+                <option value="NT" data-i18n="region_nt">
+                  Northwest Territories
+                </option>
+                <option value="NU" data-i18n="region_nu">Nunavut</option>
+                <option value="ON" data-i18n="region_on">Ontario</option>
+                <option value="PE" data-i18n="region_pe">
+                  Prince Edward Island
+                </option>
+                <option value="QC" data-i18n="region_qc">Quebec</option>
+                <option value="SK" data-i18n="region_sk">Saskatchewan</option>
+                <option value="YT" data-i18n="region_yt">Yukon</option>
+                <option value="International" data-i18n="region_international">
+                  International
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="calendar-tool-actions">
+            <button
+              type="button"
+              class="calendar-clear-filters-button"
+              id="calendarClearFiltersButton"
+              data-i18n="calendar_clear_filters"
+            >
+              Clear filters
+            </button>
+            <button
+              type="button"
+              class="calendar-download-button"
+              id="calendarDownloadButton"
+              data-i18n="calendar_download"
+            >
+              Download .ics
+            </button>
+          </div>
+        </section>
 
         <section class="calendar-view" aria-labelledby="calendarMonthLabel">
           <div class="calendar-controls">

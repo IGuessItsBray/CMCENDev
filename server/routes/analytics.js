@@ -15,8 +15,19 @@ const {
   normalizeStoredCountry,
   getSource,
 } = require('../services/analytics');
+const { getPlausibleEmbedConfig } = require('../services/plausible');
 
 const router = express.Router();
+
+router.get(
+  '/embed',
+  authMiddleware,
+  requirePermission('canViewAnalytics'),
+  (req, res) => {
+    res.set('Cache-Control', 'private, max-age=300');
+    res.json(getPlausibleEmbedConfig());
+  },
+);
 
 const RANGE_DAYS = Object.freeze({
   '7d': 7,

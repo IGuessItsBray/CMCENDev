@@ -7,12 +7,6 @@ const eventEditRejectionReason = document.getElementById(
   "eventEditRejectionReason",
 );
 
-const myEventsSection = document.getElementById("myEventsSection");
-const myEventsList = document.getElementById("myEventsList");
-const myEventsCount = document.getElementById("myEventsCount");
-const eventTabs = document.querySelectorAll("[data-event-tab]");
-const eventPanels = document.querySelectorAll("[data-event-panel]");
-const eventFormTabLabel = document.getElementById("eventFormTabLabel");
 const cancelEventEditing = document.getElementById("cancelEventEditing");
 
 const eventPageEyebrow = document.getElementById("eventPageEyebrow");
@@ -38,21 +32,17 @@ const publishNowContainer = document.getElementById("publishNowContainer");
 const eventPublishNow = document.getElementById("eventPublishNow");
 const reviewNote = document.getElementById("eventReviewNote");
 const pageTitle = document.getElementById("submitEventTitle");
-const createLoadingSpinner = CMCENUtils.createLoadingSpinner;
 const redirectToLogin = CMCENUtils.redirectToLogin;
 
 let currentUser = null;
 let isSubmitting = false;
 let accessDenied = false;
-let myEvents = [];
 let editingEvent = null;
 let eventStartPicker = null;
 let eventEndPicker = null;
 
 const eventPageParams = new URLSearchParams(window.location.search);
 let editingEventId = eventPageParams.get("id");
-const initialEventPanel =
-  eventPageParams.get("panel") === "form" ? "form" : "events";
 
 function eventApiJson(path, token, options = {}) {
   return CMCENUtils.apiJson(path, {
@@ -61,14 +51,6 @@ function eventApiJson(path, token, options = {}) {
     redirectOnUnauthorized: true,
     unauthorizedMessage: translate("event_permission_error"),
   });
-}
-
-function showMyEventsLoading() {
-  myEventsSection.hidden = false;
-  myEventsCount.hidden = true;
-  myEventsList.replaceChildren(
-    createLoadingSpinner(translate("my_events_loading")),
-  );
 }
 
 function setEventEditLoading(isLoading) {
@@ -80,215 +62,6 @@ function setEventEditLoading(isLoading) {
 
   if (isLoading) {
     eventForm.hidden = true;
-  }
-}
-
-function getLocalizedEventTitle(event) {
-  return (
-    CMCENUtils.getLocalizedText(event.title) || translate("my_events_untitled")
-  );
-}
-
-function formatMyEventDate(event) {
-  if (event.allDay) {
-    return CMCENUtils.formatDate(event.startDate, {
-      timeZone: "UTC",
-    });
-  }
-
-  return CMCENUtils.formatDate(event.startDate, {
-    timeStyle: "short",
-    hourCycle: "h23",
-    timeZone: event.timezone || undefined,
-  });
-}
-
-function formatMyEventUpdatedDate(value) {
-  return CMCENUtils.formatDate(value, {
-    fallback: "—",
-  });
-}
-
-function formatMyEventType(eventType) {
-  if (!eventType) {
-    return "";
-  }
-
-  const translationKey = `event_type_${eventType}`;
-  const translation = translate(translationKey);
-
-  return translation === translationKey
-    ? CMCENUtils.formatTitleCaseValue(eventType, "")
-    : translation;
-}
-
-function createMyEventCard(submittedEvent) {
-  const article = document.createElement("article");
-  article.className = "my-event-card";
-
-  const isPublished = submittedEvent.status === "published";
-
-  if (isPublished) {
-    article.classList.add("is-published");
-  }
-
-  const header = document.createElement("div");
-  header.className = "my-event-card-header";
-
-  const title = document.createElement("h3");
-  title.textContent = getLocalizedEventTitle(submittedEvent);
-
-  const status = document.createElement("span");
-  status.className = `my-event-status status-${submittedEvent.status}`;
-  status.textContent = translate(`my_events_status_${submittedEvent.status}`);
-
-  const details = document.createElement("div");
-  details.className = "my-event-card-details";
-
-  const location = [submittedEvent.city, submittedEvent.provinceRegion]
-    .filter(Boolean)
-    .join(", ");
-
-  [
-    formatMyEventDate(submittedEvent),
-    location,
-    formatMyEventType(submittedEvent.eventType),
-    `${translate("my_events_last_updated")}: ` +
-      formatMyEventUpdatedDate(submittedEvent.updatedAt),
-  ]
-    .filter(Boolean)
-    .forEach((value) => {
-      const item = document.createElement("span");
-      item.textContent = value;
-      details.appendChild(item);
-    });
-
-  header.append(status, title, details);
-
-  if (!isPublished) {
-    const editLink = document.createElement("a");
-    editLink.className = "my-event-edit-link";
-    editLink.href = `/submit-event?id=${encodeURIComponent(submittedEvent._id)}`;
-    editLink.textContent = translate("my_events_edit");
-    editLink.addEventListener("click", (event) => {
-      event.preventDefault();
-      startEditingEvent(submittedEvent._id);
-    });
-
-    header.appendChild(editLink);
-
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "my-event-edit-link is-danger";
-    deleteButton.textContent = "Delete";
-    deleteButton.addEventListener("click", async (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      if (
-        !(await CMCENModal.confirm(
-          "Delete this submitted event? This cannot be undone.",
-          { title: "Delete event", confirmText: "Delete", destructive: true },
-        ))
-      )
-        return;
-
-      try {
-        await eventApiJson(
-          `/api/admin/events/${encodeURIComponent(submittedEvent._id)}`,
-          token,
-          { method: "DELETE", errorMessage: "Could not delete event" },
-        );
-        await loadMyEvents(token);
-        CMCENUtils.showToast("Event deleted", {
-          color: "success",
-          position: "bottom-right",
-          animation: "slide",
-        });
-      } catch (error) {
-        CMCENUtils.showToast(error.message || "Could not delete event", {
-          color: "error",
-          position: "bottom-right",
-          animation: "slide",
-        });
-      }
-    });
-
-    header.appendChild(deleteButton);
-  }
-
-  const row = isPublished
-    ? document.createElement("a")
-    : document.createElement("div");
-
-  row.className = "my-event-card-row";
-
-  if (isPublished) {
-    row.href = `/event?id=${encodeURIComponent(submittedEvent._id)}`;
-  }
-
-  row.appendChild(header);
-  article.appendChild(row);
-
-  if (submittedEvent.status === "rejected" && submittedEvent.rejectionReason) {
-    const rejection = document.createElement("p");
-
-    rejection.className = "my-event-rejection";
-
-    rejection.textContent =
-      `${translate("my_events_rejection_reason")}: ` +
-      submittedEvent.rejectionReason;
-
-    article.appendChild(rejection);
-  }
-
-  return article;
-}
-
-function renderMyEvents() {
-  myEventsList.replaceChildren();
-
-  const count = myEvents.length;
-
-  myEventsCount.textContent =
-    count === 1
-      ? translate("my_events_count_singular")
-      : translate("my_events_count_plural", { count });
-
-  myEventsCount.hidden = !isEventTabActive("events");
-  myEventsSection.hidden = false;
-
-  if (!count) {
-    const message = document.createElement("p");
-
-    message.className = "my-events-message";
-    message.textContent = translate("my_events_empty");
-
-    myEventsList.appendChild(message);
-    return;
-  }
-
-  myEvents.forEach((event) => {
-    myEventsList.appendChild(createMyEventCard(event));
-  });
-}
-
-async function loadMyEvents(token) {
-  showMyEventsLoading();
-
-  try {
-    const data = await eventApiJson("/api/events/mine", token, {
-      errorMessage: translate("my_events_load_error"),
-    });
-
-    myEvents = Array.isArray(data.events) ? data.events : [];
-
-    renderMyEvents();
-  } catch (error) {
-    myEventsSection.hidden = false;
-
-    myEventsList.textContent =
-      error.message || translate("my_events_load_error");
   }
 }
 
@@ -441,53 +214,19 @@ function getEventDateValues() {
   };
 }
 
-const eventTabController = CMCENUtils.bindTabs({
-  onActivate: updateEventPageHeader,
-  panels: eventPanels,
-  panelKey: "eventPanel",
-  tabs: eventTabs,
-  tabKey: "eventTab",
-});
-
-function activateEventTab(tabName) {
-  eventTabController.activate(tabName);
-  updateEventPageHeader(tabName);
-}
-
-function isEventTabActive(tabName) {
-  return Array.from(eventTabs).some(
-    (tab) =>
-      tab.dataset.eventTab === tabName && tab.classList.contains("is-active"),
-  );
-}
-
-function updateEventPageHeader(tabName) {
+function updateEventPageHeader() {
   if (accessDenied) {
     return;
   }
 
-  const isMyEvents = tabName === "events";
-
-  cancelEventEditing.hidden = isMyEvents || !editingEventId;
-
-  eventPageEyebrow.textContent = translate(
-    isMyEvents ? "my_events_eyebrow" : "event_submission_eyebrow",
-  );
+  cancelEventEditing.hidden = !editingEventId;
+  eventPageEyebrow.textContent = translate("event_submission_eyebrow");
   submitEventTitle.textContent = translate(
-    isMyEvents
-      ? "my_events_heading"
-      : editingEventId
-        ? "edit_event_heading"
-        : "submit_event_heading",
+    editingEventId ? "edit_event_heading" : "submit_event_heading",
   );
   submitEventIntro.textContent = translate(
-    isMyEvents
-      ? "my_events_intro"
-      : editingEventId
-        ? "edit_event_intro"
-        : "submit_event_intro",
+    editingEventId ? "edit_event_intro" : "submit_event_intro",
   );
-  myEventsCount.hidden = !isMyEvents || !myEventsCount.textContent;
 }
 
 function buildEventData() {
@@ -556,6 +295,7 @@ function buildEventData() {
 
 function resetEventForm() {
   eventForm.reset();
+  CMCENUtils.bindCharacterCounters();
 
   eventAllDay.checked = true;
 
@@ -576,24 +316,21 @@ function scrollEventPageToTop() {
   window.requestAnimationFrame(resetScrollPosition);
 }
 
-async function finishEditingEvent(token) {
+function finishEditingEvent() {
   editingEventId = null;
   editingEvent = null;
   clearFormMessage();
   eventPageMessage.hidden = true;
   setEventEditLoading(false);
   resetEventForm();
-  activateEventTab("events");
   updateEventFormModeText();
   scrollEventPageToTop();
 
-  const myEventsUrl = "/submit-event";
+  const submitEventUrl = "/submit-event";
 
-  if (window.location.pathname + window.location.search !== myEventsUrl) {
-    window.history.replaceState({}, "", myEventsUrl);
+  if (window.location.pathname + window.location.search !== submitEventUrl) {
+    window.history.replaceState({}, "", submitEventUrl);
   }
-
-  await loadMyEvents(token);
 }
 
 function cancelEditingEvent() {
@@ -608,10 +345,9 @@ function cancelEditingEvent() {
   setEventEditLoading(false);
   resetEventForm();
   eventForm.hidden = false;
-  activateEventTab("form");
   updateEventFormModeText();
 
-  const createUrl = "/submit-event?panel=form";
+  const createUrl = "/submit-event";
 
   if (window.location.pathname + window.location.search !== createUrl) {
     window.history.pushState({}, "", createUrl);
@@ -650,11 +386,9 @@ async function initializeEventPage() {
 
     reviewNote.hidden = canPublishGeneral;
 
-    await loadMyEvents(token);
     if (editingEventId) {
       const eventId = editingEventId;
 
-      activateEventTab("form");
       setEventEditLoading(true);
       try {
         await loadEventForEditing(token, eventId);
@@ -673,7 +407,7 @@ async function initializeEventPage() {
 }
 
 eventAllDay.addEventListener("change", syncScheduleFields);
-cancelEventEditing.addEventListener("click", cancelEditingEvent);
+cancelEventEditing?.addEventListener("click", cancelEditingEvent);
 eventForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -712,7 +446,7 @@ eventForm.addEventListener("submit", async (event) => {
     });
 
     if (wasEditing) {
-      await finishEditingEvent(token);
+      finishEditingEvent();
     } else {
       resetEventForm();
 
@@ -744,15 +478,6 @@ document.addEventListener("languagechange", () => {
     pageTitle.textContent = translate("event_access_denied_title");
 
     showPageMessage(translate("event_access_denied"));
-  }
-  if (myEventsSection.hidden === false) {
-    const isMyEventsLoading = myEventsList.querySelector(".loading-state");
-
-    if (isMyEventsLoading) {
-      showMyEventsLoading();
-    } else {
-      renderMyEvents();
-    }
   }
   updateEventFormModeText();
   refreshEventSchedulePickers();
@@ -932,6 +657,7 @@ function populateEventForm(event) {
   setEventField("eventDescriptionFr", event.description?.fr);
   setEventField("eventRegistrationEn", event.registration?.en);
   setEventField("eventRegistrationFr", event.registration?.fr);
+  CMCENUtils.bindCharacterCounters();
   setEventField("eventCity", event.city);
   setEventField("eventProvinceRegion", event.provinceRegion);
   setEventField("eventOrganizingEntity", event.organizingEntity);
@@ -987,51 +713,13 @@ async function loadEventForEditing(token, eventId) {
   eventForm.hidden = false;
 }
 
-async function startEditingEvent(eventId) {
-  const token = CMCENUtils.requireAuthToken();
-
-  if (!token) {
-    redirectToLogin();
-    return;
-  }
-
-  editingEventId = eventId;
-  clearFormMessage();
-  eventPageMessage.hidden = true;
-  activateEventTab("form");
-  scrollEventPageToTop();
-  updateEventFormModeText();
-  setEventEditLoading(true);
-
-  const editUrl = `/submit-event?id=${encodeURIComponent(eventId)}`;
-
-  if (window.location.pathname + window.location.search !== editUrl) {
-    window.history.pushState({}, "", editUrl);
-  }
-
-  try {
-    await loadEventForEditing(token, eventId);
-  } catch (error) {
-    if (editingEventId !== eventId) {
-      return;
-    }
-
-    setEventEditLoading(false);
-    eventForm.hidden = true;
-    showPageMessage(error.message || translate("event_permission_error"));
-  }
-}
-
 function updateEventFormModeText() {
   const isEditing = Boolean(editingEventId);
 
   updateEventEditContext();
-  cancelEventEditing.hidden = !isEditing || isEventTabActive("events");
+  cancelEventEditing.hidden = !isEditing;
   cancelEventEditing.disabled = isSubmitting;
-  eventFormTabLabel.textContent = translate(
-    isEditing ? "edit_event_tab" : "submit_new_event_tab",
-  );
-  updateEventPageHeader(isEventTabActive("events") ? "events" : "form");
+  updateEventPageHeader();
   eventSubmitButtonLabel.textContent = translate(
     isEditing ? "save_event_changes" : "submit_event_button",
   );
@@ -1041,9 +729,7 @@ function updateEventFormModeText() {
   );
 }
 
-activateEventTab(editingEventId ? "form" : initialEventPanel);
 updateEventFormModeText();
-showMyEventsLoading();
 
 if (editingEventId) {
   setEventEditLoading(true);

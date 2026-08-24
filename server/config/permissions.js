@@ -16,11 +16,27 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Create draft events and other site content.',
   },
   {
+    key: 'news.manage',
+    label: 'Manage news stories',
+    group: 'News',
+    action: 'edit',
+    description:
+      'Create, edit, publish, unpublish, and delete bilingual news stories.',
+  },
+  {
     key: 'retirements.submit',
     label: 'Submit retirement messages',
     group: 'Retirements',
     action: 'write',
     description: 'Submit retirement messages for review.',
+  },
+  {
+    key: 'certificates.manage',
+    label: 'Manage certificate requests',
+    group: 'Certificates',
+    action: 'edit',
+    description:
+      'View certificate requests with delivery details and confirm completed certificates were printed.',
   },
   {
     key: 'content.publish_own',
@@ -38,10 +54,27 @@ const PERMISSION_CATALOG = Object.freeze([
   },
   {
     key: 'content.delete',
-    label: 'Delete content',
+    label: 'Permanently purge content',
     group: 'Content',
     action: 'delete',
-    description: 'Delete events, retirement messages, and comments.',
+    description:
+      'Permanently purge previously removed content when recovery is no longer required.',
+  },
+  {
+    key: 'content.hide',
+    label: 'Remove published content',
+    group: 'Content',
+    action: 'edit',
+    description:
+      'Remove events, Last Post notices, retirement messages, and comments from public view while preserving them for restoration.',
+  },
+  {
+    key: 'content.restore',
+    label: 'Restore removed content',
+    group: 'Content',
+    action: 'edit',
+    description:
+      'Restore previously removed content to the status it had before removal.',
   },
   {
     key: 'content.delete_own',
@@ -70,6 +103,13 @@ const PERMISSION_CATALOG = Object.freeze([
     group: 'Pages',
     action: 'edit',
     description: 'Create, edit, publish, archive, and delete custom pages.',
+  },
+  {
+    key: 'pages.feature_home',
+    label: 'Feature pages on home',
+    group: 'Pages',
+    action: 'publish',
+    description: 'Place published public custom pages in the homepage news feed.',
   },
   {
     key: 'navigation.manage',
@@ -124,6 +164,14 @@ const PERMISSION_CATALOG = Object.freeze([
       "Reset another user's authenticator app and passkeys from the admin work zone.",
   },
   {
+    key: 'subscriptions.manage',
+    label: 'Manage subscriptions and email blasts',
+    group: 'Communications',
+    action: 'admin',
+    description:
+      'View email subscriptions, export subscriber lists, and send consented news announcements.',
+  },
+  {
     key: 'roles.manage',
     label: 'Manage roles',
     group: 'Roles',
@@ -152,22 +200,6 @@ const PERMISSION_CATALOG = Object.freeze([
     group: 'Banners',
     action: 'edit',
     description: 'Create, update, schedule, and delete public site banners.',
-  },
-  {
-    key: 'site_config.access',
-    label: 'Access site config',
-    group: 'Site config',
-    action: 'read',
-    description:
-      'Open the site configuration work zone after token verification.',
-  },
-  {
-    key: 'site_config.manage',
-    label: 'Manage site config',
-    group: 'Site config',
-    action: 'admin',
-    description:
-      'Edit environment-backed site configuration values after token verification.',
   },
   {
     key: 'media.read',
@@ -202,14 +234,19 @@ const PERMISSION_CATALOG = Object.freeze([
 const LEGACY_PERMISSION_KEYS = Object.freeze({
   canAccessConnections: 'connections.read',
   canCreateDrafts: 'content.create',
+  canManageNews: 'news.manage',
   canSubmitRetirementMessages: 'retirements.submit',
+  canManageCertificateRequests: 'certificates.manage',
   canPublishOwnContent: 'content.publish_own',
   canReviewAndPublish: 'content.review',
   canDeleteContent: 'content.delete',
+  canHideContent: 'content.hide',
+  canRestoreContent: 'content.restore',
   canDeleteOwnContent: 'content.delete_own',
   canManageContentAreas: 'content_areas.manage',
   canManageTranslations: 'translations.manage',
   canManagePages: 'pages.manage',
+  canFeaturePagesOnHome: 'pages.feature_home',
   canManageNavigation: 'navigation.manage',
   canReadUsers: 'users.read',
   canManageUsers: 'users.manage',
@@ -217,12 +254,11 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canDeleteAnyUser: 'users.delete_any',
   canProvisionUsers: 'users.provision',
   canResetUserMfa: 'users.mfa_reset',
+  canManageSubscriptions: 'subscriptions.manage',
   canManageRoles: 'roles.manage',
   canViewAuditLog: 'audit.view',
   canViewAnalytics: 'analytics.view',
   canManageTimers: 'timers.manage',
-  canAccessSiteConfig: 'site_config.access',
-  canManageSiteConfig: 'site_config.manage',
   canViewMediaLibrary: 'media.read',
   canUploadMedia: 'media.upload',
   canDeleteMedia: 'media.delete',
@@ -231,8 +267,6 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
 
 const CUSTOM_ROLE_DENYLIST = Object.freeze([
   'review.bypass',
-  'site_config.access',
-  'site_config.manage',
 ]);
 
 function getAllPermissionKeys() {
@@ -259,13 +293,21 @@ function getBuiltInPermissionFlags(user) {
 
     canCreateDrafts: isGhost || hasMinimumRole(role, 'contributor'),
 
+    canManageNews: hasMinimumRole(role, 'editor'),
+
     canSubmitRetirementMessages: isGhost || hasMinimumRole(role, 'contributor'),
+
+    canManageCertificateRequests: hasMinimumRole(role, 'editor'),
 
     canPublishOwnContent: hasMinimumRole(role, 'author'),
 
     canReviewAndPublish: hasMinimumRole(role, 'editor'),
 
     canDeleteContent: hasMinimumRole(role, 'administrator'),
+
+    canHideContent: hasMinimumRole(role, 'editor'),
+
+    canRestoreContent: hasMinimumRole(role, 'editor'),
 
     canDeleteOwnContent: hasMinimumRole(role, 'subscriber'),
 
@@ -274,6 +316,8 @@ function getBuiltInPermissionFlags(user) {
     canManageTranslations: hasMinimumRole(role, 'editor'),
 
     canManagePages: hasMinimumRole(role, 'editor'),
+
+    canFeaturePagesOnHome: hasMinimumRole(role, 'administrator'),
 
     canManageNavigation: hasMinimumRole(role, 'administrator'),
 
@@ -289,6 +333,8 @@ function getBuiltInPermissionFlags(user) {
 
     canResetUserMfa: hasMinimumRole(role, 'administrator'),
 
+    canManageSubscriptions: hasMinimumRole(role, 'administrator'),
+
     canManageRoles: hasMinimumRole(role, 'administrator'),
 
     canViewAuditLog: hasMinimumRole(role, 'administrator'),
@@ -296,10 +342,6 @@ function getBuiltInPermissionFlags(user) {
     canViewAnalytics: hasMinimumRole(role, 'administrator'),
 
     canManageTimers: hasMinimumRole(role, 'editor'),
-
-    canAccessSiteConfig: role === 'developer',
-
-    canManageSiteConfig: role === 'developer',
 
     canViewMediaLibrary: hasMinimumRole(role, 'administrator'),
 
@@ -366,6 +408,10 @@ function getUserPermissions(user) {
       explicitPermissions.add(permission);
     }
   });
+
+  if (explicitPermissions.has('content.review')) {
+    explicitPermissions.add('certificates.manage');
+  }
 
   Object.entries(LEGACY_PERMISSION_KEYS).forEach(([legacyName, permission]) => {
     flags[legacyName] =

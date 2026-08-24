@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const CertificateRequest = require('../models/CertificateRequest');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
@@ -7,9 +8,15 @@ const { getUserPermissions } = require('../config/permissions');
 const { RETIREMENT_TRADE_ROLES } = require('../config/content');
 const { writeAuditLog } = require('../services/audit-log');
 const {
+  getCertificateRequestSnapshot,
   getRetirementCommentSnapshot,
   getRetirementMessageSnapshot,
 } = require('../services/content-snapshots');
+const { recordContentRevision } = require('../services/content-revisions');
+const {
+  getCleanCertificateRequestPayload,
+  validateCertificateRequestPayload,
+} = require('../services/certificate-requests');
 const { linkMediaAssetToSource } = require('../services/media-assets');
 const {
   cleanLocalizedText,
@@ -209,6 +216,7 @@ function getCleanRetirementMessagePayload(body = {}, submitterDetails = {}) {
     message,
     messageLanguage,
     photoUrl,
+    photoDisplayUrl,
     submitter = {},
     publicationConsentConfirmed,
     memberReviewConfirmed,
@@ -235,10 +243,11 @@ function getCleanRetirementMessagePayload(body = {}, submitterDetails = {}) {
   return {
     cleanRetiree,
     cleanMessage,
-    cleanMessages: cleanLocalizedText({
-      [messageLanguage]: cleanMessage,
-    }),
+    cleanMessages: ALLOWED_LANGUAGES.includes(messageLanguage)
+      ? { [messageLanguage]: cleanMessage }
+      : {},
     cleanPhotoUrl: cleanString(photoUrl),
+    cleanPhotoDisplayUrl: cleanString(photoDisplayUrl),
     cleanSubmitter,
     messageLanguage,
     consentConfirmed: parseAffirmativeBoolean(publicationConsentConfirmed),
@@ -251,6 +260,7 @@ function validateRetirementMessagePayload(payload) {
     cleanRetiree,
     cleanMessage,
     cleanPhotoUrl,
+    cleanPhotoDisplayUrl,
     cleanSubmitter,
     messageLanguage,
     consentConfirmed,
@@ -275,12 +285,20 @@ function validateRetirementMessagePayload(payload) {
     return 'The retirement message must contain at least 100 characters';
   }
 
+  if (cleanMessage.length > 10000) {
+    return 'The retirement message must be 10000 characters or fewer';
+  }
+
   if (!ALLOWED_LANGUAGES.includes(messageLanguage)) {
     return 'The message language is invalid';
   }
 
   if (cleanPhotoUrl.length > 2000) {
     return 'The photo URL is too long';
+  }
+
+  if (cleanPhotoDisplayUrl.length > 2000) {
+    return 'The display photo URL is too long';
   }
 
   if (
@@ -309,6 +327,74 @@ function validateRetirementMessagePayload(payload) {
   }
 
   return '';
+}
+
+function getCertificateRequestPayload(body = {}) {
+  if (!Object.hasOwn(body, 'certificateRequest')) {
+    return null;
+  }
+
+  return getCleanCertificateRequestPayload(body.certificateRequest);
+}
+
+function getCertificateRequestDocument({
+  certificatePayload,
+  retirementMessage,
+  requester,
+  user,
+}) {
+  return {
+    certificateType: 'retirement',
+    source: {
+      type: 'retirementMessage',
+      id: retirementMessage._id,
+    },
+    member: {
+      ...certificatePayload.member,
+      rank: retirementMessage.retiree.rank,
+      tradeRole: retirementMessage.retiree.tradeRole,
+    },
+    familyMembers: certificatePayload.familyMembers,
+    mailingAddress: certificatePayload.mailingAddress,
+    requester,
+    createdBy: user._id,
+    updatedBy: user._id,
+  };
+}
+
+async function createCertificateRequest({
+  certificatePayload,
+  retirementMessage,
+  requester,
+  user,
+  req,
+}) {
+  const certificateRequest = new CertificateRequest(
+    getCertificateRequestDocument({
+      certificatePayload,
+      retirementMessage,
+      requester,
+      user,
+    }),
+  );
+
+  await certificateRequest.save();
+
+  await writeAuditLog({
+    req,
+    action: 'content.certificate_request_created',
+    actor: user,
+    targetType: 'certificateRequest',
+    target: certificateRequest._id,
+    targetSnapshot: getCertificateRequestSnapshot(certificateRequest),
+    metadata: {
+      certificateType: certificateRequest.certificateType,
+      sourceType: certificateRequest.source.type,
+      status: certificateRequest.status,
+    },
+  });
+
+  return certificateRequest;
 }
 
 router.post(
@@ -357,11 +443,23 @@ router.post(
         });
       }
 
+      const certificatePayload = getCertificateRequestPayload(req.body);
+      const certificateValidationError = certificatePayload
+        ? validateCertificateRequestPayload(certificatePayload)
+        : '';
+
+      if (certificateValidationError) {
+        return res.status(400).json({
+          error: certificateValidationError,
+        });
+      }
+
       const {
         cleanRetiree,
         cleanMessage,
         cleanMessages,
         cleanPhotoUrl,
+        cleanPhotoDisplayUrl,
         cleanSubmitter,
         messageLanguage,
       } = payload;
@@ -377,7 +475,8 @@ router.post(
 
       if (wantsImmediatePublication && !canBypassReview) {
         return res.status(403).json({
-          error: 'You do not have permission to publish retirement messages immediately',
+          error:
+            'You do not have permission to publish retirement messages immediately',
         });
       }
 
@@ -391,6 +490,8 @@ router.post(
         messages: cleanMessages,
 
         photoUrl: cleanPhotoUrl,
+
+        photoDisplayUrl: cleanPhotoDisplayUrl,
 
         submitter: cleanSubmitter,
 
@@ -420,14 +521,31 @@ router.post(
       });
 
       await retirementMessage.save();
+
+      let certificateRequest = null;
+
+      if (certificatePayload) {
+        try {
+          certificateRequest = await createCertificateRequest({
+            certificatePayload,
+            retirementMessage,
+            requester: cleanSubmitter,
+            user: req.user,
+            req,
+          });
+        } catch (error) {
+          await RetirementMessage.deleteOne({ _id: retirementMessage._id });
+          throw error;
+        }
+      }
+
       await linkRetirementPhotoToMediaAsset(retirementMessage);
 
       let branchNotificationStatus = 'sent';
 
       try {
-        const notification = await sendRetirementSubmissionEmail(
-          retirementMessage,
-        );
+        const notification =
+          await sendRetirementSubmissionEmail(retirementMessage);
         branchNotificationStatus = notification.skipped ? 'skipped' : 'sent';
 
         if (notification.skipped) {
@@ -437,7 +555,10 @@ router.post(
         }
       } catch (error) {
         branchNotificationStatus = 'failed';
-        console.error('Could not send retirement submission branch email:', error);
+        console.error(
+          'Could not send retirement submission branch email:',
+          error,
+        );
       }
 
       await writeAuditLog({
@@ -471,12 +592,58 @@ router.post(
           : 'Retirement message submitted for review',
 
         status: retirementMessage.status,
+        retirementMessage: {
+          _id: retirementMessage._id,
+          status: retirementMessage.status,
+        },
+        certificateRequest: certificateRequest
+          ? {
+              id: certificateRequest._id,
+              status: certificateRequest.status,
+            }
+          : null,
       });
     } catch (error) {
       console.error('Could not submit retirement message:', error);
 
       return res.status(500).json({
         error: 'Could not submit retirement message',
+      });
+    }
+  },
+);
+
+router.get(
+  '/mine',
+  authMiddleware,
+  requirePermission('canSubmitRetirementMessages'),
+  async (req, res) => {
+    try {
+      const retirementMessages = await RetirementMessage.find({
+        createdBy: req.user._id,
+        status: { $ne: 'hidden' },
+      })
+        .select(
+          [
+            'retiree',
+            'messages',
+            'messageLanguage',
+            'photoUrl',
+            'photoDisplayUrl',
+            'status',
+            'rejectionReason',
+            'createdAt',
+            'updatedAt',
+          ].join(' '),
+        )
+        .sort({ updatedAt: -1 })
+        .lean();
+
+      return res.json({ retirementMessages });
+    } catch (error) {
+      console.error('Could not load user retirement messages:', error);
+      return res.status(500).json({
+        error: 'Could not load your retirement messages',
       });
     }
   },
@@ -500,6 +667,7 @@ router.get('/', async (req, res) => {
       .select({
         retiree: 1,
         photoUrl: 1,
+        photoDisplayUrl: 1,
         publishedAt: 1,
       })
       .sort({
@@ -845,6 +1013,12 @@ router.patch('/comments/:commentId', authMiddleware, async (req, res) => {
       });
     }
 
+    if (comment.status === 'hidden') {
+      return res.status(409).json({
+        error: 'Restore this comment before editing or publishing it',
+      });
+    }
+
     comment.body = cleanBody;
     comment.status =
       canReview && permissions.canPublishOwnContent === true
@@ -969,9 +1143,16 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
+    if (retirementMessage.status === 'hidden') {
+      return res.status(409).json({
+        error: 'Restore this retirement message before editing or publishing it',
+      });
+    }
+
     if (wantsImmediatePublication && !canBypassReview) {
       return res.status(403).json({
-        error: 'You do not have permission to publish retirement messages immediately',
+        error:
+          'You do not have permission to publish retirement messages immediately',
       });
     }
 
@@ -991,11 +1172,23 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
+    const certificatePayload = getCertificateRequestPayload(req.body);
+    const certificateValidationError = certificatePayload
+      ? validateCertificateRequestPayload(certificatePayload)
+      : '';
+
+    if (certificateValidationError) {
+      return res.status(400).json({
+        error: certificateValidationError,
+      });
+    }
+
     const {
       cleanRetiree,
       cleanMessage,
       cleanMessages,
       cleanPhotoUrl,
+      cleanPhotoDisplayUrl,
       cleanSubmitter,
       messageLanguage,
     } = payload;
@@ -1004,8 +1197,12 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     retirementMessage.retiree = cleanRetiree;
     retirementMessage.message = cleanMessage;
     retirementMessage.messageLanguage = messageLanguage;
-    retirementMessage.messages = cleanMessages;
+    retirementMessage.messages = {
+      ...getLocalizedMessages(retirementMessage),
+      ...cleanMessages,
+    };
     retirementMessage.photoUrl = cleanPhotoUrl;
+    retirementMessage.photoDisplayUrl = cleanPhotoDisplayUrl;
     retirementMessage.submitter = cleanSubmitter;
     retirementMessage.publicationConsent = {
       confirmed: true,
@@ -1031,6 +1228,16 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
 
     await retirementMessage.save();
     await linkRetirementPhotoToMediaAsset(retirementMessage);
+
+    const certificateRequest = certificatePayload
+      ? await createCertificateRequest({
+          certificatePayload,
+          retirementMessage,
+          requester: cleanSubmitter,
+          user: req.user,
+          req,
+        })
+      : null;
 
     await writeAuditLog({
       req,
@@ -1066,6 +1273,12 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
           ? 'Retirement message updated and published'
           : 'Retirement message updated and submitted for review',
       retirementMessage,
+      certificateRequest: certificateRequest
+        ? {
+            id: certificateRequest._id,
+            status: certificateRequest.status,
+          }
+        : null,
     });
   } catch (error) {
     if (error.name === 'CastError') {
@@ -1256,6 +1469,7 @@ router.get('/:messageId', async (req, res) => {
         messageLanguage: 1,
         messages: 1,
         photoUrl: 1,
+        photoDisplayUrl: 1,
         publishedAt: 1,
       })
       .lean();
@@ -1286,6 +1500,156 @@ router.get('/:messageId', async (req, res) => {
     });
   }
 });
+
+router.patch(
+  '/:messageId/review-content',
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { language, message } = req.body;
+
+      if (!ALLOWED_LANGUAGES.includes(language)) {
+        return res.status(400).json({
+          error: 'Review content language must be English or French',
+        });
+      }
+
+      if (typeof message !== 'string') {
+        return res.status(400).json({
+          error: 'Retirement review message text is required',
+        });
+      }
+
+      const cleanMessage = cleanString(message);
+
+      if (cleanMessage.length < 100) {
+        return res.status(400).json({
+          error:
+            'Retirement review message text must contain at least 100 characters',
+        });
+      }
+
+      const retirementMessage = await RetirementMessage.findById(
+        req.params.messageId,
+      );
+
+      if (!retirementMessage) {
+        return res.status(404).json({
+          error: 'Retirement message not found',
+        });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      const canReview = permissions.canReviewAndPublish === true;
+      const isOwner =
+        retirementMessage.createdBy &&
+        String(retirementMessage.createdBy) === String(req.user._id);
+      const canSubmitterEdit =
+        isOwner && ['pending', 'rejected'].includes(retirementMessage.status);
+      const canReviewerEdit =
+        canReview &&
+        ['pending', 'published', 'hidden'].includes(retirementMessage.status);
+      const wasRejected = isOwner && retirementMessage.status === 'rejected';
+
+      if (!canReview && !isOwner) {
+        return res.status(403).json({
+          error: 'You do not have permission to update this retirement message',
+        });
+      }
+
+      if (!canSubmitterEdit && !canReviewerEdit) {
+        return res.status(409).json({
+          error:
+            'Only pending, published, or hidden retirement messages can have content updated',
+        });
+      }
+
+      const before = {
+        message: retirementMessage.messages?.[language] || '',
+      };
+
+      retirementMessage.set(`messages.${language}`, cleanMessage);
+      retirementMessage.markModified('messages');
+
+      if (retirementMessage.messageLanguage === language) {
+        retirementMessage.message = cleanMessage;
+      }
+
+      retirementMessage.updatedBy = req.user._id;
+
+      if (wasRejected) {
+        retirementMessage.status = 'pending';
+        retirementMessage.rejectionReason = '';
+        retirementMessage.reviewedBy = null;
+        retirementMessage.reviewedAt = null;
+        retirementMessage.publishedBy = null;
+        retirementMessage.publishedAt = null;
+      }
+
+      await retirementMessage.save();
+
+      await recordContentRevision({
+        contentType: 'retirementMessage',
+        content: retirementMessage,
+        actor: req.user,
+        status: retirementMessage.status,
+        language,
+        fields: ['message'],
+        before,
+        after: { message: retirementMessage.messages?.[language] || '' },
+        note: req.body.note,
+      });
+
+      await writeAuditLog({
+        req,
+        action:
+          wasRejected
+            ? 'content.review_content_updated'
+            : retirementMessage.status === 'pending'
+            ? 'content.review_content_updated'
+            : 'content.staff_content_updated',
+        actor: req.user,
+        targetType: 'retirementMessage',
+        target: retirementMessage._id,
+        targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+        metadata: {
+          source: wasRejected ? 'submitter-resubmit' : 'review-content',
+          status: retirementMessage.status,
+          language,
+          fields: ['message'],
+        },
+      });
+
+      return res.json({
+        message:
+          wasRejected
+            ? 'Retirement message content updated and submitted for review'
+            : retirementMessage.status === 'published'
+            ? 'Published retirement message content updated'
+            : 'Retirement review content updated',
+        retirementMessage,
+      });
+    } catch (error) {
+      console.error('Could not update retirement review content:', error);
+
+      if (error.name === 'CastError') {
+        return res.status(400).json({
+          error: 'Invalid retirement message ID',
+        });
+      }
+
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({
+          error: getValidationErrorMessage(error),
+        });
+      }
+
+      return res.status(500).json({
+        error: 'Could not update retirement review content',
+      });
+    }
+  },
+);
 
 router.patch(
   '/:messageId/review',

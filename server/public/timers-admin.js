@@ -231,7 +231,7 @@ function formatPreviewCountdown(value) {
 function createTimerPreview(timer) {
   const preview = document.createElement("div");
   preview.className = "timers-editor-preview";
-  preview.style.setProperty("--timer-background", timer.color || "#1d4ed8");
+  preview.style.setProperty("--timer-background", timer.color || "#202642");
   preview.style.setProperty("--timer-text", timer.textColor || "#ffffff");
 
   const text = document.createElement("span");
@@ -284,7 +284,7 @@ function createTimerEditor() {
     ),
     createField(
       t("timers_field_background_color"),
-      createColorInput("color", timer.color, "#1d4ed8"),
+      createColorInput("color", timer.color, "#202642"),
     ),
     createField(
       t("timers_field_text_color"),
@@ -349,7 +349,7 @@ function createTimerEditor() {
       title: form.elements.title?.value || "",
       color: window.CMCENColorPicker.normalize(
         form.elements.color?.value,
-        "#1d4ed8",
+        "#202642",
       ),
       textColor: window.CMCENColorPicker.normalize(
         form.elements.textColor?.value,

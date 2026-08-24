@@ -29,7 +29,7 @@
             <h1 id="lastPostSubmitTitle" data-i18n="last_post_submit_title">
               Submit a Last Post
             </h1>
-            <p data-i18n="last_post_submit_intro">
+            <p id="lastPostSubmitIntro" data-i18n="last_post_submit_intro">
               Submit a memorial notice for review before publication.
             </p>
           </div>
@@ -49,6 +49,40 @@
           novalidate
           hidden
         >
+          <section
+            class="event-edit-context"
+            id="lastPostEditContext"
+            aria-labelledby="lastPostEditContextTitle"
+            hidden
+          >
+            <div>
+              <p
+                class="event-edit-context-eyebrow"
+                data-i18n="event_edit_context_eyebrow"
+              >
+                Edit mode
+              </p>
+              <h2
+                id="lastPostEditContextTitle"
+                data-i18n="last_post_edit_context_heading"
+              >
+                You are editing an existing Last Post notice
+              </h2>
+              <p
+                class="event-edit-context-intro"
+                data-i18n="last_post_edit_context_intro"
+              >
+                Update the details below, then save the revised notice for review.
+              </p>
+            </div>
+            <div class="event-edit-rejection" id="lastPostEditRejection" hidden>
+              <strong data-i18n="event_edit_rejection_heading">
+                Rejection reason
+              </strong>
+              <p id="lastPostEditRejectionReason"></p>
+            </div>
+          </section>
+
           <section
             class="event-form-section event-section--full-bleed-heading"
             aria-labelledby="deceasedMemberHeading"
@@ -162,11 +196,16 @@
                   <label for="lastPostImage" data-i18n="last_post_image"
                     >Image</label
                   >
-                  <input id="lastPostImage" type="file" accept="image/*" />
+                  <input
+                    id="lastPostImage"
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.heic,image/jpeg,image/png,image/webp,image/gif,image/heic"
+                  />
                   <small data-i18n="last_post_image_hint"
                     >Optional. Upload a memorial image to include with the
                     notice.</small
                   >
+                  <div id="lastPostImageCrop" class="image-crop" hidden></div>
                 </div>
                 <div class="event-field event-field-wide">
                   <label for="lastPostMessage" data-i18n="last_post_message"
@@ -176,6 +215,7 @@
                     id="lastPostMessage"
                     rows="12"
                     maxlength="10000"
+                    data-character-counter
                     required
                   ></textarea>
                 </div>
@@ -183,7 +223,81 @@
             </div>
           </section>
 
-          <footer class="event-form-actions">
+          <section
+            class="event-authorization-section"
+            aria-labelledby="lastPostAuthorizationHeading"
+          >
+            <header class="event-authorization-heading">
+              <div>
+                <p
+                  class="event-section-eyebrow"
+                  data-i18n="last_post_authorization_eyebrow"
+                >
+                  Publication authorization
+                </p>
+
+                <h2
+                  id="lastPostAuthorizationHeading"
+                  data-i18n="last_post_authorization_heading"
+                >
+                  Chain-of-command confirmation
+                </h2>
+              </div>
+            </header>
+
+            <label
+              class="event-authorization-checkbox"
+              for="lastPostPublicationPermission"
+            >
+              <input
+                type="checkbox"
+                id="lastPostPublicationPermission"
+                name="publicationPermissionConfirmed"
+                required
+              />
+
+              <span>
+                <strong data-i18n="last_post_permission_confirmation">
+                  I confirm I have consent from my chain of command to publish this Last Post notice.
+                </strong>
+
+                <small data-i18n="last_post_permission_confirmation_hint">
+                  This confirmation is required before the notice can be submitted for review or publication.
+                </small>
+              </span>
+            </label>
+          </section>
+
+          <footer class="event-submit-options">
+            <div class="event-publication-copy">
+              <label
+                class="event-toggle event-publish-toggle"
+                id="lastPostPublishNowContainer"
+                for="lastPostPublishNow"
+                hidden
+              >
+                <input type="checkbox" id="lastPostPublishNow" />
+
+                <span>
+                  <strong data-i18n="last_post_publish_now">
+                    Publish immediately
+                  </strong>
+
+                  <small data-i18n="last_post_publish_now_hint">
+                    Skip the review queue and publish this Last Post notice now.
+                  </small>
+                </span>
+              </label>
+
+              <p
+                class="event-review-note"
+                id="lastPostReviewNote"
+                data-i18n="last_post_review_note"
+              >
+                Your Last Post notice will be sent to an editor for review.
+              </p>
+            </div>
+
             <button
               class="event-submit-button"
               id="lastPostSubmitButton"

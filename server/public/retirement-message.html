@@ -13,7 +13,7 @@
       type="image/png"
       href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
     />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=retirement-photo-raw-v1" />
   </head>
 
   <body>
@@ -94,8 +94,15 @@
                 novalidate
                 hidden
               >
+                <p
+                  class="retirement-comment-edit-context"
+                  id="retirementCommentEditContext"
+                  hidden
+                ></p>
+
                 <label
                   for="retirementCommentText"
+                  id="retirementCommentLabel"
                   data-i18n="retirement_comment_add"
                 >
                   Add a comment
@@ -107,6 +114,7 @@
                   rows="4"
                   minlength="2"
                   maxlength="2000"
+                  data-character-counter
                   required
                 ></textarea>
 
@@ -115,13 +123,25 @@
                     Comments may be reviewed before publication.
                   </small>
 
-                  <button
-                    id="retirementCommentSubmit"
-                    type="submit"
-                    data-i18n="retirement_comment_post"
-                  >
-                    Post comment
-                  </button>
+                  <div class="retirement-comment-form-actions">
+                    <a
+                      class="retirement-comment-cancel"
+                      id="retirementCommentCancel"
+                      href="/retirements"
+                      data-i18n="retirement_comment_cancel_edit"
+                      hidden
+                    >
+                      Cancel editing
+                    </a>
+
+                    <button
+                      id="retirementCommentSubmit"
+                      type="submit"
+                      data-i18n="retirement_comment_post"
+                    >
+                      Post comment
+                    </button>
+                  </div>
                 </div>
               </form>
 

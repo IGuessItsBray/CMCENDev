@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="content_workspace_page_title">
+      Editorial Workspace | CMCEN / RCMCE
+    </title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <header id="header"></header>
+
+    <main class="content-workspace-page">
+      <section class="content-workspace-shell" aria-labelledby="contentWorkspaceTitle">
+        <header class="content-workspace-heading">
+          <div class="content-workspace-heading-copy">
+            <p class="content-workspace-eyebrow" id="contentWorkspaceEyebrow" data-i18n="content_workspace_eyebrow">
+              Editorial workspace
+            </p>
+            <h1 id="contentWorkspaceTitle" data-i18n="content_workspace_title">
+              Manage content
+            </h1>
+            <p id="contentWorkspaceIntro" data-i18n="content_workspace_intro">
+              Review pending submissions, correct bilingual public copy, and publish, reject, remove, or restore content without losing its history.
+            </p>
+          </div>
+
+        </header>
+
+        <p class="content-workspace-status" id="contentWorkspaceMessage" role="status" aria-live="polite"></p>
+
+        <div class="content-workspace-layout">
+          <aside class="content-workspace-list-panel" aria-label="Content records" data-i18n-aria-label="content_workspace_records">
+            <div class="content-workspace-list-heading">
+              <div class="content-workspace-filters" id="contentWorkspaceFilters" role="group" aria-label="Content filters" data-i18n-aria-label="content_workspace_filters">
+                <label>
+                  <span data-i18n="content_workspace_search">Search</span>
+                  <input id="contentWorkspaceSearch" name="search" type="search" maxlength="120" autocomplete="off" placeholder="Search title, name, or text" data-i18n-placeholder="content_workspace_search_placeholder" />
+                </label>
+
+                <label>
+                  <span data-i18n="content_workspace_type">Content type</span>
+                  <select id="contentWorkspaceType" name="type">
+                    <option value="all" data-i18n="content_workspace_all_types">All types</option>
+                    <option value="event" data-i18n="content_workspace_event">Events</option>
+                    <option value="retirementMessage" data-i18n="content_workspace_retirement">Retirement messages</option>
+                    <option value="lastPost" data-i18n="content_workspace_last_post">Last Post notices</option>
+                    <option value="retirementComment" data-i18n="content_workspace_comment">Comments</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span data-i18n="content_workspace_status">Status</span>
+                  <select id="contentWorkspaceStatusFilter" class="content-workspace-status-filter is-all" name="status">
+                    <option value="all" data-i18n="content_workspace_all_statuses">All statuses</option>
+                    <option value="pending" data-i18n="content_workspace_pending">Pending</option>
+                    <option value="published" data-i18n="content_workspace_published">Published</option>
+                    <option value="hidden" data-i18n="content_workspace_hidden">Removed</option>
+                    <option value="rejected" data-i18n="content_workspace_rejected">Rejected</option>
+                    <option value="draft" data-i18n="content_workspace_draft">Draft</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span data-i18n="content_workspace_translation_status">Translation</span>
+                  <select id="contentWorkspaceTranslationFilter" name="translation">
+                    <option value="all" data-i18n="content_workspace_all_translation_statuses">All translation states</option>
+                    <option value="missing-any" data-i18n="translations_filter_missing_any">Needs a translation</option>
+                    <option value="missing-en" data-i18n="translations_filter_missing_english">Needs English</option>
+                    <option value="missing-fr" data-i18n="translations_filter_missing_french">Needs French</option>
+                  </select>
+                </label>
+              </div>
+              <strong id="contentWorkspaceCount" aria-live="polite"></strong>
+            </div>
+            <div class="content-workspace-list" id="contentWorkspaceList"></div>
+          </aside>
+
+          <section class="content-workspace-detail" id="contentWorkspaceDetail" aria-live="polite"></section>
+        </div>
+      </section>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/date-time-picker.js"></script>
+    <script src="/content-workspace.js"></script>
+  </body>
+</html>

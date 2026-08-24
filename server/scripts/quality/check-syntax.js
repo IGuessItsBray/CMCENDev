@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const vm = require('vm');
 
 const serverRoot = path.resolve(__dirname, '..', '..');
 const ignoredDirectories = new Set(['node_modules', 'output']);
@@ -23,11 +23,11 @@ const files = collectJavaScriptFiles(serverRoot);
 let hasFailure = false;
 
 for (const filePath of files) {
-  const result = spawnSync(process.execPath, ['--check', filePath], {
-    stdio: 'inherit',
-  });
-
-  if (result.status !== 0) {
+  try {
+    const source = fs.readFileSync(filePath, 'utf8').replace(/^#!.*\r?\n/u, '');
+    new vm.Script(source, { filename: filePath });
+  } catch (error) {
+    console.error(error);
     hasFailure = true;
   }
 }

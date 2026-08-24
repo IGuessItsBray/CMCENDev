@@ -513,7 +513,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const qr = await api("/api/mfa/totp/qrcode");
                 appendTotpQrCode(container, qr.qrcode);
               } catch (e) {
-                console.warn("Could not fetch QR", e);
               }
             }
           }

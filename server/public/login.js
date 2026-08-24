@@ -35,15 +35,39 @@ const mfaError = document.getElementById("mfaError");
 const mfaCancel = document.getElementById("mfaCancel");
 
 let pendingMfa = null;
+let mfaRestoreFocus = null;
 let emailVerificationToken = "";
 let guestVerificationToken = "";
 const resetToken =
   new URLSearchParams(window.location.search).get("resetToken") || "";
+const loginNotice =
+  new URLSearchParams(window.location.search).get("notice") || "";
 
 function setLoginMessage(message, type = "error") {
   errorElement.textContent = message;
   errorElement.hidden = !message;
   errorElement.classList.toggle("is-info", type === "info");
+}
+
+function getLoginTranslation(key, fallback) {
+  if (typeof window.translate !== "function") {
+    return fallback;
+  }
+
+  const translated = window.translate(key);
+  return translated && translated !== key ? translated : fallback;
+}
+
+function requestLogin(username, password, sessionCookieConsent) {
+  return CMCENUtils.apiJson("/api/login", {
+    method: "POST",
+    body: {
+      username,
+      password,
+      sessionCookieConsent,
+    },
+    errorMessage: "Login failed",
+  });
 }
 
 function setMfaMessage(message, type = "error") {
@@ -164,7 +188,6 @@ async function applyAccountLanguage(token) {
       window.applyLanguage(user.preferredLanguage);
     }
   } catch (error) {
-    console.warn("Could not apply account language preference:", error);
   }
 }
 
@@ -192,6 +215,8 @@ function ensureWebAuthnAvailable() {
 }
 
 function openMfaDialog(methods, tempToken) {
+  mfaRestoreFocus =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
   mfaOptions.replaceChildren();
   mfaTotpForm.hidden = true;
   mfaTotpCode.value = "";
@@ -231,6 +256,16 @@ function closeMfaDialog() {
   mfaTotpForm.hidden = true;
   mfaTotpCode.value = "";
   pendingMfa = null;
+  mfaRestoreFocus?.focus();
+  mfaRestoreFocus = null;
+}
+
+function getMfaFocusableElements() {
+  return Array.from(
+    mfaOverlay.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), [href], select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((element) => !element.hidden && element.getClientRects().length > 0);
 }
 
 async function passkeyMfaLogin(tempToken) {
@@ -346,6 +381,33 @@ mfaCancel.addEventListener("click", () => {
   closeMfaDialog();
 });
 
+document.addEventListener("keydown", (event) => {
+  if (mfaOverlay.hidden || !pendingMfa) return;
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    pendingMfa.reject(new Error("Sign-in cancelled"));
+    closeMfaDialog();
+    return;
+  }
+
+  if (event.key !== "Tab") return;
+
+  const focusableElements = getMfaFocusableElements();
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+
+  if (!firstElement || !lastElement) return;
+
+  if (event.shiftKey && document.activeElement === firstElement) {
+    event.preventDefault();
+    lastElement.focus();
+  } else if (!event.shiftKey && document.activeElement === lastElement) {
+    event.preventDefault();
+    firstElement.focus();
+  }
+});
+
 forgotPasswordLink.addEventListener("click", showForgotPasswordForm);
 guestAccessLink.addEventListener("click", showGuestAccessForm);
 forgotPasswordBack.addEventListener("click", () => showLoginForm(""));
@@ -442,11 +504,27 @@ emailVerificationForm.addEventListener("submit", async (event) => {
   setEmailVerificationMessage("");
 
   try {
+    const consented =
+      CMCENUtils.hasSessionCookieConsent() ||
+      (await CMCENUtils.requestSessionCookieConsent());
+
+    if (!consented) {
+      setEmailVerificationMessage(
+        getLoginTranslation(
+          "session_cookie_consent_declined",
+          "You were not signed in. CMCEN needs the secure session cookie to protect your account.",
+        ),
+        "info",
+      );
+      return;
+    }
+
     const data = await CMCENUtils.apiJson("/api/email-verification/confirm", {
       method: "POST",
       body: {
         verificationToken: emailVerificationToken,
         code,
+        sessionCookieConsent: true,
       },
       errorMessage: "Could not verify email",
     });
@@ -491,12 +569,28 @@ guestAccessForm.addEventListener("submit", async (event) => {
       return;
     }
 
+    const consented =
+      CMCENUtils.hasSessionCookieConsent() ||
+      (await CMCENUtils.requestSessionCookieConsent());
+
+    if (!consented) {
+      setGuestAccessMessage(
+        getLoginTranslation(
+          "session_cookie_consent_declined",
+          "You were not signed in. CMCEN needs the secure session cookie to protect your account.",
+        ),
+        "info",
+      );
+      return;
+    }
+
     const data = await CMCENUtils.apiJson("/api/ghost/confirm", {
       method: "POST",
       body: {
         verificationToken: guestVerificationToken,
         firstName: guestFirstName.value.trim(),
         code: guestCode.value.trim(),
+        sessionCookieConsent: true,
       },
       errorMessage: "Could not confirm guest access",
     });
@@ -521,14 +615,28 @@ loginForm.addEventListener("submit", async (event) => {
   loginButton.setAttribute("aria-busy", "true");
 
   try {
-    const data = await CMCENUtils.apiJson("/api/login", {
-      method: "POST",
-      body: {
-        username,
-        password,
-      },
-      errorMessage: "Login failed",
-    });
+    let data = await requestLogin(
+      username,
+      password,
+      CMCENUtils.hasSessionCookieConsent(),
+    );
+
+    if (data.sessionCookieConsentRequired) {
+      const consented = await CMCENUtils.requestSessionCookieConsent();
+
+      if (!consented) {
+        setLoginMessage(
+          getLoginTranslation(
+            "session_cookie_consent_declined",
+            "You were not signed in. CMCEN needs the secure session cookie to protect your account.",
+          ),
+          "info",
+        );
+        return;
+      }
+
+      data = await requestLogin(username, password, true);
+    }
 
     if (data.emailVerificationRequired) {
       emailVerificationToken = data.verificationToken || "";
@@ -562,4 +670,11 @@ loginForm.addEventListener("submit", async (event) => {
 
 if (resetToken) {
   showResetPasswordForm("Choose a new password for your account.", "info");
+} else if (loginNotice === "td-insurance-members-only") {
+  setLoginMessage(
+    getLoginTranslation(
+      "td_insurance_login_required",
+      "You need to be logged in to view this item.",
+    ),
+  );
 }

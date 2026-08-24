@@ -42,8 +42,8 @@
         <nav
           class="admin-work-zone-tabs admin-work-zone-page-tabs"
           id="adminWorkZoneTabs"
-          aria-label="Admin work zone views"
-          data-i18n-aria-label="admin_work_zone_tabs_label"
+          aria-label="Admin tools"
+          data-i18n-aria-label="admin_tools_tabs_label"
         ></nav>
 
         <div class="translations-toolbar">
@@ -63,8 +63,75 @@
             />
           </div>
 
+          <div class="event-field translations-filter-field">
+            <label
+              for="translationsStatusFilter"
+              data-i18n="translations_filter_label"
+            >
+              Show
+            </label>
+            <select id="translationsStatusFilter">
+              <option value="all" data-i18n="translations_filter_all">
+                All labels
+              </option>
+              <option
+                value="missing-any"
+                data-i18n="translations_filter_missing_any"
+              >
+                Needs a translation
+              </option>
+              <option
+                value="missing-en"
+                data-i18n="translations_filter_missing_english"
+              >
+                Needs English
+              </option>
+              <option
+                value="missing-fr"
+                data-i18n="translations_filter_missing_french"
+              >
+                Needs French
+              </option>
+            </select>
+          </div>
+
+          <button
+            class="translations-clear-filters"
+            id="translationsClearFilters"
+            type="button"
+            hidden
+            data-i18n="translations_clear_filters"
+          >
+            Clear filters
+          </button>
+
           <p class="translations-count" id="translationsCount"></p>
         </div>
+
+        <section
+          class="translations-browser"
+          aria-labelledby="translationsBrowserHeading"
+        >
+          <div class="translations-browser-heading">
+            <div>
+              <p class="translations-browser-eyebrow" data-i18n="translations_browse_eyebrow">
+                Browse by site area
+              </p>
+              <h2 id="translationsBrowserHeading" data-i18n="translations_browse_heading">
+                Find the part of the site you want to edit
+              </h2>
+            </div>
+            <p data-i18n="translations_browse_intro">
+              Choose an area, then open a smaller group of related labels.
+            </p>
+          </div>
+
+          <div
+            class="translations-category-list"
+            id="translationsCategoryList"
+            aria-live="polite"
+          ></div>
+        </section>
 
         <p
           class="review-page-message is-loading"

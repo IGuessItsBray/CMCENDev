@@ -21,6 +21,10 @@ npm run test:integration:watch
 unit tests, OpenAPI contract checks, and Mongo-backed integration tests. The
 individual commands are useful while working on one layer.
 
+Integration tests run in four independent, balanced groups so the Node test
+runner can use available CPU cores. Use `npm run test:integration:serial` when
+diagnosing a failure in the original single-process order.
+
 The first Mongo-backed run may download a compatible `mongod` binary. Subsequent
 runs use the local cache. The test process needs permission to start the binary
 and bind a loopback port.
@@ -70,9 +74,9 @@ is executed directly. Tests set isolated environment values before importing
 the application.
 
 Each test creates only the users and content it needs. All MongoDB collections
-are cleared before every case, and test files run serially to avoid shared-state
-collisions. Never point the suite at a development, staging, or production
-database.
+are cleared before every case. Each parallel group starts its own ephemeral
+MongoDB instance, avoiding shared-state collisions. Never point the suite at a
+development, staging, or production database.
 
 ## Adding A Test
 
@@ -115,10 +119,24 @@ npm ci
 npm test
 ```
 
-The Docker job runs from the repository root:
+The workflow restores npm's download cache using a key derived from
+`server/package-lock.json`. It does not cache `node_modules`; `npm ci` remains
+the authoritative clean install step. A runner without cache support continues
+the job without a cache.
+
+The Docker job uses Buildx and restores a persistent layer cache. Its cache key
+is derived from the Dockerfile and `server/package-lock.json`, so application
+source changes can reuse the production dependency-install layer. A cache miss
+or a runner without cache support still performs a full build. The job runs
+from the repository root:
 
 ```sh
-docker build --tag cmcen-pr-test .
+docker buildx build \
+  --cache-from type=local,src=/tmp/.buildx-cache \
+  --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+  --load \
+  --tag cmcen-pr-test \
+  .
 ```
 
 Do not inject production credentials. The suite supplies its own JWT and

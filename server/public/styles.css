@@ -6634,6 +6634,20 @@ html[data-theme='dark'] .admin-subscriptions-panel p {
   color: var(--audit-badge-text, var(--white));
 }
 
+.audit-log-duplicate-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 31px;
+  padding: 4px 10px;
+  border: 1px solid var(--branch-grey-300);
+  border-radius: 999px;
+  color: var(--branch-grey-800);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .audit-log-entry.is-user-login,
 .audit-log-entry.is-user-login_mfa_required {
   --audit-accent: #2f6f9f;
@@ -9123,6 +9137,25 @@ html[data-theme='dark'] .admin-subscriptions-panel p {
   white-space: normal;
   -webkit-user-select: none;
   user-select: none;
+}
+
+.pages-block-image-thumbnail-frame {
+  width: 82px;
+  height: 52px;
+  justify-self: start;
+  display: block;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--page-block-accent) 45%, var(--branch-grey-300));
+  border-radius: 5px;
+  background: var(--branch-grey-100);
+}
+
+.pages-block-image-thumbnail {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transform-origin: center;
 }
 
 .pages-block-heading strong {

@@ -823,7 +823,9 @@ function createBlockToolbar(index) {
 }
 
 function getBlockSummary(block) {
-  if (block.type === "image") return block.mediaUrl ? "Image selected" : "Add an image";
+  if (block.type === "image") {
+    return block.mediaUrl ? "Selected image — click to edit" : "Choose an image";
+  }
   if (block.type === "divider") return "";
   if (block.type === "columns") return `${(block.columns || []).length || 2} columns`;
   if (block.type === "carousel") return `${(block.items || []).length || 1} slides`;
@@ -2076,6 +2078,18 @@ function createBlockEditor(block, index) {
     summary.className = "pages-block-summary";
     summary.textContent = summaryText;
     article.append(summary);
+  }
+  if (block.type === "image" && block.mediaUrl) {
+    const thumbnailFrame = document.createElement("span");
+    thumbnailFrame.className = "pages-block-image-thumbnail-frame";
+    const thumbnail = document.createElement("img");
+    thumbnail.className = "pages-block-image-thumbnail";
+    thumbnail.src = getPreviewMediaUrl(block);
+    thumbnail.alt = localized(block.alt) || "Selected image preview";
+    thumbnail.loading = "lazy";
+    applyCropStyles(thumbnail, block.crop);
+    thumbnailFrame.append(thumbnail);
+    article.append(thumbnailFrame);
   }
   article.append(createBlockResizeHandle(index));
 

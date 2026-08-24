@@ -2,6 +2,7 @@ const auditToken = CMCENUtils.requireAuthToken();
 const auditLogStatus = document.getElementById("auditLogStatus");
 const auditLogPage = document.getElementById("auditLogPage");
 const auditLogContent = document.getElementById("auditLogContent");
+const auditDuplicateWindowMs = 60 * 1000;
 
 let auditState = {
   logs: [],
@@ -316,6 +317,72 @@ function getTargetId(value) {
   }
 
   return "";
+}
+
+function getAuditActorGroupKey(log) {
+  const actorId = getActorId(log.actor);
+
+  if (actorId) {
+    return `id:${normalizeAuditIdentity(actorId)}`;
+  }
+
+  const actor = log.actorSnapshot || {};
+  return `snapshot:${normalizeAuditIdentity(
+    actor.accountName || actor.username || actor.email,
+  )}`;
+}
+
+function getAuditTargetGroupKey(log) {
+  const targetId = getTargetId(log.target);
+
+  if (targetId) {
+    return `id:${normalizeAuditIdentity(targetId)}`;
+  }
+
+  const target = log.targetSnapshot || {};
+  return `snapshot:${normalizeAuditIdentity(
+    target.slug || target.key || target.title || target.name,
+  )}`;
+}
+
+function getAuditDuplicateGroupKey(log) {
+  return [
+    log.action || "",
+    log.targetType || "",
+    getAuditActorGroupKey(log),
+    getAuditTargetGroupKey(log),
+  ].join("|");
+}
+
+function getAuditTimestamp(log) {
+  const timestamp = new Date(log.createdAt).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
+function collapseDuplicateAuditLogs(logs) {
+  return logs.reduce((collapsed, log) => {
+    const previous = collapsed.at(-1);
+    const previousTimestamp = previous ? getAuditTimestamp(previous) : null;
+    const timestamp = getAuditTimestamp(log);
+    const matchesPrevious =
+      previous &&
+      previous._duplicateGroupKey === getAuditDuplicateGroupKey(log) &&
+      previousTimestamp !== null &&
+      timestamp !== null &&
+      previousTimestamp - timestamp <= auditDuplicateWindowMs;
+
+    if (matchesPrevious) {
+      previous.duplicateCount = (previous.duplicateCount || 1) + 1;
+      return collapsed;
+    }
+
+    collapsed.push({
+      ...log,
+      duplicateCount: 1,
+      _duplicateGroupKey: getAuditDuplicateGroupKey(log),
+    });
+    return collapsed;
+  }, []);
 }
 
 function normalizeAuditIdentity(value) {
@@ -788,6 +855,15 @@ function createAuditRow(log) {
   type.textContent = formatAuditTargetType(log.targetType);
 
   badges.append(type);
+
+  if (log.duplicateCount > 1) {
+    const duplicateCount = document.createElement("span");
+    duplicateCount.className = "audit-log-duplicate-count";
+    duplicateCount.textContent = `×${log.duplicateCount}`;
+    duplicateCount.setAttribute("aria-label", `×${log.duplicateCount}`);
+    badges.append(duplicateCount);
+  }
+
   header.append(title, badges);
 
   const details = document.createElement("p");
@@ -849,6 +925,7 @@ function createAuditRow(log) {
 
 function renderAuditLog() {
   auditLogContent.replaceChildren();
+  const visibleLogs = collapseDuplicateAuditLogs(auditState.logs);
 
   const panel = document.createElement("div");
   panel.className = "audit-log-panel";
@@ -859,7 +936,7 @@ function renderAuditLog() {
   const titleWrapper = document.createElement("div");
   const title = document.createElement("h3");
   title.textContent = translate("audit_entries_heading", {
-    count: auditState.logs.length,
+    count: visibleLogs.length,
   });
   titleWrapper.append(title);
   heading.append(titleWrapper, createAuditRefreshButton());
@@ -873,7 +950,7 @@ function renderAuditLog() {
     panel.append(message);
   }
 
-  if (!auditState.logs.length) {
+  if (!visibleLogs.length) {
     const empty = document.createElement("p");
     empty.className = "admin-empty-state";
     empty.textContent = auditState.isLoading
@@ -881,7 +958,7 @@ function renderAuditLog() {
       : translate("audit_entries_empty");
     panel.append(empty);
   } else {
-    auditState.logs.forEach((log) => {
+    visibleLogs.forEach((log) => {
       panel.append(createAuditRow(log));
     });
   }

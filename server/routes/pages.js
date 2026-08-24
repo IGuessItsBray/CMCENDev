@@ -60,10 +60,12 @@ const SITEMAP_EXCLUDED_HTML = new Set([
   'admin-users.html',
   'analytics.html',
   'audit-log.html',
+  'content-workspace.html',
   'event.html',
   'last-post-message.html',
   'page.html',
   'pages-admin.html',
+  'review-submissions.html',
   'retirement-message.html',
   'timers-admin.html',
   'translations-admin.html',
@@ -625,6 +627,10 @@ function getSitemapSection(fileName) {
   return 'site';
 }
 
+function isPublicSitemapFile(fileName) {
+  return fileName.endsWith('.html') && !SITEMAP_EXCLUDED_HTML.has(fileName);
+}
+
 function toSitemapItem({ title, route, summary, updatedAt, section, type }) {
   return {
     title: title || {},
@@ -641,8 +647,7 @@ async function getStaticSitemapItems() {
 
   return files
     .filter(
-      (fileName) =>
-        fileName.endsWith('.html') && !SITEMAP_EXCLUDED_HTML.has(fileName),
+      isPublicSitemapFile,
     )
     .map((fileName) =>
       toSitemapItem({
@@ -1466,3 +1471,4 @@ router.delete(
 );
 
 module.exports = router;
+module.exports.isPublicSitemapFile = isPublicSitemapFile;

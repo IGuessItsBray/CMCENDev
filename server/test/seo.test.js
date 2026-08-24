@@ -9,6 +9,7 @@ const {
   getPublicBaseUrl,
   isKnownAiCrawler,
   isNoIndexPath,
+  isPublicSitemapFile,
   router,
   serializeSitemap,
   setStandardResponseHeaders,
@@ -36,6 +37,7 @@ test('marks account, admin, submission, and API paths as non-indexable', () => {
   for (const pathname of [
     '/api/me',
     '/dashboard',
+    '/content-workspace',
     '/login',
     '/pages-admin',
     '/submit-event',
@@ -44,6 +46,12 @@ test('marks account, admin, submission, and API paths as non-indexable', () => {
   }
 
   assert.equal(isNoIndexPath('/about-family'), false);
+});
+
+test('excludes protected workspace files from the public XML sitemap', () => {
+  assert.equal(isPublicSitemapFile('content-workspace.html'), false);
+  assert.equal(isPublicSitemapFile('review-submissions.html'), false);
+  assert.equal(isPublicSitemapFile('about-family.html'), true);
 });
 
 test('serializes safe, valid XML sitemap entries', () => {
@@ -128,6 +136,7 @@ test('blocks declared AI crawlers without blocking public search pages', () => {
   assert.match(robots, /User-agent: GPTBot\nDisallow: \//u);
   assert.match(robots, /User-agent: Google-Extended\nDisallow: \//u);
   assert.match(robots, /User-agent: ClaudeBot\nDisallow: \//u);
+  assert.match(robots, /Disallow: \/content-workspace/u);
   assert.match(robots, /Sitemap: https:\/\/cmcen\.example\.ca\/sitemap\.xml/u);
 });
 

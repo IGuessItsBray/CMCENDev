@@ -11,6 +11,7 @@ const NON_INDEXABLE_PATHS = [
   /^\/admin-users(?:\/|$)/u,
   /^\/analytics(?:\/|$)/u,
   /^\/audit-log(?:\/|$)/u,
+  /^\/content-workspace(?:\/|$)/u,
   /^\/dashboard(?:\/|$)/u,
   /^\/login(?:\/|$)/u,
   /^\/pages-admin(?:\/|$)/u,
@@ -30,6 +31,7 @@ const SITEMAP_EXCLUDED_FILES = new Set([
   'admin-users.html',
   'analytics.html',
   'audit-log.html',
+  'content-workspace.html',
   'dashboard.html',
   'event.html',
   'last-post-message.html',
@@ -102,6 +104,10 @@ function isNoIndexPath(pathname) {
   return NON_INDEXABLE_PATHS.some((pattern) => pattern.test(pathname));
 }
 
+function isPublicSitemapFile(fileName) {
+  return fileName.endsWith('.html') && !SITEMAP_EXCLUDED_FILES.has(fileName);
+}
+
 function getCspOrigin(value) {
   try {
     const url = new URL(String(value || '').trim());
@@ -159,8 +165,7 @@ async function getSitemapUrls(baseUrl) {
   const files = await fs.readdir(PUBLIC_DIRECTORY);
   const staticUrls = files
     .filter(
-      (fileName) =>
-        fileName.endsWith('.html') && !SITEMAP_EXCLUDED_FILES.has(fileName),
+      isPublicSitemapFile,
     )
     .map((fileName) => ({ loc: `${baseUrl}${routeFromFileName(fileName)}` }));
   const pages = await Page.find({
@@ -234,7 +239,7 @@ function buildRobotsTxt(baseUrl) {
     (crawler) => `User-agent: ${crawler}\nDisallow: /`,
   ).join('\n\n');
 
-  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin-users\nDisallow: /analytics\nDisallow: /audit-log\nDisallow: /dashboard\nDisallow: /login\nDisallow: /pages-admin\nDisallow: /register\nDisallow: /review-submissions\nDisallow: /timers-admin\nDisallow: /translations-admin\nDisallow: /submit-event\nDisallow: /submit-last-post\nDisallow: /submit-retirement\n\n# AI crawlers are not permitted to crawl or use CMCEN content.\n${blockedAiCrawlerRules}\n\nSitemap: ${baseUrl}/sitemap.xml\n`;
+  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin-users\nDisallow: /analytics\nDisallow: /audit-log\nDisallow: /content-workspace\nDisallow: /dashboard\nDisallow: /login\nDisallow: /pages-admin\nDisallow: /register\nDisallow: /review-submissions\nDisallow: /timers-admin\nDisallow: /translations-admin\nDisallow: /submit-event\nDisallow: /submit-last-post\nDisallow: /submit-retirement\n\n# AI crawlers are not permitted to crawl or use CMCEN content.\n${blockedAiCrawlerRules}\n\nSitemap: ${baseUrl}/sitemap.xml\n`;
 }
 
 router.get('/robots.txt', (req, res) => {
@@ -267,6 +272,7 @@ module.exports = {
   getCspOrigin,
   isKnownAiCrawler,
   isNoIndexPath,
+  isPublicSitemapFile,
   serializeSitemap,
   blockKnownAiCrawlers,
   setStandardResponseHeaders,

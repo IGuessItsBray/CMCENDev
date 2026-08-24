@@ -52,6 +52,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `GET`  | `/trade-options.js`    | Public        | Browser runtime for shared trade option config.                  |
 | `GET`  | `/api/content-options` | Public        | JSON trade options and retirement trade groups.                  |
 | `GET`  | `/api/branding`        | Public        | JSON branding catalogue: supported fonts, official light and dark colour tokens, and theming metadata. |
+| `GET`  | `/api/client-config/legal` | Public     | Public footer and legal-contact configuration: footer labels, four address lines, clickable footer email, monitored legal channels, and current policy versions. |
 | `GET`  | `/api/privacy`         | Public        | Return the Markdown privacy policy from `docs/PRIVACY_POLICY.md`; add `?lang=fr` for the French source when available. |
 | `GET`  | `/api/tos`             | Public        | Return the Markdown Terms of Service from `docs/TERMS_OF_SERVICE.md`; add `?lang=fr` for the French source when available. |
 | `GET`  | `/privacy`             | Public        | Render the Markdown-backed Privacy Policy page. |

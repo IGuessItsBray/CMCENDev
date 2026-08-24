@@ -940,13 +940,13 @@ function loadFooter() {
 
           <address class="footer-contact">
             <p>
-              <span data-i18n="footer_address_label">Address</span><br />
-              <span data-legal-contact="organizationName">Communications &amp; Electronics Association</span><br />
+              <strong data-legal-contact="footerAddressLabel">Address:</strong><br />
               <span data-legal-contact="address"></span>
             </p>
 
             <p>
-              <span data-legal-contact="contactName">C&amp;E Association</span>
+              <strong data-legal-contact="footerEmailLabel">Email:</strong><br />
+              <a href="mailto:support@cmcen.ca" data-legal-contact="footerEmail" data-legal-contact-email="footerEmail">support@cmcen.ca</a>
             </p>
           </address>
 
@@ -979,12 +979,6 @@ function loadFooter() {
             <li>
               <a href="/privacy#contact" data-i18n="privacy_contact">
                 Privacy inquiries
-              </a>
-            </li>
-
-            <li>
-              <a href="mailto:support@cmcen.ca" data-legal-contact-email="supportEmail">
-                General support
               </a>
             </li>
 

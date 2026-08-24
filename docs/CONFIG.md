@@ -655,22 +655,29 @@ They should name the organization that operates the website and provide
 monitored request-handling addresses.
 
 ```dotenv
-FOOTER_ORGANIZATION_NAME=Communications & Electronics Association: Care of C&E Branch Office
-FOOTER_CONTACT_NAME=Care Of: C&E Branch Office
-FOOTER_ADDRESS_LINE_1=Communications & Electronics Association,
+FOOTER_ADDRESS_LABEL=Address:
+FOOTER_ADDRESS_LINE_1=Communications & Electronics Association: Care of C&E Branch Office
 FOOTER_ADDRESS_LINE_2=Forde Building, Rm 217,
-FOOTER_ADDRESS_LINE_3=9 Byng Ave
+FOOTER_ADDRESS_LINE_3=9 Byng Ave,
 FOOTER_ADDRESS_LINE_4=Kingston, ON, K7K 5L3
+FOOTER_EMAIL_LABEL=Email:
+FOOTER_EMAIL=support@cmcen.ca
 LEGAL_CONTACT_EMAIL=legal@cmcen.ca
 PRIVACY_CONTACT_EMAIL=privacy@cmcen.ca
 SUPPORT_CONTACT_EMAIL=support@cmcen.ca
 SECURITY_CONTACT_EMAIL=security@cmcen.ca
 ```
 
+`FOOTER_ADDRESS_LABEL` and `FOOTER_EMAIL_LABEL` set the two footer labels.
+`FOOTER_ADDRESS_LINE_1` through `FOOTER_ADDRESS_LINE_4` are displayed as
+separate lines beneath the address label. `FOOTER_EMAIL` is displayed as a
+clickable mailto link beneath the email label.
+
 `LEGAL_CONTACT_EMAIL` receives Terms, copyright, account-closure, and legal
 notices. `PRIVACY_CONTACT_EMAIL` receives privacy requests and complaints.
 `SUPPORT_CONTACT_EMAIL` receives general website and account support requests.
-`SECURITY_CONTACT_EMAIL` receives website and account-security concerns.
+`SECURITY_CONTACT_EMAIL` receives website and account-security concerns. When
+`FOOTER_EMAIL` is unset, the footer falls back to `SUPPORT_CONTACT_EMAIL`.
 These addresses are public and must be actively monitored. Do not put any
 credentials in these values.
 

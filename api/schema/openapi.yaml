@@ -236,6 +236,19 @@ paths:
             text/markdown:
               schema:
                 type: string
+  /api/client-config/legal:
+    get:
+      tags: [Site]
+      summary: Get public legal and footer contact configuration.
+      description: Returns the configured footer labels, address lines, mailto email, monitored public contact channels, and current policy versions.
+      security: []
+      responses:
+        "200":
+          description: Public footer and legal contact configuration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalContactConfig"
   /api/client-config/plausible:
     get:
       tags: [System]
@@ -2784,6 +2797,28 @@ components:
         endpoint:
           type: string
           format: uri
+    LegalContactConfig:
+      type: object
+      required: [footerAddressLabel, addressLines, footerEmailLabel, footerEmail, versions]
+      properties:
+        footerAddressLabel: { type: string }
+        addressLines:
+          type: array
+          items: { type: string }
+          minItems: 1
+          maxItems: 4
+        footerEmailLabel: { type: string }
+        footerEmail: { type: string, format: email }
+        legalEmail: { type: string, format: email }
+        privacyEmail: { type: string, format: email }
+        supportEmail: { type: string, format: email }
+        securityEmail: { type: string, format: email }
+        versions:
+          type: object
+          required: [privacy, terms]
+          properties:
+            privacy: { type: string }
+            terms: { type: string }
     LocalizedText:
       type: object
       properties:

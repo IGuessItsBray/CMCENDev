@@ -547,10 +547,27 @@ function loadHeader() {
 
   const mobileMenuToggle = document.getElementById("mobileMenuToggle");
   const primaryNavigation = document.getElementById("primaryNavigation");
+  const headerSearchForm = header.querySelector(".header-search");
+  const headerSearchInput = document.getElementById("headerSearchInput");
 
   let suppressNextDesktopDropdownFocusOpen = false;
 
   setupHeaderNotifications();
+
+  headerSearchInput?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+
+    event.preventDefault();
+
+    const searchUrl = new URL(headerSearchForm.action, window.location.origin);
+    const query = headerSearchInput.value.trim();
+
+    if (query) {
+      searchUrl.searchParams.set("q", query);
+    }
+
+    window.location.assign(`${searchUrl.pathname}${searchUrl.search}`);
+  });
 
   function isMobileNavigation() {
     return window.matchMedia("(max-width: 700px)").matches;

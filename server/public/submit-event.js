@@ -16,6 +16,9 @@ const eventSubmitButtonLabel = document.getElementById(
   "eventSubmitButtonLabel",
 );
 const eventSubmitButton = document.getElementById("eventSubmitButton");
+const eventTitleEn = document.getElementById("eventTitleEn");
+const eventTitleFr = document.getElementById("eventTitleFr");
+const eventTitleError = document.getElementById("eventTitleError");
 
 const eventAllDay = document.getElementById("eventAllDay");
 const eventStartDate = document.getElementById("eventStartDate");
@@ -75,6 +78,23 @@ function showPageMessage(message, type = "error") {
 
 function clearFormMessage() {
   // Form results are presented as transient toasts.
+}
+
+function syncEventTitleValidation({ showError = false } = {}) {
+  const hasTitle = Boolean(
+    eventTitleEn.value.trim() || eventTitleFr.value.trim(),
+  );
+  const message = hasTitle ? "" : translate("event_title_required");
+
+  [eventTitleEn, eventTitleFr].forEach((field) => {
+    field.setCustomValidity(message);
+    field.setAttribute("aria-invalid", String(!hasTitle));
+  });
+
+  eventTitleError.textContent = message;
+  eventTitleError.hidden = hasTitle || !showError;
+
+  return hasTitle;
 }
 
 function showFormMessage(message, type = "error") {
@@ -408,6 +428,17 @@ async function initializeEventPage() {
 
 eventAllDay.addEventListener("change", syncScheduleFields);
 cancelEventEditing?.addEventListener("click", cancelEditingEvent);
+eventTitleEn.addEventListener("input", () => syncEventTitleValidation());
+eventTitleFr.addEventListener("input", () => syncEventTitleValidation());
+eventForm.addEventListener(
+  "invalid",
+  (event) => {
+    if (event.target === eventTitleEn || event.target === eventTitleFr) {
+      syncEventTitleValidation({ showError: true });
+    }
+  },
+  true,
+);
 eventForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -472,6 +503,7 @@ eventForm.addEventListener("submit", async (event) => {
 });
 
 document.addEventListener("languagechange", () => {
+  syncEventTitleValidation({ showError: !eventTitleError.hidden });
   setSubmitting(isSubmitting);
 
   if (accessDenied) {
@@ -651,6 +683,7 @@ function updateEventEditContext() {
 function populateEventForm(event) {
   setEventField("eventTitleEn", event.title?.en);
   setEventField("eventTitleFr", event.title?.fr);
+  syncEventTitleValidation();
   setEventField("eventLocationEn", event.location?.en);
   setEventField("eventLocationFr", event.location?.fr);
   setEventField("eventDescriptionEn", event.description?.en);
@@ -730,6 +763,7 @@ function updateEventFormModeText() {
 }
 
 updateEventFormModeText();
+syncEventTitleValidation();
 
 if (editingEventId) {
   setEventEditLoading(true);

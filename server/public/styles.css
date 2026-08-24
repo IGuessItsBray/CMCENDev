@@ -12019,6 +12019,18 @@ html[data-theme='dark'] .admin-subscriptions-panel p {
   box-shadow: 0 0 0 3px rgba(197, 141, 35, 0.14);
 }
 
+.event-field input[aria-invalid='true'] {
+  border-color: #a63c35;
+}
+
+.event-title-error {
+  margin: 10px 0 0;
+  color: #842d27;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .event-field small {
   color: var(--text-muted);
   font-size: 10px;

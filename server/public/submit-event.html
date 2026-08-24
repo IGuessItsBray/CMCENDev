@@ -134,6 +134,7 @@
                       name="titleEn"
                       maxlength="500"
                       autocomplete="off"
+                      aria-describedby="eventTitleRequirement eventTitleError"
                     />
                   </div>
 
@@ -204,6 +205,7 @@
                       name="titleFr"
                       maxlength="500"
                       autocomplete="off"
+                      aria-describedby="eventTitleRequirement eventTitleError"
                     />
                   </div>
 
@@ -252,10 +254,21 @@
                 </section>
               </div>
 
-              <p class="event-language-note" data-i18n="event_language_note">
+              <p
+                class="event-language-note"
+                id="eventTitleRequirement"
+                data-i18n="event_language_note"
+              >
                 At least one event title is required. Add both language versions
                 whenever possible.
               </p>
+              <p
+                class="event-title-error"
+                id="eventTitleError"
+                role="alert"
+                aria-live="assertive"
+                hidden
+              ></p>
               <section
                 class="event-details-section event-section--full-bleed-heading"
                 aria-labelledby="eventDetailsHeading"

@@ -14,8 +14,8 @@ const workflowPath = path.resolve(
 );
 const workflow = YAML.parse(fs.readFileSync(workflowPath, 'utf8'));
 
-test('uses the runner-provided Node 24 runtime and caches Docker build layers', () => {
-  assert.deepEqual(workflow.on.push.branches, ['main']);
+test('runs only for pull requests to main with Node 24 and cached Docker builds', () => {
+  assert.equal(workflow.on.push, undefined);
   assert.deepEqual(workflow.on.pull_request.branches, ['main']);
 
   const setupNode = workflow.jobs.test.steps.find(

@@ -1221,7 +1221,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Update one language of event copy while it is pending review or published.
+// Update one language of event copy while it is pending review, published, or hidden.
 router.patch(
   '/:eventId/review-content',
   authMiddleware,
@@ -1268,7 +1268,7 @@ router.patch(
       const canSubmitterEdit =
         isOwner && ['pending', 'rejected'].includes(event.status);
       const canReviewerEdit =
-        canReview && ['pending', 'published'].includes(event.status);
+        canReview && ['pending', 'published', 'hidden'].includes(event.status);
       const wasRejected = isOwner && event.status === 'rejected';
 
       if (!canReview && !isOwner) {
@@ -1279,7 +1279,7 @@ router.patch(
 
       if (!canSubmitterEdit && !canReviewerEdit) {
         return res.status(409).json({
-          error: 'Only pending or published events can have content updated',
+          error: 'Only pending, published, or hidden events can have content updated',
         });
       }
 

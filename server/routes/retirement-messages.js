@@ -1547,7 +1547,8 @@ router.patch(
       const canSubmitterEdit =
         isOwner && ['pending', 'rejected'].includes(retirementMessage.status);
       const canReviewerEdit =
-        canReview && ['pending', 'published'].includes(retirementMessage.status);
+        canReview &&
+        ['pending', 'published', 'hidden'].includes(retirementMessage.status);
       const wasRejected = isOwner && retirementMessage.status === 'rejected';
 
       if (!canReview && !isOwner) {
@@ -1558,7 +1559,8 @@ router.patch(
 
       if (!canSubmitterEdit && !canReviewerEdit) {
         return res.status(409).json({
-          error: 'Only pending or published retirement messages can have content updated',
+          error:
+            'Only pending, published, or hidden retirement messages can have content updated',
         });
       }
 

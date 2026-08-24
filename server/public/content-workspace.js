@@ -26,6 +26,7 @@ const contentWorkspaceState = {
   requestedContentId: "",
   user: null,
   isLoading: false,
+  isSelecting: false,
   loadRequestId: 0,
   editorDrafts: new Map(),
 };
@@ -505,11 +506,7 @@ function renderContentWorkspaceList() {
 
     button.append(createStatusBadge(item.status));
     button.addEventListener("click", () => {
-      contentWorkspaceState.selectedId = String(item._id);
-      contentWorkspaceState.requestedContentId = "";
-      updateContentWorkspaceSearchParameters({ includeSelection: true });
-      renderContentWorkspaceList();
-      renderContentWorkspaceDetail();
+      void selectContentWorkspaceItem(item);
     });
     contentWorkspaceList.append(button);
   });
@@ -616,7 +613,7 @@ function getMessageForLanguage(item, language) {
   return String(messages[language] || "").trim();
 }
 
-function createLanguageEditor(item, language, { resubmitting = false } = {}) {
+function createLanguageEditor(item, language) {
   const languageName = getText(
     language === "en" ? "language_en" : "language_fr",
     language === "en" ? "English" : "French",
@@ -699,43 +696,23 @@ function createLanguageEditor(item, language, { resubmitting = false } = {}) {
     );
   }
 
-  if (!resubmitting) {
-    const noteField = createEditNoteField();
-    noteField.querySelector("textarea").value = getEditorDraftValue(
-      item,
-      language,
-      "revisionNote",
-      "",
-    );
-    group.append(noteField);
-  }
-
-  const actions = document.createElement("div");
-  actions.className = "content-workspace-form-actions";
-  const save = document.createElement("button");
-  save.className = "admin-work-zone-button is-primary";
-  save.type = "submit";
-  setWorkspaceTranslatedText(
-    save,
-    resubmitting
-      ? "content_workspace_save_and_resubmit"
-      : language === "en"
-        ? "content_workspace_save_english"
-        : "content_workspace_save_french",
-    resubmitting
-      ? "Save and resubmit"
-      : language === "en"
-        ? "Save English"
-        : "Save French",
+  const noteField = createEditNoteField();
+  noteField.querySelector("textarea").value = getEditorDraftValue(
+    item,
+    language,
+    "revisionNote",
+    "",
   );
-  actions.append(save);
-  group.append(actions);
+  group.append(noteField);
   form.append(group);
 
-  form.addEventListener("submit", async (event) => {
+  form.addEventListener("submit", (event) => {
     event.preventDefault();
-    await saveContentLanguage(item, language, form, save);
   });
+  form.dataset.initialState = getContentWorkspaceFormState(form);
+  form.dataset.hasUnsavedDraft = String(
+    contentWorkspaceState.editorDrafts.has(getEditorDraftKey(item, language)),
+  );
 
   return form;
 }
@@ -925,13 +902,6 @@ function createWorkspaceEditorField({
 
   labelElement.append(labelText, control);
   return labelElement;
-}
-
-function createWorkspaceFormActions(button) {
-  const actions = document.createElement("div");
-  actions.className = "content-workspace-form-actions";
-  actions.append(button);
-  return actions;
 }
 
 function getWorkspaceOption(value, labelKey, label) {
@@ -1223,19 +1193,10 @@ function createContentWorkspaceRecordEditor(item) {
   const form = document.createElement("form");
   form.className = "content-workspace-record-form";
   form.append(...fields);
-  const save = document.createElement("button");
-  save.type = "submit";
-  save.className = "admin-work-zone-button is-primary";
-  setWorkspaceTranslatedText(
-    save,
-    "content_workspace_save_details",
-    "Save details",
-  );
-  form.append(createWorkspaceFormActions(save));
-  form.addEventListener("submit", async (event) => {
+  form.addEventListener("submit", (event) => {
     event.preventDefault();
-    await saveContentWorkspaceRecord(item, form, save);
   });
+  form.dataset.initialState = getContentWorkspaceFormState(form);
 
   section.append(heading, form);
   return section;
@@ -2047,21 +2008,7 @@ function createContentWorkspaceReviewActions(item) {
 
   const decision = document.createElement("section");
   decision.className = "content-workspace-review-decision";
-  const copy = document.createElement("div");
-  copy.className = "content-workspace-review-copy";
-  const heading = document.createElement("h2");
-  setWorkspaceTranslatedText(
-    heading,
-    "content_workspace_review",
-    "Review decision",
-  );
-  const help = document.createElement("p");
-  setWorkspaceTranslatedText(
-    help,
-    "content_workspace_review_help",
-    "Review the public copy before making a final decision.",
-  );
-  copy.append(heading, help);
+  decision.hidden = true;
 
   const prompt = document.createElement("p");
   prompt.className = "content-workspace-review-prompt";
@@ -2103,7 +2050,7 @@ function createContentWorkspaceReviewActions(item) {
   reject.className = "admin-work-zone-button is-danger";
   const publish = document.createElement("button");
   publish.type = "button";
-  publish.className = "admin-work-zone-button is-primary";
+  publish.className = "admin-work-zone-button is-success";
   const cancel = document.createElement("button");
   cancel.type = "button";
   cancel.className = "admin-work-zone-button is-secondary";
@@ -2113,6 +2060,7 @@ function createContentWorkspaceReviewActions(item) {
 
   function resetDecision() {
     pendingAction = "";
+    decision.hidden = true;
     prompt.hidden = true;
     rejectionField.hidden = true;
     actionMessage.hidden = true;
@@ -2131,6 +2079,7 @@ function createContentWorkspaceReviewActions(item) {
     }
 
     pendingAction = action;
+    decision.hidden = false;
     setWorkspaceTranslatedText(
       prompt,
       action === "publish"
@@ -2229,8 +2178,8 @@ function createContentWorkspaceReviewActions(item) {
 
   resetDecision();
   actions.append(reject, publish, cancel);
-  decision.append(copy, prompt, rejectionField, actionMessage, actions);
-  return decision;
+  decision.append(prompt, rejectionField, actionMessage);
+  return { actions, decision };
 }
 
 function createRemovalActions(item) {
@@ -2269,6 +2218,54 @@ function createRemovalActions(item) {
   return actions;
 }
 
+function createContentWorkspaceBottomActions(item, { canSave = false } = {}) {
+  const section = document.createElement("section");
+  section.className = "content-workspace-bottom-actions";
+  const actionRow = document.createElement("div");
+  actionRow.className = "content-workspace-action-row";
+  const removalActions = createRemovalActions(item);
+  if (removalActions.childElementCount) {
+    actionRow.append(removalActions);
+  }
+
+  const primaryActions = document.createElement("div");
+  primaryActions.className = "content-workspace-primary-actions";
+
+  if (canSave) {
+    const saveActions = document.createElement("div");
+    saveActions.className = "content-workspace-save-actions";
+    const save = document.createElement("button");
+    save.type = "button";
+    save.className = "admin-work-zone-button is-primary";
+    save.dataset.contentWorkspaceSave = "true";
+    save.disabled = true;
+    setWorkspaceTranslatedText(
+      save,
+      "content_workspace_save_changes",
+      "Save changes",
+    );
+    save.addEventListener("click", () => saveContentWorkspaceChanges(item, save));
+    saveActions.append(save);
+    primaryActions.append(saveActions);
+  }
+
+  const reviewActions = createContentWorkspaceReviewActions(item);
+  if (reviewActions) {
+    primaryActions.append(reviewActions.actions);
+    section.append(reviewActions.decision);
+  }
+
+  if (primaryActions.childElementCount) {
+    actionRow.append(primaryActions);
+  }
+
+  if (actionRow.childElementCount) {
+    section.append(actionRow);
+  }
+
+  return section.childElementCount ? section : null;
+}
+
 function renderContentWorkspaceDetail() {
   contentWorkspaceDetail.replaceChildren();
   const item = getSelectedContentWorkspaceItem();
@@ -2301,7 +2298,7 @@ function renderContentWorkspaceDetail() {
   const canEditPublicCopy =
     item.type !== "retirementComment" &&
     canReviewContentWorkspace() &&
-    ["pending", "published"].includes(item.status);
+    ["pending", "published", "hidden"].includes(item.status);
 
   if (canEditPublicCopy) {
     const copy = document.createElement("section");
@@ -2347,11 +2344,6 @@ function renderContentWorkspaceDetail() {
 
   contentWorkspaceDetail.append(createContentWorkspaceSubmissionDetails(item));
 
-  const reviewActions = createContentWorkspaceReviewActions(item);
-  if (reviewActions) {
-    contentWorkspaceDetail.append(reviewActions);
-  }
-
   const rejectionReason = createRejectionReason(item);
   if (rejectionReason) {
     contentWorkspaceDetail.append(rejectionReason);
@@ -2378,11 +2370,13 @@ function renderContentWorkspaceDetail() {
     loadRevisionHistory(item, revisions);
   }
 
-  const removalActions = createRemovalActions(item);
-  if (removalActions.childElementCount) {
-    contentWorkspaceDetail.append(removalActions);
+  const bottomActions = createContentWorkspaceBottomActions(item, {
+    canSave: canEditPublicCopy || Boolean(recordEditor),
+  });
+  if (bottomActions) {
+    contentWorkspaceDetail.append(bottomActions);
+    updateContentWorkspaceSaveAction();
   }
-
 }
 
 function getRevisionActor(revision) {
@@ -2732,36 +2726,22 @@ function getContentWorkspaceRecordSaveRoute(item) {
   return contentWorkspaceEditRoutes[item.type];
 }
 
-async function saveContentWorkspaceRecord(item, form, button) {
+function getContentWorkspaceRecordSaveRequest(item, form) {
   const formData = new FormData(form);
   const route = getContentWorkspaceRecordSaveRoute(item);
   const body = getContentWorkspaceRecordPayload(item, formData);
-  if (!route || !body) return;
+  if (!route || !body) return null;
 
-  button.disabled = true;
-  button.setAttribute("aria-busy", "true");
-  try {
-    const result = await contentWorkspaceApiJson(route(item._id), {
-      method: "PATCH",
-      body,
-    });
-    setWorkspaceMessage(
-      result.message || getText("content_workspace_details_saved", "Details saved."),
-      "success",
-    );
-    refreshContentWorkspaceNotifications();
-    await loadContentWorkspace({ preserveSelection: true });
-  } catch (error) {
-    setWorkspaceMessage(error.message, "error");
-  } finally {
-    button.disabled = false;
-    button.removeAttribute("aria-busy");
-  }
+  return {
+    path: route(item._id),
+    body,
+  };
 }
 
-async function saveContentLanguage(item, language, form, button) {
-  captureEditorDrafts(item);
+function getContentLanguageSaveRequest(item, form) {
   const formData = new FormData(form);
+  const language = form.dataset.language;
+  if (!language) return null;
   const note = String(formData.get("revisionNote") || "");
   let path = "";
   let body = { language, note };
@@ -2781,28 +2761,223 @@ async function saveContentLanguage(item, language, form, button) {
     path = `/api/last-posts/${encodeURIComponent(item._id)}/review-content`;
     body.message = String(formData.get("message") || "");
   } else {
+    return null;
+  }
+
+  return { path, body, language };
+}
+
+function getContentWorkspaceSaveForms() {
+  return [...contentWorkspaceDetail.querySelectorAll(
+    ".content-workspace-language-editor, .content-workspace-record-form",
+  )];
+}
+
+function getContentWorkspaceFormState(form) {
+  return JSON.stringify(
+    [...new FormData(form).entries()].map(([name, value]) => [
+      name,
+      typeof value === "string" ? value : value.name,
+    ]),
+  );
+}
+
+function isContentWorkspaceFormDirty(form) {
+  return (
+    form.dataset.hasUnsavedDraft === "true" ||
+    form.dataset.initialState !== getContentWorkspaceFormState(form)
+  );
+}
+
+function hasUnsavedContentWorkspaceChanges() {
+  return getContentWorkspaceSaveForms().some(isContentWorkspaceFormDirty);
+}
+
+function updateContentWorkspaceSaveAction() {
+  const save = contentWorkspaceDetail.querySelector(
+    "[data-content-workspace-save]",
+  );
+
+  if (!save || save.getAttribute("aria-busy") === "true") return;
+
+  save.disabled = !hasUnsavedContentWorkspaceChanges();
+}
+
+function discardContentWorkspaceDrafts(item) {
+  ["en", "fr"].forEach((language) => {
+    contentWorkspaceState.editorDrafts.delete(getEditorDraftKey(item, language));
+  });
+}
+
+async function selectContentWorkspaceItem(item) {
+  const nextId = String(item._id);
+
+  if (
+    nextId === contentWorkspaceState.selectedId ||
+    contentWorkspaceState.isSelecting
+  ) {
     return;
   }
 
-  button.disabled = true;
+  contentWorkspaceState.isSelecting = true;
   try {
-    const result = await contentWorkspaceApiJson(path, {
-      method: "PATCH",
-      body,
-    });
+    const currentItem = getSelectedContentWorkspaceItem();
+
+    if (currentItem && hasUnsavedContentWorkspaceChanges()) {
+      const choice = await CMCENModal.choose(
+        getText(
+          "content_workspace_unsaved_changes_message",
+          "Save or discard your changes before switching to another record.",
+        ),
+        {
+          title: getText(
+            "content_workspace_unsaved_changes_title",
+            "Unsaved changes",
+          ),
+          closeOnBackdrop: false,
+          choices: [
+            {
+              value: "save",
+              label: getText(
+                "content_workspace_save_changes",
+                "Save changes",
+              ),
+              description: getText(
+                "content_workspace_save_before_switching",
+                "Save your edits, then open the selected record.",
+              ),
+            },
+            {
+              value: "discard",
+              label: getText(
+                "content_workspace_discard_changes",
+                "Discard changes",
+              ),
+              description: getText(
+                "content_workspace_discard_before_switching",
+                "Discard your edits and open the selected record.",
+              ),
+              destructive: true,
+            },
+          ],
+        },
+      );
+
+      if (choice === "save") {
+        const save = contentWorkspaceDetail.querySelector(
+          "[data-content-workspace-save]",
+        );
+        const saved = save
+          ? await saveContentWorkspaceChanges(currentItem, save)
+          : false;
+
+        if (!saved) return;
+      } else if (choice === "discard") {
+        discardContentWorkspaceDrafts(currentItem);
+      } else {
+        return;
+      }
+    }
+
+    contentWorkspaceState.selectedId = nextId;
+    contentWorkspaceState.requestedContentId = "";
+    updateContentWorkspaceSearchParameters({ includeSelection: true });
+    renderContentWorkspaceList();
+    renderContentWorkspaceDetail();
+  } finally {
+    contentWorkspaceState.isSelecting = false;
+  }
+}
+
+async function saveContentWorkspaceChanges(item, button) {
+  const forms = getContentWorkspaceSaveForms().filter(
+    isContentWorkspaceFormDirty,
+  );
+  const invalidForm = forms.find((form) => !form.checkValidity());
+
+  if (invalidForm) {
+    invalidForm.reportValidity();
+    return false;
+  }
+
+  if (!forms.length) {
     setWorkspaceMessage(
-      result.message || getText("content_workspace_saved", "Content saved."),
+      getText("content_workspace_no_changes", "No changes to save."),
+    );
+    updateContentWorkspaceSaveAction();
+    return true;
+  }
+
+  captureEditorDrafts(item);
+  const recordForm = forms.find((form) =>
+    form.classList.contains("content-workspace-record-form"),
+  );
+  const saveRequests = [
+    ...(recordForm
+      ? [getContentWorkspaceRecordSaveRequest(item, recordForm)]
+      : []),
+    ...forms
+      .filter((form) =>
+        form.classList.contains("content-workspace-language-editor"),
+      )
+      .map((form) => getContentLanguageSaveRequest(item, form)),
+  ].filter(Boolean);
+
+  if (!saveRequests.length) return false;
+
+  let savedRequests = 0;
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  setWorkspaceTranslatedText(
+    button,
+    "content_workspace_saving_changes",
+    "Saving…",
+  );
+  try {
+    for (const request of saveRequests) {
+      await contentWorkspaceApiJson(request.path, {
+        method: "PATCH",
+        body: request.body,
+      });
+      savedRequests += 1;
+
+      if (request.language) {
+        contentWorkspaceState.editorDrafts.delete(
+          getEditorDraftKey(item, request.language),
+        );
+      }
+    }
+
+    refreshContentWorkspaceNotifications();
+    await loadContentWorkspace({ preserveSelection: true });
+    setWorkspaceMessage(
+      getText("content_workspace_changes_saved", "Changes saved."),
       "success",
     );
-    refreshContentWorkspaceNotifications();
-    contentWorkspaceState.editorDrafts.delete(
-      getEditorDraftKey(item, language),
-    );
-    await loadContentWorkspace({ preserveSelection: true });
+    return true;
   } catch (error) {
-    setWorkspaceMessage(error.message, "error");
+    if (savedRequests) {
+      await loadContentWorkspace({ preserveSelection: true });
+    }
+
+    setWorkspaceMessage(
+      savedRequests
+        ? getText(
+            "content_workspace_partial_save",
+            "Some changes were saved before the error. Review the remaining fields and save again.",
+          )
+        : error.message,
+      "error",
+    );
+    return false;
   } finally {
-    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    setWorkspaceTranslatedText(
+      button,
+      "content_workspace_save_changes",
+      "Save changes",
+    );
+    updateContentWorkspaceSaveAction();
   }
 }
 
@@ -3005,6 +3180,29 @@ contentWorkspaceSearch.addEventListener("input", () => {
 });
 
 document.addEventListener("languagechange", updateContentWorkspaceLanguage);
+
+function updateContentWorkspaceSaveActionFromField(event) {
+  if (!(event.target instanceof Element)) return;
+
+  if (
+    !event.target.closest(
+      ".content-workspace-language-editor, .content-workspace-record-form",
+    )
+  ) {
+    return;
+  }
+
+  updateContentWorkspaceSaveAction();
+}
+
+contentWorkspaceDetail.addEventListener(
+  "input",
+  updateContentWorkspaceSaveActionFromField,
+);
+contentWorkspaceDetail.addEventListener(
+  "change",
+  updateContentWorkspaceSaveActionFromField,
+);
 
 updateContentWorkspaceModePresentation();
 updateContentWorkspaceStatusFilterAppearance();

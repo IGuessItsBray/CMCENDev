@@ -1840,7 +1840,7 @@ paths:
     patch:
       tags: [Events]
       summary: Update one language of event content.
-      description: Reviewers may update title, location, description, and registration text for one language on a pending or published event. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected event; updating a rejected event sends it back to the review queue. A public-field revision and audit entry retain the before/after values.
+      description: Reviewers may update title, location, description, and registration text for one language on a pending, published, or removed (hidden) event. Editing a removed event preserves its hidden status until it is explicitly restored. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected event; updating a rejected event sends it back to the review queue. A public-field revision and audit entry retain the before/after values.
       x-permission: canReviewAndPublish or owner of a pending or rejected event
       parameters:
         - $ref: "#/components/parameters/EventId"
@@ -2037,7 +2037,7 @@ paths:
     patch:
       tags: [Last Posts]
       summary: Update one language of a Last Post notice.
-      description: Reviewers may update one translation on a pending or published Last Post notice. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected notice; updating a rejected notice sends it back to the review queue. A public-field revision and audit entry retain the before/after values.
+      description: Reviewers may update one translation on a pending, published, or removed (hidden) Last Post notice. Editing a removed notice preserves its hidden status until it is explicitly restored. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected notice; updating a rejected notice sends it back to the review queue. A public-field revision and audit entry retain the before/after values.
       x-permission: canReviewAndPublish or owner of a pending or rejected notice
       parameters:
         - $ref: "#/components/parameters/MessageId"
@@ -2190,7 +2190,7 @@ paths:
     patch:
       tags: [Retirements]
       summary: Update one language of a retirement message.
-      description: Reviewers may update one translation on a pending or published retirement message. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected message; updating a rejected message sends it back to the review queue. A public-field revision and audit entry retain the before/after values. Each saved message must contain at least 100 characters.
+      description: Reviewers may update one translation on a pending, published, or removed (hidden) retirement message. Editing a removed message preserves its hidden status until it is explicitly restored. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected message; updating a rejected message sends it back to the review queue. A public-field revision and audit entry retain the before/after values. Each saved message must contain at least 100 characters.
       x-permission: canReviewAndPublish or owner of a pending or rejected message
       parameters:
         - $ref: "#/components/parameters/MessageId"

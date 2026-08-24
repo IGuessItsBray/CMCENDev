@@ -425,7 +425,7 @@ router.patch(
       const canSubmitterEdit =
         isOwner && ['pending', 'rejected'].includes(lastPost.status);
       const canReviewerEdit =
-        canReview && ['pending', 'published'].includes(lastPost.status);
+        canReview && ['pending', 'published', 'hidden'].includes(lastPost.status);
       const wasRejected = isOwner && lastPost.status === 'rejected';
 
       if (!canReview && !isOwner) {
@@ -436,7 +436,8 @@ router.patch(
 
       if (!canSubmitterEdit && !canReviewerEdit) {
         return res.status(409).json({
-          error: 'Only pending or published Last Post notices can have content updated',
+          error:
+            'Only pending, published, or hidden Last Post notices can have content updated',
         });
       }
 

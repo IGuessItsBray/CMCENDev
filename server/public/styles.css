@@ -19599,6 +19599,32 @@ html[data-theme='dark'] .last-post-submit-button {
   display: none;
 }
 
+.admin-work-zone-button.is-success {
+  border-color: var(--success-border);
+  background: var(--success-border);
+  color: var(--white);
+}
+
+.admin-work-zone-button.is-success:hover:not(:disabled),
+.admin-work-zone-button.is-success:focus-visible:not(:disabled) {
+  border-color: #3c5b44;
+  background: #3c5b44;
+  color: var(--white);
+}
+
+html[data-theme='dark'] .admin-work-zone-button.is-success {
+  border-color: var(--success-border);
+  background: var(--success-border);
+  color: var(--white);
+}
+
+html[data-theme='dark'] .admin-work-zone-button.is-success:hover:not(:disabled),
+html[data-theme='dark'] .admin-work-zone-button.is-success:focus-visible:not(:disabled) {
+  border-color: #3c5b44;
+  background: #3c5b44;
+  color: var(--white);
+}
+
 /* Editorial workspace: a queue rail with one focused editing surface. */
 .content-workspace-page {
   padding: 24px 18px 48px;
@@ -20510,8 +20536,53 @@ html[data-theme='dark'] .last-post-submit-button {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.content-workspace-bottom-actions {
+  display: grid;
+  gap: 12px;
   padding-top: 18px;
   border-top: 1px solid var(--branch-grey-200);
+}
+
+.content-workspace-action-row,
+.content-workspace-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.content-workspace-primary-actions {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.content-workspace-save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.content-workspace-save-actions [data-content-workspace-save]:disabled {
+  border-color: var(--branch-grey-300);
+  background: var(--branch-grey-200);
+  color: var(--branch-grey-700);
+  opacity: 1;
+}
+
+.content-workspace-removal-actions + .content-workspace-primary-actions,
+.content-workspace-save-actions + .content-workspace-review-actions {
+  padding-left: 14px;
+  border-left: 1px solid var(--branch-grey-200);
+}
+
+html[data-theme='dark']
+  .content-workspace-save-actions
+  [data-content-workspace-save]:disabled {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-3);
+  color: var(--dark-text-soft);
 }
 
 .content-workspace-read-only-language {

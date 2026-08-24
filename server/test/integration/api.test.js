@@ -2515,6 +2515,115 @@ describe('event, page, and comment workflows', () => {
     assert.deepEqual(commentEditAudit.metadata.fields, ['body']);
   });
 
+  test('lets staff edit hidden public copy without restoring it', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const editorSession = await login(editor);
+    const now = new Date();
+    const event = await Event.create({
+      ...eventPayload(),
+      status: 'hidden',
+      hiddenFromStatus: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+    const retirementBase = retirementPayload();
+    const retirementMessage = await RetirementMessage.create({
+      ...retirementBase,
+      messages: {
+        en: retirementBase.message,
+        fr: translatedMessage('Hidden retirement message'),
+      },
+      status: 'hidden',
+      hiddenFromStatus: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+      publicationConsent: { confirmed: true, confirmedAt: now },
+      memberReviewConfirmation: { confirmed: true, confirmedAt: now },
+    });
+    const lastPost = await LastPostMessage.create({
+      submitter: {
+        rank: 'Captain',
+        firstName: 'Editor',
+        lastName: 'Example',
+        email: 'editor@example.test',
+      },
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Hidden',
+        surname: 'Notice',
+      },
+      messageLanguage: 'en',
+      messages: {
+        en: 'Hidden Last Post notice before a staff correction.',
+        fr: 'Avis du Dernier appel retiré avant une correction du personnel.',
+      },
+      status: 'hidden',
+      hiddenFromStatus: 'published',
+      createdBy: editor._id,
+      publishedBy: editor._id,
+      publishedAt: now,
+    });
+
+    const eventChanges = {
+      title: 'Hidden event correction',
+      location: 'Ottawa, Ontario',
+      description: 'A staff editor corrected this event while it remains removed.',
+      registration: 'Contact the branch office for registration details.',
+    };
+    const retirementCorrection = translatedMessage(
+      'Hidden retirement message correction',
+    );
+    const lastPostCorrection =
+      'Hidden Last Post notice corrected while it remains removed.';
+
+    await Promise.all([
+      request(app)
+        .patch(`/api/events/${event._id}/review-content`)
+        .set('Authorization', bearer(editorSession.body.token))
+        .send({ language: 'en', content: eventChanges })
+        .expect(200),
+      request(app)
+        .patch(`/api/retirement-messages/${retirementMessage._id}/review-content`)
+        .set('Authorization', bearer(editorSession.body.token))
+        .send({ language: 'fr', message: retirementCorrection })
+        .expect(200),
+      request(app)
+        .patch(`/api/last-posts/${lastPost._id}/review-content`)
+        .set('Authorization', bearer(editorSession.body.token))
+        .send({ language: 'en', message: lastPostCorrection })
+        .expect(200),
+    ]);
+
+    const [savedEvent, savedRetirementMessage, savedLastPost] =
+      await Promise.all([
+        Event.findById(event._id).lean(),
+        RetirementMessage.findById(retirementMessage._id).lean(),
+        LastPostMessage.findById(lastPost._id).lean(),
+      ]);
+
+    assert.equal(savedEvent.status, 'hidden');
+    assert.equal(savedEvent.hiddenFromStatus, 'published');
+    assert.equal(savedEvent.title.en, eventChanges.title);
+    assert.equal(savedRetirementMessage.status, 'hidden');
+    assert.equal(savedRetirementMessage.hiddenFromStatus, 'published');
+    assert.equal(savedRetirementMessage.messages.fr, retirementCorrection);
+    assert.equal(savedLastPost.status, 'hidden');
+    assert.equal(savedLastPost.hiddenFromStatus, 'published');
+    assert.equal(savedLastPost.messages.en, lastPostCorrection);
+
+    const revisions = await ContentRevision.find({
+      contentId: { $in: [event._id, retirementMessage._id, lastPost._id] },
+    }).lean();
+    assert.equal(revisions.length, 3);
+    assert.equal(revisions.every((revision) => revision.status === 'hidden'), true);
+    assert.equal(
+      await AuditLog.countDocuments({ action: 'content.staff_content_updated' }),
+      3,
+    );
+  });
+
   test('returns published events that overlap a requested calendar range', async () => {
     const owner = await createUser({ role: 'editor' });
 

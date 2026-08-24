@@ -561,6 +561,38 @@ describe('public search', () => {
       `/retirement-message?id=${retirement._id}`,
     );
 
+    const retirementPageSearch = await request(app)
+      .get('/api/search?q=retirement')
+      .expect(200);
+    const retirementPageResult = retirementPageSearch.body.results.find(
+      (result) => result.sourceId === '/retirements',
+    );
+    assert.equal(
+      retirementPageResult.summary,
+      'Browse retirement messages celebrating members of the C&E community.',
+    );
+    assert.doesNotMatch(retirementPageResult.summary, /loading/i);
+
+    await RetirementMessage.updateOne(
+      { _id: retirement._id },
+      {
+        $set: {
+          'messages.en':
+            '<p>A retirement tribute for Alex Example from the C&amp;E community.</p>',
+        },
+      },
+    );
+    const sanitizedRetirementSearch = await request(app)
+      .get('/api/search?q=alex%20example')
+      .expect(200);
+    const sanitizedRetirementResult = sanitizedRetirementSearch.body.results.find(
+      (result) => result.sourceId === String(retirement._id),
+    );
+    assert.equal(
+      sanitizedRetirementResult.summary,
+      'A retirement tribute for Alex Example from the C&E community.',
+    );
+
     const pageSearch = await request(app)
       .get('/api/search?q=calendar')
       .expect(200);
@@ -580,9 +612,6 @@ describe('public search', () => {
       false,
     );
 
-    const retirementPageSearch = await request(app)
-      .get('/api/search?q=retirement')
-      .expect(200);
     assert.equal(retirementPageSearch.body.results[0].sourceId, '/retirements');
 
     const lastPostPageSearch = await request(app)

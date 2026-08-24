@@ -73,6 +73,8 @@ const STATIC_PAGES = [
     file: 'retirements.html',
     type: 'page',
     title: 'Retirement Messages',
+    summary:
+      'Browse retirement messages celebrating members of the C&E community.',
   },
   {
     path: '/certificates',
@@ -529,7 +531,11 @@ async function searchRetirementMessages(query, queryTerms) {
     const messageText =
       message.messages?.en || message.messages?.fr || message.message;
 
-    const summary = truncate(messageText);
+    const summary =
+      truncate(stripHtml(messageText)) ||
+      (retireeName
+        ? `Read the retirement message for ${retireeName}.`
+        : 'Read this retirement message from the C&E community.');
 
     return {
       type: 'retirement-message',
@@ -577,7 +583,7 @@ async function searchStaticPages(query, queryTerms) {
           type: page.type,
           sourceId: page.path,
           title: page.title,
-          summary: truncate(text),
+          summary: page.summary || truncate(text),
           url: page.path,
           date: null,
           score,

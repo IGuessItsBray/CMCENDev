@@ -433,6 +433,10 @@ registerForm.addEventListener("submit", async (event) => {
     email: String(formData.get("email") || "").trim(),
     password,
     passwordConfirmation,
+    legalAcceptance: {
+      terms: formData.get("termsAccepted") === "on",
+      privacy: formData.get("termsAccepted") === "on",
+    },
   };
 
   if (invitationToken) {

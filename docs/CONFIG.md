@@ -648,6 +648,27 @@ CASL_SENDER_CONTACT=privacy@example.ca
 The subscription system should not be considered fully configured until all
 required CASL sender-identification fields are populated.
 
+## Public Footer and Legal Contacts
+
+The footer and the public legal pages use the following non-secret variables.
+They should name the organization that operates the website and provide
+monitored request-handling addresses.
+
+```dotenv
+FOOTER_ORGANIZATION_NAME=Communications & Electronics Association
+FOOTER_CONTACT_NAME=C&E Association
+FOOTER_ADDRESS_LINE_1=9 Byng Ave
+FOOTER_ADDRESS_LINE_2=Kingston, ON K7K 5L3
+LEGAL_CONTACT_EMAIL=legal@cmcen.ca
+PRIVACY_CONTACT_EMAIL=privacy@cmcen.ca
+SECURITY_CONTACT_EMAIL=security@cmcen.ca
+```
+
+`LEGAL_CONTACT_EMAIL` receives Terms, copyright, account-closure, and legal
+notices. `PRIVACY_CONTACT_EMAIL` receives privacy requests and complaints.
+These addresses are public and must be actively monitored. Do not put any
+credentials in these values.
+
 ## Plausible Analytics
 
 Self-hosted Plausible Community Edition is optional.

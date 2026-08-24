@@ -1,13 +1,14 @@
-# CMCEN Terms of Service — Draft for Legal Review
+# CMCEN Terms of Service
 
-**Effective date:** [Month Day, Year]<br>
-**Last updated:** [Month Day, Year]<br>
-**Organization:** CAF Communications & Electronics Branch Office ("CMCEN", "we", "us", or "our")<br>
+**Effective date:** September 1, 2026<br>
+**Last updated:** August 24, 2026<br>
+**Organization:** Communications & Electronics Association ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
-**Privacy and Legal Contact:** MWO Terry Cadieux<br>
+**Privacy Contact:** privacy@cmcen.ca<br>
+**Legal Contact:** legal@cmcen.ca<br>
 **Mailing Address:** 9 Byng Ave, Kingston, ON K7K 5L3
 
-> **Publication note:** This is a working draft. It must be completed with a governing-law decision, any organization-specific rules, and a monitored direct contact channel, then reviewed by qualified legal counsel before publication.
+> These Terms are published by the Communications & Electronics Association and should be reviewed by qualified legal counsel before any material change to the service or legal requirements.
 
 ## 1. Acceptance of these Terms
 
@@ -91,7 +92,7 @@ If you believe content on the website infringes your copyright or other legal ri
 
 ## 7. Privacy and email subscriptions
 
-Our collection, use, disclosure, and protection of personal information are described in the [CMCEN Privacy Policy](./PRIVACY_POLICY_DRAFT.md). Before these Terms are published on the website, replace the draft link with the public `/privacy` page.
+Our collection, use, disclosure, and protection of personal information are described in the [CMCEN Privacy Policy](/privacy).
 
 CMCEN may offer optional email subscriptions, including a weekly email brief and occasional news announcements. Opting in to one category does not opt you in to the other, and neither subscription is required to create or keep an account. Where CASL applies, we seek your express consent before sending that category of subscription email. Each subscription email will identify CMCEN, provide the required contact information, and include a working unsubscribe mechanism. You may withdraw your consent at any time through the unsubscribe link in the relevant email or through your account’s subscription controls. Account, security, password-reset, and submission-status messages are service communications and do not require an email-subscription opt-in.
 
@@ -131,11 +132,7 @@ CMCEN may modify, suspend, or discontinue the Services or any feature at any tim
 
 ## 14. Governing law and disputes
 
-**Legal decision required before publication.** These Terms should identify the law and courts appropriate to the organization that operates CMCEN. A proposed starting point is:
-
-> These Terms are governed by the laws of the Province of Ontario and the federal laws of Canada applicable in Ontario, without regard to conflict-of-law rules. You and CMCEN attorn to the exclusive jurisdiction of the courts located in [Kingston, Ontario / another confirmed location], except where applicable law requires otherwise.
-
-If the website is operated by a federal institution or another entity subject to a different legal regime, this section must be replaced following legal review.
+These Terms are governed by the laws of the Province of Ontario and the federal laws of Canada applicable in Ontario, without regard to conflict-of-law rules. You and CMCEN attorn to the exclusive jurisdiction of the courts located in Kingston, Ontario, except where applicable law requires otherwise.
 
 ## 15. General terms
 
@@ -145,10 +142,9 @@ These Terms, together with the Privacy Policy and any specific terms presented f
 
 ## 16. Contact us
 
-Questions or notices about these Terms should be directed to:
+Questions, account-closure requests, copyright notices, and legal notices about these Terms should be directed to **legal@cmcen.ca**. Privacy requests should be directed to **privacy@cmcen.ca**. You may also write to:
 
-**CAF Communications & Electronics Branch Office**<br>
-Attn: MWO Terry Cadieux<br>
+**Communications & Electronics Association**<br>
 9 Byng Ave<br>
 Kingston, ON K7K 5L3
 

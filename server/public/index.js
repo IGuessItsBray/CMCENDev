@@ -941,11 +941,12 @@ function loadFooter() {
           <address class="footer-contact">
             <p>
               <span data-i18n="footer_address_label">Address</span><br />
-              <span>CAF Communications &amp; Electronics Branch Office<br />9 Byng Ave<br />Kingston, ON K7K 5L3</span>
+              <span data-legal-contact="organizationName">Communications &amp; Electronics Association</span><br />
+              <span data-legal-contact="address"></span>
             </p>
 
             <p>
-              Contact: MWO Terry Cadieux
+              <span data-legal-contact="contactName">C&amp;E Association</span>
             </p>
           </address>
 
@@ -982,7 +983,7 @@ function loadFooter() {
             </li>
 
             <li>
-              <a href="mailto:security@cmcen.ca" data-i18n="security_contact">
+              <a href="mailto:security@cmcen.ca" data-legal-contact-email="securityEmail" data-i18n="security_contact">
                 Security concerns
               </a>
             </li>
@@ -1036,6 +1037,21 @@ function loadFooter() {
       </div>
     </div>
   `;
+
+  fetch('/api/client-config/legal')
+    .then((response) => (response.ok ? response.json() : null))
+    .then((legal) => {
+      if (!legal) return;
+      footer.querySelectorAll('[data-legal-contact]').forEach((element) => {
+        const key = element.dataset.legalContact;
+        element.textContent = key === 'address' ? (legal.addressLines || []).join(', ') : legal[key] || '';
+      });
+      footer.querySelectorAll('[data-legal-contact-email]').forEach((element) => {
+        const email = legal[element.dataset.legalContactEmail];
+        if (email) element.href = `mailto:${email}`;
+      });
+    })
+    .catch(() => {});
 
   const yearElement = document.getElementById("copyrightYear");
 

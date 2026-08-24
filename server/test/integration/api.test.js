@@ -88,6 +88,7 @@ async function login(user, options = {}) {
     username: user.username,
     password: options.password || 'Correct-Horse-Integration-1!',
     sessionCookieConsent: options.sessionCookieConsent ?? true,
+    legalAcceptance: options.legalAcceptance ?? { terms: true, privacy: true },
   });
 
   assert.equal(
@@ -391,6 +392,7 @@ describe('system and authentication', () => {
         passwordConfirmation: 'Activated-Password-1!',
         invitationToken,
         sessionCookieConsent: true,
+        legalAcceptance: { terms: true, privacy: true },
       })
       .expect(201);
 

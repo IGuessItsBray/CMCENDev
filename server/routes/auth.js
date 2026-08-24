@@ -12,6 +12,7 @@ const EmailUnsubscribeToken = require('../models/EmailUnsubscribeToken');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
+const { LEGAL_VERSIONS } = require('../config/legal');
 const { sendMail } = require('../services/mailer');
 const {
   CASL_CONSENT_TEXT_VERSION,
@@ -36,7 +37,7 @@ const {
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions notificationState createdAt updatedAt';
+  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions legalAcceptance notificationState createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -98,6 +99,24 @@ const VALID_PREFERRED_LANGUAGES = new Set(['en', 'fr']);
 
 function hasSessionCookieConsent(req) {
   return req.body?.sessionCookieConsent === true;
+}
+
+function hasCurrentLegalAcceptance(user) {
+  return Boolean(
+    user?.legalAcceptance?.terms?.version === LEGAL_VERSIONS.terms &&
+    user?.legalAcceptance?.terms?.acceptedAt &&
+    user?.legalAcceptance?.privacy?.version === LEGAL_VERSIONS.privacy &&
+    user?.legalAcceptance?.privacy?.acceptedAt,
+  );
+}
+
+function recordLegalAcceptance(user) {
+  const acceptedAt = new Date();
+  user.legalAcceptance = {
+    terms: { version: LEGAL_VERSIONS.terms, acceptedAt },
+    privacy: { version: LEGAL_VERSIONS.privacy, acceptedAt },
+  };
+  return acceptedAt;
 }
 const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 const PASSWORD_RESET_GENERIC_MESSAGE =
@@ -847,11 +866,18 @@ router.post('/register', async (req, res) => {
       password,
       passwordConfirmation,
       invitationToken,
+      legalAcceptance,
     } = req.body;
 
     if (password !== passwordConfirmation) {
       return res.status(400).json({
         error: 'Passwords do not match',
+      });
+    }
+
+    if (legalAcceptance?.terms !== true || legalAcceptance?.privacy !== true) {
+      return res.status(400).json({
+        error: 'You must accept the Terms of Service and Privacy Policy',
       });
     }
 
@@ -986,6 +1012,8 @@ router.post('/register', async (req, res) => {
       ? null
       : await prepareEmailVerification(user);
 
+    const legalAcceptedAt = recordLegalAcceptance(user);
+
     await user.save();
     if (verification) {
       await sendEmailVerificationCode(user, verification.code);
@@ -1011,6 +1039,11 @@ router.post('/register', async (req, res) => {
         emailVerification: invitedUser ? 'verified' : 'pending',
         mfaMethod: 'pending',
         invitation: invitedUser ? 'activated' : undefined,
+        legalAcceptance: {
+          termsVersion: LEGAL_VERSIONS.terms,
+          privacyVersion: LEGAL_VERSIONS.privacy,
+          acceptedAt: legalAcceptedAt.toISOString(),
+        },
       },
     });
 
@@ -1066,7 +1099,8 @@ router.post('/register', async (req, res) => {
 // POST /api/login
 // Authenticate a user and return a short-lived JWT.
 router.post('/login', async (req, res) => {
-  const { username, password, sessionCookieConsent } = req.body || {};
+  const { username, password, sessionCookieConsent, legalAcceptance } =
+    req.body || {};
 
   try {
     const user = await User.findOne({ username }).select(
@@ -1093,6 +1127,30 @@ router.post('/login', async (req, res) => {
 
     if (sessionCookieConsent !== true) {
       return res.json({ sessionCookieConsentRequired: true });
+    }
+
+    if (!hasCurrentLegalAcceptance(user)) {
+      if (legalAcceptance?.terms !== true || legalAcceptance?.privacy !== true) {
+        return res.json({
+          legalAcceptanceRequired: true,
+          versions: LEGAL_VERSIONS,
+        });
+      }
+      const acceptedAt = recordLegalAcceptance(user);
+      await user.save();
+      await writeAuditLog({
+        req,
+        action: 'user.legal_accepted',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: getUserSnapshot(user),
+        metadata: {
+          termsVersion: LEGAL_VERSIONS.terms,
+          privacyVersion: LEGAL_VERSIONS.privacy,
+          acceptedAt: acceptedAt.toISOString(),
+        },
+      });
     }
 
     const hasWebAuthn =

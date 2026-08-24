@@ -1,13 +1,14 @@
-# CMCEN Privacy Policy — Draft for Legal Review
+# CMCEN Privacy Policy
 
-**Effective date:** [Month Day, Year]<br>
-**Last updated:** [Month Day, Year]<br>
-**Organization:** CAF Communications & Electronics Branch Office ("CMCEN", "we", "us", or "our")<br>
+**Effective date:** September 1, 2026<br>
+**Last updated:** August 24, 2026<br>
+**Organization:** Communications & Electronics Association ("CMCEN", "we", "us", or "our")<br>
 **Website:** https://cmcen-rcmce.ca (the "website")<br>
-**Privacy and Legal Contact:** MWO Terry Cadieux<br>
+**Privacy Contact:** privacy@cmcen.ca<br>
+**Legal Contact:** legal@cmcen.ca<br>
 **Mailing Address:** 9 Byng Ave, Kingston, ON K7K 5L3
 
-> **Publication note:** This is a working draft, prepared from the current website’s features and data flows. It must be reviewed and completed by the policy owner and qualified Canadian privacy counsel before publication. In particular, confirm the applicable privacy-law regime, service providers, retention periods, and a monitored direct contact channel for privacy and CASL requests.
+> This policy is published by the Communications & Electronics Association. It should be reviewed by qualified Canadian privacy counsel before any material change to the organization, processing arrangements, or legal requirements.
 
 ## 1. Scope and purpose
 
@@ -122,7 +123,7 @@ We do not sell personal information. We do not use personal information for beha
 
 ## 9. International and third-party processing
 
-As of the Last updated date above, the website and the systems used to support it—including its database, email, media storage, backups, and content delivery—are self-hosted on a virtual private server provided by Contabo in Toronto, Ontario, Canada. Personal information is stored and processed in Canada. Before we introduce a service provider or arrangement that processes personal information outside Canada, we will update this Policy and provide any notice or seek any consent required by applicable law.
+As of the Last updated date above, the website, databases, backups, media/CDN, and logging are hosted by Contabo on a virtual private server in US Central (St. Louis). Email is delivered using Google's main SMTP service. These providers may process personal information on our behalf. Before we introduce a materially different processing arrangement, we will update this Policy and provide any notice or seek any consent required by applicable law.
 
 ## 10. Retention and deletion
 
@@ -178,14 +179,13 @@ We may update this Policy to reflect changes to the website, our practices, or a
 
 ## 16. Contact us
 
-Questions, access requests, correction requests, consent withdrawals, complaints, and concerns about this Policy should be directed to:
+Questions, access requests, correction requests, consent withdrawals, complaints, and concerns about this Policy should be directed to **privacy@cmcen.ca**. Legal notices should be directed to **legal@cmcen.ca**. You may also write to:
 
-**CAF Communications & Electronics Branch Office**<br>
-Attn: MWO Terry Cadieux<br>
+**Communications & Electronics Association**<br>
 9 Byng Ave<br>
 Kingston, ON K7K 5L3
 
-For suspected account compromise, another website-security concern, or a legal notice, use the same mailing address unless CMCEN publishes a more specific monitored contact channel.
+For suspected account compromise or another website-security concern, use security@cmcen.ca.
 
 ---
 

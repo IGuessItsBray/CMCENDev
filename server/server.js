@@ -22,6 +22,7 @@ const contactRoutes = require('./routes/contact');
 const diagnosticsRoutes = require('./routes/diagnostics');
 const eventRoutes = require('./routes/events');
 const lastPostRoutes = require('./routes/last-posts');
+const legalRoutes = require('./routes/legal');
 const newsRoutes = require('./routes/news');
 const retirementMessageRoutes = require('./routes/retirement-messages');
 const searchRoutes = require('./routes/search');
@@ -60,6 +61,7 @@ app.use('/api', apiRateLimit);
 app.use(translationRoutes);
 app.use(contentOptionRoutes);
 app.use(brandingRoutes);
+app.use(legalRoutes);
 
 function getBuildCommit() {
   const envCommit =

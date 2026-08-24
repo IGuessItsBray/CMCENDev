@@ -273,6 +273,17 @@ const UserSchema = new mongoose.Schema(
       },
     },
 
+    legalAcceptance: {
+      terms: {
+        version: { type: String, trim: true, default: '' },
+        acceptedAt: { type: Date, default: null },
+      },
+      privacy: {
+        version: { type: String, trim: true, default: '' },
+        acceptedAt: { type: Date, default: null },
+      },
+    },
+
     notificationState: {
       // Keep this unset until the member actually opens the notification menu.
       // A Date.now default would be applied when reading legacy users too,

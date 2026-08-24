@@ -33,6 +33,8 @@ const mfaTotpForm = document.getElementById("mfaTotpForm");
 const mfaTotpCode = document.getElementById("mfaTotpCode");
 const mfaError = document.getElementById("mfaError");
 const mfaCancel = document.getElementById("mfaCancel");
+const legalAcceptanceFieldset = document.getElementById("legalAcceptance");
+const legalTermsAccepted = document.getElementById("legalTermsAccepted");
 
 let pendingMfa = null;
 let mfaRestoreFocus = null;
@@ -58,13 +60,19 @@ function getLoginTranslation(key, fallback) {
   return translated && translated !== key ? translated : fallback;
 }
 
-function requestLogin(username, password, sessionCookieConsent) {
+function requestLogin(
+  username,
+  password,
+  sessionCookieConsent,
+  legalAcceptance,
+) {
   return CMCENUtils.apiJson("/api/login", {
     method: "POST",
     body: {
       username,
       password,
       sessionCookieConsent,
+      legalAcceptance,
     },
     errorMessage: "Login failed",
   });
@@ -615,10 +623,14 @@ loginForm.addEventListener("submit", async (event) => {
   loginButton.setAttribute("aria-busy", "true");
 
   try {
+    const legalAcceptance = legalTermsAccepted.checked
+      ? { terms: true, privacy: true }
+      : undefined;
     let data = await requestLogin(
       username,
       password,
       CMCENUtils.hasSessionCookieConsent(),
+      legalAcceptance,
     );
 
     if (data.sessionCookieConsentRequired) {
@@ -635,7 +647,17 @@ loginForm.addEventListener("submit", async (event) => {
         return;
       }
 
-      data = await requestLogin(username, password, true);
+      data = await requestLogin(username, password, true, legalAcceptance);
+    }
+
+    if (data.legalAcceptanceRequired) {
+      legalAcceptanceFieldset.hidden = false;
+      setLoginMessage(
+        "Please review and accept the Terms of Service and Privacy Policy to continue.",
+        "info",
+      );
+      legalTermsAccepted.focus();
+      return;
     }
 
     if (data.emailVerificationRequired) {

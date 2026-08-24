@@ -25057,14 +25057,18 @@ html[data-theme='dark'] .theme-toggle__icon:last-child {
   text-overflow: ellipsis;
 }
 
+.site-timer-message {
+  display: inline-block;
+}
+
 .site-timer-text a {
   color: inherit;
   text-decoration-thickness: 2px;
   text-underline-offset: 0.15em;
 }
 
-.site-timer.is-marquee:hover .site-timer-text,
-.site-timer.is-marquee:focus-within .site-timer-text {
+.site-timer.is-marquee:hover .site-timer-message,
+.site-timer.is-marquee:focus-within .site-timer-message {
   animation-play-state: paused;
 }
 
@@ -25076,8 +25080,9 @@ html[data-theme='dark'] .theme-toggle__icon:last-child {
   margin-left: 0;
 }
 
-.site-timer.is-marquee .site-timer-text {
-  animation: site-timer-marquee 42s linear infinite;
+.site-timer.is-marquee .site-timer-message {
+  animation: site-timer-marquee var(--site-timer-marquee-duration, 42s) linear
+    infinite;
 }
 
 .site-timer-countdown {
@@ -25101,6 +25106,17 @@ html[data-theme='dark'] .theme-toggle__icon:last-child {
 
   to {
     transform: translateX(calc(-100% - 2rem));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-timer-track {
+    white-space: normal;
+  }
+
+  .site-timer.is-marquee .site-timer-message {
+    display: inline;
+    animation: none;
   }
 }
 

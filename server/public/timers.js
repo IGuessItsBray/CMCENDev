@@ -164,7 +164,10 @@
 
     const text = document.createElement("span");
     text.className = "site-timer-text";
-    appendLinkedText(text, localized(timer.text) || timer.title || "Countdown");
+    const message = document.createElement("span");
+    message.className = "site-timer-message";
+    appendLinkedText(message, localized(timer.text) || timer.title || "Countdown");
+    text.append(message);
     track.append(text);
 
     if (timer.countdownAt) {
@@ -181,14 +184,39 @@
 
     banner.append(track);
 
-    requestAnimationFrame(() => {
-      banner.classList.toggle(
-        "is-marquee",
-        text.scrollWidth > track.clientWidth,
-      );
-    });
+    requestAnimationFrame(() => updateMarqueeState(banner));
 
     return banner;
+  }
+
+  function updateMarqueeState(banner) {
+    const track = banner.querySelector(".site-timer-track");
+    const text = banner.querySelector(".site-timer-text");
+    const message = banner.querySelector(".site-timer-message");
+
+    if (!track || !text || !message) return;
+
+    // Measure the text in its normal, constrained state before enabling motion.
+    banner.classList.remove("is-marquee");
+    const shouldScroll = text.scrollWidth > text.clientWidth;
+    banner.classList.toggle("is-marquee", shouldScroll);
+
+    if (shouldScroll) {
+      // About 28 pixels per second keeps notice copy comfortable to read.
+      const durationSeconds = Math.max(16, Math.ceil(message.scrollWidth / 28));
+      banner.style.setProperty(
+        "--site-timer-marquee-duration",
+        `${durationSeconds}s`,
+      );
+    } else {
+      banner.style.removeProperty("--site-timer-marquee-duration");
+    }
+  }
+
+  function updateMarqueeStates() {
+    timersRoots.forEach((root) => {
+      root.querySelectorAll(".site-timer").forEach(updateMarqueeState);
+    });
   }
 
   function updateCountdowns(root) {
@@ -313,5 +341,8 @@
 
   document.addEventListener("languagechange", renderTimers);
   document.addEventListener("cmcenheaderready", renderTimers);
-  window.addEventListener("resize", updateHeaderOffset);
+  window.addEventListener("resize", () => {
+    updateHeaderOffset();
+    updateMarqueeStates();
+  });
 })();

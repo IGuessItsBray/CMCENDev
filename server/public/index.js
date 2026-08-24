@@ -261,6 +261,10 @@ function applyCurrentLanguage() {
   updateDynamicNavigationLabels();
 }
 
+function getInterfaceTranslation(key, fallback) {
+  return typeof translate === "function" ? translate(key) : fallback;
+}
+
 // list of only protected pages
 const protectedPages = new Set([
   "/dashboard",
@@ -376,6 +380,7 @@ function loadHeader() {
           href="/index"
           class="site-identity"
           aria-label="CMCEN / RCMCE home"
+          data-i18n-aria-label="site_home_aria_label"
         >
           <img
             src="/images/logo.png"
@@ -480,6 +485,7 @@ function loadHeader() {
             aria-controls="primaryNavigation"
             aria-expanded="false"
             aria-label="Open menu"
+            data-i18n-aria-label="mobile_menu_open"
           >
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
@@ -495,6 +501,7 @@ function loadHeader() {
           class="nav-bar"
           id="primaryNavigation"
           aria-label="Primary navigation"
+          data-i18n-aria-label="primary_navigation"
         >
           ${dropdownsHtml}
           ${standaloneHtml}
@@ -526,6 +533,7 @@ function loadHeader() {
             type="submit"
             class="header-search-button"
             aria-label="Search"
+            data-i18n-aria-label="search_button_label"
           >
             <svg
               viewBox="0 0 24 24"
@@ -629,7 +637,9 @@ function loadHeader() {
     mobileMenuToggle?.setAttribute("aria-expanded", String(isOpen));
     mobileMenuToggle?.setAttribute(
       "aria-label",
-      isOpen ? "Close menu" : "Open menu",
+      isOpen
+        ? getInterfaceTranslation("mobile_menu_close", "Close menu")
+        : getInterfaceTranslation("mobile_menu_open", "Open menu"),
     );
 
     if (isOpen) {
@@ -842,7 +852,8 @@ function loadFooter() {
           <a
             href="/index"
             class="footer-identity"
-            aria-label="CMCEN / RCMCE home"
+          aria-label="CMCEN / RCMCE home"
+          data-i18n-aria-label="site_home_aria_label"
           >
             <img
               src="/images/logo.png"
@@ -969,6 +980,7 @@ function loadFooter() {
           <div
             class="footer-social"
             aria-label="Social media"
+            data-i18n-aria-label="social_media"
           >
             ${socialLinksHtml}
           </div>
@@ -987,7 +999,7 @@ function loadFooter() {
             </li>
 
             <li>
-              <a href="/terms">
+              <a href="/terms" data-i18n="terms_of_use">
                 Terms of Use
               </a>
             </li>
@@ -1042,7 +1054,11 @@ function loadFooter() {
         </p>
 
         <p class="footer-credit">
-          <a class="footer-credit-link" href="/devs">Made with ♥ by Bray &amp; Eric</a>
+          <a
+            class="footer-credit-link"
+            href="/devs"
+            data-i18n="footer_credit"
+          >Made with ♥ by Bray &amp; Eric</a>
         </p>
 
         <p
@@ -1103,8 +1119,7 @@ async function updateFooterVersion() {
       versionElement.textContent = `Running version: ${hash}`;
       versionElement.hidden = false;
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 loadHeader();
@@ -1144,8 +1159,7 @@ async function loadCustomNavigationItems() {
 
     renderCustomNavigationItems();
     updateAuthRestrictedItems();
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 function renderCustomNavigationItems() {
@@ -1588,9 +1602,9 @@ function updateHeaderNotifications(notifications = {}) {
   updateNotificationBadges(headerNotificationCount);
 
   if (
-    document.getElementById("notificationToggle")?.getAttribute(
-      "aria-expanded",
-    ) === "true"
+    document
+      .getElementById("notificationToggle")
+      ?.getAttribute("aria-expanded") === "true"
   ) {
     renderHeaderNotifications();
   }
@@ -1620,8 +1634,7 @@ async function markHeaderNotificationsRead(
         unreadCount: 0,
       });
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 async function loadHeaderNotifications() {
@@ -1686,8 +1699,7 @@ async function refreshHeaderNotificationCount() {
     if (getStoredAuthToken() === token) {
       updateHeaderNotifications(user.notifications || {});
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 function setupHeaderNotifications() {
@@ -1914,7 +1926,6 @@ async function updateAuthRestrictedItems() {
       updateAuthButtons();
       return;
     }
-
   }
 }
 

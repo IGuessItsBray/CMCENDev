@@ -327,8 +327,13 @@ function createHomeNewsItem(item, language) {
   content.className = "home-news-card-content";
   const type = document.createElement("span");
   type.className = "home-news-card-type";
-  type.textContent =
-    item.type === "page" ? "Page" : item.type === "lastPost" ? "Last Post" : "News";
+  type.textContent = getHomeTranslation(
+    item.type === "page"
+      ? "home_news_type_page"
+      : item.type === "lastPost"
+        ? "home_news_type_last_post"
+        : "home_news_type_news",
+  );
   const title = document.createElement("strong");
   const fallbackTitle =
     item.type === "page"
@@ -359,13 +364,13 @@ function renderHomeNews() {
         return item;
       }),
     );
-    setHomeMessage(homeNewsMessage, "Loading news and stories...");
+    setHomeMessage(homeNewsMessage, getHomeTranslation("home_news_loading"));
     return;
   }
   if (homeNewsState === "error") {
     setHomeMessage(
       homeNewsMessage,
-      "News and stories could not be loaded.",
+      getHomeTranslation("home_news_load_error"),
       "error",
     );
     return;
@@ -373,7 +378,7 @@ function renderHomeNews() {
   if (!homeNewsItems.length) {
     setHomeMessage(
       homeNewsMessage,
-      "No news or Last Post notices have been published yet.",
+      getHomeTranslation("home_news_empty"),
       "empty",
     );
     return;

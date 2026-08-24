@@ -9,6 +9,26 @@
     return CMCENUtils.getLocalizedText(value);
   }
 
+  function getTimerMessage(timer) {
+    const language = CMCENUtils.getCurrentLanguage();
+    const frenchText = String(timer.text?.fr || "").trim();
+    const englishText = String(timer.text?.en || "").trim();
+
+    // Older non-countdown banners were saved with the new-banner French
+    // placeholder. Preserve their existing English notice until an editor
+    // supplies a French translation instead of replacing it with that label.
+    if (
+      language === "fr" &&
+      !timer.countdownAt &&
+      /^compte à rebours$/iu.test(frenchText) &&
+      englishText
+    ) {
+      return englishText;
+    }
+
+    return localized(timer.text) || timer.title || "Countdown";
+  }
+
   function formatCountdown(targetDate) {
     const remaining = Math.max(targetDate.getTime() - Date.now(), 0);
     const totalSeconds = Math.floor(remaining / 1000);
@@ -166,7 +186,7 @@
     text.className = "site-timer-text";
     const message = document.createElement("span");
     message.className = "site-timer-message";
-    appendLinkedText(message, localized(timer.text) || timer.title || "Countdown");
+    appendLinkedText(message, getTimerMessage(timer));
     text.append(message);
     track.append(text);
 
@@ -317,8 +337,7 @@
         activeTimers = nextTimers;
         renderTimers();
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   window.CMCENTimers = {

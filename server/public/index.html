@@ -304,25 +304,37 @@
       <section class="home-latest-news" aria-labelledby="homeLatestNewsTitle">
         <header class="home-latest-news-heading">
           <div>
-            <p class="home-section-eyebrow">Latest updates</p>
-            <h2 id="homeLatestNewsTitle">News &amp; stories</h2>
-            <p>
+            <p class="home-section-eyebrow" data-i18n="home_news_eyebrow">
+              Latest updates
+            </p>
+            <h2 id="homeLatestNewsTitle" data-i18n="home_news_title">
+              News &amp; stories
+            </h2>
+            <p data-i18n="home_news_intro">
               Recent C&amp;E Family news alongside the latest Last Post notices.
             </p>
           </div>
-          <a href="/news_stories" class="home-text-link">Browse all news</a>
+          <a
+            href="/news_stories"
+            class="home-text-link"
+            data-i18n="home_browse_news"
+          >
+            Browse all news
+          </a>
         </header>
         <p
           class="home-feed-message"
           id="homeNewsMessage"
           role="status"
           aria-live="polite"
+          data-i18n="home_news_loading"
         >
           Loading news and stories...
         </p>
         <div
           class="home-news-rail"
           id="homeNewsRail"
+          data-i18n-aria-label="home_news_aria_label"
           aria-label="Latest news and stories"
         ></div>
       </section>

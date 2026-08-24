@@ -561,6 +561,38 @@ describe('public search', () => {
       `/retirement-message?id=${retirement._id}`,
     );
 
+    const retirementPageSearch = await request(app)
+      .get('/api/search?q=retirement')
+      .expect(200);
+    const retirementPageResult = retirementPageSearch.body.results.find(
+      (result) => result.sourceId === '/retirements',
+    );
+    assert.equal(
+      retirementPageResult.summary,
+      'Browse retirement messages celebrating members of the C&E community.',
+    );
+    assert.doesNotMatch(retirementPageResult.summary, /loading/i);
+
+    await RetirementMessage.updateOne(
+      { _id: retirement._id },
+      {
+        $set: {
+          'messages.en':
+            '<p>A retirement tribute for Alex Example from the C&amp;E community.</p>',
+        },
+      },
+    );
+    const sanitizedRetirementSearch = await request(app)
+      .get('/api/search?q=alex%20example')
+      .expect(200);
+    const sanitizedRetirementResult = sanitizedRetirementSearch.body.results.find(
+      (result) => result.sourceId === String(retirement._id),
+    );
+    assert.equal(
+      sanitizedRetirementResult.summary,
+      'A retirement tribute for Alex Example from the C&E community.',
+    );
+
     const pageSearch = await request(app)
       .get('/api/search?q=calendar')
       .expect(200);
@@ -580,9 +612,6 @@ describe('public search', () => {
       false,
     );
 
-    const retirementPageSearch = await request(app)
-      .get('/api/search?q=retirement')
-      .expect(200);
     assert.equal(retirementPageSearch.body.results[0].sourceId, '/retirements');
 
     const lastPostPageSearch = await request(app)
@@ -1748,6 +1777,38 @@ describe('Last Post lifecycle', () => {
 });
 
 describe('authorization matrix and account integrity', () => {
+  test('prevents a custom user manager from escalating their own access', async () => {
+    const userManagerRole = await Role.create({
+      name: 'Member Manager',
+      slug: 'member-manager',
+      permissions: ['users.manage'],
+    });
+    const contributor = await createUser({
+      role: 'contributor',
+      customRoles: [userManagerRole._id],
+    });
+    const session = await login(contributor);
+
+    await request(app)
+      .patch(`/api/admin/users/${contributor._id}`)
+      .set('Authorization', bearer(session.body.token))
+      .send({ role: 'administrator' })
+      .expect(403);
+
+    await request(app)
+      .patch(`/api/admin/users/${contributor._id}`)
+      .set('Authorization', bearer(session.body.token))
+      .send({ customRoleIds: [] })
+      .expect(403);
+
+    const unchangedUser = await User.findById(contributor._id).lean();
+    assert.equal(unchangedUser.role, 'contributor');
+    assert.deepEqual(
+      unchangedUser.customRoles.map(String),
+      [String(userManagerRole._id)],
+    );
+  });
+
   test('enforces representative built-in role boundaries', async () => {
     const cases = [
       { role: 'subscriber', path: '/api/events/review', expected: 403 },

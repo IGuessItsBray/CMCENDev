@@ -2218,13 +2218,10 @@ async function validateStandardRoleChange(userId, currentUser, role) {
     };
   }
 
-  if (
-    isSelf(userId, currentUser) &&
-    !['administrator', 'developer'].includes(role)
-  ) {
+  if (isSelf(userId, currentUser)) {
     return {
-      status: 400,
-      error: 'You cannot remove your own administrator access',
+      status: 403,
+      error: 'You cannot change your own built-in role',
     };
   }
 
@@ -3535,6 +3532,12 @@ router.patch(
       if (
         Object.prototype.hasOwnProperty.call(req.body || {}, 'customRoleIds')
       ) {
+        if (isSelf(userId, req.user)) {
+          return res.status(403).json({
+            error: 'You cannot change your own custom role assignments',
+          });
+        }
+
         const roleIdValidation = await validateCustomRoleIds(customRoleIds);
 
         if (roleIdValidation.error) {

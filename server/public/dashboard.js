@@ -20,6 +20,9 @@ const dashboardRoleBadge = document.getElementById("dashboardRoleBadge");
 const dashboardRoleDescription = document.getElementById(
   "dashboardRoleDescription",
 );
+const dashboardCustomRoleSummary = document.getElementById(
+  "dashboardCustomRoleSummary",
+);
 const dashboardReviewWork = document.getElementById("dashboardReviewWork");
 const dashboardReviewQueues = document.getElementById("dashboardReviewQueues");
 const dashboardReviewSummary = document.getElementById(
@@ -1523,6 +1526,18 @@ function renderDashboard(user) {
   dashboardRoleBadge.textContent = roleTitle;
   dashboardRoleBadge.className = `dashboard-role-badge role-${role}`;
   dashboardRoleDescription.textContent = translate(`role_description_${role}`);
+  const customRoleNames = (Array.isArray(user.customRoles)
+    ? user.customRoles
+    : []
+  )
+    .map((customRole) => String(customRole?.name || "").trim())
+    .filter(Boolean);
+  dashboardCustomRoleSummary.hidden = customRoleNames.length === 0;
+  dashboardCustomRoleSummary.textContent = customRoleNames.length
+    ? translate("dashboard_role_custom_access", {
+        roles: customRoleNames.join(", "),
+      })
+    : "";
   dashboardRoleSummary.hidden = false;
 
   dashboardProfileSummary.textContent = [user.email, roleTitle]

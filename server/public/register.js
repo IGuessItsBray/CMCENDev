@@ -67,6 +67,29 @@ async function ensureSessionCookieConsent(setMessage) {
   return consented;
 }
 
+async function redirectSignedInUser() {
+  const token = CMCENUtils.getStoredAuthToken();
+
+  if (!token) {
+    return false;
+  }
+
+  try {
+    await CMCENUtils.apiJson("/api/me", {
+      token,
+      errorMessage: "Could not verify your account session",
+    });
+    window.location.replace("/dashboard");
+    return true;
+  } catch (error) {
+    if (error.status === 401) {
+      CMCENUtils.clearAuthToken();
+    }
+
+    return false;
+  }
+}
+
 function setStoredToken(token) {
   registrationToken = CMCENUtils.storeAuthToken(token);
 
@@ -389,9 +412,7 @@ async function prepareInvitationRegistration() {
   }
 }
 
-prepareInvitationRegistration();
-
-registerForm.addEventListener("submit", async (event) => {
+async function submitRegistration(event) {
   event.preventDefault();
 
   setRegisterError("");
@@ -472,8 +493,9 @@ registerForm.addEventListener("submit", async (event) => {
     registerButton.disabled = false;
     registerButton.removeAttribute("aria-busy");
   }
-});
+}
 
+registerForm.addEventListener("submit", submitRegistration);
 registerPasskeyOption.addEventListener("click", setupPasskey);
 registerTotpOption.addEventListener("click", setupTotp);
 registerTotpVerify.addEventListener("click", verifyTotp);
@@ -490,3 +512,16 @@ registerTotpCode.addEventListener("keydown", (event) => {
     verifyTotp();
   }
 });
+
+async function initializeRegistrationPage() {
+  registerButton.disabled = true;
+
+  if (await redirectSignedInUser()) {
+    return;
+  }
+
+  registerButton.disabled = false;
+  prepareInvitationRegistration();
+}
+
+initializeRegistrationPage();

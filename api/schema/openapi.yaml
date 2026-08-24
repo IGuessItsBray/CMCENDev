@@ -981,7 +981,8 @@ paths:
           description: User detail.
     patch:
       tags: [Admin]
-      summary: Update user admin assignments.
+      summary: Update another user's admin assignments.
+      description: A caller with `canManageUsers` may update another member's built-in role, custom roles, and content areas. Self-service role and custom-role assignment changes are rejected to prevent privilege escalation.
       x-permission: canManageUsers
       parameters:
         - $ref: "#/components/parameters/UserId"
@@ -993,8 +994,8 @@ paths:
   /api/admin/users/{userId}/role:
     patch:
       tags: [Admin]
-      summary: Update built-in role.
-      description: Assigns a built-in role. `internal_beta` has the same site permissions as a subscriber and identifies members approved for internal beta software; only a developer may assign or remove it.
+      summary: Update another user's built-in role.
+      description: Assigns a built-in role to another member. Self role changes are rejected. `internal_beta` has the same site permissions as a subscriber and identifies members approved for internal beta software; only a developer may assign or remove it.
       x-permission: canManageUsers
       parameters:
         - $ref: "#/components/parameters/UserId"

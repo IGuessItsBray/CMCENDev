@@ -10,7 +10,7 @@
 **Website and Account Security:** [security@cmcen.ca](mailto:security@cmcen.ca)<br>
 **Mailing Address:**<br>
 Care Of: C&E Branch Office\
-**Communications & Electronics Association,**\
+Communications & Electronics Association,\
 Forde Building, Rm 217,\
 9 Byng Ave Kingston, ON, K7K 5L3
 
@@ -188,7 +188,7 @@ We may update this Policy to reflect changes to the website, our practices, or a
 Questions, access requests, correction requests, consent withdrawals, complaints, and concerns about this Policy should be directed to [privacy@cmcen.ca](mailto:privacy@cmcen.ca). Legal notices should be directed to [legal@cmcen.ca](mailto:legal@cmcen.ca). You may also write to:
 
 Care Of: C&E Branch Office\
-**Communications & Electronics Association,**\
+Communications & Electronics Association,\
 Forde Building, Rm 217,\
 9 Byng Ave Kingston, ON, K7K 5L3
 

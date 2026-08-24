@@ -45,7 +45,10 @@ function appendInlineText(container, value) {
 }
 
 function cleanMarkdownLine(value) {
-  return value.replace(/<br\s*\/?\s*>/giu, '').trim();
+  return value
+    .replace(/<br\s*\/?\s*>/giu, '')
+    .replace(/\\$/u, '')
+    .trim();
 }
 
 function createTextElement(tagName, value) {

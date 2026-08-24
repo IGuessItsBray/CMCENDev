@@ -86,6 +86,60 @@
 
           <section class="content-workspace-detail" id="contentWorkspaceDetail" aria-live="polite"></section>
         </div>
+
+        <template id="contentWorkspaceListLoadingTemplate">
+          <div class="content-workspace-list-skeleton" aria-hidden="true">
+            <div class="content-workspace-record-skeleton">
+              <span class="skeleton content-workspace-skeleton-record-title"></span>
+              <span class="skeleton content-workspace-skeleton-record-status"></span>
+              <span class="skeleton content-workspace-skeleton-record-meta"></span>
+            </div>
+            <div class="content-workspace-record-skeleton">
+              <span class="skeleton content-workspace-skeleton-record-title is-medium"></span>
+              <span class="skeleton content-workspace-skeleton-record-status"></span>
+              <span class="skeleton content-workspace-skeleton-record-meta is-short"></span>
+            </div>
+            <div class="content-workspace-record-skeleton">
+              <span class="skeleton content-workspace-skeleton-record-title is-short"></span>
+              <span class="skeleton content-workspace-skeleton-record-status"></span>
+              <span class="skeleton content-workspace-skeleton-record-meta"></span>
+            </div>
+            <div class="content-workspace-record-skeleton">
+              <span class="skeleton content-workspace-skeleton-record-title"></span>
+              <span class="skeleton content-workspace-skeleton-record-status"></span>
+              <span class="skeleton content-workspace-skeleton-record-meta is-medium"></span>
+            </div>
+            <div class="content-workspace-record-skeleton">
+              <span class="skeleton content-workspace-skeleton-record-title is-medium"></span>
+              <span class="skeleton content-workspace-skeleton-record-status"></span>
+              <span class="skeleton content-workspace-skeleton-record-meta is-short"></span>
+            </div>
+          </div>
+        </template>
+
+        <template id="contentWorkspaceDetailLoadingTemplate">
+          <div class="content-workspace-detail-skeleton" aria-hidden="true">
+            <header class="content-workspace-detail-skeleton-heading">
+              <span class="skeleton content-workspace-skeleton-detail-title"></span>
+              <span class="skeleton content-workspace-skeleton-detail-status"></span>
+              <span class="skeleton content-workspace-skeleton-detail-meta"></span>
+            </header>
+            <section class="content-workspace-detail-skeleton-section">
+              <span class="skeleton content-workspace-skeleton-section-heading"></span>
+              <div class="content-workspace-detail-skeleton-fields">
+                <span class="skeleton content-workspace-skeleton-field"></span>
+                <span class="skeleton content-workspace-skeleton-field is-tall"></span>
+              </div>
+            </section>
+            <section class="content-workspace-detail-skeleton-section">
+              <span class="skeleton content-workspace-skeleton-section-heading is-short"></span>
+              <div class="content-workspace-detail-skeleton-fields">
+                <span class="skeleton content-workspace-skeleton-field"></span>
+                <span class="skeleton content-workspace-skeleton-field is-tall"></span>
+              </div>
+            </section>
+          </div>
+        </template>
       </section>
     </main>
 

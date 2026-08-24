@@ -19,6 +19,12 @@ const contentWorkspaceCount = document.getElementById("contentWorkspaceCount");
 const contentWorkspaceDetail = document.getElementById(
   "contentWorkspaceDetail",
 );
+const contentWorkspaceListLoadingTemplate = document.getElementById(
+  "contentWorkspaceListLoadingTemplate",
+);
+const contentWorkspaceDetailLoadingTemplate = document.getElementById(
+  "contentWorkspaceDetailLoadingTemplate",
+);
 
 const contentWorkspaceState = {
   items: [],
@@ -507,16 +513,23 @@ function setRecordMetadata(metadata, item) {
 function renderContentWorkspaceList() {
   contentWorkspaceList.replaceChildren();
   updateContentWorkspaceCount();
+  contentWorkspaceList.setAttribute(
+    "aria-busy",
+    contentWorkspaceState.isLoading ? "true" : "false",
+  );
 
   if (contentWorkspaceState.isLoading) {
-    const loading = document.createElement("p");
-    loading.className = "content-workspace-empty";
+    const loading = document.createElement("span");
+    loading.className = "visually-hidden";
     setWorkspaceTranslatedText(
       loading,
       "content_workspace_loading",
       "Loading content…",
     );
-    contentWorkspaceList.append(loading);
+    contentWorkspaceList.append(
+      loading,
+      contentWorkspaceListLoadingTemplate.content.cloneNode(true),
+    );
     return;
   }
 
@@ -2405,6 +2418,26 @@ function createContentWorkspaceBottomActions(item, { canSave = false } = {}) {
 
 function renderContentWorkspaceDetail() {
   contentWorkspaceDetail.replaceChildren();
+  contentWorkspaceDetail.setAttribute(
+    "aria-busy",
+    contentWorkspaceState.isLoading ? "true" : "false",
+  );
+
+  if (contentWorkspaceState.isLoading) {
+    const loading = document.createElement("span");
+    loading.className = "visually-hidden";
+    setWorkspaceTranslatedText(
+      loading,
+      "content_workspace_loading",
+      "Loading content…",
+    );
+    contentWorkspaceDetail.append(
+      loading,
+      contentWorkspaceDetailLoadingTemplate.content.cloneNode(true),
+    );
+    return;
+  }
+
   const item = getSelectedContentWorkspaceItem();
 
   if (!item) {
@@ -3250,6 +3283,7 @@ async function loadContentWorkspace({
   const requestId = ++contentWorkspaceState.loadRequestId;
   contentWorkspaceState.isLoading = true;
   renderContentWorkspaceList();
+  renderContentWorkspaceDetail();
 
   const query = new URLSearchParams({
     type: contentWorkspaceType.value || "all",
@@ -3301,6 +3335,10 @@ async function loadContentWorkspace({
 }
 
 async function initializeContentWorkspace() {
+  contentWorkspaceState.isLoading = true;
+  renderContentWorkspaceList();
+  renderContentWorkspaceDetail();
+
   try {
     const user = await contentWorkspaceApiJson("/api/me");
     const canReview = user.permissions?.canReviewAndPublish === true;
@@ -3318,6 +3356,9 @@ async function initializeContentWorkspace() {
     updateContentWorkspaceStatusFilterAppearance();
     await loadContentWorkspace();
   } catch (error) {
+    contentWorkspaceState.isLoading = false;
+    renderContentWorkspaceList();
+    renderContentWorkspaceDetail();
     setWorkspaceMessage(error.message, "error");
   }
 }

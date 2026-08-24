@@ -5,6 +5,8 @@ const LastPostMessage = require('../models/LastPostMessage');
 const Page = require('../models/Page');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
+const { recordContentRevision } = require('../services/content-revisions');
+const { hideContent, restoreContent } = require('../services/content-lifecycle');
 const {
   cleanLocalizedText,
   cleanString,
@@ -42,6 +44,75 @@ function getNewsSnapshot(article) {
   };
 }
 
+function getNewsRevisionSnapshot(article) {
+  return {
+    title: cleanLocalizedText(article.title),
+    content: cleanLocalizedText(article.content),
+    imageUrl: cleanString(article.imageUrl),
+    imageDisplayUrl: cleanString(article.imageDisplayUrl),
+    status: cleanString(article.status),
+  };
+}
+
+async function recordNewsArticleRevisions({ article, before, actor, note }) {
+  const after = getNewsRevisionSnapshot(article);
+
+  for (const language of ['en', 'fr']) {
+    const languageBefore = {
+      title: before.title[language],
+      content: before.content[language],
+    };
+    const languageAfter = {
+      title: after.title[language],
+      content: after.content[language],
+    };
+    const fields = Object.keys(languageAfter).filter(
+      (field) => languageBefore[field] !== languageAfter[field],
+    );
+
+    if (fields.length) {
+      await recordContentRevision({
+        contentType: 'newsArticle',
+        content: article,
+        actor,
+        status: article.status,
+        language,
+        fields,
+        before: languageBefore,
+        after: languageAfter,
+        note,
+      });
+    }
+  }
+
+  const detailsBefore = {
+    imageUrl: before.imageUrl,
+    imageDisplayUrl: before.imageDisplayUrl,
+    status: before.status,
+  };
+  const detailsAfter = {
+    imageUrl: after.imageUrl,
+    imageDisplayUrl: after.imageDisplayUrl,
+    status: after.status,
+  };
+  const detailFields = Object.keys(detailsAfter).filter(
+    (field) => detailsBefore[field] !== detailsAfter[field],
+  );
+
+  if (detailFields.length) {
+    await recordContentRevision({
+      contentType: 'newsArticle',
+      content: article,
+      actor,
+      status: article.status,
+      fields: detailFields,
+      before: detailsBefore,
+      after: detailsAfter,
+      note,
+    });
+  }
+}
+
 function serializeArticle(article) {
   return {
     _id: article._id,
@@ -59,7 +130,7 @@ function serializeArticle(article) {
   };
 }
 
-function getPayload(body = {}) {
+function getPayload(body = {}, { preserveHiddenStatus = false } = {}) {
   return {
     title: cleanLocalizedText(body.title),
     content: cleanLocalizedText(body.content),
@@ -68,7 +139,11 @@ function getPayload(body = {}) {
       cleanString(body.imageDisplayUrl) ||
       cleanString(body.imageUrl) ||
       DEFAULT_NEWS_IMAGE_URL,
-    status: cleanString(body.status) === 'draft' ? 'draft' : 'published',
+    status: preserveHiddenStatus
+      ? 'hidden'
+      : cleanString(body.status) === 'draft'
+        ? 'draft'
+        : 'published',
   };
 }
 
@@ -311,7 +386,10 @@ router.patch(
       if (!article)
         return res.status(404).json({ error: 'News story not found' });
       const previousStatus = article.status;
-      const payload = getPayload(req.body);
+      const before = getNewsRevisionSnapshot(article);
+      const payload = getPayload(req.body, {
+        preserveHiddenStatus: article.status === 'hidden',
+      });
       const validationError = validatePayload(payload);
       if (validationError)
         return res.status(400).json({ error: validationError });
@@ -326,6 +404,12 @@ router.patch(
       }
       await article.save();
       await linkArticleImage(article);
+      await recordNewsArticleRevisions({
+        article,
+        before,
+        actor: req.user,
+        note: req.body?.revisionNote,
+      });
       await writeAuditLog({
         req,
         action: 'content.updated',
@@ -353,6 +437,109 @@ router.patch(
     } catch (error) {
       console.error('Could not update news story:', error);
       return res.status(500).json({ error: 'Could not update news story' });
+    }
+  },
+);
+
+router.patch(
+  '/:articleId/hide',
+  authMiddleware,
+  requirePermission('canManageNews'),
+  async (req, res) => {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.articleId)) {
+        return res.status(404).json({ error: 'News story not found' });
+      }
+
+      const article = await NewsArticle.findById(req.params.articleId);
+      if (!article) {
+        return res.status(404).json({ error: 'News story not found' });
+      }
+      if (article.status !== 'published') {
+        return res.status(409).json({
+          error: 'Only published news stories can be removed from public view',
+        });
+      }
+
+      const snapshot = getNewsSnapshot(article);
+      const removal = hideContent(article, {
+        actor: req.user,
+        reason: req.body?.reason,
+      });
+      if (!removal) {
+        return res.status(409).json({
+          error: 'News story is already removed or cannot be removed',
+        });
+      }
+
+      await article.save();
+      await writeAuditLog({
+        req,
+        action: 'content.hidden',
+        actor: req.user,
+        targetType: 'newsArticle',
+        target: article._id,
+        targetSnapshot: snapshot,
+        metadata: {
+          previousStatus: removal.previousStatus,
+          reason: removal.reason,
+        },
+      });
+
+      return res.json({
+        message: 'News story removed from public view',
+        article: serializeArticle(article),
+      });
+    } catch (error) {
+      console.error('Could not remove news story from public view:', error);
+      return res
+        .status(500)
+        .json({ error: 'Could not remove news story from public view' });
+    }
+  },
+);
+
+router.patch(
+  '/:articleId/restore',
+  authMiddleware,
+  requirePermission('canManageNews'),
+  async (req, res) => {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.articleId)) {
+        return res.status(404).json({ error: 'News story not found' });
+      }
+
+      const article = await NewsArticle.findById(req.params.articleId);
+      if (!article) {
+        return res.status(404).json({ error: 'News story not found' });
+      }
+
+      const snapshot = getNewsSnapshot(article);
+      const restoration = restoreContent(article);
+      if (!restoration || restoration.restoredStatus !== 'published') {
+        return res.status(409).json({
+          error: 'News story is not available to restore',
+        });
+      }
+
+      await article.save();
+      await writeAuditLog({
+        req,
+        action: 'content.restored',
+        actor: req.user,
+        targetType: 'newsArticle',
+        target: article._id,
+        targetSnapshot: snapshot,
+        metadata: { restoredStatus: restoration.restoredStatus },
+      });
+
+      return res.json({
+        message: 'News story restored',
+        article: serializeArticle(article),
+      });
+    } catch (error) {
+      console.error('Could not restore news story:', error);
+      return res.status(500).json({ error: 'Could not restore news story' });
     }
   },
 );

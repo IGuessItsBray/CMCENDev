@@ -782,10 +782,76 @@ describe('news stories', () => {
     assert.equal(feed.body.items[0].type, 'news');
     assert.equal(feed.body.items[0].title.en, payload.title.en);
 
+    const workspaceNews = await request(app)
+      .get(`/api/admin/content?type=newsArticle&id=${articleId}`)
+      .set('Authorization', bearer(token))
+      .expect(200);
+    assert.equal(workspaceNews.body.items.length, 1);
+    assert.equal(workspaceNews.body.items[0].type, 'newsArticle');
+    assert.equal(workspaceNews.body.items[0].content.title.en, payload.title.en);
+
+    const workspaceAll = await request(app)
+      .get(`/api/admin/content?type=all&id=${articleId}`)
+      .set('Authorization', bearer(token))
+      .expect(200);
+    assert.deepEqual(
+      workspaceAll.body.items.map((item) => item.type),
+      ['newsArticle'],
+    );
+
+    const updatedEnglishContent =
+      'An updated English news story for the C&E Family.';
+
+    const removed = await request(app)
+      .patch(`/api/news/${articleId}/hide`)
+      .set('Authorization', bearer(token))
+      .send({ reason: 'Correct the story before returning it to public view.' })
+      .expect(200);
+    assert.equal(removed.body.article.status, 'hidden');
+
+    const removedPublicNews = await request(app).get('/api/news').expect(200);
+    assert.equal(removedPublicNews.body.articles.length, 0);
+    await request(app).get(`/api/news/${articleId}`).expect(404);
+
+    const updatedWhileHidden = await request(app)
+      .patch(`/api/news/${articleId}`)
+      .set('Authorization', bearer(token))
+      .send({
+        ...payload,
+        content: { ...payload.content, en: updatedEnglishContent },
+        status: 'published',
+        revisionNote: 'Correct the copy while the story is removed.',
+      })
+      .expect(200);
+    assert.equal(updatedWhileHidden.body.article.status, 'hidden');
+
+    const hiddenWorkspaceNews = await request(app)
+      .get(`/api/admin/content?type=newsArticle&status=hidden&id=${articleId}`)
+      .set('Authorization', bearer(token))
+      .expect(200);
+    assert.equal(hiddenWorkspaceNews.body.items.length, 1);
+    assert.equal(hiddenWorkspaceNews.body.items[0].hiddenFromStatus, 'published');
+
+    const restored = await request(app)
+      .patch(`/api/news/${articleId}/restore`)
+      .set('Authorization', bearer(token))
+      .expect(200);
+    assert.equal(restored.body.article.status, 'published');
+
+    const restoredPublicArticle = await request(app)
+      .get(`/api/news/${articleId}`)
+      .expect(200);
+    assert.equal(restoredPublicArticle.body.article.content.en, updatedEnglishContent);
+
     await request(app)
       .patch(`/api/news/${articleId}`)
       .set('Authorization', bearer(token))
-      .send({ ...payload, status: 'draft' })
+      .send({
+        ...payload,
+        content: { ...payload.content, en: updatedEnglishContent },
+        status: 'draft',
+        revisionNote: 'Move the story back to draft after the copy correction.',
+      })
       .expect(200);
 
     const hiddenPublicNews = await request(app).get('/api/news').expect(200);
@@ -796,12 +862,38 @@ describe('news stories', () => {
       .expect(200);
     assert.equal(managedNews.body.articles[0].status, 'draft');
 
+    await request(app)
+      .patch(`/api/news/${articleId}/hide`)
+      .set('Authorization', bearer(token))
+      .expect(409);
+
+    const revisionHistory = await request(app)
+      .get(`/api/admin/content/newsArticle/${articleId}/revisions`)
+      .set('Authorization', bearer(token))
+      .expect(200);
+    const copyRevision = revisionHistory.body.revisions.find(
+      (revision) => revision.language === 'en',
+    );
+    assert.deepEqual(copyRevision.fields, ['content']);
+    assert.equal(copyRevision.after.content, updatedEnglishContent);
+    assert.equal(
+      copyRevision.note,
+      'Correct the copy while the story is removed.',
+    );
+    const statusRevision = revisionHistory.body.revisions.find(
+      (revision) => revision.fields.includes('status'),
+    );
+    assert.equal(statusRevision.after.status, 'draft');
+
     const audits = await AuditLog.find({ target: articleId }).lean();
     assert.deepEqual(
       audits.map((audit) => audit.action).sort(),
       [
         'content.created',
+        'content.hidden',
         'content.published',
+        'content.restored',
+        'content.updated',
         'content.updated',
         'content.unpublished',
       ].sort(),

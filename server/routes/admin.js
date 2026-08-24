@@ -255,13 +255,18 @@ const REVISION_CONTENT_MODELS = Object.freeze({
   retirementMessage: RetirementMessage,
   lastPost: LastPostMessage,
   retirementComment: RetirementComment,
+  newsArticle: NewsArticle,
 });
 
-const CONTENT_WORKSPACE_TYPES = Object.freeze([
+const REVIEW_CONTENT_WORKSPACE_TYPES = Object.freeze([
   'event',
   'retirementMessage',
   'lastPost',
   'retirementComment',
+]);
+const CONTENT_WORKSPACE_TYPES = Object.freeze([
+  ...REVIEW_CONTENT_WORKSPACE_TYPES,
+  'newsArticle',
 ]);
 const CONTENT_WORKSPACE_STATUSES = Object.freeze([
   'draft',
@@ -277,6 +282,29 @@ const CONTENT_WORKSPACE_TRANSLATION_FILTERS = Object.freeze([
   'missing-fr',
 ]);
 const CONTENT_WORKSPACE_SEARCH_MAX_LENGTH = 120;
+
+function requireContentWorkspaceAccess(req, res, next) {
+  const permissions = getUserPermissions(req.user);
+
+  if (
+    permissions.canReviewAndPublish !== true &&
+    permissions.canManageNews !== true
+  ) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+
+  req.permissions = permissions;
+  next();
+}
+
+function getPermittedContentWorkspaceTypes(permissions) {
+  return [
+    ...(permissions.canReviewAndPublish === true
+      ? REVIEW_CONTENT_WORKSPACE_TYPES
+      : []),
+    ...(permissions.canManageNews === true ? ['newsArticle'] : []),
+  ];
+}
 
 function getContentWorkspaceLimit(value) {
   const limit = Number.parseInt(value, 10);
@@ -329,6 +357,7 @@ function getContentWorkspaceSearchFilter(type, searchPattern) {
       'messages.fr',
     ],
     retirementComment: ['body'],
+    newsArticle: ['title.en', 'title.fr', 'content.en', 'content.fr'],
   }[type];
 
   return searchFields
@@ -346,6 +375,7 @@ function getContentWorkspaceTranslationFilter(type, translation) {
     event: ['title', 'location', 'description', 'registration'],
     retirementMessage: ['messages'],
     lastPost: ['messages'],
+    newsArticle: ['title', 'content'],
   }[type];
 
   if (!languages || !localizedFields) return {};
@@ -457,6 +487,22 @@ function toContentWorkspaceItem(type, content) {
     };
   }
 
+  if (type === 'newsArticle') {
+    return {
+      ...base,
+      title: content.title?.en || content.title?.fr || 'Untitled news story',
+      content: {
+        title: content.title || {},
+        content: content.content || {},
+        imageUrl: content.imageUrl || '',
+        imageDisplayUrl: content.imageDisplayUrl || '',
+        createdBy: content.createdBy || null,
+        publishedBy: content.publishedBy || null,
+        publishedAt: content.publishedAt || null,
+      },
+    };
+  }
+
   return {
     ...base,
     title: getRetirementCommentTitle(content),
@@ -482,7 +528,7 @@ function toContentWorkspaceItem(type, content) {
 router.get(
   '/content',
   authMiddleware,
-  requirePermission('canReviewAndPublish'),
+  requireContentWorkspaceAccess,
   async (req, res) => {
     try {
       const type = String(req.query.type || 'all');
@@ -494,6 +540,11 @@ router.get(
 
       if (type !== 'all' && !CONTENT_WORKSPACE_TYPES.includes(type)) {
         return res.status(400).json({ error: 'Unsupported content type' });
+      }
+
+      const permittedTypes = getPermittedContentWorkspaceTypes(req.permissions);
+      if (type !== 'all' && !permittedTypes.includes(type)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
       }
 
       if (status !== 'all' && !CONTENT_WORKSPACE_STATUSES.includes(status)) {
@@ -515,7 +566,7 @@ router.get(
       const searchPattern = search
         ? new RegExp(escapeRegex(search), 'i')
         : null;
-      const types = (type === 'all' ? CONTENT_WORKSPACE_TYPES : [type]).filter(
+      const types = (type === 'all' ? permittedTypes : [type]).filter(
         (contentType) =>
           translation === 'all' || contentType !== 'retirementComment',
       );
@@ -642,6 +693,40 @@ router.get(
         );
       }
 
+      if (types.includes('newsArticle')) {
+        queries.push(
+          NewsArticle.find(
+            getContentWorkspaceRecordFilter(
+              contentFilter,
+              'newsArticle',
+              searchPattern,
+              translation,
+            ),
+          )
+            .select(
+              'title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt status hiddenFromStatus updatedAt createdAt',
+            )
+            .populate([
+              {
+                path: 'createdBy',
+                select: 'username accountName firstName lastName email role',
+              },
+              {
+                path: 'publishedBy',
+                select: 'username accountName firstName lastName email role',
+              },
+            ])
+            .sort({ updatedAt: -1, _id: -1 })
+            .limit(limit)
+            .lean()
+            .then((records) =>
+              records.map((record) =>
+                toContentWorkspaceItem('newsArticle', record),
+              ),
+            ),
+        );
+      }
+
       const items = (await Promise.all(queries))
         .flat()
         .sort(
@@ -664,7 +749,7 @@ router.get(
 router.get(
   '/content/:contentType/:contentId/revisions',
   authMiddleware,
-  requirePermission('canReviewAndPublish'),
+  requireContentWorkspaceAccess,
   async (req, res) => {
     try {
       const { contentType, contentId } = req.params;
@@ -672,6 +757,10 @@ router.get(
 
       if (!Model) {
         return res.status(400).json({ error: 'Unsupported content type' });
+      }
+
+      if (!getPermittedContentWorkspaceTypes(req.permissions).includes(contentType)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
       }
 
       const exists = await Model.exists({ _id: contentId });

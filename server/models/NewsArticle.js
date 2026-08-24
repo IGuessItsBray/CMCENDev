@@ -35,9 +35,29 @@ const NewsArticleSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['published', 'draft'],
+      enum: ['published', 'draft', 'hidden'],
       default: 'published',
       index: true,
+    },
+    hiddenFromStatus: {
+      type: String,
+      enum: ['published', ''],
+      default: '',
+    },
+    hiddenAt: {
+      type: Date,
+      default: null,
+    },
+    hiddenBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    hiddenReason: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: '',
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

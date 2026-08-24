@@ -1094,15 +1094,15 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List staff-authored content revisions.
-      description: Returns up to 100 public-field revisions for an event, retirement message, Last Post notice, or retirement comment. Submitter contact details are excluded.
-      x-permission: canReviewAndPublish
+      description: Returns up to 100 public-field revisions for an event, retirement message, Last Post notice, retirement comment, or news story. Submitter contact details are excluded. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
+      x-permission: canReviewAndPublish or canManageNews (newsArticle only)
       parameters:
         - name: contentType
           in: path
           required: true
           schema:
             type: string
-            enum: [event, retirementMessage, lastPost, retirementComment]
+            enum: [event, retirementMessage, lastPost, newsArticle, retirementComment]
         - name: contentId
           in: path
           required: true
@@ -1149,14 +1149,14 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List content in the staff editorial workspace.
-      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, or narrowed to one record with `id`; when type is `all`, the record is resolved across all content types. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable.
-      x-permission: canReviewAndPublish
+      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, or narrowed to one record with `id`; when type is `all`, results are limited to the caller’s permitted content types. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
+      x-permission: canReviewAndPublish or canManageNews (newsArticle only)
       parameters:
         - name: type
           in: query
           schema:
             type: string
-            enum: [all, event, retirementMessage, lastPost, retirementComment]
+            enum: [all, event, retirementMessage, lastPost, newsArticle, retirementComment]
         - name: status
           in: query
           schema:
@@ -1933,6 +1933,7 @@ paths:
     patch:
       tags: [News]
       summary: Update a bilingual news story or its publication state.
+      description: Editing a removed story preserves its removed state until it is explicitly restored. An optional revision note is recorded with changed fields.
       x-permission: canManageNews
       parameters:
         - $ref: "#/components/parameters/ArticleId"
@@ -1954,6 +1955,40 @@ paths:
       responses:
         "200":
           description: Deleted news story.
+  /api/news/{articleId}/hide:
+    patch:
+      tags: [News]
+      summary: Remove a published news story from public view.
+      description: Removes the story from public feeds and its full article page without deleting its record or media. Only previously published stories can be removed; an optional reason is recorded in the audit log.
+      x-permission: canManageNews
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: News story removed from public view.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/news/{articleId}/restore:
+    patch:
+      tags: [News]
+      summary: Restore a removed news story.
+      description: Restores a removed news story to its previous published state.
+      x-permission: canManageNews
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: Restored news story.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/last-posts:
     get:
       tags: [Last Posts]
@@ -2773,6 +2808,10 @@ components:
           type: string
           enum: [published, draft]
           default: published
+        revisionNote:
+          type: string
+          maxLength: 2000
+          description: Optional staff note recorded with changed news-story fields.
     BannerInput:
       type: object
       properties:

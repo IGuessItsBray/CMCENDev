@@ -4,7 +4,13 @@ const ContentRevisionSchema = new mongoose.Schema(
   {
     contentType: {
       type: String,
-      enum: ['event', 'retirementMessage', 'lastPost', 'retirementComment'],
+      enum: [
+        'event',
+        'retirementMessage',
+        'lastPost',
+        'retirementComment',
+        'newsArticle',
+      ],
       required: true,
       index: true,
     },

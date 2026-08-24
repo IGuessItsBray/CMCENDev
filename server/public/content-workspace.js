@@ -61,6 +61,7 @@ const contentWorkspaceTypes = new Set([
   "event",
   "retirementMessage",
   "lastPost",
+  "newsArticle",
   "retirementComment",
 ]);
 const contentWorkspaceStatuses = new Set([
@@ -95,6 +96,55 @@ function setWorkspaceTranslatedText(element, key, fallback) {
 
 function canReviewContentWorkspace() {
   return contentWorkspaceState.user?.permissions?.canReviewAndPublish === true;
+}
+
+function canManageContentWorkspaceNews() {
+  return contentWorkspaceState.user?.permissions?.canManageNews === true;
+}
+
+function canEditContentWorkspaceRecord(item) {
+  return item?.type === "newsArticle"
+    ? canManageContentWorkspaceNews()
+    : canReviewContentWorkspace();
+}
+
+function canEditContentWorkspacePublicCopy(item) {
+  if (item?.type === "newsArticle") {
+    return (
+      canManageContentWorkspaceNews() &&
+      ["draft", "published", "hidden"].includes(item.status)
+    );
+  }
+
+  return (
+    item?.type !== "retirementComment" &&
+    canReviewContentWorkspace() &&
+    ["pending", "published", "hidden"].includes(item.status)
+  );
+}
+
+function canViewContentWorkspaceHistory(item) {
+  return item?.type === "newsArticle"
+    ? canManageContentWorkspaceNews()
+    : canReviewContentWorkspace();
+}
+
+function updateContentWorkspaceTypeOptions() {
+  const canReview = canReviewContentWorkspace();
+  const canManageNews = canManageContentWorkspaceNews();
+
+  [...contentWorkspaceType.options].forEach((option) => {
+    const isAvailable =
+      option.value === "all" ||
+      (option.value === "newsArticle" ? canManageNews : canReview);
+    option.hidden = !isAvailable;
+    option.disabled = !isAvailable;
+  });
+
+  const selected = contentWorkspaceType.selectedOptions[0];
+  if (selected && !selected.disabled) return;
+
+  contentWorkspaceType.value = canManageNews ? "newsArticle" : "all";
 }
 
 function updateContentWorkspaceModePresentation() {
@@ -261,6 +311,7 @@ function getContentWorkspaceMissingLanguages(item) {
     ],
     retirementMessage: [item.content?.messages],
     lastPost: [item.content?.messages],
+    newsArticle: [item.content?.title, item.content?.content],
   }[item?.type];
 
   if (!localizedFields) return [];
@@ -321,6 +372,7 @@ function getTypeTranslation(type) {
       "Retirement messages",
     ],
     lastPost: ["content_workspace_last_post", "Last Post notices"],
+    newsArticle: ["content_workspace_news", "News stories"],
     retirementComment: ["content_workspace_comment", "Comments"],
   }[type];
 }
@@ -389,6 +441,10 @@ function getPublicContentHref(item) {
 
   if (item.type === "lastPost") {
     return `/last-post-message?id=${encodeURIComponent(item._id)}`;
+  }
+
+  if (item.type === "newsArticle") {
+    return `/news-story?id=${encodeURIComponent(item._id)}`;
   }
 
   if (item.type === "retirementComment") {
@@ -632,7 +688,7 @@ function createLanguageEditor(item, language) {
   );
   group.append(heading);
 
-  if (item.type === "event") {
+  if (item.type === "event" || item.type === "newsArticle") {
     const fields = [
       [
         "title",
@@ -640,24 +696,38 @@ function createLanguageEditor(item, language) {
         getText("content_workspace_field_title", "Title"),
         false,
       ],
-      [
-        "location",
-        "content_workspace_field_location",
-        getText("content_workspace_field_location", "Location"),
-        false,
-      ],
-      [
-        "description",
-        "content_workspace_field_description",
-        getText("content_workspace_field_description", "Description"),
-        true,
-      ],
-      [
-        "registration",
-        "content_workspace_field_registration",
-        getText("content_workspace_field_registration", "Registration details"),
-        true,
-      ],
+      ...(item.type === "event"
+        ? [
+            [
+              "location",
+              "content_workspace_field_location",
+              getText("content_workspace_field_location", "Location"),
+              false,
+            ],
+            [
+              "description",
+              "content_workspace_field_description",
+              getText("content_workspace_field_description", "Description"),
+              true,
+            ],
+            [
+              "registration",
+              "content_workspace_field_registration",
+              getText(
+                "content_workspace_field_registration",
+                "Registration details",
+              ),
+              true,
+            ],
+          ]
+        : [
+            [
+              "content",
+              "content_workspace_field_content",
+              getText("content_workspace_field_content", "Story"),
+              true,
+            ],
+          ]),
     ];
 
     fields.forEach(([field, labelKey, label, multiline]) => {
@@ -1158,11 +1228,52 @@ function getLastPostDetailsFields(item) {
   ];
 }
 
+function getNewsArticleDetailsFields(item) {
+  const fields = [
+    createWorkspaceEditorField({
+      field: "imageUrl",
+      label: "Full image URL",
+      labelKey: "content_workspace_image_url",
+      value: item.content?.imageUrl,
+      type: "url",
+    }),
+    createWorkspaceEditorField({
+      field: "imageDisplayUrl",
+      label: "Display image URL",
+      labelKey: "content_workspace_display_image_url",
+      value: item.content?.imageDisplayUrl,
+      type: "url",
+    }),
+  ];
+
+  if (item.status !== "hidden") {
+    fields.push(
+      createWorkspaceEditorField({
+        field: "status",
+        label: "Publication status",
+        labelKey: "content_workspace_status",
+        value: item.status,
+        options: [
+          getWorkspaceOption("draft", "content_workspace_draft", "Draft"),
+          getWorkspaceOption(
+            "published",
+            "content_workspace_published",
+            "Published",
+          ),
+        ],
+      }),
+    );
+  }
+
+  return fields;
+}
+
 function createContentWorkspaceRecordEditor(item) {
   const fields = {
     event: getEventDetailsFields,
     retirementMessage: getRetirementDetailsFields,
     lastPost: getLastPostDetailsFields,
+    newsArticle: getNewsArticleDetailsFields,
     retirementComment: () => [
       createWorkspaceEditorField({
         field: "body",
@@ -1186,6 +1297,7 @@ function createContentWorkspaceRecordEditor(item) {
       "Retirement details",
     ],
     lastPost: ["content_workspace_last_post_details", "Last Post details"],
+    newsArticle: ["content_workspace_news_details", "News story details"],
     retirementComment: ["content_workspace_comment_details", "Comment details"],
   }[item.type];
   setWorkspaceTranslatedText(heading, ...headingByType);
@@ -1635,28 +1747,41 @@ function createReadOnlyLanguage(item, language) {
   );
   section.append(heading);
 
-  if (item.type === "event") {
+  if (item.type === "event" || item.type === "newsArticle") {
     const fields = [
       [
         "title",
         "content_workspace_field_title",
         getText("content_workspace_field_title", "Title"),
       ],
-      [
-        "location",
-        "content_workspace_field_location",
-        getText("content_workspace_field_location", "Location"),
-      ],
-      [
-        "description",
-        "content_workspace_field_description",
-        getText("content_workspace_field_description", "Description"),
-      ],
-      [
-        "registration",
-        "content_workspace_field_registration",
-        getText("content_workspace_field_registration", "Registration details"),
-      ],
+      ...(item.type === "event"
+        ? [
+            [
+              "location",
+              "content_workspace_field_location",
+              getText("content_workspace_field_location", "Location"),
+            ],
+            [
+              "description",
+              "content_workspace_field_description",
+              getText("content_workspace_field_description", "Description"),
+            ],
+            [
+              "registration",
+              "content_workspace_field_registration",
+              getText(
+                "content_workspace_field_registration",
+                "Registration details",
+              ),
+            ],
+          ]
+        : [
+            [
+              "content",
+              "content_workspace_field_content",
+              getText("content_workspace_field_content", "Story"),
+            ],
+          ]),
     ];
     const values = document.createElement("dl");
 
@@ -1767,6 +1892,8 @@ function createWorkspacePermissionValue(confirmed) {
 }
 
 function createContentWorkspaceSubmissionDetails(item) {
+  if (item.type === "newsArticle") return null;
+
   const content = item.content || {};
   const details = document.createElement("details");
   details.className = "content-workspace-submission-details";
@@ -2185,9 +2312,14 @@ function createContentWorkspaceReviewActions(item) {
 function createRemovalActions(item) {
   const actions = document.createElement("div");
   actions.className = "content-workspace-removal-actions";
-  const canHide = contentWorkspaceState.user?.permissions?.canHideContent === true;
-  const canRestore =
-    contentWorkspaceState.user?.permissions?.canRestoreContent === true;
+  const isNewsArticle = item.type === "newsArticle";
+  if (!isNewsArticle && !contentWorkspaceRoutes[item.type]) return actions;
+  const canHide = isNewsArticle
+    ? canManageContentWorkspaceNews()
+    : contentWorkspaceState.user?.permissions?.canHideContent === true;
+  const canRestore = isNewsArticle
+    ? canManageContentWorkspaceNews()
+    : contentWorkspaceState.user?.permissions?.canRestoreContent === true;
 
   if (item.status === "hidden" && canRestore) {
     const restore = document.createElement("button");
@@ -2202,7 +2334,12 @@ function createRemovalActions(item) {
     actions.append(restore);
   }
 
-  if (item.status !== "hidden" && item.status !== "pending" && canHide) {
+  if (
+    canHide &&
+    (isNewsArticle
+      ? item.status === "published"
+      : item.status !== "hidden" && item.status !== "pending")
+  ) {
     const remove = document.createElement("button");
     remove.className = "admin-work-zone-button is-danger";
     remove.type = "button";
@@ -2295,10 +2432,7 @@ function renderContentWorkspaceDetail() {
   if (publicContentLink) header.append(publicContentLink);
   contentWorkspaceDetail.append(header);
 
-  const canEditPublicCopy =
-    item.type !== "retirementComment" &&
-    canReviewContentWorkspace() &&
-    ["pending", "published", "hidden"].includes(item.status);
+  const canEditPublicCopy = canEditContentWorkspacePublicCopy(item);
 
   if (canEditPublicCopy) {
     const copy = document.createElement("section");
@@ -2335,21 +2469,24 @@ function renderContentWorkspaceDetail() {
     contentWorkspaceDetail.append(createReadOnlyCopy(item));
   }
 
-  const recordEditor = canReviewContentWorkspace()
+  const recordEditor = canEditContentWorkspaceRecord(item)
     ? createContentWorkspaceRecordEditor(item)
     : null;
   if (recordEditor) {
     contentWorkspaceDetail.append(recordEditor);
   }
 
-  contentWorkspaceDetail.append(createContentWorkspaceSubmissionDetails(item));
+  const submissionDetails = createContentWorkspaceSubmissionDetails(item);
+  if (submissionDetails) {
+    contentWorkspaceDetail.append(submissionDetails);
+  }
 
   const rejectionReason = createRejectionReason(item);
   if (rejectionReason) {
     contentWorkspaceDetail.append(rejectionReason);
   }
 
-  if (canReviewContentWorkspace()) {
+  if (canViewContentWorkspaceHistory(item)) {
     const history = document.createElement("section");
     history.className = "content-workspace-history";
     const historyHeading = document.createElement("h2");
@@ -2394,6 +2531,13 @@ function getRevisionFieldTranslation(field) {
       "Registration details",
     ],
     message: ["content_workspace_field_message", "Message"],
+    content: ["content_workspace_field_content", "Story"],
+    imageUrl: ["content_workspace_image_url", "Full image URL"],
+    imageDisplayUrl: [
+      "content_workspace_display_image_url",
+      "Display image URL",
+    ],
+    status: ["content_workspace_status", "Status"],
   }[field];
 }
 
@@ -2657,6 +2801,14 @@ function getContentWorkspaceRecordPayload(item, formData) {
     return { body: String(formData.get("body") || "") };
   }
 
+  if (item.type === "newsArticle") {
+    return {
+      imageUrl: String(formData.get("imageUrl") || ""),
+      imageDisplayUrl: String(formData.get("imageDisplayUrl") || ""),
+      status: String(formData.get("status") || "published"),
+    };
+  }
+
   return null;
 }
 
@@ -2735,6 +2887,55 @@ function getContentWorkspaceRecordSaveRequest(item, form) {
   return {
     path: route(item._id),
     body,
+  };
+}
+
+function getNewsArticleSaveRequest(item) {
+  const forms = getContentWorkspaceSaveForms();
+  const getLanguageFormData = (language) => {
+    const form = forms.find(
+      (candidate) => candidate.dataset.language === language,
+    );
+    return form ? new FormData(form) : null;
+  };
+  const getLanguageValue = (language, field) => {
+    const formData = getLanguageFormData(language);
+    return String(
+      formData?.get(field) ?? item.content?.[field]?.[language] ?? "",
+    );
+  };
+  const recordForm = forms.find((form) =>
+    form.classList.contains("content-workspace-record-form"),
+  );
+  const recordData = recordForm ? new FormData(recordForm) : null;
+  const getRecordValue = (field, fallback) =>
+    String(recordData?.get(field) ?? fallback ?? "");
+  const note = ["en", "fr"]
+    .map((language) => getLanguageFormData(language)?.get("revisionNote"))
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    path: `/api/news/${encodeURIComponent(item._id)}`,
+    newsArticle: true,
+    body: {
+      title: {
+        en: getLanguageValue("en", "title"),
+        fr: getLanguageValue("fr", "title"),
+      },
+      content: {
+        en: getLanguageValue("en", "content"),
+        fr: getLanguageValue("fr", "content"),
+      },
+      imageUrl: getRecordValue("imageUrl", item.content?.imageUrl),
+      imageDisplayUrl: getRecordValue(
+        "imageDisplayUrl",
+        item.content?.imageDisplayUrl,
+      ),
+      status: getRecordValue("status", item.status),
+      revisionNote: note,
+    },
   };
 }
 
@@ -2912,16 +3113,18 @@ async function saveContentWorkspaceChanges(item, button) {
   const recordForm = forms.find((form) =>
     form.classList.contains("content-workspace-record-form"),
   );
-  const saveRequests = [
-    ...(recordForm
-      ? [getContentWorkspaceRecordSaveRequest(item, recordForm)]
-      : []),
-    ...forms
-      .filter((form) =>
-        form.classList.contains("content-workspace-language-editor"),
-      )
-      .map((form) => getContentLanguageSaveRequest(item, form)),
-  ].filter(Boolean);
+  const saveRequests = item.type === "newsArticle"
+    ? [getNewsArticleSaveRequest(item)]
+    : [
+        ...(recordForm
+          ? [getContentWorkspaceRecordSaveRequest(item, recordForm)]
+          : []),
+        ...forms
+          .filter((form) =>
+            form.classList.contains("content-workspace-language-editor"),
+          )
+          .map((form) => getContentLanguageSaveRequest(item, form)),
+      ].filter(Boolean);
 
   if (!saveRequests.length) return false;
 
@@ -2945,6 +3148,14 @@ async function saveContentWorkspaceChanges(item, button) {
         contentWorkspaceState.editorDrafts.delete(
           getEditorDraftKey(item, request.language),
         );
+      }
+
+      if (request.newsArticle) {
+        ["en", "fr"].forEach((language) => {
+          contentWorkspaceState.editorDrafts.delete(
+            getEditorDraftKey(item, language),
+          );
+        });
       }
     }
 
@@ -3006,14 +3217,15 @@ async function changeContentVisibility(item, action) {
 
   if (!confirmed) return;
 
-  const route = contentWorkspaceRoutes[item.type];
+  const route = item.type === "newsArticle"
+    ? `/api/news/${encodeURIComponent(item._id)}/${isRestore ? "restore" : "hide"}`
+    : contentWorkspaceRoutes[item.type]
+      ? `${contentWorkspaceRoutes[item.type]}/${encodeURIComponent(item._id)}/${isRestore ? "restore" : "hide"}`
+      : "";
   if (!route) return;
 
   try {
-    const result = await contentWorkspaceApiJson(
-      `${route}/${encodeURIComponent(item._id)}/${isRestore ? "restore" : "hide"}`,
-      { method: "PATCH" },
-    );
+    const result = await contentWorkspaceApiJson(route, { method: "PATCH" });
     setWorkspaceMessage(
       result.message ||
         (isRestore
@@ -3092,14 +3304,16 @@ async function initializeContentWorkspace() {
   try {
     const user = await contentWorkspaceApiJson("/api/me");
     const canReview = user.permissions?.canReviewAndPublish === true;
+    const canManageNews = user.permissions?.canManageNews === true;
 
-    if (!canReview) {
+    if (!canReview && !canManageNews) {
       window.location.replace("/dashboard");
       return;
     }
 
     contentWorkspaceState.user = user;
     applyContentWorkspaceSearchParameters();
+    updateContentWorkspaceTypeOptions();
     updateContentWorkspaceModePresentation();
     updateContentWorkspaceStatusFilterAppearance();
     await loadContentWorkspace();

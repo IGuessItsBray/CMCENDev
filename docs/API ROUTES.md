@@ -38,6 +38,7 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `routes/translations.js`        | root                       |
 | `routes/content-options.js`     | root                       |
 | `routes/branding.js`            | root                       |
+| `routes/legal.js`               | root                       |
 | `routes/contact.js`             | `/api/contact`             |
 
 ## Public and System
@@ -51,6 +52,10 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 | `GET`  | `/trade-options.js`    | Public        | Browser runtime for shared trade option config.                  |
 | `GET`  | `/api/content-options` | Public        | JSON trade options and retirement trade groups.                  |
 | `GET`  | `/api/branding`        | Public        | JSON branding catalogue: supported fonts, official light and dark colour tokens, and theming metadata. |
+| `GET`  | `/api/privacy`         | Public        | Return the Markdown privacy policy from `docs/PRIVACY_POLICY.md`; add `?lang=fr` for the French source when available. |
+| `GET`  | `/api/tos`             | Public        | Return the Markdown Terms of Service from `docs/TERMS_OF_SERVICE.md`; add `?lang=fr` for the French source when available. |
+| `GET`  | `/privacy`             | Public        | Render the Markdown-backed Privacy Policy page. |
+| `GET`  | `/tos`                 | Public        | Render the Markdown-backed Terms of Service page. `/terms` permanently redirects here. |
 | `GET`  | `/translations.json`   | Public        | Translation dictionary.                                          |
 | `GET`  | `/translations.js`     | Public        | Browser translation runtime generated from the dictionary.       |
 

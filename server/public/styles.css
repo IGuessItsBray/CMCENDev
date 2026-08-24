@@ -19656,12 +19656,21 @@ html[data-theme='dark'] .last-post-submit-button {
 }
 
 .legal-document__navigation {
-  display: grid;
-  grid-template-columns: minmax(130px, 0.45fr) 1.55fr;
-  gap: 28px;
+  display: block;
   padding: 24px clamp(30px, 5vw, 58px);
   border-inline: 1px solid var(--border-color);
   background: var(--branch-grey-50);
+}
+
+.legal-document__navigation summary {
+  cursor: pointer;
+  color: var(--heading-color);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.legal-document__navigation[open] summary {
+  margin-bottom: 16px;
 }
 
 .legal-document__navigation ol {
@@ -19729,11 +19738,6 @@ html[data-theme='dark'] .last-post-submit-button {
 @media (max-width: 680px) {
   .legal-main {
     padding-inline: 14px;
-  }
-
-  .legal-document__navigation {
-    grid-template-columns: 1fr;
-    gap: 12px;
   }
 
   .legal-document__section {

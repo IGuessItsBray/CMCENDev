@@ -198,6 +198,44 @@ paths:
             text/markdown:
               schema:
                 type: string
+  /api/privacy:
+    get:
+      tags: [Site]
+      summary: Get the Privacy Policy source.
+      description: Returns the Markdown policy source from docs. Use `lang=fr` to request the French source when it is available.
+      security: []
+      parameters:
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [en, fr]
+      responses:
+        "200":
+          description: Privacy Policy in Markdown format.
+          content:
+            text/markdown:
+              schema:
+                type: string
+  /api/tos:
+    get:
+      tags: [Site]
+      summary: Get the Terms of Service source.
+      description: Returns the Markdown Terms of Service source from docs. Use `lang=fr` to request the French source when it is available.
+      security: []
+      parameters:
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [en, fr]
+      responses:
+        "200":
+          description: Terms of Service in Markdown format.
+          content:
+            text/markdown:
+              schema:
+                type: string
   /api/client-config/plausible:
     get:
       tags: [System]

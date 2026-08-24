@@ -1,104 +1,190 @@
 const legalPage = document.querySelector('[data-legal-page]');
 
-const copy = {
-  privacy: {
-    en: {
-      title: 'Privacy Policy',
-      intro: 'Effective September 1, 2026 · Last updated August 24, 2026',
-      sections: [
-        ['Who we are', 'The Communications & Electronics Association operates CMCEN / RCMCE. This policy explains how we collect, use, disclose, protect, retain, and handle personal information in accordance with PIPEDA.'],
-        ['Information we collect', 'We collect account and profile details, authentication and security records, submitted content and correspondence, uploaded images and files, consent records, and technical usage data such as IP address, page and referral information, browser/device data, and audit records.'],
-        ['How we use it', 'We use information to operate and secure the site, administer accounts, review and publish submissions, communicate with you, meet legal obligations, investigate misuse, and improve the site. Public submissions may be displayed on the site and shared through CMCEN channels where the submission process says so.'],
-        ['Service providers and location', 'The CMCEN website, databases, backups, media/CDN, and logging are hosted by Contabo on a VPS in US Central (St. Louis). Email is delivered using Google’s main SMTP service. These providers may process information on our behalf.'],
-        ['Consent, cookies, and email', 'We obtain consent where required. Essential cookies support secure sign-in; browser storage may remember preferences. We do not use behavioural advertising. Optional email subscriptions require separate express consent and include an unsubscribe mechanism.'],
-        ['Retention and safeguards', 'We retain information only as long as reasonably necessary for the stated purposes, security, legal obligations, disputes, and records. We use access controls, MFA, moderation, logging, and appropriate technical and organizational safeguards.'],
-        ['Your choices and requests', 'You may request access, correction, withdrawal of consent, account closure, or removal of your personal information from public content, subject to legal limits and identity verification. We respond within applicable legal timeframes.'],
-        ['Contact and complaints', 'For privacy requests or concerns, email privacy@cmcen.ca. You may also complain to the Office of the Privacy Commissioner of Canada. For legal notices, email legal@cmcen.ca.'],
-      ],
-    },
-    fr: {
-      title: 'Politique de confidentialité',
-      intro: 'En vigueur le 1er septembre 2026 · Dernière mise à jour le 24 août 2026',
-      sections: [
-        ['Qui sommes-nous', 'L’Association des communications et de l’électronique exploite CMCEN / RCMCE. Cette politique explique comment nous recueillons, utilisons, communiquons, protégeons, conservons et traitons les renseignements personnels conformément à la LPRPDE.'],
-        ['Renseignements recueillis', 'Nous recueillons les détails de compte et de profil, les dossiers d’authentification et de sécurité, le contenu et la correspondance soumis, les images et fichiers téléversés, les dossiers de consentement et les données techniques d’utilisation.'],
-        ['Utilisation', 'Nous utilisons ces renseignements pour exploiter et sécuriser le site, administrer les comptes, examiner et publier les soumissions, communiquer avec vous, respecter nos obligations et améliorer le site.'],
-        ['Fournisseurs et emplacement', 'Le site CMCEN, ses bases de données, sauvegardes, médias/CDN et journaux sont hébergés par Contabo sur un VPS dans le centre des États-Unis (St. Louis). Les courriels sont transmis par le service SMTP principal de Google.'],
-        ['Consentement, témoins et courriel', 'Nous obtenons le consentement lorsque requis. Les témoins essentiels permettent une connexion sécurisée; le stockage du navigateur peut mémoriser vos préférences. Nous n’utilisons pas de publicité comportementale.'],
-        ['Conservation et protection', 'Nous conservons les renseignements seulement pendant la période raisonnablement nécessaire et appliquons des contrôles d’accès, l’AMF, la modération et des mesures de protection appropriées.'],
-        ['Vos choix et demandes', 'Vous pouvez demander l’accès, la correction, le retrait du consentement, la fermeture de votre compte ou le retrait de renseignements personnels publics, sous réserve des limites légales et de la vérification de votre identité.'],
-        ['Contact et plaintes', 'Pour toute demande ou préoccupation liée à la vie privée, écrivez à privacy@cmcen.ca. Pour les avis juridiques, écrivez à legal@cmcen.ca. Vous pouvez aussi porter plainte auprès du Commissariat à la protection de la vie privée du Canada.'],
-      ],
-    },
-  },
-  terms: {
-    en: {
-      title: 'Terms of Service',
-      intro: 'Effective September 1, 2026 · Last updated August 24, 2026',
-      sections: [
-        ['Acceptance and purpose', 'By using CMCEN / RCMCE, creating an account, or submitting content, you agree to these Terms and the Privacy Policy. The Communications & Electronics Association provides this community and information service.'],
-        ['Acceptable use', 'Do not submit classified, protected, controlled, operationally sensitive, deployment-related, or unauthorized information. Do not use the site for emergencies or official Government of Canada, CAF, or DND communications.'],
-        ['Accounts', 'You must provide accurate information, safeguard your credentials and MFA methods, and promptly report suspected unauthorized access. Accounts are personal and may not be shared, sold, or transferred.'],
-        ['Submissions and publication', 'You remain responsible for content you submit and must have all required rights, authority, permissions, and consents. CMCEN may review, edit for clarity or accessibility, reject, restrict, remove, or publish content. Public content may be indexed, copied, or shared outside our control.'],
-        ['Licence and intellectual property', 'You grant the Association a non-exclusive, worldwide, royalty-free licence to host, review, format, translate, publish, distribute, preserve, and communicate submitted content for the site and its community mission.'],
-        ['Disclaimers and liability', 'The service is provided as is and as available, to the extent allowed by law. Content may change and should be confirmed with the responsible organization or official source. Nothing excludes rights that cannot lawfully be excluded.'],
-        ['Suspension, changes, and law', 'We may suspend access or remove content to protect users, the service, or the public. These Terms are governed by the laws of Ontario and the applicable federal laws of Canada, and disputes are subject to the courts of Ontario unless applicable law requires otherwise.'],
-        ['Contact', 'For Terms, account-closure, copyright, or legal requests, email legal@cmcen.ca. Privacy requests must be sent to privacy@cmcen.ca.'],
-      ],
-    },
-    fr: {
-      title: 'Conditions d’utilisation',
-      intro: 'En vigueur le 1er septembre 2026 · Dernière mise à jour le 24 août 2026',
-      sections: [
-        ['Acceptation et objet', 'En utilisant CMCEN / RCMCE, en créant un compte ou en soumettant du contenu, vous acceptez les présentes conditions et la Politique de confidentialité. L’Association des communications et de l’électronique fournit ce service communautaire et d’information.'],
-        ['Utilisation acceptable', 'Ne soumettez pas de renseignements classifiés, protégés, contrôlés, opérationnellement sensibles, liés aux déploiements ou non autorisés. N’utilisez pas le site pour les urgences ou les communications officielles du gouvernement du Canada, des FAC ou du MDN.'],
-        ['Comptes', 'Vous devez fournir des renseignements exacts, protéger vos identifiants et vos méthodes d’AMF, et signaler rapidement tout accès non autorisé présumé. Les comptes sont personnels.'],
-        ['Soumissions et publication', 'Vous demeurez responsable du contenu soumis et devez détenir les droits, l’autorité, les permissions et les consentements requis. CMCEN peut examiner, modifier, refuser, restreindre, retirer ou publier le contenu.'],
-        ['Licence et propriété intellectuelle', 'Vous accordez à l’Association une licence non exclusive, mondiale et libre de redevances pour héberger, examiner, mettre en forme, traduire, publier, distribuer, préserver et communiquer le contenu soumis.'],
-        ['Avis de non-responsabilité', 'Le service est fourni tel quel et selon sa disponibilité, dans la mesure permise par la loi. Vérifiez les renseignements importants auprès de la source officielle.'],
-        ['Suspension, modifications et droit applicable', 'Nous pouvons suspendre l’accès ou retirer du contenu pour protéger les utilisateurs, le service ou le public. Les présentes conditions sont régies par les lois de l’Ontario et les lois fédérales applicables du Canada.'],
-        ['Contact', 'Pour les demandes liées aux conditions, à la fermeture de compte, au droit d’auteur ou aux questions juridiques, écrivez à legal@cmcen.ca. Les demandes de confidentialité doivent être envoyées à privacy@cmcen.ca.'],
-      ],
-    },
-  },
-};
+function appendInlineText(container, value) {
+  const pattern = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^\s)]+\))/gu;
+  let cursor = 0;
 
-function renderLegalPage() {
+  for (const match of value.matchAll(pattern)) {
+    container.append(document.createTextNode(value.slice(cursor, match.index)));
+    const token = match[0];
+    if (token.startsWith('**')) {
+      const strong = document.createElement('strong');
+      strong.textContent = token.slice(2, -2);
+      container.append(strong);
+    } else {
+      const separator = token.lastIndexOf('](');
+      const link = document.createElement('a');
+      link.textContent = token.slice(1, separator);
+      link.href = token.slice(separator + 2, -1);
+      if (/^https?:/u.test(link.href)) {
+        link.target = '_blank';
+        link.rel = 'noopener';
+      }
+      container.append(link);
+    }
+    cursor = match.index + token.length;
+  }
+  container.append(document.createTextNode(value.slice(cursor)));
+}
+
+function cleanMarkdownLine(value) {
+  return value.replace(/<br\s*\/?\s*>/giu, '').trim();
+}
+
+function createTextElement(tagName, value) {
+  const element = document.createElement(tagName);
+  appendInlineText(element, cleanMarkdownLine(value));
+  return element;
+}
+
+function parseMarkdown(markdown) {
+  const lines = markdown.replace(/\r/g, '').split('\n');
+  const documentModel = { title: '', meta: [], preface: [], sections: [] };
+  let currentSection = null;
+  let paragraph = [];
+  let list = null;
+
+  const flushParagraph = () => {
+    if (!paragraph.length || !currentSection) return;
+    currentSection.blocks.push({ type: 'paragraph', value: paragraph.join(' ') });
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (!list || !currentSection) return;
+    currentSection.blocks.push(list);
+    list = null;
+  };
+
+  lines.forEach((rawLine) => {
+    const line = rawLine.trim();
+    if (line.startsWith('# ')) {
+      documentModel.title = line.slice(2).replace(/—.*$/u, '').trim();
+      return;
+    }
+    if (/^\*\*(Effective date|Last updated|Organization|Website):/u.test(line)) {
+      documentModel.meta.push(cleanMarkdownLine(line).replace(/\*\*/g, ''));
+      return;
+    }
+    if (line.startsWith('## ')) {
+      flushParagraph();
+      flushList();
+      currentSection = { title: line.slice(3), blocks: [] };
+      documentModel.sections.push(currentSection);
+      return;
+    }
+    if (!currentSection) {
+      if (line && !/^---+$/u.test(line)) documentModel.preface.push(line);
+      return;
+    }
+    if (line.startsWith('### ')) {
+      flushParagraph();
+      flushList();
+      currentSection.blocks.push({ type: 'heading', value: line.slice(4) });
+      return;
+    }
+    if (/^[-*] /u.test(line)) {
+      flushParagraph();
+      if (!list || list.type !== 'list') list = { type: 'list', items: [] };
+      list.items.push(line.slice(2));
+      return;
+    }
+    if (/^\d+\. /u.test(line)) {
+      flushParagraph();
+      if (!list || list.type !== 'ordered-list') list = { type: 'ordered-list', items: [] };
+      list.items.push(line.replace(/^\d+\. /u, ''));
+      return;
+    }
+    if (line.startsWith('> ')) {
+      flushParagraph();
+      flushList();
+      currentSection.blocks.push({ type: 'quote', value: line.slice(2) });
+      return;
+    }
+    if (line && !/^---+$/u.test(line)) {
+      paragraph.push(line);
+    } else {
+      flushParagraph();
+      flushList();
+    }
+  });
+  flushParagraph();
+  flushList();
+  return documentModel;
+}
+
+function renderBlock(block) {
+  if (block.type === 'heading') return createTextElement('h3', block.value);
+  if (block.type === 'quote') return createTextElement('blockquote', block.value);
+  if (block.type === 'list' || block.type === 'ordered-list') {
+    const list = document.createElement(block.type === 'list' ? 'ul' : 'ol');
+    block.items.forEach((value) => list.append(createTextElement('li', value)));
+    return list;
+  }
+  return createTextElement('p', block.value);
+}
+
+async function renderLegalPage() {
   if (!legalPage) return;
   const type = legalPage.dataset.legalPage;
   const language = document.documentElement.lang === 'fr' ? 'fr' : 'en';
-  const content = copy[type][language];
-  document.title = `${content.title} | CMCEN / RCMCE`;
-  legalPage.replaceChildren();
+  const endpoint = type === 'terms' ? '/api/tos' : '/api/privacy';
   legalPage.className = 'legal-document';
+  legalPage.replaceChildren(createTextElement('p', language === 'fr' ? 'Chargement…' : 'Loading…'));
+
+  const response = await fetch(`${endpoint}?lang=${language}`, {
+    headers: { Accept: 'text/markdown' },
+  });
+  if (!response.ok) throw new Error('Could not load the legal document');
+  const documentModel = parseMarkdown(await response.text());
+  document.title = `${documentModel.title} | CMCEN / RCMCE`;
+  legalPage.replaceChildren();
 
   const hero = document.createElement('header');
   hero.className = 'legal-document__hero';
-  hero.innerHTML = `<p class="legal-document__eyebrow">CMCEN / RCMCE</p><h1>${content.title}</h1><p class="legal-document__meta">${content.intro}</p>`;
+  hero.innerHTML = '<p class="legal-document__eyebrow">CMCEN / RCMCE</p>';
+  hero.append(createTextElement('h1', documentModel.title));
+  const metadata = document.createElement('div');
+  metadata.className = 'legal-document__meta';
+  documentModel.meta.forEach((value) => metadata.append(createTextElement('p', value)));
+  hero.append(metadata);
+  documentModel.preface.forEach((value) => {
+    hero.append(createTextElement(value.startsWith('> ') ? 'blockquote' : 'p', value.replace(/^> /u, '')));
+  });
 
-  const navigation = document.createElement('nav');
+  const navigation = document.createElement('details');
   navigation.className = 'legal-document__navigation';
-  navigation.setAttribute('aria-label', language === 'fr' ? 'Dans cette page' : 'On this page');
-  const navigationTitle = document.createElement('p');
-  navigationTitle.textContent = language === 'fr' ? 'Dans cette page' : 'On this page';
+  const summary = document.createElement('summary');
+  summary.textContent = language === 'fr' ? 'Dans cette page' : 'On this page';
   const navigationList = document.createElement('ol');
-  navigation.append(navigationTitle, navigationList);
+  navigation.append(summary, navigationList);
 
   const contentColumn = document.createElement('div');
   contentColumn.className = 'legal-document__content';
-  content.sections.forEach(([title, body], index) => {
+  documentModel.sections.forEach((sectionModel, index) => {
     const id = `legal-section-${index + 1}`;
     const navigationItem = document.createElement('li');
-    navigationItem.innerHTML = `<a href="#${id}">${title}</a>`;
+    const navigationLink = document.createElement('a');
+    navigationLink.href = `#${id}`;
+    navigationLink.textContent = sectionModel.title;
+    navigationItem.append(navigationLink);
     navigationList.append(navigationItem);
+
     const section = document.createElement('section');
     section.id = id;
     section.className = 'legal-document__section';
-    section.innerHTML = `<p class="legal-document__number">${String(index + 1).padStart(2, '0')}</p><div><h2>${title}</h2><p>${body}</p></div>`;
+    const number = document.createElement('p');
+    number.className = 'legal-document__number';
+    number.textContent = String(index + 1).padStart(2, '0');
+    const copy = document.createElement('div');
+    copy.append(createTextElement('h2', sectionModel.title));
+    sectionModel.blocks.forEach((block) => copy.append(renderBlock(block)));
+    section.append(number, copy);
     contentColumn.append(section);
   });
   legalPage.append(hero, navigation, contentColumn);
 }
 
-renderLegalPage();
-document.addEventListener('languagechange', renderLegalPage);
+renderLegalPage().catch((error) => {
+  legalPage.replaceChildren(createTextElement('p', error.message));
+});
+document.addEventListener('languagechange', () => renderLegalPage().catch(() => {}));

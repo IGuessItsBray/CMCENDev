@@ -40,7 +40,7 @@
             </p>
           </div>
 
-          <form class="login-form" id="loginForm">
+          <form class="login-form" id="loginForm" method="post">
             <p
               class="login-error"
               id="loginError"
@@ -125,6 +125,7 @@
           <form
             class="login-form login-secondary-form"
             id="forgotPasswordForm"
+            method="post"
             hidden
           >
             <p
@@ -171,6 +172,7 @@
           <form
             class="login-form login-secondary-form"
             id="resetPasswordForm"
+            method="post"
             hidden
           >
             <p
@@ -236,6 +238,7 @@
           <form
             class="login-form login-secondary-form"
             id="emailVerificationForm"
+            method="post"
             hidden
           >
             <p
@@ -283,6 +286,7 @@
           <form
             class="login-form login-secondary-form"
             id="guestAccessForm"
+            method="post"
             hidden
           >
             <p
@@ -366,7 +370,7 @@
 
         <div class="login-mfa-options" id="mfaOptions"></div>
 
-        <form class="login-mfa-totp" id="mfaTotpForm" hidden>
+        <form class="login-mfa-totp" id="mfaTotpForm" method="post" hidden>
           <label for="mfaTotpCode">Authenticator code</label>
 
           <div class="login-mfa-code-row">

@@ -1201,7 +1201,7 @@ function getMediaAttachmentMap(
       title: getEventTitle(event),
       status: event.status,
       field: 'imagePath',
-      href: `/content-workspace?type=event&id=${encodeURIComponent(event._id)}`,
+      href: `/content-workspace?id=${encodeURIComponent(event._id)}`,
     });
   });
 
@@ -3493,7 +3493,7 @@ router.get(
           date: event.startDate,
           updatedAt: event.updatedAt,
           createdAt: event.createdAt,
-          href: `/content-workspace?type=event&id=${encodeURIComponent(event._id)}`,
+          href: `/content-workspace?id=${encodeURIComponent(event._id)}`,
         })),
         ...retirementMessages.map((message) => ({
           _id: message._id,

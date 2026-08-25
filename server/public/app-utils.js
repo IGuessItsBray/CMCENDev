@@ -1753,10 +1753,7 @@
     shortcut.className = "content-workspace-shortcut";
     shortcut.href =
       "/content-workspace?" +
-      new URLSearchParams({
-        type: contentType,
-        id: String(contentId),
-      });
+      new URLSearchParams({ id: String(contentId) });
     shortcut.dataset.contentWorkspaceShortcut = contentType;
     shortcut.setAttribute("aria-label", label);
     shortcut.title = label;

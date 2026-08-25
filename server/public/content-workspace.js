@@ -16,6 +16,9 @@ const contentWorkspaceMessage = document.getElementById(
 );
 const contentWorkspaceList = document.getElementById("contentWorkspaceList");
 const contentWorkspaceCount = document.getElementById("contentWorkspaceCount");
+const contentWorkspaceClearFilters = document.getElementById(
+  "contentWorkspaceClearFilters",
+);
 const contentWorkspaceDetail = document.getElementById(
   "contentWorkspaceDetail",
 );
@@ -261,13 +264,21 @@ function applyContentWorkspaceSearchParameters() {
 
 function updateContentWorkspaceSearchParameters({ includeSelection = false } = {}) {
   const url = new URL(window.location.href);
-  const searchParameters = new URLSearchParams({
-    type: contentWorkspaceType.value || "all",
-    status: contentWorkspaceStatusFilter.value || "all",
-    translation: contentWorkspaceTranslationFilter.value || "all",
-  });
+  const searchParameters = new URLSearchParams();
+  const type = contentWorkspaceType.value || "all";
+  const status = contentWorkspaceStatusFilter.value || "all";
+  const translation = contentWorkspaceTranslationFilter.value || "all";
   const search = contentWorkspaceSearch.value.trim();
 
+  if (type !== "all") {
+    searchParameters.set("type", type);
+  }
+  if (status !== "all") {
+    searchParameters.set("status", status);
+  }
+  if (translation !== "all") {
+    searchParameters.set("translation", translation);
+  }
   if (search) {
     searchParameters.set("search", search);
   }
@@ -276,6 +287,34 @@ function updateContentWorkspaceSearchParameters({ includeSelection = false } = {
   }
   url.search = searchParameters.toString();
   window.history.replaceState({}, "", url);
+}
+
+function hasContentWorkspaceFilters() {
+  const searchParameters = new URLSearchParams(window.location.search);
+
+  return Boolean(
+    contentWorkspaceType.value !== "all" ||
+      contentWorkspaceStatusFilter.value !== "all" ||
+      contentWorkspaceTranslationFilter.value !== "all" ||
+      contentWorkspaceSearch.value.trim() ||
+      searchParameters.get("id"),
+  );
+}
+
+function updateContentWorkspaceClearFiltersAction() {
+  contentWorkspaceClearFilters.disabled = !hasContentWorkspaceFilters();
+}
+
+function clearContentWorkspaceFilters() {
+  contentWorkspaceType.value = "all";
+  contentWorkspaceStatusFilter.value = "all";
+  contentWorkspaceTranslationFilter.value = "all";
+  contentWorkspaceSearch.value = "";
+  contentWorkspaceState.selectedId = "";
+  contentWorkspaceState.requestedContentId = "";
+  updateContentWorkspaceStatusFilterAppearance();
+  updateContentWorkspaceSearchParameters();
+  void loadContentWorkspace();
 }
 
 function getLocalizedValue(value) {
@@ -522,6 +561,7 @@ function setRecordMetadata(metadata, item) {
 function renderContentWorkspaceList() {
   contentWorkspaceList.replaceChildren();
   updateContentWorkspaceCount();
+  updateContentWorkspaceClearFiltersAction();
   contentWorkspaceList.setAttribute(
     "aria-busy",
     contentWorkspaceState.isLoading ? "true" : "false",
@@ -3564,14 +3604,21 @@ async function loadContentWorkspace({
   renderContentWorkspaceList();
   renderContentWorkspaceDetail();
 
-  const query = new URLSearchParams({
-    type: contentWorkspaceType.value || "all",
-    status: contentWorkspaceStatusFilter.value || "all",
-    translation: contentWorkspaceTranslationFilter.value || "all",
-    limit: "100",
-  });
+  const query = new URLSearchParams({ limit: "100" });
+  const type = contentWorkspaceType.value || "all";
+  const status = contentWorkspaceStatusFilter.value || "all";
+  const translation = contentWorkspaceTranslationFilter.value || "all";
   const search = contentWorkspaceSearch.value.trim();
 
+  if (type !== "all") {
+    query.set("type", type);
+  }
+  if (status !== "all") {
+    query.set("status", status);
+  }
+  if (translation !== "all") {
+    query.set("translation", translation);
+  }
   if (search) {
     query.set("search", search);
   }
@@ -3712,6 +3759,8 @@ contentWorkspaceSearch.addEventListener("input", () => {
     loadContentWorkspace({ updateSearchParameters: true });
   }, 250);
 });
+
+contentWorkspaceClearFilters.addEventListener("click", clearContentWorkspaceFilters);
 
 document.addEventListener("languagechange", updateContentWorkspaceLanguage);
 

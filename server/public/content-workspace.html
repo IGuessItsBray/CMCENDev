@@ -79,7 +79,18 @@
                   </select>
                 </label>
               </div>
-              <strong id="contentWorkspaceCount" aria-live="polite"></strong>
+              <div class="content-workspace-list-summary">
+                <strong id="contentWorkspaceCount" aria-live="polite"></strong>
+                <button
+                  class="admin-work-zone-button is-secondary is-compact content-workspace-clear-filters"
+                  id="contentWorkspaceClearFilters"
+                  type="button"
+                  disabled
+                  data-i18n="translations_clear_filters"
+                >
+                  Clear filters
+                </button>
+              </div>
             </div>
             <div class="content-workspace-list" id="contentWorkspaceList"></div>
           </aside>

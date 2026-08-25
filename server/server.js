@@ -44,6 +44,7 @@ const { startWeeklyBriefScheduler } = require('./services/weekly-brief');
 logger.installConsole();
 
 const app = express();
+app.disable('x-powered-by');
 const isApiDocsEnabled = process.env.ENABLE_API_DOCS === 'true';
 const apiRateLimit = rateLimitByIp(
   'api-ip',

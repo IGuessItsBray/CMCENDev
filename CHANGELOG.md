@@ -4,6 +4,80 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.1.0-rc.2] - 2026-08-25
+
+
+
+### Bug Fixes
+
+
+- auth: Improve invitation activation diagnostics
+
+- diagnostics: Expand failure logging
+
+- frontend: Align retirement card titles
+
+- frontend: Align user header actions
+
+- frontend: Restore dark builder icon colors
+
+- frontend: Scroll long mobile banners
+
+- events: Show missing event title validation
+
+- search: Sanitize retirement result snippets
+
+- roles: Prevent unintended contributor admin access
+
+- auth: Redirect signed-in users from registration
+
+- search: Submit global search on Enter
+
+- auth: Revoke access tokens on sign out
+
+- footer: Hide protected contact link from guests
+
+- i18n: Complete French homepage and navigation localization
+
+- accessibility: Make skip link move focus to main content
+
+- assets: Prevent stale client bundles after deployment
+
+- security: Add Content-Security-Policy header
+
+- i18n: Replace remaining English labels on French homepage
+
+- calendar: Preserve event detail language
+
+- sitemap: Exclude protected workspace pages
+
+- frontend: Localize 404 page
+
+
+
+### CI
+
+
+- Prevent duplicate tests after merge
+
+
+
+### Features
+
+
+- pages: Refine visual page builder
+
+- pages: Add branding reference
+
+- content: Improve workspace editing flow
+
+- content-workspace: Manage news stories
+
+- content: Add workspace skeleton loaders
+
+- content: Add workspace image management
+
+
 ## [0.1.0-rc.1] - 2026-08-21
 
 

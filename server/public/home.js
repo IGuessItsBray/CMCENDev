@@ -34,6 +34,14 @@ function getHomeTranslation(key, replacements = {}) {
   return key;
 }
 
+function getHomeEventTimeZoneOptions(event) {
+  if (event.allDay) {
+    return { timeZone: "UTC" };
+  }
+
+  return event.timezone ? { timeZone: event.timezone } : {};
+}
+
 function setHomeMessage(element, message, type = "neutral") {
   if (!element) return;
 
@@ -59,7 +67,7 @@ function formatHomeEventDate(event, language) {
     locale: getHomeLocale(language),
     month: "short",
     day: "numeric",
-    ...(event.allDay ? { timeZone: "UTC" } : {}),
+    ...getHomeEventTimeZoneOptions(event),
   });
 }
 
@@ -78,6 +86,7 @@ function formatHomeEventTime(event, language) {
     locale: getHomeLocale(language),
     hour: "numeric",
     minute: "2-digit",
+    ...getHomeEventTimeZoneOptions(event),
   });
 }
 

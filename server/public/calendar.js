@@ -101,6 +101,14 @@ function getEventTypeLabel(value) {
     : "";
 }
 
+function getEventTimeZoneOptions(event) {
+  if (event.allDay) {
+    return { timeZone: "UTC" };
+  }
+
+  return event.timezone ? { timeZone: event.timezone } : {};
+}
+
 function getDateParts(event) {
   const date = new Date(event.startDate);
 
@@ -392,7 +400,7 @@ function formatMonthHeading(event, locale) {
     locale,
     month: "long",
     year: "numeric",
-    ...(event.allDay ? { timeZone: "UTC" } : {}),
+    ...getEventTimeZoneOptions(event),
   });
 }
 
@@ -400,7 +408,7 @@ function formatMonthAbbreviation(event, locale) {
   return CMCENUtils.formatDate(event.startDate, {
     locale,
     month: "short",
-    ...(event.allDay ? { timeZone: "UTC" } : {}),
+    ...getEventTimeZoneOptions(event),
   });
 }
 
@@ -469,6 +477,7 @@ function formatEventTime(event, locale) {
     locale,
     hour: "numeric",
     minute: "2-digit",
+    ...getEventTimeZoneOptions(event),
   });
 
   if (!event.endDate) {
@@ -490,7 +499,7 @@ function formatEventDateRange(event, locale) {
       locale,
       month: "short",
       day: "numeric",
-      ...(event.allDay ? { timeZone: "UTC" } : {}),
+      ...getEventTimeZoneOptions(event),
     });
 
   const startLabel = formatDate(event.startDate);
@@ -680,6 +689,7 @@ function getEventChipTime(event, date, locale) {
     locale,
     hour: "numeric",
     minute: "2-digit",
+    ...getEventTimeZoneOptions(event),
   });
 }
 
@@ -806,6 +816,7 @@ function createMultiDayEventBar(segment, language, locale) {
           locale,
           hour: "numeric",
           minute: "2-digit",
+          ...getEventTimeZoneOptions(event),
         })
     : "";
 

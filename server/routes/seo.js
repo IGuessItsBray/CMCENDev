@@ -32,6 +32,7 @@ const SITEMAP_EXCLUDED_FILES = new Set([
   'analytics.html',
   'audit-log.html',
   'content-workspace.html',
+  'contact.html',
   'dashboard.html',
   'event.html',
   'last-post-message.html',

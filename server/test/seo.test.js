@@ -48,9 +48,18 @@ test('marks account, admin, submission, and API paths as non-indexable', () => {
   assert.equal(isNoIndexPath('/about-family'), false);
 });
 
-test('excludes protected workspace files from the public XML sitemap', () => {
-  assert.equal(isPublicSitemapFile('content-workspace.html'), false);
-  assert.equal(isPublicSitemapFile('review-submissions.html'), false);
+test('excludes protected workspace and member-only files from the public XML sitemap', () => {
+  for (const fileName of [
+    'content-workspace.html',
+    'review-submissions.html',
+    'contact.html',
+    'submit-event.html',
+    'submit-last-post.html',
+    'submit-retirement.html',
+  ]) {
+    assert.equal(isPublicSitemapFile(fileName), false, fileName);
+  }
+
   assert.equal(isPublicSitemapFile('about-family.html'), true);
 });
 

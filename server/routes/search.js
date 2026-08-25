@@ -13,158 +13,180 @@ const MAX_RESULTS = 30;
 const MAX_RESULTS_PER_SOURCE = 10;
 
 const STATIC_PAGES = [
-  { path: '/awards', file: 'awards.html', type: 'page', title: 'Awards' },
+  {
+    path: '/awards',
+    file: 'awards.html',
+    type: 'page',
+    title: { en: 'Awards', fr: 'Prix' },
+  },
   {
     path: '/association_directors',
     file: 'association_directors.html',
     type: 'page',
-    title: 'Association Directors and Advisors',
+    title: {
+      en: 'Association Directors and Advisors',
+      fr: 'Directeurs et conseillers de l’Association',
+    },
   },
   {
     path: '/branch_advisory_council',
     file: 'branch_advisory_council.html',
     type: 'page',
-    title: 'Branch Advisory Council',
+    title: { en: 'Branch Advisory Council', fr: 'Conseil consultatif de la Branche' },
   },
   {
     path: '/ce_professions',
     file: 'ce_professions.html',
     type: 'page',
-    title: 'Communications & Electronics Professions',
+    title: {
+      en: 'Communications & Electronics Professions',
+      fr: 'Professions des communications et de l’électronique',
+    },
   },
   {
     path: '/about-family',
     file: 'about-family.html',
     type: 'page',
-    title: 'About the C&E Family',
+    title: { en: 'About the C&E Family', fr: 'Famille des C et E' },
   },
   {
     path: '/about_branch',
     file: 'about_branch.html',
     type: 'page',
-    title: 'About the C&E Branch',
+    title: { en: 'About the C&E Branch', fr: 'À propos de la Branche des C et E' },
   },
   {
     path: '/about_association',
     file: 'about_association.html',
     type: 'page',
-    title: 'About the C&E Association',
+    title: {
+      en: 'About the C&E Association',
+      fr: 'À propos de l’Association des C et E',
+    },
   },
   {
     path: '/about_museum_foundation',
     file: 'about_museum_foundation.html',
     type: 'page',
-    title: 'About the C&E Museum & Foundation',
+    title: {
+      en: 'About the C&E Museum & Foundation',
+      fr: 'À propos du Musée et de la Fondation des C et E',
+    },
   },
   {
     path: '/affiliate_offers',
     file: 'affiliate_offers.html',
     type: 'page',
-    title: 'Affiliates',
+    title: { en: 'Affiliates', fr: 'Affiliés' },
   },
   {
     path: '/calendar',
     file: 'calendar.html',
     type: 'page',
-    title: 'Events Calendar',
+    title: { en: 'Events Calendar', fr: 'Calendrier des événements' },
   },
   {
     path: '/retirements',
     file: 'retirements.html',
     type: 'page',
-    title: 'Retirement Messages',
-    summary:
-      'Browse retirement messages celebrating members of the C&E community.',
+    title: { en: 'Retirement Messages', fr: 'Retraites' },
+    summary: {
+      en: 'Browse retirement messages celebrating members of the C&E community.',
+      fr: 'Parcourez les messages de retraite célébrant les membres de la communauté des C et E.',
+    },
   },
   {
     path: '/certificates',
     file: 'certificates.html',
     type: 'page',
-    title: 'Certificates',
+    title: { en: 'Certificates', fr: 'Certificats' },
   },
   {
     path: '/doctrine_hub',
     file: 'doctrine_hub.html',
     type: 'page',
-    title: 'Doctrine Hub',
+    title: { en: 'Doctrine Hub', fr: 'Centre de doctrine' },
   },
   {
     path: '/governance',
     file: 'governance.html',
     type: 'page',
-    title: 'Governance',
+    title: { en: 'Governance', fr: 'Gouvernance' },
   },
   {
     path: '/bursaries',
     file: 'bursaries.html',
     type: 'page',
-    title: 'Bursaries and Education',
+    title: { en: 'Bursaries and Education', fr: 'Bourses et éducation' },
   },
   {
     path: '/cfmws',
     file: 'cfmws.html',
     type: 'page',
-    title: 'Canadian Forces Morale and Welfare Services',
+    title: {
+      en: 'Canadian Forces Morale and Welfare Services',
+      fr: 'Services de bien-être et moral des Forces canadiennes',
+    },
   },
   {
     path: '/history',
     file: 'history.html',
     type: 'page',
-    title: 'History',
+    title: { en: 'History', fr: 'Histoire' },
   },
   {
     path: '/last-post',
     file: 'last-post.html',
     type: 'page',
-    title: 'Last Post',
+    title: { en: 'Last Post', fr: 'Dernière sonnerie' },
   },
   {
     path: '/honours_awards',
     file: 'honours_awards.html',
     type: 'page',
-    title: 'Honours and Awards',
+    title: { en: 'Honours and Awards', fr: 'Distinctions et prix' },
   },
   {
     path: '/leadership',
     file: 'leadership.html',
     type: 'page',
-    title: 'Leadership',
+    title: { en: 'Leadership', fr: 'Leadership' },
   },
   {
     path: '/news_stories',
     file: 'news_stories.html',
     type: 'page',
-    title: 'News Stories',
+    title: { en: 'News Stories', fr: 'Nouvelles' },
   },
   {
     path: '/promotions',
     file: 'promotions.html',
     type: 'page',
-    title: 'Promotions',
+    title: { en: 'Promotions', fr: 'Promotions' },
   },
   {
     path: '/veteran_services',
     file: 'veteran_services.html',
     type: 'page',
-    title: 'Veteran Services',
+    title: { en: 'Veteran Services', fr: 'Services aux vétérans' },
   },
   {
     path: '/submit-retirement',
     file: 'submit-retirement.html',
     type: 'page',
-    title: 'Submit a Retirement Message',
+    title: { en: 'Submit a Retirement Message', fr: 'Soumettre un message de retraite' },
   },
   {
     path: '/support_troops',
     file: 'support_troops.html',
     type: 'page',
-    title: 'Support Our Troops',
+    title: { en: 'Support Our Troops', fr: 'Appuyons nos troupes' },
   },
   {
     path: '/standing_orders',
     file: 'standing_orders.html',
     type: 'page',
-    title: 'Standing Orders',
+    title: { en: 'Standing Orders', fr: 'Ordres permanents' },
   },
 ];
 
@@ -560,7 +582,7 @@ async function searchRetirementMessages(query, queryTerms) {
   });
 }
 
-async function searchStaticPages(query, queryTerms) {
+async function searchStaticPages(query, queryTerms, language) {
   const pages = await Promise.all(
     STATIC_PAGES.map(async (page) => {
       try {
@@ -569,10 +591,12 @@ async function searchStaticPages(query, queryTerms) {
           'utf8',
         );
         const text = normalizeText(stripHtml(html));
+        const title = getLocalizedText(page.title, language);
+        const summary = getLocalizedText(page.summary, language) || truncate(text);
         const score = scoreSearchResult(query, queryTerms, {
-          title: page.title,
+          title,
           type: page.type,
-          fields: [page.title, text],
+          fields: [page.title.en, page.title.fr, text],
         });
 
         if (score === 0) {
@@ -582,8 +606,8 @@ async function searchStaticPages(query, queryTerms) {
         return {
           type: page.type,
           sourceId: page.path,
-          title: page.title,
-          summary: page.summary || truncate(text),
+          title,
+          summary,
           url: page.path,
           date: null,
           score,
@@ -620,7 +644,7 @@ router.get('/', async (req, res) => {
         searchRetirementMessages(query, queryTerms),
         searchLastPostMessages(query, queryTerms, language),
         searchNewsStories(query, queryTerms, language),
-        searchStaticPages(query, queryTerms),
+        searchStaticPages(query, queryTerms, language),
       ]);
 
     const results = sortResults([

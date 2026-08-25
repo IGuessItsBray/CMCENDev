@@ -605,6 +605,15 @@ describe('public search', () => {
     );
     assert.equal(pageResult.url, '/calendar');
 
+    const frenchCalendarSearch = await request(app)
+      .get('/api/search?q=calendrier&lang=fr')
+      .expect(200);
+    const frenchCalendarResult = frenchCalendarSearch.body.results.find(
+      (result) => result.sourceId === '/calendar',
+    );
+    assert.equal(frenchCalendarResult.url, '/calendar');
+    assert.equal(frenchCalendarResult.title, 'Calendrier des événements');
+
     const historySearch = await request(app)
       .get('/api/search?q=history')
       .expect(200);

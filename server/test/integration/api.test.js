@@ -3061,6 +3061,55 @@ describe('event, page, and comment workflows', () => {
     );
   });
 
+  test('exports only published event details as a localized iCalendar attachment', async () => {
+    const owner = await createUser({ role: 'editor' });
+    const publishedEvent = await Event.create({
+      title: { en: 'English planning session', fr: 'Séance de planification' },
+      description: {
+        en: 'Public English description',
+        fr: 'Description française publique',
+      },
+      registration: { en: 'https://example.test/register' },
+      location: { en: 'Public room', fr: 'Salle publique' },
+      city: 'Ottawa',
+      timezone: 'America/Toronto',
+      startDate: new Date('2040-07-18T14:00:00.000Z'),
+      endDate: new Date('2040-07-18T16:00:00.000Z'),
+      allDay: false,
+      status: 'published',
+      submitter: { email: 'private-submitter@example.test' },
+      createdBy: owner._id,
+    });
+    const draftEvent = await Event.create({
+      title: { en: 'Private draft' },
+      startDate: new Date('2040-07-19T12:00:00.000Z'),
+      allDay: true,
+      status: 'draft',
+      createdBy: owner._id,
+    });
+
+    const response = await request(app)
+      .get(`/api/events/${publishedEvent._id}/calendar.ics?lang=fr`)
+      .expect(200);
+
+    assert.match(response.headers['content-type'], /^text\/calendar/);
+    assert.equal(
+      response.headers['content-disposition'],
+      'attachment; filename="cmcen-event.ics"',
+    );
+    assert.equal(response.headers['cache-control'], 'no-store');
+    assert.match(response.text, /SUMMARY:Séance de planification\r\n/);
+    assert.match(response.text, /DTSTART:20400718T140000Z\r\n/);
+    assert.match(response.text, /DTEND:20400718T160000Z\r\n/);
+    assert.match(response.text, /LOCATION:Salle publique\\, Ottawa\r\n/);
+    assert.doesNotMatch(response.text, /private-submitter@example\.test/);
+    assert.doesNotMatch(response.text, /createdBy|submitter|publicationPermission/);
+
+    await request(app)
+      .get(`/api/events/${draftEvent._id}/calendar.ics`)
+      .expect(404);
+  });
+
   test('prevents unauthorized page management and publishes a bilingual page', async () => {
     const subscriber = await createUser({
       role: 'subscriber',

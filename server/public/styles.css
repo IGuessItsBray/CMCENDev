@@ -3835,6 +3835,27 @@ a.dropdown-toggle {
   overflow-wrap: anywhere;
 }
 
+.event-calendar-export-link {
+  margin: 16px 18px 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 13px;
+  border: 1px solid var(--navy-900);
+  border-radius: 2px;
+  color: var(--navy-900);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+  text-decoration: none;
+}
+
+.event-calendar-export-link:hover,
+.event-calendar-export-link:focus-visible {
+  background: var(--navy-900);
+  color: var(--white);
+}
+
 .event-detail-registration {
   padding: 16px 18px 18px;
   background: var(--branch-grey-100);

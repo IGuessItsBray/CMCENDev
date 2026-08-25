@@ -1825,6 +1825,30 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
+  /api/events/{id}/calendar.ics:
+    get:
+      tags: [Events]
+      summary: Download a published event as an iCalendar entry.
+      description: Returns a public `.ics` attachment. The optional `lang` query selects English or French public text; unpublished and removed events are not exposed.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - name: lang
+          in: query
+          required: false
+          description: Preferred public-content language.
+          schema:
+            type: string
+            enum: [en, fr]
+      responses:
+        "200":
+          description: iCalendar attachment for a published event.
+          content:
+            text/calendar:
+              schema:
+                type: string
+        "404":
+          $ref: "#/components/responses/Error"
   /api/events/{id}/edit:
     get:
       tags: [Events]

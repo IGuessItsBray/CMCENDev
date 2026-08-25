@@ -25,6 +25,7 @@ const {
   parseBoolean,
 } = require('../services/content-utils');
 const { linkMediaAssetToSource } = require('../services/media-assets');
+const { buildPublicEventCalendar } = require('../services/event-calendar-export');
 
 const router = express.Router();
 
@@ -53,6 +54,18 @@ function getLocalizedValue(value) {
 
 function getEventTitle(event) {
   return getLocalizedValue(event?.title) || 'Untitled event';
+}
+
+function getCalendarLanguage(value) {
+  return String(value || '').trim().toLowerCase() === 'fr' ? 'fr' : 'en';
+}
+
+function getCalendarUidDomain(req) {
+  try {
+    return new URL(getBaseUrl(req)).hostname || 'cmcen.ca';
+  } catch {
+    return 'cmcen.ca';
+  }
 }
 
 async function linkEventImageToMediaAsset(event) {
@@ -913,6 +926,41 @@ router.get('/mine', authMiddleware, async (req, res) => {
     return res.status(500).json({
       error: 'Could not load your events',
     });
+  }
+});
+
+router.get('/:id/calendar.ics', async (req, res) => {
+  try {
+    const event = await Event.findOne({
+      _id: req.params.id,
+      status: 'published',
+    })
+      .select(`${PUBLIC_EVENT_FIELDS} updatedAt publishedAt`)
+      .lean();
+
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+
+    const eventUrl = `${getBaseUrl(req)}/event?id=${encodeURIComponent(String(event._id))}`;
+    const calendar = buildPublicEventCalendar(event, {
+      language: getCalendarLanguage(req.query.lang),
+      eventUrl,
+      uidDomain: getCalendarUidDomain(req),
+    });
+
+    return res
+      .type('text/calendar; charset=utf-8')
+      .set('Content-Disposition', 'attachment; filename="cmcen-event.ics"')
+      .set('Cache-Control', 'no-store')
+      .send(calendar);
+  } catch (error) {
+    if (error?.name === 'CastError') {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    console.error('Could not export public event calendar entry:', error);
+    return res
+      .status(500)
+      .json({ error: 'Could not export event calendar entry' });
   }
 });
 

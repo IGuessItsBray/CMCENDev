@@ -32,6 +32,10 @@ const eventDetailRegistration = document.getElementById(
   "eventDetailRegistration",
 );
 
+const eventCalendarExportLink = document.getElementById(
+  "eventCalendarExportLink",
+);
+
 let currentEvent = null;
 let currentEventId = "";
 let canOpenEventWorkspace = false;
@@ -430,6 +434,9 @@ function renderEvent(event) {
   );
 
   renderRegistration(registration);
+
+  eventCalendarExportLink.href = `/api/events/${encodeURIComponent(currentEventId)}/calendar.ics?lang=${encodeURIComponent(getEventLanguage())}`;
+  eventCalendarExportLink.hidden = false;
 
   eventDetailMessage.hidden = true;
   visibleEventMessageKey = "";

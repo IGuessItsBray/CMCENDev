@@ -11,9 +11,11 @@
     <main class="news-main">
       <section class="news-shell">
         <header class="news-heading">
-          <p class="news-eyebrow">News &amp; events</p>
-          <h1>News Stories</h1>
-          <p>
+          <p class="news-eyebrow" data-i18n="news_listing_eyebrow">
+            News &amp; events
+          </p>
+          <h1 data-i18n="news_listing_heading">News Stories</h1>
+          <p data-i18n="news_listing_intro">
             Updates, stories, and announcements from across the C&amp;E Family.
           </p>
           <button
@@ -32,12 +34,13 @@
           role="status"
           aria-live="polite"
         >
-          Loading news stories...
+          <span data-i18n="news_listing_loading">Loading news stories...</span>
         </p>
         <section
           class="news-grid"
           id="newsStoriesList"
           aria-label="Published news stories"
+          data-i18n-aria-label="news_listing_aria_label"
         ></section>
 
         <section

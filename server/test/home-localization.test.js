@@ -89,3 +89,26 @@ test('keeps legacy banner copy visible when French contains the countdown placeh
   assert.match(timersScript, /compte à rebours/iu);
   assert.match(timersScript, /return englishText;/u);
 });
+
+test('localizes the public news listing heading and description', () => {
+  const markup = fs.readFileSync(
+    path.join(publicDirectory, 'news_stories.html'),
+    'utf8',
+  );
+  const keys = new Set(translationKeys(markup));
+
+  [
+    ['news_listing_eyebrow', 'Nouvelles et événements'],
+    ['news_listing_heading', 'Articles de nouvelles'],
+    [
+      'news_listing_intro',
+      'Mises à jour, récits et annonces de l’ensemble de la famille des C et E.',
+    ],
+    ['news_listing_loading', 'Chargement des articles de nouvelles…'],
+    ['news_listing_aria_label', 'Articles de nouvelles publiés'],
+  ].forEach(([key, expectedFrenchText]) => {
+    assert.ok(keys.has(key), `${key} is used by the news listing`);
+    assert.ok(translations.en[key]?.trim(), `${key} has English text`);
+    assert.equal(translations.fr[key], expectedFrenchText);
+  });
+});

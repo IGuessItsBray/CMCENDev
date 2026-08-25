@@ -944,6 +944,83 @@ describe('news stories', () => {
 });
 
 describe('retirement message lifecycle', () => {
+  test('lets guests search and filter only published retirement messages', async () => {
+    const first = await submitAndPublishRetirement();
+    const firstRecord = await RetirementMessage.findById(first._id).lean();
+
+    await RetirementMessage.updateOne(
+      { _id: first._id },
+      {
+        $set: {
+          retiree: {
+            ...firstRecord.retiree,
+            firstName: 'Archive',
+            lastName: 'Pioneer',
+            tradeRole: 'Signals Technician',
+            retirementDate: new Date('2024-06-15T00:00:00.000Z'),
+          },
+          messages: {
+            en: translatedMessage('Signal archive'),
+            fr: translatedMessage('Archive des transmissions'),
+          },
+        },
+      },
+    );
+
+    const second = await RetirementMessage.create({
+      ...firstRecord,
+      _id: undefined,
+      retiree: {
+        ...firstRecord.retiree,
+        firstName: 'Different',
+        lastName: 'Retiree',
+        retirementDate: new Date('2023-06-15T00:00:00.000Z'),
+      },
+      message: translatedMessage('Different'),
+      messages: {
+        en: translatedMessage('Different'),
+        fr: translatedMessage('Différent'),
+      },
+      status: 'published',
+      publishedAt: new Date('2024-01-01T00:00:00.000Z'),
+    });
+
+    await RetirementMessage.create({
+      ...second.toObject(),
+      _id: undefined,
+      retiree: {
+        ...second.retiree.toObject(),
+        firstName: 'Archive',
+        lastName: 'Hidden',
+      },
+      status: 'hidden',
+      hiddenFromStatus: 'published',
+    });
+
+    const matching = await request(app)
+      .get('/api/retirement-messages?q=Signals&year=2024')
+      .expect(200);
+
+    assert.deepEqual(
+      matching.body.retirementMessages.map((message) => message.retiree.lastName),
+      ['Pioneer'],
+    );
+    assert.equal(matching.body.retirementMessages[0].submitter, undefined);
+
+    const escapedSearch = await request(app)
+      .get('/api/retirement-messages?q=Archive.*')
+      .expect(200);
+    assert.equal(escapedSearch.body.retirementMessages.length, 0);
+
+    const yearOnly = await request(app)
+      .get('/api/retirement-messages?year=2023')
+      .expect(200);
+    assert.deepEqual(
+      yearOnly.body.retirementMessages.map((message) => message.retiree.lastName),
+      ['Retiree'],
+    );
+  });
+
   test('creates a pending certificate request alongside a retirement submission', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const contributorLogin = await login(contributor);

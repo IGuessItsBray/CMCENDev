@@ -16,6 +16,16 @@ const retirementsLoadMoreMessage = document.getElementById(
   "retirementsLoadMoreMessage",
 );
 
+const retirementsFilter = document.getElementById("retirementsFilter");
+
+const retirementsSearch = document.getElementById("retirementsSearch");
+
+const retirementsYear = document.getElementById("retirementsYear");
+
+const retirementsFilterClear = document.getElementById(
+  "retirementsFilterClear",
+);
+
 const RETIREMENT_PLACEHOLDER_PHOTO_URL = "/images/logo.png";
 const RETIREMENT_PAGE_SIZE = 24;
 
@@ -23,6 +33,40 @@ let loadedRetirementMessages = [];
 let retirementNextCursor = "";
 let retirementHasMore = false;
 let isLoadingMoreRetirements = false;
+
+function getRetirementFilters() {
+  return {
+    q: retirementsSearch.value.trim(),
+    year: /^\d{4}$/.test(retirementsYear.value.trim())
+      ? retirementsYear.value.trim()
+      : "",
+  };
+}
+
+function updateRetirementFilterUrl() {
+  const url = new URL(window.location.href);
+  const { q, year } = getRetirementFilters();
+
+  if (q) {
+    url.searchParams.set("q", q);
+  } else {
+    url.searchParams.delete("q");
+  }
+
+  if (year) {
+    url.searchParams.set("year", year);
+  } else {
+    url.searchParams.delete("year");
+  }
+
+  window.history.replaceState({}, "", url);
+}
+
+function loadFiltersFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  retirementsSearch.value = params.get("q") || "";
+  retirementsYear.value = params.get("year") || "";
+}
 
 function createRetirementLoadingContent(message) {
   const loading = CMCENUtils.createLoadingSpinner(message);
@@ -251,7 +295,11 @@ function renderRetirements(retirementMessages) {
   retirementsGrid.replaceChildren();
 
   if (!retirementMessages.length) {
-    showRetirementsMessage(translate("retirements_empty"), "empty");
+    const { q, year } = getRetirementFilters();
+    showRetirementsMessage(
+      translate(q || year ? "retirements_search_empty" : "retirements_empty"),
+      "empty",
+    );
     return;
   }
 
@@ -286,6 +334,16 @@ async function loadRetirements({ append = false } = {}) {
     const params = new URLSearchParams({
       limit: String(RETIREMENT_PAGE_SIZE),
     });
+
+    const { q, year } = getRetirementFilters();
+
+    if (q) {
+      params.set("q", q);
+    }
+
+    if (year) {
+      params.set("year", year);
+    }
 
     if (append && retirementNextCursor) {
       params.set("cursor", retirementNextCursor);
@@ -339,6 +397,30 @@ retirementsLoadMoreButton.addEventListener("click", () =>
   loadRetirements({ append: true }),
 );
 
+retirementsFilter.addEventListener("submit", (event) => {
+  event.preventDefault();
+  updateRetirementFilterUrl();
+  retirementNextCursor = "";
+  retirementHasMore = false;
+  loadedRetirementMessages = [];
+  loadRetirements();
+});
+
+retirementsFilterClear.addEventListener("click", () => {
+  if (!retirementsSearch.value && !retirementsYear.value) {
+    return;
+  }
+
+  retirementsSearch.value = "";
+  retirementsYear.value = "";
+  updateRetirementFilterUrl();
+  retirementNextCursor = "";
+  retirementHasMore = false;
+  loadedRetirementMessages = [];
+  loadRetirements();
+  retirementsSearch.focus();
+});
+
 document.addEventListener("languagechange", () => {
   if (loadedRetirementMessages.length) {
     renderRetirements(loadedRetirementMessages);
@@ -368,4 +450,5 @@ document.addEventListener("languagechange", () => {
   }
 });
 
+loadFiltersFromUrl();
 loadRetirements();

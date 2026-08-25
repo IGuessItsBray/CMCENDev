@@ -31,6 +31,53 @@
           </h1>
         </header>
 
+        <form class="retirements-filter" id="retirementsFilter" role="search">
+          <div class="retirements-filter-field">
+            <label for="retirementsSearch" data-i18n="retirements_search_label">
+              Search the archive
+            </label>
+            <input
+              type="search"
+              id="retirementsSearch"
+              name="q"
+              maxlength="100"
+              autocomplete="off"
+              data-i18n-placeholder="retirements_search_placeholder"
+              placeholder="Name, trade, or message"
+            />
+          </div>
+
+          <div class="retirements-filter-field retirements-filter-year">
+            <label for="retirementsYear" data-i18n="retirements_year_label">
+              Retirement year
+            </label>
+            <input
+              type="number"
+              id="retirementsYear"
+              name="year"
+              inputmode="numeric"
+              min="1900"
+              max="9999"
+              step="1"
+              data-i18n-aria-label="retirements_year_label"
+            />
+          </div>
+
+          <div class="retirements-filter-actions">
+            <button type="submit" data-i18n="retirements_search_submit">
+              Search
+            </button>
+            <button
+              type="button"
+              class="retirements-filter-clear"
+              id="retirementsFilterClear"
+              data-i18n="retirements_search_clear"
+            >
+              Clear filters
+            </button>
+          </div>
+        </form>
+
         <p
           class="retirements-message is-loading"
           id="retirementsMessage"

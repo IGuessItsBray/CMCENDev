@@ -37,6 +37,7 @@ const ALLOWED_LANGUAGES = ['en', 'fr'];
 
 const DEFAULT_RETIREMENT_PAGE_SIZE = 24;
 const MAX_RETIREMENT_PAGE_SIZE = 48;
+const MAX_RETIREMENT_SEARCH_LENGTH = 100;
 
 function getRetirementPageSize(value) {
   const requestedSize = Number.parseInt(value, 10);
@@ -122,6 +123,48 @@ function getRetirementCursorFilter(cursor) {
         publishedAt: null,
       },
     ],
+  };
+}
+
+function escapeRegularExpression(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getRetirementSearchFilter(value) {
+  const search = cleanString(value).slice(0, MAX_RETIREMENT_SEARCH_LENGTH);
+
+  if (!search) {
+    return {};
+  }
+
+  const expression = new RegExp(escapeRegularExpression(search), 'i');
+
+  return {
+    $or: [
+      { 'retiree.rank': expression },
+      { 'retiree.firstName': expression },
+      { 'retiree.lastName': expression },
+      { 'retiree.postNominals': expression },
+      { 'retiree.tradeRole': expression },
+      { 'messages.en': expression },
+      { 'messages.fr': expression },
+      { message: expression },
+    ],
+  };
+}
+
+function getRetirementYearFilter(value) {
+  const year = Number.parseInt(value, 10);
+
+  if (!/^\d{4}$/.test(cleanString(value)) || year < 1900 || year > 9999) {
+    return {};
+  }
+
+  return {
+    'retiree.retirementDate': {
+      $gte: new Date(Date.UTC(year, 0, 1)),
+      $lt: new Date(Date.UTC(year + 1, 0, 1)),
+    },
   };
 }
 
@@ -661,8 +704,12 @@ router.get('/', async (req, res) => {
     }
 
     const retirementMessagesWithExtra = await RetirementMessage.find({
-      status: 'published',
-      ...getRetirementCursorFilter(cursor),
+      $and: [
+        { status: 'published' },
+        getRetirementSearchFilter(req.query.q),
+        getRetirementYearFilter(req.query.year),
+        getRetirementCursorFilter(cursor),
+      ],
     })
       .select({
         retiree: 1,

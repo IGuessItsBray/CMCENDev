@@ -2112,7 +2112,34 @@ paths:
     get:
       tags: [Retirements]
       summary: List published retirement messages.
+      description: Returns only published retirement messages. `q` searches the public retiree name, rank, post-nominals, trade/role, and message text. `year` filters by retirement year. Submitter and review fields are excluded.
       security: []
+      parameters:
+        - name: q
+          in: query
+          description: Case-insensitive public archive search (up to 100 characters).
+          schema:
+            type: string
+            maxLength: 100
+        - name: year
+          in: query
+          description: Four-digit retirement year.
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 9999
+        - name: limit
+          in: query
+          description: Number of results to return (default 24, maximum 48).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 48
+        - name: cursor
+          in: query
+          description: Opaque cursor returned by a previous response for the same filters.
+          schema:
+            type: string
       responses:
         "200":
           description: Retirement messages.

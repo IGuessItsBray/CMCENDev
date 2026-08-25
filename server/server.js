@@ -190,6 +190,22 @@ app.get('/vendor/plausible-tracker.js', (req, res) => {
 app.get('/notifications', (req, res) =>
   res.redirect(301, `/dashboard${req.url.slice(req.path.length)}`),
 );
+app.get('/dashboard', (req, res, next) => {
+  const adminToolPaths = {
+    users: '/admin-users',
+    subscriptions: '/admin-users?view=subscriptions',
+    roles: '/admin-users?view=roles',
+    pages: '/pages-admin',
+    timers: '/timers-admin',
+    translations: '/translations-admin',
+    media: '/admin-users?view=media',
+    analytics: '/analytics',
+    'audit-log': '/audit-log',
+  };
+  const destination = adminToolPaths[req.query.adminTool];
+
+  return destination ? res.redirect(302, destination) : next();
+});
 app.get('/review-submissions', (req, res) => {
   const typeByLegacyTab = {
     events: 'event',

@@ -5228,11 +5228,7 @@ a.dropdown-toggle {
 .admin-work-zone-dashboard-shell,
 .audit-log-shell,
 .translations-admin-shell {
-  width: min(100%, 1120px);
-}
-
-.admin-work-zone-dashboard-shell:has(.pages-admin-shell) {
-  width: 100%;
+  width: min(100%, 1480px);
 }
 
 .admin-work-zone-dashboard-shell {

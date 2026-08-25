@@ -1,20 +1,13 @@
 const adminToken = CMCENUtils.requireAuthToken();
 const adminWorkZone = document.getElementById("adminWorkZone");
 const adminWorkZoneStatus = document.getElementById("adminWorkZoneStatus");
-const embeddedAdminView = {
-  users: "users",
-  subscriptions: "subscriptions",
-  roles: "roles",
-  media: "media",
-}[window.CMCENEmbeddedAdminTool];
 const requestedAdminView = new URLSearchParams(window.location.search).get("view");
 
 let adminWorkZoneState = {
   activeView:
-    embeddedAdminView ||
-    (["media", "roles", "subscriptions"].includes(requestedAdminView)
+    ["media", "roles", "subscriptions"].includes(requestedAdminView)
       ? requestedAdminView
-      : "users"),
+      : "users",
   currentUserId: "",
   currentUserRole: "",
   currentUserPermissions: {},

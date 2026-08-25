@@ -239,10 +239,7 @@
       visibleItems.forEach((item) => {
         const option = document.createElement("a");
         option.className = "admin-work-zone-section-option";
-        option.href =
-          item.key === "main"
-            ? "/dashboard"
-            : `/dashboard?adminTool=${encodeURIComponent(item.key)}`;
+        option.href = item.href;
         option.textContent = translateAdminTab(item.labelKey);
         option.dataset.adminTab = item.key;
         if (item.key === active) {
@@ -352,10 +349,7 @@
         const isActive = item.key === active;
 
         link.className = "admin-work-zone-tab";
-        link.href =
-          item.key === "main"
-            ? "/dashboard"
-            : `/dashboard?adminTool=${encodeURIComponent(item.key)}`;
+        link.href = item.href;
         link.dataset.adminTab = item.key;
         link.setAttribute("role", "tab");
         link.setAttribute("aria-selected", String(isActive));

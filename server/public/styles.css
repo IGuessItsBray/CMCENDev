@@ -17462,6 +17462,20 @@ html[data-theme='dark'] .news-message {
   object-fit: contain;
 }
 
+.last-post-detail-image img.last-post-detail-image-logo {
+  width: min(65vw, 320px);
+  height: min(65vw, 320px);
+  max-height: none;
+  margin: 0 auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+.last-post-detail-image:has(.last-post-detail-image-logo) {
+  background: transparent;
+  border-color: transparent;
+}
+
 .last-post-detail-message {
   width: min(100%, 630px);
   margin: 0 auto;

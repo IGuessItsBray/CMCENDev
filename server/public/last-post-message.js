@@ -5,6 +5,8 @@ const lastPostDetailDate = document.getElementById("lastPostDetailDate");
 const lastPostDetailImage = document.getElementById("lastPostDetailImage");
 const lastPostDetailText = document.getElementById("lastPostDetailText");
 
+const LAST_POST_PLACEHOLDER_IMAGE_URL = "/images/logo.png";
+
 let currentLastPost = null;
 let currentLastPostId = "";
 let canOpenLastPostWorkspace = false;
@@ -103,22 +105,63 @@ function formatPublishedDate(value) {
   });
 }
 
+function isLastPostPlaceholderImage(imageUrl) {
+  if (!imageUrl) return false;
+
+  try {
+    const url = new URL(imageUrl, window.location.origin);
+    const pathname = url.pathname.toLowerCase();
+    const fileName = pathname.split("/").pop();
+
+    return (
+      fileName === "logo.png" ||
+      fileName.includes("cmcen-crest") ||
+      pathname.includes("/branch-crest/") ||
+      pathname.includes("/legacy/wordpress/348036/")
+    );
+  } catch (error) {
+    const pathname = String(imageUrl).toLowerCase().split(/[?#]/)[0];
+    const fileName = pathname.split("/").pop();
+
+    return (
+      fileName === "logo.png" ||
+      fileName.includes("cmcen-crest") ||
+      pathname.includes("/branch-crest/") ||
+      pathname.includes("/legacy/wordpress/348036/")
+    );
+  }
+}
+
 function renderImage(lastPost, name) {
   lastPostDetailImage.replaceChildren();
-  lastPostDetailImage.hidden = !lastPost.imageUrl;
-  if (!lastPost.imageUrl) return;
+  const hasPersonImage =
+    Boolean(lastPost.imageUrl) &&
+    !isLastPostPlaceholderImage(lastPost.imageUrl);
 
   const image = document.createElement("img");
-  image.src = lastPost.imageUrl;
-  image.alt = translate("last_post_image_alt", { name });
-  image.addEventListener(
-    "error",
-    () => {
-      lastPostDetailImage.hidden = true;
-    },
-    { once: true },
-  );
+  image.src = hasPersonImage
+    ? lastPost.imageUrl
+    : LAST_POST_PLACEHOLDER_IMAGE_URL;
+  image.alt = hasPersonImage ? translate("last_post_image_alt", { name }) : "";
+
+  if (hasPersonImage) {
+    image.addEventListener(
+      "error",
+      () => {
+        image.src = LAST_POST_PLACEHOLDER_IMAGE_URL;
+        image.alt = "";
+        image.className = "last-post-detail-image-logo";
+        image.setAttribute("aria-hidden", "true");
+      },
+      { once: true },
+    );
+  } else {
+    image.className = "last-post-detail-image-logo";
+    image.setAttribute("aria-hidden", "true");
+  }
+
   lastPostDetailImage.appendChild(image);
+  lastPostDetailImage.hidden = false;
 }
 
 function renderLastPost(lastPost) {

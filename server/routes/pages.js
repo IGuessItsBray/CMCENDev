@@ -61,6 +61,7 @@ const SITEMAP_EXCLUDED_HTML = new Set([
   'analytics.html',
   'audit-log.html',
   'content-workspace.html',
+  'dashboard.html',
   'contact.html',
   'event.html',
   'last-post-message.html',

@@ -6,6 +6,7 @@ test('excludes protected workspace and member-only files from the public HTML si
   for (const fileName of [
     'content-workspace.html',
     'review-submissions.html',
+    'dashboard.html',
     'contact.html',
     'submit-event.html',
     'submit-last-post.html',

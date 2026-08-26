@@ -1923,6 +1923,59 @@ paths:
                 type: string
         "404":
           $ref: "#/components/responses/Error"
+  /api/events/{id}/rsvp:
+    post:
+      tags: [Events]
+      summary: Create or update the caller's RSVP.
+      description: Available only to authenticated non-owners for published RSVP-enabled events before the optional deadline. The responder profile is copied into the RSVP record, and the event owner receives a site notification.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [response]
+              properties:
+                response:
+                  type: string
+                  enum: [accepted, declined]
+      responses:
+        "200":
+          description: Saved RSVP.
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/events/{id}/rsvps:
+    get:
+      tags: [Events]
+      summary: List event RSVPs.
+      description: Available to the event owner or a site administrator.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: RSVP responses with profile snapshots.
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/events/{id}/rsvps.csv:
+    get:
+      tags: [Events]
+      summary: Download event RSVPs as CSV.
+      description: Available to the event owner or a site administrator; exports are audit logged.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: CSV RSVP export.
+          content:
+            text/csv:
+              schema:
+                type: string
+        "403":
+          $ref: "#/components/responses/Error"
   /api/events/{id}/edit:
     get:
       tags: [Events]
@@ -2611,7 +2664,16 @@ components:
         application/json:
           schema:
             type: object
-            description: Event descriptions and registration instructions are limited to 10,000 characters per language.
+            description: Event descriptions and registration instructions are limited to 10,000 characters per language. RSVP deadlines use YYYY-MM-DD and close at the end of that UTC date.
+            properties:
+              rsvpEnabled:
+                type: boolean
+                description: Enable signed-in members to accept or decline attendance.
+              rsvpDeadline:
+                type: string
+                format: date
+                nullable: true
+                description: Optional latest date on which members may RSVP; cannot be after the event start.
             additionalProperties: true
     RetirementMessage:
       description: >-

@@ -21,6 +21,9 @@ const eventTitleFr = document.getElementById("eventTitleFr");
 const eventTitleError = document.getElementById("eventTitleError");
 
 const eventAllDay = document.getElementById("eventAllDay");
+const eventRsvpEnabled = document.getElementById("eventRsvpEnabled");
+const eventRsvpDeadline = document.getElementById("eventRsvpDeadline");
+const eventRsvpDeadlineField = document.getElementById("eventRsvpDeadlineField");
 const eventStartDate = document.getElementById("eventStartDate");
 const eventStartTime = document.getElementById("eventStartTime");
 const eventEndDate = document.getElementById("eventEndDate");
@@ -135,6 +138,12 @@ function syncScheduleFields() {
   }
 
   refreshEventSchedulePickers();
+}
+
+function syncRsvpFields() {
+  const enabled = eventRsvpEnabled.checked;
+  eventRsvpDeadlineField.hidden = !enabled;
+  eventRsvpDeadline.disabled = !enabled;
 }
 
 function getTodayDateValue() {
@@ -297,6 +306,10 @@ function buildEventData() {
 
     allDay: eventAllDay.checked,
 
+    rsvpEnabled: eventRsvpEnabled.checked,
+
+    rsvpDeadline: eventRsvpDeadline.value,
+
     publicationPermissionConfirmed: permissionConfirmed,
 
     contentArea: "general",
@@ -320,6 +333,7 @@ function resetEventForm() {
   eventAllDay.checked = true;
 
   syncScheduleFields();
+  syncRsvpFields();
   keepEndDateInRange();
   refreshEventScheduleControls();
 }
@@ -427,6 +441,7 @@ async function initializeEventPage() {
 }
 
 eventAllDay.addEventListener("change", syncScheduleFields);
+eventRsvpEnabled.addEventListener("change", syncRsvpFields);
 cancelEventEditing?.addEventListener("click", cancelEditingEvent);
 eventTitleEn.addEventListener("input", () => syncEventTitleValidation());
 eventTitleFr.addEventListener("input", () => syncEventTitleValidation());
@@ -697,6 +712,12 @@ function populateEventForm(event) {
   setEventField("eventType", event.eventType);
   setEventField("eventTimezone", event.timezone);
   setEventCheckbox("eventAllDay", event.allDay);
+  setEventCheckbox("eventRsvpEnabled", event.rsvpEnabled);
+  setEventField(
+    "eventRsvpDeadline",
+    event.rsvpDeadline ? String(event.rsvpDeadline).slice(0, 10) : "",
+  );
+  syncRsvpFields();
 
   const allDayCheckbox = document.getElementById("eventAllDay");
   allDayCheckbox?.dispatchEvent(new Event("change"));
@@ -770,4 +791,5 @@ if (editingEventId) {
 }
 
 syncScheduleFields();
+syncRsvpFields();
 initializeEventPage();

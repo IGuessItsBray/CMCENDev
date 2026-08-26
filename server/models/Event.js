@@ -149,6 +149,16 @@ const EventSchema = new mongoose.Schema(
       default: () => ({}),
     },
 
+    rsvpEnabled: {
+      type: Boolean,
+      default: false,
+    },
+
+    rsvpDeadline: {
+      type: Date,
+      default: null,
+    },
+
     city: {
       type: String,
       trim: true,

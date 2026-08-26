@@ -35,6 +35,10 @@ const eventDetailRegistration = document.getElementById(
 const eventCalendarExportLink = document.getElementById(
   "eventCalendarExportLink",
 );
+const eventRsvpSection = document.getElementById("eventRsvpSection");
+const eventRsvpMessage = document.getElementById("eventRsvpMessage");
+const eventRsvpActions = document.getElementById("eventRsvpActions");
+const eventRsvpManagement = document.getElementById("eventRsvpManagement");
 
 let currentEvent = null;
 let currentEventId = "";
@@ -382,6 +386,107 @@ function renderRegistration(value) {
   eventRegistrationSection.hidden = false;
 }
 
+function formatRsvpDeadline(value) {
+  const date = getValidDate(value);
+  return date
+    ? new Intl.DateTimeFormat(getEventLocale(), { dateStyle: "long", timeZone: "UTC" }).format(date)
+    : "";
+}
+
+async function submitRsvp(response) {
+  try {
+    const result = await CMCENUtils.apiJson(`/api/events/${encodeURIComponent(currentEventId)}/rsvp`, {
+      method: "POST", token: getStoredToken(), body: { response },
+      errorMessage: getEventTranslation("event_rsvp_submit_error", "Could not save your RSVP."),
+    });
+    eventRsvpMessage.textContent = getEventTranslation(
+      result.rsvp?.response === "accepted" ? "event_rsvp_accepted" : "event_rsvp_declined",
+      result.rsvp?.response === "accepted" ? "Your attendance has been recorded." : "Your decline has been recorded.",
+    );
+  } catch (error) {
+    eventRsvpMessage.textContent = error.message;
+  }
+}
+
+async function loadRsvpManagement() {
+  if (!getStoredToken() || !currentEventId) return;
+  try {
+    const result = await CMCENUtils.apiJson(`/api/events/${encodeURIComponent(currentEventId)}/rsvps`, {
+      token: getStoredToken(), errorMessage: "Could not load event RSVPs",
+    });
+    const accepted = result.rsvps.filter((rsvp) => rsvp.response === "accepted").length;
+    const declined = result.rsvps.length - accepted;
+    eventRsvpManagement.replaceChildren();
+    const summary = document.createElement("p");
+    summary.textContent = `${accepted} accepted · ${declined} declined`;
+    const list = document.createElement("ul");
+    result.rsvps.forEach((rsvp) => {
+      const item = document.createElement("li");
+      const name = [rsvp.rank, rsvp.firstName, rsvp.lastName]
+        .filter(Boolean)
+        .join(" ");
+      item.textContent = [
+        `${rsvp.response}: ${name}`,
+        rsvp.unitOrStatus,
+        rsvp.email,
+        rsvp.phone,
+      ].filter(Boolean).join(" · ");
+      list.append(item);
+    });
+    const exportLink = document.createElement("a");
+    exportLink.href = `/api/events/${encodeURIComponent(currentEventId)}/rsvps.csv`;
+    exportLink.textContent = getEventTranslation("event_rsvp_export", "Download RSVP CSV");
+    exportLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      fetch(exportLink.href, { headers: { Authorization: `Bearer ${getStoredToken()}` } })
+        .then((response) => response.ok ? response.blob() : response.json().then((data) => Promise.reject(new Error(data.error))))
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const download = document.createElement("a");
+          download.href = url; download.download = "event-rsvps.csv"; download.click();
+          URL.revokeObjectURL(url);
+        })
+        .catch((error) => { eventRsvpMessage.textContent = error.message; });
+    });
+    eventRsvpManagement.append(summary, list, exportLink);
+    eventRsvpManagement.hidden = false;
+  } catch {
+    eventRsvpManagement.hidden = true;
+  }
+}
+
+function renderRsvp(event) {
+  eventRsvpActions.replaceChildren();
+  eventRsvpManagement.hidden = true;
+  if (!event.rsvpEnabled) { eventRsvpSection.hidden = true; return; }
+
+  eventRsvpSection.hidden = false;
+  const deadline = formatRsvpDeadline(event.rsvpDeadline);
+  const deadlinePassed = event.rsvpDeadline && new Date() > new Date(event.rsvpDeadline);
+  if (deadlinePassed) {
+    eventRsvpMessage.textContent = getEventTranslation("event_rsvp_closed", "RSVPs are now closed.");
+  } else if (!getStoredToken()) {
+    eventRsvpMessage.textContent = getEventTranslation("event_rsvp_login_required", "Sign in to RSVP for this event.");
+    const login = document.createElement("a"); login.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    login.textContent = getEventTranslation("login", "Sign in"); eventRsvpActions.append(login);
+  } else {
+    eventRsvpMessage.textContent = deadline
+      ? getEventTranslation("event_rsvp_deadline_message", { deadline })
+      : getEventTranslation("event_rsvp_prompt", "Will you attend?");
+    [
+      ["accepted", "event_rsvp_accept", "Accept"],
+      ["declined", "event_rsvp_decline", "Decline"],
+    ].forEach(([response, key, label]) => {
+      const button = document.createElement("button"); button.type = "button";
+      button.className = `event-rsvp-button is-${response}`;
+      button.textContent = getEventTranslation(key, label);
+      button.addEventListener("click", () => submitRsvp(response));
+      eventRsvpActions.append(button);
+    });
+  }
+  loadRsvpManagement();
+}
+
 function renderEvent(event) {
   const title =
     getLocalizedEventText(event.title) ||
@@ -434,6 +539,7 @@ function renderEvent(event) {
   );
 
   renderRegistration(registration);
+  renderRsvp(event);
 
   eventCalendarExportLink.href = `/api/events/${encodeURIComponent(currentEventId)}/calendar.ics?lang=${encodeURIComponent(getEventLanguage())}`;
   eventCalendarExportLink.hidden = false;

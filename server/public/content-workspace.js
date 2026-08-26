@@ -1190,6 +1190,20 @@ function getEventDetailsFields(item) {
       checked: item.content?.allDay === true,
     }),
     createWorkspaceEditorField({
+      field: "rsvpEnabled",
+      label: "Enable RSVPs",
+      labelKey: "event_rsvp_enabled",
+      type: "checkbox",
+      checked: item.content?.rsvpEnabled === true,
+    }),
+    createWorkspaceDateTimeField({
+      field: "rsvpDeadline",
+      label: "RSVP deadline",
+      labelKey: "event_rsvp_deadline",
+      value: item.content?.rsvpDeadline,
+      includeTime: false,
+    }),
+    createWorkspaceEditorField({
       field: "contentArea",
       label: "Content area",
       labelKey: "content_workspace_content_area",
@@ -1599,6 +1613,7 @@ function createContentWorkspaceRecordEditor(item) {
   const form = document.createElement("form");
   form.className = "content-workspace-record-form";
   form.append(...fields);
+  if (item.type === "event") setupRsvpDeadlineVisibility(form);
   const imageEditor = createContentWorkspaceImageEditor(item);
   if (imageEditor) form.append(imageEditor);
   form.addEventListener("submit", (event) => {
@@ -1608,6 +1623,24 @@ function createContentWorkspaceRecordEditor(item) {
 
   section.append(heading, form);
   return section;
+}
+
+function setupRsvpDeadlineVisibility(form) {
+  const enabled = form.elements.rsvpEnabled;
+  const deadline = form.elements.rsvpDeadline;
+  const deadlineField = deadline?.closest(
+    ".content-workspace-date-time-field",
+  );
+
+  if (!enabled || !deadline || !deadlineField) return;
+
+  const sync = () => {
+    deadlineField.hidden = !enabled.checked;
+    deadline.disabled = !enabled.checked;
+  };
+
+  enabled.addEventListener("change", sync);
+  sync();
 }
 
 function getMemberEventEditorFields(item) {
@@ -1744,6 +1777,20 @@ function getMemberEventEditorFields(item) {
       checked: content.allDay !== false,
     }),
     createWorkspaceEditorField({
+      field: "rsvpEnabled",
+      label: "Enable RSVPs",
+      labelKey: "event_rsvp_enabled",
+      type: "checkbox",
+      checked: content.rsvpEnabled === true,
+    }),
+    createWorkspaceDateTimeField({
+      field: "rsvpDeadline",
+      label: "RSVP deadline",
+      labelKey: "event_rsvp_deadline",
+      value: content.rsvpDeadline,
+      includeTime: false,
+    }),
+    createWorkspaceEditorField({
       field: "publicationPermissionConfirmed",
       label:
         "I confirm I have permission from the chain of command to publish this event.",
@@ -1789,6 +1836,8 @@ function getMemberEventPayload(formData) {
       includeTime: !allDay,
     }),
     allDay,
+    rsvpEnabled: formData.get("rsvpEnabled") === "true",
+    rsvpDeadline: String(formData.get("rsvpDeadline") || ""),
     publicationPermissionConfirmed:
       formData.get("publicationPermissionConfirmed") === "true",
     contentArea: "general",
@@ -2002,6 +2051,7 @@ function createMemberEventEditor(item = null) {
   submitOptions.className = "event-submit-options";
   submitOptions.append(save);
   form.append(submitOptions);
+  setupRsvpDeadlineVisibility(form);
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveMemberEvent(item, form, save);
@@ -3095,6 +3145,8 @@ function getContentWorkspaceRecordPayload(item, formData) {
       }),
       timezone: String(formData.get("timezone") || ""),
       allDay,
+      rsvpEnabled: formData.get("rsvpEnabled") === "true",
+      rsvpDeadline: String(formData.get("rsvpDeadline") || ""),
       contentArea: String(formData.get("contentArea") || "general"),
       imagePath: String(formData.get("imagePath") || ""),
     };

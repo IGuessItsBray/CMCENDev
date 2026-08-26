@@ -294,6 +294,9 @@ Mounted at `/api/events`.
 | `GET`   | `/api/events/:id/calendar.ics`        | Public                                | Download one published event as an iCalendar (`.ics`) entry. Optional `lang=en\|fr` selects localized public text; unpublished and removed events return not found.                                                               |
 | `GET`   | `/api/events/:id/edit`                | Authenticated owner or reviewer       | Get full event edit payload. Hidden events return not found to a non-reviewer owner; reviewers retain access for moderation and restoration.                                                                                        |
 | `PATCH` | `/api/events/:id`                     | Authenticated owner or reviewer       | Update event while preserving its original submitter record. Owners may update draft, pending, or rejected events only; published events require site staff, and hidden events return not found to a non-reviewer owner. Descriptions and registration instructions are limited to 10,000 characters per language. |
+| `POST`  | `/api/events/:id/rsvp`                | Authenticated non-owner               | Create or update the caller’s accept/decline RSVP for a published RSVP-enabled event before its deadline. Event owners cannot RSVP to their own event. The stored rank, name, unit/status, email, and phone are copied from the account profile; the event owner receives a site notification. |
+| `GET`   | `/api/events/:id/rsvps`               | Event owner or site administrator     | List RSVP responses and their profile snapshots. |
+| `GET`   | `/api/events/:id/rsvps.csv`           | Event owner or site administrator     | Download accept/decline responses as CSV. Exports are audit logged. |
 | `PATCH` | `/api/events/:eventId/review-content` | Authenticated reviewer, or owner of a pending/rejected event | Update the title, location, description, and registration text for one language. Reviewers may update pending, published, or removed (hidden) events; editing a removed event preserves its hidden status until it is explicitly restored. Owners, including owners who also have reviewer permissions, may update their pending or rejected events. Updating a rejected event sends it back to the review queue and clears its rejection notification. The saved public-field revision and audit entry record the before/after values. |
 | `PATCH` | `/api/events/:eventId/review`         | Authenticated + `canReviewAndPublish` | Publish or reject event.                                                                                                                                                                                                           |
 
@@ -304,6 +307,12 @@ range. Calls without those parameters retain the upcoming-events behaviour.
 Optional `eventType`, `organizingEntity`, and `provinceRegion` parameters use
 their published event-option values and are combined when more than one is
 supplied.
+
+Events can enable account-only RSVPs with `rsvpEnabled: true` and an optional
+`rsvpDeadline` in `YYYY-MM-DD` form. The deadline closes at the end of that
+UTC date and cannot be after the event starts. A responder can change their
+own response until the deadline; only the event owner and site administrators
+can see responder contact details or download the CSV.
 
 ## News Stories
 

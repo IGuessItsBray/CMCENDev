@@ -4117,6 +4117,53 @@ a.dropdown-toggle {
   color: #0b62d6;
 }
 
+#eventRsvpActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.event-rsvp-button {
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid var(--navy-900);
+  border-radius: 2px;
+  background: var(--navy-900);
+  color: var(--white);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.event-rsvp-button:hover,
+.event-rsvp-button:focus-visible {
+  background: var(--navy-700);
+  border-color: var(--navy-700);
+}
+
+.event-rsvp-button.is-declined {
+  background: transparent;
+  color: var(--navy-900);
+}
+
+.event-rsvp-button.is-declined:hover,
+.event-rsvp-button.is-declined:focus-visible {
+  background: var(--navy-900);
+  color: var(--white);
+}
+
+#eventRsvpManagement ul {
+  margin: 10px 0;
+  padding-left: 18px;
+}
+
+#eventRsvpManagement li {
+  margin: 4px 0;
+}
+
 /* ─────────────────────────────────────────────
    Site search
    ───────────────────────────────────────────── */
@@ -23415,6 +23462,32 @@ html[data-theme='dark'] .event-detail-description p,
 html[data-theme='dark'] .event-detail-list dd,
 html[data-theme='dark'] .event-detail-registration p {
   color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .event-rsvp-button {
+  border-color: var(--gold-500);
+  background: var(--gold-500);
+  color: #101522;
+}
+
+html[data-theme='dark'] .event-rsvp-button:hover,
+html[data-theme='dark'] .event-rsvp-button:focus-visible {
+  border-color: var(--gold-200);
+  background: var(--gold-200);
+  color: #101522;
+}
+
+html[data-theme='dark'] .event-rsvp-button.is-declined {
+  border-color: var(--dark-text-soft);
+  background: transparent;
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .event-rsvp-button.is-declined:hover,
+html[data-theme='dark'] .event-rsvp-button.is-declined:focus-visible {
+  border-color: var(--dark-text);
+  background: var(--dark-text);
+  color: var(--dark-surface-2);
 }
 
 html[data-theme='dark'] .event-language-heading,

@@ -1467,6 +1467,21 @@ function updateNotificationBadges(count = 0) {
 function getHeaderNotificationTitle(item) {
   const notificationState = getHeaderNotificationState(item);
 
+  if (item?.type === "eventRsvp") {
+    const eventTitle =
+      CMCENUtils.getLocalizedText(item.title) ||
+      translate("notifications_type_event");
+    const response = translate(
+      item.response === "accepted"
+        ? "notifications_rsvp_accepted"
+        : "notifications_rsvp_declined",
+    );
+    return translate("notifications_event_rsvp_message")
+      .replace("{name}", item.responderName || translate("notifications_rsvp_member"))
+      .replace("{response}", response)
+      .replace("{title}", eventTitle);
+  }
+
   if (item?.type === "event") {
     const eventTitle =
       CMCENUtils.getLocalizedText(item.title) ||
@@ -1500,6 +1515,7 @@ function getHeaderNotificationSummary(item) {
 }
 
 function getHeaderNotificationState(item) {
+  if (item?.type === "eventRsvp") return "rsvp";
   return item?.status === "published" ? "published" : "rejected";
 }
 

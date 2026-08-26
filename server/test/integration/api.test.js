@@ -2243,6 +2243,90 @@ describe('event, page, and comment workflows', () => {
     assert.equal(publishedNotification.href, `/event?id=${event._id}`);
   });
 
+  test('records account-derived RSVPs and limits management to owners and administrators', async () => {
+    const owner = await createUser({ role: 'contributor' });
+    const attendee = await createUser({
+      status: 'civilian',
+      rank: '',
+      currentUnit: '',
+      phone: '613-555-0100',
+    });
+    const administrator = await createUser({ role: 'administrator' });
+    const otherUser = await createUser();
+    const event = await Event.create({
+      ...eventPayload(),
+      createdBy: owner._id,
+      status: 'published',
+      rsvpEnabled: true,
+      rsvpDeadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+    });
+    const attendeeSession = await login(attendee);
+    const ownerSession = await login(owner);
+    const administratorSession = await login(administrator);
+    const otherSession = await login(otherUser);
+
+    await request(app).post(`/api/events/${event._id}/rsvp`).send({ response: 'accepted' }).expect(401);
+
+    await request(app)
+      .post(`/api/events/${event._id}/rsvp`)
+      .set('Authorization', bearer(ownerSession.body.token))
+      .send({ response: 'accepted' })
+      .expect(403);
+
+    const accepted = await request(app)
+      .post(`/api/events/${event._id}/rsvp`)
+      .set('Authorization', bearer(attendeeSession.body.token))
+      .send({ response: 'accepted' })
+      .expect(200);
+    assert.equal(accepted.body.rsvp.response, 'accepted');
+    assert.equal(accepted.body.rsvp.unitOrStatus, 'Civilian');
+    assert.equal(accepted.body.rsvp.email, attendee.email);
+    assert.equal(accepted.body.rsvp.phone, attendee.phone);
+
+    await request(app)
+      .post(`/api/events/${event._id}/rsvp`)
+      .set('Authorization', bearer(attendeeSession.body.token))
+      .send({ response: 'declined' })
+      .expect(200);
+
+    const ownerList = await request(app)
+      .get(`/api/events/${event._id}/rsvps`)
+      .set('Authorization', bearer(ownerSession.body.token))
+      .expect(200);
+    assert.equal(ownerList.body.rsvps.length, 1);
+    assert.equal(ownerList.body.rsvps[0].response, 'declined');
+
+    const ownerNotifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(ownerSession.body.token))
+      .expect(200);
+    const rsvpNotification = ownerNotifications.body.notifications.items.find(
+      (item) => item.type === 'eventRsvp',
+    );
+    assert.equal(rsvpNotification.response, 'declined');
+    assert.equal(rsvpNotification.href, `/event?id=${event._id}`);
+
+    await request(app)
+      .get(`/api/events/${event._id}/rsvps`)
+      .set('Authorization', bearer(otherSession.body.token))
+      .expect(403);
+
+    await request(app)
+      .get(`/api/events/${event._id}/rsvps`)
+      .set('Authorization', bearer(administratorSession.body.token))
+      .expect(200);
+
+    const csv = await request(app)
+      .get(`/api/events/${event._id}/rsvps.csv`)
+      .set('Authorization', bearer(ownerSession.body.token))
+      .expect(200);
+    assert.match(csv.text, /Response,Rank,First name/);
+    assert.match(csv.text, /declined/);
+    assert.ok(
+      await AuditLog.exists({ action: 'event.rsvps_exported', target: event._id }),
+    );
+  });
+
   test('keeps removed events unavailable to their original submitter', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });

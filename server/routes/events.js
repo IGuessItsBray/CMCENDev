@@ -1,5 +1,6 @@
 const express = require('express');
 const Event = require('../models/Event');
+const EventRsvp = require('../models/EventRsvp');
 const {
   EVENT_ORGANIZING_ENTITIES,
   EVENT_TYPES,
@@ -326,6 +327,87 @@ function isEventStartInPast(startDate, allDay, now = new Date()) {
   return startDate < now;
 }
 
+function parseRsvpDeadline(value) {
+  if (value === null || value === undefined || value === '') return null;
+
+  const normalizedValue = String(value).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(normalizedValue)) return undefined;
+
+  const date = new Date(`${normalizedValue}T23:59:59.999Z`);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function getRsvpSettings(body, startDate, existing = {}) {
+  const hasEnabled = Object.prototype.hasOwnProperty.call(body, 'rsvpEnabled');
+  const hasDeadline = Object.prototype.hasOwnProperty.call(body, 'rsvpDeadline');
+  const enabled = hasEnabled
+    ? parseBoolean(body.rsvpEnabled, false)
+    : existing.enabled === true;
+  const deadline = hasDeadline
+    ? parseRsvpDeadline(body.rsvpDeadline)
+    : existing.deadline || null;
+
+  if (deadline === undefined) {
+    const error = new Error('The RSVP deadline must use YYYY-MM-DD');
+    error.status = 400;
+    throw error;
+  }
+
+  if (enabled && deadline && deadline > startDate) {
+    const error = new Error('The RSVP deadline cannot be after the event starts');
+    error.status = 400;
+    throw error;
+  }
+
+  return { enabled, deadline: enabled ? deadline : null };
+}
+
+function getRsvpProfile(user) {
+  const status = String(user.status || '').trim();
+  const isCivilianOrRetired = ['civilian', 'retired'].includes(status);
+  const unitOrStatus = isCivilianOrRetired
+    ? status.charAt(0).toUpperCase() + status.slice(1)
+    : cleanString(user.currentUnit || user.company);
+
+  return {
+    rank: cleanString(user.rank),
+    firstName: cleanString(user.firstName || user.accountName),
+    lastName: cleanString(user.lastName),
+    unitOrStatus,
+    email: cleanString(user.email).toLowerCase(),
+    phone: cleanString(user.phone),
+  };
+}
+
+function canManageEventRsvps(event, user) {
+  return (
+    (event.createdBy && String(event.createdBy) === String(user._id)) ||
+    user.role === 'administrator'
+  );
+}
+
+function escapeCsv(value) {
+  const normalizedValue = String(value || '');
+  return /[",\r\n]/u.test(normalizedValue)
+    ? `"${normalizedValue.replace(/"/gu, '""')}"`
+    : normalizedValue;
+}
+
+function buildRsvpCsv(rsvps) {
+  const headers = [
+    'Response', 'Rank', 'First name', 'Last name', 'Unit or status',
+    'Email', 'Phone', 'Responded at',
+  ];
+  const rows = rsvps.map((rsvp) => [
+    rsvp.response, rsvp.rank, rsvp.firstName, rsvp.lastName,
+    rsvp.unitOrStatus, rsvp.email, rsvp.phone,
+    rsvp.updatedAt ? new Date(rsvp.updatedAt).toISOString() : '',
+  ]);
+  return [headers, ...rows]
+    .map((row) => row.map(escapeCsv).join(','))
+    .join('\r\n');
+}
+
 const PUBLIC_EVENT_FIELDS = [
   'title',
   'description',
@@ -341,6 +423,8 @@ const PUBLIC_EVENT_FIELDS = [
   'allDay',
   'imagePath',
   'contentArea',
+  'rsvpEnabled',
+  'rsvpDeadline',
 ].join(' ');
 
 const MAX_PUBLIC_EVENT_RANGE_DAYS = 370;
@@ -573,6 +657,8 @@ router.post(
         publicationPermissionConfirmed = false,
         contentArea = 'general',
         publishNow = false,
+        rsvpEnabled = false,
+        rsvpDeadline = null,
       } = req.body;
 
       const cleanTitle = cleanLocalizedText(title);
@@ -711,6 +797,16 @@ router.post(
         });
       }
 
+      let rsvpSettings;
+      try {
+        rsvpSettings = getRsvpSettings(
+          { rsvpEnabled, rsvpDeadline },
+          parsedStartDate,
+        );
+      } catch (error) {
+        return res.status(error.status || 400).json({ error: error.message });
+      }
+
       const cleanContentArea = cleanString(contentArea, 'general') || 'general';
 
       const permissions = getUserPermissions(req.user);
@@ -753,6 +849,8 @@ router.post(
         endDate: parsedEndDate,
         allDay: isAllDay,
         imagePath: cleanImagePath,
+        rsvpEnabled: rsvpSettings.enabled,
+        rsvpDeadline: rsvpSettings.deadline,
 
         submitter: cleanSubmitterData,
 
@@ -926,6 +1024,79 @@ router.get('/mine', authMiddleware, async (req, res) => {
     return res.status(500).json({
       error: 'Could not load your events',
     });
+  }
+});
+
+router.post('/:id/rsvp', authMiddleware, async (req, res) => {
+  try {
+    const event = await Event.findOne({ _id: req.params.id, status: 'published' })
+      .select('createdBy rsvpEnabled rsvpDeadline')
+      .lean();
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (!event.rsvpEnabled) return res.status(409).json({ error: 'RSVP is not enabled for this event' });
+    if (event.createdBy && String(event.createdBy) === String(req.user._id)) {
+      return res.status(403).json({ error: 'You cannot RSVP to your own event' });
+    }
+    if (event.rsvpDeadline && new Date() > event.rsvpDeadline) {
+      return res.status(409).json({ error: 'The RSVP deadline has passed' });
+    }
+
+    const response = cleanString(req.body?.response).toLowerCase();
+    if (!['accepted', 'declined'].includes(response)) {
+      return res.status(400).json({ error: 'RSVP response must be accepted or declined' });
+    }
+
+    const rsvp = await EventRsvp.findOneAndUpdate(
+      { event: event._id, user: req.user._id },
+      { $set: { response, ...getRsvpProfile(req.user) } },
+      {
+        returnDocument: 'after',
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+      },
+    );
+    await writeAuditLog({
+      req, action: 'event.rsvp_submitted', actor: req.user,
+      targetType: 'event', target: event._id,
+      metadata: { response },
+    });
+    return res.json({ rsvp });
+  } catch (error) {
+    if (error.name === 'CastError') return res.status(404).json({ error: 'Event not found' });
+    console.error('Could not save event RSVP:', error);
+    return res.status(500).json({ error: 'Could not save RSVP' });
+  }
+});
+
+router.get('/:id/rsvps', authMiddleware, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id).select('createdBy rsvpEnabled').lean();
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (!event.rsvpEnabled) return res.status(409).json({ error: 'RSVP is not enabled for this event' });
+    if (!canManageEventRsvps(event, req.user)) return res.status(403).json({ error: 'You do not have permission to view event RSVPs' });
+    const rsvps = await EventRsvp.find({ event: event._id }).sort({ response: 1, updatedAt: -1 }).lean();
+    return res.json({ rsvps });
+  } catch (error) {
+    if (error.name === 'CastError') return res.status(404).json({ error: 'Event not found' });
+    console.error('Could not load event RSVPs:', error);
+    return res.status(500).json({ error: 'Could not load event RSVPs' });
+  }
+});
+
+router.get('/:id/rsvps.csv', authMiddleware, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id).select('createdBy rsvpEnabled').lean();
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (!event.rsvpEnabled) return res.status(409).json({ error: 'RSVP is not enabled for this event' });
+    if (!canManageEventRsvps(event, req.user)) return res.status(403).json({ error: 'You do not have permission to export event RSVPs' });
+    const rsvps = await EventRsvp.find({ event: event._id }).sort({ response: 1, updatedAt: -1 }).lean();
+    await writeAuditLog({ req, action: 'event.rsvps_exported', actor: req.user, targetType: 'event', target: event._id });
+    return res.type('text/csv; charset=utf-8').set('Content-Disposition', 'attachment; filename="event-rsvps.csv"').send(buildRsvpCsv(rsvps));
+  } catch (error) {
+    if (error.name === 'CastError') return res.status(404).json({ error: 'Event not found' });
+    console.error('Could not export event RSVPs:', error);
+    return res.status(500).json({ error: 'Could not export event RSVPs' });
   }
 });
 
@@ -1163,6 +1334,17 @@ router.patch('/:id', authMiddleware, async (req, res) => {
       });
     }
 
+    let rsvpSettings;
+    try {
+      rsvpSettings = getRsvpSettings(
+        req.body,
+        parsedStartDate,
+        { enabled: event.rsvpEnabled, deadline: event.rsvpDeadline },
+      );
+    } catch (error) {
+      return res.status(error.status || 400).json({ error: error.message });
+    }
+
     if (parseBoolean(publicationPermissionConfirmed) !== true) {
       return res.status(400).json({
         error: 'Publication permission must be confirmed',
@@ -1198,6 +1380,8 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     event.startDate = parsedStartDate;
     event.endDate = parsedEndDate;
     event.allDay = isAllDay;
+    event.rsvpEnabled = rsvpSettings.enabled;
+    event.rsvpDeadline = rsvpSettings.deadline;
     if (Object.prototype.hasOwnProperty.call(req.body, 'imagePath')) {
       event.imagePath = cleanString(imagePath);
     }

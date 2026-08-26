@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const speakeasy = require('speakeasy');
 const User = require('../models/User');
 const Event = require('../models/Event');
+const EventRsvp = require('../models/EventRsvp');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const LastPostMessage = require('../models/LastPostMessage');
@@ -375,6 +376,49 @@ async function getEventReviewNotifications(user, lastReadAt) {
   };
 }
 
+async function getEventRsvpNotifications(user, lastReadAt) {
+  const notificationStart =
+    lastReadAt ||
+    new Date(Date.now() - INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS);
+  const events = await Event.find({ createdBy: user._id })
+    .select('title')
+    .lean();
+  const titlesByEventId = new Map(
+    events.map((event) => [String(event._id), event.title]),
+  );
+
+  if (!titlesByEventId.size) {
+    return { actionCount: 0, unreadCount: 0, items: [] };
+  }
+
+  const rsvps = await EventRsvp.find({
+    event: { $in: events.map((event) => event._id) },
+    updatedAt: { $gt: notificationStart },
+  })
+    .select('event response rank firstName lastName updatedAt')
+    .sort({ updatedAt: -1 })
+    .limit(50)
+    .lean();
+
+  return {
+    actionCount: 0,
+    unreadCount: rsvps.length,
+    items: rsvps.map((rsvp) => ({
+      type: 'eventRsvp',
+      id: rsvp._id,
+      eventId: rsvp.event,
+      title: titlesByEventId.get(String(rsvp.event)) || {},
+      response: rsvp.response,
+      responderName: [rsvp.rank, rsvp.firstName, rsvp.lastName]
+        .filter(Boolean)
+        .join(' '),
+      status: 'rsvp',
+      updatedAt: rsvp.updatedAt,
+      href: `/event?id=${encodeURIComponent(String(rsvp.event))}`,
+    })),
+  };
+}
+
 function getRetirementMessageNotificationTitle(retirementMessage) {
   const retiree = retirementMessage.retiree || {};
   const name = [retiree.rank, retiree.firstName, retiree.lastName]
@@ -484,14 +528,15 @@ async function getNotificationSummary(user) {
   let actionCount = 0;
   let unreadCount = 0;
 
-  const [events, retirementMessages, lastPosts, retirementComments] = await Promise.all([
+  const [events, eventRsvps, retirementMessages, lastPosts, retirementComments] = await Promise.all([
     getEventReviewNotifications(user, lastReadAt),
+    getEventRsvpNotifications(user, lastReadAt),
     getRetirementMessageReviewNotifications(user, lastReadAt),
     getLastPostReviewNotifications(user, lastReadAt),
     getRetirementCommentReviewNotifications(user, lastReadAt),
   ]);
 
-  [events, retirementMessages, lastPosts, retirementComments].forEach((result) => {
+  [events, eventRsvps, retirementMessages, lastPosts, retirementComments].forEach((result) => {
     actionCount += result.actionCount;
     unreadCount += result.unreadCount;
     items.push(...result.items);
@@ -527,8 +572,9 @@ async function getReviewResultCounts(Model, ownerField, user, lastReadAt) {
 
 async function getNotificationCounts(user) {
   const lastReadAt = user.notificationState?.lastReadAt || null;
-  const [events, retirementMessages, lastPosts, retirementComments] = await Promise.all([
+  const [events, eventRsvps, retirementMessages, lastPosts, retirementComments] = await Promise.all([
     getReviewResultCounts(Event, 'createdBy', user, lastReadAt),
+    getEventRsvpNotifications(user, lastReadAt),
     getReviewResultCounts(RetirementMessage, 'createdBy', user, lastReadAt),
     getReviewResultCounts(LastPostMessage, 'createdBy', user, lastReadAt),
     getReviewResultCounts(RetirementComment, 'author', user, lastReadAt),
@@ -536,11 +582,13 @@ async function getNotificationCounts(user) {
 
   const actionCount =
     events.actionCount +
+    eventRsvps.actionCount +
     retirementMessages.actionCount +
     lastPosts.actionCount +
     retirementComments.actionCount;
   const unreadCount =
     events.unreadCount +
+    eventRsvps.unreadCount +
     retirementMessages.unreadCount +
     lastPosts.unreadCount +
     retirementComments.unreadCount;

@@ -2237,6 +2237,28 @@ a.dropdown-toggle {
   margin: 0 auto;
 }
 
+.professional-awards-shell {
+  width: min(100%, 1440px);
+}
+
+.professional-awards-manage-link {
+  display: inline-flex;
+  margin-top: 18px;
+  padding: 9px 13px;
+  border: 1px solid var(--gold-400);
+  border-radius: 5px;
+  color: var(--gold-100);
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.professional-awards-manage-link:hover,
+.professional-awards-manage-link:focus-visible {
+  background: var(--gold-500);
+  color: var(--navy-950);
+}
+
 .about-family-hero {
   min-height: 280px;
   padding: 34px 38px;
@@ -2387,6 +2409,186 @@ a.dropdown-toggle {
 
 .about-family-pillar-list li:first-child {
   margin-top: 0;
+}
+
+.professional-awards-toolbar {
+  display: grid;
+  gap: 7px;
+  max-width: 440px;
+}
+
+.professional-awards-highlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.professional-awards-highlight {
+  display: flex;
+  min-height: 160px;
+  overflow: hidden;
+  border: 1px solid var(--branch-grey-200);
+  border-left: 5px solid var(--gold-500);
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(213, 155, 39, 0.12), rgba(238, 240, 242, 0.88));
+}
+
+.professional-awards-highlight img {
+  width: 132px;
+  height: 160px;
+  object-fit: cover;
+}
+
+.professional-awards-highlight div {
+  padding: 20px;
+}
+
+.professional-awards-highlight p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.professional-awards-highlight p:first-child {
+  color: var(--navy-900);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.professional-awards-highlight h2 {
+  margin: 7px 0;
+  color: var(--navy-900);
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: normal;
+}
+
+.professional-awards-toolbar label {
+  color: var(--navy-900);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.professional-awards-toolbar input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--branch-grey-300);
+  border-radius: 5px;
+  font: inherit;
+}
+
+.professional-awards-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--branch-grey-200);
+}
+
+.professional-awards-tab {
+  min-height: 54px;
+  padding: 9px 12px;
+  border: 1px solid var(--navy-800);
+  border-radius: 5px;
+  background: var(--white);
+  color: var(--navy-900);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+  cursor: pointer;
+}
+
+.professional-awards-tab[aria-selected='true'] {
+  border-color: var(--navy-900);
+  background: var(--navy-900);
+  color: var(--white);
+}
+
+.professional-awards-select,
+.professional-awards-select-label {
+  display: none;
+}
+
+.professional-awards-table-wrap {
+  max-width: 100%;
+  margin-top: 16px;
+  overflow-x: auto;
+  border: 1px solid var(--branch-grey-200);
+  border-radius: 6px;
+}
+
+.professional-awards-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  text-align: left;
+}
+
+.professional-awards-table th,
+.professional-awards-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--branch-grey-200);
+  vertical-align: top;
+}
+
+.professional-awards-table th {
+  background: var(--navy-900);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.professional-awards-table td:first-child,
+.professional-awards-table td:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.professional-awards-table tbody tr:nth-child(even) {
+  background: var(--branch-grey-50);
+}
+
+.professional-awards-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+@media (max-width: 1120px) {
+  .professional-awards-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .professional-awards-tabs {
+    display: none;
+  }
+
+  .professional-awards-select-label {
+    display: block;
+    margin-top: 22px;
+    color: var(--navy-900);
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .professional-awards-select {
+    display: block;
+    width: 100%;
+    min-height: 46px;
+    margin-top: 7px;
+    padding: 9px 38px 9px 12px;
+    border: 1px solid var(--navy-800);
+    border-radius: 5px;
+    background: var(--white);
+    color: var(--navy-900);
+    font: inherit;
+    font-weight: 700;
+  }
 }
 
 .developers-team-list li {
@@ -17760,6 +17962,10 @@ html[data-theme='dark'] .last-post-submit-button {
     font-size: 24px;
   }
 
+  .professional-awards-highlights {
+    grid-template-columns: 1fr;
+  }
+
   .about-family-section p,
   .about-family-pillar-list li {
     font-size: 15px;
@@ -20359,6 +20565,67 @@ html[data-theme='dark'] .admin-work-zone-button.is-success:focus-visible:not(:di
   grid-column: 1 / -1;
 }
 
+/* Professional Awards uses the workspace pattern, with a deliberately quieter
+   archive rail and a single readable recipient form. */
+.professional-awards-admin-shell {
+  max-width: 1320px;
+}
+
+.professional-awards-admin-list-heading {
+  display: grid;
+  gap: 2px;
+  padding: 18px 18px 15px;
+  border-bottom: 1px solid var(--branch-grey-200);
+  color: var(--navy-900);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.professional-awards-admin-list-heading span:last-child {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.professional-awards-admin-shell .content-workspace-layout {
+  grid-template-columns: minmax(270px, 0.6fr) minmax(0, 1.4fr);
+}
+
+.professional-awards-admin-shell .content-workspace-detail {
+  gap: 22px;
+  padding: 38px 44px 48px;
+}
+
+.professional-awards-admin-shell .content-workspace-detail > h2 {
+  color: var(--navy-900);
+  font-family: var(--font-heading);
+  font-size: clamp(30px, 3vw, 40px);
+  font-weight: normal;
+  line-height: 1.12;
+}
+
+.professional-awards-admin-shell .content-workspace-detail > p {
+  max-width: 680px;
+  margin-top: -10px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.professional-awards-admin-shell .content-workspace-detail > h3 {
+  margin-top: 8px;
+  color: var(--navy-900);
+  font-size: 18px;
+}
+
+.professional-awards-admin-shell .content-workspace-record-form {
+  max-width: 820px;
+  border-top-color: var(--gold-600);
+}
+
+.professional-awards-admin-shell .content-workspace-record {
+  font-weight: 700;
+}
+
 .content-workspace-image-editor {
   display: grid;
   overflow: hidden;
@@ -21902,6 +22169,60 @@ html[data-theme='dark'] .content-workspace-record.is-selected {
     inset 4px 0 0 var(--gold-500),
     inset -3px 0 0 rgba(213, 155, 39, 0.46),
     0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme='dark'] .professional-awards-admin-list-heading {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-2);
+  color: var(--gold-200);
+}
+
+html[data-theme='dark'] .professional-awards-admin-list-heading span:last-child,
+html[data-theme='dark'] .professional-awards-admin-shell .content-workspace-detail > p {
+  color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .professional-awards-admin-shell .content-workspace-detail > h2,
+html[data-theme='dark'] .professional-awards-admin-shell .content-workspace-detail > h3,
+html[data-theme='dark'] .professional-awards-admin-shell .content-workspace-record {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .professional-awards-admin-shell .content-workspace-record-form {
+  border-top-color: var(--gold-500);
+  background: var(--dark-surface);
+}
+
+html[data-theme='dark'] .professional-awards-select-label {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .professional-awards-select {
+  border-color: var(--dark-border-strong);
+  background: var(--dark-surface-2);
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .professional-awards-table-wrap {
+  border-color: var(--dark-border);
+}
+
+html[data-theme='dark'] .professional-awards-table {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .professional-awards-table th,
+html[data-theme='dark'] .professional-awards-table td {
+  border-color: var(--dark-border);
+}
+
+html[data-theme='dark'] .professional-awards-table th {
+  background: var(--dark-surface-3);
+  color: var(--gold-200);
+}
+
+html[data-theme='dark'] .professional-awards-table tbody tr:nth-child(even) {
+  background: var(--dark-surface-2);
 }
 
 html[data-theme='dark'] .content-workspace-note {

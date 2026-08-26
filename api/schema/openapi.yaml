@@ -40,6 +40,60 @@ tags:
   - name: Certificates
   - name: Contact
 paths:
+  /api/professional-awards:
+    get:
+      tags: [Pages]
+      summary: List published professional awards.
+      security: []
+      responses:
+        "200":
+          description: Published awards, including source-document links and recipient records.
+  /api/admin/professional-awards:
+    get:
+      tags: [Admin]
+      summary: List professional awards for Content Management.
+      x-permission: canReviewAndPublish
+      responses:
+        "200":
+          description: All professional award records.
+    post:
+      tags: [Admin]
+      summary: Create a professional award.
+      x-permission: canReviewAndPublish
+      responses:
+        "201":
+          description: Professional award created.
+  /api/admin/professional-awards/{awardId}:
+    patch:
+      tags: [Admin]
+      summary: Update a professional award.
+      x-permission: canReviewAndPublish
+      responses:
+        "200":
+          description: Professional award updated.
+    delete:
+      tags: [Admin]
+      summary: Delete a professional award.
+      x-permission: canDeleteContent
+      responses:
+        "200":
+          description: Professional award deleted.
+  /api/admin/professional-awards/{awardId}/recipients:
+    post:
+      tags: [Admin]
+      summary: Add a recipient and publish a dated congratulatory news story, including an applicable medallion number or bursary amount.
+      x-permission: canReviewAndPublish
+      responses:
+        "201":
+          description: Recipient added.
+  /api/admin/professional-awards/{awardId}/recipients/{recipientId}:
+    patch:
+      tags: [Admin]
+      summary: Update a professional-award recipient, including an applicable medallion number or bursary amount.
+      x-permission: canReviewAndPublish
+      responses:
+        "200":
+          description: Recipient updated.
   /api/contact:
     post:
       tags: [Contact]
@@ -1103,7 +1157,14 @@ paths:
           required: true
           schema:
             type: string
-            enum: [event, retirementMessage, lastPost, newsArticle, retirementComment]
+            enum:
+              [
+                event,
+                retirementMessage,
+                lastPost,
+                newsArticle,
+                retirementComment,
+              ]
         - name: contentId
           in: path
           required: true
@@ -1157,7 +1218,15 @@ paths:
           in: query
           schema:
             type: string
-            enum: [all, event, retirementMessage, lastPost, newsArticle, retirementComment]
+            enum:
+              [
+                all,
+                event,
+                retirementMessage,
+                lastPost,
+                newsArticle,
+                retirementComment,
+              ]
         - name: status
           in: query
           schema:

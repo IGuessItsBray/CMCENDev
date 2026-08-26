@@ -30,6 +30,7 @@ const timerRoutes = require('./routes/timers');
 const uploadRoutes = require('./routes/uploads');
 const mfaRoutes = require('./routes/mfa');
 const pageRoutes = require('./routes/pages');
+const professionalAwardRoutes = require('./routes/professional-awards');
 const {
   blockKnownAiCrawlers,
   router: seoRoutes,
@@ -40,6 +41,7 @@ const { requestDiagnostics } = require('./middleware/request-diagnostics');
 const { getPlausibleConfig } = require('./services/plausible');
 const logger = require('./services/logger');
 const { startWeeklyBriefScheduler } = require('./services/weekly-brief');
+const { ensureProfessionalAwards } = require('./services/professional-awards');
 
 logger.installConsole();
 
@@ -247,6 +249,7 @@ app.use('/api/retirement-messages', retirementMessageRoutes);
 app.use('/api/certificate-requests', certificateRequestRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api', professionalAwardRoutes);
 app.use(pageRoutes);
 app.use(serveExtensionlessHtml);
 
@@ -303,6 +306,8 @@ async function startServer() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
+
+    await ensureProfessionalAwards();
 
     startWeeklyBriefScheduler();
 

@@ -1,1 +1,76 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Awards | CMCEN / RCMCE</title><link rel="stylesheet" href="/styles.css"></head><body><header id="header"></header><main class="about-family-main"><article class="about-family-shell"><header class="about-family-hero"><div class="about-family-hero-copy"><p class="about-family-kicker">Recognition</p><h1>Awards</h1><p class="about-family-intro">Recognition of service, achievement, and contributions to the C&amp;E community.</p></div><img src="/images/logo.png" alt="" class="about-family-emblem"></header><div class="about-family-body"><section class="about-family-section"><h2>C&amp;E recognition</h2><p>This page will publish current award, honours, and recognition opportunities for the C&amp;E community. It will also connect members with heritage-award material as it is migrated.</p></section></div></article></main><footer id="footer"></footer><script src="/app-utils.js"></script><script src="/timers.js"></script><script src="/index.js"></script><script src="/translations.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Professional Awards | CMCEN / RCMCE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main class="about-family-main">
+      <article class="about-family-shell professional-awards-shell">
+        <header class="about-family-hero">
+          <div class="about-family-hero-copy">
+            <p class="about-family-kicker">Recognition</p>
+            <h1>Professional Awards</h1>
+            <p class="about-family-intro">
+              Honours, awards, nomination guidance, and recipient records for
+              the C&amp;E community.
+            </p>
+            <a
+              class="professional-awards-manage-link"
+              id="professionalAwardsManageLink"
+              href="/professional-awards-admin"
+              hidden
+            >Manage awards</a>
+          </div>
+          <img src="/images/logo.png" alt="" class="about-family-emblem" />
+        </header>
+        <div
+          class="about-family-body"
+          id="professionalAwards"
+          aria-live="polite"
+        >
+          <section
+            class="professional-awards-highlights"
+            id="professionalAwardsHighlights"
+            aria-label="Current award recipients"
+          ></section>
+          <div class="professional-awards-toolbar">
+            <label for="professionalAwardsSearch">Search recipients</label>
+            <input
+              id="professionalAwardsSearch"
+              type="search"
+              placeholder="Search recipient names across all awards"
+              autocomplete="off"
+            />
+          </div>
+          <div
+            class="professional-awards-tabs"
+            id="professionalAwardsTabs"
+            role="tablist"
+            aria-label="Professional award categories"
+          ></div>
+          <label class="professional-awards-select-label" for="professionalAwardsSelect">
+            Award category
+          </label>
+          <select
+            class="professional-awards-select"
+            id="professionalAwardsSelect"
+            aria-label="Professional award category"
+          ></select>
+          <div id="professionalAwardsPanel" role="tabpanel">
+            <p>Loading professional awards…</p>
+          </div>
+        </div>
+      </article>
+    </main>
+    <footer id="footer"></footer>
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/awards.js"></script>
+  </body>
+</html>

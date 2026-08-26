@@ -175,7 +175,7 @@ const navLinks = {
     titleKey: "menu_doctrine_title",
     items: [
       { route: "/doctrine_hub.html", i18n: "menu_doctrine_option_1" },
-      { route: "/awards.html", i18n: "menu_doctrine_option_2" },
+      { route: "/awards", i18n: "menu_doctrine_option_2" },
     ],
   },
   news: {

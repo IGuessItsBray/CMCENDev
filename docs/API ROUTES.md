@@ -229,6 +229,19 @@ Defined in `routes/seo.js`, mounted at root. These routes are intentionally publ
 
 ## Pages and Navigation
 
+## Professional Awards
+
+| Method | Path | Access | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/api/professional-awards` | Public | List published professional awards, including application links and recipient records. |
+| `GET` | `/api/admin/professional-awards` | Authenticated + `canReviewAndPublish` | List all professional awards for Content Management. |
+| `POST` | `/api/admin/professional-awards` | Authenticated + `canReviewAndPublish` | Create a professional award with instructions, nomination/application links, and recipients. Creation is audited. |
+| `PATCH` | `/api/admin/professional-awards/:awardId` | Authenticated + `canReviewAndPublish` | Update an award and its links or recipient archive. Changes are audited. |
+| `DELETE` | `/api/admin/professional-awards/:awardId` | Authenticated + `canDeleteContent` | Permanently delete an award. This is audited. |
+| `POST` | `/api/admin/professional-awards/:awardId/recipients` | Authenticated + `canReviewAndPublish` | Add a recipient record. The payload supports recipient name/postnominals, role, medallion number for the Colonel-in-Chief Commendation, or amount for the C&E Branch Bursary. It also publishes an audited congratulatory news story dated when the recipient was added, so it appears in the homepage news feed and opens as a full news article. |
+| `PATCH` | `/api/admin/professional-awards/:awardId/recipients/:recipientId` | Authenticated + `canReviewAndPublish` | Update a recipient record. The latest Subaltern and Member of the Year are featured automatically. This is audited. |
+
+
 Defined in `routes/pages.js`, mounted at root.
 
 | Method   | Path                                  | Access                                | Purpose                                                                                                                                                   |

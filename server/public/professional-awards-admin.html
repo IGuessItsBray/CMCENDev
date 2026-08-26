@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Manage Professional Awards | CMCEN / RCMCE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main class="content-workspace-page professional-awards-admin-page">
+      <section class="content-workspace-shell professional-awards-admin-shell">
+        <header class="content-workspace-heading">
+          <div class="content-workspace-heading-copy">
+            <p class="content-workspace-eyebrow">Content management</p>
+            <h1>Professional Awards</h1>
+            <p>
+              Select an award, then add or update its recipient records.
+              The latest Subaltern and Member of the Year are featured on the
+              public Awards page.
+            </p>
+            <p><a href="/content-workspace">Back to Content Management</a></p>
+          </div>
+        </header>
+        <p
+          class="content-workspace-status"
+          id="awardsAdminMessage"
+          role="status"
+        ></p>
+        <div class="content-workspace-layout">
+          <aside class="content-workspace-list-panel">
+            <div class="professional-awards-admin-list-heading">
+              <span>Awards</span>
+              <span>Choose one to manage recipients</span>
+            </div>
+            <div class="content-workspace-list" id="awardAdminList"></div>
+          </aside>
+          <section
+            class="content-workspace-detail"
+            id="awardAdminDetail"
+          ></section>
+        </div>
+      </section>
+    </main>
+    <footer id="footer"></footer>
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/professional-awards-admin.js"></script>
+  </body>
+</html>

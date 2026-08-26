@@ -400,6 +400,110 @@ function getContentWorkspaceLimit(value) {
   return Math.min(limit, 100);
 }
 
+function encodeContentWorkspaceCursor(cursors) {
+  const serializedCursors = {};
+
+  Object.entries(cursors || {}).forEach(([type, cursor]) => {
+    if (
+      !CONTENT_WORKSPACE_TYPES.includes(type) ||
+      type === 'all' ||
+      !cursor ||
+      !mongoose.Types.ObjectId.isValid(cursor.id)
+    ) {
+      return;
+    }
+
+    const updatedAt = new Date(cursor.updatedAt);
+    if (Number.isNaN(updatedAt.getTime())) return;
+
+    serializedCursors[type] = {
+      id: String(cursor.id),
+      updatedAt: updatedAt.toISOString(),
+    };
+  });
+
+  return Buffer.from(JSON.stringify({ cursors: serializedCursors })).toString(
+    'base64url',
+  );
+}
+
+function decodeContentWorkspaceCursor(value) {
+  const cursor = cleanString(value);
+
+  if (!cursor) return {};
+
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+
+    if (!isPlainObject(decoded) || !isPlainObject(decoded.cursors)) {
+      return undefined;
+    }
+
+    const cursors = {};
+
+    for (const [type, entry] of Object.entries(decoded.cursors)) {
+      if (
+        !CONTENT_WORKSPACE_TYPES.includes(type) ||
+        type === 'all' ||
+        !isPlainObject(entry) ||
+        !mongoose.Types.ObjectId.isValid(entry.id)
+      ) {
+        return undefined;
+      }
+
+      const updatedAt = new Date(entry.updatedAt);
+      if (Number.isNaN(updatedAt.getTime())) return undefined;
+
+      cursors[type] = {
+        id: new mongoose.Types.ObjectId(entry.id),
+        updatedAt,
+      };
+    }
+
+    return cursors;
+  } catch (error) {
+    return undefined;
+  }
+}
+
+function getContentWorkspaceCursorFilter(cursor) {
+  if (!cursor) return {};
+
+  return {
+    $or: [
+      { updatedAt: { $lt: cursor.updatedAt } },
+      {
+        updatedAt: cursor.updatedAt,
+        _id: { $lt: cursor.id },
+      },
+    ],
+  };
+}
+
+function getContentWorkspaceNextCursor(cursors, items) {
+  const nextCursors = { ...cursors };
+
+  items.forEach((item) => {
+    const updatedAt = new Date(item.updatedAt);
+
+    if (
+      !CONTENT_WORKSPACE_TYPES.includes(item.type) ||
+      item.type === 'all' ||
+      !mongoose.Types.ObjectId.isValid(item._id) ||
+      Number.isNaN(updatedAt.getTime())
+    ) {
+      return;
+    }
+
+    nextCursors[item.type] = {
+      id: item._id,
+      updatedAt,
+    };
+  });
+
+  return encodeContentWorkspaceCursor(nextCursors);
+}
+
 function cleanContentWorkspaceSearch(value) {
   return String(value || '')
     .trim()
@@ -624,6 +728,7 @@ router.get(
       const search = cleanContentWorkspaceSearch(req.query.search);
       const contentId = String(req.query.id || '').trim();
       const limit = getContentWorkspaceLimit(req.query.limit);
+      const cursors = decodeContentWorkspaceCursor(req.query.cursor);
 
       if (type !== 'all' && !CONTENT_WORKSPACE_TYPES.includes(type)) {
         return res.status(400).json({ error: 'Unsupported content type' });
@@ -646,6 +751,10 @@ router.get(
         return res.status(400).json({ error: 'Invalid content ID' });
       }
 
+      if (cursors === undefined) {
+        return res.status(400).json({ error: 'Invalid content workspace cursor' });
+      }
+
       const contentFilter = {
         ...(status === 'all' ? {} : { status }),
         ...(contentId ? { _id: contentId } : {}),
@@ -657,18 +766,21 @@ router.get(
         (contentType) =>
           translation === 'all' || contentType !== 'retirementComment',
       );
+      const getWorkspaceFilter = (contentType) =>
+        getContentWorkspaceRecordFilter(
+          {
+            ...contentFilter,
+            ...getContentWorkspaceCursorFilter(cursors[contentType]),
+          },
+          contentType,
+          searchPattern,
+          translation,
+        );
       const queries = [];
 
       if (types.includes('event')) {
         queries.push(
-          Event.find(
-            getContentWorkspaceRecordFilter(
-              contentFilter,
-              'event',
-              searchPattern,
-              translation,
-            ),
-          )
+          Event.find(getWorkspaceFilter('event'))
             .select(
               'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -683,7 +795,7 @@ router.get(
               },
             ])
             .sort({ updatedAt: -1, _id: -1 })
-            .limit(limit)
+            .limit(limit + 1)
             .lean()
             .then((records) => records.map((record) => toContentWorkspaceItem('event', record))),
         );
@@ -691,14 +803,7 @@ router.get(
 
       if (types.includes('retirementMessage')) {
         queries.push(
-          RetirementMessage.find(
-            getContentWorkspaceRecordFilter(
-              contentFilter,
-              'retirementMessage',
-              searchPattern,
-              translation,
-            ),
-          )
+          RetirementMessage.find(getWorkspaceFilter('retirementMessage'))
             .select(
               'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -707,7 +812,7 @@ router.get(
               select: 'username accountName firstName lastName email role',
             })
             .sort({ updatedAt: -1, _id: -1 })
-            .limit(limit)
+            .limit(limit + 1)
             .lean()
             .then((records) =>
               records.map((record) =>
@@ -719,14 +824,7 @@ router.get(
 
       if (types.includes('lastPost')) {
         queries.push(
-          LastPostMessage.find(
-            getContentWorkspaceRecordFilter(
-              contentFilter,
-              'lastPost',
-              searchPattern,
-              translation,
-            ),
-          )
+          LastPostMessage.find(getWorkspaceFilter('lastPost'))
             .select(
               'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -741,7 +839,7 @@ router.get(
               },
             ])
             .sort({ updatedAt: -1, _id: -1 })
-            .limit(limit)
+            .limit(limit + 1)
             .lean()
             .then((records) =>
               records.map((record) => toContentWorkspaceItem('lastPost', record)),
@@ -751,14 +849,7 @@ router.get(
 
       if (types.includes('retirementComment')) {
         queries.push(
-          RetirementComment.find(
-            getContentWorkspaceRecordFilter(
-              contentFilter,
-              'retirementComment',
-              searchPattern,
-              translation,
-            ),
-          )
+          RetirementComment.find(getWorkspaceFilter('retirementComment'))
             .select(
               'retirementMessage author body status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
@@ -770,7 +861,7 @@ router.get(
               },
             ])
             .sort({ updatedAt: -1, _id: -1 })
-            .limit(limit)
+            .limit(limit + 1)
             .lean()
             .then((records) =>
               records.map((record) =>
@@ -782,14 +873,7 @@ router.get(
 
       if (types.includes('newsArticle')) {
         queries.push(
-          NewsArticle.find(
-            getContentWorkspaceRecordFilter(
-              contentFilter,
-              'newsArticle',
-              searchPattern,
-              translation,
-            ),
-          )
+          NewsArticle.find(getWorkspaceFilter('newsArticle'))
             .select(
               'title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt status hiddenFromStatus updatedAt createdAt',
             )
@@ -804,7 +888,7 @@ router.get(
               },
             ])
             .sort({ updatedAt: -1, _id: -1 })
-            .limit(limit)
+            .limit(limit + 1)
             .lean()
             .then((records) =>
               records.map((record) =>
@@ -814,16 +898,21 @@ router.get(
         );
       }
 
-      const items = (await Promise.all(queries))
+      const matchingItems = (await Promise.all(queries))
         .flat()
         .sort(
           (left, right) =>
             new Date(right.updatedAt || right.createdAt || 0) -
             new Date(left.updatedAt || left.createdAt || 0),
-        )
-        .slice(0, limit);
+        );
+      const hasMore = !contentId && matchingItems.length > limit;
+      const items = matchingItems.slice(0, limit);
 
-      return res.json({ items });
+      return res.json({
+        items,
+        hasMore,
+        nextCursor: hasMore ? getContentWorkspaceNextCursor(cursors, items) : '',
+      });
     } catch (error) {
       console.error('Could not load content workspace:', error);
       return res.status(500).json({ error: 'Could not load content workspace' });

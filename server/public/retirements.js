@@ -155,35 +155,6 @@ function formatCommentCount(count) {
   );
 }
 
-function isRetirementPlaceholderPhoto(photoUrl) {
-  if (!photoUrl) {
-    return false;
-  }
-
-  try {
-    const url = new URL(photoUrl, window.location.origin);
-    const pathname = url.pathname.toLowerCase();
-    const fileName = pathname.split("/").pop();
-
-    return (
-      fileName === "logo.png" ||
-      fileName.includes("cmcen-crest") ||
-      pathname.includes("/branch-crest/") ||
-      pathname.includes("/legacy/wordpress/348036/")
-    );
-  } catch (error) {
-    const pathname = String(photoUrl).toLowerCase().split(/[?#]/)[0];
-    const fileName = pathname.split("/").pop();
-
-    return (
-      fileName === "logo.png" ||
-      fileName.includes("cmcen-crest") ||
-      pathname.includes("/branch-crest/") ||
-      pathname.includes("/legacy/wordpress/348036/")
-    );
-  }
-}
-
 function createRetirementPlaceholderImage(className) {
   const image = document.createElement("img");
 
@@ -201,7 +172,7 @@ function createPhotoElement(retirementMessage, name) {
     const image = document.createElement("img");
     const displayPhotoUrl =
       retirementMessage.photoDisplayUrl || retirementMessage.photoUrl;
-    const isPlaceholderPhoto = isRetirementPlaceholderPhoto(
+    const isPlaceholderPhoto = CMCENUtils.isSitePlaceholderImage(
       retirementMessage.photoUrl,
     );
 

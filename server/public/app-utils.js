@@ -87,6 +87,33 @@
     return { name, postNominals };
   }
 
+  function isSitePlaceholderImage(imageUrl) {
+    if (!imageUrl) return false;
+
+    try {
+      const url = new URL(imageUrl, window.location.origin);
+      const pathname = url.pathname.toLowerCase();
+      const fileName = pathname.split("/").pop();
+
+      return (
+        fileName === "logo.png" ||
+        fileName.includes("cmcen-crest") ||
+        pathname.includes("/branch-crest/") ||
+        pathname.includes("/legacy/wordpress/348036/")
+      );
+    } catch {
+      const pathname = String(imageUrl).toLowerCase().split(/[?#]/)[0];
+      const fileName = pathname.split("/").pop();
+
+      return (
+        fileName === "logo.png" ||
+        fileName.includes("cmcen-crest") ||
+        pathname.includes("/branch-crest/") ||
+        pathname.includes("/legacy/wordpress/348036/")
+      );
+    }
+  }
+
   function storeAuthToken(token) {
     const cleanToken = normalizeToken(token);
 
@@ -1311,6 +1338,14 @@
         };
 
         modalDialog.setAttribute("role", isAlert ? "alertdialog" : "dialog");
+        modalDialog.classList.toggle(
+          "cmcen-modal--success",
+          options.tone === "success",
+        );
+        modalDialog.classList.toggle(
+          "cmcen-modal--danger",
+          options.tone === "danger",
+        );
         modalTitle.textContent =
           options.title || getModalTranslation(titleKey, defaultTitle);
         modalMessage.textContent = String(message || "");
@@ -1409,6 +1444,18 @@
               if (field.maxLength) control.maxLength = field.maxLength;
             }
 
+            if (field.requiresNonWhitespace === true && field.required === true) {
+              const validateNonWhitespaceValue = () => {
+                control.setCustomValidity(
+                  control.value && !control.value.trim()
+                    ? field.requiredMessage || "Enter a value."
+                    : "",
+                );
+              };
+              control.addEventListener("input", validateNonWhitespaceValue);
+              validateNonWhitespaceValue();
+            }
+
             group.append(label, control);
 
             if (field.hint) {
@@ -1459,7 +1506,11 @@
           );
         modalConfirmButton.classList.toggle(
           "is-danger",
-          Boolean(options.destructive),
+          Boolean(options.destructive) || options.tone === "danger",
+        );
+        modalConfirmButton.classList.toggle(
+          "is-success",
+          options.tone === "success",
         );
 
         modalOverlay.hidden = false;
@@ -1790,6 +1841,7 @@
     getCurrentLocale,
     getLocalizedText,
     getRetireeNameParts,
+    isSitePlaceholderImage,
     hasSessionCookieConsent,
     getStoredAuthToken,
     getUserDisplayName,

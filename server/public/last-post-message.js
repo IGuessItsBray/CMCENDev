@@ -105,38 +105,11 @@ function formatPublishedDate(value) {
   });
 }
 
-function isLastPostPlaceholderImage(imageUrl) {
-  if (!imageUrl) return false;
-
-  try {
-    const url = new URL(imageUrl, window.location.origin);
-    const pathname = url.pathname.toLowerCase();
-    const fileName = pathname.split("/").pop();
-
-    return (
-      fileName === "logo.png" ||
-      fileName.includes("cmcen-crest") ||
-      pathname.includes("/branch-crest/") ||
-      pathname.includes("/legacy/wordpress/348036/")
-    );
-  } catch (error) {
-    const pathname = String(imageUrl).toLowerCase().split(/[?#]/)[0];
-    const fileName = pathname.split("/").pop();
-
-    return (
-      fileName === "logo.png" ||
-      fileName.includes("cmcen-crest") ||
-      pathname.includes("/branch-crest/") ||
-      pathname.includes("/legacy/wordpress/348036/")
-    );
-  }
-}
-
 function renderImage(lastPost, name) {
   lastPostDetailImage.replaceChildren();
   const hasPersonImage =
     Boolean(lastPost.imageUrl) &&
-    !isLastPostPlaceholderImage(lastPost.imageUrl);
+    !CMCENUtils.isSitePlaceholderImage(lastPost.imageUrl);
 
   const image = document.createElement("img");
   image.src = hasPersonImage

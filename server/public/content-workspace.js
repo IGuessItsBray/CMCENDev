@@ -16,6 +16,15 @@ const contentWorkspaceMessage = document.getElementById(
 );
 const contentWorkspaceList = document.getElementById("contentWorkspaceList");
 const contentWorkspaceCount = document.getElementById("contentWorkspaceCount");
+const contentWorkspaceLoadMore = document.getElementById(
+  "contentWorkspaceLoadMore",
+);
+const contentWorkspaceLoadMoreButton = document.getElementById(
+  "contentWorkspaceLoadMoreButton",
+);
+const contentWorkspaceLoadMoreLabel = document.getElementById(
+  "contentWorkspaceLoadMoreLabel",
+);
 const contentWorkspaceClearFilters = document.getElementById(
   "contentWorkspaceClearFilters",
 );
@@ -31,6 +40,7 @@ const contentWorkspaceDetailLoadingTemplate = document.getElementById(
 const professionalAwardsManagementLink = document.getElementById(
   "professionalAwardsManagementLink",
 );
+const CONTENT_WORKSPACE_PAGE_SIZE = 24;
 
 const contentWorkspaceState = {
   items: [],
@@ -38,8 +48,11 @@ const contentWorkspaceState = {
   requestedContentId: "",
   user: null,
   isLoading: false,
+  isLoadingMore: false,
   isSelecting: false,
   loadRequestId: 0,
+  nextCursor: "",
+  hasMore: false,
   editorDrafts: new Map(),
 };
 
@@ -561,10 +574,32 @@ function setRecordMetadata(metadata, item) {
   }
 }
 
+function updateContentWorkspaceLoadMore() {
+  const showLoadMore =
+    !contentWorkspaceState.isLoading &&
+    contentWorkspaceState.hasMore &&
+    contentWorkspaceState.items.length;
+
+  contentWorkspaceLoadMore.hidden = !showLoadMore;
+  contentWorkspaceLoadMoreButton.disabled = contentWorkspaceState.isLoadingMore;
+  contentWorkspaceLoadMoreButton.setAttribute(
+    "aria-busy",
+    String(contentWorkspaceState.isLoadingMore),
+  );
+  setWorkspaceTranslatedText(
+    contentWorkspaceLoadMoreLabel,
+    contentWorkspaceState.isLoadingMore
+      ? "content_workspace_loading_more"
+      : "content_workspace_load_more",
+    contentWorkspaceState.isLoadingMore ? "Loading more…" : "Load more",
+  );
+}
+
 function renderContentWorkspaceList() {
   contentWorkspaceList.replaceChildren();
   updateContentWorkspaceCount();
   updateContentWorkspaceClearFiltersAction();
+  updateContentWorkspaceLoadMore();
   contentWorkspaceList.setAttribute(
     "aria-busy",
     contentWorkspaceState.isLoading ? "true" : "false",
@@ -2393,43 +2428,6 @@ function createContentWorkspaceReviewActions(item) {
   const route = contentWorkspaceReviewRoutes[item.type];
   if (!route) return null;
 
-  const decision = document.createElement("section");
-  decision.className = "content-workspace-review-decision";
-  decision.hidden = true;
-
-  const prompt = document.createElement("p");
-  prompt.className = "content-workspace-review-prompt";
-  prompt.setAttribute("role", "status");
-  prompt.hidden = true;
-
-  const rejectionField = document.createElement("div");
-  rejectionField.className = "content-workspace-rejection-field";
-  const rejectionLabel = document.createElement("label");
-  const rejectionId = `content-workspace-rejection-${item._id}`;
-  rejectionLabel.htmlFor = rejectionId;
-  const rejectionLabelText = document.createElement("span");
-  setWorkspaceTranslatedText(
-    rejectionLabelText,
-    "content_workspace_rejection_reason",
-    "Rejection reason",
-  );
-  const rejectionReason = document.createElement("textarea");
-  rejectionReason.id = rejectionId;
-  rejectionReason.rows = 3;
-  rejectionReason.maxLength = 2000;
-  rejectionReason.dataset.i18nPlaceholder = "rejection_reason_placeholder";
-  rejectionReason.placeholder = getText(
-    "rejection_reason_placeholder",
-    "Explain what needs to be corrected…",
-  );
-  rejectionLabel.append(rejectionLabelText, rejectionReason);
-  rejectionField.append(rejectionLabel);
-
-  const actionMessage = document.createElement("p");
-  actionMessage.className = "content-workspace-review-message";
-  actionMessage.setAttribute("role", "alert");
-  actionMessage.hidden = true;
-
   const actions = document.createElement("div");
   actions.className = "content-workspace-review-actions";
   const reject = document.createElement("button");
@@ -2438,83 +2436,17 @@ function createContentWorkspaceReviewActions(item) {
   const publish = document.createElement("button");
   publish.type = "button";
   publish.className = "admin-work-zone-button is-success";
-  const cancel = document.createElement("button");
-  cancel.type = "button";
-  cancel.className = "admin-work-zone-button is-secondary";
-  setWorkspaceTranslatedText(cancel, "content_workspace_cancel_review", "Cancel");
+  const buttons = [reject, publish];
+  let isConfirming = false;
+  let isSubmitting = false;
 
-  let pendingAction = "";
-
-  function resetDecision() {
-    pendingAction = "";
-    decision.hidden = true;
-    prompt.hidden = true;
-    rejectionField.hidden = true;
-    actionMessage.hidden = true;
-    actionMessage.textContent = "";
-    reject.hidden = false;
-    publish.hidden = false;
-    cancel.hidden = true;
+  function restoreActionLabels() {
     setWorkspaceTranslatedText(reject, "content_workspace_reject", "Reject");
     setWorkspaceTranslatedText(publish, "content_workspace_publish", "Publish");
   }
 
-  function prepareDecision(action) {
-    if (pendingAction === action) {
-      submitDecision(action);
-      return;
-    }
-
-    pendingAction = action;
-    decision.hidden = false;
-    setWorkspaceTranslatedText(
-      prompt,
-      action === "publish"
-        ? "content_workspace_publish_confirmation"
-        : "content_workspace_reject_confirmation",
-      action === "publish"
-        ? "Publishing makes this content visible on the public site. Confirm when you are ready."
-        : "This content will be rejected and the reason will be shared with the submitter. Confirm when you are ready.",
-    );
-    prompt.hidden = false;
-    rejectionField.hidden = action !== "reject";
-    reject.hidden = action !== "reject";
-    publish.hidden = action !== "publish";
-    cancel.hidden = false;
-
-    if (action === "publish") {
-      setWorkspaceTranslatedText(
-        publish,
-        "content_workspace_confirm_publish",
-        "Confirm publish",
-      );
-      publish.focus();
-      return;
-    }
-
-    setWorkspaceTranslatedText(
-      reject,
-      "content_workspace_confirm_reject",
-      "Confirm rejection",
-    );
-    rejectionReason.focus();
-  }
-
-  async function submitDecision(action) {
-    const reason = rejectionReason.value.trim();
-
-    if (action === "reject" && !reason) {
-      setWorkspaceTranslatedText(
-        actionMessage,
-        "content_workspace_rejection_reason_required",
-        "Enter a reason before rejecting this content.",
-      );
-      actionMessage.hidden = false;
-      rejectionReason.focus();
-      return;
-    }
-
-    const buttons = [reject, publish, cancel];
+  async function submitDecision(action, rejectionReason = "") {
+    isSubmitting = true;
     buttons.forEach((button) => {
       button.disabled = true;
     });
@@ -2531,7 +2463,8 @@ function createContentWorkspaceReviewActions(item) {
         method: "PATCH",
         body: {
           action,
-          rejectionReason: action === "reject" ? reason : undefined,
+          rejectionReason:
+            action === "reject" ? rejectionReason.trim() : undefined,
         },
       });
       contentWorkspaceState.editorDrafts.delete(getEditorDraftKey(item, "en"));
@@ -2548,24 +2481,98 @@ function createContentWorkspaceReviewActions(item) {
       );
       await loadContentWorkspace({ preserveSelection: true });
     } catch (error) {
-      actionMessage.textContent = error.message;
-      actionMessage.hidden = false;
+      setWorkspaceMessage(error.message, "error");
       buttons.forEach((button) => {
         button.disabled = false;
       });
-      pendingAction = "";
-      prepareDecision(action);
+      restoreActionLabels();
+    } finally {
+      isSubmitting = false;
     }
   }
 
-  reject.addEventListener("click", () => prepareDecision("reject"));
-  publish.addEventListener("click", () => prepareDecision("publish"));
-  cancel.addEventListener("click", resetDecision);
+  async function confirmDecision(action) {
+    if (isConfirming || isSubmitting) return;
 
-  resetDecision();
-  actions.append(reject, publish, cancel);
-  decision.append(prompt, rejectionField, actionMessage);
-  return { actions, decision };
+    isConfirming = true;
+    try {
+      const decision =
+        action === "publish"
+          ? await CMCENModal.confirm(
+              getText(
+                "content_workspace_publish_confirmation",
+                "Publishing makes this content visible on the public site. Confirm when you are ready.",
+              ),
+              {
+                title: getText(
+                  "content_workspace_confirm_publish",
+                  "Confirm publish",
+                ),
+                confirmText: getText(
+                  "content_workspace_confirm_publish",
+                  "Confirm publish",
+                ),
+                cancelText: getText("cancel", "Cancel"),
+                tone: "success",
+              },
+            )
+          : await CMCENModal.form(
+              getText(
+                "content_workspace_reject_confirmation",
+                "This content will be rejected and the reason will be shared with the submitter. Confirm when you are ready.",
+              ),
+              {
+                title: getText(
+                  "content_workspace_confirm_reject",
+                  "Confirm rejection",
+                ),
+                confirmText: getText(
+                  "content_workspace_confirm_reject",
+                  "Confirm rejection",
+                ),
+                cancelText: getText("cancel", "Cancel"),
+                destructive: true,
+                tone: "danger",
+                fields: [
+                  {
+                    name: "rejectionReason",
+                    type: "textarea",
+                    label: getText(
+                      "content_workspace_rejection_reason",
+                      "Rejection reason",
+                    ),
+                    placeholder: getText(
+                      "rejection_reason_placeholder",
+                      "Explain what needs to be corrected…",
+                    ),
+                    required: true,
+                    requiresNonWhitespace: true,
+                    requiredMessage: getText(
+                      "content_workspace_rejection_reason_required",
+                      "Enter a reason before rejecting this content.",
+                    ),
+                    maxLength: 2000,
+                  },
+                ],
+              },
+            );
+
+      if (!decision) return;
+      await submitDecision(
+        action,
+        typeof decision === "object" ? decision.rejectionReason || "" : "",
+      );
+    } finally {
+      isConfirming = false;
+    }
+  }
+
+  reject.addEventListener("click", () => void confirmDecision("reject"));
+  publish.addEventListener("click", () => void confirmDecision("publish"));
+
+  restoreActionLabels();
+  actions.append(reject, publish);
+  return actions;
 }
 
 function createRemovalActions(item) {
@@ -2647,8 +2654,7 @@ function createContentWorkspaceBottomActions(item, { canSave = false } = {}) {
 
   const reviewActions = createContentWorkspaceReviewActions(item);
   if (reviewActions) {
-    primaryActions.append(reviewActions.actions);
-    section.append(reviewActions.decision);
+    primaryActions.append(reviewActions);
   }
 
   if (primaryActions.childElementCount) {
@@ -2776,14 +2782,41 @@ function renderContentWorkspaceDetail() {
     );
     const revisions = document.createElement("div");
     revisions.className = "content-workspace-revisions";
+    revisions.hidden = true;
+    const loadHistory = document.createElement("button");
+    loadHistory.type = "button";
+    loadHistory.className = "admin-work-zone-button is-secondary is-compact";
     setWorkspaceTranslatedText(
-      revisions,
-      "content_workspace_history_loading",
-      "Loading revision history…",
+      loadHistory,
+      "content_workspace_load_history",
+      "Load revision history",
     );
-    history.append(historyHeading, revisions);
+    loadHistory.addEventListener("click", async () => {
+      loadHistory.disabled = true;
+      loadHistory.setAttribute("aria-busy", "true");
+      setWorkspaceTranslatedText(
+        loadHistory,
+        "content_workspace_history_loading",
+        "Loading revision history…",
+      );
+      revisions.hidden = false;
+      const loaded = await loadRevisionHistory(item, revisions);
+
+      if (loaded) {
+        loadHistory.remove();
+        return;
+      }
+
+      loadHistory.disabled = false;
+      loadHistory.removeAttribute("aria-busy");
+      setWorkspaceTranslatedText(
+        loadHistory,
+        "content_workspace_retry_history",
+        "Retry revision history",
+      );
+    });
+    history.append(historyHeading, loadHistory, revisions);
     contentWorkspaceDetail.append(history);
-    loadRevisionHistory(item, revisions);
   }
 
   const bottomActions = createContentWorkspaceBottomActions(item, {
@@ -2931,12 +2964,22 @@ function createRevisionChanges(revision) {
 }
 
 async function loadRevisionHistory(item, container) {
+  container.setAttribute("aria-busy", "true");
+  const loading = document.createElement("span");
+  loading.className = "visually-hidden";
+  setWorkspaceTranslatedText(
+    loading,
+    "content_workspace_history_loading",
+    "Loading revision history…",
+  );
+  container.replaceChildren(loading);
+
   try {
     const data = await contentWorkspaceApiJson(
       `/api/admin/content/${encodeURIComponent(item.type)}/${encodeURIComponent(item._id)}/revisions`,
     );
 
-    if (getSelectedContentWorkspaceItem()?._id !== item._id) return;
+    if (getSelectedContentWorkspaceItem()?._id !== item._id) return false;
 
     container.replaceChildren();
     const revisions = Array.isArray(data.revisions) ? data.revisions : [];
@@ -2947,7 +2990,7 @@ async function loadRevisionHistory(item, container) {
         "content_workspace_history_empty",
         "No staff revisions have been recorded yet.",
       );
-      return;
+      return true;
     }
 
     revisions.forEach((revision) => {
@@ -3013,9 +3056,15 @@ async function loadRevisionHistory(item, container) {
       details.append(summary, body);
       container.append(details);
     });
+    return true;
   } catch (error) {
-    if (getSelectedContentWorkspaceItem()?._id !== item._id) return;
+    if (getSelectedContentWorkspaceItem()?._id !== item._id) return false;
     container.textContent = error.message;
+    return false;
+  } finally {
+    if (getSelectedContentWorkspaceItem()?._id === item._id) {
+      container.setAttribute("aria-busy", "false");
+    }
   }
 }
 
@@ -3597,17 +3646,36 @@ async function changeContentVisibility(item, action) {
 async function loadContentWorkspace({
   preserveSelection = false,
   updateSearchParameters = false,
+  append = false,
 } = {}) {
+  if (
+    append &&
+    (!contentWorkspaceState.hasMore ||
+      !contentWorkspaceState.nextCursor ||
+      contentWorkspaceState.isLoadingMore)
+  ) {
+    return;
+  }
+
   if (updateSearchParameters) {
     updateContentWorkspaceSearchParameters();
   }
 
   const requestId = ++contentWorkspaceState.loadRequestId;
-  contentWorkspaceState.isLoading = true;
+  contentWorkspaceState.isLoading = !append;
+  contentWorkspaceState.isLoadingMore = append;
+  if (!append) {
+    contentWorkspaceState.nextCursor = "";
+    contentWorkspaceState.hasMore = false;
+  }
   renderContentWorkspaceList();
-  renderContentWorkspaceDetail();
+  if (!append) {
+    renderContentWorkspaceDetail();
+  }
 
-  const query = new URLSearchParams({ limit: "100" });
+  const query = new URLSearchParams({
+    limit: String(CONTENT_WORKSPACE_PAGE_SIZE),
+  });
   const type = contentWorkspaceType.value || "all";
   const status = contentWorkspaceStatusFilter.value || "all";
   const translation = contentWorkspaceTranslationFilter.value || "all";
@@ -3628,37 +3696,64 @@ async function loadContentWorkspace({
   if (contentWorkspaceState.requestedContentId) {
     query.set("id", contentWorkspaceState.requestedContentId);
   }
+  if (append) {
+    query.set("cursor", contentWorkspaceState.nextCursor);
+  }
 
   try {
     const data = await contentWorkspaceApiJson(`/api/admin/content?${query}`);
     if (requestId !== contentWorkspaceState.loadRequestId) return;
 
-    const previousSelection =
-      contentWorkspaceState.requestedContentId ||
-      (preserveSelection ? contentWorkspaceState.selectedId : "");
-    contentWorkspaceState.items = Array.isArray(data.items) ? data.items : [];
-    contentWorkspaceState.selectedId = contentWorkspaceState.items.some(
-      (item) => String(item._id) === previousSelection,
-    )
-      ? previousSelection
-      : String(contentWorkspaceState.items[0]?._id || "");
-    contentWorkspaceState.requestedContentId = "";
-    setWorkspaceMessage(
-      contentWorkspaceState.items.length
-        ? ""
-        : getText("content_workspace_empty", "No content matches these filters."),
-    );
+    const nextItems = Array.isArray(data.items) ? data.items : [];
+
+    if (append) {
+      const loadedItemIds = new Set(
+        contentWorkspaceState.items.map((item) => String(item._id)),
+      );
+      contentWorkspaceState.items.push(
+        ...nextItems.filter((item) => !loadedItemIds.has(String(item._id))),
+      );
+    } else {
+      const previousSelection =
+        contentWorkspaceState.requestedContentId ||
+        (preserveSelection ? contentWorkspaceState.selectedId : "");
+      contentWorkspaceState.items = nextItems;
+      contentWorkspaceState.selectedId = contentWorkspaceState.items.some(
+        (item) => String(item._id) === previousSelection,
+      )
+        ? previousSelection
+        : String(contentWorkspaceState.items[0]?._id || "");
+      contentWorkspaceState.requestedContentId = "";
+      setWorkspaceMessage(
+        contentWorkspaceState.items.length
+          ? ""
+          : getText("content_workspace_empty", "No content matches these filters."),
+      );
+    }
+
+    const nextCursor = String(data.nextCursor || "");
+    contentWorkspaceState.hasMore = data.hasMore === true && Boolean(nextCursor);
+    contentWorkspaceState.nextCursor = contentWorkspaceState.hasMore
+      ? nextCursor
+      : "";
   } catch (error) {
     if (requestId !== contentWorkspaceState.loadRequestId) return;
 
-    contentWorkspaceState.items = [];
-    contentWorkspaceState.selectedId = "";
+    if (!append) {
+      contentWorkspaceState.items = [];
+      contentWorkspaceState.selectedId = "";
+      contentWorkspaceState.nextCursor = "";
+      contentWorkspaceState.hasMore = false;
+    }
     setWorkspaceMessage(error.message, "error");
   } finally {
     if (requestId === contentWorkspaceState.loadRequestId) {
       contentWorkspaceState.isLoading = false;
+      contentWorkspaceState.isLoadingMore = false;
       renderContentWorkspaceList();
-      renderContentWorkspaceDetail();
+      if (!append) {
+        renderContentWorkspaceDetail();
+      }
     }
   }
 }
@@ -3768,6 +3863,9 @@ contentWorkspaceSearch.addEventListener("input", () => {
 });
 
 contentWorkspaceClearFilters.addEventListener("click", clearContentWorkspaceFilters);
+contentWorkspaceLoadMoreButton.addEventListener("click", () => {
+  void loadContentWorkspace({ append: true });
+});
 
 document.addEventListener("languagechange", updateContentWorkspaceLanguage);
 

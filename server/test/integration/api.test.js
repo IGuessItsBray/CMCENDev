@@ -2633,6 +2633,44 @@ describe('event, page, and comment workflows', () => {
       .get('/api/admin/content?status=published&limit=100')
       .set('Authorization', bearer(editorSession.body.token))
       .expect(200);
+    const firstWorkspacePage = await request(app)
+      .get('/api/admin/content?status=published&limit=1')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(firstWorkspacePage.body.items.length, 1);
+    assert.equal(firstWorkspacePage.body.hasMore, true);
+    assert.equal(typeof firstWorkspacePage.body.nextCursor, 'string');
+    assert.notEqual(firstWorkspacePage.body.nextCursor, '');
+    const pagedWorkspaceItemIds = new Set();
+    let pagedWorkspace = firstWorkspacePage;
+    let reachedFinalWorkspacePage = false;
+
+    for (let page = 0; page < 10; page += 1) {
+      assert.equal(pagedWorkspace.body.items.length, 1);
+      const item = pagedWorkspace.body.items[0];
+      const itemKey = `${item.type}:${item._id}`;
+      assert.equal(pagedWorkspaceItemIds.has(itemKey), false);
+      pagedWorkspaceItemIds.add(itemKey);
+
+      if (!pagedWorkspace.body.hasMore) {
+        assert.equal(pagedWorkspace.body.nextCursor, '');
+        reachedFinalWorkspacePage = true;
+        break;
+      }
+
+      assert.equal(typeof pagedWorkspace.body.nextCursor, 'string');
+      assert.notEqual(pagedWorkspace.body.nextCursor, '');
+      pagedWorkspace = await request(app)
+        .get(
+          '/api/admin/content?status=published&limit=1&cursor=' +
+            encodeURIComponent(pagedWorkspace.body.nextCursor),
+        )
+        .set('Authorization', bearer(editorSession.body.token))
+        .expect(200);
+    }
+
+    assert.equal(reachedFinalWorkspacePage, true);
+
     const workspaceEvent = workspace.body.items.find(
       (item) => String(item._id) === String(event._id),
     );
@@ -2653,6 +2691,8 @@ describe('event, page, and comment workflows', () => {
       .expect(200);
     assert.equal(focusedWorkspace.body.items.length, 1);
     assert.equal(String(focusedWorkspace.body.items[0]._id), String(event._id));
+    assert.equal(focusedWorkspace.body.hasMore, false);
+    assert.equal(focusedWorkspace.body.nextCursor, '');
 
     const searchedWorkspace = await request(app)
       .get('/api/admin/content?type=event&search=published%20event%20correction')
@@ -2709,6 +2749,11 @@ describe('event, page, and comment workflows', () => {
 
     await request(app)
       .get('/api/admin/content?translation=unknown')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(400);
+
+    await request(app)
+      .get('/api/admin/content?cursor=not-a-valid-cursor')
       .set('Authorization', bearer(editorSession.body.token))
       .expect(400);
 

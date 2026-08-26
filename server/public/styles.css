@@ -894,6 +894,14 @@ svg {
     0 10px 26px rgba(15, 18, 31, 0.28);
 }
 
+.cmcen-modal--success {
+  border-top-color: var(--success-border);
+}
+
+.cmcen-modal--danger {
+  border-top-color: var(--danger);
+}
+
 .cmcen-modal-header {
   min-height: 104px;
   padding: 21px 24px;
@@ -1160,6 +1168,12 @@ svg {
   color: var(--white);
 }
 
+.cmcen-modal-button-primary.is-success {
+  border-color: var(--success-border);
+  background: var(--success-border);
+  color: var(--white);
+}
+
 .cmcen-modal-button-secondary:hover,
 .cmcen-modal-button-secondary:focus-visible {
   border-color: var(--navy-800);
@@ -1183,6 +1197,14 @@ svg {
   background: #8c312d;
   color: var(--white);
   outline-color: var(--danger);
+}
+
+.cmcen-modal-button-primary.is-success:hover,
+.cmcen-modal-button-primary.is-success:focus-visible {
+  border-color: #3c5b44;
+  background: #3c5b44;
+  color: var(--white);
+  outline-color: var(--success-border);
 }
 
 @media (max-width: 560px) {
@@ -20116,6 +20138,15 @@ html[data-theme='dark'] .admin-work-zone-button.is-success:focus-visible:not(:di
   padding: 0;
 }
 
+.content-workspace-load-more {
+  padding: 12px 15px 18px;
+}
+
+.content-workspace-load-more .admin-work-zone-button {
+  justify-content: center;
+  width: 100%;
+}
+
 .content-workspace-empty {
   padding: 18px 15px;
 }
@@ -20890,7 +20921,6 @@ html[data-theme='dark'] .admin-work-zone-button.is-success:focus-visible:not(:di
   color: var(--text-muted);
 }
 
-.content-workspace-review-decision,
 .content-workspace-rejection-reason {
   display: grid;
   max-width: none;
@@ -20909,56 +20939,14 @@ html[data-theme='dark'] .admin-work-zone-button.is-success:focus-visible:not(:di
 }
 
 .content-workspace-review-copy p,
-.content-workspace-rejection-reason p,
-.content-workspace-review-prompt,
-.content-workspace-review-message {
+.content-workspace-rejection-reason p {
   margin: 0;
-}
-
-.content-workspace-review-prompt {
-  padding: 10px 12px;
-  border-left: 3px solid var(--navy-900);
-  background: var(--white);
-  color: var(--navy-900);
-  font-weight: 700;
-}
-
-.content-workspace-rejection-field label {
-  display: grid;
-  gap: 6px;
-  color: var(--navy-900);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.content-workspace-rejection-field textarea {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 88px;
-  padding: 9px 10px;
-  border: 1px solid var(--branch-grey-300);
-  border-radius: var(--surface-radius);
-  background: var(--white);
-  color: var(--ink);
-  font: inherit;
-  resize: vertical;
-}
-
-.content-workspace-rejection-field textarea:focus {
-  border-color: var(--gold-600);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(197, 141, 35, 0.14);
 }
 
 .content-workspace-review-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-}
-
-.content-workspace-review-message {
-  color: var(--red-700, #9e3029);
-  font-weight: 700;
 }
 
 .content-workspace-history {
@@ -21935,7 +21923,6 @@ html[data-theme='dark'] .content-workspace-submission-item,
 html[data-theme='dark'] .content-workspace-read-only-language,
 html[data-theme='dark'] .content-workspace-revision,
 html[data-theme='dark'] .content-workspace-revision-change,
-html[data-theme='dark'] .content-workspace-review-decision,
 html[data-theme='dark'] .content-workspace-rejection-reason {
   border-color: var(--dark-border);
   background: var(--dark-surface);
@@ -21993,9 +21980,7 @@ html[data-theme='dark'] .content-workspace-revision-body > h3,
 html[data-theme='dark'] .content-workspace-revision-change h3,
 html[data-theme='dark'] .content-workspace-revision-note h3,
 html[data-theme='dark'] .content-workspace-review-copy h2,
-html[data-theme='dark'] .content-workspace-rejection-reason h2,
-html[data-theme='dark'] .content-workspace-rejection-field label,
-html[data-theme='dark'] .content-workspace-review-prompt {
+html[data-theme='dark'] .content-workspace-rejection-reason h2 {
   color: var(--dark-text);
 }
 
@@ -22060,20 +22045,9 @@ html[data-theme='dark'] .content-workspace-submission-item .is-confirmed {
   color: #afe1ba;
 }
 
-html[data-theme='dark'] .content-workspace-rejection-field textarea,
-html[data-theme='dark'] .content-workspace-review-prompt {
-  border-color: var(--dark-border);
-  background: var(--dark-surface-2);
-}
-
-html[data-theme='dark'] .content-workspace-review-decision,
 html[data-theme='dark'] .content-workspace-rejection-reason {
   border-left-color: var(--gold-500);
   background: rgba(213, 155, 39, 0.1);
-}
-
-html[data-theme='dark'] .content-workspace-review-message {
-  color: #f3b5b0;
 }
 
 html[data-theme='dark'] .content-workspace-status-badge.is-published {
@@ -23045,6 +23019,14 @@ html[data-theme='dark'] .cmcen-modal {
   box-shadow:
     0 36px 96px rgba(0, 0, 0, 0.78),
     0 0 0 1px rgba(234, 211, 163, 0.12);
+}
+
+html[data-theme='dark'] .cmcen-modal--success {
+  border-top-color: var(--success-border);
+}
+
+html[data-theme='dark'] .cmcen-modal--danger {
+  border-top-color: var(--danger);
 }
 
 html[data-theme='dark'] .cmcen-modal-overlay {
@@ -26475,6 +26457,28 @@ html[data-theme='dark'] .analytics-meter::before {
   border-color: var(--button-danger-border);
   background: var(--button-danger-bg);
   color: var(--button-danger-text);
+}
+
+:is(
+  .admin-work-zone-button.is-success,
+  .cmcen-modal-button-primary.is-success
+) {
+  border-color: var(--success-border);
+  background: var(--success-border);
+  color: var(--white);
+}
+
+:is(
+    .admin-work-zone-button.is-success,
+    .cmcen-modal-button-primary.is-success
+  ):hover:not(:disabled),
+:is(
+    .admin-work-zone-button.is-success,
+    .cmcen-modal-button-primary.is-success
+  ):focus-visible:not(:disabled) {
+  border-color: #3c5b44;
+  background: #3c5b44;
+  color: var(--white);
 }
 
 :is(

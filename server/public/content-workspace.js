@@ -37,9 +37,6 @@ const contentWorkspaceListLoadingTemplate = document.getElementById(
 const contentWorkspaceDetailLoadingTemplate = document.getElementById(
   "contentWorkspaceDetailLoadingTemplate",
 );
-const professionalAwardsManagementLink = document.getElementById(
-  "professionalAwardsManagementLink",
-);
 const CONTENT_WORKSPACE_PAGE_SIZE = 24;
 
 const contentWorkspaceState = {
@@ -3826,10 +3823,6 @@ async function initializeContentWorkspace() {
     }
 
     contentWorkspaceState.user = user;
-    if (professionalAwardsManagementLink) {
-      professionalAwardsManagementLink.hidden =
-        user.permissions?.canReviewAndPublish !== true;
-    }
     applyContentWorkspaceSearchParameters();
     updateContentWorkspaceTypeOptions();
     updateContentWorkspaceModePresentation();

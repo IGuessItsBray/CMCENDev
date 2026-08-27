@@ -10,11 +10,14 @@
 
   function addText(section, title, value) {
     if (!value) return;
+    const item = document.createElement("div");
+    item.className = "professional-awards-detail-item";
     const heading = document.createElement("h3");
     heading.textContent = title;
     const text = document.createElement("p");
     text.textContent = value;
-    section.append(heading, text);
+    item.append(heading, text);
+    section.append(item);
   }
 
   function archiveColumn(award) {
@@ -58,20 +61,32 @@
 
   function renderAward(award) {
     const section = document.createElement("section");
-    section.className = "about-family-section";
+    section.className = "about-family-section professional-awards-detail";
+    const header = document.createElement("header");
+    header.className = "professional-awards-detail-heading";
     const title = document.createElement("h2");
     title.textContent = award.title;
-    section.append(title);
-    addText(section, "Summary", award.summary);
-    addText(section, "Eligibility", award.eligibility);
-    addText(section, "How to apply", award.applicationDetails);
-    addText(section, "Submission deadline", award.deadline);
+    const archiveCount = document.createElement("p");
+    const recipientCount = award.recipients?.length || 0;
+    archiveCount.className = "professional-awards-archive-count";
+    archiveCount.textContent = `${recipientCount} ${recipientCount === 1 ? "recipient" : "recipients"} in the archive`;
+    header.append(title, archiveCount);
+
+    const details = document.createElement("div");
+    details.className = "professional-awards-details";
+    addText(details, "Summary", award.summary);
+    addText(details, "Eligibility", award.eligibility);
+    addText(details, "How to apply", award.applicationDetails);
+    addText(details, "Submission deadline", award.deadline);
+    section.append(header, details);
 
     if (award.links?.length) {
+      const resources = document.createElement("section");
+      resources.className = "professional-awards-resources";
       const heading = document.createElement("h3");
       heading.textContent = "Instructions and nomination documents";
       const list = document.createElement("ul");
-      list.className = "about-family-pillar-list";
+      list.className = "about-family-pillar-list professional-awards-resource-list";
       award.links.forEach((item) => {
         const row = document.createElement("li");
         const link = document.createElement("a");
@@ -82,13 +97,22 @@
         row.append(link);
         list.append(row);
       });
-      section.append(heading, list);
+      resources.append(heading, list);
+      section.append(resources);
     }
 
     if (award.recipients?.length) {
+      const archive = document.createElement("section");
+      archive.className = "professional-awards-recipient-archive";
+      const archiveHeading = document.createElement("div");
+      archiveHeading.className = "professional-awards-recipient-archive-heading";
       const heading = document.createElement("h3");
       heading.textContent = "Past recipients";
-      section.append(heading, renderRecipientsTable(award, award.recipients));
+      const archiveDescription = document.createElement("p");
+      archiveDescription.textContent = "Recipient records are listed from newest to oldest.";
+      archiveHeading.append(heading, archiveDescription);
+      archive.append(archiveHeading, renderRecipientsTable(award, award.recipients));
+      section.append(archive);
     }
     return section;
   }
@@ -140,7 +164,9 @@
         tab.type = "button";
         tab.className = "professional-awards-tab";
         tab.textContent = award.title;
+        tab.id = `professional-award-tab-${award.slug}`;
         tab.setAttribute("role", "tab");
+        tab.setAttribute("aria-controls", "professionalAwardsPanel");
         tab.setAttribute("aria-selected", String(isSelected));
         tab.tabIndex = isSelected ? 0 : -1;
         tab.addEventListener("click", () => {
@@ -164,6 +190,14 @@
     const selectedAward = awards.find(
       (award) => award.slug === selectedAwardSlug,
     );
+    if (selectedAward) {
+      panel.setAttribute(
+        "aria-labelledby",
+        `professional-award-tab-${selectedAward.slug}`,
+      );
+    } else {
+      panel.removeAttribute("aria-labelledby");
+    }
     panel.replaceChildren(
       query
         ? renderRecipientResults(query)
@@ -221,18 +255,18 @@
       if (!response.ok) throw new Error(data.error || "Could not load awards.");
       awards = data.awards || [];
       selectedAwardSlug = awards[0]?.slug || "";
-      highlights.replaceChildren(
-        ...[
-          renderHighlight(
-            "Subaltern of the Year",
-            data.featuredRecipients?.subaltern,
-          ),
-          renderHighlight(
-            "Member of the Year",
-            data.featuredRecipients?.member,
-          ),
-        ].filter(Boolean),
-      );
+      const highlightCards = [
+        renderHighlight(
+          "Subaltern of the Year",
+          data.featuredRecipients?.subaltern,
+        ),
+        renderHighlight(
+          "Member of the Year",
+          data.featuredRecipients?.member,
+        ),
+      ].filter(Boolean);
+      highlights.replaceChildren(...highlightCards);
+      highlights.hidden = highlightCards.length === 0;
       renderTabs();
     })
     .catch((error) => {

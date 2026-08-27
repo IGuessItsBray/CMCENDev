@@ -37,30 +37,38 @@
             id="professionalAwardsHighlights"
             aria-label="Current award recipients"
           ></section>
-          <div class="professional-awards-toolbar">
-            <label for="professionalAwardsSearch">Search recipients</label>
-            <input
-              id="professionalAwardsSearch"
-              type="search"
-              placeholder="Search recipient names across all awards"
-              autocomplete="off"
-            />
-          </div>
-          <div
-            class="professional-awards-tabs"
-            id="professionalAwardsTabs"
-            role="tablist"
-            aria-label="Professional award categories"
-          ></div>
-          <label class="professional-awards-select-label" for="professionalAwardsSelect">
-            Award category
-          </label>
-          <select
-            class="professional-awards-select"
-            id="professionalAwardsSelect"
-            aria-label="Professional award category"
-          ></select>
-          <div id="professionalAwardsPanel" role="tabpanel">
+          <section class="professional-awards-archive" aria-labelledby="professionalAwardsArchiveTitle">
+            <div class="professional-awards-archive-heading">
+              <div>
+                <p class="professional-awards-section-kicker">Award archive</p>
+                <h2 id="professionalAwardsArchiveTitle">Explore the awards</h2>
+              </div>
+              <div class="professional-awards-toolbar">
+                <label for="professionalAwardsSearch">Search recipients</label>
+                <input
+                  id="professionalAwardsSearch"
+                  type="search"
+                  placeholder="Search recipient names across all awards"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+            <div
+              class="professional-awards-tabs"
+              id="professionalAwardsTabs"
+              role="tablist"
+              aria-label="Professional award categories"
+            ></div>
+            <label class="professional-awards-select-label" for="professionalAwardsSelect">
+              Award category
+            </label>
+            <select
+              class="professional-awards-select"
+              id="professionalAwardsSelect"
+              aria-label="Professional award category"
+            ></select>
+          </section>
+          <div class="professional-awards-panel" id="professionalAwardsPanel" role="tabpanel">
             <p>Loading professional awards…</p>
           </div>
         </div>

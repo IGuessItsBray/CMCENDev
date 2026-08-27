@@ -25,6 +25,13 @@ const dashboardReviewQueues = document.getElementById("dashboardReviewQueues");
 const dashboardReviewSummary = document.getElementById(
   "dashboardReviewSummary",
 );
+const dashboardContentAdmin = document.getElementById("dashboardContentAdmin");
+const dashboardContentAdminTitle = document.getElementById(
+  "dashboardContentAdminTitle",
+);
+const dashboardContentAdminActions = document.getElementById(
+  "dashboardContentAdminActions",
+);
 const dashboardProfileDetails = document.getElementById(
   "dashboardProfileDetails",
 );
@@ -1169,6 +1176,16 @@ function createContentWorkspaceLink() {
   return link;
 }
 
+function createManageAwardsLink() {
+  const link = document.createElement("a");
+  link.className =
+    "admin-work-zone-button is-secondary dashboard-content-admin-button";
+  link.href = "/professional-awards-admin";
+  link.textContent = translate("dashboard_manage_awards");
+
+  return link;
+}
+
 function renderDashboard(user) {
   const profileWasOpen = dashboardProfileDetails?.open === true;
 
@@ -1368,6 +1385,19 @@ function renderDashboard(user) {
     dashboardReviewSummary.hidden = true;
     dashboardReviewSummary.textContent = "";
   }
+
+  const contentAdminActions = canReviewSubmissions
+    ? [createManageAwardsLink()]
+    : [];
+  dashboardContentAdminTitle.textContent = translate(
+    "dashboard_content_admin_title",
+  );
+  dashboardContentAdminActions.setAttribute(
+    "aria-label",
+    translate("dashboard_content_admin_title"),
+  );
+  dashboardContentAdminActions.replaceChildren(...contentAdminActions);
+  dashboardContentAdmin.hidden = contentAdminActions.length === 0;
 
   dashboardStatus.hidden = true;
   dashboardStatus.removeAttribute("aria-label");

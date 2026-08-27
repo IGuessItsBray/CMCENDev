@@ -220,6 +220,8 @@ let customNavigationItems = [];
 let headerNotificationItems = [];
 let headerNotificationCount = 0;
 let headerNotificationListeners = null;
+let headerNotificationOpenCycle = 0;
+let pendingHeaderNotificationRead = null;
 const headerNotificationCachePrefix = "cmcen_header_notifications_";
 
 function escapeHtml(value) {
@@ -1545,6 +1547,9 @@ function renderHeaderNotifications(items = headerNotificationItems) {
     const notification = document.createElement("a");
     notification.className = "notification-dropdown-item";
     notification.href = item.editHref || item.href || "/dashboard";
+    notification.addEventListener("click", () => {
+      setHeaderNotificationOpen(false);
+    });
 
     const badges = document.createElement("div");
     badges.className = "notification-dropdown-badges";
@@ -1600,8 +1605,18 @@ function setHeaderNotificationOpen(isOpen) {
     return;
   }
 
+  const wasOpen = toggle.getAttribute("aria-expanded") === "true";
+
+  if (isOpen && !wasOpen) {
+    headerNotificationOpenCycle += 1;
+  }
+
   toggle.setAttribute("aria-expanded", String(isOpen));
   dropdown.hidden = !isOpen;
+
+  if (wasOpen && !isOpen) {
+    flushHeaderNotificationsRead();
+  }
 }
 
 function updateHeaderNotifications(notifications = {}) {
@@ -1633,6 +1648,7 @@ async function markHeaderNotificationsRead(
   readThrough,
   token,
   remainingActionCount = 0,
+  openCycle,
 ) {
   if (!readThrough || getStoredAuthToken() !== token) {
     return;
@@ -1644,20 +1660,62 @@ async function markHeaderNotificationsRead(
       token,
       body: { readThrough },
       errorMessage: translate("notifications_load_error"),
+      keepalive: true,
     });
 
-    if (getStoredAuthToken() === token) {
+    if (
+      getStoredAuthToken() === token &&
+      headerNotificationOpenCycle === openCycle
+    ) {
       updateHeaderNotifications({
         count: remainingActionCount,
         actionCount: remainingActionCount,
         unreadCount: 0,
+        items: headerNotificationItems.filter(
+          (item) => getHeaderNotificationState(item) === "rejected",
+        ),
       });
     }
   } catch (error) {}
 }
 
+function queueHeaderNotificationsRead(
+  readThrough,
+  token,
+  remainingActionCount = 0,
+  openCycle,
+) {
+  if (!readThrough || getStoredAuthToken() !== token) {
+    return;
+  }
+
+  pendingHeaderNotificationRead = {
+    readThrough,
+    token,
+    remainingActionCount,
+    openCycle,
+  };
+}
+
+function flushHeaderNotificationsRead() {
+  const pendingRead = pendingHeaderNotificationRead;
+  pendingHeaderNotificationRead = null;
+
+  if (!pendingRead) {
+    return;
+  }
+
+  markHeaderNotificationsRead(
+    pendingRead.readThrough,
+    pendingRead.token,
+    pendingRead.remainingActionCount,
+    pendingRead.openCycle,
+  );
+}
+
 async function loadHeaderNotifications() {
   const token = getStoredAuthToken();
+  const openCycle = headerNotificationOpenCycle;
 
   if (!token) {
     renderHeaderNotifications([]);
@@ -1681,17 +1739,24 @@ async function loadHeaderNotifications() {
       errorMessage: translate("notifications_load_error"),
     });
 
-    if (getStoredAuthToken() !== token) {
+    if (
+      getStoredAuthToken() !== token ||
+      headerNotificationOpenCycle !== openCycle ||
+      document
+        .getElementById("notificationToggle")
+        ?.getAttribute("aria-expanded") !== "true"
+    ) {
       return;
     }
 
     updateHeaderNotifications(data.notifications || {});
     renderHeaderNotifications();
     if (data.notifications?.shouldMarkRead) {
-      markHeaderNotificationsRead(
+      queueHeaderNotificationsRead(
         data.notifications.readThrough,
         token,
         data.notifications.actionCount,
+        openCycle,
       );
     }
   } catch (error) {

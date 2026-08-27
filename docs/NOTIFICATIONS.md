@@ -4,8 +4,9 @@ Authenticated users receive review-result notifications from the bell in the
 shared header. Each entry has a submission-type badge and an outcome badge:
 `Published` or `Rejected`. Rejections are action items and remain in the bell
 until the submission is resubmitted or otherwise leaves the rejected state.
-Published items are informational: opening the bell marks those review results
-read without dismissing any outstanding rejection.
+Informational entries, such as published review results and RSVP updates,
+remain visible while the bell is open. Closing the panel marks only those
+one-time entries read without dismissing any outstanding rejection.
 
 Selecting a rejected item opens its correction view directly: events,
 retirement messages, and Last Post notices open their original submission
@@ -69,9 +70,10 @@ lookups. The current header snapshot is cached in browser session storage,
 scoped to the authenticated account, so the badge and prior entries are
 available immediately after navigation and continue to work after a routine
 access-token refresh.
-If the summary has unread approvals, it sends the returned `readThrough` value
-to `/api/notifications/read`; a later review decision is not cleared because it
-falls outside that snapshot. The badge retains `actionCount` after that call.
+If the open summary has unread one-time entries, closing the bell sends its
+returned `readThrough` value to `/api/notifications/read`; a later review
+decision is not cleared because it falls outside that snapshot. The badge
+retains `actionCount` after that call.
 When the tab becomes visible again, the header refreshes its lightweight badge
 count through `GET /api/me`; it never polls in the background. Those count
 refreshes never mark an approval as read.

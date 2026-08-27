@@ -53,6 +53,13 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Review, edit, approve, and publish content.',
   },
   {
+    key: 'events.rsvps.manage',
+    label: 'Manage event RSVPs',
+    group: 'Events',
+    action: 'read',
+    description: 'View RSVP attendee details and download RSVP CSV files for events.',
+  },
+  {
     key: 'content.delete',
     label: 'Permanently purge content',
     group: 'Content',
@@ -239,6 +246,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canManageCertificateRequests: 'certificates.manage',
   canPublishOwnContent: 'content.publish_own',
   canReviewAndPublish: 'content.review',
+  canManageEventRsvps: 'events.rsvps.manage',
   canDeleteContent: 'content.delete',
   canHideContent: 'content.hide',
   canRestoreContent: 'content.restore',
@@ -302,6 +310,8 @@ function getBuiltInPermissionFlags(user) {
     canPublishOwnContent: hasMinimumRole(role, 'author'),
 
     canReviewAndPublish: hasMinimumRole(role, 'editor'),
+
+    canManageEventRsvps: hasMinimumRole(role, 'administrator'),
 
     canDeleteContent: hasMinimumRole(role, 'administrator'),
 

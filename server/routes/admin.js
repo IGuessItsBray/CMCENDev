@@ -631,6 +631,8 @@ function toContentWorkspaceItem(type, content) {
         startDate: content.startDate || null,
         endDate: content.endDate || null,
         allDay: content.allDay === true,
+        rsvpEnabled: content.rsvpEnabled === true,
+        rsvpDeadline: content.rsvpDeadline || null,
         imagePath: content.imagePath || '',
         contentArea: content.contentArea || 'general',
         submitter: content.submitter || {},
@@ -782,7 +784,7 @@ router.get(
         queries.push(
           Event.find(getWorkspaceFilter('event'))
             .select(
-              'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
+              'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay rsvpEnabled rsvpDeadline imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
             )
             .populate([
               {

@@ -1211,7 +1211,7 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List content in the staff editorial workspace.
-      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, paged with the opaque `cursor` returned by the previous response, or narrowed to one record with `id`; when type is `all`, results are limited to the caller’s permitted content types. Responses include `hasMore` and `nextCursor` for Load more pagination. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
+      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Event records include RSVP enablement and deadline settings. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, paged with the opaque `cursor` returned by the previous response, or narrowed to one record with `id`; when type is `all`, results are limited to the caller’s permitted content types. Responses include `hasMore` and `nextCursor` for Load more pagination. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
       x-permission: canReviewAndPublish or canManageNews (newsArticle only)
       parameters:
         - name: type
@@ -1878,6 +1878,7 @@ paths:
     get:
       tags: [Events]
       summary: Get published event.
+      description: Public event details. An optional bearer token adds the caller's existing RSVP response as `event.myRsvp.response`; no RSVP profile details are returned.
       security: []
       parameters:
         - $ref: "#/components/parameters/Id"
@@ -1948,11 +1949,27 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
+    delete:
+      tags: [Events]
+      summary: Cancel the caller's RSVP.
+      description: Available to authenticated non-owners for published RSVP-enabled events. It deletes the caller's RSVP and remains available after the optional RSVP deadline.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: RSVP cancellation result.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/events/{id}/rsvps:
     get:
       tags: [Events]
       summary: List event RSVPs.
-      description: Available to the event owner or a site administrator.
+      description: Available to members with the `canManageEventRsvps` permission; views are audit logged. Administrators have this permission by default.
+      x-permission: canManageEventRsvps
       parameters:
         - $ref: "#/components/parameters/Id"
       responses:
@@ -1964,7 +1981,8 @@ paths:
     get:
       tags: [Events]
       summary: Download event RSVPs as CSV.
-      description: Available to the event owner or a site administrator; exports are audit logged.
+      description: Available to members with the `canManageEventRsvps` permission; exports are audit logged. Administrators have this permission by default.
+      x-permission: canManageEventRsvps
       parameters:
         - $ref: "#/components/parameters/Id"
       responses:

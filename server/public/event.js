@@ -38,7 +38,6 @@ const eventCalendarExportLink = document.getElementById(
 const eventRsvpSection = document.getElementById("eventRsvpSection");
 const eventRsvpMessage = document.getElementById("eventRsvpMessage");
 const eventRsvpActions = document.getElementById("eventRsvpActions");
-const eventRsvpManagement = document.getElementById("eventRsvpManagement");
 
 let currentEvent = null;
 let currentEventId = "";
@@ -399,6 +398,11 @@ async function submitRsvp(response) {
       method: "POST", token: getStoredToken(), body: { response },
       errorMessage: getEventTranslation("event_rsvp_submit_error", "Could not save your RSVP."),
     });
+    if (currentEvent && ["accepted", "declined"].includes(result.rsvp?.response)) {
+      currentEvent.myRsvp = { response: result.rsvp.response };
+      renderRsvp(currentEvent);
+      return;
+    }
     eventRsvpMessage.textContent = getEventTranslation(
       result.rsvp?.response === "accepted" ? "event_rsvp_accepted" : "event_rsvp_declined",
       result.rsvp?.response === "accepted" ? "Your attendance has been recorded." : "Your decline has been recorded.",
@@ -408,62 +412,57 @@ async function submitRsvp(response) {
   }
 }
 
-async function loadRsvpManagement() {
-  if (!getStoredToken() || !currentEventId) return;
+async function cancelRsvp() {
   try {
-    const result = await CMCENUtils.apiJson(`/api/events/${encodeURIComponent(currentEventId)}/rsvps`, {
-      token: getStoredToken(), errorMessage: "Could not load event RSVPs",
+    await CMCENUtils.apiJson(`/api/events/${encodeURIComponent(currentEventId)}/rsvp`, {
+      method: "DELETE", token: getStoredToken(),
+      errorMessage: getEventTranslation("event_rsvp_cancel_error", "Could not cancel your RSVP."),
     });
-    const accepted = result.rsvps.filter((rsvp) => rsvp.response === "accepted").length;
-    const declined = result.rsvps.length - accepted;
-    eventRsvpManagement.replaceChildren();
-    const summary = document.createElement("p");
-    summary.textContent = `${accepted} accepted · ${declined} declined`;
-    const list = document.createElement("ul");
-    result.rsvps.forEach((rsvp) => {
-      const item = document.createElement("li");
-      const name = [rsvp.rank, rsvp.firstName, rsvp.lastName]
-        .filter(Boolean)
-        .join(" ");
-      item.textContent = [
-        `${rsvp.response}: ${name}`,
-        rsvp.unitOrStatus,
-        rsvp.email,
-        rsvp.phone,
-      ].filter(Boolean).join(" · ");
-      list.append(item);
-    });
-    const exportLink = document.createElement("a");
-    exportLink.href = `/api/events/${encodeURIComponent(currentEventId)}/rsvps.csv`;
-    exportLink.textContent = getEventTranslation("event_rsvp_export", "Download RSVP CSV");
-    exportLink.addEventListener("click", (event) => {
-      event.preventDefault();
-      fetch(exportLink.href, { headers: { Authorization: `Bearer ${getStoredToken()}` } })
-        .then((response) => response.ok ? response.blob() : response.json().then((data) => Promise.reject(new Error(data.error))))
-        .then((blob) => {
-          const url = URL.createObjectURL(blob);
-          const download = document.createElement("a");
-          download.href = url; download.download = "event-rsvps.csv"; download.click();
-          URL.revokeObjectURL(url);
-        })
-        .catch((error) => { eventRsvpMessage.textContent = error.message; });
-    });
-    eventRsvpManagement.append(summary, list, exportLink);
-    eventRsvpManagement.hidden = false;
-  } catch {
-    eventRsvpManagement.hidden = true;
+    if (currentEvent) {
+      delete currentEvent.myRsvp;
+      renderRsvp(currentEvent);
+      eventRsvpMessage.textContent = getEventTranslation(
+        "event_rsvp_cancelled",
+        "Your RSVP has been cancelled.",
+      );
+    }
+  } catch (error) {
+    eventRsvpMessage.textContent = error.message;
   }
 }
 
 function renderRsvp(event) {
   eventRsvpActions.replaceChildren();
-  eventRsvpManagement.hidden = true;
+  eventRsvpSection.classList.remove(
+    "is-rsvp-attending",
+    "is-rsvp-declined",
+  );
   if (!event.rsvpEnabled) { eventRsvpSection.hidden = true; return; }
 
   eventRsvpSection.hidden = false;
   const deadline = formatRsvpDeadline(event.rsvpDeadline);
   const deadlinePassed = event.rsvpDeadline && new Date() > new Date(event.rsvpDeadline);
-  if (deadlinePassed) {
+  const rsvpResponse = event.myRsvp?.response;
+  eventRsvpSection.classList.toggle(
+    "is-rsvp-attending",
+    rsvpResponse === "accepted",
+  );
+  eventRsvpSection.classList.toggle(
+    "is-rsvp-declined",
+    rsvpResponse === "declined",
+  );
+  if (["accepted", "declined"].includes(rsvpResponse)) {
+    eventRsvpMessage.textContent = getEventTranslation(
+      rsvpResponse === "accepted" ? "event_rsvp_accepted" : "event_rsvp_declined",
+      rsvpResponse === "accepted" ? "Your attendance has been recorded." : "Your decline has been recorded.",
+    );
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "event-rsvp-button is-cancel";
+    cancel.textContent = getEventTranslation("event_rsvp_cancel", "Cancel RSVP");
+    cancel.addEventListener("click", cancelRsvp);
+    eventRsvpActions.append(cancel);
+  } else if (deadlinePassed) {
     eventRsvpMessage.textContent = getEventTranslation("event_rsvp_closed", "RSVPs are now closed.");
   } else if (!getStoredToken()) {
     eventRsvpMessage.textContent = getEventTranslation("event_rsvp_login_required", "Sign in to RSVP for this event.");
@@ -484,7 +483,6 @@ function renderRsvp(event) {
       eventRsvpActions.append(button);
     });
   }
-  loadRsvpManagement();
 }
 
 function renderEvent(event) {
@@ -562,7 +560,10 @@ async function loadEvent() {
   showEventDetailMessageKey("event_detail_loading");
 
   try {
-    const response = await fetch(`/api/events/${encodeURIComponent(eventId)}`);
+    const token = getStoredToken();
+    const response = await fetch(`/api/events/${encodeURIComponent(eventId)}`, token
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : undefined);
 
     const data = await response.json().catch(() => ({}));
 

@@ -82,15 +82,17 @@
 
               <dl class="event-detail-list" id="eventDetailBrief"></dl>
 
-              <a
-                class="event-calendar-export-link"
-                id="eventCalendarExportLink"
-                href="#"
-                download="cmcen-event.ics"
-                hidden
-              >
-                <span data-i18n="event_calendar_export">Add to calendar (.ics)</span>
-              </a>
+              <div class="event-calendar-export-action">
+                <a
+                  class="event-calendar-export-link"
+                  id="eventCalendarExportLink"
+                  href="#"
+                  download="cmcen-event.ics"
+                  hidden
+                >
+                  <span data-i18n="event_calendar_export">Add to calendar (.ics)</span>
+                </a>
+              </div>
 
               <div
                 class="event-detail-registration"
@@ -108,7 +110,6 @@
                 <h3 data-i18n="event_rsvp_heading">RSVP</h3>
                 <p id="eventRsvpMessage" aria-live="polite"></p>
                 <div id="eventRsvpActions"></div>
-                <div id="eventRsvpManagement" hidden></div>
               </section>
             </aside>
           </div>

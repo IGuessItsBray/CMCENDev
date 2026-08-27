@@ -10,6 +10,7 @@ const {
 
 const {
   authMiddleware,
+  optionalAuthMiddleware,
   requireMinimumRole,
   requirePermission,
 } = require('../middleware/auth');
@@ -379,11 +380,8 @@ function getRsvpProfile(user) {
   };
 }
 
-function canManageEventRsvps(event, user) {
-  return (
-    (event.createdBy && String(event.createdBy) === String(user._id)) ||
-    user.role === 'administrator'
-  );
+function canManageEventRsvps(user) {
+  return getUserPermissions(user).canManageEventRsvps === true;
 }
 
 function escapeCsv(value) {
@@ -1069,13 +1067,41 @@ router.post('/:id/rsvp', authMiddleware, async (req, res) => {
   }
 });
 
+router.delete('/:id/rsvp', authMiddleware, async (req, res) => {
+  try {
+    const event = await Event.findOne({ _id: req.params.id, status: 'published' })
+      .select('createdBy rsvpEnabled')
+      .lean();
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (!event.rsvpEnabled) return res.status(409).json({ error: 'RSVP is not enabled for this event' });
+    if (event.createdBy && String(event.createdBy) === String(req.user._id)) {
+      return res.status(403).json({ error: 'You cannot cancel an RSVP to your own event' });
+    }
+
+    const result = await EventRsvp.deleteOne({ event: event._id, user: req.user._id });
+    const cancelled = result.deletedCount > 0;
+    if (cancelled) {
+      await writeAuditLog({
+        req, action: 'event.rsvp_cancelled', actor: req.user,
+        targetType: 'event', target: event._id,
+      });
+    }
+    return res.json({ cancelled });
+  } catch (error) {
+    if (error.name === 'CastError') return res.status(404).json({ error: 'Event not found' });
+    console.error('Could not cancel event RSVP:', error);
+    return res.status(500).json({ error: 'Could not cancel RSVP' });
+  }
+});
+
 router.get('/:id/rsvps', authMiddleware, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id).select('createdBy rsvpEnabled').lean();
     if (!event) return res.status(404).json({ error: 'Event not found' });
     if (!event.rsvpEnabled) return res.status(409).json({ error: 'RSVP is not enabled for this event' });
-    if (!canManageEventRsvps(event, req.user)) return res.status(403).json({ error: 'You do not have permission to view event RSVPs' });
+    if (!canManageEventRsvps(req.user)) return res.status(403).json({ error: 'You do not have permission to view event RSVPs' });
     const rsvps = await EventRsvp.find({ event: event._id }).sort({ response: 1, updatedAt: -1 }).lean();
+    await writeAuditLog({ req, action: 'event.rsvps_viewed', actor: req.user, targetType: 'event', target: event._id });
     return res.json({ rsvps });
   } catch (error) {
     if (error.name === 'CastError') return res.status(404).json({ error: 'Event not found' });
@@ -1089,7 +1115,7 @@ router.get('/:id/rsvps.csv', authMiddleware, async (req, res) => {
     const event = await Event.findById(req.params.id).select('createdBy rsvpEnabled').lean();
     if (!event) return res.status(404).json({ error: 'Event not found' });
     if (!event.rsvpEnabled) return res.status(409).json({ error: 'RSVP is not enabled for this event' });
-    if (!canManageEventRsvps(event, req.user)) return res.status(403).json({ error: 'You do not have permission to export event RSVPs' });
+    if (!canManageEventRsvps(req.user)) return res.status(403).json({ error: 'You do not have permission to export event RSVPs' });
     const rsvps = await EventRsvp.find({ event: event._id }).sort({ response: 1, updatedAt: -1 }).lean();
     await writeAuditLog({ req, action: 'event.rsvps_exported', actor: req.user, targetType: 'event', target: event._id });
     return res.type('text/csv; charset=utf-8').set('Content-Disposition', 'attachment; filename="event-rsvps.csv"').send(buildRsvpCsv(rsvps));
@@ -1135,7 +1161,7 @@ router.get('/:id/calendar.ics', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', optionalAuthMiddleware, async (req, res) => {
   try {
     const event = await Event.findOne({
       _id: req.params.id,
@@ -1148,6 +1174,19 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({
         error: 'Event not found',
       });
+    }
+
+    if (req.user && event.rsvpEnabled) {
+      const rsvp = await EventRsvp.findOne({
+        event: event._id,
+        user: req.user._id,
+      })
+        .select('response')
+        .lean();
+
+      if (rsvp) {
+        event.myRsvp = { response: rsvp.response };
+      }
     }
 
     return res.json({ event });

@@ -124,6 +124,10 @@ function canManageContentWorkspaceNews() {
   return contentWorkspaceState.user?.permissions?.canManageNews === true;
 }
 
+function canManageContentWorkspaceRsvps() {
+  return contentWorkspaceState.user?.permissions?.canManageEventRsvps === true;
+}
+
 function canEditContentWorkspaceRecord(item) {
   return item?.type === "newsArticle"
     ? canManageContentWorkspaceNews()
@@ -1193,13 +1197,6 @@ function getEventDetailsFields(item) {
       type: "checkbox",
       checked: item.content?.rsvpEnabled === true,
     }),
-    createWorkspaceDateTimeField({
-      field: "rsvpDeadline",
-      label: "RSVP deadline",
-      labelKey: "event_rsvp_deadline",
-      value: item.content?.rsvpDeadline,
-      includeTime: false,
-    }),
     createWorkspaceEditorField({
       field: "contentArea",
       label: "Content area",
@@ -1610,7 +1607,6 @@ function createContentWorkspaceRecordEditor(item) {
   const form = document.createElement("form");
   form.className = "content-workspace-record-form";
   form.append(...fields);
-  if (item.type === "event") setupRsvpDeadlineVisibility(form);
   const imageEditor = createContentWorkspaceImageEditor(item);
   if (imageEditor) form.append(imageEditor);
   form.addEventListener("submit", (event) => {
@@ -1620,24 +1616,6 @@ function createContentWorkspaceRecordEditor(item) {
 
   section.append(heading, form);
   return section;
-}
-
-function setupRsvpDeadlineVisibility(form) {
-  const enabled = form.elements.rsvpEnabled;
-  const deadline = form.elements.rsvpDeadline;
-  const deadlineField = deadline?.closest(
-    ".content-workspace-date-time-field",
-  );
-
-  if (!enabled || !deadline || !deadlineField) return;
-
-  const sync = () => {
-    deadlineField.hidden = !enabled.checked;
-    deadline.disabled = !enabled.checked;
-  };
-
-  enabled.addEventListener("change", sync);
-  sync();
 }
 
 function getMemberEventEditorFields(item) {
@@ -1780,13 +1758,6 @@ function getMemberEventEditorFields(item) {
       type: "checkbox",
       checked: content.rsvpEnabled === true,
     }),
-    createWorkspaceDateTimeField({
-      field: "rsvpDeadline",
-      label: "RSVP deadline",
-      labelKey: "event_rsvp_deadline",
-      value: content.rsvpDeadline,
-      includeTime: false,
-    }),
     createWorkspaceEditorField({
       field: "publicationPermissionConfirmed",
       label:
@@ -1834,7 +1805,6 @@ function getMemberEventPayload(formData) {
     }),
     allDay,
     rsvpEnabled: formData.get("rsvpEnabled") === "true",
-    rsvpDeadline: String(formData.get("rsvpDeadline") || ""),
     publicationPermissionConfirmed:
       formData.get("publicationPermissionConfirmed") === "true",
     contentArea: "general",
@@ -2048,7 +2018,6 @@ function createMemberEventEditor(item = null) {
   submitOptions.className = "event-submit-options";
   submitOptions.append(save);
   form.append(submitOptions);
-  setupRsvpDeadlineVisibility(form);
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveMemberEvent(item, form, save);
@@ -2715,6 +2684,183 @@ function createContentWorkspaceBottomActions(item, { canSave = false } = {}) {
   return section.childElementCount ? section : null;
 }
 
+function setContentWorkspaceRsvpSummary(summary, accepted, declined) {
+  summary.dataset.contentWorkspaceRsvpAccepted = String(accepted);
+  summary.dataset.contentWorkspaceRsvpDeclined = String(declined);
+  summary.textContent = getText(
+    "content_workspace_rsvp_summary",
+    "{accepted} accepted · {declined} declined",
+    { accepted, declined },
+  );
+}
+
+function getContentWorkspaceRsvpResponseLabel(response) {
+  return response === "accepted"
+    ? getText("content_workspace_rsvp_response_accepted", "Accepted")
+    : getText("content_workspace_rsvp_response_declined", "Declined");
+}
+
+function createContentWorkspaceRsvpTable(rsvps) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "content-workspace-rsvp-table-wrap";
+  const table = document.createElement("table");
+  table.className = "content-workspace-rsvp-table";
+  const head = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  [
+    ["content_workspace_rsvp_response", "Response"],
+    ["content_workspace_rsvp_attendee", "Attendee"],
+    ["email", "Email"],
+    ["content_workspace_rsvp_unit_or_status", "Unit or status"],
+    ["phone", "Phone number"],
+  ].forEach(([key, label]) => {
+    const heading = document.createElement("th");
+    heading.scope = "col";
+    setWorkspaceTranslatedText(heading, key, label);
+    headerRow.append(heading);
+  });
+  head.append(headerRow);
+
+  const body = document.createElement("tbody");
+  rsvps.forEach((rsvp) => {
+    const row = document.createElement("tr");
+    const response = document.createElement("td");
+    response.className = `is-${rsvp.response === "accepted" ? "accepted" : "declined"}`;
+    response.textContent = getContentWorkspaceRsvpResponseLabel(rsvp.response);
+    const attendee = document.createElement("td");
+    attendee.textContent = [rsvp.rank, rsvp.firstName, rsvp.lastName]
+      .filter(Boolean)
+      .join(" ") || "—";
+    const email = document.createElement("td");
+    email.textContent = rsvp.email || "—";
+    const unitOrStatus = document.createElement("td");
+    unitOrStatus.textContent = rsvp.unitOrStatus || "—";
+    const phone = document.createElement("td");
+    phone.textContent = rsvp.phone || "—";
+    row.append(response, attendee, email, unitOrStatus, phone);
+    body.append(row);
+  });
+
+  table.append(head, body);
+  wrapper.append(table);
+  return wrapper;
+}
+
+function createContentWorkspaceRsvpExport(item) {
+  const download = document.createElement("button");
+  download.type = "button";
+  download.className = "admin-work-zone-button is-secondary is-compact";
+  setWorkspaceTranslatedText(download, "event_rsvp_export", "Download RSVP CSV");
+  download.addEventListener("click", async () => {
+    const token = getContentWorkspaceToken();
+    if (!token) return;
+
+    download.disabled = true;
+    try {
+      const response = await fetch(
+        `/api/events/${encodeURIComponent(item._id)}/rsvps.csv`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!response.ok) throw new Error("Could not download RSVP CSV");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "event-rsvps.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // The RSVP panel is intentionally silent when its access is unavailable.
+    } finally {
+      download.disabled = false;
+    }
+  });
+  return download;
+}
+
+async function loadContentWorkspaceRsvps(item, panel, content) {
+  try {
+    const token = getContentWorkspaceToken();
+    if (!token) {
+      panel.hidden = true;
+      return;
+    }
+    const result = await CMCENUtils.apiJson(
+      `/api/events/${encodeURIComponent(item._id)}/rsvps`,
+      { token, redirectOnUnauthorized: false },
+    );
+    if (String(getSelectedContentWorkspaceItem()?._id) !== String(item._id)) {
+      return;
+    }
+
+    const rsvps = Array.isArray(result.rsvps) ? result.rsvps : [];
+    content.replaceChildren();
+    if (!rsvps.length) {
+      const empty = document.createElement("p");
+      empty.className = "content-workspace-rsvp-empty";
+      setWorkspaceTranslatedText(
+        empty,
+        "content_workspace_rsvp_empty",
+        "No RSVP responses yet.",
+      );
+      content.append(empty);
+      return;
+    }
+
+    const accepted = rsvps.filter((rsvp) => rsvp.response === "accepted").length;
+    const summary = document.createElement("p");
+    summary.className = "content-workspace-rsvp-summary";
+    setContentWorkspaceRsvpSummary(summary, accepted, rsvps.length - accepted);
+    const actions = document.createElement("div");
+    actions.className = "content-workspace-rsvp-actions";
+    actions.append(createContentWorkspaceRsvpExport(item));
+    content.append(summary, createContentWorkspaceRsvpTable(rsvps), actions);
+  } catch (error) {
+    if (String(getSelectedContentWorkspaceItem()?._id) === String(item._id)) {
+      if (error.status === 403) {
+        panel.hidden = true;
+        return;
+      }
+      content.replaceChildren();
+      const message = document.createElement("p");
+      message.className = "content-workspace-rsvp-empty";
+      setWorkspaceTranslatedText(
+        message,
+        "content_workspace_rsvp_load_error",
+        "Could not load RSVP responses.",
+      );
+      content.append(message);
+    }
+  }
+}
+
+function createContentWorkspaceRsvpPanel(item) {
+  if (
+    item.type !== "event" ||
+    item.content?.rsvpEnabled !== true ||
+    !canManageContentWorkspaceRsvps()
+  ) {
+    return null;
+  }
+
+  const panel = document.createElement("section");
+  panel.className = "content-workspace-rsvp-panel";
+  const heading = document.createElement("h2");
+  setWorkspaceTranslatedText(heading, "content_workspace_rsvp_heading", "RSVPs");
+  const content = document.createElement("div");
+  content.className = "content-workspace-rsvp-content";
+  const loading = document.createElement("p");
+  setWorkspaceTranslatedText(
+    loading,
+    "content_workspace_rsvp_loading",
+    "Loading RSVP responses…",
+  );
+  content.append(loading);
+  panel.append(heading, content);
+  void loadContentWorkspaceRsvps(item, panel, content);
+  return panel;
+}
+
 function renderContentWorkspaceDetail() {
   contentWorkspaceDetail.replaceChildren();
   contentWorkspaceDetail.setAttribute(
@@ -2816,6 +2962,11 @@ function renderContentWorkspaceDetail() {
   const rejectionReason = createRejectionReason(item);
   if (rejectionReason) {
     contentWorkspaceDetail.append(rejectionReason);
+  }
+
+  const rsvpPanel = createContentWorkspaceRsvpPanel(item);
+  if (rsvpPanel) {
+    contentWorkspaceDetail.append(rsvpPanel);
   }
 
   if (canViewContentWorkspaceHistory(item)) {
@@ -3143,7 +3294,6 @@ function getContentWorkspaceRecordPayload(item, formData) {
       timezone: String(formData.get("timezone") || ""),
       allDay,
       rsvpEnabled: formData.get("rsvpEnabled") === "true",
-      rsvpDeadline: String(formData.get("rsvpDeadline") || ""),
       contentArea: String(formData.get("contentArea") || "general"),
       imagePath: String(formData.get("imagePath") || ""),
     };
@@ -3876,6 +4026,16 @@ function updateContentWorkspaceLanguage() {
     .querySelectorAll("[data-revision-created-at]")
     .forEach((date) => {
       date.textContent = formatWorkspaceDate(date.dataset.revisionCreatedAt);
+    });
+
+  contentWorkspaceDetail
+    .querySelectorAll("[data-content-workspace-rsvp-accepted]")
+    .forEach((summary) => {
+      setContentWorkspaceRsvpSummary(
+        summary,
+        Number(summary.dataset.contentWorkspaceRsvpAccepted) || 0,
+        Number(summary.dataset.contentWorkspaceRsvpDeclined) || 0,
+      );
     });
 }
 

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { addRetainedContentEncryption } = require('../services/account-encryption');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
@@ -305,5 +306,7 @@ PageSchema.pre('validate', function () {
     this.slug = normalizeSlug(this.title?.en || this.title?.fr);
   }
 });
+
+addRetainedContentEncryption(PageSchema, 'page');
 
 module.exports = mongoose.model('Page', PageSchema);

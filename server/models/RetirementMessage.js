@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { addRetainedContentEncryption, addRetainedIdentityEncryption } = require('../services/account-encryption');
 
 const retirementMessageSchema = new mongoose.Schema(
   {
@@ -242,6 +243,8 @@ retirementMessageSchema.index({
   publishedAt: -1,
   _id: -1,
 });
+addRetainedContentEncryption(retirementMessageSchema, 'retirement');
+addRetainedIdentityEncryption(retirementMessageSchema, ['submitter']);
 
 retirementMessageSchema.index({
   'retiree.retirementDate': -1,

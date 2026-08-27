@@ -578,13 +578,11 @@ router.post('/totp/setup', authMiddleware, async (req, res) => {
       name: `${rpName} (${user.email})`,
     });
 
-    await User.findByIdAndUpdate(user._id, {
-      $set: {
-        'totp.secret': secret.base32,
-        'totp.enabled': false,
-        'totp.appName': defaultTotpAppName,
-      },
-    });
+    user.totp.secret = secret.base32;
+    user.totp.enabled = false;
+    user.totp.appName = defaultTotpAppName;
+    user.markModified('totp');
+    await user.save();
 
     // Generate QR data URL and return both
     const otpauth = secret.otpauth_url;
@@ -690,12 +688,11 @@ router.post(
         );
       }
 
-      await User.findByIdAndUpdate(user._id, {
-        $set: {
-          'totp.enabled': true,
-          'twoFactor.destructiveVerifiedAt': new Date(),
-        },
-      });
+      user.totp.enabled = true;
+      user.twoFactor.destructiveVerifiedAt = new Date();
+      user.markModified('totp');
+      user.markModified('twoFactor');
+      await user.save();
       await updateAccountCreationMfaMethod(user, 'totp');
 
       const responsePayload = { verified: true };
@@ -750,13 +747,13 @@ router.delete('/totp', authMiddleware, async (req, res) => {
       });
     }
 
-    await User.findByIdAndUpdate(user._id, {
-      $set: {
-        'totp.secret': '',
-        'totp.enabled': false,
-        'totp.appName': '',
-      },
-    });
+    user.totp.secret = '';
+    user.totp.enabled = false;
+    user.totp.appName = '';
+    user.encryptedTotpSecret = '';
+    user.markModified('totp');
+    user.markModified('encryptedTotpSecret');
+    await user.save();
 
     await writeAuditLog({
       req,

@@ -600,6 +600,43 @@ paths:
       responses:
         "200":
           description: Updated user profile.
+  /api/profile/encryption:
+    post:
+      tags: [Auth]
+      summary: Encrypt the current account profile and TOTP seed with its dedicated OpenBao Transit key.
+      description: 'Requires `{ "confirm": true }` and a configured OpenBao Transit service. Existing profile fields and any TOTP seed are encrypted during enrolment. Ghost/dummy accounts cannot enrol. Username and email remain clear for sign-in and delivery workflows.'
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "201":
+          description: A dedicated account key was created.
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
+  /api/media/{uuid}/{variant}:
+    get:
+      tags: [Media]
+      summary: Serve a public uploaded media variant.
+      description: Encrypted media is decrypted in memory from private object storage. The stable CMCEN URL may be linked externally.
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+        - name: variant
+          in: path
+          required: true
+          schema: { type: string, enum: [original, thumb, medium, large, hero, display] }
+      responses:
+        "200":
+          description: Image bytes.
+        "404":
+          $ref: "#/components/responses/Error"
+        "503":
+          $ref: "#/components/responses/Error"
   /api/contributor-check:
     get:
       tags: [Auth]

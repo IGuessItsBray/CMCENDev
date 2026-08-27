@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { USER_ROLES } = require('../config/roles');
+const {
+  encryptProfile,
+  encryptTotpSecret,
+  hydrateAccountSecrets,
+  hydrateProfile,
+  isEncryptionIneligible,
+  PROFILE_FIELDS,
+} = require('../services/account-encryption');
 
 function capitalizeFirstLetter(value) {
   const cleanValue = String(value || '').trim();
@@ -355,6 +363,18 @@ const UserSchema = new mongoose.Schema(
 
     // Incrementing this invalidates all browser refresh sessions for the user.
     sessionVersion: { type: Number, default: 0 },
+
+    // Secret key material stays in OpenBao Transit, never in MongoDB.
+    encryption: {
+      enabled: { type: Boolean, default: false },
+      provider: { type: String, enum: ['openbao'], default: undefined },
+      keyName: { type: String, trim: true, default: '' },
+      enrolledAt: { type: Date, default: null },
+      dataEncryptedAt: { type: Date, default: null },
+    },
+
+    encryptedProfile: { type: String, select: false, default: '' },
+    encryptedTotpSecret: { type: String, select: false, default: '' },
   },
   {
     timestamps: true,
@@ -364,9 +384,36 @@ const UserSchema = new mongoose.Schema(
 );
 
 UserSchema.pre('save', async function () {
+  if (this.encryption?.enabled === true && (this.isModified('encryption') || PROFILE_FIELDS.some((field) => this.isModified(field)))) {
+    await encryptProfile(this);
+  }
+
+  await encryptTotpSecret(this);
+
   if (!this.isModified('password')) return;
 
   this.password = await bcrypt.hash(this.password, 10);
+});
+
+UserSchema.pre('validate', function () {
+  if (isEncryptionIneligible(this) && this.encryption?.enabled === true) {
+    this.invalidate(
+      'encryption.enabled',
+      'Ghost accounts cannot use account encryption',
+    );
+  }
+});
+
+UserSchema.pre(/^find/, function () {
+  this.select('+encryptedProfile +encryptedTotpSecret');
+});
+
+UserSchema.post(/^find/, async function (result) {
+  const users = Array.isArray(result) ? result : [result];
+  await Promise.all(users.filter(Boolean).map(async (user) => {
+    await hydrateProfile(user);
+    await hydrateAccountSecrets(user);
+  }));
 });
 
 module.exports = mongoose.model('User', UserSchema);

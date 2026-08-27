@@ -78,6 +78,19 @@
       return badge;
     }
 
+    function createEncryptionBadge(user) {
+      const encryption = user?.encryption || {};
+
+      if (!encryption.enrolled || !encryption.dataEncryptedAt) {
+        return null;
+      }
+
+      const badge = document.createElement("span");
+      badge.className = "admin-user-role-badge account-encrypted";
+      badge.textContent = "Encrypted";
+      return badge;
+    }
+
     function createAccountTypeBadge(user) {
       if (user?.accountType === "invited") {
         const badge = document.createElement("span");
@@ -190,7 +203,10 @@
       button.append(
         name,
         meta,
-        createAccountTypeBadge(user) || createRoleBadge(user.role),
+        ...[
+          createAccountTypeBadge(user) || createRoleBadge(user.role),
+          createEncryptionBadge(user),
+        ].filter(Boolean),
       );
 
       const emailVerificationBadge = createEmailVerificationBadge(user);
@@ -1125,6 +1141,7 @@
       const identityBadges = [
         createAccountTypeBadge(user) || createRoleBadge(user.role),
         createEmailVerificationBadge(user),
+        createEncryptionBadge(user),
       ].filter(Boolean);
 
       identity.append(title, ...identityBadges, meta);

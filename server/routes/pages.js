@@ -19,6 +19,7 @@ const {
 } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
 const { buildPublicMediaUrl } = require('../services/media-library');
+const { enableRetainedContent } = require('../services/account-encryption');
 const s3Client = require('../storage');
 
 const router = express.Router();
@@ -1096,10 +1097,12 @@ router.post(
         return res.status(400).json({ error: result.error });
       }
 
-      const page = await Page.create({
+      const page = new Page({
         ...result.update,
         createdBy: req.user?._id || null,
       });
+      enableRetainedContent(page, req.user);
+      await page.save();
 
       await writeAuditLog({
         req,
@@ -1165,11 +1168,9 @@ router.patch(
         return res.status(404).json({ error: 'Page not found' });
       }
 
-      const page = await Page.findByIdAndUpdate(
-        req.params.pageId,
-        { $set: result.update },
-        { returnDocument: 'after', runValidators: true },
-      );
+      previousPage.set(result.update);
+      await previousPage.save();
+      const page = previousPage;
 
       await writeAuditLog({
         req,

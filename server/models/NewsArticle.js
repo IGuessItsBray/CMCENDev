@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { addRetainedContentEncryption } = require('../services/account-encryption');
 
 const DEFAULT_NEWS_IMAGE_URL =
   'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp';
@@ -80,5 +81,6 @@ const NewsArticleSchema = new mongoose.Schema(
 );
 
 NewsArticleSchema.index({ status: 1, publishedAt: -1, _id: -1 });
+addRetainedContentEncryption(NewsArticleSchema, 'news');
 
 module.exports = mongoose.model('NewsArticle', NewsArticleSchema);

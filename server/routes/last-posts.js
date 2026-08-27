@@ -7,6 +7,7 @@ const { writeAuditLog } = require('../services/audit-log');
 const { recordContentRevision } = require('../services/content-revisions');
 const { cleanString, parseBoolean } = require('../services/content-utils');
 const { linkMediaAssetToSource } = require('../services/media-assets');
+const { enableRetainedContent, enableRetainedIdentity } = require('../services/account-encryption');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 24;
@@ -261,7 +262,7 @@ router.post(
 
       const now = new Date();
 
-      const lastPost = await LastPostMessage.create({
+      const lastPost = new LastPostMessage({
         submitter,
         deceased: cleanDeceased,
         messageLanguage,
@@ -282,6 +283,9 @@ router.post(
         publishedBy: wantsImmediatePublication ? req.user._id : null,
         publishedAt: wantsImmediatePublication ? now : null,
       });
+      enableRetainedContent(lastPost, req.user);
+      enableRetainedIdentity(lastPost, req.user);
+      await lastPost.save();
 
       await linkLastPostImageToMediaAsset(lastPost);
 

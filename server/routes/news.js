@@ -15,6 +15,7 @@ const {
   linkMediaAssetToSource,
   deleteContentMediaAssets,
 } = require('../services/media-assets');
+const { enableRetainedContent } = require('../services/account-encryption');
 
 const router = express.Router();
 const MAX_ARTICLES = 48;
@@ -339,12 +340,14 @@ router.post(
       if (validationError)
         return res.status(400).json({ error: validationError });
       const now = new Date();
-      const article = await NewsArticle.create({
+      const article = new NewsArticle({
         ...payload,
         createdBy: req.user._id,
         publishedBy: payload.status === 'published' ? req.user._id : null,
         publishedAt: payload.status === 'published' ? now : null,
       });
+      enableRetainedContent(article, req.user);
+      await article.save();
       await linkArticleImage(article);
       await writeAuditLog({
         req,

@@ -14,6 +14,9 @@ const dashboardTitle = document.getElementById("dashboardTitle");
 const dashboardMemberName = document.getElementById("dashboardMemberName");
 const dashboardRoleSummary = document.getElementById("dashboardRoleSummary");
 const dashboardRoleBadge = document.getElementById("dashboardRoleBadge");
+const dashboardEncryptionBadge = document.getElementById(
+  "dashboardEncryptionBadge",
+);
 const dashboardRoleDescription = document.getElementById(
   "dashboardRoleDescription",
 );
@@ -891,10 +894,78 @@ function createProfileForm(user) {
     }
   });
 
+  form.append(createAccountEncryptionPreference(user));
+
   setProfileFormMode(form, false);
   syncProfileTradeOtherVisibility(form);
 
   return form;
+}
+
+function createAccountEncryptionPreference(user) {
+  const status = user.accountEncryption || {};
+  const panel = document.createElement("details");
+  panel.className = "account-encryption-preference";
+  const summary = document.createElement("summary");
+  const copy = document.createElement("div");
+  copy.className = "account-encryption-summary-copy";
+  const title = document.createElement("h3");
+  title.textContent = "Account encryption";
+  const beta = document.createElement("span");
+  beta.className = "account-encryption-beta";
+  beta.textContent = "Beta";
+  copy.append(title, beta);
+  summary.append(copy);
+
+  const content = document.createElement("div");
+  content.className = "account-encryption-content";
+  const description = document.createElement("p");
+
+  if (status.enrolled && status.dataEncryptedAt) {
+    panel.classList.add("is-enabled");
+    description.textContent =
+      "Enabled. This account has a dedicated OpenBao key that is destroyed before account deletion.";
+    content.append(description);
+    panel.append(summary, content);
+    return panel;
+  }
+
+  description.textContent = status.enrolled
+    ? "Your account key exists. Encrypt your profile now to replace its protected profile fields in MongoDB with OpenBao ciphertext."
+    : status.enabled
+    ? "Create a dedicated account key and encrypt your profile in MongoDB."
+    : "Unavailable until this deployment is connected to OpenBao.";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "dashboard-profile-button is-encryption";
+  button.textContent = status.enrolled ? "Encrypt profile" : "Enable encryption";
+  button.disabled = status.enabled !== true;
+  button.addEventListener("click", async () => {
+    const confirmed = await CMCENModal.confirm(
+      "CMCEN will encrypt your profile fields in MongoDB with your dedicated OpenBao account key. It cannot be disabled from this page. Your email address and username remain available for sign-in, account lookup, and email delivery. CMCEN destroys the account key before removing your account. Continue?",
+      { title: "Enable account encryption", confirmText: status.enrolled ? "Encrypt profile" : "Enable encryption" },
+    );
+    if (!confirmed) return;
+    button.disabled = true;
+    try {
+      const updated = await CMCENUtils.apiJson("/api/profile/encryption", {
+        method: "POST",
+        token,
+        body: { confirm: true },
+        redirectOnUnauthorized: true,
+        errorMessage: "Could not enable account encryption",
+      });
+      currentDashboardUser = updated;
+      renderDashboard(updated);
+      CMCENUtils.showToast("Account profile encryption enabled", { color: "success", position: "bottom-right", animation: "slide" });
+    } catch (error) {
+      button.disabled = false;
+      CMCENUtils.showToast(error.message || "Could not enable account encryption", { color: "error", position: "bottom-right", animation: "slide" });
+    }
+  });
+  content.append(description, button);
+  panel.append(summary, content);
+  return panel;
 }
 
 function createDangerZone(user) {
@@ -1000,7 +1071,9 @@ function createDangerZone(user) {
         const options = CMCENUtils.preparePublicKeyRequestOptions(
           await CMCENUtils.apiJson("/api/mfa/webauthn/authenticate/options", {
             method: "POST",
-            token,
+            // A scheduled refresh can replace the token after this dashboard
+            // module loaded. Destructive confirmation must use the current one.
+            token: CMCENUtils.getStoredAuthToken(),
             errorMessage: "Could not start passkey confirmation",
           }),
         );
@@ -1010,7 +1083,7 @@ function createDangerZone(user) {
 
         await CMCENUtils.apiJson("/api/mfa/webauthn/authenticate/verify", {
           method: "POST",
-          token,
+          token: CMCENUtils.getStoredAuthToken(),
           body: CMCENUtils.serializeAssertionCredential(assertion),
           errorMessage: "Could not verify passkey confirmation",
         });
@@ -1019,7 +1092,7 @@ function createDangerZone(user) {
 
       await CMCENUtils.apiJson("/api/profile", {
         method: "DELETE",
-        token,
+        token: CMCENUtils.getStoredAuthToken(),
         body: { mfaCode, mfaMethod },
         errorMessage: "Could not delete account",
       });
@@ -1212,6 +1285,9 @@ function renderDashboard(user) {
 
   dashboardRoleBadge.textContent = roleTitle;
   dashboardRoleBadge.className = `dashboard-role-badge role-${role}`;
+  dashboardEncryptionBadge.hidden = !(
+    user.accountEncryption?.enrolled && user.accountEncryption?.dataEncryptedAt
+  );
   dashboardRoleDescription.textContent = translate(`role_description_${role}`);
   const customRoleNames = (Array.isArray(user.customRoles)
     ? user.customRoles

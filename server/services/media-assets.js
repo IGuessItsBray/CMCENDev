@@ -108,6 +108,7 @@ async function createMediaAssetRecord({
   const displayName = getDisplayName(file, cleanUploadContext);
 
   const asset = await MediaAsset.create({
+    ...(uploadResult.uuid ? { uuid: uploadResult.uuid } : {}),
     key: uploadResult.key,
     url: uploadResult.url,
     originalKey: uploadResult.original?.key || uploadResult.key,
@@ -132,6 +133,7 @@ async function createMediaAssetRecord({
       imageMetadata || uploadResult.imageMetadata || {},
     ),
     uploadedBy: user?._id || null,
+    storageEncryption: uploadResult.storageEncryption || {},
   });
 
   return asset.toObject();

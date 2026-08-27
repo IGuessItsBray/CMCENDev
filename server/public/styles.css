@@ -5681,6 +5681,13 @@ a.dropdown-toggle {
   text-align: right;
 }
 
+.dashboard-role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
 .dashboard-role-badge {
   display: inline-flex;
   align-items: center;
@@ -5731,6 +5738,13 @@ a.dropdown-toggle {
   border-color: #b42318;
   background: #b42318;
   color: var(--white);
+}
+
+.dashboard-role-badge.is-encrypted,
+.admin-user-role-badge.account-encrypted {
+  border-color: #9b7bc7;
+  background: #9b7bc7;
+  color: #211333;
 }
 
 .dashboard-status {
@@ -11179,6 +11193,28 @@ html[data-theme='dark'] .admin-subscriptions-panel p {
   background: var(--white);
   color: var(--navy-900);
 }
+
+.dashboard-profile-button.is-encryption { border-color: #73510d; background: #73510d; color: var(--white); }
+.account-encryption-preference { margin-top: 18px; border: 1px solid rgba(115, 81, 13, 0.45); border-radius: var(--surface-radius); background: rgba(213, 155, 39, 0.06); }
+.account-encryption-preference > summary { min-height: 48px; padding: 12px 16px; display: flex; align-items: center; cursor: pointer; list-style: none; }
+.account-encryption-preference > summary::-webkit-details-marker { display: none; }
+.account-encryption-preference > summary::after { width: 7px; height: 7px; margin-left: auto; border-right: 2px solid var(--navy-800); border-bottom: 2px solid var(--navy-800); content: ''; transform: rotate(45deg) translateY(-2px); transition: transform 150ms ease; }
+.account-encryption-preference[open] > summary::after { transform: rotate(225deg) translate(-2px, -1px); }
+.account-encryption-summary-copy { display: flex; align-items: center; gap: 8px; }
+.account-encryption-preference h3, .account-encryption-preference p { margin: 0; }
+.account-encryption-preference h3 { color: var(--navy-900); font-family: var(--font-body); font-size: 13px; font-weight: 800; }
+.account-encryption-beta { padding: 3px 6px; border-radius: 999px; background: #9b7bc7; color: #211333; font-size: 9px; font-weight: 900; letter-spacing: 0.07em; text-transform: uppercase; }
+.account-encryption-content { display: grid; gap: 12px; padding: 0 16px 16px; border-top: 1px solid rgba(115, 81, 13, 0.3); }
+.account-encryption-preference p { color: var(--text-muted); font-size: 13px; line-height: 1.45; }
+.account-encryption-preference .dashboard-profile-button { justify-self: start; }
+.account-encryption-preference.is-enabled { border-color: rgba(26, 127, 55, 0.55); background: rgba(26, 127, 55, 0.08); }
+html[data-theme='dark'] .dashboard-role-badge.is-encrypted,
+html[data-theme='dark'] .admin-user-role-badge.account-encrypted { border-color: #c4a9e8; background: #73579a; color: #fbf7ff; }
+html[data-theme='dark'] .account-encryption-preference { border-color: rgba(240, 199, 108, 0.5); background: rgba(213, 155, 39, 0.12); }
+html[data-theme='dark'] .account-encryption-preference.is-enabled { border-color: rgba(92, 201, 120, 0.62); background: rgba(37, 126, 65, 0.17); }
+html[data-theme='dark'] .account-encryption-preference h3 { color: var(--dark-text); }
+html[data-theme='dark'] .account-encryption-preference p { color: var(--dark-text-soft); }
+html[data-theme='dark'] .account-encryption-preference > summary::after { border-color: var(--gold-300); }
 
 .dashboard-danger-section {
   border-top: 1px solid var(--branch-grey-200);

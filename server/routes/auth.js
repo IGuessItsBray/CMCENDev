@@ -9,10 +9,21 @@ const EventRsvp = require('../models/EventRsvp');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const LastPostMessage = require('../models/LastPostMessage');
+const NewsArticle = require('../models/NewsArticle');
+const Page = require('../models/Page');
 const EmailUnsubscribeToken = require('../models/EmailUnsubscribeToken');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
+const {
+  destroyAccountKey,
+  enrollAccount,
+  getAvailability: getAccountEncryptionAvailability,
+  hydrateProfile,
+  isEncryptionIneligible,
+  migrateRetainedAccountData,
+  anonymizeRetainedAccountData,
+} = require('../services/account-encryption');
 const { sendMail } = require('../services/mailer');
 const {
   CASL_CONSENT_TEXT_VERSION,
@@ -37,7 +48,7 @@ const {
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions notificationState createdAt updatedAt';
+  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions notificationState encryption createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -613,6 +624,7 @@ async function getProfileResponse(user) {
   delete profile.totp;
   delete profile.webauthn;
   delete profile.twoFactor;
+  delete profile.encryptedProfile;
   const permissions = getUserPermissions(profile);
   let notifications = {
     count: 0,
@@ -633,6 +645,12 @@ async function getProfileResponse(user) {
     mfa,
     permissions,
     notifications,
+    accountEncryption: {
+      ...getAccountEncryptionAvailability(),
+      enrolled: profile.encryption?.enabled === true,
+      enrolledAt: profile.encryption?.enrolledAt || null,
+      dataEncryptedAt: profile.encryption?.dataEncryptedAt || null,
+    },
   };
 }
 
@@ -1428,6 +1446,32 @@ router.get('/me', authMiddleware, async (req, res) => {
   res.json(await getProfileResponse(req.user));
 });
 
+router.post('/profile/encryption', authMiddleware, async (req, res) => {
+  if (isEncryptionIneligible(req.user)) {
+    return res.status(400).json({
+      error: 'Ghost accounts cannot use account encryption',
+    });
+  }
+  if (req.user.encryption?.dataEncryptedAt) return res.status(409).json({ error: 'Account encryption is already enabled' });
+  if (req.body?.confirm !== true) return res.status(400).json({ error: 'Explicit confirmation is required to enable account encryption' });
+  try {
+    const enrollment = req.user.encryption?.enabled === true
+      ? req.user.encryption
+      : await enrollAccount(req.user._id);
+    req.user.encryption = { enabled: true, ...enrollment };
+    req.user.markModified('encryption');
+    await req.user.save();
+    await migrateRetainedAccountData(req.user);
+    await hydrateProfile(req.user);
+    await writeAuditLog({ req, action: 'user.account_encryption_enabled', actor: req.user, targetType: 'user', target: req.user._id, metadata: { provider: enrollment.provider, keyName: enrollment.keyName } });
+    return res.status(201).json(await getProfileResponse(req.user));
+  } catch (error) {
+    console.error('Account encryption enrollment failed:', error);
+    if (error.code === 'ACCOUNT_DELETED') return res.status(409).json({ error: 'This account has been deleted' });
+    return res.status(503).json({ error: 'Account encryption is temporarily unavailable' });
+  }
+});
+
 router.get('/notifications', authMiddleware, async (req, res) => {
   res.json({
     notifications: await getNotificationSummary(req.user),
@@ -1896,6 +1940,9 @@ router.delete(
     try {
       const userId = req.user._id;
       const snapshot = getUserSnapshot(req.user);
+      await destroyAccountKey({ accountId: userId, encryption: req.user.encryption });
+
+      await anonymizeRetainedAccountData(userId);
 
       await Promise.all([
         Event.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
@@ -1908,6 +1955,14 @@ router.delete(
           { $set: { author: null } },
         ),
         LastPostMessage.updateMany(
+          { createdBy: userId },
+          { $set: { createdBy: null } },
+        ),
+        NewsArticle.updateMany(
+          { createdBy: userId },
+          { $set: { createdBy: null } },
+        ),
+        Page.updateMany(
           { createdBy: userId },
           { $set: { createdBy: null } },
         ),
@@ -1944,14 +1999,7 @@ router.patch('/profile', authMiddleware, async (req, res) => {
       });
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      { $set: updates },
-      {
-        returnDocument: 'after',
-        runValidators: true,
-      },
-    )
+    const user = await User.findById(req.user._id)
       .select(PROFILE_SELECT)
       .populate('customRoles', 'name slug color permissions');
 
@@ -1960,6 +2008,10 @@ router.patch('/profile', authMiddleware, async (req, res) => {
         error: 'User not found',
       });
     }
+
+    Object.entries(updates).forEach(([field, value]) => user.set(field, value));
+    await user.save();
+    await hydrateProfile(user);
 
     res.json(await getProfileResponse(user));
   } catch (error) {

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { addRetainedIdentityEncryption } = require('../services/account-encryption');
 const {
   CERTIFICATE_FAMILY_RELATIONSHIPS,
   CERTIFICATE_REQUEST_STATUSES,
@@ -289,6 +290,8 @@ certificateRequestSchema.index({
   status: 1,
   createdAt: -1,
 });
+
+addRetainedIdentityEncryption(certificateRequestSchema, ['member', 'familyMembers', 'mailingAddress', 'requester']);
 
 certificateRequestSchema.index({
   'source.type': 1,

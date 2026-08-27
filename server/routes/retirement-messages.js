@@ -18,6 +18,7 @@ const {
   validateCertificateRequestPayload,
 } = require('../services/certificate-requests');
 const { linkMediaAssetToSource } = require('../services/media-assets');
+const { enableRetainedContent, enableRetainedIdentity } = require('../services/account-encryption');
 const {
   cleanLocalizedText,
   cleanString,
@@ -421,6 +422,8 @@ async function createCertificateRequest({
     }),
   );
 
+  enableRetainedIdentity(certificateRequest, user);
+
   await certificateRequest.save();
 
   await writeAuditLog({
@@ -562,6 +565,9 @@ router.post(
 
         publishedAt: wantsImmediatePublication ? confirmationDate : null,
       });
+
+      enableRetainedContent(retirementMessage, req.user);
+      enableRetainedIdentity(retirementMessage, req.user);
 
       await retirementMessage.save();
 

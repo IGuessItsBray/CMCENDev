@@ -26,6 +26,7 @@ const {
 } = require('../config/permissions');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog, snapshotUser } = require('../services/audit-log');
+const { anonymizeRetainedAccountData, destroyAccountKey } = require('../services/account-encryption');
 const { cleanLocalizedText, cleanString } = require('../services/content-utils');
 const { isEmailSendingDisabled, sendMail } = require('../services/mailer');
 const {
@@ -1801,6 +1802,10 @@ function toAdminUser(user, postSummary = null) {
     lastName: plainUser.lastName,
     role: plainUser.role,
     accountType: plainUser.accountType || 'member',
+    encryption: {
+      enrolled: plainUser.encryption?.enabled === true,
+      dataEncryptedAt: plainUser.encryption?.dataEncryptedAt || null,
+    },
     invitation:
       plainUser.accountType === 'invited'
         ? {
@@ -2658,6 +2663,7 @@ router.delete(
           lastPosts: lastPosts.deletedCount || 0,
         };
       } else {
+        await anonymizeRetainedAccountData(userId);
         await Promise.all([
           Event.updateMany(
             { createdBy: userId },
@@ -2675,8 +2681,18 @@ router.delete(
             { createdBy: userId },
             { $set: { createdBy: null } },
           ),
+          NewsArticle.updateMany(
+            { createdBy: userId },
+            { $set: { createdBy: null } },
+          ),
+          Page.updateMany(
+            { createdBy: userId },
+            { $set: { createdBy: null } },
+          ),
         ]);
       }
+
+      await destroyAccountKey({ accountId: userId, encryption: user.encryption });
 
       await user.deleteOne();
       await writeAuditLog({
@@ -3930,6 +3946,7 @@ router.patch(
               enabled: false,
               appName: '',
             },
+            encryptedTotpSecret: '',
             twoFactor: {
               tempToken: '',
               tempExpires: null,

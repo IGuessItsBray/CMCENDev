@@ -27,6 +27,7 @@ const {
   parseBoolean,
 } = require('../services/content-utils');
 const { linkMediaAssetToSource } = require('../services/media-assets');
+const { encryptRsvpContact } = require('../services/account-encryption');
 const { buildPublicEventCalendar } = require('../services/event-calendar-export');
 
 const router = express.Router();
@@ -1044,16 +1045,12 @@ router.post('/:id/rsvp', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'RSVP response must be accepted or declined' });
     }
 
-    const rsvp = await EventRsvp.findOneAndUpdate(
-      { event: event._id, user: req.user._id },
-      { $set: { response, ...getRsvpProfile(req.user) } },
-      {
-        returnDocument: 'after',
-        upsert: true,
-        runValidators: true,
-        setDefaultsOnInsert: true,
-      },
-    );
+    let rsvp = await EventRsvp.findOne({ event: event._id, user: req.user._id });
+    if (!rsvp) rsvp = new EventRsvp({ event: event._id, user: req.user._id });
+    rsvp.response = response;
+    rsvp.set(getRsvpProfile(req.user));
+    await encryptRsvpContact(rsvp, req.user);
+    await rsvp.save();
     await writeAuditLog({
       req, action: 'event.rsvp_submitted', actor: req.user,
       targetType: 'event', target: event._id,

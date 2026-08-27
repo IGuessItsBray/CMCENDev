@@ -18,6 +18,7 @@ const {
 } = require('../services/media-assets');
 const { sanitizeImageBuffer } = require('../services/media-sanitization');
 const { writeAuditLog } = require('../services/audit-log');
+const { decryptRetainedBytes, encryptRetainedBytes } = require('../services/account-encryption');
 const s3Client = require('../storage');
 
 const router = express.Router();
@@ -83,24 +84,32 @@ async function assertCdnSlugAvailable(cdnSlug) {
   }
 }
 
-async function putObject({ key, body, contentType }) {
+function buildEncryptedMediaUrl(uuid, variant) {
+  const baseUrl = String(process.env.APP_BASE_URL || '').replace(/\/+$/u, '');
+  const path = `/api/media/${encodeURIComponent(uuid)}/${encodeURIComponent(variant)}`;
+  return baseUrl ? `${baseUrl}${path}` : path;
+}
+
+async function putObject({ key, body, contentType, encryptionUser }) {
+  const ciphertext = await encryptRetainedBytes(encryptionUser, body);
   await s3Client.send(
     new PutObjectCommand({
       Bucket: process.env.MINIO_BUCKET_NAME,
       Key: key,
-      Body: body,
-      ContentType: contentType,
+      Body: ciphertext || body,
+      ContentType: ciphertext ? 'application/vnd.cmcen.openbao-transit' : contentType,
     }),
   );
+  return Boolean(ciphertext);
 }
 
-function toVariantResponse(variants) {
+function toVariantResponse(variants, uuid = '') {
   return Object.fromEntries(
     Object.entries(variants).map(([name, variant]) => [
       name,
       {
         key: variant.key,
-        url: buildPublicMediaUrl(variant.key),
+        url: uuid ? buildEncryptedMediaUrl(uuid, name) : buildPublicMediaUrl(variant.key),
         width: variant.width,
         height: variant.height,
         size: variant.size,
@@ -144,7 +153,7 @@ function getDisplayVariantConfig(input = {}) {
   return null;
 }
 
-async function createDisplayVariant({ buffer, baseKey, cropPosition, config }) {
+async function createDisplayVariant({ buffer, baseKey, cropPosition, config, encryptionUser, uuid }) {
   const image = sharp(buffer).rotate();
   const metadata = await image.metadata();
   const sourceWidth = metadata.width || 0;
@@ -184,11 +193,12 @@ async function createDisplayVariant({ buffer, baseKey, cropPosition, config }) {
     key,
     body: rendered.data,
     contentType: 'image/webp',
+    encryptionUser,
   });
 
   return {
     key,
-    url: buildPublicMediaUrl(key),
+    url: uuid ? buildEncryptedMediaUrl(uuid, 'display') : buildPublicMediaUrl(key),
     width: rendered.info.width,
     height: rendered.info.height,
     size: rendered.info.size,
@@ -196,7 +206,8 @@ async function createDisplayVariant({ buffer, baseKey, cropPosition, config }) {
   };
 }
 
-async function processImageUpload(file, cdnSlug = '', options = {}) {
+async function processImageUpload(file, cdnSlug = '', options = {}, encryptionUser = null) {
+  const uuid = randomUUID();
   const baseKey = getImageBaseKey(cdnSlug);
   const sanitizedImage = await sanitizeImageBuffer(file.buffer);
   const originalKey = `${baseKey}/original.webp`;
@@ -212,6 +223,7 @@ async function processImageUpload(file, cdnSlug = '', options = {}) {
     key: originalKey,
     body: sanitizedImage.buffer,
     contentType: sanitizedImage.mimeType,
+    encryptionUser,
   });
 
   await Promise.all(
@@ -233,6 +245,7 @@ async function processImageUpload(file, cdnSlug = '', options = {}) {
         key,
         body: buffer.data,
         contentType: 'image/webp',
+        encryptionUser,
       });
 
       variants[variant.name] = {
@@ -252,26 +265,32 @@ async function processImageUpload(file, cdnSlug = '', options = {}) {
         baseKey,
         cropPosition,
         config: displayConfig,
+        encryptionUser,
+        uuid: encryptionUser ? uuid : '',
       })
     : null;
 
   return {
+    uuid,
     key: originalKey,
-    url: buildPublicMediaUrl(
-      variants.large?.key || variants.hero?.key || originalKey,
-    ),
+    url: encryptionUser
+      ? buildEncryptedMediaUrl(uuid, variants.large ? 'large' : variants.hero ? 'hero' : 'original')
+      : buildPublicMediaUrl(variants.large?.key || variants.hero?.key || originalKey),
     original: {
       key: originalKey,
-      url: buildPublicMediaUrl(originalKey),
+      url: encryptionUser ? buildEncryptedMediaUrl(uuid, 'original') : buildPublicMediaUrl(originalKey),
       width: metadata.width || null,
       height: metadata.height || null,
       size: sanitizedImage.buffer.length,
       mimeType: sanitizedImage.mimeType,
     },
-    variants: toVariantResponse(variants),
+    variants: toVariantResponse(variants, encryptionUser ? uuid : ''),
     ...(display ? { display } : {}),
     imageMetadata: sanitizeImageMetadata(metadata),
     cdnSlug,
+    storageEncryption: encryptionUser
+      ? { enabled: true, provider: 'openbao', keyName: process.env.OPENBAO_RETENTION_KEY || 'cmcen-retained-content', encryptedAt: new Date() }
+      : { enabled: false },
   };
 }
 
@@ -294,6 +313,7 @@ router.post(
         req.file,
         cdnSlug,
         req.body,
+        req.user.encryption?.dataEncryptedAt ? req.user : null,
       );
       const mediaAsset = await createMediaAssetRecord({
         uploadResult,
@@ -337,6 +357,44 @@ router.post(
     }
   },
 );
+
+// GET /api/media/:uuid/:variant
+// Serve a public media asset. Encrypted assets are decrypted only in memory;
+// the corresponding MinIO object is never exposed as a public URL.
+router.get('/media/:uuid/:variant', async (req, res) => {
+  try {
+    const asset = await MediaAsset.findOne({ uuid: req.params.uuid }).lean();
+    if (!asset) return res.status(404).end();
+
+    const variantName = String(req.params.variant || '');
+    const variant = variantName === 'original'
+      ? { key: asset.originalKey || asset.key, mimeType: asset.mimeType }
+      : variantName === 'display'
+        ? asset.display
+        : asset.variants?.[variantName];
+    if (!variant?.key) return res.status(404).end();
+
+    if (asset.storageEncryption?.enabled !== true) {
+      return res.redirect(302, buildPublicMediaUrl(variant.key));
+    }
+
+    const object = await s3Client.send(new GetObjectCommand({
+      Bucket: process.env.MINIO_BUCKET_NAME,
+      Key: variant.key,
+    }));
+    const encryptedBytes = Buffer.from(await object.Body.transformToByteArray());
+    const plaintext = await decryptRetainedBytes(encryptedBytes.toString('utf8'));
+    res.set({
+      'Content-Type': variant.mimeType || asset.mimeType || 'application/octet-stream',
+      'Cache-Control': 'public, max-age=3600',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    return res.send(plaintext);
+  } catch (error) {
+    console.error('Public encrypted media request failed:', error);
+    return res.status(503).end();
+  }
+});
 
 // POST /api/upload-url
 // Direct uploads are intentionally disabled: they bypass server-side metadata removal.

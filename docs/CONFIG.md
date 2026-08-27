@@ -760,6 +760,137 @@ documentation is intentional.
 
 ## Deployment Metadata
 
+## Optional Account Encryption (OpenBao Transit)
+
+This branch enables account-by-account enrolment by default; no account is
+enrolled unless its user explicitly opts in. Opt-in encrypts the account's
+profile fields and its TOTP MFA seed in MongoDB using its dedicated Transit key
+and records the key deletion ledger. Existing profile data and a pre-existing
+TOTP seed are encrypted when the user enrolls. Username and email remain clear
+for sign-in, account lookup, and delivery workflows. RSVP contact copies and
+new image uploads made by an enrolled account are encrypted under the separate
+retention key, so they can be retained without retaining the account identity
+after deletion. News articles, Retirement Messages, Last Post notices, and
+custom Page content created by enrolled accounts are also stored under this
+retention key; pre-existing authored records are migrated when the account
+enrols.
+
+Retirement and Last Post submitter details, plus Certificate Request member,
+family, requester, and mailing-address data, are stored in a separate encrypted
+identity payload. Account deletion removes that identity payload while retaining
+the public content and its anonymized account relationship.
+
+Ghost accounts, including the dummy identities created for comments and other
+attributed content, are never eligible for enrolment. The API rejects the
+request and the User model rejects attempts to save encryption metadata on a
+ghost account. This preserves their lightweight, content-attribution role and
+prevents a bulk or administrative update from forcing encryption on them.
+
+### `ACCOUNT_ENCRYPTION_ENABLED`
+
+Set `true` to offer enrolment; set `false` only to pause new enrolments.
+
+```dotenv
+ACCOUNT_ENCRYPTION_ENABLED=true
+```
+
+### `OPENBAO_TRANSIT_ENDPOINT`
+
+Private OpenBao API base URL without `/v1`; use TLS outside local development.
+
+```dotenv
+OPENBAO_TRANSIT_ENDPOINT=https://openbao.internal.example.ca
+```
+
+### `OPENBAO_TRANSIT_TOKEN`
+
+Secret, restricted application token. Store it only in deployment secret
+storage; never commit it.
+
+```dotenv
+OPENBAO_TRANSIT_TOKEN=<secret-token>
+```
+
+### `OPENBAO_TRANSIT_MOUNT`
+
+OpenBao Transit mount name, normally `transit`.
+
+```dotenv
+OPENBAO_TRANSIT_MOUNT=transit
+```
+
+### `OPENBAO_RETENTION_KEY`
+
+The dedicated Transit key for retained records, currently encrypted RSVP
+contact copies. It is deliberately separate from an account key and must not
+be deleted during account deletion. When an account is deleted, CMCEN removes
+the retained encrypted contact payload and replaces the RSVP identity with
+`Anonymous`, while preserving the RSVP response itself. If the key name is
+changed, update the restricted-token policy to match the new exact key name.
+
+Encrypted uploads are stored as Transit ciphertext in MinIO. CMCEN returns a
+stable public `/api/media/<uuid>/<variant>` URL and decrypts the object only in
+memory when that URL is requested. The link is intentionally suitable for
+external embedding; encryption protects the MinIO object and its backups, not
+the publicly served image.
+
+```dotenv
+OPENBAO_RETENTION_KEY=cmcen-retained-content
+```
+
+### Restricted application token
+
+Enable Transit, then write this policy using an OpenBao operator token:
+
+```hcl
+path "transit/keys/cmcen-account-*" {
+  capabilities = ["create", "update", "delete"]
+}
+
+path "transit/encrypt/cmcen-account-*" {
+  capabilities = ["update"]
+}
+
+path "transit/decrypt/cmcen-account-*" {
+  capabilities = ["update"]
+}
+
+path "transit/keys/cmcen-retained-content" {
+  capabilities = ["create", "update"]
+}
+
+path "transit/encrypt/cmcen-retained-content" {
+  capabilities = ["update"]
+}
+
+path "transit/decrypt/cmcen-retained-content" {
+  capabilities = ["update"]
+}
+```
+
+```sh
+export BAO_ADDR=https://<openbao-hostname>
+export BAO_TOKEN=<operator-token>
+bao secrets enable transit
+bao policy write cmcen-account-encryption cmcen-account-encryption.hcl
+bao token create -no-default-policy -policy=cmcen-account-encryption -ttl=720h
+```
+
+The token can manage only the CMCEN account-key namespace. Current deletion
+uses the same application token, so a future production hardening step should
+split ordinary encryption operations from a separately privileged key-destroy
+workflow.
+
+### Backup and Compose notes
+
+An account key is deleted before its user record. MongoDB/MinIO recovery alone
+cannot decrypt it while OpenBao stays current, but a pre-deletion OpenBao backup
+can restore a key. Retain and purge OpenBao backups independently.
+
+`OPENBAO_BIND_ADDRESS`, `OPENBAO_PORT`, and `OPENBAO_DEV_ROOT_TOKEN` in
+`compose.env.example` apply only to the repository's in-memory evaluation
+profile. They must not be used for production keys.
+
 The application may inspect Git commit information from deployment-provided
 environment variables such as:
 

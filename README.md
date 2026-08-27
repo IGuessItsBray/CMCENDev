@@ -193,6 +193,12 @@ CMCEN is available at `http://127.0.0.1:3000` by default. Plausible is
 available at `http://127.0.0.1:8000`, MinIO's S3 endpoint at
 `http://127.0.0.1:9000`, and the MinIO console at `http://127.0.0.1:9001`.
 
+The optional `account-encryption-demo` Compose profile adds an in-memory
+OpenBao service for evaluation only. Production OpenBao must be separately
+operated; configure `ACCOUNT_ENCRYPTION_ENABLED`, `OPENBAO_TRANSIT_ENDPOINT`,
+`OPENBAO_TRANSIT_TOKEN`, `OPENBAO_TRANSIT_MOUNT`, and
+`OPENBAO_RETENTION_KEY` in deployment secrets.
+
 The default loopback bindings are deliberate. In a public deployment, configure
 an HTTPS reverse proxy for the CMCEN public URL, the Plausible `BASE_URL`, and
 the `MINIO_PUBLIC_ENDPOINT`. Do not expose MongoDB, the MinIO console,

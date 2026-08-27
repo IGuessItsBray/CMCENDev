@@ -153,6 +153,12 @@ const MediaAssetSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    storageEncryption: {
+      enabled: { type: Boolean, default: false },
+      provider: { type: String, default: '' },
+      keyName: { type: String, default: '' },
+      encryptedAt: { type: Date, default: null },
+    },
   },
   { timestamps: true },
 );

@@ -26,9 +26,11 @@ const speakeasy = require('speakeasy');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { app } = require('../../server');
 const AuditLog = require('../../models/AuditLog');
+const AccountDeletionLedger = require('../../models/AccountDeletionLedger');
 const CertificateRequest = require('../../models/CertificateRequest');
 const ContentRevision = require('../../models/ContentRevision');
 const Event = require('../../models/Event');
+const EventRsvp = require('../../models/EventRsvp');
 const LastPostMessage = require('../../models/LastPostMessage');
 const MediaAsset = require('../../models/MediaAsset');
 const NewsArticle = require('../../models/NewsArticle');
@@ -101,6 +103,47 @@ async function login(user, options = {}) {
 
 function bearer(token) {
   return `Bearer ${token}`;
+}
+
+function createOpenBaoTestDouble() {
+  const keys = new Set();
+
+  function response(status, data = {}) {
+    return {
+      ok: status >= 200 && status < 300,
+      status,
+      async json() { return data; },
+      async text() { return JSON.stringify(data); },
+    };
+  }
+
+  return {
+    keys,
+    async fetch(url, options = {}) {
+      const pathname = new URL(url).pathname;
+      const keyName = decodeURIComponent(pathname.split('/').at(-1));
+      const body = options.body ? JSON.parse(options.body) : {};
+
+      if (options.method === 'POST' && /\/transit\/keys\/[^/]+$/.test(pathname)) {
+        keys.add(keyName);
+        return response(200, { data: {} });
+      }
+      if (options.method === 'POST' && pathname.endsWith('/config')) return response(200, { data: {} });
+      if (options.method === 'POST' && pathname.includes('/transit/encrypt/')) {
+        if (!keys.has(keyName)) return response(404, { errors: ['key not found'] });
+        return response(200, { data: { ciphertext: `vault:v1:${body.plaintext}` } });
+      }
+      if (options.method === 'POST' && pathname.includes('/transit/decrypt/')) {
+        if (!keys.has(keyName)) return response(404, { errors: ['key not found'] });
+        return response(200, { data: { plaintext: String(body.ciphertext).replace(/^vault:v1:/u, '') } });
+      }
+      if (options.method === 'DELETE' && pathname.includes('/transit/keys/')) {
+        keys.delete(keyName);
+        return response(204);
+      }
+      return response(404, { errors: ['unexpected OpenBao test request'] });
+    },
+  };
 }
 
 function retirementPayload() {
@@ -257,6 +300,244 @@ after(async () => {
 });
 
 describe('system and authentication', () => {
+  test('encrypts an opted-in profile and cryptographically deletes its account key', async () => {
+    const previousFetch = global.fetch;
+    const previousConfig = {
+      enabled: process.env.ACCOUNT_ENCRYPTION_ENABLED,
+      endpoint: process.env.OPENBAO_TRANSIT_ENDPOINT,
+      token: process.env.OPENBAO_TRANSIT_TOKEN,
+      mount: process.env.OPENBAO_TRANSIT_MOUNT,
+      retentionKey: process.env.OPENBAO_RETENTION_KEY,
+    };
+    const openBao = createOpenBaoTestDouble();
+    const totpSecret = speakeasy.generateSecret({ length: 20 }).base32;
+
+    global.fetch = openBao.fetch;
+    process.env.ACCOUNT_ENCRYPTION_ENABLED = 'true';
+    process.env.OPENBAO_TRANSIT_ENDPOINT = 'http://openbao.test';
+    process.env.OPENBAO_TRANSIT_TOKEN = 'test-token';
+    process.env.OPENBAO_TRANSIT_MOUNT = 'transit';
+    process.env.OPENBAO_RETENTION_KEY = 'cmcen-retained-content';
+
+    try {
+      const user = await createUser({
+        firstName: 'Encrypted',
+        lastName: 'Member',
+        phone: '555-0100',
+        totp: { secret: totpSecret, enabled: true, appName: 'CMCEN' },
+      });
+      const token = jwt.sign(
+        { userId: user._id, sessionVersion: user.sessionVersion },
+        process.env.JWT_SECRET,
+      );
+      const keyName = `cmcen-account-${user._id}`;
+      const rsvp = await EventRsvp.create({
+        event: new mongoose.Types.ObjectId(),
+        user: user._id,
+        response: 'accepted',
+        firstName: 'Encrypted',
+        lastName: 'Member',
+        email: user.email,
+        phone: '555-0100',
+      });
+      const article = await NewsArticle.create({
+        title: { en: 'Encrypted news', fr: '' },
+        content: { en: 'Encrypted article body', fr: '' },
+        createdBy: user._id,
+      });
+      const lastPost = await LastPostMessage.create({
+        submitter: { rank: 'Captain', firstName: 'Encrypted', lastName: 'Submitter', email: user.email },
+        deceased: { firstName: 'Remembered', surname: 'Member' },
+        messageLanguage: 'en',
+        messages: { en: 'An encrypted identity test notice.', fr: '' },
+        createdBy: user._id,
+      });
+
+      const enrollment = await request(app)
+        .post('/api/profile/encryption')
+        .set('Authorization', bearer(token))
+        .send({ confirm: true })
+        .expect(201);
+
+      assert.equal(enrollment.body.accountEncryption.enrolled, true);
+      assert.ok(enrollment.body.accountEncryption.dataEncryptedAt);
+      assert.equal(enrollment.body.firstName, 'Encrypted');
+      assert.ok(openBao.keys.has(keyName));
+
+      const rawUser = await User.collection.findOne({ _id: user._id });
+      assert.equal(rawUser.firstName, '');
+      assert.equal(rawUser.lastName, '');
+      assert.equal(rawUser.phone, '');
+      assert.match(rawUser.encryptedProfile, /^vault:v1:/u);
+      assert.equal(rawUser.totp.secret, '');
+      assert.match(rawUser.encryptedTotpSecret, /^vault:v1:/u);
+      const rawRsvp = await EventRsvp.collection.findOne({ _id: rsvp._id });
+      assert.equal(rawRsvp.firstName, '');
+      assert.match(rawRsvp.encryptedContact, /^vault:v1:/u);
+      const hydratedRsvp = await EventRsvp.findById(rsvp._id);
+      assert.equal(hydratedRsvp.firstName, 'Encrypted');
+      assert.equal(hydratedRsvp.email, user.email);
+      const rawArticle = await NewsArticle.collection.findOne({ _id: article._id });
+      assert.deepEqual(rawArticle.title, { en: '', fr: '' });
+      assert.match(rawArticle.encryptedContent, /^vault:v1:/u);
+      const hydratedArticle = await NewsArticle.findById(article._id);
+      assert.equal(hydratedArticle.title.en, 'Encrypted news');
+      assert.equal(hydratedArticle.content.en, 'Encrypted article body');
+      const rawLastPost = await LastPostMessage.collection.findOne({ _id: lastPost._id });
+      assert.equal(rawLastPost.submitter?.firstName || '', '');
+      assert.match(rawLastPost.encryptedIdentity, /^vault:v1:/u);
+      const hydratedLastPost = await LastPostMessage.findById(lastPost._id);
+      assert.equal(hydratedLastPost.submitter.email, user.email);
+
+      const reloaded = await request(app)
+        .get('/api/me')
+        .set('Authorization', bearer(token))
+        .expect(200);
+      assert.equal(reloaded.body.firstName, 'Encrypted');
+      assert.equal(reloaded.body.phone, '555-0100');
+
+      await request(app)
+        .delete('/api/profile')
+        .set('Authorization', bearer(token))
+        .send({
+          mfaMethod: 'totp',
+          mfaCode: speakeasy.totp({ secret: totpSecret, encoding: 'base32' }),
+        })
+        .expect(200);
+
+      assert.equal(await User.collection.findOne({ _id: user._id }), null);
+      const anonymizedRsvp = await EventRsvp.collection.findOne({ _id: rsvp._id });
+      assert.equal(anonymizedRsvp.firstName, 'Anonymous');
+      assert.equal(anonymizedRsvp.encryptedContact, '');
+      const retainedArticle = await NewsArticle.findById(article._id);
+      assert.equal(retainedArticle.createdBy, null);
+      assert.equal(retainedArticle.title.en, 'Encrypted news');
+      const anonymizedLastPost = await LastPostMessage.collection.findOne({ _id: lastPost._id });
+      assert.equal(anonymizedLastPost.encryptedIdentity, '');
+      assert.equal(openBao.keys.has(keyName), false);
+      const ledger = await AccountDeletionLedger.findOne({ accountId: user._id });
+      assert.equal(ledger?.keyName, keyName);
+      assert.equal(ledger?.deletionStatus, 'destroyed');
+    } finally {
+      global.fetch = previousFetch;
+      Object.entries(previousConfig).forEach(([key, value]) => {
+        const envKey = key === 'retentionKey'
+          ? 'OPENBAO_RETENTION_KEY'
+          : `OPENBAO_TRANSIT_${key.toUpperCase()}`;
+        if (key === 'enabled') {
+          if (value === undefined) delete process.env.ACCOUNT_ENCRYPTION_ENABLED;
+          else process.env.ACCOUNT_ENCRYPTION_ENABLED = value;
+        } else if (value === undefined) delete process.env[envKey];
+        else process.env[envKey] = value;
+      });
+    }
+  });
+
+  test('never enrolls ghost accounts in account encryption', async () => {
+    const ghost = await createUser({ accountType: 'ghost', role: 'ghost' });
+    const token = jwt.sign(
+      { userId: ghost._id, sessionVersion: ghost.sessionVersion },
+      process.env.JWT_SECRET,
+    );
+
+    await request(app)
+      .post('/api/profile/encryption')
+      .set('Authorization', bearer(token))
+      .send({ confirm: true })
+      .expect(400)
+      .expect(({ body }) => {
+        assert.equal(body.error, 'Ghost accounts cannot use account encryption');
+      });
+
+    await assert.rejects(
+      User.create({
+        ...createMemberData({
+          accountType: 'ghost',
+          role: 'ghost',
+          encryption: { enabled: true, provider: 'openbao', keyName: 'forbidden' },
+        }),
+      }),
+      { name: 'ValidationError' },
+    );
+  });
+
+  test('serves an enrolled user upload from encrypted object storage', async () => {
+    const previousFetch = global.fetch;
+    const previousConfig = {
+      enabled: process.env.ACCOUNT_ENCRYPTION_ENABLED,
+      endpoint: process.env.OPENBAO_TRANSIT_ENDPOINT,
+      token: process.env.OPENBAO_TRANSIT_TOKEN,
+      mount: process.env.OPENBAO_TRANSIT_MOUNT,
+      retentionKey: process.env.OPENBAO_RETENTION_KEY,
+    };
+    const openBao = createOpenBaoTestDouble();
+    const storedObjects = new Map();
+    const originalSend = s3Client.send.bind(s3Client);
+    global.fetch = openBao.fetch;
+    process.env.ACCOUNT_ENCRYPTION_ENABLED = 'true';
+    process.env.OPENBAO_TRANSIT_ENDPOINT = 'http://openbao.test';
+    process.env.OPENBAO_TRANSIT_TOKEN = 'test-token';
+    process.env.OPENBAO_TRANSIT_MOUNT = 'transit';
+    process.env.OPENBAO_RETENTION_KEY = 'cmcen-retained-content';
+    s3Client.send = async (command) => {
+      if (command.constructor.name === 'ListObjectsV2Command') return {};
+      if (command.constructor.name === 'PutObjectCommand') {
+        storedObjects.set(command.input.Key, Buffer.from(command.input.Body));
+        return {};
+      }
+      if (command.constructor.name === 'GetObjectCommand') {
+        const body = storedObjects.get(command.input.Key);
+        return { Body: { transformToByteArray: async () => new Uint8Array(body) } };
+      }
+      return {};
+    };
+
+    try {
+      const user = await createUser({ role: 'contributor' });
+      const token = jwt.sign(
+        { userId: user._id, sessionVersion: user.sessionVersion },
+        process.env.JWT_SECRET,
+      );
+      await request(app)
+        .post('/api/profile/encryption')
+        .set('Authorization', bearer(token))
+        .send({ confirm: true })
+        .expect(201);
+      const image = await sharp({
+        create: { width: 24, height: 24, channels: 3, background: '#336699' },
+      }).png().toBuffer();
+      const uploaded = await request(app)
+        .post('/api/upload')
+        .set('Authorization', bearer(token))
+        .field('uploadSource', 'mediaManager')
+        .attach('image', image, { filename: 'encrypted.png', contentType: 'image/png' })
+        .expect(201);
+
+      const asset = await MediaAsset.findById(uploaded.body.mediaAsset._id).lean();
+      assert.equal(asset.storageEncryption.enabled, true);
+      assert.match(asset.url, /\/api\/media\//u);
+      const storedLarge = storedObjects.get(asset.variants.large.key).toString('utf8');
+      assert.match(storedLarge, /^vault:v1:/u);
+      const publicPath = new URL(asset.url).pathname;
+      const publicImage = await request(app).get(publicPath).expect(200);
+      assert.match(publicImage.headers['content-type'], /image\/webp/u);
+      assert.equal((await sharp(publicImage.body).metadata()).format, 'webp');
+    } finally {
+      s3Client.send = originalSend;
+      global.fetch = previousFetch;
+      Object.entries(previousConfig).forEach(([key, value]) => {
+        const envKey = key === 'retentionKey'
+          ? 'OPENBAO_RETENTION_KEY'
+          : `OPENBAO_TRANSIT_${key.toUpperCase()}`;
+        if (key === 'enabled') {
+          if (value === undefined) delete process.env.ACCOUNT_ENCRYPTION_ENABLED;
+          else process.env.ACCOUNT_ENCRYPTION_ENABLED = value;
+        } else if (value === undefined) delete process.env[envKey];
+        else process.env[envKey] = value;
+      });
+    }
+  });
+
   test('returns a public health response and a controlled API 404', async () => {
     const health = await request(app).get('/api/data').expect(200);
     assert.equal(typeof health.body.message, 'string');

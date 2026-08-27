@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { addRetainedContentEncryption, addRetainedIdentityEncryption } = require('../services/account-encryption');
 
 const LastPostMessageSchema = new mongoose.Schema(
   {
@@ -218,6 +219,8 @@ LastPostMessageSchema.index({
   publishedAt: -1,
   _id: -1,
 });
+addRetainedContentEncryption(LastPostMessageSchema, 'lastPost');
+addRetainedIdentityEncryption(LastPostMessageSchema, ['submitter']);
 
 LastPostMessageSchema.index({
   'legacy.source': 1,

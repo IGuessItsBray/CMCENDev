@@ -512,8 +512,7 @@ document.addEventListener("DOMContentLoaded", () => {
               try {
                 const qr = await api("/api/mfa/totp/qrcode");
                 appendTotpQrCode(container, qr.qrcode);
-              } catch (e) {
-              }
+              } catch (e) {}
             }
           }
           isTotpSetupInProgress = true;

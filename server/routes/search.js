@@ -32,7 +32,10 @@ const STATIC_PAGES = [
     path: '/branch_advisory_council',
     file: 'branch_advisory_council.html',
     type: 'page',
-    title: { en: 'Branch Advisory Council', fr: 'Conseil consultatif de la Branche' },
+    title: {
+      en: 'Branch Advisory Council',
+      fr: 'Conseil consultatif de la Branche',
+    },
   },
   {
     path: '/ce_professions',
@@ -53,7 +56,10 @@ const STATIC_PAGES = [
     path: '/about_branch',
     file: 'about_branch.html',
     type: 'page',
-    title: { en: 'About the C&E Branch', fr: 'À propos de la Branche des C et E' },
+    title: {
+      en: 'About the C&E Branch',
+      fr: 'À propos de la Branche des C et E',
+    },
   },
   {
     path: '/about_association',
@@ -174,7 +180,10 @@ const STATIC_PAGES = [
     path: '/submit-retirement',
     file: 'submit-retirement.html',
     type: 'page',
-    title: { en: 'Submit a Retirement Message', fr: 'Soumettre un message de retraite' },
+    title: {
+      en: 'Submit a Retirement Message',
+      fr: 'Soumettre un message de retraite',
+    },
   },
   {
     path: '/support_troops',
@@ -592,7 +601,8 @@ async function searchStaticPages(query, queryTerms, language) {
         );
         const text = normalizeText(stripHtml(html));
         const title = getLocalizedText(page.title, language);
-        const summary = getLocalizedText(page.summary, language) || truncate(text);
+        const summary =
+          getLocalizedText(page.summary, language) || truncate(text);
         const score = scoreSearchResult(query, queryTerms, {
           title,
           type: page.type,

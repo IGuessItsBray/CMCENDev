@@ -140,10 +140,10 @@
 
       return Boolean(
         user?._id &&
-          user.accountType === "invited" &&
-          state.currentUserPermissions?.canProvisionUsers === true &&
-          (user.role !== "internal_beta" ||
-            state.currentUserRole === "developer"),
+        user.accountType === "invited" &&
+        state.currentUserPermissions?.canProvisionUsers === true &&
+        (user.role !== "internal_beta" ||
+          state.currentUserRole === "developer"),
       );
     }
 
@@ -612,7 +612,8 @@
       const status = document.createElement("span");
       const statusValue = delivery.status || "pending";
       status.className = `admin-invitation-status is-${statusValue}`;
-      status.textContent = statusValue.charAt(0).toUpperCase() + statusValue.slice(1);
+      status.textContent =
+        statusValue.charAt(0).toUpperCase() + statusValue.slice(1);
       heading.append(title, status);
 
       const summary = document.createElement("p");
@@ -627,14 +628,23 @@
       const details = document.createElement("div");
       details.className = "admin-invitation-details";
       [
-        ["Delivery", invitation.sentAt ? `Sent ${formatDate(invitation.sentAt)}` : "Not sent"],
+        [
+          "Delivery",
+          invitation.sentAt
+            ? `Sent ${formatDate(invitation.sentAt)}`
+            : "Not sent",
+        ],
         [
           "Expires",
-          invitation.expiresAt ? formatDate(invitation.expiresAt) : "No expiration set",
+          invitation.expiresAt
+            ? formatDate(invitation.expiresAt)
+            : "No expiration set",
         ],
         [
           "Last attempt",
-          delivery.attemptedAt ? formatDate(delivery.attemptedAt) : "No delivery attempt yet",
+          delivery.attemptedAt
+            ? formatDate(delivery.attemptedAt)
+            : "No delivery attempt yet",
         ],
       ].forEach(([label, value]) => {
         const item = document.createElement("div");

@@ -66,14 +66,17 @@ let editingRetirementComment = null;
 
 function createRetirementLoadingContent(message) {
   const skeleton = document.createElement("div");
-  skeleton.className = "content-detail-skeleton content-detail-skeleton--retirement";
+  skeleton.className =
+    "content-detail-skeleton content-detail-skeleton--retirement";
   skeleton.setAttribute("aria-hidden", "true");
   skeleton.append(
     CMCENUtils.createSkeleton("skeleton--detail-title"),
     CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
     CMCENUtils.createSkeleton("skeleton--detail-photo"),
     CMCENUtils.createSkeleton("skeleton--detail-block"),
-    CMCENUtils.createSkeleton("skeleton--detail-block skeleton--detail-block-short"),
+    CMCENUtils.createSkeleton(
+      "skeleton--detail-block skeleton--detail-block-short",
+    ),
   );
 
   const accessibleLabel = document.createElement("span");
@@ -468,11 +471,14 @@ async function deleteRetirementComment(comment) {
     );
 
     renderComments(loadedComments);
-    CMCENUtils.showToast("Comment removed from public view and recorded in the audit log.", {
-      color: "success",
-      position: "bottom-right",
-      animation: "slide",
-    });
+    CMCENUtils.showToast(
+      "Comment removed from public view and recorded in the audit log.",
+      {
+        color: "success",
+        position: "bottom-right",
+        animation: "slide",
+      },
+    );
   } catch (error) {
     CMCENUtils.showToast(error.message || "Could not remove comment", {
       color: "error",
@@ -684,18 +690,15 @@ retirementCommentForm.addEventListener("submit", async (event) => {
       : `/api/retirement-messages/${encodeURIComponent(
           currentRetirementMessageId,
         )}/comments`;
-    const response = await fetch(
-      endpoint,
-      {
-        method: submittingEdit ? "PATCH" : "POST",
+    const response = await fetch(endpoint, {
+      method: submittingEdit ? "PATCH" : "POST",
 
-        headers: CMCENUtils.authHeaders(token, {
-          "Content-Type": "application/json",
-        }),
+      headers: CMCENUtils.authHeaders(token, {
+        "Content-Type": "application/json",
+      }),
 
-        body: JSON.stringify({ body }),
-      },
-    );
+      body: JSON.stringify({ body }),
+    });
 
     const data = await response.json().catch(() => ({}));
 

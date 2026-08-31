@@ -21,7 +21,9 @@ function cleanSingleLineString(value) {
 }
 
 function cleanMessage(value) {
-  return String(value ?? '').replace(/\r\n?/gu, '\n').trim();
+  return String(value ?? '')
+    .replace(/\r\n?/gu, '\n')
+    .trim();
 }
 
 router.post('/', authMiddleware, contactSubmissionLimit, async (req, res) => {
@@ -29,7 +31,9 @@ router.post('/', authMiddleware, contactSubmissionLimit, async (req, res) => {
   const message = cleanMessage(req.body?.message);
 
   if (!subject || !message) {
-    return res.status(400).json({ error: 'A subject and message are required' });
+    return res
+      .status(400)
+      .json({ error: 'A subject and message are required' });
   }
 
   if (subject.length > 160 || message.length > 10000) {

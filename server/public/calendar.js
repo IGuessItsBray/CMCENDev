@@ -1059,7 +1059,9 @@ function renderAgenda(language, locale) {
 
     const emptyTitle = document.createElement("p");
     emptyTitle.className = "calendar-event-title";
-    emptyTitle.textContent = getCalendarTranslation("calendar_no_events_in_view");
+    emptyTitle.textContent = getCalendarTranslation(
+      "calendar_no_events_in_view",
+    );
 
     emptyContent.append(emptyTitle);
     emptyCard.append(emptyContent);

@@ -55,10 +55,7 @@ router.get('/translations.js', async (req, res) => {
     res.send(createTranslationsRuntime(translations));
   } catch (error) {
     console.error('Translation runtime generation failed:', error);
-    res
-      .status(500)
-      .type('application/javascript')
-      .send('');
+    res.status(500).type('application/javascript').send('');
   }
 });
 

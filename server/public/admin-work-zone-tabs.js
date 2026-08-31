@@ -254,17 +254,21 @@
         const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
         const spaceAbove = rect.top - viewportPadding;
         const menuHeight = optionsList.scrollHeight;
-        const openAbove =
-          menuHeight > spaceBelow && spaceAbove > spaceBelow;
+        const openAbove = menuHeight > spaceBelow && spaceAbove > spaceBelow;
         const availableHeight = Math.max(
           120,
           openAbove ? spaceAbove : spaceBelow,
         );
         const top = openAbove
-          ? Math.max(viewportPadding, rect.top - 6 - Math.min(menuHeight, availableHeight))
+          ? Math.max(
+              viewportPadding,
+              rect.top - 6 - Math.min(menuHeight, availableHeight),
+            )
           : Math.min(
               rect.bottom + 6,
-              window.innerHeight - viewportPadding - Math.min(menuHeight, availableHeight),
+              window.innerHeight -
+                viewportPadding -
+                Math.min(menuHeight, availableHeight),
             );
 
         Object.assign(optionsList.style, {
@@ -320,7 +324,10 @@
       document.addEventListener(
         "pointerdown",
         (event) => {
-          if (!menu.contains(event.target) && !optionsList.contains(event.target)) {
+          if (
+            !menu.contains(event.target) &&
+            !optionsList.contains(event.target)
+          ) {
             setMenuOpen(false);
           }
         },
@@ -345,41 +352,41 @@
     tabs.setAttribute("role", "tablist");
 
     visibleItems.forEach((item) => {
-        const link = document.createElement("a");
-        const isActive = item.key === active;
+      const link = document.createElement("a");
+      const isActive = item.key === active;
 
-        link.className = "admin-work-zone-tab";
-        link.href = item.href;
-        link.dataset.adminTab = item.key;
-        link.setAttribute("role", "tab");
-        link.setAttribute("aria-selected", String(isActive));
-        link.textContent = translateAdminTab(item.labelKey);
+      link.className = "admin-work-zone-tab";
+      link.href = item.href;
+      link.dataset.adminTab = item.key;
+      link.setAttribute("role", "tab");
+      link.setAttribute("aria-selected", String(isActive));
+      link.textContent = translateAdminTab(item.labelKey);
 
-        if (item.key === "timers" && isActive) {
-          const help = document.createElement("span");
-          help.className = "admin-work-zone-tab-help";
-          help.textContent = "?";
-          help.dataset.tooltip = translateAdminTab("timers_tab_help");
-          help.setAttribute("aria-label", help.dataset.tooltip);
-          help.tabIndex = 0;
-          help.addEventListener("mouseenter", () => showTooltip(help));
-          help.addEventListener("mouseleave", removeTooltip);
-          help.addEventListener("focus", () => showTooltip(help));
-          help.addEventListener("blur", removeTooltip);
-          help.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            showTooltip(help);
-          });
-          link.append(help);
-        }
+      if (item.key === "timers" && isActive) {
+        const help = document.createElement("span");
+        help.className = "admin-work-zone-tab-help";
+        help.textContent = "?";
+        help.dataset.tooltip = translateAdminTab("timers_tab_help");
+        help.setAttribute("aria-label", help.dataset.tooltip);
+        help.tabIndex = 0;
+        help.addEventListener("mouseenter", () => showTooltip(help));
+        help.addEventListener("mouseleave", removeTooltip);
+        help.addEventListener("focus", () => showTooltip(help));
+        help.addEventListener("blur", removeTooltip);
+        help.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          showTooltip(help);
+        });
+        link.append(help);
+      }
 
-        if (isActive) {
-          link.setAttribute("aria-current", "page");
-        }
+      if (isActive) {
+        link.setAttribute("aria-current", "page");
+      }
 
-        tabs.append(link);
-      });
+      tabs.append(link);
+    });
 
     CMCENUtils.activateTabs({
       active,

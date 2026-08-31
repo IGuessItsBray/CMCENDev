@@ -27,7 +27,9 @@ const {
   parseBoolean,
 } = require('../services/content-utils');
 const { linkMediaAssetToSource } = require('../services/media-assets');
-const { buildPublicEventCalendar } = require('../services/event-calendar-export');
+const {
+  buildPublicEventCalendar,
+} = require('../services/event-calendar-export');
 
 const router = express.Router();
 
@@ -59,7 +61,11 @@ function getEventTitle(event) {
 }
 
 function getCalendarLanguage(value) {
-  return String(value || '').trim().toLowerCase() === 'fr' ? 'fr' : 'en';
+  return String(value || '')
+    .trim()
+    .toLowerCase() === 'fr'
+    ? 'fr'
+    : 'en';
 }
 
 function getCalendarUidDomain(req) {
@@ -340,7 +346,10 @@ function parseRsvpDeadline(value) {
 
 function getRsvpSettings(body, startDate, existing = {}) {
   const hasEnabled = Object.prototype.hasOwnProperty.call(body, 'rsvpEnabled');
-  const hasDeadline = Object.prototype.hasOwnProperty.call(body, 'rsvpDeadline');
+  const hasDeadline = Object.prototype.hasOwnProperty.call(
+    body,
+    'rsvpDeadline',
+  );
   const enabled = hasEnabled
     ? parseBoolean(body.rsvpEnabled, false)
     : existing.enabled === true;
@@ -355,7 +364,9 @@ function getRsvpSettings(body, startDate, existing = {}) {
   }
 
   if (enabled && deadline && deadline > startDate) {
-    const error = new Error('The RSVP deadline cannot be after the event starts');
+    const error = new Error(
+      'The RSVP deadline cannot be after the event starts',
+    );
     error.status = 400;
     throw error;
   }
@@ -393,12 +404,23 @@ function escapeCsv(value) {
 
 function buildRsvpCsv(rsvps) {
   const headers = [
-    'Response', 'Rank', 'First name', 'Last name', 'Unit or status',
-    'Email', 'Phone', 'Responded at',
+    'Response',
+    'Rank',
+    'First name',
+    'Last name',
+    'Unit or status',
+    'Email',
+    'Phone',
+    'Responded at',
   ];
   const rows = rsvps.map((rsvp) => [
-    rsvp.response, rsvp.rank, rsvp.firstName, rsvp.lastName,
-    rsvp.unitOrStatus, rsvp.email, rsvp.phone,
+    rsvp.response,
+    rsvp.rank,
+    rsvp.firstName,
+    rsvp.lastName,
+    rsvp.unitOrStatus,
+    rsvp.email,
+    rsvp.phone,
     rsvp.updatedAt ? new Date(rsvp.updatedAt).toISOString() : '',
   ]);
   return [headers, ...rows]
@@ -1027,13 +1049,21 @@ router.get('/mine', authMiddleware, async (req, res) => {
 
 router.post('/:id/rsvp', authMiddleware, async (req, res) => {
   try {
-    const event = await Event.findOne({ _id: req.params.id, status: 'published' })
+    const event = await Event.findOne({
+      _id: req.params.id,
+      status: 'published',
+    })
       .select('createdBy rsvpEnabled rsvpDeadline')
       .lean();
     if (!event) return res.status(404).json({ error: 'Event not found' });
-    if (!event.rsvpEnabled) return res.status(409).json({ error: 'RSVP is not enabled for this event' });
+    if (!event.rsvpEnabled)
+      return res
+        .status(409)
+        .json({ error: 'RSVP is not enabled for this event' });
     if (event.createdBy && String(event.createdBy) === String(req.user._id)) {
-      return res.status(403).json({ error: 'You cannot RSVP to your own event' });
+      return res
+        .status(403)
+        .json({ error: 'You cannot RSVP to your own event' });
     }
     if (event.rsvpDeadline && new Date() > event.rsvpDeadline) {
       return res.status(409).json({ error: 'The RSVP deadline has passed' });
@@ -1041,7 +1071,9 @@ router.post('/:id/rsvp', authMiddleware, async (req, res) => {
 
     const response = cleanString(req.body?.response).toLowerCase();
     if (!['accepted', 'declined'].includes(response)) {
-      return res.status(400).json({ error: 'RSVP response must be accepted or declined' });
+      return res
+        .status(400)
+        .json({ error: 'RSVP response must be accepted or declined' });
     }
 
     const rsvp = await EventRsvp.findOneAndUpdate(
@@ -1055,13 +1087,17 @@ router.post('/:id/rsvp', authMiddleware, async (req, res) => {
       },
     );
     await writeAuditLog({
-      req, action: 'event.rsvp_submitted', actor: req.user,
-      targetType: 'event', target: event._id,
+      req,
+      action: 'event.rsvp_submitted',
+      actor: req.user,
+      targetType: 'event',
+      target: event._id,
       metadata: { response },
     });
     return res.json({ rsvp });
   } catch (error) {
-    if (error.name === 'CastError') return res.status(404).json({ error: 'Event not found' });
+    if (error.name === 'CastError')
+      return res.status(404).json({ error: 'Event not found' });
     console.error('Could not save event RSVP:', error);
     return res.status(500).json({ error: 'Could not save RSVP' });
   }
@@ -1069,26 +1105,41 @@ router.post('/:id/rsvp', authMiddleware, async (req, res) => {
 
 router.delete('/:id/rsvp', authMiddleware, async (req, res) => {
   try {
-    const event = await Event.findOne({ _id: req.params.id, status: 'published' })
+    const event = await Event.findOne({
+      _id: req.params.id,
+      status: 'published',
+    })
       .select('createdBy rsvpEnabled')
       .lean();
     if (!event) return res.status(404).json({ error: 'Event not found' });
-    if (!event.rsvpEnabled) return res.status(409).json({ error: 'RSVP is not enabled for this event' });
+    if (!event.rsvpEnabled)
+      return res
+        .status(409)
+        .json({ error: 'RSVP is not enabled for this event' });
     if (event.createdBy && String(event.createdBy) === String(req.user._id)) {
-      return res.status(403).json({ error: 'You cannot cancel an RSVP to your own event' });
+      return res
+        .status(403)
+        .json({ error: 'You cannot cancel an RSVP to your own event' });
     }
 
-    const result = await EventRsvp.deleteOne({ event: event._id, user: req.user._id });
+    const result = await EventRsvp.deleteOne({
+      event: event._id,
+      user: req.user._id,
+    });
     const cancelled = result.deletedCount > 0;
     if (cancelled) {
       await writeAuditLog({
-        req, action: 'event.rsvp_cancelled', actor: req.user,
-        targetType: 'event', target: event._id,
+        req,
+        action: 'event.rsvp_cancelled',
+        actor: req.user,
+        targetType: 'event',
+        target: event._id,
       });
     }
     return res.json({ cancelled });
   } catch (error) {
-    if (error.name === 'CastError') return res.status(404).json({ error: 'Event not found' });
+    if (error.name === 'CastError')
+      return res.status(404).json({ error: 'Event not found' });
     console.error('Could not cancel event RSVP:', error);
     return res.status(500).json({ error: 'Could not cancel RSVP' });
   }
@@ -1096,15 +1147,32 @@ router.delete('/:id/rsvp', authMiddleware, async (req, res) => {
 
 router.get('/:id/rsvps', authMiddleware, async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id).select('createdBy rsvpEnabled').lean();
+    const event = await Event.findById(req.params.id)
+      .select('createdBy rsvpEnabled')
+      .lean();
     if (!event) return res.status(404).json({ error: 'Event not found' });
-    if (!event.rsvpEnabled) return res.status(409).json({ error: 'RSVP is not enabled for this event' });
-    if (!canManageEventRsvps(req.user)) return res.status(403).json({ error: 'You do not have permission to view event RSVPs' });
-    const rsvps = await EventRsvp.find({ event: event._id }).sort({ response: 1, updatedAt: -1 }).lean();
-    await writeAuditLog({ req, action: 'event.rsvps_viewed', actor: req.user, targetType: 'event', target: event._id });
+    if (!event.rsvpEnabled)
+      return res
+        .status(409)
+        .json({ error: 'RSVP is not enabled for this event' });
+    if (!canManageEventRsvps(req.user))
+      return res
+        .status(403)
+        .json({ error: 'You do not have permission to view event RSVPs' });
+    const rsvps = await EventRsvp.find({ event: event._id })
+      .sort({ response: 1, updatedAt: -1 })
+      .lean();
+    await writeAuditLog({
+      req,
+      action: 'event.rsvps_viewed',
+      actor: req.user,
+      targetType: 'event',
+      target: event._id,
+    });
     return res.json({ rsvps });
   } catch (error) {
-    if (error.name === 'CastError') return res.status(404).json({ error: 'Event not found' });
+    if (error.name === 'CastError')
+      return res.status(404).json({ error: 'Event not found' });
     console.error('Could not load event RSVPs:', error);
     return res.status(500).json({ error: 'Could not load event RSVPs' });
   }
@@ -1112,15 +1180,35 @@ router.get('/:id/rsvps', authMiddleware, async (req, res) => {
 
 router.get('/:id/rsvps.csv', authMiddleware, async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id).select('createdBy rsvpEnabled').lean();
+    const event = await Event.findById(req.params.id)
+      .select('createdBy rsvpEnabled')
+      .lean();
     if (!event) return res.status(404).json({ error: 'Event not found' });
-    if (!event.rsvpEnabled) return res.status(409).json({ error: 'RSVP is not enabled for this event' });
-    if (!canManageEventRsvps(req.user)) return res.status(403).json({ error: 'You do not have permission to export event RSVPs' });
-    const rsvps = await EventRsvp.find({ event: event._id }).sort({ response: 1, updatedAt: -1 }).lean();
-    await writeAuditLog({ req, action: 'event.rsvps_exported', actor: req.user, targetType: 'event', target: event._id });
-    return res.type('text/csv; charset=utf-8').set('Content-Disposition', 'attachment; filename="event-rsvps.csv"').send(buildRsvpCsv(rsvps));
+    if (!event.rsvpEnabled)
+      return res
+        .status(409)
+        .json({ error: 'RSVP is not enabled for this event' });
+    if (!canManageEventRsvps(req.user))
+      return res
+        .status(403)
+        .json({ error: 'You do not have permission to export event RSVPs' });
+    const rsvps = await EventRsvp.find({ event: event._id })
+      .sort({ response: 1, updatedAt: -1 })
+      .lean();
+    await writeAuditLog({
+      req,
+      action: 'event.rsvps_exported',
+      actor: req.user,
+      targetType: 'event',
+      target: event._id,
+    });
+    return res
+      .type('text/csv; charset=utf-8')
+      .set('Content-Disposition', 'attachment; filename="event-rsvps.csv"')
+      .send(buildRsvpCsv(rsvps));
   } catch (error) {
-    if (error.name === 'CastError') return res.status(404).json({ error: 'Event not found' });
+    if (error.name === 'CastError')
+      return res.status(404).json({ error: 'Event not found' });
     console.error('Could not export event RSVPs:', error);
     return res.status(500).json({ error: 'Could not export event RSVPs' });
   }
@@ -1375,11 +1463,10 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 
     let rsvpSettings;
     try {
-      rsvpSettings = getRsvpSettings(
-        req.body,
-        parsedStartDate,
-        { enabled: event.rsvpEnabled, deadline: event.rsvpDeadline },
-      );
+      rsvpSettings = getRsvpSettings(req.body, parsedStartDate, {
+        enabled: event.rsvpEnabled,
+        deadline: event.rsvpDeadline,
+      });
     } catch (error) {
       return res.status(error.status || 400).json({ error: error.message });
     }
@@ -1493,153 +1580,149 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 });
 
 // Update one language of event copy while it is pending review, published, or hidden.
-router.patch(
-  '/:eventId/review-content',
-  authMiddleware,
-  async (req, res) => {
-    try {
-      const { language, content } = req.body;
-      const editableFields = [
-        'title',
-        'location',
-        'description',
-        'registration',
-      ];
+router.patch('/:eventId/review-content', authMiddleware, async (req, res) => {
+  try {
+    const { language, content } = req.body;
+    const editableFields = ['title', 'location', 'description', 'registration'];
 
-      if (!['en', 'fr'].includes(language)) {
-        return res.status(400).json({
-          error: 'Review content language must be English or French',
-        });
-      }
-
-      if (
-        !content ||
-        typeof content !== 'object' ||
-        Array.isArray(content) ||
-        editableFields.some((field) => typeof content[field] !== 'string')
-      ) {
-        return res.status(400).json({
-          error:
-            'Review content must include title, location, description, and registration text',
-        });
-      }
-
-      const event = await Event.findById(req.params.eventId);
-
-      if (!event) {
-        return res.status(404).json({
-          error: 'Event not found',
-        });
-      }
-
-      const permissions = getUserPermissions(req.user);
-      const canReview = permissions.canReviewAndPublish === true;
-      const isOwner =
-        event.createdBy && String(event.createdBy) === String(req.user._id);
-      const canSubmitterEdit =
-        isOwner && ['pending', 'rejected'].includes(event.status);
-      const canReviewerEdit =
-        canReview && ['pending', 'published', 'hidden'].includes(event.status);
-      const wasRejected = isOwner && event.status === 'rejected';
-
-      if (!canReview && !isOwner) {
-        return res.status(403).json({
-          error: 'You do not have permission to update this event',
-        });
-      }
-
-      if (!canSubmitterEdit && !canReviewerEdit) {
-        return res.status(409).json({
-          error: 'Only pending, published, or hidden events can have content updated',
-        });
-      }
-
-      const before = Object.fromEntries(
-        editableFields.map((field) => [field, event.get(`${field}.${language}`) || '']),
-      );
-
-      editableFields.forEach((field) => {
-        event.set(`${field}.${language}`, cleanString(content[field]));
+    if (!['en', 'fr'].includes(language)) {
+      return res.status(400).json({
+        error: 'Review content language must be English or French',
       });
-      event.updatedBy = req.user._id;
+    }
 
-      if (wasRejected) {
-        event.status = 'pending';
-        event.rejectionReason = '';
-        event.reviewedBy = undefined;
-        event.reviewedAt = undefined;
-        event.publishedBy = undefined;
-        event.publishedAt = undefined;
-        event.lastSubmittedAt = new Date();
-      }
+    if (
+      !content ||
+      typeof content !== 'object' ||
+      Array.isArray(content) ||
+      editableFields.some((field) => typeof content[field] !== 'string')
+    ) {
+      return res.status(400).json({
+        error:
+          'Review content must include title, location, description, and registration text',
+      });
+    }
 
-      await event.save();
+    const event = await Event.findById(req.params.eventId);
 
-      const after = Object.fromEntries(
-        editableFields.map((field) => [field, event.get(`${field}.${language}`) || '']),
-      );
-      await recordContentRevision({
-        contentType: 'event',
-        content: event,
-        actor: req.user,
+    if (!event) {
+      return res.status(404).json({
+        error: 'Event not found',
+      });
+    }
+
+    const permissions = getUserPermissions(req.user);
+    const canReview = permissions.canReviewAndPublish === true;
+    const isOwner =
+      event.createdBy && String(event.createdBy) === String(req.user._id);
+    const canSubmitterEdit =
+      isOwner && ['pending', 'rejected'].includes(event.status);
+    const canReviewerEdit =
+      canReview && ['pending', 'published', 'hidden'].includes(event.status);
+    const wasRejected = isOwner && event.status === 'rejected';
+
+    if (!canReview && !isOwner) {
+      return res.status(403).json({
+        error: 'You do not have permission to update this event',
+      });
+    }
+
+    if (!canSubmitterEdit && !canReviewerEdit) {
+      return res.status(409).json({
+        error:
+          'Only pending, published, or hidden events can have content updated',
+      });
+    }
+
+    const before = Object.fromEntries(
+      editableFields.map((field) => [
+        field,
+        event.get(`${field}.${language}`) || '',
+      ]),
+    );
+
+    editableFields.forEach((field) => {
+      event.set(`${field}.${language}`, cleanString(content[field]));
+    });
+    event.updatedBy = req.user._id;
+
+    if (wasRejected) {
+      event.status = 'pending';
+      event.rejectionReason = '';
+      event.reviewedBy = undefined;
+      event.reviewedAt = undefined;
+      event.publishedBy = undefined;
+      event.publishedAt = undefined;
+      event.lastSubmittedAt = new Date();
+    }
+
+    await event.save();
+
+    const after = Object.fromEntries(
+      editableFields.map((field) => [
+        field,
+        event.get(`${field}.${language}`) || '',
+      ]),
+    );
+    await recordContentRevision({
+      contentType: 'event',
+      content: event,
+      actor: req.user,
+      status: event.status,
+      language,
+      fields: editableFields,
+      before,
+      after,
+      note: req.body.note,
+    });
+
+    await writeAuditLog({
+      req,
+      action: wasRejected
+        ? 'content.review_content_updated'
+        : event.status === 'pending'
+          ? 'content.review_content_updated'
+          : 'content.staff_content_updated',
+      actor: req.user,
+      targetType: 'event',
+      target: event._id,
+      targetSnapshot: getEventSnapshot(event),
+      metadata: {
+        source: wasRejected ? 'submitter-resubmit' : 'review-content',
         status: event.status,
         language,
         fields: editableFields,
-        before,
-        after,
-        note: req.body.note,
-      });
+      },
+    });
 
-      await writeAuditLog({
-        req,
-        action:
-          wasRejected
-            ? 'content.review_content_updated'
-            : event.status === 'pending'
-            ? 'content.review_content_updated'
-            : 'content.staff_content_updated',
-        actor: req.user,
-        targetType: 'event',
-        target: event._id,
-        targetSnapshot: getEventSnapshot(event),
-        metadata: {
-          source: wasRejected ? 'submitter-resubmit' : 'review-content',
-          status: event.status,
-          language,
-          fields: editableFields,
-        },
-      });
+    return res.json({
+      message: wasRejected
+        ? 'Event content updated and submitted for review'
+        : event.status === 'published'
+          ? 'Published event content updated'
+          : 'Event review content updated',
+      event,
+    });
+  } catch (error) {
+    console.error('Could not update event review content:', error);
 
-      return res.json({
-        message:
-          wasRejected
-            ? 'Event content updated and submitted for review'
-            : event.status === 'published'
-            ? 'Published event content updated'
-            : 'Event review content updated',
-        event,
-      });
-    } catch (error) {
-      console.error('Could not update event review content:', error);
-
-      if (error.name === 'CastError') {
-        return res.status(400).json({
-          error: 'Invalid event ID',
-        });
-      }
-
-      if (error.name === 'ValidationError') {
-        return res.status(400).json({
-          error: getValidationErrorMessage(error),
-        });
-      }
-
-      return res.status(500).json({
-        error: 'Could not update event review content',
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        error: 'Invalid event ID',
       });
     }
-  },
-);
+
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: getValidationErrorMessage(error),
+      });
+    }
+
+    return res.status(500).json({
+      error: 'Could not update event review content',
+    });
+  }
+});
 
 // publish or reject an event
 router.patch(

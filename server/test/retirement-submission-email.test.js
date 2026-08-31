@@ -74,7 +74,10 @@ test('formats all retirement submission fields for the branch mailbox', () => {
       'MEMBER_REVIEW_CONFIRMED: true',
     ].join('\n'),
   );
-  assert.match(email.html, /PHOTO_URL: https:\/\/cdn\.example\.test\/retirements\/alex\.jpg/);
+  assert.match(
+    email.html,
+    /PHOTO_URL: https:\/\/cdn\.example\.test\/retirements\/alex\.jpg/,
+  );
   assert.equal(
     getRetirementSubmissionSubject(submission),
     'Retirement submission: Sergeant Alex Example',

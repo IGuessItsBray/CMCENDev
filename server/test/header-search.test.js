@@ -13,10 +13,7 @@ test('submits the global search when Enter is pressed in its input', () => {
     headerScript,
     /headerSearchInput\?\.addEventListener\("keydown", \(event\) => \{\s+if \(event\.key !== "Enter"\) return;\s+event\.preventDefault\(\);/s,
   );
-  assert.match(
-    headerScript,
-    /searchUrl\.searchParams\.set\("q", query\);/,
-  );
+  assert.match(headerScript, /searchUrl\.searchParams\.set\("q", query\);/);
   assert.match(
     headerScript,
     /window\.location\.assign\(`\$\{searchUrl\.pathname\}\$\{searchUrl\.search\}`\);/,

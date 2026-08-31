@@ -43,12 +43,24 @@ test('provides audited admin edit routes for every content type', () => {
 });
 
 test('allows legacy identity fields to be intentionally blank', () => {
-  assert.notEqual(LastPostMessage.schema.path('deceased.firstName').isRequired, true);
-  assert.notEqual(LastPostMessage.schema.path('deceased.surname').isRequired, true);
-  assert.notEqual(RetirementMessage.schema.path('retiree.rank').isRequired, true);
+  assert.notEqual(
+    LastPostMessage.schema.path('deceased.firstName').isRequired,
+    true,
+  );
+  assert.notEqual(
+    LastPostMessage.schema.path('deceased.surname').isRequired,
+    true,
+  );
+  assert.notEqual(
+    RetirementMessage.schema.path('retiree.rank').isRequired,
+    true,
+  );
   assert.notEqual(
     RetirementMessage.schema.path('retiree.firstName').isRequired,
     true,
   );
-  assert.notEqual(RetirementMessage.schema.path('retiree.lastName').isRequired, true);
+  assert.notEqual(
+    RetirementMessage.schema.path('retiree.lastName').isRequired,
+    true,
+  );
 });

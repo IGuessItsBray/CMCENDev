@@ -1,7 +1,14 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
-const testFile = path.join(__dirname, '..', '..', 'test', 'integration', 'api.test.js');
+const testFile = path.join(
+  __dirname,
+  '..',
+  '..',
+  'test',
+  'integration',
+  'api.test.js',
+);
 const groups = [
   'system and authentication|MFA and audit behavior|database integrity',
   'public search|permissions and audit logs|news stories|authorization matrix and account integrity',

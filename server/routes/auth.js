@@ -495,7 +495,9 @@ async function getRetirementCommentReviewNotifications(user, lastReadAt) {
   const comments = await RetirementComment.find(
     getReviewResultQuery('author', user, lastReadAt),
   )
-    .select('body status rejectionReason reviewedAt updatedAt retirementMessage')
+    .select(
+      'body status rejectionReason reviewedAt updatedAt retirementMessage',
+    )
     .populate('retirementMessage', 'retiree status')
     .sort({ reviewedAt: -1 })
     .lean();
@@ -528,7 +530,13 @@ async function getNotificationSummary(user) {
   let actionCount = 0;
   let unreadCount = 0;
 
-  const [events, eventRsvps, retirementMessages, lastPosts, retirementComments] = await Promise.all([
+  const [
+    events,
+    eventRsvps,
+    retirementMessages,
+    lastPosts,
+    retirementComments,
+  ] = await Promise.all([
     getEventReviewNotifications(user, lastReadAt),
     getEventRsvpNotifications(user, lastReadAt),
     getRetirementMessageReviewNotifications(user, lastReadAt),
@@ -536,7 +544,13 @@ async function getNotificationSummary(user) {
     getRetirementCommentReviewNotifications(user, lastReadAt),
   ]);
 
-  [events, eventRsvps, retirementMessages, lastPosts, retirementComments].forEach((result) => {
+  [
+    events,
+    eventRsvps,
+    retirementMessages,
+    lastPosts,
+    retirementComments,
+  ].forEach((result) => {
     actionCount += result.actionCount;
     unreadCount += result.unreadCount;
     items.push(...result.items);
@@ -572,7 +586,13 @@ async function getReviewResultCounts(Model, ownerField, user, lastReadAt) {
 
 async function getNotificationCounts(user) {
   const lastReadAt = user.notificationState?.lastReadAt || null;
-  const [events, eventRsvps, retirementMessages, lastPosts, retirementComments] = await Promise.all([
+  const [
+    events,
+    eventRsvps,
+    retirementMessages,
+    lastPosts,
+    retirementComments,
+  ] = await Promise.all([
     getReviewResultCounts(Event, 'createdBy', user, lastReadAt),
     getEventRsvpNotifications(user, lastReadAt),
     getReviewResultCounts(RetirementMessage, 'createdBy', user, lastReadAt),

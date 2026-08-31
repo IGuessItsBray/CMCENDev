@@ -8,10 +8,9 @@ const {
 
 test('disables Plausible when its domain or endpoint is not configured', () => {
   assert.deepEqual(getPlausibleConfig({}), { enabled: false });
-  assert.deepEqual(
-    getPlausibleConfig({ PLAUSIBLE_DOMAIN: 'cmcen.example' }),
-    { enabled: false },
-  );
+  assert.deepEqual(getPlausibleConfig({ PLAUSIBLE_DOMAIN: 'cmcen.example' }), {
+    enabled: false,
+  });
 });
 
 test('builds a self-hosted Plausible configuration', () => {

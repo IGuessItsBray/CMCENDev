@@ -29,7 +29,10 @@ const auditActions = [
   ["user.created", "audit_action_user_created"],
   ["user.invited", "audit_action_user_invited"],
   ["user.invitation_resent", "audit_action_user_invitation_resent"],
-  ["user.invitation_delivery_failed", "audit_action_user_invitation_delivery_failed"],
+  [
+    "user.invitation_delivery_failed",
+    "audit_action_user_invitation_delivery_failed",
+  ],
   ["user.login", "audit_action_user_login"],
   ["user.login_rejected", "audit_action_user_login_rejected"],
   ["user.login_mfa_required", "audit_action_mfa_required"],
@@ -50,7 +53,10 @@ const auditActions = [
   ["content.deleted", "audit_action_content_deleted"],
   ["content.hidden", "audit_action_content_hidden"],
   ["content.restored", "audit_action_content_restored"],
-  ["content.staff_content_updated", "audit_action_content_staff_content_updated"],
+  [
+    "content.staff_content_updated",
+    "audit_action_content_staff_content_updated",
+  ],
   ["analytics.purged", "audit_action_analytics_purged"],
   ["config.access_requested", "audit_action_config_access_requested"],
   ["config.token_accepted", "audit_action_config_token_accepted"],

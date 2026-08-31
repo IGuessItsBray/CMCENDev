@@ -86,7 +86,8 @@
       const heading = document.createElement("h3");
       heading.textContent = "Instructions and nomination documents";
       const list = document.createElement("ul");
-      list.className = "about-family-pillar-list professional-awards-resource-list";
+      list.className =
+        "about-family-pillar-list professional-awards-resource-list";
       award.links.forEach((item) => {
         const row = document.createElement("li");
         const link = document.createElement("a");
@@ -105,13 +106,18 @@
       const archive = document.createElement("section");
       archive.className = "professional-awards-recipient-archive";
       const archiveHeading = document.createElement("div");
-      archiveHeading.className = "professional-awards-recipient-archive-heading";
+      archiveHeading.className =
+        "professional-awards-recipient-archive-heading";
       const heading = document.createElement("h3");
       heading.textContent = "Past recipients";
       const archiveDescription = document.createElement("p");
-      archiveDescription.textContent = "Recipient records are listed from newest to oldest.";
+      archiveDescription.textContent =
+        "Recipient records are listed from newest to oldest.";
       archiveHeading.append(heading, archiveDescription);
-      archive.append(archiveHeading, renderRecipientsTable(award, award.recipients));
+      archive.append(
+        archiveHeading,
+        renderRecipientsTable(award, award.recipients),
+      );
       section.append(archive);
     }
     return section;
@@ -260,10 +266,7 @@
           "Subaltern of the Year",
           data.featuredRecipients?.subaltern,
         ),
-        renderHighlight(
-          "Member of the Year",
-          data.featuredRecipients?.member,
-        ),
+        renderHighlight("Member of the Year", data.featuredRecipients?.member),
       ].filter(Boolean);
       highlights.replaceChildren(...highlightCards);
       highlights.hidden = highlightCards.length === 0;

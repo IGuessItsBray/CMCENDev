@@ -163,7 +163,8 @@ router.patch(
 
       if (certificateRequest.status === requestedStatus) {
         return res.json({
-          certificateRequest: serializeCertificateRequestStatus(certificateRequest),
+          certificateRequest:
+            serializeCertificateRequestStatus(certificateRequest),
         });
       }
 
@@ -204,9 +205,8 @@ router.patch(
         certificateRequest.status = 'ready_to_mail';
         certificateRequest.printedBy = req.user._id;
         certificateRequest.printedAt = new Date();
-        certificateRequest.printedCertificates = getCertificatePrintItems(
-          certificateRequest,
-        );
+        certificateRequest.printedCertificates =
+          getCertificatePrintItems(certificateRequest);
       } else {
         certificateRequest.status = 'mailed';
         certificateRequest.mailedBy = req.user._id;
@@ -235,7 +235,8 @@ router.patch(
       });
 
       return res.json({
-        certificateRequest: serializeCertificateRequestStatus(certificateRequest),
+        certificateRequest:
+          serializeCertificateRequestStatus(certificateRequest),
       });
     } catch (error) {
       if (error.name === 'CastError') {
@@ -244,7 +245,10 @@ router.patch(
         });
       }
 
-      console.error('Could not update certificate request fulfillment status:', error);
+      console.error(
+        'Could not update certificate request fulfillment status:',
+        error,
+      );
       return res.status(500).json({
         error: 'Could not update certificate request fulfillment status',
       });

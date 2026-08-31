@@ -57,7 +57,9 @@ function applyDashboardAdminToolsLayout(hasAdminTools) {
 
 function getCachedDashboardAdminToolsLayout() {
   try {
-    return window.sessionStorage.getItem(dashboardAdminLayoutStorageKey) === "true";
+    return (
+      window.sessionStorage.getItem(dashboardAdminLayoutStorageKey) === "true"
+    );
   } catch {
     return false;
   }
@@ -1213,9 +1215,8 @@ function renderDashboard(user) {
   dashboardRoleBadge.textContent = roleTitle;
   dashboardRoleBadge.className = `dashboard-role-badge role-${role}`;
   dashboardRoleDescription.textContent = translate(`role_description_${role}`);
-  const customRoleNames = (Array.isArray(user.customRoles)
-    ? user.customRoles
-    : []
+  const customRoleNames = (
+    Array.isArray(user.customRoles) ? user.customRoles : []
   )
     .map((customRole) => String(customRole?.name || "").trim())
     .filter(Boolean);
@@ -1566,8 +1567,7 @@ async function loadDashboard() {
             errorMessage: "Could not load review submission counts",
           },
         );
-      } catch (error) {
-      }
+      } catch (error) {}
     } else {
       currentReviewCounts = null;
     }
@@ -1595,7 +1595,6 @@ async function loadDashboard() {
 
     renderDashboard(user);
   } catch (error) {
-
     showDashboardError(translate("dashboard_load_error"));
   }
 }

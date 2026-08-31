@@ -1479,7 +1479,10 @@ function getHeaderNotificationTitle(item) {
         : "notifications_rsvp_declined",
     );
     return translate("notifications_event_rsvp_message")
-      .replace("{name}", item.responderName || translate("notifications_rsvp_member"))
+      .replace(
+        "{name}",
+        item.responderName || translate("notifications_rsvp_member"),
+      )
       .replace("{response}", response)
       .replace("{title}", eventTitle);
   }

@@ -824,11 +824,15 @@ function createBlockToolbar(index) {
 
 function getBlockSummary(block) {
   if (block.type === "image") {
-    return block.mediaUrl ? "Selected image — click to edit" : "Choose an image";
+    return block.mediaUrl
+      ? "Selected image — click to edit"
+      : "Choose an image";
   }
   if (block.type === "divider") return "";
-  if (block.type === "columns") return `${(block.columns || []).length || 2} columns`;
-  if (block.type === "carousel") return `${(block.items || []).length || 1} slides`;
+  if (block.type === "columns")
+    return `${(block.columns || []).length || 2} columns`;
+  if (block.type === "carousel")
+    return `${(block.items || []).length || 1} slides`;
   return localized(block.text) || localized(block.body) || "Add content";
 }
 
@@ -857,7 +861,13 @@ function createBuilderIcon(name, ownerDocument = document) {
     divider: ["M4 12h16", "M7 9v6", "M17 9v6"],
     "arrow-up": ["M12 19V5", "m7 10 5-5 5 5"],
     "arrow-down": ["M12 5v14", "m7 14 5 5 5-5"],
-    trash: ["M5 7h14", "M10 11v5", "M14 11v5", "M9 7V5h6v2", "M7 7l1 12h8l1-12"],
+    trash: [
+      "M5 7h14",
+      "M10 11v5",
+      "M14 11v5",
+      "M9 7V5h6v2",
+      "M7 7l1 12h8l1-12",
+    ],
   };
 
   (paths[name] || []).forEach((pathData) => {
@@ -893,14 +903,15 @@ function getBuilderBlockSpan(block) {
 
 function getBuilderBlockLayout(block) {
   const span = getBuilderBlockSpan(block);
-  const rowSpan = block?.type === "divider"
-    ? 1
-    : Math.min(
-      Math.max(Number(block?.layout?.rowSpan) || 1, 1),
-      24,
-    );
+  const rowSpan =
+    block?.type === "divider"
+      ? 1
+      : Math.min(Math.max(Number(block?.layout?.rowSpan) || 1, 1), 24);
   return {
-    column: Math.min(Math.max(Number(block?.layout?.column) || 1, 1), 13 - span),
+    column: Math.min(
+      Math.max(Number(block?.layout?.column) || 1, 1),
+      13 - span,
+    ),
     row: Math.min(
       Math.max(Number(block?.layout?.row) || 1, 1),
       maxBuilderCanvasRows - rowSpan + 1,
@@ -948,9 +959,8 @@ function getCanvasPosition(canvas, event, block = {}) {
   const columnWidth =
     (rect.width - paddingLeft - paddingRight - columnGap * 11) / 12;
   const rowHeight =
-    Number.parseFloat(
-      styles.getPropertyValue("--page-builder-row-height"),
-    ) || 72;
+    Number.parseFloat(styles.getPropertyValue("--page-builder-row-height")) ||
+    72;
   const column = Math.min(
     Math.max(
       Math.floor(
@@ -961,9 +971,8 @@ function getCanvasPosition(canvas, event, block = {}) {
     13 - layout.span,
   );
   const row = Math.max(
-    Math.floor(
-      (event.clientY - rect.top - paddingTop) / (rowHeight + rowGap),
-    ) + 1,
+    Math.floor((event.clientY - rect.top - paddingTop) / (rowHeight + rowGap)) +
+      1,
     1,
   );
   return {
@@ -992,7 +1001,10 @@ function showCanvasDropPreview(canvas, layout, { valid = true } = {}) {
     canvas.append(preview);
   }
 
-  preview.style.setProperty("--page-builder-preview-column", String(layout.column));
+  preview.style.setProperty(
+    "--page-builder-preview-column",
+    String(layout.column),
+  );
   preview.style.setProperty("--page-builder-preview-row", String(layout.row));
   preview.style.setProperty("--page-builder-preview-span", String(layout.span));
   preview.style.setProperty(
@@ -1001,7 +1013,9 @@ function showCanvasDropPreview(canvas, layout, { valid = true } = {}) {
   );
   preview.classList.toggle("is-invalid", !valid);
 
-  const currentRows = Number(canvas.style.getPropertyValue("--page-builder-rows"));
+  const currentRows = Number(
+    canvas.style.getPropertyValue("--page-builder-rows"),
+  );
   const neededRows = Math.min(
     layout.row + layout.rowSpan,
     maxBuilderCanvasRows,
@@ -1041,9 +1055,8 @@ function stopPageBuilderAutoScroll() {
 }
 
 function updatePageBuilderAutoScroll(pointerY) {
-  const { scrollWindow, pointerY: viewportY } = getPageBuilderScrollContext(
-    pointerY,
-  );
+  const { scrollWindow, pointerY: viewportY } =
+    getPageBuilderScrollContext(pointerY);
   const edgeSize = 92;
   const distanceFromTop = viewportY;
   const distanceFromBottom = scrollWindow.innerHeight - viewportY;
@@ -1338,11 +1351,14 @@ function createBuilderCanvas() {
     empty.textContent = "Choose an element above to start building";
     canvas.append(empty);
   } else {
-    blocks.forEach((block, index) => canvas.append(createBlockEditor(block, index)));
+    blocks.forEach((block, index) =>
+      canvas.append(createBlockEditor(block, index)),
+    );
   }
 
   canvas.addEventListener("dragover", (event) => {
-    const canDrop = event.dataTransfer.types.includes("application/x-cmcen-block-type") ||
+    const canDrop =
+      event.dataTransfer.types.includes("application/x-cmcen-block-type") ||
       event.dataTransfer.types.includes("application/x-cmcen-block-index");
     if (!canDrop) return;
     event.preventDefault();
@@ -1382,18 +1398,23 @@ function createBuilderCanvas() {
     const blockType =
       event.dataTransfer.getData("application/x-cmcen-block-type") ||
       paletteDragBlockType;
-    const existingIndex = Number(event.dataTransfer.getData("application/x-cmcen-block-index"));
+    const existingIndex = Number(
+      event.dataTransfer.getData("application/x-cmcen-block-index"),
+    );
     if (blockType) {
       insertBlock(
         blockType,
         getCanvasPosition(canvas, event, getNewBlock(blockType)),
       );
     } else if (Number.isInteger(existingIndex)) {
-      moveBlockToPosition(existingIndex, getCanvasPosition(
-        canvas,
-        event,
-        pagesState.selectedPage?.blocks?.[existingIndex],
-      ));
+      moveBlockToPosition(
+        existingIndex,
+        getCanvasPosition(
+          canvas,
+          event,
+          pagesState.selectedPage?.blocks?.[existingIndex],
+        ),
+      );
     }
     paletteDragBlockType = "";
   });
@@ -1554,7 +1575,9 @@ function createPublicPreviewPage(page) {
 
   const body = document.createElement("div");
   body.className = "cms-page-body";
-  (page.blocks || []).forEach((block) => body.append(createPublicPreviewBlock(block)));
+  (page.blocks || []).forEach((block) =>
+    body.append(createPublicPreviewBlock(block)),
+  );
   preview.append(heading, body);
   return preview;
 }
@@ -1908,7 +1931,10 @@ function createBlockEditor(block, index) {
   article.style.setProperty("--page-builder-row-span", String(layout.rowSpan));
   article.draggable = false;
   article.dataset.blockIndex = String(index);
-  article.classList.toggle("is-selected", index === pagesState.selectedBlockIndex);
+  article.classList.toggle(
+    "is-selected",
+    index === pagesState.selectedBlockIndex,
+  );
 
   let pressTimer = null;
   let dragStart = null;
@@ -1935,7 +1961,11 @@ function createBlockEditor(block, index) {
       return;
     }
 
-    dragStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+    dragStart = {
+      x: event.clientX,
+      y: event.clientY,
+      pointerId: event.pointerId,
+    };
     pressTimer = window.setTimeout(() => {
       if (!dragStart) return;
       isPointerDragging = true;
@@ -2011,7 +2041,8 @@ function createBlockEditor(block, index) {
       suppressClick = false;
       return;
     }
-    if (event.target.closest("button, input, textarea, select, label, a")) return;
+    if (event.target.closest("button, input, textarea, select, label, a"))
+      return;
     if (pagesState.selectedBlockIndex !== index) {
       setPagesState({ selectedBlockIndex: index });
     }
@@ -2053,11 +2084,14 @@ function createBlockEditor(block, index) {
       );
     }
     if (Number.isInteger(fromIndex)) {
-      moveBlockToPosition(fromIndex, getCanvasPosition(
-        canvas,
-        event,
-        pagesState.selectedPage?.blocks?.[fromIndex],
-      ));
+      moveBlockToPosition(
+        fromIndex,
+        getCanvasPosition(
+          canvas,
+          event,
+          pagesState.selectedPage?.blocks?.[fromIndex],
+        ),
+      );
     }
   });
 
@@ -2178,7 +2212,8 @@ function createBlockControls() {
   autoSave.textContent = getAutoSaveLabel();
   const preview = document.createElement("button");
   preview.type = "button";
-  preview.className = "admin-work-zone-button is-secondary pages-preview-button";
+  preview.className =
+    "admin-work-zone-button is-secondary pages-preview-button";
   preview.setAttribute("aria-label", "Preview page");
   preview.title = "Preview page";
   preview.append(createPreviewEyeIcon(document));
@@ -2375,7 +2410,8 @@ function createPageEditor() {
 
   const backToPages = document.createElement("button");
   backToPages.type = "button";
-  backToPages.className = "admin-work-zone-button is-secondary pages-back-to-library";
+  backToPages.className =
+    "admin-work-zone-button is-secondary pages-back-to-library";
   backToPages.textContent = "All custom pages";
   backToPages.addEventListener("click", () => {
     cancelAutoSave();
@@ -2413,11 +2449,7 @@ function createPageEditor() {
     );
   });
 
-  pageActions.append(
-    backToPages,
-    manageNavigation,
-    openPage,
-  );
+  pageActions.append(backToPages, manageNavigation, openPage);
   headerMeta.append(pageActions);
   header.append(title, headerMeta);
 
@@ -2523,9 +2555,10 @@ function createPageEditor() {
   const saveDraft = document.createElement("button");
   saveDraft.type = "button";
   saveDraft.className = "admin-work-zone-button is-secondary";
-  saveDraft.textContent = pagesState.selectedPage.status === "published"
-    ? "Unpublish"
-    : "Save as draft";
+  saveDraft.textContent =
+    pagesState.selectedPage.status === "published"
+      ? "Unpublish"
+      : "Save as draft";
   saveDraft.addEventListener("click", saveDraftAndReturnToLibrary);
 
   const remove = document.createElement("button");
@@ -2539,9 +2572,7 @@ function createPageEditor() {
   panel.append(
     header,
     details,
-    ...(pagesState.pageDetailsOpen
-      ? []
-      : [builderControls, blocks, actions]),
+    ...(pagesState.pageDetailsOpen ? [] : [builderControls, blocks, actions]),
   );
 
   return panel;
@@ -2572,7 +2603,8 @@ function createPagePreviewModal() {
   title.id = "pagesPagePreviewTitle";
   title.textContent = "Page preview";
   const copy = document.createElement("p");
-  copy.textContent = "Showing your current edits, including anything not saved yet.";
+  copy.textContent =
+    "Showing your current edits, including anything not saved yet.";
   heading.append(title, copy);
 
   const actions = document.createElement("div");
@@ -2622,7 +2654,9 @@ function positionPagePreviewInViewport(overlay, preview) {
     };
     const schedulePosition = () => window.requestAnimationFrame(position);
     schedulePosition();
-    window.parent.addEventListener("scroll", schedulePosition, { passive: true });
+    window.parent.addEventListener("scroll", schedulePosition, {
+      passive: true,
+    });
     window.parent.addEventListener("resize", schedulePosition);
     return () => {
       window.parent.removeEventListener("scroll", schedulePosition);
@@ -2650,7 +2684,8 @@ function createNavigationPanel() {
   if (!selectedPage) {
     const empty = document.createElement("p");
     empty.className = "admin-empty-state";
-    empty.textContent = "Open a custom page to place it in the site navigation.";
+    empty.textContent =
+      "Open a custom page to place it in the site navigation.";
     panel.append(empty);
     return panel;
   }
@@ -2669,10 +2704,9 @@ function createNavigationPanel() {
     ? "Update this page in navigation"
     : "Place this page in navigation";
   const introCopy = document.createElement("p");
-  introCopy.textContent =
-    existingLink
-      ? "Change the link name or move it to a different header."
-      : "Give the link a name and choose the header where visitors will find it.";
+  introCopy.textContent = existingLink
+    ? "Change the link name or move it to a different header."
+    : "Give the link a name and choose the header where visitors will find it.";
   intro.append(introTitle, introCopy);
 
   const form = document.createElement("form");
@@ -2762,9 +2796,10 @@ function createNavigationPanel() {
 
   const renderGroupOptions = () => {
     const query = groupSearch.value.trim().toLocaleLowerCase();
-    const matches = groups.filter((group) =>
-      group.label.toLocaleLowerCase().includes(query) ||
-      group.key.toLocaleLowerCase().includes(query),
+    const matches = groups.filter(
+      (group) =>
+        group.label.toLocaleLowerCase().includes(query) ||
+        group.key.toLocaleLowerCase().includes(query),
     );
     groupMenu.replaceChildren();
 
@@ -2790,10 +2825,10 @@ function createNavigationPanel() {
       create.className = "pages-navigation-header-result is-create";
       create.textContent = `Create “${groupSearch.value.trim()}”`;
       create.setAttribute("role", "option");
-      makeGroupOptionSelectable(
-        create,
-        { key: "__new__", label: groupSearch.value.trim() },
-      );
+      makeGroupOptionSelectable(create, {
+        key: "__new__",
+        label: groupSearch.value.trim(),
+      });
       groupMenu.append(create);
     }
 
@@ -2879,10 +2914,12 @@ function createNavigationManagementPanel() {
   const customGroups = pagesState.navigationItems.filter(
     (item) => item.type === "group",
   );
-  const groupKeys = [...new Set([
-    ...pagesState.navigationItems.map((item) => item.group).filter(Boolean),
-    ...customGroups.map((item) => item.group).filter(Boolean),
-  ])];
+  const groupKeys = [
+    ...new Set([
+      ...pagesState.navigationItems.map((item) => item.group).filter(Boolean),
+      ...customGroups.map((item) => item.group).filter(Boolean),
+    ]),
+  ];
 
   if (!groupKeys.length) {
     const empty = document.createElement("p");
@@ -2923,11 +2960,14 @@ function createNavigationManagementPanel() {
         const confirmation = links.length
           ? `Remove “${headerName}” and its ${links.length} navigation link${links.length === 1 ? "" : "s"}? This cannot be undone.`
           : `Remove “${headerName}” from navigation? This cannot be undone.`;
-        if (!(await CMCENModal.confirm(confirmation, {
-          title: "Remove header",
-          confirmText: "Remove header",
-          destructive: true,
-        }))) return;
+        if (
+          !(await CMCENModal.confirm(confirmation, {
+            title: "Remove header",
+            confirmText: "Remove header",
+            destructive: true,
+          }))
+        )
+          return;
         await deleteNavigationItem(groupItem._id);
       });
       groupHeader.append(removeGroup);
@@ -2949,7 +2989,8 @@ function createNavigationManagementPanel() {
       row.className = "pages-navigation-management-link";
       const details = document.createElement("div");
       const label = document.createElement("strong");
-      label.textContent = localized(item.label) || item.route || "Untitled link";
+      label.textContent =
+        localized(item.label) || item.route || "Untitled link";
       const route = document.createElement("span");
       route.textContent = item.route || "Custom link";
       details.append(label, route);
@@ -2959,14 +3000,17 @@ function createNavigationManagementPanel() {
       remove.className = "admin-work-zone-button is-danger is-compact";
       remove.textContent = "Remove";
       remove.addEventListener("click", async () => {
-        if (!(await CMCENModal.confirm(
-          `Remove “${label.textContent}” from navigation? This cannot be undone.`,
-          {
-            title: "Remove navigation link",
-            confirmText: "Remove link",
-            destructive: true,
-          },
-        ))) return;
+        if (
+          !(await CMCENModal.confirm(
+            `Remove “${label.textContent}” from navigation? This cannot be undone.`,
+            {
+              title: "Remove navigation link",
+              confirmText: "Remove link",
+              destructive: true,
+            },
+          ))
+        )
+          return;
         await deleteNavigationItem(item._id);
       });
       row.append(details, remove);
@@ -3048,7 +3092,10 @@ async function continueNavigationSetup({
     await refreshSiteNavigation();
     setPagesState({ navigationStep: "publish" });
   } catch (error) {
-    showPagesActionToast(error.message || "Could not update navigation", "error");
+    showPagesActionToast(
+      error.message || "Could not update navigation",
+      "error",
+    );
   }
 }
 
@@ -3131,7 +3178,9 @@ function positionNavigationModalInViewport(overlay, modal) {
     const schedulePosition = () => window.requestAnimationFrame(position);
     schedulePosition();
     window.addEventListener("resize", schedulePosition);
-    window.parent.addEventListener("scroll", schedulePosition, { passive: true });
+    window.parent.addEventListener("scroll", schedulePosition, {
+      passive: true,
+    });
     window.parent.addEventListener("resize", schedulePosition);
     return () => {
       window.removeEventListener("resize", schedulePosition);
@@ -3187,11 +3236,12 @@ function createNavigationModal() {
   const heading = document.createElement("div");
   const title = document.createElement("h2");
   title.id = "pagesNavigationModalTitle";
-  title.textContent = pagesState.navigationStep === "publish"
-    ? "Finish your page"
-    : pagesState.navigationMode === "manage"
-      ? "Manage navigation"
-      : "Navigation";
+  title.textContent =
+    pagesState.navigationStep === "publish"
+      ? "Finish your page"
+      : pagesState.navigationMode === "manage"
+        ? "Manage navigation"
+        : "Navigation";
   const copy = document.createElement("p");
   copy.textContent =
     pagesState.navigationStep === "publish"
@@ -3736,7 +3786,10 @@ async function saveDraftAndReturnToLibrary() {
       );
       await refreshSiteNavigation();
     } catch (error) {
-      showPagesActionToast(error.message || "Could not save page as a draft", "error");
+      showPagesActionToast(
+        error.message || "Could not save page as a draft",
+        "error",
+      );
       return;
     }
   }
@@ -3752,20 +3805,17 @@ async function publishPageAndReturnToLibrary({ featureOnHome } = {}) {
 
   cancelAutoSave();
   try {
-    await pageApi(
-      `/api/admin/pages/${encodeURIComponent(pageId)}/status`,
-      {
-        method: "PATCH",
-        body: {
-          status: "published",
-          ...(pagesState.canFeaturePagesOnHome &&
-          typeof featureOnHome === "boolean"
-            ? { featureOnHome }
-            : {}),
-        },
-        errorMessage: "Could not publish page",
+    await pageApi(`/api/admin/pages/${encodeURIComponent(pageId)}/status`, {
+      method: "PATCH",
+      body: {
+        status: "published",
+        ...(pagesState.canFeaturePagesOnHome &&
+        typeof featureOnHome === "boolean"
+          ? { featureOnHome }
+          : {}),
       },
-    );
+      errorMessage: "Could not publish page",
+    });
     await refreshSiteNavigation();
     returnToPageLibrary();
     await loadPages();
@@ -4084,7 +4134,10 @@ async function updateNavigationItem(itemId, payload) {
     await loadPages();
     await refreshSiteNavigation();
   } catch (error) {
-    showPagesActionToast(error.message || "Could not update navigation item", "error");
+    showPagesActionToast(
+      error.message || "Could not update navigation item",
+      "error",
+    );
   }
 }
 

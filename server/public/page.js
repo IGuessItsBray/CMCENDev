@@ -91,10 +91,19 @@
       "--cms-block-span",
       String(Math.min(Math.max(Number(block.layout?.span) || 12, 1), 12)),
     );
-    if (Number.isFinite(Number(block.layout?.column)) && Number.isFinite(Number(block.layout?.row))) {
-      section.style.setProperty("--cms-block-column", String(block.layout.column));
+    if (
+      Number.isFinite(Number(block.layout?.column)) &&
+      Number.isFinite(Number(block.layout?.row))
+    ) {
+      section.style.setProperty(
+        "--cms-block-column",
+        String(block.layout.column),
+      );
       section.style.setProperty("--cms-block-row", String(block.layout.row));
-      section.style.setProperty("--cms-block-row-span", String(Math.max(Number(block.layout?.rowSpan) || 1, 1)));
+      section.style.setProperty(
+        "--cms-block-row-span",
+        String(Math.max(Number(block.layout?.rowSpan) || 1, 1)),
+      );
     }
 
     if (block.type === "heading") {

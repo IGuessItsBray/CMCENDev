@@ -72,7 +72,9 @@ function selectWorkbookImageLinks(mediaLinks) {
     (sourceUrl) => !isWorkbookPlaceholderUrl(sourceUrl),
   );
 
-  return nonPlaceholderImages.length ? nonPlaceholderImages : [BRANCH_CREST_URL];
+  return nonPlaceholderImages.length
+    ? nonPlaceholderImages
+    : [BRANCH_CREST_URL];
 }
 
 async function putObject({ key, body, contentType }) {

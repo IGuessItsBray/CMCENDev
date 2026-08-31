@@ -90,6 +90,11 @@ const ContentRevisionSchema = new mongoose.Schema(
   },
 );
 
-ContentRevisionSchema.index({ contentType: 1, contentId: 1, createdAt: -1, _id: -1 });
+ContentRevisionSchema.index({
+  contentType: 1,
+  contentId: 1,
+  createdAt: -1,
+  _id: -1,
+});
 
 module.exports = mongoose.model('ContentRevision', ContentRevisionSchema);

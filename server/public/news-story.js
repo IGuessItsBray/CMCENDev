@@ -64,8 +64,7 @@ async function addNewsEditLink() {
           : "Open in Content Workspace",
     });
     if (shortcut) document.body.append(shortcut);
-  } catch {
-  }
+  } catch {}
 }
 
 async function loadNewsStory() {

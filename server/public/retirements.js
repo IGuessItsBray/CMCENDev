@@ -90,7 +90,8 @@ function showRetirementsLoading() {
   retirementsMessage.replaceChildren(
     ...createRetirementLoadingContent(message),
   );
-  retirementsMessage.className = "retirements-message is-loading visually-hidden";
+  retirementsMessage.className =
+    "retirements-message is-loading visually-hidden";
   retirementsMessage.setAttribute("aria-label", message);
   retirementsMessage.hidden = false;
   renderRetirementsSkeletons();

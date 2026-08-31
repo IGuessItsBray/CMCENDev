@@ -14,9 +14,7 @@ const lastPostReviewNote = document.getElementById("lastPostReviewNote");
 const lastPostSubmitTitle = document.getElementById("lastPostSubmitTitle");
 const lastPostSubmitIntro = document.getElementById("lastPostSubmitIntro");
 const lastPostEditContext = document.getElementById("lastPostEditContext");
-const lastPostEditRejection = document.getElementById(
-  "lastPostEditRejection",
-);
+const lastPostEditRejection = document.getElementById("lastPostEditRejection");
 const lastPostEditRejectionReason = document.getElementById(
   "lastPostEditRejectionReason",
 );
@@ -95,8 +93,7 @@ function getSubmissionPayload(imageUrl = "", imageDisplayUrl = "") {
     messageLanguage,
     message: getFieldValue("lastPostMessage"),
     imageUrl: imageUrl || editingLastPost?.imageUrl || "",
-    imageDisplayUrl:
-      imageDisplayUrl || editingLastPost?.imageDisplayUrl || "",
+    imageDisplayUrl: imageDisplayUrl || editingLastPost?.imageDisplayUrl || "",
     publicationPermissionConfirmed,
     publishNow:
       !lastPostPublishNowContainer.hidden && lastPostPublishNow.checked,
@@ -119,10 +116,14 @@ function updateLastPostFormMode() {
 
 function populateLastPostForm(lastPost) {
   const deceased = lastPost.deceased || {};
-  document.getElementById("lastPostDeceasedRank").value = deceased.fullRank || "";
-  document.getElementById("lastPostDeceasedFirstName").value = deceased.firstName || "";
-  document.getElementById("lastPostDeceasedSurname").value = deceased.surname || "";
-  document.getElementById("lastPostDeceasedPostNominal").value = deceased.postNominal || "";
+  document.getElementById("lastPostDeceasedRank").value =
+    deceased.fullRank || "";
+  document.getElementById("lastPostDeceasedFirstName").value =
+    deceased.firstName || "";
+  document.getElementById("lastPostDeceasedSurname").value =
+    deceased.surname || "";
+  document.getElementById("lastPostDeceasedPostNominal").value =
+    deceased.postNominal || "";
   editingLastPostMessages = { ...(lastPost.messages || {}) };
   activeLastPostMessageLanguage =
     lastPost.messageLanguage || CMCENUtils.getCurrentLanguage();
@@ -156,9 +157,8 @@ function switchLastPostMessageLanguage() {
     return;
   }
 
-  editingLastPostMessages[activeLastPostMessageLanguage] = getFieldValue(
-    "lastPostMessage",
-  );
+  editingLastPostMessages[activeLastPostMessageLanguage] =
+    getFieldValue("lastPostMessage");
   activeLastPostMessageLanguage = nextLanguage;
   document.getElementById("lastPostMessage").value =
     editingLastPostMessages[nextLanguage] || "";
@@ -292,11 +292,11 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
         ? `/api/last-posts/${encodeURIComponent(editingLastPostId)}`
         : "/api/last-posts",
       {
-      method: editingLastPostId ? "PATCH" : "POST",
-      token,
-      body: submissionPayload,
-      redirectOnUnauthorized: true,
-      unauthorizedMessage: translate("last_post_permission_error"),
+        method: editingLastPostId ? "PATCH" : "POST",
+        token,
+        body: submissionPayload,
+        redirectOnUnauthorized: true,
+        unauthorizedMessage: translate("last_post_permission_error"),
       },
     );
     if (!editingLastPostId) {
@@ -312,9 +312,9 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
           editingLastPostId
             ? "last_post_update_success"
             : submissionPayload.publishNow
-            ? "last_post_submit_success_published"
-            : "last_post_submit_success",
-      ),
+              ? "last_post_submit_success_published"
+              : "last_post_submit_success",
+        ),
       "success",
     );
     if (editingLastPostId) {
@@ -343,6 +343,9 @@ lastPostSubmitForm.addEventListener("submit", async (event) => {
 });
 
 document.addEventListener("languagechange", updateLastPostFormMode);
-lastPostMessageLanguage.addEventListener("change", switchLastPostMessageLanguage);
+lastPostMessageLanguage.addEventListener(
+  "change",
+  switchLastPostMessageLanguage,
+);
 
 initializeLastPostSubmission();

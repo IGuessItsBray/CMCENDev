@@ -255,8 +255,7 @@ test('reuses the branch crest for workbook placeholders and missing images', asy
     'https://cmcen-rcmce.ca/wp-content/uploads/CMCEN-crest-snip-1.png';
   const jimmyStatueUrl =
     'https://cmcen-rcmce.ca/wp-content/uploads/2022/06/Jimmy-Statue.png';
-  const jimmyJpegUrl =
-    'https://cmcen-rcmce.ca/wp-content/uploads/jimmy.jpeg';
+  const jimmyJpegUrl = 'https://cmcen-rcmce.ca/wp-content/uploads/jimmy.jpeg';
   const tdInsuranceUrl =
     'https://cmcen-rcmce.ca/wp-content/uploads/TD-Insurance.png';
   const realImageUrl = 'https://example.test/member-photo.jpg';

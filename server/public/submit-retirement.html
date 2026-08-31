@@ -95,7 +95,8 @@
                 class="event-edit-context-intro"
                 data-i18n="retirement_edit_context_intro"
               >
-                Update the details below, then save the revised message for review.
+                Update the details below, then save the revised message for
+                review.
               </p>
             </div>
             <div
@@ -226,51 +227,288 @@
                 <div class="event-field" id="retireeRankPicker" hidden>
                   <label for="retireeRank" data-i18n="retirement_rank"></label>
                   <select id="retireeRank" name="retireeRank" disabled>
-                    <option value="" data-i18n="select_option">Select an option</option>
-                    <option value="Civilian" data-rank-category="civilian" data-i18n="retirement_rank_civilian">Civilian</option>
-                    <option value="Recruit" data-rank-category="ncm" data-i18n="retirement_rank_recruit">Recruit</option>
-                    <option value="Private" data-rank-category="ncm" data-i18n="retirement_rank_private">Private</option>
-                    <option value="Aviator" data-rank-category="ncm" data-i18n="retirement_rank_aviator">Aviator</option>
-                    <option value="Sailor Third Class" data-rank-category="ncm" data-i18n="retirement_rank_sailor_third_class">Sailor Third Class</option>
-                    <option value="Corporal" data-rank-category="ncm" data-i18n="retirement_rank_corporal">Corporal</option>
-                    <option value="Sailor Second Class" data-rank-category="ncm" data-i18n="retirement_rank_sailor_second_class">Sailor Second Class</option>
-                    <option value="Master Corporal" data-rank-category="ncm" data-i18n="retirement_rank_master_corporal">Master Corporal</option>
-                    <option value="Sailor First Class" data-rank-category="ncm" data-i18n="retirement_rank_sailor_first_class">Sailor First Class</option>
-                    <option value="Sergeant" data-rank-category="ncm" data-i18n="retirement_rank_sergeant">Sergeant</option>
-                    <option value="Petty Officer 2nd Class" data-rank-category="ncm" data-i18n="retirement_rank_petty_officer_second_class">Petty Officer 2nd Class</option>
-                    <option value="Warrant Officer" data-rank-category="ncm" data-i18n="retirement_rank_warrant_officer">Warrant Officer</option>
-                    <option value="Petty Officer 1st Class" data-rank-category="ncm" data-i18n="retirement_rank_petty_officer_first_class">Petty Officer 1st Class</option>
-                    <option value="Master Warrant Officer" data-rank-category="ncm" data-i18n="retirement_rank_master_warrant_officer">Master Warrant Officer</option>
-                    <option value="Chief Petty Officer 2nd Class" data-rank-category="ncm" data-i18n="retirement_rank_chief_petty_officer_second_class">Chief Petty Officer 2nd Class</option>
-                    <option value="Chief Warrant Officer" data-rank-category="ncm" data-i18n="retirement_rank_chief_warrant_officer">Chief Warrant Officer</option>
-                    <option value="Chief Petty Officer 1st Class" data-rank-category="ncm" data-i18n="retirement_rank_chief_petty_officer_first_class">Chief Petty Officer 1st Class</option>
-                    <option value="Officer Cadet" data-rank-category="officer" data-i18n="retirement_rank_officer_cadet">Officer Cadet</option>
-                    <option value="Naval Cadet" data-rank-category="officer" data-i18n="retirement_rank_naval_cadet">Naval Cadet</option>
-                    <option value="Second Lieutenant" data-rank-category="officer" data-i18n="retirement_rank_second_lieutenant">Second Lieutenant</option>
-                    <option value="Acting Sub-Lieutenant" data-rank-category="officer" data-i18n="retirement_rank_acting_sub_lieutenant">Acting Sub-Lieutenant</option>
-                    <option value="Lieutenant" data-rank-category="officer" data-i18n="retirement_rank_lieutenant">Lieutenant</option>
-                    <option value="Sub-Lieutenant" data-rank-category="officer" data-i18n="retirement_rank_sub_lieutenant">Sub-Lieutenant</option>
-                    <option value="Captain" data-rank-category="officer" data-i18n="retirement_rank_captain">Captain</option>
-                    <option value="Lieutenant (Navy)" data-rank-category="officer" data-i18n="retirement_rank_lieutenant_navy">Lieutenant (Navy)</option>
-                    <option value="Major" data-rank-category="officer" data-i18n="retirement_rank_major">Major</option>
-                    <option value="Lieutenant-Commander" data-rank-category="officer" data-i18n="retirement_rank_lieutenant_commander">Lieutenant-Commander</option>
-                    <option value="Lieutenant-Colonel" data-rank-category="officer" data-i18n="retirement_rank_lieutenant_colonel">Lieutenant-Colonel</option>
-                    <option value="Commander" data-rank-category="officer" data-i18n="retirement_rank_commander">Commander</option>
-                    <option value="Colonel" data-rank-category="officer" data-i18n="retirement_rank_colonel">Colonel</option>
-                    <option value="Captain (Navy)" data-rank-category="officer" data-i18n="retirement_rank_captain_navy">Captain (Navy)</option>
-                    <option value="Brigadier-General" data-rank-category="officer" data-i18n="retirement_rank_brigadier_general">Brigadier-General</option>
-                    <option value="Commodore" data-rank-category="officer" data-i18n="retirement_rank_commodore">Commodore</option>
-                    <option value="Major-General" data-rank-category="officer" data-i18n="retirement_rank_major_general">Major-General</option>
-                    <option value="Rear-Admiral" data-rank-category="officer" data-i18n="retirement_rank_rear_admiral">Rear-Admiral</option>
-                    <option value="Lieutenant-General" data-rank-category="officer" data-i18n="retirement_rank_lieutenant_general">Lieutenant-General</option>
-                    <option value="Vice-Admiral" data-rank-category="officer" data-i18n="retirement_rank_vice_admiral">Vice-Admiral</option>
-                    <option value="General" data-rank-category="officer" data-i18n="retirement_rank_general">General</option>
-                    <option value="Admiral" data-rank-category="officer" data-i18n="retirement_rank_admiral">Admiral</option>
+                    <option value="" data-i18n="select_option">
+                      Select an option
+                    </option>
+                    <option
+                      value="Civilian"
+                      data-rank-category="civilian"
+                      data-i18n="retirement_rank_civilian"
+                    >
+                      Civilian
+                    </option>
+                    <option
+                      value="Recruit"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_recruit"
+                    >
+                      Recruit
+                    </option>
+                    <option
+                      value="Private"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_private"
+                    >
+                      Private
+                    </option>
+                    <option
+                      value="Aviator"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_aviator"
+                    >
+                      Aviator
+                    </option>
+                    <option
+                      value="Sailor Third Class"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_sailor_third_class"
+                    >
+                      Sailor Third Class
+                    </option>
+                    <option
+                      value="Corporal"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_corporal"
+                    >
+                      Corporal
+                    </option>
+                    <option
+                      value="Sailor Second Class"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_sailor_second_class"
+                    >
+                      Sailor Second Class
+                    </option>
+                    <option
+                      value="Master Corporal"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_master_corporal"
+                    >
+                      Master Corporal
+                    </option>
+                    <option
+                      value="Sailor First Class"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_sailor_first_class"
+                    >
+                      Sailor First Class
+                    </option>
+                    <option
+                      value="Sergeant"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_sergeant"
+                    >
+                      Sergeant
+                    </option>
+                    <option
+                      value="Petty Officer 2nd Class"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_petty_officer_second_class"
+                    >
+                      Petty Officer 2nd Class
+                    </option>
+                    <option
+                      value="Warrant Officer"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_warrant_officer"
+                    >
+                      Warrant Officer
+                    </option>
+                    <option
+                      value="Petty Officer 1st Class"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_petty_officer_first_class"
+                    >
+                      Petty Officer 1st Class
+                    </option>
+                    <option
+                      value="Master Warrant Officer"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_master_warrant_officer"
+                    >
+                      Master Warrant Officer
+                    </option>
+                    <option
+                      value="Chief Petty Officer 2nd Class"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_chief_petty_officer_second_class"
+                    >
+                      Chief Petty Officer 2nd Class
+                    </option>
+                    <option
+                      value="Chief Warrant Officer"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_chief_warrant_officer"
+                    >
+                      Chief Warrant Officer
+                    </option>
+                    <option
+                      value="Chief Petty Officer 1st Class"
+                      data-rank-category="ncm"
+                      data-i18n="retirement_rank_chief_petty_officer_first_class"
+                    >
+                      Chief Petty Officer 1st Class
+                    </option>
+                    <option
+                      value="Officer Cadet"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_officer_cadet"
+                    >
+                      Officer Cadet
+                    </option>
+                    <option
+                      value="Naval Cadet"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_naval_cadet"
+                    >
+                      Naval Cadet
+                    </option>
+                    <option
+                      value="Second Lieutenant"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_second_lieutenant"
+                    >
+                      Second Lieutenant
+                    </option>
+                    <option
+                      value="Acting Sub-Lieutenant"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_acting_sub_lieutenant"
+                    >
+                      Acting Sub-Lieutenant
+                    </option>
+                    <option
+                      value="Lieutenant"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_lieutenant"
+                    >
+                      Lieutenant
+                    </option>
+                    <option
+                      value="Sub-Lieutenant"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_sub_lieutenant"
+                    >
+                      Sub-Lieutenant
+                    </option>
+                    <option
+                      value="Captain"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_captain"
+                    >
+                      Captain
+                    </option>
+                    <option
+                      value="Lieutenant (Navy)"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_lieutenant_navy"
+                    >
+                      Lieutenant (Navy)
+                    </option>
+                    <option
+                      value="Major"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_major"
+                    >
+                      Major
+                    </option>
+                    <option
+                      value="Lieutenant-Commander"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_lieutenant_commander"
+                    >
+                      Lieutenant-Commander
+                    </option>
+                    <option
+                      value="Lieutenant-Colonel"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_lieutenant_colonel"
+                    >
+                      Lieutenant-Colonel
+                    </option>
+                    <option
+                      value="Commander"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_commander"
+                    >
+                      Commander
+                    </option>
+                    <option
+                      value="Colonel"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_colonel"
+                    >
+                      Colonel
+                    </option>
+                    <option
+                      value="Captain (Navy)"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_captain_navy"
+                    >
+                      Captain (Navy)
+                    </option>
+                    <option
+                      value="Brigadier-General"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_brigadier_general"
+                    >
+                      Brigadier-General
+                    </option>
+                    <option
+                      value="Commodore"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_commodore"
+                    >
+                      Commodore
+                    </option>
+                    <option
+                      value="Major-General"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_major_general"
+                    >
+                      Major-General
+                    </option>
+                    <option
+                      value="Rear-Admiral"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_rear_admiral"
+                    >
+                      Rear-Admiral
+                    </option>
+                    <option
+                      value="Lieutenant-General"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_lieutenant_general"
+                    >
+                      Lieutenant-General
+                    </option>
+                    <option
+                      value="Vice-Admiral"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_vice_admiral"
+                    >
+                      Vice-Admiral
+                    </option>
+                    <option
+                      value="General"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_general"
+                    >
+                      General
+                    </option>
+                    <option
+                      value="Admiral"
+                      data-rank-category="officer"
+                      data-i18n="retirement_rank_admiral"
+                    >
+                      Admiral
+                    </option>
                   </select>
                 </div>
 
-                <div class="event-field event-field-wide retirement-trade-field">
-
+                <div
+                  class="event-field event-field-wide retirement-trade-field"
+                >
                   <div
                     class="retirement-trade-panel"
                     id="retireeOfficerTradePanel"

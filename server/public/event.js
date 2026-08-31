@@ -66,9 +66,7 @@ function getStoredToken() {
 }
 
 function removeEventAdminActions() {
-  document
-    .querySelector("[data-content-workspace-shortcut='event']")
-    ?.remove();
+  document.querySelector("[data-content-workspace-shortcut='event']")?.remove();
 }
 
 function renderEventAdminActions() {
@@ -127,7 +125,9 @@ function createEventLoadingContent(message) {
     CMCENUtils.createSkeleton("skeleton--line skeleton--line-title"),
     CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
     CMCENUtils.createSkeleton("skeleton--detail-block"),
-    CMCENUtils.createSkeleton("skeleton--detail-block skeleton--detail-block-short"),
+    CMCENUtils.createSkeleton(
+      "skeleton--detail-block skeleton--detail-block-short",
+    ),
   );
 
   const accessibleLabel = document.createElement("span");
@@ -388,24 +388,42 @@ function renderRegistration(value) {
 function formatRsvpDeadline(value) {
   const date = getValidDate(value);
   return date
-    ? new Intl.DateTimeFormat(getEventLocale(), { dateStyle: "long", timeZone: "UTC" }).format(date)
+    ? new Intl.DateTimeFormat(getEventLocale(), {
+        dateStyle: "long",
+        timeZone: "UTC",
+      }).format(date)
     : "";
 }
 
 async function submitRsvp(response) {
   try {
-    const result = await CMCENUtils.apiJson(`/api/events/${encodeURIComponent(currentEventId)}/rsvp`, {
-      method: "POST", token: getStoredToken(), body: { response },
-      errorMessage: getEventTranslation("event_rsvp_submit_error", "Could not save your RSVP."),
-    });
-    if (currentEvent && ["accepted", "declined"].includes(result.rsvp?.response)) {
+    const result = await CMCENUtils.apiJson(
+      `/api/events/${encodeURIComponent(currentEventId)}/rsvp`,
+      {
+        method: "POST",
+        token: getStoredToken(),
+        body: { response },
+        errorMessage: getEventTranslation(
+          "event_rsvp_submit_error",
+          "Could not save your RSVP.",
+        ),
+      },
+    );
+    if (
+      currentEvent &&
+      ["accepted", "declined"].includes(result.rsvp?.response)
+    ) {
       currentEvent.myRsvp = { response: result.rsvp.response };
       renderRsvp(currentEvent);
       return;
     }
     eventRsvpMessage.textContent = getEventTranslation(
-      result.rsvp?.response === "accepted" ? "event_rsvp_accepted" : "event_rsvp_declined",
-      result.rsvp?.response === "accepted" ? "Your attendance has been recorded." : "Your decline has been recorded.",
+      result.rsvp?.response === "accepted"
+        ? "event_rsvp_accepted"
+        : "event_rsvp_declined",
+      result.rsvp?.response === "accepted"
+        ? "Your attendance has been recorded."
+        : "Your decline has been recorded.",
     );
   } catch (error) {
     eventRsvpMessage.textContent = error.message;
@@ -414,10 +432,17 @@ async function submitRsvp(response) {
 
 async function cancelRsvp() {
   try {
-    await CMCENUtils.apiJson(`/api/events/${encodeURIComponent(currentEventId)}/rsvp`, {
-      method: "DELETE", token: getStoredToken(),
-      errorMessage: getEventTranslation("event_rsvp_cancel_error", "Could not cancel your RSVP."),
-    });
+    await CMCENUtils.apiJson(
+      `/api/events/${encodeURIComponent(currentEventId)}/rsvp`,
+      {
+        method: "DELETE",
+        token: getStoredToken(),
+        errorMessage: getEventTranslation(
+          "event_rsvp_cancel_error",
+          "Could not cancel your RSVP.",
+        ),
+      },
+    );
     if (currentEvent) {
       delete currentEvent.myRsvp;
       renderRsvp(currentEvent);
@@ -433,15 +458,16 @@ async function cancelRsvp() {
 
 function renderRsvp(event) {
   eventRsvpActions.replaceChildren();
-  eventRsvpSection.classList.remove(
-    "is-rsvp-attending",
-    "is-rsvp-declined",
-  );
-  if (!event.rsvpEnabled) { eventRsvpSection.hidden = true; return; }
+  eventRsvpSection.classList.remove("is-rsvp-attending", "is-rsvp-declined");
+  if (!event.rsvpEnabled) {
+    eventRsvpSection.hidden = true;
+    return;
+  }
 
   eventRsvpSection.hidden = false;
   const deadline = formatRsvpDeadline(event.rsvpDeadline);
-  const deadlinePassed = event.rsvpDeadline && new Date() > new Date(event.rsvpDeadline);
+  const deadlinePassed =
+    event.rsvpDeadline && new Date() > new Date(event.rsvpDeadline);
   const rsvpResponse = event.myRsvp?.response;
   eventRsvpSection.classList.toggle(
     "is-rsvp-attending",
@@ -453,21 +479,36 @@ function renderRsvp(event) {
   );
   if (["accepted", "declined"].includes(rsvpResponse)) {
     eventRsvpMessage.textContent = getEventTranslation(
-      rsvpResponse === "accepted" ? "event_rsvp_accepted" : "event_rsvp_declined",
-      rsvpResponse === "accepted" ? "Your attendance has been recorded." : "Your decline has been recorded.",
+      rsvpResponse === "accepted"
+        ? "event_rsvp_accepted"
+        : "event_rsvp_declined",
+      rsvpResponse === "accepted"
+        ? "Your attendance has been recorded."
+        : "Your decline has been recorded.",
     );
     const cancel = document.createElement("button");
     cancel.type = "button";
     cancel.className = "event-rsvp-button is-cancel";
-    cancel.textContent = getEventTranslation("event_rsvp_cancel", "Cancel RSVP");
+    cancel.textContent = getEventTranslation(
+      "event_rsvp_cancel",
+      "Cancel RSVP",
+    );
     cancel.addEventListener("click", cancelRsvp);
     eventRsvpActions.append(cancel);
   } else if (deadlinePassed) {
-    eventRsvpMessage.textContent = getEventTranslation("event_rsvp_closed", "RSVPs are now closed.");
+    eventRsvpMessage.textContent = getEventTranslation(
+      "event_rsvp_closed",
+      "RSVPs are now closed.",
+    );
   } else if (!getStoredToken()) {
-    eventRsvpMessage.textContent = getEventTranslation("event_rsvp_login_required", "Sign in to RSVP for this event.");
-    const login = document.createElement("a"); login.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-    login.textContent = getEventTranslation("login", "Sign in"); eventRsvpActions.append(login);
+    eventRsvpMessage.textContent = getEventTranslation(
+      "event_rsvp_login_required",
+      "Sign in to RSVP for this event.",
+    );
+    const login = document.createElement("a");
+    login.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    login.textContent = getEventTranslation("login", "Sign in");
+    eventRsvpActions.append(login);
   } else {
     eventRsvpMessage.textContent = deadline
       ? getEventTranslation("event_rsvp_deadline_message", { deadline })
@@ -476,7 +517,8 @@ function renderRsvp(event) {
       ["accepted", "event_rsvp_accept", "Accept"],
       ["declined", "event_rsvp_decline", "Decline"],
     ].forEach(([response, key, label]) => {
-      const button = document.createElement("button"); button.type = "button";
+      const button = document.createElement("button");
+      button.type = "button";
       button.className = `event-rsvp-button is-${response}`;
       button.textContent = getEventTranslation(key, label);
       button.addEventListener("click", () => submitRsvp(response));
@@ -561,9 +603,10 @@ async function loadEvent() {
 
   try {
     const token = getStoredToken();
-    const response = await fetch(`/api/events/${encodeURIComponent(eventId)}`, token
-      ? { headers: { Authorization: `Bearer ${token}` } }
-      : undefined);
+    const response = await fetch(
+      `/api/events/${encodeURIComponent(eventId)}`,
+      token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
+    );
 
     const data = await response.json().catch(() => ({}));
 

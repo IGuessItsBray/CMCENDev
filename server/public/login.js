@@ -187,8 +187,7 @@ async function applyAccountLanguage(token) {
     ) {
       window.applyLanguage(user.preferredLanguage);
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 async function completeLogin(token) {
@@ -216,7 +215,9 @@ function ensureWebAuthnAvailable() {
 
 function openMfaDialog(methods, tempToken) {
   mfaRestoreFocus =
-    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
   mfaOptions.replaceChildren();
   mfaTotpForm.hidden = true;
   mfaTotpCode.value = "";

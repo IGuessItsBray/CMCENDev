@@ -93,13 +93,9 @@ test('defines crawler routes and applies baseline response headers', () => {
   };
   let nextCalled = false;
 
-  setStandardResponseHeaders(
-    { path: '/dashboard' },
-    response,
-    () => {
-      nextCalled = true;
-    },
-  );
+  setStandardResponseHeaders({ path: '/dashboard' }, response, () => {
+    nextCalled = true;
+  });
 
   assert.deepEqual(routePaths, ['/robots.txt', '/sitemap.xml']);
   assert.equal(AI_CRAWLERS.includes('GPTBot'), true);
@@ -134,7 +130,10 @@ test('allows only configured analytics origins and API documentation assets', ()
     policy,
     /style-src 'self' 'nonce-test-nonce' https:\/\/unpkg\.com/u,
   );
-  assert.match(policy, /connect-src 'self' https:\/\/analytics\.example\.test/u);
+  assert.match(
+    policy,
+    /connect-src 'self' https:\/\/analytics\.example\.test/u,
+  );
   assert.match(policy, /frame-src 'self' https:\/\/stats\.example\.test/u);
 });
 
@@ -151,7 +150,10 @@ test('blocks declared AI crawlers without blocking public search pages', () => {
 
 test('recognizes known AI crawlers for server-side access denial', () => {
   assert.equal(isKnownAiCrawler('Mozilla/5.0 compatible; GPTBot/1.0'), true);
-  assert.equal(isKnownAiCrawler('Mozilla/5.0 compatible; Googlebot/2.1'), false);
+  assert.equal(
+    isKnownAiCrawler('Mozilla/5.0 compatible; Googlebot/2.1'),
+    false,
+  );
 
   const response = {
     statusCode: 0,
@@ -173,13 +175,9 @@ test('recognizes known AI crawlers for server-side access denial', () => {
   };
   let nextCalled = false;
 
-  blockKnownAiCrawlers(
-    { get: () => 'GPTBot/1.0' },
-    response,
-    () => {
-      nextCalled = true;
-    },
-  );
+  blockKnownAiCrawlers({ get: () => 'GPTBot/1.0' }, response, () => {
+    nextCalled = true;
+  });
 
   assert.equal(response.statusCode, 403);
   assert.equal(response.body, 'Automated AI crawler access is not permitted.');

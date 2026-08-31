@@ -41,7 +41,10 @@ test('builds an escaped, folded all-day iCalendar entry using the selected langu
     ),
   );
   assert.match(calendar, /LOCATION:Salle A\\, édifice principal\\, Ottawa\r\n/);
-  assert.match(calendar, /URL:https:\/\/cmcen\.example\/event\?id=0123456789abcdef01234567\r\n/);
+  assert.match(
+    calendar,
+    /URL:https:\/\/cmcen\.example\/event\?id=0123456789abcdef01234567\r\n/,
+  );
   assert.match(calendar, /END:VCALENDAR\r\n$/);
 
   for (const line of calendar.split('\r\n').filter(Boolean)) {

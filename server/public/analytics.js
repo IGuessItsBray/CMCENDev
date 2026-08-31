@@ -287,7 +287,8 @@ function renderAnalytics() {
 
 function getPlausibleEmbedUrl(embedUrl) {
   const url = new URL(embedUrl);
-  const theme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  const theme =
+    document.documentElement.dataset.theme === "dark" ? "dark" : "light";
   url.searchParams.set("theme", theme);
   return url.toString();
 }

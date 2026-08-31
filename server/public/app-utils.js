@@ -31,7 +31,9 @@
 
       if (!urlText) continue;
 
-      fragment.append(document.createTextNode(text.slice(lastIndex, match.index)));
+      fragment.append(
+        document.createTextNode(text.slice(lastIndex, match.index)),
+      );
 
       try {
         const url = new URL(urlText);
@@ -1078,7 +1080,9 @@
       };
       const schedulePosition = () => window.requestAnimationFrame(position);
       schedulePosition();
-      window.parent.addEventListener("scroll", schedulePosition, { passive: true });
+      window.parent.addEventListener("scroll", schedulePosition, {
+        passive: true,
+      });
       window.parent.addEventListener("resize", schedulePosition);
       modalEmbeddedPositionCleanup = () => {
         window.parent.removeEventListener("scroll", schedulePosition);
@@ -1234,7 +1238,7 @@
           ? modalInput.value
           : modalActiveRequest.type === "checklist"
             ? modalActiveRequest.getCheckedValues()
-          : modalActiveRequest.confirmValue,
+            : modalActiveRequest.confirmValue,
       );
     });
 
@@ -1324,9 +1328,7 @@
           confirmValue: isAlert ? undefined : true,
           getCheckedValues: () =>
             Array.from(
-              modalChecklist.querySelectorAll(
-                'input[type="checkbox"]:checked',
-              ),
+              modalChecklist.querySelectorAll('input[type="checkbox"]:checked'),
             ).map((input) => input.value),
           getFormValues: () =>
             Object.fromEntries(
@@ -1431,7 +1433,9 @@
               (field.options || []).forEach((option) => {
                 const optionElement = document.createElement("option");
                 optionElement.value = String(option.value || "");
-                optionElement.textContent = String(option.label || option.value || "");
+                optionElement.textContent = String(
+                  option.label || option.value || "",
+                );
                 optionElement.selected = option.value === field.defaultValue;
                 control.append(optionElement);
               });
@@ -1444,7 +1448,10 @@
               if (field.maxLength) control.maxLength = field.maxLength;
             }
 
-            if (field.requiresNonWhitespace === true && field.required === true) {
+            if (
+              field.requiresNonWhitespace === true &&
+              field.required === true
+            ) {
               const validateNonWhitespaceValue = () => {
                 control.setCustomValidity(
                   control.value && !control.value.trim()
@@ -1523,12 +1530,12 @@
           const focusTarget = isForm
             ? modalFormFields.querySelector("input, select, textarea")
             : isPrompt
-            ? modalInput
-            : isChoice
-              ? modalChoiceActions.querySelector("button")
-              : isChecklist
-                ? modalChecklist.querySelector('input[type="checkbox"]')
-              : modalConfirmButton;
+              ? modalInput
+              : isChoice
+                ? modalChoiceActions.querySelector("button")
+                : isChecklist
+                  ? modalChecklist.querySelector('input[type="checkbox"]')
+                  : modalConfirmButton;
           focusTarget?.focus();
           if (isPrompt) modalInput.select();
         });
@@ -1588,12 +1595,12 @@
   }
 
   function initializePlausibleAnalytics() {
-    fetch('/api/client-config/plausible')
+    fetch("/api/client-config/plausible")
       .then((response) => (response.ok ? response.json() : null))
       .then((config) => {
         if (!config?.enabled || !config.domain || !config.endpoint) return;
 
-        return import('/vendor/plausible-tracker.js').then(({ init }) => {
+        return import("/vendor/plausible-tracker.js").then(({ init }) => {
           init({ domain: config.domain, endpoint: config.endpoint });
         });
       })
@@ -1720,14 +1727,17 @@
     const hint = document.createElement("p");
     hint.className = "image-crop-hint";
     hint.textContent =
-      labels.hint ||
-      "The original photo is kept in full for the message page.";
+      labels.hint || "The original photo is kept in full for the message page.";
     const controls = document.createElement("div");
     controls.className = "image-crop-controls";
     controls.append(
-      makeControl(labels.horizontal || "Horizontal position", horizontal, (value) => {
-        cropX = value;
-      }),
+      makeControl(
+        labels.horizontal || "Horizontal position",
+        horizontal,
+        (value) => {
+          cropX = value;
+        },
+      ),
       makeControl(labels.vertical || "Vertical position", vertical, (value) => {
         cropY = value;
       }),
@@ -1768,29 +1778,31 @@
   }
 
   function bindCharacterCounters(root = document) {
-    root.querySelectorAll("textarea[data-character-counter]").forEach((textarea) => {
-      if (textarea.dataset.characterCounterBound === "true") {
-        textarea.characterCounterUpdate?.();
-        return;
-      }
+    root
+      .querySelectorAll("textarea[data-character-counter]")
+      .forEach((textarea) => {
+        if (textarea.dataset.characterCounterBound === "true") {
+          textarea.characterCounterUpdate?.();
+          return;
+        }
 
-      const maximum = Number.parseInt(textarea.maxLength, 10);
-      if (!Number.isInteger(maximum) || maximum < 1) return;
+        const maximum = Number.parseInt(textarea.maxLength, 10);
+        if (!Number.isInteger(maximum) || maximum < 1) return;
 
-      const counter = document.createElement("small");
-      counter.className = "character-counter";
-      counter.setAttribute("aria-live", "polite");
+        const counter = document.createElement("small");
+        counter.className = "character-counter";
+        counter.setAttribute("aria-live", "polite");
 
-      const updateCounter = () => {
-        counter.textContent = `${textarea.value.length.toLocaleString()} / ${maximum.toLocaleString()} characters`;
-      };
+        const updateCounter = () => {
+          counter.textContent = `${textarea.value.length.toLocaleString()} / ${maximum.toLocaleString()} characters`;
+        };
 
-      textarea.insertAdjacentElement("afterend", counter);
-      textarea.addEventListener("input", updateCounter);
-      textarea.dataset.characterCounterBound = "true";
-      textarea.characterCounterUpdate = updateCounter;
-      updateCounter();
-    });
+        textarea.insertAdjacentElement("afterend", counter);
+        textarea.addEventListener("input", updateCounter);
+        textarea.dataset.characterCounterBound = "true";
+        textarea.characterCounterUpdate = updateCounter;
+        updateCounter();
+      });
   }
 
   function createContentWorkspaceShortcut({
@@ -1803,8 +1815,7 @@
     const shortcut = document.createElement("a");
     shortcut.className = "content-workspace-shortcut";
     shortcut.href =
-      "/content-workspace?" +
-      new URLSearchParams({ id: String(contentId) });
+      "/content-workspace?" + new URLSearchParams({ id: String(contentId) });
     shortcut.dataset.contentWorkspaceShortcut = contentType;
     shortcut.setAttribute("aria-label", label);
     shortcut.title = label;

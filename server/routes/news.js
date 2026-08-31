@@ -6,7 +6,10 @@ const Page = require('../models/Page');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
 const { recordContentRevision } = require('../services/content-revisions');
-const { hideContent, restoreContent } = require('../services/content-lifecycle');
+const {
+  hideContent,
+  restoreContent,
+} = require('../services/content-lifecycle');
 const {
   cleanLocalizedText,
   cleanString,

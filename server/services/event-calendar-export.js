@@ -42,7 +42,10 @@ function formatUtcDateTime(value) {
 
   if (Number.isNaN(date.getTime())) return '';
 
-  return date.toISOString().replace(/[-:]/gu, '').replace(/\.\d{3}/u, '');
+  return date
+    .toISOString()
+    .replace(/[-:]/gu, '')
+    .replace(/\.\d{3}/u, '');
 }
 
 function formatAllDayDate(value) {

@@ -8,7 +8,9 @@ function formOpeningTag(documentName, formId) {
     path.join(__dirname, '..', 'public', documentName),
     'utf8',
   );
-  const match = html.match(new RegExp(`<form\\b[^>]*\\bid="${formId}"[^>]*>`, 'u'));
+  const match = html.match(
+    new RegExp(`<form\\b[^>]*\\bid="${formId}"[^>]*>`, 'u'),
+  );
 
   assert.ok(match, `expected ${documentName} to contain #${formId}`);
   return match[0];

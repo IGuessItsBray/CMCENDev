@@ -2,7 +2,9 @@ const contentWorkspaceType = document.getElementById("contentWorkspaceType");
 const contentWorkspaceStatusFilter = document.getElementById(
   "contentWorkspaceStatusFilter",
 );
-const contentWorkspaceSearch = document.getElementById("contentWorkspaceSearch");
+const contentWorkspaceSearch = document.getElementById(
+  "contentWorkspaceSearch",
+);
 const contentWorkspaceTranslationFilter = document.getElementById(
   "contentWorkspaceTranslationFilter",
 );
@@ -220,7 +222,10 @@ async function contentWorkspaceApiJson(path, options = {}) {
       ...options,
       token,
       redirectOnUnauthorized: true,
-      unauthorizedMessage: getText("sign_in_to_continue", "Sign in to continue."),
+      unauthorizedMessage: getText(
+        "sign_in_to_continue",
+        "Sign in to continue.",
+      ),
     });
   } catch (error) {
     if (error.status === 403) {
@@ -279,7 +284,9 @@ function applyContentWorkspaceSearchParameters() {
   }
 }
 
-function updateContentWorkspaceSearchParameters({ includeSelection = false } = {}) {
+function updateContentWorkspaceSearchParameters({
+  includeSelection = false,
+} = {}) {
   const url = new URL(window.location.href);
   const searchParameters = new URLSearchParams();
   const type = contentWorkspaceType.value || "all";
@@ -311,10 +318,10 @@ function hasContentWorkspaceFilters() {
 
   return Boolean(
     contentWorkspaceType.value !== "all" ||
-      contentWorkspaceStatusFilter.value !== "all" ||
-      contentWorkspaceTranslationFilter.value !== "all" ||
-      contentWorkspaceSearch.value.trim() ||
-      searchParameters.get("id"),
+    contentWorkspaceStatusFilter.value !== "all" ||
+    contentWorkspaceTranslationFilter.value !== "all" ||
+    contentWorkspaceSearch.value.trim() ||
+    searchParameters.get("id"),
   );
 }
 
@@ -342,7 +349,10 @@ function getLocalizedValue(value) {
 }
 
 function getItemTitle(item) {
-  return String(item?.title || "").trim() || getText("content_workspace_untitled", "Untitled content");
+  return (
+    String(item?.title || "").trim() ||
+    getText("content_workspace_untitled", "Untitled content")
+  );
 }
 
 function getListItemTitle(item) {
@@ -438,10 +448,7 @@ function formatWorkspaceDate(value) {
 function getTypeTranslation(type) {
   return {
     event: ["content_workspace_event", "Events"],
-    retirementMessage: [
-      "content_workspace_retirement",
-      "Retirement messages",
-    ],
+    retirementMessage: ["content_workspace_retirement", "Retirement messages"],
     lastPost: ["content_workspace_last_post", "Last Post notices"],
     newsArticle: ["content_workspace_news", "News stories"],
     retirementComment: ["content_workspace_comment", "Comments"],
@@ -679,7 +686,10 @@ function setDetailInfo(info, item) {
   const values = [getTypeLabel(item.type), formatWorkspaceDate(item.updatedAt)];
 
   if (item.type === "event") {
-    values.push(item.content?.city, formatWorkspaceDate(item.content?.startDate));
+    values.push(
+      item.content?.city,
+      formatWorkspaceDate(item.content?.startDate),
+    );
   }
 
   if (item.status === "hidden" && item.hiddenFromStatus) {
@@ -931,7 +941,9 @@ function formatWorkspaceDateTimeInput(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
 
-  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  const offsetDate = new Date(
+    date.getTime() - date.getTimezoneOffset() * 60_000,
+  );
   return offsetDate.toISOString().slice(0, 16);
 }
 
@@ -950,7 +962,8 @@ function createWorkspaceDateTimeField({
   includeTime = true,
 }) {
   const labelElement = document.createElement("label");
-  labelElement.className = "content-workspace-field content-workspace-date-time-field";
+  labelElement.className =
+    "content-workspace-field content-workspace-date-time-field";
 
   const labelText = document.createElement("span");
   setWorkspaceTranslatedText(labelText, labelKey, label);
@@ -1030,10 +1043,7 @@ function createWorkspaceEditorField({
     control = document.createElement("select");
     const optionValues = new Set(options.map((option) => option.value));
     if (value && !optionValues.has(value)) {
-      options = [
-        { value, label: value },
-        ...options,
-      ];
+      options = [{ value, label: value }, ...options];
     }
 
     options.forEach((option) => {
@@ -1110,11 +1120,7 @@ function getEventDetailsFields(item) {
           "YT",
           "International",
         ].map((value) =>
-          getWorkspaceOption(
-            value,
-            `region_${value.toLowerCase()}`,
-            value,
-          ),
+          getWorkspaceOption(value, `region_${value.toLowerCase()}`, value),
         ),
       ],
     }),
@@ -1382,7 +1388,9 @@ function getContentWorkspaceImageConfig(item) {
 }
 
 function setContentWorkspaceImageEditorPreview(editor, imageUrl = "") {
-  const preview = editor.querySelector("[data-content-workspace-image-preview]");
+  const preview = editor.querySelector(
+    "[data-content-workspace-image-preview]",
+  );
   const empty = editor.querySelector("[data-content-workspace-image-empty]");
   const state = editor.querySelector("[data-content-workspace-image-state]");
   const remove = editor.querySelector("[data-content-workspace-image-remove]");
@@ -1411,26 +1419,35 @@ function setContentWorkspaceImageEditorPreview(editor, imageUrl = "") {
 }
 
 function getContentWorkspaceImageSourceName(item, form) {
-  const getValue = (field) => String(form.elements.namedItem(field)?.value || "").trim();
+  const getValue = (field) =>
+    String(form.elements.namedItem(field)?.value || "").trim();
 
   if (item.type === "event") {
     return getValue("titleEN") || getValue("titleFR") || item.title;
   }
 
   if (item.type === "retirementMessage") {
-    return [
-      getValue("retireeRank"),
-      getValue("retireeFirstName"),
-      getValue("retireeLastName"),
-    ].filter(Boolean).join(" ") || item.title;
+    return (
+      [
+        getValue("retireeRank"),
+        getValue("retireeFirstName"),
+        getValue("retireeLastName"),
+      ]
+        .filter(Boolean)
+        .join(" ") || item.title
+    );
   }
 
   if (item.type === "lastPost") {
-    return [
-      getValue("deceasedFullRank"),
-      getValue("deceasedFirstName"),
-      getValue("deceasedSurname"),
-    ].filter(Boolean).join(" ") || item.title;
+    return (
+      [
+        getValue("deceasedFullRank"),
+        getValue("deceasedFirstName"),
+        getValue("deceasedSurname"),
+      ]
+        .filter(Boolean)
+        .join(" ") || item.title
+    );
   }
 
   return item.title;
@@ -1492,7 +1509,8 @@ function createContentWorkspaceImageEditor(item) {
   }
 
   const uploadLabel = document.createElement("label");
-  uploadLabel.className = "admin-work-zone-button is-secondary content-workspace-image-upload";
+  uploadLabel.className =
+    "admin-work-zone-button is-secondary content-workspace-image-upload";
   const uploadText = document.createElement("span");
   setWorkspaceTranslatedText(
     uploadText,
@@ -1623,12 +1641,7 @@ function getMemberEventEditorFields(item) {
   const localizedFields = [
     ["title", "content_workspace_field_title", "Title", false],
     ["location", "content_workspace_field_location", "Location", false],
-    [
-      "description",
-      "content_workspace_field_description",
-      "Description",
-      true,
-    ],
+    ["description", "content_workspace_field_description", "Description", true],
     [
       "registration",
       "content_workspace_field_registration",
@@ -1668,7 +1681,9 @@ function getMemberEventEditorFields(item) {
       "SK",
       "YT",
       "International",
-    ].map((value) => getWorkspaceOption(value, `region_${value.toLowerCase()}`, value)),
+    ].map((value) =>
+      getWorkspaceOption(value, `region_${value.toLowerCase()}`, value),
+    ),
     organizingEntity: ["branch", "association", "foundation", "museum"].map(
       (value) => getWorkspaceOption(value, `entity_${value}`, value),
     ),
@@ -1680,7 +1695,11 @@ function getMemberEventEditorFields(item) {
       "social",
       "other",
     ].map((value) =>
-      getWorkspaceOption(value, `event_type_${value.replace(/-/gu, "_")}`, value),
+      getWorkspaceOption(
+        value,
+        `event_type_${value.replace(/-/gu, "_")}`,
+        value,
+      ),
     ),
     timezone: [
       "America/St_Johns",
@@ -1705,7 +1724,10 @@ function getMemberEventEditorFields(item) {
       label: "Province or region",
       labelKey: "event_province_region",
       value: content.provinceRegion,
-      options: [getWorkspaceOption("", "event_select_option", "Select an option"), ...eventOptions.provinceRegion],
+      options: [
+        getWorkspaceOption("", "event_select_option", "Select an option"),
+        ...eventOptions.provinceRegion,
+      ],
       required: true,
     }),
     createWorkspaceEditorField({
@@ -1713,7 +1735,10 @@ function getMemberEventEditorFields(item) {
       label: "Organizing entity",
       labelKey: "event_organizing_entity",
       value: content.organizingEntity,
-      options: [getWorkspaceOption("", "event_select_option", "Select an option"), ...eventOptions.organizingEntity],
+      options: [
+        getWorkspaceOption("", "event_select_option", "Select an option"),
+        ...eventOptions.organizingEntity,
+      ],
       required: true,
     }),
     createWorkspaceEditorField({
@@ -1721,7 +1746,10 @@ function getMemberEventEditorFields(item) {
       label: "Event type",
       labelKey: "event_type",
       value: content.eventType,
-      options: [getWorkspaceOption("", "event_select_option", "Select an option"), ...eventOptions.eventType],
+      options: [
+        getWorkspaceOption("", "event_select_option", "Select an option"),
+        ...eventOptions.eventType,
+      ],
       required: true,
     }),
     createWorkspaceDateTimeField({
@@ -1742,7 +1770,10 @@ function getMemberEventEditorFields(item) {
       label: "Event timezone",
       labelKey: "event_timezone",
       value: content.timezone,
-      options: [getWorkspaceOption("", "event_select_option", "Select an option"), ...eventOptions.timezone],
+      options: [
+        getWorkspaceOption("", "event_select_option", "Select an option"),
+        ...eventOptions.timezone,
+      ],
     }),
     createWorkspaceEditorField({
       field: "allDay",
@@ -1832,7 +1863,9 @@ async function saveMemberEvent(item, form, button) {
     showWorkspaceSuccess(
       result.message ||
         getText(
-          isNew ? "event_submit_success_pending" : "event_update_success_pending",
+          isNew
+            ? "event_submit_success_pending"
+            : "event_update_success_pending",
           isNew
             ? "Event submitted for review."
             : "Event updated and submitted for review.",
@@ -2196,7 +2229,9 @@ function createWorkspacePermissionValue(confirmed) {
   status.className = confirmed ? "is-confirmed" : "is-unconfirmed";
   setWorkspaceTranslatedText(
     status,
-    confirmed ? "review_permission_confirmed" : "review_permission_not_recorded",
+    confirmed
+      ? "review_permission_confirmed"
+      : "review_permission_not_recorded",
     confirmed ? "Confirmed" : "Not recorded",
   );
   return status;
@@ -2220,43 +2255,51 @@ function createContentWorkspaceSubmissionDetails(item) {
   if (item.type === "event") {
     const permission = content.publicationPermission || {};
     body.append(
-      createWorkspaceSubmissionSection("review_submitter_record", "Submitter record", [
-        { labelKey: "event_submitter_rank", label: "Rank", value: content.submitter?.rank },
-        {
-          labelKey: "event_submitter_first_name",
-          label: "First name",
-          value: content.submitter?.firstName,
-        },
-        {
-          labelKey: "event_submitter_last_name",
-          label: "Last name",
-          value: content.submitter?.lastName,
-        },
-        {
-          labelKey: "event_submitter_unit_role",
-          label: "Unit or role",
-          value: content.submitter?.unitRole,
-          wide: true,
-        },
-        {
-          labelKey: "event_submitter_email",
-          label: "Email",
-          value: content.submitter?.email,
-          wide: true,
-        },
-        {
-          labelKey: "event_submitter_phone",
-          label: "Phone",
-          value: content.submitter?.phone,
-          wide: true,
-        },
-        {
-          labelKey: "submitted_by",
-          label: "Submitted by",
-          value: getWorkspaceUserName(content.createdBy),
-          wide: true,
-        },
-      ]),
+      createWorkspaceSubmissionSection(
+        "review_submitter_record",
+        "Submitter record",
+        [
+          {
+            labelKey: "event_submitter_rank",
+            label: "Rank",
+            value: content.submitter?.rank,
+          },
+          {
+            labelKey: "event_submitter_first_name",
+            label: "First name",
+            value: content.submitter?.firstName,
+          },
+          {
+            labelKey: "event_submitter_last_name",
+            label: "Last name",
+            value: content.submitter?.lastName,
+          },
+          {
+            labelKey: "event_submitter_unit_role",
+            label: "Unit or role",
+            value: content.submitter?.unitRole,
+            wide: true,
+          },
+          {
+            labelKey: "event_submitter_email",
+            label: "Email",
+            value: content.submitter?.email,
+            wide: true,
+          },
+          {
+            labelKey: "event_submitter_phone",
+            label: "Phone",
+            value: content.submitter?.phone,
+            wide: true,
+          },
+          {
+            labelKey: "submitted_by",
+            label: "Submitted by",
+            value: getWorkspaceUserName(content.createdBy),
+            wide: true,
+          },
+        ],
+      ),
       createWorkspaceSubmissionSection(
         "review_authorization_record",
         "Publication authorization",
@@ -2264,7 +2307,9 @@ function createContentWorkspaceSubmissionDetails(item) {
           {
             labelKey: "review_permission_status",
             label: "Permission status",
-            value: createWorkspacePermissionValue(permission.confirmed === true),
+            value: createWorkspacePermissionValue(
+              permission.confirmed === true,
+            ),
           },
           {
             labelKey: "review_confirmed_by",
@@ -2287,41 +2332,45 @@ function createContentWorkspaceSubmissionDetails(item) {
     const consent = content.publicationConsent || {};
     const memberReview = content.memberReviewConfirmation || {};
     body.append(
-      createWorkspaceSubmissionSection("review_submitter_record", "Submitter record", [
-        {
-          labelKey: "retirement_submitter_first_name",
-          label: "First name",
-          value: content.submitter?.firstName,
-        },
-        {
-          labelKey: "retirement_submitter_last_name",
-          label: "Last name",
-          value: content.submitter?.lastName,
-        },
-        {
-          labelKey: "retirement_submitter_relationship",
-          label: "Relationship",
-          value: getWorkspaceRelationship(content.submitter?.relationship),
-        },
-        {
-          labelKey: "retirement_submitter_email",
-          label: "Email",
-          value: content.submitter?.email,
-          wide: true,
-        },
-        {
-          labelKey: "retirement_submitter_unit",
-          label: "Unit",
-          value: content.submitter?.unit,
-          wide: true,
-        },
-        {
-          labelKey: "submitted_by",
-          label: "Submitted by",
-          value: getWorkspaceUserName(content.createdBy),
-          wide: true,
-        },
-      ]),
+      createWorkspaceSubmissionSection(
+        "review_submitter_record",
+        "Submitter record",
+        [
+          {
+            labelKey: "retirement_submitter_first_name",
+            label: "First name",
+            value: content.submitter?.firstName,
+          },
+          {
+            labelKey: "retirement_submitter_last_name",
+            label: "Last name",
+            value: content.submitter?.lastName,
+          },
+          {
+            labelKey: "retirement_submitter_relationship",
+            label: "Relationship",
+            value: getWorkspaceRelationship(content.submitter?.relationship),
+          },
+          {
+            labelKey: "retirement_submitter_email",
+            label: "Email",
+            value: content.submitter?.email,
+            wide: true,
+          },
+          {
+            labelKey: "retirement_submitter_unit",
+            label: "Unit",
+            value: content.submitter?.unit,
+            wide: true,
+          },
+          {
+            labelKey: "submitted_by",
+            label: "Submitted by",
+            value: getWorkspaceUserName(content.createdBy),
+            wide: true,
+          },
+        ],
+      ),
       createWorkspaceSubmissionSection(
         "review_authorization_record",
         "Publication authorization",
@@ -2329,7 +2378,9 @@ function createContentWorkspaceSubmissionDetails(item) {
           {
             labelKey: "retirement_member_review_status",
             label: "Member review confirmation",
-            value: createWorkspacePermissionValue(memberReview.confirmed === true),
+            value: createWorkspacePermissionValue(
+              memberReview.confirmed === true,
+            ),
           },
           {
             labelKey: "review_confirmed_on",
@@ -2354,18 +2405,35 @@ function createContentWorkspaceSubmissionDetails(item) {
   if (item.type === "lastPost") {
     const permission = content.publicationPermission || {};
     body.append(
-      createWorkspaceSubmissionSection("last_post_submitter_heading", "Submitter", [
-        { labelKey: "rank", label: "Rank", value: content.submitter?.rank },
-        { labelKey: "first_name", label: "First name", value: content.submitter?.firstName },
-        { labelKey: "last_name", label: "Last name", value: content.submitter?.lastName },
-        { labelKey: "email", label: "Email", value: content.submitter?.email, wide: true },
-        {
-          labelKey: "submitted_by",
-          label: "Submitted by",
-          value: getWorkspaceUserName(content.createdBy),
-          wide: true,
-        },
-      ]),
+      createWorkspaceSubmissionSection(
+        "last_post_submitter_heading",
+        "Submitter",
+        [
+          { labelKey: "rank", label: "Rank", value: content.submitter?.rank },
+          {
+            labelKey: "first_name",
+            label: "First name",
+            value: content.submitter?.firstName,
+          },
+          {
+            labelKey: "last_name",
+            label: "Last name",
+            value: content.submitter?.lastName,
+          },
+          {
+            labelKey: "email",
+            label: "Email",
+            value: content.submitter?.email,
+            wide: true,
+          },
+          {
+            labelKey: "submitted_by",
+            label: "Submitted by",
+            value: getWorkspaceUserName(content.createdBy),
+            wide: true,
+          },
+        ],
+      ),
       createWorkspaceSubmissionSection(
         "review_authorization_record",
         "Publication authorization",
@@ -2373,7 +2441,9 @@ function createContentWorkspaceSubmissionDetails(item) {
           {
             labelKey: "review_permission_status",
             label: "Permission status",
-            value: createWorkspacePermissionValue(permission.confirmed === true),
+            value: createWorkspacePermissionValue(
+              permission.confirmed === true,
+            ),
           },
           {
             labelKey: "review_confirmed_by",
@@ -2394,25 +2464,29 @@ function createContentWorkspaceSubmissionDetails(item) {
 
   if (item.type === "retirementComment") {
     body.append(
-      createWorkspaceSubmissionSection("review_submitter_record", "Submitter record", [
-        {
-          labelKey: "submitted_by",
-          label: "Submitted by",
-          value: getWorkspaceUserName(content.author),
-        },
-        {
-          labelKey: "email",
-          label: "Email",
-          value: content.author?.email,
-          wide: true,
-        },
-        {
-          labelKey: "submitted_on",
-          label: "Submitted on",
-          value: createWorkspaceDateValue(content.createdAt),
-          wide: true,
-        },
-      ]),
+      createWorkspaceSubmissionSection(
+        "review_submitter_record",
+        "Submitter record",
+        [
+          {
+            labelKey: "submitted_by",
+            label: "Submitted by",
+            value: getWorkspaceUserName(content.author),
+          },
+          {
+            labelKey: "email",
+            label: "Email",
+            value: content.author?.email,
+            wide: true,
+          },
+          {
+            labelKey: "submitted_on",
+            label: "Submitted on",
+            value: createWorkspaceDateValue(content.createdAt),
+            wide: true,
+          },
+        ],
+      ),
     );
   }
 
@@ -2612,7 +2686,9 @@ function createRemovalActions(item) {
       "content_workspace_restore",
       "Restore content",
     );
-    restore.addEventListener("click", () => changeContentVisibility(item, "restore"));
+    restore.addEventListener("click", () =>
+      changeContentVisibility(item, "restore"),
+    );
     actions.append(restore);
   }
 
@@ -2630,7 +2706,9 @@ function createRemovalActions(item) {
       "content_workspace_remove",
       "Remove from public view",
     );
-    remove.addEventListener("click", () => changeContentVisibility(item, "remove"));
+    remove.addEventListener("click", () =>
+      changeContentVisibility(item, "remove"),
+    );
     actions.append(remove);
   }
 
@@ -2663,7 +2741,9 @@ function createContentWorkspaceBottomActions(item, { canSave = false } = {}) {
       "content_workspace_save_changes",
       "Save changes",
     );
-    save.addEventListener("click", () => saveContentWorkspaceChanges(item, save));
+    save.addEventListener("click", () =>
+      saveContentWorkspaceChanges(item, save),
+    );
     saveActions.append(save);
     primaryActions.append(saveActions);
   }
@@ -2728,9 +2808,9 @@ function createContentWorkspaceRsvpTable(rsvps) {
     response.className = `is-${rsvp.response === "accepted" ? "accepted" : "declined"}`;
     response.textContent = getContentWorkspaceRsvpResponseLabel(rsvp.response);
     const attendee = document.createElement("td");
-    attendee.textContent = [rsvp.rank, rsvp.firstName, rsvp.lastName]
-      .filter(Boolean)
-      .join(" ") || "—";
+    attendee.textContent =
+      [rsvp.rank, rsvp.firstName, rsvp.lastName].filter(Boolean).join(" ") ||
+      "—";
     const email = document.createElement("td");
     email.textContent = rsvp.email || "—";
     const unitOrStatus = document.createElement("td");
@@ -2750,7 +2830,11 @@ function createContentWorkspaceRsvpExport(item) {
   const download = document.createElement("button");
   download.type = "button";
   download.className = "admin-work-zone-button is-secondary is-compact";
-  setWorkspaceTranslatedText(download, "event_rsvp_export", "Download RSVP CSV");
+  setWorkspaceTranslatedText(
+    download,
+    "event_rsvp_export",
+    "Download RSVP CSV",
+  );
   download.addEventListener("click", async () => {
     const token = getContentWorkspaceToken();
     if (!token) return;
@@ -2807,7 +2891,9 @@ async function loadContentWorkspaceRsvps(item, panel, content) {
       return;
     }
 
-    const accepted = rsvps.filter((rsvp) => rsvp.response === "accepted").length;
+    const accepted = rsvps.filter(
+      (rsvp) => rsvp.response === "accepted",
+    ).length;
     const summary = document.createElement("p");
     summary.className = "content-workspace-rsvp-summary";
     setContentWorkspaceRsvpSummary(summary, accepted, rsvps.length - accepted);
@@ -2846,7 +2932,11 @@ function createContentWorkspaceRsvpPanel(item) {
   const panel = document.createElement("section");
   panel.className = "content-workspace-rsvp-panel";
   const heading = document.createElement("h2");
-  setWorkspaceTranslatedText(heading, "content_workspace_rsvp_heading", "RSVPs");
+  setWorkspaceTranslatedText(
+    heading,
+    "content_workspace_rsvp_heading",
+    "RSVPs",
+  );
   const content = document.createElement("div");
   content.className = "content-workspace-rsvp-content";
   const loading = document.createElement("p");
@@ -3028,7 +3118,11 @@ function renderContentWorkspaceDetail() {
 
 function getRevisionActor(revision) {
   const actor = revision?.actorSnapshot || {};
-  return actor.accountName || actor.username || getText("unknown_user", "Unknown user");
+  return (
+    actor.accountName ||
+    actor.username ||
+    getText("unknown_user", "Unknown user")
+  );
 }
 
 function getRevisionFieldTranslation(field) {
@@ -3205,7 +3299,10 @@ async function loadRevisionHistory(item, container) {
           revision.language === "en" ? "English" : "French",
         );
       } else {
-        language.textContent = getText("content_workspace_history", "Revision history");
+        language.textContent = getText(
+          "content_workspace_history",
+          "Revision history",
+        );
       }
 
       const actor = document.createElement("span");
@@ -3217,7 +3314,10 @@ async function loadRevisionHistory(item, container) {
         "content_workspace_edited_by",
         "Edited by",
       );
-      actor.append(actorLabel, document.createTextNode(` ${getRevisionActor(revision)}`));
+      actor.append(
+        actorLabel,
+        document.createTextNode(` ${getRevisionActor(revision)}`),
+      );
 
       const date = document.createElement("span");
       date.className = "content-workspace-revision-date";
@@ -3412,8 +3512,12 @@ function getContentWorkspaceRecordSaveRoute(item) {
 }
 
 async function uploadContentWorkspaceImage(item, form) {
-  const imageEditor = form.querySelector("[data-content-workspace-image-editor]");
-  const file = imageEditor?.querySelector("[data-content-workspace-image-file]");
+  const imageEditor = form.querySelector(
+    "[data-content-workspace-image-editor]",
+  );
+  const file = imageEditor?.querySelector(
+    "[data-content-workspace-image-file]",
+  );
   const selectedFile = file?.files?.[0];
   if (!imageEditor || !selectedFile) return;
 
@@ -3446,7 +3550,10 @@ async function uploadContentWorkspaceImage(item, form) {
       imageEditor.dataset.displayAspectRatio,
     );
   }
-  uploadData.append("sourceName", getContentWorkspaceImageSourceName(item, form));
+  uploadData.append(
+    "sourceName",
+    getContentWorkspaceImageSourceName(item, form),
+  );
 
   const result = await contentWorkspaceApiJson("/api/upload", {
     method: "POST",
@@ -3454,7 +3561,10 @@ async function uploadContentWorkspaceImage(item, form) {
   });
   if (!result.url) {
     throw new Error(
-      getText("content_workspace_image_upload_error", "Could not upload image."),
+      getText(
+        "content_workspace_image_upload_error",
+        "Could not upload image.",
+      ),
     );
   }
 
@@ -3468,7 +3578,9 @@ async function uploadContentWorkspaceImage(item, form) {
     imageUrl: "imageDisplayUrl",
   };
   const displayField = displayFieldBySource[imageEditor.dataset.sourceField];
-  const displayValue = displayField ? form.elements.namedItem(displayField) : null;
+  const displayValue = displayField
+    ? form.elements.namedItem(displayField)
+    : null;
   if (displayValue instanceof HTMLInputElement) {
     displayValue.value = result.display?.url || "";
   }
@@ -3566,9 +3678,11 @@ function getContentLanguageSaveRequest(item, form) {
 }
 
 function getContentWorkspaceSaveForms() {
-  return [...contentWorkspaceDetail.querySelectorAll(
-    ".content-workspace-language-editor, .content-workspace-record-form",
-  )];
+  return [
+    ...contentWorkspaceDetail.querySelectorAll(
+      ".content-workspace-language-editor, .content-workspace-record-form",
+    ),
+  ];
 }
 
 function getContentWorkspaceFormState(form) {
@@ -3604,7 +3718,9 @@ function updateContentWorkspaceSaveAction() {
 
 function discardContentWorkspaceDrafts(item) {
   ["en", "fr"].forEach((language) => {
-    contentWorkspaceState.editorDrafts.delete(getEditorDraftKey(item, language));
+    contentWorkspaceState.editorDrafts.delete(
+      getEditorDraftKey(item, language),
+    );
   });
 }
 
@@ -3637,10 +3753,7 @@ async function selectContentWorkspaceItem(item) {
           choices: [
             {
               value: "save",
-              label: getText(
-                "content_workspace_save_changes",
-                "Save changes",
-              ),
+              label: getText("content_workspace_save_changes", "Save changes"),
               description: getText(
                 "content_workspace_save_before_switching",
                 "Save your edits, then open the selected record.",
@@ -3720,18 +3833,19 @@ async function saveContentWorkspaceChanges(item, button) {
     "Saving…",
   );
   try {
-    const saveRequests = item.type === "newsArticle"
-      ? [getNewsArticleSaveRequest(item)]
-      : [
-          ...(recordForm
-            ? [await getContentWorkspaceRecordSaveRequest(item, recordForm)]
-            : []),
-          ...forms
-            .filter((form) =>
-              form.classList.contains("content-workspace-language-editor"),
-            )
-            .map((form) => getContentLanguageSaveRequest(item, form)),
-        ].filter(Boolean);
+    const saveRequests =
+      item.type === "newsArticle"
+        ? [getNewsArticleSaveRequest(item)]
+        : [
+            ...(recordForm
+              ? [await getContentWorkspaceRecordSaveRequest(item, recordForm)]
+              : []),
+            ...forms
+              .filter((form) =>
+                form.classList.contains("content-workspace-language-editor"),
+              )
+              .map((form) => getContentLanguageSaveRequest(item, form)),
+          ].filter(Boolean);
 
     if (!saveRequests.length) return false;
 
@@ -3821,11 +3935,12 @@ async function changeContentVisibility(item, action) {
 
   if (!confirmed) return;
 
-  const route = item.type === "newsArticle"
-    ? `/api/news/${encodeURIComponent(item._id)}/${isRestore ? "restore" : "hide"}`
-    : contentWorkspaceRoutes[item.type]
-      ? `${contentWorkspaceRoutes[item.type]}/${encodeURIComponent(item._id)}/${isRestore ? "restore" : "hide"}`
-      : "";
+  const route =
+    item.type === "newsArticle"
+      ? `/api/news/${encodeURIComponent(item._id)}/${isRestore ? "restore" : "hide"}`
+      : contentWorkspaceRoutes[item.type]
+        ? `${contentWorkspaceRoutes[item.type]}/${encodeURIComponent(item._id)}/${isRestore ? "restore" : "hide"}`
+        : "";
   if (!route) return;
 
   try {
@@ -3834,7 +3949,10 @@ async function changeContentVisibility(item, action) {
       result.message ||
         (isRestore
           ? getText("content_workspace_restored", "Content restored.")
-          : getText("content_workspace_removed", "Content removed from public view.")),
+          : getText(
+              "content_workspace_removed",
+              "Content removed from public view.",
+            )),
     );
     await loadContentWorkspace({ preserveSelection: true });
   } catch (error) {
@@ -3926,12 +4044,16 @@ async function loadContentWorkspace({
       setWorkspaceMessage(
         contentWorkspaceState.items.length
           ? ""
-          : getText("content_workspace_empty", "No content matches these filters."),
+          : getText(
+              "content_workspace_empty",
+              "No content matches these filters.",
+            ),
       );
     }
 
     const nextCursor = String(data.nextCursor || "");
-    contentWorkspaceState.hasMore = data.hasMore === true && Boolean(nextCursor);
+    contentWorkspaceState.hasMore =
+      data.hasMore === true && Boolean(nextCursor);
     contentWorkspaceState.nextCursor = contentWorkspaceState.hasMore
       ? nextCursor
       : "";
@@ -4067,7 +4189,10 @@ contentWorkspaceSearch.addEventListener("input", () => {
   }, 250);
 });
 
-contentWorkspaceClearFilters.addEventListener("click", clearContentWorkspaceFilters);
+contentWorkspaceClearFilters.addEventListener(
+  "click",
+  clearContentWorkspaceFilters,
+);
 contentWorkspaceLoadMoreButton.addEventListener("click", () => {
   void loadContentWorkspace({ append: true });
 });

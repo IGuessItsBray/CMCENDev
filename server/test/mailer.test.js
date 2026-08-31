@@ -24,7 +24,9 @@ test('uses the sender domain as the SMTP HELO fallback', () => {
     'cmcen.example.ca',
   );
   assert.equal(
-    getSmtpClientName({ MAIL_FROM: 'CMCEN / RCMCE <noreply@cmcen.example.ca>' }),
+    getSmtpClientName({
+      MAIL_FROM: 'CMCEN / RCMCE <noreply@cmcen.example.ca>',
+    }),
     'cmcen.example.ca',
   );
   assert.equal(getSmtpClientName({ MAIL_FROM: 'invalid' }), undefined);
@@ -43,8 +45,14 @@ test('uses explicit SMTP security modes', () => {
 
 test('disables all email delivery only when explicitly configured', () => {
   assert.equal(isEmailSendingDisabled({ DISABLE_EMAIL_SENDING: 'true' }), true);
-  assert.equal(isEmailSendingDisabled({ DISABLE_EMAIL_SENDING: ' TRUE ' }), true);
-  assert.equal(isEmailSendingDisabled({ DISABLE_EMAIL_SENDING: 'false' }), false);
+  assert.equal(
+    isEmailSendingDisabled({ DISABLE_EMAIL_SENDING: ' TRUE ' }),
+    true,
+  );
+  assert.equal(
+    isEmailSendingDisabled({ DISABLE_EMAIL_SENDING: 'false' }),
+    false,
+  );
   assert.equal(isEmailSendingDisabled({}), false);
 });
 

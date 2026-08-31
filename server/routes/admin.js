@@ -26,7 +26,10 @@ const {
 } = require('../config/permissions');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog, snapshotUser } = require('../services/audit-log');
-const { cleanLocalizedText, cleanString } = require('../services/content-utils');
+const {
+  cleanLocalizedText,
+  cleanString,
+} = require('../services/content-utils');
 const { isEmailSendingDisabled, sendMail } = require('../services/mailer');
 const {
   createUnsubscribeToken,
@@ -45,7 +48,10 @@ const {
   getRetirementMessageSnapshot,
   getRetirementMessageTitle,
 } = require('../services/content-snapshots');
-const { hideContent, restoreContent } = require('../services/content-lifecycle');
+const {
+  hideContent,
+  restoreContent,
+} = require('../services/content-lifecycle');
 const { recordContentRevision } = require('../services/content-revisions');
 const { linkMediaAssetToSource } = require('../services/media-assets');
 const s3Client = require('../storage');
@@ -68,7 +74,12 @@ function applyAdminStringFields(document, updates, fieldNames, changedFields) {
   return '';
 }
 
-function applyAdminLocalizedFields(document, updates, fieldNames, changedFields) {
+function applyAdminLocalizedFields(
+  document,
+  updates,
+  fieldNames,
+  changedFields,
+) {
   for (const fieldName of fieldNames) {
     if (!Object.prototype.hasOwnProperty.call(updates, fieldName)) continue;
     if (!isPlainObject(updates[fieldName])) {
@@ -171,7 +182,9 @@ async function saveAdminContentEdit({
   const validationError = applyUpdates(document, req.body, changedFields);
   if (validationError) return res.status(400).json({ error: validationError });
   if (!changedFields.length) {
-    return res.status(400).json({ error: 'Provide at least one editable field' });
+    return res
+      .status(400)
+      .json({ error: 'Provide at least one editable field' });
   }
 
   if (document.schema.path('updatedBy')) {
@@ -433,7 +446,9 @@ function decodeContentWorkspaceCursor(value) {
   if (!cursor) return {};
 
   try {
-    const decoded = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+    const decoded = JSON.parse(
+      Buffer.from(cursor, 'base64url').toString('utf8'),
+    );
 
     if (!isPlainObject(decoded) || !isPlainObject(decoded.cursors)) {
       return undefined;
@@ -746,7 +761,9 @@ router.get(
       }
 
       if (!CONTENT_WORKSPACE_TRANSLATION_FILTERS.includes(translation)) {
-        return res.status(400).json({ error: 'Unsupported translation status' });
+        return res
+          .status(400)
+          .json({ error: 'Unsupported translation status' });
       }
 
       if (contentId && !mongoose.Types.ObjectId.isValid(contentId)) {
@@ -754,7 +771,9 @@ router.get(
       }
 
       if (cursors === undefined) {
-        return res.status(400).json({ error: 'Invalid content workspace cursor' });
+        return res
+          .status(400)
+          .json({ error: 'Invalid content workspace cursor' });
       }
 
       const contentFilter = {
@@ -799,7 +818,9 @@ router.get(
             .sort({ updatedAt: -1, _id: -1 })
             .limit(limit + 1)
             .lean()
-            .then((records) => records.map((record) => toContentWorkspaceItem('event', record))),
+            .then((records) =>
+              records.map((record) => toContentWorkspaceItem('event', record)),
+            ),
         );
       }
 
@@ -844,7 +865,9 @@ router.get(
             .limit(limit + 1)
             .lean()
             .then((records) =>
-              records.map((record) => toContentWorkspaceItem('lastPost', record)),
+              records.map((record) =>
+                toContentWorkspaceItem('lastPost', record),
+              ),
             ),
         );
       }
@@ -913,11 +936,15 @@ router.get(
       return res.json({
         items,
         hasMore,
-        nextCursor: hasMore ? getContentWorkspaceNextCursor(cursors, items) : '',
+        nextCursor: hasMore
+          ? getContentWorkspaceNextCursor(cursors, items)
+          : '',
       });
     } catch (error) {
       console.error('Could not load content workspace:', error);
-      return res.status(500).json({ error: 'Could not load content workspace' });
+      return res
+        .status(500)
+        .json({ error: 'Could not load content workspace' });
     }
   },
 );
@@ -937,7 +964,11 @@ router.get(
         return res.status(400).json({ error: 'Unsupported content type' });
       }
 
-      if (!getPermittedContentWorkspaceTypes(req.permissions).includes(contentType)) {
+      if (
+        !getPermittedContentWorkspaceTypes(req.permissions).includes(
+          contentType,
+        )
+      ) {
         return res.status(403).json({ error: 'Insufficient permissions' });
       }
 
@@ -962,7 +993,9 @@ router.get(
       }
 
       console.error('Could not load content revisions:', error);
-      return res.status(500).json({ error: 'Could not load content revisions' });
+      return res
+        .status(500)
+        .json({ error: 'Could not load content revisions' });
     }
   },
 );
@@ -1235,11 +1268,9 @@ function getPageMediaReferences(blocks = []) {
 
     const values = [item.mediaKey, item.mediaUrl];
 
-    Object.entries(item.mediaVariants || {}).forEach(
-      ([, variant]) => {
-        values.push(variant?.key, variant?.url);
-      },
-    );
+    Object.entries(item.mediaVariants || {}).forEach(([, variant]) => {
+      values.push(variant?.key, variant?.url);
+    });
 
     references.push([values, fieldPrefix]);
   };
@@ -1381,9 +1412,7 @@ function addAttachmentAliases(attachmentMap, aliasKeys) {
 
 function getMediaAssetAttachmentKeys(asset) {
   const originalKey = asset?.originalKey || asset?.key || '';
-  const originalMatch = originalKey.match(
-    /^(.*)\/original\.[a-z0-9]+$/iu,
-  );
+  const originalMatch = originalKey.match(/^(.*)\/original\.[a-z0-9]+$/iu);
   const generatedVariantKeys = originalMatch
     ? ['thumb', 'medium', 'large', 'hero'].map(
         (name) => `${originalMatch[1]}/${name}.webp`,
@@ -1412,34 +1441,34 @@ function getMediaAssetAttachmentKeys(asset) {
 async function getMediaAttachments() {
   const [events, retirementMessages, lastPostMessages, newsArticles, pages] =
     await Promise.all([
-    Event.find({
-      imagePath: { $nin: [null, ''] },
-    })
-      .select('title status imagePath updatedAt createdAt')
-      .lean(),
-    RetirementMessage.find({
-      photoUrl: { $nin: [null, ''] },
-    })
-      .select('retiree status photoUrl updatedAt createdAt')
-      .lean(),
-    LastPostMessage.find({
-      $or: [
-        { imageUrl: { $nin: [null, ''] } },
-        { photoUrl: { $nin: [null, ''] } },
-      ],
-    })
-      .select('title deceased status imageUrl photoUrl updatedAt createdAt')
-      .lean(),
-    NewsArticle.find({
-      $or: [
-        { imageUrl: { $nin: [null, ''] } },
-        { imageDisplayUrl: { $nin: [null, ''] } },
-      ],
-    })
-      .select('title status imageUrl imageDisplayUrl')
-      .lean(),
-    Page.find({}).select('title slug status blocks').lean(),
-  ]);
+      Event.find({
+        imagePath: { $nin: [null, ''] },
+      })
+        .select('title status imagePath updatedAt createdAt')
+        .lean(),
+      RetirementMessage.find({
+        photoUrl: { $nin: [null, ''] },
+      })
+        .select('retiree status photoUrl updatedAt createdAt')
+        .lean(),
+      LastPostMessage.find({
+        $or: [
+          { imageUrl: { $nin: [null, ''] } },
+          { photoUrl: { $nin: [null, ''] } },
+        ],
+      })
+        .select('title deceased status imageUrl photoUrl updatedAt createdAt')
+        .lean(),
+      NewsArticle.find({
+        $or: [
+          { imageUrl: { $nin: [null, ''] } },
+          { imageDisplayUrl: { $nin: [null, ''] } },
+        ],
+      })
+        .select('title status imageUrl imageDisplayUrl')
+        .lean(),
+      Page.find({}).select('title slug status blocks').lean(),
+    ]);
 
   return getMediaAttachmentMap(
     events,
@@ -3314,7 +3343,8 @@ router.post(
     const body = String(req.body?.body || '').trim();
     if (isEmailSendingDisabled()) {
       return res.status(202).json({
-        message: 'News blast delivery skipped because email sending is disabled',
+        message:
+          'News blast delivery skipped because email sending is disabled',
         skipped: true,
       });
     }
@@ -3325,12 +3355,10 @@ router.post(
         .status(400)
         .json({ error: 'A subject and message are required' });
     if (!sender.ready || !baseUrl)
-      return res
-        .status(503)
-        .json({
-          error:
-            'CASL sender details and APP_BASE_URL must be configured before sending a news blast',
-        });
+      return res.status(503).json({
+        error:
+          'CASL sender details and APP_BASE_URL must be configured before sending a news blast',
+      });
     try {
       const recipients = await User.find({
         'emailSubscriptions.newsAnnouncements.subscribed': true,
@@ -3338,11 +3366,9 @@ router.post(
         'emailSubscriptions.newsAnnouncements.unsubscribedAt': null,
       }).select('email accountName preferredLanguage');
       if (!recipients.length)
-        return res
-          .status(400)
-          .json({
-            error: 'There are no members subscribed to news announcements',
-          });
+        return res.status(400).json({
+          error: 'There are no members subscribed to news announcements',
+        });
       const blast = await NewsBlast.create({
         subject,
         body,
@@ -4138,7 +4164,8 @@ router.patch(
         applyUpdates(lastPost, body, changedFields) {
           if (!isPlainObject(body)) return 'Request body must be an object';
           if (Object.prototype.hasOwnProperty.call(body, 'deceased')) {
-            if (!isPlainObject(body.deceased)) return 'deceased must be an object';
+            if (!isPlainObject(body.deceased))
+              return 'deceased must be an object';
             const error = applyAdminStringFields(
               lastPost.deceased,
               body.deceased,
@@ -4164,7 +4191,9 @@ router.patch(
       });
     } catch (error) {
       console.error('Admin Last Post update failed:', error);
-      return res.status(500).json({ error: 'Could not update Last Post notice' });
+      return res
+        .status(500)
+        .json({ error: 'Could not update Last Post notice' });
     }
   },
 );
@@ -4206,7 +4235,9 @@ router.patch(
       });
     } catch (error) {
       console.error('Admin retirement comment update failed:', error);
-      return res.status(500).json({ error: 'Could not update retirement comment' });
+      return res
+        .status(500)
+        .json({ error: 'Could not update retirement comment' });
     }
   },
 );
@@ -4231,7 +4262,8 @@ router.patch(
         applyUpdates(message, body, changedFields) {
           if (!isPlainObject(body)) return 'Request body must be an object';
           if (Object.prototype.hasOwnProperty.call(body, 'retiree')) {
-            if (!isPlainObject(body.retiree)) return 'retiree must be an object';
+            if (!isPlainObject(body.retiree))
+              return 'retiree must be an object';
             const error = applyAdminStringFields(
               message.retiree,
               body.retiree,
@@ -4239,7 +4271,12 @@ router.patch(
               changedFields,
             );
             if (error) return error;
-            if (Object.prototype.hasOwnProperty.call(body.retiree, 'retirementDate')) {
+            if (
+              Object.prototype.hasOwnProperty.call(
+                body.retiree,
+                'retirementDate',
+              )
+            ) {
               const value = body.retiree.retirementDate;
               if (value !== null && typeof value !== 'string') {
                 return 'retirementDate must be an ISO date string or null';
@@ -4269,7 +4306,9 @@ router.patch(
       });
     } catch (error) {
       console.error('Admin retirement message update failed:', error);
-      return res.status(500).json({ error: 'Could not update retirement message' });
+      return res
+        .status(500)
+        .json({ error: 'Could not update retirement message' });
     }
   },
 );
@@ -4355,12 +4394,14 @@ router.patch(
           );
           if (stringError) return stringError;
           if (Object.prototype.hasOwnProperty.call(body, 'allDay')) {
-            if (typeof body.allDay !== 'boolean') return 'allDay must be a boolean';
+            if (typeof body.allDay !== 'boolean')
+              return 'allDay must be a boolean';
             event.allDay = body.allDay;
             changedFields.push('allDay');
           }
           for (const fieldName of ['startDate', 'endDate']) {
-            if (!Object.prototype.hasOwnProperty.call(body, fieldName)) continue;
+            if (!Object.prototype.hasOwnProperty.call(body, fieldName))
+              continue;
             const value = body[fieldName];
             if (value !== null && typeof value !== 'string') {
               return `${fieldName} must be an ISO date string or null`;
@@ -4744,7 +4785,9 @@ function buildContentRestoreHandler({
       }
 
       console.error(`Admin ${displayName} restore failed:`, error);
-      return res.status(500).json({ error: `Failed to restore ${displayName}` });
+      return res
+        .status(500)
+        .json({ error: `Failed to restore ${displayName}` });
     }
   };
 }

@@ -23,7 +23,9 @@ const eventTitleError = document.getElementById("eventTitleError");
 const eventAllDay = document.getElementById("eventAllDay");
 const eventRsvpEnabled = document.getElementById("eventRsvpEnabled");
 const eventRsvpDeadline = document.getElementById("eventRsvpDeadline");
-const eventRsvpDeadlineField = document.getElementById("eventRsvpDeadlineField");
+const eventRsvpDeadlineField = document.getElementById(
+  "eventRsvpDeadlineField",
+);
 const eventStartDate = document.getElementById("eventStartDate");
 const eventStartTime = document.getElementById("eventStartTime");
 const eventEndDate = document.getElementById("eventEndDate");

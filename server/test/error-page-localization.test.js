@@ -12,7 +12,10 @@ const translations = JSON.parse(
 );
 
 test('localizes the public 404 page', () => {
-  const markup = fs.readFileSync(path.join(publicDirectory, '404.html'), 'utf8');
+  const markup = fs.readFileSync(
+    path.join(publicDirectory, '404.html'),
+    'utf8',
+  );
   const keys = Array.from(markup.matchAll(/data-i18n="([^"]+)"/gu)).map(
     (match) => match[1],
   );

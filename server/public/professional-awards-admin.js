@@ -47,10 +47,7 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "content-workspace-record";
-      button.classList.toggle(
-        "is-selected",
-        String(award._id) === selectedId,
-      );
+      button.classList.toggle("is-selected", String(award._id) === selectedId);
       button.textContent = award.title;
       button.setAttribute(
         "aria-pressed",
@@ -75,11 +72,7 @@
     form.className = "content-workspace-record-form";
     form.append(
       createInput("Year", "year", recipient?.year, "number"),
-      createInput(
-        "Recipient name and postnominals",
-        "name",
-        recipient?.name,
-      ),
+      createInput("Recipient name and postnominals", "name", recipient?.name),
       createInput("Rank, trade, or role", "role", recipient?.role),
     );
     if (usesMedallion) {

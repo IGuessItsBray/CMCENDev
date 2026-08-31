@@ -51,7 +51,7 @@ test('renders an all-day event without an end date as a single date', () => {
   );
 });
 
-test('loads a signed-in attendee\'s RSVP state with the event', () => {
+test("loads a signed-in attendee's RSVP state with the event", () => {
   assert.match(
     eventDetailScript,
     /const token = getStoredToken\(\);\s+const response = await fetch\([\s\S]*Authorization: `Bearer \$\{token\}`/u,
@@ -67,10 +67,16 @@ test('loads a signed-in attendee\'s RSVP state with the event', () => {
       remove() {},
       toggle() {},
     },
-    append(...children) { this.children.push(...children); },
-    appendChild(child) { this.children.push(child); },
+    append(...children) {
+      this.children.push(...children);
+    },
+    appendChild(child) {
+      this.children.push(child);
+    },
     addEventListener() {},
-    replaceChildren(...children) { this.children = children; },
+    replaceChildren(...children) {
+      this.children = children;
+    },
     removeAttribute() {},
     setAttribute() {},
   });
@@ -91,11 +97,12 @@ test('loads a signed-in attendee\'s RSVP state with the event', () => {
       getStoredAuthToken: () => 'test-token',
     },
     window: { location: { pathname: '/event', search: '' } },
-    translate: (key) => ({
-      event_rsvp_accepted: 'Your attendance has been recorded.',
-      event_rsvp_declined: 'Your decline has been recorded.',
-      event_rsvp_cancel: 'Cancel RSVP',
-    })[key] || key,
+    translate: (key) =>
+      ({
+        event_rsvp_accepted: 'Your attendance has been recorded.',
+        event_rsvp_declined: 'Your decline has been recorded.',
+        event_rsvp_cancel: 'Cancel RSVP',
+      })[key] || key,
   };
 
   vm.runInNewContext(
@@ -112,5 +119,8 @@ test('loads a signed-in attendee\'s RSVP state with the event', () => {
     'Your attendance has been recorded.',
   );
   assert.equal(getElement('eventRsvpActions').children.length, 1);
-  assert.equal(getElement('eventRsvpActions').children[0].textContent, 'Cancel RSVP');
+  assert.equal(
+    getElement('eventRsvpActions').children[0].textContent,
+    'Cancel RSVP',
+  );
 });

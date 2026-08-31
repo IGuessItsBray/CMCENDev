@@ -165,9 +165,7 @@ function routeFromFileName(fileName) {
 async function getSitemapUrls(baseUrl) {
   const files = await fs.readdir(PUBLIC_DIRECTORY);
   const staticUrls = files
-    .filter(
-      isPublicSitemapFile,
-    )
+    .filter(isPublicSitemapFile)
     .map((fileName) => ({ loc: `${baseUrl}${routeFromFileName(fileName)}` }));
   const pages = await Page.find({
     status: 'published',

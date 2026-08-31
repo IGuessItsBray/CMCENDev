@@ -3,9 +3,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const { setPublicAssetCacheHeaders } = require('../server');
-const {
-  setTranslationRuntimeCacheHeaders,
-} = require('../routes/translations');
+const { setTranslationRuntimeCacheHeaders } = require('../routes/translations');
 
 function createResponse() {
   return {

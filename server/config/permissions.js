@@ -57,7 +57,8 @@ const PERMISSION_CATALOG = Object.freeze([
     label: 'Manage event RSVPs',
     group: 'Events',
     action: 'read',
-    description: 'View RSVP attendee details and download RSVP CSV files for events.',
+    description:
+      'View RSVP attendee details and download RSVP CSV files for events.',
   },
   {
     key: 'content.delete',
@@ -116,7 +117,8 @@ const PERMISSION_CATALOG = Object.freeze([
     label: 'Feature pages on home',
     group: 'Pages',
     action: 'publish',
-    description: 'Place published public custom pages in the homepage news feed.',
+    description:
+      'Place published public custom pages in the homepage news feed.',
   },
   {
     key: 'navigation.manage',
@@ -273,9 +275,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canBypassReviewStages: 'review.bypass',
 });
 
-const CUSTOM_ROLE_DENYLIST = Object.freeze([
-  'review.bypass',
-]);
+const CUSTOM_ROLE_DENYLIST = Object.freeze(['review.bypass']);
 
 function getAllPermissionKeys() {
   return PERMISSION_CATALOG.map((permission) => permission.key);

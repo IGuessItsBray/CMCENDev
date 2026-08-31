@@ -386,9 +386,9 @@ function updateRetireeRankPicker({ clearSelection = true } = {}) {
       translationKey: "select_option",
       fallback: "Select an option",
     }),
-    ...RETIREE_RANK_OPTIONS.filter((option) => option.category === category).map(
-      createRetireeRankOption,
-    ),
+    ...RETIREE_RANK_OPTIONS.filter(
+      (option) => option.category === category,
+    ).map(createRetireeRankOption),
   );
 
   if (category === "civilian") {
@@ -848,9 +848,8 @@ function buildCertificateRequestData() {
   const familyMembers = Array.from(
     certificateFamilyList.querySelectorAll("[data-certificate-family-card]"),
   ).map((card) => ({
-    relationship: card.querySelector(
-      "[data-certificate-family-relationship]",
-    )?.value,
+    relationship: card.querySelector("[data-certificate-family-relationship]")
+      ?.value,
     relationshipOther: card.querySelector("[data-certificate-family-other]")
       ?.value,
     fullName: card.querySelector("[data-certificate-family-full-name]")?.value,
@@ -1149,7 +1148,6 @@ retirementSubmitForm.addEventListener("submit", async (event) => {
     if (typeof window.refreshAuthUI === "function") {
       window.refreshAuthUI();
     }
-
   } catch (error) {
     showRetirementSubmissionToast(
       error.message || translate("retirement_submit_error"),

@@ -435,7 +435,10 @@ describe('system and authentication', () => {
       action: 'user.invitation_activation_rejected',
     }).lean();
     assert.equal(rejectedAudit.metadata.outcome, 'invalid_or_expired');
-    assert.equal(JSON.stringify(rejectedAudit).includes(invitationToken), false);
+    assert.equal(
+      JSON.stringify(rejectedAudit).includes(invitationToken),
+      false,
+    );
   });
 
   test('records express weekly-brief consent and permits immediate email-link withdrawal', async () => {
@@ -589,9 +592,10 @@ describe('public search', () => {
     const sanitizedRetirementSearch = await request(app)
       .get('/api/search?q=alex%20example')
       .expect(200);
-    const sanitizedRetirementResult = sanitizedRetirementSearch.body.results.find(
-      (result) => result.sourceId === String(retirement._id),
-    );
+    const sanitizedRetirementResult =
+      sanitizedRetirementSearch.body.results.find(
+        (result) => result.sourceId === String(retirement._id),
+      );
     assert.equal(
       sanitizedRetirementResult.summary,
       'A retirement tribute for Alex Example from the C&E community.',
@@ -830,7 +834,10 @@ describe('news stories', () => {
       .expect(200);
     assert.equal(workspaceNews.body.items.length, 1);
     assert.equal(workspaceNews.body.items[0].type, 'newsArticle');
-    assert.equal(workspaceNews.body.items[0].content.title.en, payload.title.en);
+    assert.equal(
+      workspaceNews.body.items[0].content.title.en,
+      payload.title.en,
+    );
 
     const workspaceAll = await request(app)
       .get(`/api/admin/content?type=all&id=${articleId}`)
@@ -872,7 +879,10 @@ describe('news stories', () => {
       .set('Authorization', bearer(token))
       .expect(200);
     assert.equal(hiddenWorkspaceNews.body.items.length, 1);
-    assert.equal(hiddenWorkspaceNews.body.items[0].hiddenFromStatus, 'published');
+    assert.equal(
+      hiddenWorkspaceNews.body.items[0].hiddenFromStatus,
+      'published',
+    );
 
     const restored = await request(app)
       .patch(`/api/news/${articleId}/restore`)
@@ -883,7 +893,10 @@ describe('news stories', () => {
     const restoredPublicArticle = await request(app)
       .get(`/api/news/${articleId}`)
       .expect(200);
-    assert.equal(restoredPublicArticle.body.article.content.en, updatedEnglishContent);
+    assert.equal(
+      restoredPublicArticle.body.article.content.en,
+      updatedEnglishContent,
+    );
 
     await request(app)
       .patch(`/api/news/${articleId}`)
@@ -922,8 +935,8 @@ describe('news stories', () => {
       copyRevision.note,
       'Correct the copy while the story is removed.',
     );
-    const statusRevision = revisionHistory.body.revisions.find(
-      (revision) => revision.fields.includes('status'),
+    const statusRevision = revisionHistory.body.revisions.find((revision) =>
+      revision.fields.includes('status'),
     );
     assert.equal(statusRevision.after.status, 'draft');
 
@@ -1002,7 +1015,9 @@ describe('retirement message lifecycle', () => {
       .expect(200);
 
     assert.deepEqual(
-      matching.body.retirementMessages.map((message) => message.retiree.lastName),
+      matching.body.retirementMessages.map(
+        (message) => message.retiree.lastName,
+      ),
       ['Pioneer'],
     );
     assert.equal(matching.body.retirementMessages[0].submitter, undefined);
@@ -1016,7 +1031,9 @@ describe('retirement message lifecycle', () => {
       .get('/api/retirement-messages?year=2023')
       .expect(200);
     assert.deepEqual(
-      yearOnly.body.retirementMessages.map((message) => message.retiree.lastName),
+      yearOnly.body.retirementMessages.map(
+        (message) => message.retiree.lastName,
+      ),
       ['Retiree'],
     );
   });
@@ -1500,7 +1517,9 @@ describe('retirement message lifecycle', () => {
       'rejected',
     );
 
-    const frenchMessage = translatedMessage('Retirement message preserved in French');
+    const frenchMessage = translatedMessage(
+      'Retirement message preserved in French',
+    );
     await RetirementMessage.findByIdAndUpdate(message._id, {
       $set: { 'messages.fr': frenchMessage },
     });
@@ -1610,7 +1629,8 @@ describe('Last Post lifecycle', () => {
         surname: 'Notice',
       },
       messageLanguage: 'en',
-      message: 'A Last Post notice listed in the current user content workspace.',
+      message:
+        'A Last Post notice listed in the current user content workspace.',
       publicationPermissionConfirmed: true,
     };
 
@@ -1684,7 +1704,10 @@ describe('Last Post lifecycle', () => {
     const rejectionNotification = notifications.body.notifications.items.find(
       (item) => String(item.id) === String(lastPostId),
     );
-    assert.equal(rejectionNotification.href, `/submit-last-post?id=${lastPostId}`);
+    assert.equal(
+      rejectionNotification.href,
+      `/submit-last-post?id=${lastPostId}`,
+    );
 
     const editPayload = await request(app)
       .get(`/api/last-posts/${lastPostId}/edit`)
@@ -1712,7 +1735,8 @@ describe('Last Post lifecycle', () => {
       .set('Authorization', bearer(contributorLogin.body.token))
       .send({
         ...submission,
-        message: 'A revised Last Post notice with the requested service details.',
+        message:
+          'A revised Last Post notice with the requested service details.',
       })
       .expect(200);
     assert.equal(updated.body.lastPost.status, 'pending');
@@ -1757,7 +1781,8 @@ describe('Last Post lifecycle', () => {
       .expect(201);
 
     const notice = await LastPostMessage.findOne();
-    const ownerTranslation = 'Corrected English Last Post notice from its submitter.';
+    const ownerTranslation =
+      'Corrected English Last Post notice from its submitter.';
     const frenchTranslation = 'Avis du Dernier appel ajouté par le réviseur.';
 
     const ownerResponse = await request(app)
@@ -1893,10 +1918,9 @@ describe('authorization matrix and account integrity', () => {
 
     const unchangedUser = await User.findById(contributor._id).lean();
     assert.equal(unchangedUser.role, 'contributor');
-    assert.deepEqual(
-      unchangedUser.customRoles.map(String),
-      [String(userManagerRole._id)],
-    );
+    assert.deepEqual(unchangedUser.customRoles.map(String), [
+      String(userManagerRole._id),
+    ]);
   });
 
   test('enforces representative built-in role boundaries', async () => {
@@ -2275,7 +2299,10 @@ describe('event, page, and comment workflows', () => {
     const otherSession = await login(otherUser);
     const rsvpManagerSession = await login(rsvpManager);
 
-    await request(app).post(`/api/events/${event._id}/rsvp`).send({ response: 'accepted' }).expect(401);
+    await request(app)
+      .post(`/api/events/${event._id}/rsvp`)
+      .send({ response: 'accepted' })
+      .expect(401);
 
     await request(app)
       .post(`/api/events/${event._id}/rsvp`)
@@ -2353,7 +2380,10 @@ describe('event, page, and comment workflows', () => {
     assert.equal(rsvpManagerList.body.rsvps.length, 1);
     assert.equal(rsvpManagerList.body.rsvps[0].response, 'declined');
     assert.ok(
-      await AuditLog.exists({ action: 'event.rsvps_viewed', target: event._id }),
+      await AuditLog.exists({
+        action: 'event.rsvps_viewed',
+        target: event._id,
+      }),
     );
 
     const csv = await request(app)
@@ -2363,7 +2393,10 @@ describe('event, page, and comment workflows', () => {
     assert.match(csv.text, /Response,Rank,First name/);
     assert.match(csv.text, /declined/);
     assert.ok(
-      await AuditLog.exists({ action: 'event.rsvps_exported', target: event._id }),
+      await AuditLog.exists({
+        action: 'event.rsvps_exported',
+        target: event._id,
+      }),
     );
   });
 
@@ -2375,7 +2408,10 @@ describe('event, page, and comment workflows', () => {
     const now = new Date();
     const pendingEvent = await Event.create({
       ...eventPayload({
-        title: { en: 'Visible pending event', fr: 'Événement visible en attente' },
+        title: {
+          en: 'Visible pending event',
+          fr: 'Événement visible en attente',
+        },
       }),
       createdBy: contributor._id,
       status: 'pending',
@@ -2465,20 +2501,19 @@ describe('event, page, and comment workflows', () => {
       true,
     );
 
-    const correctedStartDate = new Date(
-      Date.now() + 45 * 24 * 60 * 60 * 1000,
-    )
+    const correctedStartDate = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000)
       .toISOString()
       .slice(0, 10);
     const resubmitted = await request(app)
       .patch(`/api/events/${rejectedEvent._id}`)
       .set('Authorization', bearer(contributorSession.body.token))
-      .send(eventPayload({
-        title: { en: 'Corrected event title', fr: 'Événement corrigé' },
-        startDate: correctedStartDate,
-        city: 'Kingston',
-        allDay: true,
-      })
+      .send(
+        eventPayload({
+          title: { en: 'Corrected event title', fr: 'Événement corrigé' },
+          startDate: correctedStartDate,
+          city: 'Kingston',
+          allDay: true,
+        }),
       )
       .expect(200);
     assert.equal(resubmitted.body.event.status, 'pending');
@@ -2564,7 +2599,10 @@ describe('event, page, and comment workflows', () => {
     const editorSession = await login(editor);
     const rejectedEvent = await Event.create({
       ...eventPayload({
-        title: { en: 'Rejected staff event', fr: 'Événement du personnel refusé' },
+        title: {
+          en: 'Rejected staff event',
+          fr: 'Événement du personnel refusé',
+        },
       }),
       createdBy: editor._id,
       status: 'rejected',
@@ -2702,9 +2740,12 @@ describe('event, page, and comment workflows', () => {
       description: 'Published event description corrected by a staff editor.',
       registration: 'Register with the branch office.',
     };
-    const retirementCorrection = translatedMessage('Retirement staff correction');
+    const retirementCorrection = translatedMessage(
+      'Retirement staff correction',
+    );
     const lastPostCorrection = 'Published Last Post notice corrected by staff.';
-    const commentCorrection = 'Published retirement comment corrected by staff.';
+    const commentCorrection =
+      'Published retirement comment corrected by staff.';
 
     await request(app)
       .patch(`/api/events/${event._id}/review-content`)
@@ -2746,7 +2787,10 @@ describe('event, page, and comment workflows', () => {
         .expect(200),
       request(app).get(`/api/last-posts/${lastPost._id}`).expect(200),
     ]);
-    assert.equal(publicEvent.body.event.description.en, eventChanges.description);
+    assert.equal(
+      publicEvent.body.event.description.en,
+      eventChanges.description,
+    );
     assert.equal(
       publicRetirement.body.retirementMessage.messages.fr,
       retirementCorrection,
@@ -2819,11 +2863,16 @@ describe('event, page, and comment workflows', () => {
     assert.equal(focusedWorkspace.body.nextCursor, '');
 
     const searchedWorkspace = await request(app)
-      .get('/api/admin/content?type=event&search=published%20event%20correction')
+      .get(
+        '/api/admin/content?type=event&search=published%20event%20correction',
+      )
       .set('Authorization', bearer(editorSession.body.token))
       .expect(200);
     assert.equal(searchedWorkspace.body.items.length, 1);
-    assert.equal(String(searchedWorkspace.body.items[0]._id), String(event._id));
+    assert.equal(
+      String(searchedWorkspace.body.items[0]._id),
+      String(event._id),
+    );
 
     const missingEnglishWorkspace = await request(app)
       .get('/api/admin/content?type=retirementMessage&translation=missing-en')
@@ -2898,19 +2947,34 @@ describe('event, page, and comment workflows', () => {
 
     assert.equal(eventHistory.body.revisions.length, 1);
     assert.equal(eventHistory.body.revisions[0].status, 'published');
-    assert.equal(eventHistory.body.revisions[0].before.title, 'Integration exercise');
-    assert.equal(eventHistory.body.revisions[0].after.title, eventChanges.title);
-    assert.equal(eventHistory.body.revisions[0].note, 'Corrected public details');
+    assert.equal(
+      eventHistory.body.revisions[0].before.title,
+      'Integration exercise',
+    );
+    assert.equal(
+      eventHistory.body.revisions[0].after.title,
+      eventChanges.title,
+    );
+    assert.equal(
+      eventHistory.body.revisions[0].note,
+      'Corrected public details',
+    );
     assert.equal(
       Object.hasOwn(eventHistory.body.revisions[0].actorSnapshot, 'email'),
       false,
     );
-    assert.equal(retirementHistory.body.revisions[0].before.message, translatedMessage('Retirement original French'));
+    assert.equal(
+      retirementHistory.body.revisions[0].before.message,
+      translatedMessage('Retirement original French'),
+    );
     assert.equal(
       retirementHistory.body.revisions[0].after.message,
       retirementCorrection,
     );
-    assert.equal(lastPostHistory.body.revisions[0].before.message, 'Published Last Post notice before a staff correction.');
+    assert.equal(
+      lastPostHistory.body.revisions[0].before.message,
+      'Published Last Post notice before a staff correction.',
+    );
     assert.equal(
       lastPostHistory.body.revisions[0].after.message,
       lastPostCorrection,
@@ -2935,7 +2999,8 @@ describe('event, page, and comment workflows', () => {
       key: 'images/workspace-event/original.webp',
       url: 'https://cdn.example.test/images/workspace-event/large.webp',
       originalKey: 'images/workspace-event/original.webp',
-      originalUrl: 'https://cdn.example.test/images/workspace-event/original.webp',
+      originalUrl:
+        'https://cdn.example.test/images/workspace-event/original.webp',
     });
     const event = await Event.create({
       ...eventPayload(),
@@ -3032,7 +3097,11 @@ describe('event, page, and comment workflows', () => {
       .lean();
     assert.deepEqual(
       revisions.map((revision) => revision.fields),
-      [['imagePath'], ['photoUrl', 'photoDisplayUrl'], ['imageUrl', 'imageDisplayUrl']],
+      [
+        ['imagePath'],
+        ['photoUrl', 'photoDisplayUrl'],
+        ['imageUrl', 'imageDisplayUrl'],
+      ],
     );
     assert.equal(revisions[2].after.imageUrl, '');
 
@@ -3099,7 +3168,8 @@ describe('event, page, and comment workflows', () => {
     const eventChanges = {
       title: 'Hidden event correction',
       location: 'Ottawa, Ontario',
-      description: 'A staff editor corrected this event while it remains removed.',
+      description:
+        'A staff editor corrected this event while it remains removed.',
       registration: 'Contact the branch office for registration details.',
     };
     const retirementCorrection = translatedMessage(
@@ -3115,7 +3185,9 @@ describe('event, page, and comment workflows', () => {
         .send({ language: 'en', content: eventChanges })
         .expect(200),
       request(app)
-        .patch(`/api/retirement-messages/${retirementMessage._id}/review-content`)
+        .patch(
+          `/api/retirement-messages/${retirementMessage._id}/review-content`,
+        )
         .set('Authorization', bearer(editorSession.body.token))
         .send({ language: 'fr', message: retirementCorrection })
         .expect(200),
@@ -3147,9 +3219,14 @@ describe('event, page, and comment workflows', () => {
       contentId: { $in: [event._id, retirementMessage._id, lastPost._id] },
     }).lean();
     assert.equal(revisions.length, 3);
-    assert.equal(revisions.every((revision) => revision.status === 'hidden'), true);
     assert.equal(
-      await AuditLog.countDocuments({ action: 'content.staff_content_updated' }),
+      revisions.every((revision) => revision.status === 'hidden'),
+      true,
+    );
+    assert.equal(
+      await AuditLog.countDocuments({
+        action: 'content.staff_content_updated',
+      }),
       3,
     );
   });
@@ -3272,7 +3349,10 @@ describe('event, page, and comment workflows', () => {
     assert.match(response.text, /DTEND:20400718T160000Z\r\n/);
     assert.match(response.text, /LOCATION:Salle publique\\, Ottawa\r\n/);
     assert.doesNotMatch(response.text, /private-submitter@example\.test/);
-    assert.doesNotMatch(response.text, /createdBy|submitter|publicationPermission/);
+    assert.doesNotMatch(
+      response.text,
+      /createdBy|submitter|publicationPermission/,
+    );
 
     await request(app)
       .get(`/api/events/${draftEvent._id}/calendar.ics`)
@@ -3427,7 +3507,9 @@ describe('event, page, and comment workflows', () => {
 
     const whileDraft = await request(app).get('/api/navigation').expect(200);
     assert.equal(
-      whileDraft.body.items.some((item) => String(item.page) === String(pageId)),
+      whileDraft.body.items.some(
+        (item) => String(item.page) === String(pageId),
+      ),
       false,
     );
 
@@ -3439,7 +3521,9 @@ describe('event, page, and comment workflows', () => {
 
     const oncePublished = await request(app).get('/api/navigation').expect(200);
     assert.equal(
-      oncePublished.body.items.some((item) => String(item.page) === String(pageId)),
+      oncePublished.body.items.some(
+        (item) => String(item.page) === String(pageId),
+      ),
       true,
     );
   });
@@ -3475,7 +3559,10 @@ describe('event, page, and comment workflows', () => {
     const created = await request(app)
       .post('/api/admin/pages')
       .set('Authorization', bearer(session.body.token))
-      .send({ title: { en: 'Custom navigation page' }, slug: 'custom-navigation-page' })
+      .send({
+        title: { en: 'Custom navigation page' },
+        slug: 'custom-navigation-page',
+      })
       .expect(201);
     const pageId = created.body.page._id;
 
@@ -3612,7 +3699,10 @@ describe('event, page, and comment workflows', () => {
     assert.equal(notifications.body.notifications.actionCount, 1);
     assert.equal(notifications.body.notifications.unreadCount, 1);
     assert.equal(notifications.body.notifications.shouldMarkRead, true);
-    assert.match(notifications.body.notifications.readThrough, /^\d{4}-\d{2}-\d{2}T/);
+    assert.match(
+      notifications.body.notifications.readThrough,
+      /^\d{4}-\d{2}-\d{2}T/,
+    );
     assert.equal(notification.type, 'retirementComment');
     assert.equal(notification.status, 'rejected');
     assert.equal(notification.editHref, expectedEditHref);
@@ -3660,7 +3750,10 @@ describe('event, page, and comment workflows', () => {
       action: 'user.notifications_read',
       actor: subscriber._id,
     }).lean();
-    assert.equal(readAudit.metadata.readThrough, notifications.body.notifications.readThrough);
+    assert.equal(
+      readAudit.metadata.readThrough,
+      notifications.body.notifications.readThrough,
+    );
 
     await RetirementComment.findByIdAndUpdate(comment._id, {
       status: 'pending',
@@ -4304,7 +4397,10 @@ describe('media lifecycle', () => {
       .set('Authorization', bearer(editorSession.body.token))
       .send({ reason: 'Duplicate submission' })
       .expect(409);
-    assert.match(pendingRemoval.body.error, /must be published, rejected, or deleted/u);
+    assert.match(
+      pendingRemoval.body.error,
+      /must be published, rejected, or deleted/u,
+    );
 
     const pendingEvent = await Event.findById(event._id).lean();
     assert.equal(pendingEvent.status, 'pending');

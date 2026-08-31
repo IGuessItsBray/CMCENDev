@@ -244,13 +244,11 @@ router.post(
         targetSnapshot: { title: article.title.en, publishedAt },
         metadata: { source: 'professional_award_recipient' },
       });
-      res
-        .status(201)
-        .json({
-          message: 'Recipient added and congratulatory news story published',
-          award: serialize(award),
-          newsArticleId: article._id,
-        });
+      res.status(201).json({
+        message: 'Recipient added and congratulatory news story published',
+        award: serialize(award),
+        newsArticleId: article._id,
+      });
     } catch (error) {
       console.error('Professional award recipient create failed:', error);
       res.status(500).json({ error: 'Could not add recipient' });

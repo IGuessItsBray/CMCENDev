@@ -3,19 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="refresh" content="0; url=/content-workspace?status=pending" />
+    <meta
+      http-equiv="refresh"
+      content="0; url=/content-workspace?status=pending"
+    />
     <title>Content Workspace | CMCEN / RCMCE</title>
     <script>
       (() => {
         const types = {
-          events: "event",
-          retirements: "retirementMessage",
-          "last-posts": "lastPost",
-          comments: "retirementComment",
+          events: 'event',
+          retirements: 'retirementMessage',
+          'last-posts': 'lastPost',
+          comments: 'retirementComment',
         };
         const query = new URLSearchParams(window.location.search);
-        const type = types[query.get("tab")] || "all";
-        window.location.replace(`/content-workspace?type=${type}&status=pending`);
+        const type = types[query.get('tab')] || 'all';
+        window.location.replace(
+          `/content-workspace?type=${type}&status=pending`,
+        );
       })();
     </script>
   </head>

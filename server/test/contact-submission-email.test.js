@@ -32,12 +32,18 @@ describe('contact submission email', () => {
     assert.match(formatted.text, /PHONE: 613-555-0100/);
     assert.match(formatted.text, /UNIT: 1 C&E Regiment/);
     assert.match(formatted.text, /SUBJECT: Account help/);
-    assert.match(formatted.text, /MESSAGE: Please help with my account\.\nThank you\./);
+    assert.match(
+      formatted.text,
+      /MESSAGE: Please help with my account\.\nThank you\./,
+    );
     assert.match(formatted.html, /1 C&amp;E Regiment/);
   });
 
   test('only uses a valid member email as the reply-to address', () => {
     assert.equal(getReplyToEmail('member@example.test'), 'member@example.test');
-    assert.equal(getReplyToEmail('member@example.test\r\nBcc: x@example.test'), undefined);
+    assert.equal(
+      getReplyToEmail('member@example.test\r\nBcc: x@example.test'),
+      undefined,
+    );
   });
 });

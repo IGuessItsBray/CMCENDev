@@ -241,8 +241,8 @@ function getTranslationCategory(row) {
   }
 
   const prefix = row.key.split("_", 1)[0];
-  const category = TRANSLATION_CATEGORIES.find(
-    (item) => item.prefixes?.has(prefix),
+  const category = TRANSLATION_CATEGORIES.find((item) =>
+    item.prefixes?.has(prefix),
   );
 
   return category?.id || "shared";
@@ -295,9 +295,7 @@ function getFilteredRows() {
       return false;
     }
 
-    return (
-      rowMatchesTranslationStatus(row) && rowMatchesTranslationSearch(row)
-    );
+    return rowMatchesTranslationStatus(row) && rowMatchesTranslationSearch(row);
   });
 }
 
@@ -314,8 +312,8 @@ function getCategoryRows(categoryId) {
 function hasActiveTranslationFilters() {
   return Boolean(
     selectedTranslationCategory ||
-      translationsSearch.value.trim() ||
-      translationsStatusFilter.value !== "all",
+    translationsSearch.value.trim() ||
+    translationsStatusFilter.value !== "all",
   );
 }
 
@@ -337,9 +335,7 @@ function getTranslationFamilies(rows) {
     .flatMap(([groupKey, groupRows]) =>
       splitTranslationFamily(groupKey, groupRows, 1),
     )
-    .sort(([first], [second]) =>
-    first.localeCompare(second),
-  );
+    .sort(([first], [second]) => first.localeCompare(second));
 }
 
 function splitTranslationFamily(groupKey, rows, depth) {
@@ -350,7 +346,10 @@ function splitTranslationFamily(groupKey, rows, depth) {
   const childGroups = new Map();
 
   rows.forEach((row) => {
-    const key = row.key.split("_").slice(0, depth + 1).join("_");
+    const key = row.key
+      .split("_")
+      .slice(0, depth + 1)
+      .join("_");
     const existing = childGroups.get(key) || [];
     existing.push(row);
     childGroups.set(key, existing);

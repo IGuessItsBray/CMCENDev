@@ -46,7 +46,7 @@ test('collects a required rejection reason through the shared destructive modal'
 test('keeps whitespace-only required modal fields invalid', () => {
   assert.match(
     appUtilsScript,
-    /field\.requiresNonWhitespace === true && field\.required === true[\s\S]*?control\.setCustomValidity\([\s\S]*?!control\.value\.trim\(\)/u,
+    /field\.requiresNonWhitespace\s*===\s*true\s*&&\s*field\.required\s*===\s*true[\s\S]*?control\.setCustomValidity\([\s\S]*?!control\.value\.trim\(\)/u,
   );
 });
 
@@ -55,7 +55,10 @@ test('applies the requested success and danger modal accents', () => {
     appUtilsScript,
     /"cmcen-modal--success"[\s\S]*?options\.tone === "success"[\s\S]*?"cmcen-modal--danger"[\s\S]*?options\.tone === "danger"/u,
   );
-  assert.match(workspaceStyles, /\.cmcen-modal--success[\s\S]*?--success-border/u);
+  assert.match(
+    workspaceStyles,
+    /\.cmcen-modal--success[\s\S]*?--success-border/u,
+  );
   assert.match(workspaceStyles, /\.cmcen-modal--danger[\s\S]*?--danger/u);
   assert.match(
     workspaceStyles,

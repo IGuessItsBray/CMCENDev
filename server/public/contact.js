@@ -20,7 +20,8 @@ function setContactSubmitting(isSubmitting) {
 function getContactProfileItems(user) {
   const address = user.address || {};
   const name =
-    user.accountName || [user.firstName, user.lastName].filter(Boolean).join(" ");
+    user.accountName ||
+    [user.firstName, user.lastName].filter(Boolean).join(" ");
   const addressText = [
     address.line1,
     address.line2,
@@ -97,7 +98,10 @@ contactForm.addEventListener("submit", async (event) => {
       unauthorizedMessage: translate("contact_login_required"),
     });
     contactForm.reset();
-    showContactMessage(response.message || translate("contact_success"), "success");
+    showContactMessage(
+      response.message || translate("contact_success"),
+      "success",
+    );
   } catch (error) {
     showContactMessage(error.message || translate("contact_send_error"));
   } finally {

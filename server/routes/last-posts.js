@@ -250,12 +250,12 @@ router.post(
       }
 
       const permissions = getUserPermissions(req.user);
-      const canPublishImmediately =
-        permissions.canReviewAndPublish === true;
+      const canPublishImmediately = permissions.canReviewAndPublish === true;
 
       if (wantsImmediatePublication && !canPublishImmediately) {
         return res.status(403).json({
-          error: 'You do not have permission to publish Last Post notices immediately',
+          error:
+            'You do not have permission to publish Last Post notices immediately',
         });
       }
 
@@ -386,133 +386,125 @@ router.get(
   },
 );
 
-router.patch(
-  '/:messageId/review-content',
-  authMiddleware,
-  async (req, res) => {
-    try {
-      const { messageId } = req.params;
-      const { language, message } = req.body;
+router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { language, message } = req.body;
 
-      if (!mongoose.Types.ObjectId.isValid(messageId)) {
-        return res.status(404).json({ error: 'Last Post notice not found' });
-      }
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(404).json({ error: 'Last Post notice not found' });
+    }
 
-      if (!['en', 'fr'].includes(language)) {
-        return res.status(400).json({
-          error: 'Review content language must be English or French',
-        });
-      }
+    if (!['en', 'fr'].includes(language)) {
+      return res.status(400).json({
+        error: 'Review content language must be English or French',
+      });
+    }
 
-      if (typeof message !== 'string') {
-        return res.status(400).json({
-          error: 'Last Post review message text is required',
-        });
-      }
+    if (typeof message !== 'string') {
+      return res.status(400).json({
+        error: 'Last Post review message text is required',
+      });
+    }
 
-      const lastPost = await LastPostMessage.findById(messageId);
+    const lastPost = await LastPostMessage.findById(messageId);
 
-      if (!lastPost) {
-        return res
-          .status(404)
-          .json({ error: 'Last Post notice not found' });
-      }
+    if (!lastPost) {
+      return res.status(404).json({ error: 'Last Post notice not found' });
+    }
 
-      const permissions = getUserPermissions(req.user);
-      const canReview = permissions.canReviewAndPublish === true;
-      const isOwner =
-        lastPost.createdBy && String(lastPost.createdBy) === String(req.user._id);
-      const canSubmitterEdit =
-        isOwner && ['pending', 'rejected'].includes(lastPost.status);
-      const canReviewerEdit =
-        canReview && ['pending', 'published', 'hidden'].includes(lastPost.status);
-      const wasRejected = isOwner && lastPost.status === 'rejected';
+    const permissions = getUserPermissions(req.user);
+    const canReview = permissions.canReviewAndPublish === true;
+    const isOwner =
+      lastPost.createdBy && String(lastPost.createdBy) === String(req.user._id);
+    const canSubmitterEdit =
+      isOwner && ['pending', 'rejected'].includes(lastPost.status);
+    const canReviewerEdit =
+      canReview && ['pending', 'published', 'hidden'].includes(lastPost.status);
+    const wasRejected = isOwner && lastPost.status === 'rejected';
 
-      if (!canReview && !isOwner) {
-        return res.status(403).json({
-          error: 'You do not have permission to update this Last Post notice',
-        });
-      }
+    if (!canReview && !isOwner) {
+      return res.status(403).json({
+        error: 'You do not have permission to update this Last Post notice',
+      });
+    }
 
-      if (!canSubmitterEdit && !canReviewerEdit) {
-        return res.status(409).json({
-          error:
-            'Only pending, published, or hidden Last Post notices can have content updated',
-        });
-      }
+    if (!canSubmitterEdit && !canReviewerEdit) {
+      return res.status(409).json({
+        error:
+          'Only pending, published, or hidden Last Post notices can have content updated',
+      });
+    }
 
-      const before = { message: lastPost.messages?.[language] || '' };
+    const before = { message: lastPost.messages?.[language] || '' };
 
-      lastPost.set(`messages.${language}`, cleanString(message));
-      lastPost.markModified('messages');
-      lastPost.updatedBy = req.user._id;
+    lastPost.set(`messages.${language}`, cleanString(message));
+    lastPost.markModified('messages');
+    lastPost.updatedBy = req.user._id;
 
-      if (wasRejected) {
-        lastPost.status = 'pending';
-        lastPost.rejectionReason = '';
-        lastPost.reviewedBy = null;
-        lastPost.reviewedAt = null;
-        lastPost.publishedBy = null;
-        lastPost.publishedAt = null;
-      }
-      await lastPost.save();
+    if (wasRejected) {
+      lastPost.status = 'pending';
+      lastPost.rejectionReason = '';
+      lastPost.reviewedBy = null;
+      lastPost.reviewedAt = null;
+      lastPost.publishedBy = null;
+      lastPost.publishedAt = null;
+    }
+    await lastPost.save();
 
-      await recordContentRevision({
-        contentType: 'lastPost',
-        content: lastPost,
-        actor: req.user,
+    await recordContentRevision({
+      contentType: 'lastPost',
+      content: lastPost,
+      actor: req.user,
+      status: lastPost.status,
+      language,
+      fields: ['message'],
+      before,
+      after: { message: lastPost.messages?.[language] || '' },
+      note: req.body.note,
+    });
+
+    await writeAuditLog({
+      req,
+      action: wasRejected
+        ? 'content.review_content_updated'
+        : lastPost.status === 'pending'
+          ? 'content.review_content_updated'
+          : 'content.staff_content_updated',
+      actor: req.user,
+      targetType: 'lastPost',
+      target: lastPost._id,
+      targetSnapshot: getLastPostSnapshot(lastPost),
+      metadata: {
+        source: wasRejected ? 'submitter-resubmit' : 'review-content',
         status: lastPost.status,
         language,
         fields: ['message'],
-        before,
-        after: { message: lastPost.messages?.[language] || '' },
-        note: req.body.note,
+      },
+    });
+
+    return res.json({
+      message: wasRejected
+        ? 'Last Post content updated and submitted for review'
+        : lastPost.status === 'published'
+          ? 'Published Last Post content updated'
+          : 'Last Post review content updated',
+      lastPost,
+    });
+  } catch (error) {
+    console.error('Could not update Last Post review content:', error);
+
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: 'The Last Post notice must be 10000 characters or fewer',
       });
-
-      await writeAuditLog({
-        req,
-        action:
-          wasRejected
-            ? 'content.review_content_updated'
-            : lastPost.status === 'pending'
-            ? 'content.review_content_updated'
-            : 'content.staff_content_updated',
-        actor: req.user,
-        targetType: 'lastPost',
-        target: lastPost._id,
-        targetSnapshot: getLastPostSnapshot(lastPost),
-        metadata: {
-          source: wasRejected ? 'submitter-resubmit' : 'review-content',
-          status: lastPost.status,
-          language,
-          fields: ['message'],
-        },
-      });
-
-      return res.json({
-        message:
-          wasRejected
-            ? 'Last Post content updated and submitted for review'
-            : lastPost.status === 'published'
-            ? 'Published Last Post content updated'
-            : 'Last Post review content updated',
-        lastPost,
-      });
-    } catch (error) {
-      console.error('Could not update Last Post review content:', error);
-
-      if (error.name === 'ValidationError') {
-        return res.status(400).json({
-          error: 'The Last Post notice must be 10000 characters or fewer',
-        });
-      }
-
-      return res
-        .status(500)
-        .json({ error: 'Could not update Last Post review content' });
     }
-  },
-);
+
+    return res
+      .status(500)
+      .json({ error: 'Could not update Last Post review content' });
+  }
+});
 
 router.patch(
   '/:messageId/review',
@@ -625,7 +617,9 @@ router.get('/', async (req, res) => {
 
 router.get('/:messageId/edit', authMiddleware, async (req, res) => {
   try {
-    const lastPost = await LastPostMessage.findById(req.params.messageId).lean();
+    const lastPost = await LastPostMessage.findById(
+      req.params.messageId,
+    ).lean();
 
     if (!lastPost) {
       return res.status(404).json({ error: 'Last Post notice not found' });
@@ -700,8 +694,14 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     const message = cleanString(req.body?.message);
     const imageUrl = cleanString(req.body?.imageUrl);
     const imageDisplayUrl = cleanString(req.body?.imageDisplayUrl);
-    const hasTitle = Object.prototype.hasOwnProperty.call(req.body || {}, 'title');
-    const hasSlug = Object.prototype.hasOwnProperty.call(req.body || {}, 'slug');
+    const hasTitle = Object.prototype.hasOwnProperty.call(
+      req.body || {},
+      'title',
+    );
+    const hasSlug = Object.prototype.hasOwnProperty.call(
+      req.body || {},
+      'slug',
+    );
     const hasPhotoUrl = Object.prototype.hasOwnProperty.call(
       req.body || {},
       'photoUrl',
@@ -759,7 +759,8 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
 
     if (wantsImmediatePublication && !canReview) {
       return res.status(403).json({
-        error: 'You do not have permission to publish Last Post notices immediately',
+        error:
+          'You do not have permission to publish Last Post notices immediately',
       });
     }
 

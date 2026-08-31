@@ -29,7 +29,9 @@ function formatCertificateRequestDate(value) {
 }
 
 function getCertificateTypeLabel(certificateType) {
-  const key = `certificate_type_${String(certificateType || "").replace(/[^a-z0-9]+/gi, "_").toLowerCase()}`;
+  const key = `certificate_type_${String(certificateType || "")
+    .replace(/[^a-z0-9]+/gi, "_")
+    .toLowerCase()}`;
   const translated = translate(key);
 
   return translated === key
@@ -268,7 +270,8 @@ function createCertificateRequestCard(certificateRequest) {
   );
 
   const title = document.createElement("h2");
-  title.textContent = member.fullName || translate("certificate_request_untitled");
+  title.textContent =
+    member.fullName || translate("certificate_request_untitled");
 
   const summary = document.createElement("p");
   summary.textContent = `${getCertificateTypeLabel(certificateRequest.certificateType)} · ${translate("certificate_request_needed_by")} ${formatCertificateRequestDate(member.neededByDate)}`;
@@ -279,10 +282,7 @@ function createCertificateRequestCard(certificateRequest) {
   const requestDetails = document.createElement("div");
   requestDetails.className = "certificate-request-details-grid";
   requestDetails.append(
-    createCertificateRequestDetail(
-      "certificate_request_rank",
-      member.rank,
-    ),
+    createCertificateRequestDetail("certificate_request_rank", member.rank),
     createCertificateRequestDetail(
       "certificate_request_trade_role",
       member.tradeRole,
@@ -335,9 +335,7 @@ function createCertificateRequestCard(certificateRequest) {
   [
     mailingAddress.line1,
     mailingAddress.line2,
-    [mailingAddress.city, mailingAddress.province]
-      .filter(Boolean)
-      .join(", "),
+    [mailingAddress.city, mailingAddress.province].filter(Boolean).join(", "),
     mailingAddress.postalCode,
     mailingAddress.country,
   ]
@@ -359,14 +357,20 @@ function createCertificateRequestCard(certificateRequest) {
       "certificate_request_requester_relationship",
       requester.relationship,
     ),
-    createCertificateRequestDetail("certificate_request_email", requester.email),
+    createCertificateRequestDetail(
+      "certificate_request_email",
+      requester.email,
+    ),
     createCertificateRequestDetail("certificate_request_unit", requester.unit),
   );
 
   const sections = document.createElement("div");
   sections.className = "certificate-request-card-sections";
   sections.append(
-    createCertificateRequestSection("certificate_request_member_details", requestDetails),
+    createCertificateRequestSection(
+      "certificate_request_member_details",
+      requestDetails,
+    ),
     createCertificateRequestSection("certificate_dates_heading", dates),
     createCertificateRequestSection(
       "certificate_family_heading",
@@ -388,7 +392,8 @@ function renderCertificateRequests() {
 
   if (certificateRequestsLoadFailed) {
     certificateRequestsList.hidden = true;
-    certificateRequestsStatus.className = "certificate-requests-status is-error";
+    certificateRequestsStatus.className =
+      "certificate-requests-status is-error";
     certificateRequestsStatus.textContent = translate(
       "certificate_requests_load_error",
     );
@@ -416,7 +421,8 @@ function renderCertificateRequests() {
 
 function showCertificateRequestsLoading() {
   certificateRequestsList.hidden = true;
-  certificateRequestsStatus.className = "certificate-requests-status is-loading";
+  certificateRequestsStatus.className =
+    "certificate-requests-status is-loading";
   certificateRequestsStatus.replaceChildren();
 
   const spinner = document.createElement("span");

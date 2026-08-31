@@ -416,17 +416,15 @@
     const trigger = picker.querySelector(".cmcen-date-time-trigger");
     if (input.id && trigger) {
       trigger.id = `${input.id}PickerTrigger`;
-      document
-        .querySelectorAll("label[for]")
-        .forEach((label) => {
-          if (label.htmlFor !== input.id) return;
+      document.querySelectorAll("label[for]").forEach((label) => {
+        if (label.htmlFor !== input.id) return;
 
-          label.htmlFor = trigger.id;
-          label.addEventListener("click", (event) => {
-            event.preventDefault();
-            trigger.click();
-          });
+        label.htmlFor = trigger.id;
+        label.addEventListener("click", (event) => {
+          event.preventDefault();
+          trigger.click();
         });
+      });
     }
 
     enhancedDatePickers.set(input, picker);

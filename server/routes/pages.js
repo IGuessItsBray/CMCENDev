@@ -87,20 +87,38 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     en: 'About the C&E Association',
     fr: 'À propos de l’Association des C et E',
   },
-  'about_branch.html': { en: 'About the C&E Branch', fr: 'À propos de la Branche des C et E' },
+  'about_branch.html': {
+    en: 'About the C&E Branch',
+    fr: 'À propos de la Branche des C et E',
+  },
   'about_museum_foundation.html': {
     en: 'About the C&E Museum & Foundation',
     fr: 'À propos du Musée et de la Fondation des C et E',
   },
-  'association_directors.html': { en: 'Association Directors and Advisors', fr: 'Directeurs et conseillers de l’Association' },
+  'association_directors.html': {
+    en: 'Association Directors and Advisors',
+    fr: 'Directeurs et conseillers de l’Association',
+  },
   'affiliate_offers.html': { en: 'Affiliates', fr: 'Affiliés' },
-  'bursaries.html': { en: 'Bursaries and Education', fr: 'Bourses et éducation' },
-  'branch_advisory_council.html': { en: 'Branch Advisory Council', fr: 'Conseil consultatif de la Branche' },
+  'bursaries.html': {
+    en: 'Bursaries and Education',
+    fr: 'Bourses et éducation',
+  },
+  'branch_advisory_council.html': {
+    en: 'Branch Advisory Council',
+    fr: 'Conseil consultatif de la Branche',
+  },
   'calendar.html': { en: 'Events Calendar', fr: 'Calendrier des événements' },
   'certificates.html': { en: 'Certificates', fr: 'Certificats' },
-  'ce_professions.html': { en: 'Communications & Electronics Professions', fr: 'Professions des communications et de l’électronique' },
+  'ce_professions.html': {
+    en: 'Communications & Electronics Professions',
+    fr: 'Professions des communications et de l’électronique',
+  },
   'doctrine_hub.html': { en: 'Doctrine Hub', fr: 'Centre de doctrine' },
-  'cfmws.html': { en: 'Canadian Forces Morale and Welfare Services', fr: 'Services de bien-être et moral des Forces canadiennes' },
+  'cfmws.html': {
+    en: 'Canadian Forces Morale and Welfare Services',
+    fr: 'Services de bien-être et moral des Forces canadiennes',
+  },
   'dashboard.html': {
     en: 'Account dashboard',
     fr: 'Tableau de bord du compte',
@@ -109,7 +127,10 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
   'event.html': { en: 'Event details', fr: 'Détails de l’événement' },
   'index.html': { en: 'Home', fr: 'Accueil' },
   'history.html': { en: 'History', fr: 'Histoire' },
-  'honours_awards.html': { en: 'Honours and Awards', fr: 'Distinctions et prix' },
+  'honours_awards.html': {
+    en: 'Honours and Awards',
+    fr: 'Distinctions et prix',
+  },
   'leadership.html': { en: 'Leadership', fr: 'Leadership' },
   'governance.html': { en: 'Governance', fr: 'Gouvernance' },
   'news_stories.html': { en: 'News Stories', fr: 'Nouvelles' },
@@ -137,9 +158,15 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     en: 'Submit a retirement message',
     fr: 'Soumettre un message de retraite',
   },
-  'support_troops.html': { en: 'Support Our Troops', fr: 'Appuyons nos troupes' },
+  'support_troops.html': {
+    en: 'Support Our Troops',
+    fr: 'Appuyons nos troupes',
+  },
   'standing_orders.html': { en: 'Standing Orders', fr: 'Ordres permanents' },
-  'veteran_services.html': { en: 'Veteran Services', fr: 'Services aux vétérans' },
+  'veteran_services.html': {
+    en: 'Veteran Services',
+    fr: 'Services aux vétérans',
+  },
 });
 
 function cleanText(value, maxLength = 10000) {
@@ -247,7 +274,9 @@ function cleanBlockLayout(value, fallbackRow) {
   const column = Number.parseInt(source.column, 10);
   const row = Number.parseInt(source.row, 10);
   const rowSpan = Number.parseInt(source.rowSpan, 10);
-  const cleanSpan = Number.isFinite(span) ? Math.min(Math.max(span, 1), 12) : 12;
+  const cleanSpan = Number.isFinite(span)
+    ? Math.min(Math.max(span, 1), 12)
+    : 12;
 
   return {
     span: cleanSpan,
@@ -651,9 +680,7 @@ async function getStaticSitemapItems() {
   const files = await fs.readdir(PUBLIC_DIRECTORY);
 
   return files
-    .filter(
-      isPublicSitemapFile,
-    )
+    .filter(isPublicSitemapFile)
     .map((fileName) =>
       toSitemapItem({
         title: getSitemapStaticLabel(fileName),
@@ -807,9 +834,10 @@ function toAdminRole(role) {
 
 function toNavigationItem(item) {
   const plainItem = item.toObject ? item.toObject() : item;
-  const page = plainItem.page && typeof plainItem.page === 'object'
-    ? plainItem.page
-    : null;
+  const page =
+    plainItem.page && typeof plainItem.page === 'object'
+      ? plainItem.page
+      : null;
 
   return {
     _id: plainItem._id,

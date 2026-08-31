@@ -248,8 +248,7 @@ async function initializeNewsEditor() {
     const articleId = new URLSearchParams(window.location.search).get("edit");
     const article = managedArticles.find((item) => item._id === articleId);
     if (article) beginEdit(article);
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 newsCreateButton.addEventListener("click", openNewsEditor);

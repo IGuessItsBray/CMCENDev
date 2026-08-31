@@ -1,13 +1,14 @@
 const adminToken = CMCENUtils.requireAuthToken();
 const adminWorkZone = document.getElementById("adminWorkZone");
 const adminWorkZoneStatus = document.getElementById("adminWorkZoneStatus");
-const requestedAdminView = new URLSearchParams(window.location.search).get("view");
+const requestedAdminView = new URLSearchParams(window.location.search).get(
+  "view",
+);
 
 let adminWorkZoneState = {
-  activeView:
-    ["media", "roles", "subscriptions"].includes(requestedAdminView)
-      ? requestedAdminView
-      : "users",
+  activeView: ["media", "roles", "subscriptions"].includes(requestedAdminView)
+    ? requestedAdminView
+    : "users",
   currentUserId: "",
   currentUserRole: "",
   currentUserPermissions: {},
@@ -1570,7 +1571,10 @@ async function restoreAdminPost(post) {
   const endpoint = getAdminRestoreEndpoint(post);
 
   if (!endpoint) {
-    showAdminActionToast(translate("admin_content_restore_type_error"), "error");
+    showAdminActionToast(
+      translate("admin_content_restore_type_error"),
+      "error",
+    );
     return;
   }
 

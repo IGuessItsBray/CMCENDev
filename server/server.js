@@ -221,6 +221,9 @@ app.get('/review-submissions', (req, res) => {
 
   res.redirect(302, `/content-workspace?${query}`);
 });
+app.get(['/privacy', '/terms'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'legal.html'));
+});
 function setPublicAssetCacheHeaders(res, filePath) {
   if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
     // Shared client code uses stable URLs. Do not allow browsers or CDNs to

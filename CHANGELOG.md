@@ -4,6 +4,66 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.1.0-rc.3] - 2026-08-31
+
+
+
+### Bug Fixes
+
+
+- frontend: Navigate admin tabs without iframes
+
+- auth: Prevent credential form GET fallbacks
+
+- calendar: Keep event times consistent between list and detail
+
+- search: Return localized static page results
+
+- calendar: Handle missing all-day event end dates
+
+- sitemap: Exclude member-only forms
+
+- security: Hide Express framework header
+
+- i18n: Localize news listing page
+
+- sitemap: Omit dashboard from public sitemap
+
+- last-post: Show crest without portrait
+
+- notifications: Mark one-time alerts on panel close
+
+
+
+### Features
+
+
+- frontend: Unify controls and reset workspace filters
+
+- retirements: Add public archive search
+
+- events: Add public calendar export
+
+- awards: Add professional awards management
+
+- events: Add account-based RSVPs
+
+- awards: Refine awards presentation
+
+- events: Add RSVP management
+
+- legal: Add bilingual legal documents
+
+
+
+### Maintenance
+
+
+- content-workspace: Consolidate placeholder images, confirmation/rejection modal
+
+- formatting: Apply Prettier baseline
+
+
 ## [0.1.0-rc.2] - 2026-08-25
 
 

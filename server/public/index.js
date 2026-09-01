@@ -806,9 +806,8 @@ const footerSocialLinks = [
   },
 ];
 
-const tdInsuranceUrl =
-  "https://www.tdinsurance.com/affinity/cmcen?campaignid=PONMEBAN179135";
 const tdInsuranceLoginUrl = "/login?notice=td-insurance-members-only";
+const tdInsuranceMemberBenefitUrl = "/api/member-benefits/td-insurance";
 
 function loadFooter() {
   const footer = document.getElementById("footer");
@@ -884,17 +883,33 @@ function loadFooter() {
             and preserving the history of the Branch.
           </p>
 
-          <a
-            class="footer-partner-link"
-            data-td-insurance-link
-            href="${tdInsuranceLoginUrl}"
-          >
-            <img
-              src="/images/td-insurance-membership.gif"
-              alt="TD Insurance: Get more out of your membership."
-              class="footer-partner-image"
-            />
-          </a>
+          <section class="footer-partner-card" aria-label="TD Insurance">
+            <a
+              class="footer-partner-link"
+              data-td-insurance-link
+              href="${tdInsuranceLoginUrl}"
+            >
+              <img
+                src="/images/td-insurance-membership.gif"
+                alt="TD Insurance: Get more out of your membership."
+                class="footer-partner-image"
+              />
+            </a>
+
+            <div class="footer-partner-copy">
+              <p class="footer-partner-offer" data-i18n="footer_td_insurance_offer">
+                C&amp;E Association members are eligible for special rates and offers with TD Insurance.
+              </p>
+
+              <p
+                class="footer-partner-login-notice"
+                data-td-insurance-login-notice
+                data-i18n="footer_td_insurance_login_notice"
+              >
+                After you register and login you will be able to click this link to receive the discount.
+              </p>
+            </div>
+          </section>
             <button
   id="themeToggle"
   class="theme-toggle"
@@ -1132,24 +1147,65 @@ loadFooter();
 
 function updateTdInsuranceLink() {
   const link = document.querySelector("[data-td-insurance-link]");
+  const loginNotice = document.querySelector(
+    "[data-td-insurance-login-notice]",
+  );
 
   if (!link) {
     return;
   }
 
-  if (getStoredAuthToken()) {
-    link.href = tdInsuranceUrl;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
+  link.href = tdInsuranceLoginUrl;
+  if (loginNotice) {
+    loginNotice.hidden = Boolean(getStoredAuthToken());
+  }
+}
+
+function bindTdInsuranceLink() {
+  const link = document.querySelector("[data-td-insurance-link]");
+
+  if (!link || link.dataset.tdInsuranceBound === "true") {
     return;
   }
 
-  link.href = tdInsuranceLoginUrl;
-  link.removeAttribute("target");
-  link.removeAttribute("rel");
+  link.dataset.tdInsuranceBound = "true";
+  link.addEventListener("click", async (event) => {
+    const token = getStoredAuthToken();
+
+    if (!token) {
+      return;
+    }
+
+    event.preventDefault();
+
+    try {
+      const { url } = await CMCENUtils.apiJson(tdInsuranceMemberBenefitUrl, {
+        token,
+        redirectOnUnauthorized: tdInsuranceLoginUrl,
+        unauthorizedMessage: getInterfaceTranslation(
+          "td_insurance_login_required",
+          "You need to be logged in to view this item.",
+        ),
+      });
+
+      if (typeof url !== "string" || !url.startsWith("https://")) {
+        throw new Error("Could not open the TD Insurance offer");
+      }
+
+      window.location.assign(url);
+    } catch (error) {
+      if (error.status !== 401) {
+        CMCENUtils.showToast(
+          error.message || "Could not open the TD Insurance offer",
+          "error",
+        );
+      }
+    }
+  });
 }
 
 updateTdInsuranceLink();
+bindTdInsuranceLink();
 
 async function loadCustomNavigationItems() {
   try {

@@ -14,3 +14,21 @@ test('shows the protected Contact quick link only to signed-in members', () => {
     /<li data-auth-required hidden>\s*<a href="\/contact\.html" data-i18n="menu_contact">/u,
   );
 });
+
+test('keeps the TD Insurance campaign destination out of public footer code', () => {
+  assert.match(navigationSource, /class="footer-partner-card"/u);
+  assert.match(navigationSource, /data-i18n="footer_td_insurance_offer"/u);
+  assert.match(
+    navigationSource,
+    /data-i18n="footer_td_insurance_login_notice"/u,
+  );
+  assert.match(
+    navigationSource,
+    /const tdInsuranceMemberBenefitUrl = "\/api\/member-benefits\/td-insurance"/u,
+  );
+  assert.match(
+    navigationSource,
+    /CMCENUtils\.apiJson\(tdInsuranceMemberBenefitUrl/u,
+  );
+  assert.doesNotMatch(navigationSource, /tdinsurance\.com/u);
+});

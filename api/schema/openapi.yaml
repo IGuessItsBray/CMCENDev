@@ -473,6 +473,25 @@ paths:
       responses:
         "200":
           description: Current user, permissions, and lightweight notification counts for the header badge. Full notification entries are available from GET /api/notifications.
+  /api/member-benefits/td-insurance:
+    get:
+      tags: [Auth]
+      summary: Get the TD Insurance member-offer destination.
+      description: Requires authentication and records the member-benefit access before returning the TD Insurance destination URL.
+      responses:
+        "200":
+          description: Authenticated member-offer destination.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url]
+                properties:
+                  url:
+                    type: string
+                    format: uri
+        "401":
+          $ref: "#/components/responses/Error"
   /api/notifications:
     get:
       tags: [Auth]

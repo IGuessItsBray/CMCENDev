@@ -107,6 +107,8 @@ const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
 const EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS = 30 * 60 * 1000;
 const GHOST_PASSWORD_BYTES = 32;
 const INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
+const TD_INSURANCE_MEMBER_BENEFIT_URL =
+  'https://www.tdinsurance.com/affinity/cmcen?campaignid=PONMEBAN179135';
 
 function getLoginAttemptSnapshot(username) {
   return {
@@ -1447,6 +1449,29 @@ router.post(
 router.get('/me', authMiddleware, async (req, res) => {
   res.json(await getProfileResponse(req.user));
 });
+
+// GET /api/member-benefits/td-insurance
+// Return the TD Insurance member offer only after the caller is authenticated.
+router.get(
+  '/member-benefits/td-insurance',
+  authMiddleware,
+  async (req, res) => {
+    try {
+      await writeAuditLog({
+        req,
+        action: 'benefit.td_insurance_accessed',
+        actor: req.user,
+        targetType: 'member_benefit',
+        targetSnapshot: { provider: 'td_insurance' },
+      });
+
+      res.json({ url: TD_INSURANCE_MEMBER_BENEFIT_URL });
+    } catch (error) {
+      console.error('TD Insurance member benefit lookup failed:', error);
+      res.status(500).json({ error: 'Could not open the TD Insurance offer' });
+    }
+  },
+);
 
 router.get('/notifications', authMiddleware, async (req, res) => {
   res.json({

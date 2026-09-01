@@ -318,6 +318,29 @@ describe('system and authentication', () => {
     assert.equal(invalidToken.body.error, 'Invalid or expired token');
   });
 
+  test('releases the TD Insurance offer only to authenticated members', async () => {
+    await request(app).get('/api/member-benefits/td-insurance').expect(401);
+
+    const user = await createUser();
+    const session = await login(user);
+    const response = await request(app)
+      .get('/api/member-benefits/td-insurance')
+      .set('Authorization', bearer(session.body.token))
+      .expect(200);
+
+    assert.match(
+      response.body.url,
+      /^https:\/\/www\.tdinsurance\.com\/affinity\/cmcen\?/u,
+    );
+
+    const audit = await AuditLog.findOne({
+      action: 'benefit.td_insurance_accessed',
+    }).lean();
+    assert.equal(String(audit.actor), String(user._id));
+    assert.equal(audit.targetType, 'member_benefit');
+    assert.equal(audit.targetSnapshot.provider, 'td_insurance');
+  });
+
   test('logs in, returns a safe profile, refreshes, and revokes the session', async () => {
     const user = await createUser();
     const agent = request.agent(app);

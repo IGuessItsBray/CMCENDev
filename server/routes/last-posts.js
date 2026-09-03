@@ -5,6 +5,9 @@ const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
 const { recordContentRevision } = require('../services/content-revisions');
+const {
+  getScheduledPublicationDate,
+} = require('../services/scheduled-publication');
 const { cleanString, parseBoolean } = require('../services/content-utils');
 const { linkMediaAssetToSource } = require('../services/media-assets');
 
@@ -520,9 +523,20 @@ router.patch(
         return res.status(404).json({ error: 'Last Post notice not found' });
       }
 
-      if (!['publish', 'reject'].includes(action)) {
+      if (!['publish', 'reject', 'cancel-schedule'].includes(action)) {
         return res.status(400).json({
-          error: 'Review action must be publish or reject',
+          error: 'Review action must be publish, reject, or cancel a schedule',
+        });
+      }
+
+      const scheduledPublishAt =
+        action === 'publish'
+          ? getScheduledPublicationDate(req.body?.scheduledPublishAt)
+          : null;
+
+      if (action === 'publish' && scheduledPublishAt === undefined) {
+        return res.status(400).json({
+          error: 'Schedule a valid future publication date and time',
         });
       }
 
@@ -537,6 +551,42 @@ router.patch(
           .json({ error: 'Pending Last Post notice not found' });
       }
 
+      if (action === 'cancel-schedule') {
+        if (!lastPost.scheduledPublishAt) {
+          return res.status(409).json({
+            error:
+              'This Last Post notice does not have a scheduled publication',
+          });
+        }
+
+        const cancelledScheduledPublishAt = lastPost.scheduledPublishAt;
+        lastPost.scheduledPublishAt = null;
+        lastPost.scheduledBy = null;
+        lastPost.scheduledAt = null;
+        lastPost.reviewedBy = null;
+        lastPost.reviewedAt = null;
+        lastPost.updatedBy = req.user._id;
+        await lastPost.save();
+
+        await writeAuditLog({
+          req,
+          action: 'content.publish_schedule_cancelled',
+          actor: req.user,
+          targetType: 'lastPost',
+          target: lastPost._id,
+          targetSnapshot: getLastPostSnapshot(lastPost),
+          metadata: {
+            source: 'review',
+            scheduledPublishAt: cancelledScheduledPublishAt,
+          },
+        });
+
+        return res.json({
+          message: 'Scheduled Last Post publication cancelled',
+          lastPost,
+        });
+      }
+
       if (action === 'reject') {
         if (!rejectionReason) {
           return res
@@ -546,7 +596,28 @@ router.patch(
 
         lastPost.status = 'rejected';
         lastPost.rejectionReason = rejectionReason;
+        lastPost.publishedBy = null;
+        lastPost.publishedAt = null;
+        lastPost.scheduledPublishAt = null;
+        lastPost.scheduledBy = null;
+        lastPost.scheduledAt = null;
+        lastPost.reviewedBy = req.user._id;
+        lastPost.reviewedAt = new Date();
+        lastPost.updatedBy = req.user._id;
         await lastPost.save();
+
+        await writeAuditLog({
+          req,
+          action: 'content.rejected',
+          actor: req.user,
+          targetType: 'lastPost',
+          target: lastPost._id,
+          targetSnapshot: getLastPostSnapshot(lastPost),
+          metadata: {
+            source: 'review',
+            rejectionReason,
+          },
+        });
 
         return res.json({ lastPost });
       }
@@ -565,11 +636,34 @@ router.patch(
         });
       }
 
+      const reviewDate = new Date();
       lastPost.messages = messages;
-      lastPost.status = 'published';
-      lastPost.publishedAt = new Date();
+      lastPost.status = scheduledPublishAt ? 'pending' : 'published';
+      lastPost.publishedBy = scheduledPublishAt ? null : req.user._id;
+      lastPost.publishedAt = scheduledPublishAt ? null : reviewDate;
+      lastPost.scheduledPublishAt = scheduledPublishAt;
+      lastPost.scheduledBy = scheduledPublishAt ? req.user._id : null;
+      lastPost.scheduledAt = scheduledPublishAt ? reviewDate : null;
+      lastPost.reviewedBy = req.user._id;
+      lastPost.reviewedAt = reviewDate;
+      lastPost.updatedBy = req.user._id;
       lastPost.rejectionReason = '';
       await lastPost.save();
+
+      await writeAuditLog({
+        req,
+        action: scheduledPublishAt
+          ? 'content.publish_scheduled'
+          : 'content.published',
+        actor: req.user,
+        targetType: 'lastPost',
+        target: lastPost._id,
+        targetSnapshot: getLastPostSnapshot(lastPost),
+        metadata: {
+          source: 'review',
+          ...(scheduledPublishAt ? { scheduledPublishAt } : {}),
+        },
+      });
 
       return res.json({ lastPost });
     } catch (error) {

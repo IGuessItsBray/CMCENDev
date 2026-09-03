@@ -48,6 +48,11 @@ const auditActions = [
   ["contact.submitted", "audit_action_contact_submitted"],
   ["content.created", "audit_action_content_created"],
   ["content.published", "audit_action_content_published"],
+  ["content.publish_scheduled", "audit_action_content_publish_scheduled"],
+  [
+    "content.publish_schedule_cancelled",
+    "audit_action_content_publish_schedule_cancelled",
+  ],
   ["content.rejected", "audit_action_content_rejected"],
   ["content.drafted", "audit_action_content_drafted"],
   ["content.deleted", "audit_action_content_deleted"],

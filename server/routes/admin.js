@@ -320,7 +320,8 @@ function hasFreshDestructivePasskeyVerification(user) {
 }
 
 // GET /api/admin/review-counts
-// Return the current moderation workload without loading each submission.
+// Return the moderation workload that still needs a decision, without loading
+// each submission. Scheduled items have already been approved and are omitted.
 router.get(
   '/review-counts',
   authMiddleware,
@@ -329,9 +330,13 @@ router.get(
     try {
       const [events, retirementMessages, lastPosts, comments] =
         await Promise.all([
-          Event.countDocuments({ status: 'pending' }),
-          RetirementMessage.countDocuments({ status: 'pending' }),
-          LastPostMessage.countDocuments({ status: 'pending' }),
+          Event.countDocuments(getContentWorkspaceStatusFilter('pending')),
+          RetirementMessage.countDocuments(
+            getContentWorkspaceStatusFilter('pending'),
+          ),
+          LastPostMessage.countDocuments(
+            getContentWorkspaceStatusFilter('pending'),
+          ),
           RetirementComment.countDocuments({ status: 'pending' }),
         ]);
 
@@ -371,6 +376,7 @@ const CONTENT_WORKSPACE_TYPES = Object.freeze([
 const CONTENT_WORKSPACE_STATUSES = Object.freeze([
   'draft',
   'pending',
+  'scheduled',
   'published',
   'rejected',
   'hidden',
@@ -603,6 +609,28 @@ function getContentWorkspaceTranslationFilter(type, translation) {
   };
 }
 
+// Scheduled publication remains a pending lifecycle record until the
+// publication service makes it public. Expose it separately in the workspace
+// so reviewers can distinguish already-approved scheduled content from work
+// that still needs a review decision.
+function getContentWorkspaceStatusFilter(status) {
+  if (status === 'scheduled') {
+    return {
+      status: 'pending',
+      scheduledPublishAt: { $type: 'date' },
+    };
+  }
+
+  if (status === 'pending') {
+    return {
+      status: 'pending',
+      scheduledPublishAt: null,
+    };
+  }
+
+  return status === 'all' ? {} : { status };
+}
+
 function getContentWorkspaceRecordFilter(
   contentFilter,
   type,
@@ -628,6 +656,10 @@ function toContentWorkspaceItem(type, content) {
     updatedAt: content.updatedAt,
     createdAt: content.createdAt,
   };
+
+  if (['event', 'retirementMessage', 'lastPost'].includes(type)) {
+    base.scheduledPublishAt = content.scheduledPublishAt || null;
+  }
 
   if (type === 'event') {
     return {
@@ -777,7 +809,7 @@ router.get(
       }
 
       const contentFilter = {
-        ...(status === 'all' ? {} : { status }),
+        ...getContentWorkspaceStatusFilter(status),
         ...(contentId ? { _id: contentId } : {}),
       };
       const searchPattern = search
@@ -803,7 +835,7 @@ router.get(
         queries.push(
           Event.find(getWorkspaceFilter('event'))
             .select(
-              'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay rsvpEnabled rsvpDeadline imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
+              'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay rsvpEnabled rsvpDeadline imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt updatedAt createdAt',
             )
             .populate([
               {
@@ -828,7 +860,7 @@ router.get(
         queries.push(
           RetirementMessage.find(getWorkspaceFilter('retirementMessage'))
             .select(
-              'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
+              'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation createdBy status hiddenFromStatus rejectionReason scheduledPublishAt updatedAt createdAt',
             )
             .populate({
               path: 'createdBy',
@@ -849,7 +881,7 @@ router.get(
         queries.push(
           LastPostMessage.find(getWorkspaceFilter('lastPost'))
             .select(
-              'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission createdBy status hiddenFromStatus rejectionReason updatedAt createdAt',
+              'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt updatedAt createdAt',
             )
             .populate([
               {

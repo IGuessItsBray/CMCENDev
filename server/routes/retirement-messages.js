@@ -14,6 +14,9 @@ const {
 } = require('../services/content-snapshots');
 const { recordContentRevision } = require('../services/content-revisions');
 const {
+  getScheduledPublicationDate,
+} = require('../services/scheduled-publication');
+const {
   getCleanCertificateRequestPayload,
   validateCertificateRequestPayload,
 } = require('../services/certificate-requests');
@@ -875,6 +878,13 @@ router.patch(
         });
       }
 
+      if (req.body?.scheduledPublishAt !== undefined) {
+        return res.status(400).json({
+          error:
+            'Scheduled publication is not supported for retirement comments',
+        });
+      }
+
       const comment = await RetirementComment.findById(req.params.commentId);
 
       if (!comment) {
@@ -907,8 +917,8 @@ router.patch(
       }
 
       if (action === 'publish') {
-        comment.status = 'published';
         comment.rejectionReason = '';
+        comment.status = 'published';
         comment.publishedBy = req.user._id;
         comment.publishedAt = reviewDate;
       }
@@ -1699,11 +1709,27 @@ router.patch(
   requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
-      const { action, rejectionReason, messages } = req.body;
+      const {
+        action,
+        rejectionReason,
+        messages,
+        scheduledPublishAt: scheduleValue,
+      } = req.body;
 
-      if (!['publish', 'reject'].includes(action)) {
+      if (!['publish', 'reject', 'cancel-schedule'].includes(action)) {
         return res.status(400).json({
-          error: 'Review action must be publish or reject',
+          error: 'Review action must be publish, reject, or cancel a schedule',
+        });
+      }
+
+      const scheduledPublishAt =
+        action === 'publish'
+          ? getScheduledPublicationDate(scheduleValue)
+          : null;
+
+      if (action === 'publish' && scheduledPublishAt === undefined) {
+        return res.status(400).json({
+          error: 'Schedule a valid future publication date and time',
         });
       }
 
@@ -1723,6 +1749,52 @@ router.patch(
         });
       }
 
+      if (action === 'cancel-schedule') {
+        if (!retirementMessage.scheduledPublishAt) {
+          return res.status(409).json({
+            error:
+              'This retirement message does not have a scheduled publication',
+          });
+        }
+
+        const cancelledScheduledPublishAt =
+          retirementMessage.scheduledPublishAt;
+        retirementMessage.scheduledPublishAt = null;
+        retirementMessage.scheduledBy = null;
+        retirementMessage.scheduledAt = null;
+        retirementMessage.reviewedBy = null;
+        retirementMessage.reviewedAt = null;
+        retirementMessage.updatedBy = req.user._id;
+        await retirementMessage.save();
+
+        await writeAuditLog({
+          req,
+          action: 'content.publish_schedule_cancelled',
+          actor: req.user,
+          targetType: 'retirementMessage',
+          target: retirementMessage._id,
+          targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+          metadata: {
+            source: 'review',
+            scheduledPublishAt: cancelledScheduledPublishAt,
+          },
+        });
+
+        await retirementMessage.populate(
+          'reviewedBy',
+          'username accountName email role',
+        );
+        await retirementMessage.populate(
+          'publishedBy',
+          'username accountName role',
+        );
+
+        return res.json({
+          message: 'Scheduled retirement message publication cancelled',
+          retirementMessage,
+        });
+      }
+
       const reviewDate = new Date();
 
       if (action === 'reject') {
@@ -1739,6 +1811,9 @@ router.patch(
         retirementMessage.rejectionReason = cleanReason;
         retirementMessage.publishedBy = null;
         retirementMessage.publishedAt = null;
+        retirementMessage.scheduledPublishAt = null;
+        retirementMessage.scheduledBy = null;
+        retirementMessage.scheduledAt = null;
       }
 
       if (action === 'publish') {
@@ -1777,10 +1852,17 @@ router.patch(
           originalLanguage,
         );
 
-        retirementMessage.status = 'published';
         retirementMessage.rejectionReason = null;
-        retirementMessage.publishedBy = req.user._id;
-        retirementMessage.publishedAt = reviewDate;
+        retirementMessage.scheduledPublishAt = scheduledPublishAt;
+        retirementMessage.scheduledBy = scheduledPublishAt
+          ? req.user._id
+          : null;
+        retirementMessage.scheduledAt = scheduledPublishAt ? reviewDate : null;
+        retirementMessage.status = scheduledPublishAt ? 'pending' : 'published';
+        retirementMessage.publishedBy = scheduledPublishAt
+          ? null
+          : req.user._id;
+        retirementMessage.publishedAt = scheduledPublishAt ? null : reviewDate;
       }
 
       retirementMessage.reviewedBy = req.user._id;
@@ -1789,7 +1871,22 @@ router.patch(
 
       await retirementMessage.save();
 
-      if (action === 'publish') {
+      if (action === 'publish' && scheduledPublishAt) {
+        await writeAuditLog({
+          req,
+          action: 'content.publish_scheduled',
+          actor: req.user,
+          targetType: 'retirementMessage',
+          target: retirementMessage._id,
+          targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
+          metadata: {
+            source: 'review',
+            scheduledPublishAt,
+          },
+        });
+      }
+
+      if (action === 'publish' && !scheduledPublishAt) {
         await writeAuditLog({
           req,
           action: 'content.published',
@@ -1829,7 +1926,9 @@ router.patch(
       res.json({
         message:
           action === 'publish'
-            ? 'Retirement message published successfully'
+            ? scheduledPublishAt
+              ? 'Retirement message publication scheduled'
+              : 'Retirement message published successfully'
             : 'Retirement message rejected',
 
         retirementMessage,

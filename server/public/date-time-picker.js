@@ -159,6 +159,50 @@
       trigger.classList.toggle("is-placeholder", !selectedDate);
     }
 
+    function positionPopover() {
+      const viewportPadding = 12;
+      const gap = 4;
+      const triggerRect = trigger.getBoundingClientRect();
+      const width = Math.min(360, window.innerWidth - viewportPadding * 2);
+      const left = Math.max(
+        viewportPadding,
+        Math.min(
+          triggerRect.left,
+          window.innerWidth - width - viewportPadding,
+        ),
+      );
+      const spaceAbove = triggerRect.top - viewportPadding;
+      const spaceBelow = window.innerHeight - triggerRect.bottom - viewportPadding;
+      const naturalPopoverHeight = popover.getBoundingClientRect().height;
+      const openAbove =
+        spaceBelow < naturalPopoverHeight && spaceAbove > spaceBelow;
+      const availableHeight = Math.max(
+        0,
+        (openAbove ? spaceAbove : spaceBelow) - gap,
+      );
+
+      popover.style.setProperty("--date-popover-left", `${left}px`);
+      popover.style.setProperty("--date-popover-width", `${width}px`);
+      popover.style.setProperty(
+        "--date-popover-max-height",
+        `${availableHeight}px`,
+      );
+
+      const popoverHeight = popover.getBoundingClientRect().height;
+      const preferredTop = openAbove
+        ? triggerRect.top - gap - popoverHeight
+        : triggerRect.bottom + gap;
+      const top = Math.max(
+        viewportPadding,
+        Math.min(
+          preferredTop,
+          window.innerHeight - popoverHeight - viewportPadding,
+        ),
+      );
+
+      popover.style.setProperty("--date-popover-top", `${top}px`);
+    }
+
     function setOpen(isOpen) {
       if (isOpen) {
         window.dispatchEvent(
@@ -171,18 +215,7 @@
       trigger.setAttribute("aria-expanded", String(isOpen));
       if (!isOpen) return;
 
-      const triggerRect = trigger.getBoundingClientRect();
-      const width = Math.min(360, window.innerWidth - 24);
-      const left = Math.max(
-        12,
-        Math.min(triggerRect.left, window.innerWidth - width - 12),
-      );
-      popover.style.setProperty("--date-popover-left", `${left}px`);
-      popover.style.setProperty(
-        "--date-popover-top",
-        `${triggerRect.bottom + 4}px`,
-      );
-      popover.style.setProperty("--date-popover-width", `${width}px`);
+      positionPopover();
     }
 
     function selectDate(dateValue) {
@@ -330,6 +363,8 @@
 
       popover.prepend(header, grid);
       popover.append(actions);
+
+      if (picker.classList.contains("is-open")) positionPopover();
     }
 
     trigger.addEventListener("click", (event) => {
@@ -345,10 +380,10 @@
       }
     };
     const positionOnResize = () => {
-      if (picker.classList.contains("is-open")) setOpen(true);
+      if (picker.classList.contains("is-open")) positionPopover();
     };
     const positionOnScroll = () => {
-      if (picker.classList.contains("is-open")) setOpen(true);
+      if (picker.classList.contains("is-open")) positionPopover();
     };
 
     picker.addEventListener("click", stopPickerPropagation);

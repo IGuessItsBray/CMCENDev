@@ -172,6 +172,24 @@ const LastPostMessageSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+
+    scheduledPublishAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+
+    scheduledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    scheduledAt: {
+      type: Date,
+      default: null,
+    },
+
     rejectionReason: {
       type: String,
       trim: true,

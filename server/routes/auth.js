@@ -323,7 +323,13 @@ function getUnreadApprovalReviewResultQuery(user, lastReadAt) {
 
   return {
     status: 'published',
-    reviewedAt: { $gt: approvalReadAt },
+    $or: [
+      { publishedAt: { $gt: approvalReadAt } },
+      {
+        publishedAt: null,
+        reviewedAt: { $gt: approvalReadAt },
+      },
+    ],
     reviewedBy: { $ne: user._id },
   };
 }
@@ -348,6 +354,8 @@ function getReviewResultHref(type, item) {
 
   if (type === 'retirementMessage') return `/retirement-message?id=${id}`;
 
+  if (type === 'lastPost') return `/last-post-message?id=${id}`;
+
   const messageId = encodeURIComponent(
     String(item.retirementMessage?._id || item.retirementMessage || ''),
   );
@@ -358,7 +366,7 @@ async function getEventReviewNotifications(user, lastReadAt) {
   const events = await Event.find(
     getReviewResultQuery('createdBy', user, lastReadAt),
   )
-    .select('title status rejectionReason reviewedAt updatedAt')
+    .select('title status rejectionReason reviewedAt publishedAt updatedAt')
     .sort({ reviewedAt: -1 })
     .lean();
 
@@ -371,7 +379,7 @@ async function getEventReviewNotifications(user, lastReadAt) {
       title: event.title,
       status: event.status,
       reason: event.rejectionReason || '',
-      updatedAt: event.reviewedAt || event.updatedAt,
+      updatedAt: event.publishedAt || event.reviewedAt || event.updatedAt,
       editHref: getReviewResultHref('event', event),
       href: getReviewResultHref('event', event),
     })),
@@ -434,7 +442,7 @@ async function getRetirementMessageReviewNotifications(user, lastReadAt) {
   const retirementMessages = await RetirementMessage.find(
     getReviewResultQuery('createdBy', user, lastReadAt),
   )
-    .select('retiree status rejectionReason reviewedAt updatedAt')
+    .select('retiree status rejectionReason reviewedAt publishedAt updatedAt')
     .sort({ reviewedAt: -1 })
     .lean();
 
@@ -451,7 +459,10 @@ async function getRetirementMessageReviewNotifications(user, lastReadAt) {
       title: getRetirementMessageNotificationTitle(retirementMessage),
       status: retirementMessage.status,
       reason: retirementMessage.rejectionReason || '',
-      updatedAt: retirementMessage.reviewedAt || retirementMessage.updatedAt,
+      updatedAt:
+        retirementMessage.publishedAt ||
+        retirementMessage.reviewedAt ||
+        retirementMessage.updatedAt,
       editHref: getReviewResultHref('retirementMessage', retirementMessage),
       href: getReviewResultHref('retirementMessage', retirementMessage),
     })),
@@ -471,7 +482,7 @@ async function getLastPostReviewNotifications(user, lastReadAt) {
   const lastPosts = await LastPostMessage.find(
     getReviewResultQuery('createdBy', user, lastReadAt),
   )
-    .select('deceased status rejectionReason reviewedAt updatedAt')
+    .select('deceased status rejectionReason reviewedAt publishedAt updatedAt')
     .sort({ reviewedAt: -1 })
     .lean();
 
@@ -486,7 +497,8 @@ async function getLastPostReviewNotifications(user, lastReadAt) {
       title: getLastPostNotificationTitle(lastPost),
       status: lastPost.status,
       reason: lastPost.rejectionReason || '',
-      updatedAt: lastPost.reviewedAt || lastPost.updatedAt,
+      updatedAt:
+        lastPost.publishedAt || lastPost.reviewedAt || lastPost.updatedAt,
       editHref: getReviewResultHref('lastPost', lastPost),
       href: getReviewResultHref('lastPost', lastPost),
     })),
@@ -498,7 +510,7 @@ async function getRetirementCommentReviewNotifications(user, lastReadAt) {
     getReviewResultQuery('author', user, lastReadAt),
   )
     .select(
-      'body status rejectionReason reviewedAt updatedAt retirementMessage',
+      'body status rejectionReason reviewedAt publishedAt updatedAt retirementMessage',
     )
     .populate('retirementMessage', 'retiree status')
     .sort({ reviewedAt: -1 })
@@ -518,7 +530,7 @@ async function getRetirementCommentReviewNotifications(user, lastReadAt) {
       body: comment.body || '',
       status: comment.status,
       reason: comment.rejectionReason || '',
-      updatedAt: comment.reviewedAt || comment.updatedAt,
+      updatedAt: comment.publishedAt || comment.reviewedAt || comment.updatedAt,
       editHref: getReviewResultHref('retirementComment', comment),
       href: getReviewResultHref('retirementComment', comment),
     })),

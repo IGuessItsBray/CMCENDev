@@ -268,6 +268,23 @@ const EventSchema = new mongoose.Schema(
       default: null,
     },
 
+    scheduledPublishAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+
+    scheduledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    scheduledAt: {
+      type: Date,
+      default: null,
+    },
+
     lastSubmittedAt: {
       type: Date,
       default: null,

@@ -837,7 +837,8 @@ paths:
   /api/admin/review-counts:
     get:
       tags: [Admin]
-      summary: Get pending review counts.
+      summary: Get open review counts.
+      description: Counts submissions that still require a review decision. Scheduled Events, Last Post notices, and retirement messages are excluded.
       x-permission: canReviewAndPublish
       responses:
         "200":
@@ -1248,9 +1249,10 @@ paths:
               ]
         - name: status
           in: query
+          description: Scheduled is a workspace-only filter for pending Events, Last Post notices, and retirement messages that have a scheduled publication date. Pending excludes those already scheduled records.
           schema:
             type: string
-            enum: [all, draft, pending, published, rejected, hidden]
+            enum: [all, draft, pending, scheduled, published, rejected, hidden]
         - name: translation
           in: query
           description: Filter for public copy with a missing English or French equivalent. Retirement comments have no bilingual public copy and are excluded when this filter is used.
@@ -2047,7 +2049,8 @@ paths:
   /api/events/{eventId}/review:
     patch:
       tags: [Events]
-      summary: Publish or reject event.
+      summary: Review event publication.
+      description: A publish action may include a future `scheduledPublishAt` timestamp. Scheduled content stays pending until the server publishes it at that time. A `cancel-schedule` action removes the schedule and leaves the event pending.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/EventId"
@@ -2277,7 +2280,8 @@ paths:
   /api/last-posts/{messageId}/review:
     patch:
       tags: [Last Posts]
-      summary: Publish or reject a Last Post notice.
+      summary: Review Last Post publication.
+      description: A publish action may include a future `scheduledPublishAt` timestamp. Scheduled content stays pending until the server publishes it at that time. A `cancel-schedule` action removes the schedule and leaves the notice pending.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/MessageId"
@@ -2363,7 +2367,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/CommentId"
       requestBody:
-        $ref: "#/components/requestBodies/ReviewDecision"
+        $ref: "#/components/requestBodies/ImmediateReviewDecision"
       responses:
         "200":
           description: Review result.
@@ -2459,7 +2463,8 @@ paths:
   /api/retirement-messages/{messageId}/review:
     patch:
       tags: [Retirements]
-      summary: Publish or reject retirement message.
+      summary: Review retirement-message publication.
+      description: A publish action may include a future `scheduledPublishAt` timestamp. Scheduled content stays pending until the server publishes it at that time. A `cancel-schedule` action removes the schedule and leaves the message pending.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/MessageId"
@@ -2789,14 +2794,46 @@ components:
         application/json:
           schema:
             type: object
+            required: [action]
             properties:
-              decision:
+              action:
                 type: string
-                enum: [publish, reject, approve]
-              status:
+                enum: [publish, reject, cancel-schedule]
+              rejectionReason:
                 type: string
-              reason:
+                maxLength: 2000
+                description: Required when `action` is `reject`.
+              scheduledPublishAt:
                 type: string
+                format: date-time
+                description: Optional future time to publish a reviewed item when `action` is `publish`.
+              messages:
+                type: object
+                description: Optional bilingual publication copy supplied when publishing a retirement message.
+                properties:
+                  en:
+                    type: string
+                    minLength: 100
+                    maxLength: 10000
+                  fr:
+                    type: string
+                    minLength: 100
+                    maxLength: 10000
+    ImmediateReviewDecision:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [action]
+            properties:
+              action:
+                type: string
+                enum: [publish, reject]
+              rejectionReason:
+                type: string
+                maxLength: 2000
+                description: Required when `action` is `reject`.
     EventReviewContent:
       required: true
       content:

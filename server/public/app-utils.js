@@ -1410,60 +1410,98 @@
 
         if (isForm) {
           (options.fields || []).forEach((field) => {
-            const group = document.createElement("label");
+            const isCustomDateTime = field.type === "cmcen-date-time";
+            const usesDateTimePicker =
+              isCustomDateTime &&
+              window.CMCENDateTimePicker?.create;
+            const group = document.createElement(
+              usesDateTimePicker ? "div" : "label",
+            );
             group.className = "cmcen-modal-field";
 
             const label = document.createElement("span");
             label.textContent = field.label || field.name || "Field";
 
-            const control = document.createElement(
-              field.type === "select"
-                ? "select"
-                : field.type === "textarea"
-                  ? "textarea"
-                  : "input",
-            );
-            control.className = "cmcen-modal-input";
-            control.name = field.name || "";
-            control.id = `cmcenModalField-${field.name || "input"}`;
-            control.required = field.required === true;
-            control.autocomplete = field.autocomplete || "off";
+            if (usesDateTimePicker) {
+              const valueInput = document.createElement("input");
+              valueInput.type = "hidden";
+              valueInput.name = field.name || "";
+              valueInput.value = String(field.defaultValue || "");
 
-            if (field.type === "select") {
-              (field.options || []).forEach((option) => {
-                const optionElement = document.createElement("option");
-                optionElement.value = String(option.value || "");
-                optionElement.textContent = String(
-                  option.label || option.value || "",
-                );
-                optionElement.selected = option.value === field.defaultValue;
-                control.append(optionElement);
+              const [date = "", time = ""] = valueInput.value.split("T");
+              const picker = window.CMCENDateTimePicker.create({
+                name: field.name,
+                dateName: `${field.name}PickerDate`,
+                timeName: `${field.name}PickerTime`,
+                date,
+                time,
+                includeTime: true,
+                label: field.label || field.name || "Date and time",
+                placeholder: field.placeholder || "Select date and time",
+                timeLabel: field.timeLabel || "Time",
+                clearLabel: field.clearLabel || "Clear",
+                doneLabel: field.doneLabel || "Done",
+                locale: field.locale,
+                onInput: ({ date: selectedDate, time: selectedTime }) => {
+                  valueInput.value = selectedDate
+                    ? `${selectedDate}T${selectedTime || "00:00"}`
+                    : "";
+                },
               });
+
+              group.append(label, valueInput, picker);
             } else {
-              if (field.type !== "textarea") {
-                control.type = field.type || "text";
+              const control = document.createElement(
+                field.type === "select"
+                  ? "select"
+                  : field.type === "textarea"
+                    ? "textarea"
+                    : "input",
+              );
+              control.className = "cmcen-modal-input";
+              control.name = field.name || "";
+              control.id = `cmcenModalField-${field.name || "input"}`;
+              control.required = field.required === true;
+              control.autocomplete = field.autocomplete || "off";
+
+              if (field.type === "select") {
+                (field.options || []).forEach((option) => {
+                  const optionElement = document.createElement("option");
+                  optionElement.value = String(option.value || "");
+                  optionElement.textContent = String(
+                    option.label || option.value || "",
+                  );
+                  optionElement.selected = option.value === field.defaultValue;
+                  control.append(optionElement);
+                });
+              } else {
+                if (field.type !== "textarea") {
+                  control.type = isCustomDateTime
+                    ? "datetime-local"
+                    : field.type || "text";
+                }
+                control.value = String(field.defaultValue || "");
+                control.placeholder = field.placeholder || "";
+                if (field.maxLength) control.maxLength = field.maxLength;
               }
-              control.value = String(field.defaultValue || "");
-              control.placeholder = field.placeholder || "";
-              if (field.maxLength) control.maxLength = field.maxLength;
-            }
 
-            if (
-              field.requiresNonWhitespace === true &&
-              field.required === true
-            ) {
-              const validateNonWhitespaceValue = () => {
-                control.setCustomValidity(
-                  control.value && !control.value.trim()
-                    ? field.requiredMessage || "Enter a value."
-                    : "",
-                );
-              };
-              control.addEventListener("input", validateNonWhitespaceValue);
-              validateNonWhitespaceValue();
-            }
+              if (
+                field.requiresNonWhitespace === true &&
+                field.required === true
+              ) {
+                const validateNonWhitespaceValue = () => {
+                  control.setCustomValidity(
+                    control.value && !control.value.trim()
+                      ? field.requiredMessage || "Enter a value."
+                      : "",
+                  );
+                };
+                control.addEventListener("input", validateNonWhitespaceValue);
+                validateNonWhitespaceValue();
+              }
 
-            group.append(label, control);
+              group.append(label, control);
+            }
 
             if (field.hint) {
               const hint = document.createElement("small");
@@ -1528,7 +1566,9 @@
           if (modalActiveRequest?.resolve !== resolve) return;
 
           const focusTarget = isForm
-            ? modalFormFields.querySelector("input, select, textarea")
+            ? modalFormFields.querySelector(
+                ".cmcen-date-time-trigger, input:not([type=hidden]), select, textarea",
+              )
             : isPrompt
               ? modalInput
               : isChoice

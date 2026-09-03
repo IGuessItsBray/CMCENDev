@@ -21,6 +21,9 @@ const { sendMail } = require('../services/mailer');
 const { getEventSnapshot } = require('../services/content-snapshots');
 const { recordContentRevision } = require('../services/content-revisions');
 const {
+  getScheduledPublicationDate,
+} = require('../services/scheduled-publication');
+const {
   cleanLocalizedText,
   cleanString,
   getValidationErrorMessage,
@@ -1731,11 +1734,26 @@ router.patch(
   requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
-      const { action, rejectionReason } = req.body;
+      const {
+        action,
+        rejectionReason,
+        scheduledPublishAt: scheduleValue,
+      } = req.body;
 
-      if (!['publish', 'reject'].includes(action)) {
+      if (!['publish', 'reject', 'cancel-schedule'].includes(action)) {
         return res.status(400).json({
-          error: 'Review action must be publish or reject',
+          error: 'Review action must be publish, reject, or cancel a schedule',
+        });
+      }
+
+      const scheduledPublishAt =
+        action === 'publish'
+          ? getScheduledPublicationDate(scheduleValue)
+          : null;
+
+      if (action === 'publish' && scheduledPublishAt === undefined) {
+        return res.status(400).json({
+          error: 'Schedule a valid future publication date and time',
         });
       }
 
@@ -1753,6 +1771,44 @@ router.patch(
         });
       }
 
+      if (action === 'cancel-schedule') {
+        if (!event.scheduledPublishAt) {
+          return res.status(409).json({
+            error: 'This event does not have a scheduled publication',
+          });
+        }
+
+        const cancelledScheduledPublishAt = event.scheduledPublishAt;
+        event.scheduledPublishAt = null;
+        event.scheduledBy = null;
+        event.scheduledAt = null;
+        event.reviewedBy = null;
+        event.reviewedAt = null;
+        event.updatedBy = req.user._id;
+        await event.save();
+
+        await writeAuditLog({
+          req,
+          action: 'content.publish_schedule_cancelled',
+          actor: req.user,
+          targetType: 'event',
+          target: event._id,
+          targetSnapshot: getEventSnapshot(event),
+          metadata: {
+            source: 'review',
+            scheduledPublishAt: cancelledScheduledPublishAt,
+          },
+        });
+
+        await event.populate('createdBy', 'username accountName email role');
+        await event.populate('publishedBy', 'username accountName role');
+
+        return res.json({
+          message: 'Scheduled event publication cancelled',
+          event,
+        });
+      }
+
       if (action === 'reject') {
         const cleanReason =
           typeof rejectionReason === 'string' ? rejectionReason.trim() : '';
@@ -1767,13 +1823,19 @@ router.patch(
         event.rejectionReason = cleanReason;
         event.publishedBy = null;
         event.publishedAt = null;
+        event.scheduledPublishAt = null;
+        event.scheduledBy = null;
+        event.scheduledAt = null;
       }
 
       if (action === 'publish') {
-        event.status = 'published';
         event.rejectionReason = null;
-        event.publishedBy = req.user._id;
-        event.publishedAt = new Date();
+        event.scheduledPublishAt = scheduledPublishAt;
+        event.scheduledBy = scheduledPublishAt ? req.user._id : null;
+        event.scheduledAt = scheduledPublishAt ? new Date() : null;
+        event.status = scheduledPublishAt ? 'pending' : 'published';
+        event.publishedBy = scheduledPublishAt ? null : req.user._id;
+        event.publishedAt = scheduledPublishAt ? null : new Date();
       }
 
       event.updatedBy = req.user._id;
@@ -1782,7 +1844,22 @@ router.patch(
 
       await event.save();
 
-      if (action === 'publish') {
+      if (action === 'publish' && scheduledPublishAt) {
+        await writeAuditLog({
+          req,
+          action: 'content.publish_scheduled',
+          actor: req.user,
+          targetType: 'event',
+          target: event._id,
+          targetSnapshot: getEventSnapshot(event),
+          metadata: {
+            source: 'review',
+            scheduledPublishAt,
+          },
+        });
+      }
+
+      if (action === 'publish' && !scheduledPublishAt) {
         await writeAuditLog({
           req,
           action: 'content.published',
@@ -1818,7 +1895,9 @@ router.patch(
       res.json({
         message:
           action === 'publish'
-            ? 'Event published successfully'
+            ? scheduledPublishAt
+              ? 'Event publication scheduled'
+              : 'Event published successfully'
             : 'Event rejected',
 
         event,

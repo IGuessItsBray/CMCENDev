@@ -40,6 +40,7 @@ const User = require('../../models/User');
 const s3Client = require('../../storage');
 const { RETIREMENT_TRADE_ROLES } = require('../../config/content');
 const { buildPublicMediaUrl } = require('../../services/media-library');
+const { publishDueContent } = require('../../services/scheduled-publication');
 const { createUnsubscribeToken } = require('../../services/weekly-brief');
 
 let mongoServer;
@@ -2288,6 +2289,339 @@ describe('event, page, and comment workflows', () => {
     assert.equal(publishedNotification.type, 'event');
     assert.equal(publishedNotification.status, 'published');
     assert.equal(publishedNotification.href, `/event?id=${event._id}`);
+  });
+
+  test('keeps a scheduled event pending until its publication time', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorSession = await login(contributor);
+    const editorSession = await login(editor);
+    const scheduledPublishAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    const submitted = await request(app)
+      .post('/api/events')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(201);
+
+    const scheduled = await request(app)
+      .patch(`/api/events/${submitted.body.event._id}/review`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        action: 'publish',
+        scheduledPublishAt: scheduledPublishAt.toISOString(),
+      })
+      .expect(200);
+    assert.equal(scheduled.body.event.status, 'pending');
+    assert.equal(
+      new Date(scheduled.body.event.scheduledPublishAt).toISOString(),
+      scheduledPublishAt.toISOString(),
+    );
+
+    const scheduledWorkspace = await request(app)
+      .get('/api/admin/content?type=event&status=scheduled')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(scheduledWorkspace.body.items.length, 1);
+    assert.equal(
+      String(scheduledWorkspace.body.items[0]._id),
+      String(submitted.body.event._id),
+    );
+    assert.equal(scheduledWorkspace.body.items[0].status, 'pending');
+    assert.equal(
+      new Date(
+        scheduledWorkspace.body.items[0].scheduledPublishAt,
+      ).toISOString(),
+      scheduledPublishAt.toISOString(),
+    );
+
+    const pendingWorkspace = await request(app)
+      .get('/api/admin/content?type=event&status=pending')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(
+      pendingWorkspace.body.items.some(
+        (item) => String(item._id) === String(submitted.body.event._id),
+      ),
+      false,
+    );
+
+    const reviewCounts = await request(app)
+      .get('/api/admin/review-counts')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(reviewCounts.body.events, 0);
+
+    await request(app)
+      .get(`/api/events/${submitted.body.event._id}`)
+      .expect(404);
+
+    const scheduledAudit = await AuditLog.findOne({
+      action: 'content.publish_scheduled',
+      target: submitted.body.event._id,
+    }).lean();
+    assert.equal(scheduledAudit.targetType, 'event');
+
+    await User.findByIdAndUpdate(contributor._id, {
+      $set: { 'notificationState.lastReadAt': new Date() },
+    });
+
+    const unscheduled = await Event.create({
+      ...eventPayload({
+        title: {
+          en: 'Unscheduled review item',
+          fr: 'Élément de révision non planifié',
+        },
+      }),
+      createdBy: contributor._id,
+      status: 'pending',
+    });
+
+    await publishDueContent(new Date(scheduledPublishAt.getTime() + 60 * 1000));
+
+    const published = await Event.findById(submitted.body.event._id).lean();
+    assert.equal(published.status, 'published');
+    assert.equal(published.scheduledPublishAt, null);
+    assert.equal(String(published.publishedBy), String(editor._id));
+    assert.equal((await Event.findById(unscheduled._id)).status, 'pending');
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    const publishedNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(submitted.body.event._id),
+    );
+    assert.equal(publishedNotification.type, 'event');
+    assert.equal(publishedNotification.status, 'published');
+
+    const publicationAudit = await AuditLog.findOne({
+      action: 'content.published',
+      target: submitted.body.event._id,
+      'metadata.source': 'scheduled-publication',
+    }).lean();
+    assert.equal(publicationAudit.targetType, 'event');
+    assert.equal(String(publicationAudit.actor), String(editor._id));
+    assert.equal(
+      publicationAudit.actorSnapshot.accountName,
+      editor.accountName,
+    );
+  });
+
+  test('publishes due scheduled Last Post and retirement messages', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorSession = await login(contributor);
+    const editorSession = await login(editor);
+    const scheduledPublishAt = new Date(Date.now() + 30 * 60 * 1000);
+    const scheduleBody = {
+      action: 'publish',
+      scheduledPublishAt: scheduledPublishAt.toISOString(),
+    };
+
+    const lastPostSubmission = await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({
+        deceased: {
+          fullRank: 'Sergeant',
+          firstName: 'Published',
+          surname: 'Notice',
+        },
+        messageLanguage: 'en',
+        message: 'A Last Post notice for scheduled-publication coverage.',
+        publicationPermissionConfirmed: true,
+      })
+      .expect(201);
+    const lastPostId = lastPostSubmission.body.lastPost._id;
+    await request(app)
+      .patch(`/api/last-posts/${lastPostId}/review`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        ...scheduleBody,
+        messages: {
+          en: 'Scheduled English Last Post publication.',
+          fr: 'Publication planifiée du Dernier appel en français.',
+        },
+      })
+      .expect(200);
+
+    await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(retirementPayload())
+      .expect(201);
+    const retirementMessage = await RetirementMessage.findOne({
+      createdBy: contributor._id,
+    });
+    await request(app)
+      .patch(`/api/retirement-messages/${retirementMessage._id}/review`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        ...scheduleBody,
+        messages: {
+          en: translatedMessage('Scheduled English'),
+          fr: translatedMessage('Scheduled French'),
+        },
+      })
+      .expect(200);
+
+    await User.findByIdAndUpdate(contributor._id, {
+      $set: { 'notificationState.lastReadAt': new Date() },
+    });
+    await publishDueContent(new Date(scheduledPublishAt.getTime() + 60 * 1000));
+
+    const [publishedLastPost, publishedRetirement] = await Promise.all([
+      LastPostMessage.findById(lastPostId).lean(),
+      RetirementMessage.findById(retirementMessage._id).lean(),
+    ]);
+    assert.equal(publishedLastPost.status, 'published');
+    assert.equal(publishedLastPost.scheduledPublishAt, null);
+    assert.equal(publishedRetirement.status, 'published');
+    assert.equal(publishedRetirement.scheduledPublishAt, null);
+
+    const notifications = await request(app)
+      .get('/api/notifications')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .expect(200);
+    const lastPostNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(lastPostId),
+    );
+    const retirementNotification = notifications.body.notifications.items.find(
+      (item) => String(item.id) === String(retirementMessage._id),
+    );
+    assert.equal(
+      lastPostNotification.href,
+      `/last-post-message?id=${lastPostId}`,
+    );
+    assert.equal(
+      retirementNotification.href,
+      `/retirement-message?id=${retirementMessage._id}`,
+    );
+
+    const scheduledPublicationAudits = await AuditLog.find({
+      action: 'content.published',
+      'metadata.source': 'scheduled-publication',
+    }).lean();
+    assert.deepEqual(
+      scheduledPublicationAudits.map((entry) => entry.targetType).sort(),
+      ['lastPost', 'retirementMessage'],
+    );
+  });
+
+  test('cancels scheduled publication for supported content but not comments', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const contributorSession = await login(contributor);
+    const editorSession = await login(editor);
+    const scheduledPublishAt = new Date(Date.now() + 30 * 60 * 1000);
+    const scheduleBody = {
+      action: 'publish',
+      scheduledPublishAt: scheduledPublishAt.toISOString(),
+    };
+
+    const eventSubmission = await request(app)
+      .post('/api/events')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(eventPayload())
+      .expect(201);
+    await request(app)
+      .patch(`/api/events/${eventSubmission.body.event._id}/review`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send(scheduleBody)
+      .expect(200);
+    const cancelledEvent = await request(app)
+      .patch(`/api/events/${eventSubmission.body.event._id}/review`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ action: 'cancel-schedule' })
+      .expect(200);
+    assert.equal(cancelledEvent.body.event.status, 'pending');
+    assert.equal(cancelledEvent.body.event.scheduledPublishAt, null);
+
+    const lastPostSubmission = await request(app)
+      .post('/api/last-posts')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send({
+        deceased: {
+          fullRank: 'Sergeant',
+          firstName: 'Scheduled',
+          surname: 'Notice',
+        },
+        messageLanguage: 'en',
+        message: 'A Last Post notice for cancellation coverage.',
+        publicationPermissionConfirmed: true,
+      })
+      .expect(201);
+    await request(app)
+      .patch(`/api/last-posts/${lastPostSubmission.body.lastPost._id}/review`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        ...scheduleBody,
+        messages: {
+          en: 'Scheduled English Last Post notice.',
+          fr: 'Avis du Dernier appel planifié en français.',
+        },
+      })
+      .expect(200);
+    const cancelledLastPost = await request(app)
+      .patch(`/api/last-posts/${lastPostSubmission.body.lastPost._id}/review`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ action: 'cancel-schedule' })
+      .expect(200);
+    assert.equal(cancelledLastPost.body.lastPost.status, 'pending');
+    assert.equal(cancelledLastPost.body.lastPost.scheduledPublishAt, null);
+
+    await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', bearer(contributorSession.body.token))
+      .send(retirementPayload())
+      .expect(201);
+    const retirementMessage = await RetirementMessage.findOne({
+      createdBy: contributor._id,
+    });
+    await request(app)
+      .patch(`/api/retirement-messages/${retirementMessage._id}/review`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({
+        ...scheduleBody,
+        messages: {
+          en: translatedMessage('Scheduled English'),
+          fr: translatedMessage('Scheduled French'),
+        },
+      })
+      .expect(200);
+    const cancelledRetirement = await request(app)
+      .patch(`/api/retirement-messages/${retirementMessage._id}/review`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ action: 'cancel-schedule' })
+      .expect(200);
+    assert.equal(cancelledRetirement.body.retirementMessage.status, 'pending');
+    assert.equal(
+      cancelledRetirement.body.retirementMessage.scheduledPublishAt,
+      null,
+    );
+
+    const comment = await RetirementComment.create({
+      retirementMessage: retirementMessage._id,
+      author: contributor._id,
+      body: 'A retirement comment that must be published immediately.',
+      status: 'pending',
+    });
+    await request(app)
+      .patch(`/api/retirement-messages/comments/${comment._id}/review`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send(scheduleBody)
+      .expect(400);
+
+    const cancellations = await AuditLog.find({
+      action: 'content.publish_schedule_cancelled',
+      actor: editor._id,
+    }).lean();
+    assert.deepEqual(cancellations.map((entry) => entry.targetType).sort(), [
+      'event',
+      'lastPost',
+      'retirementMessage',
+    ]);
   });
 
   test('records account-derived RSVPs and limits management to RSVP managers', async () => {

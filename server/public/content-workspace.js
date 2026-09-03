@@ -71,6 +71,12 @@ const contentWorkspaceReviewRoutes = Object.freeze({
     `/api/retirement-messages/comments/${encodeURIComponent(id)}/review`,
 });
 
+const contentWorkspaceScheduledPublicationTypes = new Set([
+  "event",
+  "retirementMessage",
+  "lastPost",
+]);
+
 const contentWorkspaceEditRoutes = Object.freeze({
   event: (id) => `/api/admin/events/${encodeURIComponent(id)}`,
   retirementMessage: (id) =>
@@ -92,6 +98,7 @@ const contentWorkspaceStatuses = new Set([
   "all",
   "draft",
   "pending",
+  "scheduled",
   "published",
   "rejected",
   "hidden",
@@ -475,6 +482,7 @@ function getStatusTranslation(status) {
   return {
     draft: ["content_workspace_draft", "Draft"],
     pending: ["content_workspace_pending", "Pending"],
+    scheduled: ["content_workspace_scheduled", "Scheduled"],
     published: ["content_workspace_published", "Published"],
     rejected: ["content_workspace_rejected", "Rejected"],
     hidden: ["content_workspace_hidden", "Removed"],
@@ -484,6 +492,18 @@ function getStatusTranslation(status) {
 function getStatusLabel(status) {
   const translation = getStatusTranslation(status);
   return translation ? getText(...translation) : status;
+}
+
+function getContentWorkspaceDisplayStatus(item) {
+  if (
+    contentWorkspaceScheduledPublicationTypes.has(item?.type) &&
+    item.status === "pending" &&
+    item.scheduledPublishAt
+  ) {
+    return "scheduled";
+  }
+
+  return item?.status;
 }
 
 function updateContentWorkspaceStatusFilterAppearance() {
@@ -498,7 +518,17 @@ function createStatusBadge(status) {
   const translation = getStatusTranslation(status);
 
   if (translation) {
-    setWorkspaceTranslatedText(badge, ...translation);
+    if (status === "scheduled") {
+      const icon = document.createElement("span");
+      icon.className = "content-workspace-status-badge-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = "◷";
+      const label = document.createElement("span");
+      setWorkspaceTranslatedText(label, ...translation);
+      badge.append(icon, label);
+    } else {
+      setWorkspaceTranslatedText(badge, ...translation);
+    }
   } else {
     badge.textContent = status;
   }
@@ -668,7 +698,7 @@ function renderContentWorkspaceList() {
       button.append(translationStatus);
     }
 
-    button.append(createStatusBadge(item.status));
+    button.append(createStatusBadge(getContentWorkspaceDisplayStatus(item)));
     button.addEventListener("click", () => {
       void selectContentWorkspaceItem(item);
     });
@@ -2512,11 +2542,57 @@ function createRejectionReason(item) {
   return section;
 }
 
+function createScheduledPublicationStatus(item) {
+  if (
+    !contentWorkspaceScheduledPublicationTypes.has(item.type) ||
+    item.status !== "pending" ||
+    !item.scheduledPublishAt
+  ) {
+    return null;
+  }
+
+  const scheduledDate = new Date(item.scheduledPublishAt);
+  if (Number.isNaN(scheduledDate.getTime())) return null;
+
+  const section = document.createElement("section");
+  section.className = "content-workspace-scheduled-publication";
+  section.setAttribute("aria-live", "polite");
+
+  const heading = document.createElement("h2");
+  setWorkspaceTranslatedText(
+    heading,
+    "content_workspace_scheduled_publication",
+    "Scheduled publication",
+  );
+
+  const message = document.createElement("p");
+  setScheduledPublicationMessage(message, scheduledDate);
+
+  section.append(heading, message);
+  return section;
+}
+
+function setScheduledPublicationMessage(element, value) {
+  const scheduledDate = new Date(value);
+  if (Number.isNaN(scheduledDate.getTime())) return;
+
+  element.dataset.scheduledPublicationAt = scheduledDate.toISOString();
+  element.textContent = getText(
+    "content_workspace_scheduled_publication_at",
+    "This content is set to go public at {date}.",
+    { date: formatWorkspaceDate(scheduledDate) },
+  );
+}
+
 function createContentWorkspaceReviewActions(item) {
   if (!canReviewContentWorkspace() || item.status !== "pending") return null;
 
   const route = contentWorkspaceReviewRoutes[item.type];
   if (!route) return null;
+
+  const canSchedulePublication = contentWorkspaceScheduledPublicationTypes.has(
+    item.type,
+  );
 
   const actions = document.createElement("div");
   actions.className = "content-workspace-review-actions";
@@ -2526,26 +2602,108 @@ function createContentWorkspaceReviewActions(item) {
   const publish = document.createElement("button");
   publish.type = "button";
   publish.className = "admin-work-zone-button is-success";
-  const buttons = [reject, publish];
+  const cancelSchedule =
+    canSchedulePublication && item.scheduledPublishAt
+      ? document.createElement("button")
+      : null;
+  if (cancelSchedule) {
+    cancelSchedule.type = "button";
+    cancelSchedule.className = "admin-work-zone-button is-secondary";
+  }
+  const buttons = [reject, publish, cancelSchedule].filter(Boolean);
   let isConfirming = false;
   let isSubmitting = false;
 
   function restoreActionLabels() {
     setWorkspaceTranslatedText(reject, "content_workspace_reject", "Reject");
     setWorkspaceTranslatedText(publish, "content_workspace_publish", "Publish");
+    if (cancelSchedule) {
+      setWorkspaceTranslatedText(
+        cancelSchedule,
+        "content_workspace_cancel_scheduled_publish",
+        "Cancel scheduled publish",
+      );
+    }
   }
 
-  async function submitDecision(action, rejectionReason = "") {
+  async function saveUnsavedChangesBeforePublication() {
+    if (!hasUnsavedContentWorkspaceChanges()) return true;
+
+    const choice = await CMCENModal.choose(
+      getText(
+        "content_workspace_save_before_publish_message",
+        "Save your edits before publishing or scheduling this content.",
+      ),
+      {
+        title: getText(
+          "content_workspace_save_before_publish_title",
+          "Save changes before publishing",
+        ),
+        cancelText: getText("cancel", "Cancel"),
+        tone: "success",
+        choices: [
+          {
+            value: "save",
+            label: getText(
+              "content_workspace_save_and_continue",
+              "Save and continue",
+            ),
+            description: getText(
+              "content_workspace_save_and_continue_help",
+              "Save your edits, then continue with publication.",
+            ),
+          },
+        ],
+      },
+    );
+
+    if (choice !== "save") return false;
+
+    const saveButton = contentWorkspaceDetail.querySelector(
+      "[data-content-workspace-save]",
+    );
+    return saveButton ? saveContentWorkspaceChanges(item, saveButton) : false;
+  }
+
+  async function submitDecision(
+    action,
+    { rejectionReason = "", scheduledPublishAt = "" } = {},
+  ) {
+    if (
+      (action === "publish" || action === "cancel-schedule") &&
+      !(await saveUnsavedChangesBeforePublication())
+    ) {
+      return;
+    }
+
     isSubmitting = true;
+    const isScheduledPublication =
+      action === "publish" && Boolean(scheduledPublishAt);
+    const activeButton =
+      action === "publish"
+        ? publish
+        : action === "cancel-schedule"
+          ? cancelSchedule
+          : reject;
     buttons.forEach((button) => {
       button.disabled = true;
     });
     setWorkspaceTranslatedText(
-      action === "publish" ? publish : reject,
+      activeButton,
       action === "publish"
-        ? "content_workspace_publishing"
-        : "content_workspace_rejecting",
-      action === "publish" ? "Publishing…" : "Rejecting…",
+        ? isScheduledPublication
+          ? "content_workspace_scheduling"
+          : "content_workspace_publishing"
+        : action === "cancel-schedule"
+          ? "content_workspace_cancelling_scheduled_publish"
+          : "content_workspace_rejecting",
+      action === "publish"
+        ? isScheduledPublication
+          ? "Scheduling…"
+          : "Publishing…"
+        : action === "cancel-schedule"
+          ? "Cancelling scheduled publication…"
+          : "Rejecting…",
     );
 
     try {
@@ -2555,18 +2713,29 @@ function createContentWorkspaceReviewActions(item) {
           action,
           rejectionReason:
             action === "reject" ? rejectionReason.trim() : undefined,
+          scheduledPublishAt: isScheduledPublication
+            ? scheduledPublishAt
+            : undefined,
         },
       });
       contentWorkspaceState.editorDrafts.delete(getEditorDraftKey(item, "en"));
       contentWorkspaceState.editorDrafts.delete(getEditorDraftKey(item, "fr"));
       showWorkspaceSuccess(
         getText(
-          action === "publish"
-            ? "content_workspace_publish_success"
-            : "content_workspace_reject_success",
-          action === "publish"
-            ? "Content published successfully."
-            : "Content rejected successfully.",
+          action === "cancel-schedule"
+            ? "content_workspace_cancel_scheduled_publish_success"
+            : action === "publish"
+              ? isScheduledPublication
+                ? "content_workspace_schedule_success"
+                : "content_workspace_publish_success"
+              : "content_workspace_reject_success",
+          action === "cancel-schedule"
+            ? "Scheduled publication cancelled."
+            : action === "publish"
+              ? isScheduledPublication
+                ? "Content publication scheduled."
+                : "Content published successfully."
+              : "Content rejected successfully.",
         ),
       );
       await loadContentWorkspace({ preserveSelection: true });
@@ -2588,69 +2757,197 @@ function createContentWorkspaceReviewActions(item) {
     try {
       const decision =
         action === "publish"
-          ? await CMCENModal.confirm(
-              getText(
-                "content_workspace_publish_confirmation",
-                "Publishing makes this content visible on the public site. Confirm when you are ready.",
-              ),
-              {
-                title: getText(
-                  "content_workspace_confirm_publish",
-                  "Confirm publish",
+          ? canSchedulePublication
+            ? await CMCENModal.choose(
+                getText(
+                  "content_workspace_publish_timing",
+                  "Choose when this content should become visible on the public site.",
                 ),
-                confirmText: getText(
-                  "content_workspace_confirm_publish",
-                  "Confirm publish",
+                {
+                  title: getText("content_workspace_publish", "Publish"),
+                  cancelText: getText("cancel", "Cancel"),
+                  tone: "success",
+                  choices: [
+                    {
+                      value: "now",
+                      label: getText(
+                        "content_workspace_publish_now",
+                        "Publish now",
+                      ),
+                      description: getText(
+                        "content_workspace_publish_now_help",
+                        "Make this content public immediately.",
+                      ),
+                    },
+                    {
+                      value: "schedule",
+                      label: getText(
+                        "content_workspace_schedule_publish",
+                        "Schedule publication",
+                      ),
+                      description: getText(
+                        "content_workspace_schedule_publish_help",
+                        "Choose a future date and time for it to go public.",
+                      ),
+                    },
+                  ],
+                },
+              )
+            : await CMCENModal.confirm(
+                getText(
+                  "content_workspace_publish_confirmation",
+                  "Publishing makes this content visible on the public site. Confirm when you are ready.",
                 ),
-                cancelText: getText("cancel", "Cancel"),
-                tone: "success",
-              },
-            )
-          : await CMCENModal.form(
-              getText(
-                "content_workspace_reject_confirmation",
-                "This content will be rejected and the reason will be shared with the submitter. Confirm when you are ready.",
-              ),
-              {
-                title: getText(
-                  "content_workspace_confirm_reject",
-                  "Confirm rejection",
+                {
+                  title: getText(
+                    "content_workspace_confirm_publish",
+                    "Confirm publish",
+                  ),
+                  confirmText: getText(
+                    "content_workspace_confirm_publish",
+                    "Confirm publish",
+                  ),
+                  cancelText: getText("cancel", "Cancel"),
+                  tone: "success",
+                },
+              )
+          : action === "cancel-schedule"
+            ? await CMCENModal.confirm(
+                getText(
+                  "content_workspace_cancel_scheduled_publish_confirmation",
+                  "This content will remain pending and will not be published at its scheduled time.",
                 ),
-                confirmText: getText(
-                  "content_workspace_confirm_reject",
-                  "Confirm rejection",
+                {
+                  title: getText(
+                    "content_workspace_cancel_scheduled_publish",
+                    "Cancel scheduled publish",
+                  ),
+                  confirmText: getText(
+                    "content_workspace_confirm_cancel_scheduled_publish",
+                    "Cancel scheduled publish",
+                  ),
+                  cancelText: getText("cancel", "Cancel"),
+                  tone: "danger",
+                },
+              )
+            : await CMCENModal.form(
+                getText(
+                  "content_workspace_reject_confirmation",
+                  "This content will be rejected and the reason will be shared with the submitter. Confirm when you are ready.",
                 ),
-                cancelText: getText("cancel", "Cancel"),
-                destructive: true,
-                tone: "danger",
-                fields: [
-                  {
-                    name: "rejectionReason",
-                    type: "textarea",
-                    label: getText(
-                      "content_workspace_rejection_reason",
-                      "Rejection reason",
-                    ),
-                    placeholder: getText(
-                      "rejection_reason_placeholder",
-                      "Explain what needs to be corrected…",
-                    ),
-                    required: true,
-                    requiresNonWhitespace: true,
-                    requiredMessage: getText(
-                      "content_workspace_rejection_reason_required",
-                      "Enter a reason before rejecting this content.",
-                    ),
-                    maxLength: 2000,
-                  },
-                ],
-              },
-            );
+                {
+                  title: getText(
+                    "content_workspace_confirm_reject",
+                    "Confirm rejection",
+                  ),
+                  confirmText: getText(
+                    "content_workspace_confirm_reject",
+                    "Confirm rejection",
+                  ),
+                  cancelText: getText("cancel", "Cancel"),
+                  destructive: true,
+                  tone: "danger",
+                  fields: [
+                    {
+                      name: "rejectionReason",
+                      type: "textarea",
+                      label: getText(
+                        "content_workspace_rejection_reason",
+                        "Rejection reason",
+                      ),
+                      placeholder: getText(
+                        "rejection_reason_placeholder",
+                        "Explain what needs to be corrected…",
+                      ),
+                      required: true,
+                      requiresNonWhitespace: true,
+                      requiredMessage: getText(
+                        "content_workspace_rejection_reason_required",
+                        "Enter a reason before rejecting this content.",
+                      ),
+                      maxLength: 2000,
+                    },
+                  ],
+                },
+              );
 
       if (!decision) return;
+
+      if (action === "publish" && decision === "schedule") {
+        const schedule = await CMCENModal.form(
+          getText(
+            "content_workspace_schedule_publish_prompt",
+            "Choose the local date and time this content should go public.",
+          ),
+          {
+            title: getText(
+              "content_workspace_schedule_publish",
+              "Schedule publication",
+            ),
+            confirmText: getText(
+              "content_workspace_schedule_publish",
+              "Schedule publication",
+            ),
+            cancelText: getText("cancel", "Cancel"),
+            tone: "success",
+            fields: [
+              {
+                name: "scheduledPublishAt",
+                type: "cmcen-date-time",
+                label: getText(
+                  "content_workspace_publish_date_time",
+                  "Publish date and time",
+                ),
+                placeholder: getText(
+                  "timers_date_time_placeholder",
+                  "Select date and time",
+                ),
+                timeLabel: getText("timers_picker_time", "Time"),
+                clearLabel: getText("timers_picker_clear", "Clear"),
+                doneLabel: getText("timers_picker_done", "Done"),
+                locale: getContentWorkspaceLocale(),
+                hint: getText(
+                  "content_workspace_publish_date_time_help",
+                  "This uses your local time and must be in the future.",
+                ),
+                required: true,
+              },
+            ],
+          },
+        );
+
+        if (!schedule) return;
+        const scheduledDate = new Date(schedule.scheduledPublishAt);
+        if (
+          Number.isNaN(scheduledDate.getTime()) ||
+          scheduledDate.getTime() <= Date.now()
+        ) {
+          await CMCENModal.alert(
+            getText(
+              "content_workspace_publish_date_time_invalid",
+              "Choose a future publication date and time.",
+            ),
+            {
+              title: getText(
+                "content_workspace_schedule_publish",
+                "Schedule publication",
+              ),
+            },
+          );
+          return;
+        }
+
+        await submitDecision(action, {
+          scheduledPublishAt: scheduledDate.toISOString(),
+        });
+        return;
+      }
+
       await submitDecision(
         action,
-        typeof decision === "object" ? decision.rejectionReason || "" : "",
+        action === "reject" && typeof decision === "object"
+          ? { rejectionReason: decision.rejectionReason || "" }
+          : {},
       );
     } finally {
       isConfirming = false;
@@ -2659,9 +2956,15 @@ function createContentWorkspaceReviewActions(item) {
 
   reject.addEventListener("click", () => void confirmDecision("reject"));
   publish.addEventListener("click", () => void confirmDecision("publish"));
+  cancelSchedule?.addEventListener(
+    "click",
+    () => void confirmDecision("cancel-schedule"),
+  );
 
   restoreActionLabels();
-  actions.append(reject, publish);
+  actions.append(reject);
+  if (cancelSchedule) actions.append(cancelSchedule);
+  actions.append(publish);
   return actions;
 }
 
@@ -2993,7 +3296,7 @@ function renderContentWorkspaceDetail() {
   title.textContent = getItemTitle(item);
   const actions = document.createElement("div");
   actions.className = "content-workspace-detail-actions";
-  actions.append(createStatusBadge(item.status));
+  actions.append(createStatusBadge(getContentWorkspaceDisplayStatus(item)));
   const publicContentLink = createPublicContentLink(item);
 
   header.append(title, createDetailInfo(item), actions);
@@ -3105,6 +3408,11 @@ function renderContentWorkspaceDetail() {
     });
     history.append(historyHeading, loadHistory, revisions);
     contentWorkspaceDetail.append(history);
+  }
+
+  const scheduledPublication = createScheduledPublicationStatus(item);
+  if (scheduledPublication) {
+    contentWorkspaceDetail.append(scheduledPublication);
   }
 
   const bottomActions = createContentWorkspaceBottomActions(item, {
@@ -4148,6 +4456,15 @@ function updateContentWorkspaceLanguage() {
     .querySelectorAll("[data-revision-created-at]")
     .forEach((date) => {
       date.textContent = formatWorkspaceDate(date.dataset.revisionCreatedAt);
+    });
+
+  contentWorkspaceDetail
+    .querySelectorAll("[data-scheduled-publication-at]")
+    .forEach((publication) => {
+      setScheduledPublicationMessage(
+        publication,
+        publication.dataset.scheduledPublicationAt,
+      );
     });
 
   contentWorkspaceDetail

@@ -64,3 +64,29 @@ test('localizes content workspace loading controls in English and French', () =>
     );
   }
 });
+
+test('distinguishes scheduled publication from pending workspace records', () => {
+  assert.match(
+    workspaceHtml,
+    /value="scheduled"[\s\S]*?content_workspace_scheduled/u,
+  );
+  assert.match(
+    workspaceScript,
+    /const contentWorkspaceStatuses = new Set\(\[[\s\S]*?"scheduled",/u,
+  );
+  assert.match(
+    workspaceScript,
+    /function getContentWorkspaceDisplayStatus\(item\) \{[\s\S]*?item\.status === "pending"[\s\S]*?item\.scheduledPublishAt[\s\S]*?return "scheduled";/u,
+  );
+  assert.match(
+    workspaceScript,
+    /status === "scheduled"[\s\S]*?content-workspace-status-badge-icon[\s\S]*?icon\.textContent = "◷";/u,
+  );
+
+  for (const language of ['en', 'fr']) {
+    assert.equal(
+      typeof translations[language].content_workspace_scheduled,
+      'string',
+    );
+  }
+});

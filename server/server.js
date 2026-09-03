@@ -40,6 +40,9 @@ const { rateLimitByIp } = require('./middleware/rate-limit');
 const { requestDiagnostics } = require('./middleware/request-diagnostics');
 const { getPlausibleConfig } = require('./services/plausible');
 const logger = require('./services/logger');
+const {
+  startScheduledPublicationScheduler,
+} = require('./services/scheduled-publication');
 const { startWeeklyBriefScheduler } = require('./services/weekly-brief');
 const { ensureProfessionalAwards } = require('./services/professional-awards');
 
@@ -312,6 +315,7 @@ async function startServer() {
 
     await ensureProfessionalAwards();
 
+    startScheduledPublicationScheduler();
     startWeeklyBriefScheduler();
 
     return app.listen(process.env.PORT || 3000, () => {

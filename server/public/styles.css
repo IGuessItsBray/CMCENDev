@@ -26915,7 +26915,9 @@ html[data-theme='dark'] .theme-toggle__icon:last-child {
   position: relative;
   z-index: 40;
   display: grid;
-  gap: 1px;
+  gap: 2px;
+  background: color-mix(in srgb, var(--navy-950, #09111f) 70%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .site-timers-below-header {
@@ -26925,61 +26927,74 @@ html[data-theme='dark'] .theme-toggle__icon:last-child {
 }
 
 .site-timer {
+  position: relative;
   overflow: hidden;
-  padding: 0.55rem clamp(1rem, 4vw, 2rem);
-  background: var(--timer-background, var(--navy-900));
+  isolation: isolate;
+  padding: 0.68rem clamp(0.75rem, 2vw, 1.5rem);
+  border-block: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background-color: var(--timer-background, var(--navy-900));
+  background-image:
+    radial-gradient(
+      circle at 13% 50%,
+      color-mix(in srgb, currentColor 17%, transparent),
+      transparent 28rem
+    ),
+    linear-gradient(
+      105deg,
+      rgba(0, 0, 0, 0.26),
+      transparent 48%,
+      rgba(255, 255, 255, 0.08)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
   color: var(--timer-text, var(--white));
   font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.26);
 }
 
 .site-timer-track {
+  width: min(100%, 90rem);
   min-width: 0;
-  display: flex;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.75rem;
-  overflow: hidden;
-  white-space: nowrap;
+  line-height: 1.45;
 }
 
-.site-timer:not(.is-marquee) .site-timer-track {
-  justify-content: center;
-  text-align: center;
+.site-timer-accent {
+  display: grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, currentColor 56%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, currentColor 18%, transparent);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: none;
 }
 
 .site-timer-text {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: left;
 }
 
 .site-timer-message {
-  display: inline-block;
+  overflow-wrap: anywhere;
 }
 
 .site-timer-text a {
   color: inherit;
   text-decoration-thickness: 2px;
-  text-underline-offset: 0.15em;
-}
-
-.site-timer.is-marquee:hover .site-timer-message,
-.site-timer.is-marquee:focus-within .site-timer-message {
-  animation-play-state: paused;
-}
-
-.site-timer:not(.is-marquee) .site-timer-text {
-  padding-right: 0;
-}
-
-.site-timer:not(.is-marquee) .site-timer-countdown {
-  margin-left: 0;
-}
-
-.site-timer.is-marquee .site-timer-message {
-  animation: site-timer-marquee var(--site-timer-marquee-duration, 42s) linear
-    infinite;
+  text-underline-offset: 0.18em;
 }
 
 .site-timer-countdown {
@@ -26987,33 +27002,78 @@ html[data-theme='dark'] .theme-toggle__icon:last-child {
   align-items: center;
   flex: 0 0 auto;
   margin-left: auto;
-  min-height: 1.75rem;
-  padding: 0.15rem 0.55rem;
-  border: 1px solid color-mix(in srgb, currentColor 38%, transparent);
+  min-height: 1.9rem;
+  padding: 0.18rem 0.6rem;
+  border: 1px solid color-mix(in srgb, currentColor 48%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 15%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, currentColor 16%, transparent);
   font-variant-numeric: tabular-nums;
+  font-size: 0.88rem;
   white-space: nowrap;
 }
 
-@keyframes site-timer-marquee {
-  from {
-    transform: translateX(0);
+.site-timer-dismiss {
+  display: grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  place-items: center;
+  margin: -0.2rem;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, currentColor 42%, transparent);
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, currentColor 14%, transparent);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  opacity: 0.82;
+  text-shadow: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.site-timer-dismiss-icon {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+}
+
+.site-timer-dismiss:hover {
+  border-color: color-mix(in srgb, currentColor 72%, transparent);
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.site-timer-dismiss:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  opacity: 1;
+}
+
+@media (max-width: 42rem) {
+  .site-timer {
+    padding-block: 0.62rem;
+    border-inline-start-width: 3px;
   }
 
-  to {
-    transform: translateX(calc(-100% - 2rem));
+  .site-timer-track {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .site-timer-accent {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-timer-track {
-    white-space: normal;
-  }
-
-  .site-timer.is-marquee .site-timer-message {
-    display: inline;
-    animation: none;
+  .site-timer-dismiss {
+    transition: none;
   }
 }
 

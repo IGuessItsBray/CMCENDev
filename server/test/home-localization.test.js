@@ -90,6 +90,50 @@ test('keeps legacy banner copy visible when French contains the countdown placeh
   assert.match(timersScript, /return englishText;/u);
 });
 
+test('renders managed banners as readable status notices without marquee motion', () => {
+  const timersScript = fs.readFileSync(
+    path.join(publicDirectory, 'timers.js'),
+    'utf8',
+  );
+  const styles = fs.readFileSync(
+    path.join(publicDirectory, 'styles.css'),
+    'utf8',
+  );
+
+  assert.match(
+    timersScript,
+    /banner\.setAttribute\(\s*"role",\s*"status"\s*\)/u,
+  );
+  assert.match(timersScript, /site-timer-accent/u);
+  assert.doesNotMatch(timersScript, /is-marquee|site-timer-marquee/u);
+  assert.match(styles, /\.site-timer-accent/u);
+  assert.doesNotMatch(styles, /site-timer-marquee/u);
+});
+
+test('allows a visitor to dismiss one banner locally for 24 hours', () => {
+  const timersScript = fs.readFileSync(
+    path.join(publicDirectory, 'timers.js'),
+    'utf8',
+  );
+  const styles = fs.readFileSync(
+    path.join(publicDirectory, 'styles.css'),
+    'utf8',
+  );
+
+  assert.match(
+    timersScript,
+    /TIMER_DISMISSAL_DURATION_MS\s*=\s*24\s*\*\s*60\s*\*\s*60\s*\*\s*1000/u,
+  );
+  assert.match(timersScript, /localStorage\.setItem\(/u);
+  assert.match(timersScript, /site-timer-dismiss/u);
+  assert.match(timersScript, /site-timer-dismiss-icon/u);
+  assert.match(timersScript, /root\.addEventListener\("click"/u);
+  assert.doesNotMatch(timersScript, /window\.setTimeout\(/u);
+  assert.match(timersScript, /if\s*\(hasVisibleCountdown\(\)\)/u);
+  assert.match(styles, /\.site-timer-dismiss/u);
+  assert.match(styles, /\.site-timer-dismiss-icon/u);
+});
+
 test('localizes the public news listing heading and description', () => {
   const markup = fs.readFileSync(
     path.join(publicDirectory, 'news_stories.html'),

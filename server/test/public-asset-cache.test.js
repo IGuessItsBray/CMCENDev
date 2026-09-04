@@ -28,6 +28,22 @@ test('does not cache shared client code and styles at stable URLs', () => {
   }
 });
 
+test('caches content-hashed client code and styles indefinitely', () => {
+  for (const filename of ['index.123456789abc.js', 'styles.abcdef123456.css']) {
+    const response = createResponse();
+
+    setPublicAssetCacheHeaders(
+      response,
+      path.join(__dirname, '..', 'public', filename),
+    );
+
+    assert.equal(
+      response.headers.get('Cache-Control'),
+      'public, max-age=31536000, immutable',
+    );
+  }
+});
+
 test('leaves versionable public assets to the static middleware defaults', () => {
   const response = createResponse();
 

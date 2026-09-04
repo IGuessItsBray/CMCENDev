@@ -17,6 +17,11 @@ COPY --chown=nodeuser:nodeuser api/schema/ /usr/src/app/api/schema/
 # The developer page serves this repository-level file at /changelog.md.
 COPY --chown=nodeuser:nodeuser CHANGELOG.md /usr/src/app/CHANGELOG.md
 
+# HTML in the production image references content-hashed static assets. This
+# lets browsers cache CSS and JavaScript indefinitely without seeing stale code
+# after a later image deployment.
+RUN node scripts/quality/build-static-assets.js --rewrite-html
+
 USER nodeuser
 
 EXPOSE 3000

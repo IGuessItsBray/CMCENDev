@@ -228,6 +228,11 @@ app.get(['/privacy', '/terms'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'legal.html'));
 });
 function setPublicAssetCacheHeaders(res, filePath) {
+  if (/\.[a-f0-9]{12}\.(?:js|css)$/u.test(filePath)) {
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    return;
+  }
+
   if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
     // Shared client code uses stable URLs. Do not allow browsers or CDNs to
     // keep an older bundle after a deployment updates its behavior.

@@ -593,6 +593,14 @@ Build the CMCEN application image from the repository root.
 The image installs the locked server dependencies and does not copy an
 environment file into the image.
 
+During the image build, physical CSS and JavaScript files in `server/public/`
+are content-hashed and every static HTML page is updated to reference those
+versioned files. The application can therefore send the versioned assets with
+long-lived immutable caching, while the generated translation runtime remains
+uncached.
+This happens only inside the image; local source pages continue to use their
+stable development URLs.
+
 ```sh
 docker build -t cmcen:local .
 ```

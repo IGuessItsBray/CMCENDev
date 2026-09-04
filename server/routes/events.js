@@ -22,7 +22,8 @@ const { getEventSnapshot } = require('../services/content-snapshots');
 const { recordContentRevision } = require('../services/content-revisions');
 const {
   getScheduledPublicationDate,
-} = require('../services/scheduled-publication');
+  performEditorialReviewTransition,
+} = require('../services/editorial-review');
 const {
   cleanLocalizedText,
   cleanString,
@@ -1778,26 +1779,13 @@ router.patch(
           });
         }
 
-        const cancelledScheduledPublishAt = event.scheduledPublishAt;
-        event.scheduledPublishAt = null;
-        event.scheduledBy = null;
-        event.scheduledAt = null;
-        event.reviewedBy = null;
-        event.reviewedAt = null;
-        event.updatedBy = req.user._id;
-        await event.save();
-
-        await writeAuditLog({
+        await performEditorialReviewTransition({
           req,
-          action: 'content.publish_schedule_cancelled',
-          actor: req.user,
+          content: event,
+          action,
+          reviewerId: req.user._id,
           targetType: 'event',
-          target: event._id,
-          targetSnapshot: getEventSnapshot(event),
-          metadata: {
-            source: 'review',
-            scheduledPublishAt: cancelledScheduledPublishAt,
-          },
+          getSnapshot: getEventSnapshot,
         });
 
         await event.populate('createdBy', 'username accountName email role');
@@ -1809,83 +1797,29 @@ router.patch(
         });
       }
 
-      if (action === 'reject') {
-        const cleanReason =
-          typeof rejectionReason === 'string' ? rejectionReason.trim() : '';
+      const cleanRejectionReason =
+        typeof rejectionReason === 'string' ? rejectionReason.trim() : '';
 
-        if (!cleanReason) {
-          return res.status(400).json({
-            error: 'A rejection reason is required',
-          });
-        }
-
-        event.status = 'rejected';
-        event.rejectionReason = cleanReason;
-        event.publishedBy = null;
-        event.publishedAt = null;
-        event.scheduledPublishAt = null;
-        event.scheduledBy = null;
-        event.scheduledAt = null;
-      }
-
-      if (action === 'publish') {
-        event.rejectionReason = null;
-        event.scheduledPublishAt = scheduledPublishAt;
-        event.scheduledBy = scheduledPublishAt ? req.user._id : null;
-        event.scheduledAt = scheduledPublishAt ? new Date() : null;
-        event.status = scheduledPublishAt ? 'pending' : 'published';
-        event.publishedBy = scheduledPublishAt ? null : req.user._id;
-        event.publishedAt = scheduledPublishAt ? null : new Date();
-      }
-
-      event.updatedBy = req.user._id;
-      event.reviewedBy = req.user._id;
-      event.reviewedAt = new Date();
-
-      await event.save();
-
-      if (action === 'publish' && scheduledPublishAt) {
-        await writeAuditLog({
-          req,
-          action: 'content.publish_scheduled',
-          actor: req.user,
-          targetType: 'event',
-          target: event._id,
-          targetSnapshot: getEventSnapshot(event),
-          metadata: {
-            source: 'review',
-            scheduledPublishAt,
-          },
+      if (action === 'reject' && !cleanRejectionReason) {
+        return res.status(400).json({
+          error: 'A rejection reason is required',
         });
       }
 
-      if (action === 'publish' && !scheduledPublishAt) {
-        await writeAuditLog({
-          req,
-          action: 'content.published',
-          actor: req.user,
-          targetType: 'event',
-          target: event._id,
-          targetSnapshot: getEventSnapshot(event),
-          metadata: { source: 'review' },
-        });
+      const transition = await performEditorialReviewTransition({
+        req,
+        content: event,
+        action,
+        reviewerId: req.user._id,
+        rejectionReason: cleanRejectionReason,
+        scheduledPublishAt,
+        publishedRejectionReason: null,
+        targetType: 'event',
+        getSnapshot: getEventSnapshot,
+      });
 
+      if (action === 'publish' && !transition.scheduledPublishAt) {
         await notifyEventPublished(event, req);
-      }
-
-      if (action === 'reject') {
-        await writeAuditLog({
-          req,
-          action: 'content.rejected',
-          actor: req.user,
-          targetType: 'event',
-          target: event._id,
-          targetSnapshot: getEventSnapshot(event),
-          metadata: {
-            source: 'review',
-            rejectionReason: event.rejectionReason,
-          },
-        });
       }
 
       await event.populate('createdBy', 'username accountName email role');

@@ -15,7 +15,8 @@ const {
 const { recordContentRevision } = require('../services/content-revisions');
 const {
   getScheduledPublicationDate,
-} = require('../services/scheduled-publication');
+  performEditorialReviewTransition,
+} = require('../services/editorial-review');
 const {
   getCleanCertificateRequestPayload,
   validateCertificateRequestPayload,
@@ -1757,27 +1758,13 @@ router.patch(
           });
         }
 
-        const cancelledScheduledPublishAt =
-          retirementMessage.scheduledPublishAt;
-        retirementMessage.scheduledPublishAt = null;
-        retirementMessage.scheduledBy = null;
-        retirementMessage.scheduledAt = null;
-        retirementMessage.reviewedBy = null;
-        retirementMessage.reviewedAt = null;
-        retirementMessage.updatedBy = req.user._id;
-        await retirementMessage.save();
-
-        await writeAuditLog({
+        await performEditorialReviewTransition({
           req,
-          action: 'content.publish_schedule_cancelled',
-          actor: req.user,
+          content: retirementMessage,
+          action,
+          reviewerId: req.user._id,
           targetType: 'retirementMessage',
-          target: retirementMessage._id,
-          targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
-          metadata: {
-            source: 'review',
-            scheduledPublishAt: cancelledScheduledPublishAt,
-          },
+          getSnapshot: getRetirementMessageSnapshot,
         });
 
         await retirementMessage.populate(
@@ -1795,25 +1782,13 @@ router.patch(
         });
       }
 
-      const reviewDate = new Date();
+      const cleanRejectionReason =
+        typeof rejectionReason === 'string' ? rejectionReason.trim() : '';
 
-      if (action === 'reject') {
-        const cleanReason =
-          typeof rejectionReason === 'string' ? rejectionReason.trim() : '';
-
-        if (!cleanReason) {
-          return res.status(400).json({
-            error: 'A rejection reason is required',
-          });
-        }
-
-        retirementMessage.status = 'rejected';
-        retirementMessage.rejectionReason = cleanReason;
-        retirementMessage.publishedBy = null;
-        retirementMessage.publishedAt = null;
-        retirementMessage.scheduledPublishAt = null;
-        retirementMessage.scheduledBy = null;
-        retirementMessage.scheduledAt = null;
+      if (action === 'reject' && !cleanRejectionReason) {
+        return res.status(400).json({
+          error: 'A rejection reason is required',
+        });
       }
 
       if (action === 'publish') {
@@ -1851,67 +1826,19 @@ router.patch(
           },
           originalLanguage,
         );
-
-        retirementMessage.rejectionReason = null;
-        retirementMessage.scheduledPublishAt = scheduledPublishAt;
-        retirementMessage.scheduledBy = scheduledPublishAt
-          ? req.user._id
-          : null;
-        retirementMessage.scheduledAt = scheduledPublishAt ? reviewDate : null;
-        retirementMessage.status = scheduledPublishAt ? 'pending' : 'published';
-        retirementMessage.publishedBy = scheduledPublishAt
-          ? null
-          : req.user._id;
-        retirementMessage.publishedAt = scheduledPublishAt ? null : reviewDate;
       }
 
-      retirementMessage.reviewedBy = req.user._id;
-      retirementMessage.reviewedAt = reviewDate;
-      retirementMessage.updatedBy = req.user._id;
-
-      await retirementMessage.save();
-
-      if (action === 'publish' && scheduledPublishAt) {
-        await writeAuditLog({
-          req,
-          action: 'content.publish_scheduled',
-          actor: req.user,
-          targetType: 'retirementMessage',
-          target: retirementMessage._id,
-          targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
-          metadata: {
-            source: 'review',
-            scheduledPublishAt,
-          },
-        });
-      }
-
-      if (action === 'publish' && !scheduledPublishAt) {
-        await writeAuditLog({
-          req,
-          action: 'content.published',
-          actor: req.user,
-          targetType: 'retirementMessage',
-          target: retirementMessage._id,
-          targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
-          metadata: { source: 'review' },
-        });
-      }
-
-      if (action === 'reject') {
-        await writeAuditLog({
-          req,
-          action: 'content.rejected',
-          actor: req.user,
-          targetType: 'retirementMessage',
-          target: retirementMessage._id,
-          targetSnapshot: getRetirementMessageSnapshot(retirementMessage),
-          metadata: {
-            source: 'review',
-            rejectionReason: retirementMessage.rejectionReason,
-          },
-        });
-      }
+      await performEditorialReviewTransition({
+        req,
+        content: retirementMessage,
+        action,
+        reviewerId: req.user._id,
+        rejectionReason: cleanRejectionReason,
+        scheduledPublishAt,
+        publishedRejectionReason: null,
+        targetType: 'retirementMessage',
+        getSnapshot: getRetirementMessageSnapshot,
+      });
 
       await retirementMessage.populate(
         'reviewedBy',

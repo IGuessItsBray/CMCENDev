@@ -7,7 +7,8 @@ const { writeAuditLog } = require('../services/audit-log');
 const { recordContentRevision } = require('../services/content-revisions');
 const {
   getScheduledPublicationDate,
-} = require('../services/scheduled-publication');
+  performEditorialReviewTransition,
+} = require('../services/editorial-review');
 const { cleanString, parseBoolean } = require('../services/content-utils');
 const { linkMediaAssetToSource } = require('../services/media-assets');
 
@@ -559,26 +560,13 @@ router.patch(
           });
         }
 
-        const cancelledScheduledPublishAt = lastPost.scheduledPublishAt;
-        lastPost.scheduledPublishAt = null;
-        lastPost.scheduledBy = null;
-        lastPost.scheduledAt = null;
-        lastPost.reviewedBy = null;
-        lastPost.reviewedAt = null;
-        lastPost.updatedBy = req.user._id;
-        await lastPost.save();
-
-        await writeAuditLog({
+        await performEditorialReviewTransition({
           req,
-          action: 'content.publish_schedule_cancelled',
-          actor: req.user,
+          content: lastPost,
+          action,
+          reviewerId: req.user._id,
           targetType: 'lastPost',
-          target: lastPost._id,
-          targetSnapshot: getLastPostSnapshot(lastPost),
-          metadata: {
-            source: 'review',
-            scheduledPublishAt: cancelledScheduledPublishAt,
-          },
+          getSnapshot: getLastPostSnapshot,
         });
 
         return res.json({
@@ -593,76 +581,38 @@ router.patch(
             .status(400)
             .json({ error: 'A rejection reason is required' });
         }
-
-        lastPost.status = 'rejected';
-        lastPost.rejectionReason = rejectionReason;
-        lastPost.publishedBy = null;
-        lastPost.publishedAt = null;
-        lastPost.scheduledPublishAt = null;
-        lastPost.scheduledBy = null;
-        lastPost.scheduledAt = null;
-        lastPost.reviewedBy = req.user._id;
-        lastPost.reviewedAt = new Date();
-        lastPost.updatedBy = req.user._id;
-        await lastPost.save();
-
-        await writeAuditLog({
-          req,
-          action: 'content.rejected',
-          actor: req.user,
-          targetType: 'lastPost',
-          target: lastPost._id,
-          targetSnapshot: getLastPostSnapshot(lastPost),
-          metadata: {
-            source: 'review',
-            rejectionReason,
-          },
-        });
-
-        return res.json({ lastPost });
       }
 
-      const storedMessages = getLocalizedMessages(lastPost);
-      const messages = {
-        en:
-          cleanString(req.body?.messages?.en) || cleanString(storedMessages.en),
-        fr:
-          cleanString(req.body?.messages?.fr) || cleanString(storedMessages.fr),
-      };
+      if (action === 'publish') {
+        const storedMessages = getLocalizedMessages(lastPost);
+        const messages = {
+          en:
+            cleanString(req.body?.messages?.en) ||
+            cleanString(storedMessages.en),
+          fr:
+            cleanString(req.body?.messages?.fr) ||
+            cleanString(storedMessages.fr),
+        };
 
-      if (!messages.en || !messages.fr) {
-        return res.status(400).json({
-          error: 'English and French notices are required before publication',
-        });
+        if (!messages.en || !messages.fr) {
+          return res.status(400).json({
+            error: 'English and French notices are required before publication',
+          });
+        }
+
+        lastPost.messages = messages;
       }
 
-      const reviewDate = new Date();
-      lastPost.messages = messages;
-      lastPost.status = scheduledPublishAt ? 'pending' : 'published';
-      lastPost.publishedBy = scheduledPublishAt ? null : req.user._id;
-      lastPost.publishedAt = scheduledPublishAt ? null : reviewDate;
-      lastPost.scheduledPublishAt = scheduledPublishAt;
-      lastPost.scheduledBy = scheduledPublishAt ? req.user._id : null;
-      lastPost.scheduledAt = scheduledPublishAt ? reviewDate : null;
-      lastPost.reviewedBy = req.user._id;
-      lastPost.reviewedAt = reviewDate;
-      lastPost.updatedBy = req.user._id;
-      lastPost.rejectionReason = '';
-      await lastPost.save();
-
-      await writeAuditLog({
+      await performEditorialReviewTransition({
         req,
-        action: scheduledPublishAt
-          ? 'content.publish_scheduled'
-          : 'content.published',
-        actor: req.user,
+        content: lastPost,
+        action,
+        reviewerId: req.user._id,
+        rejectionReason,
+        scheduledPublishAt,
+        publishedRejectionReason: '',
         targetType: 'lastPost',
-        target: lastPost._id,
-        targetSnapshot: getLastPostSnapshot(lastPost),
-        metadata: {
-          source: 'review',
-          ...(scheduledPublishAt ? { scheduledPublishAt } : {}),
-        },
+        getSnapshot: getLastPostSnapshot,
       });
 
       return res.json({ lastPost });

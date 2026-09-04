@@ -1,9 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
-const {
-  getScheduledPublicationDate,
-} = require('../services/scheduled-publication');
+const { getScheduledPublicationDate } = require('../services/editorial-review');
 
 test('accepts only future ISO publication times', () => {
   const now = new Date('2026-09-01T12:00:00.000Z');

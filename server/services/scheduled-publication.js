@@ -12,21 +12,6 @@ const {
 const SCHEDULED_PUBLICATION_INTERVAL_MS = 30 * 1000;
 const MAX_PUBLICATIONS_PER_TICK = 100;
 
-function getScheduledPublicationDate(value, now = new Date()) {
-  if (value === undefined || value === null || value === '') return null;
-  if (typeof value !== 'string') return undefined;
-
-  const scheduledPublishAt = new Date(value);
-  if (
-    Number.isNaN(scheduledPublishAt.getTime()) ||
-    scheduledPublishAt.getTime() <= now.getTime()
-  ) {
-    return undefined;
-  }
-
-  return scheduledPublishAt;
-}
-
 const scheduledContentTypes = [
   {
     Model: Event,
@@ -148,7 +133,6 @@ function startScheduledPublicationScheduler() {
 }
 
 module.exports = {
-  getScheduledPublicationDate,
   publishDueContent,
   startScheduledPublicationScheduler,
 };

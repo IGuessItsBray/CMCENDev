@@ -1,0 +1,613 @@
+{
+  "title": "Charter of the C&E Family Senate",
+  "version": "Version 1 - 28 May 2020",
+  "language": "English",
+  "history": [
+    {
+      "version": "0.1",
+      "date": "2 May 2020",
+      "author": "BGen (Ret) RK Martineau",
+      "comments": "Exposure draft, for comment."
+    },
+    {
+      "version": "0.2",
+      "date": "4 May 2020",
+      "author": "BGen (Ret) RK Martineau; BGen (Ret) K O’Keefe",
+      "comments": "Edited to eliminate unnecessary content and incorporate comments from BGen (Ret) K O’Keefe."
+    },
+    {
+      "version": "0.3",
+      "date": "7 May 2020",
+      "author": "BGen (Ret) RK Martineau; BGen (Ret) K O’Keefe",
+      "comments": "Minor edits to Part 2 - a few specifics added."
+    },
+    {
+      "version": "0.4",
+      "date": "7 May 2020",
+      "author": "BGen (Ret) RK Martineau; BGen (Ret) K O’Keefe",
+      "comments": "Minor edits to Part 2 - a few specifics added."
+    },
+    {
+      "version": "0.5",
+      "date": "8 May 2020",
+      "author": "BGen (Ret) RK Martineau; BGen (Ret) K O’Keefe",
+      "comments": "Minor edit to Part 1 - title change."
+    },
+    {
+      "version": "0.6",
+      "date": "11 May 2020",
+      "author": "BGen (Ret) RK Martineau; BGen (Ret) K O’Keefe",
+      "comments": "Rewrote the governance explanation for clarity, removed redundant Part 3 Section 7, and made other minor edits."
+    },
+    {
+      "version": "1",
+      "date": "28 May 2020",
+      "author": "BGen (Ret) RK Martineau; BGen (Ret) K O’Keefe",
+      "comments": "Version 0.6 was approved at the inaugural Senate meeting on 28 May 2020 and reissued as Version 1."
+    }
+  ],
+  "sections": [
+    {
+      "title": "Introduction",
+      "sourcePages": "4-6",
+      "blocks": [
+        {
+          "type": "major",
+          "text": "INTRODUCTION"
+        },
+        {
+          "type": "heading",
+          "text": "PURPOSE"
+        },
+        {
+          "type": "text",
+          "text": "This document is the Charter of the Senate of the C&E Family (the C&E Senate)."
+        },
+        {
+          "type": "heading",
+          "text": "STRUCTURE"
+        },
+        {
+          "type": "text",
+          "text": "This document consists of three parts: 1. PART 1 – THE C&E FAMILY AND ITS COMPOSITION This part explains the composition of the C&E Family and the missions of its six components:"
+        },
+        {
+          "type": "list",
+          "text": "The C&E Senate – the C&E Family’s governance body"
+        },
+        {
+          "type": "list",
+          "text": "The C&E Branch – the serving community of Regular Force and Reserve Force members;"
+        },
+        {
+          "type": "list",
+          "text": "The C&E Association – the professional association of serving and retired members of the C&E Branch and its predecessor organizations;"
+        },
+        {
+          "type": "list",
+          "text": "The Military C&E Museum – the official museum of the C&E community;"
+        },
+        {
+          "type": "list",
+          "text": "The Military C&E Museum Foundation – a registered charity supported by the C&E Family’s membership and its donor community;"
+        },
+        {
+          "type": "list",
+          "text": "Affiliates – Independent regional and / or professional groups of current and former serving members that chose to be affiliated with the C&E Family. 2. PART 2 – THE C&E SENATE FUNCTIONS This part explains the five functions of the C&E Senate:"
+        },
+        {
+          "type": "list",
+          "text": "Strategic Guidance"
+        },
+        {
+          "type": "list",
+          "text": "Policy and Issue Management"
+        },
+        {
+          "type": "list",
+          "text": "Financial Stewardship"
+        },
+        {
+          "type": "list",
+          "text": "Human Resource Stewardship"
+        },
+        {
+          "type": "list",
+          "text": "Stakeholder Communication 3. PART 3 – C&E SENATE OPERATIONS This part explains the operations of the C&E Senate, including how the business and governance of the C&E Family are undertaken."
+        },
+        {
+          "type": "heading",
+          "text": "C&E FAMILY GOVERNANCE EXPLAINED SIMPLY"
+        },
+        {
+          "type": "text",
+          "text": "1. UNDERSTANDING GOVERNANCE Governance utilizes strategic approaches that are concerned with ensuring overall direction, effectiveness, supervision and accountability. It determines what the organization does and what it should become in the future by setting the organization's goals, direction, limitations and accountability. 2. HOW GOVERNANCE WORKS Governance usually does three basic things: 2.1 - DEFINES ORGANIZATIONAL DIRECTION AND EXPECTATIONS"
+        },
+        {
+          "type": "list",
+          "text": "Sets and maintains vision, mission and values;"
+        },
+        {
+          "type": "list",
+          "text": "Develops strategy or strategic direction (e.g., long-term strategic plan);"
+        },
+        {
+          "type": "list",
+          "text": "Develops and approves a master event schedule of major activities;"
+        },
+        {
+          "type": "list",
+          "text": "Approves the organization's policies and monitors their implementation; and"
+        },
+        {
+          "type": "list",
+          "text": "Balances the powers of its individual members versus enhancing the prosperity and viability of the organization as a whole. 2.2 - GRANTS AND ASSIGNS POWER"
+        },
+        {
+          "type": "list",
+          "text": "Empowers, manages and supports the organization’s executive management. 2.3 - VERIFIES PERFORMANCE"
+        },
+        {
+          "type": "list",
+          "text": "Ensures accountability and compliance with laws, regulations, policy and strategic direction; and"
+        },
+        {
+          "type": "list",
+          "text": "Maintains proper fiscal oversight. 3. GOVERNANCE AND THE C&E FAMILY 3.1 Governing the C&E Family The C&E Family consists of a C&E Senate and four different business entities (Branch, Association, Museum and Foundation) that each have their own by laws or equivalent, as well as their own governing body. There are also a number of affiliate organizations that have chosen to affiliate and work with the C&E Family. Each affiliate is an independent entity in its own right and has its own governance body (usually a Board of Directors) that manages and directs its affairs. In some respects, the C&E Family is like a federation of independent members who have chosen to federate in order to enjoy the shared benefits of improved coordination, results and efficiencies beyond what each could achieve on its own, while also operating independently in accordance with their own by laws or other governing regulations. 3.2 C&E Senate Basic Role The C&E Senate acts as the C&E Family’s “Board of Directors” with very specific duties and responsibilities as in Part 2 of this Charter. Its basic role is to provide the C&E Family with a common, agreed strategic management framework and set of tools with which the C&E Family operates, including strategic direction, a master event schedule, and a common fund raising strategy. The C&E Senate draws its membership from across the C&E Family. So, in essence, the C&E Family membership sets and maintains the common management framework within which C&E Family members would operate, under the leadership of the C&E Senate. 3.3 C&E Senate Functions Within the C&E Family, the C&E Senate would act as the C&E Family Board of Directors with five specific functions as set out in Part 2 of this Charter. Its governance approach will be one of “cooperate and coordinate”, and not centralized hierarchical management of C&E Family member entities. The C&E Senate’s role will be one of facilitator, coordinator and optimizer, and not a central directing authority. While respecting each member entity’s uniqueness and governance, the C&E Senate will seek to obtain mutually beneficial “cooperation and coordination” among its component parts following the agreed C&E Family Strategic Direction, master event schedule and other tools, and will seek to create synergies and benefits among the actions of its member entities beyond what each could achieve acting on its own."
+        },
+        {
+          "type": "text",
+          "text": "3.4 Example This governance approach is best explained using an example. Suppose that the Museum plans to hold a “Heritage Signals Day” and enlists the participation of C&E Branch units in Kingston, the C&E Association’s Heritage Team, the Signallers Club of Canada as well as the Vintage Signals Team in this event. As well, there could be an opportunity to either charge admission to the event or otherwise solicit funds for the Foundation as per the C&E Family’s fund raising strategy. To maximize chances of success, the Museum and the other participants would schedule this event using the C&E Senate’s master event schedule so that this event would not conflict with other events and activities. Then, the Museum holds its desired event supported by the entities (C&E Branch units, C&E Association, Signallers Club and Vintage Signals Team) and raises much needed funds for the Foundation. This is possible due to 1) mutually beneficial “cooperation and coordination” among these entities, 2) the work of the C&E Senate and its membership across the C&E Family and 3) the common coordinating tools – in this case, the strategic direction, the master event schedule and fund raising strategy. There is no hierarchy and no command and control; there is just mutually beneficial “cooperation and coordination” – or teamwork. 4. C&E SENATE METHOD OF WORK The Senate’s work has these attributes:"
+        },
+        {
+          "type": "list",
+          "text": "Undertaken in recurring annual / semi-annual meetings;"
+        },
+        {
+          "type": "list",
+          "text": "Between meetings, a Secretariat will handle most routine matters;"
+        },
+        {
+          "type": "list",
+          "text": "In cases of significant matters, a project team or Special Senate Committee would be formed, reporting back to the Senate on the completion of its work;"
+        },
+        {
+          "type": "list",
+          "text": "Work is mostly project based – using project teams and / or committees; and"
+        },
+        {
+          "type": "list",
+          "text": "Work is done electronically where possible, including voting. 5. C&E MEETINGS C&E Senate meetings occur as follows:"
+        },
+        {
+          "type": "list",
+          "text": "Annual Meetings – Determine strategic direction, update master event schedule, initiate business planning, align efforts across the C&E Family;"
+        },
+        {
+          "type": "list",
+          "text": "Other Meetings (as required) – Progress review vs plans and objectives; and"
+        },
+        {
+          "type": "list",
+          "text": "Other Senate meetings would be held at the call of the Chair and Co-Chair Decision making is achieved by consensus and where necessary, by majority voting. Minutes, agenda, significant reports reviewed and other important meeting documents would be made public on cmcen.ca."
+        }
+      ]
+    },
+    {
+      "title": "Part 1 – The C&E Family And Its Structure",
+      "sourcePages": "7-10",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "This part defines the C&E Family and its components: C&E FAMILY means the “Canadian Forces Communications and Electronics Family”, which includes all serving (Regular and Reserve) members, our retired and veteran community members and their respective families, and our industry partners. Organizationally, it includes our Branch, Association, Museum, Foundation and a number of independent Affiliates, each of which has a unique mission and responsibilities. Our C&E Family connects, develops, celebrates and supports the Canadian Armed Forces and our membership by:"
+        },
+        {
+          "type": "list",
+          "text": "Contributing to the CAF Profession of Arms by enhancing the effectiveness of Canada’s military communications, electronics and cyber capabilities through training, professional development and continuing education;"
+        },
+        {
+          "type": "list",
+          "text": "Nurturing and facilitating the morale, welfare and well-being of all C&E military personnel – past, present and future - and their families;"
+        },
+        {
+          "type": "list",
+          "text": "Connecting, supporting and promoting a close association with all serving and retired members of our C&E Family, including our extended community of veterans, their families, military support agencies, cadets, academia and industry partners; and"
+        },
+        {
+          "type": "list",
+          "text": "Preserving, educating and celebrating the heritage and traditions of the C&E Family in conjunction with the Military Communications and Electronics Museum. C&E FAMILY STRUCTURE The C&E Family shall consist of the following six organizations and their memberships: 1. The C&E SENATE is the C&E Family’s governance body (its “Board of Directors”) and is responsible to the C&E Family for the long-term well-being of the C&E Family and the furtherance of its interests and its Mission. The C&E Senate:"
+        },
+        {
+          "type": "list",
+          "text": "Provides good governance of the C&E Family by exercising oversight and stewardship of its programs, activities and resources on behalf of the trust placed in it by members of the C&E Family and the general public;"
+        },
+        {
+          "type": "list",
+          "text": "Provides strategic guidance, direction and oversight of all C&E Family programs and activities in support of the C&E Family mission;"
+        },
+        {
+          "type": "list",
+          "text": "Optimizes coordination and cooperation among internal and external stakeholders who contribute to, or influence the well-being of the C&E Family; and"
+        },
+        {
+          "type": "list",
+          "text": "Maintains suitable communication with external and internal stakeholders. 2. The C&E BRANCH, overseen by the Branch Advisory Council acting as the C&E Branch governing body, is responsible to foster and sustain operationally focused, command-centric experts in communications, information systems, and information operations for the Canadian Armed Forces. The C&E Branch includes both Regular Force and Reserve Force serving members organized into officer classifications and non-commissioned member trades. 3. The C&E ASSOCIATION is the professional association affiliated with the C&E Branch that works to provide the wider Communications and Electronics family with activities and programs that:"
+        },
+        {
+          "type": "list",
+          "text": "Enhance the effectiveness of Canada's military communications and electronics;"
+        },
+        {
+          "type": "list",
+          "text": "Nurture and facilitate the well-being of all C&E military personnel and their families;"
+        },
+        {
+          "type": "list",
+          "text": "Preserve, educate and celebrate the heritage and traditions of the C&E community in conjunction with the Military Communications and Electronics Museum;"
+        },
+        {
+          "type": "list",
+          "text": "Connect with and promote a close association with all members of our C&E military community including the extended military C&E community; and"
+        },
+        {
+          "type": "list",
+          "text": "Act as the C&E community member on the Conference of Defence Associations. STATUS AS NOT-FOR PROFIT CORPORATION Within the C&E Family, the C&E Association (Association) shall be established as a not-for-profit corporation under the Canada Not-For-Profit Corporations Act S.C. 2009. 4. The MILITARY C&E MUSEUM is dedicated to the preservation of the history of the troops, the times and the technologies used in Canadian military communications and electronics. Its mandate is to engage actively and educate the military community and public alike, about the contributions, achievements and technological innovations of Canada's military in the realm of communications and electronics. It does this by:"
+        },
+        {
+          "type": "list",
+          "text": "Preserving and displaying equipment, artifacts and records pertaining to military C&E;"
+        },
+        {
+          "type": "list",
+          "text": "Educating the public and military community on the role of C&E in operations worldwide;"
+        },
+        {
+          "type": "list",
+          "text": "Preserving war memorials, monuments, historic sites, cairns and plaques of historical significance to the C&E community; and"
+        },
+        {
+          "type": "list",
+          "text": "Fostering of identity and esprit de corps of Canada's military communicators, serving and retired. 5. The MILITARY C&E MUSEUM FOUNDATION (the Foundation) serves to undertake the following:"
+        },
+        {
+          "type": "list",
+          "text": "To preserve and perpetuate the heritage of the Military Communications and Electronics (C&E) components of the Canadian Armed Forces by supporting museum facilities, projects and programs with a view to commemorating the Military C&E Legacy and educating the public about it."
+        },
+        {
+          "type": "list",
+          "text": "To receive and maintain a fund or funds and to apply all or part of the principal and income therefrom, from time to time, to qualified donees as defined in subsection 149.1(1) of the Income Tax Act (Canada) that are part of the Communications and Electronics Branch of the Canadian Armed Forces or affiliate organizations. STATUS AS NOT-FOR PROFIT CORPORATION Within the C&E Family, the Military C&E Museum Foundation (Foundation) shall be established as a not-for-profit corporation under the Canada Not-For-Profit Corporations Act S.C. 2009. STATUS AS A REGISTERED CHARITY Within the C&E Family, the Foundation shall be established as a Registered Charity in accordance with The Income Tax Act (Canada), as well as CRA policies and procedures regarding Registered Charities. 6. The AFFILIATES The C&E affiliates are a group of C&E related entities that have been created for various purposes, and generally have their own membership, governance, policies and programs. These affiliates are usually based on a group of serving and / or retired C&E Branch members. Six examples of such groups and their membership would be as follows:"
+        },
+        {
+          "type": "list",
+          "text": "Environmental group - such as The Signallers’ Club;"
+        },
+        {
+          "type": "list",
+          "text": "Trade group - such as the Canadian Association of Forces Linemen;"
+        },
+        {
+          "type": "list",
+          "text": "Regional group – such as the Royal Canadian Signals Association (Atlantic Division);"
+        },
+        {
+          "type": "list",
+          "text": "Locality or Unit group – such as the Hamilton Signals Association;"
+        },
+        {
+          "type": "list",
+          "text": "Heritage related group – such as the Vintage Signals Team; and"
+        },
+        {
+          "type": "list",
+          "text": "Professional group – such as the Armed Forces Communications and Electronics Association (AFCEA)."
+        },
+        {
+          "type": "text",
+          "text": "C&E FAMILY ORGANIZATION The structure, roles and responsibilities of the C&E Family are shown in the following diagram:"
+        },
+        {
+          "type": "text",
+          "text": "COMPLIANCE The C&E Senate will coordinate efforts within the C&E Family to ensure that its member organizations maintain compliance with all applicable legislation, regulations, policies and other compliance requirements. MOUs WITH AFFILIATES WHERE NECESSARY Where necessary or where desired, a specific “cooperate and coordinate” governance relationship and the interaction between the C&E Family and its Affiliate(s) may be negotiated separately between the C&E Senate and individual affiliates, and documented in the form of an MOU."
+        }
+      ]
+    },
+    {
+      "title": "Part 2 - C&E Senate Functions",
+      "sourcePages": "11-12",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "The C&E Senate’s mission (as the C&E Family’s “Board of Directors”) includes five main functions: 1. STRATEGIC GUIDANCE Responsibility The C&E Senate develops draft strategic guidance for the C&E Family, including goals, objectives, plans, major undertakings and desired outcomes as well as financial management guidelines and resource generation targets and resource allocations over a specific time frame (such as two to five years). Approach It does this by consulting with the leadership of the C&E Family component organizations and affiliates (if possible) regarding goals, objectives, plans, major undertakings and resource requirements in order to obtain aligned, optimally scheduled and mutually reinforcing C&E Family programs, projects and events. Specific Tasks The C&E Senate will:"
+        },
+        {
+          "type": "list",
+          "text": "Identify and assign responsibility for major goals and objectives, including desired outcomes."
+        },
+        {
+          "type": "list",
+          "text": "Maintain a master event schedule"
+        },
+        {
+          "type": "list",
+          "text": "Oversight of all C&E Branch programs and activities to achieving optimal effectiveness and efficiency (battlefield tours, HRH visit, reunions)."
+        },
+        {
+          "type": "list",
+          "text": "Report progress, including tracking of goals, objectives, events, financial resources, other major issues. 2. POLICY AND ISSUE MANAGEMENT Responsibility The C&E Senate will be responsible for the development and implementation of C&E Family policy. Approach It does this by receiving and reviewing all policy and policy proposals from any C&E Family member or third party, assessing the policy implementation implications, adjusting policy proposals as required, approving all C&E Family policy proposals, and implementing new approved policies within the C&E Family. Specific Tasks The C&E Senate will:"
+        },
+        {
+          "type": "list",
+          "text": "Develop internal C&E Family policy;"
+        },
+        {
+          "type": "list",
+          "text": "Intercede with external policy authorities to influence external policy impacting the C&E Family; and"
+        },
+        {
+          "type": "list",
+          "text": "Address issues of concern to C&E Family members involving internal or external policy. 3. FINANCIAL STEWARDSHIP Responsibility The C&E Senate will be responsible for the stewardship of the C&E Family’s financial resources. Approach It does this by working with individual and organizational members and stakeholders to best solicit, generate, allocate and use the C&E Family’s financial resources. Specific Tasks The C&E Senate will:"
+        },
+        {
+          "type": "list",
+          "text": "Exercise oversight of C&E Family financial resources IAW financial management policy"
+        },
+        {
+          "type": "list",
+          "text": "Exercise oversight of the raising and expenditure of all funds under the Military C&E Museum Foundation and major heritage events."
+        },
+        {
+          "type": "list",
+          "text": "Oversee development and coordination of C&E Family fundraising strategy."
+        },
+        {
+          "type": "list",
+          "text": "Optimize revenue generation from all sources – members, Museum, Foundation, DHH, and other external sources."
+        },
+        {
+          "type": "list",
+          "text": "Maintain compliance with all applicable GoC legislation and regulations (including CRA and ISEDC)."
+        },
+        {
+          "type": "list",
+          "text": "Coordinate with other non-C&E Family sources of funds– i.e. other charitable organizations, CFMWS, DHH, etc. 4. HUMAN RESOURCE STEWARDSHIP Responsibility The C&E Senate will be responsible for the recruiting, employment and management of civilian human resources engaged by C&E Family components. Approach It does this by identifying C&E Family requirements for civilian human resources and working with appropriate authorities to engage, employ and manage these civilian human resources. Specific Tasks The C&E Senate will:"
+        },
+        {
+          "type": "list",
+          "text": "Establish and approve a general policy and values framework within which the C&E Family’s civilian human resources (those non-public management and staff resources who are employed by it or otherwise engaged under contract to it) will be managed."
+        },
+        {
+          "type": "list",
+          "text": "Approve and maintain personnel policies with which C&E Family non-serving human resources will be managed."
+        },
+        {
+          "type": "list",
+          "text": "Periodically monitoring key human resource performance indicators and directing appropriate remedial action. 5. STAKEHOLDER COMMUNICATION Responsibility The C&E Senate will be responsible to manage effective stakeholder communications in order to keep its members engaged and informed by optimal transparency. Approach It does this by making available for access by individual and organizational members as much documentation as possible regarding its plans, programs, and activities. Specific Tasks The C&E Senate will:"
+        },
+        {
+          "type": "list",
+          "text": "Develop a communications strategy and plan to promote the C&E Family, its plans, programs, events and other undertakings."
+        },
+        {
+          "type": "list",
+          "text": "Ensure transparency and effective communication with all internal and external stakeholders."
+        },
+        {
+          "type": "list",
+          "text": "Maximize its use of the cmcen.ca web site, where its documents and important papers will be posted for all members to access."
+        },
+        {
+          "type": "major",
+          "text": "PART 3 – C&E SENATE OPERATIONS"
+        }
+      ]
+    },
+    {
+      "title": "Section 1 - General",
+      "sourcePages": "13",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "1.01 Interpretation of Wording In this Charter, unless the context otherwise requires, words in the singular include the plural and vice-versa. Words in one gender include all genders. 1.02 Financial Year Unless modified by the C&E Senate, the financial year of the C&E Senate shall begin on the first day of April of each year and shall end on the last day of March in the following year. 1.03 Head Office Until changed by the C&E Senate, the head office of the C&E Senate shall be at Canadian Forces Base Kingston, Ontario. 1.04 Amendment of the C&E Senate Charter C&E Senate Charter elements may be repealed or amended and enacted by a majority of at least two thirds of the C&E Senate membership present at a meeting duly called for the purpose of considering the proposed amendment. 1.05 Invalidity of the Charter The invalidity or unenforceability of any provision of this Charter shall not affect the validity or enforceability of the remaining provisions of this Charter."
+        }
+      ]
+    },
+    {
+      "title": "Section 2 – C&E Senate Membership And Structure",
+      "sourcePages": "13-15",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "2.01 C&E Senate Membership The C&E Senate membership shall be: Chair – Colonel Commandant Co-chair – C&E Branch Leader Members"
+        },
+        {
+          "type": "list",
+          "text": "All Serving General Officers"
+        },
+        {
+          "type": "list",
+          "text": "Senior Reserve Representative"
+        },
+        {
+          "type": "list",
+          "text": "Immediate Past Branch Leader"
+        },
+        {
+          "type": "list",
+          "text": "Immediate Past Colonel Commandant"
+        },
+        {
+          "type": "list",
+          "text": "Immediate Past Branch CWO"
+        },
+        {
+          "type": "list",
+          "text": "Branch Advisor"
+        },
+        {
+          "type": "list",
+          "text": "Branch CWO"
+        },
+        {
+          "type": "list",
+          "text": "President C&E Association"
+        },
+        {
+          "type": "list",
+          "text": "Commanding Officer C&E Museum"
+        },
+        {
+          "type": "list",
+          "text": "President C&E Museum Foundation"
+        },
+        {
+          "type": "list",
+          "text": "Honorary Colonel/Lieutenant Colonel Representative"
+        },
+        {
+          "type": "list",
+          "text": "C&E/Signal Affiliates Representative"
+        },
+        {
+          "type": "list",
+          "text": "Branch Adjutant (Secretary)"
+        },
+        {
+          "type": "list",
+          "text": "Adjunct Representatives (as necessary) Powers of C&E Senate Members The C&E Senate may, from time to time, vary, add to or limit the powers and duties of any member. Resignation of C&E Senate Members A C&E Senate member may resign from the C&E Senate by submitting notice to the Chair and Co-Chair. Provided that a vacancy exists, the C&E Senate may appoint a replacement member to fill the vacant position. Removal The C&E Senate may remove by simple majority vote any member of the C&E Senate. Filling Vacancies If any member of the C&E Senate shall resign from it, the C&E Senate may by appoint a person to fill such vacancy. 2.02 Executive Committee Composition There shall be an Executive Committee of the C&E Senate consisting of the Chair, the Co-Chair, the Secretary, and up to two optional members, as determined by the Chair and Co-Chair. Such optional roles are limited to an Executive Director and a Treasurer. Roles may also be combined. Powers of the Executive Committee The Executive Committee is responsible for the day-today business of the C&E Senate and shall exercise such powers as are authorized by the C&E Senate. Executive Committee Meetings Meetings of the Executive Committee shall be held at the time and place as determined by the Co-Chairs. Quorum The members of the Executive Committee present physically or electronically shall constitute a quorum. 2.03 Chair and Co-Chair of the C&E Senate The Chair and Co-Chair of the C&E Senate shall:"
+        },
+        {
+          "type": "list",
+          "text": "Act as the Chief Executives of the C&E Senate and have general supervision of the affairs of the C&E Senate;"
+        },
+        {
+          "type": "list",
+          "text": "Be responsible for implementing the strategic plans and policies of the C&E Family;"
+        },
+        {
+          "type": "list",
+          "text": "Preside at all meetings of the C&E Senate."
+        },
+        {
+          "type": "list",
+          "text": "Undertake such other duties and powers as the C&E Senate may specify. During the absence of the Executive Director or if no Executive Director has been appointed, the Chair and Co-Chair of the C&E Senate shall also have the powers and duties of that office."
+        },
+        {
+          "type": "text",
+          "text": "2.04 Secretary The Secretary will support the operations and administration of the C&E Senate, under the supervision of the Chair and Co-Chair. The Secretary shall:"
+        },
+        {
+          "type": "list",
+          "text": "Attend all meetings and record all meeting decisions;"
+        },
+        {
+          "type": "list",
+          "text": "Provide notice of all meetings of the members of the C&E Senate;"
+        },
+        {
+          "type": "list",
+          "text": "Perform such other duties as may be prescribed by the C&E Senate or the Chair / Co-Chair of the C&E Senate; and"
+        },
+        {
+          "type": "list",
+          "text": "Act as the custodian of all papers records and documents of the C&E Senate. 2.05 Executive Director If appointed, the Executive Director shall:"
+        },
+        {
+          "type": "list",
+          "text": "Act as the Chief Operating Officer of the C&E Senate, responsible to the Chair and Co- Chair;"
+        },
+        {
+          "type": "list",
+          "text": "Exercise general supervision of the day-to-day business and affairs of the C&E Senate; and"
+        },
+        {
+          "type": "list",
+          "text": "Have other powers and duties as the C&E Senate may specify. If there is no Executive Director appointed, the Secretary shall have the powers, duties and responsibilities of the Executive Director. 2.06 Treasurer if appointed, the treasurer shall act as the Chief Financial Officer of the C&E Senate and generally oversee the financial affairs of the C&E Senate. The Treasurer shall:"
+        },
+        {
+          "type": "list",
+          "text": "Have the custody of the funds and securities of the C&E Senate;"
+        },
+        {
+          "type": "list",
+          "text": "Keep full and accurate accounts of all assets, liabilities, receipts and disbursements of the Senate;"
+        },
+        {
+          "type": "list",
+          "text": "Deposit all monies, securities and other valuable effects in the name and to the credit of the C&E Senate and as may be determined by the Executive Committee; and"
+        },
+        {
+          "type": "list",
+          "text": "Have such other powers and duties as the C&E Senate may specify. If there is no Treasurer appointed, the Secretary shall have the powers, duties and responsibilities of the Treasurer. 2.07 Advisors The C&E Senate at its sole discretion may appoint one or more Advisors for specific purposes and for specific terms. Advisors may not vote at meetings of the C&E Senate."
+        }
+      ]
+    },
+    {
+      "title": "Section 3 – C&E Senate Management Functions",
+      "sourcePages": "16-17",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "3.01 C&E Senate Rules and Regulations The C&E Senate may prescribe such rules and regulations relating to the management and operation of the C&E Senate as they deem necessary. 3.02 C&E Senate Management Responsibilities The Senate’s management responsibilities are: 1. Oversee Legal And Regulatory Compliance with all legal and regulatory requirements (including those that may constrain action of the C&E Senate). 2. Approve Roles And Responsibilities The C&E Senate will approve the assignment and modification of roles and responsibilities of its Officers and committee / project team leaders. 3. Approve the C&E Family Strategic / Business Plans, including vision, mission, programs, services and major events. 4. Approve Policy Any member may submit policy proposals. Such proposals would be brought forward for consideration by the C&E Senate. Proposals could also be reviewed by a relevant committee / project team established for that purpose. Policy proposals would be approved by the C&E Senate. 5. Oversee The Execution And Results of Policy And Strategic / Business Plan C&E Senate executive committee and Committee / Project Team Leaders will produce periodic reports as directed, and an annual report on results achieved in their area of responsibility. The C&E Senate will produce a consolidated report that will be made available to all C&E Senate members. 6. Policies, Procedures and Methods of Work Unless specified in this Charter, the C&E Senate will determine its internal policies, procedures and methods of work. 7. Resolve Issues submitted to it for consideration. 8. Perform Other Tasks assigned to it. 3.03 C&E Senate Financial Management Responsibilities The C&E Senate’s financial management responsibilities are:"
+        },
+        {
+          "type": "list",
+          "text": "Authorizing Expenditures The C&E Senate shall have power to authorize C&E Senate expenditures from time to time;"
+        },
+        {
+          "type": "list",
+          "text": "Authorizing Employment The C&E Senate may authorize employment of and associated salaries paid to its employees."
+        },
+        {
+          "type": "list",
+          "text": "Solicitations of Funds The C&E Senate shall take such steps as they may deem necessary to enable the C&E Family and its components to acquire, accept, solicit or receive legacies, gifts, grants, settlements, bequests, endowments and donations of any kind whatsoever for the purpose of furthering the objects of the C&E Family."
+        },
+        {
+          "type": "text",
+          "text": "3.04 Finance Committee of the C&E Senate Requirement and Composition The C&E Senate would be supported by a Finance Committee. The Finance Committee would consist of the Treasurer and other C&E Senate members as the C&E Senate deems necessary for the conduct of its business. Management of Audit Activity The Finance Committee is responsible to determine the audit requirements of the C&E Senate’s financial affairs, to select as required a suitable Auditor and to submit that Auditor’s report with the Finance Committee’s recommendations to the C&E Senate. Other Matters It may also undertake other financially related matters assigned to it by the C&E Senate. 3.05 Additional Committees and Project Teams Determining Requirements The C&E Senate may from time to time appoint any additional committee(s) and / or project teams as it deems necessary and with such powers as the C&E Senate shall determine. Committee Rules and Procedures Any such additional committee or project team may formulate its own rules of procedure, subject to such regulations or directions as the C&E Senate may make, and in a manner that does not conflict with this Charter. Dissolution The C&E Senate may dissolve such additional committees and / or project teams once in its opinion its objectives have been accomplished. 3.06 Management Review of Books and Records The C&E Senate shall ensure that all necessary records of the C&E Senate that are required by this C&E Senate Charter or by any applicable statute or law are regularly and properly reviewed by a competent and independent third party."
+        }
+      ]
+    },
+    {
+      "title": "Section 4 – C&E Senate Methods Of Work",
+      "sourcePages": "17-18",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "4.01 Business Methods of Work The C&E Senate may conduct its business using in person meetings, featuring verbal discussions, the use of documents, “show of hands” voting and such other methods and procedures as it deems to be appropriate to the business at hand. 4.02 Execution of Documents by Signing Officers Assigning Signing Authority The C&E Senate may from time to time and by resolution direct 1) the manner, and 2) the person or persons by whom a particular document or type of document shall be executed. Such designated persons shall be known as “signing officers”. Number of Signing Officers Documents, contracts, obligations, agreements and other instruments requiring execution in writing by the C&E Senate must be signed by two (2) signing officers. Certified True Copy Any signing officer may certify a copy of any instrument, resolution or other"
+        },
+        {
+          "type": "text",
+          "text": "C&E Senate document to be a true copy thereof. 4.03 Use of Electronic Media And Services Work for meetings and day-to-day business should include the use of electronic media and information sharing tools for information distribution, email, file sharing, social media, video conferencing, teleconferencing and fundraising. 4.04 Banking Arrangements Selection The banking business of the C&E Senate shall be transacted at a Canadian chartered bank that the C&E Senate may authorize. Authority to Make Transactions The banking business or any part of it shall be transacted by the Secretary or Treasurer. 4.05 Annual Financial Statements The C&E Senate will prepare necessary annual financial statements. It may publish a notice to its members stating that these annual financial statements are available either electronically or free of charge at the registered office of the C&E Senate."
+        }
+      ]
+    },
+    {
+      "title": "Section 5 - Meetings Of The C&E Senate",
+      "sourcePages": "18-20",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "5.01 Convening C&E Senate Meetings Meeting Convening Authority Meetings of the C&E Senate may be convened by the call of the Co-Chairs, including their time(s) and location(s). General Meeting Call The C&E Senate shall have power to call, at any time, a general meeting of the members of the C&E Senate. Special Meeting Call The C&E Senate shall call a special meeting of members on written requisition of members carrying not less than 15% of the ordinary membership. Meetings Schedule Meetings will be scheduled as soon as possible after the Branch Advisory Committee meeting normally held in February. If additional meetings are required, they will be held during the fall session of the C&E week and at such other times as the Co-Chairs deem necessary. 5.02 Participating in C&E Senate Meetings Persons Entitled to be Present The only persons entitled to be present at a meeting of members of the C&E Senate shall be those persons identified in Section 2, and such other persons who are required to be present at the meeting. Inviting Other Persons Any other person may be admitted only on the invitation of the Co- Chairs of the C&E Senate meeting or by resolution of the members. Such other person shall not have the right to vote at C&E Senate meetings."
+        },
+        {
+          "type": "text",
+          "text": "Participation Using Electronic Means A C&E Senate member participating in a meeting using electronic means is deemed to be present at the meeting. 5.03 Notice of C&E Senate Meetings The Secretary shall give notice of the time and place for the holding of a C&E Senate meeting. 5.04 Mandatory Business to be Transacted at Annual C&E Senate Meetings At every annual meeting, in addition to other business that may be transacted, the report of the Chair and Co-Chair, the financial reports, and statement and the report of the auditor shall be presented and an auditor appointed for the ensuing year. 5.05 Agenda of Meetings of Members The Secretary shall make available the agenda of C&E Senate meetings of persons entitled to be present, where possible along with the notice of meeting. 5.06 Quorum A quorum at any meeting of the members shall be at least half of the C&E Senate membership of members eligible to be present and who are present in person or present using an electronic service that enables them to hear the proceedings and to speak at the meeting, and entitled to vote thereat or a duly appointed proxy so entitled. 5.07 Voting and Method of Voting Open and Transparent Voting Voting shall usually be open and transparent, regardless of the method used. Acceptable methods include “show of hands”, polling, paper ballots or electronic voting / tabulation methods. All those eligible to vote are entitled to see the results of all votes. Secret ballot voting may be used at the discretion of the meeting chair. One Vote per Member Each C&E Senate member present at a meeting shall have the right to exercise one vote. Members may also cast proxy votes provided that a Proxy Authorization is submitted to the Co-Chairs before the start of the meeting. Votes Cast as a Block Where a person entitled to be present has more than one vote, those votes shall be cast as a block; no split votes from one member shall be allowed. Validation In the case of physical and electronically submitted ballots, the Chair, Co- Chair or Secretary shall review such votes, verify their validity and present them at the meeting without identifying the member. Determining Voting Result At all meetings of members of the C&E Senate, every question shall be determined by a simple majority of votes unless otherwise specifically provided by statute or by this Charter. Tie Vote In case of an equality of votes, the Executive Committee in addition to an original vote shall have a second or casting vote."
+        },
+        {
+          "type": "text",
+          "text": "5.08 Proxy Voting Proxy Voting Notices of meetings must remind C&E Senate members that they have the right to vote by proxy. A Proxy Authorization shall only be valid for one specific meeting instance. Proxy Authorization C&E Senate members may appoint another C&E Senate member as proxy by signing a Proxy Authorization form that must be signed and conveyed to the Co-Chairs before the start of that meeting. 5.09 Records Of Decisions – Development And Publication Records of Decisions shall be created for all C&E Senate meetings and signed by the meeting Co-Chairs. Records of Decisions shall be published on cmcen.ca and made accessible to all authorized parties. 5.10 Use of Auditors Appointment and Reporting Where the need for an audit has been determined, the C&E Senate shall, at each annual meeting, appoint an auditor to audit the accounts of the C&E Senate for the purposes of reporting findings and recommendations to the C&E Senate at the next annual meeting. Term of Office The auditor shall hold office until the next annual meeting provided that the Senate may fill any casual vacancy in the office of auditor. Remuneration The remuneration of the auditor shall be approved by the C&E Senate."
+        }
+      ]
+    },
+    {
+      "title": "Section 6 – Indemnification And Remuneration",
+      "sourcePages": "20",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "6.01 Indemnification of C&E Senate Members – Insurance vs Liabilities, Errors or Omissions Every C&E Senate member or other person who is undertaken or is about to undertake any liability on behalf of the C&E Senate, shall at all times, be indemnified and saved harmless out of the funds of the C&E Senate, from and against: a. All costs, chargeable expenses which should such C&E Senate member sustain or incur in or about any action, suit or proceeding’s which is brought, commenced or prosecuted against him, or in respect of any act, matter, or thing whatsoever, made, done or permitted by him, in or about the execution of his duties of his office or in respect of any such liability; and b. All other costs, charges and expenses which a C&E Senate member sustains or incurs in or about or in relation to the affairs thereof, except such costs, charges or expenses as are occasioned by his own wilful neglect or default. 6.02 C&E Senate Agents and Employees The C&E Senate may appoint such agents and engage such employees as it shall deem necessary from time to time. Agents and employees shall have such authority and shall perform such duties as shall be prescribed by the C&E Senate at the time of such appointment, and shall be remunerated in accordance with the terms and conditions of their engagement."
+        }
+      ]
+    }
+  ]
+}

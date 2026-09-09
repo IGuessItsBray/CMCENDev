@@ -14,21 +14,23 @@
   <body>
     <header id="header"></header>
 
-    <main class="about-family-main">
+    <main class="about-family-main" data-static-page="about-family">
       <article class="about-family-shell">
         <header class="about-family-hero">
           <div class="about-family-hero-copy">
-            <p class="about-family-kicker">C&amp;E Family Senate</p>
+            <p class="about-family-kicker" data-page-i18n="kicker">
+              C&amp;E Family Senate
+            </p>
 
-            <h1>About the C&amp;E Family</h1>
+            <h1 data-page-i18n="heading">About the C&amp;E Family</h1>
 
-            <p class="about-family-intro">
+            <p class="about-family-intro" data-page-i18n="intro">
               The C&amp;E Family brings together the C&amp;E Branch, C&amp;E
               Association, Military C&amp;E Museum Foundation, Museum, and
               affiliated organizations.
             </p>
 
-            <p class="about-family-tagline">
+            <p class="about-family-tagline" data-page-i18n="tagline">
               The C&amp;E Senate provides a forum for the Family to work
               together.
             </p>
@@ -44,9 +46,9 @@
 
         <div class="about-family-body">
           <section class="about-family-section">
-            <h2>A connected community</h2>
+            <h2 data-page-i18n="communityHeading">A connected community</h2>
 
-            <p>
+            <p data-page-i18n="communityBody">
               The C&amp;E Family includes the Branch, Association, Museum and
               Museum Foundation, alongside affiliated organizations that work
               together to support C&amp;E personnel, their families, heritage,
@@ -55,9 +57,9 @@
           </section>
 
           <section class="about-family-section">
-            <h2>The C&amp;E Senate Charter</h2>
+            <h2 data-page-i18n="charterHeading">The C&amp;E Senate Charter</h2>
 
-            <p>
+            <p data-page-i18n="charterBody">
               The Charter sets out the Senate's role in guiding undertakings
               across the C&amp;E Family. It is led by the C&amp;E Branch Leader
               and Colonel Commandant, with representation from across the
@@ -66,22 +68,22 @@
           </section>
 
           <section class="about-family-section">
-            <h2>The C&amp;E Family</h2>
+            <h2 data-page-i18n="familyHeading">The C&amp;E Family</h2>
 
             <ul class="about-family-pillar-list">
-              <li>
+              <li data-page-i18n="branchBody">
                 The Branch represents the serving military identity and
                 professional lineage of the C&E community.
               </li>
-              <li>
+              <li data-page-i18n="associationBody">
                 The Association connects serving members, veterans, families,
                 and supporters across careers and generations.
               </li>
-              <li>
+              <li data-page-i18n="foundationBody">
                 The Military C&amp;E Museum Foundation supports the Museum and
                 preserves the heritage of Military C&amp;E.
               </li>
-              <li>
+              <li data-page-i18n="museumBody">
                 The Museum preserves and shares the artifacts, stories, and
                 technical history of Military C&amp;E.
               </li>
@@ -89,13 +91,46 @@
           </section>
 
           <section class="about-family-section">
-            <h2>Read the Charter</h2>
+            <h2 data-page-i18n="readHeading">Read the Charter</h2>
 
-            <p>
-              <a href="/documents/ce-senate-charter-2020.pdf"
-                >Download the C&amp;E Senate Charter (PDF)</a
-              >.
+            <p data-page-i18n="charterIntro">
+              Read the complete charter below, organized by its major parts and
+              operational sections. The original document is available in
+              English only.
             </p>
+
+            <p class="charter-source-note" data-page-i18n="charterSourceNote">
+              The PDF remains the authoritative source if the extracted text
+              differs from the signed document.
+            </p>
+
+            <figure class="charter-organization-chart">
+              <img
+                src="/images/ce-family-organization-chart.jpg"
+                alt="C&amp;E Family structure, roles, and responsibilities"
+                data-page-i18n-alt="organizationChartAlt"
+                loading="lazy"
+              />
+              <figcaption data-page-i18n="organizationChartCaption">
+                C&amp;E Family organization
+              </figcaption>
+            </figure>
+
+            <div id="charterContent" class="charter-content" aria-live="polite">
+              <p data-page-i18n="charterLoading">Loading the charter…</p>
+            </div>
+
+            <div class="charter-download-footer">
+              <p data-page-i18n="charterDownloadNote">
+                Prefer the original document or need a printable copy?
+              </p>
+              <a
+                href="/documents/ce-senate-charter-2020.pdf"
+                data-page-i18n="downloadLink"
+                class="charter-download-link"
+                >Download the C&amp;E Senate Charter (PDF)</a
+              >
+            </div>
           </section>
         </div>
       </article>
@@ -106,5 +141,7 @@
     <script src="timers.js"></script>
     <script src="index.js"></script>
     <script src="translations.js"></script>
+    <script src="static-page-content.js"></script>
+    <script src="charter-content.js"></script>
   </body>
 </html>

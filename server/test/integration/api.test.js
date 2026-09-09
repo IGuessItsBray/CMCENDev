@@ -4178,7 +4178,7 @@ describe('MFA and audit behavior', () => {
   });
 
   test('sets up and verifies TOTP without exposing the secret in audit logs', async () => {
-    const user = await createUser();
+    const user = await createUser({ sessionVersion: 2 });
     const session = await login(user);
     const authorization = bearer(session.body.token);
 

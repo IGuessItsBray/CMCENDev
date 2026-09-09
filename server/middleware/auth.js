@@ -161,7 +161,7 @@ async function authOrTempMiddleware(req, res, next) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById(decoded.userId)
         .select(
-          'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas notificationState createdAt updatedAt',
+          'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas notificationState createdAt updatedAt sessionVersion',
         )
         .populate('customRoles', 'name slug color permissions');
 

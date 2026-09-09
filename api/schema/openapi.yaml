@@ -1604,11 +1604,18 @@ paths:
     get:
       tags: [Search]
       summary: Search published news stories and non-Home public content with singular/plural-aware title ranking.
+      description: Every query term must match somewhere in a result. Static public-page text is indexed once per server process and reused across searches.
       security: []
       parameters:
         - name: q
           in: query
-          schema: { type: string }
+          schema: { type: string, maxLength: 120 }
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
       responses:
         "200":
           description: Search results.

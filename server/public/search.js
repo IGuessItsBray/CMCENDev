@@ -4,6 +4,7 @@ const searchStatus = document.getElementById("searchStatus");
 const searchResults = document.getElementById("searchResults");
 
 let lastSearchQuery = "";
+let searchRequestSequence = 0;
 
 function getCurrentLanguage() {
   return CMCENUtils.getCurrentLanguage();
@@ -129,6 +130,7 @@ function renderSearchSkeletons() {
 }
 
 async function runSearch(query) {
+  const requestId = ++searchRequestSequence;
   const cleanQuery = query.trim();
   lastSearchQuery = cleanQuery;
   searchPageInput.value = cleanQuery;
@@ -155,8 +157,17 @@ async function runSearch(query) {
     }
 
     const data = await response.json();
+
+    if (requestId !== searchRequestSequence) {
+      return;
+    }
+
     renderResults(data);
   } catch (error) {
+    if (requestId !== searchRequestSequence) {
+      return;
+    }
+
     setStatus("search_error");
   }
 }

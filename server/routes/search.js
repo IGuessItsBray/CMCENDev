@@ -11,6 +11,7 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const MAX_QUERY_LENGTH = 120;
 const MAX_RESULTS = 30;
 const MAX_RESULTS_PER_SOURCE = 10;
+let staticPageCorpusPromise;
 
 const STATIC_PAGES = [
   {
@@ -95,7 +96,7 @@ const STATIC_PAGES = [
     path: '/retirements',
     file: 'retirements.html',
     type: 'page',
-    title: { en: 'Retirement Messages', fr: 'Retraites' },
+    title: { en: 'Retirements', fr: 'Messages de retraite' },
     summary: {
       en: 'Browse retirement messages celebrating members of the C&E community.',
       fr: 'Parcourez les messages de retraite célébrant les membres de la communauté des C et E.',
@@ -144,7 +145,7 @@ const STATIC_PAGES = [
     path: '/last-post',
     file: 'last-post.html',
     type: 'page',
-    title: { en: 'Last Post', fr: 'Dernière sonnerie' },
+    title: { en: 'Last Post', fr: 'Dernier appel' },
   },
   {
     path: '/honours_awards',
@@ -275,6 +276,12 @@ function scoreText(queryTerms, fields) {
   }, 0);
 }
 
+function matchesAllTerms(queryTerms, fields) {
+  const haystack = fields.filter(Boolean).join(' ').toLowerCase();
+
+  return queryTerms.every((term) => haystack.includes(term));
+}
+
 function scoreTitleMatch(query, queryTerms, title, type) {
   const normalizedQuery = normalizeText(query).toLowerCase();
   const normalizedTitle = normalizeText(title).toLowerCase();
@@ -300,7 +307,7 @@ function scoreTitleMatch(query, queryTerms, title, type) {
   const exactPhrase = new RegExp(`\\b${escapeRegex(normalizedQuery)}\\b`, 'i');
 
   if (exactPhrase.test(normalizedTitle)) {
-    return 5000;
+    return type === 'page' ? 5500 : 5000;
   }
 
   const hasEveryQueryTerm = queryTerms.every((term) => {
@@ -513,7 +520,7 @@ async function searchEvents(query, queryTerms, language) {
   });
 }
 
-async function searchRetirementMessages(query, queryTerms) {
+async function searchRetirementMessages(query, queryTerms, language) {
   // Build per-term regex checks so multi-word queries can match across retiree fields
   const fields = [
     'retiree.rank',
@@ -556,17 +563,25 @@ async function searchRetirementMessages(query, queryTerms) {
       .join(', ');
 
     const title = retireeName
-      ? `Retirement message for ${retireeName}`
-      : 'Retirement message';
+      ? language === 'fr'
+        ? `Message de retraite pour ${retireeName}`
+        : `Retirement message for ${retireeName}`
+      : language === 'fr'
+        ? 'Message de retraite'
+        : 'Retirement message';
 
     const messageText =
-      message.messages?.en || message.messages?.fr || message.message;
+      getLocalizedText(message.messages, language) || message.message;
 
     const summary =
       truncate(stripHtml(messageText)) ||
       (retireeName
-        ? `Read the retirement message for ${retireeName}.`
-        : 'Read this retirement message from the C&E community.');
+        ? language === 'fr'
+          ? `Consultez le message de retraite de ${retireeName}.`
+          : `Read the retirement message for ${retireeName}.`
+        : language === 'fr'
+          ? 'Consultez ce message de retraite de la communauté des C et E.'
+          : 'Read this retirement message from the C&E community.');
 
     return {
       type: 'retirement-message',
@@ -591,45 +606,67 @@ async function searchRetirementMessages(query, queryTerms) {
   });
 }
 
-async function searchStaticPages(query, queryTerms, language) {
-  const pages = await Promise.all(
+function getStaticPageCorpus() {
+  if (staticPageCorpusPromise) {
+    return staticPageCorpusPromise;
+  }
+
+  staticPageCorpusPromise = Promise.all(
     STATIC_PAGES.map(async (page) => {
       try {
         const html = await fs.readFile(
           path.join(PUBLIC_DIR, page.file),
           'utf8',
         );
-        const text = normalizeText(stripHtml(html));
-        const title = getLocalizedText(page.title, language);
-        const summary =
-          getLocalizedText(page.summary, language) || truncate(text);
-        const score = scoreSearchResult(query, queryTerms, {
-          title,
-          type: page.type,
-          fields: [page.title.en, page.title.fr, text],
-        });
 
-        if (score === 0) {
-          return null;
-        }
-
-        return {
-          type: page.type,
-          sourceId: page.path,
-          title,
-          summary,
-          url: page.path,
-          date: null,
-          score,
-        };
+        return { ...page, text: normalizeText(stripHtml(html)) };
       } catch (error) {
-        console.error(`Could not search static page ${page.file}:`, error);
+        console.error(`Could not index static page ${page.file}:`, error);
         return null;
       }
     }),
   );
 
-  return pages.filter(Boolean).slice(0, MAX_RESULTS_PER_SOURCE);
+  return staticPageCorpusPromise;
+}
+
+async function searchStaticPages(query, queryTerms, language) {
+  const pages = await getStaticPageCorpus();
+
+  return pages
+    .filter(Boolean)
+    .map((page) => {
+      const title = getLocalizedText(page.title, language);
+      const summary =
+        getLocalizedText(page.summary, language) || truncate(page.text);
+      const searchableFields = [page.title.en, page.title.fr, page.text];
+
+      if (!matchesAllTerms(queryTerms, searchableFields)) {
+        return null;
+      }
+
+      const score = scoreSearchResult(query, queryTerms, {
+        title,
+        type: page.type,
+        fields: searchableFields,
+      });
+
+      if (score === 0) {
+        return null;
+      }
+
+      return {
+        type: page.type,
+        sourceId: page.path,
+        title,
+        summary,
+        url: page.path,
+        date: null,
+        score,
+      };
+    })
+    .filter(Boolean)
+    .slice(0, MAX_RESULTS_PER_SOURCE);
 }
 
 // GET /api/search?q=query&lang=en
@@ -651,7 +688,7 @@ router.get('/', async (req, res) => {
     const [events, retirementMessages, lastPostMessages, newsStories, pages] =
       await Promise.all([
         searchEvents(query, queryTerms, language),
-        searchRetirementMessages(query, queryTerms),
+        searchRetirementMessages(query, queryTerms, language),
         searchLastPostMessages(query, queryTerms, language),
         searchNewsStories(query, queryTerms, language),
         searchStaticPages(query, queryTerms, language),

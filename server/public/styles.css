@@ -74,6 +74,126 @@
   --tab-active-text: var(--white);
 }
 
+.legacy-biography-list p {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color, #d6d9dd);
+}
+
+.document-library-controls {
+  display: grid;
+  grid-template-columns: minmax(16rem, 2fr) repeat(2, minmax(11rem, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.document-library-controls label {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--text-muted, #5b6472);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.document-library-controls input,
+.document-library-controls select {
+  width: 100%;
+  min-height: 2.85rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-color, #cbd1da);
+  border-radius: 0.45rem;
+  background: var(--surface-color, #fff);
+  color: var(--text-color, #172033);
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.document-library-results-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.document-library-results-heading p {
+  color: var(--text-muted, #5b6472);
+  white-space: nowrap;
+}
+
+.document-library-grid,
+.governance-document-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.document-library-card,
+.governance-document-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border-color, #d8dde5);
+  border-radius: 0.65rem;
+  background: var(--surface-color, #fff);
+}
+
+.document-library-card h3,
+.governance-document-card h3,
+.document-library-card p,
+.governance-document-card p {
+  margin: 0;
+}
+
+.document-library-card-meta,
+.document-library-language {
+  color: var(--text-muted, #5b6472);
+  font-size: 0.85rem;
+}
+
+.document-library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+
+.document-library-actions a,
+.governance-document-card a {
+  font-weight: 700;
+}
+
+.document-library-empty {
+  grid-column: 1 / -1;
+  padding: 1.25rem;
+  border: 1px dashed var(--border-color, #cbd1da);
+  border-radius: 0.65rem;
+  text-align: center;
+}
+
+.governance-outline {
+  display: grid;
+  gap: 0.65rem;
+  padding-left: 1.5rem;
+}
+
+@media (max-width: 760px) {
+  .document-library-controls,
+  .document-library-grid,
+  .governance-document-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .document-library-results-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 * {
   margin: 0;
   padding: 0;

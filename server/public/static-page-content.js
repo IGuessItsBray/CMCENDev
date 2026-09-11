@@ -53,6 +53,17 @@
           }
         });
 
+      contentRoot
+        .querySelectorAll("[data-page-i18n-placeholder]")
+        .forEach((element) => {
+          const key = element.dataset.pageI18nPlaceholder;
+          const value = localized[key] || fallback[key];
+
+          if (typeof value === "string") {
+            element.placeholder = value;
+          }
+        });
+
       const title = localized.pageTitle || fallback.pageTitle;
       if (title) {
         document.title = title;

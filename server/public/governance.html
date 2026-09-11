@@ -8,44 +8,143 @@
   </head>
   <body>
     <header id="header"></header>
-    <main class="about-family-main">
+    <main
+      class="about-family-main"
+      data-static-page="governance"
+      id="mainContent"
+    >
       <article class="about-family-shell">
         <header class="about-family-hero">
           <div class="about-family-hero-copy">
-            <p class="about-family-kicker">C&amp;E Association</p>
-            <h1>Governance</h1>
-            <p class="about-family-intro">
-              The governance framework for the Communications and Electronics
-              Association.
+            <p class="about-family-kicker" data-page-i18n="kicker">
+              C&amp;E Association
+            </p>
+            <h1 data-page-i18n="heading">Governance</h1>
+            <p class="about-family-intro" data-page-i18n="intro">
+              How the Communications and Electronics Association is constituted
+              and governed.
             </p>
           </div>
-          <img src="/images/logo.png" alt="" class="about-family-emblem" />
+          <img
+            src="/images/logo.png"
+            alt=""
+            class="about-family-emblem"
+            aria-hidden="true"
+          />
         </header>
         <div class="about-family-body">
           <section class="about-family-section">
-            <h2>Association governance</h2>
-            <p>
-              The C&amp;E Association was incorporated as a not-for-profit
-              corporation in 1970 and transitioned to the Canada Not-for-profit
-              Corporations Act framework. It is managed by a Board of Directors
-              with advice from subject-matter vice-presidents and ex-officio
-              advisors.
+            <h2 data-page-i18n="frameworkHeading">Association governance</h2>
+            <p data-page-i18n="frameworkBodyOne">
+              The C&amp;E Association was incorporated as a federal
+              not-for-profit corporation in 1970 and later continued under the
+              Canada Not-for-profit Corporations Act.
+            </p>
+            <p data-page-i18n="frameworkBodyTwo">
+              It is governed by a volunteer Board of Directors. The documents
+              below define the Association’s legal structure, operating rules,
+              and strategic direction without publishing personal rosters.
+            </p>
+          </section>
+          <section class="about-family-section" id="governing-documents">
+            <h2 data-page-i18n="documentsHeading">Governing documents</h2>
+            <div class="governance-document-grid">
+              <article class="governance-document-card">
+                <p
+                  class="document-library-card-meta"
+                  data-page-i18n="bylawsMeta"
+                >
+                  Governing rules · Revised October 2024
+                </p>
+                <h3 data-page-i18n="bylawsHeading">
+                  C&amp;E Association By-Law No. 1
+                </h3>
+                <p data-page-i18n="bylawsBody">
+                  Covers the Association’s purpose, membership, meetings, Board
+                  responsibilities, officers, notices, dispute resolution,
+                  amendments, and effective date.
+                </p>
+                <a
+                  href="/documents/ce-association-by-laws-2024.pdf"
+                  data-page-i18n="bylawsDownload"
+                  >Download the Association By-Laws (PDF)</a
+                >
+              </article>
+              <article class="governance-document-card">
+                <p
+                  class="document-library-card-meta"
+                  data-page-i18n="articlesMeta"
+                >
+                  Corporate record · 2015
+                </p>
+                <h3 data-page-i18n="articlesHeading">
+                  Articles of Continuance
+                </h3>
+                <p data-page-i18n="articlesBody">
+                  Records the Association’s continuance under the Canada
+                  Not-for-profit Corporations Act and its corporate purposes.
+                </p>
+                <a
+                  href="/documents/ce-association-articles-of-continuance.pdf"
+                  data-page-i18n="articlesDownload"
+                  >Download the Articles of Continuance (PDF)</a
+                >
+              </article>
+              <article class="governance-document-card">
+                <p
+                  class="document-library-card-meta"
+                  data-page-i18n="strategyMeta"
+                >
+                  Legacy draft planning document · 2015
+                </p>
+                <h3 data-page-i18n="strategyHeading">Draft Strategic Plan</h3>
+                <p data-page-i18n="strategyBody">
+                  Retained for institutional reference and historical context.
+                  It is visibly marked as a draft and is not presented as an
+                  approved or current plan.
+                </p>
+                <a
+                  href="/documents/ce-association-draft-strategic-plan-2015.pdf"
+                  data-page-i18n="strategyDownload"
+                  >Download the Draft Association Strategic Plan (PDF)</a
+                >
+              </article>
+            </div>
+          </section>
+          <section class="about-family-section">
+            <h2 data-page-i18n="bylawsOutlineHeading">
+              What the By-Laws cover
+            </h2>
+            <ol class="governance-outline">
+              <li data-page-i18n="outlineOne">
+                General definitions, purpose, document execution, finances,
+                records, and voting
+              </li>
+              <li data-page-i18n="outlineTwo">
+                Membership, contributions, termination, and discipline
+              </li>
+              <li data-page-i18n="outlineThree">
+                Meetings of members and voting procedures
+              </li>
+              <li data-page-i18n="outlineFour">
+                Board responsibilities, committees, officers, and Board meetings
+              </li>
+              <li data-page-i18n="outlineFive">
+                Meeting notices, dispute resolution, amendments, and effective
+                date
+              </li>
+            </ol>
+            <p class="charter-source-note" data-page-i18n="authorityNote">
+              This outline is provided for navigation only. Consult the PDF for
+              the complete authoritative wording.
             </p>
           </section>
           <section class="about-family-section">
-            <h2>Governing documents</h2>
-            <ul class="about-family-pillar-list">
-              <li>
-                <a href="/documents/ce-association-by-laws-2024.pdf"
-                  >C&amp;E Association By-Laws (2024)</a
-                >
-              </li>
-              <li>
-                <a href="/documents/ce-association-articles-of-continuance.pdf"
-                  >C&amp;E Association Articles of Continuance</a
-                >
-              </li>
-            </ul>
+            <p>
+              <a href="/document-library" data-page-i18n="libraryLink"
+                >Browse all institutional documents</a
+              >
+            </p>
           </section>
         </div>
       </article>
@@ -55,5 +154,6 @@
     <script src="/timers.js"></script>
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
+    <script src="/static-page-content.js"></script>
   </body>
 </html>

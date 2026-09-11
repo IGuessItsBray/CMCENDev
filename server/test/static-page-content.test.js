@@ -9,6 +9,11 @@ const PAGES = Object.freeze([
   ['about_branch.html', 'about-branch'],
   ['about_association.html', 'about-association'],
   ['about_museum_foundation.html', 'about-museum-foundation'],
+  ['association_directors.html', 'association-directors'],
+  ['branch_policies.html', 'branch-policies'],
+  ['document-library.html', 'document-library'],
+  ['governance.html', 'governance'],
+  ['leadership.html', 'leadership'],
 ]);
 
 test('about pages provide matching English and French editorial content', () => {
@@ -28,6 +33,10 @@ test('about pages provide matching English and French editorial content', () => 
       html.matchAll(/data-page-i18n-alt="([^"]+)"/gu),
       (match) => match[1],
     );
+    const referencedPlaceholderKeys = Array.from(
+      html.matchAll(/data-page-i18n-placeholder="([^"]+)"/gu),
+      (match) => match[1],
+    );
 
     assert.match(html, new RegExp(`data-static-page="${contentName}"`, 'u'));
     assert.match(html, /src="\/?static-page-content\.js"/u);
@@ -37,7 +46,11 @@ test('about pages provide matching English and French editorial content', () => 
       Object.keys(content.en).sort(),
     );
 
-    [...referencedKeys, ...referencedAltKeys].forEach((key) => {
+    [
+      ...referencedKeys,
+      ...referencedAltKeys,
+      ...referencedPlaceholderKeys,
+    ].forEach((key) => {
       assert.ok(content.en[key]?.trim(), `${contentName} has English ${key}`);
       assert.ok(content.fr[key]?.trim(), `${contentName} has French ${key}`);
     });

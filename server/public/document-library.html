@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Document Library | CMCEN / RCMCE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main
+      class="about-family-main"
+      data-static-page="document-library"
+      id="mainContent"
+    >
+      <article class="about-family-shell">
+        <header class="about-family-hero">
+          <div class="about-family-hero-copy">
+            <p class="about-family-kicker" data-page-i18n="kicker">
+              C&amp;E Family
+            </p>
+            <h1 data-page-i18n="heading">Document Library</h1>
+            <p class="about-family-intro" data-page-i18n="intro">
+              Charters, policies, governing documents, and other institutional
+              reference material from across the C&amp;E Family.
+            </p>
+          </div>
+          <img
+            src="/images/logo.png"
+            alt=""
+            class="about-family-emblem"
+            aria-hidden="true"
+          />
+        </header>
+
+        <div class="about-family-body">
+          <section class="about-family-section document-library-intro">
+            <h2 data-page-i18n="libraryHeading">Find a document</h2>
+            <p data-page-i18n="libraryBody">
+              Search by title or description, or narrow the library by
+              organization and document type.
+            </p>
+            <p class="charter-source-note" data-page-i18n="sourceNote">
+              Downloaded source files remain authoritative. Plain-language
+              summaries are provided to help visitors find the right document.
+            </p>
+
+            <div
+              class="document-library-controls"
+              aria-label="Document filters"
+            >
+              <label class="document-library-search">
+                <span data-page-i18n="searchLabel">Search documents</span>
+                <input
+                  id="documentSearch"
+                  type="search"
+                  autocomplete="off"
+                  data-page-i18n-placeholder="searchPlaceholder"
+                  placeholder="Search by title or topic"
+                />
+              </label>
+              <label>
+                <span data-page-i18n="organizationLabel">Organization</span>
+                <select id="documentOrganization"></select>
+              </label>
+              <label>
+                <span data-page-i18n="typeLabel">Document type</span>
+                <select id="documentType"></select>
+              </label>
+            </div>
+          </section>
+
+          <section class="about-family-section">
+            <div class="document-library-results-heading">
+              <h2 data-page-i18n="resultsHeading">Available documents</h2>
+              <p id="documentResultCount" aria-live="polite"></p>
+            </div>
+            <div
+              id="documentLibrary"
+              class="document-library-grid"
+              aria-live="polite"
+            >
+              <p data-page-i18n="loading">Loading documents…</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+    </main>
+    <footer id="footer"></footer>
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/static-page-content.js"></script>
+    <script src="/document-library.js"></script>
+  </body>
+</html>

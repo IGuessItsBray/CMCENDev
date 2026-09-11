@@ -39,6 +39,19 @@ const STATIC_PAGES = [
     },
   },
   {
+    path: '/branch_policies',
+    file: 'branch_policies.html',
+    type: 'page',
+    title: {
+      en: 'Branch Policies and Appointments',
+      fr: 'Politiques et nominations de la Branche',
+    },
+    summary: {
+      en: 'Nomination processes for the Colonel Commandant and honorary appointments.',
+      fr: 'Processus de nomination du colonel commandant et aux fonctions honorifiques.',
+    },
+  },
+  {
     path: '/ce_professions',
     file: 'ce_professions.html',
     type: 'page',
@@ -121,6 +134,16 @@ const STATIC_PAGES = [
     title: { en: 'Governance', fr: 'Gouvernance' },
   },
   {
+    path: '/document-library',
+    file: 'document-library.html',
+    type: 'page',
+    title: { en: 'Document Library', fr: 'Bibliothèque de documents' },
+    summary: {
+      en: 'Charters, policies, standing orders, and Association governance documents.',
+      fr: 'Chartes, politiques, ordres permanents et documents de gouvernance de l’Association.',
+    },
+  },
+  {
     path: '/bursaries',
     file: 'bursaries.html',
     type: 'page',
@@ -148,16 +171,16 @@ const STATIC_PAGES = [
     title: { en: 'Last Post', fr: 'Dernier appel' },
   },
   {
-    path: '/honours_awards',
-    file: 'honours_awards.html',
-    type: 'page',
-    title: { en: 'Honours and Awards', fr: 'Distinctions et prix' },
-  },
-  {
     path: '/leadership',
     file: 'leadership.html',
     type: 'page',
     title: { en: 'Leadership', fr: 'Leadership' },
+  },
+  {
+    path: '/honours_awards',
+    file: 'honours_awards.html',
+    type: 'page',
+    title: { en: 'Honours and Awards', fr: 'Distinctions et prix' },
   },
   {
     path: '/news_stories',

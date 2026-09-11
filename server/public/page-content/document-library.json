@@ -1,0 +1,255 @@
+{
+  "en": {
+    "pageTitle": "Document Library | CMCEN / RCMCE",
+    "kicker": "C&E Family",
+    "heading": "Document Library",
+    "intro": "Charters, policies, governing documents, and other institutional reference material from across the C&E Family.",
+    "libraryHeading": "Find a document",
+    "libraryBody": "Search by title or description, or narrow the library by organization and document type.",
+    "sourceNote": "Downloaded source files remain authoritative. Plain-language summaries are provided to help visitors find the right document.",
+    "searchLabel": "Search documents",
+    "searchPlaceholder": "Search by title or topic",
+    "organizationLabel": "Organization",
+    "typeLabel": "Document type",
+    "resultsHeading": "Available documents",
+    "loading": "Loading documents…",
+    "library": {
+      "allOrganizations": "All organizations",
+      "allTypes": "All document types",
+      "languageLabel": "Document language",
+      "readPage": "Read accessible page",
+      "downloadPdf": "Download PDF",
+      "sourceUnavailable": "Source file not yet available",
+      "empty": "No documents match these filters.",
+      "resultCount": "{count} documents",
+      "organizations": [
+        { "value": "family", "label": "C&E Family" },
+        { "value": "branch", "label": "C&E Branch" },
+        { "value": "association", "label": "C&E Association" },
+        { "value": "foundation", "label": "Military C&E Museum Foundation" }
+      ],
+      "types": [
+        { "value": "charter", "label": "Charter" },
+        { "value": "governance", "label": "Governance" },
+        { "value": "standing-orders", "label": "Standing orders" },
+        { "value": "policy", "label": "Policy" },
+        { "value": "meeting-record", "label": "Meeting record" },
+        { "value": "annual-report", "label": "Annual report" }
+      ]
+    }
+  },
+  "fr": {
+    "pageTitle": "Bibliothèque de documents | CMCEN / RCMCE",
+    "kicker": "Famille des C et E",
+    "heading": "Bibliothèque de documents",
+    "intro": "Chartes, politiques, documents constitutifs et autres références institutionnelles de la famille des C et E.",
+    "libraryHeading": "Trouver un document",
+    "libraryBody": "Recherchez par titre ou description, ou filtrez la bibliothèque par organisation et type de document.",
+    "sourceNote": "Les fichiers sources téléchargés demeurent les documents officiels. Les résumés en langage clair aident les visiteurs à trouver le bon document.",
+    "searchLabel": "Rechercher des documents",
+    "searchPlaceholder": "Rechercher par titre ou sujet",
+    "organizationLabel": "Organisation",
+    "typeLabel": "Type de document",
+    "resultsHeading": "Documents disponibles",
+    "loading": "Chargement des documents…",
+    "library": {
+      "allOrganizations": "Toutes les organisations",
+      "allTypes": "Tous les types de documents",
+      "languageLabel": "Langue du document",
+      "readPage": "Lire la page accessible",
+      "downloadPdf": "Télécharger le PDF",
+      "sourceUnavailable": "Fichier source non encore disponible",
+      "empty": "Aucun document ne correspond à ces filtres.",
+      "resultCount": "{count} documents",
+      "organizations": [
+        { "value": "family", "label": "Famille des C et E" },
+        { "value": "branch", "label": "Branche des C et E" },
+        { "value": "association", "label": "Association des C et E" },
+        {
+          "value": "foundation",
+          "label": "Fondation du Musée militaire des C et E"
+        }
+      ],
+      "types": [
+        { "value": "charter", "label": "Charte" },
+        { "value": "governance", "label": "Gouvernance" },
+        { "value": "standing-orders", "label": "Ordres permanents" },
+        { "value": "policy", "label": "Politique" },
+        { "value": "meeting-record", "label": "Compte rendu" },
+        { "value": "annual-report", "label": "Rapport annuel" }
+      ]
+    }
+  },
+  "documents": [
+    {
+      "id": "ce-senate-charter-2020",
+      "organization": "family",
+      "type": "charter",
+      "fileUrl": "/documents/ce-senate-charter-2020.pdf",
+      "pageUrl": "/about-family#charterContent",
+      "en": {
+        "title": "C&E Family Senate Charter",
+        "description": "Defines the Senate’s role, structure, responsibilities, and common governance framework for the C&E Family.",
+        "dateLabel": "2020",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Charte du Sénat de la famille des C et E",
+        "description": "Définit le rôle, la structure, les responsabilités et le cadre commun de gouvernance du Sénat de la famille des C et E.",
+        "dateLabel": "2020",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-branch-standing-orders-2020",
+      "organization": "branch",
+      "type": "standing-orders",
+      "fileUrl": "/documents/ce-branch-standing-orders-2020.pdf",
+      "pageUrl": "/standing_orders",
+      "en": {
+        "title": "C&E Branch Standing Orders",
+        "description": "The Branch’s principal standing reference for organization, responsibilities, customs, and recurring activities.",
+        "dateLabel": "2020",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Ordres permanents de la Branche des C et E",
+        "description": "La principale référence permanente de la Branche concernant son organisation, ses responsabilités, ses coutumes et ses activités récurrentes.",
+        "dateLabel": "2020",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "colonel-commandant-nomination-2020",
+      "organization": "branch",
+      "type": "policy",
+      "fileUrl": "/documents/ce-branch-colonel-commandant-sop-2020.pdf",
+      "pageUrl": "/branch_policies#colonel-commandant",
+      "en": {
+        "title": "Colonel Commandant Nomination Process",
+        "description": "Explains the origins, nomination and selection process, duties, and historical succession of the C&E Branch Colonel Commandant appointment.",
+        "dateLabel": "2020",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Processus de nomination du colonel commandant",
+        "description": "Explique les origines, le processus de mise en candidature et de sélection, les fonctions et la succession historique du colonel commandant de la Branche des C et E.",
+        "dateLabel": "2020",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "honorary-appointments-2020",
+      "organization": "branch",
+      "type": "policy",
+      "fileUrl": "/documents/ce-branch-honorary-appointments-sop-2020.pdf",
+      "pageUrl": "/branch_policies#honorary-appointments",
+      "en": {
+        "title": "Honorary Appointments Nomination Process",
+        "description": "Explains the roles, selection criteria, nomination process, and relationships for C&E Family honorary appointments.",
+        "dateLabel": "2020",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Processus de nomination aux fonctions honorifiques",
+        "description": "Explique les rôles, les critères de sélection, le processus de nomination et les relations concernant les fonctions honorifiques de la famille des C et E.",
+        "dateLabel": "2020",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "bac-record-of-discussion-feb-2026",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/bac-record-of-discussion-feb-2026.pdf",
+      "pageUrl": "/branch_advisory_council",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion",
+        "description": "The migrated record of discussion for the February 2026 Branch Advisory Council meeting.",
+        "dateLabel": "February 2026",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche",
+        "description": "Le compte rendu migré de la réunion de février 2026 du Conseil consultatif de la Branche.",
+        "dateLabel": "Février 2026",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-by-laws-2024",
+      "organization": "association",
+      "type": "governance",
+      "fileUrl": "/documents/ce-association-by-laws-2024.pdf",
+      "pageUrl": "/governance#governing-documents",
+      "en": {
+        "title": "C&E Association By-Law No. 1",
+        "description": "Sets the rules for membership, member meetings, the Board, officers, notices, dispute resolution, and amendments.",
+        "dateLabel": "Revised October 2024",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Règlement administratif no 1 de l’Association des C et E",
+        "description": "Établit les règles concernant les membres, leurs assemblées, le conseil, les dirigeants, les avis, le règlement des différends et les modifications.",
+        "dateLabel": "Révisé en octobre 2024",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-articles-continuance",
+      "organization": "association",
+      "type": "governance",
+      "fileUrl": "/documents/ce-association-articles-of-continuance.pdf",
+      "pageUrl": "/governance#governing-documents",
+      "en": {
+        "title": "C&E Association Articles of Continuance",
+        "description": "The corporate continuance document issued under the Canada Not-for-profit Corporations Act.",
+        "dateLabel": "2015",
+        "languageLabel": "English and French"
+      },
+      "fr": {
+        "title": "Statuts de prorogation de l’Association des C et E",
+        "description": "Le document de prorogation de la personne morale délivré en vertu de la Loi canadienne sur les organisations à but non lucratif.",
+        "dateLabel": "2015",
+        "languageLabel": "Français et anglais"
+      }
+    },
+    {
+      "id": "association-draft-strategic-plan-2015",
+      "organization": "association",
+      "type": "governance",
+      "fileUrl": "/documents/ce-association-draft-strategic-plan-2015.pdf",
+      "pageUrl": "/governance#governing-documents",
+      "en": {
+        "title": "Draft C&E Association Strategic Plan",
+        "description": "A legacy draft retained for institutional reference and historical context. It is not presented as an approved or current plan.",
+        "dateLabel": "2015",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Projet de plan stratégique de l’Association des C et E",
+        "description": "Un ancien projet conservé à titre de référence institutionnelle et de contexte historique. Il n’est pas présenté comme un plan approuvé ou actuel.",
+        "dateLabel": "2015",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "foundation-annual-report-2024-2025",
+      "organization": "foundation",
+      "type": "annual-report",
+      "pageUrl": "/about_museum_foundation",
+      "en": {
+        "title": "Foundation Annual Report 2024–2025",
+        "description": "Listed on the legacy site behind its member login. The source file still needs to be supplied or exported by an authorized stakeholder.",
+        "dateLabel": "2024–2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Rapport annuel 2024–2025 de la Fondation",
+        "description": "Répertorié sur l’ancien site derrière la connexion des membres. Le fichier source doit encore être fourni ou exporté par une personne autorisée.",
+        "dateLabel": "2024–2025",
+        "languageLabel": "Anglais"
+      }
+    }
+  ]
+}

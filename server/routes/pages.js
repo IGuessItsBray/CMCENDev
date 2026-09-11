@@ -95,6 +95,14 @@ const SITEMAP_STATIC_LABELS = Object.freeze({
     en: 'About the C&E Museum & Foundation',
     fr: 'À propos du Musée et de la Fondation des C et E',
   },
+  'branch_policies.html': {
+    en: 'Branch Policies and Appointments',
+    fr: 'Politiques et nominations de la Branche',
+  },
+  'document-library.html': {
+    en: 'Document Library',
+    fr: 'Bibliothèque de documents',
+  },
   'association_directors.html': {
     en: 'Association Directors and Advisors',
     fr: 'Directeurs et conseillers de l’Association',

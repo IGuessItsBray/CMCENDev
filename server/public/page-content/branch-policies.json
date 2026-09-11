@@ -1,0 +1,34 @@
+{
+  "en": {
+    "pageTitle": "Branch Policies and Appointments | CMCEN / RCMCE",
+    "kicker": "C&E Branch",
+    "heading": "Branch Policies and Appointments",
+    "intro": "Public reference documents explaining selected honorary appointment processes.",
+    "overviewHeading": "About these documents",
+    "overviewBody": "These migrated documents describe appointment processes, responsibilities, and related historical context. Their current status has not yet been confirmed by stakeholders.",
+    "colonelHeading": "Colonel Commandant nomination process",
+    "colonelBody": "This policy describes eligibility, nominations, review, recommendations, and the appointment cycle for the Colonel Commandant role.",
+    "colonelDownload": "Download the Colonel Commandant Nomination Process (PDF)",
+    "honoraryHeading": "Honorary appointments nomination process",
+    "honoraryBody": "This policy describes how honorary appointment nominations are prepared, reviewed, approved, and administered.",
+    "honoraryDownload": "Download the Honorary Appointments Nomination Process (PDF)",
+    "moreHeading": "More institutional documents",
+    "moreLink": "Browse the document library"
+  },
+  "fr": {
+    "pageTitle": "Politiques et nominations de la Branche | CMCEN / RCMCE",
+    "kicker": "Branche des C et E",
+    "heading": "Politiques et nominations de la Branche",
+    "intro": "Documents de référence publics expliquant certains processus de nomination honorifique.",
+    "overviewHeading": "À propos de ces documents",
+    "overviewBody": "Ces documents migrés décrivent les processus de nomination, les responsabilités et le contexte historique connexe. Leur statut actuel n’a pas encore été confirmé par les parties prenantes.",
+    "colonelHeading": "Processus de nomination du colonel commandant",
+    "colonelBody": "Cette politique décrit l’admissibilité, les candidatures, l’examen, les recommandations et le cycle de nomination au rôle de colonel commandant.",
+    "colonelDownload": "Télécharger le processus de nomination du colonel commandant (PDF)",
+    "honoraryHeading": "Processus de nomination aux fonctions honorifiques",
+    "honoraryBody": "Cette politique décrit comment les candidatures aux fonctions honorifiques sont préparées, examinées, approuvées et administrées.",
+    "honoraryDownload": "Télécharger le processus de nomination aux fonctions honorifiques (PDF)",
+    "moreHeading": "Autres documents institutionnels",
+    "moreLink": "Consulter la bibliothèque de documents"
+  }
+}

@@ -169,6 +169,21 @@ const navLinks = {
           fr: "Musée et Fondation des C et E",
         },
       },
+      {
+        route: "/governance",
+        label: {
+          en: "Association Governance",
+          fr: "Gouvernance de l’Association",
+        },
+      },
+      {
+        route: "/branch_policies",
+        label: { en: "Branch Policies", fr: "Politiques de la Branche" },
+      },
+      {
+        route: "/document-library",
+        label: { en: "Document Library", fr: "Bibliothèque de documents" },
+      },
     ],
   },
   doctrine: {

@@ -9,10 +9,6 @@ const certificateRequestsList = document.getElementById(
 let actionableCertificateRequests = [];
 let certificateRequestsLoadFailed = false;
 
-function getCertificateRequestsLanguage() {
-  return CMCENUtils.getCurrentLanguage();
-}
-
 function getCertificateRequestsLocale() {
   return CMCENUtils.getCurrentLocale();
 }

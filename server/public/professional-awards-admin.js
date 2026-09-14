@@ -18,7 +18,7 @@
 
   function createInput(label, name, value = "", type = "text") {
     const wrapper = document.createElement("label");
-    wrapper.className = "content-workspace-field";
+    wrapper.className = "admin-editor-field admin-editor-field--editorial";
     const labelElement = document.createElement("span");
     labelElement.textContent = label;
     const input = document.createElement("input");

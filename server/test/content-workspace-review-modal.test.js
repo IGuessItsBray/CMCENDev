@@ -8,10 +8,9 @@ const workspaceScript = fs.readFileSync(
   path.join(publicPath, 'content-workspace.js'),
   'utf8',
 );
-const workspaceStyles = fs.readFileSync(
-  path.join(publicPath, 'styles.css'),
-  'utf8',
-);
+const workspaceStyles = ['styles.css', 'content-workspace.css']
+  .map((filename) => fs.readFileSync(path.join(publicPath, filename), 'utf8'))
+  .join('\n');
 const appUtilsScript = fs.readFileSync(
   path.join(publicPath, 'app-utils.js'),
   'utf8',

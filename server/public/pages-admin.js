@@ -705,7 +705,7 @@ function createPageLibrary() {
 
 function createLocalizedInput(label, field, type = "input") {
   const wrapper = document.createElement("fieldset");
-  wrapper.className = "pages-editor-fieldset";
+  wrapper.className = "admin-editor-fieldset pages-editor-fieldset";
 
   const legend = document.createElement("legend");
   legend.textContent = label;
@@ -713,7 +713,7 @@ function createLocalizedInput(label, field, type = "input") {
 
   ["en", "fr"].forEach((language) => {
     const inputLabel = document.createElement("label");
-    inputLabel.className = "pages-editor-field";
+    inputLabel.className = "admin-editor-field admin-editor-field--compact";
 
     const text = document.createElement("span");
     text.textContent = language.toUpperCase();
@@ -736,7 +736,7 @@ function createLocalizedInput(label, field, type = "input") {
 
 function createBlockLocalizedInput(index, label, field, type = "textarea") {
   const wrapper = document.createElement("fieldset");
-  wrapper.className = "pages-editor-fieldset";
+  wrapper.className = "admin-editor-fieldset pages-editor-fieldset";
 
   const legend = document.createElement("legend");
   legend.textContent = label;
@@ -744,7 +744,7 @@ function createBlockLocalizedInput(index, label, field, type = "textarea") {
 
   ["en", "fr"].forEach((language) => {
     const inputLabel = document.createElement("label");
-    inputLabel.className = "pages-editor-field";
+    inputLabel.className = "admin-editor-field admin-editor-field--compact";
 
     const text = document.createElement("span");
     text.textContent = language.toUpperCase();
@@ -773,7 +773,7 @@ function createNestedLocalizedInput({
   type = "textarea",
 }) {
   const wrapper = document.createElement("fieldset");
-  wrapper.className = "pages-editor-fieldset";
+  wrapper.className = "admin-editor-fieldset pages-editor-fieldset";
 
   const legend = document.createElement("legend");
   legend.textContent = label;
@@ -781,7 +781,7 @@ function createNestedLocalizedInput({
 
   ["en", "fr"].forEach((language) => {
     const inputLabel = document.createElement("label");
-    inputLabel.className = "pages-editor-field";
+    inputLabel.className = "admin-editor-field admin-editor-field--compact";
 
     const text = document.createElement("span");
     text.textContent = language.toUpperCase();
@@ -1268,59 +1268,6 @@ function createBlockHeightResizeHandle(index) {
   });
 
   return handle;
-}
-
-function createCanvasDropZone(insertIndex) {
-  const zone = document.createElement("div");
-  zone.className = "pages-canvas-drop-zone";
-  zone.dataset.insertIndex = String(insertIndex);
-
-  const label = document.createElement("span");
-  label.textContent =
-    insertIndex === 0 ? "Drop block at top" : "Drop block here";
-  zone.append(label);
-
-  zone.addEventListener("dragover", (event) => {
-    const hasBlockType = event.dataTransfer.types.includes(
-      "application/x-cmcen-block-type",
-    );
-    const hasBlockIndex = event.dataTransfer.types.includes(
-      "application/x-cmcen-block-index",
-    );
-
-    if (!hasBlockType && !hasBlockIndex) return;
-
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    zone.classList.add("is-active");
-  });
-
-  zone.addEventListener("dragleave", () => {
-    zone.classList.remove("is-active");
-  });
-
-  zone.addEventListener("drop", (event) => {
-    event.preventDefault();
-    zone.classList.remove("is-active");
-
-    const blockType =
-      event.dataTransfer.getData("application/x-cmcen-block-type") ||
-      paletteDragBlockType;
-    const existingIndex = Number(
-      event.dataTransfer.getData("application/x-cmcen-block-index"),
-    );
-
-    if (blockType) {
-      insertBlock(blockType, insertIndex);
-      return;
-    }
-
-    if (Number.isInteger(existingIndex)) {
-      reorderBlock(existingIndex, insertIndex);
-    }
-  });
-
-  return zone;
 }
 
 function createBuilderCanvas() {
@@ -1855,7 +1802,7 @@ function createBlockEditContent(block, index) {
     );
   } else if (block.type === "button") {
     const urlLabel = document.createElement("label");
-    urlLabel.className = "pages-editor-field";
+    urlLabel.className = "admin-editor-field admin-editor-field--compact";
     const span = document.createElement("span");
     span.textContent = "URL";
     const input = document.createElement("input");
@@ -2273,14 +2220,15 @@ function createBlockControls() {
 function createPageAccessEditor() {
   const access = getSelectedPageAccess();
   const fieldset = document.createElement("fieldset");
-  fieldset.className = "pages-editor-fieldset pages-access-editor";
+  fieldset.className =
+    "admin-editor-fieldset pages-editor-fieldset pages-access-editor";
 
   const legend = document.createElement("legend");
   legend.textContent = "Visibility";
   fieldset.append(legend);
 
   const audienceLabel = document.createElement("label");
-  audienceLabel.className = "pages-editor-field";
+  audienceLabel.className = "admin-editor-field admin-editor-field--compact";
 
   const audienceText = document.createElement("span");
   audienceText.textContent = "Who can see this page";
@@ -2454,7 +2402,7 @@ function createPageEditor() {
   header.append(title, headerMeta);
 
   const slugField = document.createElement("label");
-  slugField.className = "pages-editor-field";
+  slugField.className = "admin-editor-field admin-editor-field--compact";
   const slugLabel = document.createElement("span");
   slugLabel.textContent = "Slug";
   const slug = document.createElement("input");
@@ -3419,7 +3367,7 @@ function createCropEditorModal() {
 
   function addRange(label, key, min, max, step = 1) {
     const field = document.createElement("label");
-    field.className = "pages-editor-field";
+    field.className = "admin-editor-field admin-editor-field--compact";
     const text = document.createElement("span");
     text.textContent = label;
     const input = document.createElement("input");
@@ -3825,35 +3773,6 @@ async function publishPageAndReturnToLibrary({ featureOnHome } = {}) {
   }
 }
 
-async function updatePageStatus(status) {
-  if (!pagesState.selectedPage?._id) return;
-  cancelAutoSave();
-
-  try {
-    const data = await pageApi(
-      `/api/admin/pages/${encodeURIComponent(pagesState.selectedPage._id)}/status`,
-      {
-        method: "PATCH",
-        body: { status },
-        errorMessage: "Could not update page status",
-      },
-    );
-
-    setPagesState({
-      selectedPage: data.page,
-      message: "",
-    });
-    await refreshSiteNavigation();
-    await loadPages();
-    showPagesActionToast(data.message || "Page status updated", "success");
-  } catch (error) {
-    showPagesActionToast(
-      error.message || "Could not update page status",
-      "error",
-    );
-  }
-}
-
 async function deleteSelectedPage() {
   if (!pagesState.selectedPage?._id) return;
   if (
@@ -3937,17 +3856,6 @@ function moveBlock(index, direction) {
   const block = blocks[index];
   blocks[index] = blocks[nextIndex];
   blocks[nextIndex] = block;
-  updateSelectedPage({ blocks });
-}
-
-function reorderBlock(fromIndex, toIndex) {
-  const blocks = [...(pagesState.selectedPage?.blocks || [])];
-  if (fromIndex < 0 || fromIndex >= blocks.length) return;
-
-  const [block] = blocks.splice(fromIndex, 1);
-  const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
-  const insertIndex = Math.max(0, Math.min(adjustedToIndex, blocks.length));
-  blocks.splice(insertIndex, 0, block);
   updateSelectedPage({ blocks });
 }
 
@@ -4085,24 +3993,6 @@ function uploadImageToCdnThroughServer(file, progressKey) {
   });
 }
 
-async function createNavigationItem(payload) {
-  try {
-    await pageApi("/api/admin/navigation-items", {
-      method: "POST",
-      body: payload,
-      errorMessage: "Could not add navigation item",
-    });
-    await loadPages();
-    await refreshSiteNavigation();
-    showPagesActionToast("Navigation item added", "success");
-  } catch (error) {
-    showPagesActionToast(
-      error.message || "Could not add navigation item",
-      "error",
-    );
-  }
-}
-
 async function deleteNavigationItem(itemId) {
   try {
     await pageApi(`/api/admin/navigation-items/${encodeURIComponent(itemId)}`, {
@@ -4119,23 +4009,6 @@ async function deleteNavigationItem(itemId) {
   } catch (error) {
     showPagesActionToast(
       error.message || "Could not remove navigation item",
-      "error",
-    );
-  }
-}
-
-async function updateNavigationItem(itemId, payload) {
-  try {
-    await pageApi(`/api/admin/navigation-items/${encodeURIComponent(itemId)}`, {
-      method: "PATCH",
-      body: payload,
-      errorMessage: "Could not update navigation item",
-    });
-    await loadPages();
-    await refreshSiteNavigation();
-  } catch (error) {
-    showPagesActionToast(
-      error.message || "Could not update navigation item",
       "error",
     );
   }

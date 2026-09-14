@@ -156,7 +156,7 @@ function translationApiJson(path, token, options = {}) {
 function setTranslationsMessage(message, state = "", messageKey = "") {
   activeTranslationsMessageKey = messageKey;
   translationsMessage.textContent = message;
-  translationsMessage.className = "review-page-message";
+  translationsMessage.className = "translations-admin-message";
 
   if (state) {
     translationsMessage.classList.add(`is-${state}`);
@@ -573,7 +573,7 @@ function createTranslationRow(row) {
 
   const saveButton = document.createElement("button");
   saveButton.type = "button";
-  saveButton.className = "review-publish-button translation-save-button";
+  saveButton.className = "translation-save-button";
   saveButton.textContent = translate("translations_save");
   saveButton.addEventListener("click", () => {
     saveTranslationRow(article, row.key);

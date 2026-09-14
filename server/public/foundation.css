@@ -1,0 +1,14 @@
+.about-family-main[data-static-page='about-museum-foundation']
+  .about-family-feature-list
+  + p {
+  margin-top: 20px;
+}
+
+.foundation-museum-photo {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  margin-top: 24px;
+  border-radius: var(--surface-radius);
+}

@@ -3,26 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Branch Leadership | CMCEN / RCMCE</title>
+    <title>Leadership | CMCEN / RCMCE</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <header id="header"></header>
     <main
-      class="about-family-main"
+      class="about-family-main leadership-main"
       data-static-page="leadership"
       id="mainContent"
     >
-      <article class="about-family-shell">
-        <header class="about-family-hero">
+      <article class="about-family-shell leadership-shell">
+        <header class="about-family-hero leadership-hero">
           <div class="about-family-hero-copy">
             <p class="about-family-kicker" data-page-i18n="kicker">
               C&amp;E Branch
             </p>
-            <h1 data-page-i18n="heading">Branch leadership</h1>
+            <h1 data-page-i18n="heading">Leadership</h1>
             <p class="about-family-intro" data-page-i18n="intro">
-              A migration snapshot of senior Branch appointments from the legacy
-              CMCEN site.
+              Meet the senior appointments and advisory councils serving the
+              C&amp;E Branch.
             </p>
           </div>
           <img
@@ -32,114 +32,8 @@
             aria-hidden="true"
           />
         </header>
-        <div class="about-family-body">
-          <section class="about-family-section">
-            <h2 data-page-i18n="rolesHeading">Senior Branch appointments</h2>
-            <ul class="about-family-pillar-list">
-              <li data-page-i18n="appointmentOne">
-                Her Royal Highness The Princess Royal, Princess Anne —
-                Colonel-in-Chief
-              </li>
-              <li data-page-i18n="appointmentTwo">
-                Brigadier-General (Retired) Martin Girard, OMM, MSM, CD —
-                Colonel Commandant
-              </li>
-              <li data-page-i18n="appointmentThree">
-                Major-General Dave Yarker, CD — Branch Leader
-              </li>
-              <li data-page-i18n="appointmentFour">
-                Colonel Steeve Lavoie, CD — Branch Advisor
-              </li>
-              <li data-page-i18n="appointmentFive">
-                Major Emilie Circé, US MSM, CD — Branch Adjutant
-              </li>
-              <li data-page-i18n="appointmentSix">
-                Chief Warrant Officer Renay Groves, MSM, CD — Branch Chief
-              </li>
-            </ul>
-          </section>
-          <section class="about-family-section">
-            <h2 data-page-i18n="bacHeading">Branch Advisory Council</h2>
-            <ul class="about-family-pillar-list">
-              <li data-page-i18n="bacOne">
-                Major-General Dave Yarker, CD — Branch Leader
-              </li>
-              <li data-page-i18n="bacTwo">
-                Brigadier-General (Retired) Martin Girard, OMM, MSM, CD —
-                Colonel Commandant
-              </li>
-              <li data-page-i18n="bacThree">
-                Colonel Steeve Lavoie, CD — Branch Advisor
-              </li>
-              <li data-page-i18n="bacFour">
-                Colonel Walter Jull, CD — Director Signals
-              </li>
-              <li data-page-i18n="bacFive">
-                Colonel Martin J.J-L. Coudé, CD — Strategic A6
-              </li>
-              <li data-page-i18n="bacSix">
-                Colonel John Roper, CD — Director SIGINT
-              </li>
-              <li data-page-i18n="bacSeven">
-                Chief Warrant Officer Renay Groves, MSM, CD — Branch Chief
-              </li>
-            </ul>
-          </section>
-          <section class="about-family-section">
-            <h2 data-page-i18n="ncmHeading">NCM Advisory Council</h2>
-            <ul class="about-family-pillar-list">
-              <li data-page-i18n="ncmOne">
-                Chief Warrant Officer Renay Groves, MSM, CD — Branch Chief
-              </li>
-              <li data-page-i18n="ncmTwo">
-                Chief Warrant Officer Pascal St-Gelais — RCCS Corps Chief
-              </li>
-              <li data-page-i18n="ncmThree">
-                Chief Warrant Officer Bruno Thibault — Deputy RCCS Corps Chief
-              </li>
-              <li data-page-i18n="ncmFour">
-                Chief Warrant Officer Phil Gagné, MMM, CD — Deputy Corps
-                Sergeant Major ARes
-              </li>
-              <li data-page-i18n="ncmFive">
-                Chief Warrant Officer Jason McQuigge, CD — Home Station RSM
-              </li>
-            </ul>
-          </section>
-          <section class="about-family-section">
-            <h2 data-page-i18n="rccsHeading">
-              Royal Canadian Corps of Signals
-            </h2>
-            <ul class="about-family-pillar-list">
-              <li data-page-i18n="rccsOne">
-                Brigadier-General Mark Parsons, CD — Army Master of Signals
-                (RCCS Leader)
-              </li>
-              <li data-page-i18n="rccsTwo">
-                Colonel J.S. Estrela — Director RCCS
-              </li>
-              <li data-page-i18n="rccsThree">
-                Colonel M.L. Prince, CD — Director RCCS-NCM
-              </li>
-              <li data-page-i18n="rccsFour">
-                Lieutenant-Colonel Lisa Smid, OMM, CD — Deputy Director Signals
-                ARes
-              </li>
-            </ul>
-          </section>
-          <section class="about-family-section">
-            <h2 data-page-i18n="snapshotHeading">Migration snapshot</h2>
-            <p data-page-i18n="snapshotBody">
-              This roster was copied from the legacy CMCEN site to support
-              stakeholder review. Appointments change over time and have not yet
-              been independently confirmed.
-            </p>
-            <p>
-              <a href="/branch_policies" data-page-i18n="policiesLink"
-                >Read appointment policies</a
-              >
-            </p>
-          </section>
+        <div class="about-family-body leadership-body">
+          <div id="leadershipRosters"></div>
         </div>
       </article>
     </main>
@@ -149,5 +43,6 @@
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
     <script src="/static-page-content.js"></script>
+    <script src="/leadership.js"></script>
   </body>
 </html>

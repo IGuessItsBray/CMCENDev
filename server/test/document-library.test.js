@@ -38,13 +38,9 @@ test('document library references available public source files', () => {
   });
 });
 
-test('legacy roster pages are published as migration snapshots', () => {
-  const pages = ['leadership.html', 'association_directors.html'];
+test('legacy association-director roster is published as a migration snapshot', () => {
+  const pages = ['association_directors.html'];
   const previouslyPublishedNames = [
-    'Princess Anne',
-    'Martin Girard',
-    'Dave Yarker',
-    'Steeve Lavoie',
     'John Leech',
     'Christian Marcotte',
     'Brian McDonnell',

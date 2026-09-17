@@ -1,72 +1,437 @@
 {
   "en": {
-    "pageTitle": "Branch Leadership | CMCEN / RCMCE",
+    "pageTitle": "Leadership | CMCEN / RCMCE",
     "kicker": "C&E Branch",
-    "heading": "Branch leadership",
-    "intro": "A broad migration snapshot of Branch leadership and advisory appointments from the legacy CMCEN site.",
-    "rolesHeading": "Senior Branch appointments",
-    "appointmentOne": "Her Royal Highness The Princess Royal, Princess Anne — Colonel-in-Chief",
-    "appointmentTwo": "Brigadier-General (Retired) Martin Girard, OMM, MSM, CD — Colonel Commandant",
-    "appointmentThree": "Major-General Dave Yarker, CD — Branch Leader",
-    "appointmentFour": "Colonel Steeve Lavoie, CD — Branch Advisor",
-    "appointmentFive": "Major Emilie Circé, US MSM, CD — Branch Adjutant",
-    "appointmentSix": "Chief Warrant Officer Renay Groves, MSM, CD — Branch Chief",
-    "bacHeading": "Branch Advisory Council",
-    "bacOne": "Major-General Dave Yarker, CD — Branch Leader",
-    "bacTwo": "Brigadier-General (Retired) Martin Girard, OMM, MSM, CD — Colonel Commandant",
-    "bacThree": "Colonel Steeve Lavoie, CD — Branch Advisor",
-    "bacFour": "Colonel Walter Jull, CD — Director Signals",
-    "bacFive": "Colonel Martin J.J-L. Coudé, CD — Strategic A6",
-    "bacSix": "Colonel John Roper, CD — Director SIGINT",
-    "bacSeven": "Chief Warrant Officer Renay Groves, MSM, CD — Branch Chief",
-    "ncmHeading": "NCM Advisory Council",
-    "ncmOne": "Chief Warrant Officer Renay Groves, MSM, CD — Branch Chief",
-    "ncmTwo": "Chief Warrant Officer Pascal St-Gelais — RCCS Corps Chief",
-    "ncmThree": "Chief Warrant Officer Bruno Thibault — Deputy RCCS Corps Chief",
-    "ncmFour": "Chief Warrant Officer Phil Gagné, MMM, CD — Deputy Corps Sergeant Major ARes",
-    "ncmFive": "Chief Warrant Officer Jason McQuigge, CD — Home Station RSM",
-    "rccsHeading": "Royal Canadian Corps of Signals",
-    "rccsOne": "Brigadier-General Mark Parsons, CD — Army Master of Signals (RCCS Leader)",
-    "rccsTwo": "Colonel J.S. Estrela — Director RCCS",
-    "rccsThree": "Colonel M.L. Prince, CD — Director RCCS-NCM",
-    "rccsFour": "Lieutenant-Colonel Lisa Smid, OMM, CD — Deputy Director Signals ARes",
-    "snapshotHeading": "Migration snapshot",
-    "snapshotBody": "This roster was copied from the legacy CMCEN site to support stakeholder review. Appointments change over time and have not yet been independently confirmed.",
-    "policiesLink": "Read appointment policies"
+    "heading": "Leadership",
+    "intro": "Meet the senior appointments and advisory councils serving the C&E Branch.",
+    "biographyLabel": "Biography",
+    "biographyAction": "Read biography",
+    "biographyCloseLabel": "Close biography",
+    "bios": {
+      "yarker": "Major General (MGen) Dave Yarker joined the Canadian Forces in 1989, graduating from the Royal Military College of Canada (RMC) Kingston in 1993. Following completion of Graduate studies and Signals officer Training in 1996 he served with 2 Bde as a Signals Officer in both 427 Tactical Helicopter Squadron and 2 Combat Engineer Regiment.\n\nHe has been employed as staff in project management, joint, operational and strategic communications planning and deployed as the Canadian J6 to both Kosovo and Afghanistan. He has had the honour of command at 2 Canadian Mechanised Brigade Group Headquarters and Signals Squadron, the Canadian Forces Network Operations Centre, and the Canadian Forces Information Operations Group.\n\nSince 2010, he has had the good fortune to have been employed in the cyber operations field, commanding at Unit and Formation levels as well as holding key staff and liaison positions including with United States Cyber Command and Canada’s Communications Security Establishment.\n\nIn 2022, he was then appointed as Director General Information Management Operations and the Joint Force Cyber Component Commander which became the Director General Cyber and Command and Control Information System Operation in 2024.\n\nOn promotion to his current rank, he was appointed Cyber Force Commander.\n\nHe holds undergraduate degrees in Engineering Physics and History, along with master’s degrees in Engineering Physics and Defence Studies.\n\nMajor-General Yarker is married and the couple lives in Ottawa with their son.",
+      "lavoie": "Colonel Steeve Lavoie of Mont-Joli, QC joined the CF in 1989 as a non-commissioned member. After his initial training, he was transferred to 743 Comm Sqn in Penhold, AB as a 223 Teletype and Cypher Technician (Tel Tech 223). On closure of the Sqn in 1994, he was transferred to CTC Gagetown, NB to work as a 225 Strategic Information Systems Technician (225 SIS Tech). He joined the Officer Corps under the University Training Program for Non-Commissioned Members (UTPNCM) in 1999 and was commissioned in 2002 upon completion of his BSc at RMC. Col Lavoie completed his CELE occupation training and graduated in March 2004. Col Lavoie remained at CFSCE as an incremental staff for the Basic CELE Officer Course (BCAOC) 0401 before being posted with his family to 17 Wing Winnipeg, Manitoba. Col Lavoie arrived in Winnipeg in August 2004 where he worked as the Project Officer. Upon promotion to Captain, Col Lavoie took over as the 17 Wing TIS Technical Maintenance Officer (TMO). In March 2006 he was assigned to the 17 Wing Mission Support Squadron (MSS) team where he was employed as the CIS Flt Comd. In May 2006, he led his team to Maple Flag 39 which served as a validation EX and from June to December 2006 he was deployed to Camp Mirage as part of the Theatre Support Element under OP ARCHER and OP ATHENA. Upon his return he came back to 17 Wing as the TMO and in August 2007 Col Lavoie was transferred to 1 Canadian Air Division to join the A6 team in the A6 C2IS section.\n\nCol Lavoie was transferred to CFSCE as 2 Sqn 2IC in July 2008 and was promoted to the rank of Major in June 2009 where he was appointed as OC Sp Sqn. In June 2010, he was once again transferred but this time to a NATO post in Geilenkirchen, Germany in support of the NATO Airborne Warning and Control System (AWACS). In 2011 he deployed in support of Operation UNIFIED PROTECTOR in Trapani, Italy and in 2012 and 2013 he deployed in support of Operation AFGHAN ASSIST in Mazar-e-Sharif located in RC-North. In 2014, Col Lavoie became the 20th Commanding Officer of the Canadian Forces Crypto Maintenance Unit (CFCMU). In 2016 he was appointed as the C&E Branch Adjutant and in 2017 he become the Deputy Commandant at CFSCE. Col Lavoie was promoted to the rank of LCol in June 2018 and transferred to Ottawa as Joint CIS Force Development Section Head located in Tunney’s Pasture while his family remained in Kingston. In the summer of 2019, Col Lavoie took over Defence Information Management Interoperability (DIMI) as its Section Head and later took the role of Deputy Director for DJC2ISFD.\n\nFrom July 2021 to July 2022, Col Lavoie deployed on OP PROTEUS located in Jerusalem/Israel and upon his return was assigned as DGIMO HQ CO in Ottawa. In February 2024, Col Lavoie became the new Communications & Electronics Branch Advisor. In June 2024, Col Lavoie was promoted to his current rank and became the Chief of Staff for the Canadian Armed Forces Transition Group in Ottawa, ON. He and his wife Samee have three adult children: Alex (1995), Sébastien (1998), and Sarah (2002), and a dog named Brandi.",
+      "groves": "Chief Warrant Officer Renay M. Groves has served in the Canadian Armed Forces for over 31 years, holding various roles including SIGINT Specialist, UAV Team Lead, and Squadron Sergeant Major. After enrolling in 1992, CWO Groves demonstrated leadership potential, earning accelerated promotion to Corporal in 1995. While posted to 770 Comm Research Sqn in Gander, they organized a fundraising campaign, raising $15,000 in just a few months for SAREX (Search and Rescue Exercise) to support missing children. It was presented when SAR team rode though CFB Gander and was received honouring those who started this initiative.\n\nIn 1998, CWO Groves was posted to CFS Leitrim Operations, where they held the positions of Operator, UNIX Systems Administrator, Red Team Member, Communications Center and Canadian Security Establishment Operator. In 2007, CWO Groves deployed to Afghanistan as a Master Corporal, where they presented “Notes From Home” to their comrades, boosting morale and providing emotional support to deployed troops. CWO Groves has held various senior roles, including Drill Sergeant Major at CFSCE and Acting School Chief Warrant Officer as required. They also served as a Command Team Partner to Major Blair Christie for the CFSCE Heritage Team, demonstrating their expertise and dedication to the Canadian Armed Forces.\n\nPrior to being appointed as the Signals Branch Chief Warrant Officer, CWO Groves served in these key leadership positions, further solidifying their commitment to the CAF. CWO Groves is a champion of “Trusted to Serve”, embodying the values of trust, respect, and loyalty. They have contributed to the CAF through initiatives like “Notes from Home” and the Poppy Memorial, and implementation “Trusted to Serve,” at CFSCE demonstrating their commitment to the well-being of members and their families. CWO Groves has been recognized for their exceptional service with several awards, including the Special Service Medal (Alert) in 1996, the General Campaign Star in 2010, the Meritorious Service Medal in 2011, the Canadian Forces Decoration (CD1) for 22 years of good service, and the Canadian Forces Decoration (CD) bar for an additional 10 years of service. CWO Groves is married to Master Warrant Officer (Retired) Christopher Hiscock and has two children, Madison (24) and Nathan (20). They are her world outside of the uniform and without them her life would be less whole. They have supported her career, served and sacrificed as “One Team.”",
+      "jull": "Colonel Walter Jull was born and raised in Vancouver, British Columbia. After employment with the BC Government, he enrolled in the Canadian Armed Forces as a Signals Officer and was subsequently posted to 2 Electronic Warfare Squadron in 2004. Colonel Jull deployed to Kandahar in 2006 as the Electronic Warfare Troop Commander for the 1st Battalion, Princess Patricia’s Canadian Light Infantry Battle Group. In 2007, he was posted to Canadian Forces Intelligence Command and in 2009 proceeded on post-graduate studies at the University of Alberta.\n\nAfter completing post-graduate training, Colonel Jull was posted to the National Defence Headquarters Transformation project at National Defence Headquarters. In 2012, he was selected to work for the Chief Operating Officer at Shared Services Canada (SSC), where he worked on a small team establishing SSC’s data centre transformation agenda. Following the work with SSC, Colonel Jull was posted to the Defence Renewal Team, where he was the desk officer responsible for DND’s Deficit Reduction Action Plan (DRAP) and supported the development and execution of the DND/CAF Defence Renewal plan. In 2015, he was posted to Edmonton as Commanding Officer of 1 Canadian Mechanized Brigade Group Headquarters and Signal Squadron. In 2017, he was posted to Director General Information Management Operations (DGIMO) Headquarters in Ottawa and in 2020 he became the Deputy Director of Information Management Security.\n\nHe commanded the Canadian Forces Electronic Warfare Centre from April 2021 to June 2023 and is currently Deputy DGIMO and Chief of Staff Support Cyber Forces, as well as Director of the Royal Canadian Corps of Signals.\n\nColonel Jull holds a Bachelor of Science in Computer Science from the University of British Columbia and a Master of Business Administration in Finance from the University of Alberta. He is a graduate of the Canadian Army Command and Staff College and the United States Marine Corps Command and Staff College.\n\nHe is married to Colonel Laura Jull (Physician) and together they have three children.",
+      "coude": "Colonel Martin Coudé began his military career in 2002 and graduated from the Royal Military College in 2006 with a degree in Electrical Engineering. His early postings included 19 Wing Comox, where he deployed on Operation ATHENA in 2008. In 2010, he moved to Ottawa to support international missions through CANOSCOM, participating in technical visits to countries such as Sudan, Israel, and Afghanistan.\n\nPromoted to Major in 2013, Col Coudé joined the Directorate of Air Domain Development, focusing on IT policy and coordination with Shared Services Canada. From 2015 to 2018, he served at 14 Wing Greenwood and deployed on Operation IMPACT. As a Lieutenant-Colonel in 2019, he oversaw activities coordination and support in the National Capital Region, including COVID-19 response efforts as the Canadian Force Base (Ottawa-Gatineau) Operations Officer.\n\nIn 2021, he commanded 76 Communication Regiment before joining the Chief of Programme in 2023. Promoted to Colonel in 2025, he returned to DADD as its director. He holds a Master’s in Defence Studies from RMC and an MBA from the University of Liverpool, and is a graduate of the Joint Command and Staff Program.",
+      "roper": "Colonel John Roper was born on 14 March 1977 in Charlottetown, Prince Edward Island. He joined the Canadian Armed Forces in 1994 as a Reservist where he deployed to Bosnia and Herzegovina in 1999 as a member of Op PALLADIUM Roto 4. In 2002, he completed a Component Transfer to the Regular Forces as a Communications and Electronics Officer. As a junior officer, he was first posted to the Canadian Forces Joint Signal Regiment where he served as Regimental Requirements Officer, Squadron 2IC, and Telecommunications Maintenance Troop Commander. While there, he deployed to Kandahar, Afghanistan in 2006 as the NCCIS Troop Commander / J6 Operations Officer in support of Op ATHENA. In 2007, he was posted to the Canadian Forces School of Communications and Electronics as a Squadron 2IC, instructor, and Course Director for the CELE officer course.\n\nPromoted to Major in 2009, he was assigned to the Directorate of Air Personnel Strategy in Ottawa working on RCAF workforce management and occupation recovery for all RCAF managed occupations of both Regular and Reserve Force components. He then relocated with his family to 22 Wing North Bay in 2010, where he assumed the duties of Wing Telecommunications and Information Services Officer. In 2012, he was posted to Directorate of Military Careers as the CELE Career Manager where after 12 months was sent as a student to the Joint Command and Staff Programme at the Canadian Forces College in 2013.\n\nFollowing graduation, he was moved back to Ottawa to ADM(IM) as EA to the COS(IM) where he was promoted to Lieutenant-Colonel in 2015. Following promotion, he was posted to DComd NORAD and assigned to NORAD and USNORTHCOM (N&NC) Headquarters to be employed as the N&NC Chief, Command and Control Mission Services Branch.\n\nFollowing 3 years in this position he was promoted Colonel Acting While So Employed to finish his 4 years in Colorado as the N&NC Vice Chief, Joint Cyber Centre, Cyberspace Operations Directorate focusing on Binational Cyber Operations. This included the planning and execution of Defensive Cyberspace Operations Internal Defensive Measures (DCO-IDM) on NORAD operated networks and mission systems.\n\nIn July 2019, Colonel Roper was posted to 22 Wing North Bay as the Commanding Officer, Mission Support Squadron and 22 Wing Deputy Wing Commander. After an amazing 2 years, he was promoted to Colonel and assumed the appointment as Director Aerospace Equipment Program Management (Radars and Communication Systems) in Ottawa.\n\nColonel Roper holds a Master of Defence Studies from the Royal Military College of Canada, a Bachelor of Science from the University of Prince Edward Island, and a Diploma in Applied Computer Programing from the Information Technology Institute.\n\nColonel Roper is married to his wonderful wife and they are the proud parents of their daughter."
+    },
+    "sections": [
+      {
+        "label": "Branch leadership",
+        "heading": "Senior Branch appointments",
+        "cards": [
+          {
+            "featured": true,
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/princess-anne-d725f411f24a.jpg",
+            "imageAlt": "Her Royal Highness The Princess Royal, Princess Anne",
+            "rank": "Her Royal Highness The Princess Royal",
+            "name": "Princess Anne",
+            "role": "Colonel-in-Chief of the C&E Branch",
+            "profileUrl": "https://royal.uk/the-princess-royal"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
+            "imageAlt": "Brigadier-General (Retired) Martin Girard",
+            "rank": "Brigadier-General (Retired)",
+            "name": "Martin Girard, OMM, MSM, CD",
+            "role": "Colonel Commandant",
+            "bio": "BGen Martin Girard joined the Canadian Forces in June 1981 and started at College Militaire Royal de St-Jean on 15 August 1981. He was transferred to the Royal Military College of Canada in Kingston in 1982 where he graduated from RMCC in Electrical Engineering in May 1986. His first posting was B Tel O for CFB Gagetown from 1987-1989.\n\nHe has served in numerous operational, staff and project appointments at NDHQ and the operational commands such as Chief Engineer DWAN, EA ADM IM, CF Deputy J6, CEFCOM J6, CANOSCOM OS J3 and COS.\n\nBGen Girard also served in three operational deployments: First Gulf War (1990-1991) as second in command of 1 Ptarmigan Squadron of 1st (UK) Armoured Division HQ and Signal Regiment; Bosnia (2002-2003) as Commander Signal Support Group SFOR; Haiti (2008-2009) as Task Force Commander Port au Prince and Chief of Staff MINUSTAH for which he received a Meritorious Service Medal in November 2010.\n\nBGen Girard has commanded and reluctantly relinquished command at CFS Leitrim (2000-2002), CFSCE (2003-2005) and CFSSG (2012-2014).\n\nHe is a graduate from Canadian Land Forces Command and Staff College (1993), Advanced Signal Officer Course, Canadian Forces College (1998), National Security Programme (2012) and CAPSTONE (2015). He also received a Masters Degree in Telecommunication Management at the Royal Military College of Canada (1996). BGen Girard has been appointed as an officer to the Order of Military Merit on the 25th of October 2011.\n\nPromoted to Brigadier-General on 29 May 2014, he was appointed Director General Military Signal Intelligence and Deputy Commander Canadian Forces Intelligence Command until 4 April 2016 where he moved to New York to become Military Advisor to the Permanent Mission of Canada to the United Nations. He left New York City on 29 July 2020 and retired from the Canadian Armed Forces, the C&E Branch and the Royal Canadian Corps of Signals on 4th Sep 2020 and he is now enjoying retirement with his beautiful wife Gyl in Bromont, QC."
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
+            "imageAlt": "Major-General Dave Yarker",
+            "rank": "Major-General",
+            "name": "Dave Yarker, CD",
+            "role": "Branch Leader",
+            "bioKey": "yarker"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
+            "imageAlt": "Colonel Steeve Lavoie",
+            "rank": "Colonel",
+            "name": "Steeve Lavoie, CD",
+            "role": "Branch Advisor",
+            "bioKey": "lavoie"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/emilie-circe-8625bd35e7f0.jpg",
+            "imageAlt": "Major Emilie Circé",
+            "rank": "Major",
+            "name": "Emilie Circé, US MSM, CD",
+            "role": "Branch Adjutant"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageAlt": "Chief Warrant Officer Renay Groves",
+            "rank": "Chief Warrant Officer",
+            "name": "Renay Groves, MSM, CD",
+            "role": "Branch Chief",
+            "bioKey": "groves"
+          }
+        ]
+      },
+      {
+        "label": "Council",
+        "heading": "Branch Advisory Council",
+        "description": "Acts as the C&E Branch governing body, fostering and sustaining operationally focused, command-centric experts.",
+        "cards": [
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
+            "imageAlt": "Major-General Dave Yarker",
+            "rank": "Major-General",
+            "name": "Dave Yarker, CD",
+            "role": "Branch Leader",
+            "bioKey": "yarker"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
+            "imageAlt": "Brigadier-General (Retired) Martin Girard",
+            "rank": "Brigadier-General (Retired)",
+            "name": "Martin Girard, OMM, MSM, CD",
+            "role": "Colonel Commandant",
+            "bio": "BGen Martin Girard joined the Canadian Forces in June 1981 and started at College Militaire Royal de St-Jean on 15 August 1981. He was transferred to the Royal Military College of Canada in Kingston in 1982 where he graduated from RMCC in Electrical Engineering in May 1986. His first posting was B Tel O for CFB Gagetown from 1987-1989.\n\nHe has served in numerous operational, staff and project appointments at NDHQ and the operational commands such as Chief Engineer DWAN, EA ADM IM, CF Deputy J6, CEFCOM J6, CANOSCOM OS J3 and COS.\n\nBGen Girard also served in three operational deployments: First Gulf War (1990-1991) as second in command of 1 Ptarmigan Squadron of 1st (UK) Armoured Division HQ and Signal Regiment; Bosnia (2002-2003) as Commander Signal Support Group SFOR; Haiti (2008-2009) as Task Force Commander Port au Prince and Chief of Staff MINUSTAH for which he received a Meritorious Service Medal in November 2010.\n\nBGen Girard has commanded and reluctantly relinquished command at CFS Leitrim (2000-2002), CFSCE (2003-2005) and CFSSG (2012-2014).\n\nHe is a graduate from Canadian Land Forces Command and Staff College (1993), Advanced Signal Officer Course, Canadian Forces College (1998), National Security Programme (2012) and CAPSTONE (2015). He also received a Masters Degree in Telecommunication Management at the Royal Military College of Canada (1996). BGen Girard has been appointed as an officer to the Order of Military Merit on the 25th of October 2011.\n\nPromoted to Brigadier-General on 29 May 2014, he was appointed Director General Military Signal Intelligence and Deputy Commander Canadian Forces Intelligence Command until 4 April 2016 where he moved to New York to become Military Advisor to the Permanent Mission of Canada to the United Nations. He left New York City on 29 July 2020 and retired from the Canadian Armed Forces, the C&E Branch and the Royal Canadian Corps of Signals on 4th Sep 2020 and he is now enjoying retirement with his beautiful wife Gyl in Bromont, QC."
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
+            "imageAlt": "Colonel Steeve Lavoie",
+            "rank": "Colonel",
+            "name": "Steeve Lavoie, CD",
+            "role": "Branch Advisor",
+            "bioKey": "lavoie"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/walter-jull-38c8569e1e99.jpg",
+            "imageAlt": "Colonel Walter Jull",
+            "rank": "Colonel",
+            "name": "Walter Jull, CD",
+            "role": "Director Signals",
+            "bioKey": "jull"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-coude-e017b9ae3db6.jpg",
+            "imageAlt": "Colonel Martin J.J-L. Coudé",
+            "rank": "Colonel",
+            "name": "Martin J.J-L. Coudé, CD",
+            "role": "Strategic A6",
+            "bioKey": "coude"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/john-roper-849f23c3635e.jpg",
+            "imageAlt": "Colonel John Roper",
+            "rank": "Colonel",
+            "name": "John Roper, CD",
+            "role": "Director SIGINT",
+            "bioKey": "roper"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageAlt": "Chief Warrant Officer Renay Groves",
+            "rank": "Chief Warrant Officer",
+            "name": "Renay Groves, MSM, CD",
+            "role": "Branch Chief",
+            "bioKey": "groves"
+          }
+        ]
+      },
+      {
+        "label": "Council",
+        "heading": "NCM Advisory Council",
+        "description": "Represents Branch NCM interests to the Branch Advisor and keeps members informed about changes to their responsibilities and trade structure.",
+        "cards": [
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageAlt": "Chief Warrant Officer Renay Groves",
+            "rank": "Chief Warrant Officer",
+            "name": "Renay Groves, MSM, CD",
+            "role": "Branch Chief",
+            "bioKey": "groves"
+          },
+          {
+            "image": "/images/logo.png",
+            "imageAlt": "CMCEN emblem",
+            "placeholder": true,
+            "rank": "Chief Warrant Officer",
+            "name": "Pascal St-Gelais",
+            "role": "RCCS Corps Chief"
+          },
+          {
+            "image": "/images/logo.png",
+            "imageAlt": "CMCEN emblem",
+            "placeholder": true,
+            "rank": "Chief Warrant Officer",
+            "name": "Bruno Thibault",
+            "role": "Deputy RCCS Corps Chief"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/phil-gagne-bf8993e6f78e.png",
+            "imageAlt": "Chief Warrant Officer Phil Gagné",
+            "rank": "Chief Warrant Officer",
+            "name": "Phil Gagné, MMM, CD",
+            "role": "Deputy Corps Sergeant Major ARes"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/jason-mcquigge-fb73e0227a80.jpg",
+            "imageAlt": "Chief Warrant Officer Jason McQuigge",
+            "rank": "Chief Warrant Officer",
+            "name": "Jason McQuigge, CD",
+            "role": "Home Station RSM"
+          }
+        ]
+      },
+      {
+        "label": "Corps leadership",
+        "heading": "Royal Canadian Corps of Signals",
+        "description": "Provides leadership for the Royal Canadian Corps of Signals and its role in enabling Canadian Army command and control.",
+        "cards": [
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/mark-parsons-3a45b24808aa.jpg",
+            "imageAlt": "Brigadier-General Mark Parsons",
+            "rank": "Brigadier-General",
+            "name": "Mark Parsons, CD",
+            "role": "Army Master of Signals (RCCS Leader)"
+          },
+          {
+            "image": "/images/logo.png",
+            "imageAlt": "C&E Branch emblem",
+            "placeholder": true,
+            "rank": "Colonel",
+            "name": "J.S. Estrela",
+            "role": "Director RCCS"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/ml-prince-a587c6b0baf7.jpg",
+            "imageAlt": "Colonel M.L. Prince",
+            "rank": "Colonel",
+            "name": "M.L. Prince, CD",
+            "role": "Director RCCS-NCM"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/lisa-smid-a5d457eeb773.jpg",
+            "imageAlt": "Lieutenant-Colonel Lisa Smid",
+            "rank": "Lieutenant-Colonel",
+            "name": "Lisa Smid, OMM, CD",
+            "role": "Deputy Director Signals ARes"
+          }
+        ]
+      }
+    ]
   },
   "fr": {
-    "pageTitle": "Direction de la Branche | CMCEN / RCMCE",
+    "pageTitle": "Direction | CMCEN / RCMCE",
     "kicker": "Branche des C et E",
-    "heading": "Direction de la Branche",
-    "intro": "Un vaste instantané de la direction et des nominations consultatives de la Branche provenant de l’ancien site CMCEN.",
-    "rolesHeading": "Nominations supérieures de la Branche",
-    "appointmentOne": "Son Altesse Royale la Princesse Royale, la princesse Anne — Colonelle en chef",
-    "appointmentTwo": "Brigadier-général (retraité) Martin Girard, OMM, MSM, CD — Colonel commandant",
-    "appointmentThree": "Major-général Dave Yarker, CD — Chef de la Branche",
-    "appointmentFour": "Colonel Steeve Lavoie, CD — Conseiller de la Branche",
-    "appointmentFive": "Major Emilie Circé, US MSM, CD — Adjudante de la Branche",
-    "appointmentSix": "Adjudante-chef Renay Groves, MSM, CD — Adjudante-chef de la Branche",
-    "bacHeading": "Conseil consultatif de la Branche",
-    "bacOne": "Major-général Dave Yarker, CD — Chef de la Branche",
-    "bacTwo": "Brigadier-général (retraité) Martin Girard, OMM, MSM, CD — Colonel commandant",
-    "bacThree": "Colonel Steeve Lavoie, CD — Conseiller de la Branche",
-    "bacFour": "Colonel Walter Jull, CD — Directeur des transmissions",
-    "bacFive": "Colonel Martin J.J-L. Coudé, CD — A6 stratégique",
-    "bacSix": "Colonel John Roper, CD — Directeur du renseignement d’origine électromagnétique",
-    "bacSeven": "Adjudante-chef Renay Groves, MSM, CD — Adjudante-chef de la Branche",
-    "ncmHeading": "Conseil consultatif des militaires du rang",
-    "ncmOne": "Adjudante-chef Renay Groves, MSM, CD — Adjudante-chef de la Branche",
-    "ncmTwo": "Adjudant-chef Pascal St-Gelais — Adjudant-chef du Corps des Transmissions royales du Canada",
-    "ncmThree": "Adjudant-chef Bruno Thibault — Adjoint de l’adjudant-chef du Corps",
-    "ncmFour": "Adjudant-chef Phil Gagné, MMM, CD — Sergent-major adjoint du Corps, Réserve de l’Armée",
-    "ncmFive": "Adjudant-chef Jason McQuigge, CD — Sergent-major régimentaire de la station d’attache",
-    "rccsHeading": "Corps des Transmissions royales du Canada",
-    "rccsOne": "Brigadier-général Mark Parsons, CD — Maître des transmissions de l’Armée",
-    "rccsTwo": "Colonel J.S. Estrela — Directeur du CTRC",
-    "rccsThree": "Colonel M.L. Prince, CD — Directeur du CTRC-MR",
-    "rccsFour": "Lieutenant-colonel Lisa Smid, OMM, CD — Directrice adjointe des transmissions, Réserve de l’Armée",
-    "snapshotHeading": "Instantané de migration",
-    "snapshotBody": "Cette liste a été copiée de l’ancien site CMCEN afin de soutenir l’examen par les parties prenantes. Les nominations changent au fil du temps et n’ont pas encore été confirmées de façon indépendante.",
-    "policiesLink": "Consulter les politiques de nomination"
+    "heading": "Direction",
+    "intro": "Découvrez les titulaires de postes supérieurs et les conseils consultatifs qui servent la Branche des C et E.",
+    "biographyLabel": "Biographie",
+    "biographyAction": "Lire la biographie",
+    "biographyCloseLabel": "Fermer la biographie",
+    "bios": {
+      "girard": "Le bgén Martin Girard s'est engagé dans les Forces canadiennes en juin 1981 et a débuté ses études au Collège militaire royal de St-Jean le 15 août 1981. Il a été muté au Collège militaire royal du Canada à Kingston en 1982, où il a obtenu son diplôme d'ingénieur électricien en mai 1986. Son premier affectation a été comme O Tel B à la BFC Gagetown, de 1987 à 1989.\n\nIl a occupé de nombreux postes opérationnels, d'état-major et liés à des projets au QGDN et au sein de commandements opérationnels, notamment ceux d'ingénieur en chef du RED, d'adjoint de direction du SMA(GI), de directeur adjoint J6 des FC, de J6 du COMFEC, du SO J3 du COMSOCAN et de chef d'état-major.\n\nLe bgén Girard a également participé à trois déploiements opérationnels : la première guerre du Golfe (1990-1991) en tant que commandant en second du 1er escadron « Ptarmigan » du quartier général et du régiment des transmissions de la 1re division blindée (britannique) ; en Bosnie (2002-2003) en tant que commandant du groupe de soutien aux transmissions SFOR ; en Haïti (2008-2009) en tant que commandant de la force opérationnelle de Port-au-Prince et chef d'état-major MINUSTAH, ce qui lui a valu de recevoir la médaille du service méritoire en novembre 2010.\n\nLe bgén Girard a pris le commandement, puis l'a cédé à contrecœur, du SFC Leitrim (2000-2002), de l'ÉÉCFC (2003-2005) et GSPFC (2012-2014).\n\nIl est diplômé du Collège de commandement et d'état-major des Forces terrestres canadiennes (1993), du cours avancé pour officiers des transmissions du Collège des Forces canadiennes (1998), du Programme de sécurité nationale (2012) et du « CAPSTONE » (2015). Il a également obtenu une maîtrise en gestion des télécommunications au Collège militaire royal du Canada (1996). Le bgén Girard a été nommé officier de l'Ordre du Mérite militaire le 25 octobre 2011.\n\nPromu au grade de brigadier-général le 29 mai 2014, il a été nommé directeur général du renseignement d'origine électromagnétique militaire et commandant adjoint du Commandement du renseignement des Forces canadiennes jusqu'au 4 avril 2016, date à laquelle il s'est installé à New York pour occuper le poste de conseiller militaire auprès de la Mission permanente du Canada auprès des Nations Unies. Il a quitté New York le 29 juillet 2020 et a pris sa retraite des Forces armées canadiennes, de la Branche des C&É et du Corps des transmissions royal du Canada le 4 septembre 2020. Il profite désormais de sa retraite avec son épouse magnifique, Gyl, à Bromont, au Québec.",
+      "groves": "L’adjudant-chef Renay M. Groves a servi dans les Forces armées canadiennes pendant plus de 31 ans, occupant divers postes, dont celui de spécialiste SIGINT, de chef d’équipe d’UAV et de sergent-major d’escadron. Après s’être inscrit en 1992, l’adjuc Groves a fait preuve de leadership et a été promu caporal en 1995. Alors qu’ils étaient postés au 770 Comm Research Sqn à Gander, ils ont organisé une campagne de financement, recueillant 15000 $ en quelques mois pour SAREX (Search and Rescue Exercise) afin d’aider les enfants disparus. Il a été présenté lorsque l’équipe de SAR a parcouru la BFC Gander et a été reçu en hommage à ceux qui ont lancé cette initiative.\n\nEn 1998, l’adjuc Groves a été affecté aux opérations de Leitrim du CFS, où il occupait les postes d’opérateur, administrateur des systèmes UNIX, Membre de l’équipe rouge, Centre des communications et opérateur du Centre de la sécurité canadienne. En 2007, l’adjuc Groves s’est rendu en Afghanistan à titre de caporal-chef, où il a présenté des « notes de retour à la maison » à ses camarades, renforçant le moral et apportant un soutien émotionnel aux troupes déployées. L’Adjuc Groves a occupé divers postes de direction, notamment sergent-major d’entraînement au sein de l’ECCSF et adjudant-chef intérimaire de l’école, selon les besoins. Ils ont également été les partenaires de l’équipe de commandement du major Blair Christie pour l’équipe du patrimoine de l’ECSB, démontrant ainsi leur expertise et leur dévouement envers les Forces armées canadiennes.\n\nAvant d’être nommé adjudant-chef de la Direction générale des transmissions, l’adjuc Groves a occupé ces postes de leadership clés, ce qui a renforcé son engagement envers les FAC. L’Adjuc Groves est un champion de “Trusted to Serve”, incarnant les valeurs de confiance, de respect et de loyauté. Ils ont contribué aux FAC par des initiatives comme « Notes from Home » et le Poppy Memorial, ainsi que la mise en œuvre de « Trusted to Serve », à l’ÉCFS, démontrant leur engagement envers lesLes membres et leurs familles. La CWO Groves a été reconnue pour son service exceptionnel avec plusieurs prix, y compris la médaille de service spécial (alerte) en 1996, l’étoile de campagne générale en 2010, la Médaille du service méritoire en 2011, la Décoration des Forces canadiennes (CD1) pour 22 ans de bon service et la barre de Décoration des Forces canadiennes (CD) pour 10 années supplémentaires de service. L’adjuc Groves est mariée à l’adjudant-maître (retraité) Christopher Hiscock et a deux enfants, Madison (24 ans) et Nathan (20 ans). Ils sont son monde en dehors de l’uniforme et sans eux sa vie serait moins complète. Ils ont soutenu sa carrière, servi et sacrifié en tant qu’équipe unique.",
+      "yarker": "Le major-général (Mgén) Dave Yarker s’enrôle dans les Forces armées canadiennes (FAC) en 1989 et décroche son diplôme du Collège militaire royal du Canada, à Kingston, en 1993. En 1996, il termine ses études de 2e cycle et son instruction d’officier des transmissions, et agit à ce titre au sein du 427e Escadron tactique d’hélicoptères et du 2e Régiment du génie de combat.\n\nDurant sa carrière, il remplit des fonctions d’état-major liées à la gestion de projet, ainsi qu’à la planification interarmées, opérationnelle et stratégique des communications. Il occupe en outre le poste de J6 canadien dans le cadre de déploiements au Kosovo et en Afghanistan. Le Bgén Yarker a aussi l’honneur d’assumer le commandement du Quartier général et Escadron des transmissions du 2e Groupe brigade mécanisé du Canada, du Centre d’opérations des réseaux des Forces canadiennes (CORFC) et du Groupe des opérations d’information des Forces canadiennes.\n\nDepuis 2010, il a le bonheur de travailler dans le domaine des cyberopérations, assurant un commandement au niveau de l’unité et de la formation, et occupant des postes clés d’état-major et de liaison, notamment au Cyber Command américain et au Centre de la sécurité des télécommunications Canada.\n\nEn 2022, il a été alors nommé directeur général – Opérations (Gestion de l’information) et commandant de la composante cybernétique des forces interarmées qui est devenu le Directeur général Cyber et Exploitation du système d’information de commandement et de contrôle en 2024.\n\nLorsqu’il est promu à son grade actuel, il a été alors nommé Commandant de la Force Cyber.\n\nLe Mgén Yarker est titulaire de diplômes de premier cycle en génie physique et en histoire; il détient également des maîtrises en génie physique ainsi qu’en études de la défense.\n\nLe Mgén Yarker est marié et père d’un garçon. Il vit en famille à Ottawa.",
+      "lavoie": "Le colonel Steeve Lavoie, de Mont-Joli, au Québec, s’est joint aux FC en 1989 à titre de militaire du rang. Après sa formation initiale, il a été transféré au 743e Escadron des communications à Penhold, en Alberta, en tant que technicien de télétype et de chiffrement 223 (Tél Tech 223). À la fermeture de l’escadron en 1994, il a été muté au CIC de Gagetown, au Nouveau-Brunswick, où il a occupé le poste de technicien en systèmes d’information stratégique 225 (Tech SIS 225). Il s’est joint au Corps des officiers dans le cadre du Programme de formation universitaire pour les militaires du rang (PFUMC) en 1999 et a été nommé en 2002 à la fin de son baccalauréat en sciences au CMR. Le Col Lavoie a terminé sa formation professionnelle CELE et a obtenu son diplôme en mars 2004. Le Col Lavoie est demeuré à l’EECFC à titre d’employé supplémentaire pour le cours élémentaire d’officier CELE (BCAOC) 0401 avant d’être affecté avec sa famille à la 17e Escadre Winnipeg (Manitoba).\n\nLe Col Lavoie est arrivé à Winnipeg en août 2004 où il a travaillé comme agent de projet. Après sa promotion au grade de capitaine, le Col Lavoie est devenu l’officier de maintenance technique (OTM) de la 17e Escadre. En mars 2006, il a été affecté à l’équipe du 17e Escadron de soutien des missions (SSM), où il a été affecté à titre de commandant de flt SCI. En mai 2006, il a mené son équipe au Maple Flag 39, qui a servi d’EX de validation et, de juin à décembre 2006, il a été déployé au camp Mirage dans le cadre de l’élément de soutien au théâtre d’opérations dans le cadre de l’OP ARCHER et de l’OP ATHENA. À son retour, il est revenu à la 17e Escadre à titre d’OTM et, en août 2007, le Col Lavoie a été transféré à la 1re Division aérienne du Canada pour se joindre à l’équipe A6 de la section A6 C2IS. Le Col Lavoie a été muté à l’EECFC à titre de cmdt 2IC du 2e Escadron en juillet 2008 et a été promu au grade de major en juin 2009, où il a été nommé cmdt Esc Sout.\n\nEn juin 2010, il a de nouveau été transféré, mais cette fois à un poste de l’OTAN à Geilenkirchen, en Allemagne, en soutien au système aéroporté d’alerte et de contrôle (AWACS) de l’OTAN. En 2011, il a été déployé à l’appui de l’opération UNIFIED PROTECTOR à Trapani, en Italie, et en 2012 et 2013, il a été déployé à l’appui de l’opération AFGHAN ASSIST à Mazar-e-Sharif, située dans la RC-Nord. En 2014, le Col Lavoie est devenu le 20e commandant de l’Unité de maintenance cryptographique des Forces canadiennes (UMFC). En 2016, il a été nommé adjudant de la Branche C&E et en 2017, il est devenu commandant adjoint à l’EECFC.",
+      "jull": "Le Colonel Walter Jull est né et a grandi à Vancouver, en Colombie-Britannique. Après avoir travaillé pour le gouvernement de la Colombie-Britannique, il s’est enrôlé dans les Forces armées canadiennes en tant qu’officier des transmissions et a par la suite été affecté au 2e Escadron de guerre électronique en 2004. Le Colonel Jull est déployé à Kandahar en 2006 en tant que commandant de la troupe de guerre électronique au sein du Groupe tactique, 1er Bataillon, Princess Patricia’s Canadian Light Infantry. En 2007, il a été affecté au Commandement du renseignement des Forces canadiennes et, en 2009, a poursuivi des études supérieures à l’Université de l’Alberta.\n\nAprès avoir terminé sa formation, le Colonel Jull a été affecté au projet de transformation du Quartier Général de la Défense nationale. En 2012, il a été sélectionné pour travailler pour le chef des opérations des Services partagés Canada (SPC), où il a travaillé au sein d’une petite équipe établissant le programme de transformation des centres de données de SPC. Après son expérience à SPC, le Colonel Jull a été affecté à l’Équipe de renouvellement de la défense, où il était l’officier responsable du Plan d’action pour la réduction du déficit (PARD) du MDN et a appuyé l’élaboration et l’exécution du plan de renouvellement de la défense du MDN et des FAC. En 2015, il a été affecté à Edmonton à titre de commandant du quartier général et de l’escadron des transmissions du 1er Groupe-brigade mécanisé du Canada. En 2017, il a été affecté au siège du directeur général des opérations de gestion de l’information (DGOGI) à Ottawa et en 2020, il est devenu directeur adjoint de la Sécurité de la gestion de l’information.\n\nIl a commandé le Centre de guerre électronique des Forces canadiennes d’avril 2021 à juin 2023 et est actuellement DGOGI adjoint et Chef d’état-major soutien Forces cybernétiques, ainsi que directeur du Corps des transmissions royal du Canada.\n\nLe Colonel Jull est titulaire d’un baccalauréat en informatique de l’Université de la Colombie-Britannique et d’une maîtrise en administration des affaires en finance de l’Université de l’Alberta. Il est diplômé du Collège de commandement et d’état-major de l’Armée canadienne et du Collège de commandement et d’état-major du Corps des Marines des États-Unis.\n\nIl est marié au Colonel Laura Jull (Médecin) et ils ont ensemble trois enfants.",
+      "coude": "Le Colonel Martin Coudé a commencé sa carrière militaire en 2002 et a obtenu son diplôme du Collège militaire royal en 2006 avec un baccalauréat en génie électrique. Ses premières affectations comprenaient la 19e Escadre Comox, où il a été déployé dans le cadre de l’Opération ATHENA en 2008. En 2010, il a été muté à Ottawa pour appuyer les missions internationales via le COMSOCAN, participant à des visites techniques dans des pays tels que le Soudan, Israël et l’Afghanistan.\n\nPromu au grade de major en 2013, le Col Coudé a rejoint la Direction du développement du domaine aérien (DDDA), se concentrant sur les politiques en matière de TI et la coordination avec Services partagés Canada. De 2015 à 2018, il a servi à la 14e Escadre Greenwood et a été déployé dans le cadre de l’Opération IMPACT. En tant que lieutenant-colonel en 2019, il a supervisé la coordination des activités et du soutien dans la région de la capitale nationale, y compris la réponse à la COVID-19 en tant qu’officier des opérations de la Base des Forces canadiennes Ottawa-Gatineau.\n\nEn 2021, il a pris le commandement du 76e Régiment des communications avant de rejoindre le Chef de programme en 2023. Promu au grade de colonel en 2025, il est retourné à la DDDA en tant que directeur. Il détient une maîtrise en études de la défense du CMR et une maîtrise en administration des affaires (MBA) de l’Université de Liverpool, et est diplômé du Programme de commandement et d’état-major interarmées.",
+      "roper": "La version française de cette biographie sera bientôt disponible."
+    },
+    "sections": [
+      {
+        "label": "Direction de la Branche",
+        "heading": "Nominations supérieures de la Branche",
+        "cards": [
+          {
+            "featured": true,
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/princess-anne-d725f411f24a.jpg",
+            "imageAlt": "Son Altesse Royale la Princesse royale, la princesse Anne",
+            "rank": "Son Altesse Royale la Princesse royale",
+            "name": "La princesse Anne",
+            "role": "Colonelle en chef de la Branche des C et E",
+            "profileUrl": "https://royal.uk/the-princess-royal"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
+            "imageAlt": "Brigadier-général retraité Martin Girard",
+            "rank": "Brigadier-général (retraité)",
+            "name": "Martin Girard, OMM, MSM, CD",
+            "role": "Colonel commandant",
+            "bioKey": "girard"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
+            "imageAlt": "Major-général Dave Yarker",
+            "rank": "Major-général",
+            "name": "Dave Yarker, CD",
+            "role": "Chef de la Branche",
+            "bioKey": "yarker"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
+            "imageAlt": "Colonel Steeve Lavoie",
+            "rank": "Colonel",
+            "name": "Steeve Lavoie, CD",
+            "role": "Conseiller de la Branche",
+            "bioKey": "lavoie"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/emilie-circe-8625bd35e7f0.jpg",
+            "imageAlt": "Major Emilie Circé",
+            "rank": "Major",
+            "name": "Emilie Circé, US MSM, CD",
+            "role": "Adjudante de la Branche"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageAlt": "Adjudante-chef Renay Groves",
+            "rank": "Adjudante-chef",
+            "name": "Renay Groves, MSM, CD",
+            "role": "Adjudante-chef de la Branche",
+            "bioKey": "groves"
+          }
+        ]
+      },
+      {
+        "label": "Conseil",
+        "heading": "Conseil consultatif de la Branche",
+        "description": "Agit à titre d’organisme directeur de la Branche des C et E et favorise le maintien d’experts axés sur les opérations, le commandement et le contrôle.",
+        "cards": [
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
+            "imageAlt": "Major-général Dave Yarker",
+            "rank": "Major-général",
+            "name": "Dave Yarker, CD",
+            "role": "Chef de la Branche",
+            "bioKey": "yarker"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
+            "imageAlt": "Brigadier-général retraité Martin Girard",
+            "rank": "Brigadier-général (retraité)",
+            "name": "Martin Girard, OMM, MSM, CD",
+            "role": "Colonel commandant",
+            "bioKey": "girard"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
+            "imageAlt": "Colonel Steeve Lavoie",
+            "rank": "Colonel",
+            "name": "Steeve Lavoie, CD",
+            "role": "Conseiller de la Branche",
+            "bioKey": "lavoie"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/walter-jull-38c8569e1e99.jpg",
+            "imageAlt": "Colonel Walter Jull",
+            "rank": "Colonel",
+            "name": "Walter Jull, CD",
+            "role": "Directeur des transmissions",
+            "bioKey": "jull"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-coude-e017b9ae3db6.jpg",
+            "imageAlt": "Colonel Martin J.J-L. Coudé",
+            "rank": "Colonel",
+            "name": "Martin J.J-L. Coudé, CD",
+            "role": "A6 stratégique",
+            "bioKey": "coude"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/john-roper-849f23c3635e.jpg",
+            "imageAlt": "Colonel John Roper",
+            "rank": "Colonel",
+            "name": "John Roper, CD",
+            "role": "Directeur du renseignement d’origine électromagnétique",
+            "bioKey": "roper"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageAlt": "Adjudante-chef Renay Groves",
+            "rank": "Adjudante-chef",
+            "name": "Renay Groves, MSM, CD",
+            "role": "Adjudante-chef de la Branche",
+            "bioKey": "groves"
+          }
+        ]
+      },
+      {
+        "label": "Conseil",
+        "heading": "Conseil consultatif des militaires du rang",
+        "description": "Représente les intérêts des militaires du rang auprès du conseiller de la Branche et les tient informés des changements touchant leurs responsabilités et leur structure professionnelle.",
+        "cards": [
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageAlt": "Adjudante-chef Renay Groves",
+            "rank": "Adjudante-chef",
+            "name": "Renay Groves, MSM, CD",
+            "role": "Adjudante-chef de la Branche",
+            "bioKey": "groves"
+          },
+          {
+            "image": "/images/logo.png",
+            "imageAlt": "Emblème du CMCEN",
+            "placeholder": true,
+            "rank": "Adjudant-chef",
+            "name": "Pascal St-Gelais",
+            "role": "Adjudant-chef du Corps des Transmissions royales du Canada"
+          },
+          {
+            "image": "/images/logo.png",
+            "imageAlt": "Emblème du CMCEN",
+            "placeholder": true,
+            "rank": "Adjudant-chef",
+            "name": "Bruno Thibault",
+            "role": "Adjoint de l’adjudant-chef du Corps des Transmissions royales du Canada"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/phil-gagne-bf8993e6f78e.png",
+            "imageAlt": "Adjudant-chef Phil Gagné",
+            "rank": "Adjudant-chef",
+            "name": "Phil Gagné, MMM, CD",
+            "role": "Sergent-major adjoint du Corps, Réserve de l’Armée"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/jason-mcquigge-fb73e0227a80.jpg",
+            "imageAlt": "Adjudant-chef Jason McQuigge",
+            "rank": "Adjudant-chef",
+            "name": "Jason McQuigge, CD",
+            "role": "Sergent-major régimentaire de la station d’attache"
+          }
+        ]
+      },
+      {
+        "label": "Direction du Corps",
+        "heading": "Corps des Transmissions royales du Canada",
+        "description": "Assure la direction du Corps des Transmissions royales du Canada et de son rôle dans l’appui au commandement et au contrôle de l’Armée canadienne.",
+        "cards": [
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/mark-parsons-3a45b24808aa.jpg",
+            "imageAlt": "Brigadier-général Mark Parsons",
+            "rank": "Brigadier-général",
+            "name": "Mark Parsons, CD",
+            "role": "Maître des transmissions de l’Armée (chef du CTRC)"
+          },
+          {
+            "image": "/images/logo.png",
+            "imageAlt": "Emblème de la Branche des C et E",
+            "placeholder": true,
+            "rank": "Colonel",
+            "name": "J.S. Estrela",
+            "role": "Directeur du CTRC"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/ml-prince-a587c6b0baf7.jpg",
+            "imageAlt": "Colonel M.L. Prince",
+            "rank": "Colonel",
+            "name": "M.L. Prince, CD",
+            "role": "Directeur du CTRC-MR"
+          },
+          {
+            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/lisa-smid-a5d457eeb773.jpg",
+            "imageAlt": "Lieutenant-colonel Lisa Smid",
+            "rank": "Lieutenant-colonel",
+            "name": "Lisa Smid, OMM, CD",
+            "role": "Directrice adjointe des transmissions, Réserve de l’Armée"
+          }
+        ]
+      }
+    ]
   }
 }

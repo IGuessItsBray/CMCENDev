@@ -685,13 +685,13 @@ target database, and command options before applying a migration.
 
 ## Development Workflow
 
-All repository changes are made on branches and delivered through pull
-requests.
+When a repository change is ready to be submitted, use a branch and a pull
+request.
 
 Direct commits to `main` are disabled.
 
-New work should begin from the latest `main` unless the requested work depends
-on changes already present on an existing work branch.
+New submitted work should begin from the latest `main` unless it depends on
+changes already present on an existing work branch.
 
 Branch names use purpose-oriented Conventional Branch naming, such as:
 
@@ -711,8 +711,8 @@ docs: update deployment instructions
 chore: update dependencies
 ```
 
-See `AGENTS.md` for the complete repository workflow, branch naming,
-dependency, testing, safety, and pull-request requirements.
+See `AGENTS.md` for lean repository-specific agent guidance and
+`docs/CONTRIBUTING.md` for the submitted-contribution workflow.
 
 ## Documentation
 
@@ -777,4 +777,4 @@ become part of the canonical Git history and are used by the automated
 changelog and release tooling.
 
 See [`CONTRIBUTING.md`](docs/CONTRIBUTING.md) for the contribution workflow and
-[`AGENTS.md`](AGENTS.md) for the complete repository development policy.
+[`AGENTS.md`](AGENTS.md) for focused repository-specific agent guidance.

@@ -4,8 +4,6 @@
     "kicker": "C&E Family",
     "heading": "Document Library",
     "intro": "Charters, policies, governing documents, and other institutional reference material from across the C&E Family.",
-    "libraryHeading": "Find a document",
-    "libraryBody": "Search by title or description, or narrow the library by organization and document type.",
     "sourceNote": "Downloaded source files remain authoritative. Plain-language summaries are provided to help visitors find the right document.",
     "searchLabel": "Search documents",
     "searchPlaceholder": "Search by title or topic",
@@ -19,6 +17,7 @@
       "languageLabel": "Document language",
       "readPage": "Read accessible page",
       "downloadPdf": "Download PDF",
+      "downloadDocx": "Download DOCX",
       "sourceUnavailable": "Source file not yet available",
       "empty": "No documents match these filters.",
       "resultCount": "{count} documents",
@@ -43,8 +42,6 @@
     "kicker": "Famille des C et E",
     "heading": "Bibliothèque de documents",
     "intro": "Chartes, politiques, documents constitutifs et autres références institutionnelles de la famille des C et E.",
-    "libraryHeading": "Trouver un document",
-    "libraryBody": "Recherchez par titre ou description, ou filtrez la bibliothèque par organisation et type de document.",
     "sourceNote": "Les fichiers sources téléchargés demeurent les documents officiels. Les résumés en langage clair aident les visiteurs à trouver le bon document.",
     "searchLabel": "Rechercher des documents",
     "searchPlaceholder": "Rechercher par titre ou sujet",
@@ -58,6 +55,7 @@
       "languageLabel": "Langue du document",
       "readPage": "Lire la page accessible",
       "downloadPdf": "Télécharger le PDF",
+      "downloadDocx": "Télécharger le DOCX",
       "sourceUnavailable": "Fichier source non encore disponible",
       "empty": "Aucun document ne correspond à ces filtres.",
       "resultCount": "{count} documents",
@@ -248,6 +246,708 @@
         "title": "Rapport annuel 2024–2025 de la Fondation",
         "description": "Répertorié sur l’ancien site derrière la connexion des membres. Le fichier source doit encore être fourni ou exporté par une personne autorisée.",
         "dateLabel": "2024–2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2025-may",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2025-06-16.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - May 2025",
+        "description": "Historical record of discussion from the C&E Senate meeting held in May 2025.",
+        "dateLabel": "May 2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - mai 2025",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en mai 2025.",
+        "dateLabel": "Mai 2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2025-october",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2025-10-23.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - October 2025",
+        "description": "Historical record of discussion from the C&E Senate meeting held in October 2025.",
+        "dateLabel": "October 2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - octobre 2025",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en octobre 2025.",
+        "dateLabel": "Octobre 2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-slides-2024-october",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-slides-2024-10-24.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Slides - October 2024",
+        "description": "Meeting slides published with the historical C&E Senate records for October 2024.",
+        "dateLabel": "October 2024",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Présentation de la réunion du Sénat des C et E - octobre 2024",
+        "description": "Présentation publiée avec les dossiers historiques du Sénat des C et E pour octobre 2024.",
+        "dateLabel": "Octobre 2024",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2024-october",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2024-10-24.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - October 2024",
+        "description": "Historical record of discussion from the C&E Senate meeting held in October 2024.",
+        "dateLabel": "October 2024",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - octobre 2024",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en octobre 2024.",
+        "dateLabel": "Octobre 2024",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2023-may",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2023-05-26.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - May 2023",
+        "description": "Historical record of discussion from the C&E Senate meeting held in May 2023.",
+        "dateLabel": "May 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - mai 2023",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en mai 2023.",
+        "dateLabel": "Mai 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2023-october",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2023-10-27.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - October 2023",
+        "description": "Historical record of discussion from the C&E Senate meeting held in October 2023.",
+        "dateLabel": "October 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - octobre 2023",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en octobre 2023.",
+        "dateLabel": "Octobre 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2022-june",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2022-06-20.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - June 2022",
+        "description": "Historical record of discussion from the C&E Senate meeting held in June 2022.",
+        "dateLabel": "June 2022",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - juin 2022",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en juin 2022.",
+        "dateLabel": "Juin 2022",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2022-october",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2022-10-28.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - October 2022",
+        "description": "Historical record of discussion from the C&E Senate meeting held in October 2022.",
+        "dateLabel": "October 2022",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - octobre 2022",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en octobre 2022.",
+        "dateLabel": "Octobre 2022",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2021-february",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2021-02-04.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - February 2021",
+        "description": "Historical record of discussion from the C&E Senate meeting held in February 2021.",
+        "dateLabel": "February 2021",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - février 2021",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en février 2021.",
+        "dateLabel": "Février 2021",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2021-march",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2021-03-02.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - March 2021",
+        "description": "Historical record of discussion from the C&E Senate meeting held in March 2021.",
+        "dateLabel": "March 2021",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - mars 2021",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en mars 2021.",
+        "dateLabel": "Mars 2021",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2021-june",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2021-06-24.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - June 2021",
+        "description": "Historical record of discussion from the C&E Senate meeting held in June 2021.",
+        "dateLabel": "June 2021",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - juin 2021",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en juin 2021.",
+        "dateLabel": "Juin 2021",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2021-october",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2021-10-28.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - October 2021",
+        "description": "Historical record of discussion from the C&E Senate meeting held in October 2021.",
+        "dateLabel": "October 2021",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - octobre 2021",
+        "description": "Compte rendu historique de la réunion du Sénat des C et E tenue en octobre 2021.",
+        "dateLabel": "Octobre 2021",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2020-may",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2020-05-28.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - May 2020",
+        "description": "Historical record of discussion from the first C&E Senate meeting held in May 2020.",
+        "dateLabel": "May 2020",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - mai 2020",
+        "description": "Compte rendu historique de la première réunion du Sénat des C et E tenue en mai 2020.",
+        "dateLabel": "Mai 2020",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-senate-rod-2020-october",
+      "organization": "family",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-senate-rod-2020-10-29.pdf",
+      "en": {
+        "title": "C&E Senate Meeting Record of Discussion - October 2020",
+        "description": "Historical record of discussion from the second C&E Senate meeting held in October 2020.",
+        "dateLabel": "October 2020",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de la réunion du Sénat des C et E - octobre 2020",
+        "description": "Compte rendu historique de la deuxième réunion du Sénat des C et E tenue en octobre 2020.",
+        "dateLabel": "Octobre 2020",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2025-october",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2025-10-10.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - October 2025",
+        "description": "Historical record of discussion from the Branch Advisory Council meeting held in October 2025.",
+        "dateLabel": "October 2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - octobre 2025",
+        "description": "Compte rendu historique de la réunion du Conseil consultatif de la Branche tenue en octobre 2025.",
+        "dateLabel": "Octobre 2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-slides-2025-april",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2025-04-23.pdf",
+      "en": {
+        "title": "Branch Advisory Council Meeting Slides - April 2025",
+        "description": "Meeting slides published with the historical Branch Advisory Council records for April 2025.",
+        "dateLabel": "April 2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Présentation de la réunion du Conseil consultatif de la Branche - avril 2025",
+        "description": "Présentation publiée avec les dossiers historiques du Conseil consultatif de la Branche pour avril 2025.",
+        "dateLabel": "Avril 2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2025-june",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2025-06-05.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - June 2025",
+        "description": "Historical record of discussion from the Branch Advisory Council meeting held in June 2025.",
+        "dateLabel": "June 2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - juin 2025",
+        "description": "Compte rendu historique de la réunion du Conseil consultatif de la Branche tenue en juin 2025.",
+        "dateLabel": "Juin 2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2024-september",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2024-09-24.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - September 2024",
+        "description": "Historical record of discussion from the Branch Advisory Council meeting held in September 2024.",
+        "dateLabel": "September 2024",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - septembre 2024",
+        "description": "Compte rendu historique de la réunion du Conseil consultatif de la Branche tenue en septembre 2024.",
+        "dateLabel": "Septembre 2024",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2024-february",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2024-02-05.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - February 2024",
+        "description": "Historical record of discussion from the Branch Advisory Council meeting held in February 2024.",
+        "dateLabel": "February 2024",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - février 2024",
+        "description": "Compte rendu historique de la réunion du Conseil consultatif de la Branche tenue en février 2024.",
+        "dateLabel": "Février 2024",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2023-march",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2023-03-08.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - March 2023",
+        "description": "Historical record of discussion from the Branch Advisory Council meeting held in March 2023.",
+        "dateLabel": "March 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - mars 2023",
+        "description": "Compte rendu historique de la réunion du Conseil consultatif de la Branche tenue en mars 2023.",
+        "dateLabel": "Mars 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-agm-minutes-2022",
+      "organization": "association",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-association-agm-minutes-2022-10-27.pdf",
+      "en": {
+        "title": "C&E Association Annual General Meeting Minutes - October 2022",
+        "description": "Minutes from the C&E Association Annual General Meeting, retained in the historical Branch Advisory Council archive.",
+        "dateLabel": "October 2022",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Procès-verbal de l'assemblée générale annuelle de l'Association des C et E - octobre 2022",
+        "description": "Procès-verbal de l'assemblée générale annuelle de l'Association des C et E, conservé dans les archives historiques du Conseil consultatif de la Branche.",
+        "dateLabel": "Octobre 2022",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2022-may",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2022-05-20.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - May 2022",
+        "description": "Historical record of discussion from the Branch Advisory Council meeting held in May 2022.",
+        "dateLabel": "May 2022",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - mai 2022",
+        "description": "Compte rendu historique de la réunion du Conseil consultatif de la Branche tenue en mai 2022.",
+        "dateLabel": "Mai 2022",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2022-december",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2022-12-09.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - December 2022",
+        "description": "Historical record of discussion from the Branch Advisory Council meeting held in December 2022.",
+        "dateLabel": "December 2022",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - décembre 2022",
+        "description": "Compte rendu historique de la réunion du Conseil consultatif de la Branche tenue en décembre 2022.",
+        "dateLabel": "Décembre 2022",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2021-january",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2021-01-20.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - January 2021",
+        "description": "Historical record of discussion from the Branch Advisory Council meeting held in January 2021.",
+        "dateLabel": "January 2021",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - janvier 2021",
+        "description": "Compte rendu historique de la réunion du Conseil consultatif de la Branche tenue en janvier 2021.",
+        "dateLabel": "Janvier 2021",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2020-february",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2020-02-24.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - February 2020",
+        "description": "Historical record of discussion from the Branch Advisory Council meeting held in February 2020.",
+        "dateLabel": "February 2020",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - février 2020",
+        "description": "Compte rendu historique de la réunion du Conseil consultatif de la Branche tenue en février 2020.",
+        "dateLabel": "Février 2020",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2016-april",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2016-previous.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - April 2016",
+        "description": "Historical record of discussion from the Branch Advisory Council meeting held in April 2016.",
+        "dateLabel": "April 2016",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - avril 2016",
+        "description": "Compte rendu historique de la réunion du Conseil consultatif de la Branche tenue en avril 2016.",
+        "dateLabel": "Avril 2016",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2015-version-2",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2015-v2.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - 2015 (Version 2)",
+        "description": "Historical Branch Advisory Council record of discussion preserved as the second 2015 archive version.",
+        "dateLabel": "2015",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - 2015 (version 2)",
+        "description": "Compte rendu historique du Conseil consultatif de la Branche conservé comme deuxième version des archives de 2015.",
+        "dateLabel": "2015",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2015-version-1",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2015-v1.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - 2015 (Version 1)",
+        "description": "Historical Branch Advisory Council record of discussion preserved as the first 2015 archive version.",
+        "dateLabel": "2015",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - 2015 (version 1)",
+        "description": "Compte rendu historique du Conseil consultatif de la Branche conservé comme première version des archives de 2015.",
+        "dateLabel": "2015",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2014-version-2",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2014-v2.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - 2014 (Version 2)",
+        "description": "Historical Branch Advisory Council record of discussion preserved as the second 2014 archive version.",
+        "dateLabel": "2014",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - 2014 (version 2)",
+        "description": "Compte rendu historique du Conseil consultatif de la Branche conservé comme deuxième version des archives de 2014.",
+        "dateLabel": "2014",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-bac-rod-2014-version-1",
+      "organization": "branch",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-bac-rod-2014-v1.pdf",
+      "en": {
+        "title": "Branch Advisory Council Record of Discussion - 2014 (Version 1)",
+        "description": "Historical Branch Advisory Council record of discussion preserved as the first 2014 archive version.",
+        "dateLabel": "2014",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu du Conseil consultatif de la Branche - 2014 (version 1)",
+        "description": "Compte rendu historique du Conseil consultatif de la Branche conservé comme première version des archives de 2014.",
+        "dateLabel": "2014",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-treasurers-report-2024-2025",
+      "organization": "association",
+      "type": "annual-report",
+      "fileUrl": "/documents/ce-association-treasurers-report-2024-2025.pdf",
+      "en": {
+        "title": "C&E Association Treasurer's Report 2024-2025",
+        "description": "Treasurer's report published with the C&E Association's 2025 meeting records.",
+        "dateLabel": "2024-2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Rapport du trésorier de l'Association des C et E 2024-2025",
+        "description": "Rapport du trésorier publié avec les dossiers de réunion de l'Association des C et E pour 2025.",
+        "dateLabel": "2024-2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-agm-record-2024-draft",
+      "organization": "association",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-association-agm-record-2024-draft.pdf",
+      "en": {
+        "title": "C&E Association Annual General Meeting Proposed Record - October 2024",
+        "description": "Proposed record from the C&E Association Annual General Meeting held in October 2024.",
+        "dateLabel": "October 2024",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Projet de procès-verbal de l'assemblée générale annuelle de l'Association des C et E - octobre 2024",
+        "description": "Projet de procès-verbal de l'assemblée générale annuelle de l'Association des C et E tenue en octobre 2024.",
+        "dateLabel": "Octobre 2024",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-financial-report-agm-2024",
+      "organization": "association",
+      "type": "annual-report",
+      "fileUrl": "/documents/ce-association-financial-report-agm-2024.pdf",
+      "en": {
+        "title": "C&E Association Financial Report to the AGM - 2024",
+        "description": "Financial report prepared for the C&E Association Annual General Meeting in 2024.",
+        "dateLabel": "2024",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Rapport financier à l'assemblée générale annuelle de l'Association des C et E - 2024",
+        "description": "Rapport financier préparé pour l'assemblée générale annuelle de l'Association des C et E en 2024.",
+        "dateLabel": "2024",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-agm-agenda-2023-october",
+      "organization": "association",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-association-agm-agenda-2023-10-23.pdf",
+      "en": {
+        "title": "C&E Association Annual General Meeting Agenda - October 2023",
+        "description": "Agenda for the C&E Association Annual General Meeting held in October 2023.",
+        "dateLabel": "October 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Ordre du jour de l'assemblée générale annuelle de l'Association des C et E - octobre 2023",
+        "description": "Ordre du jour de l'assemblée générale annuelle de l'Association des C et E tenue en octobre 2023.",
+        "dateLabel": "Octobre 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-agm-minutes-2023-october",
+      "organization": "association",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-association-agm-minutes-2023-10.pdf",
+      "en": {
+        "title": "C&E Association Annual General Meeting Minutes - October 2023",
+        "description": "Minutes from the C&E Association Annual General Meeting held in October 2023.",
+        "dateLabel": "October 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Procès-verbal de l'assemblée générale annuelle de l'Association des C et E - octobre 2023",
+        "description": "Procès-verbal de l'assemblée générale annuelle de l'Association des C et E tenue en octobre 2023.",
+        "dateLabel": "Octobre 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-treasurers-report-2021-2022",
+      "organization": "association",
+      "type": "annual-report",
+      "fileUrl": "/documents/ce-association-treasurers-report-2021-2022.pdf",
+      "en": {
+        "title": "C&E Association Treasurer's Report 2021-2022",
+        "description": "Treasurer's report published with the C&E Association's 2022 meeting records.",
+        "dateLabel": "2021-2022",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Rapport du trésorier de l'Association des C et E 2021-2022",
+        "description": "Rapport du trésorier publié avec les dossiers de réunion de l'Association des C et E pour 2022.",
+        "dateLabel": "2021-2022",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-agm-record-2021-october",
+      "organization": "association",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-association-agm-record-2021-10-28.pdf",
+      "en": {
+        "title": "C&E Association Annual General Meeting Record - October 2021",
+        "description": "Record from the C&E Association Annual General Meeting held in October 2021.",
+        "dateLabel": "October 2021",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Compte rendu de l'assemblée générale annuelle de l'Association des C et E - octobre 2021",
+        "description": "Compte rendu de l'assemblée générale annuelle de l'Association des C et E tenue en octobre 2021.",
+        "dateLabel": "Octobre 2021",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-treasurers-report-2020-2021",
+      "organization": "association",
+      "type": "annual-report",
+      "fileUrl": "/documents/ce-association-treasurers-report-2020-2021.pdf",
+      "en": {
+        "title": "C&E Association Treasurer's Report 2020-2021",
+        "description": "Treasurer's report published with the C&E Association's 2021 meeting records.",
+        "dateLabel": "2020-2021",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Rapport du trésorier de l'Association des C et E 2020-2021",
+        "description": "Rapport du trésorier publié avec les dossiers de réunion de l'Association des C et E pour 2021.",
+        "dateLabel": "2020-2021",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "association-agm-minutes-2025-draft",
+      "organization": "association",
+      "type": "meeting-record",
+      "fileUrl": "/documents/ce-association-agm-minutes-2025-draft.docx",
+      "en": {
+        "title": "C&E Association Draft AGM Minutes - October 2025",
+        "description": "Draft minutes from the C&E Association Annual General Meeting held on October 21, 2025.",
+        "dateLabel": "October 2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Projet de procès-verbal de l'assemblée générale annuelle de l'Association des C et E - octobre 2025",
+        "description": "Projet de procès-verbal de l'assemblée générale annuelle de l'Association des C et E tenue le 21 octobre 2025.",
+        "dateLabel": "Octobre 2025",
         "languageLabel": "Anglais"
       }
     }

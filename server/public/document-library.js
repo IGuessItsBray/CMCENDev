@@ -75,7 +75,9 @@
     if (item.fileUrl) {
       const downloadLink = document.createElement("a");
       downloadLink.href = item.fileUrl;
-      downloadLink.textContent = labels.downloadPdf;
+      downloadLink.textContent = item.fileUrl.toLowerCase().endsWith(".docx")
+        ? labels.downloadDocx
+        : labels.downloadPdf;
       actions.append(downloadLink);
     } else {
       const unavailable = document.createElement("span");

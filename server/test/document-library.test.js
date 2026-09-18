@@ -13,17 +13,29 @@ test('document library references available public source files', () => {
     ),
   );
 
-  assert.equal(content.documents.length, 9);
+  assert.equal(content.documents.length, 48);
   assert.ok(
     content.documents.some(
       (documentItem) =>
         documentItem.id === 'association-draft-strategic-plan-2015',
     ),
   );
+  assert.equal(
+    content.documents.filter((documentItem) =>
+      documentItem.id.startsWith('ce-senate-'),
+    ).length,
+    15,
+  );
+  assert.equal(
+    content.documents.filter((documentItem) =>
+      documentItem.id.startsWith('ce-bac-'),
+    ).length,
+    15,
+  );
 
   content.documents.forEach((documentItem) => {
     if (documentItem.fileUrl) {
-      assert.match(documentItem.fileUrl, /^\/documents\/.+\.pdf$/u);
+      assert.match(documentItem.fileUrl, /^\/documents\/.+\.(pdf|docx)$/u);
       assert.ok(
         fs.existsSync(path.join(PUBLIC_DIRECTORY, documentItem.fileUrl)),
         `${documentItem.id} source file exists`,
@@ -36,6 +48,23 @@ test('document library references available public source files', () => {
       assert.ok(documentItem[language].languageLabel.trim());
     });
   });
+});
+
+test('document library labels Word source files accurately', () => {
+  const content = JSON.parse(
+    fs.readFileSync(
+      path.join(PUBLIC_DIRECTORY, 'page-content', 'document-library.json'),
+      'utf8',
+    ),
+  );
+  const script = fs.readFileSync(
+    path.join(PUBLIC_DIRECTORY, 'document-library.js'),
+    'utf8',
+  );
+
+  assert.equal(content.en.library.downloadDocx, 'Download DOCX');
+  assert.equal(content.fr.library.downloadDocx, 'Télécharger le DOCX');
+  assert.match(script, /endsWith\("\.docx"\)/u);
 });
 
 test('legacy association-director roster is published as a migration snapshot', () => {

@@ -83,7 +83,7 @@
   display: grid;
   grid-template-columns: minmax(16rem, 2fr) repeat(2, minmax(11rem, 1fr));
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 0.5rem;
 }
 
 .document-library-controls label {
@@ -99,6 +99,7 @@
 .document-library-controls input,
 .document-library-controls select {
   width: 100%;
+  height: 2.85rem;
   min-height: 2.85rem;
   padding: 0.65rem 0.75rem;
   border: 1px solid var(--border-color, #cbd1da);
@@ -108,6 +109,19 @@
   font: inherit;
   letter-spacing: normal;
   text-transform: none;
+}
+
+.about-family-section .document-library-source-note {
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin-top: 1.25rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--border-color, #cbd1da);
+  border-radius: 0.45rem;
+  background: var(--branch-grey-100);
+  color: var(--text-muted, #5b6472);
+  box-shadow: 0 0.45rem 1rem rgb(0 0 0 / 0.08);
 }
 
 .document-library-results-heading {
@@ -22582,6 +22596,11 @@ html[data-theme='dark'] .about-family-section h2 {
 
 html[data-theme='dark'] .about-family-section p {
   color: var(--dark-text-soft);
+}
+
+html[data-theme='dark'] .about-family-section .document-library-source-note {
+  border-color: var(--dark-border);
+  background: var(--dark-surface-2);
 }
 
 html[data-theme='dark'] .about-family-pillar-list li {

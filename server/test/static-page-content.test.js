@@ -10,7 +10,6 @@ const PAGES = Object.freeze([
   ['about_association.html', 'about-association'],
   ['about_museum_foundation.html', 'about-museum-foundation'],
   ['association_directors.html', 'association-directors'],
-  ['branch_policies.html', 'branch-policies'],
   ['document-library.html', 'document-library'],
   ['governance.html', 'governance'],
   ['leadership.html', 'leadership'],

@@ -91,13 +91,11 @@ test('legacy association-director roster is published as a migration snapshot', 
   );
 });
 
-test('appointment policy source documents are publicly linked for review', () => {
+test('appointment policy source documents remain available through the document library', () => {
   const publicSources = [
     'document-library.html',
     'document-library.js',
-    'branch_policies.html',
     'page-content/document-library.json',
-    'page-content/branch-policies.json',
   ].map((fileName) =>
     fs.readFileSync(path.join(PUBLIC_DIRECTORY, fileName), 'utf8'),
   );

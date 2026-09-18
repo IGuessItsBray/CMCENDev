@@ -9,7 +9,6 @@ const dashboardHeading = document.querySelector(".dashboard-heading");
 const dashboardContent = document.getElementById("dashboardContent");
 const dashboardDetails = document.getElementById("dashboardDetails");
 const dashboardWorkspace = document.getElementById("dashboardWorkspace");
-const dashboardActions = document.getElementById("dashboardActions");
 const dashboardTitle = document.getElementById("dashboardTitle");
 const dashboardMemberName = document.getElementById("dashboardMemberName");
 const dashboardRoleSummary = document.getElementById("dashboardRoleSummary");
@@ -1042,54 +1041,6 @@ function createDangerZone(user) {
   return action;
 }
 
-function createActionLink({
-  href,
-  titleKey,
-  descriptionKey,
-  count = 0,
-  variant = "",
-}) {
-  const link = document.createElement("a");
-  link.className = "dashboard-action";
-
-  if (variant) {
-    link.classList.add(`is-${variant}`);
-  }
-
-  link.href = href;
-
-  const copy = document.createElement("span");
-  copy.className = "dashboard-action-copy";
-
-  const titleRow = document.createElement("span");
-  titleRow.className = "dashboard-action-title-row";
-
-  const title = document.createElement("strong");
-  title.textContent = translate(titleKey);
-
-  titleRow.appendChild(title);
-
-  if (count > 0) {
-    const badge = document.createElement("span");
-    badge.className = "dashboard-action-count";
-    badge.textContent = String(count);
-    titleRow.appendChild(badge);
-  }
-
-  const description = document.createElement("span");
-  description.textContent = translate(descriptionKey);
-
-  const arrow = document.createElement("span");
-  arrow.className = "dashboard-action-arrow";
-  arrow.setAttribute("aria-hidden", "true");
-  arrow.textContent = "→";
-
-  copy.append(titleRow, description);
-  link.append(copy, arrow);
-
-  return link;
-}
-
 function getReviewCountLabel(type, value) {
   const count = Number.isInteger(value) && value >= 0 ? value : 0;
   const plural = count === 1 ? "singular" : "plural";
@@ -1252,7 +1203,6 @@ function renderDashboard(user) {
     isGhost ? createGhostUpgradeForm(user) : createProfileForm(user),
   );
 
-  const actions = [];
   const hasAdminToolsAccess =
     !isGhost &&
     [
@@ -1271,30 +1221,6 @@ function renderDashboard(user) {
   rememberDashboardAdminToolsLayout(hasAdminToolsAccess);
 
   if (!isGhost) {
-    if (user.permissions?.canSubmitRetirementMessages === true) {
-      actions.push({
-        href: "/submit-retirement",
-        titleKey: "dashboard_action_submit_retirement",
-        descriptionKey: "dashboard_action_submit_retirement_description",
-      });
-    }
-
-    if (user.permissions?.canCreateDrafts === true) {
-      actions.push({
-        href: "/submit-event",
-        titleKey: "dashboard_action_submit_event",
-        descriptionKey: "dashboard_action_submit_event_description",
-      });
-    }
-
-    if (user.permissions?.canCreateDrafts === true) {
-      actions.push({
-        href: "/submit-last-post",
-        titleKey: "dashboard_action_submit_last_post",
-        descriptionKey: "dashboard_action_submit_last_post_description",
-      });
-    }
-
     if (hasAdminToolsAccess) {
       window.updateAdminWorkZoneTabsForUser?.(user);
     }
@@ -1304,8 +1230,6 @@ function renderDashboard(user) {
     document.getElementById("adminWorkZoneTabs")?.replaceChildren();
     document.getElementById("adminWorkZoneTabs")?.setAttribute("hidden", "");
   }
-
-  dashboardActions.replaceChildren(...actions.map(createActionLink));
 
   const canReviewSubmissions = user.permissions?.canReviewAndPublish === true;
   const canManageCertificateRequests =

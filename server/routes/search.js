@@ -39,19 +39,6 @@ const STATIC_PAGES = [
     },
   },
   {
-    path: '/branch_policies',
-    file: 'branch_policies.html',
-    type: 'page',
-    title: {
-      en: 'Branch Policies and Appointments',
-      fr: 'Politiques et nominations de la Branche',
-    },
-    summary: {
-      en: 'Nomination processes for the Colonel Commandant and honorary appointments.',
-      fr: 'Processus de nomination du colonel commandant et aux fonctions honorifiques.',
-    },
-  },
-  {
     path: '/ce_professions',
     file: 'ce_professions.html',
     type: 'page',

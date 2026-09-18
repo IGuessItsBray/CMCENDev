@@ -1348,6 +1348,10 @@
           "cmcen-modal--danger",
           options.tone === "danger",
         );
+        modalDialog.classList.toggle(
+          "cmcen-modal--contribute",
+          options.variant === "contribute",
+        );
         modalTitle.textContent =
           options.title || getModalTranslation(titleKey, defaultTitle);
         modalMessage.textContent = String(message || "");
@@ -1520,6 +1524,15 @@
             button.type = "button";
             button.className = "cmcen-modal-choice";
             button.classList.toggle("is-danger", choice.destructive === true);
+            if (choice.className) button.classList.add(choice.className);
+
+            if (choice.icon) {
+              const icon = document.createElement("span");
+              icon.className = "cmcen-modal-choice-icon";
+              icon.setAttribute("aria-hidden", "true");
+              icon.innerHTML = choice.icon;
+              button.append(icon);
+            }
 
             const label = document.createElement("strong");
             label.textContent = choice.label || choice.value;

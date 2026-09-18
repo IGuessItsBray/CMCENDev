@@ -176,14 +176,8 @@ const navLinks = {
           fr: "Gouvernance de l’Association",
         },
       },
-      {
-        route: "/branch_policies",
-        label: { en: "Branch Policies", fr: "Politiques de la Branche" },
-      },
-      {
-        route: "/document-library",
-        label: { en: "Document Library", fr: "Bibliothèque de documents" },
-      },
+      { route: "/leadership", label: { en: "Leadership", fr: "Leadership" } },
+      { route: "/history.html", i18n: "menu_news_option_8" },
     ],
   },
   doctrine: {
@@ -191,28 +185,21 @@ const navLinks = {
     items: [
       { route: "/doctrine_hub.html", i18n: "menu_doctrine_option_1" },
       { route: "/awards", i18n: "menu_doctrine_option_2" },
+      { route: "/certificates.html", i18n: "menu_news_option_6" },
+      {
+        route: "/document-library",
+        label: { en: "Document Library", fr: "Bibliothèque de documents" },
+      },
     ],
   },
   news: {
     titleKey: "menu_news_title",
     items: [
       { route: "/calendar", i18n: "menu_news_option_1" },
-      {
-        route: "/submit-event",
-        i18n: "menu_news_option_2",
-        permission: "canCreateDrafts",
-      },
-      {
-        route: "/content-workspace",
-        i18n: "menu_content_workspace",
-        permission: "canReviewAndPublish",
-      },
       { route: "/news_stories.html", i18n: "menu_news_option_3" },
       { route: "/last-post", i18n: "menu_news_option_4" },
       { route: "/retirements", i18n: "menu_news_option_5" },
-      { route: "/certificates.html", i18n: "menu_news_option_6" },
       { route: "/promotions.html", i18n: "menu_news_option_7" },
-      { route: "/history.html", i18n: "menu_news_option_8" },
     ],
   },
   benefits: {
@@ -238,6 +225,7 @@ let headerNotificationListeners = null;
 let headerNotificationOpenCycle = 0;
 let pendingHeaderNotificationRead = null;
 const headerNotificationCachePrefix = "cmcen_header_notifications_";
+let contributePermissions = {};
 
 function escapeHtml(value) {
   return String(value || "")
@@ -329,6 +317,19 @@ function renderDropdown(dropdown, index) {
   `,
     )
     .join("");
+  const contributeItemHtml =
+    dropdown === navLinks.news
+      ? `
+        <li class="contribute-menu-item" id="contributeNavigation" hidden>
+          <button
+            type="button"
+            class="contribute-menu-button"
+            id="contributeNavigationButton"
+            data-i18n="contribute_navigation_label"
+          >Contribute</button>
+        </li>
+      `
+      : "";
 
   return `
     <div class="dropdown">
@@ -346,6 +347,7 @@ function renderDropdown(dropdown, index) {
         id="${menuId}"
       >
         ${itemsHtml}
+        ${contributeItemHtml}
       </ul>
     </div>
   `;
@@ -581,6 +583,7 @@ function loadHeader() {
   let suppressNextDesktopDropdownFocusOpen = false;
 
   setupHeaderNotifications();
+  setupContributeLauncher(setMobileMenuOpen);
 
   headerSearchInput?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter") return;
@@ -801,6 +804,111 @@ function loadHeader() {
   });
 
   document.dispatchEvent(new Event("cmcenheaderready"));
+}
+
+function setupContributeLauncher(closeMobileMenu = () => {}) {
+  const contributeButton = document.getElementById(
+    "contributeNavigationButton",
+  );
+
+  contributeButton?.addEventListener("click", async () => {
+    closeMobileMenu(false);
+
+    const choices = [];
+
+    if (contributePermissions.canCreateDrafts === true) {
+      choices.push({
+        value: "/submit-event",
+        label: getInterfaceTranslation(
+          "contribute_submit_event",
+          "Submit an event",
+        ),
+        description: getInterfaceTranslation(
+          "contribute_submit_event_description",
+          "Share an upcoming community event for review.",
+        ),
+        className: "is-contribute-event",
+        icon: getContributeChoiceIcon("event"),
+      });
+    }
+
+    if (contributePermissions.canSubmitRetirementMessages === true) {
+      choices.push({
+        value: "/submit-retirement",
+        label: getInterfaceTranslation(
+          "contribute_submit_retirement",
+          "Submit a retirement message",
+        ),
+        description: getInterfaceTranslation(
+          "contribute_submit_retirement_description",
+          "Recognize a retiring member with a message for review.",
+        ),
+        className: "is-contribute-retirement",
+        icon: getContributeChoiceIcon("retirement"),
+      });
+    }
+
+    if (contributePermissions.canCreateDrafts === true) {
+      choices.push({
+        value: "/submit-last-post",
+        label: getInterfaceTranslation(
+          "contribute_submit_last_post",
+          "Submit a Last Post notice",
+        ),
+        description: getInterfaceTranslation(
+          "contribute_submit_last_post_description",
+          "Create a memorial notice for editorial review.",
+        ),
+        className: "is-contribute-last-post",
+        icon: getContributeChoiceIcon("last-post"),
+      });
+    }
+
+    if (!choices.length) return;
+
+    const destination = await CMCENModal.choose(
+      getInterfaceTranslation(
+        "contribute_modal_message",
+        "Choose the contribution you would like to submit.",
+      ),
+      {
+        title: getInterfaceTranslation("contribute_modal_title", "Contribute"),
+        choices,
+        variant: "contribute",
+      },
+    );
+
+    if (typeof destination === "string") {
+      window.location.assign(destination);
+    }
+  });
+}
+
+function getContributeChoiceIcon(type) {
+  const icons = {
+    event: `
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="7" y="10" width="34" height="31" rx="3"></rect>
+        <path d="M15 6v8M33 6v8M7 19h34"></path>
+        <path d="M16 27h6M27 27h5M16 34h6"></path>
+      </svg>
+    `,
+    retirement: `
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m15 8 9 11 9-11v20l-9 12-9-12V8Z"></path>
+        <circle cx="24" cy="28" r="7"></circle>
+        <path d="m21 28 2 2 4-5"></path>
+      </svg>
+    `,
+    "last-post": `
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M24 6c4 5 5 9 3 13 4-1 7 2 7 6 0 6-4 10-10 10S14 31 14 25c0-4 3-7 7-6-2-4-1-8 3-13Z"></path>
+        <path d="M18 42h12M21 35v7M27 35v7"></path>
+      </svg>
+    `,
+  };
+
+  return icons[type] || "";
 }
 
 const footerSocialLinks = [
@@ -2027,6 +2135,8 @@ function updateAuthButtons() {
     `;
 
     headerSignOut.replaceChildren();
+    contributePermissions = {};
+    document.getElementById("contributeNavigation").hidden = true;
   }
 
   // Keep the control visible for cookie-authenticated sessions and guests so
@@ -2056,7 +2166,11 @@ async function updateAuthRestrictedItems() {
     element.hidden = true;
   });
 
-  if (!token) return;
+  if (!token) {
+    contributePermissions = {};
+    document.getElementById("contributeNavigation").hidden = true;
+    return;
+  }
 
   try {
     const user = await CMCENUtils.apiJson("/api/me", {
@@ -2065,6 +2179,10 @@ async function updateAuthRestrictedItems() {
     });
 
     updateHeaderNotifications(user.notifications || {});
+    contributePermissions = user.permissions || {};
+    document.getElementById("contributeNavigation").hidden =
+      contributePermissions.canCreateDrafts !== true &&
+      contributePermissions.canSubmitRetirementMessages !== true;
 
     authRequiredItems.forEach((element) => {
       element.hidden = false;

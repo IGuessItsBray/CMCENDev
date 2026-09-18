@@ -4,6 +4,55 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.2.0] - 2026-09-18
+
+
+
+### Bug Fixes
+
+
+- search: Improve performance and result ranking
+
+- auth: Preserve session during totp verification
+
+
+
+### Features
+
+
+- benefits: Secure TD Insurance member offer
+
+- content: Add scheduled publication workflow
+
+- banners: Add dismissible site notices
+
+- content: Add bilingual about pages and charter
+
+- content: Migrate legacy governance content
+
+- Migrate Foundation content and isolate calendar styles
+
+- leadership: Add bilingual leadership page
+
+- frontend: Unify public page presentation
+
+
+
+### Performance
+
+
+- assets: Cache versioned static assets
+
+
+
+### Refactoring
+
+
+- content: Centralize editorial review workflow
+
+- frontend: Simplify stylesheet structure
+
+
 ## [0.1.0-rc.3] - 2026-08-31
 
 

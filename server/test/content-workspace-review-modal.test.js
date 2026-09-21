@@ -8,7 +8,11 @@ const workspaceScript = fs.readFileSync(
   path.join(publicPath, 'content-workspace.js'),
   'utf8',
 );
-const workspaceStyles = ['styles.css', 'content-workspace.css']
+const workspaceStyles = [
+  'styles.css',
+  'shared-controls.css',
+  'content-workspace.css',
+]
   .map((filename) => fs.readFileSync(path.join(publicPath, filename), 'utf8'))
   .join('\n');
 const appUtilsScript = fs.readFileSync(
@@ -61,7 +65,7 @@ test('sends a schedule only for supported scheduled publish decisions', () => {
   );
   assert.match(
     workspaceScript,
-    /const contentWorkspaceScheduledPublicationTypes = new Set\(\[\s*"event",\s*"retirementMessage",\s*"lastPost",\s*\]\);/u,
+    /const contentWorkspaceScheduledPublicationTypes = new Set\(\[\s*"event",\s*"retirementMessage",\s*"lastPost",\s*"newsArticle",\s*\]\);/u,
   );
   assert.match(
     workspaceScript,

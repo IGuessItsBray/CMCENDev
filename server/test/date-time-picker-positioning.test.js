@@ -8,14 +8,14 @@ const pickerScript = fs.readFileSync(
   'utf8',
 );
 const styles = fs.readFileSync(
-  path.join(__dirname, '..', 'public', 'styles.css'),
+  path.join(__dirname, '..', 'public', 'shared-controls.css'),
   'utf8',
 );
 
 test('keeps the date and time picker within the viewport', () => {
   assert.match(
     pickerScript,
-    /function positionPopover\(\)[\s\S]*?const spaceAbove = triggerRect\.top - viewportPadding;[\s\S]*?const spaceBelow = window\.innerHeight - triggerRect\.bottom - viewportPadding;[\s\S]*?const openAbove =[\s\S]*?spaceBelow < naturalPopoverHeight && spaceAbove > spaceBelow;/u,
+    /function positionPopover\(\)[\s\S]*?const spaceAbove = triggerRect\.top - viewportPadding;[\s\S]*?const spaceBelow =\s*window\.innerHeight - triggerRect\.bottom - viewportPadding;[\s\S]*?const openAbove =[\s\S]*?spaceBelow < naturalPopoverHeight && spaceAbove > spaceBelow;/u,
   );
   assert.match(
     pickerScript,

@@ -63,6 +63,7 @@ const contentWorkspaceRoutes = Object.freeze({
 });
 
 const contentWorkspaceReviewRoutes = Object.freeze({
+  newsArticle: (id) => `/api/news/${encodeURIComponent(id)}/publication`,
   event: (id) => `/api/events/${encodeURIComponent(id)}/review`,
   retirementMessage: (id) =>
     `/api/retirement-messages/${encodeURIComponent(id)}/review`,
@@ -75,6 +76,7 @@ const contentWorkspaceScheduledPublicationTypes = new Set([
   "event",
   "retirementMessage",
   "lastPost",
+  "newsArticle",
 ]);
 
 const contentWorkspaceEditRoutes = Object.freeze({
@@ -486,7 +488,8 @@ function getStatusLabel(status) {
 function getContentWorkspaceDisplayStatus(item) {
   if (
     contentWorkspaceScheduledPublicationTypes.has(item?.type) &&
-    item.status === "pending" &&
+    (item.status === "pending" ||
+      (item.type === "newsArticle" && item.status === "draft")) &&
     item.scheduledPublishAt
   ) {
     return "scheduled";
@@ -1344,7 +1347,7 @@ function getNewsArticleDetailsFields(item) {
     }),
   ];
 
-  if (item.status !== "hidden") {
+  if (item.status === "published") {
     fields.push(
       createWorkspaceEditorField({
         field: "status",
@@ -2110,7 +2113,7 @@ function createRejectionReason(item) {
 function createScheduledPublicationStatus(item) {
   if (
     !contentWorkspaceScheduledPublicationTypes.has(item.type) ||
-    item.status !== "pending" ||
+    !["pending", "draft"].includes(item.status) ||
     !item.scheduledPublishAt
   ) {
     return null;
@@ -2150,7 +2153,13 @@ function setScheduledPublicationMessage(element, value) {
 }
 
 function createContentWorkspaceReviewActions(item) {
-  if (!canReviewContentWorkspace() || item.status !== "pending") return null;
+  const isNewsArticle = item.type === "newsArticle";
+  if (
+    isNewsArticle
+      ? !canManageContentWorkspaceNews() || item.status !== "draft"
+      : !canReviewContentWorkspace() || item.status !== "pending"
+  )
+    return null;
 
   const route = contentWorkspaceReviewRoutes[item.type];
   if (!route) return null;
@@ -2161,9 +2170,11 @@ function createContentWorkspaceReviewActions(item) {
 
   const actions = document.createElement("div");
   actions.className = "content-workspace-review-actions";
-  const reject = document.createElement("button");
-  reject.type = "button";
-  reject.className = "admin-work-zone-button is-danger";
+  const reject = isNewsArticle ? null : document.createElement("button");
+  if (reject) {
+    reject.type = "button";
+    reject.className = "admin-work-zone-button is-danger";
+  }
   const publish = document.createElement("button");
   publish.type = "button";
   publish.className = "admin-work-zone-button is-success";
@@ -2180,7 +2191,8 @@ function createContentWorkspaceReviewActions(item) {
   let isSubmitting = false;
 
   function restoreActionLabels() {
-    setWorkspaceTranslatedText(reject, "content_workspace_reject", "Reject");
+    if (reject)
+      setWorkspaceTranslatedText(reject, "content_workspace_reject", "Reject");
     setWorkspaceTranslatedText(publish, "content_workspace_publish", "Publish");
     if (cancelSchedule) {
       setWorkspaceTranslatedText(
@@ -2379,8 +2391,12 @@ function createContentWorkspaceReviewActions(item) {
           : action === "cancel-schedule"
             ? await CMCENModal.confirm(
                 getText(
-                  "content_workspace_cancel_scheduled_publish_confirmation",
-                  "This content will remain pending and will not be published at its scheduled time.",
+                  isNewsArticle
+                    ? "content_workspace_cancel_scheduled_news_confirmation"
+                    : "content_workspace_cancel_scheduled_publish_confirmation",
+                  isNewsArticle
+                    ? "This story will remain a draft and will not be published at its scheduled time."
+                    : "This content will remain pending and will not be published at its scheduled time.",
                 ),
                 {
                   title: getText(
@@ -2519,7 +2535,7 @@ function createContentWorkspaceReviewActions(item) {
     }
   }
 
-  reject.addEventListener("click", () => void confirmDecision("reject"));
+  reject?.addEventListener("click", () => void confirmDecision("reject"));
   publish.addEventListener("click", () => void confirmDecision("publish"));
   cancelSchedule?.addEventListener(
     "click",
@@ -2527,7 +2543,7 @@ function createContentWorkspaceReviewActions(item) {
   );
 
   restoreActionLabels();
-  actions.append(reject);
+  if (reject) actions.append(reject);
   if (cancelSchedule) actions.append(cancelSchedule);
   actions.append(publish);
   return actions;
@@ -3311,7 +3327,7 @@ function getContentWorkspaceRecordPayload(item, formData) {
     return {
       imageUrl: String(formData.get("imageUrl") || ""),
       imageDisplayUrl: String(formData.get("imageDisplayUrl") || ""),
-      status: String(formData.get("status") || "published"),
+      status: String(formData.get("status") || item.status),
     };
   }
 

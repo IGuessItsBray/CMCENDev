@@ -55,6 +55,13 @@ const TimerSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    dismissible: { type: Boolean, default: true },
+    scrolling: { type: Boolean, default: false },
+    icon: {
+      type: String,
+      enum: ['none', 'info', 'warning'],
+      default: 'warning',
+    },
     order: {
       type: Number,
       default: 0,

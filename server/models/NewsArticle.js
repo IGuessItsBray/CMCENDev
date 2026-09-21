@@ -75,10 +75,26 @@ const NewsArticleSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    scheduledPublishAt: { type: Date, default: null },
+    scheduledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    scheduledAt: { type: Date, default: null },
+    sourceAwardRecipientId: { type: mongoose.Schema.Types.ObjectId },
   },
-  { timestamps: true },
+  { timestamps: true, optimisticConcurrency: true },
 );
 
 NewsArticleSchema.index({ status: 1, publishedAt: -1, _id: -1 });
+NewsArticleSchema.index({ status: 1, scheduledPublishAt: 1 });
+NewsArticleSchema.index(
+  { sourceAwardRecipientId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { sourceAwardRecipientId: { $type: 'objectId' } },
+  },
+);
 
 module.exports = mongoose.model('NewsArticle', NewsArticleSchema);

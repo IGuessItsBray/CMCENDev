@@ -1,0 +1,57 @@
+:root {
+  /* Core branch palette */
+  --navy-950: #171c32;
+  --navy-900: #202642;
+  --navy-800: #2c2f55;
+  --navy-700: #3a416d;
+
+  --branch-grey-900: #414854;
+  --branch-grey-800: #5f6772;
+  --branch-grey-700: #757d89;
+  --branch-grey-600: #858d97;
+  --branch-grey-500: #969da6;
+  --branch-grey-400: #afb6bf;
+  --branch-grey-300: #c4cad1;
+  --branch-grey-200: #d9dde2;
+  --branch-grey-100: #eef0f2;
+  --branch-grey-50: #f7f8f9;
+
+  --gold-700: #a97518;
+  --gold-600: #c58d23;
+  --gold-500: #d59b27;
+  --gold-400: #dfb35d;
+  --gold-300: #e5c47c;
+  --gold-200: #ead3a3;
+  --gold-100: #f5e7c4;
+
+  --white: #ffffff;
+  --ink: #23252b;
+  --text-muted: #646873;
+  --danger: #a63c35;
+  --success-border: #4f7358;
+  --branch-green: #25694a;
+  --border-light: rgba(255, 255, 255, 0.16);
+  --shadow: rgba(15, 18, 31, 0.22);
+  --font-heading: Georgia, 'Times New Roman', serif;
+  --font-body:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --surface-radius: 2px;
+}
+
+html[data-theme='dark'] {
+  --dark-bg: #080d18;
+  --dark-bg-elevated: #0f1625;
+  --dark-surface: #151d2d;
+  --dark-surface-2: #1b2536;
+  --dark-surface-3: #222d40;
+  --dark-border: #334057;
+  --dark-border-strong: #46556f;
+  --dark-text: #edf2fa;
+  --dark-text-soft: #c8d0dd;
+  --dark-text-muted: #aab4c4;
+  --dark-link: #f0c76c;
+  --dark-danger-bg: #341714;
+  --dark-danger-text: #ffb4ad;
+  --dark-success-bg: #10271a;
+  --dark-success-text: #bde8ca;
+}

@@ -6,6 +6,7 @@ const Page = require('../models/Page');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
 const { recordContentRevision } = require('../services/content-revisions');
+const { getScheduledPublicationDate } = require('../services/editorial-review');
 const {
   hideContent,
   restoreContent,
@@ -44,6 +45,7 @@ function getNewsSnapshot(article) {
     title: cleanString(title),
     status: article.status,
     publishedAt: article.publishedAt || null,
+    scheduledPublishAt: article.scheduledPublishAt || null,
   };
 }
 
@@ -128,6 +130,7 @@ function serializeArticle(article) {
       DEFAULT_NEWS_IMAGE_URL,
     status: article.status,
     publishedAt: article.publishedAt || null,
+    scheduledPublishAt: article.scheduledPublishAt || null,
     createdAt: article.createdAt,
     updatedAt: article.updatedAt,
   };
@@ -378,6 +381,97 @@ router.post(
 );
 
 router.patch(
+  '/:articleId/publication',
+  authMiddleware,
+  requirePermission('canManageNews'),
+  async (req, res) => {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.articleId)) {
+        return res.status(404).json({ error: 'News story not found' });
+      }
+      const { action } = req.body || {};
+      if (!['publish', 'cancel-schedule'].includes(action)) {
+        return res
+          .status(400)
+          .json({ error: 'Unsupported publication action' });
+      }
+      const now = new Date();
+      const scheduledPublishAt = getScheduledPublicationDate(
+        req.body?.scheduledPublishAt,
+        now,
+      );
+      if (action === 'publish' && scheduledPublishAt === undefined) {
+        return res
+          .status(400)
+          .json({ error: 'Choose a future publication date and time' });
+      }
+      const article = await NewsArticle.findById(req.params.articleId);
+      if (!article)
+        return res.status(404).json({ error: 'News story not found' });
+      if (article.status !== 'draft') {
+        return res
+          .status(409)
+          .json({
+            error: 'Only draft news stories can be published or scheduled',
+          });
+      }
+      const previousSchedule = article.scheduledPublishAt;
+      const before = getNewsRevisionSnapshot(article);
+      if (action === 'cancel-schedule' && !previousSchedule) {
+        return res
+          .status(409)
+          .json({ error: 'This news story is not scheduled' });
+      }
+      if (action === 'publish') {
+        const validationError = validatePayload(article);
+        if (validationError)
+          return res.status(400).json({ error: validationError });
+      }
+      const schedule = action === 'publish' ? scheduledPublishAt : null;
+      const publishNow = action === 'publish' && !schedule;
+      article.status = publishNow ? 'published' : 'draft';
+      article.publishedAt = publishNow ? now : null;
+      article.publishedBy = publishNow ? req.user._id : null;
+      article.scheduledPublishAt = schedule;
+      article.scheduledBy = schedule ? req.user._id : null;
+      article.scheduledAt = schedule ? now : null;
+      await article.save();
+      await recordNewsArticleRevisions({ article, before, actor: req.user });
+      await writeAuditLog({
+        req,
+        actor: req.user,
+        action:
+          action === 'cancel-schedule'
+            ? 'content.publish_schedule_cancelled'
+            : schedule
+              ? 'content.publish_scheduled'
+              : 'content.published',
+        targetType: 'newsArticle',
+        target: article._id,
+        targetSnapshot: getNewsSnapshot(article),
+        metadata: {
+          source: 'publication',
+          scheduledPublishAt: schedule || previousSchedule || null,
+        },
+      });
+      return res.json({ article: serializeArticle(article) });
+    } catch (error) {
+      if (error.name === 'VersionError') {
+        return res
+          .status(409)
+          .json({
+            error: 'This story changed. Reload it before trying again.',
+          });
+      }
+      console.error('Could not change news publication:', error);
+      return res
+        .status(500)
+        .json({ error: 'Could not change news publication' });
+    }
+  },
+);
+
+router.patch(
   '/:articleId',
   authMiddleware,
   requirePermission('canManageNews'),
@@ -400,6 +494,11 @@ router.patch(
       if (payload.status === 'published' && previousStatus !== 'published') {
         article.publishedAt = new Date();
         article.publishedBy = req.user._id;
+      }
+      if (payload.status !== 'draft') {
+        article.scheduledPublishAt = null;
+        article.scheduledBy = null;
+        article.scheduledAt = null;
       }
       if (payload.status === 'draft') {
         article.publishedAt = null;
@@ -438,6 +537,13 @@ router.patch(
       }
       return res.json({ article: serializeArticle(article) });
     } catch (error) {
+      if (error.name === 'VersionError') {
+        return res
+          .status(409)
+          .json({
+            error: 'This story changed. Reload it before trying again.',
+          });
+      }
       console.error('Could not update news story:', error);
       return res.status(500).json({ error: 'Could not update news story' });
     }

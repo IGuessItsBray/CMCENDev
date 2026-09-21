@@ -1,0 +1,144 @@
+.admin-users-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.5fr);
+  gap: 24px;
+  align-items: start;
+}
+.admin-users-list-panel,
+.admin-users-detail {
+  min-width: 0;
+}
+.admin-users-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.admin-users-list {
+  display: grid;
+  gap: 4px;
+  max-height: 60dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+#dashboardNext .admin-user-row {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  background: transparent;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+#dashboardNext .admin-user-row:hover {
+  background: var(--admin-hover);
+}
+#dashboardNext .admin-user-row[aria-current] {
+  background: var(--admin-inset);
+  border-left-color: var(--admin-focus);
+}
+.admin-users-muted {
+  color: var(--admin-muted);
+  font-size: 0.85rem;
+}
+.admin-users-detail {
+  padding: 20px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-surface);
+}
+.admin-users-detail > h2 {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+}
+.admin-users-fields {
+  display: grid;
+  gap: 18px;
+  border: 0;
+  padding: 0;
+  margin: 20px 0 0;
+  min-width: 0;
+}
+.admin-users-fields h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.admin-users-fields > .cmcen-field-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+}
+.admin-users-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin-users-section,
+.admin-users-export {
+  border-top: 1px solid var(--admin-border);
+  padding-top: 16px;
+  margin-top: 20px;
+}
+.admin-users-section h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+.admin-users-section p {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.admin-users-section summary,
+.admin-users-export summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.admin-users-export > fieldset {
+  margin: 14px 0;
+}
+.admin-users-export .cmcen-choice {
+  display: flex;
+}
+.admin-users-feedback {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.admin-users-feedback:empty {
+  display: none;
+}
+.admin-users-empty {
+  min-height: 200px;
+  color: var(--admin-muted);
+}
+.admin-users-note {
+  color: var(--admin-muted);
+  border-left: 2px solid var(--admin-border);
+  padding-left: 12px;
+}
+#dashboardNext .admin-users-save {
+  justify-self: start;
+  background: var(--admin-text);
+  color: var(--admin-bg);
+}
+#dashboardNext .admin-users-danger {
+  color: var(--admin-danger);
+}
+@media (min-width: 1400px) {
+  .admin-users-layout {
+    grid-template-columns: 360px minmax(0, 1fr);
+  }
+  .admin-users-fields {
+    max-width: 780px;
+  }
+}
+@media (max-width: 850px) {
+  .admin-users-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-users-list {
+    max-height: 330px;
+  }
+}

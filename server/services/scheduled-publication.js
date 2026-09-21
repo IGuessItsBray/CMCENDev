@@ -1,6 +1,7 @@
 const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
 const RetirementMessage = require('../models/RetirementMessage');
+const NewsArticle = require('../models/NewsArticle');
 const User = require('../models/User');
 const { writeAuditLog } = require('./audit-log');
 const {
@@ -13,6 +14,16 @@ const SCHEDULED_PUBLICATION_INTERVAL_MS = 30 * 1000;
 const MAX_PUBLICATIONS_PER_TICK = 100;
 
 const scheduledContentTypes = [
+  {
+    Model: NewsArticle,
+    targetType: 'newsArticle',
+    unpublishedStatus: 'draft',
+    getSnapshot: (article) => ({
+      title: article.title?.en || article.title?.fr || 'Untitled news story',
+      status: article.status,
+      publishedAt: article.publishedAt,
+    }),
+  },
   {
     Model: Event,
     targetType: 'event',
@@ -34,10 +45,11 @@ async function publishOneScheduledContent({
   Model,
   targetType,
   getSnapshot,
+  unpublishedStatus = 'pending',
   now,
 }) {
   const scheduled = await Model.findOne({
-    status: 'pending',
+    status: unpublishedStatus,
     scheduledPublishAt: { $ne: null, $lte: now },
   }).sort({ scheduledPublishAt: 1, _id: 1 });
 
@@ -48,22 +60,28 @@ async function publishOneScheduledContent({
   const published = await Model.findOneAndUpdate(
     {
       _id: scheduled._id,
-      status: 'pending',
+      status: unpublishedStatus,
       scheduledPublishAt,
+      ...(targetType === 'newsArticle' ? { __v: scheduled.__v } : {}),
     },
     {
       $set: {
         status: 'published',
-        rejectionReason: '',
-        reviewedBy: scheduled.reviewedBy || scheduledBy,
-        reviewedAt: scheduled.reviewedAt || now,
-        updatedBy: scheduledBy,
+        ...(targetType === 'newsArticle'
+          ? {}
+          : {
+              rejectionReason: '',
+              reviewedBy: scheduled.reviewedBy || scheduledBy,
+              reviewedAt: scheduled.reviewedAt || now,
+              updatedBy: scheduledBy,
+            }),
         publishedBy: scheduledBy,
         publishedAt: now,
         scheduledPublishAt: null,
         scheduledBy: null,
         scheduledAt: null,
       },
+      ...(targetType === 'newsArticle' ? { $inc: { __v: 1 } } : {}),
     },
     { returnDocument: 'after' },
   );

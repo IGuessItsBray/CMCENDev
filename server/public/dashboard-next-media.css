@@ -1,0 +1,119 @@
+#adminMediaBody {
+  padding-top: 20px;
+}
+.admin-media-toolbar {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.admin-media-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.admin-media-toolbar .admin-media-field {
+  flex: 1 1 180px;
+}
+.admin-media-toolbar .admin-media-field:first-child {
+  flex-grow: 2;
+}
+.admin-media-upload {
+  border: 1px dashed var(--admin-border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: var(--admin-surface);
+}
+.admin-media-upload h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+.admin-media-upload .admin-media-field {
+  max-width: 520px;
+  margin-top: 12px;
+}
+.admin-media-upload p,
+.admin-media-upload-queue,
+.admin-media-status {
+  font-size: 0.875rem;
+  color: var(--admin-muted);
+}
+.admin-media-upload-queue {
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+.admin-media-selection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.admin-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: 18px;
+  margin: 20px 0;
+}
+.admin-media-card {
+  min-width: 0;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--admin-surface);
+}
+.admin-media-preview {
+  display: block;
+  background: var(--admin-bg);
+}
+.admin-media-preview img {
+  display: block;
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+}
+.admin-media-card-body {
+  padding: 16px;
+  overflow-wrap: anywhere;
+  font-size: 0.875rem;
+}
+.admin-media-card-body h2 {
+  font-size: 1rem;
+  margin: 0 0 10px;
+}
+.admin-media-key,
+.admin-media-card-body small {
+  color: var(--admin-muted);
+  font-size: 0.75rem;
+}
+.admin-media-card-body small {
+  display: block;
+}
+.admin-media-card-body summary {
+  cursor: pointer;
+}
+.admin-media-card-body ul {
+  padding-left: 20px;
+}
+.admin-media-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+.admin-media-card-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 700px) {
+  .admin-media-upload {
+    padding: 16px;
+  }
+  .admin-media-field input[type='file'] {
+    width: 100%;
+  }
+}

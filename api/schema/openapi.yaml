@@ -81,11 +81,14 @@ paths:
   /api/admin/professional-awards/{awardId}/recipients:
     post:
       tags: [Admin]
-      summary: Add a recipient and publish a dated congratulatory news story, including an applicable medallion number or bursary amount.
+      summary: Add a professional-award recipient.
+      description: >-
+        Saves and audits the recipient record, including an applicable medallion
+        number or bursary amount, without creating or publishing a news article.
       x-permission: canReviewAndPublish
       responses:
         "201":
-          description: Recipient added.
+          description: Recipient added; returns a message and the updated award.
   /api/admin/professional-awards/{awardId}/recipients/{recipientId}:
     patch:
       tags: [Admin]
@@ -94,6 +97,28 @@ paths:
       responses:
         "200":
           description: Recipient updated.
+  /api/admin/professional-awards/{awardId}/recipients/{recipientId}/news:
+    post:
+      tags: [Admin]
+      summary: Create or reopen an optional news draft for a saved award recipient.
+      description: >-
+        Requires both award management and news permissions. Returns newsArticleId
+        for a Content Workspace link. Reuses an existing linked article without
+        changing its copy or publication state. New drafts contain suggested
+        bilingual copy and the recipient photo, or the default crest.
+        Concurrent requests reuse the same recipient-sourced draft.
+      x-permission: canReviewAndPublish and canManageNews
+      responses:
+        "200":
+          description: The existing or newly created article ID.
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          description: The linked article is no longer available.
   /api/contact:
     post:
       tags: [Contact]
@@ -994,7 +1019,7 @@ paths:
     get:
       tags: [Admin]
       summary: List users.
-      description: Returns lightweight user rows for the admin user manager, excluding legacy `@cmcen.local` attribution accounts. Use the user detail endpoint to load post summaries and editable detail for a selected user.
+      description: Returns lightweight user rows ordered by descending account ID (newest first), excluding legacy `@cmcen.local` attribution accounts. Pass nextCursor from a response as cursor to load the next page with the same filters. An empty nextCursor means no further page. Search is literal, case-insensitive, and limited to 120 characters. Use the user detail endpoint for editable detail and optional submitted content.
       x-permission: canReadUsers
       parameters:
         - name: query
@@ -1006,9 +1031,26 @@ paths:
             type: integer
             minimum: 1
             maximum: 100
+        - name: cursor
+          in: query
+          description: Last visible account ID from the previous page.
+          schema: { type: string, pattern: "^[a-fA-F0-9]{24}$" }
+        - name: role
+          in: query
+          description: Filter by a built-in role.
+          schema: { type: string }
+        - name: accountType
+          in: query
+          schema: { type: string, enum: [member, invited, ghost] }
+        - name: includeOptions
+          in: query
+          description: Set false to omit the role and content-area catalogs after the first load.
+          schema: { type: boolean, default: true }
       responses:
         "200":
           description: Users.
+        "400":
+          $ref: "#/components/responses/Error"
   /api/admin/users/export:
     get:
       tags: [Admin]
@@ -1047,12 +1089,23 @@ paths:
     get:
       tags: [Admin]
       summary: Get user detail.
+      description: Returns sanitized account detail. Content and catalogs are included by default for existing clients; omit them when only editing account access.
       x-permission: canReadUsers
       parameters:
         - $ref: "#/components/parameters/UserId"
+        - name: includePosts
+          in: query
+          description: Set false to skip content queries and omit posts; user.postSummary is null.
+          schema: { type: boolean, default: true }
+        - name: includeOptions
+          in: query
+          description: Set false to omit role and content-area catalogs.
+          schema: { type: boolean, default: true }
       responses:
         "200":
           description: User detail.
+        "404":
+          $ref: "#/components/responses/Error"
     patch:
       tags: [Admin]
       summary: Update another user's admin assignments.
@@ -1249,7 +1302,7 @@ paths:
               ]
         - name: status
           in: query
-          description: Scheduled is a workspace-only filter for pending Events, Last Post notices, and retirement messages that have a scheduled publication date. Pending excludes those already scheduled records.
+          description: Scheduled is a workspace-only filter for pending Events, Last Post notices, retirement messages, and draft news articles with a scheduled publication date. Pending and Draft exclude their scheduled records.
           schema:
             type: string
             enum: [all, draft, pending, scheduled, published, rejected, hidden]
@@ -2132,7 +2185,7 @@ paths:
     patch:
       tags: [News]
       summary: Update a bilingual news story or its publication state.
-      description: Editing a removed story preserves its removed state until it is explicitly restored. An optional revision note is recorded with changed fields.
+      description: Editing a removed story preserves its removed state until it is explicitly restored. Editing a scheduled draft preserves its schedule; publishing clears it. An optional revision note is recorded with changed fields. A concurrent change returns 409.
       x-permission: canManageNews
       parameters:
         - $ref: "#/components/parameters/ArticleId"
@@ -2154,6 +2207,46 @@ paths:
       responses:
         "200":
           description: Deleted news story.
+  /api/news/{articleId}/publication:
+    patch:
+      tags: [News]
+      summary: Publish, schedule, reschedule, or cancel publication of a draft news story.
+      description: >-
+        Requires a draft. Publish without a date makes it public immediately;
+        a future scheduledPublishAt keeps it private as a draft until the server
+        publishes it. Cancel-schedule clears the schedule and leaves a draft.
+        Both languages are required for publication. Changes are audited.
+      x-permission: canManageNews
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [publish, cancel-schedule]
+                scheduledPublishAt:
+                  type: string
+                  format: date-time
+                  description: Future timestamp for a publish action; omit to publish now.
+      responses:
+        "200":
+          description: Updated article, including its nullable scheduledPublishAt.
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          description: Not a draft, no schedule to cancel, or a concurrent change.
   /api/news/{articleId}/hide:
     patch:
       tags: [News]
@@ -3109,8 +3202,24 @@ components:
         placement:
           type: string
           enum: [global, home]
+        screenPosition:
+          type: string
+          enum: [header, below-header]
         enabled:
           type: boolean
+        dismissible:
+          type: boolean
+          default: true
+          description: Allow dismissal for 24 hours per banner revision in the visitor's browser. Omitted PATCH values preserve the saved setting; legacy records default to true. Returned by banner GET endpoints.
+        scrolling:
+          type: boolean
+          default: false
+          description: Scroll the message with pause/resume controls; reduced-motion visitors see static text. Omitted PATCH values preserve the saved setting; legacy records default to false. Returned by banner GET endpoints.
+        icon:
+          type: string
+          enum: [none, info, warning]
+          default: warning
+          description: Optional leading icon. Legacy records and API creates without this field use warning; omitted PATCH values preserve the saved choice. The new editor starts with none. Returned by banner GET endpoints.
         order:
           type: number
     RoleInput:

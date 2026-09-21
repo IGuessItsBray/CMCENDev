@@ -4,7 +4,6 @@ const dashboardStatus = document.getElementById("dashboardStatus");
 const dashboardLoadingTemplate = document.getElementById(
   "dashboardLoadingTemplate",
 );
-const dashboardShell = document.querySelector(".dashboard-shell");
 const dashboardHeading = document.querySelector(".dashboard-heading");
 const dashboardContent = document.getElementById("dashboardContent");
 const dashboardDetails = document.getElementById("dashboardDetails");
@@ -12,6 +11,7 @@ const dashboardWorkspace = document.getElementById("dashboardWorkspace");
 const dashboardTitle = document.getElementById("dashboardTitle");
 const dashboardMemberName = document.getElementById("dashboardMemberName");
 const dashboardRoleSummary = document.getElementById("dashboardRoleSummary");
+const dashboardAdminLink = document.getElementById("dashboardAdminLink");
 const dashboardRoleBadge = document.getElementById("dashboardRoleBadge");
 const dashboardRoleDescription = document.getElementById(
   "dashboardRoleDescription",
@@ -23,13 +23,6 @@ const dashboardReviewWork = document.getElementById("dashboardReviewWork");
 const dashboardReviewQueues = document.getElementById("dashboardReviewQueues");
 const dashboardReviewSummary = document.getElementById(
   "dashboardReviewSummary",
-);
-const dashboardContentAdmin = document.getElementById("dashboardContentAdmin");
-const dashboardContentAdminTitle = document.getElementById(
-  "dashboardContentAdminTitle",
-);
-const dashboardContentAdminActions = document.getElementById(
-  "dashboardContentAdminActions",
 );
 const dashboardProfileDetails = document.getElementById(
   "dashboardProfileDetails",
@@ -46,37 +39,7 @@ const weeklyBriefPreference = document.getElementById("weeklyBriefPreference");
 
 let currentDashboardUser = null;
 let currentReviewCounts = null;
-let currentCertificateRequestCount = null;
 const profileSaveSuccessDisplayMs = 2200;
-const dashboardAdminLayoutStorageKey = "cmcen.dashboard.has-admin-tools";
-
-function applyDashboardAdminToolsLayout(hasAdminTools) {
-  dashboardShell?.classList.toggle("has-admin-tools-layout", hasAdminTools);
-}
-
-function getCachedDashboardAdminToolsLayout() {
-  try {
-    return (
-      window.sessionStorage.getItem(dashboardAdminLayoutStorageKey) === "true"
-    );
-  } catch {
-    return false;
-  }
-}
-
-function rememberDashboardAdminToolsLayout(hasAdminTools) {
-  applyDashboardAdminToolsLayout(hasAdminTools);
-
-  try {
-    window.sessionStorage.setItem(
-      dashboardAdminLayoutStorageKey,
-      String(hasAdminTools),
-    );
-  } catch {
-    // The layout remains correct for this page even if session storage is unavailable.
-  }
-}
-
 const profileSelectOptions = {
   status: [
     "regular",
@@ -93,9 +56,6 @@ const profileSelectOptions = {
 
 function showDashboardLoading() {
   const message = translate("loading_text");
-  const hasAdminToolsLayout = getCachedDashboardAdminToolsLayout();
-
-  applyDashboardAdminToolsLayout(hasAdminToolsLayout);
   dashboardHeading?.classList.add("is-loading");
   dashboardHeading?.setAttribute("aria-busy", "true");
   dashboardRoleSummary.hidden = true;
@@ -106,9 +66,6 @@ function showDashboardLoading() {
   dashboardStatus.className = "dashboard-status is-loading";
   dashboardStatus.setAttribute("aria-label", message);
   dashboardStatus.hidden = false;
-  dashboardStatus
-    .querySelector(".dashboard-loading-skeleton")
-    ?.classList.toggle("has-admin-tools", hasAdminToolsLayout);
   dashboardStatus.querySelector(".visually-hidden").textContent = message;
   dashboardContent.hidden = true;
 }
@@ -1048,10 +1005,7 @@ function getReviewCountLabel(type, value) {
   return translate(`dashboard_review_${type}_${plural}`, { count });
 }
 
-function getReviewWorkTotal({
-  canReviewSubmissions,
-  canManageCertificateRequests,
-}) {
+function getReviewWorkTotal({ canReviewSubmissions }) {
   const counts = [];
 
   if (canReviewSubmissions && currentReviewCounts) {
@@ -1061,10 +1015,6 @@ function getReviewWorkTotal({
       currentReviewCounts.lastPosts,
       currentReviewCounts.comments,
     );
-  }
-
-  if (canManageCertificateRequests) {
-    counts.push(currentCertificateRequestCount);
   }
 
   if (!counts.length || counts.some((count) => !Number.isInteger(count))) {
@@ -1129,14 +1079,23 @@ function createContentWorkspaceLink() {
   return link;
 }
 
-function createManageAwardsLink() {
-  const link = document.createElement("a");
-  link.className =
-    "admin-work-zone-button is-secondary dashboard-content-admin-button";
-  link.href = "/professional-awards-admin";
-  link.textContent = translate("dashboard_manage_awards");
-
-  return link;
+function canAccessAdministration(user) {
+  // Match the administrative permission gate in dashboard-next.js.
+  return [
+    "canReviewAndPublish",
+    "canManageNews",
+    "canManageEventRsvps",
+    "canManageCertificateRequests",
+    "canReadUsers",
+    "canManageSubscriptions",
+    "canManageRoles",
+    "canManagePages",
+    "canManageTimers",
+    "canManageTranslations",
+    "canViewMediaLibrary",
+    "canViewAnalytics",
+    "canViewAuditLog",
+  ].some((permission) => user?.permissions?.[permission] === true);
 }
 
 function renderDashboard(user) {
@@ -1178,6 +1137,7 @@ function renderDashboard(user) {
       })
     : "";
   dashboardRoleSummary.hidden = false;
+  dashboardAdminLink.hidden = !canAccessAdministration(user);
 
   dashboardProfileSummary.textContent = [user.email, roleTitle]
     .filter(Boolean)
@@ -1203,38 +1163,8 @@ function renderDashboard(user) {
     isGhost ? createGhostUpgradeForm(user) : createProfileForm(user),
   );
 
-  const hasAdminToolsAccess =
-    !isGhost &&
-    [
-      "canReadUsers",
-      "canManageUsers",
-      "canManageRoles",
-      "canManagePages",
-      "canManageTimers",
-      "canViewMediaLibrary",
-      "canManageTranslations",
-      "canViewAuditLog",
-      "canViewAnalytics",
-      "canManageSubscriptions",
-    ].some((permission) => user.permissions?.[permission] === true);
-
-  rememberDashboardAdminToolsLayout(hasAdminToolsAccess);
-
-  if (!isGhost) {
-    if (hasAdminToolsAccess) {
-      window.updateAdminWorkZoneTabsForUser?.(user);
-    }
-  }
-
-  if (!hasAdminToolsAccess) {
-    document.getElementById("adminWorkZoneTabs")?.replaceChildren();
-    document.getElementById("adminWorkZoneTabs")?.setAttribute("hidden", "");
-  }
-
   const canReviewSubmissions = user.permissions?.canReviewAndPublish === true;
-  const canManageCertificateRequests =
-    user.permissions?.canManageCertificateRequests === true;
-  const hasReviewWork = canReviewSubmissions || canManageCertificateRequests;
+  const hasReviewWork = canReviewSubmissions;
 
   dashboardWorkspace.classList.toggle("has-review-work", hasReviewWork);
   dashboardReviewWork.hidden = !hasReviewWork;
@@ -1273,18 +1203,6 @@ function renderDashboard(user) {
       reviewQueues.push(...createReviewQueuesUnavailable());
     }
 
-    if (canManageCertificateRequests) {
-      reviewQueues.push(
-        createReviewQueueLink({
-          href: "/certificate-requests",
-          type: "certificate_requests",
-          labelKey: "dashboard_action_certificate_requests",
-          count: currentCertificateRequestCount,
-          ariaLabelKey: "dashboard_certificate_requests_open_queue",
-        }),
-      );
-    }
-
     if (canReviewSubmissions) {
       reviewQueues.push(createContentWorkspaceLink());
     }
@@ -1293,7 +1211,6 @@ function renderDashboard(user) {
 
     const reviewWorkTotal = getReviewWorkTotal({
       canReviewSubmissions,
-      canManageCertificateRequests,
     });
     dashboardReviewSummary.hidden = reviewWorkTotal === null;
     dashboardReviewSummary.textContent =
@@ -1310,19 +1227,6 @@ function renderDashboard(user) {
     dashboardReviewSummary.hidden = true;
     dashboardReviewSummary.textContent = "";
   }
-
-  const contentAdminActions = canReviewSubmissions
-    ? [createManageAwardsLink()]
-    : [];
-  dashboardContentAdminTitle.textContent = translate(
-    "dashboard_content_admin_title",
-  );
-  dashboardContentAdminActions.setAttribute(
-    "aria-label",
-    translate("dashboard_content_admin_title"),
-  );
-  dashboardContentAdminActions.replaceChildren(...contentAdminActions);
-  dashboardContentAdmin.hidden = contentAdminActions.length === 0;
 
   dashboardStatus.hidden = true;
   dashboardStatus.removeAttribute("aria-label");
@@ -1494,27 +1398,6 @@ async function loadDashboard() {
       } catch (error) {}
     } else {
       currentReviewCounts = null;
-    }
-
-    if (user.permissions?.canManageCertificateRequests === true) {
-      try {
-        const certificateCounts = await CMCENUtils.apiJson(
-          "/api/certificate-requests/count",
-          {
-            token,
-            errorMessage: "Could not load certificate request count",
-          },
-        );
-        currentCertificateRequestCount = Number.isInteger(
-          certificateCounts.actionable,
-        )
-          ? certificateCounts.actionable
-          : 0;
-      } catch (error) {
-        currentCertificateRequestCount = null;
-      }
-    } else {
-      currentCertificateRequestCount = null;
     }
 
     renderDashboard(user);

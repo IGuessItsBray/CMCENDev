@@ -90,13 +90,13 @@ test('keeps legacy banner copy visible when French contains the countdown placeh
   assert.match(timersScript, /return englishText;/u);
 });
 
-test('renders managed banners as readable status notices without marquee motion', () => {
+test('renders managed banners as status notices with scrolling explicitly enabled', () => {
   const timersScript = fs.readFileSync(
     path.join(publicDirectory, 'timers.js'),
     'utf8',
   );
   const styles = fs.readFileSync(
-    path.join(publicDirectory, 'styles.css'),
+    path.join(publicDirectory, 'site-banners.css'),
     'utf8',
   );
 
@@ -105,9 +105,8 @@ test('renders managed banners as readable status notices without marquee motion'
     /banner\.setAttribute\(\s*"role",\s*"status"\s*\)/u,
   );
   assert.match(timersScript, /site-timer-accent/u);
-  assert.doesNotMatch(timersScript, /is-marquee|site-timer-marquee/u);
+  assert.match(timersScript, /if \(timer\.scrolling === true\)/u);
   assert.match(styles, /\.site-timer-accent/u);
-  assert.doesNotMatch(styles, /site-timer-marquee/u);
 });
 
 test('allows a visitor to dismiss one banner locally for 24 hours', () => {
@@ -116,7 +115,7 @@ test('allows a visitor to dismiss one banner locally for 24 hours', () => {
     'utf8',
   );
   const styles = fs.readFileSync(
-    path.join(publicDirectory, 'styles.css'),
+    path.join(publicDirectory, 'site-banners.css'),
     'utf8',
   );
 

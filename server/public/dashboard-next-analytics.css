@@ -1,0 +1,217 @@
+#adminAnalyticsBody {
+  padding-top: 20px;
+}
+.analytics-content {
+  display: grid;
+  gap: 20px;
+}
+.analytics-toolbar {
+  margin-bottom: 20px;
+}
+.analytics-range-field {
+  display: grid;
+  gap: 6px;
+}
+.analytics-plausible-embed {
+  width: 100%;
+  min-height: 1000px;
+  border: 0;
+}
+.analytics-plausible-attribution {
+  text-align: center;
+  font-size: 0.8rem;
+}
+.analytics-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.analytics-range-field {
+  max-width: 220px;
+}
+
+.analytics-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.analytics-stat-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--surface-radius);
+  background: var(--admin-surface);
+}
+
+.analytics-stat-card strong {
+  color: var(--admin-text);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.analytics-stat-card span {
+  color: var(--admin-muted);
+  font-size: 0.92rem;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.analytics-panel {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--surface-radius);
+  background: var(--admin-surface);
+}
+
+.analytics-panel h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.analytics-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.analytics-help {
+  position: relative;
+  width: 1.15rem;
+  height: 1.15rem;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  color: var(--admin-muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: help;
+}
+
+.analytics-help::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.55rem);
+  z-index: 20;
+  width: min(280px, 80vw);
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--surface-radius);
+  background: #111827;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 0.25rem);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.analytics-help:hover::after,
+.analytics-help:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.analytics-breakdown-list,
+.analytics-recent-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.analytics-breakdown-row {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.analytics-breakdown-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.analytics-breakdown-meta span {
+  overflow-wrap: anywhere;
+}
+
+.analytics-breakdown-meta strong {
+  flex: 0 0 auto;
+}
+
+.analytics-meter {
+  position: relative;
+  display: block;
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--branch-grey-200);
+}
+
+.analytics-meter::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--analytics-meter-width, 0%);
+  border-radius: inherit;
+  background: var(--gold-600);
+}
+
+.analytics-recent-panel {
+  grid-column: 1 / -1;
+}
+
+.analytics-recent-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.analytics-recent-item:last-child {
+  border-bottom: 0;
+}
+
+.analytics-recent-item strong,
+.analytics-recent-item span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.analytics-recent-item span,
+.analytics-recent-item time {
+  color: var(--admin-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .analytics-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .analytics-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .analytics-recent-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

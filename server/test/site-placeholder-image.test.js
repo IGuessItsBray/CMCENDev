@@ -18,6 +18,7 @@ function getPlaceholderImageClassifier() {
       observe() {}
     },
     document: {
+      addEventListener() {},
       documentElement: {},
       querySelectorAll() {
         return [];

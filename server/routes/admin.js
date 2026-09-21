@@ -609,14 +609,14 @@ function getContentWorkspaceTranslationFilter(type, translation) {
   };
 }
 
-// Scheduled publication remains a pending lifecycle record until the
+// Scheduled publication remains pending (or a news draft) until the
 // publication service makes it public. Expose it separately in the workspace
 // so reviewers can distinguish already-approved scheduled content from work
 // that still needs a review decision.
-function getContentWorkspaceStatusFilter(status) {
+function getContentWorkspaceStatusFilter(status, type) {
   if (status === 'scheduled') {
     return {
-      status: 'pending',
+      status: type === 'newsArticle' ? 'draft' : 'pending',
       scheduledPublishAt: { $type: 'date' },
     };
   }
@@ -626,6 +626,10 @@ function getContentWorkspaceStatusFilter(status) {
       status: 'pending',
       scheduledPublishAt: null,
     };
+  }
+
+  if (status === 'draft' && type === 'newsArticle') {
+    return { status: 'draft', scheduledPublishAt: null };
   }
 
   return status === 'all' ? {} : { status };
@@ -657,7 +661,7 @@ function toContentWorkspaceItem(type, content) {
     createdAt: content.createdAt,
   };
 
-  if (['event', 'retirementMessage', 'lastPost'].includes(type)) {
+  if (['event', 'retirementMessage', 'lastPost', 'newsArticle'].includes(type)) {
     base.scheduledPublishAt = content.scheduledPublishAt || null;
   }
 
@@ -809,7 +813,6 @@ router.get(
       }
 
       const contentFilter = {
-        ...getContentWorkspaceStatusFilter(status),
         ...(contentId ? { _id: contentId } : {}),
       };
       const searchPattern = search
@@ -823,6 +826,7 @@ router.get(
         getContentWorkspaceRecordFilter(
           {
             ...contentFilter,
+            ...getContentWorkspaceStatusFilter(status, contentType),
             ...getContentWorkspaceCursorFilter(cursors[contentType]),
           },
           contentType,
@@ -932,7 +936,7 @@ router.get(
         queries.push(
           NewsArticle.find(getWorkspaceFilter('newsArticle'))
             .select(
-              'title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt status hiddenFromStatus updatedAt createdAt',
+              'title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus updatedAt createdAt',
             )
             .populate([
               {
@@ -3461,39 +3465,62 @@ router.get(
   requirePermission('canReadUsers'),
   async (req, res) => {
     try {
-      const { query } = req.query;
+      const query = String(req.query.query || '')
+        .trim()
+        .slice(0, 120);
       const limit = cleanUserPageSize(req.query.limit);
+      const { cursor, role, accountType } = req.query;
+      if (
+        (cursor && !mongoose.Types.ObjectId.isValid(cursor)) ||
+        (role && !USER_ROLES.includes(role)) ||
+        (accountType && !['member', 'ghost', 'invited'].includes(accountType))
+      ) {
+        return res
+          .status(400)
+          .json({ error: 'Invalid user list filter or cursor' });
+      }
+      const searchPattern = escapeRegex(query);
 
       const filter = query
         ? {
             email: { $not: LEGACY_GHOST_EMAIL_SUFFIX },
             $or: [
-              { username: { $regex: query, $options: 'i' } },
-              { accountName: { $regex: query, $options: 'i' } },
-              { email: { $regex: query, $options: 'i' } },
-              { firstName: { $regex: query, $options: 'i' } },
-              { lastName: { $regex: query, $options: 'i' } },
+              { username: { $regex: searchPattern, $options: 'i' } },
+              { accountName: { $regex: searchPattern, $options: 'i' } },
+              { email: { $regex: searchPattern, $options: 'i' } },
+              { firstName: { $regex: searchPattern, $options: 'i' } },
+              { lastName: { $regex: searchPattern, $options: 'i' } },
             ],
           }
         : { email: { $not: LEGACY_GHOST_EMAIL_SUFFIX } };
+      if (cursor) filter._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+      if (role) filter.role = role;
+      if (accountType === 'member') {
+        filter.accountType = { $in: ['member', null] };
+      } else if (accountType) filter.accountType = accountType;
 
       const users = await User.find(filter)
         .select(
           'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt invitation.delivery emailVerification.required emailVerification.verified emailVerification.verifiedAt customRoles createdAt updatedAt',
         )
-        .sort({ accountName: 1, username: 1 })
+        .sort({ _id: -1 })
         .limit(limit + 1)
         .populate('customRoles', 'name slug color permissions');
       const visibleUsers = users.slice(0, limit);
 
       res.json({
-        roles: USER_ROLES,
-        customRoles: await getAdminRoles(),
-        permissionCatalog: PERMISSION_CATALOG,
-        contentAreas: CONTENT_AREAS,
+        ...(req.query.includeOptions === 'false'
+          ? {}
+          : {
+              roles: USER_ROLES,
+              customRoles: await getAdminRoles(),
+              permissionCatalog: PERMISSION_CATALOG,
+              contentAreas: CONTENT_AREAS,
+            }),
         users: visibleUsers.map((user) => toAdminUser(user)),
         limit,
         hasMore: users.length > limit,
+        nextCursor: users.length > limit ? String(visibleUsers.at(-1)._id) : '',
       });
     } catch (err) {
       console.error('Admin user list failed:', err);
@@ -3584,6 +3611,10 @@ router.get(
     try {
       const { userId } = req.params;
 
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
       const user = await User.findById(userId)
         .select(
           'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt invitation.delivery emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
@@ -3592,6 +3623,19 @@ router.get(
 
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
+      }
+
+      const options =
+        req.query.includeOptions === 'false'
+          ? {}
+          : {
+              roles: USER_ROLES,
+              customRoles: await getAdminRoles(),
+              permissionCatalog: PERMISSION_CATALOG,
+              contentAreas: CONTENT_AREAS,
+            };
+      if (req.query.includePosts === 'false') {
+        return res.json({ ...options, user: toAdminUser(user) });
       }
 
       const [events, retirementMessages, retirementComments, lastPosts] =
@@ -3688,10 +3732,7 @@ router.get(
       );
 
       res.json({
-        roles: USER_ROLES,
-        customRoles: await getAdminRoles(),
-        permissionCatalog: PERMISSION_CATALOG,
-        contentAreas: CONTENT_AREAS,
+        ...options,
         user: toAdminUser(user, {
           events: events.length,
           retirementMessages: retirementMessages.length,

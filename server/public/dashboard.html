@@ -49,7 +49,17 @@
           </div>
 
           <div class="dashboard-role-summary" id="dashboardRoleSummary" hidden>
-            <span class="dashboard-role-badge" id="dashboardRoleBadge"></span>
+            <div class="dashboard-role-actions">
+              <span class="dashboard-role-badge" id="dashboardRoleBadge"></span>
+              <a
+                id="dashboardAdminLink"
+                class="dashboard-admin-link"
+                href="/dashboard-next"
+                data-i18n="dashboard_administration"
+                hidden
+                >Administration</a
+              >
+            </div>
 
             <p id="dashboardRoleDescription"></p>
             <p id="dashboardCustomRoleSummary" hidden></p>
@@ -168,14 +178,6 @@
         </template>
 
         <div class="dashboard-content" id="dashboardContent" hidden>
-          <nav
-            class="admin-work-zone-tabs dashboard-admin-tools-tabs"
-            id="adminWorkZoneTabs"
-            aria-label="Admin tools"
-            data-i18n-aria-label="admin_tools_tabs_label"
-            hidden
-          ></nav>
-
           <section class="dashboard-workspace" id="dashboardWorkspace">
             <section
               class="dashboard-review-work"
@@ -206,16 +208,6 @@
                 id="dashboardReviewQueues"
                 aria-live="polite"
               ></div>
-
-              <section
-                class="dashboard-content-admin"
-                id="dashboardContentAdmin"
-                aria-labelledby="dashboardContentAdminTitle"
-                hidden
-              >
-                <h3 id="dashboardContentAdminTitle"></h3>
-                <nav id="dashboardContentAdminActions"></nav>
-              </section>
             </section>
           </section>
 
@@ -484,7 +476,6 @@
     <script src="/timers.js"></script>
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
-    <script src="/admin-work-zone-tabs.js"></script>
     <script src="/validation-i18n.js"></script>
     <script src="/trade-options.js"></script>
     <script src="/dashboard.js"></script>

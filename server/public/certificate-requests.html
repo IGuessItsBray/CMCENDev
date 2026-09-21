@@ -44,28 +44,7 @@
           </p>
         </header>
 
-        <p
-          class="certificate-requests-status is-loading"
-          id="certificateRequestsStatus"
-          role="status"
-          aria-live="polite"
-          aria-label="Loading certificate requests..."
-        >
-          <span class="loading-state-spinner" aria-hidden="true"></span>
-          <span
-            class="visually-hidden"
-            data-i18n="certificate_requests_loading"
-          >
-            Loading certificate requests...
-          </span>
-        </p>
-
-        <div
-          class="certificate-requests-list"
-          id="certificateRequestsList"
-          aria-live="polite"
-          hidden
-        ></div>
+        <div id="certificateRequestsBody"></div>
       </section>
     </main>
 
@@ -75,6 +54,7 @@
     <script src="/timers.js"></script>
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
+    <script src="/certificate-requests-controller.js"></script>
     <script src="/certificate-requests.js"></script>
   </body>
 </html>

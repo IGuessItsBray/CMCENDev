@@ -58,6 +58,117 @@
     element.replaceChildren(fragment);
   }
 
+  function scrollInvalidField(control) {
+    if (!control?.isConnected || !control.getClientRects().length) return;
+
+    let scroller = document.scrollingElement;
+    for (
+      let parent = control.parentElement;
+      parent && parent !== document.body && parent !== document.documentElement;
+      parent = parent.parentElement
+    ) {
+      if (
+        parent.scrollHeight > parent.clientHeight &&
+        /auto|scroll/.test(window.getComputedStyle(parent).overflowY)
+      ) {
+        scroller = parent;
+        break;
+      }
+    }
+
+    const isPage = scroller === document.scrollingElement;
+    const viewport = window.visualViewport;
+    const viewportTop = viewport?.offsetTop || 0;
+    const viewportHeight = viewport?.height || window.innerHeight;
+    const top = isPage
+      ? viewportTop
+      : scroller.getBoundingClientRect().top + scroller.clientTop;
+    const height = isPage
+      ? viewportHeight
+      : Math.min(scroller.clientHeight, viewportTop + viewportHeight - top);
+    if (height <= 0) return;
+
+    const controlRect = control.getBoundingClientRect();
+    const fieldRect =
+      control.closest(".cmcen-field")?.getBoundingClientRect() || controlRect;
+    let fieldTop = Math.min(fieldRect.top, controlRect.top);
+    const labels = [
+      ...Array.from(control.labels || []),
+      ...(control.getAttribute("aria-labelledby") || "")
+        .split(/\s+/)
+        .map((id) => document.getElementById(id))
+        .filter(Boolean),
+    ];
+    labels.forEach((label) => {
+      if (label.getClientRects().length)
+        fieldTop = Math.min(fieldTop, label.getBoundingClientRect().top);
+    });
+
+    let covered = 0;
+    if (isPage) {
+      document
+        .querySelectorAll(".site-header, .site-timers-below-header")
+        .forEach((header) => {
+          if (header.contains(control)) return;
+          const style = window.getComputedStyle(header);
+          const rect = header.getBoundingClientRect();
+          if (
+            ["sticky", "fixed"].includes(style.position) &&
+            style.top !== "auto" &&
+            rect.height &&
+            rect.left < controlRect.right &&
+            rect.right > controlRect.left
+          )
+            covered = Math.max(
+              covered,
+              (Number.parseFloat(style.top) || 0) + rect.height - viewportTop,
+            );
+        });
+    }
+
+    const start = scroller.scrollTop + fieldTop - top;
+    const end = scroller.scrollTop + fieldRect.bottom - top;
+    // Prefer the beginning of the page/panel when the complete field fits there.
+    // Otherwise leave room for its label and context below any sticky site chrome.
+    const fitsAtTop = start >= covered && end <= height - 24;
+    const headroom = Math.min(200, Math.max(0, height - covered) * 0.3);
+    const destination = fitsAtTop ? 0 : Math.max(0, start - covered - headroom);
+    (isPage ? window : scroller).scrollTo({
+      top: destination,
+      behavior: "instant",
+    });
+  }
+
+  function focusInvalidField(control) {
+    if (!control) return;
+    control.focus({ preventScroll: true });
+    scrollInvalidField(control);
+  }
+
+  function bindValidationScrolling() {
+    const invalidControls = new Set();
+    let scheduled = false;
+    document.addEventListener(
+      "invalid",
+      (event) => {
+        invalidControls.add(event.target);
+        if (scheduled) return;
+        scheduled = true;
+        window.requestAnimationFrame(() => {
+          scheduled = false;
+          const control = document.activeElement;
+          const focusedInvalid = invalidControls.has(control);
+          invalidControls.clear();
+          // Let native validation choose and focus its first error. A validity
+          // check on an unrelated form must not move focus or scroll the page.
+          if (focusedInvalid && control.validity?.valid === false)
+            scrollInvalidField(control);
+        });
+      },
+      true,
+    );
+  }
+
   function getRetireeNameParts(retiree = {}) {
     let name = [retiree.rank, retiree.firstName, retiree.lastName]
       .map((value) => String(value || "").trim())
@@ -1621,7 +1732,11 @@
   };
 
   function trackPageVisit() {
-    if (window.location.pathname === "/analytics") {
+    if (
+      window.location.pathname === "/analytics" ||
+      (window.location.pathname === "/dashboard-next" &&
+        new URLSearchParams(window.location.search).get("area") === "analytics")
+    ) {
       return;
     }
 
@@ -1900,6 +2015,7 @@
     ensureWebAuthnAvailable,
     formatDate,
     formatTitleCaseValue,
+    focusInvalidField,
     fromLocalDateAndTime,
     getCurrentLanguage,
     getCurrentLocale,
@@ -1936,6 +2052,7 @@
   initializePlausibleAnalytics();
   bindCharacterCounters();
   bindMediaSkeletons();
+  bindValidationScrolling();
 
   new MutationObserver((records) => {
     records.forEach((record) => {

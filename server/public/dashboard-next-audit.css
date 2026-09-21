@@ -1,0 +1,110 @@
+#adminAuditBody {
+  padding-top: 20px;
+}
+.audit-log-filters fieldset {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.audit-log-field {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  min-width: 0;
+}
+.audit-log-field > span {
+  font-size: 0.875rem;
+}
+.audit-log-field select {
+  width: 100%;
+}
+.audit-log-actions {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.audit-log-help {
+  font-size: 0.8rem;
+  color: var(--admin-muted);
+  margin: 16px 0 24px;
+}
+.audit-log-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 20px 0;
+}
+.audit-log-heading h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.audit-log-list {
+  display: grid;
+  gap: 16px;
+}
+.audit-log-entry {
+  padding: 20px;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: var(--admin-surface);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.audit-log-entry .admin-post-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.audit-log-entry .admin-post-badges {
+  display: flex;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--admin-muted);
+}
+.audit-log-entry .admin-post-details {
+  color: var(--admin-muted);
+  font-size: 0.875rem;
+}
+.audit-log-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.audit-log-metadata-chip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--admin-border);
+  font-size: 0.8rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.audit-log-metadata-value {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+@media (max-width: 1000px) {
+  .audit-log-filters fieldset {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .audit-log-filters fieldset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .audit-log-entry {
+    padding: 16px;
+  }
+  .audit-log-entry .admin-post-header {
+    flex-wrap: wrap;
+  }
+}

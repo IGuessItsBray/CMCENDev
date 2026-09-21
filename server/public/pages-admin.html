@@ -10,6 +10,7 @@
       href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
     />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/pages-editor.css" />
   </head>
 
   <body>
@@ -40,6 +41,7 @@
         <div
           class="dashboard-status is-loading"
           id="pagesAdminStatus"
+          data-pages-status
           role="status"
           aria-live="polite"
         >
@@ -50,6 +52,7 @@
         <section
           class="dashboard-section admin-work-zone-page"
           id="pagesAdminPage"
+          data-pages-page
           hidden
         >
           <div class="pages-admin-shell" id="pagesAdminContent"></div>
@@ -64,6 +67,7 @@
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
     <script src="/admin-work-zone-tabs.js"></script>
+    <script src="/pages-editor.js"></script>
     <script src="/pages-admin.js"></script>
   </body>
 </html>

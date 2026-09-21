@@ -1,0 +1,127 @@
+/* Opt-in form components. Load after theme-tokens.css and page styles. */
+:root {
+  --form-control-height: 2.625rem;
+  --form-control-radius: var(--surface-radius);
+  --form-control-background: var(--white);
+  --form-control-border: var(--branch-grey-500);
+  --form-text: var(--ink);
+  --form-muted: var(--text-muted);
+  --form-focus: var(--gold-700);
+  --form-error: var(--danger);
+}
+html[data-theme='dark'] {
+  --form-control-background: var(--dark-bg-elevated);
+  --form-control-border: var(--dark-border-strong);
+  --form-text: var(--dark-text);
+  --form-muted: var(--dark-text-muted);
+  --form-focus: var(--dark-link);
+  --form-error: var(--dark-danger-text);
+}
+.cmcen-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  color: var(--form-text);
+}
+.cmcen-field[hidden],
+.cmcen-control[hidden] {
+  display: none;
+}
+.cmcen-field-label {
+  font: inherit;
+  line-height: 1.4;
+}
+.cmcen-control {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--form-control-height);
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--form-control-border);
+  border-radius: var(--form-control-radius);
+  background: var(--form-control-background);
+  color: var(--form-text);
+  font: inherit;
+  line-height: 1.5;
+  accent-color: var(--gold-500);
+}
+select.cmcen-control,
+input.cmcen-control:not([type='file']) {
+  height: var(--form-control-height);
+}
+textarea.cmcen-control {
+  resize: vertical;
+}
+.cmcen-control::placeholder,
+.cmcen-control.is-placeholder {
+  color: var(--form-muted);
+  opacity: 1;
+}
+.cmcen-control:focus-visible,
+.cmcen-choice input:focus-visible {
+  outline: 2px solid var(--form-focus);
+  outline-offset: 3px;
+}
+.cmcen-control:disabled,
+.cmcen-choice input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.cmcen-control[readonly] {
+  border-style: dashed;
+}
+.cmcen-control[aria-invalid='true'] {
+  border-color: var(--form-error);
+}
+.cmcen-choice {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 10px;
+}
+.cmcen-choice > input {
+  grid-column: 1;
+  grid-row: 1;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--gold-500);
+}
+.cmcen-choice > .cmcen-field-label,
+.cmcen-choice > .cmcen-field-help,
+.cmcen-choice > .cmcen-field-error {
+  grid-column: 2;
+}
+.cmcen-choice > .cmcen-field-label {
+  grid-row: 1;
+}
+.cmcen-field-help,
+.cmcen-field-error {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.cmcen-field-help {
+  color: var(--form-muted);
+}
+.cmcen-field-error {
+  order: 1;
+  color: var(--form-error);
+}
+.cmcen-field-error:empty {
+  display: none;
+}
+.cmcen-field-group {
+  min-width: 0;
+  margin: 0;
+  padding: 18px 0 0;
+  border: 0;
+  border-top: 1px solid var(--form-control-border);
+}
+.cmcen-field-group > legend {
+  padding-right: 12px;
+  font-weight: 700;
+}

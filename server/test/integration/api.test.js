@@ -33,10 +33,12 @@ const LastPostMessage = require('../../models/LastPostMessage');
 const MediaAsset = require('../../models/MediaAsset');
 const NewsArticle = require('../../models/NewsArticle');
 const Page = require('../../models/Page');
+const ProfessionalAward = require('../../models/ProfessionalAward');
 const RetirementComment = require('../../models/RetirementComment');
 const RetirementMessage = require('../../models/RetirementMessage');
 const Role = require('../../models/Role');
 const User = require('../../models/User');
+const Timer = require('../../models/Timer');
 const s3Client = require('../../storage');
 const { RETIREMENT_TRADE_ROLES } = require('../../config/content');
 const { buildPublicMediaUrl } = require('../../services/media-library');
@@ -255,6 +257,150 @@ after(async () => {
   if (mongoServer) {
     await mongoServer.stop();
   }
+});
+
+describe('banner configuration', () => {
+  const body = {
+    title: 'Beta notice',
+    text: { en: 'Report a bug', fr: 'Signaler un bogue' },
+    enabled: true,
+  };
+
+  test('requires banner permission and preserves new options through legacy edits', async () => {
+    await request(app).post('/api/admin/timers').send(body).expect(401);
+    const viewer = await login(await createUser());
+    await request(app)
+      .post('/api/admin/timers')
+      .set('Authorization', bearer(viewer.body.token))
+      .send(body)
+      .expect(403);
+    const admin = await login(await createUser({ role: 'editor' }));
+    const authorization = bearer(admin.body.token);
+    const created = await request(app)
+      .post('/api/admin/timers')
+      .set('Authorization', authorization)
+      .send({ ...body, scrolling: true, dismissible: false, icon: 'info' })
+      .expect(201);
+    const id = created.body.timer._id;
+    assert.equal(created.body.timer.scrolling, true);
+    assert.equal(created.body.timer.dismissible, false);
+    assert.equal(created.body.timer.icon, 'info');
+    assert.equal(created.body.timer.startsAt, '');
+    const updated = await request(app)
+      .patch(`/api/admin/timers/${id}`)
+      .set('Authorization', authorization)
+      .send(body)
+      .expect(200);
+    assert.equal(updated.body.timer.scrolling, true);
+    assert.equal(updated.body.timer.dismissible, false);
+    assert.equal(updated.body.timer.icon, 'info');
+    const stored = await Timer.findById(id).lean();
+    assert.equal(stored.scrolling, true);
+    assert.equal(stored.dismissible, false);
+    assert.equal(stored.icon, 'info');
+    const active = await request(app).get('/api/timers/active').expect(200);
+    assert.equal(active.body.timers[0].scrolling, true);
+    assert.equal(active.body.timers[0].dismissible, false);
+    assert.equal(active.body.timers[0].icon, 'info');
+    const audit = await AuditLog.findOne({ action: 'timer.updated' }).lean();
+    assert.equal(audit.targetSnapshot.scrolling, true);
+    assert.equal(audit.targetSnapshot.dismissible, false);
+    assert.equal(audit.targetSnapshot.icon, 'info');
+    for (const option of ['scrolling', 'dismissible']) {
+      await request(app)
+        .patch(`/api/admin/timers/${id}`)
+        .set('Authorization', authorization)
+        .send({ ...body, [option]: 'false' })
+        .expect(400);
+    }
+  });
+
+  test('old records and new banners default to static and dismissible', async () => {
+    await Timer.collection.insertOne({ ...body, placement: 'global' });
+    const active = await request(app).get('/api/timers/active').expect(200);
+    assert.equal(active.body.timers[0].scrolling, false);
+    assert.equal(active.body.timers[0].dismissible, true);
+    assert.equal(active.body.timers[0].icon, 'warning');
+    const admin = await login(await createUser({ role: 'editor' }));
+    const created = await request(app)
+      .post('/api/admin/timers')
+      .set('Authorization', bearer(admin.body.token))
+      .send(body)
+      .expect(201);
+    assert.equal(created.body.timer.scrolling, false);
+    assert.equal(created.body.timer.dismissible, true);
+    assert.equal(created.body.timer.icon, 'warning');
+  });
+
+  test('validates icon choices and persists explicit removal', async () => {
+    const admin = await login(await createUser({ role: 'editor' }));
+    const authorization = bearer(admin.body.token);
+    const created = await request(app)
+      .post('/api/admin/timers')
+      .set('Authorization', authorization)
+      .send({ ...body, icon: 'warning' })
+      .expect(201);
+    const id = created.body.timer._id;
+    for (const icon of ['none', 'info', 'warning', 'none']) {
+      const updated = await request(app)
+        .patch(`/api/admin/timers/${id}`)
+        .set('Authorization', authorization)
+        .send({ ...body, icon })
+        .expect(200);
+      assert.equal(updated.body.timer.icon, icon);
+      assert.equal((await Timer.findById(id).lean()).icon, icon);
+    }
+    for (const icon of ['other', '', null, false, { name: 'info' }]) {
+      await request(app)
+        .patch(`/api/admin/timers/${id}`)
+        .set('Authorization', authorization)
+        .send({ ...body, icon })
+        .expect(400);
+    }
+    const active = await request(app).get('/api/timers/active').expect(200);
+    assert.equal(active.body.timers[0].icon, 'none');
+    const listed = await request(app)
+      .get('/api/admin/timers')
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.equal(listed.body.timers[0].icon, 'none');
+  });
+
+  test('scheduled delivery respects its dates and cancellation prevents publication', async () => {
+    const admin = await login(await createUser({ role: 'editor' }));
+    const authorization = bearer(admin.body.token);
+    const future = new Date(Date.now() + 3600000).toISOString();
+    const past = new Date(Date.now() - 3600000).toISOString();
+    const created = await request(app)
+      .post('/api/admin/timers')
+      .set('Authorization', authorization)
+      .send({ ...body, startsAt: future, endsAt: null })
+      .expect(201);
+    const id = created.body.timer._id;
+    const visible = async () =>
+      (
+        await request(app).get('/api/timers/active').expect(200)
+      ).body.timers.some((timer) => timer._id === id);
+    assert.equal(await visible(), false);
+    await request(app)
+      .patch(`/api/admin/timers/${id}`)
+      .set('Authorization', authorization)
+      .send({ ...body, startsAt: past, endsAt: future })
+      .expect(200);
+    assert.equal(await visible(), true);
+    await request(app)
+      .patch(`/api/admin/timers/${id}`)
+      .set('Authorization', authorization)
+      .send({ ...body, startsAt: past, endsAt: past })
+      .expect(200);
+    assert.equal(await visible(), false);
+    await request(app)
+      .patch(`/api/admin/timers/${id}`)
+      .set('Authorization', authorization)
+      .send({ ...body, enabled: false, startsAt: null, endsAt: null })
+      .expect(200);
+    assert.equal(await visible(), false);
+  });
 });
 
 describe('system and authentication', () => {
@@ -798,6 +944,347 @@ describe('permissions and audit logs', () => {
       action: 'audit.exported',
     }).lean();
     assert.equal(exportAudit.metadata.entryCount, 1);
+  });
+});
+
+describe('professional award recipient records', () => {
+  test('adding recipients records the winner without creating news', async () => {
+    const session = await login(await createUser({ role: 'editor' }));
+    for (const [slug, extra] of [
+      ['colonel-in-chief-commendation', { medallionNumber: '42' }],
+      ['branch-bursary', { amount: '$1,500' }],
+      ['member-of-the-year', { imageUrl: 'https://example.test/member.webp' }],
+    ]) {
+      const award = await ProfessionalAward.create({ slug, title: slug });
+      const response = await request(app)
+        .post(`/api/admin/professional-awards/${award._id}/recipients`)
+        .set('Authorization', bearer(session.body.token))
+        .send({ year: 2026, name: 'Example Winner', role: 'Captain', ...extra })
+        .expect(201);
+      const recipient = response.body.award.recipients[0];
+      assert.equal(recipient.name, 'Example Winner');
+      assert.equal(recipient.newsArticleId, null);
+      assert.equal(response.body.newsArticleId, undefined);
+      for (const [key, value] of Object.entries(extra))
+        assert.equal(recipient[key], value);
+      const stored = await ProfessionalAward.findById(award._id);
+      assert.equal(stored.recipients.length, 1);
+    }
+    assert.equal(await NewsArticle.countDocuments(), 0);
+    assert.equal(
+      await AuditLog.countDocuments({
+        action: 'professional_award.recipient_added',
+      }),
+      3,
+    );
+    assert.equal(
+      await AuditLog.countDocuments({ targetType: 'newsArticle' }),
+      0,
+    );
+    const visible = await request(app)
+      .get('/api/professional-awards')
+      .expect(200);
+    assert.equal(visible.body.featuredRecipients.member.name, 'Example Winner');
+  });
+
+  test('creates one optional draft, preserves edits on retry, and opens legacy articles', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const session = await login(editor);
+    const authorization = bearer(session.body.token);
+    const award = await ProfessionalAward.create({
+      slug: 'member-of-the-year',
+      title: 'Member of the Year',
+      recipients: [{ name: 'Example Winner', year: 2025 }],
+    });
+    const recipientId = award.recipients[0]._id;
+    const endpoint = `/api/admin/professional-awards/${award._id}/recipients/${recipientId}/news`;
+    const attempts = await Promise.all(
+      [1, 2].map(() =>
+        request(app)
+          .post(endpoint)
+          .set('Authorization', authorization)
+          .expect(200),
+      ),
+    );
+    const articleId = attempts[0].body.newsArticleId;
+    assert.equal(attempts[1].body.newsArticleId, articleId);
+    assert.equal(await NewsArticle.countDocuments(), 1);
+    const draft = await NewsArticle.findById(articleId);
+    assert.equal(draft.status, 'draft');
+    assert.equal(draft.publishedAt, null);
+    assert.ok(draft.createdAt);
+    assert.ok(
+      draft.title.en && draft.title.fr && draft.content.en && draft.content.fr,
+    );
+    assert.match(draft.content.en, /2025/u);
+    assert.equal(
+      await AuditLog.countDocuments({
+        action: 'content.created',
+        target: draft._id,
+      }),
+      1,
+    );
+    assert.equal(
+      await AuditLog.countDocuments({ action: 'content.published' }),
+      0,
+    );
+    await request(app).get(`/api/news/${articleId}`).expect(404);
+    draft.title.en = 'Staff edited title';
+    await draft.save();
+    const saved = await NewsArticle.findById(articleId).lean();
+    await request(app)
+      .post(endpoint)
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.deepEqual(await NewsArticle.findById(articleId).lean(), saved);
+    const linked = await ProfessionalAward.findById(award._id);
+    assert.equal(String(linked.recipients[0].newsArticleId), articleId);
+
+    // Existing published stories remain unchanged when editing their recipient.
+    draft.status = 'published';
+    draft.publishedAt = new Date();
+    await draft.save();
+    const published = await NewsArticle.findById(articleId).lean();
+    await request(app)
+      .patch(
+        `/api/admin/professional-awards/${award._id}/recipients/${recipientId}`,
+      )
+      .set('Authorization', authorization)
+      .send({ year: 2024, name: 'Corrected Winner' })
+      .expect(200);
+    await request(app)
+      .post(endpoint)
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.deepEqual(await NewsArticle.findById(articleId).lean(), published);
+    assert.equal(
+      String(
+        (await ProfessionalAward.findById(award._id)).recipients[0]
+          .newsArticleId,
+      ),
+      articleId,
+    );
+  });
+
+  test('requires both award and news permissions and rejects missing recipients', async () => {
+    const award = await ProfessionalAward.create({
+      slug: 'test-award',
+      title: 'Test',
+      recipients: [{ name: 'Winner', year: 2026 }],
+    });
+    const base = `/api/admin/professional-awards/${award._id}/recipients`;
+    const endpoint = `${base}/${award.recipients[0]._id}/news`;
+    await request(app)
+      .post(base)
+      .send({ name: 'Winner', year: 2026 })
+      .expect(401);
+    await request(app).post(endpoint).expect(401);
+    for (const permissions of [[], ['content.review'], ['news.manage']]) {
+      const role = await Role.create({
+        name: `Role ${permissions.join('-') || 'none'}`,
+        slug: `test-${permissions.join('-').replaceAll('.', '-') || 'none'}`,
+        permissions,
+      });
+      const session = await login(
+        await createUser({ customRoles: [role._id] }),
+      );
+      await request(app)
+        .post(endpoint)
+        .set('Authorization', bearer(session.body.token))
+        .expect(403);
+    }
+    const session = await login(await createUser({ role: 'editor' }));
+    const authorization = bearer(session.body.token);
+    await request(app)
+      .post(base)
+      .set('Authorization', authorization)
+      .send({ year: 2026 })
+      .expect(400);
+    await request(app)
+      .post(`${base}/${new mongoose.Types.ObjectId()}/news`)
+      .set('Authorization', authorization)
+      .expect(404);
+    assert.equal(await NewsArticle.countDocuments(), 0);
+    assert.equal(
+      (await ProfessionalAward.findById(award._id)).recipients.length,
+      1,
+    );
+  });
+});
+
+describe('news publication scheduling', () => {
+  async function setup() {
+    const role = await Role.create({
+      name: 'News only',
+      slug: 'news-only',
+      permissions: ['news.manage'],
+    });
+    const publisher = await createUser({ customRoles: [role._id] });
+    const session = await login(publisher);
+    const article = await NewsArticle.create({
+      title: { en: 'Award winner', fr: 'Récipiendaire' },
+      content: { en: 'Congratulations', fr: 'Félicitations' },
+      status: 'draft',
+      createdBy: publisher._id,
+    });
+    return { article, authorization: bearer(session.body.token), publisher };
+  }
+
+  test('keeps scheduled news private, separates workspace filters, and publishes it once when due', async () => {
+    const { article, authorization, publisher } = await setup();
+    const scheduledPublishAt = new Date(Date.now() + 3600000).toISOString();
+    await request(app)
+      .patch(`/api/news/${article._id}/publication`)
+      .set('Authorization', authorization)
+      .send({ action: 'publish', scheduledPublishAt })
+      .expect(200);
+    const scheduled = await NewsArticle.findById(article._id);
+    assert.equal(scheduled.status, 'draft');
+    assert.equal(scheduled.publishedAt, null);
+    assert.equal(
+      scheduled.scheduledPublishAt.toISOString(),
+      scheduledPublishAt,
+    );
+    for (const path of ['/api/news', '/api/news/feed']) {
+      const result = await request(app).get(path).expect(200);
+      assert.equal((result.body.articles || result.body.items).length, 0);
+    }
+    await request(app).get(`/api/news/${article._id}`).expect(404);
+    for (const [status, count] of [
+      ['scheduled', 1],
+      ['draft', 0],
+      ['pending', 0],
+    ]) {
+      const workspace = await request(app)
+        .get(`/api/admin/content?type=newsArticle&status=${status}`)
+        .set('Authorization', authorization)
+        .expect(200);
+      assert.equal(workspace.body.items.length, count);
+      if (count)
+        assert.equal(
+          workspace.body.items[0].scheduledPublishAt,
+          scheduledPublishAt,
+        );
+    }
+    // Editing scheduled copy retains its schedule.
+    await request(app)
+      .patch(`/api/news/${article._id}`)
+      .set('Authorization', authorization)
+      .send({
+        title: article.title,
+        content: { en: 'Edited story', fr: 'Texte révisé' },
+        status: 'draft',
+      })
+      .expect(200);
+    assert.equal(
+      (
+        await NewsArticle.findById(article._id)
+      ).scheduledPublishAt.toISOString(),
+      scheduledPublishAt,
+    );
+    assert.equal(await publishDueContent(new Date(Date.now() + 1000)), 0);
+    const beforePublication = await NewsArticle.findById(article._id);
+    assert.equal(await publishDueContent(new Date(scheduledPublishAt)), 1);
+    assert.equal(await publishDueContent(new Date(scheduledPublishAt)), 0);
+    const published = await NewsArticle.findById(article._id);
+    assert.equal(published.status, 'published');
+    assert.equal(String(published.publishedBy), String(publisher._id));
+    assert.equal(published.scheduledPublishAt, null);
+    assert.equal(published.content.en, 'Edited story');
+    assert.equal(
+      await AuditLog.countDocuments({
+        action: 'content.published',
+        target: article._id,
+      }),
+      1,
+    );
+    await request(app).get(`/api/news/${article._id}`).expect(200);
+    beforePublication.title.en = 'Stale edit';
+    await assert.rejects(beforePublication.save(), { name: 'VersionError' });
+  });
+
+  test('can reschedule, cancel back to draft, or publish immediately', async () => {
+    const { article, authorization } = await setup();
+    const endpoint = `/api/news/${article._id}/publication`;
+    for (const hours of [1, 2]) {
+      const time = new Date(Date.now() + hours * 3600000).toISOString();
+      const result = await request(app)
+        .patch(endpoint)
+        .set('Authorization', authorization)
+        .send({ action: 'publish', scheduledPublishAt: time })
+        .expect(200);
+      assert.equal(result.body.article.scheduledPublishAt, time);
+    }
+    await request(app)
+      .patch(endpoint)
+      .set('Authorization', authorization)
+      .send({ action: 'cancel-schedule' })
+      .expect(200);
+    const cancelled = await NewsArticle.findById(article._id);
+    assert.equal(cancelled.status, 'draft');
+    assert.equal(cancelled.scheduledPublishAt, null);
+    assert.equal(cancelled.scheduledBy, null);
+    assert.equal(await publishDueContent(new Date(Date.now() + 10800000)), 0);
+    await request(app)
+      .patch(endpoint)
+      .set('Authorization', authorization)
+      .send({ action: 'publish' })
+      .expect(200);
+    assert.equal((await NewsArticle.findById(article._id)).status, 'published');
+    assert.equal(
+      await AuditLog.countDocuments({
+        action: 'content.publish_schedule_cancelled',
+        target: article._id,
+      }),
+      1,
+    );
+  });
+
+  test('rejects unauthorized actions, invalid dates, incomplete copy and non-draft records', async () => {
+    const { article, authorization } = await setup();
+    const endpoint = `/api/news/${article._id}/publication`;
+    await request(app).patch(endpoint).send({ action: 'publish' }).expect(401);
+    const viewer = await login(await createUser());
+    await request(app)
+      .patch(endpoint)
+      .set('Authorization', bearer(viewer.body.token))
+      .send({ action: 'publish' })
+      .expect(403);
+    for (const body of [
+      undefined,
+      { action: 'reject' },
+      { action: 'publish', scheduledPublishAt: 'invalid' },
+      {
+        action: 'publish',
+        scheduledPublishAt: new Date(Date.now() - 60000).toISOString(),
+      },
+    ])
+      await request(app)
+        .patch(endpoint)
+        .set('Authorization', authorization)
+        .send(body)
+        .expect(400);
+    await request(app)
+      .patch(endpoint)
+      .set('Authorization', authorization)
+      .send({ action: 'cancel-schedule' })
+      .expect(409);
+    article.content.fr = '';
+    await article.save();
+    await request(app)
+      .patch(endpoint)
+      .set('Authorization', authorization)
+      .send({ action: 'publish' })
+      .expect(400);
+    for (const status of ['published', 'hidden']) {
+      article.status = status;
+      await article.save();
+      await request(app)
+        .patch(endpoint)
+        .set('Authorization', authorization)
+        .send({ action: 'publish' })
+        .expect(409);
+    }
   });
 });
 
@@ -1912,6 +2399,146 @@ describe('Last Post lifecycle', () => {
     });
     assert.equal(publicationAudit.targetType, 'lastPost');
     assert.equal(publicationAudit.metadata.source, 'create');
+  });
+});
+
+describe('user administration browsing', () => {
+  test('paginates beyond 100 users without repeats and treats search as literal text', async () => {
+    const admin = await login(await createUser({ role: 'administrator' }));
+    const authorization = bearer(admin.body.token);
+    await User.insertMany(
+      Array.from({ length: 105 }, (_, index) =>
+        createMemberData({
+          accountName: `Paging Fixture ${index}`,
+          firstName: 'Paging',
+          role: 'subscriber',
+        }),
+      ),
+    );
+    const get = (query) =>
+      request(app)
+        .get('/api/admin/users')
+        .query(query)
+        .set('Authorization', authorization);
+    const first = await get({ query: 'Paging', limit: 100 }).expect(200);
+    assert.equal(first.body.users.length, 100);
+    assert.equal(first.body.hasMore, true);
+    assert.equal(first.body.nextCursor, first.body.users.at(-1)._id);
+    assert.ok(first.body.roles.length);
+    await createUser({ accountName: 'Paging New Arrival' });
+    const second = await get({
+      query: 'Paging',
+      limit: 100,
+      cursor: first.body.nextCursor,
+      includeOptions: false,
+    }).expect(200);
+    assert.equal(second.body.users.length, 5);
+    assert.equal(second.body.hasMore, false);
+    assert.equal(second.body.nextCursor, '');
+    assert.equal(second.body.roles, undefined);
+    assert.equal(
+      new Set(
+        [...first.body.users, ...second.body.users].map((user) => user._id),
+      ).size,
+      105,
+    );
+    const literal = await createUser({ accountName: 'Literal [Test]' });
+    const result = await get({ query: '[Test]' }).expect(200);
+    assert.deepEqual(
+      result.body.users.map((user) => user._id),
+      [String(literal._id)],
+    );
+    for (const query of [
+      { cursor: 'bad' },
+      { role: 'bad' },
+      { accountType: 'bad' },
+    ])
+      await get(query).expect(400);
+  });
+
+  test('filters account types and roles while excluding legacy attribution accounts', async () => {
+    const admin = await login(await createUser({ role: 'administrator' }));
+    const member = await createUser({ role: 'editor' });
+    await User.collection.updateOne(
+      { _id: member._id },
+      { $unset: { accountType: '' } },
+    );
+    await createUser({ role: 'editor', accountType: 'invited' });
+    await createUser({ role: 'editor', email: 'legacy@cmcen.local' });
+    const result = await request(app)
+      .get('/api/admin/users?role=editor&accountType=member')
+      .set('Authorization', bearer(admin.body.token))
+      .expect(200);
+    assert.deepEqual(
+      result.body.users.map((user) => user._id),
+      [String(member._id)],
+    );
+  });
+
+  test('keeps browsing read-only and omits content and secrets from access-only detail', async () => {
+    const role = await Role.create({
+      name: 'User Reader',
+      slug: 'user-reader',
+      permissions: ['users.read'],
+    });
+    const reader = await createUser({ customRoles: [role._id] });
+    const member = await createUser();
+    const session = await login(reader);
+    const authorization = bearer(session.body.token);
+    const path = `/api/admin/users/${member._id}`;
+    await request(app).get('/api/admin/users').expect(401);
+    await request(app).get(path).expect(401);
+    const denied = await login(member);
+    await request(app)
+      .get('/api/admin/users')
+      .set('Authorization', bearer(denied.body.token))
+      .expect(403);
+    await request(app)
+      .get(path)
+      .set('Authorization', bearer(denied.body.token))
+      .expect(403);
+    const detail = await request(app)
+      .get(`${path}?includePosts=false&includeOptions=false`)
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.equal(detail.body.posts, undefined);
+    assert.equal(detail.body.roles, undefined);
+    assert.equal(detail.body.user.postSummary, null);
+    for (const key of ['password', 'totp', 'webauthn', 'sessionVersion'])
+      assert.equal(detail.body.user[key], undefined);
+    const full = await request(app)
+      .get(path)
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.deepEqual(full.body.posts, []);
+    assert.ok(full.body.roles.length);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization)
+      .send({ role: 'editor' })
+      .expect(403);
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', authorization)
+      .send({})
+      .expect(403);
+    await request(app)
+      .get('/api/admin/users/not-an-id')
+      .set('Authorization', authorization)
+      .expect(404);
+  });
+
+  test('routes the old user destination to the new shell without moving other areas', async () => {
+    for (const path of [
+      '/admin-users',
+      '/admin-users?view=users',
+      '/dashboard?adminTool=users',
+    ]) {
+      const response = await request(app).get(path).expect(302);
+      assert.equal(response.headers.location, '/dashboard-next?area=users');
+    }
+    for (const view of ['roles', 'media', 'subscriptions'])
+      await request(app).get(`/admin-users?view=${view}`).expect(200);
   });
 });
 

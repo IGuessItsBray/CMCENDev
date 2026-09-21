@@ -41,7 +41,19 @@ function cleanScreenPosition(value) {
   return value === 'below-header' ? 'below-header' : 'header';
 }
 
-function timerPayload(body = {}) {
+function booleanOption(body, key, fallback) {
+  if (!Object.prototype.hasOwnProperty.call(body, key)) return fallback;
+  if (typeof body[key] !== 'boolean')
+    throw new Error(`${key} must be a boolean`);
+  return body[key];
+}
+
+function timerPayload(body = {}, previous = {}) {
+  const icon = Object.prototype.hasOwnProperty.call(body, 'icon')
+    ? body.icon
+    : previous.icon || 'warning';
+  if (!['none', 'info', 'warning'].includes(icon))
+    throw new Error('icon must be none, info, or warning');
   return {
     title:
       cleanString(body.title, 'Untitled banner').slice(0, 120) ||
@@ -55,6 +67,13 @@ function timerPayload(body = {}) {
     placement: cleanPlacement(body.placement),
     screenPosition: cleanScreenPosition(body.screenPosition),
     enabled: body.enabled !== false,
+    dismissible: booleanOption(
+      body,
+      'dismissible',
+      previous.dismissible !== false,
+    ),
+    scrolling: booleanOption(body, 'scrolling', previous.scrolling === true),
+    icon,
     order: Number.isFinite(Number(body.order)) ? Number(body.order) : 0,
   };
 }
@@ -72,6 +91,9 @@ function toTimerResponse(timer) {
     placement: timer.placement || 'global',
     screenPosition: timer.screenPosition || 'header',
     enabled: timer.enabled !== false,
+    dismissible: timer.dismissible !== false,
+    scrolling: timer.scrolling === true,
+    icon: timer.icon || 'warning',
     order: timer.order || 0,
     createdAt: timer.createdAt ? timer.createdAt.toISOString() : '',
     updatedAt: timer.updatedAt ? timer.updatedAt.toISOString() : '',
@@ -175,7 +197,7 @@ router.patch(
         return res.status(404).json({ error: 'Banner not found' });
       }
 
-      Object.assign(timer, timerPayload(req.body || {}), {
+      Object.assign(timer, timerPayload(req.body || {}, timer), {
         updatedBy: req.user?._id || null,
       });
       await timer.save();

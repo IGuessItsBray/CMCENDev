@@ -1,0 +1,35 @@
+.admin-role-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-inline-end: 8px;
+  border: 1px solid var(--admin-border);
+  border-radius: 50%;
+}
+.admin-role-permissions {
+  display: grid;
+  gap: 18px;
+}
+.admin-role-permissions .cmcen-field-group {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.admin-role-permission {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+}
+.admin-role-permission input {
+  margin-top: 4px;
+}
+.admin-role-permission small {
+  display: block;
+  margin-top: 4px;
+  color: var(--admin-muted);
+  line-height: 1.5;
+}
+.admin-role-permission:has(input:disabled) {
+  color: var(--admin-muted);
+}

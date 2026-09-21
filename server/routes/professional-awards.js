@@ -1,12 +1,12 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const ProfessionalAward = require('../models/ProfessionalAward');
 const NewsArticle = require('../models/NewsArticle');
+const { createAwardNewsDraft } = require('../services/award-news');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
 
 const router = express.Router();
-const DEFAULT_NEWS_IMAGE_URL =
-  'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp';
 
 function cleanText(value, maxLength = 8000) {
   return String(value || '')
@@ -83,24 +83,6 @@ function getLatestRecipient(recipients = []) {
       (left, right) => Number(right.year) - Number(left.year),
     )[0] || null
   );
-}
-
-function getRecipientNewsPayload(award, recipient) {
-  const name = recipient.name;
-  const awardTitle = award.title;
-  return {
-    title: {
-      en: `Congratulations to ${name}`,
-      fr: `Félicitations à ${name}`,
-    },
-    content: {
-      en: `The C&E Branch would like to congratulate ${name} on being awarded the ${awardTitle}.`,
-      fr: `Le Corps des transmissions et de l’électronique félicite ${name} pour l’attribution du prix « ${awardTitle} ».`,
-    },
-    imageUrl: recipient.imageUrl || DEFAULT_NEWS_IMAGE_URL,
-    imageDisplayUrl: recipient.imageUrl || DEFAULT_NEWS_IMAGE_URL,
-    status: 'published',
-  };
 }
 
 function cleanPayload(body = {}) {
@@ -204,15 +186,6 @@ router.post(
       award.updatedBy = req.user._id;
       await award.save();
       const savedRecipient = award.recipients.at(-1);
-      const publishedAt = new Date();
-      const article = await NewsArticle.create({
-        ...getRecipientNewsPayload(award, savedRecipient),
-        createdBy: req.user._id,
-        publishedBy: req.user._id,
-        publishedAt,
-      });
-      savedRecipient.newsArticleId = article._id;
-      await award.save();
       await writeAuditLog({
         req,
         action: 'professional_award.recipient_added',
@@ -222,32 +195,9 @@ router.post(
         targetSnapshot: { title: award.title },
         metadata: { recipient: savedRecipient.name, year: savedRecipient.year },
       });
-      await writeAuditLog({
-        req,
-        action: 'content.created',
-        actor: req.user,
-        targetType: 'newsArticle',
-        target: article._id,
-        targetSnapshot: { title: article.title.en, publishedAt },
-        metadata: {
-          source: 'professional_award_recipient',
-          award: award.title,
-          recipient: savedRecipient.name,
-        },
-      });
-      await writeAuditLog({
-        req,
-        action: 'content.published',
-        actor: req.user,
-        targetType: 'newsArticle',
-        target: article._id,
-        targetSnapshot: { title: article.title.en, publishedAt },
-        metadata: { source: 'professional_award_recipient' },
-      });
       res.status(201).json({
-        message: 'Recipient added and congratulatory news story published',
+        message: 'Recipient added',
         award: serialize(award),
-        newsArticleId: article._id,
       });
     } catch (error) {
       console.error('Professional award recipient create failed:', error);
@@ -297,6 +247,52 @@ router.patch(
     } catch (error) {
       console.error('Professional award recipient update failed:', error);
       res.status(500).json({ error: 'Could not update recipient' });
+    }
+  },
+);
+
+router.post(
+  '/admin/professional-awards/:awardId/recipients/:recipientId/news',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  requirePermission('canManageNews'),
+  async (req, res) => {
+    try {
+      const { awardId, recipientId } = req.params;
+      if (
+        ![awardId, recipientId].every((id) =>
+          mongoose.Types.ObjectId.isValid(id),
+        )
+      ) {
+        return res.status(404).json({ error: 'Recipient not found' });
+      }
+      const award = await ProfessionalAward.findById(awardId);
+      const recipient = award?.recipients.id(recipientId);
+      if (!recipient)
+        return res.status(404).json({ error: 'Recipient not found' });
+      const article = recipient.newsArticleId
+        ? await NewsArticle.findById(recipient.newsArticleId)
+        : await createAwardNewsDraft({ award, recipient, req });
+      if (!article) {
+        return res
+          .status(409)
+          .json({ error: 'The linked news article is no longer available' });
+      }
+      if (!recipient.newsArticleId) {
+        await ProfessionalAward.updateOne(
+          { _id: awardId, 'recipients._id': recipientId },
+          {
+            $set: {
+              'recipients.$.newsArticleId': article._id,
+              updatedBy: req.user._id,
+            },
+          },
+        );
+      }
+      return res.json({ newsArticleId: article._id });
+    } catch (error) {
+      console.error('Professional award news draft failed:', error);
+      return res.status(500).json({ error: 'Could not open the news draft' });
     }
   },
 );

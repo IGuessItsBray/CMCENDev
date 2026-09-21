@@ -2,15 +2,11 @@
   function translateAdminTab(key) {
     const fallbacks = {
       admin_tab_main: "Account",
-      admin_tab_users: "Users",
-      admin_tab_roles: "Roles",
       admin_tab_pages: "Pages",
       admin_tab_media: "Media Manager",
       admin_tab_translations: "Translations",
       admin_tab_audit_log: "Audit Log",
       admin_tab_analytics: "Analytics",
-      admin_tab_timers: "Banners",
-      admin_tab_subscriptions: "Subscriptions",
       admin_tools_tabs_label: "Admin tools",
     };
     const translated =
@@ -25,99 +21,11 @@
       href: "/dashboard",
       labelKey: "admin_tab_main",
     },
-    {
-      key: "users",
-      href: "/admin-users",
-      labelKey: "admin_tab_users",
-      permission: "canReadUsers",
-    },
-    {
-      key: "subscriptions",
-      href: "/admin-users?view=subscriptions",
-      labelKey: "admin_tab_subscriptions",
-      permission: "canManageSubscriptions",
-    },
-    {
-      key: "roles",
-      href: "/admin-users?view=roles",
-      labelKey: "admin_tab_roles",
-      permission: "canManageRoles",
-    },
-    {
-      key: "pages",
-      href: "/pages-admin",
-      labelKey: "admin_tab_pages",
-      permission: "canManagePages",
-      hideOnMobile: true,
-    },
-    {
-      key: "timers",
-      href: "/timers-admin",
-      labelKey: "admin_tab_timers",
-      permission: "canManageTimers",
-    },
-    {
-      key: "translations",
-      href: "/translations-admin",
-      labelKey: "admin_tab_translations",
-      permission: "canManageTranslations",
-    },
-    {
-      key: "media",
-      href: "/admin-users?view=media",
-      labelKey: "admin_tab_media",
-      permission: "canViewMediaLibrary",
-      hideOnMobile: true,
-    },
-    {
-      key: "analytics",
-      href: "/analytics",
-      labelKey: "admin_tab_analytics",
-      permission: "canViewAnalytics",
-    },
-    {
-      key: "audit-log",
-      href: "/audit-log",
-      labelKey: "admin_tab_audit_log",
-      permission: "canViewAuditLog",
-    },
   ];
 
   let currentPermissions = null;
-  let activeTooltip = null;
   let mobileSectionMenuController = null;
   const compactAdminTabs = window.matchMedia("(max-width: 700px)");
-
-  function removeTooltip() {
-    if (activeTooltip) {
-      activeTooltip.remove();
-      activeTooltip = null;
-    }
-  }
-
-  function showTooltip(trigger) {
-    removeTooltip();
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "admin-work-zone-tooltip";
-    tooltip.textContent = trigger.dataset.tooltip || "";
-    document.body.append(tooltip);
-
-    const triggerRect = trigger.getBoundingClientRect();
-    const tooltipRect = tooltip.getBoundingClientRect();
-    const left = Math.max(
-      12,
-      Math.min(
-        triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2,
-        window.innerWidth - tooltipRect.width - 12,
-      ),
-    );
-    const top = Math.max(12, triggerRect.bottom + 10);
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
-    activeTooltip = tooltip;
-  }
 
   function getActiveAdminWorkZoneTab() {
     const path = window.location.pathname;
@@ -361,25 +269,6 @@
       link.setAttribute("role", "tab");
       link.setAttribute("aria-selected", String(isActive));
       link.textContent = translateAdminTab(item.labelKey);
-
-      if (item.key === "timers" && isActive) {
-        const help = document.createElement("span");
-        help.className = "admin-work-zone-tab-help";
-        help.textContent = "?";
-        help.dataset.tooltip = translateAdminTab("timers_tab_help");
-        help.setAttribute("aria-label", help.dataset.tooltip);
-        help.tabIndex = 0;
-        help.addEventListener("mouseenter", () => showTooltip(help));
-        help.addEventListener("mouseleave", removeTooltip);
-        help.addEventListener("focus", () => showTooltip(help));
-        help.addEventListener("blur", removeTooltip);
-        help.addEventListener("click", (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          showTooltip(help);
-        });
-        link.append(help);
-      }
 
       if (isActive) {
         link.setAttribute("aria-current", "page");

@@ -147,6 +147,7 @@
   }
 
   function isTimerDismissed(timer) {
+    if (timer.dismissible === false) return false;
     const key = getTimerDismissalKey(timer);
 
     if (dismissedTimerKeys.has(key)) return true;
@@ -250,11 +251,15 @@
     const track = document.createElement("div");
     track.className = "site-timer-track";
 
-    const accent = document.createElement("span");
-    accent.className = "site-timer-accent";
-    accent.setAttribute("aria-hidden", "true");
-    accent.textContent = "!";
-    track.append(accent);
+    const icon = timer.icon || "warning";
+    banner.dataset.icon = icon;
+    if (icon !== "none") {
+      const accent = document.createElement("span");
+      accent.className = "site-timer-accent";
+      accent.setAttribute("aria-hidden", "true");
+      accent.textContent = icon === "info" ? "i" : "!";
+      track.append(accent);
+    }
 
     const text = document.createElement("span");
     text.className = "site-timer-text";
@@ -263,6 +268,36 @@
     appendLinkedText(message, getTimerMessage(timer));
     text.append(message);
     track.append(text);
+
+    const controls = document.createElement("div");
+    controls.className = "site-timer-controls";
+    if (timer.scrolling === true) {
+      banner.classList.add("site-timer-scrolling");
+      // Give longer messages more time rather than accelerating them.
+      message.style.animationDuration = `${Math.max(30, getTimerMessage(timer).length / 3)}s`;
+      const pause = document.createElement("button");
+      pause.type = "button";
+      pause.className = "site-timer-pause";
+      const updatePause = (paused) => {
+        banner.classList.toggle("is-paused", paused);
+        pause.setAttribute("aria-pressed", String(paused));
+        pause.textContent = paused ? "▶" : "Ⅱ";
+        pause.title =
+          CMCENUtils.getCurrentLanguage() === "fr"
+            ? paused
+              ? "Reprendre le défilement"
+              : "Mettre le défilement en pause"
+            : paused
+              ? "Resume scrolling"
+              : "Pause scrolling";
+        pause.setAttribute("aria-label", pause.title);
+      };
+      updatePause(false);
+      pause.addEventListener("click", () =>
+        updatePause(!banner.classList.contains("is-paused")),
+      );
+      controls.append(pause);
+    }
 
     if (timer.countdownAt) {
       const target = new Date(timer.countdownAt);
@@ -276,41 +311,44 @@
       }
     }
 
-    const dismissButton = document.createElement("button");
-    dismissButton.type = "button";
-    dismissButton.className = "site-timer-dismiss";
-    dismissButton.setAttribute("aria-label", getTimerDismissLabel());
-    dismissButton.title = getTimerDismissLabel();
-    dismissButton.dataset.timerDismissalKey = getTimerDismissalKey(timer);
-    const dismissIcon = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "svg",
-    );
-    dismissIcon.classList.add("site-timer-dismiss-icon");
-    dismissIcon.setAttribute("aria-hidden", "true");
-    dismissIcon.setAttribute("focusable", "false");
-    dismissIcon.setAttribute("viewBox", "0 0 24 24");
-
-    [
-      ["6", "6", "18", "18"],
-      ["18", "6", "6", "18"],
-    ].forEach(([x1, y1, x2, y2]) => {
-      const line = document.createElementNS(
+    if (timer.dismissible !== false) {
+      const dismissButton = document.createElement("button");
+      dismissButton.type = "button";
+      dismissButton.className = "site-timer-dismiss";
+      dismissButton.setAttribute("aria-label", getTimerDismissLabel());
+      dismissButton.title = getTimerDismissLabel();
+      dismissButton.dataset.timerDismissalKey = getTimerDismissalKey(timer);
+      const dismissIcon = document.createElementNS(
         "http://www.w3.org/2000/svg",
-        "line",
+        "svg",
       );
-      line.setAttribute("x1", x1);
-      line.setAttribute("y1", y1);
-      line.setAttribute("x2", x2);
-      line.setAttribute("y2", y2);
-      line.setAttribute("stroke", "currentColor");
-      line.setAttribute("stroke-linecap", "round");
-      line.setAttribute("stroke-width", "2.5");
-      dismissIcon.append(line);
-    });
+      dismissIcon.classList.add("site-timer-dismiss-icon");
+      dismissIcon.setAttribute("aria-hidden", "true");
+      dismissIcon.setAttribute("focusable", "false");
+      dismissIcon.setAttribute("viewBox", "0 0 24 24");
 
-    dismissButton.append(dismissIcon);
-    track.append(dismissButton);
+      [
+        ["6", "6", "18", "18"],
+        ["18", "6", "6", "18"],
+      ].forEach(([x1, y1, x2, y2]) => {
+        const line = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "line",
+        );
+        line.setAttribute("x1", x1);
+        line.setAttribute("y1", y1);
+        line.setAttribute("x2", x2);
+        line.setAttribute("y2", y2);
+        line.setAttribute("stroke", "currentColor");
+        line.setAttribute("stroke-linecap", "round");
+        line.setAttribute("stroke-width", "2.5");
+        dismissIcon.append(line);
+      });
+
+      dismissButton.append(dismissIcon);
+      controls.append(dismissButton);
+    }
+    track.append(controls);
 
     banner.append(track);
 
@@ -458,6 +496,13 @@
       }
     } catch (error) {}
   }
+
+  // The editor uses the public renderer without loading or dismissing live notices.
+  window.CMCENBannerView = Object.freeze({
+    create: createTimerElement,
+    updateCountdowns,
+  });
+  if (document.currentScript?.hasAttribute("data-render-only")) return;
 
   window.CMCENTimers = {
     reload: loadTimers,

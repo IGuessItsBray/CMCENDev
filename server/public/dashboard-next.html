@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title data-i18n="admin_next_title">Administration | CMCEN / RCMCE</title>
+    <script src="/dashboard-next-theme.js"></script>
+    <link rel="stylesheet" href="/theme-tokens.css" />
+    <link rel="stylesheet" href="/dashboard-next.css" />
+    <link rel="stylesheet" href="/shared-controls.css" />
+    <link rel="stylesheet" href="/shared-toasts.css" />
+    <link rel="stylesheet" href="/dashboard-next-controls.css" />
+    <link rel="stylesheet" href="/dashboard-next-theme.css" />
+    <link rel="stylesheet" href="/shared-forms.css" />
+    <link rel="stylesheet" href="/site-banners.css" />
+    <link rel="stylesheet" href="/dashboard-next-users.css" />
+    <link rel="stylesheet" href="/dashboard-next-roles.css" />
+    <link rel="stylesheet" href="/dashboard-next-subscriptions.css" />
+    <link rel="stylesheet" href="/pages-editor.css" />
+    <link rel="stylesheet" href="/dashboard-next-pages.css" />
+    <link rel="stylesheet" href="/dashboard-next-translations.css" />
+    <link rel="stylesheet" href="/dashboard-next-media.css" />
+    <link rel="stylesheet" href="/dashboard-next-certificates.css" />
+    <link rel="stylesheet" href="/dashboard-next-analytics.css" />
+    <link rel="stylesheet" href="/dashboard-next-audit.css" />
+    <script src="/app-utils.js" defer></script>
+    <script src="/translations.js" defer></script>
+    <script src="/date-time-picker.js" defer></script>
+    <script src="/shared-forms.js" defer></script>
+    <script src="/timers.js" data-render-only defer></script>
+    <script src="/dashboard-next-banners.js" defer></script>
+    <script src="/dashboard-next-awards.js" defer></script>
+    <script src="/dashboard-next-user-actions.js" defer></script>
+    <script src="/dashboard-next-users.js" defer></script>
+    <script src="/dashboard-next-roles.js" defer></script>
+    <script src="/dashboard-next-subscriptions.js" defer></script>
+    <script src="/pages-editor.js" defer></script>
+    <script src="/translations-editor.js" defer></script>
+    <script src="/dashboard-next-media.js" defer></script>
+    <script src="/certificate-requests-controller.js" defer></script>
+    <script src="/analytics-controller.js" defer></script>
+    <script src="/audit-log-controller.js" defer></script>
+    <script src="/dashboard-next.js" defer></script>
+  </head>
+  <body>
+    <main
+      id="dashboardNext"
+      aria-label="Administration"
+      data-i18n-aria-label="admin_next_label"
+      aria-busy="true"
+      data-state="loading"
+    >
+      <div id="dashboardNextStatus" role="status" aria-live="polite">
+        <p data-shell-state="loading" data-i18n="admin_next_loading">
+          Checking access…
+        </p>
+        <div data-shell-state="denied" hidden>
+          <h1 data-i18n="admin_next_denied_title">403 — Access denied</h1>
+          <p data-i18n="admin_next_denied">
+            Your account does not have access to administration.
+          </p>
+        </div>
+        <p data-shell-state="error" data-i18n="admin_next_error" hidden>
+          We could not check your access. Please try again.
+        </p>
+      </div>
+      <div class="shell-actions">
+        <a
+          id="dashboardNextAccount"
+          href="/dashboard"
+          data-i18n="admin_next_account"
+          hidden
+          >My account</a
+        >
+        <button
+          id="dashboardNextRetry"
+          type="button"
+          data-i18n="admin_next_retry"
+          hidden
+        >
+          Try again
+        </button>
+      </div>
+      <section
+        id="dashboardNextContent"
+        aria-label="Administration content"
+        data-i18n-aria-label="admin_next_content"
+        hidden
+      >
+        <aside class="admin-sidebar">
+          <div class="admin-sidebar-heading">
+            <strong class="admin-brand">
+              <span data-i18n="admin_next_brand_name">CMCEN</span>
+              <span class="admin-brand-label">Admin</span>
+            </strong>
+            <button
+              id="adminSidebarToggle"
+              type="button"
+              aria-controls="adminSidebarContents"
+              aria-expanded="true"
+              aria-label="Collapse sidebar"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m14 6-6 6 6 6" />
+              </svg>
+            </button>
+          </div>
+          <div id="adminSidebarContents">
+            <nav
+              class="admin-sidebar-sections"
+              aria-label="Administration"
+              data-i18n-aria-label="admin_next_label"
+            >
+              <a
+                id="adminUsersLink"
+                href="/dashboard-next?area=users"
+                data-i18n="admin_tab_users"
+                hidden
+                >Users</a
+              >
+              <a
+                id="adminRolesLink"
+                href="/dashboard-next?area=roles"
+                data-i18n="admin_tab_roles"
+                hidden
+                >Roles</a
+              >
+              <a
+                id="adminBannersLink"
+                href="/dashboard-next?area=banners"
+                data-i18n="timers_heading"
+                hidden
+                >Banners</a
+              >
+              <a
+                id="adminSubscriptionsLink"
+                href="/dashboard-next?area=subscriptions"
+                data-i18n="admin_tab_subscriptions"
+                hidden
+                >Subscriptions</a
+              >
+              <a
+                id="adminPagesLink"
+                href="/dashboard-next?area=pages"
+                data-i18n="admin_tab_pages"
+                hidden
+                >Pages</a
+              >
+              <a
+                id="adminTranslationsLink"
+                href="/dashboard-next?area=translations"
+                data-i18n="admin_tab_translations"
+                hidden
+                >Translations</a
+              >
+              <a
+                id="adminMediaLink"
+                href="/dashboard-next?area=media"
+                data-i18n="admin_tab_media"
+                hidden
+                >Media Manager</a
+              >
+              <a
+                id="adminCertificatesLink"
+                href="/dashboard-next?area=certificates"
+                data-i18n="certificate_requests_title"
+                hidden
+                >Certificate Requests</a
+              >
+              <a
+                id="adminAnalyticsLink"
+                href="/dashboard-next?area=analytics"
+                data-i18n="admin_tab_analytics"
+                hidden
+                >Analytics</a
+              >
+              <a
+                id="adminAuditLink"
+                href="/dashboard-next?area=audit"
+                data-i18n="audit_log_heading"
+                hidden
+                >Audit log</a
+              >
+              <a
+                id="adminAwardsLink"
+                href="/dashboard-next?area=awards"
+                data-i18n="admin_next_awards"
+                hidden
+                >Awards</a
+              >
+            </nav>
+            <nav
+              class="admin-sidebar-account"
+              aria-label="Account"
+              data-i18n-aria-label="admin_next_account"
+            >
+              <div class="admin-account-preferences">
+                <a href="/dashboard" data-i18n="admin_next_account"
+                  >My account</a
+                >
+                <button
+                  id="adminThemeToggle"
+                  type="button"
+                  aria-label="Switch to dark mode"
+                  aria-pressed="false"
+                >
+                  <svg
+                    class="admin-theme-sun"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path
+                      d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"
+                    />
+                  </svg>
+                  <svg
+                    class="admin-theme-moon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path d="M21 12.8A9 9 0 1 1 11.2 3A7 7 0 0 0 21 12.8Z" />
+                  </svg>
+                </button>
+              </div>
+              <a href="/" data-i18n="admin_next_site">Return to site</a>
+              <button
+                id="adminSignOut"
+                type="button"
+                data-i18n="admin_next_sign_out"
+              >
+                Sign out
+              </button>
+            </nav>
+          </div>
+        </aside>
+        <div class="admin-area">
+          <p id="adminAreaMessage" role="status" tabindex="-1" hidden></p>
+          <section id="adminUsers" aria-labelledby="adminUsersTitle" hidden>
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminUsersTitle"
+                  data-i18n="admin_tab_users"
+                  tabindex="-1"
+                >
+                  Users
+                </h1>
+                <p data-i18n="admin_next_users_intro">
+                  Manage account access, invitations, and security.
+                </p>
+              </div>
+              <button
+                id="adminUsersInvite"
+                type="button"
+                data-i18n="admin_next_users_invite"
+                hidden
+              >
+                Invite user
+              </button>
+            </header>
+            <div id="adminUsersBody" class="admin-users-layout"></div>
+          </section>
+          <section id="adminRoles" aria-labelledby="adminRolesTitle" hidden>
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminRolesTitle"
+                  data-i18n="admin_tab_roles"
+                  tabindex="-1"
+                >
+                  Roles
+                </h1>
+                <p data-i18n="admin_next_roles_intro">
+                  Create custom roles and choose the permissions they grant.
+                </p>
+              </div>
+              <button
+                id="adminRolesNew"
+                type="button"
+                data-i18n="admin_next_roles_new"
+              >
+                New role
+              </button>
+            </header>
+            <div id="adminRolesBody" class="admin-users-layout"></div>
+          </section>
+          <section
+            id="adminSubscriptions"
+            aria-labelledby="adminSubscriptionsTitle"
+            hidden
+          >
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminSubscriptionsTitle"
+                  data-i18n="admin_tab_subscriptions"
+                  tabindex="-1"
+                >
+                  Subscriptions
+                </h1>
+                <p data-i18n="admin_next_subscriptions_intro">
+                  View email subscriptions, review deliveries, and send news
+                  announcements.
+                </p>
+              </div>
+              <button
+                id="adminSubscriptionsExport"
+                type="button"
+                data-i18n="admin_next_subscriptions_export"
+              >
+                Export subscribers (CSV)
+              </button>
+            </header>
+            <div id="adminSubscriptionsBody"></div>
+          </section>
+          <section id="adminBanners" aria-labelledby="adminBannersTitle" hidden>
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminBannersTitle"
+                  data-i18n="timers_heading"
+                  tabindex="-1"
+                >
+                  Banners
+                </h1>
+                <p data-i18n="timers_intro">
+                  Schedule public banners for the home page or the whole site.
+                </p>
+              </div>
+              <button
+                id="bannerNew"
+                type="button"
+                data-i18n="timers_new"
+                disabled
+              >
+                New banner
+              </button>
+            </header>
+            <p id="bannerStatus" role="status" aria-live="polite"></p>
+            <p
+              class="visually-hidden"
+              id="bannerStatusHelp"
+              data-i18n="admin_next_banner_status_help"
+            >
+              Status reflects saved settings. Active banners are enabled and
+              within their schedule; placement, display order, and the site’s
+              banner limit determine where they appear.
+            </p>
+            <button
+              id="bannerRetry"
+              type="button"
+              data-i18n="admin_next_retry"
+              hidden
+            >
+              Try again
+            </button>
+            <div class="banners-layout">
+              <nav
+                id="bannerList"
+                aria-label="Banners"
+                data-i18n-aria-label="timers_heading"
+              ></nav>
+              <div>
+                <p id="bannerEmpty" data-i18n="timers_editor_empty" hidden>
+                  Create a banner to begin.
+                </p>
+                <form id="bannerForm" novalidate hidden>
+                  <fieldset id="bannerFields">
+                    <legend
+                      class="visually-hidden"
+                      data-i18n="admin_next_banner_editor"
+                    >
+                      Banner editor
+                    </legend>
+                    <div class="banner-editor-heading">
+                      <h2 id="bannerEditorTitle"></h2>
+                      <span id="bannerEditorState"></span>
+                    </div>
+                    <div class="banner-preview-heading">
+                      <span data-i18n="admin_next_preview">Preview</span>
+                      <button
+                        id="bannerPreviewRestore"
+                        type="button"
+                        data-i18n="admin_next_preview_restore"
+                        hidden
+                      >
+                        Show preview
+                      </button>
+                    </div>
+                    <div
+                      id="bannerPreview"
+                      class="banner-preview"
+                      aria-label="Preview"
+                      data-i18n-aria-label="admin_next_preview"
+                    ></div>
+                    <div id="bannerInputs" class="banner-inputs"></div>
+                    <div class="banner-actions">
+                      <button
+                        type="submit"
+                        id="bannerSave"
+                        data-i18n="timers_save"
+                      >
+                        Save banner
+                      </button>
+                      <button
+                        type="button"
+                        id="bannerDelete"
+                        data-i18n="admin_delete"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    <p id="bannerFeedback" role="status" aria-live="polite"></p>
+                  </fieldset>
+                </form>
+              </div>
+            </div>
+          </section>
+          <section id="adminPages" aria-labelledby="adminPagesTitle" hidden>
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminPagesTitle"
+                  data-i18n="admin_tab_pages"
+                  tabindex="-1"
+                >
+                  Pages
+                </h1>
+                <p data-i18n="admin_next_pages_intro">
+                  Build custom pages and manage their publication and
+                  navigation.
+                </p>
+              </div>
+            </header>
+            <div data-pages-status role="status" aria-live="polite"></div>
+            <div data-pages-page hidden>
+              <div class="pages-admin-shell"></div>
+            </div>
+          </section>
+          <section
+            id="adminTranslations"
+            aria-labelledby="adminTranslationsTitle"
+            hidden
+          >
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminTranslationsTitle"
+                  data-i18n="admin_tab_translations"
+                  tabindex="-1"
+                >
+                  Translations
+                </h1>
+                <p data-i18n="translations_intro">
+                  Review English and French interface text side by side and
+                  update existing translation keys.
+                </p>
+              </div>
+            </header>
+            <div class="admin-translations-body">
+              <div class="translations-toolbar">
+                <div class="event-field cmcen-field translations-search-field">
+                  <label
+                    for="translationsSearch"
+                    data-i18n="translations_search_label"
+                  >
+                    Search translations
+                  </label>
+                  <input
+                    id="translationsSearch"
+                    class="cmcen-control"
+                    type="search"
+                    autocomplete="off"
+                    data-i18n-placeholder="translations_search_placeholder"
+                    placeholder="Search by key, English, or French text"
+                  />
+                </div>
+
+                <div class="event-field cmcen-field translations-filter-field">
+                  <label
+                    for="translationsStatusFilter"
+                    data-i18n="translations_filter_label"
+                  >
+                    Show
+                  </label>
+                  <select id="translationsStatusFilter" class="cmcen-control">
+                    <option value="all" data-i18n="translations_filter_all">
+                      All labels
+                    </option>
+                    <option
+                      value="missing-any"
+                      data-i18n="translations_filter_missing_any"
+                    >
+                      Needs a translation
+                    </option>
+                    <option
+                      value="missing-en"
+                      data-i18n="translations_filter_missing_english"
+                    >
+                      Needs English
+                    </option>
+                    <option
+                      value="missing-fr"
+                      data-i18n="translations_filter_missing_french"
+                    >
+                      Needs French
+                    </option>
+                  </select>
+                </div>
+
+                <button
+                  class="translations-clear-filters"
+                  id="translationsClearFilters"
+                  type="button"
+                  hidden
+                  data-i18n="translations_clear_filters"
+                >
+                  Clear filters
+                </button>
+
+                <p class="translations-count" id="translationsCount"></p>
+              </div>
+
+              <section
+                class="translations-browser"
+                aria-labelledby="translationsBrowserHeading"
+              >
+                <div class="translations-browser-heading">
+                  <div>
+                    <p
+                      class="translations-browser-eyebrow"
+                      data-i18n="translations_browse_eyebrow"
+                    >
+                      Browse by site area
+                    </p>
+                    <h2
+                      id="translationsBrowserHeading"
+                      data-i18n="translations_browse_heading"
+                    >
+                      Find the part of the site you want to edit
+                    </h2>
+                  </div>
+                  <p data-i18n="translations_browse_intro">
+                    Choose an area, then open a smaller group of related labels.
+                  </p>
+                </div>
+
+                <div
+                  class="translations-category-list"
+                  id="translationsCategoryList"
+                  aria-live="polite"
+                ></div>
+              </section>
+
+              <p
+                class="translations-admin-message is-loading"
+                id="translationsMessage"
+                role="status"
+                aria-live="polite"
+                data-i18n="translations_loading"
+              >
+                Loading translations...
+              </p>
+
+              <button
+                id="translationsRetry"
+                type="button"
+                data-i18n="admin_next_retry"
+                hidden
+              >
+                Try again
+              </button>
+              <div class="translations-list" id="translationsList" hidden></div>
+            </div>
+          </section>
+          <section id="adminMedia" aria-labelledby="adminMediaTitle" hidden>
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminMediaTitle"
+                  data-i18n="admin_tab_media"
+                  tabindex="-1"
+                >
+                  Media Manager
+                </h1>
+                <p data-i18n="admin_next_media_intro">
+                  Browse images, see where they’re used, and manage uploads.
+                </p>
+              </div>
+            </header>
+            <div id="adminMediaBody"></div>
+          </section>
+          <section
+            id="adminCertificates"
+            aria-labelledby="adminCertificatesTitle"
+            hidden
+          >
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminCertificatesTitle"
+                  data-i18n="certificate_requests_title"
+                  tabindex="-1"
+                >
+                  Certificate Requests
+                </h1>
+                <p data-i18n="admin_next_certificates_intro">
+                  Confirm printing for each requested certificate, then confirm
+                  mailing.
+                </p>
+              </div>
+            </header>
+            <div id="adminCertificatesBody"></div>
+          </section>
+          <section
+            id="adminAnalytics"
+            aria-labelledby="adminAnalyticsTitle"
+            hidden
+          >
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminAnalyticsTitle"
+                  data-i18n="admin_tab_analytics"
+                  tabindex="-1"
+                >
+                  Analytics
+                </h1>
+                <p data-i18n="admin_next_analytics_intro">
+                  Page visits, traffic sources, devices, and audience.
+                </p>
+              </div>
+            </header>
+            <div id="adminAnalyticsBody"></div>
+          </section>
+          <section id="adminAudit" aria-labelledby="adminAuditTitle" hidden>
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminAuditTitle"
+                  data-i18n="audit_log_heading"
+                  tabindex="-1"
+                >
+                  Audit log
+                </h1>
+                <p data-i18n="audit_log_intro">
+                  Review logins, publishing, deletions, and role changes.
+                </p>
+              </div>
+            </header>
+            <div id="adminAuditBody"></div>
+          </section>
+          <section id="adminAwards" aria-labelledby="adminAwardsTitle" hidden>
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminAwardsTitle"
+                  data-i18n="admin_next_awards"
+                  tabindex="-1"
+                >
+                  Awards
+                </h1>
+                <p data-i18n="admin_next_awards_intro">
+                  Manage award recipients and their archive.
+                </p>
+              </div>
+              <a
+                href="/awards"
+                target="_blank"
+                rel="noopener"
+                data-i18n="admin_next_awards_public"
+                >View public awards page</a
+              >
+            </header>
+            <p id="awardsStatus" role="status" aria-live="polite"></p>
+            <button
+              id="awardsRetry"
+              type="button"
+              data-i18n="admin_next_retry"
+              hidden
+            >
+              Try again
+            </button>
+            <div class="awards-layout">
+              <nav
+                id="awardList"
+                class="admin-record-list"
+                aria-label="Awards"
+                data-i18n-aria-label="admin_next_awards"
+              ></nav>
+              <div id="awardDetail" hidden>
+                <header class="admin-area-heading">
+                  <h2 id="awardTitle"></h2>
+                  <button
+                    id="awardRecipientNew"
+                    type="button"
+                    data-i18n="admin_next_recipient_new"
+                  >
+                    Add recipient
+                  </button>
+                </header>
+                <div class="award-recipient-layout">
+                  <div>
+                    <label class="award-search cmcen-field"
+                      ><span data-i18n="admin_next_recipient_search"
+                        >Find a recipient</span
+                      ><input
+                        id="awardRecipientSearch"
+                        class="cmcen-control"
+                        type="search"
+                    /></label>
+                    <nav
+                      id="awardRecipientList"
+                      class="admin-record-list"
+                      aria-label="Recipient archive"
+                      data-i18n-aria-label="admin_next_recipient_archive"
+                    ></nav>
+                  </div>
+                  <div>
+                    <p
+                      id="awardRecipientEmpty"
+                      data-i18n="admin_next_recipient_empty"
+                    >
+                      Add a recipient to begin.
+                    </p>
+                    <form id="awardRecipientForm" novalidate hidden>
+                      <fieldset id="awardRecipientFields">
+                        <legend id="awardRecipientHeading"></legend>
+                        <div
+                          id="awardRecipientInputs"
+                          class="award-inputs"
+                        ></div>
+                        <p
+                          id="awardPhotoNote"
+                          data-i18n="admin_next_award_photo_note"
+                          hidden
+                        >
+                          The latest recipient is featured automatically. A
+                          C&amp;E crest is shown when no photo is provided.
+                        </p>
+                        <p
+                          id="awardRecipientFeedback"
+                          role="status"
+                          aria-live="polite"
+                        ></p>
+                        <button id="awardRecipientSave" type="submit"></button>
+                        <button
+                          id="awardRecipientNews"
+                          type="button"
+                          hidden
+                        ></button>
+                        <p
+                          id="awardRecipientNewsHelp"
+                          data-i18n="admin_next_recipient_news_help"
+                          hidden
+                        >
+                          Optional: prepare a news draft in Content Workspace,
+                          then review it and publish now or schedule it.
+                        </p>
+                      </fieldset>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+      <noscript
+        ><p>JavaScript is required. / JavaScript est requis.</p></noscript
+      >
+    </main>
+  </body>
+</html>

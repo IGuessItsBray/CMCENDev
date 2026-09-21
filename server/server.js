@@ -198,7 +198,7 @@ app.get('/notifications', (req, res) =>
 );
 app.get('/dashboard', (req, res, next) => {
   const adminToolPaths = {
-    users: '/admin-users',
+    users: '/dashboard-next?area=users',
     subscriptions: '/admin-users?view=subscriptions',
     roles: '/admin-users?view=roles',
     pages: '/pages-admin',
@@ -211,6 +211,11 @@ app.get('/dashboard', (req, res, next) => {
   const destination = adminToolPaths[req.query.adminTool];
 
   return destination ? res.redirect(302, destination) : next();
+});
+app.get('/admin-users', (req, res, next) => {
+  if (['roles', 'media', 'subscriptions'].includes(req.query.view))
+    return next();
+  return res.redirect(302, '/dashboard-next?area=users');
 });
 app.get('/review-submissions', (req, res) => {
   const typeByLegacyTab = {

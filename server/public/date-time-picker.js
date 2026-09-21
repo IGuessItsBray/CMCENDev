@@ -39,13 +39,13 @@
     return `${pad(hour)}:${pad(minute)}`;
   }
 
-  function formatDisplay(dateValue, timeValue, placeholder) {
+  function formatDisplay(dateValue, timeValue, placeholder, options = {}) {
     const dateParts = parseDateParts(dateValue);
     if (!dateParts) return placeholder;
 
     const date = new Date(dateParts.year, dateParts.month, dateParts.day);
     const timeParts = parseTimeParts(timeValue) || { hour: 0, minute: 0 };
-    const dateLabel = date.toLocaleDateString(undefined, {
+    const dateLabel = date.toLocaleDateString(options.locale, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -56,9 +56,10 @@
       dateParts.day,
       timeParts.hour,
       timeParts.minute,
-    ).toLocaleTimeString(undefined, {
+    ).toLocaleTimeString(options.locale, {
       hour: "numeric",
       minute: "2-digit",
+      ...(options.hourCycle ? { hourCycle: options.hourCycle } : {}),
     });
 
     return `${dateLabel}, ${timeLabel}`;
@@ -154,7 +155,10 @@
 
     function updateTrigger() {
       trigger.textContent = includeTime
-        ? formatDisplay(selectedDate, selectedTime, placeholder)
+        ? formatDisplay(selectedDate, selectedTime, placeholder, {
+            locale,
+            hourCycle: options.hourCycle,
+          })
         : formatDateDisplay(selectedDate, placeholder);
       trigger.classList.toggle("is-placeholder", !selectedDate);
     }
@@ -166,13 +170,11 @@
       const width = Math.min(360, window.innerWidth - viewportPadding * 2);
       const left = Math.max(
         viewportPadding,
-        Math.min(
-          triggerRect.left,
-          window.innerWidth - width - viewportPadding,
-        ),
+        Math.min(triggerRect.left, window.innerWidth - width - viewportPadding),
       );
       const spaceAbove = triggerRect.top - viewportPadding;
-      const spaceBelow = window.innerHeight - triggerRect.bottom - viewportPadding;
+      const spaceBelow =
+        window.innerHeight - triggerRect.bottom - viewportPadding;
       const naturalPopoverHeight = popover.getBoundingClientRect().height;
       const openAbove =
         spaceBelow < naturalPopoverHeight && spaceAbove > spaceBelow;

@@ -1,0 +1,21 @@
+/* Shared control layout adjustments for the standalone admin shell. */
+body.cmcen-modal-lock {
+  overflow: hidden;
+}
+.cmcen-modal [hidden] {
+  display: none !important;
+}
+/* Override the admin form defaults without duplicating component styles. */
+#dashboardNext .cmcen-date-time-nav,
+#dashboardNext .cmcen-date-time-action {
+  padding: 0.35rem 0.65rem;
+  font-weight: 900;
+}
+#dashboardNext .cmcen-date-time-day {
+  padding: 4px;
+  font-weight: 800;
+}
+#dashboardNext .cmcen-date-time-time-row input {
+  width: 150px;
+  padding: 0.45rem 0.55rem;
+}

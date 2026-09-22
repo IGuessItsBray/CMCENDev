@@ -1,0 +1,123 @@
+.association-director-list {
+  margin-top: 28px;
+}
+
+.association-director {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  align-items: start;
+  gap: 28px;
+}
+
+.association-director + .association-director {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid var(--branch-grey-200);
+}
+
+.association-portrait {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.association-portrait--crest {
+  width: 100px;
+  margin: 12px auto;
+  border-radius: 0;
+}
+
+.association-director-copy {
+  min-width: 0;
+}
+
+.association-director h3 {
+  margin: 3px 0 8px;
+  color: var(--navy-900);
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: normal;
+  line-height: 1.2;
+}
+
+.about-family-section .association-role {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.association-email {
+  display: inline-block;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
+.association-biography {
+  margin-top: 18px;
+}
+
+.association-biography p {
+  white-space: pre-line;
+}
+
+.association-advisor-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 32px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.association-advisor {
+  padding-left: 16px;
+  border-left: 3px solid var(--gold-500);
+}
+
+.association-advisor h3 {
+  margin: 0 0 6px;
+  color: var(--navy-900);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.association-related-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+}
+
+html[data-theme='dark'] .association-director + .association-director {
+  border-color: var(--dark-border);
+}
+
+html[data-theme='dark'] .association-director h3,
+html[data-theme='dark'] .association-advisor h3 {
+  color: var(--dark-text);
+}
+
+html[data-theme='dark'] .about-family-section .association-role {
+  color: var(--gold-200);
+}
+
+@media (max-width: 640px) {
+  .association-director,
+  .association-advisor-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .association-director {
+    gap: 20px;
+  }
+
+  .association-portrait {
+    width: min(180px, 100%);
+    margin-inline: auto;
+  }
+
+  .association-portrait--crest {
+    width: 80px;
+  }
+}

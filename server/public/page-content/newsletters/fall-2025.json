@@ -1,0 +1,295 @@
+{
+  "slug": "fall-2025",
+  "title": "Association Newsletter — Fall 2025",
+  "kicker": "ASSOCIATION NEWS",
+  "issue": "Vol. 3, Issue 2, Fall 2025",
+  "publishedAt": "2025-09-18",
+  "author": "David Whittier",
+  "language": "en",
+  "sourceUrl": "https://cmcen-rcmce.ca/association-newsletter-fall-2025-2/",
+  "images": {
+    "crest": {
+      "id": "ce-branch-crest",
+      "sourceUrl": "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100.png",
+      "alt": "Communications and Electronics Branch crest",
+      "url": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/ce-branch-crest/large.webp",
+      "mediaStatus": "cdn-verified",
+      "width": 512,
+      "height": 512,
+      "mediaKey": "legacy/newsletters/ce-branch-crest/original.webp",
+      "variants": {
+        "thumb": {
+          "key": "legacy/newsletters/ce-branch-crest/thumb.webp",
+          "url": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/ce-branch-crest/thumb.webp",
+          "width": 400,
+          "height": 400,
+          "size": 34258,
+          "mimeType": "image/webp"
+        },
+        "medium": {
+          "key": "legacy/newsletters/ce-branch-crest/medium.webp",
+          "url": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/ce-branch-crest/medium.webp",
+          "width": 512,
+          "height": 512,
+          "size": 50302,
+          "mimeType": "image/webp"
+        },
+        "large": {
+          "key": "legacy/newsletters/ce-branch-crest/large.webp",
+          "url": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/ce-branch-crest/large.webp",
+          "width": 512,
+          "height": 512,
+          "size": 50302,
+          "mimeType": "image/webp"
+        },
+        "hero": {
+          "key": "legacy/newsletters/ce-branch-crest/hero.webp",
+          "url": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/ce-branch-crest/hero.webp",
+          "width": 512,
+          "height": 512,
+          "size": 50302,
+          "mimeType": "image/webp"
+        }
+      }
+    },
+    "team": {
+      "id": "39-sigs-hackathon-team",
+      "sourceUrl": "https://cmcen-rcmce.ca/wp-content/uploads/39-Sigs-hackathon-team.jpg",
+      "alt": "CWO Christopher Robin and LGen Michael Wright with members of the 39 Signal Regiment hackathon team",
+      "url": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/39-sigs-hackathon-team/large.webp",
+      "mediaStatus": "cdn-verified",
+      "width": 980,
+      "height": 654,
+      "mediaKey": "legacy/newsletters/39-sigs-hackathon-team/original.webp",
+      "variants": {
+        "thumb": {
+          "key": "legacy/newsletters/39-sigs-hackathon-team/thumb.webp",
+          "url": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/39-sigs-hackathon-team/thumb.webp",
+          "width": 400,
+          "height": 267,
+          "size": 21212,
+          "mimeType": "image/webp"
+        },
+        "medium": {
+          "key": "legacy/newsletters/39-sigs-hackathon-team/medium.webp",
+          "url": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/39-sigs-hackathon-team/medium.webp",
+          "width": 900,
+          "height": 601,
+          "size": 70738,
+          "mimeType": "image/webp"
+        },
+        "large": {
+          "key": "legacy/newsletters/39-sigs-hackathon-team/large.webp",
+          "url": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/39-sigs-hackathon-team/large.webp",
+          "width": 980,
+          "height": 654,
+          "size": 101148,
+          "mimeType": "image/webp"
+        },
+        "hero": {
+          "key": "legacy/newsletters/39-sigs-hackathon-team/hero.webp",
+          "url": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/39-sigs-hackathon-team/hero.webp",
+          "width": 980,
+          "height": 654,
+          "size": 101148,
+          "mimeType": "image/webp"
+        }
+      }
+    }
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Greetings to our Members!"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        "Yes, all former and serving members (Regular Force and Reserve) of the C&E Branch and its founding elements are automatically members in perpetuity of the C&E Association. Your family members are welcome to apply for Associate Membership. See everything about us and the rest of the C&E Family at ",
+        {
+          "type": "link",
+          "href": "/about_association",
+          "children": ["https://cmcen-rcmce.ca/association."]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "FROM THE EDITOR"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        "We’ve gotten some feedback from members who have had issues accessing CMCEN links from their DWAN workstations. Unfortunately, that’s not a bug, that’s a feature, and a part of the design of the DWAN.  The firewall blocks all links to protect users from phishing scams.  Also, when many users connect to the same website from DWAN, the main Internet access point is out of Ottawa, so the network sees multiple accesses as as an issue. Therefore, the user is challenged by the enhanced-proxy server to verify this is “work related”.  I’m sure there is someone reading this who can give a far more comprehensive explanation on what is going on, but hopefully I’ve gotten the gist of it."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        "If you are still interested in getting the newsletter and would like to change your DWAN email on the contact list to a personal email, let me know at dave.whittier@cmcen-rcmce.ca, and I can make the change."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "39 SIGNAL REGIMENT"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        "Shout out to ",
+        {
+          "type": "strong",
+          "children": ["39 Signal Regiment"]
+        },
+        " for their first place finish in the Canadian Army’s first hackathon, reflecting the very purpose of the Army’s 2022 Digital Strategy, which encourages innovation from the ground up. A four-person  team, drawing on civilian expertise in cloud engineering, systems engineering, and cybersecurity, conceived a prototype that digitizes and accelerates the sensor-to-shooter link. Using AI to parse voice-to-text and imagery, their solution flags high-priority targets in real time, automates messaging to a Fire Support Coordination Centre for validation, and supports commands with digital logs and ammunition forecasting. It’s a striking example of how reservists in C&E are not just supporting forces—they are helping lead Canada toward a data-driven, digitally empowered Army. The 39 Signal Regiment team went on to represent Canada and win the AI-Driven Cyber Threat Intelligence Challenge track at the 2025 NATO TIDE Hackathon in Dunkirk, France, with an AI-powered cyber defence system demo.  Congratulations to team lead Maj Sarai, and MCpl Ratnayake, Cpl Rahman and Pte Smith for showing 39 Signal Regiment can be competitive on a global scale.  For more info check out ",
+        {
+          "type": "link",
+          "href": "https://canadianarmytoday.com/a-hack-for-the-sensor-to-shooter-link/",
+          "children": [
+            "https://canadianarmytoday.com/a-hack-for-the-sensor-to-shooter-link/"
+          ]
+        },
+        "."
+      ]
+    },
+    {
+      "type": "figure",
+      "image": "team",
+      "caption": "CWO Christopher Robin and LGen Michael Wright with members of the Hackathon team: Cpl Reese Rahman, Pte Grant Smith and Maj Saajan Sarai. Photo: Bdr Albert Law (photo from canadianarmytoday.com)"
+    },
+    {
+      "type": "heading",
+      "text": "VETERANS’ CORNER"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        "We’re introducing a new feature to better serve our retired members. For this issue, we would like to draw your attention to some websites where several links lead to information that can be useful to those of us who retire from the military to become …veterans!  Watch this space for more news and information."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "link",
+          "href": "https://letstalkveterans.ca",
+          "children": ["https://letstalkveterans.ca"]
+        },
+        {
+          "type": "br"
+        },
+        "\n",
+        {
+          "type": "link",
+          "href": "https://www.ombudsman-veterans.gc.ca/en",
+          "children": ["https://www.ombudsman-veterans.gc.ca/en"]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "MEMBER BENEFITS"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        "As part of our service to C&E Association members, we approach companies and service providers to negotiate favoured rates and services for you.  TD Insurance provides preferred rates for home, auto, tenant, cottage, and travel insurance.  For more info, check out ",
+        {
+          "type": "link",
+          "href": "https://www.tdinsurance.com/affinity/cmcen",
+          "children": ["https://www.tdinsurance.com/affinity/cmcen"]
+        },
+        "."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "UNIT AND ASSOCIATION NEWSLETTERS"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        "We’re pleased to report that we are continuing to get updates and newsletters from units and C&E associations from across the country.  One of the core functions of the C&E Association is to “connect with and promote a close association with all members of our extended C&E military community”.  If you have anything you’d like to share, be it news, a picture, or even a newsletter from your own local association, send it to ",
+        {
+          "type": "link",
+          "href": "mailto:dave.whittier@cmcen-rcmce.ca",
+          "children": ["dave.whittier@cmcen-rcmce.ca"]
+        },
+        " and we’ll do our best to include it.  Please enjoy!"
+      ]
+    },
+    {
+      "type": "paragraph",
+      "children": ["32 Signal Regiment updates"]
+    },
+    {
+      "type": "list",
+      "items": [
+        [
+          {
+            "type": "link",
+            "href": "/documents/32-despatches-2025-06-07.pdf",
+            "children": ["32 Sig Regt Vol 3 Iss 5 June-July 2025"]
+          }
+        ],
+        [
+          {
+            "type": "link",
+            "href": "/documents/32-despatches-2025-08.pdf",
+            "children": ["32 Sig Regt Vol 5 Iss 1 Aug 2025"]
+          }
+        ],
+        [
+          {
+            "type": "link",
+            "href": "/documents/32-despatches-2025-09.pdf",
+            "children": ["32 Sig Regt Vol 5 Iss 2 Sep 2025"]
+          }
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "2026 C&E WEEK"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        "Planning is underway for C&E Week 2025.  It will be held from 20 – 25 Oct this year. Some highlights:"
+      ]
+    },
+    {
+      "type": "list",
+      "items": [
+        [
+          "21 Oct: two PD sessions on the morning with AFCEA providing a PD Seminar in the afternoon (CFS Leitrim)."
+        ],
+        [
+          "21 Oct: C&E Association AGM 1115-1200hrs  (CFS Leitrim and virtual – Teams link to follow)."
+        ],
+        ["22-23 Oct: C&E Ambassador Program (Museum)"],
+        ["23 Oct: TGIT at Vimy Officers’ Mess"],
+        [
+          "24 Oct: Vets’ Day  to include sustainable power demo, Carruthers Grave Ceremony, Lunch at Museum and book signing at Mercury Shop (Museum)."
+        ],
+        ["24 Oct: C&E Combined Mess Dinner (NDHQ WOs’ and Sgts’ Mess)"]
+      ]
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        "More details will be available on CMCEN as they are finalized."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "FROM THE MEMBERS"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        "From Ken Lloyd, Hon LCol of 32 Signal Regiment: “Brian Luscombe has asked if we might know anyone who is familiar with Vietnam War era radio and line equipment. Apparently a Re-enactor Group has the equipment and have asked if we know anyone who understands how to use it.”  If you know of anyone, contact dave.whittier@cmcen-rceme.ca and I will pass it on."
+      ]
+    }
+  ]
+}

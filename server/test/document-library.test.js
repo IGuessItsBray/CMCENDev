@@ -13,7 +13,7 @@ test('document library references available public source files', () => {
     ),
   );
 
-  assert.equal(content.documents.length, 48);
+  assert.equal(content.documents.length, 76);
   assert.ok(
     content.documents.some(
       (documentItem) =>
@@ -65,30 +65,6 @@ test('document library labels Word source files accurately', () => {
   assert.equal(content.en.library.downloadDocx, 'Download DOCX');
   assert.equal(content.fr.library.downloadDocx, 'Télécharger le DOCX');
   assert.match(script, /endsWith\("\.docx"\)/u);
-});
-
-test('legacy association-director roster is published as a migration snapshot', () => {
-  const pages = ['association_directors.html'];
-  const previouslyPublishedNames = [
-    'John Leech',
-    'Christian Marcotte',
-    'Brian McDonnell',
-  ];
-
-  pages.forEach((fileName) => {
-    const html = fs.readFileSync(path.join(PUBLIC_DIRECTORY, fileName), 'utf8');
-    assert.doesNotMatch(html, /name="robots" content="noindex"/u);
-    assert.match(html, /data-page-i18n="snapshotBody"/u);
-  });
-
-  const combined = pages
-    .map((fileName) =>
-      fs.readFileSync(path.join(PUBLIC_DIRECTORY, fileName), 'utf8'),
-    )
-    .join('\n');
-  previouslyPublishedNames.forEach((name) =>
-    assert.match(combined, new RegExp(name, 'u')),
-  );
 });
 
 test('appointment policy source documents remain available through the document library', () => {

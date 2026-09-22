@@ -33,7 +33,10 @@
         { "value": "standing-orders", "label": "Standing orders" },
         { "value": "policy", "label": "Policy" },
         { "value": "meeting-record", "label": "Meeting record" },
-        { "value": "annual-report", "label": "Annual report" }
+        { "value": "annual-report", "label": "Annual report" },
+        { "value": "newsletter", "label": "Newsletter" },
+        { "value": "article", "label": "Article" },
+        { "value": "project-brief", "label": "Project brief" }
       ]
     }
   },
@@ -74,7 +77,10 @@
         { "value": "standing-orders", "label": "Ordres permanents" },
         { "value": "policy", "label": "Politique" },
         { "value": "meeting-record", "label": "Compte rendu" },
-        { "value": "annual-report", "label": "Rapport annuel" }
+        { "value": "annual-report", "label": "Rapport annuel" },
+        { "value": "newsletter", "label": "Bulletin" },
+        { "value": "article", "label": "Article" },
+        { "value": "project-brief", "label": "Présentation de projet" }
       ]
     }
   },
@@ -947,6 +953,513 @@
         "description": "Projet de procès-verbal de l'assemblée générale annuelle de l'Association des C et E tenue le 21 octobre 2025.",
         "dateLabel": "Octobre 2025",
         "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "741-newsletter-1985-09",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/741-newsletter-1985-09.pdf",
+      "en": {
+        "title": "741 (Victoria) Communication Squadron Newsletter - September 1985",
+        "description": "Original scanned newsletter from 741 (Victoria) Communication Squadron, preserved as a historical document.",
+        "dateLabel": "September 1985",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Bulletin du 741e Escadron des communications (Victoria) - septembre 1985",
+        "description": "Bulletin original numérisé du 741e Escadron des communications (Victoria), conservé comme document historique.",
+        "dateLabel": "Septembre 1985",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "741-newsletter-1985-11",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/741-newsletter-1985-11.pdf",
+      "en": {
+        "title": "741 (Victoria) Communication Squadron Newsletter - November 1985",
+        "description": "Original scanned newsletter from 741 (Victoria) Communication Squadron, preserved as a historical document.",
+        "dateLabel": "November 1985",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Bulletin du 741e Escadron des communications (Victoria) - novembre 1985",
+        "description": "Bulletin original numérisé du 741e Escadron des communications (Victoria), conservé comme document historique.",
+        "dateLabel": "Novembre 1985",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "741-newsletter-1985-12",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/741-newsletter-1985-12.pdf",
+      "en": {
+        "title": "741 (Victoria) Communication Squadron Newsletter - December 1985",
+        "description": "Original scanned newsletter from 741 (Victoria) Communication Squadron, preserved as a historical document.",
+        "dateLabel": "December 1985",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Bulletin du 741e Escadron des communications (Victoria) - décembre 1985",
+        "description": "Bulletin original numérisé du 741e Escadron des communications (Victoria), conservé comme document historique.",
+        "dateLabel": "Décembre 1985",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "741-newsletter-1986-02",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/741-newsletter-1986-02.pdf",
+      "en": {
+        "title": "741 (Victoria) Communication Squadron Newsletter - February 1986",
+        "description": "Original scanned newsletter from 741 (Victoria) Communication Squadron, preserved as a historical document.",
+        "dateLabel": "February 1986",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Bulletin du 741e Escadron des communications (Victoria) - février 1986",
+        "description": "Bulletin original numérisé du 741e Escadron des communications (Victoria), conservé comme document historique.",
+        "dateLabel": "Février 1986",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "77-the-cable-v6-i1",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/77-the-cable-v6-i1.pdf",
+      "en": {
+        "title": "The Cable - 77 Line Regiment - Volume 6, Issue 1",
+        "description": "Original newsletter from 77 Line Regiment, including articles in English and French, preserved as a historical document.",
+        "dateLabel": "January 2022",
+        "languageLabel": "English and French"
+      },
+      "fr": {
+        "title": "The Cable - 77e Régiment de ligne - volume 6, numéro 1",
+        "description": "Bulletin original du 77e Régiment de ligne, comprenant des articles en français et en anglais, conservé comme document historique.",
+        "dateLabel": "Janvier 2022",
+        "languageLabel": "Français et anglais"
+      }
+    },
+    {
+      "id": "77-the-cable-v6-i2",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/77-the-cable-v6-i2.pdf",
+      "en": {
+        "title": "The Cable - 77 Line Regiment - Volume 6, Issue 2",
+        "description": "Original newsletter from 77 Line Regiment, including articles in English and French, preserved as a historical document.",
+        "dateLabel": "July 2022",
+        "languageLabel": "English and French"
+      },
+      "fr": {
+        "title": "The Cable - 77e Régiment de ligne - volume 6, numéro 2",
+        "description": "Bulletin original du 77e Régiment de ligne, comprenant des articles en français et en anglais, conservé comme document historique.",
+        "dateLabel": "Juillet 2022",
+        "languageLabel": "Français et anglais"
+      }
+    },
+    {
+      "id": "77-the-cable-v6-i3",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/77-the-cable-v6-i3.pdf",
+      "en": {
+        "title": "The Cable - 77 Line Regiment - Volume 6, Issue 3",
+        "description": "Original newsletter from 77 Line Regiment, including articles in English and French, preserved as a historical document.",
+        "dateLabel": "December 2022",
+        "languageLabel": "English and French"
+      },
+      "fr": {
+        "title": "The Cable - 77e Régiment de ligne - volume 6, numéro 3",
+        "description": "Bulletin original du 77e Régiment de ligne, comprenant des articles en français et en anglais, conservé comme document historique.",
+        "dateLabel": "Décembre 2022",
+        "languageLabel": "Français et anglais"
+      }
+    },
+    {
+      "id": "77-the-cable-v7-i1",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/77-the-cable-v7-i1.pdf",
+      "en": {
+        "title": "The Cable - 77 Line Regiment - Volume 7, Issue 1",
+        "description": "Original newsletter from 77 Line Regiment, including articles in English and French, preserved as a historical document.",
+        "dateLabel": "June 2023",
+        "languageLabel": "English and French"
+      },
+      "fr": {
+        "title": "The Cable - 77e Régiment de ligne - volume 7, numéro 1",
+        "description": "Bulletin original du 77e Régiment de ligne, comprenant des articles en français et en anglais, conservé comme document historique.",
+        "dateLabel": "Juin 2023",
+        "languageLabel": "Français et anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2025-06-07",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2025-06-07.pdf",
+      "pageUrl": "/newsletter?issue=fall-2025",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - June/July 2025 - Volume 3, Issue 5",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "June/July 2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - juin/juillet 2025 - volume 3, numéro 5",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Juin/juillet 2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2025-08",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2025-08.pdf",
+      "pageUrl": "/newsletter?issue=fall-2025",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - August 2025 - Volume 5, Issue 1",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "August 2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - août 2025 - volume 5, numéro 1",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Août 2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2025-09",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2025-09.pdf",
+      "pageUrl": "/newsletter?issue=fall-2025",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - September 2025 - Volume 5, Issue 2",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "September 2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - septembre 2025 - volume 5, numéro 2",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Septembre 2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2023-03-picture-on-the-wall",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2023-03-picture-on-the-wall.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - March 2023 - Volume 1, Issue 5 - Picture on the Wall: David Watson",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "March 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - mars 2023 - volume 1, numéro 5 - Un portrait au mur : David Watson",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Mars 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-special-dispatch-riders",
+      "organization": "branch",
+      "type": "article",
+      "fileUrl": "/documents/32-special-dispatch-riders.pdf",
+      "en": {
+        "title": "Special Dispatch Riders - Urgent Maps and Messages - Get the Message Through",
+        "description": "Historical article by HCol Ken Lloyd comparing Second World War dispatch riders with modern 32 Signal Regiment dispatch riders.",
+        "dateLabel": "Undated",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Les estafettes militaires - cartes et messages urgents - transmettre le message",
+        "description": "Article historique du colonel honoraire Ken Lloyd comparant les estafettes de la Seconde Guerre mondiale à celles du 32e Régiment des transmissions.",
+        "dateLabel": "Sans date",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2024-01",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2024-01.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - January 2024 - Volume 3, Issue 1",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "January 2024",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - janvier 2024 - volume 3, numéro 1",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Janvier 2024",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2022-07",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2022-07.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - July 2022 - Volume 1, Issue 1",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "July 2022",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - juillet 2022 - volume 1, numéro 1",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Juillet 2022",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2022-09",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2022-09.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - September 2022 - Volume 1, Issue 2",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "September 2022",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - septembre 2022 - volume 1, numéro 2",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Septembre 2022",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2023-01",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2023-01.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - January 2023 - Volume 1, Issue 3",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "January 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - janvier 2023 - volume 1, numéro 3",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Janvier 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2023-03",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2023-03.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - March 2023 - Volume 1, Issue 4",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "March 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - mars 2023 - volume 1, numéro 4",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Mars 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2023-06",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2023-06.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - June 2023 - Volume 2, Issue 10",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "June 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - juin 2023 - volume 2, numéro 10",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Juin 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2023-07",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2023-07.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - July 2023 - Volume 2, Issue 11",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "July 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - juillet 2023 - volume 2, numéro 11",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Juillet 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2023-08",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2023-08.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - August 2023 - Volume 2, Issue 12",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "August 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - août 2023 - volume 2, numéro 12",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Août 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2023-08-special",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2023-08-special.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - August 2023 - Volume 2, Issue 13 - Special Edition",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "August 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - août 2023 - volume 2, numéro 13 - Édition spéciale",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Août 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2023-10",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2023-10.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - October 2023 - Volume 2, Issue 12",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "October 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - octobre 2023 - volume 2, numéro 12",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Octobre 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "32-despatches-2023-11",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/32-despatches-2023-11.pdf",
+      "en": {
+        "title": "Despatches - 32 Signal Regiment - November 2023 - Volume 2, Issue 13",
+        "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
+        "dateLabel": "November 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Despatches - 32e Régiment des transmissions - novembre 2023 - volume 2, numéro 13",
+        "description": "Bulletin Despatches original du 32e Régiment des transmissions, conservé comme document historique.",
+        "dateLabel": "Novembre 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "naval-silent-signaling-service",
+      "organization": "branch",
+      "type": "article",
+      "fileUrl": "/documents/naval-silent-signaling-service.pdf",
+      "en": {
+        "title": "The Silent Signaling Service - Navy Signalers",
+        "description": "Historical article by Ken Lloyd comparing naval signalling experiences across generations, linked from the 32 Signal Regiment collection.",
+        "dateLabel": "Undated",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Le service silencieux des transmissions - les signaleurs de la Marine",
+        "description": "Article historique de Ken Lloyd comparant les expériences de signalisation navale de différentes générations, lié à la collection du 32e Régiment des transmissions.",
+        "dateLabel": "Sans date",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "cpo1-cwo-newsletter-2025-09",
+      "organization": "branch",
+      "type": "newsletter",
+      "fileUrl": "/documents/cpo1-cwo-newsletter-2025-09.pdf",
+      "en": {
+        "title": "CPO1/CWO Corps Newsletter - September 2025",
+        "description": "Original September 2025 newsletter, preserved as a historical issue.",
+        "dateLabel": "September 2025",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Bulletin du corps des premiers maîtres de 1re classe et des adjudants-chefs - septembre 2025",
+        "description": "Bulletin original de septembre 2025, conservé comme numéro historique.",
+        "dateLabel": "Septembre 2025",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "ce-memorials-project-2023-10",
+      "organization": "association",
+      "type": "project-brief",
+      "fileUrl": "/documents/ce-memorials-project-2023-10.pdf",
+      "en": {
+        "title": "C&E Memorials Project - Search for a Project Lead",
+        "description": "Historical project description and call for a project lead from October 2023, retained for reference rather than presented as a current opportunity.",
+        "dateLabel": "October 2023",
+        "languageLabel": "English"
+      },
+      "fr": {
+        "title": "Projet des monuments commémoratifs des C et E - recherche d’un responsable",
+        "description": "Description historique du projet et appel à un responsable d’octobre 2023, conservés à titre de référence et non présentés comme une offre actuelle.",
+        "dateLabel": "Octobre 2023",
+        "languageLabel": "Anglais"
+      }
+    },
+    {
+      "id": "5-cmbg-in-evolution",
+      "organization": "branch",
+      "type": "article",
+      "fileUrl": "/documents/5-cmbg-in-evolution.pdf",
+      "en": {
+        "title": "5 CMBG in Evolution",
+        "description": "Bilingual article on innovation at 5 Canadian Mechanized Brigade Group, shared in the Summer 2023 Association newsletter. The document itself is undated.",
+        "dateLabel": "Undated",
+        "languageLabel": "English and French"
+      },
+      "fr": {
+        "title": "5 GBMC en Évolution",
+        "description": "Article bilingue sur l’innovation au 5e Groupe-brigade mécanisé du Canada, partagé dans le bulletin de l’Association de l’été 2023. Le document lui-même n’est pas daté.",
+        "dateLabel": "Sans date",
+        "languageLabel": "Français et anglais"
       }
     }
   ]

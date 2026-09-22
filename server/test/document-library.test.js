@@ -35,11 +35,18 @@ test('document library references available public source files', () => {
 
   content.documents.forEach((documentItem) => {
     if (documentItem.fileUrl) {
-      assert.match(documentItem.fileUrl, /^\/documents\/.+\.(pdf|docx)$/u);
-      assert.ok(
-        fs.existsSync(path.join(PUBLIC_DIRECTORY, documentItem.fileUrl)),
-        `${documentItem.id} source file exists`,
-      );
+      if (documentItem.fileUrl.startsWith('https://')) {
+        const url = new URL(documentItem.fileUrl);
+        assert.equal(url.protocol, 'https:');
+        assert.equal(url.hostname, 'cdn.corebot.ca');
+        assert.match(url.pathname, /^\/[^/]+\/documents\/.+\.(pdf|docx)$/u);
+      } else {
+        assert.match(documentItem.fileUrl, /^\/documents\/.+\.(pdf|docx)$/u);
+        assert.ok(
+          fs.existsSync(path.join(PUBLIC_DIRECTORY, documentItem.fileUrl)),
+          `${documentItem.id} source file exists`,
+        );
+      }
     }
     ['en', 'fr'].forEach((language) => {
       assert.ok(documentItem[language].title.trim());
@@ -68,15 +75,22 @@ test('document library labels Word source files accurately', () => {
 });
 
 test('appointment policy source documents remain available through the document library', () => {
-  const publicSources = [
-    'document-library.html',
-    'document-library.js',
-    'page-content/document-library.json',
-  ].map((fileName) =>
-    fs.readFileSync(path.join(PUBLIC_DIRECTORY, fileName), 'utf8'),
+  const content = JSON.parse(
+    fs.readFileSync(
+      path.join(PUBLIC_DIRECTORY, 'page-content/document-library.json'),
+      'utf8',
+    ),
   );
-
-  const combined = publicSources.join('\n');
-  assert.match(combined, /ce-branch-colonel-commandant-sop-2020\.pdf/u);
-  assert.match(combined, /ce-branch-honorary-appointments-sop-2020\.pdf/u);
+  for (const id of [
+    'colonel-commandant-nomination-2020',
+    'honorary-appointments-2020',
+  ]) {
+    const document = content.documents.find((item) => item.id === id);
+    assert.ok(document, `${id} is discoverable in the library`);
+    assert.match(
+      document.fileUrl,
+      /\.pdf$/u,
+      `${id} retains its source PDF link`,
+    );
+  }
 });

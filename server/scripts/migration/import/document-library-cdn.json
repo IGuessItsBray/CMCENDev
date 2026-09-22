@@ -1,0 +1,429 @@
+{
+  "version": 1,
+  "scope": "Remaining 46 PDFs and one Word document from the public document library. Original bytes uploaded without rewriting; CDN responses verified by SHA-256 and the appropriate PDF or DOCX content type. Newsletter PDFs are tracked separately in newsletter-inventory.json.",
+  "documents": [
+    {
+      "documentId": "association-agm-minutes-2025-draft",
+      "sourceName": "ce-association-agm-minutes-2025-draft.docx",
+      "storageKey": "documents/library/association-agm-minutes-2025-draft-a7d51c2cb07c.docx",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-minutes-2025-draft-a7d51c2cb07c.docx",
+      "sha256": "a7d51c2cb07ca55aab73b722acf8d18d64bfe1f0a305518ae6bd9a26c46254d7",
+      "bytes": 2286661,
+      "cdnVerifiedAt": "2026-09-22T17:12:42.960Z"
+    },
+    {
+      "documentId": "association-agm-agenda-2023-october",
+      "sourceName": "ce-association-agm-agenda-2023-10-23.pdf",
+      "storageKey": "documents/library/association-agm-agenda-2023-october-4412ef676d88.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-agenda-2023-october-4412ef676d88.pdf",
+      "sha256": "4412ef676d88507274cb798c6ab0f79382cfdbfcf5f2178bbc36f7f30e856ff1",
+      "bytes": 66066,
+      "cdnVerifiedAt": "2026-09-22T17:07:27.392Z"
+    },
+    {
+      "documentId": "association-agm-minutes-2022",
+      "sourceName": "ce-association-agm-minutes-2022-10-27.pdf",
+      "storageKey": "documents/library/association-agm-minutes-2022-7911981af66c.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-minutes-2022-7911981af66c.pdf",
+      "sha256": "7911981af66c5e1ba04e79c6110ad17432eed3fd7027161965f2b1019f9f7244",
+      "bytes": 81964,
+      "cdnVerifiedAt": "2026-09-22T17:07:27.517Z"
+    },
+    {
+      "documentId": "association-agm-minutes-2023-october",
+      "sourceName": "ce-association-agm-minutes-2023-10.pdf",
+      "storageKey": "documents/library/association-agm-minutes-2023-october-bca295891563.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-minutes-2023-october-bca295891563.pdf",
+      "sha256": "bca295891563d1ca53284b2f8fe5a1d2386fc05979335427dbcfdd465e4bc8ed",
+      "bytes": 48489,
+      "cdnVerifiedAt": "2026-09-22T17:07:28.449Z"
+    },
+    {
+      "documentId": "association-agm-record-2021-october",
+      "sourceName": "ce-association-agm-record-2021-10-28.pdf",
+      "storageKey": "documents/library/association-agm-record-2021-october-e9c0ddf6957e.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-record-2021-october-e9c0ddf6957e.pdf",
+      "sha256": "e9c0ddf6957e3fff0189f590edc7e2e8179eb94ad333fb7ce4d3225f5d38e46e",
+      "bytes": 5764523,
+      "cdnVerifiedAt": "2026-09-22T17:08:05.897Z"
+    },
+    {
+      "documentId": "association-agm-record-2024-draft",
+      "sourceName": "ce-association-agm-record-2024-draft.pdf",
+      "storageKey": "documents/library/association-agm-record-2024-draft-a9859d8ba851.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-record-2024-draft-a9859d8ba851.pdf",
+      "sha256": "a9859d8ba851aa64bf4f7eccb4ada98aa4cce7be17f01c6ab0e182c7ed41e328",
+      "bytes": 22038,
+      "cdnVerifiedAt": "2026-09-22T17:07:29.270Z"
+    },
+    {
+      "documentId": "association-articles-continuance",
+      "sourceName": "ce-association-articles-of-continuance.pdf",
+      "storageKey": "documents/library/association-articles-continuance-a78d2383a9a3.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-articles-continuance-a78d2383a9a3.pdf",
+      "sha256": "a78d2383a9a3e444a55081120388ee8c74b232ecd68be31ca1154856a2eb69d1",
+      "bytes": 2450720,
+      "cdnVerifiedAt": "2026-09-22T17:07:59.710Z"
+    },
+    {
+      "documentId": "association-by-laws-2024",
+      "sourceName": "ce-association-by-laws-2024.pdf",
+      "storageKey": "documents/library/association-by-laws-2024-672cacc7b264.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-by-laws-2024-672cacc7b264.pdf",
+      "sha256": "672cacc7b2642508316ab6492adbc88b6f9c2f2a571e74b366618b85d44ce180",
+      "bytes": 910394,
+      "cdnVerifiedAt": "2026-09-22T17:07:36.562Z"
+    },
+    {
+      "documentId": "association-draft-strategic-plan-2015",
+      "sourceName": "ce-association-draft-strategic-plan-2015.pdf",
+      "storageKey": "documents/library/association-draft-strategic-plan-2015-502054545e44.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-draft-strategic-plan-2015-502054545e44.pdf",
+      "sha256": "502054545e44af65cc8dd7736fbf24ce2b88a48570ac0b688ef8d9967ade1935",
+      "bytes": 398791,
+      "cdnVerifiedAt": "2026-09-22T17:07:40.369Z"
+    },
+    {
+      "documentId": "association-financial-report-agm-2024",
+      "sourceName": "ce-association-financial-report-agm-2024.pdf",
+      "storageKey": "documents/library/association-financial-report-agm-2024-88278063f94f.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-financial-report-agm-2024-88278063f94f.pdf",
+      "sha256": "88278063f94fb2a076644883d49a6e0dc169504e690516d032ebf6c7e69ae63d",
+      "bytes": 191713,
+      "cdnVerifiedAt": "2026-09-22T17:07:46.221Z"
+    },
+    {
+      "documentId": "association-treasurers-report-2020-2021",
+      "sourceName": "ce-association-treasurers-report-2020-2021.pdf",
+      "storageKey": "documents/library/association-treasurers-report-2020-2021-9d107c7aec0f.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-treasurers-report-2020-2021-9d107c7aec0f.pdf",
+      "sha256": "9d107c7aec0fd761aa05d05b31c0dd1f5afef8f3724569379ff6659d2f9a1b70",
+      "bytes": 1424407,
+      "cdnVerifiedAt": "2026-09-22T17:08:02.262Z"
+    },
+    {
+      "documentId": "association-treasurers-report-2021-2022",
+      "sourceName": "ce-association-treasurers-report-2021-2022.pdf",
+      "storageKey": "documents/library/association-treasurers-report-2021-2022-92c8022ad4b9.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-treasurers-report-2021-2022-92c8022ad4b9.pdf",
+      "sha256": "92c8022ad4b9c998c44506d39e117ef358e84ae92f9db64c9f08ab351b671113",
+      "bytes": 1473049,
+      "cdnVerifiedAt": "2026-09-22T17:08:08.865Z"
+    },
+    {
+      "documentId": "association-treasurers-report-2024-2025",
+      "sourceName": "ce-association-treasurers-report-2024-2025.pdf",
+      "storageKey": "documents/library/association-treasurers-report-2024-2025-bbf9cf8aeecb.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-treasurers-report-2024-2025-bbf9cf8aeecb.pdf",
+      "sha256": "bbf9cf8aeecbfd0ad7a305ad395148bf9ee1b6807d0696d4614bbb50e62ea3e6",
+      "bytes": 474841,
+      "cdnVerifiedAt": "2026-09-22T17:08:11.358Z"
+    },
+    {
+      "documentId": "bac-record-of-discussion-feb-2026",
+      "sourceName": "bac-record-of-discussion-feb-2026.pdf",
+      "storageKey": "documents/library/bac-record-of-discussion-feb-2026-64ddad7f5884.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/bac-record-of-discussion-feb-2026-64ddad7f5884.pdf",
+      "sha256": "64ddad7f588469b40de4f9b923b0cecfa5aef614b5f24c5279a831d1c25541bf",
+      "bytes": 335840,
+      "cdnVerifiedAt": "2026-09-22T17:07:28.392Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2014-version-1",
+      "sourceName": "ce-bac-rod-2014-v1.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2014-version-1-d08c957a3dec.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2014-version-1-d08c957a3dec.pdf",
+      "sha256": "d08c957a3decad8360ab790782ce7edc5397b8f3b70f6f40b918ebe3f52295d5",
+      "bytes": 456119,
+      "cdnVerifiedAt": "2026-09-22T17:08:12.493Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2014-version-2",
+      "sourceName": "ce-bac-rod-2014-v2.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2014-version-2-d9707b7ff462.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2014-version-2-d9707b7ff462.pdf",
+      "sha256": "d9707b7ff4625a26bc2f7cf7fc6dbe9be384e81c34a033729a6e6b21d47fd948",
+      "bytes": 393480,
+      "cdnVerifiedAt": "2026-09-22T17:08:12.461Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2015-version-1",
+      "sourceName": "ce-bac-rod-2015-v1.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2015-version-1-0cab8e95164d.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2015-version-1-0cab8e95164d.pdf",
+      "sha256": "0cab8e95164d6e66a5a335e21bc382d748cff4eaa3fe1d95e4b01dccae76d5f8",
+      "bytes": 312727,
+      "cdnVerifiedAt": "2026-09-22T17:08:19.470Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2015-version-2",
+      "sourceName": "ce-bac-rod-2015-v2.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2015-version-2-c0394777db10.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2015-version-2-c0394777db10.pdf",
+      "sha256": "c0394777db10415c69da7d595ee5979585a9a5663393524497f82957d02db466",
+      "bytes": 292500,
+      "cdnVerifiedAt": "2026-09-22T17:08:21.298Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2016-april",
+      "sourceName": "ce-bac-rod-2016-previous.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2016-april-82d16b619977.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2016-april-82d16b619977.pdf",
+      "sha256": "82d16b619977293c0a5a249a57995384f372e9d0c97d38af94db96e64cb8a56f",
+      "bytes": 338263,
+      "cdnVerifiedAt": "2026-09-22T17:08:22.661Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2020-february",
+      "sourceName": "ce-bac-rod-2020-02-24.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2020-february-0ab080061d24.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2020-february-0ab080061d24.pdf",
+      "sha256": "0ab080061d24d356b28f33fe3b6b0a4f60a0d600ae6e718339bc00302ad85242",
+      "bytes": 511147,
+      "cdnVerifiedAt": "2026-09-22T17:08:27.824Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2021-january",
+      "sourceName": "ce-bac-rod-2021-01-20.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2021-january-aeb7f5474bc0.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2021-january-aeb7f5474bc0.pdf",
+      "sha256": "aeb7f5474bc040c2e47923174581297a7a75062a661f8a05abf2be42ce5db269",
+      "bytes": 712926,
+      "cdnVerifiedAt": "2026-09-22T17:08:39.350Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2022-december",
+      "sourceName": "ce-bac-rod-2022-12-09.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2022-december-bfd488bbee42.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2022-december-bfd488bbee42.pdf",
+      "sha256": "bfd488bbee4224bb4d8c4f751e7700715321410e059966f4286d595e03392484",
+      "bytes": 1016796,
+      "cdnVerifiedAt": "2026-09-22T17:08:39.256Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2022-may",
+      "sourceName": "ce-bac-rod-2022-05-20.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2022-may-e5510cacf833.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2022-may-e5510cacf833.pdf",
+      "sha256": "e5510cacf833c38168d771b8a14bdc0fb7c9f35359a4ed0d6c6c5ff1825e4b8e",
+      "bytes": 575030,
+      "cdnVerifiedAt": "2026-09-22T17:08:33.449Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2023-march",
+      "sourceName": "ce-bac-rod-2023-03-08.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2023-march-914048d27084.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2023-march-914048d27084.pdf",
+      "sha256": "914048d27084ebdfc71ca0b27d06079f800586270e0c52b01630149fd47d1532",
+      "bytes": 1124966,
+      "cdnVerifiedAt": "2026-09-22T17:08:44.452Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2024-february",
+      "sourceName": "ce-bac-rod-2024-02-05.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2024-february-28386be1954c.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2024-february-28386be1954c.pdf",
+      "sha256": "28386be1954c28dce3eb0ef9e475b647fd72c71fa8b8eb91e1d438b7b6030b85",
+      "bytes": 168460,
+      "cdnVerifiedAt": "2026-09-22T17:08:41.951Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2024-september",
+      "sourceName": "ce-bac-rod-2024-09-24.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2024-september-53474bd86231.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2024-september-53474bd86231.pdf",
+      "sha256": "53474bd86231be36d5db4c001b196246e1be4cf356a485838c859e3ecb02cf3e",
+      "bytes": 2934638,
+      "cdnVerifiedAt": "2026-09-22T17:08:59.267Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2025-june",
+      "sourceName": "ce-bac-rod-2025-06-05.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2025-june-fb70dfe96095.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2025-june-fb70dfe96095.pdf",
+      "sha256": "fb70dfe960951cafb6745ae2be667d0ae814a5537096a2a0c678561f3bc0a85e",
+      "bytes": 302471,
+      "cdnVerifiedAt": "2026-09-22T17:08:49.812Z"
+    },
+    {
+      "documentId": "ce-bac-rod-2025-october",
+      "sourceName": "ce-bac-rod-2025-10-10.pdf",
+      "storageKey": "documents/library/ce-bac-rod-2025-october-dcb1c2d4d263.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2025-october-dcb1c2d4d263.pdf",
+      "sha256": "dcb1c2d4d263ba1021885cdf02537423e1ab2f50fac8220f5eb5f2c805a78838",
+      "bytes": 364544,
+      "cdnVerifiedAt": "2026-09-22T17:08:54.964Z"
+    },
+    {
+      "documentId": "ce-bac-slides-2025-april",
+      "sourceName": "ce-bac-rod-2025-04-23.pdf",
+      "storageKey": "documents/library/ce-bac-slides-2025-april-7a7e6d932a38.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-slides-2025-april-7a7e6d932a38.pdf",
+      "sha256": "7a7e6d932a389560a0da8abbc6dfde6c8c9b5588c9f9e39fefb366511f212b8f",
+      "bytes": 850425,
+      "cdnVerifiedAt": "2026-09-22T17:08:50.626Z"
+    },
+    {
+      "documentId": "ce-branch-standing-orders-2020",
+      "sourceName": "ce-branch-standing-orders-2020.pdf",
+      "storageKey": "documents/library/ce-branch-standing-orders-2020-2ea661300ed7.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-branch-standing-orders-2020-2ea661300ed7.pdf",
+      "sha256": "2ea661300ed7fd4e634d97e8514bb6f34b644de0ba69e3ad56ab3d8404d3c304",
+      "bytes": 14764763,
+      "cdnVerifiedAt": "2026-09-22T17:09:49.249Z"
+    },
+    {
+      "documentId": "ce-senate-charter-2020",
+      "sourceName": "ce-senate-charter-2020.pdf",
+      "storageKey": "documents/library/ce-senate-charter-2020-f589195882e2.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-charter-2020-f589195882e2.pdf",
+      "sha256": "f589195882e296ebdf69d21b3e318616e81d4d0904cc69e8dc688ac03bd5cf4e",
+      "bytes": 993923,
+      "cdnVerifiedAt": "2026-09-22T17:09:02.656Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2020-may",
+      "sourceName": "ce-senate-rod-2020-05-28.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2020-may-7340c3fddb0c.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2020-may-7340c3fddb0c.pdf",
+      "sha256": "7340c3fddb0c36beb7a9cda5c8155f5e070224c5641a527fcedda07ffbe014a9",
+      "bytes": 751499,
+      "cdnVerifiedAt": "2026-09-22T17:09:08.147Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2020-october",
+      "sourceName": "ce-senate-rod-2020-10-29.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2020-october-faac1b180b1e.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2020-october-faac1b180b1e.pdf",
+      "sha256": "faac1b180b1e3f0c61e5c7d7ec04ae336a117cfc3a1d9f00487ebaf235037369",
+      "bytes": 948403,
+      "cdnVerifiedAt": "2026-09-22T17:09:10.696Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2021-february",
+      "sourceName": "ce-senate-rod-2021-02-04.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2021-february-0e62f38a1b2d.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2021-february-0e62f38a1b2d.pdf",
+      "sha256": "0e62f38a1b2d6ca9b6045bf453e579e3e1e9f5c56e28efe1c0fbda7e9065eb24",
+      "bytes": 1001666,
+      "cdnVerifiedAt": "2026-09-22T17:09:16.949Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2021-june",
+      "sourceName": "ce-senate-rod-2021-06-24.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2021-june-634784cc3440.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2021-june-634784cc3440.pdf",
+      "sha256": "634784cc3440f1fc596cd6c884d08ec3c59da35c80cbd85c44411ac242d063ca",
+      "bytes": 1128543,
+      "cdnVerifiedAt": "2026-09-22T17:09:26.384Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2021-march",
+      "sourceName": "ce-senate-rod-2021-03-02.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2021-march-5be2e0a36d15.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2021-march-5be2e0a36d15.pdf",
+      "sha256": "5be2e0a36d1523da6574cd43b521e5c85ebfada7ec306045a3dcf9f33c3fd487",
+      "bytes": 959340,
+      "cdnVerifiedAt": "2026-09-22T17:09:22.195Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2021-october",
+      "sourceName": "ce-senate-rod-2021-10-28.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2021-october-3f3f21a8a410.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2021-october-3f3f21a8a410.pdf",
+      "sha256": "3f3f21a8a410a3dce0c8439fb3cd43c2a8deb72eca6d76a679cfd737bcb95335",
+      "bytes": 1162591,
+      "cdnVerifiedAt": "2026-09-22T17:09:30.162Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2022-june",
+      "sourceName": "ce-senate-rod-2022-06-20.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2022-june-c9d8ea790299.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2022-june-c9d8ea790299.pdf",
+      "sha256": "c9d8ea790299aaae6ca804ac3c7fdcbe6d9e076f5a0b52c1c32f22a015910b43",
+      "bytes": 2048085,
+      "cdnVerifiedAt": "2026-09-22T17:09:38.100Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2022-october",
+      "sourceName": "ce-senate-rod-2022-10-28.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2022-october-47f6fedc1622.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2022-october-47f6fedc1622.pdf",
+      "sha256": "47f6fedc1622630bc0511a41190312dd4f5f7c002ea24420fd9bbb607dd1563d",
+      "bytes": 806631,
+      "cdnVerifiedAt": "2026-09-22T17:09:38.378Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2023-may",
+      "sourceName": "ce-senate-rod-2023-05-26.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2023-may-0cd6971b470a.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2023-may-0cd6971b470a.pdf",
+      "sha256": "0cd6971b470a90091ab37733dec27735a0c2c9b11511a22774616004d50add01",
+      "bytes": 757267,
+      "cdnVerifiedAt": "2026-09-22T17:09:48.623Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2023-october",
+      "sourceName": "ce-senate-rod-2023-10-27.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2023-october-9642b2caa376.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2023-october-9642b2caa376.pdf",
+      "sha256": "9642b2caa3763f43df5d56c764a1d15198e2800f9f5014bc51b72692869a6b8c",
+      "bytes": 931898,
+      "cdnVerifiedAt": "2026-09-22T17:09:47.826Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2024-october",
+      "sourceName": "ce-senate-rod-2024-10-24.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2024-october-f24a477c6069.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2024-october-f24a477c6069.pdf",
+      "sha256": "f24a477c6069ffc12f109440cb92b8f14f4bc9b09eb35edbc0bf44b58ce22ba5",
+      "bytes": 372649,
+      "cdnVerifiedAt": "2026-09-22T17:09:51.701Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2025-may",
+      "sourceName": "ce-senate-rod-2025-06-16.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2025-may-2860975cfeca.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2025-may-2860975cfeca.pdf",
+      "sha256": "2860975cfeca4fcb844eb97d4f362949c4ccd40f680db7f2f31ce4cceb51c07e",
+      "bytes": 316770,
+      "cdnVerifiedAt": "2026-09-22T17:09:52.022Z"
+    },
+    {
+      "documentId": "ce-senate-rod-2025-october",
+      "sourceName": "ce-senate-rod-2025-10-23.pdf",
+      "storageKey": "documents/library/ce-senate-rod-2025-october-06b98f1c08fb.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2025-october-06b98f1c08fb.pdf",
+      "sha256": "06b98f1c08fb0c0f0ad5409c02de36b74cbce39de5d8957bef96a268bb8d24b6",
+      "bytes": 376412,
+      "cdnVerifiedAt": "2026-09-22T17:09:55.856Z"
+    },
+    {
+      "documentId": "ce-senate-slides-2024-october",
+      "sourceName": "ce-senate-slides-2024-10-24.pdf",
+      "storageKey": "documents/library/ce-senate-slides-2024-october-1693b190d34c.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-slides-2024-october-1693b190d34c.pdf",
+      "sha256": "1693b190d34cfc5468926012c6c3440cee868850ede0cb3c52205ed6212f74d1",
+      "bytes": 1591105,
+      "cdnVerifiedAt": "2026-09-22T17:10:01.661Z"
+    },
+    {
+      "documentId": "colonel-commandant-nomination-2020",
+      "sourceName": "ce-branch-colonel-commandant-sop-2020.pdf",
+      "storageKey": "documents/library/colonel-commandant-nomination-2020-dece5683b48d.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/colonel-commandant-nomination-2020-dece5683b48d.pdf",
+      "sha256": "dece5683b48dfd7b5b2ecbaf8fb32bbabf8957208eebbdea6d2a1262cccf03ff",
+      "bytes": 64732,
+      "cdnVerifiedAt": "2026-09-22T17:08:54.340Z"
+    },
+    {
+      "documentId": "honorary-appointments-2020",
+      "sourceName": "ce-branch-honorary-appointments-sop-2020.pdf",
+      "storageKey": "documents/library/honorary-appointments-2020-5de588ad18e8.pdf",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/honorary-appointments-2020-5de588ad18e8.pdf",
+      "sha256": "5de588ad18e812b48698060547f95d19c3b218ca0fe571b34ea4139b3135e8d1",
+      "bytes": 241373,
+      "cdnVerifiedAt": "2026-09-22T17:08:56.623Z"
+    }
+  ]
+}

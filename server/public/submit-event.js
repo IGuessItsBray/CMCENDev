@@ -50,6 +50,7 @@ let eventStartPicker = null;
 let eventEndPicker = null;
 
 const eventPageParams = new URLSearchParams(window.location.search);
+const personalSubmission = eventPageParams.get("personal") === "1";
 let editingEventId = eventPageParams.get("id");
 
 function eventApiJson(path, token, options = {}) {
@@ -122,7 +123,9 @@ function setSubmitting(submitting) {
       submitting
         ? "event_submitting"
         : editingEventId
-          ? "save_event_changes"
+          ? personalSubmission
+            ? "my_submissions_resubmit"
+            : "save_event_changes"
           : "submit_event_button",
     ),
   );
@@ -317,6 +320,7 @@ function buildEventData() {
     contentArea: "general",
 
     publishNow: !publishNowContainer.hidden && eventPublishNow.checked,
+    ...(personalSubmission && editingEventId ? { submitForReview: true } : {}),
 
     city: document.getElementById("eventCity").value.trim(),
 
@@ -414,9 +418,10 @@ async function initializeEventPage() {
     }
 
     const canPublishGeneral =
-      currentUser.permissions?.canReviewAndPublish === true ||
-      (currentUser.permissions?.canPublishOwnContent === true &&
-        currentUser.contentAreas?.includes("general"));
+      !personalSubmission &&
+      (currentUser.permissions?.canReviewAndPublish === true ||
+        (currentUser.permissions?.canPublishOwnContent === true &&
+          currentUser.contentAreas?.includes("general")));
 
     publishNowContainer.hidden = !canPublishGeneral;
 
@@ -777,11 +782,21 @@ function updateEventFormModeText() {
   cancelEventEditing.disabled = isSubmitting;
   updateEventPageHeader();
   eventSubmitButtonLabel.textContent = translate(
-    isEditing ? "save_event_changes" : "submit_event_button",
+    isEditing
+      ? personalSubmission
+        ? "my_submissions_resubmit"
+        : "save_event_changes"
+      : "submit_event_button",
   );
   eventSubmitButton.setAttribute(
     "aria-label",
-    translate(isEditing ? "save_event_changes" : "submit_event_button"),
+    translate(
+      isEditing
+        ? personalSubmission
+          ? "my_submissions_resubmit"
+          : "save_event_changes"
+        : "submit_event_button",
+    ),
   );
 }
 

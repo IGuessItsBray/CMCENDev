@@ -1,4 +1,5 @@
 const express = require('express');
+const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const mongoose = require('mongoose');
 const CertificateRequest = require('../models/CertificateRequest');
 const RetirementMessage = require('../models/RetirementMessage');
@@ -1038,6 +1039,15 @@ router.get('/comments/:commentId/edit', authMiddleware, async (req, res) => {
 
 router.patch('/comments/:commentId', authMiddleware, async (req, res) => {
   try {
+    if (
+      req.body?.submitForReview !== undefined &&
+      typeof req.body.submitForReview !== 'boolean'
+    ) {
+      return res
+        .status(400)
+        .json({ error: 'submitForReview must be a boolean' });
+    }
+    const submitForReview = req.body?.submitForReview === true;
     const cleanBody = cleanString(req.body?.body);
 
     if (cleanBody.length < 2) {
@@ -1077,9 +1087,17 @@ router.patch('/comments/:commentId', authMiddleware, async (req, res) => {
       });
     }
 
+    if (submitForReview && !isOwner) {
+      return res.status(404).json({ error: 'Retirement comment not found' });
+    }
+    if (submitForReview && !['pending', 'rejected'].includes(comment.status)) {
+      return res
+        .status(409)
+        .json({ error: 'This comment cannot be resubmitted' });
+    }
     comment.body = cleanBody;
     comment.status =
-      canReview && permissions.canPublishOwnContent === true
+      !submitForReview && canReview && permissions.canPublishOwnContent === true
         ? 'published'
         : 'pending';
     comment.rejectionReason = '';
@@ -1184,6 +1202,8 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
+    const personalError = getPersonalSubmissionError(req.body, retirementMessage, req.user._id);
+    if (personalError) return res.status(personalError.status).json({ error: personalError.error });
     const permissions = getUserPermissions(req.user);
     const isOwner =
       retirementMessage.createdBy &&

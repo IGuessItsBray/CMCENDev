@@ -5,7 +5,6 @@ const crypto = require('crypto');
 const speakeasy = require('speakeasy');
 const User = require('../models/User');
 const Event = require('../models/Event');
-const EventRsvp = require('../models/EventRsvp');
 const RetirementMessage = require('../models/RetirementMessage');
 const RetirementComment = require('../models/RetirementComment');
 const LastPostMessage = require('../models/LastPostMessage');
@@ -37,7 +36,7 @@ const {
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions notificationState createdAt updatedAt';
+  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -106,7 +105,6 @@ const PASSWORD_RESET_GENERIC_MESSAGE =
 const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
 const EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS = 30 * 60 * 1000;
 const GHOST_PASSWORD_BYTES = 32;
-const INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 const TD_INSURANCE_MEMBER_BENEFIT_URL =
   'https://www.tdinsurance.com/affinity/cmcen?campaignid=PONMEBAN179135';
 
@@ -302,338 +300,6 @@ function createGhostPassword() {
   return crypto.randomBytes(GHOST_PASSWORD_BYTES).toString('hex');
 }
 
-function getReviewResultQuery(ownerField, user, lastReadAt) {
-  return {
-    [ownerField]: user._id,
-    $or: [
-      getRejectedReviewResultQuery(),
-      getUnreadApprovalReviewResultQuery(user, lastReadAt),
-    ],
-  };
-}
-
-function getRejectedReviewResultQuery() {
-  return { status: 'rejected' };
-}
-
-function getUnreadApprovalReviewResultQuery(user, lastReadAt) {
-  const approvalReadAt =
-    lastReadAt ||
-    new Date(Date.now() - INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS);
-
-  return {
-    status: 'published',
-    $or: [
-      { publishedAt: { $gt: approvalReadAt } },
-      {
-        publishedAt: null,
-        reviewedAt: { $gt: approvalReadAt },
-      },
-    ],
-    reviewedBy: { $ne: user._id },
-  };
-}
-
-function getReviewResultHref(type, item) {
-  const id = encodeURIComponent(String(item._id));
-
-  if (item.status === 'rejected') {
-    if (type === 'event') return `/submit-event?id=${id}`;
-
-    if (type === 'retirementMessage') return `/submit-retirement?id=${id}`;
-
-    if (type === 'lastPost') return `/submit-last-post?id=${id}`;
-
-    const messageId = encodeURIComponent(
-      String(item.retirementMessage?._id || item.retirementMessage || ''),
-    );
-    return `/retirement-message?id=${messageId}&editComment=${id}`;
-  }
-
-  if (type === 'event') return `/event?id=${id}`;
-
-  if (type === 'retirementMessage') return `/retirement-message?id=${id}`;
-
-  if (type === 'lastPost') return `/last-post-message?id=${id}`;
-
-  const messageId = encodeURIComponent(
-    String(item.retirementMessage?._id || item.retirementMessage || ''),
-  );
-  return `/retirement-message?id=${messageId}#comments`;
-}
-
-async function getEventReviewNotifications(user, lastReadAt) {
-  const events = await Event.find(
-    getReviewResultQuery('createdBy', user, lastReadAt),
-  )
-    .select('title status rejectionReason reviewedAt publishedAt updatedAt')
-    .sort({ reviewedAt: -1 })
-    .lean();
-
-  return {
-    actionCount: events.filter((event) => event.status === 'rejected').length,
-    unreadCount: events.filter((event) => event.status === 'published').length,
-    items: events.map((event) => ({
-      type: 'event',
-      id: event._id,
-      title: event.title,
-      status: event.status,
-      reason: event.rejectionReason || '',
-      updatedAt: event.publishedAt || event.reviewedAt || event.updatedAt,
-      editHref: getReviewResultHref('event', event),
-      href: getReviewResultHref('event', event),
-    })),
-  };
-}
-
-async function getEventRsvpNotifications(user, lastReadAt) {
-  const notificationStart =
-    lastReadAt ||
-    new Date(Date.now() - INITIAL_NOTIFICATION_APPROVAL_LOOKBACK_MS);
-  const events = await Event.find({ createdBy: user._id })
-    .select('title')
-    .lean();
-  const titlesByEventId = new Map(
-    events.map((event) => [String(event._id), event.title]),
-  );
-
-  if (!titlesByEventId.size) {
-    return { actionCount: 0, unreadCount: 0, items: [] };
-  }
-
-  const rsvps = await EventRsvp.find({
-    event: { $in: events.map((event) => event._id) },
-    updatedAt: { $gt: notificationStart },
-  })
-    .select('event response rank firstName lastName updatedAt')
-    .sort({ updatedAt: -1 })
-    .limit(50)
-    .lean();
-
-  return {
-    actionCount: 0,
-    unreadCount: rsvps.length,
-    items: rsvps.map((rsvp) => ({
-      type: 'eventRsvp',
-      id: rsvp._id,
-      eventId: rsvp.event,
-      title: titlesByEventId.get(String(rsvp.event)) || {},
-      response: rsvp.response,
-      responderName: [rsvp.rank, rsvp.firstName, rsvp.lastName]
-        .filter(Boolean)
-        .join(' '),
-      status: 'rsvp',
-      updatedAt: rsvp.updatedAt,
-      href: `/event?id=${encodeURIComponent(String(rsvp.event))}`,
-    })),
-  };
-}
-
-function getRetirementMessageNotificationTitle(retirementMessage) {
-  const retiree = retirementMessage.retiree || {};
-  const name = [retiree.rank, retiree.firstName, retiree.lastName]
-    .filter(Boolean)
-    .join(' ');
-
-  return name ? `Retirement message for ${name}` : 'Retirement message';
-}
-
-async function getRetirementMessageReviewNotifications(user, lastReadAt) {
-  const retirementMessages = await RetirementMessage.find(
-    getReviewResultQuery('createdBy', user, lastReadAt),
-  )
-    .select('retiree status rejectionReason reviewedAt publishedAt updatedAt')
-    .sort({ reviewedAt: -1 })
-    .lean();
-
-  return {
-    actionCount: retirementMessages.filter(
-      (retirementMessage) => retirementMessage.status === 'rejected',
-    ).length,
-    unreadCount: retirementMessages.filter(
-      (retirementMessage) => retirementMessage.status === 'published',
-    ).length,
-    items: retirementMessages.map((retirementMessage) => ({
-      type: 'retirementMessage',
-      id: retirementMessage._id,
-      title: getRetirementMessageNotificationTitle(retirementMessage),
-      status: retirementMessage.status,
-      reason: retirementMessage.rejectionReason || '',
-      updatedAt:
-        retirementMessage.publishedAt ||
-        retirementMessage.reviewedAt ||
-        retirementMessage.updatedAt,
-      editHref: getReviewResultHref('retirementMessage', retirementMessage),
-      href: getReviewResultHref('retirementMessage', retirementMessage),
-    })),
-  };
-}
-
-function getLastPostNotificationTitle(lastPost) {
-  const deceased = lastPost.deceased || {};
-  const name = [deceased.fullRank, deceased.firstName, deceased.surname]
-    .filter(Boolean)
-    .join(' ');
-
-  return name ? `Last Post for ${name}` : 'Last Post notice';
-}
-
-async function getLastPostReviewNotifications(user, lastReadAt) {
-  const lastPosts = await LastPostMessage.find(
-    getReviewResultQuery('createdBy', user, lastReadAt),
-  )
-    .select('deceased status rejectionReason reviewedAt publishedAt updatedAt')
-    .sort({ reviewedAt: -1 })
-    .lean();
-
-  return {
-    actionCount: lastPosts.filter((lastPost) => lastPost.status === 'rejected')
-      .length,
-    unreadCount: lastPosts.filter((lastPost) => lastPost.status === 'published')
-      .length,
-    items: lastPosts.map((lastPost) => ({
-      type: 'lastPost',
-      id: lastPost._id,
-      title: getLastPostNotificationTitle(lastPost),
-      status: lastPost.status,
-      reason: lastPost.rejectionReason || '',
-      updatedAt:
-        lastPost.publishedAt || lastPost.reviewedAt || lastPost.updatedAt,
-      editHref: getReviewResultHref('lastPost', lastPost),
-      href: getReviewResultHref('lastPost', lastPost),
-    })),
-  };
-}
-
-async function getRetirementCommentReviewNotifications(user, lastReadAt) {
-  const comments = await RetirementComment.find(
-    getReviewResultQuery('author', user, lastReadAt),
-  )
-    .select(
-      'body status rejectionReason reviewedAt publishedAt updatedAt retirementMessage',
-    )
-    .populate('retirementMessage', 'retiree status')
-    .sort({ reviewedAt: -1 })
-    .lean();
-
-  return {
-    actionCount: comments.filter((comment) => comment.status === 'rejected')
-      .length,
-    unreadCount: comments.filter((comment) => comment.status === 'published')
-      .length,
-    items: comments.map((comment) => ({
-      type: 'retirementComment',
-      id: comment._id,
-      title: getRetirementMessageNotificationTitle(
-        comment.retirementMessage || {},
-      ),
-      body: comment.body || '',
-      status: comment.status,
-      reason: comment.rejectionReason || '',
-      updatedAt: comment.publishedAt || comment.reviewedAt || comment.updatedAt,
-      editHref: getReviewResultHref('retirementComment', comment),
-      href: getReviewResultHref('retirementComment', comment),
-    })),
-  };
-}
-
-async function getNotificationSummary(user) {
-  const readThrough = new Date();
-  const lastReadAt = user.notificationState?.lastReadAt || null;
-  const items = [];
-  let actionCount = 0;
-  let unreadCount = 0;
-
-  const [
-    events,
-    eventRsvps,
-    retirementMessages,
-    lastPosts,
-    retirementComments,
-  ] = await Promise.all([
-    getEventReviewNotifications(user, lastReadAt),
-    getEventRsvpNotifications(user, lastReadAt),
-    getRetirementMessageReviewNotifications(user, lastReadAt),
-    getLastPostReviewNotifications(user, lastReadAt),
-    getRetirementCommentReviewNotifications(user, lastReadAt),
-  ]);
-
-  [
-    events,
-    eventRsvps,
-    retirementMessages,
-    lastPosts,
-    retirementComments,
-  ].forEach((result) => {
-    actionCount += result.actionCount;
-    unreadCount += result.unreadCount;
-    items.push(...result.items);
-  });
-
-  items.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-
-  return {
-    count: actionCount + unreadCount,
-    actionCount,
-    unreadCount,
-    shouldMarkRead: !lastReadAt || unreadCount > 0,
-    items,
-    readThrough: readThrough.toISOString(),
-  };
-}
-
-async function getReviewResultCounts(Model, ownerField, user, lastReadAt) {
-  const ownerQuery = { [ownerField]: user._id };
-  const [actionCount, unreadCount] = await Promise.all([
-    Model.countDocuments({
-      ...ownerQuery,
-      ...getRejectedReviewResultQuery(),
-    }),
-    Model.countDocuments({
-      ...ownerQuery,
-      ...getUnreadApprovalReviewResultQuery(user, lastReadAt),
-    }),
-  ]);
-
-  return { actionCount, unreadCount };
-}
-
-async function getNotificationCounts(user) {
-  const lastReadAt = user.notificationState?.lastReadAt || null;
-  const [
-    events,
-    eventRsvps,
-    retirementMessages,
-    lastPosts,
-    retirementComments,
-  ] = await Promise.all([
-    getReviewResultCounts(Event, 'createdBy', user, lastReadAt),
-    getEventRsvpNotifications(user, lastReadAt),
-    getReviewResultCounts(RetirementMessage, 'createdBy', user, lastReadAt),
-    getReviewResultCounts(LastPostMessage, 'createdBy', user, lastReadAt),
-    getReviewResultCounts(RetirementComment, 'author', user, lastReadAt),
-  ]);
-
-  const actionCount =
-    events.actionCount +
-    eventRsvps.actionCount +
-    retirementMessages.actionCount +
-    lastPosts.actionCount +
-    retirementComments.actionCount;
-  const unreadCount =
-    events.unreadCount +
-    eventRsvps.unreadCount +
-    retirementMessages.unreadCount +
-    lastPosts.unreadCount +
-    retirementComments.unreadCount;
-
-  return {
-    count: actionCount + unreadCount,
-    actionCount,
-    unreadCount,
-  };
-}
-
 async function getProfileResponse(user) {
   const profile = user.toObject ? user.toObject() : user;
   const mfa = {
@@ -647,26 +313,14 @@ async function getProfileResponse(user) {
   delete profile.totp;
   delete profile.webauthn;
   delete profile.twoFactor;
+  delete profile.notificationState;
   const permissions = getUserPermissions(profile);
-  let notifications = {
-    count: 0,
-    actionCount: 0,
-    unreadCount: 0,
-  };
-
-  try {
-    notifications = await getNotificationCounts(profile);
-  } catch (error) {
-    console.error('Could not load notification counts:', error);
-  }
-
   return {
     ...profile,
     weeklyBrief: getWeeklyBriefSubscription(profile),
     newsAnnouncements: getNewsAnnouncementsSubscription(profile),
     mfa,
     permissions,
-    notifications,
   };
 }
 
@@ -1484,44 +1138,6 @@ router.get(
     }
   },
 );
-
-router.get('/notifications', authMiddleware, async (req, res) => {
-  res.json({
-    notifications: await getNotificationSummary(req.user),
-  });
-});
-
-router.post('/notifications/read', authMiddleware, async (req, res) => {
-  const readThrough = new Date(req.body?.readThrough);
-
-  if (Number.isNaN(readThrough.getTime())) {
-    return res.status(400).json({
-      error: 'A valid notification read time is required',
-    });
-  }
-
-  const currentReadAt = req.user.notificationState?.lastReadAt;
-  const lastReadAt =
-    currentReadAt && currentReadAt > readThrough ? currentReadAt : readThrough;
-
-  if (!currentReadAt || currentReadAt < readThrough) {
-    await User.updateOne(
-      { _id: req.user._id },
-      { $set: { 'notificationState.lastReadAt': lastReadAt } },
-    );
-
-    await writeAuditLog({
-      req,
-      action: 'user.notifications_read',
-      actor: req.user,
-      targetType: 'user',
-      target: req.user._id,
-      metadata: { readThrough: readThrough.toISOString() },
-    });
-  }
-
-  res.json({ lastReadAt });
-});
 
 // PUT /api/subscriptions/weekly-brief
 // Capture an explicit, account-page opt-in or immediately withdraw it.

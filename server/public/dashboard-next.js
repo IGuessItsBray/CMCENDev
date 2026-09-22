@@ -81,6 +81,13 @@
       title: "adminAuditTitle",
       mount: (options) => window.AuditLogController.mount(options),
     },
+    content: {
+      permissions: ["canReviewAndPublish", "canManageNews"],
+      link: document.getElementById("adminContentLink"),
+      element: document.getElementById("adminContent"),
+      title: "contentWorkspaceTitle",
+      mount: (options) => window.ContentWorkspace.mount(options),
+    },
     awards: {
       permission: "canReviewAndPublish",
       link: document.getElementById("adminAwardsLink"),
@@ -161,6 +168,13 @@
   let areaRequests = new AbortController();
   let currentUrl = "";
   let areaMessageKey = "";
+  const canAccessArea = (area) =>
+    Boolean(
+      area &&
+      (area.permissions || [area.permission]).some(
+        (permission) => session?.permissions[permission] === true,
+      ),
+    );
 
   function resetAreas() {
     areaRequests.abort();
@@ -176,7 +190,7 @@
   async function areaApi(area, path, options = {}) {
     const { timeoutMs = 15000, ...requestOptions } = options;
     const owner = session;
-    if (!owner || owner.permissions[area.permission] !== true) {
+    if (!owner || !canAccessArea(area)) {
       throw Object.assign(new Error("Access denied"), { status: 403 });
     }
     try {
@@ -219,8 +233,8 @@
   function route(focus = false) {
     if (!session) return;
     const url = new URL(window.location.href);
-    const available = Object.keys(areas).filter(
-      (key) => session.permissions[areas[key].permission] === true,
+    const available = Object.keys(areas).filter((key) =>
+      canAccessArea(areas[key]),
     );
     Object.entries(areas).forEach(([key, area]) => {
       area.link.hidden = !available.includes(key);
@@ -245,17 +259,29 @@
           permissions: session.permissions,
           user: session,
           navigate: navigateAway,
+          onUrlChange: () => {
+            currentUrl = window.location.href;
+          },
           onDenied: () => {
             if (!session) return;
             session = {
               ...session,
-              permissions: { ...session.permissions, [area.permission]: false },
+              permissions: {
+                ...session.permissions,
+                ...Object.fromEntries(
+                  (area.permissions || [area.permission]).map((permission) => [
+                    permission,
+                    false,
+                  ]),
+                ),
+              },
             };
             area.instance?.dispose();
             area.instance = null;
             route();
           },
         });
+      area.instance.activate?.(new URL(window.location.href));
       if (focus) document.getElementById(area.title).focus();
     } else {
       showAreaMessage(
@@ -359,10 +385,10 @@
   }
   function canNavigate(url) {
     const destination = areas[url.searchParams.get("area")];
-    if (!destination || session?.permissions[destination.permission] !== true)
-      return canLeave();
+    if (!canAccessArea(destination)) return canLeave();
     // Mounted sections retain their forms and drafts when hidden.
-    return areasReady();
+    if (!areasReady()) return false;
+    return destination.instance?.canRoute?.(url) ?? true;
   }
   async function navigateAway(href) {
     if (navigationPending) return;

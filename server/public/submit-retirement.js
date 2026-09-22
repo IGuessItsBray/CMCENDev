@@ -67,6 +67,7 @@ const retirementAuthToken = CMCENUtils.requireAuthToken();
 const RETIREMENT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const redirectToLogin = CMCENUtils.redirectToLogin;
 const retirementPageParams = new URLSearchParams(window.location.search);
+const personalSubmission = retirementPageParams.get("personal") === "1";
 const editingRetirementMessageId = retirementPageParams.get("id");
 const retirementPhotoCrop = CMCENUtils.createImageCropController({
   input: retirementPhotoInput,
@@ -124,6 +125,7 @@ function renderRetirementDeleteAction() {
     ?.remove();
 
   if (
+    personalSubmission ||
     !editingRetirementMessageId ||
     editingRetirementMessage?.status !== "pending"
   ) {
@@ -220,7 +222,9 @@ function setRetirementSubmitting(isSubmitting) {
       isSubmitting
         ? "retirement_submitting"
         : editingRetirementMessageId
-          ? "retirement_save_changes"
+          ? personalSubmission
+            ? "my_submissions_resubmit"
+            : "retirement_save_changes"
           : "retirement_submit_button",
     ),
   );
@@ -243,7 +247,11 @@ function updateRetirementFormModeText() {
 
   if (retirementSubmitButtonLabel) {
     retirementSubmitButtonLabel.textContent = translate(
-      isEditing ? "retirement_save_changes" : "retirement_submit_button",
+      isEditing
+        ? personalSubmission
+          ? "my_submissions_resubmit"
+          : "retirement_save_changes"
+        : "retirement_submit_button",
     );
   }
 
@@ -827,6 +835,7 @@ function buildRetirementMessageData(photoUrl = "", photoDisplayUrl = "") {
 
     publicationConsentConfirmed: consentConfirmed,
     memberReviewConfirmed,
+    ...(personalSubmission && editingRetirementMessageId ? { submitForReview: true } : {}),
     publishNow:
       !retirementPublishNowContainer.hidden && retirementPublishNow.checked,
     website: getFieldValue("retirementWebsite"),
@@ -899,7 +908,8 @@ async function verifyRetirementAccess() {
     currentRetirementUser = user;
     populateRetirementSubmitterFromProfile(user);
 
-    const canBypassReview = user.permissions?.canBypassReviewStages === true;
+    const canBypassReview =
+      !personalSubmission && user.permissions?.canBypassReviewStages === true;
     retirementPublishNowContainer.hidden = !canBypassReview;
     retirementReviewNote.hidden = canBypassReview;
 

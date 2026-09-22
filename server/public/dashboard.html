@@ -14,6 +14,7 @@
       href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
     />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/my-submissions.css" />
   </head>
 
   <body>
@@ -46,23 +47,26 @@
               id="dashboardMemberName"
               hidden
             ></p>
+            <div
+              class="dashboard-role-summary"
+              id="dashboardRoleSummary"
+              hidden
+            >
+              <span class="dashboard-role-badge" id="dashboardRoleBadge"></span>
+              <p id="dashboardRoleDescription"></p>
+              <p id="dashboardCustomRoleSummary" hidden></p>
+            </div>
           </div>
 
-          <div class="dashboard-role-summary" id="dashboardRoleSummary" hidden>
-            <div class="dashboard-role-actions">
-              <span class="dashboard-role-badge" id="dashboardRoleBadge"></span>
-              <a
-                id="dashboardAdminLink"
-                class="dashboard-admin-link"
-                href="/dashboard-next"
-                data-i18n="dashboard_administration"
-                hidden
-                >Administration</a
-              >
-            </div>
-
-            <p id="dashboardRoleDescription"></p>
-            <p id="dashboardCustomRoleSummary" hidden></p>
+          <div class="dashboard-role-actions">
+            <a
+              id="dashboardAdminLink"
+              class="dashboard-admin-link"
+              href="/dashboard-next"
+              data-i18n="dashboard_administration"
+              hidden
+              >Administration</a
+            >
           </div>
         </header>
 
@@ -178,39 +182,159 @@
         </template>
 
         <div class="dashboard-content" id="dashboardContent" hidden>
-          <section class="dashboard-workspace" id="dashboardWorkspace">
-            <section
-              class="dashboard-review-work"
-              id="dashboardReviewWork"
-              aria-labelledby="dashboardReviewWorkTitle"
+          <section
+            id="mySubmissions"
+            hidden
+            class="dashboard-section my-submissions"
+            aria-labelledby="mySubmissionsTitle"
+          >
+            <header class="dashboard-section-heading">
+              <div>
+                <h2 id="mySubmissionsTitle" data-i18n="my_submissions_title">
+                  My submissions
+                </h2>
+                <p data-i18n="my_submissions_intro">
+                  Track what you’ve submitted and see whether anything needs
+                  your attention.
+                </p>
+              </div>
+            </header>
+            <div class="my-submissions-filters">
+              <label
+                ><span data-i18n="content_workspace_type">Content type</span>
+                <select data-submissions-type>
+                  <option value="all" data-i18n="content_workspace_all_types">
+                    All types
+                  </option>
+                  <option value="event" data-i18n="content_workspace_event">
+                    Events
+                  </option>
+                  <option
+                    value="retirementMessage"
+                    data-i18n="content_workspace_retirement"
+                  >
+                    Retirement messages
+                  </option>
+                  <option
+                    value="lastPost"
+                    data-i18n="content_workspace_last_post"
+                  >
+                    Last Post notices
+                  </option>
+                  <option
+                    value="retirementComment"
+                    data-i18n="content_workspace_comment"
+                  >
+                    Comments
+                  </option>
+                </select>
+              </label>
+              <label
+                ><span data-i18n="content_workspace_status">Status</span>
+                <select data-submissions-status>
+                  <option
+                    value="all"
+                    data-i18n="content_workspace_all_statuses"
+                  >
+                    All statuses
+                  </option>
+                  <option
+                    value="rejected"
+                    data-i18n="my_submissions_status_rejected"
+                  >
+                    Changes requested
+                  </option>
+                  <option
+                    value="pending"
+                    data-i18n="my_submissions_status_pending"
+                  >
+                    Awaiting review
+                  </option>
+                  <option
+                    value="scheduled"
+                    data-i18n="my_submissions_status_scheduled"
+                  >
+                    Scheduled
+                  </option>
+                  <option
+                    value="published"
+                    data-i18n="my_submissions_status_published"
+                  >
+                    Published
+                  </option>
+                  <option value="draft" data-i18n="my_submissions_status_draft">
+                    Draft
+                  </option>
+                </select>
+              </label>
+            </div>
+            <p data-submissions-message role="status" aria-live="polite"></p>
+            <ul
+              data-submissions-list
+              class="my-submissions-list"
+              aria-busy="true"
+            ></ul>
+            <button
+              type="button"
+              data-submissions-retry
+              class="admin-work-zone-button is-secondary"
+              data-i18n="my_submissions_retry"
               hidden
             >
-              <header
-                class="dashboard-section-heading dashboard-review-heading"
-              >
-                <div>
-                  <h2
-                    id="dashboardReviewWorkTitle"
-                    data-i18n="dashboard_review_work_title"
+              Try again
+            </button>
+            <button
+              type="button"
+              data-submissions-more
+              class="admin-work-zone-button is-secondary"
+              data-i18n="my_submissions_more"
+              hidden
+            >
+              Load more
+            </button>
+            <dialog
+              class="my-submission-dialog"
+              aria-labelledby="mySubmissionDialogTitle"
+            >
+              <div class="my-submission-dialog-layout">
+                <header class="my-submission-dialog-heading">
+                  <div>
+                    <h2 id="mySubmissionDialogTitle"></h2>
+                    <div data-submission-meta class="my-submission-meta"></div>
+                  </div>
+                  <button
+                    type="button"
+                    class="my-submission-close"
+                    data-submission-close
+                    data-i18n-aria-label="my_submissions_close"
+                    aria-label="Close"
+                    autofocus
                   >
-                    Submissions to review
-                  </h2>
-                  <p
-                    class="dashboard-review-summary"
-                    id="dashboardReviewSummary"
-                    hidden
-                  ></p>
-                </div>
-              </header>
-
-              <div
-                class="dashboard-review-queues"
-                id="dashboardReviewQueues"
-                aria-live="polite"
-              ></div>
-            </section>
+                    ×
+                  </button>
+                </header>
+                <div
+                  data-submission-body
+                  class="my-submission-dialog-body"
+                  aria-live="polite"
+                ></div>
+                <footer class="my-submission-dialog-footer">
+                  <button
+                    type="button"
+                    data-submission-close
+                    class="admin-work-zone-button is-secondary"
+                    data-i18n="my_submissions_close"
+                  >
+                    Close
+                  </button>
+                  <div
+                    data-submission-actions
+                    class="my-submission-actions"
+                  ></div>
+                </footer>
+              </div>
+            </dialog>
           </section>
-
           <section
             class="dashboard-section dashboard-profile-section"
             aria-labelledby="accountDetailsTitle"
@@ -478,6 +602,9 @@
     <script src="/translations.js"></script>
     <script src="/validation-i18n.js"></script>
     <script src="/trade-options.js"></script>
+    <script src="/trade-options.js"></script>
+    <script src="/my-submissions-editor.js"></script>
+    <script src="/my-submissions.js"></script>
     <script src="/dashboard.js"></script>
     <script src="/dashboard-mfa.js"></script>
   </body>

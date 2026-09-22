@@ -4,10 +4,14 @@ const path = require('node:path');
 const test = require('node:test');
 
 const publicPath = path.join(__dirname, '..', 'public');
-const workspaceScript = fs.readFileSync(
-  path.join(publicPath, 'content-workspace.js'),
-  'utf8',
-);
+const workspaceScript = ['controller', 'editors', 'actions', 'rsvps', 'history']
+  .map((name) =>
+    fs.readFileSync(
+      path.join(publicPath, 'content-workspace-' + name + '.js'),
+      'utf8',
+    ),
+  )
+  .join('\n');
 const workspaceStyles = [
   'styles.css',
   'shared-controls.css',

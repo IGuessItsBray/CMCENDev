@@ -1,4 +1,5 @@
 const express = require('express');
+const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const mongoose = require('mongoose');
 const LastPostMessage = require('../models/LastPostMessage');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
@@ -705,6 +706,8 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Last Post notice not found' });
     }
 
+    const personalError = getPersonalSubmissionError(req.body, lastPost, req.user._id);
+    if (personalError) return res.status(personalError.status).json({ error: personalError.error });
     const permissions = getUserPermissions(req.user);
     const isOwner =
       lastPost.createdBy && String(lastPost.createdBy) === String(req.user._id);

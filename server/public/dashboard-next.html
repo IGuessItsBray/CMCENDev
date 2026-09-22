@@ -24,6 +24,8 @@
     <link rel="stylesheet" href="/dashboard-next-certificates.css" />
     <link rel="stylesheet" href="/dashboard-next-analytics.css" />
     <link rel="stylesheet" href="/dashboard-next-audit.css" />
+    <link rel="stylesheet" href="/content-workspace.css" />
+    <link rel="stylesheet" href="/dashboard-next-content.css" />
     <script src="/app-utils.js" defer></script>
     <script src="/translations.js" defer></script>
     <script src="/date-time-picker.js" defer></script>
@@ -41,6 +43,11 @@
     <script src="/certificate-requests-controller.js" defer></script>
     <script src="/analytics-controller.js" defer></script>
     <script src="/audit-log-controller.js" defer></script>
+    <script src="/content-workspace-editors.js" defer></script>
+    <script src="/content-workspace-actions.js" defer></script>
+    <script src="/content-workspace-rsvps.js" defer></script>
+    <script src="/content-workspace-history.js" defer></script>
+    <script src="/content-workspace-controller.js" defer></script>
     <script src="/dashboard-next.js" defer></script>
   </head>
   <body>
@@ -112,6 +119,13 @@
               aria-label="Administration"
               data-i18n-aria-label="admin_next_label"
             >
+              <a
+                id="adminContentLink"
+                href="/dashboard-next?area=content"
+                data-i18n="admin_next_content_nav"
+                hidden
+                >Content</a
+              >
               <a
                 id="adminUsersLink"
                 href="/dashboard-next?area=users"
@@ -634,6 +648,352 @@
               </div>
             </header>
             <div id="adminAnalyticsBody"></div>
+          </section>
+          <section
+            id="adminContent"
+            aria-labelledby="contentWorkspaceTitle"
+            hidden
+          >
+            <header class="admin-area-heading">
+              <div>
+                <p
+                  id="contentWorkspaceEyebrow"
+                  class="admin-area-eyebrow"
+                  data-i18n="content_workspace_eyebrow"
+                >
+                  Editorial workspace
+                </p>
+                <h1
+                  id="contentWorkspaceTitle"
+                  tabindex="-1"
+                  data-i18n="content_workspace_title"
+                >
+                  Manage content
+                </h1>
+                <p
+                  id="contentWorkspaceIntro"
+                  data-i18n="content_workspace_intro"
+                >
+                  Review pending submissions, correct bilingual public copy, and
+                  publish, reject, remove, or restore content without losing its
+                  history.
+                </p>
+              </div>
+            </header>
+            <div id="adminContentBody"></div>
+            <template id="contentWorkspaceTemplate">
+              <p
+                class="content-workspace-status"
+                id="contentWorkspaceMessage"
+                role="status"
+                aria-live="polite"
+              ></p>
+
+              <div class="content-workspace-layout">
+                <aside
+                  class="content-workspace-list-panel"
+                  aria-label="Content records"
+                  data-i18n-aria-label="content_workspace_records"
+                >
+                  <div class="content-workspace-list-heading">
+                    <div
+                      class="content-workspace-filters"
+                      id="contentWorkspaceFilters"
+                      role="group"
+                      aria-label="Content filters"
+                      data-i18n-aria-label="content_workspace_filters"
+                    >
+                      <label>
+                        <span data-i18n="content_workspace_search">Search</span>
+                        <input
+                          id="contentWorkspaceSearch"
+                          name="search"
+                          type="search"
+                          maxlength="120"
+                          autocomplete="off"
+                          placeholder="Search title, name, or text"
+                          data-i18n-placeholder="content_workspace_search_placeholder"
+                        />
+                      </label>
+
+                      <label>
+                        <span data-i18n="content_workspace_type"
+                          >Content type</span
+                        >
+                        <select id="contentWorkspaceType" name="type">
+                          <option
+                            value="all"
+                            data-i18n="content_workspace_all_types"
+                          >
+                            All types
+                          </option>
+                          <option
+                            value="event"
+                            data-i18n="content_workspace_event"
+                          >
+                            Events
+                          </option>
+                          <option
+                            value="retirementMessage"
+                            data-i18n="content_workspace_retirement"
+                          >
+                            Retirement messages
+                          </option>
+                          <option
+                            value="lastPost"
+                            data-i18n="content_workspace_last_post"
+                          >
+                            Last Post notices
+                          </option>
+                          <option
+                            value="newsArticle"
+                            data-i18n="content_workspace_news"
+                          >
+                            News stories
+                          </option>
+                          <option
+                            value="retirementComment"
+                            data-i18n="content_workspace_comment"
+                          >
+                            Comments
+                          </option>
+                        </select>
+                      </label>
+
+                      <label>
+                        <span data-i18n="content_workspace_status">Status</span>
+                        <select
+                          id="contentWorkspaceStatusFilter"
+                          class="content-workspace-status-filter is-all"
+                          name="status"
+                        >
+                          <option
+                            value="all"
+                            data-i18n="content_workspace_all_statuses"
+                          >
+                            All statuses
+                          </option>
+                          <option
+                            value="pending"
+                            data-i18n="content_workspace_pending"
+                          >
+                            Pending
+                          </option>
+                          <option
+                            value="scheduled"
+                            data-i18n="content_workspace_scheduled"
+                          >
+                            Scheduled
+                          </option>
+                          <option
+                            value="published"
+                            data-i18n="content_workspace_published"
+                          >
+                            Published
+                          </option>
+                          <option
+                            value="hidden"
+                            data-i18n="content_workspace_hidden"
+                          >
+                            Removed
+                          </option>
+                          <option
+                            value="rejected"
+                            data-i18n="content_workspace_rejected"
+                          >
+                            Rejected
+                          </option>
+                          <option
+                            value="draft"
+                            data-i18n="content_workspace_draft"
+                          >
+                            Draft
+                          </option>
+                        </select>
+                      </label>
+
+                      <label>
+                        <span data-i18n="content_workspace_translation_status"
+                          >Translation</span
+                        >
+                        <select
+                          id="contentWorkspaceTranslationFilter"
+                          name="translation"
+                        >
+                          <option
+                            value="all"
+                            data-i18n="content_workspace_all_translation_statuses"
+                          >
+                            All translation states
+                          </option>
+                          <option
+                            value="missing-any"
+                            data-i18n="translations_filter_missing_any"
+                          >
+                            Needs a translation
+                          </option>
+                          <option
+                            value="missing-en"
+                            data-i18n="translations_filter_missing_english"
+                          >
+                            Needs English
+                          </option>
+                          <option
+                            value="missing-fr"
+                            data-i18n="translations_filter_missing_french"
+                          >
+                            Needs French
+                          </option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="content-workspace-list-summary">
+                      <strong
+                        id="contentWorkspaceCount"
+                        aria-live="polite"
+                      ></strong>
+                      <button
+                        class="admin-work-zone-button is-secondary is-compact content-workspace-clear-filters"
+                        id="contentWorkspaceClearFilters"
+                        type="button"
+                        disabled
+                        data-i18n="translations_clear_filters"
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    class="content-workspace-list"
+                    id="contentWorkspaceList"
+                  ></div>
+                  <div
+                    class="content-workspace-load-more"
+                    id="contentWorkspaceLoadMore"
+                    hidden
+                  >
+                    <button
+                      class="admin-work-zone-button is-secondary is-compact"
+                      id="contentWorkspaceLoadMoreButton"
+                      type="button"
+                    >
+                      <span id="contentWorkspaceLoadMoreLabel">Load more</span>
+                    </button>
+                  </div>
+                </aside>
+
+                <section
+                  class="content-workspace-detail"
+                  id="contentWorkspaceDetail"
+                  aria-live="polite"
+                ></section>
+              </div>
+
+              <template id="contentWorkspaceListLoadingTemplate">
+                <div class="content-workspace-list-skeleton" aria-hidden="true">
+                  <div class="content-workspace-record-skeleton">
+                    <span
+                      class="skeleton content-workspace-skeleton-record-title"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-record-status"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-record-meta"
+                    ></span>
+                  </div>
+                  <div class="content-workspace-record-skeleton">
+                    <span
+                      class="skeleton content-workspace-skeleton-record-title is-medium"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-record-status"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-record-meta is-short"
+                    ></span>
+                  </div>
+                  <div class="content-workspace-record-skeleton">
+                    <span
+                      class="skeleton content-workspace-skeleton-record-title is-short"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-record-status"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-record-meta"
+                    ></span>
+                  </div>
+                  <div class="content-workspace-record-skeleton">
+                    <span
+                      class="skeleton content-workspace-skeleton-record-title"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-record-status"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-record-meta is-medium"
+                    ></span>
+                  </div>
+                  <div class="content-workspace-record-skeleton">
+                    <span
+                      class="skeleton content-workspace-skeleton-record-title is-medium"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-record-status"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-record-meta is-short"
+                    ></span>
+                  </div>
+                </div>
+              </template>
+
+              <template id="contentWorkspaceDetailLoadingTemplate">
+                <div
+                  class="content-workspace-detail-skeleton"
+                  aria-hidden="true"
+                >
+                  <header class="content-workspace-detail-skeleton-heading">
+                    <span
+                      class="skeleton content-workspace-skeleton-detail-title"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-detail-status"
+                    ></span>
+                    <span
+                      class="skeleton content-workspace-skeleton-detail-meta"
+                    ></span>
+                  </header>
+                  <section class="content-workspace-detail-skeleton-section">
+                    <span
+                      class="skeleton content-workspace-skeleton-section-heading"
+                    ></span>
+                    <div class="content-workspace-detail-skeleton-fields">
+                      <span
+                        class="skeleton content-workspace-skeleton-field"
+                      ></span>
+                      <span
+                        class="skeleton content-workspace-skeleton-field is-tall"
+                      ></span>
+                    </div>
+                  </section>
+                  <section class="content-workspace-detail-skeleton-section">
+                    <span
+                      class="skeleton content-workspace-skeleton-section-heading is-short"
+                    ></span>
+                    <div class="content-workspace-detail-skeleton-fields">
+                      <span
+                        class="skeleton content-workspace-skeleton-field"
+                      ></span>
+                      <span
+                        class="skeleton content-workspace-skeleton-field is-tall"
+                      ></span>
+                    </div>
+                  </section>
+                </div>
+              </template>
+            </template>
           </section>
           <section id="adminAudit" aria-labelledby="adminAuditTitle" hidden>
             <header class="admin-area-heading">

@@ -491,13 +491,86 @@ paths:
           description: Reset confirmation result.
         "429":
           $ref: "#/components/responses/RateLimited"
+  /api/my-submissions:
+    get:
+      tags: [Auth]
+      operationId: listMySubmissions
+      summary: List the signed-in user's own submissions.
+      description: Owner-filtered for every role. Hidden records are excluded. Rejected submissions sort first, then newest submitted date and stable ID/type tie-breaks. Pending excludes scheduled records. Cursors must be reused with the same filters. Unknown query parameters return 400.
+      parameters:
+        - name: type
+          in: query
+          schema: { type: string, enum: [all, event, retirementMessage, lastPost, retirementComment], default: all }
+        - name: status
+          in: query
+          schema: { type: string, enum: [all, draft, pending, scheduled, published, rejected], default: all }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 48, default: 12 }
+        - name: cursor
+          in: query
+          schema: { type: string, maxLength: 512 }
+      responses:
+        "200":
+          description: Personal summaries only; Cache-Control is no-store.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, hasMore, nextCursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/PersonalSubmission" }
+                  hasMore: { type: boolean }
+                  nextCursor: { type: [string, "null"] }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+  /api/my-submissions/{type}/{id}:
+    get:
+      tags: [Auth]
+      operationId: getMySubmission
+      summary: Read one owned submission and its personal actions.
+      description: No staff override. Invalid, missing, hidden, or other-owner records return 404. The explicit projection excludes reviewer identities, internal notes, contact/consent data, revision history, and RSVP attendees. Only editable unscheduled states provide editUrl; published items provide publicUrl. Comment links require a published parent.
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: { type: string, enum: [event, retirementMessage, lastPost, retirementComment] }
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Owned detail; Cache-Control is no-store.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [item]
+                properties:
+                  item:
+                    allOf:
+                      - $ref: "#/components/schemas/PersonalSubmission"
+                      - type: object
+                        required: [content, feedback, scheduledPublishAt, editUrl, publicUrl]
+                        properties:
+                          content:
+                            type: object
+                            description: Whitelisted submission copy; event localized description/location/registration and schedule, retirement/Last Post localized messages, or comment body. Includes attached image references and retirement date/trade when available.
+                          feedback: { type: string, description: Reviewer feedback only when rejected. }
+                          scheduledPublishAt: { type: [string, "null"], format: date-time }
+                          editUrl: { type: [string, "null"] }
+                          publicUrl: { type: [string, "null"] }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
   /api/me:
     get:
       tags: [Auth]
       summary: Get current user.
       responses:
         "200":
-          description: Current user, permissions, and lightweight notification counts for the header badge. Full notification entries are available from GET /api/notifications.
+          description: Current user profile, permissions, MFA status, and email subscription preferences.
   /api/member-benefits/td-insurance:
     get:
       tags: [Auth]
@@ -516,24 +589,6 @@ paths:
                     type: string
                     format: uri
         "401":
-          $ref: "#/components/responses/Error"
-  /api/notifications:
-    get:
-      tags: [Auth]
-      summary: Get current rejections and unread externally reviewed approvals.
-      responses:
-        "200":
-          description: Notification summary with current action items, unread approval items, direct destinations, and read-through snapshot. Rejected events, retirement messages, and Last Post notices target their original submit form in edit mode.
-  /api/notifications/read:
-    post:
-      tags: [Auth]
-      summary: Mark informational approval notifications as read through a snapshot time.
-      requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
-      responses:
-        "200":
-          description: Saved notification read time.
-        "400":
           $ref: "#/components/responses/Error"
   /api/subscriptions/weekly-brief:
     put:
@@ -1969,7 +2024,7 @@ paths:
     patch:
       tags: [Events]
       summary: Update event.
-      description: Updates event content while preserving the original submitter record. Owners may update draft, pending, or rejected events only; published events require site staff, and hidden events return not found to a non-reviewer owner. Descriptions and registration instructions are limited to 10,000 characters per language.
+      description: Updates event content while preserving the original submitter record. Owners may update draft, pending, or rejected events only; published events require site staff, and hidden events return not found to a non-reviewer owner. Descriptions and registration instructions are limited to 10,000 characters per language. submitForReview=true requires ownership, an editable unscheduled state, and publishNow=false or omitted. Staff overrides are unavailable in this personal mode; stale approved states return 409.
       parameters:
         - $ref: "#/components/parameters/Id"
       requestBody:
@@ -1977,6 +2032,8 @@ paths:
       responses:
         "200":
           description: Updated event.
+        "400":
+          $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
         "409":
@@ -2009,7 +2066,7 @@ paths:
     post:
       tags: [Events]
       summary: Create or update the caller's RSVP.
-      description: Available only to authenticated non-owners for published RSVP-enabled events before the optional deadline. The responder profile is copied into the RSVP record, and the event owner receives a site notification.
+      description: Available only to authenticated non-owners for published RSVP-enabled events before the optional deadline. The responder profile is copied into the RSVP record.
       parameters:
         - $ref: "#/components/parameters/Id"
       requestBody:
@@ -2484,13 +2541,27 @@ paths:
     patch:
       tags: [Retirements]
       summary: Update retirement comment.
+      description: Optional submitForReview=true restricts resubmission to the owner of a pending/rejected comment and keeps it pending regardless of staff publishing permissions. Existing behavior is retained when omitted.
       parameters:
         - $ref: "#/components/parameters/CommentId"
       requestBody:
-        $ref: "#/components/requestBodies/GenericJson"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, minLength: 2, maxLength: 2000 }
+                submitForReview: { type: boolean, default: false }
       responses:
         "200":
           description: Updated comment.
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
   /api/retirement-messages/{messageId}/edit:
     get:
       tags: [Retirements]
@@ -2513,7 +2584,7 @@ paths:
     patch:
       tags: [Retirements]
       summary: Update retirement message.
-      description: Updates retirement content while preserving the original submitter contact record and any existing text in the other language; missing legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`. An optional complete `certificateRequest` creates a separate pending certificate-request record associated with the retirement message.
+      description: Updates retirement content while preserving the original submitter contact record and any existing text in the other language; missing legacy contact fields are filled from the authenticated profile, and the request may update `submitter.relationship`. An optional complete `certificateRequest` creates a separate pending certificate-request record associated with the retirement message. submitForReview=true requires ownership, an editable unscheduled state, and publishNow=false or omitted; staff overrides are unavailable and stale approved states return 409.
       parameters:
         - $ref: "#/components/parameters/MessageId"
       requestBody:
@@ -2521,6 +2592,12 @@ paths:
       responses:
         "200":
           description: Updated retirement message.
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/retirement-messages/{messageId}/comments:
     get:
       tags: [Retirements]
@@ -2808,6 +2885,9 @@ components:
             type: object
             description: Event descriptions and registration instructions are limited to 10,000 characters per language. RSVP deadlines use YYYY-MM-DD and close at the end of that UTC date.
             properties:
+              submitForReview:
+                type: boolean
+                description: On PATCH only, use the owner-only personal correction workflow without immediate publication.
               rsvpEnabled:
                 type: boolean
                 description: Enable signed-in members to accept or decline attendance.
@@ -2826,6 +2906,9 @@ components:
           schema:
             type: object
             properties:
+              submitForReview:
+                type: boolean
+                description: On PATCH only, use the owner-only personal correction workflow without immediate publication.
               photoUrl:
                 type: string
                 format: uri
@@ -2990,6 +3073,9 @@ components:
                 publicationPermissionConfirmed,
               ]
             properties:
+              submitForReview:
+                type: boolean
+                description: On PATCH only, require owner, editable unscheduled state, and publishNow=false or omitted. Staff overrides are unavailable; stale approved states return 409.
               deceased:
                 type: object
                 required: [fullRank, firstName, surname]
@@ -3075,6 +3161,21 @@ components:
             properties:
               message: { type: string }
   schemas:
+    PersonalSubmission:
+      type: object
+      required: [id, type, title, status, submittedAt, updatedAt]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [event, retirementMessage, lastPost, retirementComment] }
+        title:
+          type: object
+          required: [en, fr]
+          properties:
+            en: { type: string }
+            fr: { type: string }
+        status: { type: string, enum: [draft, pending, scheduled, published, rejected] }
+        submittedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     Error:
       type: object
       required: [error]

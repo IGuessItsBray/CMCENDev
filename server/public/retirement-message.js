@@ -597,8 +597,11 @@ async function setupCommentAccess() {
       currentRetirementViewerId = user._id || "";
 
       canOpenRetirementWorkspace =
+        new URLSearchParams(window.location.search).get("personal") !== "1" &&
         user.permissions?.canReviewAndPublish === true;
-      canManageRetirementComments = user.permissions?.canHideContent === true;
+      canManageRetirementComments =
+        new URLSearchParams(window.location.search).get("personal") !== "1" &&
+        user.permissions?.canHideContent === true;
       canDeleteOwnRetirementComments = canDeleteOwnContent;
       renderRetirementAdminActions();
       await loadRetirementCommentEditor(token);
@@ -697,7 +700,13 @@ retirementCommentForm.addEventListener("submit", async (event) => {
         "Content-Type": "application/json",
       }),
 
-      body: JSON.stringify({ body }),
+      body: JSON.stringify({
+        body,
+        ...(submittingEdit &&
+        new URLSearchParams(window.location.search).get("personal") === "1"
+          ? { submitForReview: true }
+          : {}),
+      }),
     });
 
     const data = await response.json().catch(() => ({}));

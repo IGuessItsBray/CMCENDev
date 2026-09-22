@@ -1,4 +1,5 @@
 const express = require('express');
+const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const Event = require('../models/Event');
 const EventRsvp = require('../models/EventRsvp');
 const {
@@ -1352,6 +1353,8 @@ router.patch('/:id', authMiddleware, async (req, res) => {
       });
     }
 
+    const personalError = getPersonalSubmissionError(req.body, event, req.user._id);
+    if (personalError) return res.status(personalError.status).json({ error: personalError.error });
     const permissions = getUserPermissions(req.user);
 
     const previousStatus = event.status;

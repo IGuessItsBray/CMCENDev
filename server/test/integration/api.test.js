@@ -259,6 +259,364 @@ after(async () => {
   }
 });
 
+describe('personal submissions', () => {
+  function tokenFor(user) {
+    return bearer(
+      jwt.sign(
+        { userId: String(user._id), sessionVersion: user.sessionVersion || 0 },
+        process.env.JWT_SECRET,
+      ),
+    );
+  }
+  async function seed(owner) {
+    const now = new Date('2026-09-21T12:00:00Z');
+    const base = {
+      createdBy: owner._id,
+      createdAt: now,
+      updatedAt: now,
+      status: 'pending',
+      rejectionReason: 'Reviewer feedback',
+      reviewedBy: new mongoose.Types.ObjectId(),
+      hiddenReason: 'Internal note',
+      submitter: {
+        rank: 'Sgt',
+        firstName: 'Test',
+        lastName: 'Submitter',
+        email: 'private@example.test',
+      },
+      legacy: { private: true },
+    };
+    const event = {
+      ...base,
+      _id: new mongoose.Types.ObjectId(),
+      title: { en: 'My event', fr: 'Mon événement' },
+      description: { en: 'English copy', fr: 'Texte français' },
+      startDate: now,
+      allDay: true,
+    };
+    const retirement = {
+      ...base,
+      _id: new mongoose.Types.ObjectId(),
+      status: 'published',
+      retiree: { firstName: 'Alex', lastName: 'Example' },
+      message: 'Legacy copy',
+      messageLanguage: 'en',
+    };
+    const lastPost = {
+      ...base,
+      _id: new mongoose.Types.ObjectId(),
+      status: 'rejected',
+      deceased: { firstName: 'Pat', surname: 'Example' },
+      messages: { en: 'English notice', fr: 'Avis français' },
+    };
+    const comment = {
+      ...base,
+      _id: new mongoose.Types.ObjectId(),
+      author: owner._id,
+      retirementMessage: retirement._id,
+      body: 'My comment',
+    };
+    delete comment.createdBy;
+    await Event.collection.insertOne(event);
+    await RetirementMessage.collection.insertOne(retirement);
+    await LastPostMessage.collection.insertOne(lastPost);
+    await RetirementComment.collection.insertOne(comment);
+    return {
+      event,
+      retirementMessage: retirement,
+      lastPost,
+      retirementComment: comment,
+    };
+  }
+
+  test('requires ownership for every type and every role, excluding hidden and private fields', async () => {
+    const owner = await createUser({ role: 'contributor' });
+    const admin = await createUser({ role: 'administrator' });
+    const fixtures = await seed(owner);
+    const adminFixtures = await seed(admin);
+    await request(app).get('/api/my-submissions').expect(401);
+    await request(app)
+      .get(`/api/my-submissions/event/${fixtures.event._id}`)
+      .expect(401);
+    for (const [user, own, foreign] of [
+      [owner, fixtures, adminFixtures],
+      [admin, adminFixtures, fixtures],
+    ]) {
+      const auth = tokenFor(user);
+      const result = await request(app)
+        .get('/api/my-submissions')
+        .set('Authorization', auth)
+        .expect(200);
+      assert.equal(result.headers['cache-control'], 'no-store');
+      assert.equal(result.body.items.length, 4);
+      assert.equal(result.body.items[0].type, 'lastPost');
+      for (const [type, record] of Object.entries(own)) {
+        const response = await request(app)
+          .get(`/api/my-submissions/${type}/${record._id}`)
+          .set('Authorization', auth)
+          .expect(200);
+        const item = response.body.item;
+        assert.equal(item.id, String(record._id));
+        for (const privateValue of [
+          'private@example.test',
+          'Internal note',
+          String(record.reviewedBy),
+          '"legacy"',
+          '"createdBy"',
+        ]) {
+          assert.equal(
+            JSON.stringify(response.body).includes(privateValue),
+            false,
+          );
+          assert.equal(
+            JSON.stringify(result.body).includes(privateValue),
+            false,
+          );
+        }
+        if (type === 'lastPost') {
+          assert.equal(item.feedback, 'Reviewer feedback');
+          assert.match(item.editUrl, /personal=1$/);
+          assert.equal(item.publicUrl, null);
+        }
+        if (type === 'retirementMessage') {
+          assert.equal(item.editUrl, null);
+          assert.equal(item.feedback, '');
+          assert.equal(item.content.messages.en, 'Legacy copy');
+        }
+        await request(app)
+          .get(`/api/my-submissions/${type}/${foreign[type]._id}`)
+          .set('Authorization', auth)
+          .expect(404);
+      }
+    }
+    for (const [type, record] of Object.entries(fixtures)) {
+      const model = {
+        event: Event,
+        retirementMessage: RetirementMessage,
+        lastPost: LastPostMessage,
+        retirementComment: RetirementComment,
+      }[type];
+      await model.updateOne(
+        { _id: record._id },
+        { $set: { status: 'hidden' } },
+      );
+      await request(app)
+        .get(`/api/my-submissions/${type}/${record._id}`)
+        .set('Authorization', tokenFor(owner))
+        .expect(404);
+    }
+    const empty = await request(app)
+      .get('/api/my-submissions')
+      .set('Authorization', tokenFor(owner))
+      .expect(200);
+    assert.deepEqual(empty.body.items, []);
+  });
+
+  test('pages across all types without duplicates and separates scheduled from pending', async () => {
+    const user = await createUser({ role: 'contributor' });
+    const auth = tokenFor(user);
+    const fixtures = await seed(user);
+    await Event.updateOne(
+      { _id: fixtures.event._id },
+      { $set: { scheduledPublishAt: new Date('2027-01-01T12:00:00Z') } },
+    );
+    const seen = [];
+    let cursor;
+    do {
+      const response = await request(app)
+        .get('/api/my-submissions')
+        .query({ limit: 1, ...(cursor ? { cursor } : {}) })
+        .set('Authorization', auth)
+        .expect(200);
+      seen.push(
+        ...response.body.items.map((item) => `${item.type}:${item.id}`),
+      );
+      cursor = response.body.nextCursor;
+      assert.equal(response.body.hasMore, Boolean(cursor));
+      assert.ok(seen.length <= 4);
+    } while (cursor);
+    assert.equal(new Set(seen).size, 4);
+    assert.match(seen[0], /^lastPost:/);
+    const pending = await request(app)
+      .get('/api/my-submissions?status=pending')
+      .set('Authorization', auth)
+      .expect(200);
+    assert.deepEqual(
+      pending.body.items.map((item) => item.type),
+      ['retirementComment'],
+    );
+    const scheduled = await request(app)
+      .get('/api/my-submissions?type=event&status=scheduled')
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(scheduled.body.items[0].status, 'scheduled');
+    const detail = await request(app)
+      .get(`/api/my-submissions/event/${fixtures.event._id}`)
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(detail.body.item.editUrl, null);
+    for (const query of [
+      'limit=0',
+      'limit=49',
+      'limit=12abc',
+      'type=__proto__',
+      'status=hidden',
+      'cursor=invalid',
+      'createdBy=another-user',
+      'type=event&type=lastPost',
+    ]) {
+      await request(app)
+        .get(`/api/my-submissions?${query}`)
+        .set('Authorization', auth)
+        .expect(400);
+    }
+    await request(app)
+      .get('/api/my-submissions/event/invalid')
+      .set('Authorization', auth)
+      .expect(404);
+    await request(app)
+      .get(`/api/my-submissions/newsArticle/${fixtures.event._id}`)
+      .set('Authorization', auth)
+      .expect(404);
+    await RetirementMessage.updateOne(
+      { _id: fixtures.retirementMessage._id },
+      { $set: { status: 'hidden' } },
+    );
+    const comment = await request(app)
+      .get(
+        `/api/my-submissions/retirementComment/${fixtures.retirementComment._id}`,
+      )
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(comment.body.item.editUrl, null);
+    assert.equal(comment.body.item.publicUrl, null);
+  });
+
+  test('personal correction handoffs reject staff overrides and stale publication states', async () => {
+    const staff = await createUser({ role: 'administrator' });
+    const other = await createUser({ role: 'administrator' });
+    const fixtures = await seed(staff);
+    for (const [type, model, path, payload] of [
+      ['event', Event, '/api/events', eventPayload()],
+      [
+        'retirementMessage',
+        RetirementMessage,
+        '/api/retirement-messages',
+        retirementPayload(),
+      ],
+      [
+        'lastPost',
+        LastPostMessage,
+        '/api/last-posts',
+        {
+          deceased: {
+            fullRank: 'Sergeant',
+            firstName: 'Pat',
+            surname: 'Example',
+          },
+          messageLanguage: 'en',
+          message: translatedMessage('English'),
+          publicationPermissionConfirmed: true,
+        },
+      ],
+    ]) {
+      const id = fixtures[type]._id;
+      const url = `${path}/${id}`;
+      const body = { ...payload, publishNow: false, submitForReview: true };
+      await model.updateOne({ _id: id }, { $set: { status: 'rejected' } });
+      await request(app)
+        .patch(url)
+        .set('Authorization', tokenFor(other))
+        .send(body)
+        .expect(404);
+      await request(app)
+        .patch(url)
+        .set('Authorization', tokenFor(staff))
+        .send({ ...body, publishNow: true })
+        .expect(400);
+      await request(app)
+        .patch(url)
+        .set('Authorization', tokenFor(staff))
+        .send(body)
+        .expect(200);
+      const saved = await model.findById(id).lean();
+      assert.equal(saved.status, 'pending');
+      assert.equal(saved.rejectionReason, '');
+      assert.equal(saved.publishedBy ?? null, null);
+      await model.updateOne(
+        { _id: id },
+        { $set: { scheduledPublishAt: new Date('2027-01-01T12:00:00Z') } },
+      );
+      await request(app)
+        .patch(url)
+        .set('Authorization', tokenFor(staff))
+        .send(body)
+        .expect(409);
+      await model.updateOne(
+        { _id: id },
+        { $set: { scheduledPublishAt: null, status: 'published' } },
+      );
+      await request(app)
+        .patch(url)
+        .set('Authorization', tokenFor(staff))
+        .send(body)
+        .expect(409);
+    }
+  });
+
+  test('personal comment corrections stay pending for staff and enforce ownership and editable state', async () => {
+    const staff = await createUser({ role: 'administrator' });
+    const other = await createUser({ role: 'administrator' });
+    const fixtures = await seed(staff);
+    const url = `/api/retirement-messages/comments/${fixtures.retirementComment._id}`;
+    await request(app)
+      .patch(url)
+      .set('Authorization', tokenFor(other))
+      .send({ body: 'Correction', submitForReview: true })
+      .expect(404);
+    await request(app)
+      .patch(url)
+      .set('Authorization', tokenFor(staff))
+      .send({ body: 'Correction', submitForReview: 'yes' })
+      .expect(400);
+    await request(app)
+      .patch(url)
+      .set('Authorization', tokenFor(staff))
+      .send({ body: 'Correction', submitForReview: true })
+      .expect(200);
+    let comment = await RetirementComment.findById(
+      fixtures.retirementComment._id,
+    ).lean();
+    assert.equal(comment.status, 'pending');
+    assert.equal(comment.reviewedBy, null);
+    assert.equal(comment.publishedBy ?? null, null);
+    assert.equal(comment.rejectionReason, '');
+    assert.equal(
+      await AuditLog.countDocuments({
+        action: 'content.created',
+        target: comment._id,
+      }),
+      1,
+    );
+    await RetirementComment.updateOne(
+      { _id: comment._id },
+      { $set: { status: 'published' } },
+    );
+    await request(app)
+      .patch(url)
+      .set('Authorization', tokenFor(staff))
+      .send({ body: 'Correction', submitForReview: true })
+      .expect(409);
+    await request(app)
+      .patch(url)
+      .set('Authorization', tokenFor(staff))
+      .send({ body: 'Normal staff edit' })
+      .expect(200);
+    comment = await RetirementComment.findById(comment._id).lean();
+    assert.equal(comment.status, 'published');
+  });
+});
+
 describe('banner configuration', () => {
   const body = {
     title: 'Beta notice',
@@ -2035,18 +2393,6 @@ describe('retirement message lifecycle', () => {
       $set: { 'messages.fr': frenchMessage },
     });
 
-    const notifications = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(contributorLogin.body.token))
-      .expect(200);
-    const rejectionNotification = notifications.body.notifications.items.find(
-      (item) => String(item.id) === String(message._id),
-    );
-    assert.equal(
-      rejectionNotification.href,
-      `/submit-retirement?id=${message._id}`,
-    );
-
     const editPayload = await request(app)
       .get(`/api/retirement-messages/${message._id}/edit`)
       .set('Authorization', bearer(contributorLogin.body.token))
@@ -2065,17 +2411,6 @@ describe('retirement message lifecycle', () => {
     assert.equal(resubmitted.body.retirementMessage.status, 'pending');
     assert.equal(resubmitted.body.retirementMessage.rejectionReason, '');
     assert.equal(resubmitted.body.retirementMessage.messages.fr, frenchMessage);
-
-    const resolvedNotifications = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(contributorLogin.body.token))
-      .expect(200);
-    assert.equal(
-      resolvedNotifications.body.notifications.items.some(
-        (item) => String(item.id) === String(message._id),
-      ),
-      false,
-    );
   });
 });
 
@@ -2208,18 +2543,6 @@ describe('Last Post lifecycle', () => {
       },
     });
 
-    const notifications = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(contributorLogin.body.token))
-      .expect(200);
-    const rejectionNotification = notifications.body.notifications.items.find(
-      (item) => String(item.id) === String(lastPostId),
-    );
-    assert.equal(
-      rejectionNotification.href,
-      `/submit-last-post?id=${lastPostId}`,
-    );
-
     const editPayload = await request(app)
       .get(`/api/last-posts/${lastPostId}/edit`)
       .set('Authorization', bearer(contributorLogin.body.token))
@@ -2255,17 +2578,6 @@ describe('Last Post lifecycle', () => {
     assert.equal(
       updated.body.lastPost.messages.fr,
       'Un avis du Dernier appel qui doit être préservé.',
-    );
-
-    const resolvedNotifications = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(contributorLogin.body.token))
-      .expect(200);
-    assert.equal(
-      resolvedNotifications.body.notifications.items.some(
-        (item) => String(item.id) === String(lastPostId),
-      ),
-      false,
     );
   });
 
@@ -2854,13 +3166,6 @@ describe('event, page, and comment workflows', () => {
     const contributor = await createUser({ role: 'contributor' });
     const editor = await createUser({ role: 'editor' });
 
-    // Existing accounts created before notification tracking have no read time.
-    // Their first notification request must still include recent approvals.
-    await User.updateOne(
-      { _id: contributor._id },
-      { $unset: { notificationState: 1 } },
-    );
-
     const contributorSession = await login(contributor);
     const editorSession = await login(editor);
 
@@ -2903,19 +3208,6 @@ describe('event, page, and comment workflows', () => {
     assert.equal(publicEvent.body.event.title.en, 'Integration exercise');
     assert.equal(publicEvent.body.event.title.fr, "Exercice d'integration");
     assert.equal((await Event.findById(event._id)).status, 'published');
-
-    const notifications = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(contributorSession.body.token))
-      .expect(200);
-    const publishedNotification = notifications.body.notifications.items.find(
-      (item) => String(item.id) === String(event._id),
-    );
-
-    assert.equal(notifications.body.notifications.unreadCount, 1);
-    assert.equal(publishedNotification.type, 'event');
-    assert.equal(publishedNotification.status, 'published');
-    assert.equal(publishedNotification.href, `/event?id=${event._id}`);
   });
 
   test('keeps a scheduled event pending until its publication time', async () => {
@@ -2989,10 +3281,6 @@ describe('event, page, and comment workflows', () => {
     }).lean();
     assert.equal(scheduledAudit.targetType, 'event');
 
-    await User.findByIdAndUpdate(contributor._id, {
-      $set: { 'notificationState.lastReadAt': new Date() },
-    });
-
     const unscheduled = await Event.create({
       ...eventPayload({
         title: {
@@ -3011,16 +3299,6 @@ describe('event, page, and comment workflows', () => {
     assert.equal(published.scheduledPublishAt, null);
     assert.equal(String(published.publishedBy), String(editor._id));
     assert.equal((await Event.findById(unscheduled._id)).status, 'pending');
-
-    const notifications = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(contributorSession.body.token))
-      .expect(200);
-    const publishedNotification = notifications.body.notifications.items.find(
-      (item) => String(item.id) === String(submitted.body.event._id),
-    );
-    assert.equal(publishedNotification.type, 'event');
-    assert.equal(publishedNotification.status, 'published');
 
     const publicationAudit = await AuditLog.findOne({
       action: 'content.published',
@@ -3093,9 +3371,6 @@ describe('event, page, and comment workflows', () => {
       })
       .expect(200);
 
-    await User.findByIdAndUpdate(contributor._id, {
-      $set: { 'notificationState.lastReadAt': new Date() },
-    });
     await publishDueContent(new Date(scheduledPublishAt.getTime() + 60 * 1000));
 
     const [publishedLastPost, publishedRetirement] = await Promise.all([
@@ -3106,25 +3381,6 @@ describe('event, page, and comment workflows', () => {
     assert.equal(publishedLastPost.scheduledPublishAt, null);
     assert.equal(publishedRetirement.status, 'published');
     assert.equal(publishedRetirement.scheduledPublishAt, null);
-
-    const notifications = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(contributorSession.body.token))
-      .expect(200);
-    const lastPostNotification = notifications.body.notifications.items.find(
-      (item) => String(item.id) === String(lastPostId),
-    );
-    const retirementNotification = notifications.body.notifications.items.find(
-      (item) => String(item.id) === String(retirementMessage._id),
-    );
-    assert.equal(
-      lastPostNotification.href,
-      `/last-post-message?id=${lastPostId}`,
-    );
-    assert.equal(
-      retirementNotification.href,
-      `/retirement-message?id=${retirementMessage._id}`,
-    );
 
     const scheduledPublicationAudits = await AuditLog.find({
       action: 'content.published',
@@ -3337,16 +3593,6 @@ describe('event, page, and comment workflows', () => {
       .set('Authorization', bearer(ownerSession.body.token))
       .expect(403);
 
-    const ownerNotifications = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(ownerSession.body.token))
-      .expect(200);
-    const rsvpNotification = ownerNotifications.body.notifications.items.find(
-      (item) => item.type === 'eventRsvp',
-    );
-    assert.equal(rsvpNotification.response, 'declined');
-    assert.equal(rsvpNotification.href, `/event?id=${event._id}`);
-
     await request(app)
       .get(`/api/events/${event._id}/rsvps`)
       .set('Authorization', bearer(otherSession.body.token))
@@ -3456,35 +3702,6 @@ describe('event, page, and comment workflows', () => {
       .send(eventPayload())
       .expect(409);
 
-    const notifications = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(contributorSession.body.token))
-      .expect(200);
-    const rejectedNotification = notifications.body.notifications.items.find(
-      (item) => String(item.id) === String(rejectedEvent._id),
-    );
-    assert.equal(
-      rejectedNotification.href,
-      `/submit-event?id=${rejectedEvent._id}`,
-    );
-
-    await request(app)
-      .post('/api/notifications/read')
-      .set('Authorization', bearer(contributorSession.body.token))
-      .send({ readThrough: notifications.body.notifications.readThrough })
-      .expect(200);
-
-    const actionableNotification = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(contributorSession.body.token))
-      .expect(200);
-    assert.equal(
-      actionableNotification.body.notifications.items.some(
-        (item) => String(item.id) === String(rejectedEvent._id),
-      ),
-      true,
-    );
-
     const correctedStartDate = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000)
       .toISOString()
       .slice(0, 10);
@@ -3506,17 +3723,6 @@ describe('event, page, and comment workflows', () => {
     assert.equal(
       new Date(resubmitted.body.event.startDate).toISOString().slice(0, 10),
       correctedStartDate,
-    );
-
-    const resolvedNotifications = await request(app)
-      .get('/api/notifications')
-      .set('Authorization', bearer(contributorSession.body.token))
-      .expect(200);
-    assert.equal(
-      resolvedNotifications.body.notifications.items.some(
-        (item) => String(item.id) === String(rejectedEvent._id),
-      ),
-      false,
     );
   });
 
@@ -4346,7 +4552,6 @@ describe('event, page, and comment workflows', () => {
   test('prevents unauthorized page management and publishes a bilingual page', async () => {
     const subscriber = await createUser({
       role: 'subscriber',
-      notificationState: { lastReadAt: null },
     });
     const editor = await createUser({ role: 'editor' });
     const subscriberSession = await login(subscriber);
@@ -4617,138 +4822,54 @@ describe('event, page, and comment workflows', () => {
     );
   });
 
-  test('returns unread published and rejected review results with direct destinations', async () => {
+  test('keeps profile and submission feedback available without notification APIs', async () => {
     const message = await submitAndPublishRetirement();
     const subscriber = await createUser({ role: 'subscriber' });
-    const reviewer = await createUser({ role: 'editor' });
     const session = await login(subscriber);
-    const reviewDate = new Date();
+    // Legacy read markers may remain in MongoDB but must not enter the profile.
+    await User.collection.updateOne(
+      { _id: subscriber._id },
+      { $set: { notificationState: { lastReadAt: new Date() } } },
+    );
     const comment = await RetirementComment.create({
       retirementMessage: message._id,
       author: subscriber._id,
       body: 'Please correct this rejected integration comment.',
       status: 'rejected',
       rejectionReason: 'Add the missing context.',
-      reviewedBy: reviewer._id,
-      reviewedAt: reviewDate,
     });
-    const event = await Event.create({
-      ...eventPayload(),
-      createdBy: subscriber._id,
-      status: 'published',
-      reviewedBy: reviewer._id,
-      publishedBy: reviewer._id,
-      reviewedAt: reviewDate,
-      publishedAt: reviewDate,
-    });
-    const selfPublishedEvent = await Event.create({
-      ...eventPayload({
-        title: {
-          en: 'Self-published integration exercise',
-          fr: 'Exercice d’intégration autopublié',
-        },
-      }),
-      createdBy: subscriber._id,
-      status: 'published',
-      reviewedBy: subscriber._id,
-      publishedBy: subscriber._id,
-      reviewedAt: reviewDate,
-      publishedAt: reviewDate,
-    });
-
     const profile = await request(app)
       .get('/api/me')
       .set('Authorization', bearer(session.body.token))
       .expect(200);
-
-    assert.deepEqual(profile.body.notifications, {
-      count: 2,
-      actionCount: 1,
-      unreadCount: 1,
-    });
-
-    const notifications = await request(app)
+    assert.equal(profile.body.role, 'subscriber');
+    assert.equal(typeof profile.body.permissions, 'object');
+    assert.equal('notifications' in profile.body, false);
+    assert.equal('notificationState' in profile.body, false);
+    await request(app)
       .get('/api/notifications')
       .set('Authorization', bearer(session.body.token))
-      .expect(200);
-    const notification = notifications.body.notifications.items.find(
-      (item) => String(item.id) === String(comment._id),
-    );
-    const publishedNotification = notifications.body.notifications.items.find(
-      (item) => String(item.id) === String(event._id),
-    );
-    const expectedEditHref = `/retirement-message?id=${message._id}&editComment=${comment._id}`;
-
-    assert.equal(notifications.body.notifications.count, 2);
-    assert.equal(notifications.body.notifications.actionCount, 1);
-    assert.equal(notifications.body.notifications.unreadCount, 1);
-    assert.equal(notifications.body.notifications.shouldMarkRead, true);
-    assert.match(
-      notifications.body.notifications.readThrough,
-      /^\d{4}-\d{2}-\d{2}T/,
-    );
-    assert.equal(notification.type, 'retirementComment');
-    assert.equal(notification.status, 'rejected');
-    assert.equal(notification.editHref, expectedEditHref);
-    assert.equal(notification.href, expectedEditHref);
-    assert.equal(publishedNotification.type, 'event');
-    assert.equal(publishedNotification.status, 'published');
-    assert.equal(publishedNotification.href, `/event?id=${event._id}`);
-    assert.equal(
-      notifications.body.notifications.items.some(
-        (item) => String(item.id) === String(selfPublishedEvent._id),
-      ),
-      false,
-    );
-
-    const editableComment = await request(app)
-      .get(`/api/retirement-messages/comments/${comment._id}/edit`)
-      .set('Authorization', bearer(session.body.token))
-      .expect(200);
-
-    assert.equal(
-      String(editableComment.body.comment.retirementMessage._id),
-      String(message._id),
-    );
-    assert.equal(editableComment.body.comment.status, 'rejected');
-
+      .expect(404);
     await request(app)
       .post('/api/notifications/read')
       .set('Authorization', bearer(session.body.token))
-      .send({ readThrough: notifications.body.notifications.readThrough })
-      .expect(200);
-
-    const readNotifications = await request(app)
-      .get('/api/notifications')
+      .send({ readThrough: new Date().toISOString() })
+      .expect(404);
+    const detail = await request(app)
+      .get('/api/my-submissions/retirementComment/' + comment._id)
       .set('Authorization', bearer(session.body.token))
       .expect(200);
-    assert.equal(readNotifications.body.notifications.count, 1);
-    assert.equal(readNotifications.body.notifications.actionCount, 1);
-    assert.equal(readNotifications.body.notifications.unreadCount, 0);
-    assert.equal(
-      String(readNotifications.body.notifications.items[0].id),
-      String(comment._id),
-    );
-
-    const readAudit = await AuditLog.findOne({
-      action: 'user.notifications_read',
-      actor: subscriber._id,
-    }).lean();
-    assert.equal(
-      readAudit.metadata.readThrough,
-      notifications.body.notifications.readThrough,
-    );
-
-    await RetirementComment.findByIdAndUpdate(comment._id, {
-      status: 'pending',
-      rejectionReason: '',
-    });
-
-    const resolvedNotifications = await request(app)
-      .get('/api/notifications')
+    assert.equal(detail.body.item.status, 'rejected');
+    assert.equal(detail.body.item.feedback, 'Add the missing context.');
+    assert.match(detail.body.item.editUrl, /editComment=/);
+    await request(app)
+      .patch('/api/retirement-messages/comments/' + comment._id)
       .set('Authorization', bearer(session.body.token))
+      .send({ body: 'Corrected context for review.', submitForReview: true })
       .expect(200);
-    assert.equal(resolvedNotifications.body.notifications.count, 0);
+    const saved = await RetirementComment.findById(comment._id).lean();
+    assert.equal(saved.status, 'pending');
+    assert.equal(saved.rejectionReason, '');
   });
 });
 

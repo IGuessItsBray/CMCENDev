@@ -7,7 +7,6 @@ const dashboardLoadingTemplate = document.getElementById(
 const dashboardHeading = document.querySelector(".dashboard-heading");
 const dashboardContent = document.getElementById("dashboardContent");
 const dashboardDetails = document.getElementById("dashboardDetails");
-const dashboardWorkspace = document.getElementById("dashboardWorkspace");
 const dashboardTitle = document.getElementById("dashboardTitle");
 const dashboardMemberName = document.getElementById("dashboardMemberName");
 const dashboardRoleSummary = document.getElementById("dashboardRoleSummary");
@@ -18,11 +17,6 @@ const dashboardRoleDescription = document.getElementById(
 );
 const dashboardCustomRoleSummary = document.getElementById(
   "dashboardCustomRoleSummary",
-);
-const dashboardReviewWork = document.getElementById("dashboardReviewWork");
-const dashboardReviewQueues = document.getElementById("dashboardReviewQueues");
-const dashboardReviewSummary = document.getElementById(
-  "dashboardReviewSummary",
 );
 const dashboardProfileDetails = document.getElementById(
   "dashboardProfileDetails",
@@ -38,7 +32,8 @@ const weeklyBriefSection = document.getElementById("weeklyBriefSection");
 const weeklyBriefPreference = document.getElementById("weeklyBriefPreference");
 
 let currentDashboardUser = null;
-let currentReviewCounts = null;
+let mySubmissions = null;
+let mySubmissionsOwner = null;
 const profileSaveSuccessDisplayMs = 2200;
 const profileSelectOptions = {
   status: [
@@ -998,87 +993,6 @@ function createDangerZone(user) {
   return action;
 }
 
-function getReviewCountLabel(type, value) {
-  const count = Number.isInteger(value) && value >= 0 ? value : 0;
-  const plural = count === 1 ? "singular" : "plural";
-
-  return translate(`dashboard_review_${type}_${plural}`, { count });
-}
-
-function getReviewWorkTotal({ canReviewSubmissions }) {
-  const counts = [];
-
-  if (canReviewSubmissions && currentReviewCounts) {
-    counts.push(
-      currentReviewCounts.events,
-      currentReviewCounts.retirementMessages,
-      currentReviewCounts.lastPosts,
-      currentReviewCounts.comments,
-    );
-  }
-
-  if (!counts.length || counts.some((count) => !Number.isInteger(count))) {
-    return null;
-  }
-
-  return counts.reduce((total, count) => total + Math.max(0, count), 0);
-}
-
-function createReviewQueueLink({
-  type,
-  contentType,
-  labelKey,
-  count,
-  href,
-  ariaLabelKey = "dashboard_review_open_queue",
-}) {
-  const reviewCount = Number.isInteger(count) && count >= 0 ? count : 0;
-  const link = document.createElement("a");
-  link.className = "dashboard-review-queue-link";
-  link.href =
-    href ||
-    `/content-workspace?type=${encodeURIComponent(contentType)}&status=pending`;
-  link.setAttribute(
-    "aria-label",
-    translate(ariaLabelKey, {
-      count: getReviewCountLabel(type, reviewCount),
-    }),
-  );
-
-  const countElement = document.createElement("strong");
-  countElement.textContent = String(reviewCount);
-  countElement.classList.toggle("is-empty", reviewCount === 0);
-
-  const label = document.createElement("span");
-  label.textContent = translate(labelKey);
-
-  link.append(countElement, label);
-
-  return link;
-}
-
-function createReviewQueuesUnavailable() {
-  const message = document.createElement("p");
-  message.className = "dashboard-review-counts-unavailable";
-  message.textContent = translate("dashboard_review_counts_unavailable");
-
-  const link = document.createElement("a");
-  link.className = "dashboard-review-open-link";
-  link.href = "/content-workspace?status=pending";
-  link.textContent = translate("dashboard_review_open_queues");
-
-  return [message, link];
-}
-
-function createContentWorkspaceLink() {
-  const link = document.createElement("a");
-  link.className = "dashboard-review-manage-content";
-  link.href = "/content-workspace";
-  link.textContent = translate("dashboard_review_manage_content");
-
-  return link;
-}
-
 function canAccessAdministration(user) {
   // Match the administrative permission gate in dashboard-next.js.
   return [
@@ -1163,75 +1077,32 @@ function renderDashboard(user) {
     isGhost ? createGhostUpgradeForm(user) : createProfileForm(user),
   );
 
-  const canReviewSubmissions = user.permissions?.canReviewAndPublish === true;
-  const hasReviewWork = canReviewSubmissions;
-
-  dashboardWorkspace.classList.toggle("has-review-work", hasReviewWork);
-  dashboardReviewWork.hidden = !hasReviewWork;
-
-  if (hasReviewWork) {
-    const reviewQueues = [];
-
-    if (canReviewSubmissions && currentReviewCounts) {
-      reviewQueues.push(
-        createReviewQueueLink({
-          type: "events",
-          contentType: "event",
-          labelKey: "review_events_tab",
-          count: currentReviewCounts.events,
-        }),
-        createReviewQueueLink({
-          type: "retirement_messages",
-          contentType: "retirementMessage",
-          labelKey: "review_retirements_tab",
-          count: currentReviewCounts.retirementMessages,
-        }),
-        createReviewQueueLink({
-          type: "last_posts",
-          contentType: "lastPost",
-          labelKey: "review_last_posts_tab",
-          count: currentReviewCounts.lastPosts,
-        }),
-        createReviewQueueLink({
-          type: "comments",
-          contentType: "retirementComment",
-          labelKey: "review_comments_tab",
-          count: currentReviewCounts.comments,
-        }),
-      );
-    } else if (canReviewSubmissions) {
-      reviewQueues.push(...createReviewQueuesUnavailable());
-    }
-
-    if (canReviewSubmissions) {
-      reviewQueues.push(createContentWorkspaceLink());
-    }
-
-    dashboardReviewQueues.replaceChildren(...reviewQueues);
-
-    const reviewWorkTotal = getReviewWorkTotal({
-      canReviewSubmissions,
-    });
-    dashboardReviewSummary.hidden = reviewWorkTotal === null;
-    dashboardReviewSummary.textContent =
-      reviewWorkTotal === null
-        ? ""
-        : translate(
-            reviewWorkTotal === 1
-              ? "dashboard_review_open_items_singular"
-              : "dashboard_review_open_items_plural",
-            { count: reviewWorkTotal },
-          );
-  } else {
-    dashboardReviewQueues.replaceChildren();
-    dashboardReviewSummary.hidden = true;
-    dashboardReviewSummary.textContent = "";
-  }
-
   dashboardStatus.hidden = true;
   dashboardStatus.removeAttribute("aria-label");
   dashboardContent.hidden = false;
+  if (!mySubmissions || mySubmissionsOwner !== String(user._id)) {
+    mySubmissions?.dispose();
+    mySubmissionsOwner = String(user._id);
+    mySubmissions = window.MySubmissions.mount({
+      root: document.getElementById("mySubmissions"),
+    });
+  }
 }
+
+window.addEventListener("pagehide", () => {
+  mySubmissions?.dispose();
+  mySubmissions = null;
+});
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) void loadDashboard();
+});
+window.addEventListener("storage", (event) => {
+  if (event.key === null || ["token", "api_token"].includes(event.key)) {
+    mySubmissions?.dispose();
+    mySubmissions = null;
+    window.location.reload();
+  }
+});
 
 function showDashboardError(message) {
   dashboardHeading?.classList.remove("is-loading");
@@ -1385,20 +1256,6 @@ async function loadDashboard() {
       redirectOnUnauthorized: true,
       errorMessage: "Could not load account data",
     });
-
-    if (user.permissions?.canReviewAndPublish === true) {
-      try {
-        currentReviewCounts = await CMCENUtils.apiJson(
-          "/api/admin/review-counts",
-          {
-            token,
-            errorMessage: "Could not load review submission counts",
-          },
-        );
-      } catch (error) {}
-    } else {
-      currentReviewCounts = null;
-    }
 
     renderDashboard(user);
   } catch (error) {

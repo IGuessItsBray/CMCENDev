@@ -1,0 +1,305 @@
+.my-submissions,
+.my-submission-dialog {
+  margin: auto;
+  inset: 0;
+  --submission-surface: var(--white);
+  --submission-inset: #f5f6f8;
+  --submission-text: var(--ink);
+  --submission-muted: var(--text-muted);
+  --submission-border: var(--branch-grey-300);
+  color: var(--submission-text);
+}
+html[data-theme='dark'] :is(.my-submissions, .my-submission-dialog) {
+  color-scheme: dark;
+  --submission-surface: var(--dark-bg-elevated);
+  --submission-inset: var(--dark-surface);
+  --submission-text: var(--dark-text);
+  --submission-muted: var(--dark-text-muted);
+  --submission-border: var(--dark-border-strong);
+}
+.my-submissions-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 20px 0 12px;
+}
+.my-submission-correction,
+.my-submission-correction fieldset {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.my-submission-correction fieldset {
+  padding: 16px;
+  border: 1px solid var(--submission-border);
+}
+.my-submission-correction legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+.my-submission-edit-field {
+  display: grid;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+.my-submission-edit-field :is(input, select, textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--submission-border);
+  border-radius: var(--surface-radius);
+  background: var(--submission-surface);
+  color: var(--submission-text);
+  font: inherit;
+}
+.my-submission-edit-field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+.my-submission-edit-field.is-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.my-submission-edit-field input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+.my-submission-correction [role='alert'] {
+  color: var(--submission-text);
+  border-left: 3px solid var(--gold-600);
+  padding: 12px;
+}
+.my-submissions-filters label {
+  display: grid;
+  gap: 5px;
+  font-size: 0.875rem;
+}
+.my-submissions-filters select {
+  box-sizing: border-box;
+  height: 32px;
+  min-height: 32px;
+  padding: 4px 11px;
+  border: 1px solid var(--submission-border);
+  background: var(--submission-surface);
+  color: var(--submission-text);
+  font: inherit;
+}
+.my-submissions-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 16px;
+  border-top: 1px solid var(--submission-border);
+}
+.my-submissions-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 12px;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--submission-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--submission-text);
+  font: inherit;
+  cursor: pointer;
+}
+.my-submissions-row:hover {
+  background: var(--submission-inset);
+}
+.my-submissions-row:focus-visible {
+  outline: 2px solid var(--gold-600);
+  outline-offset: -2px;
+}
+.my-submissions-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.my-submissions-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.my-submissions-meta {
+  font-size: 0.8125rem;
+  color: var(--submission-muted);
+}
+.my-submissions-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 9px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--submission-inset);
+  border: 1px solid var(--submission-border);
+  white-space: nowrap;
+}
+.my-submissions-badge.is-rejected {
+  border-color: var(--gold-600);
+}
+.my-submissions-badge.is-published {
+  border-color: #63856a;
+}
+.my-submissions-skeleton {
+  display: grid;
+  gap: 10px;
+  padding: 20px 12px;
+  border-bottom: 1px solid var(--submission-border);
+}
+.my-submission-dialog {
+  width: min(840px, calc(100vw - 40px));
+  max-width: none;
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  border: 1px solid var(--submission-border);
+  border-radius: var(--surface-radius);
+  background: var(--submission-surface);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+.my-submission-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.65);
+}
+.my-submission-dialog-layout {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 50px);
+}
+.my-submission-dialog-heading {
+  flex-shrink: 0;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--submission-border);
+}
+.my-submission-dialog-heading h2 {
+  margin: 0 0 10px;
+  color: inherit;
+  font-size: 1.4rem;
+  overflow-wrap: anywhere;
+}
+.my-submission-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+}
+.my-submission-close {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  font-size: 1.6rem;
+  color: inherit;
+  border: 1px solid var(--submission-border);
+  background: transparent;
+  cursor: pointer;
+}
+.my-submission-dialog-body {
+  padding: 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 120px;
+}
+.my-submission-dialog-body :is(h3, h4, p) {
+  color: inherit;
+  margin: 0;
+}
+.my-submission-dialog-body h3 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+.my-submission-dialog-body h4 {
+  font-size: 0.8125rem;
+  margin-bottom: 4px;
+  color: var(--submission-muted);
+}
+.my-submission-field {
+  margin-bottom: 18px;
+}
+.my-submission-image {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  margin: 20px auto;
+}
+.my-submission-field p,
+.my-submission-feedback p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.my-submission-facts {
+  display: flex;
+  gap: 12px 32px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.my-submission-language {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--submission-border);
+}
+.my-submission-language > :last-child {
+  margin-bottom: 0;
+}
+.my-submission-feedback {
+  margin-top: 18px;
+  padding: 16px;
+  border-left: 3px solid var(--gold-600);
+  background: var(--submission-inset);
+}
+.my-submission-dialog-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 24px;
+  border-top: 1px solid var(--submission-border);
+}
+.my-submission-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+body.my-submission-dialog-open {
+  overflow: hidden;
+}
+@media (max-width: 600px) {
+  .my-submissions-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .my-submissions-copy {
+    grid-column: 1 / -1;
+  }
+  .my-submission-dialog {
+    margin: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+  .my-submission-dialog-layout {
+    height: 100%;
+    max-height: 100dvh;
+  }
+  .my-submission-dialog-body {
+    flex: 1;
+  }
+  .my-submission-dialog-heading,
+  .my-submission-dialog-body,
+  .my-submission-dialog-footer {
+    padding: 16px;
+  }
+}

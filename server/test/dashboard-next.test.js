@@ -343,6 +343,10 @@ function setup({
   let cleared = false;
   let mounted = 0;
   let awardsMounted = 0;
+  let contentMounted = 0;
+  let contentDisposed = 0;
+  let contentOptions;
+  let contentDirty = false;
   let awardsDisposed = 0;
   let awardsOptions;
   let usersOptions;
@@ -551,6 +555,19 @@ function setup({
         };
       },
     },
+    ContentWorkspace: {
+      mount: (options) => {
+        contentOptions = options;
+        contentMounted++;
+        return {
+          dispose: () => {
+            contentDisposed++;
+          },
+          hasUnsavedChanges: () => contentDirty,
+          canNavigate: () => !navigationBusy,
+        };
+      },
+    },
     addEventListener: (key, handler) => {
       events[key] = handler;
     },
@@ -575,6 +592,12 @@ function setup({
   });
   return {
     window,
+    contentMounted: () => contentMounted,
+    contentDisposed: () => contentDisposed,
+    contentArea: () => contentOptions,
+    setContentDirty: (value) => {
+      contentDirty = value;
+    },
     events,
     documentEvents,
     setConfirmation: (handler) => {
@@ -974,7 +997,7 @@ test('Users admits read-only staff and combines caller cancellation with shell c
 
 test('unmigrated access is distinguished from unknown destinations', async () => {
   const page = setup({
-    api: async () => ({ permissions: { canManageNews: true } }),
+    api: async () => ({ permissions: { canManageEventRsvps: true } }),
   });
   await flush();
   assert.equal(
@@ -1126,9 +1149,66 @@ test('sign-out waits for confirmation and does not act on a replaced session', a
   assert.equal(page.state(), 'ready');
 });
 
-test('Awards is the default for reviewers and is unavailable without review permission', async () => {
+test('Content admits reviewers or news managers but not unrelated administrative permissions', async () => {
+  for (const permission of [
+    'canReviewAndPublish',
+    'canManageNews',
+    'canManageEventRsvps',
+    'canReadUsers',
+  ]) {
+    const page = setup({
+      url: 'http://localhost/dashboard-next?area=content&type=event&status=pending&id=selected',
+      api: async () => ({ permissions: { [permission]: true } }),
+    });
+    await flush();
+    const allowed = ['canReviewAndPublish', 'canManageNews'].includes(
+      permission,
+    );
+    assert.equal(page.contentMounted(), allowed ? 1 : 0);
+    assert.equal(page.element('adminContentLink').hidden, !allowed);
+    if (allowed) {
+      assert.equal(page.contentArea().user.permissions[permission], true);
+      await page.contentArea().api('/api/admin/content');
+      page.contentArea().onDenied();
+      assert.equal(page.contentDisposed(), 1);
+      await assert.rejects(page.contentArea().api('/api/admin/content'), {
+        status: 403,
+      });
+    }
+  }
+});
+
+test('Content remains mounted between sections and its hidden edits guard page exit', async () => {
+  const page = setup({
+    url: 'http://localhost/dashboard-next?area=content',
+    api: async () => ({
+      permissions: { canManageNews: true, canReadUsers: true },
+    }),
+  });
+  await flush();
+  page.setContentDirty(true);
+  page.window.location.href = 'http://localhost/dashboard-next?area=users';
+  await page.events.popstate();
+  assert.equal(page.contentDisposed(), 0);
+  let prevented = false;
+  page.events.beforeunload({
+    preventDefault: () => {
+      prevented = true;
+    },
+  });
+  assert.equal(prevented, true);
+  page.window.location.href = 'http://localhost/dashboard-next?area=content';
+  await page.events.popstate();
+  assert.equal(page.contentMounted(), 1);
+  page.events.storage({ key: 'token' });
+  await flush();
+  assert.equal(page.contentDisposed(), 1);
+});
+
+test('Awards remains available to reviewers and unavailable without review permission', async () => {
   const reviewer = setup({
     api: async () => ({ permissions: { canReviewAndPublish: true } }),
+    url: 'http://localhost/dashboard-next?area=awards',
   });
   await flush();
   assert.equal(

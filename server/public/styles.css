@@ -753,217 +753,6 @@ svg {
   color: var(--gold-200);
 }
 
-.notification-badge {
-  position: absolute;
-  top: 1px;
-  right: 2px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--navy-950);
-  border-radius: 999px;
-  background: #a63c35;
-  color: var(--white);
-  font-size: 10px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.header-notifications {
-  position: relative;
-}
-
-.notification-toggle {
-  position: relative;
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid transparent;
-  border-radius: 2px;
-  background: transparent;
-  color: var(--white);
-  cursor: pointer;
-}
-
-.notification-toggle:hover,
-.notification-toggle:focus-visible,
-.notification-toggle[aria-expanded='true'] {
-  border-color: var(--gold-500);
-  color: var(--gold-200);
-}
-
-.notification-toggle .notification-badge {
-  top: -5px;
-  right: -6px;
-}
-
-.notification-bell-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.notification-dropdown {
-  width: min(390px, calc(100vw - 32px));
-  max-height: min(560px, calc(100vh - 116px));
-  position: absolute;
-  z-index: 1100;
-  top: calc(100% + 9px);
-  right: 0;
-  overflow: hidden auto;
-  border: 0;
-  border-radius: 0 0 var(--surface-radius) var(--surface-radius);
-  background:
-    radial-gradient(
-      circle at 92% 0%,
-      rgba(213, 155, 39, 0.16),
-      transparent 38%
-    ),
-    linear-gradient(145deg, var(--navy-950), var(--navy-900) 58%, #29365a);
-  color: var(--white);
-  box-shadow:
-    inset 0 1px 0 rgba(240, 199, 108, 0.72),
-    0 22px 42px rgba(4, 8, 20, 0.48);
-}
-
-.notification-dropdown-header {
-  padding: 13px 15px;
-  background: linear-gradient(
-    90deg,
-    rgba(5, 9, 24, 0.72),
-    rgba(20, 29, 56, 0.3)
-  );
-  box-shadow: inset 0 -1px 0 rgba(240, 199, 108, 0.24);
-}
-
-.notification-dropdown-header h2 {
-  margin: 0;
-  color: var(--white);
-  font-family: var(--font-heading);
-  font-size: 15px;
-  letter-spacing: 0.025em;
-}
-
-.notification-dropdown-status {
-  margin: 0;
-  padding: 16px 15px;
-  color: var(--branch-grey-100);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.notification-dropdown-status.is-error {
-  color: #ffd0cc;
-}
-
-.notification-dropdown-list {
-  display: grid;
-}
-
-.notification-dropdown-badges {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.notification-dropdown-item {
-  padding: 13px 15px;
-  display: grid;
-  gap: 4px;
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-  color: var(--white);
-  text-decoration: none;
-  transition:
-    background-color 150ms ease,
-    box-shadow 150ms ease,
-    color 150ms ease;
-}
-
-.notification-dropdown-item:last-child {
-  box-shadow: none;
-}
-
-.notification-dropdown-item:hover,
-.notification-dropdown-item:focus-visible {
-  background: linear-gradient(
-    90deg,
-    rgba(213, 155, 39, 0.16),
-    rgba(255, 255, 255, 0.06)
-  );
-  box-shadow: inset 3px 0 0 var(--gold-500);
-  color: var(--gold-100);
-}
-
-.notification-dropdown-type {
-  padding: 3px 6px;
-  border-radius: 999px;
-  background: rgba(240, 199, 108, 0.15);
-  color: var(--gold-200);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.09em;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
-.notification-dropdown-type.is-event {
-  background: rgba(132, 185, 220, 0.16);
-  color: #b9e0f7;
-}
-
-.notification-dropdown-type.is-retirementMessage {
-  background: rgba(240, 199, 108, 0.16);
-  color: var(--gold-200);
-}
-
-.notification-dropdown-type.is-lastPost {
-  background: rgba(120, 188, 159, 0.16);
-  color: #b5e7d0;
-}
-
-.notification-dropdown-type.is-retirementComment {
-  background: rgba(177, 159, 227, 0.16);
-  color: #d9cbff;
-}
-
-.notification-dropdown-status-badge {
-  padding: 3px 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
-  color: var(--branch-grey-100);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.07em;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
-.notification-dropdown-status-badge.is-published {
-  background: rgba(104, 179, 122, 0.18);
-  color: #b8e7c1;
-}
-
-.notification-dropdown-status-badge.is-rejected {
-  background: rgba(208, 106, 98, 0.18);
-  color: #ffc5bf;
-}
-
-.notification-dropdown-title {
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.notification-dropdown-reason {
-  color: var(--branch-grey-100);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
 .utility-icon {
   width: 19px;
   height: 19px;
@@ -5030,6 +4819,13 @@ body.leadership-biography-open .leadership-biography-portrait {
   text-transform: uppercase;
 }
 
+.account-dashboard-main .dashboard-heading-copy .dashboard-role-summary {
+  margin-top: 12px;
+  max-width: none;
+  align-items: flex-start;
+  text-align: left;
+}
+
 .dashboard-role-actions {
   display: flex;
   align-items: center;
@@ -8148,10 +7944,6 @@ html[data-theme='dark'] .legal-document th {
   border-left-color: var(--gold-600);
   background: var(--branch-grey-100);
   transform: translateX(2px);
-}
-
-.dashboard-action.is-notification {
-  border-left-color: #a63c35;
 }
 
 .dashboard-action-copy {
@@ -14283,18 +14075,6 @@ html[data-theme='dark'] .last-post-detail-footer {
     color: var(--white);
   }
 
-  .header-notifications {
-    position: static;
-  }
-
-  .notification-dropdown {
-    width: auto;
-    max-height: min(520px, calc(100vh - 24px));
-    top: calc(100% + 8px);
-    right: 15px;
-    left: 15px;
-  }
-
   .footer-inner {
     width: min(100% - 30px, 1440px);
   }
@@ -15987,10 +15767,6 @@ html[data-theme='dark']
 
 /* Mobile follow-up: keep administrative tools usable without horizontal panning. */
 @media (max-width: 700px) {
-  .header-notifications {
-    display: block;
-  }
-
   .admin-work-zone-tabs.is-mobile-select {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -16187,8 +15963,7 @@ html[data-theme='dark']
     width: auto;
   }
 
-  .header-account-controls,
-  .header-notifications {
+  .header-account-controls {
     display: none;
   }
 
@@ -16625,7 +16400,6 @@ html[data-theme='dark'] .content-workspace-shortcut:focus-visible {
   }
 
   .utility-link,
-  .notification-toggle,
   .lang-toggle,
   .theme-toggle,
   .donate-link,
@@ -16683,10 +16457,6 @@ html[data-theme='dark'] .content-workspace-shortcut:focus-visible {
 
   .header-search-button {
     width: 44px;
-  }
-
-  .notification-dropdown {
-    max-height: min(620px, calc(100dvh - 24px));
   }
 
   dialog {
@@ -18127,10 +17897,6 @@ html[data-theme='dark'] .dashboard-action:focus-visible {
   background: linear-gradient(180deg, #263349, #1b2638);
 }
 
-html[data-theme='dark'] .dashboard-action.is-notification {
-  border-left-color: #d06a62;
-}
-
 html[data-theme='dark'] .dashboard-review-work {
   background: var(--dark-surface-2);
 }
@@ -18216,8 +17982,7 @@ html[data-theme='dark'] .dashboard-detail-value {
   color: var(--dark-text-soft);
 }
 
-html[data-theme='dark'] .dashboard-action-count,
-html[data-theme='dark'] .notification-badge {
+html[data-theme='dark'] .dashboard-action-count {
   color: var(--white);
 }
 
@@ -19797,10 +19562,10 @@ html[data-theme='dark'] .analytics-meter::before {
 /* Final control normalization. Keep this after page-specific controls. */
 @media (max-width: 700px) {
   .header-identity-row .header-inner {
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
-      'identity notifications language menu'
-      'donate donate donate donate';
+      'identity language menu'
+      'donate donate donate';
   }
 
   .header-account-controls {
@@ -19809,18 +19574,6 @@ html[data-theme='dark'] .analytics-meter::before {
 
   .header-account-controls .auth-buttons {
     display: none;
-  }
-
-  .header-notifications {
-    display: block !important;
-    grid-area: notifications;
-    min-width: 44px;
-  }
-
-  .notification-toggle {
-    width: 44px;
-    height: 44px;
-    min-height: 44px;
   }
 
   .admin-work-zone-tabs.is-mobile-select {

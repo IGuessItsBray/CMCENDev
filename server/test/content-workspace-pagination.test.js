@@ -5,13 +5,17 @@ const test = require('node:test');
 
 const publicPath = path.join(__dirname, '..', 'public');
 const workspaceHtml = fs.readFileSync(
-  path.join(publicPath, 'content-workspace.html'),
+  path.join(publicPath, 'dashboard-next.html'),
   'utf8',
 );
-const workspaceScript = fs.readFileSync(
-  path.join(publicPath, 'content-workspace.js'),
-  'utf8',
-);
+const workspaceScript = ['controller', 'editors', 'actions', 'rsvps', 'history']
+  .map((name) =>
+    fs.readFileSync(
+      path.join(publicPath, 'content-workspace-' + name + '.js'),
+      'utf8',
+    ),
+  )
+  .join('\n');
 const translations = JSON.parse(
   fs.readFileSync(
     path.join(__dirname, '..', 'data', 'translations.json'),

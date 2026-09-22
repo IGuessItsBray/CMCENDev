@@ -23,6 +23,7 @@ const lastPostMessageLanguage = document.getElementById(
 );
 const LAST_POST_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 const lastPostPageParams = new URLSearchParams(window.location.search);
+const personalSubmission = lastPostPageParams.get("personal") === "1";
 const editingLastPostId = lastPostPageParams.get("id");
 let editingLastPost = null;
 let editingLastPostMessages = {};
@@ -67,7 +68,9 @@ function setSubmitting(isSubmitting) {
     isSubmitting
       ? "last_post_submitting"
       : editingLastPostId
-        ? "last_post_save_changes"
+        ? personalSubmission
+          ? "my_submissions_resubmit"
+          : "last_post_save_changes"
         : "last_post_submit_button",
   );
 }
@@ -95,6 +98,7 @@ function getSubmissionPayload(imageUrl = "", imageDisplayUrl = "") {
     imageUrl: imageUrl || editingLastPost?.imageUrl || "",
     imageDisplayUrl: imageDisplayUrl || editingLastPost?.imageDisplayUrl || "",
     publicationPermissionConfirmed,
+    ...(personalSubmission && editingLastPostId ? { submitForReview: true } : {}),
     publishNow:
       !lastPostPublishNowContainer.hidden && lastPostPublishNow.checked,
   };
@@ -109,7 +113,11 @@ function updateLastPostFormMode() {
     isEditing ? "last_post_edit_intro" : "last_post_submit_intro",
   );
   lastPostSubmitButtonLabel.textContent = translate(
-    isEditing ? "last_post_save_changes" : "last_post_submit_button",
+    isEditing
+      ? personalSubmission
+        ? "my_submissions_resubmit"
+        : "last_post_save_changes"
+      : "last_post_submit_button",
   );
   updateLastPostEditContext();
 }
@@ -241,6 +249,7 @@ async function initializeLastPostSubmission() {
     document.getElementById("lastPostMessageLanguage").value =
       CMCENUtils.getCurrentLanguage();
     const canPublishImmediately =
+      !personalSubmission &&
       currentUser.permissions?.canReviewAndPublish === true;
     lastPostPublishNowContainer.hidden = !canPublishImmediately;
     lastPostReviewNote.hidden = canPublishImmediately;

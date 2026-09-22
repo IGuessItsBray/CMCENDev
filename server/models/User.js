@@ -273,13 +273,6 @@ const UserSchema = new mongoose.Schema(
       },
     },
 
-    notificationState: {
-      // Keep this unset until the member actually opens the notification menu.
-      // A Date.now default would be applied when reading legacy users too,
-      // incorrectly treating existing review results as already read.
-      lastReadAt: { type: Date, default: null },
-    },
-
     webauthn: {
       type: [
         {

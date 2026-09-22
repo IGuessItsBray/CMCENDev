@@ -722,7 +722,7 @@ Repository documentation includes:
 - [API routes](docs/API%20ROUTES.md)
 - [OpenAPI schema](api/schema/openapi.yaml)
 - [Migration guide](docs/MIGRATION%20INFO.md)
-- [Notifications](docs/NOTIFICATIONS.md)
+- [Submission status and feedback](docs/NOTIFICATIONS.md)
 - [Page builder](docs/PAGE_BUILDER.md)
 - [Role editor](docs/ROLE_EDITOR.md)
 - [Testing](docs/TESTING.md)

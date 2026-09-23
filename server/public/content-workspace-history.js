@@ -27,6 +27,10 @@ window.ContentWorkspaceHistory = {
         ],
         message: ["content_workspace_field_message", "Message"],
         content: ["content_workspace_field_content", "Story"],
+        blocks: ["article_blocks", "Article blocks"],
+        newsletterBlocks: ["article_blocks", "Article blocks"],
+        newsletter: ["article_details", "Newsletter details"],
+        layout: ["article_template", "Article template"],
         imagePath: ["content_workspace_event_image_url", "Event image URL"],
         photoUrl: ["content_workspace_photo_url", "Full photo URL"],
         photoDisplayUrl: [
@@ -65,8 +69,14 @@ window.ContentWorkspaceHistory = {
       return [...fields]
         .map((field) => ({
           field,
-          before: String(before[field] || ""),
-          after: String(after[field] || ""),
+          before:
+            typeof before[field] === "object"
+              ? JSON.stringify(before[field], null, 2)
+              : String(before[field] || ""),
+          after:
+            typeof after[field] === "object"
+              ? JSON.stringify(after[field], null, 2)
+              : String(after[field] || ""),
         }))
         .filter((change) => change.before !== change.after);
     }

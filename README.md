@@ -65,6 +65,13 @@ Each service has a distinct responsibility:
 Do not use Plausible's PostgreSQL or ClickHouse databases for CMCEN application
 data.
 
+Staff news stories and newsletters are MongoDB `NewsArticle` records, managed
+through **Admin → Articles**. Newsletter JSON files under the migration scripts
+are import seeds, not live content. Images and documents use object storage;
+the document-library catalog and unrelated static editorial pages retain their
+existing JSON files. See [Staff articles and newsletters](docs/NEWSLETTERS.md)
+for authoring, archive behavior and migration/deployment steps.
+
 ## Requirements
 
 ### CMCEN

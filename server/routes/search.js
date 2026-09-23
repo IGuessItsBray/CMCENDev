@@ -4,6 +4,7 @@ const path = require('path');
 const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
 const NewsArticle = require('../models/NewsArticle');
+const { publicDateStages } = require('../services/newsletter-content');
 const RetirementMessage = require('../models/RetirementMessage');
 
 const router = express.Router();
@@ -422,14 +423,17 @@ async function searchNewsStories(query, queryTerms, language) {
     const regex = new RegExp(escapeRegex(term), 'i');
     return { $or: fields.map((field) => ({ [field]: regex })) };
   });
-  const articles = await NewsArticle.find({
-    status: 'published',
-    $and: andClauses,
-  })
-    .select('title content publishedAt createdAt')
-    .sort({ publishedAt: -1, createdAt: -1 })
-    .limit(MAX_RESULTS_PER_SOURCE)
-    .lean();
+  const articles = await NewsArticle.aggregate([
+    {
+      $match: {
+        status: 'published',
+        $and: andClauses,
+      },
+    },
+    ...publicDateStages,
+    { $limit: MAX_RESULTS_PER_SOURCE },
+    { $project: { title: 1, content: 1, layout: 1, displayDate: 1 } },
+  ]);
 
   return articles.map((article) => {
     const title = getLocalizedText(article.title, language) || 'News story';
@@ -440,8 +444,8 @@ async function searchNewsStories(query, queryTerms, language) {
       sourceId: String(article._id),
       title,
       summary,
-      url: `/news-story?id=${encodeURIComponent(String(article._id))}`,
-      date: article.publishedAt || article.createdAt || null,
+      url: `/${article.layout === 'newsletter' ? 'newsletter' : 'news-story'}?id=${encodeURIComponent(String(article._id))}`,
+      date: article.displayDate || null,
       score: scoreSearchResult(query, queryTerms, {
         title,
         type: 'news-story',

@@ -1,3 +1,6 @@
+const {
+  imageUrls: newsletterImageUrls,
+} = require('../public/newsletter-format');
 const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
@@ -300,9 +303,10 @@ async function getContentMediaReferences(assetKeys) {
         $or: [
           { imageUrl: { $nin: [null, ''] } },
           { imageDisplayUrl: { $nin: [null, ''] } },
+          { layout: 'newsletter' },
         ],
       })
-        .select('_id imageUrl imageDisplayUrl')
+        .select('_id imageUrl imageDisplayUrl layout newsletterBlocks')
         .lean(),
       Page.find({}).select('_id blocks').lean(),
     ]);
@@ -328,6 +332,8 @@ async function getContentMediaReferences(assetKeys) {
     addReference('lastPostMessage', message, 'photoUrl', message.photoUrl);
   });
   newsArticles.forEach((article) => {
+    for (const url of newsletterImageUrls(article))
+      addReference('newsArticle', article, 'content', url);
     addReference('newsArticle', article, 'imageUrl', article.imageUrl);
     addReference(
       'newsArticle',

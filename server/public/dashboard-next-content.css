@@ -1,27 +1,27 @@
 /* Workspace layout within the persistent admin shell. */
-#adminContent .content-workspace-review-queues {
+:is(#adminContent, #adminArticles) .content-workspace-review-queues {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 16px;
 }
-#adminContent .content-workspace-review-queues-title {
+:is(#adminContent, #adminArticles) .content-workspace-review-queues-title {
   flex-basis: 100%;
   margin: 0;
   font-size: 0.875rem;
   color: var(--admin-muted);
 }
-#adminContentBody {
+:is(#adminContentBody, #adminArticlesBody) {
   padding-top: 20px;
   min-width: 0;
 }
-#adminContent .content-workspace-layout {
+:is(#adminContent, #adminArticles) .content-workspace-layout {
   display: grid;
   grid-template-columns: minmax(240px, 0.65fr) minmax(0, 1.35fr);
   gap: 20px;
   align-items: start;
 }
-#adminContent .content-workspace-list-panel {
+:is(#adminContent, #adminArticles) .content-workspace-list-panel {
   --content-workspace-list-surface: var(--admin-inset);
   position: sticky;
   top: calc(var(--admin-header-height, 100px) + 16px);
@@ -29,15 +29,15 @@
   overflow: auto;
   border: 1px solid var(--admin-border);
 }
-#adminContent .content-workspace-list {
+:is(#adminContent, #adminArticles) .content-workspace-list {
   display: grid;
 }
-#adminContent .content-workspace-filters label {
+:is(#adminContent, #adminArticles) .content-workspace-filters label {
   min-width: 0;
   width: 100%;
   grid-template-columns: minmax(0, 1fr);
 }
-#adminContent .content-workspace-record {
+:is(#adminContent, #adminArticles) .content-workspace-record {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 6px 10px;
@@ -50,76 +50,80 @@
   background: transparent;
   text-align: left;
 }
-#adminContent .content-workspace-record:hover {
+:is(#adminContent, #adminArticles) .content-workspace-record:hover {
   background: var(--admin-hover);
 }
-#adminContent .content-workspace-record.is-selected {
+:is(#adminContent, #adminArticles) .content-workspace-record.is-selected {
   border-left-color: var(--admin-accent);
   background: var(--admin-selected);
 }
-#adminContent .content-workspace-record strong {
+:is(#adminContent, #adminArticles) .content-workspace-record strong {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-#adminContent .content-workspace-detail {
+:is(#adminContent, #adminArticles) .content-workspace-detail {
   display: grid;
   align-content: start;
   gap: 24px;
   min-width: 0;
 }
-#adminContent .admin-editor-field {
+:is(#adminContent, #adminArticles) .admin-editor-field {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 6px;
   min-width: 0;
 }
-#adminContent .admin-editor-field :is(input, select, textarea) {
+:is(#adminContent, #adminArticles)
+  .admin-editor-field
+  :is(input, select, textarea) {
   width: 100%;
   min-width: 0;
 }
-#adminContent textarea {
+:is(#adminContent, #adminArticles) textarea {
   resize: vertical;
 }
-#adminContent .content-workspace-detail h2 {
+:is(#adminContent, #adminArticles) .content-workspace-detail h2 {
   margin: 0;
 }
-#adminContent .content-workspace-note .cmcen-control {
+:is(#adminContent, #adminArticles) .content-workspace-note .cmcen-control {
   background: var(--form-control-background);
   color: var(--form-text);
 }
-#adminContent .content-workspace-record-form {
+:is(#adminContent, #adminArticles) .content-workspace-record-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   padding: 18px;
 }
-#adminContent .content-workspace-record-form .admin-editor-field:has(textarea),
-#adminContent .content-workspace-record-form .is-checkbox {
+:is(#adminContent, #adminArticles)
+  .content-workspace-record-form
+  .admin-editor-field:has(textarea),
+:is(#adminContent, #adminArticles) .content-workspace-record-form .is-checkbox {
   grid-column: 1 / -1;
 }
-#adminContent .admin-editor-field.is-checkbox {
+:is(#adminContent, #adminArticles) .admin-editor-field.is-checkbox {
   grid-template-columns: auto 1fr;
   align-items: center;
 }
-#adminContent .admin-editor-field.is-checkbox > span {
+:is(#adminContent, #adminArticles) .admin-editor-field.is-checkbox > span {
   grid-column: 2;
   grid-row: 1;
 }
-#adminContent .admin-editor-field.is-checkbox input {
+:is(#adminContent, #adminArticles) .admin-editor-field.is-checkbox input {
   grid-column: 1;
   grid-row: 1;
   width: auto;
 }
-#adminContent .content-workspace-status:empty {
+:is(#adminContent, #adminArticles) .content-workspace-status:empty {
   display: none;
 }
-#adminContent .content-workspace-status.is-error {
+:is(#adminContent, #adminArticles) .content-workspace-status.is-error {
   color: var(--admin-danger);
 }
-#adminContent
+:is(#adminContent, #adminArticles)
   :is(
     .content-workspace-language-group,
     .content-workspace-record-form,
@@ -129,7 +133,7 @@
   background: var(--admin-surface);
   border-color: var(--admin-border);
 }
-#adminContent
+:is(#adminContent, #adminArticles)
   :is(
     .content-workspace-filters label,
     .admin-editor-field > span,
@@ -138,29 +142,31 @@
   ) {
   color: var(--admin-text);
 }
-#adminContent .content-workspace-filters :is(input, select) {
+:is(#adminContent, #adminArticles)
+  .content-workspace-filters
+  :is(input, select) {
   background: var(--admin-surface);
   color: var(--admin-text);
   border-color: var(--admin-control-border);
 }
-#adminContent .skeleton {
+:is(#adminContent, #adminArticles) .skeleton {
   background: var(--admin-inset);
   border-radius: 4px;
 }
-#adminContent .content-workspace-review-actions {
+:is(#adminContent, #adminArticles) .content-workspace-review-actions {
   flex-wrap: wrap;
 }
 @media (max-width: 1100px) {
-  #adminContent .content-workspace-layout {
+  :is(#adminContent, #adminArticles) .content-workspace-layout {
     grid-template-columns: minmax(0, 1fr);
   }
-  #adminContent .content-workspace-list-panel {
+  :is(#adminContent, #adminArticles) .content-workspace-list-panel {
     position: static;
     max-height: 420px;
   }
 }
 @media (max-width: 560px) {
-  #adminContent .content-workspace-record-form {
+  :is(#adminContent, #adminArticles) .content-workspace-record-form {
     grid-template-columns: minmax(0, 1fr);
     padding: 12px;
   }

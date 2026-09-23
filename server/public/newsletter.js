@@ -41,6 +41,7 @@
     module.exports = { safeUrl, inline };
     return;
   }
+  window.NewsletterRenderer = { safeUrl, inline };
   const root = document.getElementById("newsletterArticle");
   if (!root) return;
   let issue;
@@ -48,7 +49,10 @@
     en: {
       archive:
         "From the newsletter archive. Dates and information reflect the original issue.",
-      fallback: "This issue is available in English.",
+      fallback: {
+        en: "This issue is available in English.",
+        fr: "This issue is available in French.",
+      },
       library: "Document library",
       source: "Original publication",
       error: "This newsletter could not be loaded.",
@@ -57,7 +61,10 @@
     fr: {
       archive:
         "Archives des bulletins. Les dates et les renseignements correspondent au numéro original.",
-      fallback: "Ce numéro est disponible en anglais.",
+      fallback: {
+        en: "Ce numéro est disponible en anglais.",
+        fr: "Ce numéro est disponible en français.",
+      },
       library: "Bibliothèque de documents",
       source: "Publication originale",
       error: "Ce bulletin n’a pas pu être chargé.",
@@ -76,8 +83,8 @@
     const img = element("img");
     img.src = data.url;
     img.alt = data.alt || "";
-    img.width = data.width;
-    img.height = data.height;
+    if (data.width) img.width = data.width;
+    if (data.height) img.height = data.height;
     img.loading = "lazy";
     img.decoding = "async";
     const variants = Object.values(data.variants || {}).filter(
@@ -111,23 +118,31 @@
       }).format(new Date(`${issue.publishedAt}T12:00:00Z`)),
     );
     time.dateTime = issue.publishedAt;
-    metadata.append(time, document.createTextNode(` · ${issue.author}`));
+    metadata.append(time);
+    if (issue.author)
+      metadata.append(document.createTextNode(` · ${issue.author}`));
     copy.append(metadata);
     header.append(copy);
-    const crest = image(issue.images.crest);
+    const crest = image(issue.crest);
     if (crest) {
       crest.className = "newsletter-crest";
       crest.sizes = "104px";
       header.append(crest);
     }
     const body = element("div", "", "about-family-body newsletter-body");
-    body.append(
-      element(
-        "p",
-        `${ui.archive}${language !== issue.language ? ` ${ui.fallback}` : ""}`,
-        "newsletter-context",
-      ),
-    );
+    if (issue.archived || language !== issue.language)
+      body.append(
+        element(
+          "p",
+          [
+            issue.archived ? ui.archive : "",
+            language !== issue.language ? ui.fallback[issue.language] : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
+          "newsletter-context",
+        ),
+      );
     const content = element("div");
     content.lang = issue.language;
     for (const block of issue.blocks) {
@@ -145,16 +160,36 @@
         }
       } else if (block.type === "figure") {
         el = element("figure");
-        const img = image(issue.images[block.image]);
+        const img = image(block.image);
         if (img) el.append(img);
-        el.append(element("figcaption", block.caption));
+        if (block.caption) el.append(element("figcaption", block.caption));
+      } else if (block.type === "document") {
+        el = element("p");
+        inline(el, [
+          { type: "link", href: block.href, children: [block.label] },
+        ]);
       }
       if (el) content.append(el);
     }
     const footer = element("footer", "", "newsletter-footer");
+    if (issue.preview) {
+      const notice = element(
+        "p",
+        language === "fr"
+          ? "Aperçu réservé au personnel."
+          : "Staff preview — this is not the public article.",
+      );
+      body.prepend(notice);
+      const edit = element(
+        "a",
+        language === "fr" ? "Modifier l’article" : "Edit article",
+      );
+      edit.href = `/dashboard-next?area=articles&id=${encodeURIComponent(issue._id)}`;
+      footer.append(edit);
+    }
     for (const [text, url] of [
       [ui.library, "/document-library"],
-      [ui.source, issue.sourceUrl],
+      ...(issue.sourceUrl ? [[ui.source, issue.sourceUrl]] : []),
     ]) {
       const link = element("a", text);
       link.href = safeUrl(url);
@@ -164,17 +199,41 @@
     root.append(header, body);
     root.setAttribute("aria-busy", "false");
   }
+  let requestId = 0;
   async function load() {
+    const currentRequest = ++requestId;
     try {
-      const slug =
-        new URLSearchParams(location.search).get("issue") || "fall-2025";
-      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(slug))
-        throw new Error("Invalid issue");
-      const response = await fetch(`/page-content/newsletters/${slug}.json`);
-      if (!response.ok) throw new Error("Unavailable issue");
-      issue = await response.json();
+      const id = new URLSearchParams(location.search).get("id");
+      if (!/^[a-f0-9]{24}$/i.test(id || "")) throw new Error("Invalid article");
+      const preview =
+        new URLSearchParams(location.search).get("preview") === "1";
+      const { article } = await CMCENUtils.apiJson(
+        `/api/news/${id}${preview ? "/preview" : ""}`,
+        preview ? { token: CMCENUtils.getStoredAuthToken() } : {},
+      );
+      if (currentRequest !== requestId) return;
+      if (article.layout !== "newsletter") throw new Error("Not a newsletter");
+      const metadata = article.newsletter || {};
+      const requested = document.documentElement.lang === "fr" ? "fr" : "en";
+      const language = article.newsletterBlocks?.[requested]?.length
+        ? requested
+        : metadata.language;
+      issue = {
+        ...metadata,
+        blocks: article.newsletterBlocks?.[language] || [],
+        title: article.title[language] || article.title[metadata.language],
+        language,
+        publishedAt:
+          metadata.date ||
+          (article.publishedAt || article.createdAt).slice(0, 10),
+      };
+      if (metadata.headerCrest)
+        issue.crest = { url: article.imageUrl, alt: issue.title };
+      issue._id = article._id;
+      issue.preview = preview;
       render();
     } catch {
+      if (currentRequest !== requestId) return;
       const ui = labels[document.documentElement.lang === "fr" ? "fr" : "en"];
       const message = element("p", ui.error, "newsletter-status");
       message.setAttribute("role", "alert");
@@ -186,6 +245,6 @@
       root.setAttribute("aria-busy", "false");
     }
   }
-  document.addEventListener("languagechange", render);
+  document.addEventListener("languagechange", load);
   load();
 })();

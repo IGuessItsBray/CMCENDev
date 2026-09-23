@@ -12,9 +12,12 @@ process.env.CASL_SENDER_MAILING_ADDRESS =
   '100 Example Street, Ottawa, ON K1A 0A1';
 process.env.CASL_SENDER_CONTACT = 'https://example.test/contact';
 process.env.MINIO_ENDPOINT = 'http://127.0.0.1:9000';
+process.env.MINIO_PUBLIC_ENDPOINT = 'http://127.0.0.1:9000';
 process.env.MINIO_ACCESS_KEY = 'integration-test';
 process.env.MINIO_SECRET_KEY = 'integration-test';
 process.env.MINIO_BUCKET_NAME = 'integration-test';
+// Public article images require HTTPS, independent of local .env or CI settings.
+process.env.CDN_PUBLIC_BASE_URL = 'https://cdn.example.test/integration-test';
 process.env.PLAUSIBLE_DOMAIN = '';
 process.env.PLAUSIBLE_API_URL = '';
 
@@ -1647,6 +1650,246 @@ describe('news publication scheduling', () => {
 });
 
 describe('news stories', () => {
+  test('newsletter drafts preserve metadata, restrict previews, and protect inline media aliases', async () => {
+    const admin = await createUser({ role: 'administrator' });
+    const member = await createUser();
+    const authorization = bearer((await login(admin)).body.token);
+    const memberAuthorization = bearer((await login(member)).body.token);
+    const key = 'legacy/newsletters/test/original.webp';
+    const display = buildPublicMediaUrl('legacy/newsletters/test/large.webp');
+    await MediaAsset.create({ key, originalKey: key, url: display });
+    const payload = {
+      layout: 'newsletter',
+      newsletter: { language: 'en', author: 'Editor', date: '2025-09-18' },
+      title: { en: 'Archive issue' },
+      newsletterBlocks: {
+        en: [
+          { type: 'heading', text: 'Update' },
+          {
+            type: 'figure',
+            image: { url: display, alt: 'Unit crest', width: 400, height: 600 },
+            caption: 'Photo credit',
+          },
+          {
+            type: 'document',
+            label: 'Document',
+            href: 'https://example.org/document.pdf',
+          },
+        ],
+      },
+      status: 'draft',
+    };
+    await request(app).post('/api/news').send(payload).expect(401);
+    await request(app)
+      .post('/api/news')
+      .set('Authorization', memberAuthorization)
+      .send(payload)
+      .expect(403);
+    const created = await request(app)
+      .post('/api/news')
+      .set('Authorization', authorization)
+      .send(payload);
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    const id = created.body.article._id;
+    await request(app).get(`/api/news/${id}`).expect(404);
+    await request(app).get(`/api/news/${id}/preview`).expect(401);
+    await request(app)
+      .get(`/api/news/${id}/preview`)
+      .set('Authorization', memberAuthorization)
+      .expect(403);
+    const preview = await request(app)
+      .get(`/api/news/${id}/preview`)
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.equal(preview.body.article.newsletter.author, 'Editor');
+    assert.equal(
+      preview.body.article.newsletterBlocks.en[1].caption,
+      'Photo credit',
+    );
+    assert.equal(preview.body.article.newsletterBlocks.en[1].image.width, 400);
+    assert.equal(
+      preview.body.article.content.en,
+      'Update\n\nPhoto credit\n\nDocument',
+    );
+    assert.equal(preview.headers['cache-control'], 'no-store');
+    const media = await request(app)
+      .get('/api/admin/media')
+      .set('Authorization', authorization)
+      .expect(200);
+    const item = media.body.media.find((asset) => asset.key === key);
+    assert.equal(item.attachedPostCount, 1);
+    assert.equal(item.attachedPosts[0].type, 'newsArticle');
+    await request(app)
+      .delete(`/api/admin/media/${encodeURIComponent(key)}`)
+      .set('Authorization', authorization)
+      .expect(409);
+    const bulk = await request(app)
+      .post('/api/admin/media/bulk-delete')
+      .set('Authorization', authorization)
+      .send({ keys: [key] })
+      .expect(200);
+    assert.equal(bulk.body.skipped.length, 1);
+    assert.equal(bulk.body.deleted.length, 0);
+    const updated = await request(app)
+      .patch(`/api/news/${id}`)
+      .set('Authorization', authorization)
+      .send({ title: payload.title, content: payload.content, status: 'draft' })
+      .expect(200);
+    assert.equal(updated.body.article.layout, 'newsletter');
+    assert.equal(updated.body.article.newsletter.author, 'Editor');
+    assert.deepEqual(
+      updated.body.article.newsletterBlocks,
+      preview.body.article.newsletterBlocks,
+    );
+    await request(app)
+      .patch(`/api/news/${id}`)
+      .set('Authorization', authorization)
+      .send({
+        ...payload,
+        newsletter: { ...payload.newsletter, date: '2025-02-31' },
+      })
+      .expect(400);
+    await request(app)
+      .patch(`/api/news/${id}`)
+      .set('Authorization', authorization)
+      .send({
+        ...payload,
+        newsletter: { ...payload.newsletter, sourceUrl: 'javascript:alert(1)' },
+      })
+      .expect(400);
+    await request(app)
+      .patch(`/api/news/${id}/publication`)
+      .set('Authorization', authorization)
+      .send({ action: 'publish' })
+      .expect(200);
+    await request(app).get(`/api/news/${id}`).expect(200);
+    await request(app)
+      .patch(`/api/news/${id}/hide`)
+      .set('Authorization', authorization)
+      .send({ reason: 'Review' })
+      .expect(200);
+    await request(app).get(`/api/news/${id}`).expect(404);
+  });
+  test('archive ordering, search, media selection and separate staff queues preserve their boundaries', async () => {
+    const staff = await createUser({ role: 'editor' });
+    const member = await createUser();
+    const authorization = bearer((await login(staff)).body.token);
+    await request(app).get('/api/news/media').expect(401);
+    await request(app)
+      .get('/api/news/media')
+      .set('Authorization', bearer((await login(member)).body.token))
+      .expect(403);
+    await request(app)
+      .get('/api/news/media?cursor=-1')
+      .set('Authorization', authorization)
+      .expect(400);
+    await MediaAsset.create({
+      key: 'article/test.png',
+      url: buildPublicMediaUrl('article/test.png'),
+      mimeType: 'image/png',
+      displayName: 'Article image',
+      uploadedBy: member._id,
+    });
+    const selected = await request(app)
+      .get('/api/news/media?search=Article')
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.equal(selected.body.media.length, 1);
+    assert.equal(selected.body.media[0].uploadedBy, undefined);
+    const post = (data) =>
+      request(app)
+        .post('/api/news')
+        .set('Authorization', authorization)
+        .send(data);
+    const archived = await post({
+      layout: 'newsletter',
+      status: 'published',
+      title: { fr: 'Archives historiques' },
+      newsletter: { archived: true, date: '1985-09-01', language: 'fr' },
+      newsletterBlocks: {
+        fr: [{ type: 'heading', text: 'Archives historiques' }],
+      },
+    }).expect(201);
+    const fresh = await post({
+      title: { en: 'Current story', fr: 'Actualité' },
+      content: { en: 'Current update', fr: 'Actualité récente' },
+      status: 'published',
+    }).expect(201);
+    const archivedId = archived.body.article._id;
+    assert.ok(
+      Date.parse(archived.body.article.publishedAt) > Date.parse('1985-09-01'),
+    );
+    assert.match(archived.body.article.displayDate, /^1985-09-01/);
+    const listing = await request(app).get('/api/news').expect(200);
+    assert.deepEqual(
+      listing.body.articles.map((item) => item._id),
+      [fresh.body.article._id, archivedId],
+    );
+    const feed = await request(app).get('/api/news/feed').expect(200);
+    assert.ok(!feed.body.items.some((item) => item._id === archivedId));
+    const search = await request(app)
+      .get('/api/search?q=historiques&lang=fr')
+      .expect(200);
+    const match = search.body.results.find(
+      (item) => item.sourceId === archivedId,
+    );
+    assert.ok(match);
+    assert.equal(match.summary, 'Archives historiques');
+    assert.match(match.date, /^1985-09-01/);
+    const articles = await request(app)
+      .get('/api/admin/content?scope=articles')
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.equal(articles.body.items.length, 2);
+    assert.ok(articles.body.items.every((item) => item.type === 'newsArticle'));
+    const submissions = await request(app)
+      .get('/api/admin/content?scope=submissions')
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.ok(
+      submissions.body.items.every((item) => item.type !== 'newsArticle'),
+    );
+    await request(app)
+      .get('/api/admin/content?scope=unknown')
+      .set('Authorization', authorization)
+      .expect(400);
+    const changed = [{ type: 'paragraph', children: ['Revised archive text'] }];
+    await request(app)
+      .patch(`/api/news/${archivedId}`)
+      .set('Authorization', authorization)
+      .send({
+        title: archived.body.article.title,
+        newsletterBlocks: { fr: changed },
+        status: 'published',
+      })
+      .expect(200);
+    const revisions = await ContentRevision.find({
+      contentId: archivedId,
+      language: 'fr',
+    }).lean();
+    assert.ok(
+      revisions.some(
+        (revision) =>
+          revision.fields.includes('blocks') &&
+          revision.after.blocks[0].children[0] === 'Revised archive text',
+      ),
+    );
+    await post({
+      layout: 'newsletter',
+      title: { en: 'Bad' },
+      newsletter: { archived: true },
+      newsletterBlocks: { en: [{ type: 'heading', text: 'Body' }] },
+    }).expect(400);
+    await post({
+      layout: 'newsletter',
+      title: { en: 'Bad' },
+      newsletterBlocks: {
+        en: [
+          { type: 'document', label: 'Bad link', href: 'javascript:alert(1)' },
+        ],
+      },
+    }).expect(400);
+  });
   test('uses the news permission to publish bilingual stories and audit their changes', async () => {
     const publisherRole = await Role.create({
       name: 'News Publisher',

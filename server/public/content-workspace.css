@@ -1,5 +1,88 @@
 /* Styles exclusive to Editorial Workspace. Shared workspace controls remain in styles.css. */
 
+.article-create {
+  margin-bottom: 16px;
+}
+.article-block-editor,
+.article-block-list,
+.article-block,
+.article-rich-text,
+.article-media-control,
+.article-cover,
+.article-list-item {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.article-block {
+  padding: 14px;
+  border: 1px solid var(--border-color, #ccd3dc);
+  border-radius: 8px;
+}
+.article-block-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.article-block-tools > strong {
+  flex: 1 1 100%;
+}
+.article-block-tools > select {
+  width: auto;
+  max-width: 100%;
+}
+.article-rich-input {
+  min-height: 7em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  resize: vertical;
+  overflow: auto;
+}
+.article-rich-input a {
+  text-decoration: underline;
+}
+.article-image-preview {
+  max-width: 100%;
+  max-height: 180px;
+  width: auto;
+  object-fit: contain;
+}
+.article-cover {
+  grid-column: 1 / -1;
+}
+.article-media-picker {
+  display: grid;
+  gap: 10px;
+}
+.article-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+.article-media-option {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--border-color, #ccd3dc);
+  border-radius: 6px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.article-media-option img {
+  width: 100%;
+  height: 85px;
+  object-fit: contain;
+}
+.article-block-editor [hidden],
+.article-media-control [hidden] {
+  display: none !important;
+}
+
 .content-workspace-filters {
   display: flex;
   flex-wrap: wrap;

@@ -13,7 +13,7 @@
 }
 .newsletter-body {
   margin: 22px 0 0;
-  padding: clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 4vw, 3rem) clamp(1.25rem, 2.5vw, 2rem);
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
@@ -38,7 +38,8 @@
   margin-top: 0.65rem;
 }
 .newsletter-body figure {
-  margin: 2rem 0;
+  max-width: 700px;
+  margin: 2rem auto;
 }
 .newsletter-body figure img {
   display: block;
@@ -77,7 +78,7 @@
 .newsletter-body > div,
 .newsletter-body > p,
 .newsletter-body > footer {
-  max-width: 700px;
+  max-width: none;
   margin-left: auto;
   margin-right: auto;
 }

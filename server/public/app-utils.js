@@ -1527,8 +1527,7 @@
           (options.fields || []).forEach((field) => {
             const isCustomDateTime = field.type === "cmcen-date-time";
             const usesDateTimePicker =
-              isCustomDateTime &&
-              window.CMCENDateTimePicker?.create;
+              isCustomDateTime && window.CMCENDateTimePicker?.create;
             const group = document.createElement(
               usesDateTimePicker ? "div" : "label",
             );
@@ -1983,7 +1982,10 @@
     const shortcut = document.createElement("a");
     shortcut.className = "content-workspace-shortcut";
     shortcut.href =
-      "/content-workspace?" + new URLSearchParams({ id: String(contentId) });
+      (contentType === "newsArticle"
+        ? "/dashboard-next?area=articles&"
+        : "/content-workspace?") +
+      new URLSearchParams({ id: String(contentId) });
     shortcut.dataset.contentWorkspaceShortcut = contentType;
     shortcut.setAttribute("aria-label", label);
     shortcut.title = label;

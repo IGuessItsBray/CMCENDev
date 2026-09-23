@@ -500,10 +500,21 @@ paths:
       parameters:
         - name: type
           in: query
-          schema: { type: string, enum: [all, event, retirementMessage, lastPost, retirementComment], default: all }
+          schema:
+            {
+              type: string,
+              enum:
+                [all, event, retirementMessage, lastPost, retirementComment],
+              default: all,
+            }
         - name: status
           in: query
-          schema: { type: string, enum: [all, draft, pending, scheduled, published, rejected], default: all }
+          schema:
+            {
+              type: string,
+              enum: [all, draft, pending, scheduled, published, rejected],
+              default: all,
+            }
         - name: limit
           in: query
           schema: { type: integer, minimum: 1, maximum: 48, default: 12 }
@@ -537,7 +548,11 @@ paths:
         - name: type
           in: path
           required: true
-          schema: { type: string, enum: [event, retirementMessage, lastPost, retirementComment] }
+          schema:
+            {
+              type: string,
+              enum: [event, retirementMessage, lastPost, retirementComment],
+            }
         - $ref: "#/components/parameters/Id"
       responses:
         "200":
@@ -552,13 +567,25 @@ paths:
                     allOf:
                       - $ref: "#/components/schemas/PersonalSubmission"
                       - type: object
-                        required: [content, feedback, scheduledPublishAt, editUrl, publicUrl]
+                        required:
+                          [
+                            content,
+                            feedback,
+                            scheduledPublishAt,
+                            editUrl,
+                            publicUrl,
+                          ]
                         properties:
                           content:
                             type: object
                             description: Whitelisted submission copy; event localized description/location/registration and schedule, retirement/Last Post localized messages, or comment body. Includes attached image references and retirement date/trade when available.
-                          feedback: { type: string, description: Reviewer feedback only when rejected. }
-                          scheduledPublishAt: { type: [string, "null"], format: date-time }
+                          feedback:
+                            {
+                              type: string,
+                              description: Reviewer feedback only when rejected.,
+                            }
+                          scheduledPublishAt:
+                            { type: [string, "null"], format: date-time }
                           editUrl: { type: [string, "null"] }
                           publicUrl: { type: [string, "null"] }
         "401": { $ref: "#/components/responses/Error" }
@@ -1342,6 +1369,11 @@ paths:
       description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Event records include RSVP enablement and deadline settings. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, paged with the opaque `cursor` returned by the previous response, or narrowed to one record with `id`; when type is `all`, results are limited to the caller’s permitted content types. Responses include `hasMore` and `nextCursor` for Load more pagination. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
       x-permission: canReviewAndPublish or canManageNews (newsArticle only)
       parameters:
+        - name: scope
+          in: query
+          description: Separate staff articles from member/contributor submissions within caller permissions.
+          schema:
+            { type: string, enum: [all, submissions, articles], default: all }
         - name: type
           in: query
           schema:
@@ -2179,7 +2211,8 @@ paths:
   /api/news:
     get:
       tags: [News]
-      summary: List published bilingual news stories.
+      summary: List published news stories and newsletters.
+      description: Ordered by displayDate, using the original date for historical newsletters and publishedAt otherwise.
       security: []
       parameters:
         - in: query
@@ -2193,7 +2226,8 @@ paths:
           description: Published news stories.
     post:
       tags: [News]
-      summary: Create a bilingual news story.
+      summary: Create a news story or newsletter.
+      description: Persists a NewsArticle in MongoDB. Supply status draft to keep it private; the staff editor does so explicitly.
       x-permission: canManageNews
       requestBody:
         required: true
@@ -2208,6 +2242,7 @@ paths:
     get:
       tags: [News]
       summary: List newest published news stories, Last Post notices, and featured public custom pages together.
+      description: Includes current newsletters and excludes historical issues marked newsletter.archived.
       security: []
       parameters:
         - in: query
@@ -2227,10 +2262,51 @@ paths:
       responses:
         "200":
           description: Managed news stories.
+  /api/news/media:
+    get:
+      tags: [News]
+      summary: Select registered images for an article.
+      x-permission: canManageNews
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 60, default: 24 }
+        - name: cursor
+          in: query
+          description: Numeric offset returned as nextCursor.
+          schema: { type: string, pattern: "^[0-9]+$" }
+        - name: search
+          in: query
+          schema: { type: string, maxLength: 120 }
+      responses:
+        "200":
+          description: Image media with key, URL, names, dimensions and variants; nextCursor is empty on the final page.
+        "400":
+          description: Invalid pagination or search.
+        "401":
+          description: Authentication required.
+        "403":
+          description: News management permission required.
+  /api/news/{articleId}/preview:
+    get:
+      tags: [News]
+      summary: Preview a news story or newsletter, including drafts and hidden records.
+      x-permission: canManageNews
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: Article including layout and newsletter metadata. Cache-Control is no-store.
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/news/{articleId}:
     get:
       tags: [News]
-      summary: Get one published bilingual news story for its full article page.
+      summary: Get one published news story or newsletter for its full article page.
       security: []
       parameters:
         - $ref: "#/components/parameters/ArticleId"
@@ -2241,7 +2317,7 @@ paths:
           $ref: "#/components/responses/Error"
     patch:
       tags: [News]
-      summary: Update a bilingual news story or its publication state.
+      summary: Update a news story, newsletter, or its publication state.
       description: Editing a removed story preserves its removed state until it is explicitly restored. Editing a scheduled draft preserves its schedule; publishing clears it. An optional revision note is recorded with changed fields. A concurrent change returns 409.
       x-permission: canManageNews
       parameters:
@@ -2272,7 +2348,8 @@ paths:
         Requires a draft. Publish without a date makes it public immediately;
         a future scheduledPublishAt keeps it private as a draft until the server
         publishes it. Cancel-schedule clears the schedule and leaves a draft.
-        Both languages are required for publication. Changes are audited.
+        Standard stories require both languages; newsletters require their
+        original language. Changes are audited.
       x-permission: canManageNews
       parameters:
         - $ref: "#/components/parameters/ArticleId"
@@ -3166,14 +3243,22 @@ components:
       required: [id, type, title, status, submittedAt, updatedAt]
       properties:
         id: { type: string }
-        type: { type: string, enum: [event, retirementMessage, lastPost, retirementComment] }
+        type:
+          {
+            type: string,
+            enum: [event, retirementMessage, lastPost, retirementComment],
+          }
         title:
           type: object
           required: [en, fr]
           properties:
             en: { type: string }
             fr: { type: string }
-        status: { type: string, enum: [draft, pending, scheduled, published, rejected] }
+        status:
+          {
+            type: string,
+            enum: [draft, pending, scheduled, published, rejected],
+          }
         submittedAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     Error:
@@ -3249,16 +3334,104 @@ components:
       properties:
         en: { type: string }
         fr: { type: string }
+    NewsletterMetadata:
+      type: object
+      properties:
+        author: { type: string, maxLength: 240 }
+        issue: { type: string, maxLength: 240 }
+        kicker: { type: string, maxLength: 120 }
+        date:
+          {
+            type: string,
+            description: Original publication date in YYYY-MM-DD format,
+            maxLength: 10,
+          }
+        language: { type: string, enum: [en, fr], default: en }
+        sourceUrl:
+          {
+            type: string,
+            maxLength: 2000,
+            description: Original HTTP or HTTPS publication URL,
+          }
+        headerCrest: { type: boolean, default: false }
+        archived:
+          type: boolean
+          default: false
+          description: Historical issue. Requires an original date; excluded from the current-news feed, with lists/search ordered by original date. Does not alter publishedAt.
+    NewsletterInline:
+      oneOf:
+        - type: string
+        - type: object
+          required: [type]
+          properties:
+            type: { type: string, enum: [strong, em, link, br] }
+            href: { type: string, maxLength: 2000 }
+            children:
+              type: array
+              items: { $ref: "#/components/schemas/NewsletterInline" }
+      description: Safe inline text, nested at most six levels. Links allow HTTP/S, mailto and root-relative site paths.
+    NewsletterBlock:
+      type: object
+      required: [type]
+      description: Heading requires text; paragraph requires children; list requires items; figure requires image with optional caption; document requires label and href. No HTML. Images/variants require HTTPS.
+      properties:
+        type:
+          { type: string, enum: [heading, paragraph, list, figure, document] }
+        text: { type: string, maxLength: 500 }
+        children:
+          type: array
+          items: { $ref: "#/components/schemas/NewsletterInline" }
+        items:
+          type: array
+          maxItems: 200
+          items:
+            type: array
+            items: { $ref: "#/components/schemas/NewsletterInline" }
+        caption: { type: string, maxLength: 2000 }
+        label: { type: string, maxLength: 500 }
+        href: { type: string, maxLength: 2000 }
+        image:
+          type: object
+          required: [url]
+          properties:
+            url: { type: string, format: uri, maxLength: 2000 }
+            alt: { type: string, maxLength: 2000 }
+            width: { type: integer, minimum: 1, maximum: 50000 }
+            height: { type: integer, minimum: 1, maximum: 50000 }
+            variants:
+              type: object
+              description: thumb, medium, large and hero entries with HTTPS url, width and optional height.
+    NewsletterBlocks:
+      type: object
+      description: Up to 20,000 visible text characters and 200,000 serialized characters per language.
+      properties:
+        en:
+          type: array
+          maxItems: 200
+          items: { $ref: "#/components/schemas/NewsletterBlock" }
+        fr:
+          type: array
+          maxItems: 200
+          items: { $ref: "#/components/schemas/NewsletterBlock" }
     NewsArticleInput:
       type: object
-      required: [title, content]
+      required: [title]
       properties:
+        layout:
+          type: string
+          enum: [standard, newsletter]
+          default: standard
+          description: Newsletter uses structured blocks and requires content in its original language. Omitted PATCH values preserve the layout.
+        newsletter:
+          $ref: "#/components/schemas/NewsletterMetadata"
+        newsletterBlocks:
+          $ref: "#/components/schemas/NewsletterBlocks"
         title:
           $ref: "#/components/schemas/LocalizedText"
-          description: English and French titles are both required; each is at most 240 characters.
+          description: Each title is at most 240 characters. Both languages are required for standard news; newsletters require their original language.
         content:
           $ref: "#/components/schemas/LocalizedText"
-          description: English and French content are both required; each is at most 20,000 characters.
+          description: Standard news requires both languages, each at most 20,000 characters. Newsletter content is derived from newsletterBlocks and cannot be edited directly.
         imageUrl:
           type: string
           format: uri

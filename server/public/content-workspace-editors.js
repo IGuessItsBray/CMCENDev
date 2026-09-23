@@ -13,6 +13,12 @@ window.ContentWorkspaceEditors = {
   }) {
     const previewUrls = new Set();
     const pickers = new Set();
+    function setMediaBusy(active) {
+      contentWorkspaceState.isActing =
+        (contentWorkspaceState.isActing || 0) + (active ? 1 : -1);
+      contentWorkspaceState.isUploading =
+        (contentWorkspaceState.isUploading || 0) + (active ? 1 : -1);
+    }
     function disposeEditors() {
       for (const picker of pickers) picker.destroy?.();
       pickers.clear();
@@ -109,7 +115,6 @@ window.ContentWorkspaceEditors = {
         languageName,
       );
       group.append(heading);
-
       if (item.type === "event" || item.type === "newsArticle") {
         const fields = [
           [
@@ -153,6 +158,27 @@ window.ContentWorkspaceEditors = {
         ];
 
         fields.forEach(([field, labelKey, label, multiline]) => {
+          if (field === "content" && item.content?.layout === "newsletter") {
+            group.append(
+              window.ArticleEditor.create({
+                value: getEditorDraftValue(
+                  item,
+                  language,
+                  "newsletterBlocks",
+                  JSON.stringify(
+                    item.content.newsletterBlocks?.[language] || [],
+                  ),
+                ),
+                language,
+                getText,
+                api: contentWorkspaceApiJson,
+                canUpload:
+                  contentWorkspaceState.user?.permissions?.canUploadMedia,
+                busy: setMediaBusy,
+              }),
+            );
+            return;
+          }
           group.append(
             createEditableField({
               label,
@@ -279,7 +305,8 @@ window.ContentWorkspaceEditors = {
         "admin-editor-field admin-editor-field--editorial content-workspace-date-time-field";
 
       const labelText = document.createElement("span");
-      setWorkspaceTranslatedText(labelText, labelKey, label);
+      if (labelKey) setWorkspaceTranslatedText(labelText, labelKey, label);
+      else labelText.textContent = label;
       labelElement.append(labelText);
 
       const dateTime = includeTime
@@ -631,19 +658,78 @@ window.ContentWorkspaceEditors = {
     function getNewsArticleDetailsFields(item) {
       const fields = [
         createWorkspaceEditorField({
-          field: "imageUrl",
-          label: "Full image URL",
-          labelKey: "content_workspace_image_url",
-          value: item.content?.imageUrl,
-          type: "url",
+          field: "layout",
+          label: "Article template",
+          labelKey: "article_template",
+          disabled: true,
+          value: item.content?.layout || "standard",
+          options: [
+            {
+              value: "standard",
+              label: "News story",
+              labelKey: "article_template_standard",
+            },
+            {
+              value: "newsletter",
+              label: "Newsletter",
+              labelKey: "article_template_newsletter",
+            },
+          ],
         }),
-        createWorkspaceEditorField({
-          field: "imageDisplayUrl",
-          label: "Display image URL",
-          labelKey: "content_workspace_display_image_url",
-          value: item.content?.imageDisplayUrl,
-          type: "url",
-        }),
+        ...(item.content?.layout === "newsletter"
+          ? [
+              ...Object.entries({
+                author: "Original author",
+                issue: "Issue",
+                kicker: "Section label",
+                date: "Original publication date",
+                sourceUrl: "Original publication URL",
+              }).map(([key, label]) =>
+                createWorkspaceEditorField({
+                  field: `newsletter_${key}`,
+                  label,
+                  labelKey: `article_${key}`,
+                  value: item.content?.newsletter?.[key] || "",
+                  type:
+                    key === "date"
+                      ? "date"
+                      : key === "sourceUrl"
+                        ? "url"
+                        : "text",
+                }),
+              ),
+              createWorkspaceEditorField({
+                field: "newsletter_language",
+                label: "Original language",
+                labelKey: "article_language",
+                value: item.content?.newsletter?.language || "en",
+                options: [
+                  { value: "en", label: "English", labelKey: "language_en" },
+                  { value: "fr", label: "French", labelKey: "language_fr" },
+                ],
+              }),
+              createWorkspaceEditorField({
+                field: "newsletter_headerCrest",
+                label: "Show cover image in newsletter header",
+                labelKey: "article_headerCrest",
+                value: String(Boolean(item.content?.newsletter?.headerCrest)),
+                options: [
+                  { value: "false", label: "No", labelKey: "article_no" },
+                  { value: "true", label: "Yes", labelKey: "article_yes" },
+                ],
+              }),
+              createWorkspaceEditorField({
+                field: "newsletter_archived",
+                label: "Historical issue",
+                labelKey: "article_archived",
+                value: String(Boolean(item.content?.newsletter?.archived)),
+                options: [
+                  { value: "false", label: "No", labelKey: "article_no" },
+                  { value: "true", label: "Yes", labelKey: "article_yes" },
+                ],
+              }),
+            ]
+          : []),
       ];
 
       if (item.status === "published") {
@@ -953,7 +1039,7 @@ window.ContentWorkspaceEditors = {
           "Retirement details",
         ],
         lastPost: ["content_workspace_last_post_details", "Last Post details"],
-        newsArticle: ["content_workspace_news_details", "News story details"],
+        newsArticle: ["content_workspace_news_details", "Article details"],
         retirementComment: [
           "content_workspace_comment_details",
           "Comment details",
@@ -964,6 +1050,53 @@ window.ContentWorkspaceEditors = {
       const form = document.createElement("form");
       form.className = "content-workspace-record-form";
       form.append(...fields);
+      if (item.type === "newsArticle") {
+        const cover = document.createElement("section");
+        cover.className = "article-cover";
+        const label = document.createElement("h3");
+        setWorkspaceTranslatedText(label, "article_cover", "Cover image");
+        const full = document.createElement("input");
+        full.type = "hidden";
+        full.name = "imageUrl";
+        full.value = item.content?.imageUrl || "";
+        const display = document.createElement("input");
+        display.type = "hidden";
+        display.name = "imageDisplayUrl";
+        display.value = item.content?.imageDisplayUrl || "";
+        cover.append(
+          label,
+          full,
+          display,
+          window.ArticleEditor.mediaControl({
+            value: { url: display.value || full.value },
+            getText,
+            api: contentWorkspaceApiJson,
+            canUpload: contentWorkspaceState.user?.permissions?.canUploadMedia,
+            busy: setMediaBusy,
+            onChange: (image) => {
+              full.value = image.url;
+              display.value = image.url;
+              full.dispatchEvent(new Event("input", { bubbles: true }));
+            },
+          }),
+        );
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "admin-work-zone-button is-secondary";
+        setWorkspaceTranslatedText(
+          remove,
+          "content_workspace_remove_image",
+          "Remove image",
+        );
+        remove.addEventListener("click", () => {
+          full.value = "";
+          display.value = "";
+          cover.querySelector("img").hidden = true;
+          full.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        cover.append(remove);
+        form.append(cover);
+      }
       const imageEditor = createContentWorkspaceImageEditor(item);
       if (imageEditor) form.append(imageEditor);
       form.addEventListener("submit", (event) => {
@@ -1683,9 +1816,37 @@ window.ContentWorkspaceEditors = {
         .join("\n");
 
       return {
-        path: `/api/news/${encodeURIComponent(item._id)}`,
+        path: item.isNew
+          ? "/api/news"
+          : `/api/news/${encodeURIComponent(item._id)}`,
+        method: item.isNew ? "POST" : "PATCH",
         newsArticle: true,
         body: {
+          layout: getRecordValue("layout", item.content?.layout || "standard"),
+          newsletter: Object.fromEntries(
+            [
+              "author",
+              "issue",
+              "kicker",
+              "date",
+              "sourceUrl",
+              "language",
+              "headerCrest",
+              "archived",
+            ].map((key) => [
+              key,
+              ["headerCrest", "archived"].includes(key)
+                ? getRecordValue(
+                    `newsletter_${key}`,
+                    String(Boolean(item.content?.newsletter?.[key])),
+                  ) === "true"
+                : getRecordValue(
+                    `newsletter_${key}`,
+                    item.content?.newsletter?.[key] ||
+                      (key === "language" ? "en" : ""),
+                  ),
+            ]),
+          ),
           title: {
             en: getLanguageValue("en", "title"),
             fr: getLanguageValue("fr", "title"),
@@ -1694,6 +1855,17 @@ window.ContentWorkspaceEditors = {
             en: getLanguageValue("en", "content"),
             fr: getLanguageValue("fr", "content"),
           },
+          newsletterBlocks: Object.fromEntries(
+            ["en", "fr"].map((language) => [
+              language,
+              JSON.parse(
+                getLanguageFormData(language)?.get("newsletterBlocks") ||
+                  JSON.stringify(
+                    item.content?.newsletterBlocks?.[language] || [],
+                  ),
+              ),
+            ]),
+          ),
           imageUrl: getRecordValue("imageUrl", item.content?.imageUrl),
           imageDisplayUrl: getRecordValue(
             "imageDisplayUrl",

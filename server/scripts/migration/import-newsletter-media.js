@@ -32,7 +32,7 @@ async function main() {
   const apply = process.argv.includes('--apply');
   const file = path.join(
     __dirname,
-    '../../public/page-content/newsletters',
+    'import/newsletters',
     `${slug}.json`,
   );
   const issue = JSON.parse(await fs.readFile(file, 'utf8'));

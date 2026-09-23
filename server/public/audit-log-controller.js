@@ -594,6 +594,8 @@
 
       const targetId = getTargetId(log.target);
       const snapshot = log.targetSnapshot || {};
+      if (log.targetType === "newsArticle" && targetId)
+        return `/dashboard-next?area=articles&id=${encodeURIComponent(targetId)}`;
 
       if (log.targetType === "event" && targetId) {
         return log.action === "content.published"

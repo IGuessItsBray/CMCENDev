@@ -265,7 +265,7 @@ Recipient creation returns `{ message, award }` with the updated award. It no lo
 
 `POST /api/admin/professional-awards/:awardId/recipients/:recipientId/news`
 requires both `canReviewAndPublish` and `canManageNews`. This optional action
-returns `{ newsArticleId }` for `/content-workspace?id=<id>`. It creates an audited
+returns `{ newsArticleId }` for `/dashboard-next?area=articles&id=<id>`. It creates an audited
 private draft with suggested bilingual copy and the recipient photo (or default
 crest), or reopens the linked article without changing it. A unique recipient
 source prevents duplicate drafts on retries and concurrent requests. A missing
@@ -347,27 +347,79 @@ download the CSV. Administrators have that permission by default.
 
 ## News Stories
 
-Mounted at `/api/news`.
+Mounted at `/api/news`. Articles are persisted as MongoDB `NewsArticle` records.
+See [NEWSLETTERS.md](NEWSLETTERS.md) for the staff workflow and migration steps;
+the JSON seeds are import inputs, not live article storage.
 
-News stories are editorial content with mandatory English and French titles and
-body content, an optional uploaded image, and a `published` or `draft` status.
+News records support `layout: "standard" | "newsletter"` (default `standard`).
+Newsletter bodies use structured `newsletterBlocks: { en: [], fr: [] }`, with up
+to 200 heading, paragraph, list, figure or document blocks per language. Paragraphs
+and list items contain text, strong, emphasis, link and line-break nodes (up to six
+nested levels). Figures retain URL, alt text, dimensions, responsive variants and
+caption. HTML is never interpreted. Links allow HTTP/S, mailto or root-relative
+site paths; images and variants require HTTPS. Each language is limited to 20,000
+visible text characters and 200,000 serialized characters. Inline images and their
+variants participate in media usage and deletion protection.
+`newsletter` metadata contains `author` and `issue` (240 characters), `kicker`
+(120), `date` (valid YYYY-MM-DD), `language` (`en` or `fr`), `sourceUrl`
+(HTTP/S, up to 2000 characters), `headerCrest` and `archived` (booleans). A newsletter requires
+title and body in its original language; an unavailable translation can be empty.
+Standard news retains the bilingual requirement. PATCH preserves omitted layout,
+blocks and metadata. Text, block and metadata edits are revision-tracked.
+Historical issues require their original date. `publishedAt` remains the site's
+publication timestamp; public `displayDate`, listing order and search dates use
+the original date for historical issues. Historical issues remain searchable and
+listed, but are excluded from `/api/news/feed`. New newsletters do not receive an
+archive notice by default.
+Article responses include `layout`, `newsletter`, `newsletterBlocks`, `displayDate`
+and a localized plain-text `excerpt`. Newsletter `content` is derived plain text
+for search and summaries; edit `newsletterBlocks` instead.
+
+Staff create drafts in the dashboard's Articles section. Submissions contains
+member/contributor content separately, using the same underlying workspace and
+existing permissions. `GET /api/admin/content` accepts
+`scope=all|submissions|articles` (default `all`), intersected with the selected type
+and caller permissions. Submissions excludes NewsArticle; Articles includes only
+NewsArticle.
+
+`GET /api/news/media` requires `canManageNews` and lists registered images for
+article selection, exposing only key, URL, dimensions, variants and names. It
+accepts `limit` (1–60, default 24), numeric offset `cursor`, and `search` (up to 120
+characters); returns `media` and `nextCursor`. It grants no media deletion or
+administrative media access. Uploads retain `canUploadMedia` via `/api/upload`.
+
+`GET /api/news/:articleId/preview` requires authentication and `canManageNews`,
+returns the same article shape including unpublished content, and sets
+`Cache-Control: no-store`. Public reads still return only published records.
+
+The two legacy newsletter seeds live under `server/scripts/migration/import/newsletters/`.
+From `server/`, run `node scripts/migration/import-newsletter-articles.js` for a dry
+run; `--apply --actor=<staff-id>` imports drafts, records audit entries and links
+their media. Repeated imports retain existing records without overwriting edits.
+The one-time `--upgrade-structured` option upgrades unchanged imported text drafts
+from their source seeds, preserving captions/variants and recording a revision and
+audit entry. It marks them historical and refuses published or edited bodies.
+
+Standard news stories require English and French titles and body content;
+newsletters require their original language. Articles have an optional uploaded
+image and a `published`, `draft` or `hidden` status.
 Stories without an uploaded image use the canonical CMCEN crest at
 `https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp`; that shared asset
 is never removed when a story is deleted.
 The `canManageNews` (`news.manage`) permission is granted to editors and above
 and is available to custom roles. Creates, edits, publication-state changes,
 and deletions are recorded in the audit log. The public homepage feed combines
-published news stories with published Last Post notices in reverse publish
-order.
+published non-historical articles with published Last Post notices and featured
+public custom pages in reverse publish order.
 
 | Method   | Path                   | Access                          | Purpose                                                                                                                                              |
 | -------- | ---------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`    | `/api/news`            | Public                          | List published news stories. Query: `limit` from 1-48. Cards use the optional 16:9 image display derivative.                                         |
+| `GET`    | `/api/news`            | Public                          | List published articles, including historical newsletters, ordered by `displayDate`. Query: `limit` from 1-48. Cards use the optional 16:9 image display derivative. |
 | `GET`    | `/api/news/feed`       | Public                          | List the newest combined published news, Last Post, and featured public custom-page items. Query: `limit` from 1-24.                                 |
 | `GET`    | `/api/news/:articleId` | Public                          | Read one published news story as a full article page.                                                                                                |
 | `GET`    | `/api/news/manage`     | Authenticated + `canManageNews` | List news stories, including drafts, for the publishing workspace.                                                                                   |
-| `POST`   | `/api/news`            | Authenticated + `canManageNews` | Create a bilingual news story. It publishes immediately unless `status: "draft"` is supplied. An upload may include the 16:9 `imageDisplayUrl` crop. |
-| `PATCH`  | `/api/news/:articleId` | Authenticated + `canManageNews` | Update the complete bilingual story, image, or publish status. Editing a removed story preserves its removed state until it is explicitly restored. An optional `revisionNote` is recorded with changed fields. |
+| `POST`   | `/api/news`            | Authenticated + `canManageNews` | Create a standard story or newsletter. The API publishes immediately unless `status: "draft"` is supplied; the staff editor explicitly creates drafts. An upload may include the 16:9 `imageDisplayUrl` crop. |
+| `PATCH`  | `/api/news/:articleId` | Authenticated + `canManageNews` | Update article text, newsletter blocks/metadata, image, or publish status. Editing a removed article preserves its removed state until explicitly restored. An optional `revisionNote` is recorded with changed fields. |
 | `PATCH`  | `/api/news/:articleId/hide` | Authenticated + `canManageNews` | Remove a published news story from public feeds and its public article page without deleting it or its media. The story can be restored to published state; an optional `reason` is retained in the audit log. |
 | `PATCH`  | `/api/news/:articleId/restore` | Authenticated + `canManageNews` | Restore a removed news story to its previous published state. |
 | `DELETE` | `/api/news/:articleId` | Authenticated + `canManageNews` | Delete a news story and remove its unshared uploaded image. |
@@ -377,12 +429,13 @@ order.
 `{ action: "cancel-schedule" }`. The article must be a draft. Publish without a
 date makes it public immediately; a future date schedules it (or replaces its
 schedule). Cancellation returns it to an unscheduled draft. Publication requires
-both languages and each action is audited. Invalid actions/dates return `400`;
+both languages for standard stories or the original language for newsletters;
+each action is audited. Invalid actions/dates return `400`;
 non-drafts, cancellation without a schedule, or concurrent changes return `409`.
 
 News responses include nullable `scheduledPublishAt`. Scheduled news remains a
-private draft until the existing server publication job publishes it. In Content
-Workspace, `status=scheduled` includes these articles and `status=draft` excludes
+private draft until the existing server publication job publishes it. In Articles,
+`status=scheduled` includes these articles and `status=draft` excludes
 them. Saving edits to a scheduled draft preserves its date; immediate publication
 clears the schedule. Existing articles need no data migration: missing schedule
 fields are treated as unscheduled. The optional `sourceAwardRecipientId` has a

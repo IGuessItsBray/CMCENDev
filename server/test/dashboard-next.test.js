@@ -1149,7 +1149,7 @@ test('sign-out waits for confirmation and does not act on a replaced session', a
   assert.equal(page.state(), 'ready');
 });
 
-test('Content admits reviewers or news managers but not unrelated administrative permissions', async () => {
+test('Submissions admits reviewers and excludes news-only and unrelated administrative permissions', async () => {
   for (const permission of [
     'canReviewAndPublish',
     'canManageNews',
@@ -1161,9 +1161,7 @@ test('Content admits reviewers or news managers but not unrelated administrative
       api: async () => ({ permissions: { [permission]: true } }),
     });
     await flush();
-    const allowed = ['canReviewAndPublish', 'canManageNews'].includes(
-      permission,
-    );
+    const allowed = permission === 'canReviewAndPublish';
     assert.equal(page.contentMounted(), allowed ? 1 : 0);
     assert.equal(page.element('adminContentLink').hidden, !allowed);
     if (allowed) {
@@ -1182,7 +1180,7 @@ test('Content remains mounted between sections and its hidden edits guard page e
   const page = setup({
     url: 'http://localhost/dashboard-next?area=content',
     api: async () => ({
-      permissions: { canManageNews: true, canReadUsers: true },
+      permissions: { canReviewAndPublish: true, canReadUsers: true },
     }),
   });
   await flush();
@@ -1203,6 +1201,29 @@ test('Content remains mounted between sections and its hidden edits guard page e
   page.events.storage({ key: 'token' });
   await flush();
   assert.equal(page.contentDisposed(), 1);
+});
+
+test('Articles uses the shared workspace with independent news permissions', async () => {
+  for (const permission of [
+    'canManageNews',
+    'canReviewAndPublish',
+    'canReadUsers',
+  ]) {
+    const page = setup({
+      url: 'http://localhost/dashboard-next?area=articles',
+      api: async () => ({ permissions: { [permission]: true } }),
+    });
+    await flush();
+    const allowed = permission === 'canManageNews';
+    assert.equal(page.contentMounted(), allowed ? 1 : 0);
+    assert.equal(page.element('adminArticlesLink').hidden, !allowed);
+    if (allowed) {
+      assert.equal(page.contentArea().articleMode, true);
+      assert.equal(page.element('adminContentLink').hidden, true);
+      page.contentArea().onDenied();
+      assert.equal(page.contentDisposed(), 1);
+    }
+  }
 });
 
 test('Awards remains available to reviewers and unavailable without review permission', async () => {

@@ -36,7 +36,9 @@ function renderNewsStory(article) {
   currentNewsArticle = article;
   const title = getNewsDetailText(article.title) || "News story";
   document.title = `${title} | CMCEN / RCMCE`;
-  newsDetailDate.textContent = formatNewsDetailDate(article.publishedAt);
+  newsDetailDate.textContent = formatNewsDetailDate(
+    article.displayDate || article.publishedAt,
+  );
   newsDetailTitle.textContent = title;
   newsDetailImage.src = article.imageUrl;
   newsDetailImage.alt = title;
@@ -75,12 +77,32 @@ async function loadNewsStory() {
   }
   showNewsDetailMessage("Loading news story...");
   try {
+    const preview =
+      new URLSearchParams(window.location.search).get("preview") === "1";
     const data = await CMCENUtils.apiJson(
-      `/api/news/${encodeURIComponent(articleId)}`,
-      { errorMessage: "Could not load this news story." },
+      `/api/news/${encodeURIComponent(articleId)}${preview ? "/preview" : ""}`,
+      {
+        errorMessage: "Could not load this news story.",
+        ...(preview ? { token: CMCENUtils.getStoredAuthToken() } : {}),
+      },
     );
     if (!data.article) throw new Error("Could not load this news story.");
+    if (data.article.layout === "newsletter") {
+      window.location.replace(
+        `/newsletter?id=${encodeURIComponent(data.article._id)}${preview ? "&preview=1" : ""}`,
+      );
+      return;
+    }
     renderNewsStory(data.article);
+    if (preview) {
+      const notice = document.createElement("p");
+      notice.dataset.i18n = "article_preview_notice";
+      notice.textContent =
+        typeof window.translate === "function"
+          ? window.translate("article_preview_notice")
+          : "Staff preview — this is not the public article.";
+      newsDetailContent.prepend(notice);
+    }
     addNewsEditLink();
   } catch (error) {
     showNewsDetailMessage(

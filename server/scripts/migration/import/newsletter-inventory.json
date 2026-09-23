@@ -2,22 +2,24 @@
   "version": 1,
   "discoveredOn": "2026-09-22",
   "sourceCategoryUrl": "https://cmcen-rcmce.ca/category/association/association-newsletters/",
-  "scope": "Direct document and embedded image URLs from all 13 public posts returned by WordPress category 542. Related article pages, PDF-internal links, image variants and uncategorized newsletters have not yet been inventoried.",
-  "deploymentStatus": "Local repository only; no deployment performed.",
+  "scope": "Direct document and embedded image URLs from all 13 public posts returned by WordPress category 542, plus the featured image discovered while migrating the 77 Line Regiment article. Other featured images, related article pages, PDF-internal links, image variants and uncategorized newsletters have not yet been inventoried.",
+  "deploymentStatus": "CDN assets uploaded and two News drafts imported into the configured database. Application changes remain local and are not deployed.",
   "articles": [
     {
       "sourceUrl": "https://cmcen-rcmce.ca/association-newsletter-fall-2025-2/",
       "wordpressId": 352030,
       "publishedAt": "2025-09-18T21:46:22",
-      "status": "local-article-ready",
+      "status": "database-draft",
       "documentUrls": [
         "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-Vol-3-Iss-5-June-July-2025.pdf",
         "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-Vol-5-Iss-1-Aug-2025.pdf",
         "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-Vol-5-Iss-2-Sep-2025.pdf"
       ],
-      "pageUrl": "/newsletter?issue=fall-2025",
-      "contentFile": "server/public/page-content/newsletters/fall-2025.json",
-      "notes": "Article template prepared without ratings/comments. Images verified on CDN. Original heading year and final email spelling retained."
+      "pageUrl": "/newsletter?id=6ab2cb31b995f8d3ef512266",
+      "contentFile": "server/scripts/migration/import/newsletters/fall-2025.json",
+      "notes": "Article template prepared without ratings/comments. Images verified on CDN. Original heading year and final email spelling retained. Imported as a database-backed News draft; seed retained only for migration provenance.",
+      "previewUrl": "/newsletter?id=6ab2cb31b995f8d3ef512266&preview=1",
+      "databaseId": "6ab2cb31b995f8d3ef512266"
     },
     {
       "sourceUrl": "https://cmcen-rcmce.ca/cpo1-cwo-corp-newsletter-september-2025/",
@@ -75,13 +77,21 @@
       "sourceUrl": "https://cmcen-rcmce.ca/77-line-regiment-newsletters/",
       "wordpressId": 315305,
       "publishedAt": "2023-02-15T12:52:02",
-      "status": "pending",
+      "status": "database-draft",
       "documentUrls": [
         "https://cmcen-rcmce.ca/wp-content/uploads/2022/02/The-Cable-Volume-6-Issue-1.pdf",
         "https://cmcen-rcmce.ca/wp-content/uploads/2022/07/The-Cable-Volume-6-Issue-2.pdf",
         "https://cmcen-rcmce.ca/wp-content/uploads/2022/12/The-Cable-Volume-6-Issue-3.pdf",
         "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/The-Cable-Volume-7-Issue-1.pdf"
-      ]
+      ],
+      "pageUrl": "/newsletter?id=6ab2cb30b995f8d3ef512264",
+      "contentFile": "server/scripts/migration/import/newsletters/77-line-regiment-newsletters.json",
+      "notes": "Original article text and four issue links preserved. Both source crests retained on CDN. Per user direction, display only the large crest using a transparent derivative of the user-supplied image; pixel-based background removal preserves its RGB artwork. No ratings or comments. Imported as a database-backed News draft; seed retained only for migration provenance.",
+      "displayImageUrl": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/77-line-regiment-transparent/b2a8da7fe915.png",
+      "displayImageSha256": "b2a8da7fe91522bc10ac6899a192f893f322a5aeadd0cc2f8eee5d4ac73e0684",
+      "sourceModifiedAt": "2023-07-04T12:55:09",
+      "previewUrl": "/newsletter?id=6ab2cb30b995f8d3ef512264&preview=1",
+      "databaseId": "6ab2cb30b995f8d3ef512264"
     },
     {
       "sourceUrl": "https://cmcen-rcmce.ca/741-communication-squadron-newsletters/",
@@ -784,13 +794,14 @@
       "sourceUrl": "https://cmcen-rcmce.ca/wp-content/uploads/280px-Unit_crest_77_Line_Regiment.jpg",
       "kind": "image",
       "referencedBy": ["https://cmcen-rcmce.ca/77-line-regiment-newsletters/"],
-      "status": "preserved-locally-awaiting-article",
-      "fileUrl": "/images/newsletters/77-line-regiment-crest.jpg",
+      "status": "cdn-verified",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/77-line-regiment-crest/large.webp",
       "sha256": "2b276c960252b19b9956e6e31f58e2c7abe51302959d85ef71325dde1ecea952",
       "bytes": 44358,
       "width": 280,
       "height": 479,
-      "verification": "Image decoded and visually checked; original bytes preserved. Article has not yet been migrated."
+      "verification": "Source hash retained for provenance. Sanitized WebP and variants registered in MediaAsset, decoded from CDN and linked to the migrated article; local source copy removed.",
+      "mediaKey": "legacy/newsletters/77-line-regiment-crest/original.webp"
     },
     {
       "sourceUrl": "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/250px-Unit_crest_741_Comm_Sqn-240x300.jpg",
@@ -806,6 +817,15 @@
       "referencedBy": ["https://cmcen-rcmce.ca/32-signal-regiment-dispatches/"],
       "status": "preserved-locally-awaiting-article",
       "fileUrl": "/images/newsletters/32-signal-regiment-crest.jpg",
+      "transparentDerivative": {
+        "fileUrl": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/32-signal-regiment-transparent/1ef14cd904c1.png",
+        "mediaKey": "legacy/newsletters/32-signal-regiment-transparent/1ef14cd904c1.png",
+        "sha256": "1ef14cd904c181e95313684a900fbe80ec9d42a47d605c9a0d834b3e177ab7d5",
+        "width": 486,
+        "height": 822,
+        "status": "cdn-verified-awaiting-article",
+        "verification": "Improved 243x411 PNG supplied by user. Exterior background and enclosed gaps behind the crown and above the scroll removed with a pixel mask, preserving white eagle and crown trim; 2x Lanczos upscale with mild sharpening, no generated artwork. Transparent PNG registered in MediaAsset and CDN bytes verified."
+      },
       "sha256": "16eaff688a03ad181284333cbbdf34d5f45894af3d3e0ff6449542f128f1cce1",
       "bytes": 19259,
       "width": 177,
@@ -891,6 +911,16 @@
         "https://cmcen-rcmce.ca/association-newsletter-summer-2022/"
       ],
       "status": "pending"
+    },
+    {
+      "sourceUrl": "https://cmcen-rcmce.ca/wp-content/uploads/2023/02/77-Comm-Reg.jpg",
+      "kind": "image",
+      "referencedBy": ["https://cmcen-rcmce.ca/77-line-regiment-newsletters/"],
+      "sourceRole": "featured-image",
+      "sha256": "68f3afb598ddd59f72cd8927d7a595f02bb7b211e88ac7810c0705dd25d51c18",
+      "status": "cdn-verified",
+      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/legacy/newsletters/77-line-regiment-featured/large.webp",
+      "mediaKey": "legacy/newsletters/77-line-regiment-featured/original.webp"
     }
   ]
 }

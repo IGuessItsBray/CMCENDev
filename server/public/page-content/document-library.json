@@ -1104,7 +1104,6 @@
       "organization": "branch",
       "type": "newsletter",
       "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2025-06-07-d4c6d688699f.pdf",
-      "pageUrl": "/newsletter?issue=fall-2025",
       "en": {
         "title": "Despatches - 32 Signal Regiment - June/July 2025 - Volume 3, Issue 5",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1123,7 +1122,6 @@
       "organization": "branch",
       "type": "newsletter",
       "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2025-08-5a57fc30931f.pdf",
-      "pageUrl": "/newsletter?issue=fall-2025",
       "en": {
         "title": "Despatches - 32 Signal Regiment - August 2025 - Volume 5, Issue 1",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1142,7 +1140,6 @@
       "organization": "branch",
       "type": "newsletter",
       "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2025-09-c7ab6ab5a590.pdf",
-      "pageUrl": "/newsletter?issue=fall-2025",
       "en": {
         "title": "Despatches - 32 Signal Regiment - September 2025 - Volume 5, Issue 2",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",

@@ -13,6 +13,26 @@ const LocalizedTextSchema = new mongoose.Schema(
 
 const NewsArticleSchema = new mongoose.Schema(
   {
+    layout: {
+      type: String,
+      enum: ['standard', 'newsletter'],
+      default: 'standard',
+    },
+    newsletter: {
+      author: { type: String, maxlength: 240, default: '' },
+      issue: { type: String, maxlength: 240, default: '' },
+      kicker: { type: String, maxlength: 120, default: 'NEWSLETTERS' },
+      date: { type: String, maxlength: 10, default: '' },
+      language: { type: String, enum: ['en', 'fr'], default: 'en' },
+      sourceUrl: { type: String, maxlength: 2000, default: '' },
+      headerCrest: { type: Boolean, default: false },
+      archived: { type: Boolean, default: false },
+    },
+    newsletterBlocks: {
+      en: { type: [mongoose.Schema.Types.Mixed], default: [] },
+      fr: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    },
+    migrationSource: { type: String, default: undefined },
     title: {
       type: LocalizedTextSchema,
       required: true,
@@ -88,6 +108,13 @@ const NewsArticleSchema = new mongoose.Schema(
 );
 
 NewsArticleSchema.index({ status: 1, publishedAt: -1, _id: -1 });
+NewsArticleSchema.index(
+  { migrationSource: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { migrationSource: { $type: 'string' } },
+  },
+);
 NewsArticleSchema.index({ status: 1, scheduledPublishAt: 1 });
 NewsArticleSchema.index(
   { sourceAwardRecipientId: 1 },

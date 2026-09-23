@@ -18,14 +18,15 @@
           <p data-i18n="news_listing_intro">
             Updates, stories, and announcements from across the C&amp;E Family.
           </p>
-          <button
+          <a
             class="news-primary-button news-create-button"
-            type="button"
+            href="/dashboard-next?area=articles"
+            data-i18n="article_manage"
             id="newsCreateButton"
             hidden
           >
-            Create news story
-          </button>
+            Manage articles
+          </a>
         </header>
 
         <p
@@ -42,87 +43,6 @@
           aria-label="Published news stories"
           data-i18n-aria-label="news_listing_aria_label"
         ></section>
-
-        <section
-          class="news-editor"
-          id="newsEditor"
-          hidden
-          aria-labelledby="newsEditorTitle"
-        >
-          <div class="news-editor-heading">
-            <div>
-              <p class="news-eyebrow">Publishing</p>
-              <h2 id="newsEditorTitle">Create a news story</h2>
-            </div>
-            <button
-              class="news-secondary-button"
-              type="button"
-              id="newsEditorCancel"
-              hidden
-            >
-              Cancel edit
-            </button>
-          </div>
-          <p class="news-editor-note">
-            News is published immediately when you save it. Both English and
-            French are required.
-          </p>
-          <form id="newsStoryForm" class="news-form">
-            <input type="hidden" id="newsArticleId" />
-            <div class="news-form-grid">
-              <label
-                >English title<input id="newsTitleEn" maxlength="240" required
-              /></label>
-              <label
-                >Titre français<input id="newsTitleFr" maxlength="240" required
-              /></label>
-              <label class="news-form-full"
-                >Photo (optional)<input
-                  id="newsImage"
-                  type="file"
-                  accept="image/*"
-              /></label>
-              <div
-                class="image-crop news-image-crop news-form-full"
-                id="newsImageCrop"
-              ></div>
-              <label
-                >English story<textarea
-                  id="newsContentEn"
-                  maxlength="20000"
-                  rows="10"
-                  required
-                ></textarea>
-              </label>
-              <label
-                >Article français<textarea
-                  id="newsContentFr"
-                  maxlength="20000"
-                  rows="10"
-                  required
-                ></textarea>
-              </label>
-            </div>
-            <label class="news-draft-choice"
-              ><input id="newsDraft" type="checkbox" /> Save as a draft instead
-              of publishing</label
-            >
-            <div class="news-form-actions">
-              <button
-                class="news-primary-button"
-                id="newsSaveButton"
-                type="submit"
-              >
-                Publish story
-              </button>
-            </div>
-          </form>
-          <section
-            class="news-manage-list"
-            id="newsManageList"
-            aria-label="Your news management list"
-          ></section>
-        </section>
       </section>
     </main>
     <footer id="footer"></footer>

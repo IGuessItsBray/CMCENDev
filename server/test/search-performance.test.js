@@ -35,8 +35,9 @@ function createQuery(results = []) {
 }
 
 async function runSearch(query, language = 'en', modelResults = new Map()) {
-  const models = [Event, LastPostMessage, NewsArticle, RetirementMessage];
+  const models = [Event, LastPostMessage, RetirementMessage];
   const originalFindMethods = models.map((model) => model.find);
+  const originalNewsAggregate = NewsArticle.aggregate;
   const routeHandler = searchRouter.stack.find(
     (layer) => layer.route?.path === '/' && layer.route.methods.get,
   ).route.stack[0].handle;
@@ -45,6 +46,7 @@ async function runSearch(query, language = 'en', modelResults = new Map()) {
   models.forEach((model) => {
     model.find = () => createQuery(modelResults.get(model) || []);
   });
+  NewsArticle.aggregate = async () => modelResults.get(NewsArticle) || [];
 
   try {
     await routeHandler(
@@ -62,6 +64,7 @@ async function runSearch(query, language = 'en', modelResults = new Map()) {
     models.forEach((model, index) => {
       model.find = originalFindMethods[index];
     });
+    NewsArticle.aggregate = originalNewsAggregate;
   }
 
   return responseBody;
@@ -201,4 +204,40 @@ test('localizes retirement message results to the selected language', async () =
 
   assert.equal(retirementResult.title, 'Message de retraite pour Cpl Alex Roy');
   assert.equal(retirementResult.summary, 'Merci pour votre service.');
+});
+
+test('preserves article URLs, historical dates and localized search text', async () => {
+  const articles = [
+    {
+      _id: 'story-1',
+      layout: 'standard',
+      title: { en: 'Signal news', fr: 'Actualités des transmissions' },
+      content: { en: 'Current update.', fr: 'Nouvelles récentes.' },
+      displayDate: new Date('2026-09-01'),
+    },
+    {
+      _id: 'newsletter-1',
+      layout: 'newsletter',
+      title: { fr: 'Bulletin des transmissions' },
+      content: { fr: 'Le bulletin historique.' },
+      publishedAt: new Date('2026-09-01'),
+      displayDate: new Date('1985-09-01'),
+    },
+  ];
+  const response = await runSearch(
+    'transmissions',
+    'fr',
+    new Map([[NewsArticle, articles]]),
+  );
+  for (const article of articles) {
+    const result = response.results.find(
+      (item) => item.sourceId === article._id,
+    );
+    assert.ok(result);
+    assert.equal(result.title, article.title.fr);
+    assert.equal(result.summary, article.content.fr);
+    assert.equal(result.date, article.displayDate);
+    const page = article.layout === 'newsletter' ? 'newsletter' : 'news-story';
+    assert.equal(result.url, `/${page}?id=${article._id}`);
+  }
 });

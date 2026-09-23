@@ -24,8 +24,10 @@ window.ContentWorkspaceActions = {
     getNewsArticleSaveRequest,
     getContentWorkspaceRecordSaveRequest,
     getContentLanguageSaveRequest,
+    onArticleCreated,
   }) {
     function createContentWorkspaceReviewActions(item) {
+      if (item.isNew) return null;
       const isNewsArticle = item.type === "newsArticle";
       if (
         isNewsArticle
@@ -214,7 +216,8 @@ window.ContentWorkspaceActions = {
       }
 
       async function confirmDecision(action) {
-        if (isConfirming || isSubmitting) return;
+        if (isConfirming || isSubmitting || contentWorkspaceState.isUploading)
+          return;
 
         isConfirming = true;
         contentWorkspaceState.isActing =
@@ -541,6 +544,7 @@ window.ContentWorkspaceActions = {
     }
 
     async function saveContentWorkspaceChanges(item, button) {
+      if (contentWorkspaceState.isUploading) return false;
       contentWorkspaceState.isActing =
         (contentWorkspaceState.isActing || 0) + 1;
       try {
@@ -605,10 +609,11 @@ window.ContentWorkspaceActions = {
         if (!saveRequests.length) return false;
 
         for (const request of saveRequests) {
-          await contentWorkspaceApiJson(request.path, {
-            method: "PATCH",
+          const result = await contentWorkspaceApiJson(request.path, {
+            method: request.method || "PATCH",
             body: request.body,
           });
+          if (item.isNew && result.article) onArticleCreated(result.article);
           savedRequests += 1;
 
           if (request.language) {

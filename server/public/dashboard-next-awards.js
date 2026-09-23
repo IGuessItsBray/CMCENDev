@@ -306,7 +306,7 @@
         // A clean editor may leave; release the shell's in-flight guard first.
         setBusy(false);
         await navigate(
-          `/content-workspace?id=${encodeURIComponent(data.newsArticleId)}`,
+          `/dashboard-next?area=articles&id=${encodeURIComponent(data.newsArticleId)}`,
         );
       } catch (error) {
         if (!disposed)

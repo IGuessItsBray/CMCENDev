@@ -44,6 +44,9 @@
     <script src="/analytics-controller.js" defer></script>
     <script src="/audit-log-controller.js" defer></script>
     <script src="/content-workspace-editors.js" defer></script>
+    <script src="/newsletter-format.js" defer></script>
+    <script src="/newsletter.js" defer></script>
+    <script src="/article-editor.js" defer></script>
     <script src="/content-workspace-actions.js" defer></script>
     <script src="/content-workspace-rsvps.js" defer></script>
     <script src="/content-workspace-history.js" defer></script>
@@ -125,6 +128,13 @@
                 data-i18n="admin_next_content_nav"
                 hidden
                 >Content</a
+              >
+              <a
+                id="adminArticlesLink"
+                href="/dashboard-next?area=articles"
+                data-i18n="admin_articles"
+                hidden
+                >Articles</a
               >
               <a
                 id="adminUsersLink"
@@ -648,6 +658,34 @@
               </div>
             </header>
             <div id="adminAnalyticsBody"></div>
+          </section>
+          <section
+            id="adminArticles"
+            aria-labelledby="articleWorkspaceTitle"
+            hidden
+          >
+            <header class="admin-area-heading">
+              <div>
+                <p
+                  id="articleWorkspaceEyebrow"
+                  class="admin-area-eyebrow"
+                  data-i18n="article_staff"
+                >
+                  Staff publishing
+                </p>
+                <h1
+                  id="articleWorkspaceTitle"
+                  tabindex="-1"
+                  data-i18n="admin_articles"
+                >
+                  Articles
+                </h1>
+                <p id="articleWorkspaceIntro" data-i18n="article_intro">
+                  Create and manage news stories and newsletters.
+                </p>
+              </div>
+            </header>
+            <div id="adminArticlesBody"></div>
           </section>
           <section
             id="adminContent"

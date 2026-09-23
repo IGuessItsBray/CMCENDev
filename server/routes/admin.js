@@ -1,3 +1,6 @@
+const {
+  imageUrls: newsletterImageUrls,
+} = require('../public/newsletter-format');
 const express = require('express');
 const mongoose = require('mongoose');
 const speakeasy = require('speakeasy');
@@ -661,7 +664,9 @@ function toContentWorkspaceItem(type, content) {
     createdAt: content.createdAt,
   };
 
-  if (['event', 'retirementMessage', 'lastPost', 'newsArticle'].includes(type)) {
+  if (
+    ['event', 'retirementMessage', 'lastPost', 'newsArticle'].includes(type)
+  ) {
     base.scheduledPublishAt = content.scheduledPublishAt || null;
   }
 
@@ -736,6 +741,9 @@ function toContentWorkspaceItem(type, content) {
       ...base,
       title: content.title?.en || content.title?.fr || 'Untitled news story',
       content: {
+        layout: content.layout || 'standard',
+        newsletter: content.newsletter || {},
+        newsletterBlocks: content.newsletterBlocks || { en: [], fr: [] },
         title: content.title || {},
         content: content.content || {},
         imageUrl: content.imageUrl || '',
@@ -776,6 +784,9 @@ router.get(
   async (req, res) => {
     try {
       const type = String(req.query.type || 'all');
+      const scope = String(req.query.scope || 'all');
+      if (!['all', 'submissions', 'articles'].includes(scope))
+        return res.status(400).json({ error: 'Unsupported workspace scope' });
       const status = String(req.query.status || 'all');
       const translation = String(req.query.translation || 'all');
       const search = cleanContentWorkspaceSearch(req.query.search);
@@ -820,7 +831,11 @@ router.get(
         : null;
       const types = (type === 'all' ? permittedTypes : [type]).filter(
         (contentType) =>
-          translation === 'all' || contentType !== 'retirementComment',
+          (translation === 'all' || contentType !== 'retirementComment') &&
+          (scope === 'all' ||
+            (scope === 'articles'
+              ? contentType === 'newsArticle'
+              : contentType !== 'newsArticle')),
       );
       const getWorkspaceFilter = (contentType) =>
         getContentWorkspaceRecordFilter(
@@ -936,7 +951,7 @@ router.get(
         queries.push(
           NewsArticle.find(getWorkspaceFilter('newsArticle'))
             .select(
-              'title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus updatedAt createdAt',
+              'layout newsletter newsletterBlocks title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus updatedAt createdAt',
             )
             .populate([
               {
@@ -1397,9 +1412,14 @@ function getMediaAttachmentMap(
       type: 'newsArticle',
       title: getNewsArticleTitle(article),
       status: article.status,
-      href: `/news_stories?edit=${encodeURIComponent(article._id)}`,
+      href: `/dashboard-next?area=articles&id=${encodeURIComponent(article._id)}`,
     };
 
+    for (const url of newsletterImageUrls(article))
+      addAttachment(getMediaKeyFromValue(url), {
+        ...attachment,
+        field: 'content',
+      });
     addAttachment(getMediaKeyFromValue(article.imageUrl), {
       ...attachment,
       field: 'imageUrl',
@@ -1499,9 +1519,10 @@ async function getMediaAttachments() {
         $or: [
           { imageUrl: { $nin: [null, ''] } },
           { imageDisplayUrl: { $nin: [null, ''] } },
+          { layout: 'newsletter' },
         ],
       })
-        .select('title status imageUrl imageDisplayUrl')
+        .select('title status imageUrl imageDisplayUrl newsletterBlocks layout')
         .lean(),
       Page.find({}).select('title slug status blocks').lean(),
     ]);
@@ -2917,10 +2938,12 @@ router.post(
           continue;
         }
 
-        const objectKeys = toAdminMediaAssetItem(
-          mediaAsset,
-          attachmentMap,
-        ).objectKeys;
+        const mediaItem = toAdminMediaAssetItem(mediaAsset, attachmentMap);
+        if (mediaItem.attachedPostCount) {
+          skipped.push({ key, attachedPosts: mediaItem.attachedPosts });
+          continue;
+        }
+        const objectKeys = mediaItem.objectKeys;
 
         await Promise.all(
           objectKeys.map((objectKey) =>
@@ -3006,6 +3029,12 @@ router.delete(
         ? toAdminMediaAssetItem(mediaAsset, attachmentMap).objectKeys
         : [key];
 
+      const resolvedAttachments = attachmentMap.get(key) || [];
+      if (resolvedAttachments.length)
+        return res.status(409).json({
+          error: 'Image is still attached to content',
+          attachedPosts: resolvedAttachments,
+        });
       await Promise.all(
         objectKeys.map((objectKey) =>
           s3Client.send(

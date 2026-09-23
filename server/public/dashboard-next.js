@@ -82,11 +82,19 @@
       mount: (options) => window.AuditLogController.mount(options),
     },
     content: {
-      permissions: ["canReviewAndPublish", "canManageNews"],
+      permission: "canReviewAndPublish",
       link: document.getElementById("adminContentLink"),
       element: document.getElementById("adminContent"),
       title: "contentWorkspaceTitle",
       mount: (options) => window.ContentWorkspace.mount(options),
+    },
+    articles: {
+      permission: "canManageNews",
+      link: document.getElementById("adminArticlesLink"),
+      element: document.getElementById("adminArticles"),
+      title: "articleWorkspaceTitle",
+      mount: (options) =>
+        window.ContentWorkspace.mount({ ...options, articleMode: true }),
     },
     awards: {
       permission: "canReviewAndPublish",

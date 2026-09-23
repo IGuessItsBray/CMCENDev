@@ -20,6 +20,16 @@ const {
   deleteContentMediaAssets,
 } = require('../services/media-assets');
 
+const {
+  imageUrls,
+  plainText,
+  displayDate,
+} = require('../public/newsletter-format');
+const {
+  normalizeBlocks,
+  publicDateStages,
+} = require('../services/newsletter-content');
+const MediaAsset = require('../models/MediaAsset');
 const router = express.Router();
 const MAX_ARTICLES = 48;
 const DEFAULT_NEWS_IMAGE_URL =
@@ -51,8 +61,12 @@ function getNewsSnapshot(article) {
 
 function getNewsRevisionSnapshot(article) {
   return {
+    layout: article.layout || 'standard',
+    newsletter: article.newsletter?.toObject?.() || article.newsletter || {},
     title: cleanLocalizedText(article.title),
     content: cleanLocalizedText(article.content),
+    newsletterBlocks: article.newsletterBlocks?.toObject?.() ||
+      article.newsletterBlocks || { en: [], fr: [] },
     imageUrl: cleanString(article.imageUrl),
     imageDisplayUrl: cleanString(article.imageDisplayUrl),
     status: cleanString(article.status),
@@ -66,13 +80,17 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
     const languageBefore = {
       title: before.title[language],
       content: before.content[language],
+      blocks: before.newsletterBlocks[language] || [],
     };
     const languageAfter = {
       title: after.title[language],
       content: after.content[language],
+      blocks: after.newsletterBlocks[language] || [],
     };
     const fields = Object.keys(languageAfter).filter(
-      (field) => languageBefore[field] !== languageAfter[field],
+      (field) =>
+        JSON.stringify(languageBefore[field]) !==
+        JSON.stringify(languageAfter[field]),
     );
 
     if (fields.length) {
@@ -91,17 +109,23 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
   }
 
   const detailsBefore = {
+    layout: before.layout,
+    newsletter: before.newsletter,
     imageUrl: before.imageUrl,
     imageDisplayUrl: before.imageDisplayUrl,
     status: before.status,
   };
   const detailsAfter = {
+    layout: after.layout,
+    newsletter: after.newsletter,
     imageUrl: after.imageUrl,
     imageDisplayUrl: after.imageDisplayUrl,
     status: after.status,
   };
   const detailFields = Object.keys(detailsAfter).filter(
-    (field) => detailsBefore[field] !== detailsAfter[field],
+    (field) =>
+      JSON.stringify(detailsBefore[field]) !==
+      JSON.stringify(detailsAfter[field]),
   );
 
   if (detailFields.length) {
@@ -120,7 +144,20 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
 
 function serializeArticle(article) {
   return {
+    excerpt: Object.fromEntries(
+      ['en', 'fr'].map((language) => [
+        language,
+        (article.layout === 'newsletter'
+          ? plainText(article.newsletterBlocks?.[language])
+          : article.content?.[language] || ''
+        ).slice(0, 500),
+      ]),
+    ),
     _id: article._id,
+    displayDate: displayDate(article),
+    newsletterBlocks: article.newsletterBlocks || { en: [], fr: [] },
+    layout: article.layout || 'standard',
+    newsletter: article.newsletter?.toObject?.() || article.newsletter || {},
     title: cleanLocalizedText(article.title),
     content: cleanLocalizedText(article.content),
     imageUrl: cleanString(article.imageUrl) || DEFAULT_NEWS_IMAGE_URL,
@@ -136,8 +173,35 @@ function serializeArticle(article) {
   };
 }
 
-function getPayload(body = {}, { preserveHiddenStatus = false } = {}) {
+function getPayload(
+  body = {},
+  { preserveHiddenStatus = false, existing = {} } = {},
+) {
   return {
+    layout: body.layout ?? existing.layout ?? 'standard',
+    newsletterBlocks: body.newsletterBlocks ??
+      existing.newsletterBlocks ?? { en: [], fr: [] },
+    newsletter: Object.fromEntries(
+      [
+        'author',
+        'issue',
+        'kicker',
+        'date',
+        'language',
+        'sourceUrl',
+        'headerCrest',
+        'archived',
+      ].map((key) => [
+        key,
+        body.newsletter?.[key] ??
+          existing.newsletter?.[key] ??
+          (['headerCrest', 'archived'].includes(key)
+            ? false
+            : key === 'language'
+              ? 'en'
+              : ''),
+      ]),
+    ),
     title: cleanLocalizedText(body.title),
     content: cleanLocalizedText(body.content),
     imageUrl: cleanString(body.imageUrl) || DEFAULT_NEWS_IMAGE_URL,
@@ -154,10 +218,71 @@ function getPayload(body = {}, { preserveHiddenStatus = false } = {}) {
 }
 
 function validatePayload(payload) {
-  if (!payload.title.en || !payload.title.fr) {
+  if (!['standard', 'newsletter'].includes(payload.layout || 'standard'))
+    return 'Invalid article layout';
+  if (payload.layout === 'newsletter') {
+    try {
+      payload.newsletterBlocks = Object.fromEntries(
+        ['en', 'fr'].map((language) => [
+          language,
+          normalizeBlocks(payload.newsletterBlocks?.[language] || []),
+        ]),
+      );
+      payload.content = Object.fromEntries(
+        ['en', 'fr'].map((language) => [
+          language,
+          plainText(payload.newsletterBlocks[language]),
+        ]),
+      );
+    } catch {
+      return 'Invalid newsletter blocks';
+    }
+  }
+  const metadata = payload.newsletter || {};
+  if (!['en', 'fr'].includes(metadata.language))
+    return 'Choose English or French';
+  for (const [key, limit] of Object.entries({
+    author: 240,
+    issue: 240,
+    kicker: 120,
+    date: 10,
+    sourceUrl: 2000,
+  })) {
+    if (typeof metadata[key] !== 'string' || metadata[key].length > limit)
+      return 'Invalid newsletter metadata';
+  }
+  if (typeof metadata.headerCrest !== 'boolean') return 'Invalid crest setting';
+  if (typeof metadata.archived !== 'boolean') return 'Invalid archive setting';
+  if (metadata.archived && !metadata.date)
+    return 'Archived issues require their original publication date';
+  if (
+    metadata.date &&
+    (!/^\d{4}-\d{2}-\d{2}$/.test(metadata.date) ||
+      Number.isNaN(Date.parse(metadata.date)) ||
+      new Date(metadata.date).toISOString().slice(0, 10) !== metadata.date)
+  )
+    return 'Invalid original publication date';
+  if (metadata.sourceUrl && !isValidImageUrl(metadata.sourceUrl))
+    return 'Invalid source URL';
+  if (
+    payload.layout === 'newsletter' &&
+    (!payload.title[metadata.language] || !payload.content[metadata.language])
+  )
+    return 'Title and content are required in the original language';
+  if (payload.layout !== 'newsletter') {
+    payload.newsletter.archived = false;
+    payload.newsletterBlocks = { en: [], fr: [] };
+  }
+  if (
+    payload.layout !== 'newsletter' &&
+    (!payload.title.en || !payload.title.fr)
+  ) {
     return 'English and French titles are required';
   }
-  if (!payload.content.en || !payload.content.fr) {
+  if (
+    payload.layout !== 'newsletter' &&
+    (!payload.content.en || !payload.content.fr)
+  ) {
     return 'English and French story content is required';
   }
   if (payload.title.en.length > 240 || payload.title.fr.length > 240) {
@@ -176,9 +301,19 @@ function validatePayload(payload) {
 }
 
 async function linkArticleImage(article) {
-  if (isDefaultNewsImage(article.imageUrl)) {
-    return;
+  for (const mediaUrl of imageUrls(article)) {
+    await linkMediaAssetToSource({
+      mediaUrl,
+      sourceType: 'newsArticle',
+      context: 'newsletter',
+      sourceModel: 'NewsArticle',
+      sourceId: article._id,
+      sourceField: 'content',
+      sourceUrl: `/news-story?id=${article._id}`,
+      inferredName: article.title.en || article.title.fr,
+    });
   }
+  if (isDefaultNewsImage(article.imageUrl)) return;
 
   await linkMediaAssetToSource({
     mediaUrl: article.imageUrl,
@@ -198,10 +333,11 @@ router.get('/', async (req, res) => {
       Math.max(Number.parseInt(req.query.limit, 10) || 24, 1),
       MAX_ARTICLES,
     );
-    const articles = await NewsArticle.find({ status: 'published' })
-      .sort({ publishedAt: -1, _id: -1 })
-      .limit(limit)
-      .lean();
+    const articles = await NewsArticle.aggregate([
+      { $match: { status: 'published' } },
+      ...publicDateStages,
+      { $limit: limit },
+    ]);
     return res.json({ articles: articles.map(serializeArticle) });
   } catch (error) {
     console.error('Could not load news stories:', error);
@@ -216,7 +352,10 @@ router.get('/feed', async (req, res) => {
       24,
     );
     const [articles, lastPosts, featuredPages] = await Promise.all([
-      NewsArticle.find({ status: 'published' })
+      NewsArticle.find({
+        status: 'published',
+        'newsletter.archived': { $ne: true },
+      })
         .sort({ publishedAt: -1, _id: -1 })
         .limit(limit)
         .lean(),
@@ -241,8 +380,18 @@ router.get('/feed', async (req, res) => {
       ...articles.map((article) => ({
         type: 'news',
         _id: article._id,
+        layout: article.layout || 'standard',
+        newsletter:
+          article.newsletter?.toObject?.() || article.newsletter || {},
         title: cleanLocalizedText(article.title),
-        content: cleanLocalizedText(article.content),
+        content: Object.fromEntries(
+          ['en', 'fr'].map((language) => [
+            language,
+            article.layout === 'newsletter'
+              ? plainText(article.newsletterBlocks?.[language])
+              : article.content?.[language] || '',
+          ]),
+        ),
         imageUrl:
           cleanString(article.imageDisplayUrl) ||
           cleanString(article.imageUrl) ||
@@ -310,6 +459,80 @@ router.get(
     } catch (error) {
       console.error('Could not load managed news stories:', error);
       return res.status(500).json({ error: 'Could not load news stories' });
+    }
+  },
+);
+
+router.get(
+  '/media',
+  authMiddleware,
+  requirePermission('canManageNews'),
+  async (req, res) => {
+    const limit = Number(req.query.limit || 24);
+    const offset = Number(req.query.cursor || 0);
+    const search = String(req.query.search || '');
+    if (
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 60 ||
+      !Number.isSafeInteger(offset) ||
+      offset < 0 ||
+      search.length > 120
+    )
+      return res.status(400).json({ error: 'Invalid media query' });
+    const pattern = new RegExp(
+      search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+      'i',
+    );
+    const filter = {
+      $and: [
+        {
+          $or: [
+            { mimeType: /^image\// },
+            { url: /\.(png|jpe?g|webp|gif|avif)(\?|$)/i },
+          ],
+        },
+        {
+          $or: ['key', 'displayName', 'inferredName', 'originalName'].map(
+            (key) => ({ [key]: pattern }),
+          ),
+        },
+      ],
+    };
+    try {
+      const media = await MediaAsset.find(filter)
+        .select(
+          'key url width height variants displayName inferredName originalName',
+        )
+        .sort({ createdAt: -1, _id: -1 })
+        .skip(offset)
+        .limit(limit + 1)
+        .lean();
+      return res.json({
+        media: media.slice(0, limit),
+        nextCursor: media.length > limit ? String(offset + limit) : '',
+      });
+    } catch {
+      return res.status(500).json({ error: 'Could not load article media' });
+    }
+  },
+);
+
+router.get(
+  '/:articleId/preview',
+  authMiddleware,
+  requirePermission('canManageNews'),
+  async (req, res) => {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.articleId))
+        return res.status(404).json({ error: 'News story not found' });
+      const article = await NewsArticle.findById(req.params.articleId).lean();
+      if (!article)
+        return res.status(404).json({ error: 'News story not found' });
+      res.set('Cache-Control', 'no-store');
+      return res.json({ article: serializeArticle(article) });
+    } catch {
+      return res.status(500).json({ error: 'Could not load news preview' });
     }
   },
 );
@@ -409,11 +632,9 @@ router.patch(
       if (!article)
         return res.status(404).json({ error: 'News story not found' });
       if (article.status !== 'draft') {
-        return res
-          .status(409)
-          .json({
-            error: 'Only draft news stories can be published or scheduled',
-          });
+        return res.status(409).json({
+          error: 'Only draft news stories can be published or scheduled',
+        });
       }
       const previousSchedule = article.scheduledPublishAt;
       const before = getNewsRevisionSnapshot(article);
@@ -457,11 +678,9 @@ router.patch(
       return res.json({ article: serializeArticle(article) });
     } catch (error) {
       if (error.name === 'VersionError') {
-        return res
-          .status(409)
-          .json({
-            error: 'This story changed. Reload it before trying again.',
-          });
+        return res.status(409).json({
+          error: 'This story changed. Reload it before trying again.',
+        });
       }
       console.error('Could not change news publication:', error);
       return res
@@ -486,6 +705,7 @@ router.patch(
       const before = getNewsRevisionSnapshot(article);
       const payload = getPayload(req.body, {
         preserveHiddenStatus: article.status === 'hidden',
+        existing: article,
       });
       const validationError = validatePayload(payload);
       if (validationError)
@@ -538,11 +758,9 @@ router.patch(
       return res.json({ article: serializeArticle(article) });
     } catch (error) {
       if (error.name === 'VersionError') {
-        return res
-          .status(409)
-          .json({
-            error: 'This story changed. Reload it before trying again.',
-          });
+        return res.status(409).json({
+          error: 'This story changed. Reload it before trying again.',
+        });
       }
       console.error('Could not update news story:', error);
       return res.status(500).json({ error: 'Could not update news story' });

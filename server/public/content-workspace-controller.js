@@ -1,14 +1,46 @@
 "use strict";
 window.ContentWorkspace = {
-  mount({ api, user, onUrlChange = () => {} }) {
-    const root = document.getElementById("adminContentBody");
+  mount({ api, user, onUrlChange = () => {}, articleMode = false }) {
+    const area = articleMode ? "articles" : "content";
+    const root = document.getElementById(
+      articleMode ? "adminArticlesBody" : "adminContentBody",
+    );
     root.replaceChildren(
       document
         .getElementById("contentWorkspaceTemplate")
         .content.cloneNode(true),
     );
+    const elementId = (id) =>
+      articleMode ? id.replace("contentWorkspace", "articleWorkspace") : id;
+    if (articleMode) {
+      root.querySelectorAll("[id]").forEach((node) => {
+        node.id = elementId(node.id);
+      });
+      root
+        .querySelectorAll(
+          "[for], [aria-labelledby], [aria-describedby], [aria-controls]",
+        )
+        .forEach((node) => {
+          for (const attribute of [
+            "for",
+            "aria-labelledby",
+            "aria-describedby",
+            "aria-controls",
+          ])
+            if (node.hasAttribute(attribute))
+              node.setAttribute(
+                attribute,
+                node
+                  .getAttribute(attribute)
+                  .split(" ")
+                  .map(elementId)
+                  .join(" "),
+              );
+        });
+    }
     const getElement = (id) =>
-      root.querySelector("#" + id) || document.getElementById(id);
+      root.querySelector("#" + elementId(id)) ||
+      document.getElementById(elementId(id));
     const lifecycle = new AbortController();
     let disposed = false;
     let queueRequestId = 0;
@@ -75,9 +107,7 @@ window.ContentWorkspace = {
       !filterNames.some((name) => url.searchParams.has(name));
     function rememberUrl(url) {
       workspaceUrl = new URL(url);
-      if (
-        new URL(window.location.href).searchParams.get("area") === "content"
-      ) {
+      if (new URL(window.location.href).searchParams.get("area") === area) {
         window.history.replaceState(null, "", workspaceUrl);
         onUrlChange();
       }
@@ -203,12 +233,16 @@ window.ContentWorkspace = {
 
     function canReviewContentWorkspace() {
       return (
+        !articleMode &&
         contentWorkspaceState.user?.permissions?.canReviewAndPublish === true
       );
     }
 
     function canManageContentWorkspaceNews() {
-      return contentWorkspaceState.user?.permissions?.canManageNews === true;
+      return (
+        articleMode &&
+        contentWorkspaceState.user?.permissions?.canManageNews === true
+      );
     }
 
     function canManageContentWorkspaceRsvps() {
@@ -247,6 +281,17 @@ window.ContentWorkspace = {
     function updateContentWorkspaceTypeOptions() {
       const canReview = canReviewContentWorkspace();
       const canManageNews = canManageContentWorkspaceNews();
+      [...contentWorkspaceStatusFilter.options].forEach((option) => {
+        const unavailable = articleMode
+          ? ["pending", "rejected"].includes(option.value)
+          : option.value === "draft";
+        option.hidden = unavailable;
+        option.disabled = unavailable;
+      });
+      if (contentWorkspaceStatusFilter.selectedOptions[0]?.disabled)
+        contentWorkspaceStatusFilter.value = "all";
+      contentWorkspaceType.closest("label").hidden = articleMode;
+      if (articleMode) contentWorkspaceType.value = "newsArticle";
 
       [...contentWorkspaceType.options].forEach((option) => {
         const isAvailable =
@@ -265,17 +310,17 @@ window.ContentWorkspace = {
     function updateContentWorkspaceModePresentation() {
       setWorkspaceTranslatedText(
         contentWorkspaceEyebrow,
-        "content_workspace_eyebrow",
-        "Editorial workspace",
+        articleMode ? "article_staff" : "content_workspace_eyebrow",
+        articleMode ? "Staff publishing" : "Editorial workspace",
       );
       setWorkspaceTranslatedText(
         contentWorkspaceTitle,
-        "content_workspace_title",
-        "Manage content",
+        articleMode ? "admin_articles" : "content_workspace_title",
+        articleMode ? "Articles" : "Submissions",
       );
       setWorkspaceTranslatedText(
         contentWorkspaceIntro,
-        "content_workspace_intro",
+        articleMode ? "article_intro" : "content_workspace_intro",
         "Review pending submissions, correct bilingual public copy, and publish, reject, remove, or restore content without losing its history.",
       );
     }
@@ -342,7 +387,7 @@ window.ContentWorkspace = {
       includeSelection = false,
     } = {}) {
       const url = new URL(workspaceUrl);
-      const searchParameters = new URLSearchParams({ area: "content" });
+      const searchParameters = new URLSearchParams({ area });
       const type = contentWorkspaceType.value || "all";
       const status = contentWorkspaceStatusFilter.value || "all";
       const translation = contentWorkspaceTranslationFilter.value || "all";
@@ -500,7 +545,7 @@ window.ContentWorkspace = {
           "Retirement messages",
         ],
         lastPost: ["content_workspace_last_post", "Last Post notices"],
-        newsArticle: ["content_workspace_news", "News stories"],
+        newsArticle: ["content_workspace_news", "Articles"],
         retirementComment: ["content_workspace_comment", "Comments"],
       }[type];
     }
@@ -581,7 +626,10 @@ window.ContentWorkspace = {
     }
 
     function getPublicContentHref(item) {
-      if (!item?._id || item.status !== "published") return "";
+      if (!item?._id || item.isNew) return "";
+      if (item.type === "newsArticle")
+        return `/${item.content?.layout === "newsletter" ? "newsletter" : "news-story"}?id=${encodeURIComponent(item._id)}${item.status === "published" ? "" : "&preview=1"}`;
+      if (item.status !== "published") return "";
 
       if (item.type === "event") {
         return `/event?id=${encodeURIComponent(item._id)}`;
@@ -618,6 +666,10 @@ window.ContentWorkspace = {
       link.href = href;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
+      if (item.type === "newsArticle" && item.status !== "published") {
+        setWorkspaceTranslatedText(link, "article_preview", "Preview article");
+        return link;
+      }
       setWorkspaceTranslatedText(
         link,
         "content_workspace_view_public_link",
@@ -757,6 +809,8 @@ window.ContentWorkspace = {
     }
 
     function getSelectedContentWorkspaceItem() {
+      if (contentWorkspaceState.selectedId === "new")
+        return contentWorkspaceState.newArticle;
       return contentWorkspaceState.items.find(
         (item) => String(item._id) === contentWorkspaceState.selectedId,
       );
@@ -903,7 +957,7 @@ window.ContentWorkspace = {
         contentWorkspaceDetail.append(rsvpPanel);
       }
 
-      if (canViewContentWorkspaceHistory(item)) {
+      if (!item.isNew && canViewContentWorkspaceHistory(item)) {
         const history = document.createElement("section");
         history.className = "content-workspace-history";
         const historyHeading = document.createElement("h2");
@@ -1103,6 +1157,7 @@ window.ContentWorkspace = {
 
       const query = new URLSearchParams({
         limit: String(CONTENT_WORKSPACE_PAGE_SIZE),
+        scope: articleMode ? "articles" : "submissions",
       });
       const type = contentWorkspaceType.value || "all";
       const status = contentWorkspaceStatusFilter.value || "all";
@@ -1199,6 +1254,70 @@ window.ContentWorkspace = {
       updateContentWorkspaceModePresentation();
       updateContentWorkspaceStatusFilterAppearance();
       await loadContentWorkspace();
+    }
+
+    if (articleMode) {
+      const create = document.createElement("button");
+      create.type = "button";
+      create.className = "admin-work-zone-button is-primary article-create";
+      setWorkspaceTranslatedText(create, "article_new", "New article");
+      root.prepend(create);
+      create.addEventListener("click", async () => {
+        if (
+          contentWorkspaceState.isLoading ||
+          contentWorkspaceState.isActing ||
+          !(await confirmDiscard())
+        )
+          return;
+        const layout = await CMCENModal.choose(
+          getText("article_template_prompt", "Choose an article template."),
+          {
+            title: getText("article_new", "New article"),
+            choices: [
+              {
+                value: "standard",
+                label: getText("article_template_standard", "News story"),
+                description: getText(
+                  "article_standard_hint",
+                  "A bilingual news update with a cover image.",
+                ),
+              },
+              {
+                value: "newsletter",
+                label: getText("article_template_newsletter", "Newsletter"),
+                description: getText(
+                  "article_newsletter_hint",
+                  "An issue with text, images, captions and document links.",
+                ),
+              },
+            ],
+          },
+        );
+        if (!layout || disposed) return;
+        contentWorkspaceState.editorDrafts.clear();
+        contentWorkspaceState.newArticle = {
+          _id: "new",
+          type: "newsArticle",
+          isNew: true,
+          status: "draft",
+          title: getText("article_new", "New article"),
+          content: {
+            layout,
+            title: { en: "", fr: "" },
+            content: { en: "", fr: "" },
+            newsletterBlocks: { en: [], fr: [] },
+            newsletter: {
+              language: CMCENUtils.getCurrentLanguage(),
+              archived: false,
+            },
+          },
+        };
+        contentWorkspaceState.selectedId = "new";
+        contentWorkspaceState.requestedContentId = "";
+        updateContentWorkspaceSearchParameters();
+        renderContentWorkspaceDetail();
+        contentWorkspaceDetail.querySelector("input[name=title]")?.focus();
+      });
     }
 
     function updateContentWorkspaceLanguage() {
@@ -1314,6 +1433,7 @@ window.ContentWorkspace = {
         }
         if (clear) {
           clearContentWorkspaceFilters();
+          updateContentWorkspaceTypeOptions();
           return;
         }
         contentWorkspaceState.selectedId = "";
@@ -1409,6 +1529,12 @@ window.ContentWorkspace = {
     });
     const { createContentWorkspaceBottomActions, saveContentWorkspaceChanges } =
       window.ContentWorkspaceActions.create({
+        onArticleCreated: (article) => {
+          contentWorkspaceState.newArticle = null;
+          contentWorkspaceState.selectedId = String(article._id);
+          contentWorkspaceState.requestedContentId = String(article._id);
+          updateContentWorkspaceSearchParameters({ includeSelection: true });
+        },
         canManageContentWorkspaceNews: (...args) =>
           canManageContentWorkspaceNews(...args),
         canReviewContentWorkspace: (...args) =>

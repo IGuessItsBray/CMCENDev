@@ -126,7 +126,7 @@
     const crest = image(issue.crest);
     if (crest) {
       crest.className = "newsletter-crest";
-      crest.sizes = "104px";
+      crest.sizes = "(max-width: 600px) 120px, 160px";
       header.append(crest);
     }
     const body = element("div", "", "about-family-body newsletter-body");

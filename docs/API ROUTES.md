@@ -348,8 +348,7 @@ download the CSV. Administrators have that permission by default.
 ## News Stories
 
 Mounted at `/api/news`. Articles are persisted as MongoDB `NewsArticle` records.
-See [NEWSLETTERS.md](NEWSLETTERS.md) for the staff workflow and migration steps;
-the JSON seeds are import inputs, not live article storage.
+See [NEWSLETTERS.md](NEWSLETTERS.md) for the staff workflow.
 
 News records support `layout: "standard" | "newsletter"` (default `standard`).
 Newsletter bodies use structured `newsletterBlocks: { en: [], fr: [] }`, with up
@@ -391,14 +390,6 @@ administrative media access. Uploads retain `canUploadMedia` via `/api/upload`.
 `GET /api/news/:articleId/preview` requires authentication and `canManageNews`,
 returns the same article shape including unpublished content, and sets
 `Cache-Control: no-store`. Public reads still return only published records.
-
-The two legacy newsletter seeds live under `server/scripts/migration/import/newsletters/`.
-From `server/`, run `node scripts/migration/import-newsletter-articles.js` for a dry
-run; `--apply --actor=<staff-id>` imports drafts, records audit entries and links
-their media. Repeated imports retain existing records without overwriting edits.
-The one-time `--upgrade-structured` option upgrades unchanged imported text drafts
-from their source seeds, preserving captions/variants and recording a revision and
-audit entry. It marks them historical and refuses published or edited bodies.
 
 Standard news stories require English and French titles and body content;
 newsletters require their original language. Articles have an optional uploaded

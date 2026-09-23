@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "scope": "Remaining 46 PDFs and one Word document from the public document library. Original bytes uploaded without rewriting; CDN responses verified by SHA-256 and the appropriate PDF or DOCX content type. Newsletter PDFs are tracked separately in newsletter-inventory.json.",
+  "scope": "Remaining 46 PDFs and one Word document from the public document library. Original bytes uploaded without rewriting; CDN responses verified by SHA-256 and the appropriate PDF or DOCX content type.",
   "documents": [
     {
       "documentId": "association-agm-minutes-2025-draft",

@@ -6,49 +6,25 @@ const {
   displayDate,
 } = require('../public/newsletter-format');
 const { normalizeBlocks } = require('../services/newsletter-content');
-test('migrated newsletter body retains the complete original text', async () => {
-  const fs = require('node:fs/promises');
-  const path = require('node:path');
-  const {
-    convert,
-  } = require('../scripts/migration/import-newsletter-articles');
-  const flatten = (nodes) =>
-    (nodes || [])
-      .map((node) =>
-        typeof node === 'string'
-          ? node
-          : node.type === 'br'
-            ? '\n'
-            : flatten(node.children),
-      )
-      .join('');
-  for (const file of ['fall-2025', '77-line-regiment-newsletters']) {
-    const issue = JSON.parse(
-      await fs.readFile(
-        path.join(
-          __dirname,
-          '../scripts/migration/import/newsletters',
-          `${file}.json`,
-        ),
-        'utf8',
-      ),
-    );
-    const sourceText = issue.blocks
-      .map(
-        (block) =>
-          block.text ||
-          block.caption ||
-          (block.items
-            ? block.items.map(flatten).join('\n')
-            : flatten(block.children)),
-      )
-      .join('\n');
-    const result = plainText(convert(issue).newsletterBlocks.en);
-    assert.equal(
-      result.replace(/\s+/g, ' ').trim(),
-      sourceText.replace(/\s+/g, ' ').trim(),
-    );
-  }
+test('structured body text preserves block order, line breaks and repeated links', () => {
+  const link = {
+    type: 'link',
+    href: 'https://example.org/issue.pdf',
+    children: ['Issue'],
+  };
+  const blocks = normalizeBlocks([
+    { type: 'heading', text: 'Heading' },
+    {
+      type: 'paragraph',
+      children: ['First', { type: 'br' }, { type: 'em', children: ['Second'] }],
+    },
+    { type: 'list', items: [[link], [link]] },
+    { type: 'document', label: 'Attachment', href: link.href },
+  ]);
+  assert.equal(
+    plainText(blocks),
+    'Heading\n\nFirst\nSecond\n\nIssue\nIssue\n\nAttachment',
+  );
 });
 test('structured bodies retain caption, formatting, variants and safe links', () => {
   const blocks = [

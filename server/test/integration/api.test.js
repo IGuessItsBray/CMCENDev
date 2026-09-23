@@ -279,6 +279,9 @@ describe('personal submissions', () => {
       updatedAt: now,
       status: 'pending',
       rejectionReason: 'Reviewer feedback',
+      reviewedAt: now,
+      lastEditedAt: now,
+      lastEditedBy: 'Private Staff Editor',
       reviewedBy: new mongoose.Types.ObjectId(),
       hiddenReason: 'Internal note',
       submitter: {
@@ -366,6 +369,8 @@ describe('personal submissions', () => {
           String(record.reviewedBy),
           '"legacy"',
           '"createdBy"',
+          'Private Staff Editor',
+          '"lastEditedAt"',
         ]) {
           assert.equal(
             JSON.stringify(response.body).includes(privateValue),
@@ -378,6 +383,11 @@ describe('personal submissions', () => {
         }
         if (type === 'lastPost') {
           assert.equal(item.feedback, 'Reviewer feedback');
+          assert.equal(item.rejectedAt, record.reviewedAt.toISOString());
+          assert.equal(
+            result.body.items.find((row) => row.id === item.id).rejectedAt,
+            item.rejectedAt,
+          );
           assert.match(item.editUrl, /personal=1$/);
           assert.equal(item.publicUrl, null);
         }
@@ -4229,11 +4239,50 @@ describe('event, page, and comment workflows', () => {
       retirementCorrection,
     );
     assert.equal(publicLastPost.body.lastPost.messages.en, lastPostCorrection);
+    for (const content of [
+      publicEvent.body.event,
+      publicRetirement.body.retirementMessage,
+      publicLastPost.body.lastPost,
+    ]) {
+      assert.equal(content.lastEditedAt, undefined);
+      assert.equal(content.lastEditedBy, undefined);
+    }
+
+    const personal = await request(app)
+      .get(`/api/my-submissions/event/${event._id}`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(personal.body.item.publishedAt, undefined);
+    assert.equal(personal.body.item.lastEditedBy, undefined);
+    assert.equal(personal.body.item.lastEditedAt, undefined);
+    const personalList = await request(app)
+      .get('/api/my-submissions?type=event')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    assert.equal(
+      personalList.body.items.find((item) => item.id === String(event._id))
+        .lastEditedBy,
+      undefined,
+    );
 
     const workspace = await request(app)
       .get('/api/admin/content?status=published&limit=100')
       .set('Authorization', bearer(editorSession.body.token))
       .expect(200);
+    for (const record of [
+      event,
+      retirementMessage,
+      lastPost,
+      retirementComment,
+    ]) {
+      const item = workspace.body.items.find(
+        (item) => item._id === String(record._id),
+      );
+      assert.equal(item.publishedAt, record.publishedAt.toISOString());
+      assert.equal(item.publishedByName, editor.accountName);
+      assert.equal(item.lastEditedBy, editor.accountName);
+      assert.ok(item.lastEditedAt);
+    }
     const firstWorkspacePage = await request(app)
       .get('/api/admin/content?status=published&limit=1')
       .set('Authorization', bearer(editorSession.body.token))
@@ -4501,6 +4550,37 @@ describe('event, page, and comment workflows', () => {
       .set('Authorization', bearer(editorSession.body.token))
       .send({ imageUrl: '', imageDisplayUrl: '' })
       .expect(200);
+
+    const editedWorkspace = await request(app)
+      .get('/api/admin/content?status=published&limit=100')
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    for (const record of [event, retirementMessage, lastPost]) {
+      const item = editedWorkspace.body.items.find(
+        (item) => item._id === String(record._id),
+      );
+      assert.ok(item.lastEditedAt);
+      assert.equal(item.lastEditedBy, editor.accountName);
+      assert.equal(item.publishedAt, now.toISOString());
+    }
+    await request(app)
+      .patch(`/api/admin/events/${event._id}/hide`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({})
+      .expect(200);
+    const hiddenWorkspace = await request(app)
+      .get(`/api/admin/content?id=${event._id}`)
+      .set('Authorization', bearer(editorSession.body.token))
+      .expect(200);
+    const hidden = hiddenWorkspace.body.items[0];
+    assert.ok(hidden.hiddenAt);
+    assert.equal(hidden.hiddenByName, editor.accountName);
+    assert.equal(hidden.publishedByName, editor.accountName);
+    assert.equal(
+      hidden.lastEditedAt,
+      editedWorkspace.body.items.find((item) => item._id === String(event._id))
+        .lastEditedAt,
+    );
 
     const [savedEvent, savedRetirement, savedLastPost, linkedAsset] =
       await Promise.all([

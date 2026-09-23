@@ -126,6 +126,14 @@ window.MySubmissions = (() => {
             `${t(types[item.type])} · ${t("my_submissions_submitted", { date: date(item.submittedAt) })}`,
           ),
         );
+        if (item.rejectedAt)
+          copy.append(
+            element(
+              "span",
+              "my-submissions-meta",
+              t("submission_rejected_at", { date: date(item.rejectedAt) }),
+            ),
+          );
         button.append(copy, statusBadge(item.status));
         button.addEventListener("click", () => open(item, button));
         row.append(button);
@@ -190,6 +198,16 @@ window.MySubmissions = (() => {
           element("span", "", t(types[selected.type])),
           statusBadge(detail.status),
         );
+        if (detail.rejectedAt)
+          dialogMeta.append(
+            element(
+              "span",
+              "",
+              t("submission_rejected_at", {
+                date: date(detail.rejectedAt),
+              }),
+            ),
+          );
         dialogBody.querySelector(".my-submission-status-help").textContent = t(
           `my_submissions_help_${detail.status}`,
         );
@@ -205,6 +223,16 @@ window.MySubmissions = (() => {
         element("span", "", t(types[selected.type])),
         statusBadge((detail || selected).status),
       );
+      if ((detail || selected).rejectedAt)
+        dialogMeta.append(
+          element(
+            "span",
+            "",
+            t("submission_rejected_at", {
+              date: date((detail || selected).rejectedAt),
+            }),
+          ),
+        );
       dialogBody.replaceChildren();
       dialogActions.replaceChildren();
       dialogBody.setAttribute("aria-busy", String(!detail && !detailFailed));
@@ -271,14 +299,6 @@ window.MySubmissions = (() => {
         "my_submissions_submitted_date",
         date(detail.submittedAt),
       );
-      if (detail.scheduledPublishAt)
-        addField(
-          facts,
-          "my_submissions_publication_date",
-          new Date(detail.scheduledPublishAt).toLocaleString(
-            CMCENUtils.getCurrentLocale(),
-          ),
-        );
       dialogBody.append(facts);
       const content = detail.content || {};
       if (content.imageUrl) {
@@ -460,6 +480,7 @@ window.MySubmissions = (() => {
         const updated = {
           ...detail,
           status: "pending",
+          rejectedAt: null,
           feedback: "",
           editUrl: null,
           updatedAt: saved?.updatedAt || new Date().toISOString(),

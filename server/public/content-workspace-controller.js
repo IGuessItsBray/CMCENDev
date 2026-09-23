@@ -702,10 +702,59 @@ window.ContentWorkspace = {
       setTypeLabel(type, item.type);
       metadata.append(type);
 
-      const updatedAt = formatWorkspaceDate(item.updatedAt || item.createdAt);
-      if (updatedAt) {
-        metadata.append(document.createTextNode(` · ${updatedAt}`));
+      metadata.append(
+        document.createTextNode(` · ${getPublicationLabel(item)}`),
+      );
+      if (item.lastEditedAt) {
+        metadata.append(
+          document.createElement("br"),
+          document.createTextNode(getEditLabel(item)),
+        );
       }
+      appendHiddenMetadata(metadata, item);
+    }
+
+    function getPublicationLabel(item) {
+      return getText(
+        item.publishedAt
+          ? item.publishedByName
+            ? "submission_published_by"
+            : "submission_published_at"
+          : "submission_submitted_at",
+        "",
+        {
+          date: formatWorkspaceDate(item.publishedAt || item.createdAt),
+          name: item.publishedByName,
+        },
+      );
+    }
+
+    function appendHiddenMetadata(element, item) {
+      if (!item.hiddenAt) return;
+      element.append(
+        document.createElement("br"),
+        document.createTextNode(
+          getText(
+            item.hiddenByName ? "submission_hidden_by" : "submission_hidden_at",
+            "",
+            {
+              date: formatWorkspaceDate(item.hiddenAt),
+              name: item.hiddenByName,
+            },
+          ),
+        ),
+      );
+    }
+
+    function getEditLabel(item) {
+      return getText(
+        item.lastEditedBy ? "submission_edited_by" : "submission_edited_at",
+        "",
+        {
+          date: formatWorkspaceDate(item.lastEditedAt),
+          name: item.lastEditedBy,
+        },
+      );
     }
 
     function updateContentWorkspaceLoadMore() {
@@ -817,10 +866,7 @@ window.ContentWorkspace = {
     }
 
     function setDetailInfo(info, item) {
-      const values = [
-        getTypeLabel(item.type),
-        formatWorkspaceDate(item.updatedAt),
-      ];
+      const values = [getTypeLabel(item.type), getPublicationLabel(item)];
 
       if (item.type === "event") {
         values.push(
@@ -838,6 +884,13 @@ window.ContentWorkspace = {
       }
 
       info.textContent = values.filter(Boolean).join(" · ");
+      if (item.lastEditedAt) {
+        info.append(
+          document.createElement("br"),
+          document.createTextNode(getEditLabel(item)),
+        );
+      }
+      appendHiddenMetadata(info, item);
     }
 
     function createDetailInfo(item) {

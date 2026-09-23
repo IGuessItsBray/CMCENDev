@@ -242,4 +242,8 @@ LastPostMessageSchema.index({
   'legacy.postId': 1,
 });
 
+require('../services/content-edit-metadata').installContentEditMetadata(
+  LastPostMessageSchema,
+);
+
 module.exports = mongoose.model('LastPostMessage', LastPostMessageSchema);

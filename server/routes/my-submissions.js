@@ -28,7 +28,7 @@ const sources = {
 };
 const storedStatuses = ['draft', 'pending', 'published', 'rejected'];
 const statuses = [...storedStatuses, 'scheduled'];
-const commonFields = 'status createdAt updatedAt scheduledPublishAt';
+const commonFields = 'status createdAt updatedAt scheduledPublishAt reviewedAt';
 const detailFields = {
   event:
     'description location registration city provinceRegion startDate endDate timezone allDay imagePath',
@@ -123,6 +123,7 @@ function summary(type, record) {
       record.status === 'pending' && record.scheduledPublishAt
         ? 'scheduled'
         : record.status,
+    rejectedAt: record.status === 'rejected' ? record.reviewedAt || null : null,
     submittedAt: record.createdAt || new Date(0),
     updatedAt: record.updatedAt || record.createdAt || new Date(0),
   };

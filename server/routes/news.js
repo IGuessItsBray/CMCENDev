@@ -1,4 +1,5 @@
 const express = require('express');
+const { markContentEdited } = require('../services/content-edit-metadata');
 const mongoose = require('mongoose');
 const NewsArticle = require('../models/NewsArticle');
 const LastPostMessage = require('../models/LastPostMessage');
@@ -711,6 +712,7 @@ router.patch(
       if (validationError)
         return res.status(400).json({ error: validationError });
       Object.assign(article, payload);
+      markContentEdited(article, req.user);
       if (payload.status === 'published' && previousStatus !== 'published') {
         article.publishedAt = new Date();
         article.publishedBy = req.user._id;

@@ -1366,7 +1366,7 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List content in the staff editorial workspace.
-      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Event records include RSVP enablement and deadline settings. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, paged with the opaque `cursor` returned by the previous response, or narrowed to one record with `id`; when type is `all`, results are limited to the caller’s permitted content types. Responses include `hasMore` and `nextCursor` for Load more pagination. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
+      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Records include publishedAt and publishedByName, lastEditedAt and lastEditedBy (including picture edits), and hiddenAt and hiddenByName. Actor names are display names or empty strings; missing timestamps are null. Hiding does not overwrite edit or publication metadata; restoring clears hiding metadata. Event records include RSVP enablement and deadline settings. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, paged with the opaque `cursor` returned by the previous response, or narrowed to one record with `id`; when type is `all`, results are limited to the caller’s permitted content types. Responses include `hasMore` and `nextCursor` for Load more pagination. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
       x-permission: canReviewAndPublish or canManageNews (newsArticle only)
       parameters:
         - name: scope
@@ -3259,6 +3259,7 @@ components:
             type: string,
             enum: [draft, pending, scheduled, published, rejected],
           }
+        rejectedAt: { type: string, format: date-time, nullable: true }
         submittedAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     Error:

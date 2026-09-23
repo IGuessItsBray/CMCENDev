@@ -280,4 +280,8 @@ retirementMessageSchema.index({
   publishedAt: -1,
 });
 
+require('../services/content-edit-metadata').installContentEditMetadata(
+  retirementMessageSchema,
+);
+
 module.exports = mongoose.model('RetirementMessage', retirementMessageSchema);

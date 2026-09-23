@@ -1,5 +1,13 @@
 {
   "en": {
+    "submission_published_by": "Published {date} by {name}",
+    "submission_hidden_at": "Hidden {date}",
+    "submission_hidden_by": "Hidden {date} by {name}",
+    "submission_rejected_at": "Rejected {date}",
+    "submission_published_at": "Published {date}",
+    "submission_submitted_at": "Submitted {date}",
+    "submission_edited_at": "Last edited {date}",
+    "submission_edited_by": "Last edited {date} by {name}",
     "admin_next_audit_clear": "Clear filters",
     "admin_next_audit_export_help": "CSV exports use the selected filters and include up to 10,000 matching records, without grouping duplicates. Dates filter by UTC calendar day.",
     "admin_next_audit_exporting": "Preparing CSV export…",
@@ -2090,6 +2098,14 @@
     "article_preview_notice": "Staff preview — this is not the public article."
   },
   "fr": {
+    "submission_published_by": "Publié le {date} par {name}",
+    "submission_hidden_at": "Masqué le {date}",
+    "submission_hidden_by": "Masqué le {date} par {name}",
+    "submission_rejected_at": "Refusé le {date}",
+    "submission_published_at": "Publié le {date}",
+    "submission_submitted_at": "Soumis le {date}",
+    "submission_edited_at": "Dernière modification le {date}",
+    "submission_edited_by": "Dernière modification le {date} par {name}",
     "admin_next_audit_clear": "Effacer les filtres",
     "admin_next_audit_export_help": "Les exports CSV utilisent les filtres sélectionnés et contiennent jusqu’à 10 000 entrées correspondantes, sans regrouper les doublons. Les dates filtrent par jour civil UTC.",
     "admin_next_audit_exporting": "Préparation de l’export CSV…",

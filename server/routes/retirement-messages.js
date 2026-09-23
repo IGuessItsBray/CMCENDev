@@ -1,4 +1,5 @@
 const express = require('express');
+const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const mongoose = require('mongoose');
 const CertificateRequest = require('../models/CertificateRequest');
@@ -1095,6 +1096,7 @@ router.patch('/comments/:commentId', authMiddleware, async (req, res) => {
         .status(409)
         .json({ error: 'This comment cannot be resubmitted' });
     }
+    markContentEdited(comment, req.user);
     comment.body = cleanBody;
     comment.status =
       !submitForReview && canReview && permissions.canPublishOwnContent === true
@@ -1103,8 +1105,12 @@ router.patch('/comments/:commentId', authMiddleware, async (req, res) => {
     comment.rejectionReason = '';
     comment.reviewedBy = comment.status === 'published' ? req.user._id : null;
     comment.reviewedAt = comment.status === 'published' ? new Date() : null;
-    comment.publishedBy = comment.status === 'published' ? req.user._id : null;
-    comment.publishedAt = comment.status === 'published' ? new Date() : null;
+    comment.publishedBy =
+      comment.status === 'published'
+        ? comment.publishedBy || req.user._id
+        : null;
+    comment.publishedAt =
+      comment.status === 'published' ? comment.publishedAt || new Date() : null;
 
     await comment.save();
     await comment.populate('retirementMessage', 'retiree status');
@@ -1291,6 +1297,7 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       confirmed: true,
       confirmedAt: now,
     };
+    markContentEdited(retirementMessage, req.user);
     retirementMessage.updatedBy = req.user._id;
     retirementMessage.status = wantsImmediatePublication
       ? 'published'
@@ -1301,9 +1308,13 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     retirementMessage.reviewedAt =
       retirementMessage.status === 'published' ? now : null;
     retirementMessage.publishedBy =
-      retirementMessage.status === 'published' ? req.user._id : null;
+      retirementMessage.status === 'published'
+        ? retirementMessage.publishedBy || req.user._id
+        : null;
     retirementMessage.publishedAt =
-      retirementMessage.status === 'published' ? now : null;
+      retirementMessage.status === 'published'
+        ? retirementMessage.publishedAt || now
+        : null;
 
     await retirementMessage.save();
     await linkRetirementPhotoToMediaAsset(retirementMessage);
@@ -1651,6 +1662,7 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
       retirementMessage.message = cleanMessage;
     }
 
+    markContentEdited(retirementMessage, req.user);
     retirementMessage.updatedBy = req.user._id;
 
     if (wasRejected) {

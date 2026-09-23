@@ -391,4 +391,8 @@ EventSchema.index({
   createdAt: 1,
 });
 
+require('../services/content-edit-metadata').installContentEditMetadata(
+  EventSchema,
+);
+
 module.exports = mongoose.model('Event', EventSchema);

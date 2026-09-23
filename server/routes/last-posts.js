@@ -1,4 +1,5 @@
 const express = require('express');
+const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const mongoose = require('mongoose');
 const LastPostMessage = require('../models/LastPostMessage');
@@ -445,6 +446,7 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
 
     lastPost.set(`messages.${language}`, cleanString(message));
     lastPost.markModified('messages');
+    markContentEdited(lastPost, req.user);
     lastPost.updatedBy = req.user._id;
 
     if (wasRejected) {
@@ -828,13 +830,18 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       confirmedAt: now,
       confirmedBy: req.user._id,
     };
+    markContentEdited(lastPost, req.user);
     lastPost.updatedBy = req.user._id;
     lastPost.status = wantsImmediatePublication ? 'published' : 'pending';
     lastPost.rejectionReason = '';
     lastPost.reviewedBy = wantsImmediatePublication ? req.user._id : null;
     lastPost.reviewedAt = wantsImmediatePublication ? now : null;
-    lastPost.publishedBy = wantsImmediatePublication ? req.user._id : null;
-    lastPost.publishedAt = wantsImmediatePublication ? now : null;
+    lastPost.publishedBy = wantsImmediatePublication
+      ? lastPost.publishedBy || req.user._id
+      : null;
+    lastPost.publishedAt = wantsImmediatePublication
+      ? lastPost.publishedAt || now
+      : null;
 
     await lastPost.save();
     await linkLastPostImageToMediaAsset(lastPost);

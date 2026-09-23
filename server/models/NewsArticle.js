@@ -124,4 +124,8 @@ NewsArticleSchema.index(
   },
 );
 
+require('../services/content-edit-metadata').installContentEditMetadata(
+  NewsArticleSchema,
+);
+
 module.exports = mongoose.model('NewsArticle', NewsArticleSchema);

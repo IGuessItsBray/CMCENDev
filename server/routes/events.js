@@ -1,4 +1,5 @@
 const express = require('express');
+const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const Event = require('../models/Event');
 const EventRsvp = require('../models/EventRsvp');
@@ -1525,14 +1526,15 @@ router.patch('/:id', authMiddleware, async (req, res) => {
       confirmedBy: req.user._id,
     };
 
+    markContentEdited(event, req.user);
     event.updatedBy = req.user._id;
     event.lastSubmittedAt = new Date();
 
     event.status = wantsImmediatePublication ? 'published' : 'pending';
 
     if (event.status === 'published') {
-      event.publishedBy = req.user._id;
-      event.publishedAt = new Date();
+      event.publishedBy ||= req.user._id;
+      event.publishedAt ||= new Date();
       event.reviewedBy = req.user._id;
       event.reviewedAt = new Date();
     } else {
@@ -1651,6 +1653,7 @@ router.patch('/:eventId/review-content', authMiddleware, async (req, res) => {
     editableFields.forEach((field) => {
       event.set(`${field}.${language}`, cleanString(content[field]));
     });
+    markContentEdited(event, req.user);
     event.updatedBy = req.user._id;
 
     if (wasRejected) {

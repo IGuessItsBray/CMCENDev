@@ -116,4 +116,8 @@ retirementCommentSchema.index({
   publishedAt: -1,
 });
 
+require('../services/content-edit-metadata').installContentEditMetadata(
+  retirementCommentSchema,
+);
+
 module.exports = mongoose.model('RetirementComment', retirementCommentSchema);

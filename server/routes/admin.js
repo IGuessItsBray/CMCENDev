@@ -2,6 +2,7 @@ const {
   imageUrls: newsletterImageUrls,
 } = require('../public/newsletter-format');
 const express = require('express');
+const { markContentEdited } = require('../services/content-edit-metadata');
 const mongoose = require('mongoose');
 const speakeasy = require('speakeasy');
 const crypto = require('crypto');
@@ -193,6 +194,7 @@ async function saveAdminContentEdit({
   if (document.schema.path('updatedBy')) {
     document.updatedBy = req.user._id;
   }
+  markContentEdited(document, req.user);
   await document.save();
 
   const mediaAfter = getAdminContentMediaDetails(targetType, document);
@@ -653,6 +655,14 @@ function getContentWorkspaceRecordFilter(
   return filters.length === 1 ? filters[0] : { $and: filters };
 }
 
+function getContentActorName(actor) {
+  return (
+    actor?.accountName ||
+    [actor?.firstName, actor?.lastName].filter(Boolean).join(' ') ||
+    ''
+  );
+}
+
 function toContentWorkspaceItem(type, content) {
   const base = {
     _id: content._id,
@@ -660,6 +670,12 @@ function toContentWorkspaceItem(type, content) {
     status: content.status,
     hiddenFromStatus: content.hiddenFromStatus || '',
     rejectionReason: content.rejectionReason || '',
+    publishedAt: content.publishedAt || null,
+    publishedByName: getContentActorName(content.publishedBy),
+    hiddenAt: content.hiddenAt || null,
+    hiddenByName: getContentActorName(content.hiddenBy),
+    lastEditedAt: content.lastEditedAt || null,
+    lastEditedBy: content.lastEditedBy || '',
     updatedAt: content.updatedAt,
     createdAt: content.createdAt,
   };
@@ -854,7 +870,7 @@ router.get(
         queries.push(
           Event.find(getWorkspaceFilter('event'))
             .select(
-              'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay rsvpEnabled rsvpDeadline imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt updatedAt createdAt',
+              'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay rsvpEnabled rsvpDeadline imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
               {
@@ -866,6 +882,10 @@ router.get(
                 select: 'username accountName firstName lastName email role',
               },
             ])
+            .populate({
+              path: 'publishedBy hiddenBy',
+              select: 'accountName firstName lastName',
+            })
             .sort({ updatedAt: -1, _id: -1 })
             .limit(limit + 1)
             .lean()
@@ -879,11 +899,15 @@ router.get(
         queries.push(
           RetirementMessage.find(getWorkspaceFilter('retirementMessage'))
             .select(
-              'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation createdBy status hiddenFromStatus rejectionReason scheduledPublishAt updatedAt createdAt',
+              'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate({
               path: 'createdBy',
               select: 'username accountName firstName lastName email role',
+            })
+            .populate({
+              path: 'publishedBy hiddenBy',
+              select: 'accountName firstName lastName',
             })
             .sort({ updatedAt: -1, _id: -1 })
             .limit(limit + 1)
@@ -900,7 +924,7 @@ router.get(
         queries.push(
           LastPostMessage.find(getWorkspaceFilter('lastPost'))
             .select(
-              'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt updatedAt createdAt',
+              'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
               {
@@ -912,6 +936,10 @@ router.get(
                 select: 'username accountName firstName lastName email role',
               },
             ])
+            .populate({
+              path: 'publishedBy hiddenBy',
+              select: 'accountName firstName lastName',
+            })
             .sort({ updatedAt: -1, _id: -1 })
             .limit(limit + 1)
             .lean()
@@ -927,7 +955,7 @@ router.get(
         queries.push(
           RetirementComment.find(getWorkspaceFilter('retirementComment'))
             .select(
-              'retirementMessage author body status hiddenFromStatus rejectionReason updatedAt createdAt',
+              'retirementMessage author body status hiddenFromStatus rejectionReason publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
               { path: 'retirementMessage', select: 'retiree' },
@@ -936,6 +964,10 @@ router.get(
                 select: 'username accountName firstName lastName email role',
               },
             ])
+            .populate({
+              path: 'publishedBy hiddenBy',
+              select: 'accountName firstName lastName',
+            })
             .sort({ updatedAt: -1, _id: -1 })
             .limit(limit + 1)
             .lean()
@@ -951,7 +983,7 @@ router.get(
         queries.push(
           NewsArticle.find(getWorkspaceFilter('newsArticle'))
             .select(
-              'layout newsletter newsletterBlocks title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus updatedAt createdAt',
+              'layout newsletter newsletterBlocks title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
               {
@@ -963,6 +995,10 @@ router.get(
                 select: 'username accountName firstName lastName email role',
               },
             ])
+            .populate({
+              path: 'publishedBy hiddenBy',
+              select: 'accountName firstName lastName',
+            })
             .sort({ updatedAt: -1, _id: -1 })
             .limit(limit + 1)
             .lean()

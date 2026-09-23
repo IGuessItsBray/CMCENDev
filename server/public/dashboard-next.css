@@ -490,3 +490,35 @@ body {
     transition: none;
   }
 }
+.loading-state {
+  min-height: 140px;
+  display: grid;
+  place-items: center;
+}
+.loading-state-spinner {
+  width: 34px;
+  height: 34px;
+  display: block;
+  border: 3px solid var(--admin-border);
+  border-top-color: var(--gold-600);
+  border-radius: 50%;
+  animation: admin-loading-spin 750ms linear infinite;
+}
+.loading-state .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@keyframes admin-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-state-spinner {
+    animation: none;
+  }
+}

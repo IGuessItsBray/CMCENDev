@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const DEFAULT_NEWS_IMAGE_URL =
-  'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp';
+  'https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp';
 
 const LocalizedTextSchema = new mongoose.Schema(
   {

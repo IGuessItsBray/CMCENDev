@@ -38,6 +38,15 @@ function setup({
     location: { origin: 'https://example.test' },
     translate: (key, values) => key + (values ? JSON.stringify(values) : ''),
     CMCENModal: { confirm },
+    CMCENUtils: {
+      createLoadingSpinner(label) {
+        const spinner = new Element('div');
+        spinner.className = 'loading-state';
+        spinner.setAttribute('role', 'status');
+        spinner.setAttribute('aria-label', label);
+        return spinner;
+      },
+    },
   };
   vm.runInNewContext(
     fs.readFileSync(
@@ -309,4 +318,40 @@ test('library permission denial disposes the area', async () => {
   });
   await page.instance.ready;
   assert.equal(page.denied(), 1);
+});
+
+test('loading indicator clears after success or failure and errors remain visible', async () => {
+  for (const fails of [false, true]) {
+    const pending = deferred();
+    const page = setup({ api: () => pending.promise });
+    const grid = page.root.querySelector('.admin-media-grid');
+    assert.ok(grid.querySelector('.loading-state'));
+    assert.equal(page.status(), '');
+    if (fails) pending.reject(new Error('offline'));
+    else pending.resolve({ media: [image('loaded')], isTruncated: false });
+    await page.instance.ready;
+    assert.equal(grid.querySelector('.loading-state'), null);
+    if (fails) assert.match(page.status(), /load_error/);
+    else assert.equal(grid.querySelectorAll('article').length, 1);
+  }
+});
+
+test('dropping files uses the same upload metadata and permission checks as file selection', async () => {
+  for (const allowed of [true, false]) {
+    const page = setup({ permissions: { canUploadMedia: allowed } });
+    await page.instance.ready;
+    page.field('slug').value = 'dropped-image';
+    await page.root.querySelector('.admin-media-upload').fire('drop', {
+      preventDefault() {},
+      dataTransfer: {
+        files: [new File(['x'], 'photo.png', { type: 'image/png' })],
+      },
+    });
+    const uploads = page.calls.filter((call) => call.url === '/api/upload');
+    assert.equal(uploads.length, allowed ? 1 : 0);
+    if (allowed) {
+      assert.equal(uploads[0].body.get('cdnSlug'), 'dropped-image');
+      assert.equal(uploads[0].body.get('image').name, 'photo.png');
+    }
+  }
 });

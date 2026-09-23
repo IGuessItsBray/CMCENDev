@@ -2,7 +2,7 @@ const path = require('path');
 const axios = require('axios');
 
 const DEFAULT_IMAGE_URL =
-  'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp';
+  'https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp';
 const DEFAULT_IMAGE_NAME = 'cmcen-crest.webp';
 
 function getUrlFileName(sourceUrl) {

@@ -88,23 +88,26 @@
     const refresh = button("admin_refresh", () => load());
     toolbar.append(refresh);
     const uploadPanel = node("section", null, "admin-media-upload");
-    uploadPanel.append(
-      node("h2", "admin_next_media_upload_heading"),
-      node("p", "admin_next_media_upload_help"),
-    );
-    const slug = field(uploadPanel, "slug", "text");
+    uploadPanel.append(node("h2", "admin_next_media_upload_heading"));
+    const uploadLayout = node("div", null, "admin-media-upload-layout");
+    const dropzone = node("div", null, "admin-media-dropzone");
+    dropzone.append(node("p", "admin_next_media_upload_help"));
+    const options = node("div", null, "admin-media-upload-options");
+    const slug = field(options, "slug", "text");
     slug.maxLength = 80;
     const slugHelp = node("p", "admin_next_media_slug_help");
     slugHelp.id = "media-slug-help";
     slug.setAttribute("aria-describedby", slugHelp.id);
-    uploadPanel.append(slugHelp);
-    const files = field(uploadPanel, "files", "file");
+    options.append(slugHelp);
+    const files = field(dropzone, "files", "file");
     files.multiple = true;
     files.accept =
       ".jpg,.jpeg,.png,.webp,.gif,.heic,image/jpeg,image/png,image/webp,image/gif,image/heic";
     const uploads = node("ul", null, "admin-media-upload-queue");
     uploads.setAttribute("aria-live", "polite");
-    uploadPanel.append(uploads);
+    options.append(uploads);
+    uploadLayout.append(dropzone, options);
+    uploadPanel.append(uploadLayout);
     const status = node("p", null, "admin-media-status");
     status.setAttribute("role", "status");
     const retry = button("admin_next_retry", () => load(Boolean(cursor)));
@@ -128,8 +131,8 @@
     const grid = node("div", null, "admin-media-grid");
     const more = button("admin_media_load_more", () => load(true));
     root.replaceChildren(
-      toolbar,
       uploadPanel,
+      toolbar,
       status,
       retry,
       selection,
@@ -158,8 +161,9 @@
         count: selected.size,
       });
       status.textContent = loading
-        ? t("admin_media_loading")
+        ? ""
         : feedback.map(([key, values]) => t(key, values)).join(" ");
+      status.hidden = !status.textContent;
       retry.hidden = !loadFailed;
       retry.disabled = locked() || loading;
       more.hidden = !cursor;
@@ -285,6 +289,10 @@
         card.append(body);
         grid.append(card);
       }
+      if (loading)
+        grid.append(
+          window.CMCENUtils.createLoadingSpinner(t("admin_media_loading")),
+        );
       if (!items.length && !loading && !loadFailed)
         grid.append(node("p", "admin_next_media_empty"));
       update();
@@ -553,13 +561,19 @@
     listen(sort, "change", () => queryChanged(false));
     listen(type, "change", () => queryChanged(false));
     listen(files, "change", () => upload(files.files));
-    listen(uploadPanel, "dragover", (event) => {
+    listen(dropzone, "dragover", (event) => {
       event.preventDefault();
+      if (!locked() && canUpload) dropzone.dataset.dragging = "true";
+    });
+    listen(dropzone, "dragleave", () => {
+      dropzone.dataset.dragging = "false";
     });
     listen(uploadPanel, "drop", (event) => {
       event.preventDefault();
+      dropzone.dataset.dragging = "false";
       return upload(event.dataTransfer?.files);
     });
+    listen(uploadPanel, "dragover", (event) => event.preventDefault());
     listen(document, "languagechange", render);
     const ready = load();
     return {

@@ -33,7 +33,7 @@ const MediaAsset = require('../models/MediaAsset');
 const router = express.Router();
 const MAX_ARTICLES = 48;
 const DEFAULT_NEWS_IMAGE_URL =
-  'https://cdn.corebot.ca/cmcen-demo/images/crest/large.webp';
+  'https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp';
 
 function isValidImageUrl(value) {
   if (!value) return true;

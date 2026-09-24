@@ -34,6 +34,9 @@ test('document library references available public source files', () => {
   );
 
   content.documents.forEach((documentItem) => {
+    if (documentItem.fileKey) {
+      assert.match(documentItem.fileKey, /^documents\/.+\.(pdf|docx)$/u);
+    }
     if (documentItem.fileUrl) {
       if (documentItem.fileUrl.startsWith('https://')) {
         const url = new URL(documentItem.fileUrl);
@@ -88,7 +91,7 @@ test('appointment policy source documents remain available through the document 
     const document = content.documents.find((item) => item.id === id);
     assert.ok(document, `${id} is discoverable in the library`);
     assert.match(
-      document.fileUrl,
+      document.fileKey || document.fileUrl,
       /\.pdf$/u,
       `${id} retains its source PDF link`,
     );

@@ -25,8 +25,7 @@ const NON_IMAGE_EXTENSIONS = new Set([
   '.ppt',
   '.pptx',
 ]);
-const BRANCH_CREST_URL =
-  'https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp';
+const BRANCH_CREST_URL = buildPublicMediaUrl('images/branch-crest/large.webp');
 const WORKBOOK_PLACEHOLDER_PATTERNS = Object.freeze([
   /cmcen-crest-snip/iu,
   /\/jimmy(?:[-_.]|$)/iu,

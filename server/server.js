@@ -22,6 +22,8 @@ const contactRoutes = require('./routes/contact');
 const diagnosticsRoutes = require('./routes/diagnostics');
 const eventRoutes = require('./routes/events');
 const lastPostRoutes = require('./routes/last-posts');
+const pageContentRoutes = require('./routes/page-content');
+const publicMediaRoutes = require('./routes/public-media');
 const newsRoutes = require('./routes/news');
 const mySubmissionRoutes = require('./routes/my-submissions');
 const retirementMessageRoutes = require('./routes/retirement-messages');
@@ -67,6 +69,8 @@ app.use('/api', apiRateLimit);
 app.use(translationRoutes);
 app.use(contentOptionRoutes);
 app.use(brandingRoutes);
+app.use(pageContentRoutes);
+app.use(publicMediaRoutes);
 
 function getBuildCommit() {
   const envCommit =

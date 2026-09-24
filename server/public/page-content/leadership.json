@@ -22,7 +22,7 @@
         "cards": [
           {
             "featured": true,
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/princess-anne-d725f411f24a.jpg",
+            "imageKey": "images/leadership/portraits/princess-anne-d725f411f24a.jpg",
             "imageAlt": "Her Royal Highness The Princess Royal, Princess Anne",
             "rank": "Her Royal Highness The Princess Royal",
             "name": "Princess Anne",
@@ -30,7 +30,7 @@
             "profileUrl": "https://royal.uk/the-princess-royal"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
+            "imageKey": "images/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
             "imageAlt": "Brigadier-General (Retired) Martin Girard",
             "rank": "Brigadier-General (Retired)",
             "name": "Martin Girard, OMM, MSM, CD",
@@ -38,7 +38,7 @@
             "bio": "BGen Martin Girard joined the Canadian Forces in June 1981 and started at College Militaire Royal de St-Jean on 15 August 1981. He was transferred to the Royal Military College of Canada in Kingston in 1982 where he graduated from RMCC in Electrical Engineering in May 1986. His first posting was B Tel O for CFB Gagetown from 1987-1989.\n\nHe has served in numerous operational, staff and project appointments at NDHQ and the operational commands such as Chief Engineer DWAN, EA ADM IM, CF Deputy J6, CEFCOM J6, CANOSCOM OS J3 and COS.\n\nBGen Girard also served in three operational deployments: First Gulf War (1990-1991) as second in command of 1 Ptarmigan Squadron of 1st (UK) Armoured Division HQ and Signal Regiment; Bosnia (2002-2003) as Commander Signal Support Group SFOR; Haiti (2008-2009) as Task Force Commander Port au Prince and Chief of Staff MINUSTAH for which he received a Meritorious Service Medal in November 2010.\n\nBGen Girard has commanded and reluctantly relinquished command at CFS Leitrim (2000-2002), CFSCE (2003-2005) and CFSSG (2012-2014).\n\nHe is a graduate from Canadian Land Forces Command and Staff College (1993), Advanced Signal Officer Course, Canadian Forces College (1998), National Security Programme (2012) and CAPSTONE (2015). He also received a Masters Degree in Telecommunication Management at the Royal Military College of Canada (1996). BGen Girard has been appointed as an officer to the Order of Military Merit on the 25th of October 2011.\n\nPromoted to Brigadier-General on 29 May 2014, he was appointed Director General Military Signal Intelligence and Deputy Commander Canadian Forces Intelligence Command until 4 April 2016 where he moved to New York to become Military Advisor to the Permanent Mission of Canada to the United Nations. He left New York City on 29 July 2020 and retired from the Canadian Armed Forces, the C&E Branch and the Royal Canadian Corps of Signals on 4th Sep 2020 and he is now enjoying retirement with his beautiful wife Gyl in Bromont, QC."
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
+            "imageKey": "images/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
             "imageAlt": "Major-General Dave Yarker",
             "rank": "Major-General",
             "name": "Dave Yarker, CD",
@@ -46,7 +46,7 @@
             "bioKey": "yarker"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
+            "imageKey": "images/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
             "imageAlt": "Colonel Steeve Lavoie",
             "rank": "Colonel",
             "name": "Steeve Lavoie, CD",
@@ -54,14 +54,14 @@
             "bioKey": "lavoie"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/emilie-circe-8625bd35e7f0.jpg",
+            "imageKey": "images/leadership/portraits/emilie-circe-8625bd35e7f0.jpg",
             "imageAlt": "Major Emilie Circé",
             "rank": "Major",
             "name": "Emilie Circé, US MSM, CD",
             "role": "Branch Adjutant"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageKey": "images/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
             "imageAlt": "Chief Warrant Officer Renay Groves",
             "rank": "Chief Warrant Officer",
             "name": "Renay Groves, MSM, CD",
@@ -76,7 +76,7 @@
         "description": "Acts as the C&E Branch governing body, fostering and sustaining operationally focused, command-centric experts.",
         "cards": [
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
+            "imageKey": "images/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
             "imageAlt": "Major-General Dave Yarker",
             "rank": "Major-General",
             "name": "Dave Yarker, CD",
@@ -84,7 +84,7 @@
             "bioKey": "yarker"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
+            "imageKey": "images/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
             "imageAlt": "Brigadier-General (Retired) Martin Girard",
             "rank": "Brigadier-General (Retired)",
             "name": "Martin Girard, OMM, MSM, CD",
@@ -92,7 +92,7 @@
             "bio": "BGen Martin Girard joined the Canadian Forces in June 1981 and started at College Militaire Royal de St-Jean on 15 August 1981. He was transferred to the Royal Military College of Canada in Kingston in 1982 where he graduated from RMCC in Electrical Engineering in May 1986. His first posting was B Tel O for CFB Gagetown from 1987-1989.\n\nHe has served in numerous operational, staff and project appointments at NDHQ and the operational commands such as Chief Engineer DWAN, EA ADM IM, CF Deputy J6, CEFCOM J6, CANOSCOM OS J3 and COS.\n\nBGen Girard also served in three operational deployments: First Gulf War (1990-1991) as second in command of 1 Ptarmigan Squadron of 1st (UK) Armoured Division HQ and Signal Regiment; Bosnia (2002-2003) as Commander Signal Support Group SFOR; Haiti (2008-2009) as Task Force Commander Port au Prince and Chief of Staff MINUSTAH for which he received a Meritorious Service Medal in November 2010.\n\nBGen Girard has commanded and reluctantly relinquished command at CFS Leitrim (2000-2002), CFSCE (2003-2005) and CFSSG (2012-2014).\n\nHe is a graduate from Canadian Land Forces Command and Staff College (1993), Advanced Signal Officer Course, Canadian Forces College (1998), National Security Programme (2012) and CAPSTONE (2015). He also received a Masters Degree in Telecommunication Management at the Royal Military College of Canada (1996). BGen Girard has been appointed as an officer to the Order of Military Merit on the 25th of October 2011.\n\nPromoted to Brigadier-General on 29 May 2014, he was appointed Director General Military Signal Intelligence and Deputy Commander Canadian Forces Intelligence Command until 4 April 2016 where he moved to New York to become Military Advisor to the Permanent Mission of Canada to the United Nations. He left New York City on 29 July 2020 and retired from the Canadian Armed Forces, the C&E Branch and the Royal Canadian Corps of Signals on 4th Sep 2020 and he is now enjoying retirement with his beautiful wife Gyl in Bromont, QC."
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
+            "imageKey": "images/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
             "imageAlt": "Colonel Steeve Lavoie",
             "rank": "Colonel",
             "name": "Steeve Lavoie, CD",
@@ -100,7 +100,7 @@
             "bioKey": "lavoie"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/walter-jull-38c8569e1e99.jpg",
+            "imageKey": "images/leadership/portraits/walter-jull-38c8569e1e99.jpg",
             "imageAlt": "Colonel Walter Jull",
             "rank": "Colonel",
             "name": "Walter Jull, CD",
@@ -108,7 +108,7 @@
             "bioKey": "jull"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-coude-e017b9ae3db6.jpg",
+            "imageKey": "images/leadership/portraits/martin-coude-e017b9ae3db6.jpg",
             "imageAlt": "Colonel Martin J.J-L. Coudé",
             "rank": "Colonel",
             "name": "Martin J.J-L. Coudé, CD",
@@ -116,7 +116,7 @@
             "bioKey": "coude"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/john-roper-849f23c3635e.jpg",
+            "imageKey": "images/leadership/portraits/john-roper-849f23c3635e.jpg",
             "imageAlt": "Colonel John Roper",
             "rank": "Colonel",
             "name": "John Roper, CD",
@@ -124,7 +124,7 @@
             "bioKey": "roper"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageKey": "images/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
             "imageAlt": "Chief Warrant Officer Renay Groves",
             "rank": "Chief Warrant Officer",
             "name": "Renay Groves, MSM, CD",
@@ -139,7 +139,7 @@
         "description": "Represents Branch NCM interests to the Branch Advisor and keeps members informed about changes to their responsibilities and trade structure.",
         "cards": [
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageKey": "images/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
             "imageAlt": "Chief Warrant Officer Renay Groves",
             "rank": "Chief Warrant Officer",
             "name": "Renay Groves, MSM, CD",
@@ -147,7 +147,7 @@
             "bioKey": "groves"
           },
           {
-            "image": "/images/logo.png",
+            "image": "/assets/images/logo.png",
             "imageAlt": "CMCEN emblem",
             "placeholder": true,
             "rank": "Chief Warrant Officer",
@@ -155,7 +155,7 @@
             "role": "RCCS Corps Chief"
           },
           {
-            "image": "/images/logo.png",
+            "image": "/assets/images/logo.png",
             "imageAlt": "CMCEN emblem",
             "placeholder": true,
             "rank": "Chief Warrant Officer",
@@ -163,14 +163,14 @@
             "role": "Deputy RCCS Corps Chief"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/phil-gagne-bf8993e6f78e.png",
+            "imageKey": "images/leadership/portraits/phil-gagne-bf8993e6f78e.png",
             "imageAlt": "Chief Warrant Officer Phil Gagné",
             "rank": "Chief Warrant Officer",
             "name": "Phil Gagné, MMM, CD",
             "role": "Deputy Corps Sergeant Major ARes"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/jason-mcquigge-fb73e0227a80.jpg",
+            "imageKey": "images/leadership/portraits/jason-mcquigge-fb73e0227a80.jpg",
             "imageAlt": "Chief Warrant Officer Jason McQuigge",
             "rank": "Chief Warrant Officer",
             "name": "Jason McQuigge, CD",
@@ -184,14 +184,14 @@
         "description": "Provides leadership for the Royal Canadian Corps of Signals and its role in enabling Canadian Army command and control.",
         "cards": [
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/mark-parsons-3a45b24808aa.jpg",
+            "imageKey": "images/leadership/portraits/mark-parsons-3a45b24808aa.jpg",
             "imageAlt": "Brigadier-General Mark Parsons",
             "rank": "Brigadier-General",
             "name": "Mark Parsons, CD",
             "role": "Army Master of Signals (RCCS Leader)"
           },
           {
-            "image": "/images/logo.png",
+            "image": "/assets/images/logo.png",
             "imageAlt": "C&E Branch emblem",
             "placeholder": true,
             "rank": "Colonel",
@@ -199,14 +199,14 @@
             "role": "Director RCCS"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/ml-prince-a587c6b0baf7.jpg",
+            "imageKey": "images/leadership/portraits/ml-prince-a587c6b0baf7.jpg",
             "imageAlt": "Colonel M.L. Prince",
             "rank": "Colonel",
             "name": "M.L. Prince, CD",
             "role": "Director RCCS-NCM"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/lisa-smid-a5d457eeb773.jpg",
+            "imageKey": "images/leadership/portraits/lisa-smid-a5d457eeb773.jpg",
             "imageAlt": "Lieutenant-Colonel Lisa Smid",
             "rank": "Lieutenant-Colonel",
             "name": "Lisa Smid, OMM, CD",
@@ -240,7 +240,7 @@
         "cards": [
           {
             "featured": true,
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/princess-anne-d725f411f24a.jpg",
+            "imageKey": "images/leadership/portraits/princess-anne-d725f411f24a.jpg",
             "imageAlt": "Son Altesse Royale la Princesse royale, la princesse Anne",
             "rank": "Son Altesse Royale la Princesse royale",
             "name": "La princesse Anne",
@@ -248,7 +248,7 @@
             "profileUrl": "https://royal.uk/the-princess-royal"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
+            "imageKey": "images/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
             "imageAlt": "Brigadier-général retraité Martin Girard",
             "rank": "Brigadier-général (retraité)",
             "name": "Martin Girard, OMM, MSM, CD",
@@ -256,7 +256,7 @@
             "bioKey": "girard"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
+            "imageKey": "images/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
             "imageAlt": "Major-général Dave Yarker",
             "rank": "Major-général",
             "name": "Dave Yarker, CD",
@@ -264,7 +264,7 @@
             "bioKey": "yarker"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
+            "imageKey": "images/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
             "imageAlt": "Colonel Steeve Lavoie",
             "rank": "Colonel",
             "name": "Steeve Lavoie, CD",
@@ -272,14 +272,14 @@
             "bioKey": "lavoie"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/emilie-circe-8625bd35e7f0.jpg",
+            "imageKey": "images/leadership/portraits/emilie-circe-8625bd35e7f0.jpg",
             "imageAlt": "Major Emilie Circé",
             "rank": "Major",
             "name": "Emilie Circé, US MSM, CD",
             "role": "Adjudante de la Branche"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageKey": "images/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
             "imageAlt": "Adjudante-chef Renay Groves",
             "rank": "Adjudante-chef",
             "name": "Renay Groves, MSM, CD",
@@ -294,7 +294,7 @@
         "description": "Agit à titre d’organisme directeur de la Branche des C et E et favorise le maintien d’experts axés sur les opérations, le commandement et le contrôle.",
         "cards": [
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
+            "imageKey": "images/leadership/portraits/dave-yarker-a1050f0335a1.jpg",
             "imageAlt": "Major-général Dave Yarker",
             "rank": "Major-général",
             "name": "Dave Yarker, CD",
@@ -302,7 +302,7 @@
             "bioKey": "yarker"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
+            "imageKey": "images/leadership/portraits/martin-girard-cfb7572f81b2.jpg",
             "imageAlt": "Brigadier-général retraité Martin Girard",
             "rank": "Brigadier-général (retraité)",
             "name": "Martin Girard, OMM, MSM, CD",
@@ -310,7 +310,7 @@
             "bioKey": "girard"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
+            "imageKey": "images/leadership/portraits/steeve-lavoie-8f9320a0bdbd.jpg",
             "imageAlt": "Colonel Steeve Lavoie",
             "rank": "Colonel",
             "name": "Steeve Lavoie, CD",
@@ -318,7 +318,7 @@
             "bioKey": "lavoie"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/walter-jull-38c8569e1e99.jpg",
+            "imageKey": "images/leadership/portraits/walter-jull-38c8569e1e99.jpg",
             "imageAlt": "Colonel Walter Jull",
             "rank": "Colonel",
             "name": "Walter Jull, CD",
@@ -326,7 +326,7 @@
             "bioKey": "jull"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/martin-coude-e017b9ae3db6.jpg",
+            "imageKey": "images/leadership/portraits/martin-coude-e017b9ae3db6.jpg",
             "imageAlt": "Colonel Martin J.J-L. Coudé",
             "rank": "Colonel",
             "name": "Martin J.J-L. Coudé, CD",
@@ -334,7 +334,7 @@
             "bioKey": "coude"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/john-roper-849f23c3635e.jpg",
+            "imageKey": "images/leadership/portraits/john-roper-849f23c3635e.jpg",
             "imageAlt": "Colonel John Roper",
             "rank": "Colonel",
             "name": "John Roper, CD",
@@ -342,7 +342,7 @@
             "bioKey": "roper"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageKey": "images/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
             "imageAlt": "Adjudante-chef Renay Groves",
             "rank": "Adjudante-chef",
             "name": "Renay Groves, MSM, CD",
@@ -357,7 +357,7 @@
         "description": "Représente les intérêts des militaires du rang auprès du conseiller de la Branche et les tient informés des changements touchant leurs responsabilités et leur structure professionnelle.",
         "cards": [
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
+            "imageKey": "images/leadership/portraits/renay-groves-c0c11aca5ea7.jpg",
             "imageAlt": "Adjudante-chef Renay Groves",
             "rank": "Adjudante-chef",
             "name": "Renay Groves, MSM, CD",
@@ -365,7 +365,7 @@
             "bioKey": "groves"
           },
           {
-            "image": "/images/logo.png",
+            "image": "/assets/images/logo.png",
             "imageAlt": "Emblème du CMCEN",
             "placeholder": true,
             "rank": "Adjudant-chef",
@@ -373,7 +373,7 @@
             "role": "Adjudant-chef du Corps des Transmissions royales du Canada"
           },
           {
-            "image": "/images/logo.png",
+            "image": "/assets/images/logo.png",
             "imageAlt": "Emblème du CMCEN",
             "placeholder": true,
             "rank": "Adjudant-chef",
@@ -381,14 +381,14 @@
             "role": "Adjoint de l’adjudant-chef du Corps des Transmissions royales du Canada"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/phil-gagne-bf8993e6f78e.png",
+            "imageKey": "images/leadership/portraits/phil-gagne-bf8993e6f78e.png",
             "imageAlt": "Adjudant-chef Phil Gagné",
             "rank": "Adjudant-chef",
             "name": "Phil Gagné, MMM, CD",
             "role": "Sergent-major adjoint du Corps, Réserve de l’Armée"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/jason-mcquigge-fb73e0227a80.jpg",
+            "imageKey": "images/leadership/portraits/jason-mcquigge-fb73e0227a80.jpg",
             "imageAlt": "Adjudant-chef Jason McQuigge",
             "rank": "Adjudant-chef",
             "name": "Jason McQuigge, CD",
@@ -402,14 +402,14 @@
         "description": "Assure la direction du Corps des Transmissions royales du Canada et de son rôle dans l’appui au commandement et au contrôle de l’Armée canadienne.",
         "cards": [
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/mark-parsons-3a45b24808aa.jpg",
+            "imageKey": "images/leadership/portraits/mark-parsons-3a45b24808aa.jpg",
             "imageAlt": "Brigadier-général Mark Parsons",
             "rank": "Brigadier-général",
             "name": "Mark Parsons, CD",
             "role": "Maître des transmissions de l’Armée (chef du CTRC)"
           },
           {
-            "image": "/images/logo.png",
+            "image": "/assets/images/logo.png",
             "imageAlt": "Emblème de la Branche des C et E",
             "placeholder": true,
             "rank": "Colonel",
@@ -417,14 +417,14 @@
             "role": "Directeur du CTRC"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/ml-prince-a587c6b0baf7.jpg",
+            "imageKey": "images/leadership/portraits/ml-prince-a587c6b0baf7.jpg",
             "imageAlt": "Colonel M.L. Prince",
             "rank": "Colonel",
             "name": "M.L. Prince, CD",
             "role": "Directeur du CTRC-MR"
           },
           {
-            "image": "https://cdn.corebot.ca/cmcen-demo/leadership/portraits/lisa-smid-a5d457eeb773.jpg",
+            "imageKey": "images/leadership/portraits/lisa-smid-a5d457eeb773.jpg",
             "imageAlt": "Lieutenant-colonel Lisa Smid",
             "rank": "Lieutenant-colonel",
             "name": "Lisa Smid, OMM, CD",

@@ -53,6 +53,7 @@ test('classifies shared site placeholder image URLs', () => {
   assert.equal(isSitePlaceholderImage(''), false);
   assert.equal(isSitePlaceholderImage('/uploads/retiree-photo.webp'), false);
   assert.equal(isSitePlaceholderImage('/images/logo.png?version=2'), true);
+  assert.equal(isSitePlaceholderImage('/assets/images/logo.png?version=2'), true);
   assert.equal(isSitePlaceholderImage('/images/cmcen-crest.webp'), true);
   assert.equal(isSitePlaceholderImage('/images/branch-crest/sigs.png'), true);
   assert.equal(

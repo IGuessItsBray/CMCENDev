@@ -220,7 +220,7 @@
     const card = document.createElement("article");
     card.className = "professional-awards-highlight";
     const image = document.createElement("img");
-    image.src = recipient.imageUrl || "/images/logo.png";
+    image.src = recipient.imageUrl || "/assets/images/logo.png";
     image.alt = recipient.imageUrl ? recipient.name : "";
     card.append(image);
     const copy = document.createElement("div");

@@ -69,7 +69,7 @@ function configureSiteMetadata() {
   });
   setHeadElement('meta[property="og:image"]', {
     property: "og:image",
-    content: `${window.location.origin}/images/logo.png`,
+    content: `${window.location.origin}/assets/images/logo.png`,
   });
 }
 
@@ -399,7 +399,7 @@ function loadHeader() {
           data-i18n-aria-label="site_home_aria_label"
         >
           <img
-            src="/images/logo.png"
+            src="/assets/images/logo.png"
             alt=""
             class="site-logo"
           />
@@ -926,7 +926,7 @@ function loadFooter() {
           data-i18n-aria-label="site_home_aria_label"
           >
             <img
-              src="/images/logo.png"
+              src="/assets/images/logo.png"
               alt=""
               class="footer-logo"
             />
@@ -1611,7 +1611,7 @@ function showBetaNotice() {
   notice.setAttribute("aria-describedby", "betaNoticeMessage");
   notice.innerHTML = `
     <div class="beta-notice-brand" aria-hidden="true">
-      <img src="/images/logo.png" alt="" />
+      <img src="/assets/images/logo.png" alt="" />
       <span>CMCEN</span>
     </div>
     <div class="beta-notice-content">

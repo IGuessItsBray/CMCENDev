@@ -26,7 +26,7 @@ const retirementsFilterClear = document.getElementById(
   "retirementsFilterClear",
 );
 
-const RETIREMENT_PLACEHOLDER_PHOTO_URL = "/images/logo.png";
+const RETIREMENT_PLACEHOLDER_PHOTO_URL = "/assets/images/logo.png";
 const RETIREMENT_PAGE_SIZE = 24;
 
 let loadedRetirementMessages = [];

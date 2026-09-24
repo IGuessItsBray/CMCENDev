@@ -1,8 +1,8 @@
 const path = require('path');
 const axios = require('axios');
+const { buildPublicMediaUrl } = require('../../../services/media-library');
 
-const DEFAULT_IMAGE_URL =
-  'https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp';
+const DEFAULT_IMAGE_URL = buildPublicMediaUrl('images/branch-crest/large.webp');
 const DEFAULT_IMAGE_NAME = 'cmcen-crest.webp';
 
 function getUrlFileName(sourceUrl) {

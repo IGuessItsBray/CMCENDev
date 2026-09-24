@@ -46,7 +46,7 @@ const retirementCommentLogin = document.getElementById(
   "retirementCommentLogin",
 );
 
-const RETIREMENT_PLACEHOLDER_PHOTO_URL = "/images/logo.png";
+const RETIREMENT_PLACEHOLDER_PHOTO_URL = "/assets/images/logo.png";
 
 let currentRetirementMessageId = "";
 let currentRetirementMessage = null;

@@ -5,7 +5,7 @@ const lastPostDetailDate = document.getElementById("lastPostDetailDate");
 const lastPostDetailImage = document.getElementById("lastPostDetailImage");
 const lastPostDetailText = document.getElementById("lastPostDetailText");
 
-const LAST_POST_PLACEHOLDER_IMAGE_URL = "/images/logo.png";
+const LAST_POST_PLACEHOLDER_IMAGE_URL = "/assets/images/logo.png";
 
 let currentLastPost = null;
 let currentLastPostId = "";

@@ -1930,11 +1930,11 @@ describe('news stories', () => {
     const articleId = created.body.article._id;
     assert.equal(
       created.body.article.imageUrl,
-      'https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp',
+      'https://cdn.example.test/integration-test/images/branch-crest/large.webp',
     );
     assert.equal(
       created.body.article.imageDisplayUrl,
-      'https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp',
+      'https://cdn.example.test/integration-test/images/branch-crest/large.webp',
     );
 
     const publicNews = await request(app).get('/api/news').expect(200);

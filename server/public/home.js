@@ -140,7 +140,7 @@ function createHomeRetirementPlaceholderImage() {
   const image = document.createElement("img");
 
   image.className = "home-retirement-photo-placeholder";
-  image.src = "/images/logo.png";
+  image.src = "/assets/images/logo.png";
   image.alt = "";
   image.loading = "lazy";
   image.setAttribute("aria-hidden", "true");
@@ -160,7 +160,7 @@ function createHomeRetirementMedia(retirementMessage, name) {
       retirementMessage.photoUrl,
     );
 
-    image.src = isPlaceholderPhoto ? "/images/logo.png" : displayPhotoUrl;
+    image.src = isPlaceholderPhoto ? "/assets/images/logo.png" : displayPhotoUrl;
     image.alt = isPlaceholderPhoto
       ? ""
       : getHomeTranslation("retirement_photo_alt", { name });

@@ -89,7 +89,7 @@
       "id": "ce-senate-charter-2020",
       "organization": "family",
       "type": "charter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-charter-2020-f589195882e2.pdf",
+      "fileKey": "documents/library/ce-senate-charter-2020-f589195882e2.pdf",
       "pageUrl": "/about-family#charterContent",
       "en": {
         "title": "C&E Family Senate Charter",
@@ -108,7 +108,7 @@
       "id": "ce-branch-standing-orders-2020",
       "organization": "branch",
       "type": "standing-orders",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-branch-standing-orders-2020-2ea661300ed7.pdf",
+      "fileKey": "documents/library/ce-branch-standing-orders-2020-2ea661300ed7.pdf",
       "pageUrl": "/standing_orders",
       "en": {
         "title": "C&E Branch Standing Orders",
@@ -127,7 +127,7 @@
       "id": "colonel-commandant-nomination-2020",
       "organization": "branch",
       "type": "policy",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/colonel-commandant-nomination-2020-dece5683b48d.pdf",
+      "fileKey": "documents/library/colonel-commandant-nomination-2020-dece5683b48d.pdf",
       "en": {
         "title": "Colonel Commandant Nomination Process",
         "description": "Explains the origins, nomination and selection process, duties, and historical succession of the C&E Branch Colonel Commandant appointment.",
@@ -145,7 +145,7 @@
       "id": "honorary-appointments-2020",
       "organization": "branch",
       "type": "policy",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/honorary-appointments-2020-5de588ad18e8.pdf",
+      "fileKey": "documents/library/honorary-appointments-2020-5de588ad18e8.pdf",
       "en": {
         "title": "Honorary Appointments Nomination Process",
         "description": "Explains the roles, selection criteria, nomination process, and relationships for C&E Family honorary appointments.",
@@ -163,7 +163,7 @@
       "id": "bac-record-of-discussion-feb-2026",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/bac-record-of-discussion-feb-2026-64ddad7f5884.pdf",
+      "fileKey": "documents/library/bac-record-of-discussion-feb-2026-64ddad7f5884.pdf",
       "pageUrl": "/branch_advisory_council",
       "en": {
         "title": "Branch Advisory Council Record of Discussion",
@@ -182,7 +182,7 @@
       "id": "association-by-laws-2024",
       "organization": "association",
       "type": "governance",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-by-laws-2024-672cacc7b264.pdf",
+      "fileKey": "documents/library/association-by-laws-2024-672cacc7b264.pdf",
       "pageUrl": "/governance#governing-documents",
       "en": {
         "title": "C&E Association By-Law No. 1",
@@ -201,7 +201,7 @@
       "id": "association-articles-continuance",
       "organization": "association",
       "type": "governance",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-articles-continuance-a78d2383a9a3.pdf",
+      "fileKey": "documents/library/association-articles-continuance-a78d2383a9a3.pdf",
       "pageUrl": "/governance#governing-documents",
       "en": {
         "title": "C&E Association Articles of Continuance",
@@ -220,7 +220,7 @@
       "id": "association-draft-strategic-plan-2015",
       "organization": "association",
       "type": "governance",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-draft-strategic-plan-2015-502054545e44.pdf",
+      "fileKey": "documents/library/association-draft-strategic-plan-2015-502054545e44.pdf",
       "pageUrl": "/governance#governing-documents",
       "en": {
         "title": "Draft C&E Association Strategic Plan",
@@ -257,7 +257,7 @@
       "id": "ce-senate-rod-2025-may",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2025-may-2860975cfeca.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2025-may-2860975cfeca.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - May 2025",
         "description": "Historical record of discussion from the C&E Senate meeting held in May 2025.",
@@ -275,7 +275,7 @@
       "id": "ce-senate-rod-2025-october",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2025-october-06b98f1c08fb.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2025-october-06b98f1c08fb.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - October 2025",
         "description": "Historical record of discussion from the C&E Senate meeting held in October 2025.",
@@ -293,7 +293,7 @@
       "id": "ce-senate-slides-2024-october",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-slides-2024-october-1693b190d34c.pdf",
+      "fileKey": "documents/library/ce-senate-slides-2024-october-1693b190d34c.pdf",
       "en": {
         "title": "C&E Senate Meeting Slides - October 2024",
         "description": "Meeting slides published with the historical C&E Senate records for October 2024.",
@@ -311,7 +311,7 @@
       "id": "ce-senate-rod-2024-october",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2024-october-f24a477c6069.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2024-october-f24a477c6069.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - October 2024",
         "description": "Historical record of discussion from the C&E Senate meeting held in October 2024.",
@@ -329,7 +329,7 @@
       "id": "ce-senate-rod-2023-may",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2023-may-0cd6971b470a.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2023-may-0cd6971b470a.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - May 2023",
         "description": "Historical record of discussion from the C&E Senate meeting held in May 2023.",
@@ -347,7 +347,7 @@
       "id": "ce-senate-rod-2023-october",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2023-october-9642b2caa376.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2023-october-9642b2caa376.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - October 2023",
         "description": "Historical record of discussion from the C&E Senate meeting held in October 2023.",
@@ -365,7 +365,7 @@
       "id": "ce-senate-rod-2022-june",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2022-june-c9d8ea790299.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2022-june-c9d8ea790299.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - June 2022",
         "description": "Historical record of discussion from the C&E Senate meeting held in June 2022.",
@@ -383,7 +383,7 @@
       "id": "ce-senate-rod-2022-october",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2022-october-47f6fedc1622.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2022-october-47f6fedc1622.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - October 2022",
         "description": "Historical record of discussion from the C&E Senate meeting held in October 2022.",
@@ -401,7 +401,7 @@
       "id": "ce-senate-rod-2021-february",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2021-february-0e62f38a1b2d.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2021-february-0e62f38a1b2d.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - February 2021",
         "description": "Historical record of discussion from the C&E Senate meeting held in February 2021.",
@@ -419,7 +419,7 @@
       "id": "ce-senate-rod-2021-march",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2021-march-5be2e0a36d15.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2021-march-5be2e0a36d15.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - March 2021",
         "description": "Historical record of discussion from the C&E Senate meeting held in March 2021.",
@@ -437,7 +437,7 @@
       "id": "ce-senate-rod-2021-june",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2021-june-634784cc3440.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2021-june-634784cc3440.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - June 2021",
         "description": "Historical record of discussion from the C&E Senate meeting held in June 2021.",
@@ -455,7 +455,7 @@
       "id": "ce-senate-rod-2021-october",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2021-october-3f3f21a8a410.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2021-october-3f3f21a8a410.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - October 2021",
         "description": "Historical record of discussion from the C&E Senate meeting held in October 2021.",
@@ -473,7 +473,7 @@
       "id": "ce-senate-rod-2020-may",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2020-may-7340c3fddb0c.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2020-may-7340c3fddb0c.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - May 2020",
         "description": "Historical record of discussion from the first C&E Senate meeting held in May 2020.",
@@ -491,7 +491,7 @@
       "id": "ce-senate-rod-2020-october",
       "organization": "family",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-senate-rod-2020-october-faac1b180b1e.pdf",
+      "fileKey": "documents/library/ce-senate-rod-2020-october-faac1b180b1e.pdf",
       "en": {
         "title": "C&E Senate Meeting Record of Discussion - October 2020",
         "description": "Historical record of discussion from the second C&E Senate meeting held in October 2020.",
@@ -509,7 +509,7 @@
       "id": "ce-bac-rod-2025-october",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2025-october-dcb1c2d4d263.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2025-october-dcb1c2d4d263.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - October 2025",
         "description": "Historical record of discussion from the Branch Advisory Council meeting held in October 2025.",
@@ -527,7 +527,7 @@
       "id": "ce-bac-slides-2025-april",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-slides-2025-april-7a7e6d932a38.pdf",
+      "fileKey": "documents/library/ce-bac-slides-2025-april-7a7e6d932a38.pdf",
       "en": {
         "title": "Branch Advisory Council Meeting Slides - April 2025",
         "description": "Meeting slides published with the historical Branch Advisory Council records for April 2025.",
@@ -545,7 +545,7 @@
       "id": "ce-bac-rod-2025-june",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2025-june-fb70dfe96095.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2025-june-fb70dfe96095.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - June 2025",
         "description": "Historical record of discussion from the Branch Advisory Council meeting held in June 2025.",
@@ -563,7 +563,7 @@
       "id": "ce-bac-rod-2024-september",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2024-september-53474bd86231.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2024-september-53474bd86231.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - September 2024",
         "description": "Historical record of discussion from the Branch Advisory Council meeting held in September 2024.",
@@ -581,7 +581,7 @@
       "id": "ce-bac-rod-2024-february",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2024-february-28386be1954c.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2024-february-28386be1954c.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - February 2024",
         "description": "Historical record of discussion from the Branch Advisory Council meeting held in February 2024.",
@@ -599,7 +599,7 @@
       "id": "ce-bac-rod-2023-march",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2023-march-914048d27084.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2023-march-914048d27084.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - March 2023",
         "description": "Historical record of discussion from the Branch Advisory Council meeting held in March 2023.",
@@ -617,7 +617,7 @@
       "id": "association-agm-minutes-2022",
       "organization": "association",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-minutes-2022-7911981af66c.pdf",
+      "fileKey": "documents/library/association-agm-minutes-2022-7911981af66c.pdf",
       "en": {
         "title": "C&E Association Annual General Meeting Minutes - October 2022",
         "description": "Minutes from the C&E Association Annual General Meeting, retained in the historical Branch Advisory Council archive.",
@@ -635,7 +635,7 @@
       "id": "ce-bac-rod-2022-may",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2022-may-e5510cacf833.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2022-may-e5510cacf833.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - May 2022",
         "description": "Historical record of discussion from the Branch Advisory Council meeting held in May 2022.",
@@ -653,7 +653,7 @@
       "id": "ce-bac-rod-2022-december",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2022-december-bfd488bbee42.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2022-december-bfd488bbee42.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - December 2022",
         "description": "Historical record of discussion from the Branch Advisory Council meeting held in December 2022.",
@@ -671,7 +671,7 @@
       "id": "ce-bac-rod-2021-january",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2021-january-aeb7f5474bc0.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2021-january-aeb7f5474bc0.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - January 2021",
         "description": "Historical record of discussion from the Branch Advisory Council meeting held in January 2021.",
@@ -689,7 +689,7 @@
       "id": "ce-bac-rod-2020-february",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2020-february-0ab080061d24.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2020-february-0ab080061d24.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - February 2020",
         "description": "Historical record of discussion from the Branch Advisory Council meeting held in February 2020.",
@@ -707,7 +707,7 @@
       "id": "ce-bac-rod-2016-april",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2016-april-82d16b619977.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2016-april-82d16b619977.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - April 2016",
         "description": "Historical record of discussion from the Branch Advisory Council meeting held in April 2016.",
@@ -725,7 +725,7 @@
       "id": "ce-bac-rod-2015-version-2",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2015-version-2-c0394777db10.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2015-version-2-c0394777db10.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - 2015 (Version 2)",
         "description": "Historical Branch Advisory Council record of discussion preserved as the second 2015 archive version.",
@@ -743,7 +743,7 @@
       "id": "ce-bac-rod-2015-version-1",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2015-version-1-0cab8e95164d.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2015-version-1-0cab8e95164d.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - 2015 (Version 1)",
         "description": "Historical Branch Advisory Council record of discussion preserved as the first 2015 archive version.",
@@ -761,7 +761,7 @@
       "id": "ce-bac-rod-2014-version-2",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2014-version-2-d9707b7ff462.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2014-version-2-d9707b7ff462.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - 2014 (Version 2)",
         "description": "Historical Branch Advisory Council record of discussion preserved as the second 2014 archive version.",
@@ -779,7 +779,7 @@
       "id": "ce-bac-rod-2014-version-1",
       "organization": "branch",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/ce-bac-rod-2014-version-1-d08c957a3dec.pdf",
+      "fileKey": "documents/library/ce-bac-rod-2014-version-1-d08c957a3dec.pdf",
       "en": {
         "title": "Branch Advisory Council Record of Discussion - 2014 (Version 1)",
         "description": "Historical Branch Advisory Council record of discussion preserved as the first 2014 archive version.",
@@ -797,7 +797,7 @@
       "id": "association-treasurers-report-2024-2025",
       "organization": "association",
       "type": "annual-report",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-treasurers-report-2024-2025-bbf9cf8aeecb.pdf",
+      "fileKey": "documents/library/association-treasurers-report-2024-2025-bbf9cf8aeecb.pdf",
       "en": {
         "title": "C&E Association Treasurer's Report 2024-2025",
         "description": "Treasurer's report published with the C&E Association's 2025 meeting records.",
@@ -815,7 +815,7 @@
       "id": "association-agm-record-2024-draft",
       "organization": "association",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-record-2024-draft-a9859d8ba851.pdf",
+      "fileKey": "documents/library/association-agm-record-2024-draft-a9859d8ba851.pdf",
       "en": {
         "title": "C&E Association Annual General Meeting Proposed Record - October 2024",
         "description": "Proposed record from the C&E Association Annual General Meeting held in October 2024.",
@@ -833,7 +833,7 @@
       "id": "association-financial-report-agm-2024",
       "organization": "association",
       "type": "annual-report",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-financial-report-agm-2024-88278063f94f.pdf",
+      "fileKey": "documents/library/association-financial-report-agm-2024-88278063f94f.pdf",
       "en": {
         "title": "C&E Association Financial Report to the AGM - 2024",
         "description": "Financial report prepared for the C&E Association Annual General Meeting in 2024.",
@@ -851,7 +851,7 @@
       "id": "association-agm-agenda-2023-october",
       "organization": "association",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-agenda-2023-october-4412ef676d88.pdf",
+      "fileKey": "documents/library/association-agm-agenda-2023-october-4412ef676d88.pdf",
       "en": {
         "title": "C&E Association Annual General Meeting Agenda - October 2023",
         "description": "Agenda for the C&E Association Annual General Meeting held in October 2023.",
@@ -869,7 +869,7 @@
       "id": "association-agm-minutes-2023-october",
       "organization": "association",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-minutes-2023-october-bca295891563.pdf",
+      "fileKey": "documents/library/association-agm-minutes-2023-october-bca295891563.pdf",
       "en": {
         "title": "C&E Association Annual General Meeting Minutes - October 2023",
         "description": "Minutes from the C&E Association Annual General Meeting held in October 2023.",
@@ -887,7 +887,7 @@
       "id": "association-treasurers-report-2021-2022",
       "organization": "association",
       "type": "annual-report",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-treasurers-report-2021-2022-92c8022ad4b9.pdf",
+      "fileKey": "documents/library/association-treasurers-report-2021-2022-92c8022ad4b9.pdf",
       "en": {
         "title": "C&E Association Treasurer's Report 2021-2022",
         "description": "Treasurer's report published with the C&E Association's 2022 meeting records.",
@@ -905,7 +905,7 @@
       "id": "association-agm-record-2021-october",
       "organization": "association",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-record-2021-october-e9c0ddf6957e.pdf",
+      "fileKey": "documents/library/association-agm-record-2021-october-e9c0ddf6957e.pdf",
       "en": {
         "title": "C&E Association Annual General Meeting Record - October 2021",
         "description": "Record from the C&E Association Annual General Meeting held in October 2021.",
@@ -923,7 +923,7 @@
       "id": "association-treasurers-report-2020-2021",
       "organization": "association",
       "type": "annual-report",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-treasurers-report-2020-2021-9d107c7aec0f.pdf",
+      "fileKey": "documents/library/association-treasurers-report-2020-2021-9d107c7aec0f.pdf",
       "en": {
         "title": "C&E Association Treasurer's Report 2020-2021",
         "description": "Treasurer's report published with the C&E Association's 2021 meeting records.",
@@ -941,7 +941,7 @@
       "id": "association-agm-minutes-2025-draft",
       "organization": "association",
       "type": "meeting-record",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/library/association-agm-minutes-2025-draft-a7d51c2cb07c.docx",
+      "fileKey": "documents/library/association-agm-minutes-2025-draft-a7d51c2cb07c.docx",
       "en": {
         "title": "C&E Association Draft AGM Minutes - October 2025",
         "description": "Draft minutes from the C&E Association Annual General Meeting held on October 21, 2025.",
@@ -959,7 +959,7 @@
       "id": "741-newsletter-1985-09",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/741-newsletter-1985-09-7ad875267b6c.pdf",
+      "fileKey": "documents/newsletters/741-newsletter-1985-09-7ad875267b6c.pdf",
       "en": {
         "title": "741 (Victoria) Communication Squadron Newsletter - September 1985",
         "description": "Original scanned newsletter from 741 (Victoria) Communication Squadron, preserved as a historical document.",
@@ -977,7 +977,7 @@
       "id": "741-newsletter-1985-11",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/741-newsletter-1985-11-a64ad6bf2191.pdf",
+      "fileKey": "documents/newsletters/741-newsletter-1985-11-a64ad6bf2191.pdf",
       "en": {
         "title": "741 (Victoria) Communication Squadron Newsletter - November 1985",
         "description": "Original scanned newsletter from 741 (Victoria) Communication Squadron, preserved as a historical document.",
@@ -995,7 +995,7 @@
       "id": "741-newsletter-1985-12",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/741-newsletter-1985-12-c9fe9897b5cc.pdf",
+      "fileKey": "documents/newsletters/741-newsletter-1985-12-c9fe9897b5cc.pdf",
       "en": {
         "title": "741 (Victoria) Communication Squadron Newsletter - December 1985",
         "description": "Original scanned newsletter from 741 (Victoria) Communication Squadron, preserved as a historical document.",
@@ -1013,7 +1013,7 @@
       "id": "741-newsletter-1986-02",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/741-newsletter-1986-02-f8363cb74952.pdf",
+      "fileKey": "documents/newsletters/741-newsletter-1986-02-f8363cb74952.pdf",
       "en": {
         "title": "741 (Victoria) Communication Squadron Newsletter - February 1986",
         "description": "Original scanned newsletter from 741 (Victoria) Communication Squadron, preserved as a historical document.",
@@ -1031,7 +1031,7 @@
       "id": "77-the-cable-v6-i1",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/77-the-cable-v6-i1-df9d33cea706.pdf",
+      "fileKey": "documents/newsletters/77-the-cable-v6-i1-df9d33cea706.pdf",
       "en": {
         "title": "The Cable - 77 Line Regiment - Volume 6, Issue 1",
         "description": "Original newsletter from 77 Line Regiment, including articles in English and French, preserved as a historical document.",
@@ -1049,7 +1049,7 @@
       "id": "77-the-cable-v6-i2",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/77-the-cable-v6-i2-2d00a11793e1.pdf",
+      "fileKey": "documents/newsletters/77-the-cable-v6-i2-2d00a11793e1.pdf",
       "en": {
         "title": "The Cable - 77 Line Regiment - Volume 6, Issue 2",
         "description": "Original newsletter from 77 Line Regiment, including articles in English and French, preserved as a historical document.",
@@ -1067,7 +1067,7 @@
       "id": "77-the-cable-v6-i3",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/77-the-cable-v6-i3-15a1e85337b8.pdf",
+      "fileKey": "documents/newsletters/77-the-cable-v6-i3-15a1e85337b8.pdf",
       "en": {
         "title": "The Cable - 77 Line Regiment - Volume 6, Issue 3",
         "description": "Original newsletter from 77 Line Regiment, including articles in English and French, preserved as a historical document.",
@@ -1085,7 +1085,7 @@
       "id": "77-the-cable-v7-i1",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/77-the-cable-v7-i1-b2ab849748c7.pdf",
+      "fileKey": "documents/newsletters/77-the-cable-v7-i1-b2ab849748c7.pdf",
       "en": {
         "title": "The Cable - 77 Line Regiment - Volume 7, Issue 1",
         "description": "Original newsletter from 77 Line Regiment, including articles in English and French, preserved as a historical document.",
@@ -1103,7 +1103,7 @@
       "id": "32-despatches-2025-06-07",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2025-06-07-d4c6d688699f.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2025-06-07-d4c6d688699f.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - June/July 2025 - Volume 3, Issue 5",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1121,7 +1121,7 @@
       "id": "32-despatches-2025-08",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2025-08-5a57fc30931f.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2025-08-5a57fc30931f.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - August 2025 - Volume 5, Issue 1",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1139,7 +1139,7 @@
       "id": "32-despatches-2025-09",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2025-09-c7ab6ab5a590.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2025-09-c7ab6ab5a590.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - September 2025 - Volume 5, Issue 2",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1157,7 +1157,7 @@
       "id": "32-despatches-2023-03-picture-on-the-wall",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2023-03-picture-on-the-wall-95752a2f1a3c.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2023-03-picture-on-the-wall-95752a2f1a3c.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - March 2023 - Volume 1, Issue 5 - Picture on the Wall: David Watson",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1175,7 +1175,7 @@
       "id": "32-special-dispatch-riders",
       "organization": "branch",
       "type": "article",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-special-dispatch-riders-47ea53758d93.pdf",
+      "fileKey": "documents/newsletters/32-special-dispatch-riders-47ea53758d93.pdf",
       "en": {
         "title": "Special Dispatch Riders - Urgent Maps and Messages - Get the Message Through",
         "description": "Historical article by HCol Ken Lloyd comparing Second World War dispatch riders with modern 32 Signal Regiment dispatch riders.",
@@ -1193,7 +1193,7 @@
       "id": "32-despatches-2024-01",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2024-01-c3beb92c7af6.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2024-01-c3beb92c7af6.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - January 2024 - Volume 3, Issue 1",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1211,7 +1211,7 @@
       "id": "32-despatches-2022-07",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2022-07-baf33bf2400a.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2022-07-baf33bf2400a.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - July 2022 - Volume 1, Issue 1",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1229,7 +1229,7 @@
       "id": "32-despatches-2022-09",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2022-09-07be0eb2ff36.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2022-09-07be0eb2ff36.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - September 2022 - Volume 1, Issue 2",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1247,7 +1247,7 @@
       "id": "32-despatches-2023-01",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2023-01-0ca55df731b6.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2023-01-0ca55df731b6.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - January 2023 - Volume 1, Issue 3",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1265,7 +1265,7 @@
       "id": "32-despatches-2023-03",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2023-03-3891a48331ce.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2023-03-3891a48331ce.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - March 2023 - Volume 1, Issue 4",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1283,7 +1283,7 @@
       "id": "32-despatches-2023-06",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2023-06-3d506d87534a.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2023-06-3d506d87534a.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - June 2023 - Volume 2, Issue 10",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1301,7 +1301,7 @@
       "id": "32-despatches-2023-07",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2023-07-cc73942d06cf.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2023-07-cc73942d06cf.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - July 2023 - Volume 2, Issue 11",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1319,7 +1319,7 @@
       "id": "32-despatches-2023-08",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2023-08-ed08b1a24a05.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2023-08-ed08b1a24a05.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - August 2023 - Volume 2, Issue 12",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1337,7 +1337,7 @@
       "id": "32-despatches-2023-08-special",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2023-08-special-dcaf686e42bf.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2023-08-special-dcaf686e42bf.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - August 2023 - Volume 2, Issue 13 - Special Edition",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1355,7 +1355,7 @@
       "id": "32-despatches-2023-10",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2023-10-8874badc74bb.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2023-10-8874badc74bb.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - October 2023 - Volume 2, Issue 12",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1373,7 +1373,7 @@
       "id": "32-despatches-2023-11",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/32-despatches-2023-11-86ac8a37549b.pdf",
+      "fileKey": "documents/newsletters/32-despatches-2023-11-86ac8a37549b.pdf",
       "en": {
         "title": "Despatches - 32 Signal Regiment - November 2023 - Volume 2, Issue 13",
         "description": "Original 32 Signal Regiment Despatches newsletter, preserved as a historical document.",
@@ -1391,7 +1391,7 @@
       "id": "naval-silent-signaling-service",
       "organization": "branch",
       "type": "article",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/naval-silent-signaling-service-7363ed2cda1f.pdf",
+      "fileKey": "documents/newsletters/naval-silent-signaling-service-7363ed2cda1f.pdf",
       "en": {
         "title": "The Silent Signaling Service - Navy Signalers",
         "description": "Historical article by Ken Lloyd comparing naval signalling experiences across generations, linked from the 32 Signal Regiment collection.",
@@ -1409,7 +1409,7 @@
       "id": "cpo1-cwo-newsletter-2025-09",
       "organization": "branch",
       "type": "newsletter",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/cpo1-cwo-newsletter-2025-09-5fb0e535c86c.pdf",
+      "fileKey": "documents/newsletters/cpo1-cwo-newsletter-2025-09-5fb0e535c86c.pdf",
       "en": {
         "title": "CPO1/CWO Corps Newsletter - September 2025",
         "description": "Original September 2025 newsletter, preserved as a historical issue.",
@@ -1427,7 +1427,7 @@
       "id": "ce-memorials-project-2023-10",
       "organization": "association",
       "type": "project-brief",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/ce-memorials-project-2023-10-810279854062.pdf",
+      "fileKey": "documents/newsletters/ce-memorials-project-2023-10-810279854062.pdf",
       "en": {
         "title": "C&E Memorials Project - Search for a Project Lead",
         "description": "Historical project description and call for a project lead from October 2023, retained for reference rather than presented as a current opportunity.",
@@ -1445,7 +1445,7 @@
       "id": "5-cmbg-in-evolution",
       "organization": "branch",
       "type": "article",
-      "fileUrl": "https://cdn.corebot.ca/cmcen-demo/documents/newsletters/5-cmbg-in-evolution-ddf2e9eb5ce0.pdf",
+      "fileKey": "documents/newsletters/5-cmbg-in-evolution-ddf2e9eb5ce0.pdf",
       "en": {
         "title": "5 CMBG in Evolution",
         "description": "Bilingual article on innovation at 5 Canadian Mechanized Brigade Group, shared in the Summer 2023 Association newsletter. The document itself is undated.",

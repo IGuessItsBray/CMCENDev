@@ -1,4 +1,5 @@
 const express = require('express');
+const { buildPublicMediaUrl } = require('../services/media-library');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const mongoose = require('mongoose');
 const NewsArticle = require('../models/NewsArticle');
@@ -33,8 +34,9 @@ const {
 const MediaAsset = require('../models/MediaAsset');
 const router = express.Router();
 const MAX_ARTICLES = 48;
-const DEFAULT_NEWS_IMAGE_URL =
-  'https://cdn.corebot.ca/cmcen-demo/images/branch-crest/large.webp';
+const DEFAULT_NEWS_IMAGE_URL = buildPublicMediaUrl(
+  'images/branch-crest/large.webp',
+);
 
 function isValidImageUrl(value) {
   if (!value) return true;

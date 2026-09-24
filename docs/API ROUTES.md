@@ -18,6 +18,27 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 
 ## Mounts
 
+`GET /page-content/{filename}` is public and serves the bundled JSON files in
+`server/public/page-content/`. The shared handler recursively resolves `imageKey`
+values into sibling `image` URLs and `fileKey` into `fileUrl` using the
+existing media configuration (`CDN_PUBLIC_BASE_URL`, then its documented
+fallbacks). Existing URLs and bundled placeholder images without an `imageKey`
+remain unchanged. New page images should use storage keys such as
+`images/leadership/portraits/example.jpg`; do not add per-page media routes.
+The matching objects must exist in every deployment's bucket before rollout.
+This applies to public page-content JSON, not database-backed content.
+Unknown filenames return 404. The response uses
+`Cache-Control: no-cache` so deployment-specific URLs are revalidated.
+
+`GET /images/{key}` and `GET /documents/{key}` (also HEAD) redirect public
+object keys, retaining their `images/` or `documents/` prefix, to the configured
+media base with HTTP 302 and `Cache-Control: no-cache`. Static HTML uses these
+same-origin links for images, favicons, and downloads. Invalid path segments
+return 400; a missing absolute HTTP(S) media base returns 503. This route never
+signs storage requests or grants access to private objects.
+Bundled artwork uses `/assets/images/`. The old `/images/logo.png` and decorative
+leadership frame URLs redirect to their bundled replacements for compatibility.
+
 | Module                          | Mount                      |
 | ------------------------------- | -------------------------- |
 | `server/server.js`              | root                       |

@@ -2097,7 +2097,7 @@ html:not([data-theme='dark']) .leadership-featured-portrait > img {
   position: absolute;
   z-index: 2;
   inset: 0;
-  background: url('/images/leadership/princess-anne-laurel-frame.svg') center /
+  background: url('/assets/images/leadership/princess-anne-laurel-frame.svg') center /
     100% 100% no-repeat;
   content: '';
   pointer-events: none;

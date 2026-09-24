@@ -40,6 +40,71 @@ tags:
   - name: Certificates
   - name: Contact
 paths:
+  /images/{key}:
+    get:
+      summary: Redirect an image path to this deployment's media service
+      security: []
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+          description: Image path after images/, including slash-separated segments. Legacy logo and frame paths redirect to bundled assets.
+      responses:
+        '302':
+          description: Public media URL; no signed access or credentials.
+          headers:
+            Location:
+              schema:
+                type: string
+        '400':
+          description: Invalid object path.
+        '503':
+          description: An absolute public media base URL is not configured.
+  /documents/{key}:
+    get:
+      summary: Redirect a document path to this deployment's media service
+      security: []
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+          description: Document path after documents/, including slash-separated segments.
+      responses:
+        '302':
+          description: Public document URL; no signed access or credentials.
+          headers:
+            Location:
+              schema:
+                type: string
+        '400':
+          description: Invalid object path.
+        '503':
+          description: An absolute public media base URL is not configured.
+  /page-content/{filename}:
+    get:
+      summary: Bundled public page content with deployment-specific media URLs
+      security: []
+      parameters:
+        - in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+          description: Existing bundled page-content JSON filename, including .json.
+      responses:
+        '200':
+          description: Nested imageKey and fileKey values resolved using the configured public media base URL; other content preserved.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '404':
+          description: No matching bundled public JSON file.
   /api/professional-awards:
     get:
       tags: [Pages]

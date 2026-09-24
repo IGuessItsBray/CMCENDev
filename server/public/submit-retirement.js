@@ -11,7 +11,7 @@ const retirementPublishNowContainer = document.getElementById(
 );
 const retirementPublishNow = document.getElementById("retirementPublishNow");
 const retirementReviewNote = document.getElementById("retirementReviewNote");
-const retirementSubmitTitle = document.getElementById("submitEventTitle");
+const retirementSubmitTitle = document.getElementById("retirementSubmitTitle");
 const retirementSubmitIntro = document.getElementById("submitEventIntro");
 const retirementEditContext = document.getElementById("retirementEditContext");
 const retirementEditRejection = document.getElementById(
@@ -835,7 +835,9 @@ function buildRetirementMessageData(photoUrl = "", photoDisplayUrl = "") {
 
     publicationConsentConfirmed: consentConfirmed,
     memberReviewConfirmed,
-    ...(personalSubmission && editingRetirementMessageId ? { submitForReview: true } : {}),
+    ...(personalSubmission && editingRetirementMessageId
+      ? { submitForReview: true }
+      : {}),
     publishNow:
       !retirementPublishNowContainer.hidden && retirementPublishNow.checked,
     website: getFieldValue("retirementWebsite"),

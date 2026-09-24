@@ -118,17 +118,57 @@ function getLocalizedEventText(value) {
 
 function createEventLoadingContent(message) {
   const skeleton = document.createElement("div");
-  skeleton.className = "content-detail-skeleton content-detail-skeleton--event";
+  skeleton.className = "event-detail-loading-layout";
   skeleton.setAttribute("aria-hidden", "true");
-  skeleton.append(
-    CMCENUtils.createSkeleton("skeleton--detail-date"),
-    CMCENUtils.createSkeleton("skeleton--line skeleton--line-title"),
-    CMCENUtils.createSkeleton("skeleton--line skeleton--line-medium"),
-    CMCENUtils.createSkeleton("skeleton--detail-block"),
-    CMCENUtils.createSkeleton(
-      "skeleton--detail-block skeleton--detail-block-short",
-    ),
+
+  const hero = document.createElement("div");
+  hero.className = "event-detail-hero event-detail-loading-hero";
+  const heroGrid = document.createElement("div");
+  heroGrid.className = "event-detail-hero-grid";
+  const date = document.createElement("div");
+  date.className = "event-detail-date-card";
+  date.append(
+    CMCENUtils.createSkeleton("event-detail-loading-month"),
+    CMCENUtils.createSkeleton("event-detail-loading-day"),
+    CMCENUtils.createSkeleton("event-detail-loading-year"),
   );
+  const heading = document.createElement("div");
+  heading.className = "event-detail-heading";
+  heading.append(
+    CMCENUtils.createSkeleton("event-detail-loading-eyebrow"),
+    CMCENUtils.createSkeleton("event-detail-loading-title"),
+    CMCENUtils.createSkeleton("event-detail-loading-summary"),
+  );
+  heroGrid.append(date, heading);
+  hero.append(heroGrid);
+
+  const body = document.createElement("div");
+  body.className = "event-detail-body";
+  const description = document.createElement("div");
+  description.className =
+    "event-detail-section event-detail-description event-detail-loading-description";
+  description.append(
+    CMCENUtils.createSkeleton("event-detail-loading-card-title"),
+    CMCENUtils.createSkeleton("event-detail-loading-copy"),
+    CMCENUtils.createSkeleton("event-detail-loading-copy"),
+    CMCENUtils.createSkeleton("event-detail-loading-copy is-short"),
+  );
+
+  const brief = document.createElement("div");
+  brief.className = "event-detail-brief event-detail-loading-brief";
+  brief.append(CMCENUtils.createSkeleton("event-detail-loading-card-title"));
+  for (let index = 0; index < 3; index += 1) {
+    const fact = document.createElement("div");
+    fact.className = "event-detail-loading-fact";
+    fact.append(
+      CMCENUtils.createSkeleton("event-detail-loading-fact-label"),
+      CMCENUtils.createSkeleton("event-detail-loading-fact-value"),
+    );
+    brief.append(fact);
+  }
+  brief.append(CMCENUtils.createSkeleton("event-detail-loading-action"));
+  body.append(description, brief);
+  skeleton.append(hero, body);
 
   const accessibleLabel = document.createElement("span");
   accessibleLabel.className = "visually-hidden";

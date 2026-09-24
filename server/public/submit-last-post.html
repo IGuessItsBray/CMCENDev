@@ -12,6 +12,7 @@
       href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
     />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/submission-pages.css" />
   </head>
   <body>
     <header id="header"></header>
@@ -272,12 +273,21 @@
           </section>
 
           <footer class="event-submit-options">
-            <div class="event-publication-copy">
+            <div
+              class="event-admin-action"
+              id="lastPostPublishNowContainer"
+              hidden
+            >
+              <p
+                class="event-admin-action-label"
+                data-i18n="event_admin_action"
+              >
+                Admin action
+              </p>
+
               <label
                 class="event-toggle event-publish-toggle"
-                id="lastPostPublishNowContainer"
                 for="lastPostPublishNow"
-                hidden
               >
                 <input type="checkbox" id="lastPostPublishNow" />
 
@@ -291,7 +301,9 @@
                   </small>
                 </span>
               </label>
+            </div>
 
+            <div class="event-submit-actions">
               <p
                 class="event-review-note"
                 id="lastPostReviewNote"
@@ -299,15 +311,17 @@
               >
                 Your Last Post notice will be sent to an editor for review.
               </p>
-            </div>
 
-            <button
-              class="event-submit-button"
-              id="lastPostSubmitButton"
-              type="submit"
-            >
-              <span data-i18n="last_post_submit_button">Submit for review</span>
-            </button>
+              <button
+                class="event-submit-button"
+                id="lastPostSubmitButton"
+                type="submit"
+              >
+                <span data-i18n="last_post_submit_button">
+                  Submit for review
+                </span>
+              </button>
+            </div>
           </footer>
         </form>
       </section>

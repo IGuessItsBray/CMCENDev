@@ -30,11 +30,12 @@ html[data-theme='dark'] :is(.my-submissions, .my-submission-dialog) {
   min-width: 0;
 }
 .my-submission-correction fieldset {
-  padding: 16px;
+  padding: 20px;
   border: 1px solid var(--submission-border);
+  background: var(--submission-inset);
 }
 .my-submission-correction legend {
-  padding: 0 6px;
+  padding: 0 8px;
   font-weight: 700;
 }
 .my-submission-edit-field {
@@ -116,6 +117,10 @@ html[data-theme='dark'] :is(.my-submissions, .my-submission-dialog) {
   outline: 2px solid var(--gold-600);
   outline-offset: -2px;
 }
+.my-submissions-row.is-pointer-restored:focus {
+  outline: none;
+  box-shadow: none;
+}
 .my-submissions-copy {
   display: grid;
   gap: 5px;
@@ -139,13 +144,38 @@ html[data-theme='dark'] :is(.my-submissions, .my-submission-dialog) {
   font-weight: 700;
   background: var(--submission-inset);
   border: 1px solid var(--submission-border);
+  color: var(--submission-text);
   white-space: nowrap;
 }
-.my-submissions-badge.is-rejected {
-  border-color: var(--gold-600);
+.my-submissions-badge.is-pending {
+  border-color: #d8aa4c;
+  background: #fff1cb;
+  color: #76500c;
 }
 .my-submissions-badge.is-published {
-  border-color: #63856a;
+  border-color: #a5c9ad;
+  background: #dcece0;
+  color: #285638;
+}
+.my-submissions-badge.is-rejected {
+  border-color: #d9a5a1;
+  background: #f3dfdf;
+  color: #7c322e;
+}
+html[data-theme='dark'] .my-submissions-badge.is-pending {
+  border-color: rgba(223, 179, 93, 0.48);
+  background: rgba(197, 141, 35, 0.26);
+  color: var(--gold-200);
+}
+html[data-theme='dark'] .my-submissions-badge.is-published {
+  border-color: rgba(143, 192, 155, 0.5);
+  background: rgba(79, 115, 88, 0.35);
+  color: #afe1ba;
+}
+html[data-theme='dark'] .my-submissions-badge.is-rejected {
+  border-color: rgba(243, 181, 176, 0.46);
+  background: rgba(166, 60, 53, 0.3);
+  color: #f3b5b0;
 }
 .my-submissions-skeleton {
   display: grid;
@@ -154,83 +184,223 @@ html[data-theme='dark'] :is(.my-submissions, .my-submission-dialog) {
   border-bottom: 1px solid var(--submission-border);
 }
 .my-submission-dialog {
-  width: min(840px, calc(100vw - 40px));
+  width: min(920px, calc(100vw - 40px));
   max-width: none;
   max-height: calc(100dvh - 48px);
   padding: 0;
   border: 1px solid var(--submission-border);
+  border-top: 5px solid var(--gold-500);
   border-radius: var(--surface-radius);
   background: var(--submission-surface);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.32);
 }
 .my-submission-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(4, 9, 20, 0.72);
 }
 .my-submission-dialog-layout {
   display: flex;
   flex-direction: column;
-  max-height: calc(100dvh - 50px);
+  max-height: calc(100dvh - 52px);
 }
 .my-submission-dialog-heading {
   flex-shrink: 0;
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 20px;
-  padding: 22px 24px;
-  border-bottom: 1px solid var(--submission-border);
+  gap: 24px;
+  padding: 26px 32px 24px;
+  background: linear-gradient(
+    90deg,
+    var(--navy-950),
+    var(--navy-900) 52%,
+    var(--navy-800)
+  );
+  color: var(--white);
+}
+html[data-theme='dark'] .my-submission-dialog-heading {
+  background: linear-gradient(
+    180deg,
+    var(--dark-surface-2),
+    var(--dark-surface)
+  );
 }
 .my-submission-dialog-heading h2 {
-  margin: 0 0 10px;
+  margin: 0;
   color: inherit;
-  font-size: 1.4rem;
+  font-family: var(--font-heading);
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 600;
+  line-height: 1.2;
   overflow-wrap: anywhere;
+}
+.my-submission-dialog-heading h2:focus {
+  outline: none;
+  box-shadow: none;
+}
+.my-submission-submitted {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.8125rem;
 }
 .my-submission-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px 14px;
   flex-wrap: wrap;
-  font-size: 0.875rem;
+  margin-bottom: 14px;
+  color: var(--gold-200);
+  font-size: 0.8125rem;
+}
+.my-submission-meta > :first-child {
+  padding-bottom: 5px;
+  border-bottom: 2px solid var(--gold-500);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.my-submission-meta .my-submissions-badge {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--white);
+}
+.my-submission-meta .my-submissions-badge.is-pending {
+  border-color: rgba(223, 179, 93, 0.48);
+  background: rgba(197, 141, 35, 0.26);
+  color: var(--gold-200);
+}
+.my-submission-meta .my-submissions-badge.is-published {
+  border-color: rgba(143, 192, 155, 0.5);
+  background: rgba(79, 115, 88, 0.35);
+  color: #afe1ba;
+}
+.my-submission-meta .my-submissions-badge.is-rejected {
+  border-color: rgba(243, 181, 176, 0.46);
+  background: rgba(166, 60, 53, 0.3);
+  color: #f3b5b0;
 }
 .my-submission-close {
   flex-shrink: 0;
   width: 40px;
   height: 40px;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
+  line-height: 1;
   color: inherit;
-  border: 1px solid var(--submission-border);
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  background: rgba(255, 255, 255, 0.08);
   cursor: pointer;
 }
+.my-submission-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--gold-600);
+}
+.my-submission-close:focus-visible {
+  outline: 2px solid var(--gold-600);
+  outline-offset: 2px;
+}
 .my-submission-dialog-body {
-  padding: 24px;
+  padding: 28px 32px 36px;
   overflow-y: auto;
   overscroll-behavior: contain;
   min-height: 120px;
+  line-height: 1.55;
 }
 .my-submission-dialog-body :is(h3, h4, p) {
   color: inherit;
   margin: 0;
 }
 .my-submission-dialog-body h3 {
-  font-size: 1rem;
-  margin-bottom: 12px;
+  font-size: 1.0625rem;
+  margin-bottom: 18px;
 }
 .my-submission-dialog-body h4 {
-  font-size: 0.8125rem;
-  margin-bottom: 4px;
+  font-size: 0.75rem;
+  margin-bottom: 5px;
   color: var(--submission-muted);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .my-submission-field {
-  margin-bottom: 18px;
+  min-width: 0;
+  margin-bottom: 20px;
+}
+.my-submission-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--gold-600) 42%, var(--submission-border));
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--gold-100) 56%, var(--submission-surface)),
+    var(--submission-inset)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+html[data-theme='dark'] .my-submission-status-banner {
+  border-color: rgba(223, 179, 93, 0.38);
+  background: linear-gradient(
+    105deg,
+    rgba(197, 141, 35, 0.21),
+    rgba(213, 155, 39, 0.08) 80%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.my-submission-status-banner.is-published {
+  border-color: #a5c9ad;
+  background: linear-gradient(105deg, #e4f2e8, #f3f8f3);
+  color: #285638;
+}
+html[data-theme='dark'] .my-submission-status-banner.is-published {
+  border-color: rgba(143, 192, 155, 0.5);
+  background: linear-gradient(
+    105deg,
+    rgba(79, 115, 88, 0.35),
+    rgba(49, 91, 63, 0.14) 80%
+  );
+  color: #c4e9cd;
+}
+.my-submission-status-icon {
+  flex: 0 0 27px;
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 1px solid var(--gold-600);
+  border-radius: 50%;
+  background: rgba(213, 155, 39, 0.13);
+  color: var(--gold-700);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+}
+html[data-theme='dark'] .my-submission-status-icon {
+  color: var(--gold-200);
+}
+.my-submission-status-banner.is-published .my-submission-status-icon {
+  border-color: #75ae84;
+  background: #d1e8d7;
+  color: #285638;
+  font-family: Arial, sans-serif;
+}
+html[data-theme='dark']
+  .my-submission-status-banner.is-published
+  .my-submission-status-icon {
+  border-color: rgba(143, 192, 155, 0.6);
+  background: rgba(79, 115, 88, 0.48);
+  color: #c4e9cd;
+}
+.my-submission-status-help {
+  padding-top: 1px;
+  font-weight: 600;
 }
 .my-submission-image {
   display: block;
   max-width: 100%;
   max-height: 360px;
   object-fit: contain;
-  margin: 20px auto;
+  margin: 24px auto;
 }
 .my-submission-field p,
 .my-submission-feedback p {
@@ -238,24 +408,69 @@ html[data-theme='dark'] :is(.my-submissions, .my-submission-dialog) {
   overflow-wrap: anywhere;
 }
 .my-submission-facts {
-  display: flex;
-  gap: 12px 32px;
-  flex-wrap: wrap;
-  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: 18px 24px;
+  margin-top: 22px;
+  padding: 20px 22px;
+  background: var(--submission-inset);
+}
+.my-submission-facts.is-event {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.my-submission-facts .my-submission-field {
+  margin-bottom: 0;
+}
+.my-submission-facts .my-submission-field p {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.35;
 }
 .my-submission-language {
-  margin-top: 20px;
-  padding: 18px;
-  border: 1px solid var(--submission-border);
+  margin-top: 24px;
+  padding: 22px 24px;
+  border: 1px solid color-mix(in srgb, var(--submission-border) 48%, transparent);
+  background: linear-gradient(180deg, var(--submission-surface), var(--submission-inset));
+  box-shadow:
+    0 10px 26px rgba(15, 18, 31, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+html[data-theme='dark'] .my-submission-language {
+  border-color: color-mix(in srgb, var(--dark-border) 50%, transparent);
+  background: linear-gradient(180deg, var(--dark-surface-2), var(--dark-surface));
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.my-submission-dialog-body .my-submission-language h3 {
+  margin: 0 0 18px;
+  color: var(--gold-700);
+  font-family: inherit;
+  font-size: 0.6875rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+html[data-theme='dark'] .my-submission-dialog-body .my-submission-language h3 {
+  color: var(--gold-200);
 }
 .my-submission-language > :last-child {
   margin-bottom: 0;
 }
+.my-submission-language .my-submission-field p {
+  max-width: 72ch;
+}
 .my-submission-feedback {
-  margin-top: 18px;
-  padding: 16px;
-  border-left: 3px solid var(--gold-600);
-  background: var(--submission-inset);
+  margin-top: 20px;
+  padding: 20px 22px;
+  background: color-mix(in srgb, var(--gold-100) 34%, var(--submission-inset));
+}
+html[data-theme='dark'] .my-submission-feedback {
+  background: rgba(197, 141, 35, 0.11);
+}
+.my-submission-feedback h3 {
+  margin-bottom: 8px;
 }
 .my-submission-dialog-footer {
   flex-shrink: 0;
@@ -263,8 +478,9 @@ html[data-theme='dark'] :is(.my-submissions, .my-submission-dialog) {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 16px 24px;
+  padding: 16px 32px;
   border-top: 1px solid var(--submission-border);
+  background: var(--submission-inset);
 }
 .my-submission-actions {
   display: flex;
@@ -288,18 +504,35 @@ body.my-submission-dialog-open {
     height: 100dvh;
     max-height: 100dvh;
     border: 0;
+    border-top: 5px solid var(--gold-500);
     border-radius: 0;
   }
   .my-submission-dialog-layout {
     height: 100%;
-    max-height: 100dvh;
+    max-height: calc(100dvh - 5px);
   }
   .my-submission-dialog-body {
     flex: 1;
+    min-height: 0;
   }
   .my-submission-dialog-heading,
   .my-submission-dialog-body,
   .my-submission-dialog-footer {
-    padding: 16px;
+    padding: 16px 20px;
+  }
+  .my-submission-dialog-heading {
+    padding: 20px;
+  }
+  .my-submission-dialog-body {
+    padding: 22px 20px 32px;
+  }
+  .my-submission-facts.is-event {
+    grid-template-columns: 1fr;
+  }
+  .my-submission-language {
+    padding: 20px 18px;
+  }
+  .my-submission-dialog-footer {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
 }

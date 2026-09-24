@@ -86,19 +86,26 @@ function clearFormMessage() {
   // Form results are presented as transient toasts.
 }
 
-function syncEventTitleValidation({ showError = false } = {}) {
+function syncEventTitleValidation({
+  showError = !eventTitleError.hidden,
+} = {}) {
   const hasTitle = Boolean(
     eventTitleEn.value.trim() || eventTitleFr.value.trim(),
   );
   const message = hasTitle ? "" : translate("event_title_required");
+  const isInvalid = !hasTitle && showError;
 
   [eventTitleEn, eventTitleFr].forEach((field) => {
     field.setCustomValidity(message);
-    field.setAttribute("aria-invalid", String(!hasTitle));
+    if (isInvalid) {
+      field.setAttribute("aria-invalid", "true");
+    } else {
+      field.removeAttribute("aria-invalid");
+    }
   });
 
   eventTitleError.textContent = message;
-  eventTitleError.hidden = hasTitle || !showError;
+  eventTitleError.hidden = !isInvalid;
 
   return hasTitle;
 }
@@ -334,6 +341,8 @@ function buildEventData() {
 
 function resetEventForm() {
   eventForm.reset();
+  eventTitleError.hidden = true;
+  syncEventTitleValidation();
   CMCENUtils.bindCharacterCounters();
 
   eventAllDay.checked = true;

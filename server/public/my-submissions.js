@@ -29,6 +29,7 @@ window.MySubmissions = (() => {
     const dialog = root.querySelector("dialog");
     const dialogTitle = dialog.querySelector("h2");
     const dialogMeta = dialog.querySelector("[data-submission-meta]");
+    const dialogSubmitted = dialog.querySelector("[data-submission-submitted]");
     const dialogBody = dialog.querySelector("[data-submission-body]");
     const dialogActions = dialog.querySelector("[data-submission-actions]");
     let items = [];
@@ -48,6 +49,7 @@ window.MySubmissions = (() => {
     let editorSource = null;
     let saving = false;
     let saveRequest;
+    let closedWithPointer = false;
     const token = CMCENUtils.getStoredAuthToken();
     root.hidden = true;
     typeFilter.value = "all";
@@ -190,24 +192,47 @@ window.MySubmissions = (() => {
       field.append(element("h4", "", t(key)), element("p", "", value));
       container.append(field);
     }
+    function statusBanner(status) {
+      const banner = element("div", `my-submission-status-banner is-${status}`);
+      const icon = element(
+        "span",
+        "my-submission-status-icon",
+        status === "published" ? "✓" : "i",
+      );
+      icon.setAttribute("aria-hidden", "true");
+      banner.append(
+        icon,
+        element(
+          "p",
+          "my-submission-status-help",
+          t(`my_submissions_help_${status}`),
+        ),
+      );
+      return banner;
+    }
     function renderDetail() {
       if (!selected) return;
+      const shown = detail || selected;
+      dialogTitle.textContent = title(shown);
+      dialogMeta.replaceChildren(
+        element("span", "", t(types[selected.type])),
+        statusBadge(shown.status),
+      );
+      if (shown.rejectedAt)
+        dialogMeta.append(
+          element(
+            "span",
+            "",
+            t("submission_rejected_at", { date: date(shown.rejectedAt) }),
+          ),
+        );
+      const submittedAt = date(shown.submittedAt);
+      dialogSubmitted.textContent = submittedAt
+        ? t("my_submissions_submitted", { date: submittedAt })
+        : "";
+      dialogSubmitted.hidden = !submittedAt;
       if (editor) {
         editor.translate();
-        dialogMeta.replaceChildren(
-          element("span", "", t(types[selected.type])),
-          statusBadge(detail.status),
-        );
-        if (detail.rejectedAt)
-          dialogMeta.append(
-            element(
-              "span",
-              "",
-              t("submission_rejected_at", {
-                date: date(detail.rejectedAt),
-              }),
-            ),
-          );
         dialogBody.querySelector(".my-submission-status-help").textContent = t(
           `my_submissions_help_${detail.status}`,
         );
@@ -218,21 +243,6 @@ window.MySubmissions = (() => {
           feedbackTitle.textContent = t("my_submissions_feedback");
         return;
       }
-      dialogTitle.textContent = title(detail || selected);
-      dialogMeta.replaceChildren(
-        element("span", "", t(types[selected.type])),
-        statusBadge((detail || selected).status),
-      );
-      if ((detail || selected).rejectedAt)
-        dialogMeta.append(
-          element(
-            "span",
-            "",
-            t("submission_rejected_at", {
-              date: date((detail || selected).rejectedAt),
-            }),
-          ),
-        );
       dialogBody.replaceChildren();
       dialogActions.replaceChildren();
       dialogBody.setAttribute("aria-busy", String(!detail && !detailFailed));
@@ -260,13 +270,7 @@ window.MySubmissions = (() => {
         }
         return;
       }
-      dialogBody.append(
-        element(
-          "p",
-          "my-submission-status-help",
-          t(`my_submissions_help_${detail.status}`),
-        ),
-      );
+      dialogBody.append(statusBanner(detail.status));
       if (detail.status === "rejected" && detail.feedback) {
         const feedback = element("section", "my-submission-feedback");
         feedback.append(
@@ -294,31 +298,7 @@ window.MySubmissions = (() => {
         return;
       }
       const facts = element("div", "my-submission-facts");
-      addField(
-        facts,
-        "my_submissions_submitted_date",
-        date(detail.submittedAt),
-      );
-      dialogBody.append(facts);
       const content = detail.content || {};
-      if (content.imageUrl) {
-        try {
-          const url = new URL(content.imageUrl, window.location.origin);
-          if (
-            ["https:", "http:"].includes(url.protocol) &&
-            !url.username &&
-            !url.password
-          ) {
-            const image = element("img", "my-submission-image");
-            image.src = url.href;
-            image.alt = title(detail);
-            image.loading = "lazy";
-            dialogBody.append(image);
-          }
-        } catch {
-          /* Invalid legacy image references do not prevent reading the submission. */
-        }
-      }
       if (detail.type === "retirementMessage") {
         addField(
           facts,
@@ -328,12 +308,7 @@ window.MySubmissions = (() => {
         addField(facts, "retirement_trade_role", content.tradeRole);
       }
       if (detail.type === "event") {
-        const facts = element("div", "my-submission-facts");
-        addField(
-          facts,
-          "content_workspace_field_location",
-          [content.city, content.provinceRegion].filter(Boolean).join(", "),
-        );
+        facts.classList.add("is-event");
         const eventDate = (value) =>
           content.allDay
             ? String(value).slice(0, 10)
@@ -351,8 +326,31 @@ window.MySubmissions = (() => {
           "my_submissions_event_end",
           content.endDate ? eventDate(content.endDate) : "",
         );
+        addField(
+          facts,
+          "content_workspace_field_location",
+          [content.city, content.provinceRegion].filter(Boolean).join(", "),
+        );
         addField(facts, "event_timezone", content.timezone);
-        dialogBody.append(facts);
+      }
+      if (facts.childElementCount) dialogBody.append(facts);
+      if (content.imageUrl) {
+        try {
+          const url = new URL(content.imageUrl, window.location.origin);
+          if (
+            ["https:", "http:"].includes(url.protocol) &&
+            !url.username &&
+            !url.password
+          ) {
+            const image = element("img", "my-submission-image");
+            image.src = url.href;
+            image.alt = title(detail);
+            image.loading = "lazy";
+            dialogBody.append(image);
+          }
+        } catch {
+          /* Invalid legacy image references do not prevent reading the submission. */
+        }
       }
       if (detail.type === "retirementComment") {
         addField(dialogBody, "content_workspace_comment_body", content.body);
@@ -535,7 +533,7 @@ window.MySubmissions = (() => {
         controls.forEach((button) => {
           button.disabled = false;
         });
-        dialog.querySelector("[data-submission-close]").focus();
+        dialogTitle.focus({ preventScroll: true });
         CMCENUtils.showToast(t("my_submissions_resubmitted"));
       } catch (error) {
         if (!disposed && editor === activeEditor) {
@@ -552,10 +550,11 @@ window.MySubmissions = (() => {
         }
       }
     }
-    function requestClose() {
+    function requestClose(event) {
       if (saving) return;
       if (editor?.dirty() && !window.confirm(t("my_submissions_discard")))
         return;
+      closedWithPointer = event?.detail > 0;
       dialog.close();
     }
     function open(item, button) {
@@ -564,6 +563,7 @@ window.MySubmissions = (() => {
       dialog.showModal();
       document.body.classList.add("my-submission-dialog-open");
       void loadDetail();
+      dialogTitle.focus({ preventScroll: true });
     }
     dialog.querySelectorAll("[data-submission-close]").forEach((button) =>
       button.addEventListener("click", requestClose, {
@@ -600,9 +600,17 @@ window.MySubmissions = (() => {
         editorSource = null;
         dialogBody.replaceChildren();
         document.body.classList.remove("my-submission-dialog-open");
-        (opener?.isConnected ? opener : statusFilter)?.focus({
-          preventScroll: true,
-        });
+        const restoreTarget = opener?.isConnected ? opener : statusFilter;
+        if (closedWithPointer && restoreTarget === opener) {
+          restoreTarget.classList.add("is-pointer-restored");
+          restoreTarget.addEventListener(
+            "blur",
+            () => restoreTarget.classList.remove("is-pointer-restored"),
+            { once: true },
+          );
+        }
+        restoreTarget?.focus({ preventScroll: true });
+        closedWithPointer = false;
       },
       { signal: lifecycle.signal },
     );

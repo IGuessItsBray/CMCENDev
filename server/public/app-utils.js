@@ -1246,6 +1246,7 @@
 
     modalTitle = document.createElement("h2");
     modalTitle.id = "cmcenModalTitle";
+    modalTitle.tabIndex = -1;
     heading.append(brand, modalTitle);
 
     modalCloseButton = document.createElement("button");
@@ -1695,7 +1696,9 @@
             : isPrompt
               ? modalInput
               : isChoice
-                ? modalChoiceActions.querySelector("button")
+                ? options.variant === "contribute"
+                  ? modalTitle
+                  : modalChoiceActions.querySelector("button")
                 : isChecklist
                   ? modalChecklist.querySelector('input[type="checkbox"]')
                   : modalConfirmButton;

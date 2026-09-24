@@ -837,15 +837,16 @@ function getContributeChoiceIcon(type) {
     `,
     retirement: `
       <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m15 8 9 11 9-11v20l-9 12-9-12V8Z"></path>
-        <circle cx="24" cy="28" r="7"></circle>
-        <path d="m21 28 2 2 4-5"></path>
+        <circle cx="24" cy="20" r="12"></circle>
+        <path d="m16 29-3 13 11-6 11 6-3-13"></path>
+        <path d="m24 13 2.1 4.4 4.9.7-3.5 3.4.8 4.9-4.3-2.3-4.3 2.3.8-4.9-3.5-3.4 4.9-.7L24 13Z"></path>
       </svg>
     `,
     "last-post": `
       <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M24 6c4 5 5 9 3 13 4-1 7 2 7 6 0 6-4 10-10 10S14 31 14 25c0-4 3-7 7-6-2-4-1-8 3-13Z"></path>
-        <path d="M18 42h12M21 35v7M27 35v7"></path>
+        <path d="M24 22c-3-7-10-11-15-7-5 4-2 11 5 13-6 3-7 10-2 13 5 3 10-1 12-8 2 7 7 11 12 8 5-3 4-10-2-13 7-2 10-9 5-13-5-4-12 0-15 7Z" fill="currentColor" fill-opacity=".22"></path>
+        <circle cx="24" cy="28" r="4" fill="currentColor" stroke="none"></circle>
+        <path d="M24 33v10"></path>
       </svg>
     `,
   };

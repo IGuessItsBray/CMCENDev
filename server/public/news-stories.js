@@ -31,17 +31,37 @@ function formatNewsDate(value) {
   });
 }
 
+function newsPreview(article) {
+  const text = newsText(article.excerpt || article.content)
+    .replace(/\s+/g, " ")
+    .trim();
+  let sentenceStart = 0;
+  for (const match of text.matchAll(/[.!?](?=\s|$)/g)) {
+    if (match[0] === "." && /\d/.test(text[match.index - 1])) continue;
+    const sentence = text.slice(sentenceStart, match.index + 1).trim();
+    if (sentence.length >= 40 && sentence.length <= 250) return sentence;
+    if (sentence.length > 250) return "";
+    sentenceStart = match.index + 1;
+  }
+  return text.length <= 250 ? text : "";
+}
+
 function createNewsCard(article) {
   const card = document.createElement("a");
   card.className = "news-card";
   card.id = String(article._id);
   card.href = `/${article.layout === "newsletter" ? "newsletter" : "news-story"}?id=${encodeURIComponent(article._id)}`;
   if (article.imageDisplayUrl || article.imageUrl) {
+    const media = document.createElement("span");
+    media.className = "news-card-media";
     const image = document.createElement("img");
     image.src = article.imageDisplayUrl || article.imageUrl;
     image.alt = "";
     image.loading = "lazy";
-    card.appendChild(image);
+    media.appendChild(image);
+    card.appendChild(media);
+  } else {
+    card.classList.add("news-card--without-image");
   }
   const content = document.createElement("div");
   content.className = "news-card-content";
@@ -50,9 +70,13 @@ function createNewsCard(article) {
   date.textContent = formatNewsDate(article.displayDate || article.publishedAt);
   const title = document.createElement("h2");
   title.textContent = newsText(article.title) || "News story";
-  const body = document.createElement("p");
-  body.textContent = newsText(article.excerpt || article.content) || "";
-  content.append(date, title, body);
+  content.append(date, title);
+  const preview = newsPreview(article);
+  if (preview) {
+    const body = document.createElement("p");
+    body.textContent = preview;
+    content.appendChild(body);
+  }
   card.appendChild(content);
   return card;
 }
@@ -81,15 +105,5 @@ async function loadPublicNews() {
   }
 }
 
-async function showArticleManagement() {
-  const token = CMCENUtils.getStoredAuthToken();
-  if (!token) return;
-  try {
-    const user = await CMCENUtils.apiJson("/api/me", { token });
-    document.getElementById("newsCreateButton").hidden =
-      !user.permissions?.canManageNews;
-  } catch {}
-}
 document.addEventListener("languagechange", loadPublicNews);
 loadPublicNews();
-showArticleManagement();

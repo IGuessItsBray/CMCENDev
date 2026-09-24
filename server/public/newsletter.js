@@ -44,6 +44,8 @@
   window.NewsletterRenderer = { safeUrl, inline };
   const root = document.getElementById("newsletterArticle");
   if (!root) return;
+  const context = document.getElementById("newsletterContext");
+  const contextText = document.getElementById("newsletterContextText");
   let issue;
   const labels = {
     en: {
@@ -53,7 +55,6 @@
         en: "This issue is available in English.",
         fr: "This issue is available in French.",
       },
-      library: "Document library",
       source: "Original publication",
       error: "This newsletter could not be loaded.",
       retry: "Try again",
@@ -65,7 +66,6 @@
         en: "Ce numéro est disponible en anglais.",
         fr: "Ce numéro est disponible en français.",
       },
-      library: "Bibliothèque de documents",
       source: "Publication originale",
       error: "Ce bulletin n’a pas pu être chargé.",
       retry: "Réessayer",
@@ -99,6 +99,14 @@
     if (!issue) return;
     const language = document.documentElement.lang === "fr" ? "fr" : "en";
     const ui = labels[language];
+    const contextMessage = [
+      issue.archived ? ui.archive : "",
+      language !== issue.language ? ui.fallback[issue.language] : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    contextText.textContent = contextMessage;
+    context.hidden = !contextMessage;
     root.replaceChildren();
     document.title = `${issue.title} | CMCEN / RCMCE`;
     const header = element("header", "", "about-family-hero leadership-hero");
@@ -130,19 +138,6 @@
       header.append(crest);
     }
     const body = element("div", "", "about-family-body newsletter-body");
-    if (issue.archived || language !== issue.language)
-      body.append(
-        element(
-          "p",
-          [
-            issue.archived ? ui.archive : "",
-            language !== issue.language ? ui.fallback[issue.language] : "",
-          ]
-            .filter(Boolean)
-            .join(" "),
-          "newsletter-context",
-        ),
-      );
     const content = element("div");
     content.lang = issue.language;
     for (const block of issue.blocks) {
@@ -187,21 +182,20 @@
       edit.href = `/dashboard-next?area=articles&id=${encodeURIComponent(issue._id)}`;
       footer.append(edit);
     }
-    for (const [text, url] of [
-      [ui.library, "/document-library"],
-      ...(issue.sourceUrl ? [[ui.source, issue.sourceUrl]] : []),
-    ]) {
-      const link = element("a", text);
-      link.href = safeUrl(url);
-      footer.append(link);
+    if (issue.sourceUrl) {
+      const source = element("a", ui.source);
+      source.href = safeUrl(issue.sourceUrl);
+      footer.append(source);
     }
-    body.append(content, footer);
+    body.append(content);
+    if (footer.hasChildNodes()) body.append(footer);
     root.append(header, body);
     root.setAttribute("aria-busy", "false");
   }
   let requestId = 0;
   async function load() {
     const currentRequest = ++requestId;
+    context.hidden = true;
     try {
       const id = new URLSearchParams(location.search).get("id");
       if (!/^[a-f0-9]{24}$/i.test(id || "")) throw new Error("Invalid article");

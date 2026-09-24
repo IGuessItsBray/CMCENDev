@@ -12,6 +12,7 @@
       href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
     />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/submission-pages.css" />
   </head>
 
   <body>
@@ -696,12 +697,17 @@
           </section>
 
           <section class="event-submit-options">
-            <div class="event-publication-copy">
+            <div class="event-admin-action" id="publishNowContainer" hidden>
+              <p
+                class="event-admin-action-label"
+                data-i18n="event_admin_action"
+              >
+                Admin action
+              </p>
+
               <label
                 class="event-toggle event-publish-toggle"
-                id="publishNowContainer"
                 for="eventPublishNow"
-                hidden
               >
                 <input type="checkbox" id="eventPublishNow" />
 
@@ -715,7 +721,9 @@
                   </small>
                 </span>
               </label>
+            </div>
 
+            <div class="event-submit-actions">
               <p
                 class="event-review-note"
                 id="eventReviewNote"
@@ -723,15 +731,15 @@
               >
                 Your event will be sent to an editor for review.
               </p>
-            </div>
 
-            <button
-              type="submit"
-              class="event-submit-button"
-              id="eventSubmitButton"
-            >
-              <span id="eventSubmitButtonLabel"> Submit Event </span>
-            </button>
+              <button
+                type="submit"
+                class="event-submit-button"
+                id="eventSubmitButton"
+              >
+                <span id="eventSubmitButtonLabel"> Submit Event </span>
+              </button>
+            </div>
           </section>
         </form>
       </section>

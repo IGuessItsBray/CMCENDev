@@ -5,7 +5,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title data-i18n="submit_event_page_title">
+    <title data-i18n="retirement_submit_page_title">
       Submit Retirement Message | CMCEN / RCMCE
     </title>
     <link
@@ -14,6 +14,7 @@
       href="https://cdn.corebot.ca/cmcen-demo/favicon_crest.png"
     />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/submission-pages.css" />
   </head>
 
   <body>
@@ -33,7 +34,7 @@
               Retirement Messages
             </p>
 
-            <h1 id="submitEventTitle" data-i18n="retirement_submit_title">
+            <h1 id="retirementSubmitTitle" data-i18n="retirement_submit_title">
               Submit a Retirement Message
             </h1>
 
@@ -1452,12 +1453,21 @@
           </section>
 
           <footer class="event-submit-options">
-            <div class="event-publication-copy">
+            <div
+              class="event-admin-action"
+              id="retirementPublishNowContainer"
+              hidden
+            >
+              <p
+                class="event-admin-action-label"
+                data-i18n="event_admin_action"
+              >
+                Admin action
+              </p>
+
               <label
                 class="event-toggle event-publish-toggle"
-                id="retirementPublishNowContainer"
                 for="retirementPublishNow"
-                hidden
               >
                 <input type="checkbox" id="retirementPublishNow" />
 
@@ -1472,7 +1482,9 @@
                   </small>
                 </span>
               </label>
+            </div>
 
+            <div class="event-submit-actions">
               <p
                 class="event-review-note"
                 id="retirementReviewNote"
@@ -1480,17 +1492,17 @@
               >
                 Your retirement message will be sent to an editor for review.
               </p>
-            </div>
 
-            <button
-              class="event-submit-button"
-              id="retirementSubmitButton"
-              type="submit"
-            >
-              <span data-i18n="retirement_submit_button">
-                Submit for Review
-              </span>
-            </button>
+              <button
+                class="event-submit-button"
+                id="retirementSubmitButton"
+                type="submit"
+              >
+                <span data-i18n="retirement_submit_button">
+                  Submit for Review
+                </span>
+              </button>
+            </div>
           </footer>
         </form>
       </section>

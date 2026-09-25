@@ -1420,7 +1420,7 @@ paths:
     delete:
       tags: [Admin, Events]
       summary: Delete any event.
-      description: Administrator deletion removes an attached image and its generated variants when no other content still references that asset.
+      description: Permanently deletes the event and its RSVPs. Administrator deletion also removes an attached image and its generated variants when no other content still references that asset. Audit and revision history are retained.
       x-permission: canDeleteContent
       parameters:
         - $ref: "#/components/parameters/EventId"
@@ -2399,7 +2399,7 @@ paths:
     delete:
       tags: [News]
       summary: Delete a news story.
-      x-permission: canManageNews
+      x-permission: canDeleteContent
       parameters:
         - $ref: "#/components/parameters/ArticleId"
       responses:
@@ -2764,7 +2764,7 @@ paths:
     patch:
       tags: [Retirements]
       summary: Update one language of a retirement message.
-      description: Reviewers may update one translation on a pending, published, or removed (hidden) retirement message. Editing a removed message preserves its hidden status until it is explicitly restored. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected message; updating a rejected message sends it back to the review queue. A public-field revision and audit entry retain the before/after values. Each saved message must contain at least 100 characters.
+      description: Reviewers may update one translation on a pending, published, or removed (hidden) retirement message. Editing a removed message preserves its hidden status until it is explicitly restored. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected message; updating a rejected message sends it back to the review queue. A public-field revision and audit entry retain the before/after values. Saved text may be empty and is limited to 10,000 characters.
       x-permission: canReviewAndPublish or owner of a pending or rejected message
       parameters:
         - $ref: "#/components/parameters/MessageId"
@@ -3138,11 +3138,11 @@ components:
                 properties:
                   en:
                     type: string
-                    minLength: 100
+                    minLength: 1
                     maxLength: 10000
                   fr:
                     type: string
-                    minLength: 100
+                    minLength: 1
                     maxLength: 10000
     ImmediateReviewDecision:
       required: true
@@ -3199,7 +3199,6 @@ components:
                 enum: [en, fr]
               message:
                 type: string
-                minLength: 100
                 maxLength: 10000
     LastPostSubmission:
       required: true

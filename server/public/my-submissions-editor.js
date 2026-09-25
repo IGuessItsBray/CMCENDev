@@ -303,7 +303,7 @@ window.MySubmissionEditor = (() => {
         {
           type: "textarea",
           required: true,
-          minLength: retirement ? 100 : 1,
+          minLength: 1,
           maxLength: 10000,
         },
       );

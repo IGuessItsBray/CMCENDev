@@ -878,7 +878,7 @@ router.patch(
 router.delete(
   '/:articleId',
   authMiddleware,
-  requirePermission('canManageNews'),
+  requirePermission('canDeleteContent'),
   async (req, res) => {
     try {
       if (!mongoose.Types.ObjectId.isValid(req.params.articleId))

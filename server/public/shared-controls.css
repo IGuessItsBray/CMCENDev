@@ -646,6 +646,31 @@ html[data-theme='dark'] .cmcen-date-time-time-row {
     transform 150ms ease;
 }
 
+.cmcen-modal-button[aria-busy='true']::after {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 10px;
+  vertical-align: middle;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: cmcen-modal-spin 750ms linear infinite;
+}
+
+@keyframes cmcen-modal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmcen-modal-button[aria-busy='true']::after {
+    animation: none;
+  }
+}
+
 .cmcen-modal-button-secondary {
   border-color: var(--branch-grey-500);
   background: transparent;

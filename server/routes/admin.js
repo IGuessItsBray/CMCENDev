@@ -14,6 +14,7 @@ const User = require('../models/User');
 const Role = require('../models/Role');
 const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
+const EventRsvp = require('../models/EventRsvp');
 const LastPostMessage = require('../models/LastPostMessage');
 const NewsArticle = require('../models/NewsArticle');
 const Page = require('../models/Page');
@@ -57,7 +58,14 @@ const {
   restoreContent,
 } = require('../services/content-lifecycle');
 const { recordContentRevision } = require('../services/content-revisions');
-const { linkMediaAssetToSource } = require('../services/media-assets');
+const {
+  linkMediaAssetToSource,
+  deleteContentMediaAssets,
+} = require('../services/media-assets');
+
+function getContentMediaCleanupMetadata(cleanup) {
+  return cleanup.map(({ status, key }) => ({ status, key }));
+}
 const s3Client = require('../storage');
 
 const router = express.Router();
@@ -4588,6 +4596,7 @@ router.delete('/events/:eventId', authMiddleware, async (req, res) => {
         })
       : [];
 
+    await EventRsvp.deleteMany({ event: event._id });
     await event.deleteOne();
     await writeAuditLog({
       req,

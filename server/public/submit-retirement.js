@@ -790,7 +790,7 @@ function buildRetirementMessageData(photoUrl = "", photoDisplayUrl = "") {
     clearSelection: false,
   });
 
-  if (message.length < 100) {
+  if (!message) {
     throw new Error(translate("retirement_message_too_short"));
   }
 

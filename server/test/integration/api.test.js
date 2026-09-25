@@ -2552,8 +2552,8 @@ describe('retirement message lifecycle', () => {
       .expect(201);
 
     const messageId = (await RetirementMessage.findOne())._id;
-    const ownerTranslation = translatedMessage('English submitter');
-    const frenchTranslation = translatedMessage('French reviewer');
+    const ownerTranslation = 'Thank you.';
+    const frenchTranslation = 'Merci.';
 
     const ownerResponse = await request(app)
       .patch(`/api/retirement-messages/${messageId}/review-content`)
@@ -4471,6 +4471,69 @@ describe('event, page, and comment workflows', () => {
       target: retirementComment._id,
     }).lean();
     assert.deepEqual(commentEditAudit.metadata.fields, ['body']);
+  });
+
+  test('lets staff shorten and clear retirement translations with audited history', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const member = await createUser();
+    const editorSession = await login(editor);
+    const memberSession = await login(member);
+    const base = retirementPayload();
+    const message = await RetirementMessage.create({
+      ...base,
+      messages: { en: base.message, fr: 'Unwanted archive copy' },
+      status: 'published',
+      createdBy: editor._id,
+      publicationConsent: { confirmed: true, confirmedAt: new Date() },
+    });
+    const path = `/api/retirement-messages/${message._id}/review-content`;
+    await request(app)
+      .patch(path)
+      .send({ language: 'fr', message: '' })
+      .expect(401);
+    await request(app)
+      .patch(path)
+      .set('Authorization', bearer(memberSession.body.token))
+      .send({ language: 'fr', message: '' })
+      .expect(403);
+    for (const [language, text] of [
+      ['fr', 'Merci.'],
+      ['fr', ''],
+      ['en', ''],
+    ]) {
+      await request(app)
+        .patch(path)
+        .set('Authorization', bearer(editorSession.body.token))
+        .send({ language, message: text })
+        .expect(200);
+      const saved = await RetirementMessage.findById(message._id).lean();
+      assert.equal(saved.messages[language], text);
+      assert.equal(saved.status, 'published');
+      if (language === 'en') assert.equal(saved.message, '');
+      else assert.equal(saved.messages.en, base.message);
+    }
+    await request(app)
+      .patch(path)
+      .set('Authorization', bearer(editorSession.body.token))
+      .send({ language: 'fr', message: 'a'.repeat(10001) })
+      .expect(400);
+    const revisions = await ContentRevision.find({
+      contentId: message._id,
+    }).lean();
+    assert.equal(revisions.length, 3);
+    assert.ok(
+      revisions.some(
+        (revision) =>
+          revision.before.message === 'Merci.' && revision.after.message === '',
+      ),
+    );
+    assert.equal(
+      await AuditLog.countDocuments({
+        target: message._id,
+        action: 'content.staff_content_updated',
+      }),
+      3,
+    );
   });
 
   test('lets reviewers replace or remove submission images from the workspace', async () => {

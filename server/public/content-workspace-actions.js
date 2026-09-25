@@ -444,6 +444,7 @@ window.ContentWorkspaceActions = {
     function createRemovalActions(item) {
       const actions = document.createElement("div");
       actions.className = "content-workspace-removal-actions";
+      if (item.isNew) return actions;
       const isNewsArticle = item.type === "newsArticle";
       if (!isNewsArticle && !contentWorkspaceRoutes[item.type]) return actions;
       const canHide = isNewsArticle
@@ -460,7 +461,7 @@ window.ContentWorkspaceActions = {
         setWorkspaceTranslatedText(
           restore,
           "content_workspace_restore",
-          "Restore content",
+          "Unhide content",
         );
         restore.addEventListener("click", () =>
           changeContentVisibility(item, "restore"),
@@ -488,7 +489,75 @@ window.ContentWorkspaceActions = {
         actions.append(remove);
       }
 
+      if (contentWorkspaceState.user?.permissions?.canDeleteContent === true) {
+        const purge = document.createElement("button");
+        purge.type = "button";
+        purge.className = "admin-work-zone-button is-danger";
+        setWorkspaceTranslatedText(
+          purge,
+          "content_workspace_delete_permanently",
+          "Delete permanently",
+        );
+        purge.addEventListener(
+          "click",
+          () => void permanentlyDeleteContent(item, purge),
+        );
+        actions.append(purge);
+      }
       return actions;
+    }
+
+    async function permanentlyDeleteContent(item, button) {
+      if (contentWorkspaceState.isActing || contentWorkspaceState.isUploading)
+        return;
+      contentWorkspaceState.isActing = 1;
+      button.disabled = true;
+      try {
+        const confirmed = await CMCENModal.confirm(
+          getText(
+            "content_workspace_delete_permanently_confirm",
+            "Permanently delete this content? Associated comments and images that are not used elsewhere will also be deleted. This cannot be undone.",
+          ),
+          {
+            title: getText(
+              "content_workspace_delete_permanently",
+              "Delete permanently",
+            ),
+            confirmText: getText(
+              "content_workspace_delete_permanently",
+              "Delete permanently",
+            ),
+            cancelText: getText("cancel", "Cancel"),
+            busyText: getText("content_workspace_deleting", "Deleting…"),
+            onConfirm: async () => {
+              const base =
+                item.type === "newsArticle"
+                  ? "/api/news"
+                  : contentWorkspaceRoutes[item.type];
+              await contentWorkspaceApiJson(
+                `${base}/${encodeURIComponent(item._id)}`,
+                { method: "DELETE" },
+              );
+            },
+          },
+        );
+        if (!confirmed) return;
+        ["en", "fr"].forEach((language) =>
+          contentWorkspaceState.editorDrafts.delete(
+            getEditorDraftKey(item, language),
+          ),
+        );
+        contentWorkspaceState.selectedId = "";
+        showWorkspaceSuccess(
+          getText("admin_content_delete_success", "Content deleted."),
+        );
+        await loadContentWorkspace({ preserveSelection: false });
+      } catch (error) {
+        setWorkspaceMessage(error.message, "error");
+      } finally {
+        button.disabled = false;
+        contentWorkspaceState.isActing = 0;
+      }
     }
 
     function createContentWorkspaceBottomActions(
@@ -684,7 +753,7 @@ window.ContentWorkspaceActions = {
         isRestore
           ? getText(
               "content_workspace_restore_confirm",
-              "Restore this content to its previous status?",
+              "Unhide this content? Previously published content will be visible to the public again; other content will return to its previous status.",
             )
           : getText(
               "content_workspace_remove_confirm",
@@ -692,10 +761,10 @@ window.ContentWorkspaceActions = {
             ),
         {
           title: isRestore
-            ? getText("content_workspace_restore", "Restore content")
+            ? getText("content_workspace_restore", "Unhide content")
             : getText("content_workspace_remove", "Remove from public view"),
           confirmText: isRestore
-            ? getText("content_workspace_restore", "Restore content")
+            ? getText("content_workspace_restore", "Unhide content")
             : getText("content_workspace_remove", "Remove from public view"),
           cancelText: getText("cancel", "Cancel"),
         },
@@ -712,17 +781,16 @@ window.ContentWorkspaceActions = {
       if (!route) return;
 
       try {
-        const result = await contentWorkspaceApiJson(route, {
+        await contentWorkspaceApiJson(route, {
           method: "PATCH",
         });
         showWorkspaceSuccess(
-          result.message ||
-            (isRestore
-              ? getText("content_workspace_restored", "Content restored.")
-              : getText(
-                  "content_workspace_removed",
-                  "Content removed from public view.",
-                )),
+          isRestore
+            ? getText("content_workspace_restored", "Content unhidden.")
+            : getText(
+                "content_workspace_removed",
+                "Content removed from public view.",
+              ),
         );
         await loadContentWorkspace({ preserveSelection: true });
       } catch (error) {

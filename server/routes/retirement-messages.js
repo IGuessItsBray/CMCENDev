@@ -330,8 +330,8 @@ function validateRetirementMessagePayload(payload) {
     return 'The retiree MOSID or role is invalid';
   }
 
-  if (cleanMessage.length < 100) {
-    return 'The retirement message must contain at least 100 characters';
+  if (!cleanMessage) {
+    return 'The retirement message is required';
   }
 
   if (cleanMessage.length > 10000) {
@@ -1609,10 +1609,10 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
 
     const cleanMessage = cleanString(message);
 
-    if (cleanMessage.length < 100) {
+    if (cleanMessage.length > 10000) {
       return res.status(400).json({
         error:
-          'Retirement review message text must contain at least 100 characters',
+          'Retirement review message text must be 10000 characters or fewer',
       });
     }
 
@@ -1840,10 +1840,10 @@ router.patch(
           );
         }
 
-        if (cleanMessages.en.length < 100 || cleanMessages.fr.length < 100) {
+        if (!cleanMessages.en || !cleanMessages.fr) {
           return res.status(400).json({
             error:
-              'English and French retirement messages must each contain at least 100 characters before publication',
+              'English and French retirement messages are required before publication',
           });
         }
 

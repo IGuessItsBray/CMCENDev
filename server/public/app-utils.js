@@ -1209,7 +1209,7 @@
   function closeModal(value) {
     const request = modalActiveRequest;
 
-    if (!request) return;
+    if (!request || request.busy) return;
 
     modalActiveRequest = null;
     modalEmbeddedPositionCleanup?.();
@@ -1334,8 +1334,37 @@
       }
     });
 
-    modalConfirmButton.addEventListener("click", () => {
-      if (!modalActiveRequest) return;
+    modalConfirmButton.addEventListener("click", async () => {
+      if (!modalActiveRequest || modalActiveRequest.busy) return;
+      if (modalActiveRequest.onConfirm) {
+        const request = modalActiveRequest;
+        const label = modalConfirmButton.textContent;
+        request.busy = true;
+        modalConfirmButton.disabled = true;
+        modalCancelButton.disabled = true;
+        modalCloseButton.disabled = true;
+        modalConfirmButton.setAttribute("aria-busy", "true");
+        modalConfirmButton.textContent = request.busyText;
+        modalTitle.focus();
+        let succeeded = false;
+        try {
+          await request.onConfirm();
+          succeeded = true;
+        } catch (error) {
+          modalMessage.textContent = error.message || String(error);
+          modalMessage.setAttribute("role", "alert");
+        } finally {
+          request.busy = false;
+          modalConfirmButton.disabled = false;
+          modalCancelButton.disabled = false;
+          modalCloseButton.disabled = false;
+          modalConfirmButton.removeAttribute("aria-busy");
+          modalConfirmButton.textContent = label;
+        }
+        if (succeeded) closeModal(request.confirmValue);
+        else modalConfirmButton.focus();
+        return;
+      }
       if (modalActiveRequest.type === "form") {
         const fields = Array.from(
           modalFormFields.querySelectorAll("input, select, textarea"),
@@ -1392,7 +1421,11 @@
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
 
-      if (!firstElement || !lastElement) return;
+      if (!firstElement || !lastElement) {
+        event.preventDefault();
+        modalTitle.focus();
+        return;
+      }
 
       if (event.shiftKey && document.activeElement === firstElement) {
         event.preventDefault();
@@ -1438,6 +1471,9 @@
               : null,
           cancelValue: isPrompt ? null : false,
           confirmValue: isAlert ? undefined : true,
+          onConfirm: type === "confirm" ? options.onConfirm : null,
+          busyText:
+            options.busyText || getModalTranslation("loading", "Loading…"),
           getCheckedValues: () =>
             Array.from(
               modalChecklist.querySelectorAll('input[type="checkbox"]:checked'),
@@ -1467,6 +1503,7 @@
         modalTitle.textContent =
           options.title || getModalTranslation(titleKey, defaultTitle);
         modalMessage.textContent = String(message || "");
+        modalMessage.removeAttribute("role");
         modalCloseButton.setAttribute(
           "aria-label",
           options.closeLabel || getModalTranslation("modal_close", "Close"),

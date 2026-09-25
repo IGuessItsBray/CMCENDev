@@ -43,9 +43,8 @@ const retirementMessageSchema = new mongoose.Schema(
 
     message: {
       type: String,
-      required: true,
+      default: '',
       trim: true,
-      minlength: 100,
       maxlength: 10000,
     },
 

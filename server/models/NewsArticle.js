@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { buildPublicMediaUrl } = require('../services/media-library');
+const { categories } = require('../public/newsletter-format');
 
 const DEFAULT_NEWS_IMAGE_URL = buildPublicMediaUrl(
   'images/branch-crest/large.webp',
@@ -15,6 +16,8 @@ const LocalizedTextSchema = new mongoose.Schema(
 
 const NewsArticleSchema = new mongoose.Schema(
   {
+    // Missing values keep their legacy category until the article is edited.
+    category: { type: String, enum: categories, default: undefined },
     layout: {
       type: String,
       enum: ['standard', 'newsletter'],

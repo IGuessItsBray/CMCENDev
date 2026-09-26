@@ -185,6 +185,10 @@ function serveExtensionlessHtml(req, res, next) {
 
 app.use(redirectHtmlExtension);
 app.use(seoRoutes);
+// Both historical article URLs use the same structured article renderer.
+app.get('/news-story', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'newsletter.html'));
+});
 app.get('/vendor/plausible-tracker.js', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400');
   res.type('js');

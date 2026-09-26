@@ -444,7 +444,7 @@ async function searchNewsStories(query, queryTerms, language) {
       sourceId: String(article._id),
       title,
       summary,
-      url: `/${article.layout === 'newsletter' ? 'newsletter' : 'news-story'}?id=${encodeURIComponent(String(article._id))}`,
+      url: `/news-story?id=${encodeURIComponent(String(article._id))}`,
       date: article.displayDate || null,
       score: scoreSearchResult(query, queryTerms, {
         title,

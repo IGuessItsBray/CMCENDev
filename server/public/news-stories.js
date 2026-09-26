@@ -50,7 +50,7 @@ function createNewsCard(article) {
   const card = document.createElement("a");
   card.className = "news-card";
   card.id = String(article._id);
-  card.href = `/${article.layout === "newsletter" ? "newsletter" : "news-story"}?id=${encodeURIComponent(article._id)}`;
+  card.href = `/news-story?id=${encodeURIComponent(article._id)}`;
   if (article.imageDisplayUrl || article.imageUrl) {
     const media = document.createElement("span");
     media.className = "news-card-media";
@@ -67,7 +67,15 @@ function createNewsCard(article) {
   content.className = "news-card-content";
   const date = document.createElement("p");
   date.className = "news-card-date";
-  date.textContent = formatNewsDate(article.displayDate || article.publishedAt);
+  const category =
+    article.category ||
+    (article.layout === "newsletter" ? "newsletter" : "news");
+  date.textContent = [
+    window.translate?.(`article_category_${category}`, category) || category,
+    formatNewsDate(article.displayDate || article.publishedAt),
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const title = document.createElement("h2");
   title.textContent = newsText(article.title) || "News story";
   content.append(date, title);

@@ -374,7 +374,14 @@ Mounted at `/api/news`. Articles are persisted as MongoDB `NewsArticle` records.
 See [NEWSLETTERS.md](NEWSLETTERS.md) for the staff workflow.
 
 News records support `layout: "standard" | "newsletter"` (default `standard`).
-Newsletter bodies use structured `newsletterBlocks: { en: [], fr: [] }`, with up
+These are backward-compatible storage formats, not public article types. The
+shared editor always saves structured articles (`layout: "newsletter"`), converting
+legacy plain text on save. The `category` field accepts `news`, `newsletter`,
+`unit-updates`, `history-heritage`, or `museum-foundation`. It controls public labels
+independently of formatting and archive status. Omitted categories preserve the
+existing value, falling back to `newsletter` for legacy structured articles and
+`news` for legacy plain text. Category changes are revision-tracked.
+Structured article bodies use `newsletterBlocks: { en: [], fr: [] }`, with up
 to 200 heading, paragraph, list, figure or document blocks per language. Paragraphs
 and list items contain text, strong, emphasis, link and line-break nodes (up to six
 nested levels). Figures retain URL, alt text, dimensions, responsive variants and
@@ -388,12 +395,12 @@ variants participate in media usage and deletion protection.
 title and body in its original language; an unavailable translation can be empty.
 Standard news retains the bilingual requirement. PATCH preserves omitted layout,
 blocks and metadata. Text, block and metadata edits are revision-tracked.
-Historical issues require their original date. `publishedAt` remains the site's
+Historical articles in every category require their original date. `publishedAt` remains the site's
 publication timestamp; public `displayDate`, listing order and search dates use
 the original date for historical issues. Historical issues remain searchable and
 listed, but are excluded from `/api/news/feed`. New newsletters do not receive an
 archive notice by default.
-Article responses include `layout`, `newsletter`, `newsletterBlocks`, `displayDate`
+Article responses include `category`, `layout`, `newsletter`, `newsletterBlocks`, `displayDate`
 and a localized plain-text `excerpt`. Newsletter `content` is derived plain text
 for search and summaries; edit `newsletterBlocks` instead.
 

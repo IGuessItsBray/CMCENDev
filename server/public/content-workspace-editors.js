@@ -158,7 +158,7 @@ window.ContentWorkspaceEditors = {
         ];
 
         fields.forEach(([field, labelKey, label, multiline]) => {
-          if (field === "content" && item.content?.layout === "newsletter") {
+          if (field === "content" && item.type === "newsArticle") {
             group.append(
               window.ArticleEditor.create({
                 value: getEditorDraftValue(
@@ -166,7 +166,7 @@ window.ContentWorkspaceEditors = {
                   language,
                   "newsletterBlocks",
                   JSON.stringify(
-                    item.content.newsletterBlocks?.[language] || [],
+                    window.NewsletterFormat.blocksFor(item.content, language),
                   ),
                 ),
                 language,
@@ -658,79 +658,92 @@ window.ContentWorkspaceEditors = {
     function getNewsArticleDetailsFields(item) {
       const fields = [
         createWorkspaceEditorField({
-          field: "layout",
-          label: "Article template",
-          labelKey: "article_template",
-          disabled: true,
-          value: item.content?.layout || "standard",
-          options: [
-            {
-              value: "standard",
-              label: "News story",
-              labelKey: "article_template_standard",
-            },
-            {
-              value: "newsletter",
-              label: "Newsletter",
-              labelKey: "article_template_newsletter",
-            },
-          ],
+          field: "category",
+          label: "Category",
+          labelKey: "article_category",
+          value: window.NewsletterFormat.categoryOf(item.content),
+          options: window.NewsletterFormat.categories.map((value) => ({
+            value,
+            label: value,
+            labelKey: `article_category_${value}`,
+          })),
         }),
-        ...(item.content?.layout === "newsletter"
-          ? [
-              ...Object.entries({
-                author: "Original author",
-                issue: "Issue",
-                kicker: "Section label",
-                date: "Original publication date",
-                sourceUrl: "Original publication URL",
-              }).map(([key, label]) =>
-                createWorkspaceEditorField({
+        ...[
+          ...Object.entries({
+            author: "Original author",
+            date: "Original publication date",
+            sourceUrl: "Original publication URL",
+          }).map(([key, label]) =>
+            key === "date"
+              ? createWorkspaceDateTimeField({
+                  field: "newsletter_date",
+                  label,
+                  labelKey: "article_date",
+                  value: item.content?.newsletter?.date || "",
+                  includeTime: false,
+                })
+              : createWorkspaceEditorField({
                   field: `newsletter_${key}`,
                   label,
                   labelKey: `article_${key}`,
                   value: item.content?.newsletter?.[key] || "",
-                  type:
-                    key === "date"
-                      ? "date"
-                      : key === "sourceUrl"
-                        ? "url"
-                        : "text",
+                  type: key === "sourceUrl" ? "url" : "text",
                 }),
-              ),
-              createWorkspaceEditorField({
-                field: "newsletter_language",
-                label: "Original language",
-                labelKey: "article_language",
-                value: item.content?.newsletter?.language || "en",
-                options: [
-                  { value: "en", label: "English", labelKey: "language_en" },
-                  { value: "fr", label: "French", labelKey: "language_fr" },
-                ],
-              }),
-              createWorkspaceEditorField({
-                field: "newsletter_headerCrest",
-                label: "Show cover image in newsletter header",
-                labelKey: "article_headerCrest",
-                value: String(Boolean(item.content?.newsletter?.headerCrest)),
-                options: [
-                  { value: "false", label: "No", labelKey: "article_no" },
-                  { value: "true", label: "Yes", labelKey: "article_yes" },
-                ],
-              }),
-              createWorkspaceEditorField({
-                field: "newsletter_archived",
-                label: "Historical issue",
-                labelKey: "article_archived",
-                value: String(Boolean(item.content?.newsletter?.archived)),
-                options: [
-                  { value: "false", label: "No", labelKey: "article_no" },
-                  { value: "true", label: "Yes", labelKey: "article_yes" },
-                ],
-              }),
-            ]
-          : []),
+          ),
+          createWorkspaceEditorField({
+            field: "newsletter_language",
+            label: "Original language",
+            labelKey: "article_language",
+            value: item.content?.newsletter?.language || "en",
+            options: [
+              { value: "en", label: "English", labelKey: "language_en" },
+              { value: "fr", label: "French", labelKey: "language_fr" },
+            ],
+          }),
+          createWorkspaceEditorField({
+            field: "newsletter_headerCrest",
+            label: "Show cover image in article header",
+            labelKey: "article_headerCrest",
+            value: String(Boolean(item.content?.newsletter?.headerCrest)),
+            options: [
+              { value: "false", label: "No", labelKey: "article_no" },
+              { value: "true", label: "Yes", labelKey: "article_yes" },
+            ],
+          }),
+          createWorkspaceEditorField({
+            field: "newsletter_archived",
+            label: "Historical article",
+            labelKey: "article_archived",
+            value: String(Boolean(item.content?.newsletter?.archived)),
+            options: [
+              { value: "false", label: "No", labelKey: "article_no" },
+              { value: "true", label: "Yes", labelKey: "article_yes" },
+            ],
+          }),
+        ],
       ];
+      const optional = document.createElement("details");
+      const summary = document.createElement("summary");
+      setWorkspaceTranslatedText(
+        summary,
+        "article_optional_details",
+        "Optional series and issue details",
+      );
+      optional.append(summary);
+      for (const [key, label] of Object.entries({
+        kicker: "Series",
+        issue: "Issue",
+      })) {
+        optional.append(
+          createWorkspaceEditorField({
+            field: `newsletter_${key}`,
+            label,
+            labelKey: `article_${key}`,
+            value: item.content?.newsletter?.[key] || "",
+          }),
+        );
+      }
+      fields.push(optional);
 
       if (item.status === "published") {
         fields.push(
@@ -1822,7 +1835,11 @@ window.ContentWorkspaceEditors = {
         method: item.isNew ? "POST" : "PATCH",
         newsArticle: true,
         body: {
-          layout: getRecordValue("layout", item.content?.layout || "standard"),
+          layout: "newsletter",
+          category: getRecordValue(
+            "category",
+            window.NewsletterFormat.categoryOf(item.content),
+          ),
           newsletter: Object.fromEntries(
             [
               "author",
@@ -1861,7 +1878,7 @@ window.ContentWorkspaceEditors = {
               JSON.parse(
                 getLanguageFormData(language)?.get("newsletterBlocks") ||
                   JSON.stringify(
-                    item.content?.newsletterBlocks?.[language] || [],
+                    window.NewsletterFormat.blocksFor(item.content, language),
                   ),
               ),
             ]),

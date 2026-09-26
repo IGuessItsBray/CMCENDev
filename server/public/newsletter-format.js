@@ -1,4 +1,32 @@
 (function (root) {
+  const categories = [
+    "news",
+    "newsletter",
+    "unit-updates",
+    "history-heritage",
+    "museum-foundation",
+  ];
+  function categoryOf(article) {
+    return (
+      article.category ||
+      (article.layout === "newsletter" ? "newsletter" : "news")
+    );
+  }
+  function blocksFor(article, language) {
+    if (article.layout === "newsletter")
+      return article.newsletterBlocks?.[language] || [];
+    const text = article.content?.[language] || "";
+    return text
+      ? [
+          {
+            type: "paragraph",
+            children: text
+              .split(/(\n)/)
+              .map((part) => (part === "\n" ? { type: "br" } : part)),
+          },
+        ]
+      : [];
+  }
   const inlineText = (nodes) =>
     (nodes || [])
       .map((node) =>
@@ -45,7 +73,15 @@
       ? `${article.newsletter.date}T12:00:00.000Z`
       : article.publishedAt || article.createdAt || null;
   }
-  const api = { imageUrls, plainText, inlineText, displayDate };
+  const api = {
+    imageUrls,
+    plainText,
+    inlineText,
+    displayDate,
+    categories,
+    categoryOf,
+    blocksFor,
+  };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.NewsletterFormat = api;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -237,7 +237,6 @@ test('preserves article URLs, historical dates and localized search text', async
     assert.equal(result.title, article.title.fr);
     assert.equal(result.summary, article.content.fr);
     assert.equal(result.date, article.displayDate);
-    const page = article.layout === 'newsletter' ? 'newsletter' : 'news-story';
-    assert.equal(result.url, `/${page}?id=${article._id}`);
+    assert.equal(result.url, `/news-story?id=${article._id}`);
   }
 });

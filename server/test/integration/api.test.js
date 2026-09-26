@@ -1660,6 +1660,78 @@ describe('news publication scheduling', () => {
 });
 
 describe('news stories', () => {
+  test('unified articles preserve legacy copy and history while categories remain independent', async () => {
+    const staff = await createUser({ role: 'editor' });
+    const authorization = bearer((await login(staff)).body.token);
+    const legacy = await NewsArticle.create({
+      title: { en: 'Legacy story', fr: 'Article ancien' },
+      content: { en: 'First line\nSecond line', fr: 'Texte original français' },
+      createdBy: staff._id,
+      status: 'draft',
+      newsletter: { archived: true, date: '2001-02-03' },
+    });
+    const url = `/api/news/${legacy._id}`;
+    const saved = await request(app)
+      .patch(url)
+      .set('Authorization', authorization)
+      .send({
+        title: legacy.title,
+        layout: 'newsletter',
+        category: 'history-heritage',
+        status: 'draft',
+      })
+      .expect(200);
+    assert.equal(saved.body.article.content.en, legacy.content.en);
+    assert.equal(saved.body.article.content.fr, legacy.content.fr);
+    assert.equal(saved.body.article.newsletter.archived, true);
+    assert.match(saved.body.article.displayDate, /^2001-02-03/);
+    await request(app).get(url).expect(404);
+    const workspace = await request(app)
+      .get(`/api/admin/content?scope=articles&id=${legacy._id}`)
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.equal(workspace.body.items[0].content.category, 'history-heritage');
+    await request(app)
+      .patch(url)
+      .set('Authorization', authorization)
+      .send({ ...saved.body.article, category: 'invalid' })
+      .expect(400);
+    const published = await request(app)
+      .patch(`${url}/publication`)
+      .set('Authorization', authorization)
+      .send({ action: 'publish' })
+      .expect(200);
+    const updated = await request(app)
+      .patch(url)
+      .set('Authorization', authorization)
+      .send({
+        ...published.body.article,
+        category: 'unit-updates',
+      })
+      .expect(200);
+    assert.deepEqual(
+      updated.body.article.newsletterBlocks,
+      saved.body.article.newsletterBlocks,
+    );
+    assert.equal(updated.body.article.newsletter.date, '2001-02-03');
+    assert.equal(
+      updated.body.article.publishedAt,
+      published.body.article.publishedAt,
+    );
+    const feed = await request(app).get('/api/news/feed').expect(200);
+    assert.ok(!feed.body.items.some((item) => item._id === String(legacy._id)));
+    const revisions = await ContentRevision.find({
+      contentId: legacy._id,
+    }).lean();
+    assert.ok(
+      revisions.some(
+        (r) =>
+          r.fields.includes('category') && r.after.category === 'unit-updates',
+      ),
+    );
+    for (const path of ['/news-story', '/newsletter'])
+      await request(app).get(`${path}?id=${legacy._id}&preview=1`).expect(200);
+  });
   test('newsletter drafts preserve metadata, restrict previews, and protect inline media aliases', async () => {
     const admin = await createUser({ role: 'administrator' });
     const member = await createUser();

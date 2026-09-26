@@ -3482,11 +3482,22 @@ components:
       type: object
       required: [title]
       properties:
+        category:
+          type: string
+          enum:
+            [
+              news,
+              newsletter,
+              unit-updates,
+              history-heritage,
+              museum-foundation,
+            ]
+          description: Public category, independent of layout and archive status. Omitted values preserve the stored category or infer newsletter for legacy structured articles and news for legacy plain text. Returned on article responses; changes are revision-tracked.
         layout:
           type: string
           enum: [standard, newsletter]
           default: standard
-          description: Newsletter uses structured blocks and requires content in its original language. Omitted PATCH values preserve the layout.
+          description: Backward-compatible storage format. The unified article editor uses newsletter for all categories; standard remains supported for legacy bilingual plain-text clients. Omitted PATCH values preserve the layout.
         newsletter:
           $ref: "#/components/schemas/NewsletterMetadata"
         newsletterBlocks:

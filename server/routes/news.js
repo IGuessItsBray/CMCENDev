@@ -26,6 +26,9 @@ const {
   imageUrls,
   plainText,
   displayDate,
+  categories,
+  categoryOf,
+  blocksFor,
 } = require('../public/newsletter-format');
 const {
   normalizeBlocks,
@@ -64,6 +67,7 @@ function getNewsSnapshot(article) {
 
 function getNewsRevisionSnapshot(article) {
   return {
+    category: categoryOf(article),
     layout: article.layout || 'standard',
     newsletter: article.newsletter?.toObject?.() || article.newsletter || {},
     title: cleanLocalizedText(article.title),
@@ -112,6 +116,7 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
   }
 
   const detailsBefore = {
+    category: before.category,
     layout: before.layout,
     newsletter: before.newsletter,
     imageUrl: before.imageUrl,
@@ -119,6 +124,7 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
     status: before.status,
   };
   const detailsAfter = {
+    category: after.category,
     layout: after.layout,
     newsletter: after.newsletter,
     imageUrl: after.imageUrl,
@@ -147,6 +153,7 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
 
 function serializeArticle(article) {
   return {
+    category: categoryOf(article),
     excerpt: Object.fromEntries(
       ['en', 'fr'].map((language) => [
         language,
@@ -181,9 +188,21 @@ function getPayload(
   { preserveHiddenStatus = false, existing = {} } = {},
 ) {
   return {
+    category: body.category ?? categoryOf(existing.layout ? existing : body),
     layout: body.layout ?? existing.layout ?? 'standard',
-    newsletterBlocks: body.newsletterBlocks ??
-      existing.newsletterBlocks ?? { en: [], fr: [] },
+    newsletterBlocks:
+      body.newsletterBlocks ??
+      (existing.layout === 'newsletter'
+        ? existing.newsletterBlocks
+        : Object.fromEntries(
+            ['en', 'fr'].map((language) => [
+              language,
+              blocksFor(
+                { content: body.content ?? existing.content },
+                language,
+              ),
+            ]),
+          )),
     newsletter: Object.fromEntries(
       [
         'author',
@@ -221,6 +240,8 @@ function getPayload(
 }
 
 function validatePayload(payload) {
+  if (!categories.includes(payload.category ?? categoryOf(payload)))
+    return 'Choose a valid article category';
   if (!['standard', 'newsletter'].includes(payload.layout || 'standard'))
     return 'Invalid article layout';
   if (payload.layout === 'newsletter') {
@@ -257,7 +278,7 @@ function validatePayload(payload) {
   if (typeof metadata.headerCrest !== 'boolean') return 'Invalid crest setting';
   if (typeof metadata.archived !== 'boolean') return 'Invalid archive setting';
   if (metadata.archived && !metadata.date)
-    return 'Archived issues require their original publication date';
+    return 'Archived articles require their original publication date';
   if (
     metadata.date &&
     (!/^\d{4}-\d{2}-\d{2}$/.test(metadata.date) ||
@@ -273,7 +294,6 @@ function validatePayload(payload) {
   )
     return 'Title and content are required in the original language';
   if (payload.layout !== 'newsletter') {
-    payload.newsletter.archived = false;
     payload.newsletterBlocks = { en: [], fr: [] };
   }
   if (
@@ -381,6 +401,7 @@ router.get('/feed', async (req, res) => {
     ]);
     const items = [
       ...articles.map((article) => ({
+        category: categoryOf(article),
         type: 'news',
         _id: article._id,
         layout: article.layout || 'standard',

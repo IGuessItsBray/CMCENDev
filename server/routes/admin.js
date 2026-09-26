@@ -766,6 +766,7 @@ function toContentWorkspaceItem(type, content) {
       title: content.title?.en || content.title?.fr || 'Untitled news story',
       content: {
         layout: content.layout || 'standard',
+        category: content.category,
         newsletter: content.newsletter || {},
         newsletterBlocks: content.newsletterBlocks || { en: [], fr: [] },
         title: content.title || {},
@@ -991,7 +992,7 @@ router.get(
         queries.push(
           NewsArticle.find(getWorkspaceFilter('newsArticle'))
             .select(
-              'layout newsletter newsletterBlocks title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
+              'category layout newsletter newsletterBlocks title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
               {

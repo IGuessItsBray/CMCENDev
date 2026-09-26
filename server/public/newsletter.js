@@ -50,24 +50,24 @@
   const labels = {
     en: {
       archive:
-        "From the newsletter archive. Dates and information reflect the original issue.",
+        "From the article archive. Dates and information reflect the original publication.",
       fallback: {
-        en: "This issue is available in English.",
-        fr: "This issue is available in French.",
+        en: "This article is available in English.",
+        fr: "This article is available in French.",
       },
       source: "Original publication",
-      error: "This newsletter could not be loaded.",
+      error: "This article could not be loaded.",
       retry: "Try again",
     },
     fr: {
       archive:
-        "Archives des bulletins. Les dates et les renseignements correspondent au numéro original.",
+        "Archives des articles. Les dates et les renseignements correspondent à la publication originale.",
       fallback: {
-        en: "Ce numéro est disponible en anglais.",
-        fr: "Ce numéro est disponible en français.",
+        en: "Cet article est disponible en anglais.",
+        fr: "Cet article est disponible en français.",
       },
       source: "Publication originale",
-      error: "Ce bulletin n’a pas pu être chargé.",
+      error: "Cet article n’a pas pu être chargé.",
       retry: "Réessayer",
     },
   };
@@ -112,11 +112,16 @@
     const header = element("header", "", "about-family-hero leadership-hero");
     const copy = element("div", "", "about-family-hero-copy");
     copy.lang = issue.language;
-    copy.append(
-      element("p", issue.kicker, "about-family-kicker"),
-      element("h1", issue.title),
-      element("p", issue.issue, "about-family-intro"),
-    );
+    const category = element("p", "", "about-family-kicker");
+    category.dataset.i18n = `article_category_${issue.category}`;
+    category.textContent =
+      window.translate?.(category.dataset.i18n, issue.category) ||
+      issue.category;
+    copy.append(category, element("h1", issue.title));
+    if (issue.category === "newsletter") {
+      const series = [issue.kicker, issue.issue].filter(Boolean).join(" · ");
+      if (series) copy.append(element("p", series, "about-family-intro"));
+    }
     const metadata = element("p", "", "newsletter-meta");
     const time = element(
       "time",
@@ -140,6 +145,14 @@
     const body = element("div", "", "about-family-body newsletter-body");
     const content = element("div");
     content.lang = issue.language;
+    if (issue.cover) {
+      const cover = image(issue.cover);
+      if (cover) {
+        const figure = element("figure");
+        figure.append(cover);
+        content.append(figure);
+      }
+    }
     for (const block of issue.blocks) {
       let el;
       if (block.type === "heading") el = element("h2", block.text);
@@ -206,23 +219,36 @@
         preview ? { token: CMCENUtils.getStoredAuthToken() } : {},
       );
       if (currentRequest !== requestId) return;
-      if (article.layout !== "newsletter") throw new Error("Not a newsletter");
       const metadata = article.newsletter || {};
       const requested = document.documentElement.lang === "fr" ? "fr" : "en";
-      const language = article.newsletterBlocks?.[requested]?.length
+      const blocks = Object.fromEntries(
+        ["en", "fr"].map((language) => [
+          language,
+          window.NewsletterFormat.blocksFor(article, language),
+        ]),
+      );
+      const language = blocks[requested].length
         ? requested
-        : metadata.language;
+        : blocks.en.length
+          ? "en"
+          : "fr";
       issue = {
         ...metadata,
-        blocks: article.newsletterBlocks?.[language] || [],
-        title: article.title[language] || article.title[metadata.language],
+        category: window.NewsletterFormat.categoryOf(article),
+        blocks: blocks[language],
+        title: article.title[language] || article.title.en || article.title.fr,
         language,
-        publishedAt:
-          metadata.date ||
-          (article.publishedAt || article.createdAt).slice(0, 10),
+        publishedAt: (
+          article.displayDate || window.NewsletterFormat.displayDate(article)
+        ).slice(0, 10),
       };
       if (metadata.headerCrest)
         issue.crest = { url: article.imageUrl, alt: issue.title };
+      else if (
+        issue.category !== "newsletter" &&
+        !window.NewsletterFormat.imageUrls(article).includes(article.imageUrl)
+      )
+        issue.cover = { url: article.imageUrl, alt: issue.title };
       issue._id = article._id;
       issue.preview = preview;
       render();

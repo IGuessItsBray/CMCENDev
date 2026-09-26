@@ -4,8 +4,36 @@ const {
   imageUrls,
   plainText,
   displayDate,
+  blocksFor,
+  categoryOf,
 } = require('../public/newsletter-format');
 const { normalizeBlocks } = require('../services/newsletter-content');
+test('legacy text converts without losing line breaks, languages or literal markup', () => {
+  const article = {
+    layout: 'standard',
+    content: {
+      en: 'First\nSecond\n\n<script>literal</script>',
+      fr: 'Texte\nfrançais',
+    },
+  };
+  for (const language of ['en', 'fr'])
+    assert.equal(
+      plainText(normalizeBlocks(blocksFor(article, language))),
+      article.content[language],
+    );
+  assert.equal(categoryOf(article), 'news');
+  assert.equal(categoryOf({ layout: 'newsletter' }), 'newsletter');
+  assert.equal(
+    categoryOf({ layout: 'newsletter', category: 'unit-updates' }),
+    'unit-updates',
+  );
+  const emptyTranslation = {
+    layout: 'newsletter',
+    newsletterBlocks: { en: [], fr: [] },
+    content: { en: 'stale text' },
+  };
+  assert.deepEqual(blocksFor(emptyTranslation, 'en'), []);
+});
 test('structured body text preserves block order, line breaks and repeated links', () => {
   const link = {
     type: 'link',

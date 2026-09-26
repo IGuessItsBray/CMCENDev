@@ -628,7 +628,7 @@ window.ContentWorkspace = {
     function getPublicContentHref(item) {
       if (!item?._id || item.isNew) return "";
       if (item.type === "newsArticle")
-        return `/${item.content?.layout === "newsletter" ? "newsletter" : "news-story"}?id=${encodeURIComponent(item._id)}${item.status === "published" ? "" : "&preview=1"}`;
+        return `/news-story?id=${encodeURIComponent(item._id)}${item.status === "published" ? "" : "&preview=1"}`;
       if (item.status !== "published") return "";
 
       if (item.type === "event") {
@@ -1322,31 +1322,7 @@ window.ContentWorkspace = {
           !(await confirmDiscard())
         )
           return;
-        const layout = await CMCENModal.choose(
-          getText("article_template_prompt", "Choose an article template."),
-          {
-            title: getText("article_new", "New article"),
-            choices: [
-              {
-                value: "standard",
-                label: getText("article_template_standard", "News story"),
-                description: getText(
-                  "article_standard_hint",
-                  "A bilingual news update with a cover image.",
-                ),
-              },
-              {
-                value: "newsletter",
-                label: getText("article_template_newsletter", "Newsletter"),
-                description: getText(
-                  "article_newsletter_hint",
-                  "An issue with text, images, captions and document links.",
-                ),
-              },
-            ],
-          },
-        );
-        if (!layout || disposed) return;
+        if (disposed) return;
         contentWorkspaceState.editorDrafts.clear();
         contentWorkspaceState.newArticle = {
           _id: "new",
@@ -1355,7 +1331,8 @@ window.ContentWorkspace = {
           status: "draft",
           title: getText("article_new", "New article"),
           content: {
-            layout,
+            layout: "newsletter",
+            category: "news",
             title: { en: "", fr: "" },
             content: { en: "", fr: "" },
             newsletterBlocks: { en: [], fr: [] },

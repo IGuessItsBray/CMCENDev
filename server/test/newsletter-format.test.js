@@ -8,6 +8,48 @@ const {
   categoryOf,
 } = require('../public/newsletter-format');
 const { normalizeBlocks } = require('../services/newsletter-content');
+const { pairBlocks } = require('../public/newsletter-format');
+
+test('bilingual pairing preserves both legacy sequences and stable translation positions', () => {
+  const en = [
+    { type: 'heading', text: 'Title' },
+    { type: 'paragraph', children: ['English'] },
+    {
+      type: 'figure',
+      image: { url: 'https://example.com/a.png' },
+      caption: 'Photo',
+    },
+  ];
+  const fr = [
+    { type: 'paragraph', children: ['Français'] },
+    { type: 'document', href: '/document.pdf', label: 'Document' },
+  ];
+  const paired = pairBlocks(en, fr);
+  assert.deepEqual(
+    paired.filter((row) => row.en).map((row) => row.en),
+    en,
+  );
+  assert.deepEqual(
+    paired.filter((row) => row.fr).map((row) => row.fr),
+    fr,
+  );
+  assert.equal(paired.find((row) => row.en?.type === 'paragraph').fr, fr[0]);
+  const withIds = [
+    { type: 'paragraph', children: ['First'], pairId: 'first' },
+    { type: 'paragraph', children: ['Second'], pairId: 'second' },
+  ];
+  const partial = [
+    { type: 'paragraph', children: ['Deuxième'], pairId: 'second' },
+  ];
+  assert.deepEqual(pairBlocks(withIds, partial), [
+    { en: withIds[0], fr: null },
+    { en: withIds[1], fr: partial[0] },
+  ]);
+  assert.deepEqual(normalizeBlocks(withIds), withIds);
+  assert.throws(() =>
+    normalizeBlocks([{ ...withIds[0], pairId: '<invalid>' }]),
+  );
+});
 test('legacy text converts without losing line breaks, languages or literal markup', () => {
   const article = {
     layout: 'standard',

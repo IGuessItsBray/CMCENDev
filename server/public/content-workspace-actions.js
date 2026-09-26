@@ -646,6 +646,32 @@ window.ContentWorkspaceActions = {
         form.classList.contains("content-workspace-record-form"),
       );
       let savedRequests = 0;
+      let savedContentId = item._id;
+      const noteChanges = forms
+        .filter(
+          (form) =>
+            form.dataset.language && form.elements.namedItem("editorialNote"),
+        )
+        .map((form) => ({
+          language: form.dataset.language,
+          note: String(new FormData(form).get("editorialNote") || "").trim(),
+        }))
+        .filter(
+          ({ language, note }) =>
+            note !== (item.editorialNotes?.[language] || ""),
+        );
+      const contentForms = forms.filter((form) => {
+        if (item.isNew || !form.elements.namedItem("editorialNote"))
+          return true;
+        const withoutNote = (entries) =>
+          entries.filter(([name]) => name !== "editorialNote");
+        return (
+          JSON.stringify(withoutNote([...new FormData(form).entries()])) !==
+          JSON.stringify(
+            withoutNote(JSON.parse(form.dataset.initialState || "[]")),
+          )
+        );
+      });
       button.disabled = true;
       button.setAttribute("aria-busy", "true");
       setWorkspaceTranslatedText(
@@ -656,7 +682,9 @@ window.ContentWorkspaceActions = {
       try {
         const saveRequests =
           item.type === "newsArticle"
-            ? [getNewsArticleSaveRequest(item)]
+            ? contentForms.length
+              ? [getNewsArticleSaveRequest(item)]
+              : []
             : [
                 ...(recordForm
                   ? [
@@ -666,7 +694,7 @@ window.ContentWorkspaceActions = {
                       ),
                     ]
                   : []),
-                ...forms
+                ...contentForms
                   .filter((form) =>
                     form.classList.contains(
                       "content-workspace-language-editor",
@@ -675,29 +703,44 @@ window.ContentWorkspaceActions = {
                   .map((form) => getContentLanguageSaveRequest(item, form)),
               ].filter(Boolean);
 
-        if (!saveRequests.length) return false;
+        if (!saveRequests.length && !noteChanges.length) return false;
 
         for (const request of saveRequests) {
           const result = await contentWorkspaceApiJson(request.path, {
             method: request.method || "PATCH",
             body: request.body,
           });
-          if (item.isNew && result.article) onArticleCreated(result.article);
-          savedRequests += 1;
-
-          if (request.language) {
-            contentWorkspaceState.editorDrafts.delete(
-              getEditorDraftKey(item, request.language),
-            );
-          }
-
-          if (request.newsArticle) {
-            ["en", "fr"].forEach((language) => {
-              contentWorkspaceState.editorDrafts.delete(
+          if (item.isNew && result.article) {
+            savedContentId = result.article._id;
+            for (const language of ["en", "fr"]) {
+              const draft = contentWorkspaceState.editorDrafts.get(
                 getEditorDraftKey(item, language),
               );
-            });
+              if (draft)
+                contentWorkspaceState.editorDrafts.set(
+                  `${savedContentId}:${language}`,
+                  draft,
+                );
+            }
+            onArticleCreated(result.article);
           }
+          savedRequests += 1;
+        }
+        for (const note of noteChanges) {
+          await contentWorkspaceApiJson(
+            `/api/admin/content/${encodeURIComponent(item.type)}/${encodeURIComponent(savedContentId)}/editorial-note`,
+            { method: "PATCH", body: note },
+          );
+          savedRequests += 1;
+        }
+        for (const form of getContentWorkspaceSaveForms()) {
+          if (!form.dataset.language) continue;
+          contentWorkspaceState.editorDrafts.delete(
+            getEditorDraftKey(item, form.dataset.language),
+          );
+          contentWorkspaceState.editorDrafts.delete(
+            `${savedContentId}:${form.dataset.language}`,
+          );
         }
 
         await loadContentWorkspace({ preserveSelection: true });

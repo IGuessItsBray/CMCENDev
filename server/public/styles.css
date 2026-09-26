@@ -4060,7 +4060,7 @@ body.leadership-biography-open .leadership-biography-portrait {
 }
 
 .login-submit:disabled {
-  cursor: progress;
+  cursor: default;
   opacity: 0.7;
 }
 
@@ -4621,7 +4621,7 @@ body.leadership-biography-open .leadership-biography-portrait {
 }
 
 .register-submit:disabled {
-  cursor: progress;
+  cursor: default;
   opacity: 0.7;
 }
 
@@ -4723,7 +4723,7 @@ body.leadership-biography-open .leadership-biography-portrait {
 }
 
 .register-mfa-option:disabled {
-  cursor: progress;
+  cursor: default;
   opacity: 0.68;
   transform: none;
 }
@@ -7637,7 +7637,7 @@ html[data-theme='dark'] .legal-document th {
 }
 
 .dashboard-profile-button:disabled {
-  cursor: wait;
+  cursor: default;
   opacity: 0.65;
 }
 
@@ -8220,7 +8220,7 @@ html[data-theme='dark'] .legal-document th {
 }
 
 .mfa-button:disabled {
-  cursor: progress;
+  cursor: default;
   opacity: 0.68;
 }
 
@@ -8245,7 +8245,7 @@ html[data-theme='dark'] .legal-document th {
 }
 
 .mfa-link-button:disabled {
-  cursor: progress;
+  cursor: default;
   opacity: 0.65;
 }
 
@@ -8513,7 +8513,7 @@ html[data-theme='dark'] .legal-document th {
 }
 
 .event-cancel-editing:disabled {
-  cursor: progress;
+  cursor: default;
   opacity: 0.7;
 }
 
@@ -9016,7 +9016,7 @@ html[data-theme='dark'] .legal-document th {
 }
 
 .event-submit-button:disabled {
-  cursor: progress;
+  cursor: default;
   opacity: 0.7;
 }
 
@@ -11946,7 +11946,7 @@ html[data-theme='dark'] .home-news-card {
 }
 .news-primary-button:disabled {
   opacity: 0.6;
-  cursor: wait;
+  cursor: default;
 }
 .news-manage-list {
   margin-top: 38px;
@@ -12695,7 +12695,7 @@ html[data-theme='dark'] .news-message {
 }
 
 .retirements-load-more button:disabled {
-  cursor: wait;
+  cursor: default;
   opacity: 0.7;
 }
 
@@ -13057,7 +13057,7 @@ html[data-theme='dark'] .news-message {
 }
 
 .retirement-comment-form button:disabled {
-  cursor: wait;
+  cursor: default;
   opacity: 0.68;
 }
 
@@ -13287,7 +13287,7 @@ html[data-theme='dark'] .news-message {
 }
 
 .last-post-load-more button:disabled {
-  cursor: wait;
+  cursor: default;
   opacity: 0.7;
 }
 
@@ -16688,7 +16688,7 @@ html[data-theme='dark'] .content-workspace-shortcut:focus-visible {
   cursor: pointer;
 }
 .contact-submit:disabled {
-  cursor: wait;
+  cursor: default;
   opacity: 0.7;
 }
 .contact-message {

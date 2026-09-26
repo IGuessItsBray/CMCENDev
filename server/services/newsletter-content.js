@@ -47,42 +47,54 @@ function normalizeBlocks(value) {
     return value;
   };
   if (!Array.isArray(value) || value.length > 200) fail();
-  const blocks = value.map((block) => {
-    if (!block || typeof block !== 'object') fail();
-    if (block.type === 'heading')
-      return { type: 'heading', text: text(block.text, 500) };
-    if (block.type === 'paragraph')
-      return { type: 'paragraph', children: inline(block.children) };
-    if (block.type === 'list') {
-      if (!Array.isArray(block.items) || block.items.length > 200) fail();
-      return { type: 'list', items: block.items.map((item) => inline(item)) };
-    }
-    if (block.type === 'document')
-      return {
-        type: 'document',
-        label: text(block.label, 500),
-        href: url(block.href),
-      };
-    if (block.type !== 'figure' || !block.image) fail();
-    const image = {
-      url: url(block.image.url, true),
-      alt: text(block.image.alt || '', 2000),
-    };
-    for (const key of ['width', 'height'])
-      if (block.image[key]) image[key] = dimension(block.image[key]);
-    image.variants = {};
-    for (const key of ['thumb', 'medium', 'large', 'hero']) {
-      const variant = block.image.variants?.[key];
-      if (variant?.url)
-        image.variants[key] = {
-          url: url(variant.url, true),
-          width: dimension(variant.width),
-          ...(variant.height ? { height: dimension(variant.height) } : {}),
+  const blocks = value
+    .map((block) => {
+      if (!block || typeof block !== 'object') fail();
+      if (block.type === 'heading')
+        return { type: 'heading', text: text(block.text, 500) };
+      if (block.type === 'paragraph')
+        return { type: 'paragraph', children: inline(block.children) };
+      if (block.type === 'list') {
+        if (!Array.isArray(block.items) || block.items.length > 200) fail();
+        return { type: 'list', items: block.items.map((item) => inline(item)) };
+      }
+      if (block.type === 'document')
+        return {
+          type: 'document',
+          label: text(block.label, 500),
+          href: url(block.href),
         };
-    }
-    if (!Object.keys(image.variants).length) delete image.variants;
-    return { type: 'figure', image, caption: text(block.caption || '', 2000) };
-  });
+      if (block.type !== 'figure' || !block.image) fail();
+      const image = {
+        url: url(block.image.url, true),
+        alt: text(block.image.alt || '', 2000),
+      };
+      for (const key of ['width', 'height'])
+        if (block.image[key]) image[key] = dimension(block.image[key]);
+      image.variants = {};
+      for (const key of ['thumb', 'medium', 'large', 'hero']) {
+        const variant = block.image.variants?.[key];
+        if (variant?.url)
+          image.variants[key] = {
+            url: url(variant.url, true),
+            width: dimension(variant.width),
+            ...(variant.height ? { height: dimension(variant.height) } : {}),
+          };
+      }
+      if (!Object.keys(image.variants).length) delete image.variants;
+      return {
+        type: 'figure',
+        image,
+        caption: text(block.caption || '', 2000),
+      };
+    })
+    .map((block, index) => {
+      const pairId = value[index].pairId;
+      if (pairId === undefined) return block;
+      if (typeof pairId !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(pairId))
+        fail();
+      return { ...block, pairId };
+    });
   if (
     plainText(blocks).length > 20000 ||
     JSON.stringify(blocks).length > 200000

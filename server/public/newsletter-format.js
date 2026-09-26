@@ -27,6 +27,35 @@
         ]
       : [];
   }
+  // Align existing sequences without dropping or reordering either language.
+  // Saved pair IDs keep partially translated, repeated block types aligned.
+  function pairBlocks(en = [], fr = []) {
+    const matches = (a, b) =>
+      a.type === b.type &&
+      (a.pairId || b.pairId ? a.pairId === b.pairId : true);
+    const lengths = Array.from({ length: en.length + 1 }, () =>
+      Array(fr.length + 1).fill(0),
+    );
+    for (let i = en.length - 1; i >= 0; i--)
+      for (let j = fr.length - 1; j >= 0; j--)
+        lengths[i][j] = matches(en[i], fr[j])
+          ? 1 + lengths[i + 1][j + 1]
+          : Math.max(lengths[i + 1][j], lengths[i][j + 1]);
+    const rows = [];
+    let i = 0,
+      j = 0;
+    while (i < en.length || j < fr.length) {
+      if (i < en.length && j < fr.length && matches(en[i], fr[j]))
+        rows.push({ en: en[i++], fr: fr[j++] });
+      else if (
+        i < en.length &&
+        (j === fr.length || lengths[i + 1][j] >= lengths[i][j + 1])
+      )
+        rows.push({ en: en[i++], fr: null });
+      else rows.push({ en: null, fr: fr[j++] });
+    }
+    return rows;
+  }
   const inlineText = (nodes) =>
     (nodes || [])
       .map((node) =>
@@ -81,6 +110,7 @@
     categories,
     categoryOf,
     blocksFor,
+    pairBlocks,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.NewsletterFormat = api;

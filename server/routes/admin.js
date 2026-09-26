@@ -1028,6 +1028,41 @@ router.get(
         );
       const hasMore = !contentId && matchingItems.length > limit;
       const items = matchingItems.slice(0, limit);
+      if (items.length) {
+        const notes = await ContentRevision.aggregate([
+          {
+            $match: {
+              fields: 'editorialNote',
+              $or: items.map((item) => ({
+                contentType: item.type,
+                contentId: new mongoose.Types.ObjectId(item._id),
+              })),
+            },
+          },
+          { $sort: { createdAt: -1, _id: -1 } },
+          {
+            $group: {
+              _id: {
+                type: '$contentType',
+                id: '$contentId',
+                language: '$language',
+              },
+              note: { $first: '$after.editorialNote' },
+            },
+          },
+        ]);
+        for (const item of items) {
+          item.editorialNotes = Object.fromEntries(
+            notes
+              .filter(
+                (entry) =>
+                  entry._id.type === item.type &&
+                  String(entry._id.id) === String(item._id),
+              )
+              .map((entry) => [entry._id.language, entry.note || '']),
+          );
+        }
+      }
 
       return res.json({
         items,
@@ -1041,6 +1076,71 @@ router.get(
       return res
         .status(500)
         .json({ error: 'Could not load content workspace' });
+    }
+  },
+);
+
+router.patch(
+  '/content/:contentType/:contentId/editorial-note',
+  authMiddleware,
+  requireContentWorkspaceAccess,
+  async (req, res) => {
+    try {
+      const { contentType, contentId } = req.params;
+      const Model = REVISION_CONTENT_MODELS[contentType];
+      const { language, note } = req.body || {};
+      if (
+        !Model ||
+        !['en', 'fr'].includes(language) ||
+        typeof note !== 'string' ||
+        note.length > 2000 ||
+        !mongoose.isObjectIdOrHexString(contentId)
+      )
+        return res.status(400).json({ error: 'Invalid editorial note' });
+      if (
+        !getPermittedContentWorkspaceTypes(req.permissions).includes(
+          contentType,
+        )
+      )
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      const content = await Model.findById(contentId)
+        .select('_id status')
+        .lean();
+      if (!content) return res.status(404).json({ error: 'Content not found' });
+      const previous = await ContentRevision.findOne({
+        contentType,
+        contentId,
+        language,
+        fields: 'editorialNote',
+      })
+        .sort({ createdAt: -1, _id: -1 })
+        .lean();
+      const value = note.trim();
+      const before = previous?.after?.editorialNote || '';
+      if (before !== value) {
+        await recordContentRevision({
+          contentType,
+          content,
+          actor: req.user,
+          status: content.status,
+          language,
+          fields: ['editorialNote'],
+          before: { editorialNote: before },
+          after: { editorialNote: value },
+        });
+        await writeAuditLog({
+          req,
+          action: 'content.editorial_note_updated',
+          actor: req.user,
+          targetType: contentType,
+          target: contentId,
+          metadata: { language },
+        });
+      }
+      return res.json({ language, note: value });
+    } catch (error) {
+      console.error('Could not save editorial note:', error);
+      return res.status(500).json({ error: 'Could not save editorial note' });
     }
   },
 );

@@ -82,14 +82,35 @@ window.ContentWorkspaceEditors = {
       const note = createEditableField({
         label: getText("content_workspace_note", "Editorial note (optional)"),
         labelKey: "content_workspace_note",
-        field: "revisionNote",
+        field: "editorialNote",
         value: "",
         multiline: true,
         minimumRows: 2,
         maximumRows: 4,
       });
       note.classList.add("content-workspace-note");
-      return note;
+      note.querySelector("textarea").maxLength = 2000;
+      const disclosure = document.createElement("details");
+      disclosure.className = "content-workspace-note-disclosure";
+      const summary = document.createElement("summary");
+      summary.textContent = "✎";
+      summary.dataset.i18nAriaLabel = "content_workspace_note";
+      summary.setAttribute(
+        "aria-label",
+        getText("content_workspace_note", "Editorial note (optional)"),
+      );
+      summary.title = getText(
+        "content_workspace_note",
+        "Editorial note (optional)",
+      );
+      disclosure.append(summary, note);
+      note.querySelector("textarea").addEventListener("input", () => {
+        disclosure.classList.toggle(
+          "has-note",
+          Boolean(note.querySelector("textarea").value.trim()),
+        );
+      });
+      return disclosure;
     }
 
     function getMessageForLanguage(item, language) {
@@ -159,24 +180,18 @@ window.ContentWorkspaceEditors = {
 
         fields.forEach(([field, labelKey, label, multiline]) => {
           if (field === "content" && item.type === "newsArticle") {
-            group.append(
-              window.ArticleEditor.create({
-                value: getEditorDraftValue(
-                  item,
-                  language,
-                  "newsletterBlocks",
-                  JSON.stringify(
-                    window.NewsletterFormat.blocksFor(item.content, language),
-                  ),
-                ),
-                language,
-                getText,
-                api: contentWorkspaceApiJson,
-                canUpload:
-                  contentWorkspaceState.user?.permissions?.canUploadMedia,
-                busy: setMediaBusy,
-              }),
+            const blocksInput = document.createElement("input");
+            blocksInput.type = "hidden";
+            blocksInput.name = "newsletterBlocks";
+            blocksInput.value = getEditorDraftValue(
+              item,
+              language,
+              "newsletterBlocks",
+              JSON.stringify(
+                window.NewsletterFormat.blocksFor(item.content, language),
+              ),
             );
+            group.append(blocksInput);
             return;
           }
           group.append(
@@ -218,9 +233,13 @@ window.ContentWorkspaceEditors = {
       noteField.querySelector("textarea").value = getEditorDraftValue(
         item,
         language,
-        "revisionNote",
-        "",
+        "editorialNote",
+        item.editorialNotes?.[language] || "",
       );
+      noteField.open = Boolean(
+        noteField.querySelector("textarea").value.trim(),
+      );
+      noteField.classList.toggle("has-note", noteField.open);
       group.append(noteField);
       form.append(group);
 
@@ -239,6 +258,20 @@ window.ContentWorkspaceEditors = {
 
     function getEditorDraftKey(item, language) {
       return `${item._id}:${language}`;
+    }
+    function createBilingualArticleEditor(forms) {
+      return window.ArticleEditor.create({
+        inputs: Object.fromEntries(
+          forms.map((form) => [
+            form.dataset.language,
+            form.elements.namedItem("newsletterBlocks"),
+          ]),
+        ),
+        getText,
+        api: contentWorkspaceApiJson,
+        canUpload: contentWorkspaceState.user?.permissions?.canUploadMedia,
+        busy: setMediaBusy,
+      });
     }
 
     function getEditorDraftValue(item, language, field, fallback) {
@@ -1213,19 +1246,13 @@ window.ContentWorkspaceEditors = {
     function createReadOnlyCopy(item) {
       const copy = document.createElement("section");
       copy.className = "content-workspace-copy";
-      const heading = document.createElement("h2");
-      setWorkspaceTranslatedText(
-        heading,
-        "content_workspace_public_copy",
-        "Public copy",
-      );
       const languages = document.createElement("div");
       languages.className = "content-workspace-language-grid";
       languages.append(
         createReadOnlyLanguage(item, "en"),
         createReadOnlyLanguage(item, "fr"),
       );
-      copy.append(heading, languages);
+      copy.append(languages);
       return copy;
     }
 
@@ -1951,6 +1978,7 @@ window.ContentWorkspaceEditors = {
     return {
       disposeEditors,
       createLanguageEditor,
+      createBilingualArticleEditor,
       getEditorDraftKey,
       captureEditorDrafts,
       createContentWorkspaceRecordEditor,

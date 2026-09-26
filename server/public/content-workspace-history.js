@@ -27,6 +27,7 @@ window.ContentWorkspaceHistory = {
         ],
         message: ["content_workspace_field_message", "Message"],
         content: ["content_workspace_field_content", "Story"],
+        editorialNote: ["content_workspace_revision_note", "Editorial note"],
         blocks: ["article_blocks", "Article blocks"],
         newsletterBlocks: ["article_blocks", "Article blocks"],
         newsletter: ["article_details", "Article details"],

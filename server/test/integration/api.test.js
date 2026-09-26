@@ -1660,6 +1660,133 @@ describe('news publication scheduling', () => {
 });
 
 describe('news stories', () => {
+  test('private editorial notes persist independently per language and enforce access and validation', async () => {
+    const staff = await createUser({ role: 'editor' });
+    const member = await createUser();
+    const authorization = bearer((await login(staff)).body.token);
+    const article = await NewsArticle.create({
+      title: { en: 'Story', fr: 'Article' },
+      content: { en: 'Public copy', fr: 'Texte public' },
+      status: 'published',
+      createdBy: staff._id,
+    });
+    const path = `/api/admin/content/newsArticle/${article._id}/editorial-note`;
+    const note = { language: 'en', note: 'Check this translation' };
+    const reviewerRole = await Role.create({
+      name: 'Notes reviewer',
+      slug: 'notes-reviewer',
+      permissions: ['content.review'],
+    });
+    const reviewer = await createUser({
+      role: 'subscriber',
+      customRoles: [reviewerRole._id],
+    });
+    await request(app)
+      .patch(path)
+      .set('Authorization', bearer((await login(reviewer)).body.token))
+      .send(note)
+      .expect(403);
+    const publisherRole = await Role.create({
+      name: 'Notes publisher',
+      slug: 'notes-publisher',
+      permissions: ['news.manage'],
+    });
+    const publisher = await createUser({
+      role: 'subscriber',
+      customRoles: [publisherRole._id],
+    });
+    const publisherAuth = bearer((await login(publisher)).body.token);
+    await request(app)
+      .patch(path.replace('newsArticle', 'event'))
+      .set('Authorization', publisherAuth)
+      .send(note)
+      .expect(403);
+    await request(app)
+      .patch(path)
+      .set('Authorization', publisherAuth)
+      .send({ language: 'en', note: '' })
+      .expect(200);
+    await request(app).patch(path).send(note).expect(401);
+    await request(app)
+      .patch(path)
+      .set('Authorization', bearer((await login(member)).body.token))
+      .send(note)
+      .expect(403);
+    for (const invalid of [
+      { language: 'de', note: 'No' },
+      { language: 'en', note: 12 },
+      { language: 'en', note: 'x'.repeat(2001) },
+    ])
+      await request(app)
+        .patch(path)
+        .set('Authorization', authorization)
+        .send(invalid)
+        .expect(400);
+    await request(app)
+      .patch(path.replace(String(article._id), 'invalid'))
+      .set('Authorization', authorization)
+      .send(note)
+      .expect(400);
+    await request(app)
+      .patch(
+        path.replace(
+          String(article._id),
+          String(new mongoose.Types.ObjectId()),
+        ),
+      )
+      .set('Authorization', authorization)
+      .send(note)
+      .expect(404);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization)
+      .send(note)
+      .expect(200);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization)
+      .send({ language: 'fr', note: 'Note française' })
+      .expect(200);
+    const workspace = await request(app)
+      .get(`/api/admin/content?scope=articles&id=${article._id}`)
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.deepEqual(workspace.body.items[0].editorialNotes, {
+      en: note.note,
+      fr: 'Note française',
+    });
+    const publicArticle = await request(app)
+      .get(`/api/news/${article._id}`)
+      .expect(200);
+    assert.ok(!JSON.stringify(publicArticle.body).includes(note.note));
+    assert.equal(publicArticle.body.article?.editorialNotes, undefined);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization)
+      .send({ language: 'en', note: '' })
+      .expect(200);
+    const cleared = await request(app)
+      .get(`/api/admin/content?scope=articles&id=${article._id}`)
+      .set('Authorization', authorization)
+      .expect(200);
+    assert.deepEqual(cleared.body.items[0].editorialNotes, {
+      en: '',
+      fr: 'Note française',
+    });
+    assert.equal(
+      await ContentRevision.countDocuments({
+        contentId: article._id,
+        fields: 'editorialNote',
+      }),
+      3,
+    );
+    assert.equal(
+      await AuditLog.countDocuments({
+        action: 'content.editorial_note_updated',
+      }),
+      3,
+    );
+  });
   test('unified articles preserve legacy copy and history while categories remain independent', async () => {
     const staff = await createUser({ role: 'editor' });
     const authorization = bearer((await login(staff)).body.token);

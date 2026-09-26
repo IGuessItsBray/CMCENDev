@@ -1,33 +1,303 @@
 /* Workspace layout within the persistent admin shell. */
+:is(#adminContent, #adminArticles) {
+  --workspace-edge-light: rgba(255, 255, 255, 0.65);
+  --workspace-edge-shadow: rgba(20, 30, 45, 0.09);
+}
+html[data-theme='dark'] :is(#adminContent, #adminArticles) {
+  --workspace-edge-light: rgba(255, 255, 255, 0.045);
+  --workspace-edge-shadow: rgba(0, 0, 0, 0.25);
+}
+:is(#adminContent, #adminArticles) > .admin-area-heading {
+  background:
+    linear-gradient(180deg, var(--workspace-edge-light), transparent 80%),
+    var(--admin-heading);
+  box-shadow:
+    inset 0 1px var(--workspace-edge-light),
+    0 2px 6px var(--workspace-edge-shadow);
+}
+:is(#adminContent, #adminArticles) .content-workspace-list-heading {
+  background:
+    linear-gradient(135deg, var(--workspace-edge-light), transparent),
+    var(--admin-inset);
+  border-bottom-color: var(--admin-border);
+}
+.content-workspace-record-title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.content-workspace-record-type {
+  font-size: 0.7rem;
+  line-height: 1.2;
+  color: var(--admin-muted);
+}
+.article-block-header > strong {
+  flex: 1 1 auto;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.admin-area .article-block-header > button {
+  width: 28px;
+  min-height: 28px;
+  padding: 2px;
+  flex: 0 0 28px;
+}
+.admin-area .article-block-header > button:last-child {
+  color: #fff;
+  background: #a32d32;
+  border-color: #a32d32;
+}
+.article-language-label {
+  color: var(--admin-accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+#dashboardNextContent .content-workspace-list-toggle {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 16px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  min-width: 0;
+  font-size: 18px;
+  line-height: 1;
+  margin: 0;
+  border: 0;
+  border-left: 1px solid var(--admin-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--admin-muted);
+  z-index: 1;
+}
+#dashboardNextContent .content-workspace-list-toggle:hover {
+  background: var(--admin-selected);
+  color: var(--admin-accent);
+}
+:is(#adminContent, #adminArticles) .content-workspace-layout.is-list-collapsed {
+  grid-template-columns: minmax(18px, 0fr) minmax(0, 1.35fr);
+}
+.is-list-collapsed
+  .content-workspace-list-panel
+  > :not(.content-workspace-list-toggle) {
+  opacity: 0;
+  visibility: hidden;
+}
+:is(#adminContent, #adminArticles) .content-workspace-record {
+  row-gap: 2px;
+  padding-bottom: 8px;
+}
+:is(#adminContent, #adminArticles) .content-workspace-translation-status {
+  margin: 2px 0 0;
+  padding: 0;
+  font-size: 0.65rem;
+  line-height: 1.2;
+  color: var(--admin-accent);
+}
+.article-bilingual-columns,
+:is(#adminContent, #adminArticles) .content-workspace-language-editors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  min-width: 0;
+}
+.content-workspace-translation-needs {
+  color: var(--admin-text);
+}
+html[data-theme='dark'] .content-workspace-translation-needs {
+  color: #fff;
+}
+.article-block-language {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+.content-workspace-copy > .article-block-editor {
+  margin-top: 18px;
+}
+@media (max-width: 700px) {
+  .article-bilingual-columns,
+  :is(#adminContent, #adminArticles) .content-workspace-language-editors {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+html[data-theme='dark'] :is(#adminContent, #adminArticles) .article-block {
+  border-color: var(--admin-border);
+}
+.content-workspace-note-disclosure > summary {
+  display: inline-flex;
+  padding: 4px 8px;
+  color: var(--gold-600);
+  cursor: pointer;
+  font-size: 1.25rem;
+  list-style: none;
+}
+.content-workspace-note-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.content-workspace-note-disclosure.has-note > summary {
+  background: var(--admin-selected);
+  border-radius: 4px;
+}
 :is(#adminContent, #adminArticles) .content-workspace-review-queues {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 16px;
+  margin: 0;
+  justify-content: flex-end;
 }
 :is(#adminContent, #adminArticles) .content-workspace-review-queues-title {
   flex-basis: 100%;
   margin: 0;
   font-size: 0.875rem;
   color: var(--admin-muted);
+  text-align: right;
+}
+#contentWorkspaceQueueActions {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.content-workspace-review-queues button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+#adminContent .content-workspace-review-queues button.has-pending {
+  border-color: var(--admin-accent);
+  background: var(--admin-selected);
+  color: var(--admin-accent);
+}
+#adminContent .content-workspace-review-queues button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+#adminContent
+  .content-workspace-review-queues
+  button:disabled
+  .content-workspace-queue-count {
+  background: var(--admin-inset);
+  color: var(--admin-muted);
+}
+@media (min-width: 1101px) {
+  #adminContent .content-workspace-review-queues {
+    display: grid;
+    grid-template-columns: repeat(4, max-content);
+  }
+  #adminContent .content-workspace-review-queues-title {
+    grid-column: 1 / -1;
+  }
+  #adminContent > .admin-area-heading > div:first-child {
+    min-width: 0;
+    flex: 1;
+  }
+}
+.content-workspace-queue-count {
+  min-width: 1.6em;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--admin-selected);
+  color: var(--admin-text);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 :is(#adminContentBody, #adminArticlesBody) {
-  padding-top: 20px;
+  padding-top: 0;
   min-width: 0;
+  margin-inline: calc(16px - var(--admin-area-padding));
+}
+:is(#adminContent, #adminArticles) > .admin-area-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin-bottom: 16px;
 }
 :is(#adminContent, #adminArticles) .content-workspace-layout {
   display: grid;
   grid-template-columns: minmax(240px, 0.65fr) minmax(0, 1.35fr);
   gap: 20px;
   align-items: start;
+  transition: grid-template-columns 200ms ease;
 }
 :is(#adminContent, #adminArticles) .content-workspace-list-panel {
   --content-workspace-list-surface: var(--admin-inset);
   position: sticky;
   top: calc(var(--admin-header-height, 100px) + 16px);
   max-height: calc(100dvh - var(--admin-header-height, 100px) - 32px);
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid var(--admin-border);
+  height: calc(100dvh - var(--admin-header-height, 100px) - 32px);
+  padding-right: 16px;
+}
+@media (min-width: 1101px) {
+  #dashboardNextContent .is-list-collapsed .content-workspace-list-toggle {
+    width: 100%;
+    border-left: 0;
+  }
+  :is(#adminContent, #adminArticles) .content-workspace-layout {
+    margin-left: -16px;
+  }
+  :is(#adminContent, #adminArticles) .content-workspace-list-panel {
+    top: var(--admin-header-height, 100px);
+    margin-top: -16px;
+    height: calc(100dvh - var(--admin-header-height, 100px));
+    max-height: calc(100dvh - var(--admin-header-height, 100px));
+    border-block: 0;
+    border-left: 0;
+    box-shadow: 3px 0 8px var(--workspace-edge-shadow);
+  }
+}
+.content-workspace-list-panel > :not(.content-workspace-list-toggle) {
+  transition:
+    opacity 140ms ease,
+    visibility 140ms;
+}
+:is(#adminContent, #adminArticles) .content-workspace-detail-heading {
+  gap: 4px 12px;
+  padding-bottom: 0;
+}
+:is(#adminContent, #adminArticles) .content-workspace-detail-heading h2 {
+  font-size: clamp(22px, 2vw, 28px);
+}
+:is(#adminContent, #adminArticles) .content-workspace-detail-info {
+  margin: 0;
+  font-size: 12px;
+}
+:is(#adminContent, #adminArticles) .content-workspace-public-link {
+  margin-top: 2px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+:is(#adminContent, #adminArticles) .content-workspace-list-heading {
+  position: static;
+  flex: 0 0 auto;
+  box-shadow: none;
+}
+:is(#adminContent, #adminArticles) .content-workspace-list-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+:is(#adminContent, #adminArticles) .content-workspace-advanced-filters {
+  min-width: 0;
+}
+:is(#adminContent, #adminArticles) .content-workspace-advanced-filters summary {
+  padding: 4px 0;
+  cursor: pointer;
+  color: var(--admin-text);
+}
+:is(#adminContent, #adminArticles)
+  .content-workspace-filters
+  .content-workspace-advanced-filters
+  label {
+  grid-template-columns: 82px minmax(0, 1fr);
+  margin-top: 8px;
 }
 :is(#adminContent, #adminArticles) .content-workspace-list {
   display: grid;
@@ -40,9 +310,9 @@
 :is(#adminContent, #adminArticles) .content-workspace-record {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 6px 10px;
+  gap: 2px 10px;
   width: 100%;
-  padding: 14px;
+  padding: 14px 14px 8px;
   border: 0;
   border-bottom: 1px solid var(--admin-border);
   border-left: 3px solid transparent;
@@ -66,7 +336,7 @@
 :is(#adminContent, #adminArticles) .content-workspace-detail {
   display: grid;
   align-content: start;
-  gap: 24px;
+  gap: 14px;
   min-width: 0;
 }
 :is(#adminContent, #adminArticles) .admin-editor-field {
@@ -157,12 +427,42 @@
   flex-wrap: wrap;
 }
 @media (max-width: 1100px) {
+  #adminContent > .admin-area-heading {
+    flex-wrap: wrap;
+  }
+  #contentWorkspaceQueueActions {
+    flex-basis: 100%;
+  }
+  #adminContent .content-workspace-review-queues {
+    justify-content: flex-start;
+  }
+  #adminContent .content-workspace-review-queues-title {
+    text-align: left;
+  }
   :is(#adminContent, #adminArticles) .content-workspace-layout {
     grid-template-columns: minmax(0, 1fr);
   }
   :is(#adminContent, #adminArticles) .content-workspace-list-panel {
-    position: static;
     max-height: 420px;
+    position: relative;
+    height: 420px;
+    transition: height 200ms ease;
+  }
+  :is(#adminContent, #adminArticles)
+    .content-workspace-layout.is-list-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :is(#adminContent, #adminArticles)
+    .is-list-collapsed
+    .content-workspace-list-panel {
+    height: 32px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(#adminContent, #adminArticles) .content-workspace-layout,
+  :is(#adminContent, #adminArticles) .content-workspace-list-panel,
+  .content-workspace-list-panel > :not(.content-workspace-list-toggle) {
+    transition: none;
   }
 }
 @media (max-width: 560px) {

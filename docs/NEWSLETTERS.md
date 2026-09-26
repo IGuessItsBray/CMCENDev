@@ -14,7 +14,12 @@ articles. Contributor content remains in **Submissions**.
 
 Articles in the editor require their original language; translations can be added
 later. The shared editor supports headings, paragraphs, lists, images/captions and
-document links. Optional series/issue details are collapsed and appear publicly
+document links. Each block shows English and French side by side (stacked on
+small screens), with shared add, move and remove controls. Missing translations
+have empty fields; existing unmatched blocks in either language are preserved.
+Optional `pairId` values retain translation alignment when only some blocks have
+been translated. Private editorial notes stay attached to each language section.
+Optional series/issue details are collapsed and appear publicly
 for the Newsletter category. The cover image can be shown in the article header.
 Select existing media or upload images with `canUploadMedia`. Removing an image
 from an article does not delete the stored asset.

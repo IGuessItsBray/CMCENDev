@@ -215,8 +215,11 @@ body {
   cursor: pointer;
 }
 .admin-area button:disabled {
-  cursor: wait;
+  cursor: default;
   opacity: 0.6;
+}
+.admin-area button[aria-busy='true'] {
+  cursor: progress;
 }
 .banners-layout {
   display: grid;

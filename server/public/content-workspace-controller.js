@@ -48,7 +48,8 @@ window.ContentWorkspace = {
     const queues = document.createElement("nav");
     queues.className = "content-workspace-review-queues";
     queues.hidden = true;
-    root.prepend(queues);
+    const queueHost = document.getElementById("contentWorkspaceQueueActions");
+    if (!articleMode) queueHost.replaceChildren(queues);
     function renderReviewQueues() {
       queues.hidden = !canReviewContentWorkspace();
       if (queues.hidden) return;
@@ -57,8 +58,8 @@ window.ContentWorkspace = {
       heading.className = "content-workspace-review-queues-title";
       setWorkspaceTranslatedText(
         heading,
-        "dashboard_review_work_title",
-        "Submissions to review",
+        "content_workspace_awaiting_review",
+        "Awaiting review",
       );
       queues.setAttribute("aria-labelledby", heading.id);
       queues.replaceChildren(heading);
@@ -72,7 +73,17 @@ window.ContentWorkspace = {
         button.type = "button";
         button.className = "admin-work-zone-button is-secondary is-compact";
         const count = reviewCounts?.[key];
-        button.textContent = `${getText(label, type)}${Number.isInteger(count) ? ` (${count})` : ""}`;
+        button.disabled = count === 0;
+        button.classList.toggle(
+          "has-pending",
+          Number.isInteger(count) && count > 0,
+        );
+        const name = document.createElement("span");
+        name.textContent = getText(label, type);
+        const badge = document.createElement("strong");
+        badge.className = "content-workspace-queue-count";
+        badge.textContent = Number.isInteger(count) ? String(count) : "…";
+        button.append(name, badge);
         button.addEventListener(
           "click",
           () => void changeFilters({ queueType: type }),
@@ -125,6 +136,46 @@ window.ContentWorkspace = {
     const contentWorkspaceIntro = getElement("contentWorkspaceIntro");
     const contentWorkspaceMessage = getElement("contentWorkspaceMessage");
     const contentWorkspaceList = getElement("contentWorkspaceList");
+    const listPanel = contentWorkspaceList.closest(
+      ".content-workspace-list-panel",
+    );
+    const listToggle = document.createElement("button");
+    listToggle.type = "button";
+    listToggle.className = "content-workspace-list-toggle";
+    listToggle.setAttribute("aria-expanded", "true");
+    listToggle.setAttribute("aria-controls", elementId("contentWorkspaceList"));
+    const updateListToggle = () => {
+      const collapsed = listPanel
+        .closest(".content-workspace-layout")
+        .classList.contains("is-list-collapsed");
+      if (listToggle.parentElement !== listPanel) listPanel.append(listToggle);
+      for (const child of listPanel.children) {
+        if (child !== listToggle) child.inert = collapsed;
+      }
+      listToggle.textContent = collapsed ? "›" : "‹";
+      listToggle.setAttribute("aria-expanded", String(!collapsed));
+      listToggle.setAttribute(
+        "aria-label",
+        getText(
+          collapsed
+            ? "content_workspace_expand_list"
+            : "content_workspace_collapse_list",
+          collapsed ? "Show list" : "Collapse list",
+        ),
+      );
+      listToggle.title = listToggle.getAttribute("aria-label");
+    };
+    listToggle.addEventListener(
+      "click",
+      () => {
+        listPanel
+          .closest(".content-workspace-layout")
+          .classList.toggle("is-list-collapsed");
+        updateListToggle();
+        listToggle.focus({ preventScroll: true });
+      },
+      { signal: lifecycle.signal },
+    );
     const contentWorkspaceCount = getElement("contentWorkspaceCount");
     const contentWorkspaceLoadMore = getElement("contentWorkspaceLoadMore");
     const contentWorkspaceLoadMoreButton = getElement(
@@ -393,7 +444,7 @@ window.ContentWorkspace = {
       const translation = contentWorkspaceTranslationFilter.value || "all";
       const search = contentWorkspaceSearch.value.trim();
 
-      if (type !== "all") {
+      if (!articleMode && type !== "all") {
         searchParameters.set("type", type);
       }
       if (status !== "all") {
@@ -413,19 +464,25 @@ window.ContentWorkspace = {
     }
 
     function hasContentWorkspaceFilters() {
-      const searchParameters = workspaceUrl.searchParams;
-
       return Boolean(
-        contentWorkspaceType.value !== "all" ||
+        (!articleMode && contentWorkspaceType.value !== "all") ||
         contentWorkspaceStatusFilter.value !== "all" ||
         contentWorkspaceTranslationFilter.value !== "all" ||
-        contentWorkspaceSearch.value.trim() ||
-        searchParameters.get("id"),
+        contentWorkspaceSearch.value.trim(),
       );
     }
 
     function updateContentWorkspaceClearFiltersAction() {
       contentWorkspaceClearFilters.disabled = !hasContentWorkspaceFilters();
+      const advancedFilters = getElement("contentWorkspaceAdvancedFilters");
+      const activeCount = [
+        ...(articleMode ? [] : [contentWorkspaceType]),
+        contentWorkspaceStatusFilter,
+        contentWorkspaceTranslationFilter,
+      ].filter((control) => control.value !== "all").length;
+      advancedFilters.querySelector("strong").textContent = activeCount
+        ? ` (${activeCount})`
+        : "";
     }
 
     function clearContentWorkspaceFilters() {
@@ -510,9 +567,18 @@ window.ContentWorkspace = {
         ),
       );
 
-      status.textContent = languages.length
-        ? `${getText("translations_missing_label", "Missing translation")}: ${languages.join(", ")}`
-        : "";
+      status.textContent = missing
+        .map((language) => language.toUpperCase())
+        .join(" / ");
+      const prefix = document.createElement("span");
+      prefix.className = "content-workspace-translation-needs";
+      prefix.textContent = `${getText("content_workspace_translation_needs", "Missing")} `;
+      status.prepend(prefix);
+      status.setAttribute(
+        "aria-label",
+        `${getText("translations_missing_label", "Missing translation")}: ${languages.join(", ")}`,
+      );
+      status.title = status.getAttribute("aria-label");
     }
 
     function createContentWorkspaceTranslationStatus(item) {
@@ -697,14 +763,7 @@ window.ContentWorkspace = {
 
     function setRecordMetadata(metadata, item) {
       metadata.replaceChildren();
-
-      const type = document.createElement("span");
-      setTypeLabel(type, item.type);
-      metadata.append(type);
-
-      metadata.append(
-        document.createTextNode(` · ${getPublicationLabel(item)}`),
-      );
+      metadata.append(document.createTextNode(getPublicationLabel(item)));
       if (item.lastEditedAt) {
         metadata.append(
           document.createElement("br"),
@@ -781,6 +840,8 @@ window.ContentWorkspace = {
 
     function renderContentWorkspaceList() {
       if (disposed) return;
+      const scrollArea = contentWorkspaceList.parentElement;
+      const scrollTop = scrollArea.scrollTop;
       contentWorkspaceList.replaceChildren();
       updateContentWorkspaceCount();
       updateContentWorkspaceClearFiltersAction();
@@ -835,12 +896,18 @@ window.ContentWorkspace = {
 
         const title = document.createElement("strong");
         title.textContent = getListItemTitle(item);
+        const titleGroup = document.createElement("span");
+        titleGroup.className = "content-workspace-record-title";
+        const typeLabel = document.createElement("span");
+        typeLabel.className = "content-workspace-record-type";
+        setTypeLabel(typeLabel, item.type);
+        titleGroup.append(title, typeLabel);
 
         const metadata = document.createElement("span");
         metadata.className = "content-workspace-record-meta";
         setRecordMetadata(metadata, item);
 
-        button.append(title, metadata);
+        button.append(titleGroup, metadata);
         const translationStatus = createContentWorkspaceTranslationStatus(item);
 
         if (translationStatus) {
@@ -855,6 +922,7 @@ window.ContentWorkspace = {
         });
         contentWorkspaceList.append(button);
       });
+      scrollArea.scrollTop = scrollTop;
     }
 
     function getSelectedContentWorkspaceItem() {
@@ -956,13 +1024,6 @@ window.ContentWorkspace = {
       if (canEditPublicCopy) {
         const copy = document.createElement("section");
         copy.className = "content-workspace-copy";
-        const copyHeading = document.createElement("h2");
-        setWorkspaceTranslatedText(
-          copyHeading,
-          "content_workspace_public_copy",
-          "Public copy",
-        );
-        copy.append(copyHeading);
 
         const editors = document.createElement("div");
         editors.className = "content-workspace-language-editors";
@@ -971,18 +1032,16 @@ window.ContentWorkspace = {
           createLanguageEditor(item, "fr"),
         );
         copy.append(editors);
+        if (item.type === "newsArticle") {
+          editors.classList.add("article-bilingual-columns");
+          copy.append(createBilingualArticleEditor([...editors.children]));
+        }
 
         contentWorkspaceDetail.append(copy);
       } else if (item.type === "retirementComment") {
         const comment = document.createElement("section");
         comment.className = "content-workspace-copy";
-        const heading = document.createElement("h2");
-        setWorkspaceTranslatedText(
-          heading,
-          "content_workspace_public_copy",
-          "Public copy",
-        );
-        comment.append(heading, ...createReadOnlyComment(item));
+        comment.append(...createReadOnlyComment(item));
         contentWorkspaceDetail.append(comment);
       } else {
         contentWorkspaceDetail.append(createReadOnlyCopy(item));
@@ -1229,9 +1288,6 @@ window.ContentWorkspace = {
       if (search) {
         query.set("search", search);
       }
-      if (contentWorkspaceState.requestedContentId) {
-        query.set("id", contentWorkspaceState.requestedContentId);
-      }
       if (append) {
         query.set("cursor", contentWorkspaceState.nextCursor);
       }
@@ -1243,6 +1299,29 @@ window.ContentWorkspace = {
         if (requestId !== contentWorkspaceState.loadRequestId) return;
 
         const nextItems = Array.isArray(data.items) ? data.items : [];
+        // A URL id selects a record; it must not restrict the paginated list.
+        // Fetch a deep-linked record separately when it is outside this page.
+        const requestedId =
+          contentWorkspaceState.requestedContentId ||
+          (preserveSelection ? contentWorkspaceState.selectedId : "");
+        if (
+          !append &&
+          requestedId &&
+          !nextItems.some((item) => String(item._id) === requestedId)
+        ) {
+          const selectedQuery = new URLSearchParams({
+            scope: articleMode ? "articles" : "submissions",
+            id: requestedId,
+          });
+          const selectedData = await contentWorkspaceApiJson(
+            `/api/admin/content?${selectedQuery}`,
+          );
+          if (requestId !== contentWorkspaceState.loadRequestId) return;
+          const selected = selectedData.items?.find(
+            (item) => String(item._id) === requestedId,
+          );
+          if (selected) nextItems.unshift(selected);
+        }
 
         if (append) {
           const loadedItemIds = new Set(
@@ -1310,47 +1389,48 @@ window.ContentWorkspace = {
     }
 
     if (articleMode) {
-      const create = document.createElement("button");
-      create.type = "button";
-      create.className = "admin-work-zone-button is-primary article-create";
-      setWorkspaceTranslatedText(create, "article_new", "New article");
-      root.prepend(create);
-      create.addEventListener("click", async () => {
-        if (
-          contentWorkspaceState.isLoading ||
-          contentWorkspaceState.isActing ||
-          !(await confirmDiscard())
-        )
-          return;
-        if (disposed) return;
-        contentWorkspaceState.editorDrafts.clear();
-        contentWorkspaceState.newArticle = {
-          _id: "new",
-          type: "newsArticle",
-          isNew: true,
-          status: "draft",
-          title: getText("article_new", "New article"),
-          content: {
-            layout: "newsletter",
-            category: "news",
-            title: { en: "", fr: "" },
-            content: { en: "", fr: "" },
-            newsletterBlocks: { en: [], fr: [] },
-            newsletter: {
-              language: CMCENUtils.getCurrentLanguage(),
-              archived: false,
+      const create = getElement("contentWorkspaceCreate");
+      create.addEventListener(
+        "click",
+        async () => {
+          if (
+            contentWorkspaceState.isLoading ||
+            contentWorkspaceState.isActing ||
+            !(await confirmDiscard())
+          )
+            return;
+          if (disposed) return;
+          contentWorkspaceState.editorDrafts.clear();
+          contentWorkspaceState.newArticle = {
+            _id: "new",
+            type: "newsArticle",
+            isNew: true,
+            status: "draft",
+            title: getText("article_new", "New article"),
+            content: {
+              layout: "newsletter",
+              category: "news",
+              title: { en: "", fr: "" },
+              content: { en: "", fr: "" },
+              newsletterBlocks: { en: [], fr: [] },
+              newsletter: {
+                language: CMCENUtils.getCurrentLanguage(),
+                archived: false,
+              },
             },
-          },
-        };
-        contentWorkspaceState.selectedId = "new";
-        contentWorkspaceState.requestedContentId = "";
-        updateContentWorkspaceSearchParameters();
-        renderContentWorkspaceDetail();
-        contentWorkspaceDetail.querySelector("input[name=title]")?.focus();
-      });
+          };
+          contentWorkspaceState.selectedId = "new";
+          contentWorkspaceState.requestedContentId = "";
+          updateContentWorkspaceSearchParameters();
+          renderContentWorkspaceDetail();
+          contentWorkspaceDetail.querySelector("input[name=title]")?.focus();
+        },
+        { signal: lifecycle.signal },
+      );
     }
 
     function updateContentWorkspaceLanguage() {
+      updateListToggle();
       renderReviewQueues();
       updateContentWorkspaceModePresentation();
       updateContentWorkspaceStatusFilterAppearance();
@@ -1530,6 +1610,7 @@ window.ContentWorkspace = {
     const {
       disposeEditors,
       createLanguageEditor,
+      createBilingualArticleEditor,
       getEditorDraftKey,
       captureEditorDrafts,
       createContentWorkspaceRecordEditor,
@@ -1621,6 +1702,7 @@ window.ContentWorkspace = {
       formatWorkspaceDate: (...args) => formatWorkspaceDate(...args),
     });
     updateContentWorkspaceModePresentation();
+    updateListToggle();
     updateContentWorkspaceStatusFilterAppearance();
     renderContentWorkspaceDetail();
     const ready = initializeContentWorkspace();
@@ -1656,6 +1738,7 @@ window.ContentWorkspace = {
         contentWorkspaceState.items = [];
         contentWorkspaceState.editorDrafts.clear();
         disposeEditors();
+        queues.remove();
         root.replaceChildren();
       },
     };

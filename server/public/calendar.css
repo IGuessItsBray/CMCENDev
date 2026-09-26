@@ -402,7 +402,7 @@
 .calendar-navigation-button:disabled,
 .calendar-today-button:disabled,
 .calendar-view-toggle-button:disabled {
-  cursor: wait;
+  cursor: default;
   opacity: 0.55;
 }
 

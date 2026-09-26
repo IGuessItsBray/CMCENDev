@@ -684,6 +684,14 @@
                   Create and manage articles.
                 </p>
               </div>
+              <button
+                id="articleWorkspaceCreate"
+                type="button"
+                class="admin-work-zone-button is-primary"
+                data-i18n="article_new"
+              >
+                New article
+              </button>
             </header>
             <div id="adminArticlesBody"></div>
           </section>
@@ -717,6 +725,7 @@
                   history.
                 </p>
               </div>
+              <div id="contentWorkspaceQueueActions"></div>
             </header>
             <div id="adminContentBody"></div>
             <template id="contentWorkspaceTemplate">
@@ -742,7 +751,11 @@
                       data-i18n-aria-label="content_workspace_filters"
                     >
                       <label>
-                        <span data-i18n="content_workspace_search">Search</span>
+                        <span
+                          class="visually-hidden"
+                          data-i18n="content_workspace_search"
+                          >Search</span
+                        >
                         <input
                           id="contentWorkspaceSearch"
                           name="search"
@@ -754,136 +767,148 @@
                         />
                       </label>
 
-                      <label>
-                        <span data-i18n="content_workspace_type"
-                          >Content type</span
-                        >
-                        <select id="contentWorkspaceType" name="type">
-                          <option
-                            value="all"
-                            data-i18n="content_workspace_all_types"
+                      <details
+                        id="contentWorkspaceAdvancedFilters"
+                        class="content-workspace-advanced-filters"
+                      >
+                        <summary>
+                          <span data-i18n="content_workspace_filters"
+                            >Content filters</span
+                          ><strong></strong>
+                        </summary>
+                        <label>
+                          <span data-i18n="content_workspace_type"
+                            >Content type</span
                           >
-                            All types
-                          </option>
-                          <option
-                            value="event"
-                            data-i18n="content_workspace_event"
-                          >
-                            Events
-                          </option>
-                          <option
-                            value="retirementMessage"
-                            data-i18n="content_workspace_retirement"
-                          >
-                            Retirement messages
-                          </option>
-                          <option
-                            value="lastPost"
-                            data-i18n="content_workspace_last_post"
-                          >
-                            Last Post notices
-                          </option>
-                          <option
-                            value="newsArticle"
-                            data-i18n="content_workspace_news"
-                          >
-                            News stories
-                          </option>
-                          <option
-                            value="retirementComment"
-                            data-i18n="content_workspace_comment"
-                          >
-                            Comments
-                          </option>
-                        </select>
-                      </label>
+                          <select id="contentWorkspaceType" name="type">
+                            <option
+                              value="all"
+                              data-i18n="content_workspace_all_types"
+                            >
+                              All types
+                            </option>
+                            <option
+                              value="event"
+                              data-i18n="content_workspace_event"
+                            >
+                              Events
+                            </option>
+                            <option
+                              value="retirementMessage"
+                              data-i18n="content_workspace_retirement"
+                            >
+                              Retirement messages
+                            </option>
+                            <option
+                              value="lastPost"
+                              data-i18n="content_workspace_last_post"
+                            >
+                              Last Post notices
+                            </option>
+                            <option
+                              value="newsArticle"
+                              data-i18n="content_workspace_news"
+                            >
+                              News stories
+                            </option>
+                            <option
+                              value="retirementComment"
+                              data-i18n="content_workspace_comment"
+                            >
+                              Comments
+                            </option>
+                          </select>
+                        </label>
 
-                      <label>
-                        <span data-i18n="content_workspace_status">Status</span>
-                        <select
-                          id="contentWorkspaceStatusFilter"
-                          class="content-workspace-status-filter is-all"
-                          name="status"
-                        >
-                          <option
-                            value="all"
-                            data-i18n="content_workspace_all_statuses"
+                        <label>
+                          <span data-i18n="content_workspace_status"
+                            >Status</span
                           >
-                            All statuses
-                          </option>
-                          <option
-                            value="pending"
-                            data-i18n="content_workspace_pending"
+                          <select
+                            id="contentWorkspaceStatusFilter"
+                            class="content-workspace-status-filter is-all"
+                            name="status"
                           >
-                            Pending
-                          </option>
-                          <option
-                            value="scheduled"
-                            data-i18n="content_workspace_scheduled"
-                          >
-                            Scheduled
-                          </option>
-                          <option
-                            value="published"
-                            data-i18n="content_workspace_published"
-                          >
-                            Published
-                          </option>
-                          <option
-                            value="hidden"
-                            data-i18n="content_workspace_hidden"
-                          >
-                            Removed
-                          </option>
-                          <option
-                            value="rejected"
-                            data-i18n="content_workspace_rejected"
-                          >
-                            Rejected
-                          </option>
-                          <option
-                            value="draft"
-                            data-i18n="content_workspace_draft"
-                          >
-                            Draft
-                          </option>
-                        </select>
-                      </label>
+                            <option
+                              value="all"
+                              data-i18n="content_workspace_all_statuses"
+                            >
+                              All statuses
+                            </option>
+                            <option
+                              value="pending"
+                              data-i18n="content_workspace_pending"
+                            >
+                              Pending
+                            </option>
+                            <option
+                              value="scheduled"
+                              data-i18n="content_workspace_scheduled"
+                            >
+                              Scheduled
+                            </option>
+                            <option
+                              value="published"
+                              data-i18n="content_workspace_published"
+                            >
+                              Published
+                            </option>
+                            <option
+                              value="hidden"
+                              data-i18n="content_workspace_hidden"
+                            >
+                              Removed
+                            </option>
+                            <option
+                              value="rejected"
+                              data-i18n="content_workspace_rejected"
+                            >
+                              Rejected
+                            </option>
+                            <option
+                              value="draft"
+                              data-i18n="content_workspace_draft"
+                            >
+                              Draft
+                            </option>
+                          </select>
+                        </label>
 
-                      <label>
-                        <span data-i18n="content_workspace_translation_status"
-                          >Translation</span
-                        >
-                        <select
-                          id="contentWorkspaceTranslationFilter"
-                          name="translation"
-                        >
-                          <option
-                            value="all"
-                            data-i18n="content_workspace_all_translation_statuses"
+                        <label>
+                          <span data-i18n="content_workspace_translation_status"
+                            >Translation</span
                           >
-                            All translation states
-                          </option>
-                          <option
-                            value="missing-any"
-                            data-i18n="translations_filter_missing_any"
+                          <select
+                            id="contentWorkspaceTranslationFilter"
+                            name="translation"
                           >
-                            Needs a translation
-                          </option>
-                          <option
-                            value="missing-en"
-                            data-i18n="translations_filter_missing_english"
-                          >
-                            Needs English
-                          </option>
-                          <option
-                            value="missing-fr"
-                            data-i18n="translations_filter_missing_french"
-                          >
-                            Needs French
-                          </option>
-                        </select>
-                      </label>
+                            <option
+                              value="all"
+                              data-i18n="content_workspace_all_translation_statuses"
+                            >
+                              All translation states
+                            </option>
+                            <option
+                              value="missing-any"
+                              data-i18n="translations_filter_missing_any"
+                            >
+                              Needs a translation
+                            </option>
+                            <option
+                              value="missing-en"
+                              data-i18n="translations_filter_missing_english"
+                            >
+                              Needs English
+                            </option>
+                            <option
+                              value="missing-fr"
+                              data-i18n="translations_filter_missing_french"
+                            >
+                              Needs French
+                            </option>
+                          </select>
+                        </label>
+                      </details>
                     </div>
                     <div class="content-workspace-list-summary">
                       <strong
@@ -901,22 +926,26 @@
                       </button>
                     </div>
                   </div>
-                  <div
-                    class="content-workspace-list"
-                    id="contentWorkspaceList"
-                  ></div>
-                  <div
-                    class="content-workspace-load-more"
-                    id="contentWorkspaceLoadMore"
-                    hidden
-                  >
-                    <button
-                      class="admin-work-zone-button is-secondary is-compact"
-                      id="contentWorkspaceLoadMoreButton"
-                      type="button"
+                  <div class="content-workspace-list-scroll">
+                    <div
+                      class="content-workspace-list"
+                      id="contentWorkspaceList"
+                    ></div>
+                    <div
+                      class="content-workspace-load-more"
+                      id="contentWorkspaceLoadMore"
+                      hidden
                     >
-                      <span id="contentWorkspaceLoadMoreLabel">Load more</span>
-                    </button>
+                      <button
+                        class="admin-work-zone-button is-secondary is-compact"
+                        id="contentWorkspaceLoadMoreButton"
+                        type="button"
+                      >
+                        <span id="contentWorkspaceLoadMoreLabel"
+                          >Load more</span
+                        >
+                      </button>
+                    </div>
                   </div>
                 </aside>
 

@@ -10,6 +10,30 @@ window.ArticleEditor = (() => {
     node.type = "button";
     node.dataset.i18n = key;
     node.textContent = getText(key, key);
+    const symbols = {
+      article_bold: "B",
+      article_italic: "I",
+      article_link: "🔗",
+      article_move_up: "↑",
+      article_move_down: "↓",
+      article_remove_block: "−",
+    };
+    if (symbols[key]) {
+      delete node.dataset.i18n;
+      node.dataset.i18nAriaLabel = key;
+      node.setAttribute("aria-label", getText(key, key));
+      node.title = getText(key, key);
+      const icon = el(
+        key === "article_bold"
+          ? "strong"
+          : key === "article_italic"
+            ? "em"
+            : "span",
+      );
+      icon.textContent = symbols[key];
+      icon.setAttribute("aria-hidden", "true");
+      node.replaceChildren(icon);
+    }
     node.addEventListener("click", action);
     return node;
   }
@@ -68,6 +92,9 @@ window.ArticleEditor = (() => {
     input.setAttribute("aria-multiline", "true");
     input.setAttribute("aria-label", getText("article_text", "Text"));
     window.NewsletterRenderer.inline(input, nodes);
+    input.querySelectorAll("a").forEach((anchor) => {
+      anchor.contentEditable = "false";
+    });
     const changed = () => onChange(readInline(input));
     input.addEventListener("input", changed);
     input.addEventListener("paste", (event) => {
@@ -83,7 +110,6 @@ window.ArticleEditor = (() => {
     for (const [key, command] of [
       ["article_bold", "bold"],
       ["article_italic", "italic"],
-      ["article_unlink", "unlink"],
     ]) {
       const control = button(
         key,
@@ -105,11 +131,28 @@ window.ArticleEditor = (() => {
           selection.rangeCount && input.contains(selection.anchorNode)
             ? selection.getRangeAt(0).cloneRange()
             : null;
-        const href = await CMCENModal.prompt(
+        const values = await CMCENModal.form(
           getText("article_link_url", "Link URL"),
-          { inputType: "url" },
+          {
+            fields: [
+              {
+                name: "href",
+                type: "text",
+                label: getText("article_link_url", "Link URL"),
+                required: true,
+              },
+              {
+                name: "text",
+                type: "text",
+                label: getText("article_link_text", "Display text (optional)"),
+                defaultValue: range?.toString() || "",
+              },
+            ],
+          },
         );
-        if (!href || !input.isConnected) return;
+        if (!values || !input.isConnected) return;
+        const href = values.href.trim();
+        if (!href) return;
         if (!window.NewsletterRenderer.safeUrl(href)) {
           CMCENUtils.showToast(
             getText("article_invalid_url", "Enter a valid web or email link."),
@@ -122,13 +165,21 @@ window.ArticleEditor = (() => {
           selection.removeAllRanges();
           selection.addRange(range);
         }
-        if (!range || range.collapsed) {
-          const anchor = el("a");
-          anchor.href = href;
-          anchor.textContent = href;
-          if (range) range.insertNode(anchor);
-          else input.append(anchor);
-        } else document.execCommand("createLink", false, href);
+        const anchor = el("a");
+        anchor.href = href;
+        anchor.textContent = values.text.trim() || href;
+        anchor.contentEditable = "false";
+        const insertion = range || document.createRange();
+        if (!range) {
+          insertion.selectNodeContents(input);
+          insertion.collapse(false);
+        }
+        insertion.deleteContents();
+        insertion.insertNode(anchor);
+        insertion.setStartAfter(anchor);
+        insertion.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(insertion);
         changed();
       },
       getText,
@@ -294,27 +345,54 @@ window.ArticleEditor = (() => {
     return root;
   }
 
-  function create({ value, getText, api, canUpload, busy, language }) {
+  function create({ inputs, getText, api, canUpload, busy }) {
     const root = el("div", "article-block-editor");
-    const hidden = el("input");
-    hidden.type = "hidden";
-    hidden.name = "newsletterBlocks";
-    let blocks = JSON.parse(value || "[]");
-    hidden.value = JSON.stringify(blocks);
+    const blocks = window.NewsletterFormat.pairBlocks(
+      JSON.parse(inputs.en.value || "[]"),
+      JSON.parse(inputs.fr.value || "[]"),
+    ).map((row) => ({
+      ...row,
+      id: row.en?.pairId || row.fr?.pairId || crypto.randomUUID(),
+      type: (row.en || row.fr).type,
+    }));
+    const emptyBlock = (type, source) => ({
+      type,
+      ...{
+        paragraph: { children: [""] },
+        heading: { text: "" },
+        figure: {
+          image: source?.image
+            ? { ...structuredClone(source.image), alt: "" }
+            : { url: "", alt: "" },
+          caption: "",
+        },
+        list: {
+          items: Array.from({ length: source?.items?.length || 1 }, () => [""]),
+        },
+        document: { label: "", href: "" },
+      }[type],
+    });
     const list = el("div", "article-block-list");
-    const changed = () => {
-      hidden.value = JSON.stringify(blocks);
-      hidden.dispatchEvent(new Event("input", { bubbles: true }));
+    const syncInputs = () => {
+      for (const language of ["en", "fr"]) {
+        inputs[language].value = JSON.stringify(
+          blocks
+            .filter((row) => row[language])
+            .map((row) => ({ ...row[language], pairId: row.id })),
+        );
+        inputs[language].dispatchEvent(new Event("input", { bubbles: true }));
+      }
     };
+    const changed = syncInputs;
     const redraw = (focusIndex) => {
       list.replaceChildren();
-      blocks.forEach((block, index) => {
+      blocks.forEach((pair, index) => {
         const card = el("section", "article-block");
-        card.dataset.blockType = block.type;
-        const toolbar = el("div", "article-block-tools");
+        card.dataset.blockType = pair.type;
+        const toolbar = el("div", "article-block-tools article-block-header");
         const name = el("strong");
-        name.dataset.i18n = `article_block_${block.type}`;
-        name.textContent = getText(name.dataset.i18n, block.type);
+        name.dataset.i18n = `article_block_${pair.type}`;
+        name.textContent = getText(name.dataset.i18n, pair.type);
         toolbar.append(name);
         for (const [key, delta] of [
           ["article_move_up", -1],
@@ -338,7 +416,18 @@ window.ArticleEditor = (() => {
         toolbar.append(
           button(
             "article_remove_block",
-            () => {
+            async () => {
+              const confirmed = await CMCENModal.confirm(
+                getText(
+                  "article_remove_block_confirm",
+                  "Remove this block and its English and French content?",
+                ),
+                {
+                  title: getText("article_remove_block", "Remove block"),
+                  destructive: true,
+                },
+              );
+              if (!confirmed || !root.isConnected) return;
               blocks.splice(index, 1);
               changed();
               redraw(Math.min(index, blocks.length - 1));
@@ -347,183 +436,212 @@ window.ArticleEditor = (() => {
           ),
         );
         card.append(toolbar);
-        if (block.type === "heading")
-          card.append(
-            field(
-              "article_heading",
-              block.text,
-              (text) => {
-                block.text = text;
-                changed();
-              },
-              getText,
-            ),
-          );
-        if (block.type === "paragraph")
-          card.append(
-            richText(
-              block.children,
-              (children) => {
-                block.children = children;
-                changed();
-              },
-              getText,
-            ),
-          );
-        if (block.type === "list") {
-          block.items.forEach((item, itemIndex) => {
-            const row = el("div", "article-list-item");
-            row.append(
-              richText(
-                item,
-                (children) => {
-                  block.items[itemIndex] = children;
+        const columns = el("div", "article-bilingual-columns");
+        for (const language of ["en", "fr"]) {
+          const counterpart = language === "en" ? "fr" : "en";
+          const block =
+            pair[language] || emptyBlock(pair.type, pair[counterpart]);
+          const card = el("section", "article-block-language");
+          card.dataset.language = language;
+          card.lang = language;
+          const label = el("strong");
+          label.className = "article-language-label";
+          label.textContent = language.toUpperCase();
+          card.append(label);
+          const changed = () => {
+            pair[language] = block;
+            syncInputs();
+          };
+          if (block.type === "heading")
+            card.append(
+              field(
+                "article_heading",
+                block.text,
+                (text) => {
+                  block.text = text;
                   changed();
                 },
                 getText,
               ),
+            );
+          if (block.type === "paragraph")
+            card.append(
+              richText(
+                block.children,
+                (children) => {
+                  block.children = children;
+                  changed();
+                },
+                getText,
+              ),
+            );
+          if (block.type === "list") {
+            block.items.forEach((item, itemIndex) => {
+              const row = el("div", "article-list-item");
+              row.append(
+                richText(
+                  item,
+                  (children) => {
+                    block.items[itemIndex] = children;
+                    changed();
+                  },
+                  getText,
+                ),
+                button(
+                  "article_remove_item",
+                  () => {
+                    for (const lang of ["en", "fr"])
+                      pair[lang]?.items.splice(itemIndex, 1);
+                    if (!pair[language]) block.items.splice(itemIndex, 1);
+                    changed();
+                    redraw(index);
+                  },
+                  getText,
+                ),
+              );
+              card.append(row);
+            });
+            card.append(
               button(
-                "article_remove_item",
+                "article_add_item",
                 () => {
-                  block.items.splice(itemIndex, 1);
+                  for (const lang of ["en", "fr"]) pair[lang]?.items.push([""]);
+                  if (!pair[language]) block.items.push([""]);
                   changed();
                   redraw(index);
                 },
                 getText,
               ),
             );
-            card.append(row);
-          });
-          card.append(
-            button(
-              "article_add_item",
-              () => {
-                block.items.push([""]);
-                changed();
-                redraw(index);
-              },
-              getText,
-            ),
-          );
-        }
-        if (block.type === "figure") {
-          card.append(
-            mediaControl({
-              value: block.image,
-              onChange: (image) => {
-                block.image = { ...image, alt: block.image.alt || image.alt };
-                changed();
-              },
-              api,
-              getText,
-              canUpload,
-              busy,
-            }),
-            field(
-              "article_alt",
-              block.image.alt,
-              (value) => {
-                block.image.alt = value;
-                changed();
-              },
-              getText,
-            ),
-            field(
-              "article_caption",
-              block.caption,
-              (value) => {
-                block.caption = value;
-                changed();
-              },
-              getText,
-            ),
-          );
-        }
-        if (block.type === "document") {
-          card.append(
-            field(
-              "article_document_label",
-              block.label,
-              (value) => {
-                block.label = value;
-                changed();
-              },
-              getText,
-            ),
-            field(
-              "article_link_url",
-              block.href,
-              (value) => {
-                block.href = value;
-                changed();
-              },
-              getText,
-              "url",
-            ),
-          );
-          const select = el("select", "cmcen-control");
-          select.hidden = true;
-          select.setAttribute(
-            "aria-label",
-            getText("article_choose_document", "Choose a library document"),
-          );
-          const status = el("p");
-          status.setAttribute("role", "status");
-          card.append(
-            button(
-              "article_choose_document",
-              async () => {
-                try {
-                  const response = await fetch(
-                    "/page-content/document-library.json",
-                  );
-                  if (!response.ok)
-                    throw new Error(
-                      getText(
-                        "article_documents_error",
-                        "Could not load documents.",
-                      ),
+          }
+          if (block.type === "figure") {
+            card.append(
+              mediaControl({
+                value: block.image,
+                onChange: (image) => {
+                  const previousUrl = block.image.url;
+                  block.image = { ...image, alt: block.image.alt || image.alt };
+                  if (pair[counterpart]?.image?.url === previousUrl)
+                    pair[counterpart].image = {
+                      ...structuredClone(image),
+                      alt: pair[counterpart].image.alt || "",
+                    };
+                  changed();
+                  redraw(index);
+                },
+                api,
+                getText,
+                canUpload,
+                busy,
+              }),
+              field(
+                "article_alt",
+                block.image.alt,
+                (value) => {
+                  block.image.alt = value;
+                  changed();
+                },
+                getText,
+              ),
+              field(
+                "article_caption",
+                block.caption,
+                (value) => {
+                  block.caption = value;
+                  changed();
+                },
+                getText,
+              ),
+            );
+          }
+          if (block.type === "document") {
+            card.append(
+              field(
+                "article_document_label",
+                block.label,
+                (value) => {
+                  block.label = value;
+                  changed();
+                },
+                getText,
+              ),
+              field(
+                "article_link_url",
+                block.href,
+                (value) => {
+                  block.href = value;
+                  changed();
+                },
+                getText,
+                "url",
+              ),
+            );
+            const select = el("select", "cmcen-control");
+            select.hidden = true;
+            select.setAttribute(
+              "aria-label",
+              getText("article_choose_document", "Choose a library document"),
+            );
+            const status = el("p");
+            status.setAttribute("role", "status");
+            card.append(
+              button(
+                "article_choose_document",
+                async () => {
+                  try {
+                    const response = await fetch(
+                      "/page-content/document-library.json",
                     );
-                  const data = await response.json();
-                  if (!card.isConnected) return;
-                  select.replaceChildren(
-                    new Option(
-                      getText(
-                        "article_choose_document",
-                        "Choose a library document",
-                      ),
-                      "",
-                    ),
-                  );
-                  for (const document of data.documents)
-                    if (document.fileUrl)
-                      select.append(
-                        new Option(
-                          document[language]?.title ||
-                            document.en?.title ||
-                            document.id,
-                          document.fileUrl,
+                    if (!response.ok)
+                      throw new Error(
+                        getText(
+                          "article_documents_error",
+                          "Could not load documents.",
                         ),
                       );
-                  select.hidden = false;
-                  select.focus();
-                } catch (error) {
-                  status.textContent = error.message;
-                }
-              },
-              getText,
-            ),
-            select,
-            status,
-          );
-          select.addEventListener("change", () => {
-            if (!select.value) return;
-            block.href = select.value;
-            block.label = select.selectedOptions[0].textContent;
-            changed();
-            redraw(index);
-          });
+                    const data = await response.json();
+                    if (!card.isConnected) return;
+                    select.replaceChildren(
+                      new Option(
+                        getText(
+                          "article_choose_document",
+                          "Choose a library document",
+                        ),
+                        "",
+                      ),
+                    );
+                    for (const document of data.documents)
+                      if (document.fileUrl)
+                        select.append(
+                          new Option(
+                            document[language]?.title ||
+                              document.en?.title ||
+                              document.id,
+                            document.fileUrl,
+                          ),
+                        );
+                    select.hidden = false;
+                    select.focus();
+                  } catch (error) {
+                    status.textContent = error.message;
+                  }
+                },
+                getText,
+              ),
+              select,
+              status,
+            );
+            select.addEventListener("change", () => {
+              if (!select.value) return;
+              block.href = select.value;
+              block.label = select.selectedOptions[0].textContent;
+              changed();
+              redraw(index);
+            });
+          }
+          columns.append(card);
         }
+        card.append(columns);
         list.append(card);
       });
       if (Number.isInteger(focusIndex))
@@ -549,21 +667,19 @@ window.ArticleEditor = (() => {
       button(
         "article_add_block",
         () => {
-          const empty = {
-            paragraph: { children: [""] },
-            heading: { text: "" },
-            figure: { image: { url: "", alt: "" }, caption: "" },
-            list: { items: [[""]] },
-            document: { label: "", href: "" },
-          };
-          blocks.push({ type: type.value, ...empty[type.value] });
+          blocks.push({
+            id: crypto.randomUUID(),
+            type: type.value,
+            en: null,
+            fr: null,
+          });
           changed();
           redraw(blocks.length - 1);
         },
         getText,
       ),
     );
-    root.append(hidden, list, add);
+    root.append(list, add);
     redraw();
     return root;
   }

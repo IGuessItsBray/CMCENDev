@@ -1365,6 +1365,42 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
+  /api/admin/content/{contentType}/{contentId}/editorial-note:
+    patch:
+      tags: [Admin, Content]
+      summary: Save a private editorial note for a language section.
+      description: Requires canManageNews for newsArticle or canReviewAndPublish for other types. Notes are returned as editorialNotes on authenticated workspace items only. Empty text clears the note. Changes retain revision and audit history.
+      x-permission: canReviewAndPublish or canManageNews (newsArticle only)
+      parameters:
+        - name: contentType
+          in: path
+          required: true
+          schema: { type: string, enum: [event, retirementMessage, lastPost, newsArticle, retirementComment] }
+        - name: contentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [language, note]
+              properties:
+                language: { type: string, enum: [en, fr] }
+                note: { type: string, maxLength: 2000 }
+      responses:
+        "200":
+          description: Saved language and note.
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/admin/content/{contentType}/{contentId}/revisions:
     get:
       tags: [Admin, Content]
@@ -3440,6 +3476,11 @@ components:
       required: [type]
       description: Heading requires text; paragraph requires children; list requires items; figure requires image with optional caption; document requires label and href. No HTML. Images/variants require HTTPS.
       properties:
+        pairId:
+          type: string
+          maxLength: 64
+          pattern: '^[a-zA-Z0-9_-]{1,64}$'
+          description: Optional stable identifier linking English and French counterparts. Legacy blocks without it remain supported.
         type:
           { type: string, enum: [heading, paragraph, list, figure, document] }
         text: { type: string, maxLength: 500 }

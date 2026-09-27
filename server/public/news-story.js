@@ -4,6 +4,9 @@ const newsDetailDate = document.getElementById("newsDetailDate");
 const newsDetailTitle = document.getElementById("newsDetailTitle");
 const newsDetailImage = document.getElementById("newsDetailImage");
 const newsDetailText = document.getElementById("newsDetailText");
+const newsStaffActions = document.getElementById("newsStaffActions");
+const newsStaffLabel = document.getElementById("newsStaffLabel");
+const newsStaffEdit = document.getElementById("newsStaffEdit");
 let currentNewsArticle = null;
 
 function getNewsDetailText(value) {
@@ -47,29 +50,29 @@ function renderNewsStory(article) {
   newsDetailContent.hidden = false;
 }
 
-async function addNewsEditLink() {
+async function showNewsStaffActions() {
   const token = CMCENUtils.getStoredAuthToken();
   if (!token) return;
   try {
     const user = await CMCENUtils.apiJson("/api/me", { token });
     if (!user.permissions?.canManageNews || !currentNewsArticle?._id) return;
 
-    const shortcut = CMCENUtils.createContentWorkspaceShortcut({
-      contentType: "newsArticle",
-      contentId: currentNewsArticle._id,
-      label:
-        typeof window.translate === "function"
-          ? window.translate(
-              "content_workspace_open_record",
-              "Open in Content Workspace",
-            )
-          : "Open in Content Workspace",
-    });
-    if (shortcut) document.body.append(shortcut);
+    newsStaffEdit.href = `/dashboard-next?area=articles&id=${encodeURIComponent(currentNewsArticle._id)}`;
+    updateNewsStaffLabels();
+    newsStaffActions.hidden = false;
   } catch {}
 }
 
+function updateNewsStaffLabels() {
+  const french = CMCENUtils.getCurrentLanguage() === "fr";
+  newsStaffLabel.textContent = french ? "Actions administratives" : "Admin actions";
+  newsStaffEdit.textContent = french
+    ? "Modifier"
+    : "Edit";
+}
+
 async function loadNewsStory() {
+  newsStaffActions.hidden = true;
   const articleId = new URLSearchParams(window.location.search).get("id");
   if (!articleId) {
     showNewsDetailMessage("Choose a news story to read.", "error");
@@ -103,7 +106,7 @@ async function loadNewsStory() {
           : "Staff preview — this is not the public article.";
       newsDetailContent.prepend(notice);
     }
-    addNewsEditLink();
+    showNewsStaffActions();
   } catch (error) {
     showNewsDetailMessage(
       error.message || "Could not load this news story.",
@@ -114,6 +117,7 @@ async function loadNewsStory() {
 
 document.addEventListener("languagechange", () => {
   if (currentNewsArticle) renderNewsStory(currentNewsArticle);
+  if (!newsStaffActions.hidden) updateNewsStaffLabels();
 });
 
 loadNewsStory();

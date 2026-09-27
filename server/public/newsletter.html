@@ -9,6 +9,20 @@
   </head>
   <body>
     <header id="header"></header>
+    <div
+      id="newsletterPreviewBanner"
+      class="site-timers site-timers-below-header"
+      hidden
+    >
+      <aside class="site-timer" data-icon="info" role="status">
+        <div class="site-timer-track">
+          <span class="site-timer-accent" aria-hidden="true">i</span>
+          <span class="site-timer-text">
+            <span id="newsletterPreviewText" class="site-timer-message"></span>
+          </span>
+        </div>
+      </aside>
+    </div>
     <main id="mainContent" class="about-family-main newsletter-main">
       <aside
         id="newsletterContext"
@@ -28,6 +42,15 @@
           Loading article…
         </p>
       </article>
+      <section
+        id="newsletterStaffActions"
+        class="article-staff-actions"
+        aria-labelledby="newsletterStaffLabel"
+        hidden
+      >
+        <h2 class="article-staff-actions-label" id="newsletterStaffLabel"></h2>
+        <a id="newsletterStaffEdit" class="article-staff-actions-link"></a>
+      </section>
       <noscript
         >This article requires JavaScript.
         <a href="/news_stories">Browse articles</a>.</noscript

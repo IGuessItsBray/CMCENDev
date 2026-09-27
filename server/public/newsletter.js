@@ -46,11 +46,19 @@
   if (!root) return;
   const context = document.getElementById("newsletterContext");
   const contextText = document.getElementById("newsletterContextText");
+  const previewBanner = document.getElementById("newsletterPreviewBanner");
+  const previewText = document.getElementById("newsletterPreviewText");
+  const staffActions = document.getElementById("newsletterStaffActions");
+  const staffLabel = document.getElementById("newsletterStaffLabel");
+  const staffEdit = document.getElementById("newsletterStaffEdit");
   let issue;
   const labels = {
     en: {
       archive:
-        "From the article archive. Dates and information reflect the original publication.",
+        "From the archive. Dates and information reflect the original publication.",
+      preview: "Staff preview — this is not the public article.",
+      staff: "Admin actions",
+      edit: "Edit",
       fallback: {
         en: "This article is available in English.",
         fr: "This article is available in French.",
@@ -61,7 +69,10 @@
     },
     fr: {
       archive:
-        "Archives des articles. Les dates et les renseignements correspondent à la publication originale.",
+        "Ce contenu provient des archives. Les dates et les renseignements correspondent à la publication originale.",
+      preview: "Aperçu réservé au personnel.",
+      staff: "Actions administratives",
+      edit: "Modifier",
       fallback: {
         en: "Cet article est disponible en anglais.",
         fr: "Cet article est disponible en français.",
@@ -99,6 +110,13 @@
     if (!issue) return;
     const language = document.documentElement.lang === "fr" ? "fr" : "en";
     const ui = labels[language];
+    if (!staffActions.hidden) {
+      staffLabel.textContent = ui.staff;
+      staffEdit.textContent = ui.edit;
+    }
+    previewText.textContent = issue.preview ? ui.preview : "";
+    previewBanner.hidden = !issue.preview;
+    if (issue.preview) updatePreviewBannerOffset();
     const contextMessage = [
       issue.archived ? ui.archive : "",
       language !== issue.language ? ui.fallback[issue.language] : "",
@@ -180,21 +198,6 @@
       if (el) content.append(el);
     }
     const footer = element("footer", "", "newsletter-footer");
-    if (issue.preview) {
-      const notice = element(
-        "p",
-        language === "fr"
-          ? "Aperçu réservé au personnel."
-          : "Staff preview — this is not the public article.",
-      );
-      body.prepend(notice);
-      const edit = element(
-        "a",
-        language === "fr" ? "Modifier l’article" : "Edit article",
-      );
-      edit.href = `/dashboard-next?area=articles&id=${encodeURIComponent(issue._id)}`;
-      footer.append(edit);
-    }
     if (issue.sourceUrl) {
       const source = element("a", ui.source);
       source.href = safeUrl(issue.sourceUrl);
@@ -205,10 +208,27 @@
     root.append(header, body);
     root.setAttribute("aria-busy", "false");
   }
+  function updatePreviewBannerOffset() {
+    const header = document.querySelector("#header.site-header");
+    if (header)
+      document.documentElement.style.setProperty(
+        "--site-header-height",
+        `${header.offsetHeight}px`,
+      );
+  }
+  function showStaffActions() {
+    const language = document.documentElement.lang === "fr" ? "fr" : "en";
+    staffLabel.textContent = labels[language].staff;
+    staffEdit.textContent = labels[language].edit;
+    staffEdit.href = `/dashboard-next?area=articles&id=${encodeURIComponent(issue._id)}`;
+    staffActions.hidden = false;
+  }
   let requestId = 0;
   async function load() {
     const currentRequest = ++requestId;
     context.hidden = true;
+    previewBanner.hidden = true;
+    staffActions.hidden = true;
     try {
       const id = new URLSearchParams(location.search).get("id");
       if (!/^[a-f0-9]{24}$/i.test(id || "")) throw new Error("Invalid article");
@@ -252,8 +272,19 @@
       issue._id = article._id;
       issue.preview = preview;
       render();
+      if (preview) showStaffActions();
+      else if (CMCENUtils.getStoredAuthToken()) {
+        try {
+          const user = await CMCENUtils.apiJson("/api/me", {
+            token: CMCENUtils.getStoredAuthToken(),
+          });
+          if (currentRequest === requestId && user.permissions?.canManageNews)
+            showStaffActions();
+        } catch {}
+      }
     } catch {
       if (currentRequest !== requestId) return;
+      previewBanner.hidden = true;
       const ui = labels[document.documentElement.lang === "fr" ? "fr" : "en"];
       const message = element("p", ui.error, "newsletter-status");
       message.setAttribute("role", "alert");
@@ -266,5 +297,7 @@
     }
   }
   document.addEventListener("languagechange", load);
+  document.addEventListener("cmcenheaderready", updatePreviewBannerOffset);
+  window.addEventListener("resize", updatePreviewBannerOffset);
   load();
 })();

@@ -113,11 +113,13 @@ router.get('/:batchId/items/:itemId', async (req, res) => {
     article = getArticle(batch, item),
     hash = itemHash(batch, item);
   const decision = await Decision.findById(`${batch.id}:${item.id}`).lean();
-  const destination = await NewsArticle.findOne({
-    migrationSource: article.sources.en.url,
-  })
-    .select('_id status updatedAt title.fr content.fr newsletterBlocks.fr')
-    .lean();
+  const destination = article.sources.en
+    ? await NewsArticle.findOne({
+        migrationSource: article.sources.en.url,
+      })
+        .select('_id status updatedAt title.fr content.fr newsletterBlocks.fr')
+        .lean()
+    : null;
   res.json({
     item,
     article,

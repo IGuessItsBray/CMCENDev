@@ -119,6 +119,7 @@
       ]),
       selectFilter("type", [
         "all",
+        "disposition",
         "pairing",
         "discovery",
         "translation",
@@ -126,7 +127,13 @@
         "provenance",
         "layout",
       ]),
-      selectFilter("category", ["all", "news", "newsletter", "unit-updates"]),
+      selectFilter("category", [
+        "all",
+        "unassigned",
+        "news",
+        "newsletter",
+        "unit-updates",
+      ]),
     );
     const searchButton = node("button", t("search_action"));
     searchButton.type = "submit";
@@ -257,11 +264,14 @@
           pane.setAttribute("aria-busy", "false");
       }
     }
-    function renderSource(language) {
-      const source = detail.article.sources[language];
+    function renderSource(
+      language,
+      source = detail.article.sources[language],
+      label = language.toUpperCase(),
+    ) {
       const column = node("section", undefined, "archive-source");
       column.lang = language;
-      column.append(node("h3", language.toUpperCase(), "archive-language"));
+      column.append(node("h3", label, "archive-language"));
       if (!source) {
         column.append(node("p", t("unresolved")));
         return column;
@@ -386,6 +396,16 @@
       const sources = node("div", undefined, "archive-sources");
       sources.append(renderSource("en"), renderSource("fr"));
       pane.append(sources);
+      for (const source of detail.article.relatedSources || []) {
+        const related = node("details");
+        related.append(
+          node("summary", `${t("related_source")}: ${source.title}`),
+        );
+        related.append(
+          renderSource(source.language || "en", source, t("related_source")),
+        );
+        pane.append(related);
+      }
       const form = node("form", undefined, "archive-decision");
       const fieldset = node("fieldset");
       fieldset.disabled = saving;

@@ -1,9 +1,15 @@
 const crypto = require('crypto');
-const catalogue = require('../data/archive-review/pilot-2026-09-26.json');
+const pilot = require('../data/archive-review/pilot-2026-09-26.json');
+const discovery = require('../data/archive-review/discovery-2026-09-27.json');
+const catalogue = {
+  version: 1,
+  batches: [...pilot.batches, ...discovery.batches],
+};
 
 // Choices describe review decisions only. None execute article or media writes.
 const common = ['custom', 'defer'];
 const choices = {
+  disposition: ['preserve', 'exclude', 'research', ...common],
   pairing: ['pair', 'separate', ...common],
   discovery: ['research', 'leave-incomplete', ...common],
   translation: ['keep-source', 'request-edit', ...common],

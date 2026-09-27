@@ -1839,6 +1839,7 @@ paths:
               enum:
                 [
                   all,
+                  disposition,
                   pairing,
                   discovery,
                   translation,
@@ -1907,6 +1908,8 @@ paths:
                   description: Must be one of the choices returned for this issue type.
                   enum:
                     [
+                      preserve,
+                      exclude,
                       pair,
                       separate,
                       research,

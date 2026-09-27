@@ -1,0 +1,30 @@
+# Last Post reconciliation — 27 September 2026
+
+Compared 14 individual death, funeral, tribute and memorial news items from the saved 670-entry news inventory with the 383 linked entries rendered in the live Last Post year archive. Eleven people have matching dedicated pages; three have no counterpart found in that index. All eleven matching pages were fetched and inspected. This is person-level coverage, not certification that the news content is duplicated or fully preserved.
+
+| News source | Last Post counterpart | Follow-up |
+| --- | --- | --- |
+| [RAINDROPS OF HONOUR: REMEMBERING CORPORAL JONATHAN DUNSTER, A TRIBUTE OF CAMARADERIE AND RESPECT](https://cmcen-rcmce.ca/raindrops-of-honour-remembering-corporal-jonathan-dunster-a-tribute-of-camaraderie-and-respect/) (345823) | [Dedicated page](https://cmcen-rcmce.ca/lp/corporal-jonathan-l-dunster/) | tribute; stakeholder disposition |
+| [Celebration of Life: James (Jim) Palmer LCol (Ret’d)](https://cmcen-rcmce.ca/celebration-of-life-james-jim-palmer-lcol-retd/) (316163) | [Dedicated page](https://cmcen-rcmce.ca/lp/james-jim-palmer-lcol-retd/) | celebration of life; reconcile supplementary details |
+| [BURIAL CEREMONY – MASTER CORPORAL CLIFFORD DENNISON, CD](https://cmcen-rcmce.ca/burial-ceremony-master-corporal-clifford-dennison-cd/) (313269) | Not found in year index | burial ceremony; stakeholder disposition, no archive counterpart found |
+| [Col (Ret) Nigel Van Loan – 00120 SIGINT](https://cmcen-rcmce.ca/col-ret-nigel-van-loan-00120-sigint/) (311718) | Not found in year index | death notice; no archive counterpart found |
+| [Passing of the former C&E Branch Chief CWO Michel Boislard, CD](https://cmcen-rcmce.ca/passing-of-the-former-ce-branch-chief-cwo-michel-boislard-cd/) (310856) | [Dedicated page](https://cmcen-rcmce.ca/lp/cwo-michel-boislard-cd-rccs-retired-former-ce-branch-chief/) | death notice; compare content before consolidation |
+| [Virtual Memorial Service – MCpl Danny Corneau, CD, RCCS (Retired)](https://cmcen-rcmce.ca/funeral-broadcast-mcpl-danny-corneau-cd-rccs-retired/) (300739) | [Dedicated page](https://cmcen-rcmce.ca/lp/mcpl-danny-corneau-cd-rccs-retired/) | virtual memorial service; stakeholder disposition |
+| [Last Post: Private (Basic) Rudi William Kraak](https://cmcen-rcmce.ca/last-post-private-basic-rudi-william-kraak/) (300565) | [Dedicated page](https://cmcen-rcmce.ca/lp/pteb-rudi-william-kraak-rccs/) | death notice; compare content before consolidation |
+| [Colonel Alexander Tupper, CD, RCAF – Funeral Arrangements](https://cmcen-rcmce.ca/colonel-alexander-tupper-cd-rcaf-funeral-arrangements/) (296178) | [Dedicated page](https://cmcen-rcmce.ca/lp/colonel-alexander-tupper-cd-rcaf/) | funeral arrangements; reconcile supplementary details |
+| [Celebration of Life – Sgt Allan Edwin Stapleton, CD, RCCS (Retired), WII Veteran](https://cmcen-rcmce.ca/celebration-of-life-sgt-allan-edwin-stapleton-cd-rccs-retired-wii-veteran/) (296123) | [Dedicated page](https://cmcen-rcmce.ca/lp/sgt-allan-edwin-stapleton-cd-rccs-retired-wwii-veteran/) | celebration of life; reconcile supplementary details |
+| [Obituary Notice – Colonel Peter H. Sutton, CD, Late RCCS (Retired)](https://cmcen-rcmce.ca/obituary-notice-colonel-peter-h-sutton-cd-late-rccs-retired/) (294087) | [Dedicated page](https://cmcen-rcmce.ca/lp/colonel-peter-h-sutton-cd-late-rccs-retired/) | obituary; compare content before consolidation |
+| [Obituary Notice – LCol (Ret’d) Jacques Hamel, OMM, CD](https://cmcen-rcmce.ca/obituary-notice-lcol-jacques-hamel-omm-cd/) (292466) | [Dedicated page](https://cmcen-rcmce.ca/lp/lcol-retd-jacques-hamel-omm-cd-peng/) | obituary; compare content before consolidation |
+| [HCol David Lloyd Hart, MM, CD, RCCS](https://cmcen-rcmce.ca/hcol-hart-obituary/) (291574) | [Dedicated page](https://cmcen-rcmce.ca/lp/hcol-david-lloyd-hart-mm-cd-rccs/) | death notice; compare content before consolidation |
+| [Corporal Kenneth Chad O’Quinn 10 year Memorial – Sunday, 03 March 2019](https://cmcen-rcmce.ca/cpl-kenneth-chad-oquinn-10-year-memorial-3-march-2019-kingston-ontario/) (291156) | Not found in year index | 10-year memorial gathering; stakeholder disposition, no archive counterpart found |
+| [Whig Standard Article  – Gerry Coady](https://cmcen-rcmce.ca/whig-standard-article-gerry-coady/) (22718) | [Dedicated page](https://cmcen-rcmce.ca/lp/col-retd-gerry-coady/) | external newspaper coverage; stakeholder disposition |
+
+## Scope and decisions
+
+Funeral/celebration invitations, later memorial gatherings, personal tributes and external coverage must remain separately accounted for pending stakeholder decisions. They are not automatic duplicate obituaries and must not be silently folded into Last Post or discarded. No import, merge, exclusion or publication decision was made.
+
+The Nigel Van Loan news item reports his death on 15 May 2022. The Clifford Dennison item announces a later burial/headstone ceremony for a death in 2021. Kenneth Chad O’Quinn is a 2019 tenth-anniversary gathering for a death in 2009; the year index ends in 2013, so absence here is not proof no older record exists. Jonathan Dunster has a dedicated obituary, while the news item is a first-person tribute about his 2024 burial.
+
+The three unresolved names were also searched on the public web without locating dedicated pages. Absence from the rendered year index is not proof of site-wide nonexistence; hidden/unindexed pages, private records and older archives remain possible. General memorial projects and collective annual paratrooper services remain news/event inventory, outside this individual-person comparison. Title/classification screening is not an exhaustive semantic review of all news bodies. The news feed was not recrawled today.
+
+French counterparts, external linked documents, comments and new-VPS record coverage have not been reconciled. Source snapshots, the 383-entry index and machine-readable mappings are retained in the ignored output/last-post-news-reconciliation-20260927 folder. Fourteen local ledger review records were updated; these cases are included in the last-post-discovery-2026-09-27 admin review batch.

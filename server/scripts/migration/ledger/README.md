@@ -2,6 +2,28 @@
 
 Temporary checklist for the legacy migration. No import or publication is performed by this inventory.
 
+Goal: account for all legacy-site content, including source-to-destination mappings, merges and explicit stakeholder decisions. This news inventory is one part of that ledger, not a complete whole-site inventory. See [retirement coverage and DWD stakeholder decisions](RETIREMENTS.md); standalone invitations are not automatically retirement notices.
+
+The [Last Post reconciliation](LAST_POSTS.md) records 14 individual news notices/tributes: 11 person-level matches in the dedicated archive and three unresolved. Related funeral notices, memorial gatherings and tributes remain separate stakeholder decisions; a person match does not prove all source content is preserved.
+
+## Discovery and stakeholder review rules
+
+[Heritage Moments discovery](HERITAGE_MOMENTS.md) records nine English articles
+(four already in the news ledger, five newly accounted for) and 14 French
+archive entries, including language and possible test/duplicate issues.
+
+[Parent Heritage discovery](HERITAGE.md) expands coverage to 22 English and
+26 French archive records, with overlap recorded and placeholder content held
+outside migration pending documented disposition.
+
+Recorded 27 September 2026:
+
+- Discover English and French sources, including French-only material. Check available language-switcher links, public inventories and internal links; record confirmed counterparts separately from possible matches and unresolved searches. Similar titles or shared media alone do not establish a translation pair.
+- Preserve each language's source URL and content independently. Flag differences, incomplete translations and conflicting facts for review rather than silently choosing one language as authoritative. “Not found” does not mean a translation does not exist.
+- Inventory content found through body links, newsletter links, category tags and archives, not only navigation menus. Heritage Moments is a pending investigation: compare the reportedly blank navigation destination with the populated category archive described by the operator; their relationship is not yet verified.
+- Record legacy categories as source metadata, not as decisions about the new site's structure. Staff/stakeholders decide how ambiguous archival material should be organized and presented. Leave proposed destination/category unresolved and capture the specific question and source evidence for the meeting.
+- Discovery does not authorize imports, publication, merging or exclusion. Maintain separate discovery, language-pairing, stakeholder-decision and migration-verification states. Preserve every source's eventual disposition, including sources consolidated into one destination.
+
 - 680 source records: 670 from the 67-page news feed, plus 10 newsletters outside the feed.
 - 16 records marked verified. The original operator confirmations cover 13 in the initial transfer and 3 in the pilot.
 - 529 remaining candidates: 23 newsletter-format records and 506 other news records.

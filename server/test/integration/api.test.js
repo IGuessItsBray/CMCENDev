@@ -1820,6 +1820,43 @@ describe('news stories', () => {
       .get(`${base}/missing`)
       .set('Authorization', auth)
       .expect(404);
+    const discoveryBase =
+      '/api/admin/archive-review/heritage-discovery-2026-09-27/items';
+    const discovery = await request(app)
+      .get(`${discoveryBase}?type=disposition&category=unassigned`)
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(discovery.body.items.length, 27);
+    const frenchOnlyPath = `${discoveryBase}/wp-298812-disposition`;
+    const frenchOnly = await request(app)
+      .get(frenchOnlyPath)
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(frenchOnly.body.article.sources.en, null);
+    assert.equal(frenchOnly.body.article.sources.fr.id, 298812);
+    assert.equal(frenchOnly.body.destination, null);
+    const excluded = await request(app)
+      .put(`${frenchOnlyPath}/decision`)
+      .set('Authorization', auth)
+      .send({
+        choice: 'exclude',
+        note: 'Keep evidence in the ledger',
+        revision: 0,
+        catalogueHash: frenchOnly.body.catalogueHash,
+      })
+      .expect(200);
+    assert.equal(excluded.body.state, 'reviewed');
+    const stillVisible = await request(app)
+      .get(discoveryBase)
+      .set('Authorization', auth)
+      .expect(200);
+    assert.ok(
+      stillVisible.body.items.some((i) => i.id === 'wp-298812-disposition'),
+    );
+    assert.deepEqual(
+      await NewsArticle.findById(article._id).lean(),
+      beforeArticle,
+    );
   });
 
   test('private editorial notes persist independently per language and enforce access and validation', async () => {

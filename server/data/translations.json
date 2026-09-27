@@ -2189,7 +2189,12 @@
     "archive_review_unsaved": "Unsaved decision.",
     "archive_review_saved": "Decision saved. No article or media changes were made.",
     "archive_review_conflict": "This item changed in another session or its evidence was updated. Your notes are still here. Copy them if needed, then reload the saved decision before reviewing again.",
-    "archive_review_save_error": "Could not save. Your decision and notes are still here; retry when ready."
+    "archive_review_save_error": "Could not save. Your decision and notes are still here; retry when ready.",
+    "archive_review_type_disposition": "Content disposition",
+    "archive_review_category_unassigned": "Undecided",
+    "archive_review_choice_preserve": "Preserve — describe placement in notes",
+    "archive_review_choice_exclude": "Exclude from migration — retain source record",
+    "archive_review_related_source": "Related source (not a translation)"
   },
   "fr": {
     "submission_published_by": "Publié le {date} par {name}",
@@ -4381,6 +4386,11 @@
     "archive_review_unsaved": "Décision non enregistrée.",
     "archive_review_saved": "Décision enregistrée. Aucun article ni média modifié.",
     "archive_review_conflict": "Ce point a changé dans une autre session ou ses sources ont été actualisées. Vos notes sont conservées ici. Copiez-les au besoin, puis rechargez la décision avant de la réexaminer.",
-    "archive_review_save_error": "Enregistrement impossible. Votre décision et vos notes sont conservées; réessayez."
+    "archive_review_save_error": "Enregistrement impossible. Votre décision et vos notes sont conservées; réessayez.",
+    "archive_review_type_disposition": "Destination du contenu",
+    "archive_review_category_unassigned": "À décider",
+    "archive_review_choice_preserve": "Conserver — préciser la destination",
+    "archive_review_choice_exclude": "Exclure de la migration — conserver la référence",
+    "archive_review_related_source": "Source connexe (pas une traduction)"
   }
 }

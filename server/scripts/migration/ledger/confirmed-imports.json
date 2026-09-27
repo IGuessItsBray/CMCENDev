@@ -1,0 +1,118 @@
+{
+  "evidenceType": "user-provided-vps-verification-output",
+  "recordedAt": "2026-09-26",
+  "batches": [
+    {
+      "id": "corebot-to-ecgw-initial-13",
+      "articleCount": 13,
+      "evidence": "Operator pasted successful apply: 13 draft articles; schedules cleared; database records and Garage/public media hashes verified.",
+      "journalLocation": "Beside the import script on ecgw; exact filename not collected",
+      "applyTimestamp": null
+    },
+    {
+      "id": "legacy-news-pilot-20260926",
+      "articleCount": 3,
+      "evidence": "Operator pasted successful apply: 3 draft articles; schedules cleared; database records and Garage/public media hashes verified.",
+      "journalLocation": "Beside the import script on ecgw; exact filename not collected",
+      "applyTimestamp": null
+    }
+  ],
+  "articles": [
+    {
+      "sourceId": 315305,
+      "sourceUrl": "https://cmcen-rcmce.ca/77-line-regiment-newsletters/",
+      "destinationId": "6ab2cb30b995f8d3ef512264",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 352030,
+      "sourceUrl": "https://cmcen-rcmce.ca/association-newsletter-fall-2025-2/",
+      "destinationId": "6ab2cb31b995f8d3ef512266",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 354205,
+      "sourceUrl": "https://cmcen-rcmce.ca/32-signal-regiment-additional-newsletters/",
+      "destinationId": "6ab3be3699daf38e2fd15a0a",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 314987,
+      "sourceUrl": "https://cmcen-rcmce.ca/32-signal-regiment-dispatches/",
+      "destinationId": "6ab3be3899daf38e2fd15a0c",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 354233,
+      "sourceUrl": "https://cmcen-rcmce.ca/cpo1-cwo-corp-newsletter-september-2025/",
+      "destinationId": "6ab3ca7963367bad6ec0a9fd",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 351934,
+      "sourceUrl": "https://cmcen-rcmce.ca/association-newsletter-spring-2025/",
+      "destinationId": "6ab3ccc1c7057ad06209ece7",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 342235,
+      "sourceUrl": "https://cmcen-rcmce.ca/association-newsletter-winter-2023/",
+      "destinationId": "6ab3cdff78d135849c6a08ec",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 340587,
+      "sourceUrl": "https://cmcen-rcmce.ca/association-newsletter-summer-2023/",
+      "destinationId": "6ab3cfcf278e89a22d9b1fcd",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 315043,
+      "sourceUrl": "https://cmcen-rcmce.ca/association-newsletter-spring-2023/",
+      "destinationId": "6ab3d05304b3ae386a882270",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 315139,
+      "sourceUrl": "https://cmcen-rcmce.ca/741-communication-squadron-newsletters/",
+      "destinationId": "6ab3d0e0508922324d770a20",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 314957,
+      "sourceUrl": "https://cmcen-rcmce.ca/association-newsletter-winter-2022/",
+      "destinationId": "6ab3d13823d3474194b04b53",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 312836,
+      "sourceUrl": "https://cmcen-rcmce.ca/association-newsletter-summer-2022/",
+      "destinationId": "6ab3d1f6617751d2a95115ab",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 312814,
+      "sourceUrl": "https://cmcen-rcmce.ca/association-newsletter-spring-2022-english/",
+      "destinationId": "6ab3d29e6e2ca7e935bf2bba",
+      "batchId": "corebot-to-ecgw-initial-13"
+    },
+    {
+      "sourceId": 358352,
+      "sourceUrl": "https://cmcen-rcmce.ca/amendment-to-poppy-start-date/",
+      "destinationId": "91f27bed582b86c117bd14a7",
+      "batchId": "legacy-news-pilot-20260926"
+    },
+    {
+      "sourceId": 355841,
+      "sourceUrl": "https://cmcen-rcmce.ca/promotion-cpl-al-sawi-and-capt-roh-8-cis-flt/",
+      "destinationId": "99d0c491d9f13a6d124be409",
+      "batchId": "legacy-news-pilot-20260926"
+    },
+    {
+      "sourceId": 357547,
+      "sourceUrl": "https://cmcen-rcmce.ca/despatches-6-4-may-2026/",
+      "destinationId": "6baef277a30b266784e6d26f",
+      "batchId": "legacy-news-pilot-20260926"
+    }
+  ]
+}

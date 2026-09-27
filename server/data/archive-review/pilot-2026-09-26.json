@@ -1,0 +1,1434 @@
+{
+  "version": 1,
+  "batches": [
+    {
+      "id": "legacy-16-2026-09-26",
+      "title": {
+        "en": "First 16 imported articles",
+        "fr": "Les 16 premiers articles importés"
+      },
+      "description": {
+        "en": "Eight confirmed French counterparts; eight unresolved. Public source snapshots from 26 September 2026. PDF text and historical accuracy are not certified. No counterpart found does not prove none exists.",
+        "fr": "Huit équivalents français confirmés; huit non résolus. Sources publiques du 26 septembre 2026. Le texte des PDF et l’exactitude historique ne sont pas validés. Une recherche infructueuse ne prouve pas l’absence de traduction."
+      },
+      "auditedAt": "2026-09-26",
+      "articles": [
+        {
+          "key": "wp-315305",
+          "title": {
+            "en": "77 Line Regiment Newsletters",
+            "fr": "77 Line Regiment Newsletters"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 315305,
+              "url": "https://cmcen-rcmce.ca/77-line-regiment-newsletters/",
+              "title": "77 Line Regiment Newsletters",
+              "publishedAt": "2023-02-15T12:52:02",
+              "modifiedAt": "2023-07-04T12:55:09",
+              "paragraphs": [
+                "77 LINE REGIMENT",
+                "77 Line Regiment has been publishing newsletters for a good while now. Here are the latest:",
+                "January 2022 The Cable – Volume 6 Issue 1",
+                "July 2022 The Cable – Volume 6 Issue 2",
+                "December 2022 The Cable – Volume 6 Issue 3",
+                "June 2023 The Cable – Volume 7 Issue 1"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/280px-Unit_crest_77_Line_Regiment.jpg"
+              ],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/02/The-Cable-Volume-6-Issue-1.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/07/The-Cable-Volume-6-Issue-2.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/12/The-Cable-Volume-6-Issue-3.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/The-Cable-Volume-7-Issue-1.pdf"
+              ]
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "wp-352030",
+          "title": {
+            "en": "Association Newsletter — Fall 2025",
+            "fr": "Association Newsletter — Fall 2025"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 352030,
+              "url": "https://cmcen-rcmce.ca/association-newsletter-fall-2025-2/",
+              "title": "ASSOCIATION NEWSLETTER – FALL 2025",
+              "publishedAt": "2025-09-18T21:46:22",
+              "modifiedAt": "2025-09-18T21:46:22",
+              "paragraphs": [
+                "ASSOCIATION NEWS",
+                "Vol. 3, Issue 2, Fall 2025",
+                "Greetings to our Members!",
+                "Yes, all former and serving members (Regular Force and Reserve) of the C&E Branch and its founding elements are automatically members in perpetuity of the C&E Association. Your family members are welcome to apply for Associate Membership. See everything about us and the rest of the C&E Family at https://cmcen-rcmce.ca/association.",
+                "FROM THE EDITOR",
+                "We’ve gotten some feedback from members who have had issues accessing CMCEN links from their DWAN workstations. Unfortunately, that’s not a bug, that’s a feature, and a part of the design of the DWAN. The firewall blocks all links to protect users from phishing scams. Also, when many users connect to the same website from DWAN, the main Internet access point is out of Ottawa, so the network sees multiple accesses as as an issue. Therefore, the user is challenged by the enhanced-proxy server to verify this is “work related”. I’m sure there is someone reading this who can give a far more comprehensive explanation on what is going on, but hopefully I’ve gotten the gist of it.",
+                "If you are still interested in getting the newsletter and would like to change your DWAN email on the contact list to a personal email, let me know at dave.whittier@cmcen-rcmce.ca, and I can make the change.",
+                "39 SIGNAL REGIMENT",
+                "Shout out to 39 Signal Regiment for their first place finish in the Canadian Army’s first hackathon, reflecting the very purpose of the Army’s 2022 Digital Strategy, which encourages innovation from the ground up. A four-person team, drawing on civilian expertise in cloud engineering, systems engineering, and cybersecurity, conceived a prototype that digitizes and accelerates the sensor-to-shooter link. Using AI to parse voice-to-text and imagery, their solution flags high-priority targets in real time, automates messaging to a Fire Support Coordination Centre for validation, and supports commands with digital logs and ammunition forecasting. It’s a striking example of how reservists in C&E are not just supporting forces—they are helping lead Canada toward a data-driven, digitally empowered Army. The 39 Signal Regiment team went on to represent Canada and win the AI-Driven Cyber Threat Intelligence Challenge track at the 2025 NATO TIDE Hackathon in Dunkirk, France, with an AI-powered cyber defence system demo. Congratulations to team lead Maj Sarai, and MCpl Ratnayake, Cpl Rahman and Pte Smith for showing 39 Signal Regiment can be competitive on a global scale. For more info check out https://canadianarmytoday.com/a-hack-for-the-sensor-to-shooter-link/.",
+                "CWO Christopher Robin and LGen Michael Wright with members of the Hackathon team: Cpl Reese Rahman, Pte Grant Smith and Maj Saajan Sarai. Photo: Bdr Albert Law (photo from canadianarmytoday.com)",
+                "VETERANS’ CORNER",
+                "We’re introducing a new feature to better serve our retired members. For this issue, we would like to draw your attention to some websites where several links lead to information that can be useful to those of us who retire from the military to become …veterans! Watch this space for more news and information.",
+                "https://letstalkveterans.ca",
+                "https://www.ombudsman-veterans.gc.ca/en",
+                "MEMBER BENEFITS",
+                "As part of our service to C&E Association members, we approach companies and service providers to negotiate favoured rates and services for you. TD Insurance provides preferred rates for home, auto, tenant, cottage, and travel insurance. For more info, check out https://www.tdinsurance.com/affinity/cmcen.",
+                "UNIT AND ASSOCIATION NEWSLETTERS",
+                "We’re pleased to report that we are continuing to get updates and newsletters from units and C&E associations from across the country. One of the core functions of the C&E Association is to “connect with and promote a close association with all members of our extended C&E military community”. If you have anything you’d like to share, be it news, a picture, or even a newsletter from your own local association, send it to dave.whittier@cmcen-rcmce.ca and we’ll do our best to include it. Please enjoy!",
+                "32 Signal Regiment updates",
+                "32 Sig Regt Vol 3 Iss 5 June-July 2025",
+                "32 Sig Regt Vol 5 Iss 1 Aug 2025",
+                "32 Sig Regt Vol 5 Iss 2 Sep 2025",
+                "2026 C&E WEEK",
+                "Planning is underway for C&E Week 2025. It will be held from 20 – 25 Oct this year. Some highlights:",
+                "21 Oct: two PD sessions on the morning with AFCEA providing a PD Seminar in the afternoon (CFS Leitrim).",
+                "21 Oct: C&E Association AGM 1115-1200hrs (CFS Leitrim and virtual – Teams link to follow).",
+                "22-23 Oct: C&E Ambassador Program (Museum)",
+                "23 Oct: TGIT at Vimy Officers’ Mess",
+                "24 Oct: Vets’ Day to include sustainable power demo, Carruthers Grave Ceremony, Lunch at Museum and book signing at Mercury Shop (Museum).",
+                "24 Oct: C&E Combined Mess Dinner (NDHQ WOs’ and Sgts’ Mess)",
+                "More details will be available on CMCEN as they are finalized.",
+                "FROM THE MEMBERS",
+                "From Ken Lloyd, Hon LCol of 32 Signal Regiment: “Brian Luscombe has asked if we might know anyone who is familiar with Vietnam War era radio and line equipment. Apparently a Re-enactor Group has the equipment and have asked if we know anyone who understands how to use it.” If you know of anyone, contact dave.whittier@cmcen-rceme.ca and I will pass it on."
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
+                "https://cmcen-rcmce.ca/wp-content/uploads/39-Sigs-hackathon-team.jpg"
+              ],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-Vol-3-Iss-5-June-July-2025.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-Vol-5-Iss-1-Aug-2025.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-Vol-5-Iss-2-Sep-2025.pdf"
+              ]
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "wp-354205",
+          "title": {
+            "en": "32 SIGNAL REGIMENT – ADDITIONAL NEWSLETTERS!",
+            "fr": "32E RÉGIMENT DE TRANSMISSIONS – BULLETINS D’INFORMATION SUPPLÉMENTAIRES !"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 354205,
+              "url": "https://cmcen-rcmce.ca/32-signal-regiment-additional-newsletters/",
+              "title": "32 SIGNAL REGIMENT – ADDITIONAL NEWSLETTERS!",
+              "publishedAt": "2025-09-12T10:20:05",
+              "modifiedAt": "2025-09-15T09:36:37",
+              "paragraphs": [
+                "PLEASE FIND BELOW, THREE ADDITIONAL NEWSLETTERS FROM 32 SIGNAL REGIMENT FOR YOUR PLEASURE READING. ENJOY!",
+                "5. 2023 March Picture on the Wall Dave Watson Vol 1 Issue 5 32-Sig-Regt-SDR 12. 2024 Jan",
+                "32-Sig-Regt-SDR",
+                "12. 2024 Jan"
+              ],
+              "images": [],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/12.-2024-Jan.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-SDR.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/5.-2023-March-Picture-on-the-Wall-Dave-Watson-Vol-1-Issue-5-.pdf"
+              ]
+            },
+            "fr": {
+              "id": 354219,
+              "url": "https://cmcen-rcmce.ca/fr/32e-regiment-de-transmissions-bulletins-dinformation-supplementaires/",
+              "title": "32E RÉGIMENT DE TRANSMISSIONS – BULLETINS D’INFORMATION SUPPLÉMENTAIRES !",
+              "publishedAt": "2025-09-12T10:20:05",
+              "modifiedAt": "2025-09-15T09:37:03",
+              "paragraphs": [
+                "VOUS TROUVEREZ CI-DESSOUS TROIS LETTRES D’INFORMATION SUPPLÉMENTAIRES DU 32E RÉGIMENT DE TRANSMISSIONS POUR VOTRE PLAISIR DE LECTURE (DISPONIBLES UNIQUEMENT EN ANGLAIS). BONNE LECTURE!",
+                "5. 2023 March Picture on the Wall Dave Watson Vol 1 Issue 5",
+                "32-Sig-Regt-SDR",
+                "12. 2024 Jan"
+              ],
+              "images": [],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/12.-2024-Jan.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-SDR.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/5.-2023-March-Picture-on-the-Wall-Dave-Watson-Vol-1-Issue-5-.pdf"
+              ]
+            }
+          }
+        },
+        {
+          "key": "wp-314987",
+          "title": {
+            "en": "32 Signal Regiment Dispatches",
+            "fr": "32 Signal Regiment Dispatches"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 314987,
+              "url": "https://cmcen-rcmce.ca/32-signal-regiment-dispatches/",
+              "title": "32 Signal Regiment Dispatches",
+              "publishedAt": "2023-01-11T20:16:50",
+              "modifiedAt": "2024-01-01T19:04:39",
+              "paragraphs": [
+                "32 SIGNAL REGIMENT",
+                "We are pleased to be able to share some of the newsletters and articles from our friends at 32 Signal Regiment:",
+                "Volume 1, Issue 1, July 2022: 32 Sig Regt newsletter Vol1_Iss1",
+                "Volume 1, Issue 2, September 2022: 32 Sig Regt newsletter Vol1_Iss 2",
+                "Volume 1, Issue 3, January 2023: 32 Sig Regt newsletter vol 1 issue 3",
+                "Volume 1, Issue 4, March 2023: 32 Sig Regt Despatches Vol 1.4",
+                "Volume 2, Issue 10, June 2023: 32 Sig Regt Dispatches Vol 2.10",
+                "Volume 2, Issue 11, July 2023: 32 Sig Regt newsletter Vol 2 Issue 11",
+                "Volume 2, Issue 12, August 2023: 32 Sig Regt newsletter Vol 2 Issue 12",
+                "Volume 2, Issue 13, August 2023: 32 Sig Regt newsletter Vol 2 Issue 13",
+                "Volume 2, Issue 12, October 2023: 32 Sig Regt newsletter Vol 2 Issue 12",
+                "Volume 2, Issue 13, November 2023: 32 Sig Regt newsletter Vol 2 Issue 13",
+                "Special Dispatch Riders, interviews with Cpl Hugh Patterson, 2nd Canadian Infantry Div Royal Canadian Corps of Signals (Jul ’42 – Jan ’46) and Cpl Kurt Rayala, 32 Signal Regiment (2018 – present): 32 Sig Regt SDR",
+                "The Silent Signalling Service – Navy Signallers, by Ken Lloyd: Naval Signaller Jan 2023"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/32-Signal-Regiment-177x300.jpg"
+              ],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/32-Sig-Regt-SDR.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/32-Sig-Regt-newsletter-Vol1_Iss-2.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/32-Sig-Regt-newsletter-Vol1_Iss1.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/32-Sig-Regt-newsletter-vol-1-iss-3.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/Naval-Signaller-Jan-2023.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/03/32-Sig-Regt-Despatches-Vol-1.4.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/32-Sig-Regt-Jun2023.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/10/32-Sig-Regt-Aug-2023.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/10/32-Sig-Regt-Oct-2023.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/10/7.-32-Sig-Regt-newsletter-Vol-2-Issue-11-July2023.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/10/8.-32-Sig-Regt-newsletter-Vol-2-Issue-12-.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/12/32-Sig-Regt-Vol-2-Iss-13-Nov-2023.pdf"
+              ]
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "wp-354233",
+          "title": {
+            "en": "CPO1/CWO CORP NEWSLETTER – SEPTEMBER 2025",
+            "fr": "BULLETIN D’INFORMATION DU GROUPE DES PM1/ADJUC – SEPTEMBRE 2025"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 354233,
+              "url": "https://cmcen-rcmce.ca/cpo1-cwo-corp-newsletter-september-2025/",
+              "title": "CPO1/CWO CORP NEWSLETTER – SEPTEMBER 2025",
+              "publishedAt": "2025-09-12T10:34:26",
+              "modifiedAt": "2025-09-15T09:31:07",
+              "paragraphs": [
+                "A COPY OF THE CPO1/CWO CORP NEWSLETTER CAN BE FOUND HERE: En_newsletter 29 aout. HAPPY READING!"
+              ],
+              "images": [],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/En_newsletter-29-aout.pdf"
+              ]
+            },
+            "fr": {
+              "id": 354223,
+              "url": "https://cmcen-rcmce.ca/fr/bulletin-dinformation-du-groupe-des-pm1-adjuc-septembre-2025/",
+              "title": "BULLETIN D’INFORMATION DU GROUPE DES PM1/ADJUC – SEPTEMBRE 2025",
+              "publishedAt": "2025-09-12T10:34:26",
+              "modifiedAt": "2025-09-15T09:30:08",
+              "paragraphs": [
+                "UNE COPIE DU BULLETIN D’INFORMATION DU GROUPE DES PM1/ADJUC EST DISPONIBLE ICI: FR_newsletter 29 aout.indd. BONNE LECTURE!"
+              ],
+              "images": [],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/FR_newsletter-29-aout.indd_.pdf"
+              ]
+            }
+          }
+        },
+        {
+          "key": "wp-351934",
+          "title": {
+            "en": "ASSOCIATION NEWSLETTER – SPRING 2025",
+            "fr": "ASSOCIATION NEWSLETTER – SPRING 2025"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 351934,
+              "url": "https://cmcen-rcmce.ca/association-newsletter-spring-2025/",
+              "title": "ASSOCIATION NEWSLETTER – SPRING 2025",
+              "publishedAt": "2025-03-02T22:59:45",
+              "modifiedAt": "2025-03-02T22:59:45",
+              "paragraphs": [
+                "ASSOCIATION NEWS",
+                "Vol. 3, Issue 1, Spring 2025",
+                "Greetings to our Members!",
+                "Yes, all former and serving members (Regular Force and Reserve) of the C&E Branch and its founding elements are automatically members in perpetuity of the C&E Association. Your family members are welcome to apply for Associate Membership. See everything about us and the rest of the C&E Family at https://cmcen-rcmce.ca/association.",
+                "FROM THE EDITOR",
+                "It’s been far too long since our last newsletter, mostly as I allowed myself to get distracted by other happenings in my life. I am back, and determined to get back on schedule in publishing our newsletter! I hope you find it useful, and please let me know at dave.whittier@cmcen-rcmce.ca if you have anything you would like me to share with the group.",
+                "NEW COLONEL COMMANDANT",
+                "We are proud to welcome Brigadier-General Martin Girard, OMM, MSM, CD (Retired) in his new role as Colonel Commandant of the Communications and Electronics Branch.",
+                "The Colonel Commandant is not involved in the operational affairs of the units of the Branch. They are considered a ‘conscience keeper’ of the Branch and a guardian of its traditions: a link between the past and the present. They represent all members of the C&E Family including serving members (Regular and Reserve), retired members, and their families. They are the channel of communication between the Branch and the Colonel-in-Chief, and a leader that fosters esprit de corps throughout its membership.",
+                "BGen (ret’d) Girard served in the Canadian Armed Forces from Jun 1981 to Sep 2020. He served in numerous operational, staff, and command appointments in Canada and three operational deployments overseas: First Gulf War (1990-1991) as second in command of 1 Ptarmigan Squadron of 1st (UK) Armoured Division HQ and Signal Regiment, Bosnia (2002-2003) as Commander Signal Support Group SFOR, and Haiti (2008-2009) as Task Force Commander Port au Prince and Chief of Staff MINUSTAH for which he received a Meritorious Service Medal in November 2010.",
+                "Congratulations on your well deserved appointment!",
+                "For more information and photos on the appointment ceremony, check out: https://cmcen-rcmce.ca/colonel-commandant-appointment-ceremony-23-january-2025/",
+                "VETERANS’ CORNER",
+                "We’re introducing a new feature to better serve our retired members. For this issue, we would like to draw your attention to some websites where several links lead to information that can be useful to those of us who retire from the military to become …veterans! Watch this space for more news and information.",
+                "https://letstalkveterans.ca",
+                "https://www.ombudsman-veterans.gc.ca/en",
+                "MEMBER BENEFITS",
+                "As part of our service to C&E Association members, we approach companies and service providers to negotiate favoured rates and services for you. TD Insurance provides preferred rates for home, auto, tenant, cottage, and travel insurance. For more info, check out https://www.tdinsurance.com/affinity/cmcen.",
+                "UNIT AND ASSOCIATION NEWSLETTERS",
+                "We’re pleased to report that we are continuing to get updates and newsletters from units and C&E associations from across the country. One of the core functions of the C&E Association is to “connect with and promote a close association with all members of our extended C&E military community”. If you have anything you’d like to share, be it news, a picture, or even a newsletter from your own local association, send it to dave.whittier@cmcen-rcmce.ca and we’ll do our best to include it. Please enjoy!"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png"
+              ],
+              "documents": []
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "wp-342235",
+          "title": {
+            "en": "ASSOCIATION NEWSLETTER – WINTER 2023",
+            "fr": "NEWSLETTER DE L’ASSOCIATION – HIVER 2023"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 342235,
+              "url": "https://cmcen-rcmce.ca/association-newsletter-winter-2023/",
+              "title": "ASSOCIATION NEWSLETTER – WINTER 2023",
+              "publishedAt": "2024-01-01T19:33:37",
+              "modifiedAt": "2024-01-31T12:51:06",
+              "paragraphs": [
+                "ASSOCIATION NEWS",
+                "Vol. 2, Issue 4, Winter 2023",
+                "Greetings to our Members!",
+                "Yes, all former and serving members (Regular Force and Reserve) of the C&E Branch and its founding elements are automatically members in perpetuity of the C&E Association. Your family members are welcome to apply for Associate Membership. See everything about us and the rest of the C&E Family at https://cmcen-rcmce.ca/association.",
+                "WE NEED YOUR HELP!",
+                "We’re looking for some help from the membership in the Association “Preserve our C&E Memorials” project. It was initiated in 2003 by the C&E Branch as a Centennial Anniversary Project. Initially supported by the Signals Club of Canada, the work was assumed by the then C&E Heritage & Museum Committee in 2015 and in 2019 came under the auspice of the C&E Association. LCol (Ret) Tony Charters has led it",
+                "from the start and now advises and reports to the C&E Association Board of Directors. However, having reached a certain age, Tony is looking for his replacement. It could be you! All you need is an interest in our heritage and a desire to ensure that our memorials are preserved for all to appreciate.",
+                "For more info on the project, check here: Preserve Our Memorials – Project Description",
+                "VETERANS’ CORNER",
+                "We’re working on a new feature to better serve our retired members. For this issue, we would like to draw your attention to some websites where several links lead to information that can be useful to those of us who retire from the military to become …veterans! Watch this space for more news and information.",
+                "https://letstalkveterans.ca",
+                "https://www.ombudsman-veterans.gc.ca/en",
+                "BENEFITS",
+                "As part of our service to C&E Association members, we approach companies and service providers to negotiate favoured rates and services for you. TD Insurance provides preferred rates for home, auto, tenant, cottage, and travel insurance. For more info, check out https://www.tdinsurance.com/affinity/cmcen.",
+                "OP JIMMY SANTA 2023",
+                "Every year the Association, on your behalf, sends a small parcel out to all of the C&E Branch members who are deployed during Christmas. This year, we had 168 names for folks deployed under CJOC, CFIOG and in Alert. Thanks to Leala and Karen at the Mercury Shop and all of the folks from CFSCE who volunteered as elf stand ins to put the parcels together. Here’s a note we received from some of our men and women overseas:",
+                "I am writing on behalf of the C&E Branch members as part of Op Union to thank you and the C&E Association for the lovely note and Christmas gifts you sent us. We have a small but outstanding crew of Signallers here in eastern Europe supporting Op Union. For some of us, this is just the latest deployment and for others this is their first opportunity to deploy but either way it is always nice to receive a little something from our home branch. From the J6 Op Union team: Merry Christmas and happy holidays!",
+                "UNIT AND ASSOCIATION NEWSLETTERS",
+                "We’re pleased to report that we are continuing to get updates and newsletters from units and C&E associations from across the country. One of the core functions of the C&E Association is to “connect with and promote a close association with all members of our extended C&E military community”. If you have anything you’d like to share, be it news, a picture, or even a newsletter from your own local association, send it to dave.whittier@cmcen-rcmce.ca and we’ll do our best to include it. Please enjoy!",
+                "32 SIGNAL REGIMENT DISPATCHES",
+                "Check the link for the latest 32 Signal Regiment newsletter and some great back issues: https://cmcen-rcmce.ca/32-signal-regiment-dispatches/",
+                "C&E MUSEUM",
+                "The latest newsletter from our museum can be found here: https://www.candemuseum.org/news-events/news/despatch-december-2023-edition",
+                "CHECK OUT ALL THE BACK ISSUES!",
+                "A full list of all of the newsletters I’ve collected is at: https://cmcen-rcmce.ca/association_newsletter/",
+                "MEMBER SHOUT OUT",
+                "For the ninth year, the Toronto Maple Leafs Hockey Club has once again included the Maple Leafs Troops of the Game CAF Recognition Program in its 2023 – 2024 calendar of events. This program will see the Toronto Maple Leafs (TML) honour one deserving CAF member during an in-game presentation at every home game, 25 Oct 23 – 13 Apr 24. On 9 Dec 23, the honoured member was none other than our own Maj Samson Young! Maj Young is a first-generation Canadian and a refugee from Laos who came to Canada in 1980. After 10 years of schooling, he decided to join the Canadian Armed Forces (CAF) and the Royal Canadian Corps of Signals. He is currently serving as a Deputy Information Systems Security Manager and DGDS (Director General Defence Security) Alternate ISSO at NDHQ. Congratulations Maj Young!",
+                "On behalf of all of us on the Board, all the best in 2024!!"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2024/01/Op-UNION-Christmas-pic-2023-226x300.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2024/01/Maj-Young-239x300.jpg"
+              ],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/10/Preserve-Our-Memorials-Project-Description.pdf"
+              ]
+            },
+            "fr": {
+              "id": 342236,
+              "url": "https://cmcen-rcmce.ca/fr/newsletter-de-lassociation-hiver-2023/",
+              "title": "NEWSLETTER DE L’ASSOCIATION – HIVER 2023",
+              "publishedAt": "2024-01-01T09:49:11",
+              "modifiedAt": "2024-02-12T09:51:05",
+              "paragraphs": [
+                "NOUVELLES DE L’ASSOCIATION",
+                "Vol. 2, numéro 4, hiver 2023",
+                "Salutations à nos membres!",
+                "Oui, tous les anciens membres et les membres actifs (Force régulière et Réserve) de la Branche des C&E et de ses éléments fondateurs sont automatiquement membres à perpétuité de l’Association des C&E. Les membres de votre famille peuvent demander à devenir membres associés. Pour tout savoir sur nous et le reste de la famille C&E, consultez le site https://cmcen-rcmce.ca/fr/association-qui-sommes-nous/",
+                "NOUS AVONS BESOIN DE VOTRE AIDE !",
+                "Nous recherchons l’aide des membres pour le projet de l’Association “Préserver nos monuments commémoratifs C&E”. Ce projet a été lancé en 2003 par la branche C&E à l’occasion de son centenaire. Initialement soutenu par le Signals Club of Canada, le travail a été pris en charge par le Comité du patrimoine et du musée des C&E en 2015 et, en 2019, il a été placé sous l’égide de l’Association des C&E. Le Lcol (Ret) Tony Charters l’a dirigé depuis le début.",
+                "depuis le début et conseille désormais le conseil d’administration de l’association C&E et lui fait rapport. Toutefois, ayant atteint un certain âge, Tony est à la recherche d’un remplaçant. Ce pourrait être vous ! Tout ce dont vous avez besoin, c’est d’un intérêt pour notre patrimoine et d’un désir de veiller à ce que nos monuments commémoratifs soient préservés pour que tout le monde puisse les apprécier.",
+                "Pour plus d’informations sur le projet, cliquez ici : Préserver nos monuments commémoratifs – Description du projet",
+                "LE COIN DES VÉTÉRANS",
+                "Nous travaillons sur une nouvelle rubrique afin de mieux servir nos membres retraités. Pour ce numéro, nous aimerions attirer votre attention sur certains sites web où plusieurs liens mènent à des informations qui peuvent être utiles à ceux d’entre nous qui prennent leur retraite de l’armée pour devenir… des vétérans ! Surveillez cet espace pour plus de nouvelles et d’informations.",
+                "https://parlonsveterans2.ca/",
+                "https://www.ombudsman-veterans.gc.ca/fr/bureau-de-lombud-des-veterans",
+                "BENEFITS",
+                "As part of our service to C&E Association members, we approach companies and service providers to negotiate favoured rates and services for you. TD Insurance provides preferred rates for home, auto, tenant, cottage, and travel insurance. Pour plus d’informations, consultez https://www.tdassurance.com/affinity/cmcen",
+                "OP JIMMY SANTA 2023",
+                "Chaque année, l’Association envoie, en votre nom, un petit colis à tous les membres de la branche C&E qui sont déployés pendant la période de Noël. Cette année, nous avons reçu 168 noms de personnes déployées dans le cadre du CJOC, du CFIOG et d’Alert. Merci à Leala et Karen du Mercury Shop et à tous les membres du CFSCE qui se sont portés volontaires pour préparer les colis. Voici un message que nous avons reçu de certains de nos hommes et femmes à l’étranger :",
+                "Je vous écris au nom des membres de la branche C&E de l’Op Union pour vous remercier, ainsi que l’association C&E, pour la jolie note et les cadeaux de Noël que vous nous avez envoyés. Nous avons une petite mais remarquable équipe de signaleurs ici en Europe de l’Est qui soutient l’opération Union. Pour certains d’entre nous, il s’agit du dernier déploiement et pour d’autres, c’est leur première occasion de se déployer, mais dans tous les cas, il est toujours agréable de recevoir un petit quelque chose de la part de notre branche d’origine. De la part de l’équipe J6 Op Union : Joyeux Noël et bonnes vacances!",
+                "BULLETINS D’INFORMATION DES UNITÉS ET DES ASSOCIATIONS",
+                "Nous avons le plaisir de vous annoncer que nous continuons à recevoir des mises à jour et des bulletins d’information de la part d’unités et d’associations de C&E de tout le pays. L’une des principales fonctions de l’association des C&E est de “créer des liens et de promouvoir une association étroite avec tous les membres de la communauté militaire étendue des C&E”. Si vous avez quelque chose à partager, qu’il s’agisse d’une nouvelle, d’une photo ou même d’une lettre d’information de votre association locale, envoyez-la à dave.whittier@cmcen-rcmce.ca et nous ferons de notre mieux pour l’inclure. Bonne lecture !",
+                "32 SIGNAL REGIMENT DISPATCHES",
+                "Consultez le lien pour obtenir la dernière lettre d’information du 32e régiment de transmissions et d’excellents anciens numéros : https://cmcen-rcmce.ca/32-signal-regiment-dispatches/",
+                "MUSÉE C&E",
+                "Le dernier bulletin d’information de notre musée se trouve à l’adresse suivante : https://www.candemuseum.org/fr/nouvelles-et-evenements/nouvelles/de-la-depeche-ledition-de-decembre-2023",
+                "CONSULTEZ TOUS LES ANCIENS NUMÉROS !",
+                "Une liste complète de toutes les lettres d’information que j’ai rassemblées se trouve à l’adresse suivante : https://cmcen-rcmce.ca/association_newsletter/",
+                "RECONNAISSANCE DES MEMBRES",
+                "Pour la neuvième année, le club de hockey Maple Leafs de Toronto a de nouveau inclus le programme de reconnaissance des Troupes du match des FAC dans son calendrier d’événements 2023 – 2024. Dans le cadre de ce programme, les Toronto Maple Leafs (TML) rendront hommage à un membre méritant de la CAF lors d’une présentation en cours de match à chaque match à domicile, du 25 octobre 23 au 13 avril 24. Le 9 décembre 23, le membre honoré n’était autre que notre Maj Samson Young ! Le major Young est un Canadien de première génération et un réfugié du Laos qui est arrivé au Canada en 1980. Après dix ans d’études, il a décidé de rejoindre les Forces armées canadiennes (FAC) et le Corps royal canadien des transmissions. Il est actuellement gestionnaire adjoint de la sécurité des systèmes d’information et OSSI suppléant du DGDS (directeur général de la sécurité de la défense) au QGDN. Félicitations au Maj Young !",
+                "Au nom de tous les membres du conseil d’administration, nous vous souhaitons bonne chance pour 2024 !",
+                "Traduit avec DeepL.com (version gratuite)"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2024/01/Op-UNION-Christmas-pic-2023-226x300.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2024/01/Maj-Young-239x300.jpg"
+              ],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/10/Preserve-Our-Memorials-Project-Description.pdf"
+              ]
+            }
+          }
+        },
+        {
+          "key": "wp-340587",
+          "title": {
+            "en": "ASSOCIATION NEWSLETTER – SUMMER 2023",
+            "fr": "NEWSLETTER DE L’ASSOCIATION – ÉTÉ 2023"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 340587,
+              "url": "https://cmcen-rcmce.ca/association-newsletter-summer-2023/",
+              "title": "ASSOCIATION NEWSLETTER – SUMMER 2023",
+              "publishedAt": "2023-07-03T20:50:07",
+              "modifiedAt": "2024-01-29T12:19:48",
+              "paragraphs": [
+                "ASSOCIATION NEWS",
+                "Vol. 2, Issue 2, Summer 2023",
+                "Greetings to our Members!",
+                "Yes, all former and serving members (Regular Force and Reserve) of the C&E Branch and its founding elements are automatically members in perpetuity of the C&E Association. Your family members are welcome to apply for Associate Membership. See everything about us and the rest of the C&E Family at https://cmcen-rcmce.ca/association.",
+                "VETERANS’ CORNER",
+                "We’re working on a new feature to better serve our retired members. For this issue, we would like to draw your attention to some websites where several links lead to information that can be useful to those of us who retire from the military to become …veterans! Watch this space for more news and information.",
+                "https://letstalkveterans.ca",
+                "https://www.ombudsman-veterans.gc.ca/en",
+                "BENEFITS",
+                "As part of our service to C&E Association members, we approach companies and service providers to negotiate favoured rates and services for you. TD Insurance provides preferred rates for home, auto, tenant, cottage, and travel insurance. For more info, check out https://www.tdinsurance.com/affinity/cmcen.",
+                "UNIT AND ASSOCIATION NEWSLETTERS",
+                "We’re pleased to report that we are starting to get updates and newsletters from units and C&E associations from across the country. One of the core functions of the C&E Association is to “connect with and promote a close association with all members of our extended C&E military community”. If you have anything you’d like to share, be it news, a picture, or even a newsletter from your own local association, send it to dave.whittier@cmcen-rcmce.ca and we’ll do our best to include it. Please enjoy!",
+                "32 SIGNAL REGIMENT DISPATCHES",
+                "Check the link for the latest 32 Signal Regiment newsletter and some great back issues: https://cmcen-rcmce.ca/32-signal-regiment-dispatches/",
+                "77 LINE REGIMENT – THE CABLE",
+                "The June 2023 edition of the 77 Line Regiment newsletter has just been added: https://cmcen-rcmce.ca/77-line-regiment-newsletters/",
+                "5 GBMC en Évolution// 5 CMBG in Evolution",
+                "Le 5e Groupe-Brigade Mécanisé du Canada (5 GBMC) a toujours été la brigade (Bde) qui propulse l’Armée canadienne (AC) vers le futur avec des idées innovantes qui brisent le statu quo. Un grand merci au capitaine Sean Minckler pour son excellent résumé de quelques-unes des nombreuses initiatives mises en œuvre par le 5 CMBG Trans pour tirer le meilleur parti de la technologie moderne des télécommunications sur le champ de bataille.",
+                "5 Canadian Mechanised Brigade (Bde) Group (5 CMBG) has always been the Bde that propels the Canadian Army (CA) into the future with innovative ideas that break the status quo. Many thanks to Captain Sean Minckler for his excellent summary of some of the many initiatives that 5 CMBG Sigs has fielded to make the best use of modern telecommunications technology on the battlefield. Check it out – consultez le!",
+                "BRANCH BATTLEFIELD TOUR TO THE NETHERLANDS",
+                "From April 28 to May 7 2023, members of the C&E Branch traveled to the Netherlands for a battlefield tour to commemorate the legacy of our C&E Branch predecessors during the liberation of The Netherlands. Signallers ‘got comms thru’ as Canadians fought over the Channel, on the coast of France & Belgium, and the dykes of the Netherlands. We helped liberate the Dutch and rebuild their lives. Canadian signalmen connected the German forces to General Foulkes for the surrender.",
+                "To take a look at Louis Lemaire’s blog, check out this link. I have also included a few photos from the trip, taken by various participants, below."
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_20230504_125306-300x225.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_20230504_124324-300x225.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_20230501_222031_021-300x300.webp",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_6489-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_2958-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_2722.heic",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/Dutch-Sig-Regt-Parade-10-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_2220-225x300.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/A-March-to-Remember-11_Parade-End-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/A-March-to-Remember-9_Parade-start-1-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/A-March-to-Remember-2_Group-Pic-1-1-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230503_073519-1-300x225.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230430_142221-1-225x300.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230430_122117-1-300x225.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230503_144638-1-300x174.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230502_014755-1-300x169.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_20230505_110219-300x135.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230503_110320-1-300x125.jpg"
+              ],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/5-CMBG-Bde-of-Innovation.pdf"
+              ]
+            },
+            "fr": {
+              "id": 340588,
+              "url": "https://cmcen-rcmce.ca/fr/newsletter-de-lassociation-hiver-2022/",
+              "title": "NEWSLETTER DE L’ASSOCIATION – ÉTÉ 2023",
+              "publishedAt": "2023-07-03T11:41:23",
+              "modifiedAt": "2024-01-31T12:02:38",
+              "paragraphs": [
+                "NOUVELLES DE L’ASSOCIATION",
+                "Vol. 2, Numéro 2, Été 2023",
+                "Salutations à nos Membres!",
+                "Oui, tous les anciens membres et les membres actifs (Force régulière et Réserve) de la Branche C&É et de ses éléments fondateurs sont automatiquement membres à perpétuité de l’Association C&É. Les membres de votre famille peuvent demander à devenir membres associés. Pour tout savoir sur nous et le reste de la famille C&E, consultez le site https://cmcen-rcmce.ca/association.",
+                "COIN DES VÉTÉRANS",
+                "Nous travaillons sur une nouvelle fonctionnalité pour mieux servir nos membres retraités. Pour ce numéro, nous aimerions attirer votre attention sur certains sites web où plusieurs liens mènent à des informations qui peuvent être utiles à ceux d’entre nous qui prennent leur retraite de l’armée pour devenir … des vétérans ! Surveillez cet espace pour plus de nouvelles et d’informations.",
+                "parlonsveterans2.ca",
+                "ombudsman-veterans.gc.ca/fr/bureau-de-lombud-des-veterans",
+                "AVANTAGES",
+                "Dans le cadre de notre service aux membres de l’association C&E, nous contactons des entreprises et des fournisseurs de services afin de négocier des tarifs et des services préférentiels pour vous. TD Assurance offre des tarifs préférentiels pour l’assurance maison, voiture, locataire, chalet et voyage. Pour plus d’informations, consultez https://www.tdassurance.com/affinity/cmcen.",
+                "NEWSLETTERS D’UNITÉ ET D’ASSOCIATION",
+                "Nous avons le plaisir de vous annoncer que nous commençons à recevoir des mises à jour et des bulletins d’information de la part d’unités et d’associations de C&E de tout le pays. L’une des principales fonctions de l’association des C&E est de ” créer des liens et de promouvoir une association étroite avec tous les membres de notre communauté militaire élargie de C&E “. Si vous avez quelque chose à partager, qu’il s’agisse d’une nouvelle, d’une photo ou même d’une lettre d’information de votre association locale, envoyez-la à dave.whittier@cmcen-rcmce.ca et nous ferons de notre mieux pour l’inclure. Bonne lecture!",
+                "DÉPÊCHES DU 32E RÉGIMENT DE SIGNAUX",
+                "Consultez le lien pour obtenir la dernière lettre d’information du 32e régiment de signaux et d’autres anciens numéros intéressants: https://cmcen-rcmce.ca/32-signal-regiment-dispatches/",
+                "77E RÉGIMENT DE LIGNE – LE CÂBLE",
+                "L’édition de juin 2023 de la lettre d’information du 77 Line Regiment vient d’être ajoutée: https://cmcen-rcmce.ca/77-line-regiment-newsletters/",
+                "5 GBMC en Évolution// 5 CMBG in Evolution",
+                "Le 5e Groupe-Brigade Mécanisé du Canada (5 GBMC) a toujours été la brigade (Bde) qui propulse l’Armée canadienne (AC) vers le futur avec des idées innovantes qui brisent le statu quo. Un grand merci au capitaine Sean Minckler pour son excellent résumé de quelques-unes des nombreuses initiatives mises en œuvre par le 5 CMBG Trans pour tirer le meilleur parti de la technologie moderne des télécommunications sur le champ de bataille.",
+                "5 Canadian Mechanised Brigade (Bde) Group (5 CMBG) has always been the Bde that propels the Canadian Army (CA) into the future with innovative ideas that break the status quo. Many thanks to Captain Sean Minckler for his excellent summary of some of the many initiatives that 5 CMBG Sigs has fielded to make the best use of modern telecommunications technology on the battlefield. Check it out – consultez le!",
+                "VISITE DES CHAMPS DE BATAILLE DE LA BRANCHE AUX PAYS-BAS",
+                "Du 28 avril au 7 mai 2023, des membres de la Branche C&É se sont rendus aux Pays-Bas pour une visite des champs de bataille afin de commémorer l’héritage de nos prédécesseurs de la Branche C&É pendant la libération des Pays-Bas. Les signaleurs ont assuré la communication pendant que les Canadiens se battaient au-dessus de la Manche, sur les côtes de la France et de la Belgique, et sur les digues des Pays-Bas. Nous avons aidé à libérer les Néerlandais et à reconstruire leur vie. Les signaleurs canadiens ont relié les forces allemandes au général Foulkes pour la reddition.",
+                "Pour consulter le blog de Louis Lemaire, cliquez sur ce lien. J’ai également inclus quelques photos du voyage, prises par divers participants, ci-dessous."
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_20230504_125306-300x225.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_20230504_124324-300x225.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_20230501_222031_021-300x300.webp",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_6489-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_2958-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_2722.heic",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/Dutch-Sig-Regt-Parade-10-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_2220-225x300.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/A-March-to-Remember-11_Parade-End-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/A-March-to-Remember-9_Parade-start-1-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/A-March-to-Remember-2_Group-Pic-1-1-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230503_073519-1-300x225.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230430_142221-1-225x300.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230430_122117-1-300x225.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230503_144638-1-300x174.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230502_014755-1-300x169.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/IMG_20230505_110219-300x135.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/20230503_110320-1-300x125.jpg"
+              ],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/5-CMBG-Bde-of-Innovation.pdf"
+              ]
+            }
+          }
+        },
+        {
+          "key": "wp-315043",
+          "title": {
+            "en": "ASSOCIATION NEWSLETTER – SPRING 2023",
+            "fr": "ASSOCIATION NEWSLETTER – SPRING 2023"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 315043,
+              "url": "https://cmcen-rcmce.ca/association-newsletter-spring-2023/",
+              "title": "ASSOCIATION NEWSLETTER – SPRING 2023",
+              "publishedAt": "2023-04-10T13:48:58",
+              "modifiedAt": "2023-04-10T13:48:58",
+              "paragraphs": [
+                "ASSOCIATION NEWS",
+                "Vol. 2, Issue 1, Spring 2023",
+                "Greetings to our Members!",
+                "Yes, all former and serving members (Regular Force and Reserve) of the C&E Branch and its founding elements are automatically members in perpetuity of the C&E Association. Your family members are welcome to apply for Associate Membership. See everything about us and the rest of the C&E Family at https://cmcen-rcmce.ca/association.",
+                "NEW MEMBERS OF THE BOARD",
+                "The Board of Directors is pleased to announce two new members! Sergeant Christian Marcotte was born to military parents and spent most of his youth moving from base to base, He lived in Germany, Nova Scotia, and various cities in Quebec. Sgt Marcotte joined the CAF in September 2001 as a Comm Research Operator (now SIGINT analyst), transferred to ATIS Tech, and has served at CFS Leitrim, CFB Bagotville, CFSCE, and CFJSR. Sgt Marcotte is now our new Association Secretary. Welcome, Sgt Marcotte!",
+                "We are also pleased to welcome aboard Corporal David Tran from 41 Signal Regiment. Cpl Tran has been an Army Reservist for 5 years as an Army Communication and Information System Specialist and is currently employed on a Class B contract in the Quartermaster shop at HMCS Tecumseh. Cpl Tran is an Acting Director until his appointment can be ratified by the membership at the next General Meeting, and he will focus on membership development. Thanks for volunteering to help!",
+                "UPDATE FROM THE C&E BRANCH CHIEF",
+                "Members of the C&E Branch,",
+                "I would like to take this opportunity to highlight a few things that the Branch Office is working on for 2023.",
+                "First off, planning is already underway for this year’s C&E Week, which will take place during the 23 to 28 October timeframe. This year’s theme will be Reconstitution and we are working hard to increase engagement for this year’s event. I would like to remind everyone that C&E Week is for everyone and not just for currently serving CAF members. The C&E Family is encouraged to come out and take part, whether it is during the working groups and panels, attending the meet and greet or the mess dinner, or simply visiting the Museum and Home Station. Whether it is virtual or in-person, I look forward to seeing you all!",
+                "Next, I would like to highlight that recognizing the accomplishments of our members continues to be a priority for me. Nominations for the Colonel-in-Chief Award, Heritage Awards, Branch Commendations, and Branch Member and Subaltern of the Year are all important ways to celebrate the excellence of the C&E Family. While some awards are only presented during C&E Week, some can be presented at any time, so don’t wait to nominate a deserving person. That said, official nomination calls for the C&E Member and Subaltern of the Year will be going out soon too, so I hope to see great nominations from all of the occupations again this year. By the way, you can always find nomination criteria and process details in the C&E Branch Standing Orders posted on the CMCEN web page, so I encourage you to have a look and consider nominating someone for an award.",
+                "The Museum in Kingston needs our support. If you are not already supporting them either through a pay allotment (Regular Force serving members) or through Canada Helps (Reserves or retired members), please consider doing so. Donations are what keep the Museum going and they need our help to keep our history and heritage alive and available for everyone to see. If you haven’t been to the Museum in a while, I encourage you to check it out. There are many amazing changes and additions to the Museum that you might not know about, so I encourage you to pay them a visit or check out their website (https://www.candemuseum.org/) for more info. If you are interested in donating, please see your Orderly Room or visit Museum Foundation’s Canada Helps campaign (https://www.canadahelps.org/en/dn/14172). Your generosity and support are truly appreciated.",
+                "Finally, there is a dedicated group of folks, both in the Branch Office, the C&E Association, and in Museum who work hard to ensure the C&E Family is supported. My thanks to every one of them for their dedication and support! Remember, you can always catch the latest news on the web (https://cmcen-rcmce.ca/), on Facebook (https://www.facebook.com/RCMCE.CMCEN) and on Twitter (https://twitter.com/cmcen_rcmce)!",
+                "As always, I am here for you. Feel free to drop me a line or send me your questions and concerns. I can be reached by e-mail (alex.arndt@forces.gc.ca) anytime.",
+                "CWO (Mr Gnr) / Adjuc (mtre can) Alex Arndt, CD",
+                "Branch Chief, Communications and Electronics Branch",
+                "VETERANS’ CORNER",
+                "We’re introducing a new feature to better serve our retired members. For this issue, we would like to draw your attention to some websites where several links lead to information that can be useful to those of us who retire from the military to become …veterans! Watch this space for more news and information.",
+                "https://letstalkveterans.ca",
+                "https://www.ombudsman-veterans.gc.ca/en",
+                "HERITAGE AWARD PROGRAM – CALL FOR NOMINATIONS",
+                "As part of the Communications & Electronics Association’s Awards and Recognition Program, the Heritage Awards supplement other forms of recognition in our community such as Branch commendations and the Foundation’s Philanthropic Award. In this instance, these awards are intended for presentation to persons and organizations who promote our heritage and honour our legacy through their actions. More detail on the Heritage Awards themselves, the Nomination and Submission Guide, and the Nomination Form are found at https://cmcen-rcmce.ca/heritage-awards/ Think about it and submit a nomination!!",
+                "CONFERENCE OF DEFENCE ASSOCIATIONS",
+                "Included in the mandate of your Association is to represent the Branch at the Conference of Defence Associations (CDA). Indeed, we are a charter member of the Conference whose mission is to inform the Canadian public at large and advocate decision-makers on defence and security issues of national interest. This allows us retired folks to represent the interest of our Family in a way that serving members can’t. Your President recently attended the CDA’s general meetings and Ottawa Conference. This organization does good work in advocating for us and your Association makes sure our voice is heard.",
+                "MEMBER BENEFITS",
+                "As part of our service to C&E Association members, we approach companies and service providers to negotiate favoured rates and services for you. TD Insurance provides preferred rates for home, auto, tenant, cottage, and travel insurance. For more info, check out https://www.tdinsurance.com/affinity/cmcen.",
+                "UNIT AND ASSOCIATION NEWSLETTERS",
+                "We’re pleased to report that we are starting to get updates and newsletters from units and C&E associations from across the country. One of the core functions of the C&E Association is to “connect with and promote a close association with all members of our extended C&E military community”. If you have anything you’d like to share, be it news, a picture, or even a newsletter from your own local association, send it to dave.whittier@cmcen-rcmce.ca and we’ll do our best to include it. Please enjoy!",
+                "32 SIGNAL REGIMENT DESPATCHES",
+                "The Honorary Colonel of 32 Signal Regiment Ken Lloyd has graciously shared some of the back issues of “Despatches”, published by the 32 Signal Regiment Family Council. You can find them here: https://cmcen-rcmce.ca/32-signal-regiment-dispatches/. Thanks for sharing your news and updates, and we hope to see more!",
+                "77 LINE REGIMENT – THE CABLE",
+                "77 Line Regiment has been sharing its newsletter “The Cable” with CMCEN for some time now, and we are including them here so people can see them all in one place: https://cmcen-rcmce.ca/77-communication-regiment-newsletters/",
+                "BLAST FROM THE PAST – 741 COMMUNICATION SQUADRON",
+                "Lieutenant Colonel (ret’d) Mike Hayes, a past Commander of 74 Communication Group, dug up these old gems from the 741 Communication Squadron newsletters in the mid-Eighties. I (Dave W) served in that unit back then and it was a thrill to see some of my own stuff in there. You can find them here: https://cmcen-rcmce.ca/741-communication-squadron-newsletters"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/04/Br-Chief-signature.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/04/Br-Signature-block.jpg"
+              ],
+              "documents": []
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "wp-315139",
+          "title": {
+            "en": "741 Communication Squadron Newsletters",
+            "fr": "741 Communication Squadron Newsletters"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 315139,
+              "url": "https://cmcen-rcmce.ca/741-communication-squadron-newsletters/",
+              "title": "741 Communication Squadron Newsletters",
+              "publishedAt": "2023-01-23T13:59:40",
+              "modifiedAt": "2023-03-10T12:56:50",
+              "paragraphs": [
+                "741 COMMUNICATION SQUADRON",
+                "741 Communication Squadron Victoria, now a part of 39 Signal Regiment, published regular newsletters in its time. Many of them have been lost, but thanks to Lieutenant Colonel (retired) Mike Hayes we are able to share a few of them:",
+                "741 Newsletter Sept 1985",
+                "741 Newsletter Nov 1985",
+                "741 Newsletter Dec 1985",
+                "741 Newsletter Feb 1986"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/250px-Unit_crest_741_Comm_Sqn-240x300.jpg"
+              ],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/741-Newsletter-Dec-1985.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/741-Newsletter-Feb-1986.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/741-Newsletter-Nov-1985.pdf",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/741-Newsletter-Sept-1985.pdf"
+              ]
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "wp-314957",
+          "title": {
+            "en": "ASSOCIATION NEWSLETTER – WINTER 2022",
+            "fr": "NEWSLETTER DE L’ASSOCIATION – HIVER 2022"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 314957,
+              "url": "https://cmcen-rcmce.ca/association-newsletter-winter-2022/",
+              "title": "ASSOCIATION NEWSLETTER – WINTER 2022",
+              "publishedAt": "2022-12-24T12:37:19",
+              "modifiedAt": "2022-12-24T19:34:27",
+              "paragraphs": [
+                "ASSOCIATION NEWS",
+                "Vol. 1, Issue 3, Winter 2022",
+                "Greetings to our Members!",
+                "Yes, all former and serving members (Regular Force and Reserve) of the C&E Branch and its founding elements are automatically members in perpetuity of the C&E Association. Your family members are welcome to apply for Associate Membership. See everything about us and the rest of the C&E Family at https://cmcen-rcmce.ca/association.",
+                "JIMMY SANTA 2022",
+                "This year, as in years past, the Association executed Operation JIMMY SANTA 2022. To help the morale of our deployed Branch members, the Association sends each one a small gift parcel for Christmas. In the end, we put together 161 parcels for deployed personnel. More info can be found here: https://cmcen-rcmce.ca/op-jimmy-santa-2022/",
+                "CFSCE and CJOC were instrumental in helping pull this off and we would be remiss in not acknowledging the key role played by the Mercury Shop. They ordered the gifts for us, supervised the packaging and addressing, and delivered the parcels to the postal system. It simply would not have happened without them. Hats off to you!",
+                "LOOKING BACK AT 2022",
+                "As with so many other organizations, the C&E Association is coming out from under COVID restrictions and working to resume normal operations. As part of the business planning process, the Board of Directors conducted a review of accomplishments in 2022. Here are some highlights:",
+                "remained active with the Conference of Defence Associations (CDA) Institute in order to advocate on behalf of the C&E Branch (sidenote: the current Board Chair of the CDS Institute is LGen (ret’d) Guy Thibault).",
+                "Renewed our relationship with our Affinity Partner program, which at the moment consists of a partnership with TD Insurance, and discussed options to expand. This program provides the bulk of our revenue.",
+                "Remained on track with our NL 2023 Battlefield Tour planning.",
+                "Increase our ability to reach out to our membership through newsletters and email.",
+                "Assisted in the conduct of three hybrid PD panels during C&E Week.",
+                "Successfully executed Operation JIMMY SANTA.",
+                "LOOKING FORWARD TO 2023",
+                "The Association Board of Directors has been working on a Business Plan for 2023. Some of the tasks we will be working on:",
+                "Expand the newsletter program to reach a wider audience.",
+                "Develop a new Member Management System.",
+                "In cooperation with CDA or AFCEA, conduct a virtual Professional Development activity.",
+                "Expand our Affinity program.",
+                "Start a program to digitize Reserve history.",
+                "Recruit more members for the Board and/or as advisors.",
+                "RETIREMENT – BGEN D. AWALT",
+                "Dave Whittier had the distinct pleasure of being able to attend the Depart with Dignity for BGen (ret’d) Dave Awalt on November 27th at the CFB Esquimalt Chief and Petty Officer’s Mess. BGen (ret’d) Awalt retired on September 30th after over 31 years of service. His career was unique in the number of command positions he held (748 Comm Sqn, 744 Comm Regt, 39 Sig Regt, Canadian Scottish Regiment, and 39 Canadian Brigade Group), as well as the fact that he commanded 3rd Canadian Division for a total of 9 months during his tenure as Deputy Commander.",
+                "Thank you for your service, General!",
+                "HERITAGE AWARD PROGRAM – CALL FOR NOMINATIONS",
+                "As part of the Communications & Electronics Association’s Awards and Recognition Program, the Heritage Awards supplement other forms of recognition in our community such as Branch commendations and the Foundation’s Philanthropic Award. In this instance, these awards are intended for presentation to persons and organizations who promote our heritage and honour our legacy through their actions. More detail on the Heritage Awards themselves, the Nomination and Submission Guide, and the Nomination Form are found at https://cmcen-rcmce.ca/heritage-awards/ Think about it and submit a nomination!!",
+                "NEW ASSOCIATION VICE PRESIDENT",
+                "On behalf of the Association Board, a warm welcome to BGen (ret’d) Martin Girard, who has graciously agreed to serve as our Vice President. Welcome!",
+                "FROM OUR MEMBERS",
+                "As this newsletter gets traction we would like to highlight one or two emails we receive from Association members, as a way to help make connections. This edition recognizes WO (ret’d) Colin Blackburn, who wrote us back in August. His 28-year career was remarkable:",
+                "Two years served on HMCS Haida as a radioman,",
+                "20 hours a day working HF in Yarmouth, NS during the Cuban Missile Crisis,",
+                "AGA ops in Baden Baden, Sardinia, Trenton, Norway, Denmark, Ft Bragg, Ft lewis, Hawaii, Frobisher Bay, Resolute Bay, Alert, USAF Thule, Yellowknife, and “so many other exotic locales”.",
+                "posted to Airlift Command Element in Cairo during the 1972 Yom Kippur War.",
+                "was part of the first contingent of UN Peacekeepers in Egypt.",
+                "after remuster, was the only Reserve Image Tech on the West Coast, as part of 39 CBG Public Affairs cell.",
+                "Oh yeah, he also designed MACS crests. Truly a stellar career, WO (ret’d) Blackburn, thank you for your service!",
+                "Feedback is a gift, and if you have any comments or suggestions regarding content for the newsletters, please write to dave.whittier@cmcen-rcmce.ca",
+                "MERRY CHRISTMAS, HAPPY HOLIDAYS, AND ALL THE BEST IN 2023!!"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/12/MACS-Trenton-crest-265x300.jpg"
+              ],
+              "documents": []
+            },
+            "fr": {
+              "id": 314972,
+              "url": "https://cmcen-rcmce.ca/fr/association-newsletter-winter-2022/",
+              "title": "NEWSLETTER DE L’ASSOCIATION – HIVER 2022",
+              "publishedAt": "2022-12-24T12:37:19",
+              "modifiedAt": "2022-12-24T19:34:15",
+              "paragraphs": [
+                "NOUVELLES DE L’ASSOCIATION",
+                "Vol. 1, numéro 3, hiver 2022",
+                "Salutations à nos membres!",
+                "Yes, all former and serving members (Regular Force and Reserve) of the C&E Branch and its founding elements are automatically members in perpetuity of the C&E Association. Your family members are welcome to apply for Associate Membership. See everything about us and the rest of the C&E Family at https://cmcen-rcmce.ca/fr/association-qui-sommes-nous/",
+                "JIMMY SANTA 2022",
+                "Cette année, comme les années précédentes, l’Association a exécuté l’opération JIMMY SANTA 2022. Afin de soutenir le moral des membres de notre branche déployée, l’Association envoie à chacun un petit colis-cadeau pour Noël. Au final, nous avons réuni 161 colis pour le personnel déployé. Vous trouverez plus d’informations ici : https://cmcen-rcmce.ca/fr/operation-jimmy-santa-2022/",
+                "L’EECFC et le CJOC ont joué un rôle déterminant dans la réalisation de cet événement et nous serions négligents de ne pas reconnaître le rôle clé joué par le Mercury Shop. Ils ont commandé les cadeaux pour nous, supervisé l’emballage et l’adressage, et livré les colis au système postal. Tout cela n’aurait pas été possible sans eux. Chapeau bas !",
+                "RETOUR SUR L’ANNÉE 2022",
+                "Comme tant d’autres organisations, l’Association C&E sort des restrictions du COVID et s’efforce de reprendre ses activités normales. Dans le cadre du processus de planification des activités, le conseil d’administration a procédé à un examen des réalisations en 2022. En voici quelques points saillants :",
+                "Nous sommes restés actifs au sein de l’Institut de la Conférence des associations de la défense (CDA) afin de défendre les intérêts de la Branche C&E (remarque : le président actuel du conseil d’administration de l’Institut CDA est le Lgén (ret) Guy Thibault).",
+                "Nous avons renouvelé notre relation avec notre programme de partenaires d’affinité, qui consiste actuellement en un partenariat avec TD Assurance, et discuté des possibilités d’expansion. Ce programme fournit la majeure partie de nos revenus.",
+                "Nous sommes restés sur la bonne voie en ce qui concerne la planification de notre tournée des champs de bataille de NL 2023.",
+                "Accroître notre capacité à communiquer avec nos membres par le biais de bulletins d’information et de courriels.",
+                "Nous avons participé à la tenue de trois groupes de discussion sur le perfectionnement professionnel hybride pendant la semaine des sciences et de la technologie.",
+                "Exécution réussie de l’opération JIMMY SANTA.",
+                "EN ATTENDANT 2023",
+                "Le conseil d’administration de l’association a travaillé sur un plan d’affaires pour 2023. Voici quelques-unes des tâches sur lesquelles nous allons travailler :",
+                "Développer le programme de bulletin d’information pour atteindre un public plus large.",
+                "Développer un nouveau système de gestion des membres.",
+                "En coopération avec CDA ou AFCEA, organiser une activité virtuelle de développement professionnel.",
+                "Développer notre programme d’affinité.",
+                "Lancer un programme de numérisation de l’histoire de la Réserve.",
+                "Recruter davantage de membres pour le conseil d’administration et/ou en tant que conseillers.",
+                "RETRAITE – BGEN D. AWALT",
+                "Dave Whittier a eu le grand plaisir d’assister à la cérémonie de départ avec dignité du Bgén (ret) Dave Awalt, le 27 novembre, au mess des chefs et des maîtres de la BFC Esquimalt. Le Bgén (ret) Awalt a pris sa retraite le 30 septembre après plus de 31 ans de service. Sa carrière a été unique par le nombre de postes de commandement qu’il a occupés (748 Comm Sqn, 744 Comm Regt, 39 Sig Regt, Canadian Scottish Regiment et 39 Canadian Brigade Group), ainsi que par le fait qu’il a commandé la 3e Division canadienne pendant un total de 9 mois au cours de son mandat de commandant adjoint.",
+                "Merci pour votre service, Général !",
+                "PROGRAMME DE PRIX DU PATRIMOINE – APPEL À NOMINATIONS",
+                "Dans le cadre du programme de récompenses et de reconnaissance de l’Association des communications et de l’électronique, les prix du patrimoine complètent d’autres formes de reconnaissance dans notre communauté, comme les mentions élogieuses de la branche et le prix philanthropique de la Fondation. En l’occurrence, ces prix sont destinés à être remis à des personnes et à des organisations qui promeuvent notre patrimoine et honorent notre héritage par leurs actions. Vous trouverez plus de détails sur les prix du patrimoine eux-mêmes, le guide de mise en candidature et de soumission, ainsi que le formulaire de mise en candidature à l’adresse https://cmcen-rcmce.ca/fr/prix-du-patrimoine/. Pensez-y et soumettez une candidature !",
+                "NOUVEAU VICE-PRÉSIDENT DE L’ASSOCIATION",
+                "Au nom du conseil d’administration de l’association, nous souhaitons la bienvenue au bgén (retraité) Martin Girard, qui a gracieusement accepté de servir en tant que vice-président. Bienvenue !",
+                "DE NOS MEMBRES",
+                "Au fur et à mesure que ce bulletin prend de l’ampleur, nous aimerions mettre en évidence un ou deux courriels que nous recevons des membres de l’Association, afin d’aider à établir des liens. Cette édition rend hommage à l’Adj (retraité) Colin Blackburn, qui nous a écrit en août. Sa carrière de 28 ans a été remarquable :",
+                "Deux ans de service à bord du NCSM Haida en tant que radioman,",
+                "20 heures par jour à travailler en HF à Yarmouth, en Nouvelle-Écosse, pendant la crise des missiles cubains,",
+                "Des opérations AGA à Baden Baden, en Sardaigne, à Trenton, en Norvège, au Danemark, à Ft Bragg, à Ft Lewis, à Hawaï, à Frobisher Bay, à Resolute Bay, à Alert, à USAF Thule, à Yellowknife et dans “tant d’autres endroits exotiques”.",
+                "Affecté à l’élément de commandement du transport aérien au Caire pendant la guerre du Yom Kippour en 1972.",
+                "Il a fait partie du premier contingent de soldats de la paix des Nations Unies en Égypte.",
+                "Après la réaffectation, il a été le seul technicien en image de réserve sur la côte ouest, au sein de la cellule des affaires publiques du 39e GBC.",
+                "Et aussi, il a également conçu les écussons de MACS. Une carrière vraiment exceptionnelle, Adj (retraité) Blackburn, merci pour votre service !",
+                "Les réactions sont un cadeau, et si vous avez des commentaires ou des suggestions concernant le contenu des bulletins d’information, veuillez écrire à dave.whittier@cmcen-rcmce.ca.",
+                "JOYEUX NOËL, BONNES FÊTES DE FIN D’ANNÉE, ET BONNE CONTINUATION EN 2023 !"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/12/MACS-Trenton-crest-265x300.jpg"
+              ],
+              "documents": []
+            }
+          }
+        },
+        {
+          "key": "wp-312836",
+          "title": {
+            "en": "ASSOCIATION NEWSLETTER – SUMMER 2022",
+            "fr": "NEWSLETTER DE L’ASSOCIATION – ÉTÉ 2022"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 312836,
+              "url": "https://cmcen-rcmce.ca/association-newsletter-summer-2022/",
+              "title": "ASSOCIATION NEWSLETTER – SUMMER 2022",
+              "publishedAt": "2022-08-11T22:26:14",
+              "modifiedAt": "2022-12-24T19:58:43",
+              "paragraphs": [
+                "ASSOCIATION NEWS",
+                "Vol. 1, Issue 2, Summer 2022",
+                "Greetings to our Members!",
+                "Yes, all former and serving members (Regular Force and Reserve) of the C&E Branch and its founding elements are automatically members in perpetuity of the C&E Association. Your family members are welcome to apply for Associate Membership. See everything about us and the rest of the C&E Family at https://cmcen-rcmce.ca/association",
+                "C&E BRANCH 2023 VICTORY TOUR BATTLEFIELD STUDY",
+                "– NETHERLANDS 2023 –",
+                "The Communication and Electronic Branch Colonel Commandant Josée Robidoux is proud to launch ‘Netherlands 2023′, the latest in our series of battlefield study tours, to commemorate the legacy of our C&E Branch predecessors during the liberation of The Netherlands.This battlefield study is a look at our profession and a review of lessons from the past. However, the true value is the pride instilled in our people, in the uniform they wear, and the camaraderie created by bringing veterans and serving Branch members together: through their common history.",
+                "Why a Battlefield Study? Our past C&E communicators ‘got comms thru’ as Canadians fought in, and over, the Channel along the coast of France and Belgium, and over dykes and the skies of the Netherlands. We liberated the Dutch and helped rebuild their lives. Canadian linemen connected the German commander for the surrender to General Foulkes. Our Museum holds the ceasefire message. Our RCAF colleagues supported all air operations playing a major role in Operation MANNA – delivering food to the starving Dutch population and participating in all the major air campaigns in support of the liberation including the Allied air campaign against the German Op Bodenplatte in 1945. The program remains superb: a 10-day Study trip in The Netherlands (Market Garden, Op VERITABLE and BLOCKBUSTER, Groesbeek and Holten War Cemeteries, and other commemorative events). This is not a wine tour! Everyone is expected to research the campaign and ‘signalling stories’, and present their experiences upon return. There will be interactions between historians, retired and serving alike, and reading material on www.cmcen-rcmce.ca. Liesbeth Langford will be again invited to join us. We intend to install a memorial plaque at the home of Dutch Signals at their barracks in Stroe, NL. C&E personnel in Europe may also tag-on. Our Tour will be lead formation for the ‘Sunset March’ over the ‘A bridge too Far’ Nijmegen bridge.",
+                "The C&E Branch, Corporate Sponsors, and Units will be co-sponsoring [Unit nominated] 40+ young Branch deserving serving Regular and Reserve members from Army and Air units all across Canada; other serving, veterans, family, and friends are also invited to attend.",
+                "Tour details:",
+                "All Tour members are invited to attend six Battlefield Study/Background/Discussion Zoom sessions held between Oct ’22 to Apr ’23;",
+                "Depart Canada: 28 Apr ’23, return 07 May ’23;",
+                "Staying at the Mercure Hotel Nijmegen, most meals provided;",
+                "Formal Tour registration closes 30 Sept ’22 for guaranteed Tour seats; Tour sales will continue up to day of departure upon availability;",
+                "Detailed Tour info can be found here: https://cmcen-rcmce.ca/the-netherlands-2023-battlefield-study/",
+                "Contact LCol (retired) Hubert (Hugh) Janssen 613-590-0565 hubertjanssen1949@gmail.com for any Tour questions.",
+                "JOIN US!",
+                "Velox Versutus Vigilans",
+                "Preserve Our Memorials",
+                "The management of our worldwide C&E memorials continues. Have a peek at https://cmcen-rcmce.ca/preserve-our-memorials/ for the latest. Joe Costello at is providing the data repository, which can be seen at http://www.rcsigs.ca/index.php/CandE_Memorials_Project. Our President recently reached out to CFB Kingston to see if we could coordinate our efforts to manage the creation and maintenance of the numerous C&E memorials currently residing on or planned for the Base. We were well received by the Deputy Base Commander and his staff and had a very productive meeting with them. We subsequently copied our extensive photo coverage of those memorials for their use and will continue our engagement over the coming weeks. MTF.",
+                "Finally, a small ask, we have a pretty good record of our Signals memorials but we need more data on our Air and EW/SIGINT communications memorials. To that end, if one of you readers thinks that you are just the person who could do a little online research on this subject, then please contact Tony Charters at tmcharters@gmail.com.",
+                "Signallers Club dissolved",
+                "We are sad to report that the Signallers Club was officially dissolved on 21 Jan 2022. Its webpage is still up, at least for now, but will not be updated. Please check https://cmcen-rcmce.ca/ for updates and information about the branch.",
+                "New Branch Leader",
+                "BGen Dave Yarker has been appointed Director General Information Management Operations in Ottawa, replacing BGen James Lambert on his retirement. He is also taking the reigns as the C&E Branch Leader. Our thanks and best good wishes go out to BGen Lambert, and congratulations to BGen Yarker.",
+                "Looking for a Secretary",
+                "Are you looking for an opportunity to pitch in? Do you have a good eye for detail and have a knack with words? The Association is looking for someone who can help out and fill our vacant Secretary position. For more information, please contact our President, John Leech, at john.leech@cmcen.ca",
+                "Do you have news to share?",
+                "One of our five core functions at the C&E Association is to connect with all members of our community. If you have any news you’d like to share with the community, let us know! We can either publish it in an upcoming newsletter or get it posted to the CMCEN website. You can send your news to dave.whittier@cmcen-rcmce.ca"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/75th-anniversary-crest.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/75th-anniversary-crest.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/armd-car-300x192.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/plane.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/battle-map-300x300.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/Liesbeth-202x300.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/marching.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/cheers-300x225.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/cda-netherlands-flag.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/branch-flag-300x177.jpg"
+              ],
+              "documents": []
+            },
+            "fr": {
+              "id": 312837,
+              "url": "https://cmcen-rcmce.ca/fr/bulletin-dinformation-de-lassociation-ete-2022/",
+              "title": "NEWSLETTER DE L’ASSOCIATION – ÉTÉ 2022",
+              "publishedAt": "2022-08-11T22:39:59",
+              "modifiedAt": "2022-12-24T19:58:36",
+              "paragraphs": [
+                "NOUVELLES DE L’ASSOCIATION",
+                "Vol. 1, numéro 2, été 2022",
+                "Salutations à nos membres !",
+                "Oui, tous les membres anciens et actifs (Force régulière et Réserve) de la Branche des C&E et de ses éléments fondateurs sont automatiquement membres à perpétuité de l’Association des C&E. Les membres de votre famille sont les bienvenus pour demander le statut de membre associé. Pour tout savoir sur nous et le reste de la famille C&E, consultez le site https://cmcen-rcmce.ca/fr/association-qui-sommes-nous/",
+                "BRANCHE C&E 2023 TOUR DE LA VICTOIRE ET ÉTUDE DU CHAMP DE BATAILLE",
+                "– NETHERLANDS 2023 –",
+                "La Branche des communications et de l’électronique et électronique, Josée Robidoux, est fière de lancer “Pays-Bas 2023”, le dernier de notre série de voyages d’étude sur le champ de bataille, pour commémorer l’héritage de nos prédécesseurs de la Branche C&E pendant la libération des Pays-Bas. Cette étude de champ de bataille est un regard sur notre profession et un examen des leçons du passé. Cependant, la véritable valeur réside dans la fierté que nous inspirent les gens et l’uniforme qu’ils portent, ainsi que dans la camaraderie créée par le rapprochement des anciens combattants et des membres actifs de la Branche, à travers leur histoire commune.",
+                "Pourquoi une étude de champ de bataille ? Nos anciens communicateurs C&E ont fait passer les communications alors que les Canadiens combattaient dans et au-dessus de la Manche, le long des côtes françaises et belges, et au-dessus des digues et du ciel des Pays-Bas. Nous avons libéré les Néerlandais et les avons aidés à reconstruire leur vie. Les monteurs de lignes canadiens ont relié le commandant allemand pour la reddition au général Foulkes. Notre musée détient le",
+                "message de cessez-le-feu. Nos collègues de l’ARC ont appuyé toutes les opérations aériennes, jouant un rôle majeur dans l’opération Manna – livrant de la nourriture à la population néerlandaise affamée et participant à toutes les grandes campagnes aériennes à l’appui de la libération, y compris la campagne aérienne alliée contre l’opération allemande Bodenplatte en 1945. Le programme reste superbe : un voyage d’étude de 10 jours aux Pays-Bas (Market Garden, Op VERITABLE et BLOCKBUSTER, cimetières militaires de Groesbeek et Holten, et autres événements commémoratifs). Il ne s’agit pas d’une visite des vignobles ! Chacun doit faire des recherches sur la campagne et les “histoires de signalisation”, et présenter ses expériences à son retour. Il y aura des échanges entre historiens, retraités ou en activité, et des lectures sur www.cmcen-rcmce.ca. Liesbeth Langford sera à nouveau invitée à se joindre à nous. Nous avons l’intention d’installer une plaque commémorative chez les Signaux néerlandais, dans leur caserne de Stroe, aux Pays-Bas. Le personnel des C&E en Europe peut également se joindre à nous. Notre tournée sera la formation de tête pour la ” marche du crépuscule ” sur le pont ” A bridge too Far ” de Nijmegen.",
+                "La Branche des C&E, les entreprises commanditaires et les unités coparraineront plus de 40 jeunes membres méritants de la Branche, de la Force régulière et de la Réserve, provenant d’unités de l’Armée de terre et de l’Armée de l’air de tout le Canada ; d’autres membres actifs, des anciens combattants, leur famille et leurs amis sont également invités à participer.",
+                "Détails de la tournée :",
+                "Tous les participants à la tournée sont invités à assister à six séances Zoom d’étude des champs de bataille, d’étude du contexte et de discussion entre octobre 22 et avril 23;",
+                "Départ du Canada : 28 avril 23, retour le 7 mai 23;",
+                "Hébergement à l’hôtel Mercure de Nijmegen, la plupart des repas sont fournis;",
+                "L’inscription officielle au voyage se termine le 30 septembre 22 pour les places garanties. Les ventes se poursuivront jusqu’au jour du départ, selon les disponibilités;",
+                "Des informations détaillées sur le voyage sont disponibles ici: https://cmcen-rcmce.ca/fr/pays-bas-2023-etude-du-champ-de-bataille/",
+                "Communiquez avec le Lcol (retraité) Hubert (Hugh) Janssen au 613-590-0565 hubertjanssen1949@gmail.com pour toute question concernant la tournée.",
+                "Rejoignez-nous!",
+                "Velox Versutus Vigilans",
+                "Préserver nos mémoriaux",
+                "La gestion de nos mémoriaux C&E dans le monde entier se poursuit. Jetez un coup d’œil à https://cmcen-rcmce.ca/preserve-our-memorials/ pour les dernières nouvelles. Joe Costello à fournit le dépôt de données, qui peut être vu à http://www.rcsigs.ca/index.php/CandE_Memorials_Project. Notre président a récemment contacté la BFC Kingston pour voir si nous pouvions coordonner nos efforts pour gérer la création et l’entretien des nombreux monuments commémoratifs des C et E qui se trouvent actuellement sur la base ou qui y sont prévus. Nous avons été bien accueillis par le commandant adjoint de la base et son personnel et avons eu une réunion très productive avec eux. Nous avons par la suite copié notre vaste couverture photographique de ces mémoriaux pour leur usage et nous poursuivrons notre engagement au cours des prochaines semaines. MTF.",
+                "Enfin, une petite demande, nous avons un assez bon dossier sur nos monuments commémoratifs des transmissions mais nous avons besoin de plus de données sur nos monuments commémoratifs des communications aériennes et EW/SIGINT. À cette fin, si l’un de vos lecteurs pense être la personne qui pourrait faire une petite recherche en ligne sur ce sujet, veuillez contacter Tony Charters à tmcharters@gmail.com.",
+                "Dissolution du Signallers Club",
+                "Nous avons le regret d’annoncer que le Signallers Club a été officiellement dissous le 21 janvier 2022. Sa page web est toujours disponible, du moins pour le moment, mais ne sera pas mise à jour. Veuillez consulter https://cmcen-rcmce.ca/ pour les mises à jour et les informations concernant la branche.",
+                "Nouveau chef de branche",
+                "Le bgén Dave Yarker a été nommé directeur général des opérations de gestion de l’information à Ottawa, en remplacement du bgén James Lambert qui prend sa retraite. Il prend également les rênes de la Branche des C et E. Nos remerciements et nos meilleurs vœux vont au Bgén Lambert, et nos félicitations au Bgén Yarker.",
+                "Recherche d’une secrétaire",
+                "Vous cherchez une occasion de mettre la main à la pâte ? Vous avez le sens du détail et le sens de la parole ? L’Association est à la recherche d’une personne capable de nous aider et de combler le poste vacant de secrétaire. Pour plus d’informations, veuillez contacter notre président, John Leech, à l’adresse john.leech@cmcen.ca.",
+                "Avez-vous des nouvelles à partager ?",
+                "L’une de nos cinq fonctions principales à l’Association C&E est d’entrer en contact avec tous les membres de notre communauté. Si vous avez des nouvelles que vous souhaitez partager avec la communauté, faites-le nous savoir ! Nous pouvons soit la publier dans un prochain bulletin, soit l’afficher sur le site Web du RCEM. Vous pouvez envoyer vos nouvelles à dave.whittier@cmcen-rcmce.ca"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/75th-anniversary-crest.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/75th-anniversary-crest.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/armd-car-300x192.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/plane.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/battle-map-300x300.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/marching.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/cheers-300x225.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/cda-netherlands-flag.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/branch-flag-300x177.jpg"
+              ],
+              "documents": []
+            }
+          }
+        },
+        {
+          "key": "wp-312814",
+          "title": {
+            "en": "ASSOCIATION NEWSLETTER – SPRING 2022",
+            "fr": "BULLETIN D’INFORMATION DE L’ASSOCIATION – PRINTEMPS 2022 – FRANCAIS"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 312814,
+              "url": "https://cmcen-rcmce.ca/association-newsletter-spring-2022-english/",
+              "title": "ASSOCIATION NEWSLETTER – SPRING 2022",
+              "publishedAt": "2022-08-11T20:42:54",
+              "modifiedAt": "2022-08-11T21:44:27",
+              "paragraphs": [
+                "ASSOCIATION NEWS",
+                "Vol. 1 Issue 1 Spring 2022",
+                "Greetings to our Members!",
+                "Yes, all former and serving members (Regular Force and Reserve) of the C&E Branch and its founding elements are automatically members in perpetuity of the C&E Association. Your family members are welcome to apply for Associate Membership. See everything about us and the rest of the C&E Family at https://cmcen-rcmce.ca/association",
+                "What do we do?",
+                "We are ready to support members in distress, in conjunction with the Branch Office;",
+                "We arrange for the maintenance of the hundreds of memorials to the service of our members around the world;",
+                "We present Heritage Awards to deserving individuals each year;",
+                "We conduct professional development training;",
+                "We have an affinity program that offers insurance at favorable rates to registered members;",
+                "We reach out to the community, especially those who may not be getting the information about what’s going on in our Family.",
+                "Hence this Newsletter!",
+                "What’s New?",
+                "Recognizing that it’s better if all the components of our C&E Family (Branch Association, Museum, and Foundation) are on the same page, some very smart people designed a C&E Family Senate. This august body, with wide representation across the board, has assumed the role of providing strategic guidance and coordination among these components, all of whom have a separate part to play in our life as a Family.",
+                "Much more info about the Senate and the good work it has accomplished in the past two years will be forthcoming as our communications channels get properly established.",
+                "We have a new Colonel Commandant! With the retirement of BGen (Ret) Kevin O’Keefe, the Defence Minister, on the recommendation of the Senate, has appointed BGen (Ret) Josée Robidoux to this important honourary position. You can see her story at https://cmcen-rcmce.ca/biographies/brigadier-general-josee-robidoux-omm-cd-retired/. Sad to see Kevin O’Keefe step down from his very active role in our Family, but happy to see such a worthy successor in place.",
+                "Enough for this initial news bulletin.",
+                "You can actively keep up with what’s up by registering at https://cmcen-rcmce.ca/register/",
+                "That way you can stay informed about developments across our profession: you’ll be eligible for our affinity benefits and get the first info in any breaking news in our C&E Family life.",
+                "And",
+                "Pass it on; we all know colleagues who want to know what’s up.",
+                "And",
+                "Send us feedback; what do you want to hear more about? How can your professional Association be of assistance to you?"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png"
+              ],
+              "documents": []
+            },
+            "fr": {
+              "id": 312829,
+              "url": "https://cmcen-rcmce.ca/fr/bulletin-dinformation-de-lassociation-printemps-2022-francais/",
+              "title": "BULLETIN D’INFORMATION DE L’ASSOCIATION – PRINTEMPS 2022 – FRANCAIS",
+              "publishedAt": "2022-08-11T21:33:06",
+              "modifiedAt": "2022-08-11T21:33:06",
+              "paragraphs": [
+                "LES NOUVELLES DE L’ASSOCIATION",
+                "Volume 1 Edition 1 printemps 2022",
+                "Salutations à nos membres!",
+                "Oui, tous les membres anciens et actifs (Force régulière et Réserve) de la Branche des C et E et ses éléments fondateurs sont automatiquement membres à perpétuité de l’Association des C et E. Les membres de votre famille sont invités à faire une demande d’adhésion en tant que membre associé. Voyez tout sur nous et le reste de la famille C&E à https://cmcen-rcmce.ca/fr/association-qui-sommes-nous/",
+                "Qu’est-ce qu’on fait?",
+                "Nous sommes prêts à soutenir les membres en détresse, en collaboration avec la Branche ;",
+                "Nous assurons l’entretien des centaines de mémoriaux au service de nos membres à travers le monde ;",
+                "Nous décernons chaque année des prix du patrimoine à des personnes méritantes;",
+                "Nous organisons des formations de perfectionnement professionnel;",
+                "Nous avons un programme d’affinité qui offre des assurances à des tarifs avantageux aux membres inscrits;",
+                "Nous tendons la main à la communauté, en particulier à ceux qui ne reçoivent peut-être pas les informations sur ce qui se passe dans notre famille.",
+                "C’est la raison de cette Newsletter !",
+                "Quoi de neuf?",
+                "Reconnaissant qu’il soit préférable que toutes les composantes de notre famille C&E (l’association, la branche, le musée et la fondation) soient sur la même longueur d’onde, certaines personnes très intelligentes ont conçu un Sénat de la famille C&E. Cet organe auguste, avec une large représentation à tous les niveaux, a assumé le rôle de fournir une orientation stratégique et une coordination entre ces composantes, qui ont toutes un rôle distinct à jouer dans notre vie en tant que Famille.",
+                "Beaucoup plus d’informations sur le Sénat et le bon travail qu’il a accompli au cours des deux dernières années seront disponibles à mesure que nos canaux de communication seront correctement établis.",
+                "Nous avons un nouveau colonel commandant! Avec le départ à la retraite du Bgén (ret) Kevin O’Keefe, le ministre de la Défense, sur la recommandation du Sénat, a nommé le Bgén (ret) Josée Robidoux à cet important poste honorifique. Vous pouvez voir son histoire à https://cmcen-rcmce.ca/fr/biographies/brigadier-general-josee-robidoux-omm-cd-a-la-retraite/",
+                "Triste de voir Kevin O’Keefe se retirer de son rôle très actif dans notre famille, mais heureux de voir un si digne successeur en place.",
+                "Assez pour ce premier bulletin d’information.",
+                "Vous pouvez suivre activement ce qui se passe en vous inscrivant à https://cmcen-rcmce.ca/register/",
+                "De cette façon, vous pouvez rester informé des développements dans notre profession: vous serez éligible à nos avantages d’affinité et obtiendrez les premières informations sur les dernières nouvelles de notre vie de famille C&E.",
+                "Et",
+                "Partagez ces nouvelles; nous connaissons tous des collègues qui veulent savoir ce qui se passe.",
+                "Et",
+                "Envoyez-nous vos commentaires; de quoi voulez-vous en savoir plus? Comment votre association professionnelle peut-elle vous être utile?"
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png"
+              ],
+              "documents": []
+            }
+          }
+        },
+        {
+          "key": "wp-358352",
+          "title": {
+            "en": "AMENDMENT TO POPPY START DATE",
+            "fr": "MODIFICATION À LA DATE DE DÉBUT DU COQUELICOT"
+          },
+          "category": "news",
+          "sources": {
+            "en": {
+              "id": 358352,
+              "url": "https://cmcen-rcmce.ca/amendment-to-poppy-start-date/",
+              "title": "AMENDMENT TO POPPY START DATE",
+              "publishedAt": "2026-09-24T15:14:48",
+              "modifiedAt": "2026-09-24T15:14:48",
+              "paragraphs": [
+                "The Royal Canadian Legion has changed the date upon which Canadians are encouraged to start wearing a poppy for the Remembrance period. It will now begin annually on 24 October, and end on Remembrance Day. This is a change of about a week, which was previously the last Friday in October. The change is designed to normalize the number of days the campaign runs and make it more manageable for their volunteers.",
+                "As a heads up, the CDS has approved an amendment to policy that will see the CAF follow suit. A CANFORGEN will be promulgated shortly, and the applicable policy documents will be amended in due course.",
+                "Therefore, this year you can expect that we will commence the wearing of approved poppies on CAF uniforms on 24 October, and end on Remembrance Day.",
+                "Formal direction will follow in the near future.",
+                "Questions can be directed to the undersigned, or to:",
+                "+DressandCeremonial-TenuesetCérémonies@CMP DHH@Ottawa-Hull <DressandCeremonial-TenuesetCeremonies@forces.gc.ca>"
+              ],
+              "images": [],
+              "documents": []
+            },
+            "fr": {
+              "id": 358354,
+              "url": "https://cmcen-rcmce.ca/fr/modification-a-la-date-de-debut-du-coquelicot/",
+              "title": "MODIFICATION À LA DATE DE DÉBUT DU COQUELICOT",
+              "publishedAt": "2026-09-24T15:14:48",
+              "modifiedAt": "2026-09-24T15:15:14",
+              "paragraphs": [
+                "La Légion royale canadienne a changé la date à laquelle les Canadiens sont encouragés à commencer à porter un pavot pour la période du Souvenir. Elle commencera maintenant chaque année le 24 octobre et se terminera le jour du Souvenir. Il s’agit d’un changement d’environ une semaine, qui était auparavant le dernier vendredi d’octobre. Ce changement vise à normaliser le nombre de jours de la campagne et à la rendre plus gérable pour leurs bénévoles.",
+                "À titre d’avertissement, le CEMD a approuvé un amendement à la politique qui verra les FAC suivre le mouvement. Un CANFORGEN sera promulgué sous peu, et les documents de politique applicables seront modifiés en temps voulu.",
+                "Ainsi, cette année, vous pouvez vous attendre à ce que nous commençions à porter des coquelicots approuvés sur les uniformes des FAC le 24 octobre, et que nous terminerons le jour du Souvenir.",
+                "Des directives officielles suivront prochainement.",
+                "Les questions peuvent être adressées au soussigné, ou à :",
+                "+DressandCeremonial-TenuesetCérémonies@CMP DHH@Ottawa-Hull <DressandCeremonial-TenuesetCeremonies@forces.gc.ca>"
+              ],
+              "images": [],
+              "documents": []
+            }
+          }
+        },
+        {
+          "key": "wp-355841",
+          "title": {
+            "en": "PROMOTION – CPL AL SAWI AND CAPT ROH – 8 CIS FLT",
+            "fr": "PROMOTION – CPL AL SAWI AND CAPT ROH – 8 CIS FLT"
+          },
+          "category": "unit-updates",
+          "sources": {
+            "en": {
+              "id": 355841,
+              "url": "https://cmcen-rcmce.ca/promotion-cpl-al-sawi-and-capt-roh-8-cis-flt/",
+              "title": "PROMOTION – CPL AL SAWI AND CAPT ROH – 8 CIS FLT",
+              "publishedAt": "2026-01-09T09:20:56",
+              "modifiedAt": "2026-01-09T09:20:56",
+              "paragraphs": [
+                "Avr Al Sawi was accelerated promoted to the rank of Cpl on 12 Dec 25.",
+                "CWO Lapierre, LCol Jackson, Cpl Al Sawi, Maj Blanchet & MWO Dicks.",
+                "Lt Roh was accelerated promoted to the rank of Capt on 12 Dec 25.",
+                "CWO Lapierre, LCol Jackson, WO Williams, Capt Roh, Maj Blanchet & MWO Dicks."
+              ],
+              "images": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/DSC_0008-300x200.jpg",
+                "https://cmcen-rcmce.ca/wp-content/uploads/DSC_0011-300x200.jpg"
+              ],
+              "documents": []
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "wp-357547",
+          "title": {
+            "en": "DESPATCHES 6.4 MAY 2026",
+            "fr": "DESPATCHES 6.4 MAY 2026"
+          },
+          "category": "newsletter",
+          "sources": {
+            "en": {
+              "id": 357547,
+              "url": "https://cmcen-rcmce.ca/despatches-6-4-may-2026/",
+              "title": "DESPATCHES 6.4 MAY 2026",
+              "publishedAt": "2026-06-01T09:34:27",
+              "modifiedAt": "2026-06-01T09:34:27",
+              "paragraphs": [
+                "Read “Despatches,” a transmission of the 32 Signal Regiment Family Council, below.",
+                "Despatches (May 2026)"
+              ],
+              "images": [],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/2026-May-DESPATCHES-26-May-2026.pdf"
+              ]
+            },
+            "fr": null
+          }
+        }
+      ],
+      "items": [
+        {
+          "id": "wp-315305-discovery",
+          "articleKey": "wp-315305",
+          "type": "discovery",
+          "question": {
+            "en": "How should we handle the unresolved French version?",
+            "fr": "Comment traiter la version française non résolue?"
+          },
+          "recommendation": {
+            "en": "Keep French unresolved and continue research. Do not pair a different issue or event.",
+            "fr": "Laisser le français non résolu et poursuivre les recherches. Ne pas associer un autre numéro ou événement."
+          },
+          "rationale": {
+            "en": "No French switcher or matching aggregate article found. French post 310747 is a January 2022 issue notice sharing one PDF, not a translation of this four-issue collection.",
+            "fr": "Aucun équivalent de cette collection de quatre numéros trouvé. Le billet français 310747 concerne uniquement janvier 2022 et partage un PDF."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "wp-352030-discovery",
+          "articleKey": "wp-352030",
+          "type": "discovery",
+          "question": {
+            "en": "How should we handle the unresolved French version?",
+            "fr": "Comment traiter la version française non résolue?"
+          },
+          "recommendation": {
+            "en": "Keep French unresolved and continue research. Do not pair a different issue or event.",
+            "fr": "Laisser le français non résolu et poursuivre les recherches. Ne pas associer un autre numéro ou événement."
+          },
+          "rationale": {
+            "en": "No French switcher, matching Fall/Autumn 2025 Association issue, same-day news match, or matching linked documents found in the public French post inventory.",
+            "fr": "Aucun numéro correspondant à l’automne 2025 trouvé dans les billets français publics, leurs dates ou leurs documents."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "wp-354205-pairing",
+          "articleKey": "wp-354205",
+          "type": "pairing",
+          "question": {
+            "en": "Do these sources belong to the same article?",
+            "fr": "Ces sources correspondent-elles au même article?"
+          },
+          "recommendation": {
+            "en": "Pair these sources for a later draft update. Review separate issues independently.",
+            "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
+          },
+          "rationale": {
+            "en": "Confirmed WPML counterpart. French explicitly says the three newsletters are available only in English. Both pages link the same three unique PDFs; English repeats one link. Do not invent French PDFs.",
+            "fr": "Lien WPML confirmé. L’introduction française précise que les trois bulletins sont disponibles en anglais seulement. Les PDF sont identiques; un lien est répété en anglais."
+          },
+          "recommendedChoice": "pair"
+        },
+        {
+          "id": "wp-314987-discovery",
+          "articleKey": "wp-314987",
+          "type": "discovery",
+          "question": {
+            "en": "How should we handle the unresolved French version?",
+            "fr": "Comment traiter la version française non résolue?"
+          },
+          "recommendation": {
+            "en": "Keep French unresolved and continue research. Do not pair a different issue or event.",
+            "fr": "Laisser le français non résolu et poursuivre les recherches. Ne pas associer un autre numéro ou événement."
+          },
+          "rationale": {
+            "en": "No French switcher or matching multi-issue Dispatches collection found. Other French 32 Signal Regiment stories/newsletter references are not this collection.",
+            "fr": "Aucun équivalent de cette collection de plusieurs numéros trouvé. Les autres mentions du 32e Régiment ne constituent pas une traduction de cette collection."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "wp-354233-pairing",
+          "articleKey": "wp-354233",
+          "type": "pairing",
+          "question": {
+            "en": "Do these sources belong to the same article?",
+            "fr": "Ces sources correspondent-elles au même article?"
+          },
+          "recommendation": {
+            "en": "Pair these sources for a later draft update. Review separate issues independently.",
+            "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
+          },
+          "rationale": {
+            "en": "Confirmed WPML counterpart. French links FR_newsletter-29-aout.indd_.pdf, whereas English links En_newsletter-29-aout.pdf. The French attachment is absent from the delivered article. PDF body translation and availability have not been audited here.",
+            "fr": "Lien WPML confirmé. La page française contient un PDF français distinct, absent de l’import livré. Le contenu et la disponibilité du PDF restent à vérifier."
+          },
+          "recommendedChoice": "pair"
+        },
+        {
+          "id": "wp-351934-discovery",
+          "articleKey": "wp-351934",
+          "type": "discovery",
+          "question": {
+            "en": "How should we handle the unresolved French version?",
+            "fr": "Comment traiter la version française non résolue?"
+          },
+          "recommendation": {
+            "en": "Keep French unresolved and continue research. Do not pair a different issue or event.",
+            "fr": "Laisser le français non résolu et poursuivre les recherches. Ne pas associer un autre numéro ou événement."
+          },
+          "rationale": {
+            "en": "No French switcher or corresponding Spring 2025 Association issue found in the public French post inventory.",
+            "fr": "Aucun numéro correspondant au printemps 2025 trouvé dans l’inventaire des billets français publics."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "wp-342235-pairing",
+          "articleKey": "wp-342235",
+          "type": "pairing",
+          "question": {
+            "en": "Do these sources belong to the same article?",
+            "fr": "Ces sources correspondent-elles au même article?"
+          },
+          "recommendation": {
+            "en": "Pair these sources for a later draft update. Review separate issues independently.",
+            "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
+          },
+          "rationale": {
+            "en": "Confirmed Winter 2023 issue, including the same 168-parcel count and Maj Samson Young story. French BENEFITS heading and most of its paragraph remain English; the Tony Charters passage repeats a phrase. A DeepL attribution is present in the source. Same three inline image URLs and same memorial-project PDF; language-specific external links differ.",
+            "fr": "Numéro de l’hiver 2023 confirmé : 168 colis et récit du Maj Samson Young concordent. La section BENEFITS demeure en anglais; une phrase sur Tony Charters est répétée. Attribution DeepL présente. Images et PDF commémoratif identiques."
+          },
+          "recommendedChoice": "pair"
+        },
+        {
+          "id": "wp-340587-pairing",
+          "articleKey": "wp-340587",
+          "type": "pairing",
+          "question": {
+            "en": "Do these sources belong to the same article?",
+            "fr": "Ces sources correspondent-elles au même article?"
+          },
+          "recommendation": {
+            "en": "Pair these sources for a later draft update. Review separate issues independently.",
+            "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
+          },
+          "rationale": {
+            "en": "The French slug says hiver-2022, but title and body explicitly identify Vol. 2, issue 2, Summer 2023. Sections, 19 inline image occurrences, and the 5 CMBG PDF match. The bilingual 5 CMBG passage exists in both sources; it is not automatically a missing translation. Several French links still point to English legacy pages.",
+            "fr": "L’URL française indique hiver-2022, mais le titre et le texte identifient le volume 2, numéro 2, été 2023. Les 19 occurrences d’images et le PDF du 5 GBMC concordent. Le passage bilingue figure dans les deux sources."
+          },
+          "recommendedChoice": "pair"
+        },
+        {
+          "id": "wp-315043-discovery",
+          "articleKey": "wp-315043",
+          "type": "discovery",
+          "question": {
+            "en": "How should we handle the unresolved French version?",
+            "fr": "Comment traiter la version française non résolue?"
+          },
+          "recommendation": {
+            "en": "Keep French unresolved and continue research. Do not pair a different issue or event.",
+            "fr": "Laisser le français non résolu et poursuivre les recherches. Ne pas associer un autre numéro ou événement."
+          },
+          "rationale": {
+            "en": "No French switcher or corresponding Spring 2023 Association issue found. French Autumn 2023 is a different issue and must not be paired.",
+            "fr": "Aucun numéro du printemps 2023 correspondant trouvé. Le numéro français de l’automne 2023 est différent."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "wp-315139-discovery",
+          "articleKey": "wp-315139",
+          "type": "discovery",
+          "question": {
+            "en": "How should we handle the unresolved French version?",
+            "fr": "Comment traiter la version française non résolue?"
+          },
+          "recommendation": {
+            "en": "Keep French unresolved and continue research. Do not pair a different issue or event.",
+            "fr": "Laisser le français non résolu et poursuivre les recherches. Ne pas associer un autre numéro ou événement."
+          },
+          "rationale": {
+            "en": "No French switcher or matching 741 newsletter collection found; French body mentions of 741 occur in unrelated personnel/unit articles.",
+            "fr": "Aucune collection française correspondante trouvée. Les mentions de la 741e dans d’autres billets concernent d’autres sujets."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "wp-314957-pairing",
+          "articleKey": "wp-314957",
+          "type": "pairing",
+          "question": {
+            "en": "Do these sources belong to the same article?",
+            "fr": "Ces sources correspondent-elles au même article?"
+          },
+          "recommendation": {
+            "en": "Pair these sources for a later draft update. Review separate issues independently.",
+            "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
+          },
+          "rationale": {
+            "en": "Confirmed Winter 2022 issue. The French membership introduction remains English. Main historical people/roles agree, including Martin Girard as the newly appointed Association vice-president and the Dave Awalt retirement. French list/paragraph boundaries differ; match blocks semantically. Both languages contain the same 1972 Yom Kippur War reference: a shared source issue, not a language mismatch; no factual correction performed. Same two inline images.",
+            "fr": "Numéro de l’hiver 2022 confirmé. L’introduction sur l’adhésion reste en anglais. Martin Girard et le départ de Dave Awalt concordent. Les paragraphes doivent être alignés selon leur sens. Deux images identiques; les faits historiques n’ont pas été corrigés."
+          },
+          "recommendedChoice": "pair"
+        },
+        {
+          "id": "wp-312836-pairing",
+          "articleKey": "wp-312836",
+          "type": "pairing",
+          "question": {
+            "en": "Do these sources belong to the same article?",
+            "fr": "Ces sources correspondent-elles au même article?"
+          },
+          "recommendation": {
+            "en": "Pair these sources for a later draft update. Review separate issues independently.",
+            "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
+          },
+          "rationale": {
+            "en": "Confirmed Summer 2022 issue. Both versions identify Dave Yarker replacing James Lambert, and carry the same tour dates. French garbles the Colonel Commandant sentence about Josee Robidoux and omits her role wording. English has 11 inline image occurrences and French 10; French has no unique additional image URLs. Preserve each source layout rather than automatically duplicating the extra occurrence.",
+            "fr": "Numéro de l’été 2022 confirmé. Dave Yarker remplace James Lambert dans les deux versions, et les dates concordent. La phrase sur Josée Robidoux est mal traduite et omet sa fonction. Onze occurrences d’images en anglais, dix en français; aucune image propre au français."
+          },
+          "recommendedChoice": "pair"
+        },
+        {
+          "id": "wp-312814-pairing",
+          "articleKey": "wp-312814",
+          "type": "pairing",
+          "question": {
+            "en": "Do these sources belong to the same article?",
+            "fr": "Ces sources correspondent-elles au même article?"
+          },
+          "recommendation": {
+            "en": "Pair these sources for a later draft update. Review separate issues independently.",
+            "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
+          },
+          "rationale": {
+            "en": "Confirmed Spring 2022 issue. Both identify Josee Robidoux succeeding Kevin O’Keefe. The French splits that passage into separate paragraphs; content alignment must not rely solely on block position. Same inline image. No substantive conflicting person/date identified in this comparison.",
+            "fr": "Numéro du printemps 2022 confirmé. Josée Robidoux succède à Kevin O’Keefe dans les deux textes. Le français divise ce passage en plusieurs paragraphes; ne pas aligner uniquement selon la position."
+          },
+          "recommendedChoice": "pair"
+        },
+        {
+          "id": "wp-358352-pairing",
+          "articleKey": "wp-358352",
+          "type": "pairing",
+          "question": {
+            "en": "Do these sources belong to the same article?",
+            "fr": "Ces sources correspondent-elles au même article?"
+          },
+          "recommendation": {
+            "en": "Pair these sources for a later draft update. Review separate issues independently.",
+            "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
+          },
+          "rationale": {
+            "en": "Explicit WPML link; dates, 24 October start, Remembrance Day end and contact match. Six corresponding body paragraphs. French has awkward source wording, including pavot in the opening, so preserving it is not an endorsement of translation quality.",
+            "fr": "Lien WPML explicite. Les six paragraphes, le début au 24 octobre, la fin au jour du Souvenir et le contact concordent. Certaines formulations françaises sont maladroites, dont pavot; l’appariement ne valide pas la qualité de la traduction."
+          },
+          "recommendedChoice": "pair"
+        },
+        {
+          "id": "wp-355841-discovery",
+          "articleKey": "wp-355841",
+          "type": "discovery",
+          "question": {
+            "en": "How should we handle the unresolved French version?",
+            "fr": "Comment traiter la version française non résolue?"
+          },
+          "recommendation": {
+            "en": "Keep French unresolved and continue research. Do not pair a different issue or event.",
+            "fr": "Laisser le français non résolu et poursuivre les recherches. Ne pas associer un autre numéro ou événement."
+          },
+          "rationale": {
+            "en": "No French switcher or matching January 2026 promotion story found. French AL SAWI and ROH searches identify earlier, separate promotion announcements, not this joint December 2025 promotion report.",
+            "fr": "Aucun billet français correspondant aux promotions communes de décembre 2025, publiées en janvier 2026. Les annonces françaises AL SAWI et ROH trouvées concernent des événements antérieurs."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "wp-357547-discovery",
+          "articleKey": "wp-357547",
+          "type": "discovery",
+          "question": {
+            "en": "How should we handle the unresolved French version?",
+            "fr": "Comment traiter la version française non résolue?"
+          },
+          "recommendation": {
+            "en": "Keep French unresolved and continue research. Do not pair a different issue or event.",
+            "fr": "Laisser le français non résolu et poursuivre les recherches. Ne pas associer un autre numéro ou événement."
+          },
+          "rationale": {
+            "en": "No French switcher, matching May 2026 Despatches issue, or matching PDF reference found. The French January 2025 Despatches notice is a different issue.",
+            "fr": "Aucun numéro français correspondant à Despatches de mai 2026 ni PDF associé trouvé. Le billet de janvier 2025 porte sur un autre numéro."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "wp-342235-translation",
+          "articleKey": "wp-342235",
+          "type": "translation",
+          "question": {
+            "en": "How should the untranslated benefits section and repeated phrase be handled?",
+            "fr": "Comment traiter la section des avantages non traduite et la phrase répétée?"
+          },
+          "recommendation": {
+            "en": "Ask a translator to correct the identified passage in a later draft update; preserve the source snapshot.",
+            "fr": "Demander une correction du passage dans une mise à jour ultérieure du brouillon; conserver la source."
+          },
+          "rationale": {
+            "en": "Confirmed Winter 2023 issue, including the same 168-parcel count and Maj Samson Young story. French BENEFITS heading and most of its paragraph remain English; the Tony Charters passage repeats a phrase. A DeepL attribution is present in the source. Same three inline image URLs and same memorial-project PDF; language-specific external links differ.",
+            "fr": "Numéro de l’hiver 2023 confirmé : 168 colis et récit du Maj Samson Young concordent. La section BENEFITS demeure en anglais; une phrase sur Tony Charters est répétée. Attribution DeepL présente. Images et PDF commémoratif identiques."
+          },
+          "recommendedChoice": "request-edit",
+          "highlights": ["BENEFITS", "Tony Charters"]
+        },
+        {
+          "id": "wp-314957-translation",
+          "articleKey": "wp-314957",
+          "type": "translation",
+          "question": {
+            "en": "Should the English membership introduction in the French source be corrected?",
+            "fr": "Faut-il corriger l’introduction anglaise sur l’adhésion dans la source française?"
+          },
+          "recommendation": {
+            "en": "Ask a translator to correct the identified passage in a later draft update; preserve the source snapshot.",
+            "fr": "Demander une correction du passage dans une mise à jour ultérieure du brouillon; conserver la source."
+          },
+          "rationale": {
+            "en": "Confirmed Winter 2022 issue. The French membership introduction remains English. Main historical people/roles agree, including Martin Girard as the newly appointed Association vice-president and the Dave Awalt retirement. French list/paragraph boundaries differ; match blocks semantically. Both languages contain the same 1972 Yom Kippur War reference: a shared source issue, not a language mismatch; no factual correction performed. Same two inline images.",
+            "fr": "Numéro de l’hiver 2022 confirmé. L’introduction sur l’adhésion reste en anglais. Martin Girard et le départ de Dave Awalt concordent. Les paragraphes doivent être alignés selon leur sens. Deux images identiques; les faits historiques n’ont pas été corrigés."
+          },
+          "recommendedChoice": "request-edit",
+          "highlights": ["membership", "Membership"]
+        },
+        {
+          "id": "wp-312836-translation",
+          "articleKey": "wp-312836",
+          "type": "translation",
+          "question": {
+            "en": "How should Josée Robidoux’s missing role and garbled sentence be handled?",
+            "fr": "Comment traiter la fonction omise de Josée Robidoux et la phrase mal traduite?"
+          },
+          "recommendation": {
+            "en": "Ask a translator to correct the identified passage in a later draft update; preserve the source snapshot.",
+            "fr": "Demander une correction du passage dans une mise à jour ultérieure du brouillon; conserver la source."
+          },
+          "rationale": {
+            "en": "Confirmed Summer 2022 issue. Both versions identify Dave Yarker replacing James Lambert, and carry the same tour dates. French garbles the Colonel Commandant sentence about Josee Robidoux and omits her role wording. English has 11 inline image occurrences and French 10; French has no unique additional image URLs. Preserve each source layout rather than automatically duplicating the extra occurrence.",
+            "fr": "Numéro de l’été 2022 confirmé. Dave Yarker remplace James Lambert dans les deux versions, et les dates concordent. La phrase sur Josée Robidoux est mal traduite et omet sa fonction. Onze occurrences d’images en anglais, dix en français; aucune image propre au français."
+          },
+          "recommendedChoice": "request-edit",
+          "highlights": ["Robidoux"]
+        },
+        {
+          "id": "wp-354233-attachment",
+          "articleKey": "wp-354233",
+          "type": "attachment",
+          "question": {
+            "en": "Should the separate French PDF be included in the next draft update?",
+            "fr": "Faut-il inclure le PDF français distinct dans la prochaine mise à jour du brouillon?"
+          },
+          "recommendation": {
+            "en": "Include the French PDF after checking its contents and availability. This decision does not copy it.",
+            "fr": "Inclure le PDF français après vérification de son contenu et de sa disponibilité. Cette décision ne le copie pas."
+          },
+          "rationale": {
+            "en": "Confirmed WPML counterpart. French links FR_newsletter-29-aout.indd_.pdf, whereas English links En_newsletter-29-aout.pdf. The French attachment is absent from the delivered article. PDF body translation and availability have not been audited here.",
+            "fr": "Lien WPML confirmé. La page française contient un PDF français distinct, absent de l’import livré. Le contenu et la disponibilité du PDF restent à vérifier."
+          },
+          "recommendedChoice": "include",
+          "highlights": []
+        },
+        {
+          "id": "wp-340587-provenance",
+          "articleKey": "wp-340587",
+          "type": "provenance",
+          "question": {
+            "en": "Can we retain the misleading French URL as the historical source?",
+            "fr": "Peut-on conserver l’URL française trompeuse comme source historique?"
+          },
+          "recommendation": {
+            "en": "Keep the original source URL in provenance; identify this as Summer 2023 by its title and body.",
+            "fr": "Conserver l’URL d’origine; identifier le numéro comme été 2023 selon son titre et son contenu."
+          },
+          "rationale": {
+            "en": "The French slug says hiver-2022, but title and body explicitly identify Vol. 2, issue 2, Summer 2023. Sections, 19 inline image occurrences, and the 5 CMBG PDF match. The bilingual 5 CMBG passage exists in both sources; it is not automatically a missing translation. Several French links still point to English legacy pages.",
+            "fr": "L’URL française indique hiver-2022, mais le titre et le texte identifient le volume 2, numéro 2, été 2023. Les 19 occurrences d’images et le PDF du 5 GBMC concordent. Le passage bilingue figure dans les deux sources."
+          },
+          "recommendedChoice": "accept-source-url",
+          "highlights": []
+        },
+        {
+          "id": "wp-312836-layout",
+          "articleKey": "wp-312836",
+          "type": "layout",
+          "question": {
+            "en": "Should we preserve the different image counts in each language?",
+            "fr": "Faut-il préserver le nombre différent d’images dans chaque langue?"
+          },
+          "recommendation": {
+            "en": "Preserve each source layout. Do not add a repeated image solely to equalize the counts.",
+            "fr": "Préserver chaque mise en page. Ne pas répéter une image uniquement pour égaliser les nombres."
+          },
+          "rationale": {
+            "en": "Confirmed Summer 2022 issue. Both versions identify Dave Yarker replacing James Lambert, and carry the same tour dates. French garbles the Colonel Commandant sentence about Josee Robidoux and omits her role wording. English has 11 inline image occurrences and French 10; French has no unique additional image URLs. Preserve each source layout rather than automatically duplicating the extra occurrence.",
+            "fr": "Numéro de l’été 2022 confirmé. Dave Yarker remplace James Lambert dans les deux versions, et les dates concordent. La phrase sur Josée Robidoux est mal traduite et omet sa fonction. Onze occurrences d’images en anglais, dix en français; aucune image propre au français."
+          },
+          "recommendedChoice": "keep-layouts",
+          "highlights": []
+        }
+      ]
+    }
+  ]
+}

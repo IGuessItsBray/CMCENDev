@@ -266,6 +266,7 @@ app.use('/api', diagnosticsRoutes);
 app.use('/api', timerRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/archive-review', require('./routes/archive-review'));
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/last-posts', lastPostRoutes);

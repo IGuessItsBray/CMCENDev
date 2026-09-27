@@ -1803,6 +1803,155 @@ paths:
       responses:
         "200":
           description: Active banners.
+  /api/admin/archive-review:
+    get:
+      tags: [Admin]
+      summary: List archive review batches and decision counts (developer only).
+      x-role: developer
+      responses:
+        "200":
+          description: Batch summaries; Cache-Control no-store.
+        "401":
+          description: Authentication required.
+        "403":
+          description: Exact developer role required.
+  /api/admin/archive-review/{batchId}/items:
+    parameters:
+      - { name: batchId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Admin]
+      summary: List archive review issues without source bodies (developer only).
+      x-role: developer
+      parameters:
+        - name: state
+          in: query
+          schema:
+            {
+              type: string,
+              enum: [all, pending, approved, reviewed, deferred],
+              default: all,
+            }
+        - name: type
+          in: query
+          schema:
+            {
+              type: string,
+              enum:
+                [
+                  all,
+                  pairing,
+                  discovery,
+                  translation,
+                  attachment,
+                  provenance,
+                  layout,
+                ],
+              default: all,
+            }
+        - name: category
+          in: query
+          schema: { type: string, default: all }
+        - name: search
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, maximum: 999999, default: 0 }
+      responses:
+        "200":
+          description: Batch summary, up to 50 items, total and nullable nextOffset.
+        "400":
+          description: Invalid filters.
+        "401":
+          description: Authentication required.
+        "403":
+          description: Exact developer role required.
+        "404":
+          description: Batch not found.
+  /api/admin/archive-review/{batchId}/items/{itemId}:
+    parameters:
+      - { name: batchId, in: path, required: true, schema: { type: string } }
+      - { name: itemId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Admin]
+      summary: Read archive source evidence and decision history (developer only).
+      x-role: developer
+      responses:
+        "200":
+          description: Item, article sources, catalogueHash, allowed choices, state, stale flag, decision/history and nullable current destination summary.
+        "401":
+          description: Authentication required.
+        "403":
+          description: Exact developer role required.
+        "404":
+          description: Batch or item not found.
+  /api/admin/archive-review/{batchId}/items/{itemId}/decision:
+    parameters:
+      - { name: batchId, in: path, required: true, schema: { type: string } }
+      - { name: itemId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Admin]
+      summary: Record an archive review decision without applying it (developer only).
+      x-role: developer
+      description: Append actor/time/history atomically and audit archive_review.decision_saved. Article and media data remain unchanged.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [choice, note, revision, catalogueHash]
+              properties:
+                choice:
+                  type: string
+                  description: Must be one of the choices returned for this issue type.
+                  enum:
+                    [
+                      pair,
+                      separate,
+                      research,
+                      leave-incomplete,
+                      keep-source,
+                      request-edit,
+                      include,
+                      skip,
+                      accept-source-url,
+                      keep-layouts,
+                      align-layouts,
+                      custom,
+                      defer,
+                    ]
+                note:
+                  {
+                    type: string,
+                    maxLength: 4000,
+                    description: Nonblank for custom decisions.,
+                  }
+                revision:
+                  {
+                    type: integer,
+                    minimum: 0,
+                    maximum: 100000,
+                    description: Zero for a new decision; otherwise the last saved revision.,
+                  }
+                catalogueHash:
+                  {
+                    type: string,
+                    description: Evidence hash from the detail response.,
+                  }
+      responses:
+        "200":
+          description: Saved decision with history and incremented revision, plus derived state.
+        "400":
+          description: Invalid decision.
+        "401":
+          description: Authentication required.
+        "403":
+          description: Exact developer role required.
+        "404":
+          description: Batch or item not found.
+        "409":
+          description: Another decision was saved or the source evidence changed; reload before retrying.
   /api/admin/timers:
     get:
       tags: [Banners]

@@ -1660,6 +1660,168 @@ describe('news publication scheduling', () => {
 });
 
 describe('news stories', () => {
+  test('archive review is developer-only and decisions preserve content with optimistic concurrency', async () => {
+    const Decision = require('../../models/ArchiveReviewDecision');
+    const { catalogue } = require('../../services/archive-review');
+    const batch = catalogue.batches[0];
+    const item = batch.items.find((row) => row.type === 'pairing');
+    const base = `/api/admin/archive-review/${batch.id}/items`;
+    const detailPath = `${base}/${item.id}`;
+    const savePath = `${detailPath}/decision`;
+    await request(app).get('/api/admin/archive-review').expect(401);
+    await request(app).get(detailPath).expect(401);
+    await request(app).put(savePath).send({}).expect(401);
+    for (const role of ['administrator', 'editor', 'subscriber']) {
+      const user = await createUser({ role });
+      const auth = bearer((await login(user)).body.token);
+      await request(app).get(base).set('Authorization', auth).expect(403);
+      await request(app).get(detailPath).set('Authorization', auth).expect(403);
+      await request(app)
+        .put(savePath)
+        .set('Authorization', auth)
+        .send({})
+        .expect(403);
+    }
+    const newsRole = await Role.create({
+      name: 'Archive test editor',
+      slug: 'archive-test-editor',
+      permissions: ['news.manage'],
+    });
+    const customEditor = await createUser({ customRoles: [newsRole._id] });
+    const customAuth = bearer((await login(customEditor)).body.token);
+    await request(app).get(base).set('Authorization', customAuth).expect(403);
+    await request(app)
+      .put(savePath)
+      .set('Authorization', customAuth)
+      .send({})
+      .expect(403);
+    const developer = await createUser({ role: 'developer' });
+    const auth = bearer((await login(developer)).body.token);
+    const article = await NewsArticle.create({
+      title: { en: 'Existing title', fr: 'Texte déjà révisé' },
+      content: { en: 'Existing copy', fr: 'Ne pas remplacer' },
+      status: 'draft',
+      createdBy: developer._id,
+      migrationSource: batch.articles.find((a) => a.key === item.articleKey)
+        .sources.en.url,
+    });
+    const beforeArticle = await NewsArticle.findById(article._id).lean();
+    const listing = await request(app)
+      .get(base)
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(listing.body.items.length, 22);
+    assert.equal(listing.body.batch.articleCount, 16);
+    assert.equal(listing.body.batch.counts.pending, 22);
+    assert.equal(listing.body.items[0].sources, undefined);
+    assert.match(listing.headers['cache-control'], /no-store/);
+    const detail = await request(app)
+      .get(detailPath)
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(detail.body.destination.hasFrench, true);
+    const payload = {
+      choice: 'pair',
+      note: 'Reviewed with stakeholders',
+      revision: 0,
+      catalogueHash: detail.body.catalogueHash,
+    };
+    for (const invalid of [
+      { choice: 'publish' },
+      { note: 'x'.repeat(4001) },
+      { revision: -1 },
+      { choice: 'custom', note: ' ' },
+    ]) {
+      await request(app)
+        .put(savePath)
+        .set('Authorization', auth)
+        .send({ ...payload, ...invalid })
+        .expect(400);
+    }
+    await request(app)
+      .put(savePath)
+      .set('Authorization', auth)
+      .send({ ...payload, catalogueHash: 'changed' })
+      .expect(409);
+    const saved = await request(app)
+      .put(savePath)
+      .set('Authorization', auth)
+      .send(payload)
+      .expect(200);
+    assert.equal(saved.body.state, 'approved');
+    assert.equal(saved.body.decision.revision, 1);
+    assert.equal(saved.body.decision.history[0].actor, String(developer._id));
+    await request(app)
+      .put(savePath)
+      .set('Authorization', auth)
+      .send(payload)
+      .expect(409);
+    const concurrent = await Promise.all(
+      ['defer', 'separate'].map((choice) =>
+        request(app)
+          .put(savePath)
+          .set('Authorization', auth)
+          .send({ ...payload, revision: 1, choice }),
+      ),
+    );
+    assert.deepEqual(
+      concurrent.map((response) => response.status).sort(),
+      [200, 409],
+    );
+    const stored = await Decision.findById(`${batch.id}:${item.id}`).lean();
+    assert.equal(stored.revision, 2);
+    assert.equal(stored.history.length, 2);
+    assert.deepEqual(
+      await NewsArticle.findById(article._id).lean(),
+      beforeArticle,
+    );
+    assert.equal(await MediaAsset.countDocuments(), 0);
+    assert.equal(await ContentRevision.countDocuments(), 0);
+    assert.equal(
+      await AuditLog.countDocuments({
+        action: 'archive_review.decision_saved',
+      }),
+      2,
+    );
+    await Decision.updateOne(
+      { _id: stored._id },
+      { $set: { catalogueHash: 'older-evidence' } },
+    );
+    const stale = await request(app)
+      .get(detailPath)
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(stale.body.stale, true);
+    assert.equal(stale.body.state, 'pending');
+    assert.equal(stale.body.decision.history.length, 2);
+    await request(app)
+      .get(`${base}?state=invalid`)
+      .set('Authorization', auth)
+      .expect(400);
+    await request(app)
+      .get(`${base}?offset=-1`)
+      .set('Authorization', auth)
+      .expect(400);
+    await request(app)
+      .get(`${base}?search[x]=bad`)
+      .set('Authorization', auth)
+      .expect(200);
+    const pairs = await request(app)
+      .get(`${base}?type=pairing`)
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(pairs.body.items.length, 8);
+    const page = await request(app)
+      .get(`${base}?offset=20`)
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(page.body.items.length, 2);
+    await request(app)
+      .get(`${base}/missing`)
+      .set('Authorization', auth)
+      .expect(404);
+  });
+
   test('private editorial notes persist independently per language and enforce access and validation', async () => {
     const staff = await createUser({ role: 'editor' });
     const member = await createUser();

@@ -169,6 +169,19 @@ Mounted at `/api/audit-logs`.
 | `GET`  | `/api/audit-logs`            | Authenticated + `canViewAuditLog` (`audit.view`) | List audit entries. Query: `action`, `targetType`, `user`, `startDate`, `endDate`.                   |
 | `GET`  | `/api/audit-logs/export.csv` | Authenticated + `canViewAuditLog` (`audit.view`) | Export matching audit entries as CSV. Query: `action`, `targetType`, `user`, `startDate`, `endDate`. |
 
+## Archive Review
+
+All routes require an authenticated user with the exact `developer` role and return `Cache-Control: no-store`. Review decisions never mutate articles, media or publication state. See [Archive Review](ARCHIVE_REVIEW.md).
+
+| Method | Route                                                       | Purpose                                                                                                                                                                                    |
+| ------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET`  | `/api/admin/archive-review`                                 | Batch summaries and decision counts.                                                                                                                                                       |
+| `GET`  | `/api/admin/archive-review/:batchId/items`                  | Lightweight queue; filters `state`, `type`, `category`, `search` (max 200 characters), and numeric `offset`; pages of 50 with `nextOffset`. Defaults are `all`, empty search and offset 0. |
+| `GET`  | `/api/admin/archive-review/:batchId/items/:itemId`          | Source snapshots, issue, allowed choices, evidence hash, saved decision/history and current destination presence/French-content flag.                                                      |
+| `PUT`  | `/api/admin/archive-review/:batchId/items/:itemId/decision` | Save `{choice, note, revision, catalogueHash}`. Note max 4,000 characters, required for custom choice. Initial revision is 0; later saves use the returned revision.                       |
+
+Unknown batches/items return 404, invalid inputs 400, missing authentication 401 and other roles 403. PUT returns 409 for changed evidence or concurrent saves. Successful saves atomically append actor/time/notes/history and write `archive_review.decision_saved` to the audit log. Evidence changes reopen items as pending while retaining saved history. The response includes the saved `decision` and derived `state` (`pending`, `approved`, `reviewed`, `deferred`); approval records intent for later work, not application or publication.
+
 ## Admin Users, Roles, Media, Moderation
 
 Mounted at `/api/admin`.

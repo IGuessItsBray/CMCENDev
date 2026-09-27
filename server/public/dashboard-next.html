@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="/dashboard-next-audit.css" />
     <link rel="stylesheet" href="/content-workspace.css" />
     <link rel="stylesheet" href="/dashboard-next-content.css" />
+    <link rel="stylesheet" href="/archive-review.css" />
     <script src="/app-utils.js" defer></script>
     <script src="/translations.js" defer></script>
     <script src="/date-time-picker.js" defer></script>
@@ -51,6 +52,7 @@
     <script src="/content-workspace-rsvps.js" defer></script>
     <script src="/content-workspace-history.js" defer></script>
     <script src="/content-workspace-controller.js" defer></script>
+    <script src="/archive-review.js" defer></script>
     <script src="/dashboard-next.js" defer></script>
   </head>
   <body>
@@ -135,6 +137,13 @@
                 data-i18n="admin_articles"
                 hidden
                 >Articles</a
+              >
+              <a
+                id="adminArchivesLink"
+                href="/dashboard-next?area=archives"
+                data-i18n="archive_review_title"
+                hidden
+                >Archive Review</a
               >
               <a
                 id="adminUsersLink"
@@ -694,6 +703,39 @@
               </button>
             </header>
             <div id="adminArticlesBody"></div>
+          </section>
+          <section
+            id="adminArchives"
+            aria-labelledby="adminArchivesTitle"
+            hidden
+          >
+            <header class="admin-area-heading">
+              <div>
+                <p class="admin-eyebrow" data-i18n="archive_review_eyebrow">
+                  Developer · Temporary migration tool
+                </p>
+                <h1
+                  id="adminArchivesTitle"
+                  tabindex="-1"
+                  data-i18n="archive_review_title"
+                >
+                  Archive Review
+                </h1>
+                <p data-i18n="archive_review_intro">
+                  Decide what to preserve, pair, or revisit. Decisions never
+                  import or publish content.
+                </p>
+              </div>
+              <button
+                id="archiveMeetingToggle"
+                type="button"
+                aria-pressed="false"
+                data-i18n="archive_review_meeting"
+              >
+                Meeting view
+              </button>
+            </header>
+            <div id="archiveReviewRoot"></div>
           </section>
           <section
             id="adminContent"

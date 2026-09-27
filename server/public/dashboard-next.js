@@ -103,6 +103,14 @@
       title: "adminAwardsTitle",
       mount: (options) => window.DashboardNextAwards.mount(options),
     },
+    archives: {
+      permission: "canManageNews",
+      role: "developer",
+      link: document.getElementById("adminArchivesLink"),
+      element: document.getElementById("adminArchives"),
+      title: "adminArchivesTitle",
+      mount: (options) => window.ArchiveReview.mount(options),
+    },
   };
   const areaMessage = document.getElementById("adminAreaMessage");
   const signOut = document.getElementById("adminSignOut");
@@ -179,6 +187,8 @@
   const canAccessArea = (area) =>
     Boolean(
       area &&
+      !area.denied &&
+      (!area.role || session?.role === area.role) &&
       (area.permissions || [area.permission]).some(
         (permission) => session?.permissions[permission] === true,
       ),
@@ -190,6 +200,7 @@
     Object.values(areas).forEach((area) => {
       area.instance?.dispose();
       area.instance = null;
+      area.denied = false;
       area.element.hidden = true;
       area.link.removeAttribute("aria-current");
     });
@@ -272,6 +283,13 @@
           },
           onDenied: () => {
             if (!session) return;
+            if (area.role) {
+              area.denied = true;
+              area.instance?.dispose();
+              area.instance = null;
+              route();
+              return;
+            }
             session = {
               ...session,
               permissions: {

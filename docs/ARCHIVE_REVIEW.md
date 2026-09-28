@@ -18,6 +18,8 @@ Saving records a decision only. It does not import, modify, publish, schedule or
 
 ## Evidence and persistence
 
+The **Comment migration exceptions** batch (`comments-2026-09-28.json`) adds seven decisions from the WordPress/Corebot identity audit: one email-only import, three unmapped source comments, one truncated comment, and two comments whose referenced account is absent from the export. Source IDs, links and redacted evidence are included; private email/account metadata is not. English evidence panels retain original comment language, with no invented French translation. Destination lookup still covers news articles only; use the supplied snapshot evidence for these comments. Preserving the truncated original requires separately addressing the comment length limit before import. These decisions do not establish account ownership, restore accounts, or apply content changes.
+
 The reviewed catalogues are `server/data/archive-review/pilot-2026-09-26.json` and `discovery-2026-09-27.json`. They contain public legacy source text, asset links, source IDs/dates and bilingual audit findings. They are server-side data, available through developer-only endpoints. No database seed or test fixtures are required. Future batches can be appended with unique stable batch/item IDs and the same shape.
 
 This audit searched 1,463 public French WordPress posts and inspected English language-switcher links. Unpublished/deleted posts and independently authored WordPress Pages were outside that inventory. No counterpart found is not proof none exists. PDF text and historical factual accuracy were not certified; snapshot paragraph boundaries do not establish semantic block alignment.

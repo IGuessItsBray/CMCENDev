@@ -52,6 +52,28 @@ test('changed evidence reopens review while retaining the existing decision', ()
   );
 });
 
+test('comment review exposes redacted evidence and content decisions only', () => {
+  const batch = catalogue.batches.find(
+    (entry) => entry.id === 'comment-exceptions-2026-09-28',
+  );
+  assert.ok(batch);
+  const serialized = JSON.stringify(batch);
+  assert.doesNotMatch(serialized, /[\w.+-]+@[\w.-]+\.[a-z]{2,}/i);
+  assert.doesNotMatch(
+    serialized,
+    /"(?:user_email|user_pass|session_tokens|emailHash|wordpressUserId)"/,
+  );
+  for (const item of batch.items) {
+    assert.equal(item.type, 'disposition');
+    assert.ok(choices[item.type].includes(item.recommendedChoice));
+    for (const field of ['question', 'recommendation', 'rationale']) {
+      assert.ok(item[field].en);
+      assert.ok(item[field].fr);
+    }
+  }
+  assert.equal(summary(batch, new Map()).counts.pending, batch.items.length);
+});
+
 test('discovery review retains every inventoried Heritage source, including placeholders', () => {
   const batches = catalogue.batches.slice(1);
   assert.equal(

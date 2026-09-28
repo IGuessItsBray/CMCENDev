@@ -1,0 +1,341 @@
+{
+  "version": 1,
+  "batches": [
+    {
+      "id": "comment-exceptions-2026-09-28",
+      "title": {
+        "en": "Comment migration exceptions",
+        "fr": "Exceptions de migration des commentaires"
+      },
+      "description": {
+        "en": "Seven content decisions from the WordPress/Corebot comparison. Evidence is a 28 September snapshot, not a live destination check. Private account details are omitted. Decisions do not assign account ownership or apply changes.",
+        "fr": "Sept décisions de contenu issues de la comparaison WordPress/Corebot. Les preuves datent du 28 septembre; elles ne constituent pas une vérification en direct de la destination. Les renseignements privés des comptes sont omis. Les décisions ne modifient ni le contenu ni les liens aux comptes."
+      },
+      "auditedAt": "2026-09-28",
+      "articles": [
+        {
+          "key": "email-only",
+          "title": {
+            "en": "Email-only imported comment",
+            "fr": "Commentaire importé contenant seulement une adresse courriel"
+          },
+          "category": "unassigned",
+          "sources": {
+            "en": {
+              "id": 357413,
+              "url": "https://cmcen-rcmce.ca/?p=357413",
+              "title": "Email-only imported comment",
+              "publishedAt": "",
+              "modifiedAt": "",
+              "paragraphs": [
+                "WordPress post ID: 357413.",
+                "Corebot comment ID: 6a847e001f899c1069d81b9d.",
+                "Imported body: [email address withheld].",
+                "No WordPress comment ID established. Do not infer an author account."
+              ],
+              "images": [],
+              "documents": []
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "truncated-5249",
+          "title": {
+            "en": "Restore truncated comment 5249",
+            "fr": "Rétablir le commentaire tronqué 5249"
+          },
+          "category": "unassigned",
+          "sources": {
+            "en": {
+              "id": 315166,
+              "url": "https://cmcen-rcmce.ca/?p=315166#comment-5249",
+              "title": "Restore truncated comment 5249",
+              "publishedAt": "2023-01-30T20:20:20",
+              "modifiedAt": "",
+              "paragraphs": [
+                "WordPress post ID: 315166.",
+                "Corebot comment ID: 6a84803a1f899c1069d82f0b.",
+                "Current imported text (redacted):",
+                "Gary, Congratulations on your upcoming retirement. It has been an honour and a true privilege to have been part of one of your many command teams. I will forever remember the great times we had with 1 CMBG HQ and Signals Squadron, this to include our travels in and around Wainwright, Edmonton and Abbotsford. Especially during each of your troops night-outs; those that we were all invited to. I thank you for having given your troops the required time to train and prepare for the Great Canadian Death Race (not debt race) during working hours. For them, bringing back the trophy for being the fastest 1CMBG team was their dream. You allowed them, your Signallers, to outperform Infantry BN’s and other Combat Arms Units earning them great praise and respect amongst their peers. Knowing that you truly admired my driving, when Trevor was not around, I thank you for allowing me to terrify you on occasions. On a more serious note. For me, The best way to describe your leadership style is by highlighting the following (a few of many): turned down a promotion to LCol more than one year early to complete your COship, told Col Vance NO Sir, with regards to a certain impromptu dog and pony show request without being fired. For always giving it your all in support of your troops, officers and their families. The way in which you always sought and listened to our council. The way you always balanced your work and family responsibilities; I will always remember our return from Wainwright when little Brian was so excited to see you arriving. I also thank you for the way in which you never hesitated to voice your views based on real time and real facts, even if it meant ruffling some feathers from time to time. I thank you as well for allowing me to leave your command team early to pursue a new career in uniform. Last but certainly not least, I thank you for providing your troops those famous 2 day short per month. For these many reasons, everyone who had the opportunity to work along s",
+                "Complete original text follows. A decision does not bypass the current model length limit.",
+                "WordPress comment ID: 5249; source approval: 1; source local timestamp: 2023-01-30 20:20:20.",
+                "Historical display name: Rejean Richard",
+                "Original comment (source language retained; email addresses redacted):",
+                "Gary, Congratulations on your upcoming retirement. It has been an honour and a true privilege to have been part of one of your many command teams. I will forever remember the great times we had with 1 CMBG HQ and Signals Squadron, this to include our travels in and around Wainwright, Edmonton and Abbotsford. Especially during each of your troops night-outs; those that we were all invited to. I thank you for having given your troops the required time to train and prepare for the Great Canadian Death Race (not debt race) during working hours. For them, bringing back the trophy for being the fastest 1CMBG team was their dream. You allowed them, your Signallers, to outperform Infantry BN’s and other Combat Arms Units earning them great praise and respect amongst their peers. Knowing that you truly admired my driving, when Trevor was not around, I thank you for allowing me to terrify you on occasions. On a more serious note. For me, The best way to describe your leadership style is by highlighting the following (a few of many): turned down a promotion to LCol more than one year early to complete your COship, told Col Vance NO Sir, with regards to a certain impromptu dog and pony show request without being fired. For always giving it your all in support of your troops, officers and their families. The way in which you always sought and listened to our council. The way you always balanced your work and family responsibilities; I will always remember our return from Wainwright when little Brian was so excited to see you arriving. I also thank you for the way in which you never hesitated to voice your views based on real time and real facts, even if it meant ruffling some feathers from time to time. I thank you as well for allowing me to leave your command team early to pursue a new career in uniform. Last but certainly not least, I thank you for providing your troops those famous 2 day short per month. For these many reasons, everyone who had the opportunity to work along side of you, young and old, admired you and they will well into the distant future. That my friend is the greatest gift ever. In my opinion, the return on your investment for being grounded, honest and aware has been paid you in dividends. Everyone under your command did absolutely all that they could, to include myself as your RSM, to surpass all your expectations. I know that I speak for many. Thank you so very much for your outstanding leadership and council over the years. Sincerely, Your friend, Rej! VVV"
+              ],
+              "images": [],
+              "documents": []
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "unmatched-6826",
+          "title": {
+            "en": "Unmapped WordPress comment 6826",
+            "fr": "Commentaire WordPress non associé 6826"
+          },
+          "category": "unassigned",
+          "sources": {
+            "en": {
+              "id": 357625,
+              "url": "https://cmcen-rcmce.ca/?p=357625#comment-6826",
+              "title": "Unmapped WordPress comment 6826",
+              "publishedAt": "2026-08-28T14:05:26",
+              "modifiedAt": "",
+              "paragraphs": [
+                "WordPress post ID: 357625.",
+                "WordPress comment ID: 6826; source approval: 1; source local timestamp: 2026-08-28 14:05:26.",
+                "Historical display name: Nolan Vollmer",
+                "Original comment (source language retained; email addresses redacted):",
+                "Congratulations on the retirement Maj Huculak!"
+              ],
+              "images": [],
+              "documents": []
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "unmatched-6825",
+          "title": {
+            "en": "Unmapped WordPress comment 6825",
+            "fr": "Commentaire WordPress non associé 6825"
+          },
+          "category": "unassigned",
+          "sources": {
+            "en": {
+              "id": 357842,
+              "url": "https://cmcen-rcmce.ca/?p=357842#comment-6825",
+              "title": "Unmapped WordPress comment 6825",
+              "publishedAt": "2026-08-28T14:03:44",
+              "modifiedAt": "",
+              "paragraphs": [
+                "WordPress post ID: 357842.",
+                "WordPress comment ID: 6825; source approval: 1; source local timestamp: 2026-08-28 14:03:44.",
+                "Historical display name: Nolan Vollmer",
+                "Original comment (source language retained; email addresses redacted):",
+                "Congratulations Darcy! All my best to you and your family on your retirement! Stop in at the old Sqn Lines when you can! Teymut!"
+              ],
+              "images": [],
+              "documents": []
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "unmatched-6822",
+          "title": {
+            "en": "Unmapped WordPress comment 6822",
+            "fr": "Commentaire WordPress non associé 6822"
+          },
+          "category": "unassigned",
+          "sources": {
+            "en": {
+              "id": 357901,
+              "url": "https://cmcen-rcmce.ca/?p=357901#comment-6822",
+              "title": "Unmapped WordPress comment 6822",
+              "publishedAt": "2026-08-14T23:49:46",
+              "modifiedAt": "",
+              "paragraphs": [
+                "WordPress post ID: 357901.",
+                "WordPress comment ID: 6822; source approval: 1; source local timestamp: 2026-08-14 23:49:46.",
+                "Historical display name: Kris Hjalmarson",
+                "Original comment (source language retained; email addresses redacted):",
+                "Great working with you!"
+              ],
+              "images": [],
+              "documents": []
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "missing-account-2881",
+          "title": {
+            "en": "Preserve attribution for comment 2881",
+            "fr": "Conserver l’attribution du commentaire 2881"
+          },
+          "category": "unassigned",
+          "sources": {
+            "en": {
+              "id": 300654,
+              "url": "https://cmcen-rcmce.ca/?p=300654#comment-2881",
+              "title": "Preserve attribution for comment 2881",
+              "publishedAt": "2020-08-23T14:01:57",
+              "modifiedAt": "",
+              "paragraphs": [
+                "WordPress post ID: 300654.",
+                "Corebot comment ID: 6a84814b1f899c1069d83e11.",
+                "WordPress comment ID: 2881; source approval: 1; source local timestamp: 2020-08-23 14:01:57.",
+                "Historical display name: Kash Bagal",
+                "Original comment (source language retained; email addresses redacted):",
+                "Sir, It was an absolute pleasure to work for you - luckily I had the opportunity several times. Thank you for giving me the opportunity to go on my one tour (to Kosovo) - it was the highlight of my career. You always looked after your troops, and it was a pleasure to know you as a caring leader. I hope the best for you and your family in your retirement. Kash Bagal"
+              ],
+              "images": [],
+              "documents": []
+            },
+            "fr": null
+          }
+        },
+        {
+          "key": "missing-account-2579",
+          "title": {
+            "en": "Preserve attribution for comment 2579",
+            "fr": "Conserver l’attribution du commentaire 2579"
+          },
+          "category": "unassigned",
+          "sources": {
+            "en": {
+              "id": 297236,
+              "url": "https://cmcen-rcmce.ca/?p=297236#comment-2579",
+              "title": "Preserve attribution for comment 2579",
+              "publishedAt": "2020-02-24T20:19:38",
+              "modifiedAt": "",
+              "paragraphs": [
+                "WordPress post ID: 297236.",
+                "Corebot comment ID: 6a84816e1f899c1069d841ef.",
+                "WordPress comment ID: 2579; source approval: 1; source local timestamp: 2020-02-24 20:19:38.",
+                "Historical display name: Kash Bagal",
+                "Original comment (source language retained; email addresses redacted):",
+                "Malheureusement, nous n'avions pas reçu votre commentaire précédent. Veuillez s'il vous plait le renvoyer et nous l'afficherons."
+              ],
+              "images": [],
+              "documents": []
+            },
+            "fr": null
+          }
+        }
+      ],
+      "items": [
+        {
+          "id": "email-only",
+          "articleKey": "email-only",
+          "type": "disposition",
+          "question": {
+            "en": "Is this an import artifact to exclude, or does it need further research?",
+            "fr": "Faut-il exclure cet artefact d’importation ou poursuivre la recherche?"
+          },
+          "recommendation": {
+            "en": "Keep on hold; exclude only after confirming it is an artifact.",
+            "fr": "Laisser en attente; exclure seulement après confirmation qu’il s’agit d’un artefact."
+          },
+          "rationale": {
+            "en": "The imported body contains only an email address. No source comment matched. The address is withheld. The source link opens the parent post, not a matched comment.",
+            "fr": "Le corps importé contient seulement une adresse courriel. Aucun commentaire source ne correspond. L’adresse est masquée. Le lien ouvre la publication parente, et non un commentaire correspondant."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "truncated-5249",
+          "articleKey": "truncated-5249",
+          "type": "disposition",
+          "question": {
+            "en": "Preserve the complete original comment in the migration?",
+            "fr": "Conserver le commentaire original complet dans la migration?"
+          },
+          "recommendation": {
+            "en": "Preserve the full source text; handle the comment length limit before applying.",
+            "fr": "Conserver le texte source complet; régler la limite de longueur avant l’application."
+          },
+          "rationale": {
+            "en": "The 2,000-character imported body matches the prefix of the 2,513-character normalized original, with the same post, author and date. This is a guest comment.",
+            "fr": "Le texte importé de 2 000 caractères correspond au début de l’original normalisé de 2 513 caractères, avec la même publication, le même auteur et la même date. Il s’agit d’un commentaire invité."
+          },
+          "recommendedChoice": "preserve"
+        },
+        {
+          "id": "unmatched-6826",
+          "articleKey": "unmatched-6826",
+          "type": "disposition",
+          "question": {
+            "en": "Should this source comment be included with its archived post?",
+            "fr": "Faut-il inclure ce commentaire source avec sa publication archivée?"
+          },
+          "recommendation": {
+            "en": "Review the source and parent before choosing Preserve or Exclude.",
+            "fr": "Examiner la source et la publication parente avant de choisir Conserver ou Exclure."
+          },
+          "rationale": {
+            "en": "This comment belongs to a selected source post but has no matched comment in the reviewed Corebot batch. This is not proof it is absent from every collection or environment.",
+            "fr": "Ce commentaire appartient à une publication source sélectionnée, mais aucun commentaire du lot Corebot examiné ne correspond. Cela ne prouve pas son absence de toutes les collections ou de tous les environnements."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "unmatched-6825",
+          "articleKey": "unmatched-6825",
+          "type": "disposition",
+          "question": {
+            "en": "Should this source comment be included with its archived post?",
+            "fr": "Faut-il inclure ce commentaire source avec sa publication archivée?"
+          },
+          "recommendation": {
+            "en": "Review the source and parent before choosing Preserve or Exclude.",
+            "fr": "Examiner la source et la publication parente avant de choisir Conserver ou Exclure."
+          },
+          "rationale": {
+            "en": "This comment belongs to a selected source post but has no matched comment in the reviewed Corebot batch. This is not proof it is absent from every collection or environment.",
+            "fr": "Ce commentaire appartient à une publication source sélectionnée, mais aucun commentaire du lot Corebot examiné ne correspond. Cela ne prouve pas son absence de toutes les collections ou de tous les environnements."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "unmatched-6822",
+          "articleKey": "unmatched-6822",
+          "type": "disposition",
+          "question": {
+            "en": "Should this source comment be included with its archived post?",
+            "fr": "Faut-il inclure ce commentaire source avec sa publication archivée?"
+          },
+          "recommendation": {
+            "en": "Review the source and parent before choosing Preserve or Exclude.",
+            "fr": "Examiner la source et la publication parente avant de choisir Conserver ou Exclure."
+          },
+          "rationale": {
+            "en": "This comment belongs to a selected source post but has no matched comment in the reviewed Corebot batch. This is not proof it is absent from every collection or environment.",
+            "fr": "Ce commentaire appartient à une publication source sélectionnée, mais aucun commentaire du lot Corebot examiné ne correspond. Cela ne prouve pas son absence de toutes les collections ou de tous les environnements."
+          },
+          "recommendedChoice": "research"
+        },
+        {
+          "id": "missing-account-2881",
+          "articleKey": "missing-account-2881",
+          "type": "disposition",
+          "question": {
+            "en": "Preserve the historical author attribution without linking a login account?",
+            "fr": "Conserver l’attribution historique sans associer un compte de connexion?"
+          },
+          "recommendation": {
+            "en": "Preserve as historical guest attribution; do not recreate or assign an account.",
+            "fr": "Conserver comme attribution historique invitée; ne pas recréer ni attribuer de compte."
+          },
+          "rationale": {
+            "en": "Original post, comment body and author match, but the referenced WordPress account is absent from the export. The reason for its absence is unknown.",
+            "fr": "La publication originale, le texte et l’auteur correspondent, mais le compte WordPress référencé est absent de l’exportation. La raison de cette absence est inconnue."
+          },
+          "recommendedChoice": "preserve"
+        },
+        {
+          "id": "missing-account-2579",
+          "articleKey": "missing-account-2579",
+          "type": "disposition",
+          "question": {
+            "en": "Preserve the historical author attribution without linking a login account?",
+            "fr": "Conserver l’attribution historique sans associer un compte de connexion?"
+          },
+          "recommendation": {
+            "en": "Preserve as historical guest attribution; do not recreate or assign an account.",
+            "fr": "Conserver comme attribution historique invitée; ne pas recréer ni attribuer de compte."
+          },
+          "rationale": {
+            "en": "Original post, comment body and author match, but the referenced WordPress account is absent from the export. The reason for its absence is unknown.",
+            "fr": "La publication originale, le texte et l’auteur correspondent, mais le compte WordPress référencé est absent de l’exportation. La raison de cette absence est inconnue."
+          },
+          "recommendedChoice": "preserve"
+        }
+      ]
+    }
+  ]
+}

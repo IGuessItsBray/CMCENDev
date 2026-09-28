@@ -1057,10 +1057,10 @@
             "fr": "Laisser le français non résolu et poursuivre les recherches. Ne pas associer un autre numéro ou événement."
           },
           "rationale": {
-            "en": "No French switcher, matching Fall/Autumn 2025 Association issue, same-day news match, or matching linked documents found in the public French post inventory.",
-            "fr": "Aucun numéro correspondant à l’automne 2025 trouvé dans les billets français publics, leurs dates ou leurs documents."
+            "en": "We found no French version of the Fall 2025 newsletter.",
+            "fr": "Nous n’avons pas trouvé de version française du bulletin de l’automne 2025."
           },
-          "recommendedChoice": "research"
+          "recommendedChoice": "translate"
         },
         {
           "id": "wp-354205-pairing",
@@ -1111,8 +1111,8 @@
             "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
           },
           "rationale": {
-            "en": "Confirmed WPML counterpart. French links FR_newsletter-29-aout.indd_.pdf, whereas English links En_newsletter-29-aout.pdf. The French attachment is absent from the delivered article. PDF body translation and availability have not been audited here.",
-            "fr": "Lien WPML confirmé. La page française contient un PDF français distinct, absent de l’import livré. Le contenu et la disponibilité du PDF restent à vérifier."
+            "en": "The English and French legacy pages are versions of the same article. Each links its own newsletter PDF; both links were included in the imported article.",
+            "fr": "Les pages historiques anglaise et française correspondent au même article. Chacune contient un lien vers son bulletin PDF; les deux liens figurent dans l’article importé."
           },
           "recommendedChoice": "pair"
         },
@@ -1129,10 +1129,10 @@
             "fr": "Laisser le français non résolu et poursuivre les recherches. Ne pas associer un autre numéro ou événement."
           },
           "rationale": {
-            "en": "No French switcher or corresponding Spring 2025 Association issue found in the public French post inventory.",
-            "fr": "Aucun numéro correspondant au printemps 2025 trouvé dans l’inventaire des billets français publics."
+            "en": "We found no French version of the Spring 2025 newsletter.",
+            "fr": "Nous n’avons pas trouvé de version française du bulletin du printemps 2025."
           },
-          "recommendedChoice": "research"
+          "recommendedChoice": "translate"
         },
         {
           "id": "wp-342235-pairing",
@@ -1370,25 +1370,6 @@
           },
           "recommendedChoice": "request-edit",
           "highlights": ["Robidoux"]
-        },
-        {
-          "id": "wp-354233-attachment",
-          "articleKey": "wp-354233",
-          "type": "attachment",
-          "question": {
-            "en": "Should the separate French PDF be included in the next draft update?",
-            "fr": "Faut-il inclure le PDF français distinct dans la prochaine mise à jour du brouillon?"
-          },
-          "recommendation": {
-            "en": "Include the French PDF after checking its contents and availability. This decision does not copy it.",
-            "fr": "Inclure le PDF français après vérification de son contenu et de sa disponibilité. Cette décision ne le copie pas."
-          },
-          "rationale": {
-            "en": "Confirmed WPML counterpart. French links FR_newsletter-29-aout.indd_.pdf, whereas English links En_newsletter-29-aout.pdf. The French attachment is absent from the delivered article. PDF body translation and availability have not been audited here.",
-            "fr": "Lien WPML confirmé. La page française contient un PDF français distinct, absent de l’import livré. Le contenu et la disponibilité du PDF restent à vérifier."
-          },
-          "recommendedChoice": "include",
-          "highlights": []
         },
         {
           "id": "wp-340587-provenance",

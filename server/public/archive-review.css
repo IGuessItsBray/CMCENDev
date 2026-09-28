@@ -175,6 +175,12 @@
 .archive-choices input {
   flex-shrink: 0;
 }
+.archive-choices label small {
+  display: inline;
+  margin: 0;
+  color: var(--admin-accent);
+  font-weight: 600;
+}
 .archive-decision textarea {
   display: block;
   width: 100%;

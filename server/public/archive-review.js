@@ -372,11 +372,7 @@
         node("h3", local(detail.item.question)),
       );
       const finding = node("div", undefined, "archive-finding");
-      finding.append(
-        node("p", local(detail.item.rationale)),
-        node("strong", t("recommendation")),
-        node("p", local(detail.item.recommendation)),
-      );
+      finding.append(node("p", local(detail.item.rationale)));
       pane.append(finding);
       if (detail.stale) pane.append(node("p", t("stale"), "archive-warning"));
       if (detail.destination) {
@@ -425,6 +421,8 @@
           message("unsaved");
         });
         label.append(input, node("span", t(`choice_${value}`)));
+        if (value === detail.item.recommendedChoice && value !== "defer")
+          label.append(node("small", t("suggested")));
         options.append(label);
       }
       const noteLabel = node("label", t("note"));
@@ -454,7 +452,7 @@
         save,
         reload,
       );
-      form.append(fieldset, node("p", t("decision_help"), "archive-muted"));
+      form.append(fieldset);
       pane.append(form);
       listen(form, "submit", async (event) => {
         event.preventDefault();

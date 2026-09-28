@@ -1913,6 +1913,7 @@ paths:
                       pair,
                       separate,
                       research,
+                      translate,
                       leave-incomplete,
                       keep-source,
                       request-edit,

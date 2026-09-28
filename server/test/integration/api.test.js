@@ -1710,11 +1710,17 @@ describe('news stories', () => {
       .get(base)
       .set('Authorization', auth)
       .expect(200);
-    assert.equal(listing.body.items.length, 22);
+    assert.equal(listing.body.items.length, 21);
     assert.equal(listing.body.batch.articleCount, 16);
-    assert.equal(listing.body.batch.counts.pending, 22);
+    assert.equal(listing.body.batch.counts.pending, 21);
     assert.equal(listing.body.items[0].sources, undefined);
     assert.match(listing.headers['cache-control'], /no-store/);
+    const missingFrench = batch.items.find((row) => row.type === 'discovery');
+    const missingFrenchDetail = await request(app)
+      .get(`${base}/${missingFrench.id}`)
+      .set('Authorization', auth)
+      .expect(200);
+    assert.ok(missingFrenchDetail.body.choices.includes('translate'));
     const detail = await request(app)
       .get(detailPath)
       .set('Authorization', auth)
@@ -1815,7 +1821,7 @@ describe('news stories', () => {
       .get(`${base}?offset=20`)
       .set('Authorization', auth)
       .expect(200);
-    assert.equal(page.body.items.length, 2);
+    assert.equal(page.body.items.length, 1);
     await request(app)
       .get(`${base}/missing`)
       .set('Authorization', auth)

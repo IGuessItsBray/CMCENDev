@@ -12,7 +12,7 @@ const common = ['custom', 'defer'];
 const choices = {
   disposition: ['preserve', 'exclude', 'research', ...common],
   pairing: ['pair', 'separate', ...common],
-  discovery: ['research', 'leave-incomplete', ...common],
+  discovery: ['translate', 'research', 'leave-incomplete', ...common],
   translation: ['keep-source', 'request-edit', ...common],
   attachment: ['include', 'skip', ...common],
   provenance: ['accept-source-url', 'research', ...common],

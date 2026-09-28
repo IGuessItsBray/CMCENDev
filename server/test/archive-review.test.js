@@ -8,15 +8,15 @@ const {
   summary,
 } = require('../services/archive-review');
 
-test('archive catalogue preserves the 16 real sources and 22 independently reviewed issues', () => {
+test('archive catalogue preserves the 16 real sources and 21 independently reviewed issues', () => {
   const batch = catalogue.batches[0];
   assert.equal(batch.articles.length, 16);
-  assert.equal(batch.items.length, 22);
+  assert.equal(batch.items.length, 21);
   assert.equal(
     batch.articles.filter((article) => article.sources.fr).length,
     8,
   );
-  assert.equal(new Set(batch.items.map((item) => item.id)).size, 22);
+  assert.equal(new Set(batch.items.map((item) => item.id)).size, 21);
   for (const article of batch.articles) {
     for (const source of Object.values(article.sources).filter(Boolean)) {
       assert.equal(new URL(source.url).hostname, 'cmcen-rcmce.ca');
@@ -48,7 +48,7 @@ test('changed evidence reopens review while retaining the existing decision', ()
   assert.equal(stateOf(decision, itemHash(batch, item)), 'pending');
   assert.equal(
     summary(batch, new Map([[item.id, decision]])).counts.pending,
-    22,
+    21,
   );
 });
 

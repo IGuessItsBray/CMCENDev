@@ -174,6 +174,7 @@ Mounted at `/api/audit-logs`.
 All routes require an authenticated user with the exact `developer` role and return `Cache-Control: no-store`. Review decisions never mutate articles, media or publication state. See [Archive Review](ARCHIVE_REVIEW.md).
 
 Discovery batches support `type=disposition` and `category=unassigned`. Disposition choices are `preserve`, `exclude`, `research`, `custom`, and `defer`; exclusion records a decision without removing the item. Sources may be French-only (`sources.en=null`), and optional `relatedSources` contain separate supporting records rather than translations. Destination lookup currently covers news articles only.
+Missing-translation (`discovery`) items also offer `translate` to request a new French translation.
 
 | Method | Route                                                       | Purpose                                                                                                                                                                                    |
 | ------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

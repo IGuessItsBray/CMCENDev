@@ -67,7 +67,7 @@ window.ContentWorkspace = {
         ["event", "events", "review_events_tab"],
         ["retirementMessage", "retirementMessages", "review_retirements_tab"],
         ["lastPost", "lastPosts", "review_last_posts_tab"],
-        ["retirementComment", "comments", "review_comments_tab"],
+        ["comment", "comments", "content_workspace_comment"],
       ]) {
         const button = document.createElement("button");
         button.type = "button";
@@ -109,7 +109,14 @@ window.ContentWorkspace = {
     }
     let workspaceUrl = new URL(window.location.href);
     let changingFilters = false;
-    const filterNames = ["type", "status", "translation", "search", "id"];
+    const filterNames = [
+      "type",
+      "status",
+      "translation",
+      "search",
+      "id",
+      "parentTypes",
+    ];
     const routeKey = (url) =>
       filterNames
         .map((name) => url.searchParams.get(name) || "")
@@ -131,6 +138,53 @@ window.ContentWorkspace = {
     const contentWorkspaceTranslationFilter = getElement(
       "contentWorkspaceTranslationFilter",
     );
+    const commentTypeFilters = document.createElement("fieldset");
+    commentTypeFilters.hidden = true;
+    commentTypeFilters.className = "content-workspace-comment-types";
+    contentWorkspaceType.closest("label").after(commentTypeFilters);
+    let commentTypes = [];
+    let selectedCommentTypes = null;
+    let renderedCommentTypes = "";
+    function renderCommentTypeFilters() {
+      commentTypeFilters.hidden = contentWorkspaceType.value !== "comment";
+      const rendering = JSON.stringify([
+        commentTypes,
+        selectedCommentTypes === null ? null : [...selectedCommentTypes],
+        getContentWorkspaceLocale(),
+      ]);
+      if (rendering === renderedCommentTypes) return;
+      renderedCommentTypes = rendering;
+      const legend = document.createElement("legend");
+      setWorkspaceTranslatedText(
+        legend,
+        "content_workspace_comment_post_types",
+        "Comments on",
+      );
+      commentTypeFilters.replaceChildren(legend);
+      for (const { value, label } of commentTypes) {
+        const wrapper = document.createElement("label");
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = value;
+        input.checked =
+          selectedCommentTypes === null || selectedCommentTypes.has(value);
+        input.addEventListener("change", () => {
+          selectedCommentTypes = new Set(
+            [...commentTypeFilters.querySelectorAll("input:checked")].map(
+              (input) => input.value,
+            ),
+          );
+          void changeFilters();
+        });
+        wrapper.append(
+          input,
+          document.createTextNode(
+            label[getContentWorkspaceLocale().slice(0, 2)] || label.en,
+          ),
+        );
+        commentTypeFilters.append(wrapper);
+      }
+    }
     const contentWorkspaceEyebrow = getElement("contentWorkspaceEyebrow");
     const contentWorkspaceTitle = getElement("contentWorkspaceTitle");
     const contentWorkspaceIntro = getElement("contentWorkspaceIntro");
@@ -214,7 +268,7 @@ window.ContentWorkspace = {
       event: "/api/admin/events",
       retirementMessage: "/api/admin/retirement-messages",
       lastPost: "/api/admin/last-posts",
-      retirementComment: "/api/admin/retirement-comments",
+      comment: "/api/admin/comments",
     });
 
     const contentWorkspaceReviewRoutes = Object.freeze({
@@ -223,8 +277,7 @@ window.ContentWorkspace = {
       retirementMessage: (id) =>
         `/api/retirement-messages/${encodeURIComponent(id)}/review`,
       lastPost: (id) => `/api/last-posts/${encodeURIComponent(id)}/review`,
-      retirementComment: (id) =>
-        `/api/retirement-messages/comments/${encodeURIComponent(id)}/review`,
+      comment: (id) => `/api/comments/${encodeURIComponent(id)}/review`,
     });
 
     const contentWorkspaceScheduledPublicationTypes = new Set([
@@ -239,8 +292,7 @@ window.ContentWorkspace = {
       retirementMessage: (id) =>
         `/api/admin/retirement-messages/${encodeURIComponent(id)}`,
       lastPost: (id) => `/api/admin/last-posts/${encodeURIComponent(id)}`,
-      retirementComment: (id) =>
-        `/api/admin/retirement-comments/${encodeURIComponent(id)}`,
+      comment: (id) => `/api/admin/comments/${encodeURIComponent(id)}`,
     });
 
     const contentWorkspaceTypes = new Set([
@@ -249,7 +301,7 @@ window.ContentWorkspace = {
       "retirementMessage",
       "lastPost",
       "newsArticle",
-      "retirementComment",
+      "comment",
     ]);
     const contentWorkspaceStatuses = new Set([
       "all",
@@ -317,9 +369,9 @@ window.ContentWorkspace = {
       }
 
       return (
-        item?.type !== "retirementComment" &&
+        !["comment"].includes(item?.type) &&
         canReviewContentWorkspace() &&
-        ["pending", "published", "hidden"].includes(item.status)
+        ["draft", "pending", "published", "hidden"].includes(item.status)
       );
     }
 
@@ -335,7 +387,7 @@ window.ContentWorkspace = {
       [...contentWorkspaceStatusFilter.options].forEach((option) => {
         const unavailable = articleMode
           ? ["pending", "rejected"].includes(option.value)
-          : option.value === "draft";
+          : false;
         option.hidden = unavailable;
         option.disabled = unavailable;
       });
@@ -410,6 +462,11 @@ window.ContentWorkspace = {
     function applyContentWorkspaceSearchParameters() {
       const searchParameters = workspaceUrl.searchParams;
       const type = searchParameters.get("type");
+      selectedCommentTypes = searchParameters.has("parentTypes")
+        ? new Set(
+            searchParameters.get("parentTypes").split(",").filter(Boolean),
+          )
+        : null;
       const status = searchParameters.get("status");
       const translation = searchParameters.get("translation");
       const search = String(searchParameters.get("search") || "").slice(0, 120);
@@ -429,6 +486,7 @@ window.ContentWorkspace = {
           : "all";
 
       contentWorkspaceSearch.value = search;
+      renderCommentTypeFilters();
 
       contentWorkspaceState.selectedId = contentId;
       contentWorkspaceState.requestedContentId = contentId;
@@ -447,6 +505,11 @@ window.ContentWorkspace = {
       if (!articleMode && type !== "all") {
         searchParameters.set("type", type);
       }
+      if (type === "comment" && selectedCommentTypes !== null)
+        searchParameters.set(
+          "parentTypes",
+          [...selectedCommentTypes].join(","),
+        );
       if (status !== "all") {
         searchParameters.set("status", status);
       }
@@ -486,6 +549,8 @@ window.ContentWorkspace = {
     }
 
     function clearContentWorkspaceFilters() {
+      selectedCommentTypes = null;
+      commentTypeFilters.hidden = true;
       contentWorkspaceType.value = "all";
       contentWorkspaceStatusFilter.value = "all";
       contentWorkspaceTranslationFilter.value = "all";
@@ -612,7 +677,7 @@ window.ContentWorkspace = {
         ],
         lastPost: ["content_workspace_last_post", "Last Post notices"],
         newsArticle: ["content_workspace_news", "Articles"],
-        retirementComment: ["content_workspace_comment", "Comments"],
+        comment: ["content_workspace_comment", "Comments"],
       }[type];
     }
 
@@ -651,8 +716,7 @@ window.ContentWorkspace = {
     function getContentWorkspaceDisplayStatus(item) {
       if (
         contentWorkspaceScheduledPublicationTypes.has(item?.type) &&
-        (item.status === "pending" ||
-          (item.type === "newsArticle" && item.status === "draft")) &&
+        ["pending", "draft"].includes(item.status) &&
         item.scheduledPublishAt
       ) {
         return "scheduled";
@@ -713,12 +777,7 @@ window.ContentWorkspace = {
         return `/news-story?id=${encodeURIComponent(item._id)}`;
       }
 
-      if (item.type === "retirementComment") {
-        const retirementMessageId = item.content?.retirementMessage?._id;
-        return retirementMessageId
-          ? `/retirement-message?id=${encodeURIComponent(retirementMessageId)}`
-          : "";
-      }
+      if (item.type === "comment") return item.content?.publicUrl || "";
 
       return "";
     }
@@ -1038,7 +1097,7 @@ window.ContentWorkspace = {
         }
 
         contentWorkspaceDetail.append(copy);
-      } else if (item.type === "retirementComment") {
+      } else if (["comment"].includes(item.type)) {
         const comment = document.createElement("section");
         comment.className = "content-workspace-copy";
         comment.append(...createReadOnlyComment(item));
@@ -1279,6 +1338,8 @@ window.ContentWorkspace = {
       if (type !== "all") {
         query.set("type", type);
       }
+      if (type === "comment" && selectedCommentTypes !== null)
+        query.set("parentTypes", [...selectedCommentTypes].join(","));
       if (status !== "all") {
         query.set("status", status);
       }
@@ -1298,6 +1359,8 @@ window.ContentWorkspace = {
         );
         if (requestId !== contentWorkspaceState.loadRequestId) return;
 
+        commentTypes = data.commentTypes || [];
+        renderCommentTypeFilters();
         const nextItems = Array.isArray(data.items) ? data.items : [];
         // A URL id selects a record; it must not restrict the paginated list.
         // Fetch a deep-linked record separately when it is outside this page.
@@ -1434,6 +1497,7 @@ window.ContentWorkspace = {
       renderReviewQueues();
       updateContentWorkspaceModePresentation();
       updateContentWorkspaceStatusFilterAppearance();
+      renderCommentTypeFilters();
       updateContentWorkspaceCount();
 
       contentWorkspaceList

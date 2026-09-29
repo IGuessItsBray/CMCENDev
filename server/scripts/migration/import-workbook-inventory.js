@@ -20,9 +20,8 @@ const {
 } = require('./lib/workbook-import');
 const { uploadWorkbookMedia } = require('./lib/workbook-media');
 const RetirementMessage = require('../../models/RetirementMessage');
-const RetirementComment = require('../../models/RetirementComment');
+const Comment = require('../../models/Comment');
 const LastPostMessage = require('../../models/LastPostMessage');
-const LastPostComment = require('../../models/LastPostComment');
 const User = require('../../models/User');
 
 const args = parseArgs();
@@ -130,10 +129,6 @@ async function getCommentAuthor(authorName) {
 }
 
 async function importComments(candidate, importedMessage, legacyUser) {
-  const CommentModel =
-    candidate.type === 'retirement' ? RetirementComment : LastPostComment;
-  const messageField =
-    candidate.type === 'retirement' ? 'retirementMessage' : 'lastPostMessage';
   const imported = [];
 
   for (const comment of candidate.comments.filter(
@@ -142,9 +137,10 @@ async function importComments(candidate, importedMessage, legacyUser) {
     const author = await getCommentAuthor(comment.authorName);
     const publishedAt = new Date(comment.publishedAt);
     const document = {
-      [messageField]: importedMessage._id,
+      parentType: candidate.type === 'retirement' ? 'retirement' : 'lastPost',
+      parentId: importedMessage._id,
       author: author._id,
-      body: comment.body.slice(0, 2000),
+      body: comment.body,
       status: 'published',
       reviewedBy: legacyUser._id,
       reviewedAt: publishedAt,
@@ -162,7 +158,7 @@ async function importComments(candidate, importedMessage, legacyUser) {
     };
 
     imported.push(
-      await CommentModel.findOneAndUpdate(
+      await Comment.findOneAndUpdate(
         {
           'legacy.source': 'workbook-bilingual-inventory',
           'legacy.commentKey': document.legacy.commentKey,

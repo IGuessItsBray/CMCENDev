@@ -29,10 +29,12 @@ window.ContentWorkspaceActions = {
     function createContentWorkspaceReviewActions(item) {
       if (item.isNew) return null;
       const isNewsArticle = item.type === "newsArticle";
+      if (item.type === "event" && item.status === "draft") return null;
       if (
         isNewsArticle
           ? !canManageContentWorkspaceNews() || item.status !== "draft"
-          : !canReviewContentWorkspace() || item.status !== "pending"
+          : !canReviewContentWorkspace() ||
+            !["draft", "pending"].includes(item.status)
       )
         return null;
 
@@ -44,7 +46,8 @@ window.ContentWorkspaceActions = {
 
       const actions = document.createElement("div");
       actions.className = "content-workspace-review-actions";
-      const reject = isNewsArticle ? null : document.createElement("button");
+      const reject =
+        item.status === "draft" ? null : document.createElement("button");
       if (reject) {
         reject.type = "button";
         reject.className = "admin-work-zone-button is-danger";

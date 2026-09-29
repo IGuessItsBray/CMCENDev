@@ -59,7 +59,11 @@ function applyEditorialReviewTransition({
     content.scheduledPublishAt = scheduledPublishAt;
     content.scheduledBy = isScheduled ? reviewerId : null;
     content.scheduledAt = isScheduled ? now : null;
-    content.status = isScheduled ? 'pending' : 'published';
+    content.status = isScheduled
+      ? content.status === 'draft'
+        ? 'draft'
+        : 'pending'
+      : 'published';
     content.publishedBy = isScheduled ? null : reviewerId;
     content.publishedAt = isScheduled ? null : now;
   }

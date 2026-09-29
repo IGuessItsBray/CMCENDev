@@ -5,7 +5,7 @@ window.MySubmissions = (() => {
     event: "content_workspace_event",
     retirementMessage: "content_workspace_retirement",
     lastPost: "content_workspace_last_post",
-    retirementComment: "content_workspace_comment",
+    comment: "content_workspace_comment",
   };
   const statuses = ["draft", "pending", "scheduled", "published", "rejected"];
   const t = (key, replacements) => window.translate(key, replacements);
@@ -352,7 +352,7 @@ window.MySubmissions = (() => {
           /* Invalid legacy image references do not prevent reading the submission. */
         }
       }
-      if (detail.type === "retirementComment") {
+      if (detail.type === "comment") {
         addField(dialogBody, "content_workspace_comment_body", content.body);
       } else {
         for (const language of ["en", "fr"]) {
@@ -491,7 +491,7 @@ window.MySubmissions = (() => {
             endDate: saved?.endDate || body.endDate,
             imageUrl: body.imagePath,
           });
-        } else if (detail.type === "retirementComment")
+        } else if (detail.type === "comment")
           updated.content.body = body.body;
         else {
           updated.content.messages = {

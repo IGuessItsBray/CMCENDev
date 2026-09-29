@@ -95,7 +95,7 @@
     ["translation", "audit_target_translations"],
     ["contactMessage", "audit_target_contact_messages"],
     ["retirementMessage", "audit_target_retirement_posts"],
-    ["retirementComment", "audit_target_comments"],
+    ["comment", "audit_target_comments"],
   ];
 
   function mount({
@@ -607,7 +607,7 @@
         return `/retirement-message?id=${encodeURIComponent(targetId)}`;
       }
 
-      if (log.targetType === "retirementComment") {
+      if (log.targetType === "comment") {
         const messageId = getTargetId(snapshot.retirementMessage);
 
         if (messageId) {

@@ -1,0 +1,156 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const {
+  inspectBatch,
+  hash,
+} = require('../scripts/migration/lib/content-preflight');
+
+class ValidModel {
+  constructor(values) {
+    this.values = values;
+  }
+  async validate() {}
+  get(field) {
+    return field.split('.').reduce((value, key) => value?.[key], this.values);
+  }
+}
+const models = { RetirementMessage: ValidModel, Comment: ValidModel };
+function fixture() {
+  const source = {
+    id: 10,
+    status: 'publish',
+    language: 'en',
+    authorId: 20,
+    originalBody: 'Source text',
+    convertedText: 'Source text',
+    bodySha256: hash('Source text'),
+  };
+  return {
+    items: [
+      {
+        key: 'test',
+        kind: 'retirement',
+        sources: [source],
+        document: {
+          createdBy: 'a'.repeat(24),
+          status: 'draft',
+          messageLanguage: 'en',
+          message: 'Source text',
+          messages: { en: 'Source text' },
+          legacy: { source: 'https://cmcen-rcmce.ca', sourcePostIds: [10] },
+        },
+        comments: [],
+        mediaInventoryComplete: true,
+        mediaUrls: [],
+        destinationEvidence: {
+          destinationMatches: [],
+          unmappedAuthorIds: [],
+          unmappedRegisteredCommenterIds: [],
+        },
+        authorMappings: [{ sourceUserId: 20, userId: 'a'.repeat(24) }],
+        languageReview: {
+          reviewedBy: 'reviewer',
+          sourceFingerprint: hash(JSON.stringify([[10, source.bodySha256]])),
+        },
+      },
+    ],
+  };
+}
+test('preflight preserves input and accepts complete evidence', async () => {
+  const input = fixture();
+  const before = JSON.stringify(input);
+  assert.equal((await inspectBatch(input, { models })).safeToApply, true);
+  assert.equal(JSON.stringify(input), before);
+});
+test('source drafts, private content, pending submission state and scheduled publication are blocked', async () => {
+  for (const mutate of [
+    (i) => {
+      i.sources[0].status = 'draft';
+    },
+    (i) => {
+      i.sources[0].status = 'private';
+    },
+    (i) => {
+      i.sources[0].passwordProtected = true;
+    },
+    (i) => {
+      i.document.status = 'pending';
+    },
+    (i) => {
+      i.document.scheduledPublishAt = '2030-01-01';
+    },
+    (i) => {
+      i.document.legacy.sourcePostIds = [];
+    },
+    (i) => {
+      i.document.messages.en = 'Truncated';
+    },
+    (i) => {
+      i.authorMappings = [];
+    },
+    (i) => {
+      i.document.createdBy = 'b'.repeat(24);
+    },
+    (i) => {
+      i.languageReview = null;
+    },
+    (i) => {
+      i.sources[0].originalBody = 'Changed source';
+    },
+  ]) {
+    const input = fixture();
+    mutate(input.items[0]);
+    assert.equal((await inspectBatch(input, { models })).safeToApply, false);
+  }
+});
+test('media availability alone is insufficient without verified destination bytes', async () => {
+  const input = fixture();
+  input.items[0].mediaUrls = ['https://cmcen-rcmce.ca/image.jpg'];
+  assert.equal(
+    (
+      await inspectBatch(input, {
+        models,
+        mediaEvidence: [
+          { sourceUrl: input.items[0].mediaUrls[0], sourceVerified: true },
+        ],
+      })
+    ).safeToApply,
+    false,
+  );
+});
+test('missing parents, provenance and guessed guest ownership are blocked', async () => {
+  const input = fixture();
+  input.items[0].comments = [
+    {
+      sourceCommentId: 1,
+      sourcePostId: 10,
+      sourceParentId: 99,
+      sourceUserId: 0,
+      sourceApproval: '1',
+      convertedText: 'Comment',
+      document: { status: 'pending', body: 'Comment', author: 'a'.repeat(24) },
+    },
+  ];
+  const report = await inspectBatch(input, { models });
+  for (const code of [
+    'comment-not-migration-draft',
+    'unresolved-comment-parent',
+    'missing-comment-provenance',
+    'guest-assigned-account',
+  ])
+    assert.ok(report.results[0].issues.some((i) => i.code === code));
+});
+test('model errors are reported without exposing field values', async () => {
+  class InvalidModel extends ValidModel {
+    async validate() {
+      throw Object.assign(new Error('private value'), {
+        errors: { body: { kind: 'maxlength', value: 'private value' } },
+      });
+    }
+  }
+  const report = await inspectBatch(fixture(), {
+    models: { ...models, RetirementMessage: InvalidModel },
+  });
+  assert.equal(report.safeToApply, false);
+  assert.ok(!JSON.stringify(report).includes('private value'));
+});

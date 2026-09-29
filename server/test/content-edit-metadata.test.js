@@ -6,7 +6,7 @@ for (const name of [
   'Event',
   'LastPostMessage',
   'RetirementMessage',
-  'RetirementComment',
+  'Comment',
   'NewsArticle',
 ]) {
   test(`${name} preserves publication metadata and keeps edit metadata private`, () => {

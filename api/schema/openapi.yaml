@@ -569,7 +569,7 @@ paths:
             {
               type: string,
               enum:
-                [all, event, retirementMessage, lastPost, retirementComment],
+                [all, event, retirementMessage, lastPost, comment],
               default: all,
             }
         - name: status
@@ -616,7 +616,7 @@ paths:
           schema:
             {
               type: string,
-              enum: [event, retirementMessage, lastPost, retirementComment],
+              enum: [event, retirementMessage, lastPost, comment],
             }
         - $ref: "#/components/parameters/Id"
       responses:
@@ -1012,7 +1012,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get open review counts.
-      description: Counts submissions that still require a review decision. Scheduled Events, Last Post notices, and retirement messages are excluded.
+      description: Counts submissions that still require a review decision. Scheduled Events, Last Post notices, and retirement messages are excluded. comments counts pending comments across all registered parent types. Drafts are excluded.
       x-permission: canReviewAndPublish
       responses:
         "200":
@@ -1378,7 +1378,7 @@ paths:
         - name: contentType
           in: path
           required: true
-          schema: { type: string, enum: [event, retirementMessage, lastPost, newsArticle, retirementComment] }
+          schema: { type: string, enum: [event, retirementMessage, lastPost, newsArticle, comment] }
         - name: contentId
           in: path
           required: true
@@ -1408,7 +1408,7 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List staff-authored content revisions.
-      description: Returns up to 100 public-field revisions for an event, retirement message, Last Post notice, retirement comment, or news story. Submitter contact details are excluded. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
+      description: Returns up to 100 public-field revisions for an event, retirement message, Last Post notice, comment, or news story. Submitter contact details are excluded. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
       x-permission: canReviewAndPublish or canManageNews (newsArticle only)
       parameters:
         - name: contentType
@@ -1422,7 +1422,7 @@ paths:
                 retirementMessage,
                 lastPost,
                 newsArticle,
-                retirementComment,
+                comment,
               ]
         - name: contentId
           in: path
@@ -1470,7 +1470,7 @@ paths:
     get:
       tags: [Admin, Content]
       summary: List content in the staff editorial workspace.
-      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Records include publishedAt and publishedByName, lastEditedAt and lastEditedBy (including picture edits), and hiddenAt and hiddenByName. Actor names are display names or empty strings; missing timestamps are null. Hiding does not overwrite edit or publication metadata; restoring clears hiding metadata. Event records include RSVP enablement and deadline settings. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, paged with the opaque `cursor` returned by the previous response, or narrowed to one record with `id`; when type is `all`, results are limited to the caller’s permitted content types. Responses include `hasMore` and `nextCursor` for Load more pagination. Translation-only results exclude retirement comments. Includes the original status for removed records plus a rejection reason when applicable. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
+      description: Returns staff-only content records with editable metadata plus submitter and publication-authorization details. Records include publishedAt and publishedByName, lastEditedAt and lastEditedBy (including picture edits), and hiddenAt and hiddenByName. Actor names are display names or empty strings; missing timestamps are null. Hiding does not overwrite edit or publication metadata; restoring clears hiding metadata. Event records include RSVP enablement and deadline settings. Results can be filtered by type, lifecycle status, text search, and missing English or French public copy, paged with the opaque `cursor` returned by the previous response, or narrowed to one record with `id`; when type is `all`, results are limited to the caller’s permitted content types. Responses include `hasMore` and `nextCursor` for Load more pagination. Translation-only results exclude comments. Includes the original status for removed records plus a rejection reason when applicable. News stories require `canManageNews`; all other types require `canReviewAndPublish`.
       x-permission: canReviewAndPublish or canManageNews (newsArticle only)
       parameters:
         - name: scope
@@ -1489,17 +1489,21 @@ paths:
                 retirementMessage,
                 lastPost,
                 newsArticle,
-                retirementComment,
+                comment,
               ]
         - name: status
           in: query
-          description: Scheduled is a workspace-only filter for pending Events, Last Post notices, retirement messages, and draft news articles with a scheduled publication date. Pending and Draft exclude their scheduled records.
+          description: Scheduled selects pending Events, draft or pending Last Post notices and retirement messages, and draft news articles with a scheduled publication date. Pending and Draft exclude scheduled records.
           schema:
             type: string
             enum: [all, draft, pending, scheduled, published, rejected, hidden]
+        - name: parentTypes
+          in: query
+          description: Comma-separated registered parent types for comments. Omit for all types; an empty string selects none. Applies only to comments.
+          schema: { type: string }
         - name: translation
           in: query
-          description: Filter for public copy with a missing English or French equivalent. Retirement comments have no bilingual public copy and are excluded when this filter is used.
+          description: Filter for public copy with a missing English or French equivalent. Comments have no bilingual public copy and are excluded when this filter is used.
           schema:
             type: string
             enum: [all, missing-any, missing-en, missing-fr]
@@ -1638,10 +1642,10 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
-  /api/admin/retirement-comments/{commentId}:
+  /api/admin/comments/{commentId}:
     patch:
       tags: [Admin, Retirements]
-      summary: Edit a retirement comment.
+      summary: Edit a comment.
       description: Requires canReviewAndPublish. Corrects the comment body without changing its lifecycle state. Changes are audited.
       x-permission: canReviewAndPublish
       parameters:
@@ -1650,7 +1654,7 @@ paths:
         $ref: "#/components/requestBodies/GenericJson"
       responses:
         "200":
-          description: Retirement comment updated.
+          description: Comment updated.
         "400":
           $ref: "#/components/responses/Error"
         "403":
@@ -1659,36 +1663,36 @@ paths:
           $ref: "#/components/responses/Error"
     delete:
       tags: [Admin, Retirements]
-      summary: Delete any retirement comment.
+      summary: Delete any comment.
       x-permission: canDeleteContent
       parameters:
         - $ref: "#/components/parameters/CommentId"
       responses:
         "200":
           description: Delete result.
-  /api/admin/retirement-comments/{commentId}/hide:
+  /api/admin/comments/{commentId}/hide:
     patch:
       tags: [Admin, Retirements]
-      summary: Remove a retirement comment from public view.
+      summary: Remove a comment from public view.
       description: Allowed for content editors or the original author with own-content deletion permission. Pending comments cannot be removed because they are not public; they must be published, rejected, or deleted. The comment is retained for restoration; an optional reason is recorded in the audit log.
       x-permission: canHideContent
       parameters:
         - $ref: "#/components/parameters/CommentId"
       responses:
         "200":
-          description: Retirement comment removed from public view.
+          description: Comment removed from public view.
         "409":
           $ref: "#/components/responses/Error"
-  /api/admin/retirement-comments/{commentId}/restore:
+  /api/admin/comments/{commentId}/restore:
     patch:
       tags: [Admin, Retirements]
-      summary: Restore a removed retirement comment.
+      summary: Restore a removed comment.
       x-permission: canRestoreContent
       parameters:
         - $ref: "#/components/parameters/CommentId"
       responses:
         "200":
-          description: Restored retirement comment.
+          description: Restored comment.
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -2755,7 +2759,7 @@ paths:
     patch:
       tags: [Last Posts]
       summary: Update one language of a Last Post notice.
-      description: Reviewers may update one translation on a pending, published, or removed (hidden) Last Post notice. Editing a removed notice preserves its hidden status until it is explicitly restored. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected notice; updating a rejected notice sends it back to the review queue. A public-field revision and audit entry retain the before/after values.
+      description: Reviewers may update one translation on a draft, pending, published, or removed (hidden) Last Post notice, preserving its status. Owners may update pending or rejected notices; updating a rejected notice sends it back to the review queue. Drafts require staff editing through this endpoint or the admin metadata endpoint, and cannot be resubmitted through the personal submission endpoint. Revision and audit history retain before/after values.
       x-permission: canReviewAndPublish or owner of a pending or rejected notice
       parameters:
         - $ref: "#/components/parameters/MessageId"
@@ -2772,7 +2776,7 @@ paths:
     patch:
       tags: [Last Posts]
       summary: Review Last Post publication.
-      description: A publish action may include a future `scheduledPublishAt` timestamp. Scheduled content stays pending until the server publishes it at that time. A `cancel-schedule` action removes the schedule and leaves the notice pending.
+      description: Reviewers may publish draft or pending notices. Rejection applies only to pending submissions. A publish action may include a future `scheduledPublishAt`; scheduling and cancellation preserve the draft or pending status. Existing bilingual publication validation applies.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/MessageId"
@@ -2830,6 +2834,7 @@ paths:
     get:
       tags: [Retirements]
       summary: List retirement-message review queue.
+      description: Defaults to pending submissions. The status query also accepts draft, rejected, or published.
       x-permission: canReviewAndPublish
       responses:
         "200":
@@ -2842,18 +2847,20 @@ paths:
       responses:
         "200":
           description: User retirement messages.
-  /api/retirement-messages/comments/review:
+  /api/comments/review:
     get:
       tags: [Retirements]
       summary: List retirement-comment review queue.
+      description: Defaults to pending submissions. The status query also accepts draft, rejected, or published.
       x-permission: canReviewAndPublish
       responses:
         "200":
           description: Review comments.
-  /api/retirement-messages/comments/{commentId}/review:
+  /api/comments/{commentId}/review:
     patch:
       tags: [Retirements]
-      summary: Publish or reject retirement comment.
+      summary: Publish or reject comment.
+      description: Reviewers may publish draft or pending comments. Rejection applies only to pending submissions. Draft edits use the admin comments endpoint and preserve status; personal submission edits return 409 for drafts.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/CommentId"
@@ -2862,19 +2869,19 @@ paths:
       responses:
         "200":
           description: Review result.
-  /api/retirement-messages/comments/{commentId}/edit:
+  /api/comments/{commentId}/edit:
     get:
       tags: [Retirements]
-      summary: Get retirement comment edit payload.
+      summary: Get comment edit payload.
       parameters:
         - $ref: "#/components/parameters/CommentId"
       responses:
         "200":
           description: Comment edit payload.
-  /api/retirement-messages/comments/{commentId}:
+  /api/comments/{commentId}:
     patch:
       tags: [Retirements]
-      summary: Update retirement comment.
+      summary: Update comment.
       description: Optional submitForReview=true restricts resubmission to the owner of a pending/rejected comment and keeps it pending regardless of staff publishing permissions. Existing behavior is retained when omitted.
       parameters:
         - $ref: "#/components/parameters/CommentId"
@@ -2886,7 +2893,7 @@ paths:
               type: object
               required: [body]
               properties:
-                body: { type: string, minLength: 2, maxLength: 2000 }
+                body: { type: string, minLength: 2, maxLength: 10000 }
                 submitForReview: { type: boolean, default: false }
       responses:
         "200":
@@ -2932,21 +2939,37 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
-  /api/retirement-messages/{messageId}/comments:
+  /api/comments/on/{parentType}/{parentId}:
     get:
-      tags: [Retirements]
+      tags: [Comments]
       summary: List published comments for message.
       security: []
       parameters:
-        - $ref: "#/components/parameters/MessageId"
+        - name: parentType
+          in: path
+          required: true
+          description: A post type registered in config/comment-targets.js.
+          schema: { type: string }
+        - name: parentId
+          in: path
+          required: true
+          schema: { type: string }
       responses:
         "200":
           description: Comments.
     post:
-      tags: [Retirements]
-      summary: Create retirement comment.
+      tags: [Comments]
+      summary: Create comment.
       parameters:
-        - $ref: "#/components/parameters/MessageId"
+        - name: parentType
+          in: path
+          required: true
+          description: A post type registered in config/comment-targets.js.
+          schema: { type: string }
+        - name: parentId
+          in: path
+          required: true
+          schema: { type: string }
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
       responses:
@@ -2956,7 +2979,7 @@ paths:
     patch:
       tags: [Retirements]
       summary: Update one language of a retirement message.
-      description: Reviewers may update one translation on a pending, published, or removed (hidden) retirement message. Editing a removed message preserves its hidden status until it is explicitly restored. Its owner, including an owner who also has reviewer permissions, may update a pending or rejected message; updating a rejected message sends it back to the review queue. A public-field revision and audit entry retain the before/after values. Saved text may be empty and is limited to 10,000 characters.
+      description: Reviewers may update one translation on a draft, pending, published, or removed (hidden) retirement message, preserving its status. Owners may update pending or rejected messages; updating a rejected message sends it back to the review queue. Drafts require staff editing through this endpoint or the admin metadata endpoint, and cannot be resubmitted through the personal submission endpoint. Revision and audit history retain before/after values. Saved text may be empty and is limited to 30,000 characters.
       x-permission: canReviewAndPublish or owner of a pending or rejected message
       parameters:
         - $ref: "#/components/parameters/MessageId"
@@ -2975,7 +2998,7 @@ paths:
     patch:
       tags: [Retirements]
       summary: Review retirement-message publication.
-      description: A publish action may include a future `scheduledPublishAt` timestamp. Scheduled content stays pending until the server publishes it at that time. A `cancel-schedule` action removes the schedule and leaves the message pending.
+      description: Reviewers may publish draft or pending messages. Rejection applies only to pending submissions. A publish action may include a future `scheduledPublishAt`; scheduling and cancellation preserve the draft or pending status. Existing bilingual publication validation applies.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/MessageId"
@@ -3331,11 +3354,11 @@ components:
                   en:
                     type: string
                     minLength: 1
-                    maxLength: 10000
+                    maxLength: 30000
                   fr:
                     type: string
                     minLength: 1
-                    maxLength: 10000
+                    maxLength: 30000
     ImmediateReviewDecision:
       required: true
       content:
@@ -3391,7 +3414,7 @@ components:
                 enum: [en, fr]
               message:
                 type: string
-                maxLength: 10000
+                maxLength: 30000
     LastPostSubmission:
       required: true
       content:
@@ -3431,7 +3454,7 @@ components:
               message:
                 type: string
                 minLength: 1
-                maxLength: 10000
+                maxLength: 30000
               imageUrl:
                 type: string
                 format: uri
@@ -3458,7 +3481,7 @@ components:
                 enum: [en, fr]
               message:
                 type: string
-                maxLength: 10000
+                maxLength: 30000
     TranslationUpdate:
       required: true
       content:
@@ -3502,7 +3525,7 @@ components:
         type:
           {
             type: string,
-            enum: [event, retirementMessage, lastPost, retirementComment],
+            enum: [event, retirementMessage, lastPost, comment],
           }
         title:
           type: object

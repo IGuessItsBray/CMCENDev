@@ -45,7 +45,7 @@ const retirementMessageSchema = new mongoose.Schema(
       type: String,
       default: '',
       trim: true,
-      maxlength: 10000,
+      maxlength: 30000,
     },
 
     messageLanguage: {
@@ -58,14 +58,14 @@ const retirementMessageSchema = new mongoose.Schema(
       en: {
         type: String,
         trim: true,
-        maxlength: 10000,
+        maxlength: 30000,
         default: '',
       },
 
       fr: {
         type: String,
         trim: true,
-        maxlength: 10000,
+        maxlength: 30000,
         default: '',
       },
     },
@@ -155,7 +155,7 @@ const retirementMessageSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['pending', 'published', 'rejected', 'hidden'],
+      enum: ['draft', 'pending', 'published', 'rejected', 'hidden'],
       default: 'pending',
       index: true,
     },
@@ -221,7 +221,7 @@ const retirementMessageSchema = new mongoose.Schema(
 
     hiddenFromStatus: {
       type: String,
-      enum: ['pending', 'published', 'rejected', ''],
+      enum: ['draft', 'pending', 'published', 'rejected', ''],
       default: '',
     },
 

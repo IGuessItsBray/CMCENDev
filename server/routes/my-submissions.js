@@ -5,7 +5,11 @@ const { getUserPermissions } = require('../config/permissions');
 const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
 const LastPostMessage = require('../models/LastPostMessage');
-const RetirementComment = require('../models/RetirementComment');
+const Comment = require('../models/Comment');
+const {
+  getCommentTarget,
+  getCommentPublicUrl,
+} = require('../config/comment-targets');
 
 const router = express.Router();
 const sources = {
@@ -20,8 +24,8 @@ const sources = {
     owner: 'createdBy',
     titleFields: 'title deceased',
   },
-  retirementComment: {
-    model: RetirementComment,
+  comment: {
+    model: Comment,
     owner: 'author',
     titleFields: '',
   },
@@ -34,7 +38,7 @@ const detailFields = {
     'description location registration city provinceRegion startDate endDate timezone allDay imagePath',
   retirementMessage: 'message messageLanguage messages photoUrl',
   lastPost: 'messages imageUrl',
-  retirementComment: 'body retirementMessage',
+  comment: 'body parentType parentId',
 };
 const text = (value) => (typeof value === 'string' ? value : '');
 const localized = (value) => ({ en: text(value?.en), fr: text(value?.fr) });
@@ -296,14 +300,16 @@ router.get('/:type/:id', async (req, res) => {
         publicUrl = `/${type === 'retirementMessage' ? 'retirement-message' : 'last-post-message'}?id=${id}`;
     } else {
       content = { body: text(record.body) };
-      const parent = await RetirementMessage.exists({
-        _id: record.retirementMessage,
+      const target = getCommentTarget(record.parentType);
+      const Parent = require('../models/' + target.model);
+      const parent = await Parent.exists({
+        _id: record.parentId,
         status: 'published',
       });
       if (parent && editable)
-        editUrl = `/retirement-message?id=${record.retirementMessage}&editComment=${id}&personal=1`;
+        editUrl = `${getCommentPublicUrl(record)}&editComment=${id}&personal=1`;
       if (parent && item.status === 'published')
-        publicUrl = `/retirement-message?id=${record.retirementMessage}`;
+        publicUrl = getCommentPublicUrl(record);
     }
     res.set('Cache-Control', 'no-store').json({
       item: {

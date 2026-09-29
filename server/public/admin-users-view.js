@@ -745,7 +745,7 @@
         {
           event: translate("admin_content_type_event"),
           retirementMessage: translate("admin_content_type_post"),
-          retirementComment: translate("admin_content_type_comment"),
+          comment: translate("admin_content_type_comment"),
           lastPost: getText("admin_content_type_last_post", "Last Post notice"),
         }[post.type] || translate("admin_content_type_content");
 

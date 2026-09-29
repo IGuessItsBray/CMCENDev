@@ -231,7 +231,7 @@ app.get('/review-submissions', (req, res) => {
     events: 'event',
     retirements: 'retirementMessage',
     'last-posts': 'lastPost',
-    comments: 'retirementComment',
+    comments: 'comment',
   };
   const type = typeByLegacyTab[String(req.query.tab || '')] || 'all';
   const query = new URLSearchParams({ type, status: 'pending' });
@@ -273,6 +273,7 @@ app.use('/api/last-posts', lastPostRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/my-submissions', mySubmissionRoutes);
 app.use('/api/retirement-messages', retirementMessageRoutes);
+app.use('/api/comments', require('./routes/comments'));
 app.use('/api/certificate-requests', certificateRequestRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/search', searchRoutes);

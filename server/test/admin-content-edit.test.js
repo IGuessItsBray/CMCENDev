@@ -16,7 +16,7 @@ test('provides audited admin edit routes for every content type', () => {
     [
       '/last-posts/:lastPostId',
       '/retirement-messages/:messageId',
-      '/retirement-comments/:commentId',
+      '/comments/:commentId',
       '/news/:articleId',
       '/events/:eventId',
     ].every((path) => patchRoutes.includes(path)),
@@ -26,7 +26,7 @@ test('provides audited admin edit routes for every content type', () => {
     [
       '/events/:eventId/hide',
       '/retirement-messages/:messageId/hide',
-      '/retirement-comments/:commentId/hide',
+      '/comments/:commentId/hide',
       '/last-posts/:lastPostId/hide',
     ].every((path) => patchRoutes.includes(path)),
     true,
@@ -35,7 +35,7 @@ test('provides audited admin edit routes for every content type', () => {
     [
       '/events/:eventId',
       '/retirement-messages/:messageId',
-      '/retirement-comments/:commentId',
+      '/comments/:commentId',
       '/last-posts/:lastPostId',
     ].every((path) => deleteRoutes.includes(path)),
     true,

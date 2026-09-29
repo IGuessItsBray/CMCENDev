@@ -1502,8 +1502,8 @@ function getAdminDeleteEndpoint(post) {
     return `/api/admin/retirement-messages/${encodedId}`;
   }
 
-  if (post.type === "retirementComment") {
-    return `/api/admin/retirement-comments/${encodedId}`;
+  if (post.type === "comment") {
+    return `/api/admin/comments/${encodedId}`;
   }
 
   if (post.type === "lastPost") {

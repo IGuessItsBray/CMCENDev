@@ -1062,7 +1062,7 @@ window.ContentWorkspaceEditors = {
         retirementMessage: getRetirementDetailsFields,
         lastPost: getLastPostDetailsFields,
         newsArticle: getNewsArticleDetailsFields,
-        retirementComment: () => [
+        comment: () => [
           createWorkspaceEditorField({
             field: "body",
             label: "Comment",
@@ -1086,10 +1086,7 @@ window.ContentWorkspaceEditors = {
         ],
         lastPost: ["content_workspace_last_post_details", "Last Post details"],
         newsArticle: ["content_workspace_news_details", "Article details"],
-        retirementComment: [
-          "content_workspace_comment_details",
-          "Comment details",
-        ],
+        comment: ["content_workspace_comment_details", "Comment details"],
       }[item.type];
       setWorkspaceTranslatedText(heading, ...headingByType);
 
@@ -1560,7 +1557,7 @@ window.ContentWorkspaceEditors = {
         );
       }
 
-      if (item.type === "retirementComment") {
+      if (["comment"].includes(item.type)) {
         body.append(
           createWorkspaceSubmissionSection(
             "review_submitter_record",
@@ -1569,7 +1566,9 @@ window.ContentWorkspaceEditors = {
               {
                 labelKey: "submitted_by",
                 label: "Submitted by",
-                value: getWorkspaceUserName(content.author),
+                value: content.author
+                  ? getWorkspaceUserName(content.author)
+                  : content.legacyAuthorName,
               },
               {
                 labelKey: "email",
@@ -1716,7 +1715,7 @@ window.ContentWorkspaceEditors = {
         };
       }
 
-      if (item.type === "retirementComment") {
+      if (["comment"].includes(item.type)) {
         return { body: String(formData.get("body") || "") };
       }
 

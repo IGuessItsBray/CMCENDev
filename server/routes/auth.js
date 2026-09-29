@@ -6,7 +6,7 @@ const speakeasy = require('speakeasy');
 const User = require('../models/User');
 const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
-const RetirementComment = require('../models/RetirementComment');
+const Comment = require('../models/Comment');
 const LastPostMessage = require('../models/LastPostMessage');
 const EmailUnsubscribeToken = require('../models/EmailUnsubscribeToken');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
@@ -1593,7 +1593,7 @@ router.delete(
           { createdBy: userId },
           { $set: { createdBy: null } },
         ),
-        RetirementComment.updateMany(
+        Comment.updateMany(
           { author: userId },
           { $set: { author: null } },
         ),

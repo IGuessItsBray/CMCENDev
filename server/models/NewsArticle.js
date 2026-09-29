@@ -38,6 +38,8 @@ const NewsArticleSchema = new mongoose.Schema(
       fr: { type: [mongoose.Schema.Types.Mixed], default: [] },
     },
     migrationSource: { type: String, default: undefined },
+    // Original source IDs are separate from this document's MongoDB identity.
+    legacy: { type: mongoose.Schema.Types.Mixed, default: undefined },
     title: {
       type: LocalizedTextSchema,
       required: true,

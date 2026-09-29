@@ -37,7 +37,7 @@ const MediaAsset = require('../../models/MediaAsset');
 const NewsArticle = require('../../models/NewsArticle');
 const Page = require('../../models/Page');
 const ProfessionalAward = require('../../models/ProfessionalAward');
-const RetirementComment = require('../../models/RetirementComment');
+const Comment = require('../../models/Comment');
 const RetirementMessage = require('../../models/RetirementMessage');
 const Role = require('../../models/Role');
 const User = require('../../models/User');
@@ -319,19 +319,20 @@ describe('personal submissions', () => {
       ...base,
       _id: new mongoose.Types.ObjectId(),
       author: owner._id,
-      retirementMessage: retirement._id,
+      parentType: 'retirement',
+      parentId: retirement._id,
       body: 'My comment',
     };
     delete comment.createdBy;
     await Event.collection.insertOne(event);
     await RetirementMessage.collection.insertOne(retirement);
     await LastPostMessage.collection.insertOne(lastPost);
-    await RetirementComment.collection.insertOne(comment);
+    await Comment.collection.insertOne(comment);
     return {
       event,
       retirementMessage: retirement,
       lastPost,
-      retirementComment: comment,
+      comment: comment,
     };
   }
 
@@ -407,7 +408,7 @@ describe('personal submissions', () => {
         event: Event,
         retirementMessage: RetirementMessage,
         lastPost: LastPostMessage,
-        retirementComment: RetirementComment,
+        comment: Comment,
       }[type];
       await model.updateOne(
         { _id: record._id },
@@ -456,7 +457,7 @@ describe('personal submissions', () => {
       .expect(200);
     assert.deepEqual(
       pending.body.items.map((item) => item.type),
-      ['retirementComment'],
+      ['comment'],
     );
     const scheduled = await request(app)
       .get('/api/my-submissions?type=event&status=scheduled')
@@ -496,9 +497,7 @@ describe('personal submissions', () => {
       { $set: { status: 'hidden' } },
     );
     const comment = await request(app)
-      .get(
-        `/api/my-submissions/retirementComment/${fixtures.retirementComment._id}`,
-      )
+      .get(`/api/my-submissions/comment/${fixtures.comment._id}`)
       .set('Authorization', auth)
       .expect(200);
     assert.equal(comment.body.item.editUrl, null);
@@ -581,7 +580,7 @@ describe('personal submissions', () => {
     const staff = await createUser({ role: 'administrator' });
     const other = await createUser({ role: 'administrator' });
     const fixtures = await seed(staff);
-    const url = `/api/retirement-messages/comments/${fixtures.retirementComment._id}`;
+    const url = `/api/comments/${fixtures.comment._id}`;
     await request(app)
       .patch(url)
       .set('Authorization', tokenFor(other))
@@ -597,9 +596,7 @@ describe('personal submissions', () => {
       .set('Authorization', tokenFor(staff))
       .send({ body: 'Correction', submitForReview: true })
       .expect(200);
-    let comment = await RetirementComment.findById(
-      fixtures.retirementComment._id,
-    ).lean();
+    let comment = await Comment.findById(fixtures.comment._id).lean();
     assert.equal(comment.status, 'pending');
     assert.equal(comment.reviewedBy, null);
     assert.equal(comment.publishedBy ?? null, null);
@@ -611,7 +608,7 @@ describe('personal submissions', () => {
       }),
       1,
     );
-    await RetirementComment.updateOne(
+    await Comment.updateOne(
       { _id: comment._id },
       { $set: { status: 'published' } },
     );
@@ -625,7 +622,7 @@ describe('personal submissions', () => {
       .set('Authorization', tokenFor(staff))
       .send({ body: 'Normal staff edit' })
       .expect(200);
-    comment = await RetirementComment.findById(comment._id).lean();
+    comment = await Comment.findById(comment._id).lean();
     assert.equal(comment.status, 'published');
   });
 });
@@ -2574,6 +2571,644 @@ describe('news stories', () => {
   });
 });
 
+describe('unified comments', () => {
+  test('account deletion removes comments on all of the deleted member posts', async () => {
+    const admin = await createUser({ role: 'administrator' });
+    const session = await login(admin);
+    const secret = speakeasy.generateSecret().base32;
+    await User.updateOne(
+      { _id: admin._id },
+      { $set: { totp: { enabled: true, secret } } },
+    );
+    const member = await createUser();
+    const parent = await LastPostMessage.collection.insertOne({
+      createdBy: member._id,
+    });
+    const comment = await Comment.create({
+      parentType: 'lastPost',
+      parentId: parent.insertedId,
+      body: 'Another member comment',
+      author: admin._id,
+    });
+    await request(app)
+      .delete(`/api/admin/users/${member._id}`)
+      .set('Authorization', bearer(session.body.token))
+      .send({
+        contentDisposition: 'delete_all',
+        mfaCode: speakeasy.totp({ secret, encoding: 'base32' }),
+      })
+      .expect(200);
+    assert.equal(await Comment.findById(comment._id), null);
+  });
+  test('combines registered parent types and filters any checked subset', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const session = await login(editor);
+    const token = bearer(session.body.token);
+    const records = await Comment.create(
+      ['retirement', 'lastPost'].map((parentType) => ({
+        parentType,
+        parentId: new mongoose.Types.ObjectId(),
+        body: 'Comment for filter coverage.',
+      })),
+    );
+    const all = await request(app)
+      .get('/api/admin/content?type=comment')
+      .set('Authorization', token)
+      .expect(200);
+    assert.equal(all.body.items.length, 2);
+    assert.deepEqual(
+      all.body.commentTypes.map((type) => type.value),
+      ['retirement', 'lastPost'],
+    );
+    for (const record of records) {
+      const one = await request(app)
+        .get(`/api/admin/content?type=comment&parentTypes=${record.parentType}`)
+        .set('Authorization', token)
+        .expect(200);
+      assert.deepEqual(
+        one.body.items.map((item) => item._id),
+        [String(record._id)],
+      );
+    }
+    const none = await request(app)
+      .get('/api/admin/content?type=comment&parentTypes=')
+      .set('Authorization', token)
+      .expect(200);
+    assert.equal(none.body.items.length, 0);
+    await request(app)
+      .get('/api/admin/content?type=comment&parentTypes=User')
+      .set('Authorization', token)
+      .expect(400);
+    const counts = await request(app)
+      .get('/api/admin/review-counts')
+      .set('Authorization', token)
+      .expect(200);
+    assert.equal(counts.body.comments, 2);
+    await request(app).get('/api/comments/on/User/abc').expect(400);
+    await request(app)
+      .get('/api/last-posts/comments/review')
+      .set('Authorization', token)
+      .expect(404);
+    await request(app)
+      .get('/api/retirement-messages/comments/review')
+      .set('Authorization', token)
+      .expect(404);
+  });
+
+  test('consolidation preserves IDs and complete records, is repeatable, and refuses conflicts', async () => {
+    const {
+      consolidateComments,
+    } = require('../../scripts/migration/consolidate-comments');
+    const db = mongoose.connection.db;
+    const original = {
+      _id: new mongoose.Types.ObjectId(),
+      retirementMessage: new mongoose.Types.ObjectId(),
+      author: new mongoose.Types.ObjectId(),
+      body: 'Original complete comment.',
+      status: 'published',
+      createdAt: new Date('2020-01-01'),
+      publishedAt: new Date('2020-01-02'),
+      legacy: { wordpressCommentId: 45 },
+    };
+    await mongoose.connection
+      .collection('retirementcomments')
+      .insertOne(original);
+    const lastPost = {
+      ...original,
+      _id: new mongoose.Types.ObjectId(),
+      lastPostMessage: original.retirementMessage,
+      author: null,
+    };
+    delete lastPost.retirementMessage;
+    await mongoose.connection
+      .collection('lastpostcomments')
+      .insertOne(lastPost);
+    await mongoose.connection
+      .collection('contentrevisions')
+      .insertOne({ contentType: 'retirementComment', contentId: original._id });
+    assert.equal((await consolidateComments(db)).create, 2);
+    assert.equal(await Comment.countDocuments(), 0);
+    assert.equal(
+      (await consolidateComments(db, { apply: true })).applied,
+      true,
+    );
+    const copied = await db
+      .collection('comments')
+      .findOne({ _id: original._id });
+    const { retirementMessage, ...kept } = original;
+    assert.deepEqual(copied, {
+      ...kept,
+      parentType: 'retirement',
+      parentId: retirementMessage,
+    });
+    assert.equal((await consolidateComments(db)).existing, 2);
+    assert.equal(await db.collection('retirementcomments').countDocuments(), 1);
+    assert.equal(
+      (
+        await db
+          .collection('contentrevisions')
+          .findOne({ contentId: original._id })
+      ).contentType,
+      'comment',
+    );
+    await Comment.updateOne(
+      { _id: original._id },
+      { $set: { body: 'Subsequent staff correction.' } },
+    );
+    await assert.rejects(
+      consolidateComments(db, { apply: true }),
+      /refusing to overwrite/,
+    );
+    assert.equal(
+      (await Comment.findById(original._id)).body,
+      'Subsequent staff correction.',
+    );
+  });
+});
+
+describe('Last Post comment moderation', () => {
+  async function setup() {
+    const editor = await createUser({ role: 'editor' });
+    const member = await createUser({ role: 'subscriber' });
+    const editorSession = await login(editor);
+    const memberSession = await login(member);
+    const parent = await LastPostMessage.create({
+      submitter: {
+        rank: 'Captain',
+        firstName: 'Source',
+        lastName: 'Member',
+        email: 'source@example.test',
+      },
+      deceased: {
+        fullRank: 'Sergeant',
+        firstName: 'Archived',
+        surname: 'Notice',
+      },
+      messages: { en: 'Archived notice.', fr: 'Avis archivé.' },
+      messageLanguage: 'en',
+      status: 'draft',
+    });
+    const legacy = {
+      wordpressCommentId: 123,
+      authorName: 'Legacy Guest',
+      authorEmail: 'private@example.test',
+    };
+    const comment = await Comment.create({
+      parentType: 'lastPost',
+      parentId: parent._id,
+      body: 'Preserved original comment.',
+      status: 'draft',
+      legacy,
+    });
+    return {
+      editor,
+      member,
+      parent,
+      comment,
+      legacy,
+      token: bearer(editorSession.body.token),
+      memberToken: bearer(memberSession.body.token),
+    };
+  }
+
+  test('lists guest drafts in the workspace, protects details, and records staff corrections', async () => {
+    const { comment, legacy, token, memberToken } = await setup();
+    const edit = await request(app)
+      .get(`/api/comments/${comment._id}/edit`)
+      .set('Authorization', token)
+      .expect(200);
+    assert.equal(edit.body.comment.parentId, String(comment.parentId));
+    const path = `/api/admin/comments/${comment._id}`;
+    await request(app).get('/api/admin/content?type=comment').expect(401);
+    await request(app)
+      .get('/api/admin/content?type=comment')
+      .set('Authorization', memberToken)
+      .expect(403);
+    const listing = await request(app)
+      .get('/api/admin/content?type=comment&status=draft')
+      .set('Authorization', token)
+      .expect(200);
+    assert.equal(listing.body.items.length, 1);
+    const item = listing.body.items[0];
+    assert.equal(item.type, 'comment');
+    assert.equal(item.content.author, null);
+    assert.equal(item.content.legacyAuthorName, 'Legacy Guest');
+    assert.ok(item.content.parentTitle.includes('Archived Notice'));
+    assert.ok(!JSON.stringify(listing.body).includes('private@example.test'));
+    const filtered = await request(app)
+      .get('/api/admin/content?type=comment&translation=missing-any')
+      .set('Authorization', token)
+      .expect(200);
+    assert.equal(filtered.body.items.length, 0);
+    await request(app)
+      .patch(path)
+      .send({ body: 'Changed comment' })
+      .expect(401);
+    await request(app)
+      .patch(path)
+      .set('Authorization', memberToken)
+      .send({ body: 'Changed comment' })
+      .expect(403);
+    await request(app)
+      .patch(path)
+      .set('Authorization', token)
+      .send({ body: 'x'.repeat(10001) })
+      .expect(400);
+    await request(app)
+      .patch(path)
+      .set('Authorization', token)
+      .send({
+        body: 'Corrected comment',
+        status: 'published',
+        author: 'a'.repeat(24),
+      })
+      .expect(200);
+    const saved = await Comment.findById(comment._id).select('+lastEditedAt');
+    assert.equal(saved.status, 'draft');
+    assert.equal(saved.author, null);
+    assert.deepEqual(saved.legacy, legacy);
+    assert.ok(saved.lastEditedAt);
+    const revisions = await request(app)
+      .get(`/api/admin/content/comment/${comment._id}/revisions`)
+      .set('Authorization', token)
+      .expect(200);
+    assert.ok(
+      JSON.stringify(revisions.body).includes('Preserved original comment.'),
+    );
+    assert.ok(JSON.stringify(revisions.body).includes('Corrected comment'));
+    assert.ok(
+      await AuditLog.exists({
+        target: comment._id,
+        targetType: 'comment',
+      }),
+    );
+  });
+
+  test('reviews pending comments and publishes drafts without scheduling or repeated decisions', async () => {
+    const { comment, parent, token, memberToken } = await setup();
+    const pending = await Comment.create({
+      parentType: 'lastPost',
+      parentId: parent._id,
+      body: 'Pending comment.',
+    });
+    const queue = await request(app)
+      .get('/api/comments/review')
+      .set('Authorization', token)
+      .expect(200);
+    assert.deepEqual(
+      queue.body.comments.map((c) => c._id),
+      [String(pending._id)],
+    );
+    const counts = await request(app)
+      .get('/api/admin/review-counts')
+      .set('Authorization', token)
+      .expect(200);
+    assert.equal(counts.body.comments, 1);
+
+    await request(app)
+      .get('/api/comments/review?status=invalid')
+      .set('Authorization', token)
+      .expect(400);
+    const path = `/api/comments/${comment._id}/review`;
+    await request(app).patch(path).send({ action: 'publish' }).expect(401);
+    await request(app)
+      .patch(path)
+      .set('Authorization', memberToken)
+      .send({ action: 'publish' })
+      .expect(403);
+    await request(app)
+      .patch(path)
+      .set('Authorization', token)
+      .send({ action: 'reject', rejectionReason: 'Not pending' })
+      .expect(409);
+    await request(app)
+      .patch(path)
+      .set('Authorization', token)
+      .send({ action: 'publish', scheduledPublishAt: new Date().toISOString() })
+      .expect(400);
+    await request(app)
+      .patch(path)
+      .set('Authorization', token)
+      .send({ action: 'publish' })
+      .expect(200);
+    await request(app)
+      .patch(path)
+      .set('Authorization', token)
+      .send({ action: 'publish' })
+      .expect(409);
+    const published = await Comment.findById(comment._id);
+    assert.equal(published.status, 'published');
+    assert.equal(published.author, null);
+    assert.ok(published.publishedBy && published.publishedAt);
+    const pendingPath = `/api/comments/${pending._id}/review`;
+    await request(app)
+      .patch(pendingPath)
+      .set('Authorization', token)
+      .send({ action: 'reject' })
+      .expect(400);
+    await request(app)
+      .patch(pendingPath)
+      .set('Authorization', token)
+      .send({ action: 'reject', rejectionReason: 'x'.repeat(2001) })
+      .expect(400);
+    await request(app)
+      .patch(pendingPath)
+      .set('Authorization', token)
+      .send({ action: 'reject', rejectionReason: 'Duplicate' })
+      .expect(200);
+    assert.equal((await Comment.findById(pending._id)).status, 'rejected');
+    assert.ok(
+      await AuditLog.exists({
+        action: 'content.published',
+        target: comment._id,
+        targetType: 'comment',
+      }),
+    );
+    assert.ok(
+      await AuditLog.exists({
+        action: 'content.rejected',
+        target: pending._id,
+      }),
+    );
+    await request(app)
+      .patch('/api/comments/invalid/review')
+      .set('Authorization', token)
+      .send({ action: 'publish' })
+      .expect(400);
+    const invalid = await Comment.collection.insertOne({
+      parentType: 'lastPost',
+      parentId: parent._id,
+      body: 'x',
+      status: 'draft',
+    });
+    await request(app)
+      .patch(`/api/comments/${invalid.insertedId}/review`)
+      .set('Authorization', token)
+      .send({ action: 'publish' })
+      .expect(400);
+    assert.equal((await Comment.findById(invalid.insertedId)).status, 'draft');
+  });
+
+  test('hides and restores drafts with permissions, and deletes comments with their parent', async () => {
+    const { comment, parent, token, memberToken } = await setup();
+    const path = `/api/admin/comments/${comment._id}`;
+    await request(app)
+      .patch(`${path}/hide`)
+      .set('Authorization', memberToken)
+      .send({})
+      .expect(403);
+    await request(app)
+      .patch(`${path}/hide`)
+      .set('Authorization', token)
+      .send({})
+      .expect(200);
+    assert.equal((await Comment.findById(comment._id)).status, 'hidden');
+    await request(app)
+      .patch(`${path}/restore`)
+      .set('Authorization', token)
+      .send({})
+      .expect(200);
+    assert.equal((await Comment.findById(comment._id)).status, 'draft');
+    await request(app)
+      .delete(path)
+      .set('Authorization', memberToken)
+      .expect(403);
+    const admin = await createUser({ role: 'administrator' });
+    const adminSession = await login(admin);
+    const adminToken = bearer(adminSession.body.token);
+    await request(app)
+      .delete(path)
+      .set('Authorization', adminToken)
+      .expect(200);
+    assert.equal(await Comment.findById(comment._id), null);
+    assert.ok(
+      await AuditLog.exists({ action: 'content.deleted', target: comment._id }),
+    );
+    const attached = await Comment.create({
+      parentType: 'lastPost',
+      parentId: parent._id,
+      body: 'Attached comment.',
+    });
+    const unrelated = await Comment.create({
+      parentType: 'lastPost',
+      parentId: new mongoose.Types.ObjectId(),
+      body: 'Other comment.',
+    });
+    await request(app)
+      .delete(`/api/admin/last-posts/${parent._id}`)
+      .set('Authorization', adminToken)
+      .expect(200);
+    assert.equal(await Comment.findById(attached._id), null);
+    assert.ok(await Comment.findById(unrelated._id));
+  });
+});
+
+describe('archival draft lifecycle', () => {
+  for (const kind of ['retirement', 'last-post']) {
+    test(`${kind} drafts stay out of approval queues and support staff editing and publication`, async () => {
+      const owner = await createUser({ role: 'contributor' });
+      const editor = await createUser({ role: 'editor' });
+      const ownerSession = await login(owner);
+      const editorSession = await login(editor);
+      const ownerToken = bearer(ownerSession.body.token);
+      const editorToken = bearer(editorSession.body.token);
+      const isRetirement = kind === 'retirement';
+      const base = isRetirement
+        ? '/api/retirement-messages'
+        : '/api/last-posts';
+      const Model = isRetirement ? RetirementMessage : LastPostMessage;
+      await request(app)
+        .post(base)
+        .set('Authorization', ownerToken)
+        .send(
+          isRetirement
+            ? retirementPayload()
+            : {
+                deceased: {
+                  fullRank: 'Sergeant',
+                  firstName: 'Draft',
+                  surname: 'Notice',
+                },
+                messageLanguage: 'en',
+                message: 'A notice awaiting archival curation.',
+                publicationPermissionConfirmed: true,
+              },
+        )
+        .expect(201);
+      const record = await Model.findOne({ createdBy: owner._id });
+      assert.equal(record.status, 'pending');
+      record.status = 'draft';
+      await record.save();
+      const path = `${base}/${record._id}`;
+      await request(app).get(path).expect(404);
+      await request(app)
+        .patch(`${path}/review`)
+        .send({ action: 'publish' })
+        .expect(401);
+      await request(app)
+        .patch(`${path}/review`)
+        .set('Authorization', ownerToken)
+        .send({ action: 'publish' })
+        .expect(403);
+      await request(app)
+        .patch(path)
+        .set('Authorization', ownerToken)
+        .send({ submitForReview: true })
+        .expect(409);
+      await request(app)
+        .patch(`${path}/review-content`)
+        .set('Authorization', ownerToken)
+        .send({
+          language: 'en',
+          message: 'Owner must not submit an archival draft.',
+        })
+        .expect(409);
+      await request(app)
+        .patch(`${path}/review-content`)
+        .set('Authorization', editorToken)
+        .send({
+          language: 'fr',
+          message: 'Avis français conservé pour la révision.',
+        })
+        .expect(200);
+      assert.equal((await Model.findById(record._id)).status, 'draft');
+      const queue = await request(app)
+        .get(`${base}/review`)
+        .set('Authorization', editorToken)
+        .expect(200);
+      assert.ok(!JSON.stringify(queue.body).includes(String(record._id)));
+      const workspace = await request(app)
+        .get('/api/admin/content')
+        .query({
+          status: 'draft',
+          type: isRetirement ? 'retirementMessage' : 'lastPost',
+        })
+        .set('Authorization', editorToken)
+        .expect(200);
+      assert.ok(JSON.stringify(workspace.body).includes(String(record._id)));
+      await request(app)
+        .patch(`${base.replace('/api/', '/api/admin/')}/${record._id}/hide`)
+        .set('Authorization', editorToken)
+        .send({})
+        .expect(200);
+      await request(app)
+        .patch(`${base.replace('/api/', '/api/admin/')}/${record._id}/restore`)
+        .set('Authorization', editorToken)
+        .send({})
+        .expect(200);
+      assert.equal((await Model.findById(record._id)).status, 'draft');
+      await request(app)
+        .patch(`${path}/review`)
+        .set('Authorization', editorToken)
+        .send({ action: 'reject', rejectionReason: 'Not a submission' })
+        .expect(409);
+      const scheduledPublishAt = new Date(Date.now() + 3600000);
+      await request(app)
+        .patch(`${path}/review`)
+        .set('Authorization', editorToken)
+        .send({
+          action: 'publish',
+          scheduledPublishAt: scheduledPublishAt.toISOString(),
+        })
+        .expect(200);
+      assert.equal((await Model.findById(record._id)).status, 'draft');
+      const scheduledWorkspace = await request(app)
+        .get('/api/admin/content')
+        .query({
+          status: 'scheduled',
+          type: isRetirement ? 'retirementMessage' : 'lastPost',
+        })
+        .set('Authorization', editorToken)
+        .expect(200);
+      assert.ok(
+        JSON.stringify(scheduledWorkspace.body).includes(String(record._id)),
+      );
+      const unscheduledWorkspace = await request(app)
+        .get('/api/admin/content')
+        .query({
+          status: 'draft',
+          type: isRetirement ? 'retirementMessage' : 'lastPost',
+        })
+        .set('Authorization', editorToken)
+        .expect(200);
+      assert.ok(
+        !JSON.stringify(unscheduledWorkspace.body).includes(String(record._id)),
+      );
+      await request(app)
+        .patch(`${path}/review`)
+        .set('Authorization', editorToken)
+        .send({ action: 'cancel-schedule' })
+        .expect(200);
+      await publishDueContent(new Date(scheduledPublishAt.getTime() + 1));
+      assert.equal((await Model.findById(record._id)).status, 'draft');
+      await request(app)
+        .patch(`${path}/review`)
+        .set('Authorization', editorToken)
+        .send({
+          action: 'publish',
+          scheduledPublishAt: scheduledPublishAt.toISOString(),
+        })
+        .expect(200);
+      await publishDueContent(new Date(scheduledPublishAt.getTime() + 1));
+      assert.equal((await Model.findById(record._id)).status, 'published');
+      await request(app).get(path).expect(200);
+      assert.ok(
+        await AuditLog.exists({
+          action: 'content.published',
+          target: record._id,
+        }),
+      );
+    });
+  }
+
+  test('retirement comment drafts can be corrected and explicitly published by staff', async () => {
+    const owner = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const ownerSession = await login(owner);
+    const editorSession = await login(editor);
+    const token = bearer(editorSession.body.token);
+    const comment = await Comment.create({
+      parentType: 'retirement',
+      parentId: new mongoose.Types.ObjectId(),
+      author: owner._id,
+      body: 'Original archival comment.',
+      status: 'draft',
+    });
+    const path = `/api/comments/${comment._id}`;
+    await request(app)
+      .patch(path)
+      .set('Authorization', bearer(ownerSession.body.token))
+      .send({ body: 'Owner edit' })
+      .expect(409);
+    await request(app)
+      .patch(`${path}/review`)
+      .send({ action: 'publish' })
+      .expect(401);
+    await request(app)
+      .patch(`${path}/review`)
+      .set('Authorization', bearer(ownerSession.body.token))
+      .send({ action: 'publish' })
+      .expect(403);
+    await request(app)
+      .patch(`/api/admin/comments/${comment._id}`)
+      .set('Authorization', token)
+      .send({ body: 'Corrected archival comment.' })
+      .expect(200);
+    assert.equal((await Comment.findById(comment._id)).status, 'draft');
+    await request(app)
+      .patch(`${path}/review`)
+      .set('Authorization', token)
+      .send({ action: 'reject', rejectionReason: 'Not a submission' })
+      .expect(409);
+    await request(app)
+      .patch(`${path}/review`)
+      .set('Authorization', token)
+      .send({ action: 'publish' })
+      .expect(200);
+    assert.equal((await Comment.findById(comment._id)).status, 'published');
+  });
+});
+
 describe('retirement message lifecycle', () => {
   test('lets guests search and filter only published retirement messages', async () => {
     const first = await submitAndPublishRetirement();
@@ -4233,14 +4868,15 @@ describe('event, page, and comment workflows', () => {
       null,
     );
 
-    const comment = await RetirementComment.create({
-      retirementMessage: retirementMessage._id,
+    const comment = await Comment.create({
+      parentType: 'retirement',
+      parentId: retirementMessage._id,
       author: contributor._id,
       body: 'A retirement comment that must be published immediately.',
       status: 'pending',
     });
     await request(app)
-      .patch(`/api/retirement-messages/comments/${comment._id}/review`)
+      .patch(`/api/comments/${comment._id}/review`)
       .set('Authorization', bearer(editorSession.body.token))
       .send(scheduleBody)
       .expect(400);
@@ -4642,8 +5278,9 @@ describe('event, page, and comment workflows', () => {
       publicationConsent: { confirmed: true, confirmedAt: now },
       memberReviewConfirmation: { confirmed: true, confirmedAt: now },
     });
-    const retirementComment = await RetirementComment.create({
-      retirementMessage: retirementMessage._id,
+    const comment = await Comment.create({
+      parentType: 'retirement',
+      parentId: retirementMessage._id,
       author: editor._id,
       body: 'Published retirement comment before a staff correction.',
       status: 'published',
@@ -4714,7 +5351,7 @@ describe('event, page, and comment workflows', () => {
       })
       .expect(200);
     await request(app)
-      .patch(`/api/admin/retirement-comments/${retirementComment._id}`)
+      .patch(`/api/admin/comments/${comment._id}`)
       .set('Authorization', bearer(editorSession.body.token))
       .send({ body: commentCorrection })
       .expect(200);
@@ -4765,12 +5402,7 @@ describe('event, page, and comment workflows', () => {
       .get('/api/admin/content?status=published&limit=100')
       .set('Authorization', bearer(editorSession.body.token))
       .expect(200);
-    for (const record of [
-      event,
-      retirementMessage,
-      lastPost,
-      retirementComment,
-    ]) {
+    for (const record of [event, retirementMessage, lastPost, comment]) {
       const item = workspace.body.items.find(
         (item) => item._id === String(record._id),
       );
@@ -4825,9 +5457,9 @@ describe('event, page, and comment workflows', () => {
     assert.equal(Object.hasOwn(workspaceEvent.content, 'submitter'), true);
     assert.equal(workspaceEvent.content.submitter.email, 'events@example.test');
     const workspaceComment = workspace.body.items.find(
-      (item) => String(item._id) === String(retirementComment._id),
+      (item) => String(item._id) === String(comment._id),
     );
-    assert.equal(workspaceComment.type, 'retirementComment');
+    assert.equal(workspaceComment.type, 'comment');
     assert.equal(workspaceComment.content.body, commentCorrection);
     assert.equal(workspaceComment.content.author.email, editor.email);
 
@@ -4883,7 +5515,7 @@ describe('event, page, and comment workflows', () => {
     );
 
     const commentTranslationWorkspace = await request(app)
-      .get('/api/admin/content?type=retirementComment&translation=missing-any')
+      .get('/api/admin/content?type=comment&translation=missing-any')
       .set('Authorization', bearer(editorSession.body.token))
       .expect(200);
     assert.equal(commentTranslationWorkspace.body.items.length, 0);
@@ -4964,7 +5596,7 @@ describe('event, page, and comment workflows', () => {
     assert.equal(staffEditAudits, 3);
     const commentEditAudit = await AuditLog.findOne({
       action: 'content.admin_updated',
-      target: retirementComment._id,
+      target: comment._id,
     }).lean();
     assert.deepEqual(commentEditAudit.metadata.fields, ['body']);
   });
@@ -5011,7 +5643,7 @@ describe('event, page, and comment workflows', () => {
     await request(app)
       .patch(path)
       .set('Authorization', bearer(editorSession.body.token))
-      .send({ language: 'fr', message: 'a'.repeat(10001) })
+      .send({ language: 'fr', message: 'a'.repeat(30001) })
       .expect(400);
     const revisions = await ContentRevision.find({
       contentId: message._id,
@@ -5680,7 +6312,7 @@ describe('event, page, and comment workflows', () => {
     const authorSession = await login(author);
 
     const pending = await request(app)
-      .post(`/api/retirement-messages/${message._id}/comments`)
+      .post(`/api/comments/on/retirement/${message._id}`)
       .set('Authorization', bearer(subscriberSession.body.token))
       .send({ body: 'A pending integration comment.' })
       .expect(201);
@@ -5688,20 +6320,17 @@ describe('event, page, and comment workflows', () => {
     assert.equal(pending.body.comment, null);
 
     const published = await request(app)
-      .post(`/api/retirement-messages/${message._id}/comments`)
+      .post(`/api/comments/on/retirement/${message._id}`)
       .set('Authorization', bearer(authorSession.body.token))
       .send({ body: 'An immediately published integration comment.' })
       .expect(201);
     assert.equal(published.body.status, 'published');
 
     const publicComments = await request(app)
-      .get(`/api/retirement-messages/${message._id}/comments`)
+      .get(`/api/comments/on/retirement/${message._id}`)
       .expect(200);
     assert.equal(publicComments.body.comments.length, 1);
-    assert.equal(
-      await RetirementComment.countDocuments({ status: 'pending' }),
-      1,
-    );
+    assert.equal(await Comment.countDocuments({ status: 'pending' }), 1);
   });
 
   test('keeps profile and submission feedback available without notification APIs', async () => {
@@ -5713,8 +6342,9 @@ describe('event, page, and comment workflows', () => {
       { _id: subscriber._id },
       { $set: { notificationState: { lastReadAt: new Date() } } },
     );
-    const comment = await RetirementComment.create({
-      retirementMessage: message._id,
+    const comment = await Comment.create({
+      parentType: 'retirement',
+      parentId: message._id,
       author: subscriber._id,
       body: 'Please correct this rejected integration comment.',
       status: 'rejected',
@@ -5738,18 +6368,18 @@ describe('event, page, and comment workflows', () => {
       .send({ readThrough: new Date().toISOString() })
       .expect(404);
     const detail = await request(app)
-      .get('/api/my-submissions/retirementComment/' + comment._id)
+      .get('/api/my-submissions/comment/' + comment._id)
       .set('Authorization', bearer(session.body.token))
       .expect(200);
     assert.equal(detail.body.item.status, 'rejected');
     assert.equal(detail.body.item.feedback, 'Add the missing context.');
     assert.match(detail.body.item.editUrl, /editComment=/);
     await request(app)
-      .patch('/api/retirement-messages/comments/' + comment._id)
+      .patch('/api/comments/' + comment._id)
       .set('Authorization', bearer(session.body.token))
       .send({ body: 'Corrected context for review.', submitForReview: true })
       .expect(200);
-    const saved = await RetirementComment.findById(comment._id).lean();
+    const saved = await Comment.findById(comment._id).lean();
     assert.equal(saved.status, 'pending');
     assert.equal(saved.rejectionReason, '');
   });

@@ -1,3 +1,4 @@
+const { getCommentParentTitle } = require('../config/comment-targets');
 function getEventTitle(event) {
   return event.title?.en || event.title?.fr || 'Untitled event';
 }
@@ -20,15 +21,6 @@ function getRetirementMessageTitle(message) {
     .join(' ');
 
   return name ? `Retirement message for ${name}` : 'Retirement message';
-}
-
-function getRetirementCommentTitle(comment) {
-  const retiree = comment.retirementMessage?.retiree;
-  const name = [retiree?.rank, retiree?.firstName, retiree?.lastName]
-    .filter(Boolean)
-    .join(' ');
-
-  return name ? `Retirement comment for ${name}` : 'Retirement comment';
 }
 
 function getLastPostMessageTitle(message) {
@@ -60,27 +52,22 @@ function getLastPostMessageSnapshot(message) {
   };
 }
 
-function getRetirementCommentSnapshot(comment, options = {}) {
-  const { includeBody = false, includeRetirementMessageTitle = false } =
-    options;
-  const snapshot = {
-    title: includeRetirementMessageTitle
-      ? getRetirementCommentTitle(comment)
-      : 'Retirement comment',
+function getCommentTitle(comment) {
+  const title = getCommentParentTitle(comment);
+  return title ? `Comment on ${title}` : 'Comment';
+}
+function getCommentSnapshot(comment, { includeBody = false } = {}) {
+  return {
+    title: getCommentTitle(comment),
     status: comment.status,
     author: comment.author,
-    retirementMessage: comment.retirementMessage,
+    parentType: comment.parentType,
+    parentId: comment.parentId,
     publishedBy: comment.publishedBy,
     excerpt: String(comment.body || '').slice(0, 240),
+    ...(includeBody ? { body: String(comment.body || '') } : {}),
   };
-
-  if (includeBody) {
-    snapshot.body = String(comment.body || '');
-  }
-
-  return snapshot;
 }
-
 function getCertificateRequestSnapshot(certificateRequest) {
   const member = certificateRequest.member || {};
   const fullName = String(member.fullName || '').trim();
@@ -97,13 +84,13 @@ function getCertificateRequestSnapshot(certificateRequest) {
 }
 
 module.exports = {
+  getCommentSnapshot,
+  getCommentTitle,
   getCertificateRequestSnapshot,
   getEventSnapshot,
   getEventTitle,
   getLastPostMessageSnapshot,
   getLastPostMessageTitle,
-  getRetirementCommentSnapshot,
-  getRetirementCommentTitle,
   getRetirementMessageSnapshot,
   getRetirementMessageTitle,
 };

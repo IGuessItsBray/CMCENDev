@@ -237,9 +237,9 @@ router.post(
         });
       }
 
-      if (message.length > 10000) {
+      if (message.length > 30000) {
         return res.status(400).json({
-          error: 'The Last Post notice must be 10000 characters or fewer',
+          error: 'The Last Post notice must be 30000 characters or fewer',
         });
       }
 
@@ -426,7 +426,8 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
     const canSubmitterEdit =
       isOwner && ['pending', 'rejected'].includes(lastPost.status);
     const canReviewerEdit =
-      canReview && ['pending', 'published', 'hidden'].includes(lastPost.status);
+      canReview &&
+      ['draft', 'pending', 'published', 'hidden'].includes(lastPost.status);
     const wasRejected = isOwner && lastPost.status === 'rejected';
 
     if (!canReview && !isOwner) {
@@ -438,7 +439,7 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
     if (!canSubmitterEdit && !canReviewerEdit) {
       return res.status(409).json({
         error:
-          'Only pending, published, or hidden Last Post notices can have content updated',
+          'Only draft, pending, published, or hidden Last Post notices can have content updated',
       });
     }
 
@@ -503,7 +504,7 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
 
     if (error.name === 'ValidationError') {
       return res.status(400).json({
-        error: 'The Last Post notice must be 10000 characters or fewer',
+        error: 'The Last Post notice must be 30000 characters or fewer',
       });
     }
 
@@ -546,15 +547,20 @@ router.patch(
 
       const lastPost = await LastPostMessage.findOne({
         _id: messageId,
-        status: 'pending',
+        status: { $in: ['draft', 'pending'] },
       });
 
       if (!lastPost) {
         return res
           .status(404)
-          .json({ error: 'Pending Last Post notice not found' });
+          .json({ error: 'Draft or pending Last Post notice not found' });
       }
 
+      if (lastPost.status === 'draft' && action === 'reject') {
+        return res.status(409).json({
+          error: 'Drafts are not submissions awaiting approval',
+        });
+      }
       if (action === 'cancel-schedule') {
         if (!lastPost.scheduledPublishAt) {
           return res.status(409).json({
@@ -722,6 +728,11 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
+    if (lastPost.status === 'draft') {
+      return res.status(409).json({
+        error: 'Edit drafts through the staff content workspace',
+      });
+    }
     if (lastPost.status === 'hidden') {
       if (isOwner && !canReview) {
         return res.status(404).json({ error: 'Last Post notice not found' });
@@ -794,9 +805,9 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
-    if (message.length > 10000) {
+    if (message.length > 30000) {
       return res.status(400).json({
-        error: 'The Last Post notice must be 10000 characters or fewer',
+        error: 'The Last Post notice must be 30000 characters or fewer',
       });
     }
 

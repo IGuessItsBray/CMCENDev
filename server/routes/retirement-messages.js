@@ -1,17 +1,16 @@
+const Comment = require('../models/Comment');
 const express = require('express');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const mongoose = require('mongoose');
 const CertificateRequest = require('../models/CertificateRequest');
 const RetirementMessage = require('../models/RetirementMessage');
-const RetirementComment = require('../models/RetirementComment');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
 const { RETIREMENT_TRADE_ROLES } = require('../config/content');
 const { writeAuditLog } = require('../services/audit-log');
 const {
   getCertificateRequestSnapshot,
-  getRetirementCommentSnapshot,
   getRetirementMessageSnapshot,
 } = require('../services/content-snapshots');
 const { recordContentRevision } = require('../services/content-revisions');
@@ -334,8 +333,8 @@ function validateRetirementMessagePayload(payload) {
     return 'The retirement message is required';
   }
 
-  if (cleanMessage.length > 10000) {
-    return 'The retirement message must be 10000 characters or fewer';
+  if (cleanMessage.length > 30000) {
+    return 'The retirement message must be 30000 characters or fewer';
   }
 
   if (!ALLOWED_LANGUAGES.includes(messageLanguage)) {
@@ -735,11 +734,12 @@ router.get('/', async (req, res) => {
       ? retirementMessagesWithExtra.slice(0, pageSize)
       : retirementMessagesWithExtra;
 
-    const commentCounts = await RetirementComment.aggregate([
+    const commentCounts = await Comment.aggregate([
       {
         $match: {
           status: 'published',
-          retirementMessage: {
+          parentType: 'retirement',
+          parentId: {
             $in: retirementMessages.map(
               (retirementMessage) => retirementMessage._id,
             ),
@@ -748,7 +748,7 @@ router.get('/', async (req, res) => {
       },
       {
         $group: {
-          _id: '$retirementMessage',
+          _id: '$parentId',
           count: { $sum: 1 },
         },
       },
@@ -787,7 +787,7 @@ router.get(
   requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
-      const allowedStatuses = ['pending', 'rejected', 'published'];
+      const allowedStatuses = ['draft', 'pending', 'rejected', 'published'];
 
       const requestedStatus =
         typeof req.query.status === 'string' ? req.query.status : 'pending';
@@ -821,340 +821,6 @@ router.get(
     }
   },
 );
-
-router.get(
-  '/comments/review',
-  authMiddleware,
-  requirePermission('canReviewAndPublish'),
-  async (req, res) => {
-    try {
-      const allowedStatuses = ['pending', 'rejected', 'published'];
-
-      const requestedStatus =
-        typeof req.query.status === 'string' ? req.query.status : 'pending';
-
-      if (!allowedStatuses.includes(requestedStatus)) {
-        return res.status(400).json({
-          error: 'Invalid review status',
-        });
-      }
-
-      const comments = await RetirementComment.find({
-        status: requestedStatus,
-      })
-        .populate(
-          'author',
-          'username accountName firstName lastName email role',
-        )
-        .populate('reviewedBy', 'username accountName email role')
-        .populate('retirementMessage', 'retiree status')
-        .sort({
-          createdAt: 1,
-        })
-        .lean();
-
-      res.json({
-        status: requestedStatus,
-        comments,
-      });
-    } catch (error) {
-      console.error('Could not load retirement comment review queue:', error);
-
-      res.status(500).json({
-        error: 'Could not load retirement comment review queue',
-      });
-    }
-  },
-);
-
-router.patch(
-  '/comments/:commentId/review',
-  authMiddleware,
-  requirePermission('canReviewAndPublish'),
-  async (req, res) => {
-    try {
-      const { action, rejectionReason } = req.body;
-
-      if (!['publish', 'reject'].includes(action)) {
-        return res.status(400).json({
-          error: 'Review action must be publish or reject',
-        });
-      }
-
-      if (req.body?.scheduledPublishAt !== undefined) {
-        return res.status(400).json({
-          error:
-            'Scheduled publication is not supported for retirement comments',
-        });
-      }
-
-      const comment = await RetirementComment.findById(req.params.commentId);
-
-      if (!comment) {
-        return res.status(404).json({
-          error: 'Retirement comment not found',
-        });
-      }
-
-      if (comment.status !== 'pending') {
-        return res.status(409).json({
-          error: 'Only pending retirement comments can be reviewed',
-        });
-      }
-
-      const reviewDate = new Date();
-
-      if (action === 'reject') {
-        const cleanReason = cleanString(rejectionReason);
-
-        if (!cleanReason) {
-          return res.status(400).json({
-            error: 'A rejection reason is required',
-          });
-        }
-
-        comment.status = 'rejected';
-        comment.rejectionReason = cleanReason;
-        comment.publishedBy = null;
-        comment.publishedAt = null;
-      }
-
-      if (action === 'publish') {
-        comment.rejectionReason = '';
-        comment.status = 'published';
-        comment.publishedBy = req.user._id;
-        comment.publishedAt = reviewDate;
-      }
-
-      comment.reviewedBy = req.user._id;
-      comment.reviewedAt = reviewDate;
-
-      await comment.save();
-
-      if (action === 'publish') {
-        await writeAuditLog({
-          req,
-          action: 'content.published',
-          actor: req.user,
-          targetType: 'retirementComment',
-          target: comment._id,
-          targetSnapshot: getRetirementCommentSnapshot(comment),
-          metadata: { source: 'review' },
-        });
-      }
-
-      if (action === 'reject') {
-        await writeAuditLog({
-          req,
-          action: 'content.rejected',
-          actor: req.user,
-          targetType: 'retirementComment',
-          target: comment._id,
-          targetSnapshot: getRetirementCommentSnapshot(comment),
-          metadata: {
-            source: 'review',
-            rejectionReason: comment.rejectionReason,
-          },
-        });
-      }
-
-      await comment.populate(
-        'author',
-        'username accountName firstName lastName email role',
-      );
-
-      await comment.populate('reviewedBy', 'username accountName email role');
-
-      await comment.populate('publishedBy', 'username accountName email role');
-
-      await comment.populate('retirementMessage', 'retiree status');
-
-      res.json({
-        message:
-          action === 'publish'
-            ? 'Comment published successfully'
-            : 'Comment rejected',
-
-        comment,
-      });
-    } catch (error) {
-      console.error('Could not review retirement comment:', error);
-
-      if (error.name === 'CastError') {
-        return res.status(400).json({
-          error: 'Invalid retirement comment ID',
-        });
-      }
-
-      if (error.name === 'ValidationError') {
-        return res.status(400).json({
-          error: getValidationErrorMessage(error),
-        });
-      }
-
-      res.status(500).json({
-        error: 'Could not review retirement comment',
-      });
-    }
-  },
-);
-
-router.get('/comments/:commentId/edit', authMiddleware, async (req, res) => {
-  try {
-    const comment = await RetirementComment.findById(req.params.commentId)
-      .populate('retirementMessage', 'retiree status')
-      .lean();
-
-    if (!comment) {
-      return res.status(404).json({
-        error: 'Retirement comment not found',
-      });
-    }
-
-    const permissions = getUserPermissions(req.user);
-    const isOwner =
-      comment.author && String(comment.author) === String(req.user._id);
-    const canReview = permissions.canReviewAndPublish === true;
-
-    if (!isOwner && !canReview) {
-      return res.status(403).json({
-        error: 'You do not have permission to edit this comment',
-      });
-    }
-
-    res.json({ comment });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(404).json({
-        error: 'Retirement comment not found',
-      });
-    }
-
-    console.error('Could not load retirement comment for editing:', error);
-
-    res.status(500).json({
-      error: 'Could not load retirement comment for editing',
-    });
-  }
-});
-
-router.patch('/comments/:commentId', authMiddleware, async (req, res) => {
-  try {
-    if (
-      req.body?.submitForReview !== undefined &&
-      typeof req.body.submitForReview !== 'boolean'
-    ) {
-      return res
-        .status(400)
-        .json({ error: 'submitForReview must be a boolean' });
-    }
-    const submitForReview = req.body?.submitForReview === true;
-    const cleanBody = cleanString(req.body?.body);
-
-    if (cleanBody.length < 2) {
-      return res.status(400).json({
-        error: 'Comment must contain at least 2 characters',
-      });
-    }
-
-    if (cleanBody.length > 2000) {
-      return res.status(400).json({
-        error: 'Comment must be 2000 characters or fewer',
-      });
-    }
-
-    const comment = await RetirementComment.findById(req.params.commentId);
-
-    if (!comment) {
-      return res.status(404).json({
-        error: 'Retirement comment not found',
-      });
-    }
-
-    const permissions = getUserPermissions(req.user);
-    const isOwner =
-      comment.author && String(comment.author) === String(req.user._id);
-    const canReview = permissions.canReviewAndPublish === true;
-
-    if (!isOwner && !canReview) {
-      return res.status(403).json({
-        error: 'You do not have permission to edit this comment',
-      });
-    }
-
-    if (comment.status === 'hidden') {
-      return res.status(409).json({
-        error: 'Restore this comment before editing or publishing it',
-      });
-    }
-
-    if (submitForReview && !isOwner) {
-      return res.status(404).json({ error: 'Retirement comment not found' });
-    }
-    if (submitForReview && !['pending', 'rejected'].includes(comment.status)) {
-      return res
-        .status(409)
-        .json({ error: 'This comment cannot be resubmitted' });
-    }
-    markContentEdited(comment, req.user);
-    comment.body = cleanBody;
-    comment.status =
-      !submitForReview && canReview && permissions.canPublishOwnContent === true
-        ? 'published'
-        : 'pending';
-    comment.rejectionReason = '';
-    comment.reviewedBy = comment.status === 'published' ? req.user._id : null;
-    comment.reviewedAt = comment.status === 'published' ? new Date() : null;
-    comment.publishedBy =
-      comment.status === 'published'
-        ? comment.publishedBy || req.user._id
-        : null;
-    comment.publishedAt =
-      comment.status === 'published' ? comment.publishedAt || new Date() : null;
-
-    await comment.save();
-    await comment.populate('retirementMessage', 'retiree status');
-
-    await writeAuditLog({
-      req,
-      action: 'content.created',
-      actor: req.user,
-      targetType: 'retirementComment',
-      target: comment._id,
-      targetSnapshot: getRetirementCommentSnapshot(comment),
-      metadata: {
-        source: 'resubmit',
-        status: comment.status,
-      },
-    });
-
-    res.json({
-      message:
-        comment.status === 'published'
-          ? 'Comment updated and published'
-          : 'Comment updated and submitted for review',
-      comment,
-    });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(404).json({
-        error: 'Retirement comment not found',
-      });
-    }
-
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        error: getValidationErrorMessage(error),
-      });
-    }
-
-    console.error('Could not update retirement comment:', error);
-
-    res.status(500).json({
-      error: 'Could not update retirement comment',
-    });
-  }
-});
 
 router.get('/:messageId/edit', authMiddleware, async (req, res) => {
   try {
@@ -1227,6 +893,11 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
+    if (retirementMessage.status === 'draft') {
+      return res.status(409).json({
+        error: 'Edit drafts through the staff content workspace',
+      });
+    }
     if (retirementMessage.status === 'hidden') {
       return res.status(409).json({
         error:
@@ -1391,162 +1062,6 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/:messageId/comments', async (req, res) => {
-  try {
-    const retirementMessage = await RetirementMessage.findOne({
-      _id: req.params.messageId,
-      status: 'published',
-    })
-      .select({ _id: 1 })
-      .lean();
-
-    if (!retirementMessage) {
-      return res.status(404).json({
-        error: 'Retirement message not found',
-      });
-    }
-
-    const comments = await RetirementComment.find({
-      retirementMessage: req.params.messageId,
-      status: 'published',
-    })
-      .populate('author', 'username accountName firstName lastName role')
-      .sort({
-        publishedAt: 1,
-        createdAt: 1,
-      })
-      .lean();
-
-    res.json({
-      comments,
-    });
-  } catch (error) {
-    console.error('Could not load retirement comments:', error);
-
-    if (error.name === 'CastError') {
-      return res.status(400).json({
-        error: 'Invalid retirement message ID',
-      });
-    }
-
-    res.status(500).json({
-      error: 'Could not load retirement comments',
-    });
-  }
-});
-
-router.post('/:messageId/comments', authMiddleware, async (req, res) => {
-  try {
-    const cleanBody = cleanString(req.body?.body);
-
-    if (cleanBody.length < 2) {
-      return res.status(400).json({
-        error: 'Comment must contain at least 2 characters',
-      });
-    }
-
-    if (cleanBody.length > 2000) {
-      return res.status(400).json({
-        error: 'Comment must be 2000 characters or fewer',
-      });
-    }
-
-    const retirementMessage = await RetirementMessage.findOne({
-      _id: req.params.messageId,
-      status: 'published',
-    })
-      .select({ _id: 1 })
-      .lean();
-
-    if (!retirementMessage) {
-      return res.status(404).json({
-        error: 'Retirement message not found',
-      });
-    }
-
-    const permissions = getUserPermissions(req.user);
-
-    const publishImmediately = permissions.canPublishOwnContent === true;
-
-    const now = new Date();
-
-    const comment = new RetirementComment({
-      retirementMessage: retirementMessage._id,
-
-      author: req.user._id,
-
-      body: cleanBody,
-
-      status: publishImmediately ? 'published' : 'pending',
-
-      reviewedBy: publishImmediately ? req.user._id : null,
-
-      reviewedAt: publishImmediately ? now : null,
-
-      publishedBy: publishImmediately ? req.user._id : null,
-
-      publishedAt: publishImmediately ? now : null,
-    });
-
-    await comment.save();
-
-    await writeAuditLog({
-      req,
-      action: 'content.created',
-      actor: req.user,
-      targetType: 'retirementComment',
-      target: comment._id,
-      targetSnapshot: getRetirementCommentSnapshot(comment),
-      metadata: { status: comment.status },
-    });
-
-    if (comment.status === 'published') {
-      await writeAuditLog({
-        req,
-        action: 'content.published',
-        actor: req.user,
-        targetType: 'retirementComment',
-        target: comment._id,
-        targetSnapshot: getRetirementCommentSnapshot(comment),
-        metadata: { source: 'create' },
-      });
-    }
-
-    await comment.populate(
-      'author',
-      'username accountName firstName lastName role',
-    );
-
-    res.status(201).json({
-      message: publishImmediately
-        ? 'Comment published successfully'
-        : 'Comment submitted for review',
-
-      status: comment.status,
-
-      comment: comment.status === 'published' ? comment : null,
-    });
-  } catch (error) {
-    console.error('Could not submit retirement comment:', error);
-
-    if (error.name === 'CastError') {
-      return res.status(400).json({
-        error: 'Invalid retirement message ID',
-      });
-    }
-
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        error: getValidationErrorMessage(error),
-      });
-    }
-
-    res.status(500).json({
-      error: 'Could not submit retirement comment',
-    });
-  }
-});
-
 router.get('/:messageId', async (req, res) => {
   try {
     const retirementMessage = await RetirementMessage.findOne({
@@ -1609,10 +1124,10 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
 
     const cleanMessage = cleanString(message);
 
-    if (cleanMessage.length > 10000) {
+    if (cleanMessage.length > 30000) {
       return res.status(400).json({
         error:
-          'Retirement review message text must be 10000 characters or fewer',
+          'Retirement review message text must be 30000 characters or fewer',
       });
     }
 
@@ -1635,7 +1150,9 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
       isOwner && ['pending', 'rejected'].includes(retirementMessage.status);
     const canReviewerEdit =
       canReview &&
-      ['pending', 'published', 'hidden'].includes(retirementMessage.status);
+      ['draft', 'pending', 'published', 'hidden'].includes(
+        retirementMessage.status,
+      );
     const wasRejected = isOwner && retirementMessage.status === 'rejected';
 
     if (!canReview && !isOwner) {
@@ -1647,7 +1164,7 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
     if (!canSubmitterEdit && !canReviewerEdit) {
       return res.status(409).json({
         error:
-          'Only pending, published, or hidden retirement messages can have content updated',
+          'Only draft, pending, published, or hidden retirement messages can have content updated',
       });
     }
 
@@ -1776,9 +1293,14 @@ router.patch(
         });
       }
 
-      if (retirementMessage.status !== 'pending') {
+      if (retirementMessage.status === 'draft' && action === 'reject') {
         return res.status(409).json({
-          error: 'Only pending retirement messages can be reviewed',
+          error: 'Drafts are not submissions awaiting approval',
+        });
+      }
+      if (!['draft', 'pending'].includes(retirementMessage.status)) {
+        return res.status(409).json({
+          error: 'Only draft or pending retirement messages can be reviewed',
         });
       }
 

@@ -8,7 +8,7 @@ const ContentRevisionSchema = new mongoose.Schema(
         'event',
         'retirementMessage',
         'lastPost',
-        'retirementComment',
+        'comment',
         'newsArticle',
       ],
       required: true,

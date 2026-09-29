@@ -5,7 +5,7 @@ window.MySubmissionEditor = (() => {
     event: ["/api/events", "event"],
     retirementMessage: ["/api/retirement-messages", "retirementMessage"],
     lastPost: ["/api/last-posts", "lastPost"],
-    retirementComment: ["/api/retirement-messages/comments", "comment"],
+    comment: ["/api/comments", "comment"],
   };
   const t = (key) => window.translate(key);
   function dateInput(value, allDay, timezone) {
@@ -230,12 +230,12 @@ window.MySubmissionEditor = (() => {
         record.publicationPermission?.confirmed,
         { type: "checkbox", required: true },
       );
-    } else if (item.type === "retirementComment") {
+    } else if (item.type === "comment") {
       field("body", "content_workspace_comment_body", record.body, {
         type: "textarea",
         required: true,
         minLength: 2,
-        maxLength: 2000,
+        maxLength: 10000,
       });
     } else {
       const retirement = item.type === "retirementMessage";
@@ -304,7 +304,7 @@ window.MySubmissionEditor = (() => {
           type: "textarea",
           required: true,
           minLength: 1,
-          maxLength: 10000,
+          maxLength: 30000,
         },
       );
       text("p", "my_submissions_translation_review");
@@ -324,7 +324,7 @@ window.MySubmissionEditor = (() => {
           { type: "checkbox", required: true },
         );
     }
-    if (item.type !== "retirementComment") {
+    if (item.type !== "comment") {
       const media = document.createElement("fieldset");
       text("legend", "last_post_image", media);
       const preview = document.createElement("img");
@@ -412,7 +412,7 @@ window.MySubmissionEditor = (() => {
     });
     function payload() {
       const common = { submitForReview: true, publishNow: false };
-      if (item.type === "retirementComment")
+      if (item.type === "comment")
         return { body: val("body"), submitForReview: true };
       if (item.type === "event") {
         const body = { ...common };

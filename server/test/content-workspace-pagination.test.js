@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const publicPath = path.join(__dirname, '..', 'public');
 const workspaceHtml = fs.readFileSync(
@@ -78,9 +79,48 @@ test('distinguishes scheduled publication from pending workspace records', () =>
     workspaceScript,
     /const contentWorkspaceStatuses = new Set\(\[[\s\S]*?"scheduled",/u,
   );
-  assert.match(
-    workspaceScript,
-    /function getContentWorkspaceDisplayStatus\(item\) \{[\s\S]*?item\.status === "pending"[\s\S]*?item\.scheduledPublishAt[\s\S]*?return "scheduled";/u,
+  const start = workspaceScript.indexOf(
+    'function getContentWorkspaceDisplayStatus(item)',
+  );
+  const end = workspaceScript.indexOf(
+    'function updateContentWorkspaceStatusFilterAppearance',
+    start,
+  );
+  const displayStatus = vm.runInNewContext(
+    `(${workspaceScript.slice(start, end).trim()})`,
+    {
+      contentWorkspaceScheduledPublicationTypes: new Set([
+        'event',
+        'retirementMessage',
+        'lastPost',
+        'newsArticle',
+      ]),
+    },
+  );
+  for (const status of ['draft', 'pending']) {
+    for (const type of ['retirementMessage', 'lastPost']) {
+      assert.equal(displayStatus({ type, status }), status);
+      assert.equal(
+        displayStatus({ type, status, scheduledPublishAt: '2030-01-01' }),
+        'scheduled',
+      );
+    }
+    assert.equal(
+      displayStatus({
+        type: 'comment',
+        status,
+        scheduledPublishAt: '2030-01-01',
+      }),
+      status,
+    );
+  }
+  assert.equal(
+    displayStatus({
+      type: 'lastPost',
+      status: 'published',
+      scheduledPublishAt: '2030-01-01',
+    }),
+    'published',
   );
   assert.match(
     workspaceScript,

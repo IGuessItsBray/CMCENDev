@@ -115,6 +115,28 @@
   background: #f8f9fa;
 }
 
+.content-workspace-comment-types {
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--branch-grey-300);
+  border-radius: var(--surface-radius);
+}
+
+.content-workspace-filters .content-workspace-comment-types label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+  margin-inline-end: 12px;
+}
+
+.content-workspace-filters .content-workspace-comment-types input {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  padding: 0;
+}
+
 .content-workspace-status-filter {
   font-weight: 800;
 }

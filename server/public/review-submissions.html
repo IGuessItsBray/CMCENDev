@@ -14,7 +14,7 @@
           events: 'event',
           retirements: 'retirementMessage',
           'last-posts': 'lastPost',
-          comments: 'retirementComment',
+          comments: 'comment',
         };
         const query = new URLSearchParams(window.location.search);
         const type = types[query.get('tab')] || 'all';

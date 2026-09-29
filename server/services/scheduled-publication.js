@@ -32,11 +32,13 @@ const scheduledContentTypes = [
   {
     Model: RetirementMessage,
     targetType: 'retirementMessage',
+    unpublishedStatus: { $in: ['draft', 'pending'] },
     getSnapshot: getRetirementMessageSnapshot,
   },
   {
     Model: LastPostMessage,
     targetType: 'lastPost',
+    unpublishedStatus: { $in: ['draft', 'pending'] },
     getSnapshot: getLastPostMessageSnapshot,
   },
 ];
@@ -60,7 +62,7 @@ async function publishOneScheduledContent({
   const published = await Model.findOneAndUpdate(
     {
       _id: scheduled._id,
-      status: unpublishedStatus,
+      status: scheduled.status,
       scheduledPublishAt,
       ...(targetType === 'newsArticle' ? { __v: scheduled.__v } : {}),
     },

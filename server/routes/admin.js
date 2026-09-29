@@ -20,7 +20,13 @@ const NewsArticle = require('../models/NewsArticle');
 const Page = require('../models/Page');
 const ContentRevision = require('../models/ContentRevision');
 const RetirementMessage = require('../models/RetirementMessage');
-const RetirementComment = require('../models/RetirementComment');
+const Comment = require('../models/Comment');
+const {
+  getCommentTypes,
+  getCommentTarget,
+  getCommentParentTitle,
+  getCommentPublicUrl,
+} = require('../config/comment-targets');
 const WeeklyBriefRun = require('../models/WeeklyBriefRun');
 const NewsBlast = require('../models/NewsBlast');
 const { USER_ROLES } = require('../config/roles');
@@ -48,8 +54,8 @@ const {
   getEventSnapshot,
   getEventTitle,
   getLastPostMessageSnapshot,
-  getRetirementCommentSnapshot,
-  getRetirementCommentTitle,
+  getCommentSnapshot,
+  getCommentTitle,
   getRetirementMessageSnapshot,
   getRetirementMessageTitle,
 } = require('../services/content-snapshots');
@@ -190,6 +196,9 @@ async function saveAdminContentEdit({
   if (!document) return res.status(404).json({ error: notFoundMessage });
 
   const mediaBefore = getAdminContentMediaDetails(targetType, document);
+  const commentBefore = ['comment'].includes(targetType)
+    ? document.body
+    : undefined;
   const changedFields = [];
   const validationError = applyUpdates(document, req.body, changedFields);
   if (validationError) return res.status(400).json({ error: validationError });
@@ -204,6 +213,18 @@ async function saveAdminContentEdit({
   }
   markContentEdited(document, req.user);
   await document.save();
+
+  if (commentBefore !== undefined && commentBefore !== document.body) {
+    await recordContentRevision({
+      contentType: targetType,
+      content: document,
+      actor: req.user,
+      status: document.status,
+      fields: ['body'],
+      before: { body: commentBefore },
+      after: { body: document.body },
+    });
+  }
 
   const mediaAfter = getAdminContentMediaDetails(targetType, document);
   if (mediaBefore && mediaAfter) {
@@ -350,7 +371,7 @@ router.get(
           LastPostMessage.countDocuments(
             getContentWorkspaceStatusFilter('pending'),
           ),
-          RetirementComment.countDocuments({ status: 'pending' }),
+          Comment.countDocuments({ status: 'pending' }),
         ]);
 
       res.json({
@@ -372,7 +393,7 @@ const REVISION_CONTENT_MODELS = Object.freeze({
   event: Event,
   retirementMessage: RetirementMessage,
   lastPost: LastPostMessage,
-  retirementComment: RetirementComment,
+  comment: Comment,
   newsArticle: NewsArticle,
 });
 
@@ -380,7 +401,7 @@ const REVIEW_CONTENT_WORKSPACE_TYPES = Object.freeze([
   'event',
   'retirementMessage',
   'lastPost',
-  'retirementComment',
+  'comment',
 ]);
 const CONTENT_WORKSPACE_TYPES = Object.freeze([
   ...REVIEW_CONTENT_WORKSPACE_TYPES,
@@ -581,7 +602,7 @@ function getContentWorkspaceSearchFilter(type, searchPattern) {
       'messages.en',
       'messages.fr',
     ],
-    retirementComment: ['body'],
+    comment: ['body'],
     newsArticle: ['title.en', 'title.fr', 'content.en', 'content.fr'],
   }[type];
 
@@ -622,14 +643,19 @@ function getContentWorkspaceTranslationFilter(type, translation) {
   };
 }
 
-// Scheduled publication remains pending (or a news draft) until the
+// Scheduled publication preserves the draft or pending state until the
 // publication service makes it public. Expose it separately in the workspace
 // so reviewers can distinguish already-approved scheduled content from work
 // that still needs a review decision.
 function getContentWorkspaceStatusFilter(status, type) {
   if (status === 'scheduled') {
     return {
-      status: type === 'newsArticle' ? 'draft' : 'pending',
+      status:
+        type === 'newsArticle'
+          ? 'draft'
+          : ['retirementMessage', 'lastPost'].includes(type)
+            ? { $in: ['draft', 'pending'] }
+            : 'pending',
       scheduledPublishAt: { $type: 'date' },
     };
   }
@@ -641,7 +667,7 @@ function getContentWorkspaceStatusFilter(status, type) {
     };
   }
 
-  if (status === 'draft' && type === 'newsArticle') {
+  if (status === 'draft') {
     return { status: 'draft', scheduledPublishAt: null };
   }
 
@@ -782,17 +808,16 @@ function toContentWorkspaceItem(type, content) {
 
   return {
     ...base,
-    title: getRetirementCommentTitle(content),
+    title: getCommentTitle(content),
     content: {
       body: content.body || '',
       author: content.author || null,
+      legacyAuthorName: content.legacy?.authorName || '',
       createdAt: content.createdAt || null,
-      retirementMessage: content.retirementMessage
-        ? {
-            _id: content.retirementMessage._id,
-            title: getRetirementMessageTitle(content.retirementMessage),
-          }
-        : null,
+      parentType: content.parentType,
+      parentId: content.parentId?._id || content.parentId,
+      parentTitle: getCommentParentTitle(content),
+      publicUrl: getCommentPublicUrl(content),
     },
   };
 }
@@ -848,6 +873,18 @@ router.get(
           .json({ error: 'Invalid content workspace cursor' });
       }
 
+      const parentTypes =
+        req.query.parentTypes === undefined
+          ? null
+          : typeof req.query.parentTypes === 'string'
+            ? req.query.parentTypes.split(',').filter(Boolean)
+            : undefined;
+      if (
+        parentTypes === undefined ||
+        parentTypes?.some((type) => !getCommentTarget(type))
+      ) {
+        return res.status(400).json({ error: 'Invalid comment parent types' });
+      }
       const contentFilter = {
         ...(contentId ? { _id: contentId } : {}),
       };
@@ -856,7 +893,7 @@ router.get(
         : null;
       const types = (type === 'all' ? permittedTypes : [type]).filter(
         (contentType) =>
-          (translation === 'all' || contentType !== 'retirementComment') &&
+          (translation === 'all' || !['comment'].includes(contentType)) &&
           (scope === 'all' ||
             (scope === 'articles'
               ? contentType === 'newsArticle'
@@ -960,14 +997,17 @@ router.get(
         );
       }
 
-      if (types.includes('retirementComment')) {
+      if (types.includes('comment')) {
         queries.push(
-          RetirementComment.find(getWorkspaceFilter('retirementComment'))
+          Comment.find({
+            ...getWorkspaceFilter('comment'),
+            ...(parentTypes ? { parentType: { $in: parentTypes } } : {}),
+          })
             .select(
-              'retirementMessage author body status hiddenFromStatus rejectionReason publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
+              'parentType parentId author body legacy.authorName status hiddenFromStatus rejectionReason publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
-              { path: 'retirementMessage', select: 'retiree' },
+              { path: 'parentId' },
               {
                 path: 'author',
                 select: 'username accountName firstName lastName email role',
@@ -982,7 +1022,7 @@ router.get(
             .lean()
             .then((records) =>
               records.map((record) =>
-                toContentWorkspaceItem('retirementComment', record),
+                toContentWorkspaceItem('comment', record),
               ),
             ),
         );
@@ -1066,6 +1106,7 @@ router.get(
 
       return res.json({
         items,
+        commentTypes: getCommentTypes(),
         hasMore,
         nextCursor: hasMore
           ? getContentWorkspaceNextCursor(cursors, items)
@@ -1975,32 +2016,24 @@ function getRetirementMessageUserFilter(user) {
 
 async function getUserPostSummary(user) {
   const userId = user._id || user;
-  const [
-    eventCount,
-    retirementMessageCount,
-    retirementCommentCount,
-    lastPostCount,
-  ] = await Promise.all([
-    Event.countDocuments({
-      $or: [{ createdBy: userId }, { publishedBy: userId }],
-    }),
-    RetirementMessage.countDocuments(getRetirementMessageUserFilter(user)),
-    RetirementComment.countDocuments({
-      $or: [{ author: userId }, { publishedBy: userId }],
-    }),
-    LastPostMessage.countDocuments({ createdBy: userId }),
-  ]);
+  const [eventCount, retirementMessageCount, commentCount, lastPostCount] =
+    await Promise.all([
+      Event.countDocuments({
+        $or: [{ createdBy: userId }, { publishedBy: userId }],
+      }),
+      RetirementMessage.countDocuments(getRetirementMessageUserFilter(user)),
+      Comment.countDocuments({
+        $or: [{ author: userId }, { publishedBy: userId }],
+      }),
+      LastPostMessage.countDocuments({ createdBy: userId }),
+    ]);
 
   return {
     events: eventCount,
     retirementMessages: retirementMessageCount,
-    retirementComments: retirementCommentCount,
+    comments: commentCount,
     lastPosts: lastPostCount,
-    total:
-      eventCount +
-      retirementMessageCount +
-      retirementCommentCount +
-      lastPostCount,
+    total: eventCount + retirementMessageCount + commentCount + lastPostCount,
   };
 }
 
@@ -2859,7 +2892,7 @@ router.delete(
       let deleted = {
         events: 0,
         retirementMessages: 0,
-        retirementComments: 0,
+        comments: 0,
         lastPosts: 0,
       };
 
@@ -2868,23 +2901,29 @@ router.delete(
           createdBy: userId,
         }).select('_id');
         const messageIds = messages.map((message) => message._id);
+        const lastPostIds = (
+          await LastPostMessage.find({
+            createdBy: userId,
+          }).select('_id')
+        ).map((post) => post._id);
         const [events, comments, lastPosts] = await Promise.all([
           Event.deleteMany({ createdBy: userId }),
-          RetirementComment.deleteMany({ author: userId }),
+          Comment.deleteMany({ author: userId }),
           LastPostMessage.deleteMany({ createdBy: userId }),
         ]);
-        const messageComments = messageIds.length
-          ? await RetirementComment.deleteMany({
-              retirementMessage: { $in: messageIds },
-            })
-          : { deletedCount: 0 };
+        const messageComments = await Comment.deleteMany({
+          $or: [
+            { parentType: 'retirement', parentId: { $in: messageIds } },
+            { parentType: 'lastPost', parentId: { $in: lastPostIds } },
+          ],
+        });
         const messagesResult = await RetirementMessage.deleteMany({
           _id: { $in: messageIds },
         });
         deleted = {
           events: events.deletedCount || 0,
           retirementMessages: messagesResult.deletedCount || 0,
-          retirementComments:
+          comments:
             (comments.deletedCount || 0) + (messageComments.deletedCount || 0),
           lastPosts: lastPosts.deletedCount || 0,
         };
@@ -2898,10 +2937,7 @@ router.delete(
             { createdBy: userId },
             { $set: { createdBy: null } },
           ),
-          RetirementComment.updateMany(
-            { author: userId },
-            { $set: { author: null } },
-          ),
+          Comment.updateMany({ author: userId }, { $set: { author: null } }),
           LastPostMessage.updateMany(
             { createdBy: userId },
             { $set: { createdBy: null } },
@@ -3854,7 +3890,7 @@ router.get(
         });
       }
 
-      const [events, retirementMessages, retirementComments, lastPosts] =
+      const [events, retirementMessages, comments, lastPosts] =
         await Promise.all([
           Event.find({
             $or: [{ createdBy: userId }, { publishedBy: userId }],
@@ -3874,13 +3910,13 @@ router.get(
             .sort({ updatedAt: -1 })
             .limit(100)
             .lean(),
-          RetirementComment.find({
+          Comment.find({
             $or: [{ author: userId }, { publishedBy: userId }],
           })
             .select(
-              'body status retirementMessage author publishedBy createdAt updatedAt publishedAt',
+              'body status parentType parentId author publishedBy createdAt updatedAt publishedAt',
             )
-            .populate('retirementMessage', 'retiree status')
+            .populate('parentId')
             .sort({ updatedAt: -1 })
             .limit(100)
             .lean(),
@@ -3915,18 +3951,16 @@ router.get(
           createdAt: message.createdAt,
           href: `/retirement-message?id=${encodeURIComponent(message._id)}`,
         })),
-        ...retirementComments.map((comment) => ({
+        ...comments.map((comment) => ({
           _id: comment._id,
-          type: 'retirementComment',
-          title: getRetirementCommentTitle(comment),
+          type: 'comment',
+          title: getCommentTitle(comment),
           status: comment.status,
           action: getUserContentAction(comment, userId, 'author'),
           excerpt: String(comment.body || '').slice(0, 180),
           updatedAt: comment.updatedAt,
           createdAt: comment.createdAt,
-          href: comment.retirementMessage?._id
-            ? `/retirement-message?id=${encodeURIComponent(comment.retirementMessage._id)}`
-            : '',
+          href: getCommentPublicUrl(comment),
         })),
         ...lastPosts.map((lastPost) => ({
           _id: lastPost._id,
@@ -3954,12 +3988,12 @@ router.get(
           ...toAdminUser(user, {
             events: events.length,
             retirementMessages: retirementMessages.length,
-            retirementComments: retirementComments.length,
+            comments: comments.length,
             lastPosts: lastPosts.length,
             total:
               events.length +
               retirementMessages.length +
-              retirementComments.length +
+              comments.length +
               lastPosts.length,
           }),
         },
@@ -4490,10 +4524,10 @@ router.patch(
   },
 );
 
-// PATCH /api/admin/retirement-comments/:commentId
-// Correct a retirement comment from the staff content workspace.
+// PATCH /api/admin/comments/:commentId
+// Correct a comment from the staff content workspace.
 router.patch(
-  '/retirement-comments/:commentId',
+  '/comments/:commentId',
   authMiddleware,
   requirePermission('canReviewAndPublish'),
   async (req, res) => {
@@ -4501,13 +4535,13 @@ router.patch(
       return await saveAdminContentEdit({
         req,
         res,
-        model: RetirementComment,
+        model: Comment,
         id: req.params.commentId,
-        targetType: 'retirementComment',
-        notFoundMessage: 'Retirement comment not found',
+        targetType: 'comment',
+        notFoundMessage: 'Comment not found',
         responseKey: 'comment',
         getSnapshot: (comment) =>
-          getRetirementCommentSnapshot(comment, { includeBody: true }),
+          getCommentSnapshot(comment, { includeBody: true }),
         applyUpdates(comment, body, changedFields) {
           if (!isPlainObject(body)) return 'Request body must be an object';
           if (!Object.prototype.hasOwnProperty.call(body, 'body')) {
@@ -4516,8 +4550,8 @@ router.patch(
           if (typeof body.body !== 'string') return 'body must be a string';
 
           const cleanBody = cleanString(body.body);
-          if (cleanBody.length < 2 || cleanBody.length > 2000) {
-            return 'Comment text must contain between 2 and 2000 characters';
+          if (cleanBody.length < 2 || cleanBody.length > 10000) {
+            return 'Comment text must contain between 2 and 10000 characters';
           }
 
           comment.body = cleanBody;
@@ -4526,10 +4560,8 @@ router.patch(
         },
       });
     } catch (error) {
-      console.error('Admin retirement comment update failed:', error);
-      return res
-        .status(500)
-        .json({ error: 'Could not update retirement comment' });
+      console.error('Admin comment update failed:', error);
+      return res.status(500).json({ error: 'Could not update comment' });
     }
   },
 );
@@ -4791,8 +4823,9 @@ router.delete(
       }
 
       const snapshot = getRetirementMessageSnapshot(message);
-      const deletedComments = await RetirementComment.countDocuments({
-        retirementMessage: message._id,
+      const deletedComments = await Comment.countDocuments({
+        parentType: 'retirement',
+        parentId: message._id,
       });
       const mediaCleanup = permissions.canDeleteContent
         ? await deleteContentMediaAssets({
@@ -4801,8 +4834,9 @@ router.delete(
           })
         : [];
 
-      await RetirementComment.deleteMany({
-        retirementMessage: message._id,
+      await Comment.deleteMany({
+        parentType: 'retirement',
+        parentId: message._id,
       });
       await message.deleteOne();
       await writeAuditLog({
@@ -4831,66 +4865,61 @@ router.delete(
   },
 );
 
-router.delete(
-  '/retirement-comments/:commentId',
-  authMiddleware,
-  async (req, res) => {
-    try {
-      const comment = await RetirementComment.findById(
-        req.params.commentId,
-      ).populate('retirementMessage', 'retiree status');
+router.delete('/comments/:commentId', authMiddleware, async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.commentId).populate(
+      'parentId',
+    );
 
-      if (!comment) {
-        return res.status(404).json({ error: 'Retirement comment not found' });
-      }
-
-      const permissions = getUserPermissions(req.user);
-      const isOwner = String(comment.author || '') === String(req.user._id);
-      if (
-        !permissions.canDeleteContent &&
-        !(permissions.canDeleteOwnContent && isOwner)
-      ) {
-        return res
-          .status(403)
-          .json({ error: 'You do not have permission to delete this comment' });
-      }
-
-      const snapshot = getRetirementCommentSnapshot(comment, {
-        includeBody: true,
-        includeRetirementMessageTitle: true,
-      });
-      const deletedBy = snapshotUser(req.user);
-
-      await comment.deleteOne();
-      await writeAuditLog({
-        req,
-        action: 'content.deleted',
-        actor: req.user,
-        targetType: 'retirementComment',
-        target: comment._id,
-        targetSnapshot: snapshot,
-        metadata: {
-          commentContent: snapshot.body,
-          deletedBy:
-            deletedBy.accountName ||
-            deletedBy.username ||
-            deletedBy.email ||
-            'Unknown user',
-        },
-      });
-
-      res.json({ message: 'Retirement comment deleted' });
-    } catch (err) {
-      console.error('Admin retirement comment delete failed:', err);
-
-      if (err.name === 'CastError') {
-        return res.status(400).json({ error: 'Invalid retirement comment ID' });
-      }
-
-      res.status(500).json({ error: 'Failed to delete retirement comment' });
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
     }
-  },
-);
+
+    const permissions = getUserPermissions(req.user);
+    const isOwner = String(comment.author || '') === String(req.user._id);
+    if (
+      !permissions.canDeleteContent &&
+      !(permissions.canDeleteOwnContent && isOwner)
+    ) {
+      return res
+        .status(403)
+        .json({ error: 'You do not have permission to delete this comment' });
+    }
+
+    const snapshot = getCommentSnapshot(comment, {
+      includeBody: true,
+    });
+    const deletedBy = snapshotUser(req.user);
+
+    await comment.deleteOne();
+    await writeAuditLog({
+      req,
+      action: 'content.deleted',
+      actor: req.user,
+      targetType: 'comment',
+      target: comment._id,
+      targetSnapshot: snapshot,
+      metadata: {
+        commentContent: snapshot.body,
+        deletedBy:
+          deletedBy.accountName ||
+          deletedBy.username ||
+          deletedBy.email ||
+          'Unknown user',
+      },
+    });
+
+    res.json({ message: 'Comment deleted' });
+  } catch (err) {
+    console.error('Admin comment delete failed:', err);
+
+    if (err.name === 'CastError') {
+      return res.status(400).json({ error: 'Invalid comment ID' });
+    }
+
+    res.status(500).json({ error: 'Failed to delete comment' });
+  }
+});
 
 router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
   try {
@@ -4923,6 +4952,10 @@ router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
           source: { type: 'lastPostMessage', id: lastPost._id },
         })
       : [];
+    const deletedComments = await Comment.deleteMany({
+      parentType: 'lastPost',
+      parentId: lastPost._id,
+    });
     await lastPost.deleteOne();
     await writeAuditLog({
       req,
@@ -4932,6 +4965,7 @@ router.delete('/last-posts/:lastPostId', authMiddleware, async (req, res) => {
       target: lastPost._id,
       targetSnapshot: snapshot,
       metadata: {
+        deletedComments: deletedComments.deletedCount,
         deletedByOwner: isOwner,
         mediaCleanup: getContentMediaCleanupMetadata(mediaCleanup),
       },
@@ -5103,22 +5137,17 @@ const contentRemovalRoutes = [
     getSnapshot: getRetirementMessageSnapshot,
   },
   {
-    path: '/retirement-comments/:commentId',
-    Model: RetirementComment,
+    path: '/comments/:commentId',
+    Model: Comment,
     idParam: 'commentId',
-    targetType: 'retirementComment',
-    displayName: 'Retirement comment',
+    targetType: 'comment',
+    displayName: 'Comment',
     getSnapshot: (comment) =>
-      getRetirementCommentSnapshot(comment, {
+      getCommentSnapshot(comment, {
         includeBody: true,
-        includeRetirementMessageTitle: true,
       }),
     getOwner: (comment) => comment.author,
-    load: (id) =>
-      RetirementComment.findById(id).populate(
-        'retirementMessage',
-        'retiree status',
-      ),
+    load: (id) => Comment.findById(id).populate('parentId'),
   },
   {
     path: '/last-posts/:lastPostId',

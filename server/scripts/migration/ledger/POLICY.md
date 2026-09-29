@@ -16,6 +16,12 @@ invitations previously marked for exclusion. Preserve the saved decision history
 - Import everything as drafts. Review and publish individual completed records
   separately; neither a saved Archive Review decision nor an import publishes.
   Missing French alone does not prevent an English archive record being complete.
+- Subsequent operator clarification: the current import includes only source
+  records originally published in WordPress. Keep the 296 original drafts and
+  28 private source records outside all current batches for separate review at
+  the end. Their comments and assets are not imported solely on their behalf;
+  shared assets required by eligible published records remain eligible. An
+  unpublished language counterpart must not enter through a published sibling.
 - Pair genuine English/French counterparts where they exist. Inspect actual text:
   a language-switcher relationship does not prove that the French body is French.
   If French is absent or simply duplicates English, keep English only and leave
@@ -57,3 +63,12 @@ The operator supplied 15 saved VPS decisions on 29 September, then superseded
 their use as migration instructions. [Meeting notes](MEETING_DECISIONS.md) retain
 that context only. No clarification of the two invitation exclusions is needed:
 retain both under the supporting-content policy. No database changes were made.
+# Migration drafts and submission approval
+
+`pending` denotes a user submission awaiting administrator approval. It must
+not be used as the holding state for migrated archival content or comments.
+The content preflight requires a distinct `draft` state and must remain blocked
+where the destination model or editorial workflow does not support it. Adding
+an enum value alone does not establish an editable, publishable draft workflow.
+This destination holding state does not make original WordPress drafts eligible
+for import; deferred source drafts and private records remain excluded.

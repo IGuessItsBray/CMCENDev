@@ -361,7 +361,7 @@ async function loadRetirementCommentEditor(token) {
 
   try {
     const data = await CMCENUtils.apiJson(
-      `/api/retirement-messages/comments/${encodeURIComponent(requestedRetirementCommentEditId)}/edit`,
+      `/api/comments/${encodeURIComponent(requestedRetirementCommentEditId)}/edit`,
       {
         token,
         errorMessage: translate("retirement_comment_edit_load_error"),
@@ -369,7 +369,7 @@ async function loadRetirementCommentEditor(token) {
     );
     const comment = data.comment;
     const messageId =
-      comment?.retirementMessage?._id || comment?.retirementMessage;
+      comment?.parentId?._id || comment?.parentId;
 
     if (String(messageId || "") !== String(currentRetirementMessageId)) {
       throw new Error(translate("retirement_comment_edit_load_error"));
@@ -440,7 +440,7 @@ async function deleteRetirementComment(comment) {
 
   try {
     const response = await fetch(
-      `/api/admin/retirement-comments/${encodeURIComponent(comment._id)}`,
+      `/api/admin/comments/${encodeURIComponent(comment._id)}`,
       {
         method: "DELETE",
         headers: CMCENUtils.authHeaders(token),
@@ -556,7 +556,7 @@ function renderComments(comments) {
 async function loadComments(messageId) {
   try {
     const response = await fetch(
-      `/api/retirement-messages/${encodeURIComponent(messageId)}/comments`,
+      `/api/comments/on/retirement/${encodeURIComponent(messageId)}`,
     );
 
     const data = await response.json().catch(() => ({}));
@@ -689,10 +689,8 @@ retirementCommentForm.addEventListener("submit", async (event) => {
 
   try {
     const endpoint = submittingEdit
-      ? `/api/retirement-messages/comments/${encodeURIComponent(commentId)}`
-      : `/api/retirement-messages/${encodeURIComponent(
-          currentRetirementMessageId,
-        )}/comments`;
+      ? `/api/comments/${encodeURIComponent(commentId)}`
+      : `/api/comments/on/retirement/${encodeURIComponent(currentRetirementMessageId)}`;
     const response = await fetch(endpoint, {
       method: submittingEdit ? "PATCH" : "POST",
 

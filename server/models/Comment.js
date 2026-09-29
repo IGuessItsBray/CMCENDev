@@ -1,10 +1,21 @@
 const mongoose = require('mongoose');
+const { getCommentTarget } = require('../config/comment-targets');
 
-const retirementCommentSchema = new mongoose.Schema(
+const commentSchema = new mongoose.Schema(
   {
-    retirementMessage: {
+    parentType: {
+      type: String,
+      required: true,
+      validate: {
+        validator: (value) => Boolean(getCommentTarget(value)),
+        message: 'Unsupported comment parent type',
+      },
+    },
+    parentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'RetirementMessage',
+      ref: function () {
+        return getCommentTarget(this.parentType)?.model;
+      },
       required: true,
       index: true,
     },
@@ -21,12 +32,12 @@ const retirementCommentSchema = new mongoose.Schema(
       required: true,
       trim: true,
       minlength: 2,
-      maxlength: 2000,
+      maxlength: 10000,
     },
 
     status: {
       type: String,
-      enum: ['pending', 'published', 'rejected', 'hidden'],
+      enum: ['draft', 'pending', 'published', 'rejected', 'hidden'],
       default: 'pending',
       index: true,
     },
@@ -62,7 +73,7 @@ const retirementCommentSchema = new mongoose.Schema(
 
     hiddenFromStatus: {
       type: String,
-      enum: ['pending', 'published', 'rejected', ''],
+      enum: ['draft', 'pending', 'published', 'rejected', ''],
       default: '',
     },
 
@@ -94,30 +105,32 @@ const retirementCommentSchema = new mongoose.Schema(
   },
 );
 
-retirementCommentSchema.index({
-  retirementMessage: 1,
+commentSchema.index({
+  parentType: 1,
+  parentId: 1,
   status: 1,
   publishedAt: 1,
 });
 
-retirementCommentSchema.index({
+commentSchema.index({
   status: 1,
   createdAt: 1,
 });
 
-retirementCommentSchema.index({
+commentSchema.index({
   author: 1,
   status: 1,
   reviewedAt: -1,
 });
 
-retirementCommentSchema.index({
+commentSchema.index({
   publishedBy: 1,
   publishedAt: -1,
 });
+commentSchema.index({ 'legacy.source': 1, 'legacy.wordpressCommentId': 1 });
 
 require('../services/content-edit-metadata').installContentEditMetadata(
-  retirementCommentSchema,
+  commentSchema,
 );
 
-module.exports = mongoose.model('RetirementComment', retirementCommentSchema);
+module.exports = mongoose.model('Comment', commentSchema);

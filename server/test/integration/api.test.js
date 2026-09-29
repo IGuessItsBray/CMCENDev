@@ -2117,11 +2117,18 @@ describe('news stories', () => {
       .set('Authorization', authorization)
       .send({ ...saved.body.article, category: 'invalid' })
       .expect(400);
-    const published = await request(app)
+    await request(app)
       .patch(`${url}/publication`)
       .set('Authorization', authorization)
       .send({ action: 'publish' })
+      .expect(400);
+    assert.equal((await NewsArticle.findById(legacy._id)).status, 'draft');
+    const published = await request(app)
+      .patch(`${url}/publication`)
+      .set('Authorization', authorization)
+      .send({ action: 'publish', publicationDateChoice: 'original' })
       .expect(200);
+    assert.equal(published.body.article.publishedAt, '2001-02-03T12:00:00.000Z');
     const updated = await request(app)
       .patch(url)
       .set('Authorization', authorization)
@@ -3006,6 +3013,163 @@ describe('Last Post comment moderation', () => {
 });
 
 describe('archival draft lifecycle', () => {
+  test('archive publication dates require a staff choice across content types', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const token = bearer((await login(editor)).body.token);
+    const contributor = await createUser({ role: 'contributor' });
+    const memberToken = bearer((await login(contributor)).body.token);
+    const original = new Date('2010-02-03T10:00:00Z');
+    const legacy = {
+      source: 'https://cmcen-rcmce.ca',
+      sourcePostIds: [123],
+      originalStatus: 'publish',
+      submissionMetadata: 'historically-unknown',
+      sourceRecords: [
+        {
+          language: 'en',
+          sourceStatus: 'publish',
+          createdGmt: '2010-02-03 10:00:00',
+        },
+      ],
+    };
+    for (const [Model, type, base] of [
+      [RetirementMessage, 'retirementMessage', '/api/retirement-messages'],
+      [LastPostMessage, 'lastPost', '/api/last-posts'],
+    ]) {
+      const record = await Model.create({
+        status: 'draft',
+        messageLanguage: 'en',
+        messages: {
+          en: 'Historical English notice',
+          fr: 'Avis historique français',
+        },
+        legacy,
+      });
+      const url = `${base}/${record._id}/review`;
+      await request(app)
+        .patch(url)
+        .send({ action: 'publish', publicationDateChoice: 'original' })
+        .expect(401);
+      await request(app)
+        .patch(url)
+        .set('Authorization', memberToken)
+        .send({ action: 'publish', publicationDateChoice: 'original' })
+        .expect(403);
+      const listing = await request(app)
+        .get(`/api/admin/content?type=${type}&id=${record._id}`)
+        .set('Authorization', token)
+        .expect(200);
+      assert.equal(
+        listing.body.items[0].publicationDate.originalPublishedAt,
+        original.toISOString(),
+      );
+      await request(app)
+        .patch(url)
+        .set('Authorization', token)
+        .send({ action: 'publish' })
+        .expect(400);
+      await request(app)
+        .patch(url)
+        .set('Authorization', token)
+        .send({ action: 'publish', publicationDateChoice: 'invalid' })
+        .expect(400);
+      await request(app)
+        .patch(url)
+        .set('Authorization', token)
+        .send({
+          action: 'publish',
+          publicationDateChoice: 'original',
+          originalPublishedAt: '1900-01-01',
+        })
+        .expect(200);
+      const saved = await Model.findById(record._id);
+      assert.equal(saved.publishedAt.toISOString(), original.toISOString());
+      assert(saved.reviewedAt > original);
+    }
+    const comment = await Comment.create({
+      parentType: 'lastPost',
+      parentId: new mongoose.Types.ObjectId(),
+      body: 'Historical comment',
+      status: 'draft',
+      createdAt: original,
+      legacy: { source: 'wp', wordpressCommentId: 5, originalApproval: '0' },
+    });
+    const url = `/api/comments/${comment._id}/review`;
+    await request(app)
+      .patch(url)
+      .set('Authorization', token)
+      .send({ action: 'publish', publicationDateChoice: 'original' })
+      .expect(400);
+    await request(app)
+      .patch(url)
+      .set('Authorization', token)
+      .send({ action: 'publish', publicationDateChoice: 'now' })
+      .expect(200);
+    assert((await Comment.findById(comment._id)).publishedAt > original);
+    const article = await NewsArticle.create({
+      status: 'draft',
+      title: { en: 'Historical story', fr: 'Article historique' },
+      createdBy: editor._id,
+      content: { en: 'Historical story content', fr: 'Contenu historique' },
+      originalPublishedAt: original,
+    });
+    await request(app)
+      .patch(`/api/news/${article._id}/publication`)
+      .set('Authorization', token)
+      .send({ action: 'publish', publicationDateChoice: 'original' })
+      .expect(200);
+    assert.equal(
+      (await NewsArticle.findById(article._id)).publishedAt.toISOString(),
+      original.toISOString(),
+    );
+    const event = await Event.create({
+      ...eventPayload(),
+      status: 'draft',
+      originalPublishedAt: original,
+    });
+    const newsletter = await NewsArticle.create({
+      status: 'draft',
+      createdBy: editor._id,
+      title: { en: 'Archived newsletter', fr: 'Bulletin archivé' },
+      content: { en: 'Original content', fr: 'Contenu original' },
+      newsletter: { archived: true, date: '1985-09-01' },
+    });
+    await request(app)
+      .patch(`/api/news/${newsletter._id}/publication`)
+      .set('Authorization', token)
+      .send({ action: 'publish', publicationDateChoice: 'now' })
+      .expect(200);
+    const feed = await request(app).get('/api/news').expect(200);
+    assert.equal(feed.body.articles[0]._id, String(newsletter._id));
+    assert.equal(
+      feed.body.articles[0].displayDate,
+      feed.body.articles[0].publishedAt,
+    );
+    assert.equal(
+      (
+        await NewsArticle.findById(newsletter._id)
+      ).originalPublishedAt.toISOString(),
+      '1985-09-01T12:00:00.000Z',
+    );
+    const scheduledPublishAt = new Date(Date.now() + 3600000);
+    await request(app)
+      .patch(`/api/events/${event._id}/review`)
+      .set('Authorization', token)
+      .send({
+        action: 'publish',
+        publicationDateChoice: 'original',
+        scheduledPublishAt: scheduledPublishAt.toISOString(),
+      })
+      .expect(200);
+    assert.equal((await Event.findById(event._id)).status, 'draft');
+    await publishDueContent(new Date(scheduledPublishAt.getTime() + 1));
+    const publishedEvent = await Event.findById(event._id);
+    assert.equal(publishedEvent.status, 'published');
+    assert.equal(
+      publishedEvent.publishedAt.toISOString(),
+      original.toISOString(),
+    );
+  });
   test('archive unknowns remain editable without allowing public consent bypass', async () => {
     const editor = await createUser({ role: 'editor' });
     const token = bearer((await login(editor)).body.token);

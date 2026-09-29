@@ -1,4 +1,5 @@
 const express = require('express');
+const { getPublicationDateInfo, selectPublicationDate } = require('../services/publication-date');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const Event = require('../models/Event');
@@ -1534,7 +1535,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 
     if (event.status === 'published') {
       event.publishedBy ||= req.user._id;
-      event.publishedAt ||= new Date();
+      event.publishedAt ||= selectPublicationDate(event, req.body?.publicationDateChoice);
       event.reviewedBy = req.user._id;
       event.reviewedAt = new Date();
     } else {
@@ -1580,6 +1581,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
       });
     }
 
+    if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('Could not update event:', error);
 
     return res.status(500).json({
@@ -1772,7 +1774,14 @@ router.patch(
         });
       }
 
-      if (event.status !== 'pending') {
+      if (
+        event.status !== 'pending' &&
+        !(
+          ['publish', 'cancel-schedule'].includes(action) &&
+          event.status === 'draft' &&
+          getPublicationDateInfo(event).isArchive
+        )
+      ) {
         return res.status(409).json({
           error: 'Only pending events can be reviewed',
         });
@@ -1843,6 +1852,8 @@ router.patch(
         event,
       });
     } catch (error) {
+      if (error.status === 400)
+        return res.status(400).json({ error: error.message });
       console.error('Could not review event:', error);
 
       if (error.name === 'CastError') {

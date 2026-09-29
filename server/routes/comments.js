@@ -1,5 +1,6 @@
 const express = require('express');
 const Comment = require('../models/Comment');
+const { selectPublicationDate } = require('../services/publication-date');
 const { getCommentTarget } = require('../config/comment-targets');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { getUserPermissions } = require('../config/permissions');
@@ -114,10 +115,15 @@ router.patch(
       }
 
       if (action === 'publish') {
+        const publishedAt = selectPublicationDate(
+          comment,
+          req.body?.publicationDateChoice,
+          reviewDate,
+        );
         comment.rejectionReason = '';
         comment.status = 'published';
         comment.publishedBy = req.user._id;
-        comment.publishedAt = reviewDate;
+        comment.publishedAt = publishedAt;
       }
 
       comment.reviewedBy = req.user._id;
@@ -133,7 +139,12 @@ router.patch(
           targetType: 'comment',
           target: comment._id,
           targetSnapshot: getCommentSnapshot(comment),
-          metadata: { source: 'review' },
+          metadata: {
+            source: 'review',
+            publicationDateChoice: comment.publicationDateChoice,
+            originalPublishedAt: comment.originalPublishedAt,
+            publishedAt: comment.publishedAt,
+          },
         });
       }
 
@@ -172,6 +183,8 @@ router.patch(
         comment,
       });
     } catch (error) {
+      if (error.status === 400)
+        return res.status(400).json({ error: error.message });
       console.error('Could not review comment:', error);
 
       if (error.name === 'CastError') {
@@ -307,7 +320,7 @@ router.patch('/:commentId', authMiddleware, async (req, res) => {
         ? comment.publishedBy || req.user._id
         : null;
     comment.publishedAt =
-      comment.status === 'published' ? comment.publishedAt || new Date() : null;
+      comment.status === 'published' ? comment.publishedAt || selectPublicationDate(comment, req.body?.publicationDateChoice) : null;
 
     await comment.save();
     await writeAuditLog({
@@ -343,6 +356,7 @@ router.patch('/:commentId', authMiddleware, async (req, res) => {
       });
     }
 
+    if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('Could not update comment:', error);
 
     res.status(500).json({

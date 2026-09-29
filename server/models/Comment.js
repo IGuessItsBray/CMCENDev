@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { publicationDateFields } = require('../services/publication-date');
 const { getCommentTarget } = require('../config/comment-targets');
 
 const commentSchema = new mongoose.Schema(
@@ -59,6 +60,7 @@ const commentSchema = new mongoose.Schema(
       default: null,
     },
 
+    ...publicationDateFields,
     publishedAt: {
       type: Date,
       default: null,

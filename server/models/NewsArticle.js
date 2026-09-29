@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { publicationDateFields } = require('../services/publication-date');
 const { buildPublicMediaUrl } = require('../services/media-library');
 const { categories } = require('../public/newsletter-format');
 
@@ -97,6 +98,7 @@ const NewsArticleSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    ...publicationDateFields,
     publishedAt: {
       type: Date,
       default: null,

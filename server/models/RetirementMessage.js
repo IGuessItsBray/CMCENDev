@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { publicationDateFields } = require('../services/publication-date');
 const {
   isWordPressArchive,
   requiresSubmissionMetadata,
@@ -196,6 +197,7 @@ const retirementMessageSchema = new mongoose.Schema(
       default: null,
     },
 
+    ...publicationDateFields,
     publishedAt: {
       type: Date,
       default: null,

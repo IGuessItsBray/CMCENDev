@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { publicationDateFields } = require('../services/publication-date');
 
 const {
   CONTENT_STATUSES,
@@ -263,6 +264,8 @@ const EventSchema = new mongoose.Schema(
       default: null,
     },
 
+    ...publicationDateFields,
+    legacy: { type: mongoose.Schema.Types.Mixed, default: undefined },
     publishedAt: {
       type: Date,
       default: null,

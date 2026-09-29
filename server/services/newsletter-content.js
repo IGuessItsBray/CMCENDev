@@ -111,6 +111,11 @@ const publicDateStages = [
           {
             $and: [
               { $eq: ['$newsletter.archived', true] },
+              {
+                $not: [
+                  { $in: ['$publicationDateChoice', ['original', 'now']] },
+                ],
+              },
               { $ne: ['$newsletter.date', ''] },
             ],
           },

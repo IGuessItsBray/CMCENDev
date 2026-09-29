@@ -1531,7 +1531,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Editorial workspace content with `items`, `hasMore`, and an opaque `nextCursor` when another page is available. Retirement and Last Post content includes `historicalSubmissionUnknown` for recognized WordPress archive records whose original submitter and consent metadata is unavailable; this does not imply confirmed consent.
+          description: Editorial workspace content with `items`, `hasMore`, and an opaque `nextCursor` when another page is available. Each item includes `publicationDate` with `isArchive` and nullable `originalPublishedAt` for publication date selection. Retirement and Last Post content includes `historicalSubmissionUnknown` for recognized WordPress archive records whose original submitter and consent metadata is unavailable; this does not imply confirmed consent.
         "400":
           $ref: "#/components/responses/Error"
         "403":
@@ -2460,7 +2460,7 @@ paths:
     patch:
       tags: [Events]
       summary: Review event publication.
-      description: A publish action may include a future `scheduledPublishAt` timestamp. Scheduled content stays pending until the server publishes it at that time. A `cancel-schedule` action removes the schedule and leaves the event pending.
+      description: A publish action may include a future `scheduledPublishAt` timestamp. Imported archive event drafts may be published by reviewers. Scheduling and cancellation preserve the draft or pending status. Imported/archive content requires an explicit publicationDateChoice; the server keeps that choice when the scheduled publication runs.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/EventId"
@@ -2473,7 +2473,7 @@ paths:
     get:
       tags: [News]
       summary: List published news stories and newsletters.
-      description: Ordered by displayDate, using the original date for historical newsletters and publishedAt otherwise.
+      description: Ordered by displayDate. An explicit publicationDateChoice uses publishedAt; historical newsletters without a choice retain their existing original-date behavior.
       security: []
       parameters:
         - in: query
@@ -2629,6 +2629,10 @@ paths:
                   type: string
                   format: date-time
                   description: Future timestamp for a publish action; omit to publish now.
+                publicationDateChoice:
+                  type: string
+                  enum: [original, now]
+                  description: Required for imported or archive content. Uses the server-stored original date or the actual publication time, including scheduled publication. An unavailable original date returns 400.
       responses:
         "200":
           description: Updated article, including its nullable scheduledPublishAt.
@@ -3347,6 +3351,10 @@ components:
                 type: string
                 format: date-time
                 description: Optional future time to publish a reviewed item when `action` is `publish`.
+              publicationDateChoice:
+                type: string
+                enum: [original, now]
+                description: Required when publishing imported or archive content. The original date is resolved from stored provenance; now uses the actual publication time. Scheduling preserves this choice. An unavailable original date returns 400.
               messages:
                 type: object
                 description: Optional bilingual publication copy supplied when publishing a retirement message.
@@ -3370,6 +3378,10 @@ components:
               action:
                 type: string
                 enum: [publish, reject]
+              publicationDateChoice:
+                type: string
+                enum: [original, now]
+                description: Required for imported/archive comments. Original uses the stored original public date; originally unapproved comments cannot use original. Invalid or unavailable choices return 400.
               rejectionReason:
                 type: string
                 maxLength: 2000

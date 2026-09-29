@@ -171,4 +171,12 @@ test('structured bodies retain caption, formatting, variants and safe links', ()
     }),
     '2026-09-22',
   );
+  assert.equal(
+    displayDate({
+      publishedAt: '2026-09-29',
+      publicationDateChoice: 'now',
+      newsletter: { archived: true, date: '1985-09-01' },
+    }),
+    '2026-09-29',
+  );
 });

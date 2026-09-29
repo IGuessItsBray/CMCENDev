@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { publicationDateFields } = require('../services/publication-date');
 const {
   requiresSubmissionMetadata,
 } = require('../services/archive-provenance');
@@ -170,6 +171,7 @@ const LastPostMessageSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    ...publicationDateFields,
     publishedAt: {
       type: Date,
       default: null,

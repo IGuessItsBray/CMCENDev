@@ -1,4 +1,5 @@
 const { writeAuditLog } = require('./audit-log');
+const { selectPublicationDate } = require('./publication-date');
 
 function getScheduledPublicationDate(value, now = new Date()) {
   if (value === undefined || value === null || value === '') return null;
@@ -21,6 +22,7 @@ function applyEditorialReviewTransition({
   reviewerId,
   rejectionReason,
   scheduledPublishAt = null,
+  publicationDateChoice,
   publishedRejectionReason = null,
   now = new Date(),
 }) {
@@ -54,6 +56,11 @@ function applyEditorialReviewTransition({
   }
 
   if (action === 'publish') {
+    const publicationDate = selectPublicationDate(
+      content,
+      publicationDateChoice,
+      now,
+    );
     const isScheduled = Boolean(scheduledPublishAt);
     content.rejectionReason = publishedRejectionReason;
     content.scheduledPublishAt = scheduledPublishAt;
@@ -65,7 +72,7 @@ function applyEditorialReviewTransition({
         : 'pending'
       : 'published';
     content.publishedBy = isScheduled ? null : reviewerId;
-    content.publishedAt = isScheduled ? null : now;
+    content.publishedAt = isScheduled ? null : publicationDate;
   }
 
   content.updatedBy = reviewerId;
@@ -83,6 +90,13 @@ function applyEditorialReviewTransition({
         : 'content.published',
     auditMetadata: {
       source: 'review',
+      ...(action === 'publish' && content.publicationDateChoice
+        ? {
+            publicationDateChoice: content.publicationDateChoice,
+            originalPublishedAt: content.originalPublishedAt || null,
+            publishedAt: content.publishedAt,
+          }
+        : {}),
       ...(isScheduled ? { scheduledPublishAt } : {}),
       ...(isRejected ? { rejectionReason: content.rejectionReason } : {}),
     },
@@ -109,6 +123,7 @@ async function performEditorialReviewTransition({
     rejectionReason,
     scheduledPublishAt,
     publishedRejectionReason,
+    publicationDateChoice: req.body?.publicationDateChoice,
     now,
   });
 

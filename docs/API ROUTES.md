@@ -1,5 +1,26 @@
 # API Routes
 
+## Archive publication dates
+
+The event, retirement, Last Post and comment review endpoints, and the news
+publication endpoint, accept `publicationDateChoice: "original" | "now"` for
+publish actions. Imported/archive records require an explicit choice; ordinary
+new content defaults to now. Existing-content update endpoints that transition a
+record to published apply the same date-choice validation.
+The original date is resolved from stored provenance,
+never a client-supplied timestamp. Missing/invalid choices or an unavailable
+original date return 400. Approved WordPress comments use their original comment
+date; originally unapproved comments have no original public date.
+
+`GET /api/admin/content` includes `publicationDate: { isArchive,
+originalPublishedAt }` for the shared confirmation dialog. Missing dates are null.
+The typed `originalPublishedAt` and `publicationDateChoice` fields preserve the
+choice across scheduling and later republication. `publishedAt` controls display
+and chronological ordering; audit/review times still record the actual action.
+An imported archive event draft can be published/scheduled by a reviewer; ordinary
+event drafts still use their existing submission workflow. Cancellation keeps the
+draft or pending status. No date backfill or data rewrite is required for the pilot.
+
 Account deletion through `DELETE /api/profile` or `DELETE /api/admin/users/:userId`
 also removes private legacy profile data. The migration map retains a source-ID
 tombstone without its email hash or Mongo user ID, preventing silent reimport.
@@ -550,6 +571,8 @@ The review count `comments` includes all pending comments and excludes drafts.
   published, or rejected through `status`.
 - `PATCH /api/comments/:commentId/review`: publish drafts/pending comments or
   reject pending comments with a reason. Comments cannot be scheduled.
+  Imported comments require `publicationDateChoice: "original" | "now"`.
+  Originally unapproved WordPress comments have no original public date.
 - `GET /api/comments/:commentId/edit` and `PATCH /api/comments/:commentId`:
   owner/staff access to the existing personal correction workflow.
 - `GET` / `POST /api/comments/on/:parentType/:parentId`: published comments or

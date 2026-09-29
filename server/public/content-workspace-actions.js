@@ -29,7 +29,12 @@ window.ContentWorkspaceActions = {
     function createContentWorkspaceReviewActions(item) {
       if (item.isNew) return null;
       const isNewsArticle = item.type === "newsArticle";
-      if (item.type === "event" && item.status === "draft") return null;
+      if (
+        item.type === "event" &&
+        item.status === "draft" &&
+        !item.publicationDate?.isArchive
+      )
+        return null;
       if (
         isNewsArticle
           ? !canManageContentWorkspaceNews() || item.status !== "draft"
@@ -131,7 +136,11 @@ window.ContentWorkspaceActions = {
 
       async function submitDecision(
         action,
-        { rejectionReason = "", scheduledPublishAt = "" } = {},
+        {
+          rejectionReason = "",
+          scheduledPublishAt = "",
+          publicationDateChoice,
+        } = {},
       ) {
         if (
           (action === "publish" || action === "cancel-schedule") &&
@@ -175,6 +184,7 @@ window.ContentWorkspaceActions = {
             method: "PATCH",
             body: {
               action,
+              publicationDateChoice,
               rejectionReason:
                 action === "reject" ? rejectionReason.trim() : undefined,
               scheduledPublishAt: isScheduledPublication
@@ -348,6 +358,53 @@ window.ContentWorkspaceActions = {
 
           if (!decision) return;
 
+          async function choosePublicationDate() {
+            if (!item.publicationDate?.isArchive) return undefined;
+            const original = item.publicationDate.originalPublishedAt;
+            const choices = [];
+            if (original)
+              choices.push({
+                value: "original",
+                label: getText(
+                  "content_workspace_date_original",
+                  "Keep original publication date",
+                ),
+                description: new Date(original).toLocaleString(
+                  getContentWorkspaceLocale(),
+                ),
+              });
+            choices.push({
+              value: "now",
+              label: getText(
+                "content_workspace_date_current",
+                "Use the new publication date",
+              ),
+              description: getText(
+                "content_workspace_date_current_help",
+                "Use the date it goes public on this site.",
+              ),
+            });
+            return await CMCENModal.choose(
+              getText(
+                original
+                  ? "content_workspace_date_prompt"
+                  : "content_workspace_date_missing",
+                original
+                  ? "Which date should readers see? This also controls its chronological position."
+                  : "This is archive content, but no original publication date is recorded. It can use the date it goes public on this site.",
+              ),
+              {
+                title: getText(
+                  "content_workspace_date_title",
+                  "Publication date",
+                ),
+                cancelText: getText("cancel", "Cancel"),
+                tone: "success",
+                choices,
+              },
+            );
+          }
+
           if (action === "publish" && decision === "schedule") {
             const schedule = await CMCENModal.form(
               getText(
@@ -412,17 +469,29 @@ window.ContentWorkspaceActions = {
               return;
             }
 
+            const publicationDateChoice = await choosePublicationDate();
+            if (item.publicationDate?.isArchive && !publicationDateChoice)
+              return;
             await submitDecision(action, {
+              publicationDateChoice,
               scheduledPublishAt: scheduledDate.toISOString(),
             });
             return;
           }
 
+          const publicationDateChoice =
+            action === "publish" ? await choosePublicationDate() : undefined;
+          if (
+            action === "publish" &&
+            item.publicationDate?.isArchive &&
+            !publicationDateChoice
+          )
+            return;
           await submitDecision(
             action,
             action === "reject" && typeof decision === "object"
               ? { rejectionReason: decision.rejectionReason || "" }
-              : {},
+              : { publicationDateChoice },
           );
         } finally {
           isConfirming = false;

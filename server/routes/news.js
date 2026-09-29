@@ -1,4 +1,5 @@
 const express = require('express');
+const { selectPublicationDate } = require('../services/publication-date');
 const { buildPublicMediaUrl } = require('../services/media-library');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const mongoose = require('mongoose');
@@ -674,8 +675,12 @@ router.patch(
       }
       const schedule = action === 'publish' ? scheduledPublishAt : null;
       const publishNow = action === 'publish' && !schedule;
+      const publicationDate =
+        action === 'publish'
+          ? selectPublicationDate(article, req.body?.publicationDateChoice, now)
+          : null;
       article.status = publishNow ? 'published' : 'draft';
-      article.publishedAt = publishNow ? now : null;
+      article.publishedAt = publishNow ? publicationDate : null;
       article.publishedBy = publishNow ? req.user._id : null;
       article.scheduledPublishAt = schedule;
       article.scheduledBy = schedule ? req.user._id : null;
@@ -696,6 +701,9 @@ router.patch(
         targetSnapshot: getNewsSnapshot(article),
         metadata: {
           source: 'publication',
+          publicationDateChoice: article.publicationDateChoice,
+          originalPublishedAt: article.originalPublishedAt,
+          publishedAt: article.publishedAt,
           scheduledPublishAt: schedule || previousSchedule || null,
         },
       });
@@ -706,6 +714,8 @@ router.patch(
           error: 'This story changed. Reload it before trying again.',
         });
       }
+      if (error.status === 400)
+        return res.status(400).json({ error: error.message });
       console.error('Could not change news publication:', error);
       return res
         .status(500)
@@ -737,7 +747,10 @@ router.patch(
       Object.assign(article, payload);
       markContentEdited(article, req.user);
       if (payload.status === 'published' && previousStatus !== 'published') {
-        article.publishedAt = new Date();
+        article.publishedAt = selectPublicationDate(
+          article,
+          req.body?.publicationDateChoice,
+        );
         article.publishedBy = req.user._id;
       }
       if (payload.status !== 'draft') {
@@ -787,6 +800,8 @@ router.patch(
           error: 'This story changed. Reload it before trying again.',
         });
       }
+      if (error.status === 400)
+        return res.status(400).json({ error: error.message });
       console.error('Could not update news story:', error);
       return res.status(500).json({ error: 'Could not update news story' });
     }

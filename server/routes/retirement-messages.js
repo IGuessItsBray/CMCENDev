@@ -1,5 +1,6 @@
 const Comment = require('../models/Comment');
 const express = require('express');
+const { selectPublicationDate } = require('../services/publication-date');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const mongoose = require('mongoose');
@@ -984,7 +985,7 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
         : null;
     retirementMessage.publishedAt =
       retirementMessage.status === 'published'
-        ? retirementMessage.publishedAt || now
+        ? retirementMessage.publishedAt || selectPublicationDate(retirementMessage, req.body?.publicationDateChoice, now)
         : null;
 
     await retirementMessage.save();
@@ -1054,6 +1055,7 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
+    if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('Could not update retirement message:', error);
 
     res.status(500).json({
@@ -1415,6 +1417,8 @@ router.patch(
         retirementMessage,
       });
     } catch (error) {
+      if (error.status === 400)
+        return res.status(400).json({ error: error.message });
       console.error('Could not review retirement message:', error);
 
       if (error.name === 'CastError') {

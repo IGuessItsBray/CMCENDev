@@ -3,6 +3,7 @@ const LastPostMessage = require('../models/LastPostMessage');
 const RetirementMessage = require('../models/RetirementMessage');
 const NewsArticle = require('../models/NewsArticle');
 const User = require('../models/User');
+const { getPublicationDateInfo } = require('./publication-date');
 const { writeAuditLog } = require('./audit-log');
 const {
   getEventSnapshot,
@@ -27,6 +28,7 @@ const scheduledContentTypes = [
   {
     Model: Event,
     targetType: 'event',
+    unpublishedStatus: { $in: ['draft', 'pending'] },
     getSnapshot: getEventSnapshot,
   },
   {
@@ -59,6 +61,13 @@ async function publishOneScheduledContent({
 
   const scheduledPublishAt = scheduled.scheduledPublishAt;
   const scheduledBy = scheduled.scheduledBy || null;
+  const publishedAt =
+    scheduled.publicationDateChoice === 'original'
+      ? getPublicationDateInfo(scheduled, now).originalPublishedAt
+      : now;
+  // Never silently substitute today if a saved original-date choice is invalid.
+  if (!publishedAt)
+    throw new Error('Scheduled content has no valid original publication date');
   const published = await Model.findOneAndUpdate(
     {
       _id: scheduled._id,
@@ -78,7 +87,7 @@ async function publishOneScheduledContent({
               updatedBy: scheduledBy,
             }),
         publishedBy: scheduledBy,
-        publishedAt: now,
+        publishedAt,
         scheduledPublishAt: null,
         scheduledBy: null,
         scheduledAt: null,
@@ -104,6 +113,8 @@ async function publishOneScheduledContent({
     targetSnapshot: getSnapshot(published),
     metadata: {
       source: 'scheduled-publication',
+      publicationDateChoice: scheduled.publicationDateChoice,
+      publishedAt,
       scheduledPublishAt,
     },
   });

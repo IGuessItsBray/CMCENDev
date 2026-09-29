@@ -2,6 +2,7 @@ const {
   imageUrls: newsletterImageUrls,
 } = require('../public/newsletter-format');
 const express = require('express');
+const { getPublicationDateInfo } = require('../services/publication-date');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const mongoose = require('mongoose');
 const speakeasy = require('speakeasy');
@@ -700,6 +701,7 @@ function getContentActorName(actor) {
 
 function toContentWorkspaceItem(type, content) {
   const base = {
+    publicationDate: getPublicationDateInfo(content),
     _id: content._id,
     type,
     status: content.status,
@@ -920,6 +922,9 @@ router.get(
         queries.push(
           Event.find(getWorkspaceFilter('event'))
             .select(
+              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
+            )
+            .select(
               'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay rsvpEnabled rsvpDeadline imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
@@ -949,6 +954,9 @@ router.get(
         queries.push(
           RetirementMessage.find(getWorkspaceFilter('retirementMessage'))
             .select(
+              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
+            )
+            .select(
               'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation legacy.source legacy.sourcePostIds legacy.originalStatus legacy.submissionMetadata createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate({
@@ -973,6 +981,9 @@ router.get(
       if (types.includes('lastPost')) {
         queries.push(
           LastPostMessage.find(getWorkspaceFilter('lastPost'))
+            .select(
+              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
+            )
             .select(
               'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission legacy.source legacy.sourcePostIds legacy.originalStatus legacy.submissionMetadata createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
@@ -1008,6 +1019,9 @@ router.get(
             ...(parentTypes ? { parentType: { $in: parentTypes } } : {}),
           })
             .select(
+              'originalPublishedAt publicationDateChoice legacy.source legacy.originalPublishedAt legacy.wordpressCommentId',
+            )
+            .select(
               'parentType parentId author body legacy.authorName legacy.originalApproval status hiddenFromStatus rejectionReason publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
@@ -1035,6 +1049,9 @@ router.get(
       if (types.includes('newsArticle')) {
         queries.push(
           NewsArticle.find(getWorkspaceFilter('newsArticle'))
+            .select(
+              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
+            )
             .select(
               'category layout newsletter newsletterBlocks title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )

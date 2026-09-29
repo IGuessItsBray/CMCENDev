@@ -98,6 +98,7 @@
       .join("\n\n");
   }
   function displayDate(article) {
+    if (article.publicationDateChoice) return article.publishedAt;
     return article.newsletter?.archived && article.newsletter.date
       ? `${article.newsletter.date}T12:00:00.000Z`
       : article.publishedAt || article.createdAt || null;

@@ -1,4 +1,5 @@
 const express = require('express');
+const { selectPublicationDate } = require('../services/publication-date');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const mongoose = require('mongoose');
@@ -626,6 +627,8 @@ router.patch(
 
       return res.json({ lastPost });
     } catch (error) {
+      if (error.status === 400)
+        return res.status(400).json({ error: error.message });
       console.error('Could not review Last Post notice:', error);
       return res
         .status(500)
@@ -851,7 +854,7 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       ? lastPost.publishedBy || req.user._id
       : null;
     lastPost.publishedAt = wantsImmediatePublication
-      ? lastPost.publishedAt || now
+        ? lastPost.publishedAt || selectPublicationDate(lastPost, req.body?.publicationDateChoice, now)
       : null;
 
     await lastPost.save();
@@ -900,6 +903,7 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
+    if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('Could not update Last Post notice:', error);
     return res.status(500).json({ error: 'Could not update Last Post notice' });
   }

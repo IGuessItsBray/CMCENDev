@@ -21,6 +21,7 @@ const Page = require('../models/Page');
 const ContentRevision = require('../models/ContentRevision');
 const RetirementMessage = require('../models/RetirementMessage');
 const Comment = require('../models/Comment');
+const { isWordPressArchive } = require('../services/archive-provenance');
 const {
   getCommentTypes,
   getCommentTarget,
@@ -760,6 +761,7 @@ function toContentWorkspaceItem(type, content) {
         photoDisplayUrl: content.photoDisplayUrl || '',
         submitter: content.submitter || {},
         publicationConsent: content.publicationConsent || {},
+        historicalSubmissionUnknown: isWordPressArchive(content),
         memberReviewConfirmation: content.memberReviewConfirmation || {},
         createdBy: content.createdBy || null,
       },
@@ -781,6 +783,7 @@ function toContentWorkspaceItem(type, content) {
         photoUrl: content.photoUrl || '',
         submitter: content.submitter || {},
         publicationPermission: content.publicationPermission || {},
+        historicalSubmissionUnknown: isWordPressArchive(content),
         createdBy: content.createdBy || null,
       },
     };
@@ -813,6 +816,7 @@ function toContentWorkspaceItem(type, content) {
       body: content.body || '',
       author: content.author || null,
       legacyAuthorName: content.legacy?.authorName || '',
+      originalApproval: content.legacy?.originalApproval ?? null,
       createdAt: content.createdAt || null,
       parentType: content.parentType,
       parentId: content.parentId?._id || content.parentId,
@@ -945,7 +949,7 @@ router.get(
         queries.push(
           RetirementMessage.find(getWorkspaceFilter('retirementMessage'))
             .select(
-              'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
+              'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation legacy.source legacy.sourcePostIds legacy.originalStatus legacy.submissionMetadata createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate({
               path: 'createdBy',
@@ -970,7 +974,7 @@ router.get(
         queries.push(
           LastPostMessage.find(getWorkspaceFilter('lastPost'))
             .select(
-              'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
+              'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission legacy.source legacy.sourcePostIds legacy.originalStatus legacy.submissionMetadata createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
               {
@@ -1004,7 +1008,7 @@ router.get(
             ...(parentTypes ? { parentType: { $in: parentTypes } } : {}),
           })
             .select(
-              'parentType parentId author body legacy.authorName status hiddenFromStatus rejectionReason publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
+              'parentType parentId author body legacy.authorName legacy.originalApproval status hiddenFromStatus rejectionReason publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
               { path: 'parentId' },

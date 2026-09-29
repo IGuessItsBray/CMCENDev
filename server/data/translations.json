@@ -1,5 +1,7 @@
 {
   "en": {
+    "review_wordpress_comment_unapproved": "This comment was unapproved in WordPress. It was preserved as a draft for review.",
+    "review_historical_submission_unknown": "Imported from the published archive. Original submitter details and consent records are unavailable; no confirmation has been inferred.",
     "submission_published_by": "Published {date} by {name}",
     "submission_hidden_at": "Hidden {date}",
     "submission_hidden_by": "Hidden {date} by {name}",
@@ -2204,6 +2206,8 @@
     "archive_review_related_source": "Related source (not a translation)"
   },
   "fr": {
+    "review_wordpress_comment_unapproved": "Ce commentaire n’était pas approuvé dans WordPress. Il a été conservé comme brouillon pour examen.",
+    "review_historical_submission_unknown": "Importé des archives publiées. Les renseignements sur la personne ayant soumis le contenu et les preuves de consentement d’origine ne sont pas disponibles; aucune confirmation n’a été présumée.",
     "submission_published_by": "Publié le {date} par {name}",
     "submission_hidden_at": "Masqué le {date}",
     "submission_hidden_by": "Masqué le {date} par {name}",

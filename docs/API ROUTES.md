@@ -575,6 +575,18 @@ The original collections remain as a backup and are not used by the new app.
 No emails are sent and no publication statuses change. Run this before reopening
 writes; rerunning after staff edits will refuse to overwrite changed records.
 
+Published WordPress archive imports can retain missing historical submitter and
+consent data when their stored provenance explicitly records
+`submissionMetadata: historically-unknown`, `originalStatus: publish`, the
+WordPress source namespace and numeric source post IDs. The staff content API
+exposes `historicalSubmissionUnknown` and the workspace explains these unknowns.
+Public submission routes do not accept this provenance or bypass their normal
+submitter/consent checks. Missing historical consent is never marked confirmed.
+Comment workspace content includes `originalApproval` when preserved from
+WordPress. A value of `0` is labelled as originally unapproved, independently
+of its current draft status. Importing such a comment requires an explicit
+preservation decision in the preflight evidence and does not publish it.
+
 Archival content length contract: retirement and Last Post message text
 supports 30,000 characters per language. Retirement comment creation, owner
 editing and staff correction support 2–10,000 characters. Last Post comment

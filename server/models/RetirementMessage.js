@@ -1,4 +1,8 @@
 const mongoose = require('mongoose');
+const {
+  isWordPressArchive,
+  requiresSubmissionMetadata,
+} = require('../services/archive-provenance');
 
 const retirementMessageSchema = new mongoose.Schema(
   {
@@ -89,14 +93,14 @@ const retirementMessageSchema = new mongoose.Schema(
     submitter: {
       firstName: {
         type: String,
-        required: true,
+        required: requiresSubmissionMetadata,
         trim: true,
         maxlength: 80,
       },
 
       lastName: {
         type: String,
-        required: true,
+        required: requiresSubmissionMetadata,
         trim: true,
         maxlength: 80,
       },
@@ -104,12 +108,12 @@ const retirementMessageSchema = new mongoose.Schema(
       relationship: {
         type: String,
         enum: ['self', 'colleague', 'family', 'other'],
-        required: true,
+        required: requiresSubmissionMetadata,
       },
 
       email: {
         type: String,
-        required: true,
+        required: requiresSubmissionMetadata,
         trim: true,
         lowercase: true,
         maxlength: 254,
@@ -117,7 +121,7 @@ const retirementMessageSchema = new mongoose.Schema(
 
       unit: {
         type: String,
-        required: true,
+        required: requiresSubmissionMetadata,
         trim: true,
         maxlength: 160,
       },
@@ -126,10 +130,12 @@ const retirementMessageSchema = new mongoose.Schema(
     publicationConsent: {
       confirmed: {
         type: Boolean,
-        required: true,
+        required: requiresSubmissionMetadata,
         validate: {
           validator(value) {
-            return value === true;
+            return (
+              value === true || (isWordPressArchive(this) && value == null)
+            );
           },
           message: 'Publication consent must be confirmed',
         },
@@ -137,7 +143,7 @@ const retirementMessageSchema = new mongoose.Schema(
 
       confirmedAt: {
         type: Date,
-        required: true,
+        required: requiresSubmissionMetadata,
       },
     },
 

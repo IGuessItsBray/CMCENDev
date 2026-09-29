@@ -154,3 +154,41 @@ test('model errors are reported without exposing field values', async () => {
   assert.equal(report.safeToApply, false);
   assert.ok(!JSON.stringify(report).includes('private value'));
 });
+
+test('unapproved comments need an explicit preservation decision and remain drafts', async () => {
+  const input = fixture();
+  const item = input.items[0];
+  item.document._id = 'b'.repeat(24);
+  const comment = {
+    sourceCommentId: 42,
+    sourcePostId: 10,
+    sourceParentId: 0,
+    sourceUserId: 0,
+    sourceApproval: '0',
+    convertedText: 'Congratulations.',
+    document: {
+      parentType: 'retirement',
+      parentId: item.document._id,
+      status: 'draft',
+      body: 'Congratulations.',
+      legacy: {
+        source: 'https://cmcen-rcmce.ca',
+        wordpressCommentId: 42,
+        postId: 10,
+        parentCommentId: 0,
+        authorUserId: 0,
+        originalApproval: '0',
+      },
+    },
+  };
+  item.comments = [comment];
+  assert.equal((await inspectBatch(input, { models })).safeToApply, false);
+  comment.importReview = {
+    decision: 'preserve-as-draft',
+    reviewedBy: 'operator',
+    reason: 'Preserve this historical congratulations for review',
+  };
+  assert.equal((await inspectBatch(input, { models })).safeToApply, true);
+  comment.document.status = 'published';
+  assert.equal((await inspectBatch(input, { models })).safeToApply, false);
+});

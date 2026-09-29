@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+const {
+  requiresSubmissionMetadata,
+} = require('../services/archive-provenance');
 
 const LastPostMessageSchema = new mongoose.Schema(
   {
@@ -20,25 +23,25 @@ const LastPostMessageSchema = new mongoose.Schema(
     submitter: {
       rank: {
         type: String,
-        required: true,
+        required: requiresSubmissionMetadata,
         trim: true,
         maxlength: 80,
       },
       firstName: {
         type: String,
-        required: true,
+        required: requiresSubmissionMetadata,
         trim: true,
         maxlength: 80,
       },
       lastName: {
         type: String,
-        required: true,
+        required: requiresSubmissionMetadata,
         trim: true,
         maxlength: 80,
       },
       email: {
         type: String,
-        required: true,
+        required: requiresSubmissionMetadata,
         trim: true,
         lowercase: true,
         maxlength: 254,

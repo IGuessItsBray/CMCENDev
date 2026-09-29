@@ -1531,7 +1531,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Editorial workspace content with `items`, `hasMore`, and an opaque `nextCursor` when another page is available.
+          description: Editorial workspace content with `items`, `hasMore`, and an opaque `nextCursor` when another page is available. Retirement and Last Post content includes `historicalSubmissionUnknown` for recognized WordPress archive records whose original submitter and consent metadata is unavailable; this does not imply confirmed consent.
         "400":
           $ref: "#/components/responses/Error"
         "403":

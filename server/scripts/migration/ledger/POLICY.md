@@ -40,6 +40,14 @@ invitations previously marked for exclusion. Preserve the saved decision history
 - Preserve original content during transfer; editorial curation comes later.
   Check that storage/import constraints do not silently truncate source content.
   This is a fidelity requirement, not adoption of the superseded meeting notes.
+- Original submitter details and consent records absent from the WordPress
+  archive remain historically unknown. Do not invent values or imply consent.
+  Recognized published-source archive records can omit that metadata; normal
+  submission requirements remain unchanged. The staff workspace labels this.
+- The operator explicitly approved preserving unapproved WordPress comments
+  6828 and 6815 as drafts after reading them. Keep their original approval
+  status and the preservation decision; this is not publication approval and
+  does not approve other unmoderated comments automatically.
 
 ## Execution order
 

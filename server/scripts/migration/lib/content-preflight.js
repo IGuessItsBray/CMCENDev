@@ -157,7 +157,15 @@ async function inspectBatch(input, { models, mediaEvidence = [] } = {}) {
         flag('unresolved-comment-parent', {
           sourceCommentId: comment.sourceCommentId,
         });
-      if (comment.sourceApproval !== '1')
+      if (
+        comment.sourceApproval !== '1' &&
+        !(
+          comment.sourceApproval === '0' &&
+          comment.importReview?.decision === 'preserve-as-draft' &&
+          comment.importReview?.reviewedBy &&
+          comment.importReview?.reason
+        )
+      )
         flag('originally-unapproved-comment', {
           sourceCommentId: comment.sourceCommentId,
         });
@@ -175,7 +183,8 @@ async function inspectBatch(input, { models, mediaEvidence = [] } = {}) {
         legacy.wordpressCommentId !== comment.sourceCommentId ||
         legacy.postId !== comment.sourcePostId ||
         legacy.parentCommentId !== comment.sourceParentId ||
-        legacy.authorUserId !== comment.sourceUserId
+        legacy.authorUserId !== comment.sourceUserId ||
+        legacy.originalApproval !== comment.sourceApproval
       )
         flag('missing-comment-provenance');
       if (comment.sourceUserId === 0 && comment.document?.author)

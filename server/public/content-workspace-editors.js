@@ -1338,6 +1338,24 @@ window.ContentWorkspaceEditors = {
       );
       const body = document.createElement("div");
       body.className = "content-workspace-submission-body";
+      if (content.historicalSubmissionUnknown) {
+        const note = document.createElement("p");
+        setWorkspaceTranslatedText(
+          note,
+          "review_historical_submission_unknown",
+          "Imported from the published archive. Original submitter details and consent records are unavailable; no confirmation has been inferred.",
+        );
+        body.append(note);
+      }
+      if (item.type === "comment" && content.originalApproval === "0") {
+        const note = document.createElement("p");
+        setWorkspaceTranslatedText(
+          note,
+          "review_wordpress_comment_unapproved",
+          "This comment was unapproved in WordPress. It was preserved as a draft for review.",
+        );
+        body.append(note);
+      }
 
       if (item.type === "event") {
         const permission = content.publicationPermission || {};

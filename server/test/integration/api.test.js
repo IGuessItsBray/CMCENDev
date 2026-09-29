@@ -2750,6 +2750,7 @@ describe('Last Post comment moderation', () => {
     });
     const legacy = {
       wordpressCommentId: 123,
+      originalApproval: '0',
       authorName: 'Legacy Guest',
       authorEmail: 'private@example.test',
     };
@@ -2793,6 +2794,7 @@ describe('Last Post comment moderation', () => {
     assert.equal(item.type, 'comment');
     assert.equal(item.content.author, null);
     assert.equal(item.content.legacyAuthorName, 'Legacy Guest');
+    assert.equal(item.content.originalApproval, '0');
     assert.ok(item.content.parentTitle.includes('Archived Notice'));
     assert.ok(!JSON.stringify(listing.body).includes('private@example.test'));
     const filtered = await request(app)
@@ -3004,6 +3006,60 @@ describe('Last Post comment moderation', () => {
 });
 
 describe('archival draft lifecycle', () => {
+  test('archive unknowns remain editable without allowing public consent bypass', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const token = bearer((await login(editor)).body.token);
+    const legacy = {
+      source: 'https://cmcen-rcmce.ca',
+      sourcePostIds: [123],
+      originalStatus: 'publish',
+      submissionMetadata: 'historically-unknown',
+    };
+    for (const [Model, type, base] of [
+      [RetirementMessage, 'retirementMessage', '/api/retirement-messages'],
+      [LastPostMessage, 'lastPost', '/api/last-posts'],
+    ]) {
+      const record = await Model.create({
+        status: 'draft',
+        messageLanguage: 'en',
+        messages: { en: 'Original historical content' },
+        legacy,
+      });
+      const listing = await request(app)
+        .get(`/api/admin/content?type=${type}&id=${record._id}`)
+        .set('Authorization', token)
+        .expect(200);
+      assert.equal(
+        listing.body.items[0].content.historicalSubmissionUnknown,
+        true,
+      );
+      await request(app)
+        .patch(`${base}/${record._id}/review-content`)
+        .set('Authorization', token)
+        .send({ language: 'en', message: 'Preserved historical content' })
+        .expect(200);
+      await request(app)
+        .post(base)
+        .set('Authorization', token)
+        .send({
+          ...retirementPayload(),
+          deceased: {
+            fullRank: 'Sergeant',
+            firstName: 'Example',
+            surname: 'Member',
+          },
+          publicationConsentConfirmed: false,
+          publicationPermissionConfirmed: false,
+          legacy,
+        })
+        .expect(400);
+      assert.equal(await Model.countDocuments(), 1);
+      assert.notEqual(
+        (await Model.findById(record._id)).publicationConsent?.confirmed,
+        true,
+      );
+    }
+  });
   for (const kind of ['retirement', 'last-post']) {
     test(`${kind} drafts stay out of approval queues and support staff editing and publication`, async () => {
       const owner = await createUser({ role: 'contributor' });

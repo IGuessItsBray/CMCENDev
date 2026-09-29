@@ -859,6 +859,98 @@ describe('system and authentication', () => {
     assert.equal(audit.targetSnapshot.provider, 'td_insurance');
   });
 
+  test('private biography and links are owner editable and excluded from ordinary user queries', async () => {
+    const user = await createUser();
+    const other = await createUser({
+      username: 'other-profile',
+      email: 'other-profile@example.test',
+    });
+    const response = await login(user);
+    const auth = bearer(response.body.token);
+    await request(app).get('/api/me').expect(401);
+    await request(app)
+      .patch('/api/profile')
+      .send({ biography: 'no access' })
+      .expect(401);
+    const edited = await request(app)
+      .patch('/api/profile')
+      .set('Authorization', auth)
+      .send({
+        userId: String(other._id),
+        biography: '<b>Historical text</b>\nSecond line',
+        websiteUrl: 'http://example.org',
+        socialLinks: { facebook: 'https://www.facebook.com/example' },
+      })
+      .expect(200);
+    assert.equal(edited.body.biography, '<b>Historical text</b>\nSecond line');
+    const mine = await request(app)
+      .get('/api/me')
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(mine.body.websiteUrl, 'http://example.org');
+    assert.equal(
+      mine.body.socialLinks.facebook,
+      'https://www.facebook.com/example',
+    );
+    const ordinary = await User.findById(user._id).lean();
+    assert.equal(ordinary.biography, undefined);
+    assert.equal(ordinary.websiteUrl, undefined);
+    assert.equal(ordinary.socialLinks?.facebook, undefined);
+    const untouched = await User.findById(other._id).select('+biography');
+    assert.equal(untouched.biography, '');
+    await mongoose.connection.db.collection('legacyaccountprofiles').insertOne({
+      userId: user._id,
+      sourceData: { account: { user_registered: '2001-01-01' }, metadata: {} },
+    });
+    const detailsPath = `/api/admin/users/${user._id}?includePosts=false`;
+    await request(app).get(detailsPath).expect(401);
+    await request(app).get(detailsPath).set('Authorization', auth).expect(403);
+    const admin = await createUser({
+      username: 'profile-admin',
+      email: 'profile-admin@example.test',
+      role: 'administrator',
+    });
+    const adminLogin = await login(admin);
+    const detail = await request(app)
+      .get(detailsPath)
+      .set('Authorization', bearer(adminLogin.body.token))
+      .expect(200);
+    assert.equal(detail.body.user.profile.websiteUrl, 'http://example.org');
+    assert.equal(
+      detail.body.user.legacyAccount.account.user_registered,
+      '2001-01-01',
+    );
+    assert.equal(detail.body.user.password, undefined);
+    assert.equal(mine.body.legacyAccount, undefined);
+    assert.ok(
+      await AuditLog.exists({
+        action: 'user.profile_viewed',
+        target: String(user._id),
+      }),
+    );
+    for (const url of [
+      'javascript:alert(1)',
+      'data:text/html,hello',
+      'https://user:password@example.org',
+    ]) {
+      await request(app)
+        .patch('/api/profile')
+        .set('Authorization', auth)
+        .send({ websiteUrl: url })
+        .expect(400);
+    }
+    await request(app)
+      .patch('/api/profile')
+      .set('Authorization', auth)
+      .send({ biography: '', websiteUrl: '', socialLinks: { facebook: '' } })
+      .expect(200);
+    const cleared = await request(app)
+      .get('/api/me')
+      .set('Authorization', auth)
+      .expect(200);
+    assert.equal(cleared.body.biography, '');
+  });
+
   test('logs in, returns a safe profile, refreshes, and revokes the session', async () => {
     const user = await createUser();
     const agent = request.agent(app);

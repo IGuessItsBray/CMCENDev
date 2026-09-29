@@ -775,6 +775,7 @@ paths:
     delete:
       tags: [Auth]
       summary: Delete the current account after a current TOTP or passkey MFA confirmation.
+      description: Also removes private legacy profile data and retains a source-ID tombstone without email hash or Mongo user ID to prevent reimport.
       x-permission: canDeleteOwnAccount
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
@@ -786,6 +787,7 @@ paths:
     patch:
       tags: [Auth]
       summary: Update current user profile.
+      description: Owner-only updates. currentUnit accepts 256 characters; biography is plain text up to 10000 characters; websiteUrl and socialLinks.facebook accept HTTP(S) URLs up to 2048 characters or empty strings. URL credentials are rejected. These fields are not public profiles.
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
       responses:
@@ -1223,6 +1225,7 @@ paths:
     delete:
       tags: [Admin]
       summary: Delete a user account after a current TOTP or passkey MFA confirmation.
+      description: Also removes private legacy profile data and retains a source-ID tombstone without email hash or Mongo user ID to prevent reimport.
       x-permission: canDeleteAnyUser
       parameters:
         - $ref: "#/components/parameters/UserId"
@@ -1236,7 +1239,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get user detail.
-      description: Returns sanitized account detail. Content and catalogs are included by default for existing clients; omit them when only editing account access.
+      description: Returns sanitized account detail including user.profile (private member fields) and user.legacyAccount (preserved legacy source data, or null). Requires canReadUsers; reads audit user.profile_viewed without recording profile values. Content and catalogs are included by default for existing clients; omit them when only editing account access. Credentials are never returned.
       x-permission: canReadUsers
       parameters:
         - $ref: "#/components/parameters/UserId"

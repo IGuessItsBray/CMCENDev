@@ -10,6 +10,21 @@ function capitalizeFirstLetter(value) {
   return cleanValue.charAt(0).toUpperCase() + cleanValue.slice(1);
 }
 
+function isProfileUrl(value) {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return (
+      ['http:', 'https:'].includes(url.protocol) &&
+      Boolean(url.hostname) &&
+      !url.username &&
+      !url.password
+    );
+  } catch {
+    return false;
+  }
+}
+
 function formatAccountName(value) {
   return String(value || '')
     .trim()
@@ -214,7 +229,7 @@ const UserSchema = new mongoose.Schema(
     currentUnit: {
       type: String,
       trim: true,
-      maxlength: 160,
+      maxlength: 256,
       default: '',
     },
 
@@ -230,6 +245,33 @@ const UserSchema = new mongoose.Schema(
       enum: ['en', 'fr'],
       default: 'en',
       required: true,
+    },
+
+    // Private account fields: explicitly select for owner or authorized admin.
+    biography: {
+      type: String,
+      trim: true,
+      maxlength: 10000,
+      default: '',
+      select: false,
+    },
+    websiteUrl: {
+      type: String,
+      trim: true,
+      maxlength: 2048,
+      default: '',
+      select: false,
+      validate: isProfileUrl,
+    },
+    socialLinks: {
+      facebook: {
+        type: String,
+        trim: true,
+        maxlength: 2048,
+        default: '',
+        select: false,
+        validate: isProfileUrl,
+      },
     },
 
     role: {

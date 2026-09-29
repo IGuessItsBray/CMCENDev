@@ -43,7 +43,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/2022/07/The-Cable-Volume-6-Issue-2.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2022/12/The-Cable-Volume-6-Issue-3.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/The-Cable-Volume-7-Issue-1.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": null
           }
@@ -105,7 +106,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-Vol-3-Iss-5-June-July-2025.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-Vol-5-Iss-1-Aug-2025.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-Vol-5-Iss-2-Sep-2025.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": null
           }
@@ -135,7 +137,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/12.-2024-Jan.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-SDR.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/5.-2023-March-Picture-on-the-Wall-Dave-Watson-Vol-1-Issue-5-.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 354219,
@@ -154,8 +157,17 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/12.-2024-Jan.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/32-Sig-Regt-SDR.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/5.-2023-March-Picture-on-the-Wall-Dave-Watson-Vol-1-Issue-5-.pdf"
-              ]
+              ],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/32e-regiment-de-transmissions-bulletins-dinformation-supplementaires/",
+            "englishUrl": "https://cmcen-rcmce.ca/32-signal-regiment-additional-newsletters/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/32e-regiment-de-transmissions-bulletins-dinformation-supplementaires/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -204,7 +216,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/10/7.-32-Sig-Regt-newsletter-Vol-2-Issue-11-July2023.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/10/8.-32-Sig-Regt-newsletter-Vol-2-Issue-12-.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/12/32-Sig-Regt-Vol-2-Iss-13-Nov-2023.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": null
           }
@@ -229,7 +242,8 @@
               "images": [],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/En_newsletter-29-aout.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 354223,
@@ -243,8 +257,17 @@
               "images": [],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/FR_newsletter-29-aout.indd_.pdf"
-              ]
+              ],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/bulletin-dinformation-du-groupe-des-pm1-adjuc-septembre-2025/",
+            "englishUrl": "https://cmcen-rcmce.ca/cpo1-cwo-corp-newsletter-september-2025/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/bulletin-dinformation-du-groupe-des-pm1-adjuc-septembre-2025/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -286,7 +309,8 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": null
           }
@@ -342,7 +366,8 @@
               ],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/10/Preserve-Our-Memorials-Project-Description.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 342236,
@@ -388,8 +413,17 @@
               ],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/10/Preserve-Our-Memorials-Project-Description.pdf"
-              ]
+              ],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/newsletter-de-lassociation-hiver-2023/",
+            "englishUrl": "https://cmcen-rcmce.ca/association-newsletter-winter-2023/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/newsletter-de-lassociation-hiver-2023/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -453,7 +487,8 @@
               ],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/5-CMBG-Bde-of-Innovation.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 340588,
@@ -508,8 +543,17 @@
               ],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/07/5-CMBG-Bde-of-Innovation.pdf"
-              ]
+              ],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/newsletter-de-lassociation-hiver-2022/",
+            "englishUrl": "https://cmcen-rcmce.ca/association-newsletter-summer-2023/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/newsletter-de-lassociation-hiver-2022/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -568,7 +612,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/04/Br-Chief-signature.jpg",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/04/Br-Signature-block.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": null
           }
@@ -603,7 +648,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/741-Newsletter-Feb-1986.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/741-Newsletter-Nov-1985.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/01/741-Newsletter-Sept-1985.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": null
           }
@@ -669,7 +715,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2022/12/MACS-Trenton-crest-265x300.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 314972,
@@ -724,8 +771,17 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2022/12/MACS-Trenton-crest-265x300.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/association-newsletter-winter-2022/",
+            "englishUrl": "https://cmcen-rcmce.ca/association-newsletter-winter-2022/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/association-newsletter-winter-2022/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -786,7 +842,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/cda-netherlands-flag.jpg",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/branch-flag-300x177.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 312837,
@@ -838,8 +895,17 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/cda-netherlands-flag.jpg",
                 "https://cmcen-rcmce.ca/wp-content/uploads/2022/08/branch-flag-300x177.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/bulletin-dinformation-de-lassociation-ete-2022/",
+            "englishUrl": "https://cmcen-rcmce.ca/association-newsletter-summer-2022/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/bulletin-dinformation-de-lassociation-ete-2022/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -884,7 +950,8 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 312829,
@@ -921,8 +988,17 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/cropped-Official_2017_CE_Crest_Square_100_100-300x300.png"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/bulletin-dinformation-de-lassociation-printemps-2022-francais/",
+            "englishUrl": "https://cmcen-rcmce.ca/association-newsletter-spring-2022-english/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/bulletin-dinformation-de-lassociation-printemps-2022-francais/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -948,7 +1024,8 @@
                 "+DressandCeremonial-TenuesetCérémonies@CMP DHH@Ottawa-Hull <DressandCeremonial-TenuesetCeremonies@forces.gc.ca>"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 358354,
@@ -965,8 +1042,17 @@
                 "+DressandCeremonial-TenuesetCérémonies@CMP DHH@Ottawa-Hull <DressandCeremonial-TenuesetCeremonies@forces.gc.ca>"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/modification-a-la-date-de-debut-du-coquelicot/",
+            "englishUrl": "https://cmcen-rcmce.ca/amendment-to-poppy-start-date/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/modification-a-la-date-de-debut-du-coquelicot/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -993,7 +1079,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/DSC_0008-300x200.jpg",
                 "https://cmcen-rcmce.ca/wp-content/uploads/DSC_0011-300x200.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": null
           }
@@ -1019,7 +1106,8 @@
               "images": [],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/2026-May-DESPATCHES-26-May-2026.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": null
           }
@@ -1075,8 +1163,8 @@
             "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
           },
           "rationale": {
-            "en": "Confirmed WPML counterpart. French explicitly says the three newsletters are available only in English. Both pages link the same three unique PDFs; English repeats one link. Do not invent French PDFs.",
-            "fr": "Lien WPML confirmé. L’introduction française précise que les trois bulletins sont disponibles en anglais seulement. Les PDF sont identiques; un lien est répété en anglais."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation."
           },
           "recommendedChoice": "pair"
         },
@@ -1111,8 +1199,8 @@
             "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
           },
           "rationale": {
-            "en": "The English and French legacy pages are versions of the same article. Each links its own newsletter PDF; both links were included in the imported article.",
-            "fr": "Les pages historiques anglaise et française correspondent au même article. Chacune contient un lien vers son bulletin PDF; les deux liens figurent dans l’article importé."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation."
           },
           "recommendedChoice": "pair"
         },
@@ -1147,8 +1235,8 @@
             "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
           },
           "rationale": {
-            "en": "Confirmed Winter 2023 issue, including the same 168-parcel count and Maj Samson Young story. French BENEFITS heading and most of its paragraph remain English; the Tony Charters passage repeats a phrase. A DeepL attribution is present in the source. Same three inline image URLs and same memorial-project PDF; language-specific external links differ.",
-            "fr": "Numéro de l’hiver 2023 confirmé : 168 colis et récit du Maj Samson Young concordent. La section BENEFITS demeure en anglais; une phrase sur Tony Charters est répétée. Attribution DeepL présente. Images et PDF commémoratif identiques."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation."
           },
           "recommendedChoice": "pair"
         },
@@ -1165,8 +1253,8 @@
             "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
           },
           "rationale": {
-            "en": "The French slug says hiver-2022, but title and body explicitly identify Vol. 2, issue 2, Summer 2023. Sections, 19 inline image occurrences, and the 5 CMBG PDF match. The bilingual 5 CMBG passage exists in both sources; it is not automatically a missing translation. Several French links still point to English legacy pages.",
-            "fr": "L’URL française indique hiver-2022, mais le titre et le texte identifient le volume 2, numéro 2, été 2023. Les 19 occurrences d’images et le PDF du 5 GBMC concordent. Le passage bilingue figure dans les deux sources."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation."
           },
           "recommendedChoice": "pair"
         },
@@ -1219,8 +1307,8 @@
             "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
           },
           "rationale": {
-            "en": "Confirmed Winter 2022 issue. The French membership introduction remains English. Main historical people/roles agree, including Martin Girard as the newly appointed Association vice-president and the Dave Awalt retirement. French list/paragraph boundaries differ; match blocks semantically. Both languages contain the same 1972 Yom Kippur War reference: a shared source issue, not a language mismatch; no factual correction performed. Same two inline images.",
-            "fr": "Numéro de l’hiver 2022 confirmé. L’introduction sur l’adhésion reste en anglais. Martin Girard et le départ de Dave Awalt concordent. Les paragraphes doivent être alignés selon leur sens. Deux images identiques; les faits historiques n’ont pas été corrigés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation."
           },
           "recommendedChoice": "pair"
         },
@@ -1237,8 +1325,8 @@
             "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
           },
           "rationale": {
-            "en": "Confirmed Summer 2022 issue. Both versions identify Dave Yarker replacing James Lambert, and carry the same tour dates. French garbles the Colonel Commandant sentence about Josee Robidoux and omits her role wording. English has 11 inline image occurrences and French 10; French has no unique additional image URLs. Preserve each source layout rather than automatically duplicating the extra occurrence.",
-            "fr": "Numéro de l’été 2022 confirmé. Dave Yarker remplace James Lambert dans les deux versions, et les dates concordent. La phrase sur Josée Robidoux est mal traduite et omet sa fonction. Onze occurrences d’images en anglais, dix en français; aucune image propre au français."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation."
           },
           "recommendedChoice": "pair"
         },
@@ -1255,8 +1343,8 @@
             "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
           },
           "rationale": {
-            "en": "Confirmed Spring 2022 issue. Both identify Josee Robidoux succeeding Kevin O’Keefe. The French splits that passage into separate paragraphs; content alignment must not rely solely on block position. Same inline image. No substantive conflicting person/date identified in this comparison.",
-            "fr": "Numéro du printemps 2022 confirmé. Josée Robidoux succède à Kevin O’Keefe dans les deux textes. Le français divise ce passage en plusieurs paragraphes; ne pas aligner uniquement selon la position."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation."
           },
           "recommendedChoice": "pair"
         },
@@ -1273,8 +1361,8 @@
             "fr": "Apparier ces sources pour une mise à jour ultérieure du brouillon. Examiner les autres points séparément."
           },
           "rationale": {
-            "en": "Explicit WPML link; dates, 24 October start, Remembrance Day end and contact match. Six corresponding body paragraphs. French has awkward source wording, including pavot in the opening, so preserving it is not an endorsement of translation quality.",
-            "fr": "Lien WPML explicite. Les six paragraphes, le début au 24 octobre, la fin au jour du Souvenir et le contact concordent. Certaines formulations françaises sont maladroites, dont pavot; l’appariement ne valide pas la qualité de la traduction."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation."
           },
           "recommendedChoice": "pair"
         },
@@ -1327,8 +1415,8 @@
             "fr": "Demander une correction du passage dans une mise à jour ultérieure du brouillon; conserver la source."
           },
           "rationale": {
-            "en": "Confirmed Winter 2023 issue, including the same 168-parcel count and Maj Samson Young story. French BENEFITS heading and most of its paragraph remain English; the Tony Charters passage repeats a phrase. A DeepL attribution is present in the source. Same three inline image URLs and same memorial-project PDF; language-specific external links differ.",
-            "fr": "Numéro de l’hiver 2023 confirmé : 168 colis et récit du Maj Samson Young concordent. La section BENEFITS demeure en anglais; une phrase sur Tony Charters est répétée. Attribution DeepL présente. Images et PDF commémoratif identiques."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Confirmed Winter 2023 issue, including the same 168-parcel count and Maj Samson Young story. French BENEFITS heading and most of its paragraph remain English; the Tony Charters passage repeats a phrase. A DeepL attribution is present in the source. Same three inline image URLs and same memorial-project PDF; language-specific external links differ.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Numéro de l’hiver 2023 confirmé : 168 colis et récit du Maj Samson Young concordent. La section BENEFITS demeure en anglais; une phrase sur Tony Charters est répétée. Attribution DeepL présente. Images et PDF commémoratif identiques."
           },
           "recommendedChoice": "request-edit",
           "highlights": ["BENEFITS", "Tony Charters"]
@@ -1346,8 +1434,8 @@
             "fr": "Demander une correction du passage dans une mise à jour ultérieure du brouillon; conserver la source."
           },
           "rationale": {
-            "en": "Confirmed Winter 2022 issue. The French membership introduction remains English. Main historical people/roles agree, including Martin Girard as the newly appointed Association vice-president and the Dave Awalt retirement. French list/paragraph boundaries differ; match blocks semantically. Both languages contain the same 1972 Yom Kippur War reference: a shared source issue, not a language mismatch; no factual correction performed. Same two inline images.",
-            "fr": "Numéro de l’hiver 2022 confirmé. L’introduction sur l’adhésion reste en anglais. Martin Girard et le départ de Dave Awalt concordent. Les paragraphes doivent être alignés selon leur sens. Deux images identiques; les faits historiques n’ont pas été corrigés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Confirmed Winter 2022 issue. The French membership introduction remains English. Main historical people/roles agree, including Martin Girard as the newly appointed Association vice-president and the Dave Awalt retirement. French list/paragraph boundaries differ; match blocks semantically. Both languages contain the same 1972 Yom Kippur War reference: a shared source issue, not a language mismatch; no factual correction performed. Same two inline images.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Numéro de l’hiver 2022 confirmé. L’introduction sur l’adhésion reste en anglais. Martin Girard et le départ de Dave Awalt concordent. Les paragraphes doivent être alignés selon leur sens. Deux images identiques; les faits historiques n’ont pas été corrigés."
           },
           "recommendedChoice": "request-edit",
           "highlights": ["membership", "Membership"]
@@ -1365,8 +1453,8 @@
             "fr": "Demander une correction du passage dans une mise à jour ultérieure du brouillon; conserver la source."
           },
           "rationale": {
-            "en": "Confirmed Summer 2022 issue. Both versions identify Dave Yarker replacing James Lambert, and carry the same tour dates. French garbles the Colonel Commandant sentence about Josee Robidoux and omits her role wording. English has 11 inline image occurrences and French 10; French has no unique additional image URLs. Preserve each source layout rather than automatically duplicating the extra occurrence.",
-            "fr": "Numéro de l’été 2022 confirmé. Dave Yarker remplace James Lambert dans les deux versions, et les dates concordent. La phrase sur Josée Robidoux est mal traduite et omet sa fonction. Onze occurrences d’images en anglais, dix en français; aucune image propre au français."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Confirmed Summer 2022 issue. Both versions identify Dave Yarker replacing James Lambert, and carry the same tour dates. French garbles the Colonel Commandant sentence about Josee Robidoux and omits her role wording. English has 11 inline image occurrences and French 10; French has no unique additional image URLs. Preserve each source layout rather than automatically duplicating the extra occurrence.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Numéro de l’été 2022 confirmé. Dave Yarker remplace James Lambert dans les deux versions, et les dates concordent. La phrase sur Josée Robidoux est mal traduite et omet sa fonction. Onze occurrences d’images en anglais, dix en français; aucune image propre au français."
           },
           "recommendedChoice": "request-edit",
           "highlights": ["Robidoux"]
@@ -1384,8 +1472,8 @@
             "fr": "Conserver l’URL d’origine; identifier le numéro comme été 2023 selon son titre et son contenu."
           },
           "rationale": {
-            "en": "The French slug says hiver-2022, but title and body explicitly identify Vol. 2, issue 2, Summer 2023. Sections, 19 inline image occurrences, and the 5 CMBG PDF match. The bilingual 5 CMBG passage exists in both sources; it is not automatically a missing translation. Several French links still point to English legacy pages.",
-            "fr": "L’URL française indique hiver-2022, mais le titre et le texte identifient le volume 2, numéro 2, été 2023. Les 19 occurrences d’images et le PDF du 5 GBMC concordent. Le passage bilingue figure dans les deux sources."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): The French slug says hiver-2022, but title and body explicitly identify Vol. 2, issue 2, Summer 2023. Sections, 19 inline image occurrences, and the 5 CMBG PDF match. The bilingual 5 CMBG passage exists in both sources; it is not automatically a missing translation. Several French links still point to English legacy pages.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : L’URL française indique hiver-2022, mais le titre et le texte identifient le volume 2, numéro 2, été 2023. Les 19 occurrences d’images et le PDF du 5 GBMC concordent. Le passage bilingue figure dans les deux sources."
           },
           "recommendedChoice": "accept-source-url",
           "highlights": []
@@ -1403,8 +1491,8 @@
             "fr": "Préserver chaque mise en page. Ne pas répéter une image uniquement pour égaliser les nombres."
           },
           "rationale": {
-            "en": "Confirmed Summer 2022 issue. Both versions identify Dave Yarker replacing James Lambert, and carry the same tour dates. French garbles the Colonel Commandant sentence about Josee Robidoux and omits her role wording. English has 11 inline image occurrences and French 10; French has no unique additional image URLs. Preserve each source layout rather than automatically duplicating the extra occurrence.",
-            "fr": "Numéro de l’été 2022 confirmé. Dave Yarker remplace James Lambert dans les deux versions, et les dates concordent. La phrase sur Josée Robidoux est mal traduite et omet sa fonction. Onze occurrences d’images en anglais, dix en français; aucune image propre au français."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Confirmed Summer 2022 issue. Both versions identify Dave Yarker replacing James Lambert, and carry the same tour dates. French garbles the Colonel Commandant sentence about Josee Robidoux and omits her role wording. English has 11 inline image occurrences and French 10; French has no unique additional image URLs. Preserve each source layout rather than automatically duplicating the extra occurrence.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Numéro de l’été 2022 confirmé. Dave Yarker remplace James Lambert dans les deux versions, et les dates concordent. La phrase sur Josée Robidoux est mal traduite et omet sa fonction. Onze occurrences d’images en anglais, dix en français; aucune image propre au français."
           },
           "recommendedChoice": "keep-layouts",
           "highlights": []

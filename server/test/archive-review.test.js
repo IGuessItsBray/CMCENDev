@@ -8,6 +8,77 @@ const {
   summary,
 } = require('../services/archive-review');
 
+test('remaining inventory keeps unique sources in seven decision-only categories', () => {
+  const batches = catalogue.batches.filter((b) =>
+    b.id.startsWith('remaining-'),
+  );
+  assert.equal(batches.length, 7);
+  const existingIds = new Set(
+    catalogue.batches
+      .filter((b) => !b.id.startsWith('remaining-'))
+      .flatMap((b) => b.articles)
+      .flatMap((a) => [
+        ...Object.values(a.sources),
+        ...(a.relatedSources || []),
+      ])
+      .filter(Boolean)
+      .map((s) => s.id),
+  );
+  const ids = [];
+  for (const batch of batches) {
+    assert.equal(summary(batch, new Map()).counts.pending, batch.items.length);
+    for (const item of batch.items) {
+      assert.equal(item.type, 'disposition');
+      const article = batch.articles.find((a) => a.key === item.articleKey);
+      assert.equal(
+        item.recommendedChoice,
+        article.languagePairConflict ? 'defer' : 'research',
+      );
+    }
+    for (const article of batch.articles) {
+      for (const source of [
+        ...Object.values(article.sources),
+        ...article.relatedSources,
+      ].filter(Boolean)) {
+        if (source.languageLinkCandidate) {
+          assert.equal(source.id, undefined);
+          assert.equal(new URL(source.url).protocol, 'https:');
+          continue;
+        }
+        assert.ok(!existingIds.has(source.id));
+        assert.ok(['en', 'fr', 'und'].includes(source.language));
+        assert.equal(new URL(source.url).protocol, 'https:');
+        ids.push(source.id);
+      }
+    }
+  }
+  assert.equal(new Set(ids).size, ids.length);
+  const inventoryIds =
+    require('../data/archive-review/remaining-2026-09-28.json').sourceInventoryIds;
+  assert.equal(inventoryIds.length, 1353);
+  for (const id of inventoryIds)
+    assert.ok(existingIds.has(id) || ids.includes(id));
+});
+
+test('language-switcher counterparts share the existing Dennison review item', () => {
+  const batch = catalogue.batches.find(
+    (b) => b.id === 'last-post-discovery-2026-09-27',
+  );
+  const article = batch.articles.find((a) => a.key === 'wp-313269');
+  assert.equal(article.sources.en.id, 313269);
+  assert.equal(article.sources.fr.id, 313271);
+  assert.equal(article.languagePairEvidence.kind, 'legacy-language-switcher');
+  assert.ok(
+    !catalogue.batches
+      .filter((b) => b.id.startsWith('remaining-'))
+      .some((b) =>
+        b.articles.some((a) =>
+          Object.values(a.sources).some((s) => s?.id === 313271),
+        ),
+      ),
+  );
+});
+
 test('archive catalogue preserves the 16 real sources and 21 independently reviewed issues', () => {
   const batch = catalogue.batches[0];
   assert.equal(batch.articles.length, 16);

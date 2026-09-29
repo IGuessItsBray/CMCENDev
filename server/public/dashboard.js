@@ -249,6 +249,8 @@ function createProfileField({
   wide = false,
   addressField = "",
   fieldDataset = {},
+  multiline = false,
+  maxLength,
 }) {
   const field = document.createElement("div");
   field.className = wide
@@ -261,8 +263,10 @@ function createProfileField({
   label.setAttribute("for", id);
   label.textContent = translate(labelKey);
 
-  const input = document.createElement("input");
-  input.type = "text";
+  const input = document.createElement(multiline ? "textarea" : "input");
+  if (multiline) input.rows = 5;
+  else input.type = "text";
+  if (maxLength) input.maxLength = maxLength;
   input.id = id;
   input.name = name;
   input.value = value || "";
@@ -356,7 +360,7 @@ function setProfileFormMode(form, isEditing) {
 
   form.dataset.editing = isEditing ? "true" : "false";
 
-  form.querySelectorAll("input").forEach((input) => {
+  form.querySelectorAll("input, textarea").forEach((input) => {
     input.readOnly = !isEditing;
     input.tabIndex = isEditing ? 0 : -1;
   });
@@ -422,7 +426,9 @@ function getProfilePayload(form) {
   };
 
   form.querySelectorAll("[data-profile-field]").forEach((field) => {
-    payload[field.dataset.profileField] = field.value;
+    if (field.dataset.profileField === "socialLinks.facebook") {
+      payload.socialLinks = { facebook: field.value };
+    } else payload[field.dataset.profileField] = field.value;
   });
 
   form.querySelectorAll("[data-address-field]").forEach((field) => {
@@ -723,6 +729,26 @@ function createProfileForm(user) {
       labelKey: "phone",
       value: user.phone,
       autocomplete: "tel",
+    }),
+    createProfileField({
+      name: "biography",
+      labelKey: "profile_biography",
+      value: user.biography,
+      multiline: true,
+      wide: true,
+      maxLength: 10000,
+    }),
+    createProfileField({
+      name: "websiteUrl",
+      labelKey: "profile_website",
+      value: user.websiteUrl,
+      maxLength: 2048,
+    }),
+    createProfileField({
+      name: "socialLinks.facebook",
+      labelKey: "profile_facebook",
+      value: user.socialLinks?.facebook,
+      maxLength: 2048,
     }),
     createProfileSelect({
       name: "preferredLanguage",

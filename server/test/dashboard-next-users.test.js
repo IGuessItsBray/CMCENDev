@@ -136,6 +136,33 @@ const manager = {
   },
 };
 
+test('selected user details show private profiles and legacy values as text', async () => {
+  const page = await controller();
+  page.users[0].profile = {
+    biography: '<img src=x onerror=alert(1)>',
+    websiteUrl: 'https://example.org',
+    address: { city: 'Ottawa' },
+  };
+  page.users[0].legacyAccount = {
+    account: { user_login: 'old-login' },
+    metadata: { nickname: ['old-name'] },
+  };
+  await page.rows()[0].fire('click');
+  const values = page
+    .detail()
+    .querySelectorAll('dd')
+    .map((node) => node.textContent);
+  assert.ok(values.includes('<img src=x onerror=alert(1)>'));
+  assert.ok(values.includes('Ottawa'));
+  assert.equal(page.detail().querySelectorAll('img').length, 0);
+  assert.ok(
+    page
+      .detail()
+      .querySelectorAll('p')
+      .some((node) => node.textContent === 'user_login: old-login'),
+  );
+});
+
 test('role changes preserve the user draft and remove deleted assignments from its baseline', async () => {
   const page = await controller();
   page.mounted.updateRoles([

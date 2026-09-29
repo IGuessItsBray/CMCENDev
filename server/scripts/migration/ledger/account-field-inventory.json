@@ -1,0 +1,2321 @@
+{
+  "source": "WordPress SQL export, audited 2026-09-29",
+  "users": 2450,
+  "accountColumns": [
+    {
+      "sourceKey": "ID",
+      "populatedUsers": 2450,
+      "category": "source-identity"
+    },
+    {
+      "sourceKey": "user_login",
+      "populatedUsers": 2450,
+      "category": "legacy-login"
+    },
+    {
+      "sourceKey": "user_nicename",
+      "populatedUsers": 2450,
+      "category": "legacy-slug"
+    },
+    {
+      "sourceKey": "user_email",
+      "populatedUsers": 2450,
+      "category": "email"
+    },
+    {
+      "sourceKey": "user_url",
+      "populatedUsers": 3,
+      "category": "websiteUrl"
+    },
+    {
+      "sourceKey": "user_registered",
+      "populatedUsers": 2450,
+      "category": "legacy-registration-date"
+    },
+    {
+      "sourceKey": "user_status",
+      "populatedUsers": 2450,
+      "category": "legacy-status-not-service-status"
+    },
+    {
+      "sourceKey": "display_name",
+      "populatedUsers": 2450,
+      "category": "accountName"
+    },
+    {
+      "sourceKey": "user_pass",
+      "category": "security-do-not-copy",
+      "populatedUsers": null
+    },
+    {
+      "sourceKey": "user_activation_key",
+      "category": "security-do-not-copy",
+      "populatedUsers": null
+    }
+  ],
+  "metadataKeys": [
+    {
+      "sourceKey": "Phone",
+      "category": "profile",
+      "populatedUsers": 570,
+      "sourceRows": 1739,
+      "conflictingUsers": 0,
+      "destination": "phone"
+    },
+    {
+      "sourceKey": "WPML(notices)",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "WPML_TM_Wizard_Only_I",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 10,
+      "sourceRows": 10,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_ac_notices",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 11,
+      "sourceRows": 11,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_dm_dismissed",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 13,
+      "sourceRows": 13,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_et_support_center_safe_mode",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_et_support_center_safe_mode_product",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 0,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_icl_preferences",
+      "category": "legacy-context-review",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_pfd_onboarding",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 6,
+      "sourceRows": 6,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_wc_plugin_framework_square_dismissed_messages",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 4,
+      "sourceRows": 4,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_wc_square_credit_card_payment_tokens",
+      "category": "security-do-not-activate",
+      "populatedUsers": 12,
+      "sourceRows": 12,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_woocommerce_load_saved_cart_after_login",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 4,
+      "sourceRows": 4,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_woocommerce_persistent_cart_1",
+      "category": "billing-history",
+      "populatedUsers": 1027,
+      "sourceRows": 1027,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_woocommerce_tracks_anon_id",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 30,
+      "sourceRows": 30,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_wpml_initialized_administrator_role",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 10,
+      "sourceRows": 10,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_wpml_manual_translations_count",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_wpml_user_dismissed_notices",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 15,
+      "sourceRows": 15,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_yoast_wpseo_introductions",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 10,
+      "sourceRows": 10,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_yoast_wpseo_profile_updated",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2401,
+      "sourceRows": 2401,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "_yoast_wpseo_task_list_opt_in_notification_seen",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "ac_preferences_check-addon-available-ac-addon-acf",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "ac_preferences_check-addon-available-ac-addon-woocommerce",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "ac_preferences_check-addon-available-ac-addon-yoast-seo",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "ac_preferences_check-promo-black-friday20251125",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "ac_preferences_check-review",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 28,
+      "sourceRows": 28,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "acf_user_settings",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "admin_color",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2450,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_address_1",
+      "category": "billing-history",
+      "populatedUsers": 2,
+      "sourceRows": 120,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_address_2",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_city",
+      "category": "billing-history",
+      "populatedUsers": 3,
+      "sourceRows": 120,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_company",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_country",
+      "category": "billing-history",
+      "populatedUsers": 3,
+      "sourceRows": 120,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_email",
+      "category": "billing-history",
+      "populatedUsers": 181,
+      "sourceRows": 181,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_first_name",
+      "category": "billing-history",
+      "populatedUsers": 180,
+      "sourceRows": 181,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_last_name",
+      "category": "billing-history",
+      "populatedUsers": 179,
+      "sourceRows": 181,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_phone",
+      "category": "billing-history",
+      "populatedUsers": 2,
+      "sourceRows": 120,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_postcode",
+      "category": "billing-history",
+      "populatedUsers": 2,
+      "sourceRows": 120,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "billing_state",
+      "category": "billing-history",
+      "populatedUsers": 3,
+      "sourceRows": 120,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_acf-field-group",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_acf-taxonomy",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_biographies",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_cpt-ui_page_cptui_manage_post_types",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_cpt-ui_page_cptui_manage_taxonomies",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_dashboard",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 7,
+      "sourceRows": 7,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_dflip",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_et_pb_layout",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_exhibit",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_lp",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 7,
+      "sourceRows": 7,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_mec-events",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 5,
+      "sourceRows": 5,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_mec_calendars",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_memberpressproduct",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_mep_events",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_mpdl-file",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_opportunties",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 8,
+      "sourceRows": 8,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_pdfviewer",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "closedpostboxes_post",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 16,
+      "sourceRows": 16,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "comment_shortcuts",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2450,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "community-events-location",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 37,
+      "sourceRows": 37,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "default_password_nag",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 0,
+      "sourceRows": 167,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "description",
+      "category": "profile",
+      "populatedUsers": 4,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": "biography"
+    },
+    {
+      "sourceKey": "dismissed_download_directories_sync_complete_notice",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "dismissed_product_reviews_moved_notice",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "dismissed_update_notice",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "dismissed_wp_pointers",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 17,
+      "sourceRows": 1773,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "edit_acf-post-type_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "edit_comments_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "edit_et_pb_layout_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "edit_lp_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "edit_mec-books_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 3,
+      "sourceRows": 3,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "edit_mec-events_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "edit_mec_calendars_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "edit_mep_events_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "edit_post_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "em_bookings_view-EM_Event",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "em_data_privacy_consent",
+      "category": "membership-or-account-history",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "facebook",
+      "category": "profile",
+      "populatedUsers": 1,
+      "sourceRows": 70,
+      "conflictingUsers": 0,
+      "destination": "socialLinks.facebook"
+    },
+    {
+      "sourceKey": "first_name",
+      "category": "profile",
+      "populatedUsers": 2448,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": "firstName"
+    },
+    {
+      "sourceKey": "google_plus",
+      "category": "profile-empty-in-export",
+      "populatedUsers": 0,
+      "sourceRows": 2449,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "googleplus",
+      "category": "profile-empty-in-export",
+      "populatedUsers": 0,
+      "sourceRows": 9,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "icl_admin_language",
+      "category": "legacy-language-preference",
+      "populatedUsers": 2449,
+      "sourceRows": 2449,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "icl_admin_language_for_edit",
+      "category": "legacy-language-preference",
+      "populatedUsers": 119,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "icl_admin_language_migrated_to_wp47",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 717,
+      "sourceRows": 719,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "icl_show_hidden_languages",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 119,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "icwp-wpsf-meta",
+      "category": "security-do-not-activate",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "icwp-wpsf-meta-version",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "infinite_scrolling",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 11,
+      "sourceRows": 11,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "invoice_user_last_view_date",
+      "category": "legacy-activity",
+      "populatedUsers": 181,
+      "sourceRows": 181,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "jetpack_account_protection_recent_password_hashes",
+      "category": "security-do-not-activate",
+      "populatedUsers": 6,
+      "sourceRows": 6,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "jetpack_tracks_anon_id",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 46,
+      "sourceRows": 47,
+      "conflictingUsers": 1,
+      "destination": null
+    },
+    {
+      "sourceKey": "jetpack_tracks_wpcom_id",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 5,
+      "sourceRows": 5,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "last_name",
+      "category": "profile",
+      "populatedUsers": 2448,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": "lastName"
+    },
+    {
+      "sourceKey": "last_update",
+      "category": "legacy-activity",
+      "populatedUsers": 2449,
+      "sourceRows": 2449,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "locale",
+      "category": "legacy-language-preference",
+      "populatedUsers": 709,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "login_date",
+      "category": "legacy-activity",
+      "populatedUsers": 55,
+      "sourceRows": 55,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "manageedit-acf-post-typecolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "manageedit-acf-taxonomycolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "manageedit-event-recurringcolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "manageedit-eventcolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "manageedit-locationcolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "manageedit-mec-eventscolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "manageedit-mep_eventscolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "manageedit-postcolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "managemainwp-child_page_mainwp-reports-pagecolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 10,
+      "sourceRows": 10,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "managememberpress_page_memberpress-memberscolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "managenav-menuscolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 12,
+      "sourceRows": 12,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "managetablepress_listcolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 8,
+      "sourceRows": 8,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "manageuploadcolumnshidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "maxgalleria_mlp_feature_notice",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "maxgalleria_mlp_review_notice",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mec_op",
+      "category": "legacy-context-review",
+      "populatedUsers": 10,
+      "sourceRows": 10,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mec_user_is_organizer",
+      "category": "membership-or-account-history",
+      "populatedUsers": 18,
+      "sourceRows": 19,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mec_user_is_speaker",
+      "category": "membership-or-account-history",
+      "populatedUsers": 16,
+      "sourceRows": 19,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mec_user_last_view_date",
+      "category": "legacy-activity",
+      "populatedUsers": 14,
+      "sourceRows": 14,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mec_user_last_view_date_events",
+      "category": "legacy-activity",
+      "populatedUsers": 12,
+      "sourceRows": 12,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mepr-address-city",
+      "category": "profile",
+      "populatedUsers": 1407,
+      "sourceRows": 2423,
+      "conflictingUsers": 0,
+      "destination": "address.city"
+    },
+    {
+      "sourceKey": "mepr-address-country",
+      "category": "profile",
+      "populatedUsers": 1404,
+      "sourceRows": 2426,
+      "conflictingUsers": 0,
+      "destination": "address.country"
+    },
+    {
+      "sourceKey": "mepr-address-one",
+      "category": "profile",
+      "populatedUsers": 1349,
+      "sourceRows": 2422,
+      "conflictingUsers": 0,
+      "destination": "address.line1"
+    },
+    {
+      "sourceKey": "mepr-address-state",
+      "category": "profile",
+      "populatedUsers": 1391,
+      "sourceRows": 2426,
+      "conflictingUsers": 0,
+      "destination": "address.stateProvince"
+    },
+    {
+      "sourceKey": "mepr-address-two",
+      "category": "profile",
+      "populatedUsers": 75,
+      "sourceRows": 1054,
+      "conflictingUsers": 0,
+      "destination": "address.line2"
+    },
+    {
+      "sourceKey": "mepr-address-zip",
+      "category": "profile",
+      "populatedUsers": 1367,
+      "sourceRows": 2426,
+      "conflictingUsers": 0,
+      "destination": "address.postalCode"
+    },
+    {
+      "sourceKey": "mepr-geo-country",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 0,
+      "sourceRows": 600,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mepr_affiliation_element",
+      "category": "profile",
+      "populatedUsers": 2426,
+      "sourceRows": 2426,
+      "conflictingUsers": 0,
+      "destination": "affiliationElement"
+    },
+    {
+      "sourceKey": "mepr_company",
+      "category": "profile",
+      "populatedUsers": 312,
+      "sourceRows": 2426,
+      "conflictingUsers": 0,
+      "destination": "company"
+    },
+    {
+      "sourceKey": "mepr_current_unit",
+      "category": "profile",
+      "populatedUsers": 1317,
+      "sourceRows": 2424,
+      "conflictingUsers": 0,
+      "destination": "currentUnit"
+    },
+    {
+      "sourceKey": "mepr_dismiss_notice_cart_release",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mepr_dismiss_notice_get_started",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 7,
+      "sourceRows": 7,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mepr_honourary_rank",
+      "category": "profile-empty-in-export",
+      "populatedUsers": 0,
+      "sourceRows": 5,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mepr_mosid_moc_trade",
+      "category": "profile",
+      "populatedUsers": 1995,
+      "sourceRows": 2426,
+      "conflictingUsers": 0,
+      "destination": "trade"
+    },
+    {
+      "sourceKey": "mepr_mosid_moc_trade_other",
+      "category": "profile",
+      "populatedUsers": 229,
+      "sourceRows": 2426,
+      "conflictingUsers": 0,
+      "destination": "tradeOther"
+    },
+    {
+      "sourceKey": "mepr_nick_name",
+      "category": "profile-empty-in-export",
+      "populatedUsers": 0,
+      "sourceRows": 5,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mepr_other_salutation",
+      "category": "profile-empty-in-export",
+      "populatedUsers": 0,
+      "sourceRows": 5,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mepr_post_nominals",
+      "category": "profile",
+      "populatedUsers": 613,
+      "sourceRows": 2426,
+      "conflictingUsers": 0,
+      "destination": "postNominals"
+    },
+    {
+      "sourceKey": "mepr_rank",
+      "category": "profile",
+      "populatedUsers": 2252,
+      "sourceRows": 2426,
+      "conflictingUsers": 0,
+      "destination": "rank"
+    },
+    {
+      "sourceKey": "mepr_rank_other",
+      "category": "profile-empty-in-export",
+      "populatedUsers": 0,
+      "sourceRows": 5,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mepr_salutation",
+      "category": "profile-empty-in-export",
+      "populatedUsers": 0,
+      "sourceRows": 5,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mepr_status",
+      "category": "profile",
+      "populatedUsers": 1737,
+      "sourceRows": 2426,
+      "conflictingUsers": 0,
+      "destination": "status"
+    },
+    {
+      "sourceKey": "mepr_user_message",
+      "category": "membership-or-account-history",
+      "populatedUsers": 1,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_ai1ec_event",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_attachment",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_dashboard",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 6,
+      "sourceRows": 6,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_dflip",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_et_pb_layout",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_exhibit",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_lp",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 4,
+      "sourceRows": 4,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_mec-events",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 3,
+      "sourceRows": 3,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_mep_events",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_post",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 10,
+      "sourceRows": 10,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "meta-box-order_product",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 24,
+      "sourceRows": 24,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_acf-field-group",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_acf-taxonomy",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_biographies",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_cpt-ui_page_cptui_manage_post_types",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_cpt-ui_page_cptui_manage_taxonomies",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_dashboard",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 7,
+      "sourceRows": 7,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_dflip",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_et_pb_layout",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_exhibit",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_lp",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 7,
+      "sourceRows": 7,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_mec-events",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 5,
+      "sourceRows": 5,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_mec_calendars",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_memberpressproduct",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_mep_events",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_mpdl-file",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_nav-menus",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 12,
+      "sourceRows": 12,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_opportunties",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 8,
+      "sourceRows": 8,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_pdfviewer",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "metaboxhidden_post",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 16,
+      "sourceRows": 16,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mlf_display_info",
+      "category": "legacy-context-review",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mp_lifetime_subs_perpage",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "mp_members_perpage",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "my-jetpack-cache",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 4,
+      "sourceRows": 4,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "my-jetpack-cache-date",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 4,
+      "sourceRows": 4,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "my-jetpack-wpcom-product-check-hash",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "nav_menu_recently_edited",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 6,
+      "sourceRows": 6,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "nickname",
+      "category": "legacy-identity",
+      "populatedUsers": 2450,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "paying_customer",
+      "category": "membership-or-account-history",
+      "populatedUsers": 123,
+      "sourceRows": 123,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "phylax_pp_scc_plugin_name_change_notice_dismissed",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 17,
+      "sourceRows": 17,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "phylax_ppsccss_release_notes_v031_seen",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 8,
+      "sourceRows": 9,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "ppscc_birthday_message",
+      "category": "legacy-context-review",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "rich_editing",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2450,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "rmlDefaultFolder",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "rmlInfiniteScrolling",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "rml_1_lastquery",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "rml_wpml_lang",
+      "category": "legacy-language-preference",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "roc_dismissed_pro_release_notice",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 3,
+      "sourceRows": 3,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "screen_layout_ai1ec_event",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "screen_layout_attachment",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "screen_layout_dflip",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "screen_layout_et_pb_layout",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "screen_layout_exhibit",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "screen_layout_lp",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 4,
+      "sourceRows": 4,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "screen_layout_mec-events",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 3,
+      "sourceRows": 3,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "screen_layout_mep_events",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "screen_layout_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "screen_layout_post",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 10,
+      "sourceRows": 10,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "session_tokens",
+      "category": "security-do-not-activate",
+      "populatedUsers": 965,
+      "sourceRows": 965,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_address_1",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_address_2",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_city",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_company",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_country",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_first_name",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_last_name",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_method",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 123,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_phone",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_postcode",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "shipping_state",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "show_admin_bar_front",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2450,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "show_welcome_panel",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "signup_notice_sent",
+      "category": "membership-or-account-history",
+      "populatedUsers": 616,
+      "sourceRows": 940,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "syntax_highlighting",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2450,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "twitter",
+      "category": "profile-empty-in-export",
+      "populatedUsers": 0,
+      "sourceRows": 69,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "upload_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "use_ssl",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2450,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "user_last_view_date",
+      "category": "legacy-activity",
+      "populatedUsers": 175,
+      "sourceRows": 175,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "user_last_view_date_events",
+      "category": "legacy-activity",
+      "populatedUsers": 14,
+      "sourceRows": 14,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "uuid",
+      "category": "legacy-identity",
+      "populatedUsers": 2450,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "w3tc_features_seen",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wc_last_active",
+      "category": "legacy-activity",
+      "populatedUsers": 1118,
+      "sourceRows": 1118,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wc_order_count_wp",
+      "category": "membership-or-account-history",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wc_square_customer_id",
+      "category": "billing-history",
+      "populatedUsers": 0,
+      "sourceRows": 52,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wfls-last-captcha-score",
+      "category": "security-do-not-activate",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wfls-last-login",
+      "category": "legacy-activity",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wfls-verification-tokens",
+      "category": "security-do-not-activate",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wfls_notices",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "woocommerce_admin_homepage_stats",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "woocommerce_admin_launch_your_store_tour_hidden",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "woocommerce_admin_task_list_tracked_started_tasks",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_2fa_status",
+      "category": "security-do-not-activate",
+      "populatedUsers": 255,
+      "sourceRows": 255,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_backup_codes",
+      "category": "security-do-not-activate",
+      "populatedUsers": 18,
+      "sourceRows": 18,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_email-login-attempts",
+      "category": "security-do-not-activate",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_email_token",
+      "category": "security-do-not-activate",
+      "populatedUsers": 6,
+      "sourceRows": 6,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_enabled_methods",
+      "category": "security-do-not-activate",
+      "populatedUsers": 67,
+      "sourceRows": 67,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_enforcement_state",
+      "category": "security-do-not-activate",
+      "populatedUsers": 111,
+      "sourceRows": 111,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_global_settings_hash",
+      "category": "security-do-not-activate",
+      "populatedUsers": 109,
+      "sourceRows": 109,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_grace_period_expiry",
+      "category": "security-do-not-activate",
+      "populatedUsers": 41,
+      "sourceRows": 41,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_last_totp_step",
+      "category": "security-do-not-activate",
+      "populatedUsers": 6,
+      "sourceRows": 6,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_totp_key",
+      "category": "security-do-not-activate",
+      "populatedUsers": 76,
+      "sourceRows": 76,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_2fa_user_enforced_instantly",
+      "category": "security-do-not-activate",
+      "populatedUsers": 41,
+      "sourceRows": 41,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_WPML_TM_Wizard_For_Manager_Complete",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_ac_preferences_layout_table",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 25,
+      "sourceRows": 25,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_ac_preferences_menu_status",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_ac_preferences_settings",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 10,
+      "sourceRows": 10,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_ate_activated",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 18,
+      "sourceRows": 18,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_capabilities",
+      "category": "historical-permissions-only",
+      "populatedUsers": 2450,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_dashboard_quick_press_last_post_id",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 37,
+      "sourceRows": 37,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_language_pairs",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 25,
+      "sourceRows": 25,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_mail_smtp_dash_widget_lite_hide_graph",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_media_library_mode",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 3,
+      "sourceRows": 3,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_nav_menu_recently_edited",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 665,
+      "sourceRows": 669,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_persisted_preferences",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_tablepress_user_options",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 6,
+      "sourceRows": 6,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_user-settings",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 31,
+      "sourceRows": 31,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_user-settings-time",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 31,
+      "sourceRows": 31,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_user_level",
+      "category": "historical-permissions-only",
+      "populatedUsers": 2450,
+      "sourceRows": 2450,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_wpml-wpseo-not-installed",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_wpml_dismiss_post_edit_original_te_notice",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 5,
+      "sourceRows": 5,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_wpseo-suggested-plugin-yoast-woocommerce-seo",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wp_yoast_notifications",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 20,
+      "sourceRows": 20,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpcf7_hide_welcome_panel_on",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpdiscuz_last_visit",
+      "category": "legacy-activity",
+      "populatedUsers": 188,
+      "sourceRows": 188,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpforms_builder_settings_collapsable_block_states",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpforms_dash_widget_timespan",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpforms_dismissed",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 2,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpforms_entries_default_screen_timespan",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpforms_forms_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpforms_overview_table_columns",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 7,
+      "sourceRows": 7,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpml_block_new_email_notifications",
+      "category": "legacy-notification-preference",
+      "populatedUsers": 119,
+      "sourceRows": 119,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpml_enabled_for_translation_via_ate",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 8,
+      "sourceRows": 8,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpseo_content_analysis_disable",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 0,
+      "sourceRows": 108,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpseo_inclusive_language_analysis_disable",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 0,
+      "sourceRows": 52,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpseo_keyword_analysis_disable",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 0,
+      "sourceRows": 108,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpseo_metadesc",
+      "category": "legacy-context-review",
+      "populatedUsers": 1,
+      "sourceRows": 113,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpseo_pronouns",
+      "category": "profile-empty-in-export",
+      "populatedUsers": 0,
+      "sourceRows": 2,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpseo_seen_llm_txt_opt_in_notification",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wpseo_title",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 0,
+      "sourceRows": 113,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wsal-selected-main-view",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    },
+    {
+      "sourceKey": "wsal_list_view_per_page",
+      "category": "wordpress-plugin-or-interface-state",
+      "populatedUsers": 1,
+      "sourceRows": 1,
+      "conflictingUsers": 0,
+      "destination": null
+    }
+  ],
+  "categories": {
+    "profile": 19,
+    "wordpress-plugin-or-interface-state": 181,
+    "legacy-context-review": 5,
+    "security-do-not-activate": 17,
+    "billing-history": 24,
+    "membership-or-account-history": 7,
+    "profile-empty-in-export": 9,
+    "legacy-language-preference": 4,
+    "legacy-activity": 10,
+    "legacy-identity": 2,
+    "historical-permissions-only": 2,
+    "legacy-notification-preference": 1
+  },
+  "status": "Expanded profile fields and private legacy-history backfill implemented locally; deployment and live backfill pending"
+}

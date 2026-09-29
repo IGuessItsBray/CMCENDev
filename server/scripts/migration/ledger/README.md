@@ -1,5 +1,13 @@
 # News migration ledger
 
+Follow the [29 September migration policy](POLICY.md). It supersedes older
+translation-first priorities and general stakeholder-decision holds below;
+historical findings and specific unresolved source issues remain evidence.
+
+See [remaining editorial inventory](REMAINING.md) for the 28 September reconciliation
+of the broader English/French archive, with retirement, Last Post and event work
+separated and proposed review batches retained locally.
+
 Temporary checklist for the legacy migration. No import or publication is performed by this inventory.
 
 Goal: account for all legacy-site content, including source-to-destination mappings, merges and explicit stakeholder decisions. This news inventory is one part of that ledger, not a complete whole-site inventory. See [retirement coverage and DWD stakeholder decisions](RETIREMENTS.md); standalone invitations are not automatically retirement notices.
@@ -30,7 +38,8 @@ Recorded 27 September 2026:
 - 133 records excluded for now; 2 personal-memorial records held for separate review.
 - 132 unique document links among included records; 4 links occur in multiple records.
 
-Current priority: [complete French for the initial 16 imports](INITIAL16.md). The five new candidates below are deferred.
+Earlier priority: [French completion for the initial 16 imports](INITIAL16.md).
+Missing translations no longer block draft preparation under the current policy.
 
 Counts describe the saved 25 September inventory. A public API count/latest-post check on 26 September still returned 1,525 English posts and the same latest post. This does not prove that every older page is unchanged. The French post inventory was collected on 26 September.
 

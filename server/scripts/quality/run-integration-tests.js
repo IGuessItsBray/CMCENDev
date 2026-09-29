@@ -1,5 +1,6 @@
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const testFile = path.join(
   __dirname,
@@ -28,6 +29,24 @@ const runs = groups.map(
       child.once('error', () => resolve({ code: 1 }));
     }),
 );
+
+const additionalTests = fs
+  .readdirSync(path.dirname(testFile))
+  .filter((name) => name.endsWith('.test.js') && name !== 'api.test.js')
+  .map((name) => path.join(path.dirname(testFile), name));
+if (additionalTests.length) {
+  runs.push(
+    new Promise((resolve) => {
+      const child = spawn(
+        process.execPath,
+        ['--test', '--test-concurrency=1', ...additionalTests],
+        { stdio: 'inherit' },
+      );
+      child.once('exit', (code, signal) => resolve({ code, signal }));
+      child.once('error', () => resolve({ code: 1 }));
+    }),
+  );
+}
 
 Promise.all(runs).then((results) => {
   if (results.some(({ code, signal }) => code !== 0 || signal)) {

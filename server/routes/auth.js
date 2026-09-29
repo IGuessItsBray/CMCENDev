@@ -36,7 +36,7 @@ const {
 const router = express.Router();
 
 const PROFILE_SELECT =
-  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions createdAt updatedAt';
+  'accountType profileComplete username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage biography websiteUrl socialLinks.facebook role customRoles contentAreas emailSubscriptions createdAt updatedAt';
 
 const EDITABLE_PROFILE_FIELDS = [
   'firstName',
@@ -51,6 +51,8 @@ const EDITABLE_PROFILE_FIELDS = [
   'currentUnit',
   'phone',
   'preferredLanguage',
+  'biography',
+  'websiteUrl',
 ];
 
 const EDITABLE_ADDRESS_FIELDS = [
@@ -327,6 +329,17 @@ async function getProfileResponse(user) {
 function getProfileUpdate(body, currentUser) {
   const updates = {};
   const source = body || {};
+
+  if (
+    source.socialLinks &&
+    typeof source.socialLinks === 'object' &&
+    !Array.isArray(source.socialLinks) &&
+    hasOwnValue(source.socialLinks, 'facebook')
+  ) {
+    updates['socialLinks.facebook'] = cleanProfileString(
+      source.socialLinks.facebook,
+    );
+  }
 
   EDITABLE_PROFILE_FIELDS.forEach((field) => {
     if (hasOwnValue(source, field)) {
@@ -1113,7 +1126,11 @@ router.post(
 // GET /api/me
 // Return the authenticated user's profile and computed permissions.
 router.get('/me', authMiddleware, async (req, res) => {
-  res.json(await getProfileResponse(req.user));
+  const user = await User.findById(req.user._id)
+    .select(`${PROFILE_SELECT} totp webauthn twoFactor`)
+    .populate('customRoles', 'name slug color permissions');
+  if (!user) return res.status(401).json({ error: 'User no longer exists' });
+  res.json(await getProfileResponse(user));
 });
 
 // GET /api/member-benefits/td-insurance
@@ -1585,6 +1602,9 @@ router.delete(
           { $set: { createdBy: null } },
         ),
       ]);
+      await require('../services/legacy-account-data').removeLegacyAccountData(
+        userId,
+      );
       await User.deleteOne({ _id: userId });
       await writeAuditLog({
         req,

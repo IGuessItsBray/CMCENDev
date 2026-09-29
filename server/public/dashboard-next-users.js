@@ -471,6 +471,66 @@
           `${t(`admin_users_account_${user.accountType || "member"}`)} · ${t(user.emailVerification?.verified ? "admin_users_email_verified" : "admin_next_users_unverified")}`,
       );
       info.append(status);
+      if (user.profile) {
+        const profile = node("dl", null, "admin-users-profile-details");
+        const fields = {
+          firstName: "first_name",
+          lastName: "last_name",
+          rank: "rank",
+          postNominals: "post_nominals",
+          company: "company",
+          status: "status",
+          affiliationElement: "affiliation_element",
+          trade: "trade",
+          tradeOther: "trade_other",
+          currentUnit: "current_unit",
+          phone: "phone",
+          preferredLanguage: "preferred_language",
+          biography: "profile_biography",
+          websiteUrl: "profile_website",
+        };
+        function detail(label, value) {
+          if (value === undefined || value === null || value === "") return;
+          const term = node("dt");
+          term.textContent = label;
+          const description = node("dd");
+          description.textContent = String(value);
+          description.style.whiteSpace = "pre-wrap";
+          profile.append(term, description);
+        }
+        Object.entries(fields).forEach(([key, label]) =>
+          detail(t(label), user.profile[key]),
+        );
+        detail(t("profile_facebook"), user.profile.socialLinks?.facebook);
+        const addressLabels = {
+          line1: "address_line_1",
+          line2: "address_line_2",
+          city: "city",
+          country: "country",
+          stateProvince: "state_province",
+          postalCode: "postal_code",
+        };
+        Object.entries(user.profile.address || {}).forEach(([key, value]) =>
+          detail(t(addressLabels[key] || key), value),
+        );
+        info.append(profile);
+      }
+      if (user.legacyAccount) {
+        const legacy = node("details");
+        legacy.append(node("summary", "profile_legacy_data"));
+        for (const group of [
+          user.legacyAccount.account,
+          user.legacyAccount.metadata,
+        ]) {
+          for (const [key, value] of Object.entries(group || {})) {
+            const line = node("p");
+            line.style.whiteSpace = "pre-wrap";
+            line.textContent = `${key}: ${Array.isArray(value) ? value.join("\n") : value}`;
+            legacy.append(line);
+          }
+        }
+        info.append(legacy);
+      }
       if (user.createdAt) {
         const joined = node("p", null, "admin-users-muted");
         dynamicText(joined, () =>

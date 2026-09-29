@@ -17,7 +17,7 @@
           "key": "wp-357822",
           "title": {
             "en": "INVITATION – DEPART WITH DIGNITY – CWO COUTURE",
-            "fr": "INVITATION – DEPART WITH DIGNITY – CWO COUTURE"
+            "fr": "INVITATION – DÉPART AVEC DIGNITÉ – ADJUC COUTURE"
           },
           "category": "unassigned",
           "sources": {
@@ -51,16 +51,41 @@
                 "VOLUNTARY CONTRIBUTIONS ARE WELCOMED FOR A DEPARTURE GIFT. FOR CONTRIBUTION: HTTPS://GOFUND.ME/C89C5FF21"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 357826,
+              "url": "https://cmcen-rcmce.ca/fr/invitation-depart-avec-dignite-adjuc-couture/",
+              "title": "INVITATION – DÉPART AVEC DIGNITÉ – ADJUC COUTURE",
+              "language": "fr",
+              "publishedAt": "2026-07-06T13:49:12",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 357826. Source type: post. Language: fr.",
+                "Possible event notice or retrospective news; human scope decision",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "  VOUS ÊTES CORDIALEMENT INVITÉ(E) À PARTICIPER À LA CÉRÉMONIE DE DÉPART AVEC DIGNITÉ DE L’ ADJUDANTE-CHEF COUTURE . LA CARRIÈRE DE L’ADJUC COUTURE S’EST DISTINGUÉE PAR UN PROFESSIONNALISME EXEMPLAIRE, UN LEADERSHIP INDÉFECTIBLE ET UN ENGAGEMENT SOUTENU ENVERS LES MEMBRES ET LA MISSION. ELLE A INCARNÉ LES PLUS HAUTES NORMES DES FAC, LAISSANT UNE EMPREINTE DURABLE AU SEIN DE SES UNITÉS, AUPRÈS DE CES PAIRS AINSI QUE DE TOUS LES MEMBRES QU’ELLE A EU LE PRIVILÈGE DE DIRIGER ET AUX CÔTÉS DESQUELLES ELLE A SERVI. DÉTAILS DE L’ÉVÉNEMENT 📅 VENDREDI, 13 NOVEMBRE 2026 ⏰ 1300 – ARRIVÉ DES INVITÉS ⏰ 1400 – DÉBUT DES PRÉSENTATIONS NOTE : VOUS ÊTES INVITÉ(E)S À RESTER APRÈS LES PRÉSENTATIONS POUR LE RESTE DE LA SOIRÉE. IL SERA POSSIBLE DE MANGER SUR PLACE. 📍 ROYAL CANADIAN LEGION BRANCH 560 📍 734 MONTREAL ST, KINGSTON, ON K7K 3J4 AFIN DE FACILITER LA PLANIFICATION DE L’ÉVÉNEMENT, VEUILLEZ CONFIRMER V"
+              ],
+              "images": [],
+              "documents": []
+            }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/invitation-depart-with-dignity-cwo-couture/",
+            "englishUrl": "https://cmcen-rcmce.ca/invitation-depart-with-dignity-cwo-couture/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/invitation-depart-avec-dignite-adjuc-couture/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
           "key": "wp-345318",
           "title": {
             "en": "Depart with Dignity Invitation: Brigadier-General Denis Boucher",
-            "fr": "Depart with Dignity Invitation: Brigadier-General Denis Boucher"
+            "fr": "Invitation Départ dans la dignité: Brigadier-Général Denis Boucher"
           },
           "category": "unassigned",
           "sources": {
@@ -70,15 +95,28 @@
               "title": "Depart with Dignity Invitation: Brigadier-General Denis Boucher",
               "publishedAt": "2024-05-17T17:12:15",
               "modifiedAt": "2024-05-17T17:12:15",
-              "paragraphs": [
-                "[Image-only source; inspect linked media.]"
-              ],
+              "paragraphs": ["[Image-only source; inspect linked media.]"],
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/2024/05/BoucherDWD.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 345321,
+              "url": "https://cmcen-rcmce.ca/fr/invitation-depart-dans-la-dignite-brigadier-general-denis-boucher/",
+              "title": "Invitation Départ dans la dignité: Brigadier-Général Denis Boucher",
+              "language": "fr",
+              "publishedAt": "2024-05-17T17:11:14",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 345321. Source type: post. Language: fr.",
+                "Possible event notice or retrospective news; human scope decision",
+                "Source comparison, access restrictions and destination mapping still need verification."
+              ],
+              "images": [],
+              "documents": []
+            }
           },
           "relatedSources": [
             {
@@ -95,13 +133,21 @@
               "images": [],
               "documents": []
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/invitation-depart-dans-la-dignite-brigadier-general-denis-boucher/",
+            "englishUrl": "https://cmcen-rcmce.ca/depart-with-dignity-invitation-brigadier-general-denis-boucher/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/invitation-depart-dans-la-dignite-brigadier-general-denis-boucher/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         },
         {
           "key": "wp-346556",
           "title": {
             "en": "RETIREMENT – WARRANT OFFICER ANTHONY KUHMAYER, CD – SIG OP 00383 – 01",
-            "fr": "RETIREMENT – WARRANT OFFICER ANTHONY KUHMAYER, CD – SIG OP 00383 – 01"
+            "fr": "RETRAITE – ADJUDANT ANTHONY KUHMAYER, CD – SIG OP 00383 – 01"
           },
           "category": "unassigned",
           "sources": {
@@ -121,9 +167,30 @@
                 "THERE WILL BE NO DEPART WITH DIGNITY AT THE REQUEST OF TONY. WITH THE PLAN OF ACCEPTING THE PUBLIC SERVANT POSITION WITH CMTC, TONY ISN’T GOING FAR AND WILL BE AVAILABLE FOR ANY FAR-FETCHED TALES, AS WE SEE EACH OTHER AGAIN. THOSE WISHING TO SEND CONGRATULATORY MESSAGES, PICTURES, TALL TALES AND/OR ANECDOTES ARE TO EMAIL MJ COOPER AT COOPER2@FORCES.GC.CA NLT 20 SEPT 24."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 346561,
+              "url": "https://cmcen-rcmce.ca/fr/retraite-adjudant-anthony-kuhmayer-cd-sig-op-00383-01/",
+              "title": "RETRAITE – ADJUDANT ANTHONY KUHMAYER, CD – SIG OP 00383 – 01",
+              "publishedAt": "2024-07-15T14:18:56",
+              "modifiedAt": "",
+              "language": "fr",
+              "paragraphs": [
+                "Counterpart linked explicitly by the legacy site language switcher. Full body comparison is still pending."
+              ],
+              "images": [],
+              "documents": []
+            }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/retirement-warrant-officer-anthony-kuhmayer-cd-sig-op-00383-01/",
+            "englishUrl": "https://cmcen-rcmce.ca/retirement-warrant-officer-anthony-kuhmayer-cd-sig-op-00383-01/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/retraite-adjudant-anthony-kuhmayer-cd-sig-op-00383-01/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -148,7 +215,8 @@
                 "5. MAJOR MONETTE AND HIS SPOUSE STACEY WILL REMAIN IN THE OTTAWA AREA TO ENJOY THEIR POOL AND BACKYARD AND OF COURSE, START HIS NEW CIVY EMPLOYMENT WITHIN THE FEDERAL GOVERNMENT OF CANADA."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": null
           },
@@ -198,8 +266,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Standalone CWO Couture DWD invitation, absent from the retirement listing. This is not automatically a retirement notice; stakeholders decide placement.",
-            "fr": "Invitation DWD distincte de l’Adjudante-chef Couture, absente de la liste des retraites. Ne pas la traiter automatiquement comme un avis de retraite; décider de sa présentation."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Standalone CWO Couture DWD invitation, absent from the retirement listing. This is not automatically a retirement notice; stakeholders decide placement.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Invitation DWD distincte de l’Adjudante-chef Couture, absente de la liste des retraites. Ne pas la traiter automatiquement comme un avis de retraite; décider de sa présentation."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -216,8 +284,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Standalone BGen Denis Boucher invitation image. Retirement notice 345110 exists; see related source. Decide separately whether to retain as news/event, associate, or exclude.",
-            "fr": "Invitation distincte en image du Bgén Denis Boucher. L’avis de retraite 345110 existe (source connexe). Décider séparément de sa conservation, de son association ou de son exclusion."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Standalone BGen Denis Boucher invitation image. Retirement notice 345110 exists; see related source. Decide separately whether to retain as news/event, associate, or exclude.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Invitation distincte en image du Bgén Denis Boucher. L’avis de retraite 345110 existe (source connexe). Décider séparément de sa conservation, de son association ou de son exclusion."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -234,8 +302,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Anthony Kuhmayer retirement notice is missing from the dedicated legacy listing. Check destination inventory before any import.",
-            "fr": "L’avis de retraite d’Anthony Kuhmayer manque dans la liste dédiée. Vérifier l’inventaire de destination avant tout import."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Anthony Kuhmayer retirement notice is missing from the dedicated legacy listing. Check destination inventory before any import.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : L’avis de retraite d’Anthony Kuhmayer manque dans la liste dédiée. Vérifier l’inventaire de destination avant tout import."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -279,7 +347,7 @@
           "key": "wp-345823",
           "title": {
             "en": "RAINDROPS OF HONOUR: REMEMBERING CORPORAL JONATHAN DUNSTER, A TRIBUTE OF CAMARADERIE AND RESPECT",
-            "fr": "RAINDROPS OF HONOUR: REMEMBERING CORPORAL JONATHAN DUNSTER, A TRIBUTE OF CAMARADERIE AND RESPECT"
+            "fr": "GOUTTES DE PLUIE D’HONNEUR : À LA MÉMOIRE DU CAPORAL JONATHAN DUNSTER, UN HOMMAGE DE CAMARADERIE ET DE RESPECT"
           },
           "category": "unassigned",
           "sources": {
@@ -305,9 +373,26 @@
                 "1978-2023"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 345825,
+              "url": "https://cmcen-rcmce.ca/fr/gouttes-de-pluie-dhonneur-a-la-memoire-du-caporal-jonathan-dunster-un-hommage-de-camaraderie-et-de-respect/",
+              "title": "GOUTTES DE PLUIE D’HONNEUR : À LA MÉMOIRE DU CAPORAL JONATHAN DUNSTER, UN HOMMAGE DE CAMARADERIE ET DE RESPECT",
+              "language": "fr",
+              "publishedAt": "2024-06-13T10:44:41",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 345825. Source type: post. Language: fr.",
+                "Editorial source; provisional inclusion, not import approval",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "Article par CplC Teresa A. Romeo, SFC Leitrim, 5 Cellule de Préparation au Déploiement de l’Escadron Le 24 mai 2024, nous avons enterré le Caporal Jonathan Dunster, un ami et collègue très cher, à Plaster Rock, au Nouveau-Brunswick. Cette date a une signification importante pour moi, car elle marque les sept ans depuis que le caporal Dunster et moi-même, ainsi que deux autres membres du groupe des porteurs, avons obtenu ensemble notre premier diplôme de métier, le PD 1. Nous avons partagé cette étape avec fierté et camaraderie, sans jamais imaginer que ces liens nous réuniraient à nouveau dans des circonstances aussi solennelles. En tant que porteuse d’Insigne, j’ai ressenti un immense sentiment de fierté et de responsabilité en rendant hommage à Jonathan, qui avait été mon premier colocataire à Ottawa lors de notre première affectation. Ce rôle exigeait une préparation méticuleuse, et c"
+              ],
+              "images": [],
+              "documents": []
+            }
           },
           "relatedSources": [
             {
@@ -338,7 +423,15 @@
               "documents": [],
               "language": "en"
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/raindrops-of-honour-remembering-corporal-jonathan-dunster-a-tribute-of-camaraderie-and-respect/",
+            "englishUrl": "https://cmcen-rcmce.ca/raindrops-of-honour-remembering-corporal-jonathan-dunster-a-tribute-of-camaraderie-and-respect/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/gouttes-de-pluie-dhonneur-a-la-memoire-du-caporal-jonathan-dunster-un-hommage-de-camaraderie-et-de-respect/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         },
         {
           "key": "wp-316163",
@@ -363,7 +456,8 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/2023/04/LCol-Palmer-Uniform-230x300.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": null
           },
@@ -404,7 +498,7 @@
           "key": "wp-313269",
           "title": {
             "en": "BURIAL CEREMONY – MASTER CORPORAL CLIFFORD DENNISON, CD",
-            "fr": "BURIAL CEREMONY – MASTER CORPORAL CLIFFORD DENNISON, CD"
+            "fr": "CÉRÉMONIE D’INHUMATION -CAPORAL-CHEF CLIFFORD DENNISON, CD"
           },
           "category": "unassigned",
           "sources": {
@@ -430,9 +524,34 @@
                 "(H) 613-547-6236."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 313271,
+              "url": "https://cmcen-rcmce.ca/fr/ceremonie-dinhumation-cplcaporal-chef-clifford-dennison-cd/",
+              "title": "CÉRÉMONIE D’INHUMATION -CAPORAL-CHEF CLIFFORD DENNISON, CD",
+              "language": "fr",
+              "publishedAt": "2022-09-14T10:04:09",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 313271. Source type: post. Language: fr.",
+                "Possible event notice or retrospective news; human scope decision",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "  LE CPLC CLIFFORD DENNISON CD, DÉCÉDÉ EN 2021, A ÉTÉ ENTERRÉ AU CIMETIÈRE CATARAQUI DE KINGSTON (ONTARIO) LE 25 JUIN 2021. AU MOMENT DE SON INHUMATION, ON A DÉCOUVERT QUE CLIFFORD ÉTAIT UN ANCIEN COMBATTANT AUTOCHTONE. HEATHER MITCHELL, DE LA VILLE DE KINGSTON, S’EST DONC CHARGÉE DE CONTACTER LE FONDS DU SOUVENIR POUR OBTENIR LA PIERRE TOMBALE DE L’ANCIEN COMBATTANT. HEATHER A CONTACTÉ LES ANCIENS COMBATTANTS AUTOCHTONES AUTOCHTONES (AVA) POUR VOIR CE QUI POUVAIT ÊTRE FAIT POUR UNE CÉRÉMONIE TRADITIONNELLE AUTOCHTONE APPROPRIÉE. PLUS D’UN AN S’EST ÉCOULÉ ET, MAINTENANT QUE LA PIERRE TOMBALE EST EN PLACE, NOUS SOMMES PRÊTS À HONORER LA VIE DE CLIFFORD ET À ORGANISER LA CÉRÉMONIE TRADITIONNELLE POUR QU’IL REJOIGNE LE MONDE DES ESPRITS POUR REJOINDRE SES ANCÊTRES. VOICI LES DÉTAILS DE LA CÉRÉMONIE : LIEU : CIMETIÈRE CATARAQUI, 927, CHEMIN PURDY’S MILL, KINGSTON, ONTARIO. LE PLAN DU CIMETIÈ"
+              ],
+              "images": [],
+              "documents": []
+            }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/ceremonie-dinhumation-cplcaporal-chef-clifford-dennison-cd/",
+            "englishUrl": "https://cmcen-rcmce.ca/burial-ceremony-master-corporal-clifford-dennison-cd/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/ceremonie-dinhumation-cplcaporal-chef-clifford-dennison-cd/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -455,7 +574,8 @@
                 "Please see the link to the obituary at https://ottawacitizen.remembering.ca/obituary/nigel-van-loan-1085247940 and https://www.arbormemorial.ca/kelly-kanata/obituaries/nigel-ward-van-loan/86013 RIP to valued colleague and friend to many."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": null
           }
@@ -464,7 +584,7 @@
           "key": "wp-310856",
           "title": {
             "en": "Passing of the former C&E Branch Chief CWO Michel Boislard, CD",
-            "fr": "Passing of the former C&E Branch Chief CWO Michel Boislard, CD"
+            "fr": "Décès de l’ancien Adjudant-chef de la Branche des C&É Adjuc Michel Boislard, CD"
           },
           "category": "unassigned",
           "sources": {
@@ -482,9 +602,26 @@
                 "Please read Notice of Death here: https://beechwoodottawa.ca/en/services/michel-boislard?fbclid=IwAR3vpYbNITtc-8U8t1AomrtnrQvd8dqSsiXgsqRX5lJ2i6B_-nYGlc8ggBU"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 310860,
+              "url": "https://cmcen-rcmce.ca/fr/deces-de-lancien-adjudant-chef-de-la-branche-adjuc-michel-boislard-cd/",
+              "title": "Décès de l’ancien Adjudant-chef de la Branche des C&É Adjuc Michel Boislard, CD",
+              "language": "fr",
+              "publishedAt": "2022-02-15T10:19:27",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 310860. Source type: post. Language: fr.",
+                "Title suggests personnel notice; confirm scope, do not discard",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "Chère Famille des C&É : C’est avec grande tristesse que nous vous annonçons le décès de l’Adjudant-chef Michel Boislard, CD (retraité) le 7 février 2022. L’Adjuc Boislard a servi en tant que Conseiller GPM supérieur pour le métier d’opérateur de recherche en communications, en tant qu’Adjuc de la formation du GOIFC, en tant qu’Adjuc de la Branche des C&É et en tant que tout premier Conseiller GPM supérieur pour le métier de cyberopérateur, chargé de “mettre sur pied” la profession de cyberopérateur sur le plan administratif. L’Adjuc Boislard était un véritable gentleman et un professionnel ; lors de sa cérémonie de départ avec dignité, il a été indiqué qu’il se préoccupait vraiment du bien-être des autres, de la Branche des C&É et de la Cyberforce des FAC. Repose en paix, grand leader, mentor, collègue et ami. Veuillez lire l’avis de décès ici : https://beechwoodottawa.ca/en/services/mic"
+              ],
+              "images": [],
+              "documents": []
+            }
           },
           "relatedSources": [
             {
@@ -516,13 +653,21 @@
               "documents": [],
               "language": "en"
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/passing-of-the-former-ce-branch-chief-cwo-michel-boislard-cd/",
+            "englishUrl": "https://cmcen-rcmce.ca/passing-of-the-former-ce-branch-chief-cwo-michel-boislard-cd/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/deces-de-lancien-adjudant-chef-de-la-branche-adjuc-michel-boislard-cd/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         },
         {
           "key": "wp-300739",
           "title": {
             "en": "Virtual Memorial Service – MCpl Danny Corneau, CD, RCCS (Retired)",
-            "fr": "Virtual Memorial Service – MCpl Danny Corneau, CD, RCCS (Retired)"
+            "fr": "Service commémoratif virtuel – Cplc Danny Corneau, CD, CTRC (retraité)"
           },
           "category": "unassigned",
           "sources": {
@@ -540,9 +685,29 @@
               "images": [],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/MCpl-Danny-Corneau-Memorial-Pamphlet-Sequence-of-Events.docx"
-              ]
+              ],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 300744,
+              "url": "https://cmcen-rcmce.ca/fr/diffusion-des-funerailles-cplc-danny-corneau-cd-ctrc-retraite/",
+              "title": "Service commémoratif virtuel – Cplc Danny Corneau, CD, CTRC (retraité)",
+              "language": "fr",
+              "publishedAt": "2020-09-04T12:34:05",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 300744. Source type: post. Language: fr.",
+                "Editorial source; provisional inclusion, not import approval",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Shared document-link candidates (bytes not verified): 300739",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "Le Commandant et le SMR du Régiment d’Opérations Spéciales du Canada vous invite à un service commémoratif virtuel pour M Danny Cormeau, décédé le 9 aout 2020. Danny Corneau était un ancien signaleur et membre du ROSC, et plus récemment, il était fonctionnaire au sein de l’équipe J6 du COMFOSCAN, travaillant à Petawawa . Le mercredi 9 septembre, le mémorial sera en direct à 11h00 sur YouTube via : https://youtu.be/Y5py2L0-q7Y . Vous trouverez ci-joint le pamphlet et la séquence de l’évènement . Le service sera également enregistré pour ceux qui ne pourront pas y assister."
+              ],
+              "images": [],
+              "documents": [
+                "https://cmcen-rcmce.ca/wp-content/uploads/MCpl-Danny-Corneau-Memorial-Pamphlet-Sequence-of-Events.docx"
+              ]
+            }
           },
           "relatedSources": [
             {
@@ -571,13 +736,21 @@
               "documents": [],
               "language": "en"
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/funeral-broadcast-mcpl-danny-corneau-cd-rccs-retired/",
+            "englishUrl": "https://cmcen-rcmce.ca/funeral-broadcast-mcpl-danny-corneau-cd-rccs-retired/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/diffusion-des-funerailles-cplc-danny-corneau-cd-ctrc-retraite/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         },
         {
           "key": "wp-300565",
           "title": {
             "en": "Last Post: Private (Basic) Rudi William Kraak",
-            "fr": "Last Post: Private (Basic) Rudi William Kraak"
+            "fr": "Avis de décès: Soldat (confirmé) Rudi William Kraak"
           },
           "category": "unassigned",
           "sources": {
@@ -596,9 +769,26 @@
                 "VVV"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 300569,
+              "url": "https://cmcen-rcmce.ca/fr/avis-de-deces-soldat-confirme-rudi-william-kraak/",
+              "title": "Avis de décès: Soldat (confirmé) Rudi William Kraak",
+              "language": "fr",
+              "publishedAt": "2020-07-30T10:15:32",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 300569. Source type: post. Language: fr.",
+                "Title suggests personnel notice; confirm scope, do not discard",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "Soldat (confirmé) Rudi William Kraak (12 décembre 1994 – 19 juillet 2020) C’est avec une grande tristesse que nous vous informons du décès du soldat Rudi William Kraak. Rudi est décédé à son domicile le 19 juillet 2020. Il vivait à Victoria, en Colombie-Britannique et avait récemment rejoint le Corps des transmissions royal du Canada en décembre 2019. Rudi était à la maison avec sa mère et son père, et attendait des instructions sur son QMB-T (Cours qualification du soldat) avant de poursuivre sa carrière au CTRC en tant qu’opérateur des signaux. Il était considéré par ses pairs comme quelqu’un très attentionné qui était toujours prêt à prendre le temps d’aider les autres. Il avait une vision très positive de la vie et un grand sens de l’humour, ce qui lui a permis de remonter le moral de ses pairs dans les moments difficiles. La cérémonie funéraire aura lieu le samedi 8 août 2020 à 15 h"
+              ],
+              "images": [],
+              "documents": []
+            }
           },
           "relatedSources": [
             {
@@ -629,13 +819,21 @@
               "documents": [],
               "language": "en"
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/last-post-private-basic-rudi-william-kraak/",
+            "englishUrl": "https://cmcen-rcmce.ca/last-post-private-basic-rudi-william-kraak/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/avis-de-deces-soldat-confirme-rudi-william-kraak/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         },
         {
           "key": "wp-296178",
           "title": {
             "en": "Colonel Alexander Tupper, CD, RCAF – Funeral Arrangements",
-            "fr": "Colonel Alexander Tupper, CD, RCAF – Funeral Arrangements"
+            "fr": "Colonel Alexander Tupper, CD, ARC – Les arrangements funéraires"
           },
           "category": "unassigned",
           "sources": {
@@ -665,9 +863,26 @@
                 "Link: Colonel Alexander Tupper, CD Obituary"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 296187,
+              "url": "https://cmcen-rcmce.ca/fr/colonel-alexander-tupper-cd-arc-les-arrangements-funeraires/",
+              "title": "Colonel Alexander Tupper, CD, ARC – Les arrangements funéraires",
+              "language": "fr",
+              "publishedAt": "2019-12-09T14:29:28",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 296187. Source type: post. Language: fr.",
+                "Editorial source; provisional inclusion, not import approval",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "C’est avec beaucoup de tristesse que nous annonçons la perte du colonel Alex Tupper, ancien directeur de la gestion du programme d’équipement aérospatial (Radars et systèmes de communication) et chef d’état-major par intérim. Le colonel Tupper est décédé mardi après-midi (3 décembre 2019) avec son épouse Rachel, sa fille Esther et son fils Justin à ses côtés. Vendredi 13 décembre 2019 (Hall des couleurs) Édifice principal de Beechwood , situé au 280, avenue Beechwood, à Ottawa : 1. Visites familiales 1300 – 1400 h ; et 2. Visites publiques 1400 – 1600 h et 1800 – 2000 h . Samedi 14 décembre 2019 il y aura : 1. Une Célébration de sa vie et de sa contribution au Canada aura lieu au Life Centre , situé au 2214, chemin Innes, Orléans, à 10 h 30 ; 2. L’inhumation se fera au NMC Beechwood à partir de 1200 h ; et 3. Réception prévue de 1300 à 1500 h (Borden & Fleming Suites) Édifice principal d"
+              ],
+              "images": [],
+              "documents": []
+            }
           },
           "relatedSources": [
             {
@@ -700,13 +915,21 @@
               "documents": [],
               "language": "en"
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/colonel-alexander-tupper-cd-arc-les-arrangements-funeraires/",
+            "englishUrl": "https://cmcen-rcmce.ca/colonel-alexander-tupper-cd-rcaf-funeral-arrangements/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/colonel-alexander-tupper-cd-arc-les-arrangements-funeraires/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         },
         {
           "key": "wp-296123",
           "title": {
             "en": "Celebration of Life – Sgt Allan Edwin Stapleton, CD, RCCS (Retired), WII Veteran",
-            "fr": "Celebration of Life – Sgt Allan Edwin Stapleton, CD, RCCS (Retired), WII Veteran"
+            "fr": "Célébration de la Vie – Sgt Allan Edwin Stapleton, CD, CTRC (à la retraite), ancien combattant de WWII"
           },
           "category": "unassigned",
           "sources": {
@@ -728,9 +951,26 @@
                 "Link: Sgt Allan Edwin Stapleton, CD, RCCS (Retired) Obituary"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 296127,
+              "url": "https://cmcen-rcmce.ca/fr/celebration-de-la-vie-sgt-allan-edwin-stapleton-cd-ctrc-a-la-retraite-ancien-combattant-de-wwii/",
+              "title": "Célébration de la Vie – Sgt Allan Edwin Stapleton, CD, CTRC (à la retraite), ancien combattant de WWII",
+              "language": "fr",
+              "publishedAt": "2019-12-03T15:05:33",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 296127. Source type: post. Language: fr.",
+                "Title suggests personnel notice; confirm scope, do not discard",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "Une célébration de la vie sera organisé en honeur d ‘Allan Stapleton le 4 janvier 2020 . Il aurait eu 100 ans le lendemain. L’événement aura lieu au Club de Yacht d’Ashbridges Bay (30, chemin Ashbridges Bay Prk, Toronto, ON) dans l’est de Toronto, où Al était membre à vie. Ce sera une célébration non religieuse. Les remarques et souvenirs commenceront à 14 heures . Il s’agisse d’un événement ouvert à tous ceux qui souhaitent y assister. Veuillez confirmer votre présence à M. John Stapleton ( [email redacted] ) par retour de courrier électronique à des fins de planification. De plus, si vous souhaitez prendre la parole lors de l’événement, n’hésitez pas à nous contacter. Nous allons inclure un «micro ouvert» à la fin des formalités, si le temps le permet. S’il vous plaît, n’hésitez pas à partager cette information avec des personnes qui connaissaient Al. L’inhumation de Al aura lieu à une"
+              ],
+              "images": [],
+              "documents": []
+            }
           },
           "relatedSources": [
             {
@@ -762,13 +1002,21 @@
               "documents": [],
               "language": "en"
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/celebration-de-la-vie-sgt-allan-edwin-stapleton-cd-ctrc-a-la-retraite-ancien-combattant-de-wwii/",
+            "englishUrl": "https://cmcen-rcmce.ca/celebration-of-life-sgt-allan-edwin-stapleton-cd-rccs-retired-wii-veteran/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/celebration-de-la-vie-sgt-allan-edwin-stapleton-cd-ctrc-a-la-retraite-ancien-combattant-de-wwii/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         },
         {
           "key": "wp-294087",
           "title": {
             "en": "Obituary Notice – Colonel Peter H. Sutton, CD, Late RCCS (Retired)",
-            "fr": "Obituary Notice – Colonel Peter H. Sutton, CD, Late RCCS (Retired)"
+            "fr": "Avis de décès – Colonel Peter H. Sutton, CD, ancien CTRC (retraité)"
           },
           "category": "unassigned",
           "sources": {
@@ -795,9 +1043,26 @@
                 "In lieu of flowers, donations may be made to Military Communications and Electronics Museum (candemuseum.org) or to the Michael J. Fox Foundation (www.michaeljfox.org) in his memory."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 294090,
+              "url": "https://cmcen-rcmce.ca/fr/avis-de-deces-colonel-peter-h-sutton-cd-ancien-ctrc-retraite/",
+              "title": "Avis de décès – Colonel Peter H. Sutton, CD, ancien CTRC (retraité)",
+              "language": "fr",
+              "publishedAt": "2019-08-24T13:01:53",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 294090. Source type: post. Language: fr.",
+                "Title suggests personnel notice; confirm scope, do not discard",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "Colonel (à la retraite) Peter Hutingford Sutton, CD (15 décembre 1932 – 24 août 2019) Décédé le 24 août 2019 à Kingston (Ontario), à l’âge de 86 ans, le colonel Peter Sutton était un époux bien-aimé, père et grand-père dévoué. Il laisse dans le deuil son épouse bien-aimée, Audrey (née Doerr), ses filles, Karen Sutton (Peter Heidinger) et Ann Hollett (Edward), ainsi que sa soeur, Ann Dunn. Cinq petits-enfants, Bryan, Michael et Eric Heidinger, ainsi que Philip et Emma Hollett, ont enrichi sa vie. Le colonel Sutton était le fils de feu William D. Sutton et de Mme Edna (Thompson) Sutton de London (Ontario). Les visites auront lieu à la Maison funéraire James Reid, 1900, boulevard John Counter, à Kingston le 26 août 2019 de 19h00 à 21h00. Les funérailles du colonel Sutton auront lieu à la chapelle Trinity de la base des Forces canadiennes Kingston le 27 août 2019 à 14 heures. L’inhumation pr"
+              ],
+              "images": [],
+              "documents": []
+            }
           },
           "relatedSources": [
             {
@@ -836,13 +1101,21 @@
               "documents": [],
               "language": "en"
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/obituary-notice-colonel-peter-h-sutton-cd-late-rccs-retired/",
+            "englishUrl": "https://cmcen-rcmce.ca/obituary-notice-colonel-peter-h-sutton-cd-late-rccs-retired/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/avis-de-deces-colonel-peter-h-sutton-cd-ancien-ctrc-retraite/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         },
         {
           "key": "wp-292466",
           "title": {
             "en": "Obituary Notice – LCol (Ret’d) Jacques Hamel, OMM, CD",
-            "fr": "Obituary Notice – LCol (Ret’d) Jacques Hamel, OMM, CD"
+            "fr": "Avis de décès – LCol (ret) Jacques Hamel, OMM, CD"
           },
           "category": "unassigned",
           "sources": {
@@ -865,9 +1138,26 @@
                 "Francois.Chagnon@forces.gc.ca / Tel: 613-992-5420 / CSN: 992-5420 / Fax: 613-995-2189"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 292469,
+              "url": "https://cmcen-rcmce.ca/fr/avis-necrologique-lcol-jacques-hamel-omm-cd/",
+              "title": "Avis de décès – LCol (ret) Jacques Hamel, OMM, CD",
+              "language": "fr",
+              "publishedAt": "2019-05-24T13:07:12",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 292469. Source type: post. Language: fr.",
+                "Title suggests personnel notice; confirm scope, do not discard",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "C’est avec tristesse que je vous informe le décès de LCol (ret) Jacques Hamel, OMM, C54D, ing. Il est décédé à la suite d’une chirurgie vers 2 h 30 ce matin entouré de sa famille. Aucun mot ne peut décrire l’impact que Jacques a eu envers l’organisation de la C4ISR, depuis plus de dix ans. Sa vision, son leadership et sa passion ont sans aucun doute laissé leur marque au sein de l’organisation. Son héritage se perpétuera avec les gens qu’il a côtoyés au fil du temps, et la transformation organisationnelle qu’il a accomplie. En cette période difficile, je présente mes sincères condoléances à sa famille, ses amis et ses collègues. Les détails du service commémoratif seront transmis dès qu’elles seront disponibles. F.J. Chagnon Major-général Chef d’État Major – Groupe de la gestion de l’information J6 des FAC Commandant de la force cybernétique Chef de la Branche des communications et de l’"
+              ],
+              "images": [],
+              "documents": []
+            }
           },
           "relatedSources": [
             {
@@ -898,7 +1188,15 @@
               "documents": [],
               "language": "en"
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/obituary-notice-lcol-jacques-hamel-omm-cd/",
+            "englishUrl": "https://cmcen-rcmce.ca/obituary-notice-lcol-jacques-hamel-omm-cd/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/avis-necrologique-lcol-jacques-hamel-omm-cd/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         },
         {
           "key": "wp-291574",
@@ -938,9 +1236,27 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/col-hart-sr.png",
                 "https://cmcen-rcmce.ca/wp-content/uploads/col-hart.gif"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 291616,
+              "url": "https://cmcen-rcmce.ca/fr/hcol-david-lloyd-hart-mm-cd-rccs/",
+              "title": "HCol David Lloyd Hart, MM, CD, RCCS",
+              "language": "fr",
+              "publishedAt": "2019-03-27T13:59:06",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 291616. Source type: post. Language: fr.",
+                "Editorial source; provisional inclusion, not import approval",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Layout checks: divi, shortcode",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "The Communications and Electronics Branch and The Royal Canadian Corps of Signals is deeply saddened to note the passing of Honorary Colonel (HCol) David Lloyd Hart, MM, CD, RCCS. David passed away on Wednesday, 27 March 2019 at the Jewish General Hospital in Montreal, Quebec surrounded by his family. Honorary Colonel David Lloyd Hart was born in Montreal on the 7th of July 1917. Upon his graduation at the High School of Montreal, he attended studies at Strathcona Academy and later McGill University where he obtained his Chartered Accounts Degree. HCol Hart enlisted in the Army Reserve in 1936 and achieved the rank of Lance-Corporal. He deployed overseas in 1940, serving in England and France during the Second World War. Among other honours, he was awarded the Military Medal (MM) by His Majesty King George VI at Buckingham Palace – a bravery decoration for enlisted men and second only to"
+              ],
+              "images": [],
+              "documents": []
+            }
           },
           "relatedSources": [
             {
@@ -997,13 +1313,21 @@
               "documents": [],
               "language": "en"
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/hcol-hart-obituary/",
+            "englishUrl": "https://cmcen-rcmce.ca/hcol-hart-obituary/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/hcol-david-lloyd-hart-mm-cd-rccs/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         },
         {
           "key": "wp-291156",
           "title": {
             "en": "Corporal Kenneth Chad O’Quinn 10 year Memorial – Sunday, 03 March 2019",
-            "fr": "Corporal Kenneth Chad O’Quinn 10 year Memorial – Sunday, 03 March 2019"
+            "fr": "Caporal Kenneth Chad O’Quinn, commémorant son 10e anniversaire – dimanche, 03 mars 2019"
           },
           "category": "unassigned",
           "sources": {
@@ -1028,16 +1352,42 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Cpl-Kenneth-Chad-OQuinn.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 291165,
+              "url": "https://cmcen-rcmce.ca/fr/cpl-kenneth-chad-oquinn-commemorant-son-10e-anniversaire-3-mars-2019-kingston-ontario-2/",
+              "title": "Caporal Kenneth Chad O’Quinn, commémorant son 10e anniversaire – dimanche, 03 mars 2019",
+              "language": "fr",
+              "publishedAt": "2019-02-25T13:24:08",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 291165. Source type: post. Language: fr.",
+                "Editorial source; provisional inclusion, not import approval",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Layout checks: divi, shortcode",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "Dimanche, le 3 mars 2019 à 1330, quelques amis se réuniront au club d’Armée, Marine, Armée de l’air (ANAF) pour commémorer leur cher ami Chad O’Quinn. Le caporal O’Quinn a été tué le 3 mars 2009, en même temps que deux autres membres de l’équipe de neutralisation des explosifs et munitions, auxquels il avait été affecté lorsque leur Bison a été touché par un engin piégé à 10 km au nord-ouest de Kandahar. L’équipe revenait d’une opération réussie pour faire face à un autre IED lorsque leur véhicule a été heurté. Chad était un homme formidable qui était extrêmement fier d’être membre des Forces Canadiennes et le Corps royal canadien des transmissions. Un fils aimant, Chad a chéri sa famille. Au cours de ses deux tournées en Afghanistan, il a téléphoné, envoyé des courriels et des messages à sa famille tous les jours. Il a hautement apprécié sa foi, sa santé et ses proches. Il a défié la vi"
+              ],
+              "images": [],
+              "documents": []
+            }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/cpl-kenneth-chad-oquinn-commemorant-son-10e-anniversaire-3-mars-2019-kingston-ontario-2/",
+            "englishUrl": "https://cmcen-rcmce.ca/cpl-kenneth-chad-oquinn-10-year-memorial-3-march-2019-kingston-ontario/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/cpl-kenneth-chad-oquinn-commemorant-son-10e-anniversaire-3-mars-2019-kingston-ontario-2/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
           "key": "wp-22718",
           "title": {
             "en": "Whig Standard Article  – Gerry Coady",
-            "fr": "Whig Standard Article  – Gerry Coady"
+            "fr": "Whig Standard Article – Gerry Coady"
           },
           "category": "unassigned",
           "sources": {
@@ -1054,9 +1404,27 @@
                 "http://www.thewhig.com/2018/04/26/weve-lost-quite-a-soldier"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
-            "fr": null
+            "fr": {
+              "id": 22972,
+              "url": "https://cmcen-rcmce.ca/fr/whig-standard-article-gerry-coady/",
+              "title": "Whig Standard Article – Gerry Coady",
+              "language": "fr",
+              "publishedAt": "2018-04-26T19:15:23",
+              "modifiedAt": "",
+              "paragraphs": [
+                "Inventory evidence only. Source ID: 22972. Source type: post. Language: fr.",
+                "Editorial source; provisional inclusion, not import approval",
+                "Source comparison, access restrictions and destination mapping still need verification.",
+                "Matching normalized text candidates (not approved merges): 22718",
+                "Saved public-source excerpt (not the complete article; original language retained):",
+                "(Ian MacAlpine/The Whig-Standard) Dear C&E Association Members, Below is a link to an Whig Standard article on the passing of Col (Retired) Gerry Coady. http://www.thewhig.com/2018/04/26/weve-lost-quite-a-soldier"
+              ],
+              "images": [],
+              "documents": []
+            }
           },
           "relatedSources": [
             {
@@ -1098,7 +1466,15 @@
               "documents": [],
               "language": "en"
             }
-          ]
+          ],
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/whig-standard-article-gerry-coady/",
+            "englishUrl": "https://cmcen-rcmce.ca/whig-standard-article-gerry-coady/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/whig-standard-article-gerry-coady/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
+          }
         }
       ],
       "items": [
@@ -1111,8 +1487,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "tribute; stakeholder disposition. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): tribute; stakeholder disposition. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1147,8 +1523,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "burial ceremony; stakeholder disposition, no archive counterpart found. No counterpart found in the year index, not proof of site-wide absence. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "Aucun équivalent trouvé dans l’index annuel; cela ne prouve pas son absence sur tout le site. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): burial ceremony; stakeholder disposition, no archive counterpart found. No counterpart found in the year index, not proof of site-wide absence. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Aucun équivalent trouvé dans l’index annuel; cela ne prouve pas son absence sur tout le site. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1183,8 +1559,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "death notice; compare content before consolidation. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): death notice; compare content before consolidation. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1201,8 +1577,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "virtual memorial service; stakeholder disposition. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): virtual memorial service; stakeholder disposition. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1219,8 +1595,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "death notice; compare content before consolidation. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): death notice; compare content before consolidation. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1237,8 +1613,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "funeral arrangements; reconcile supplementary details. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): funeral arrangements; reconcile supplementary details. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1255,8 +1631,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "celebration of life; reconcile supplementary details. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): celebration of life; reconcile supplementary details. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1273,8 +1649,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "obituary; compare content before consolidation. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): obituary; compare content before consolidation. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1291,8 +1667,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "obituary; compare content before consolidation. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): obituary; compare content before consolidation. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1309,8 +1685,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "death notice; compare content before consolidation. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): death notice; compare content before consolidation. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1327,8 +1703,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "10-year memorial gathering; stakeholder disposition, no archive counterpart found. No counterpart found in the year index, not proof of site-wide absence. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "Aucun équivalent trouvé dans l’index annuel; cela ne prouve pas son absence sur tout le site. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): 10-year memorial gathering; stakeholder disposition, no archive counterpart found. No counterpart found in the year index, not proof of site-wide absence. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Aucun équivalent trouvé dans l’index annuel; cela ne prouve pas son absence sur tout le site. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1345,8 +1721,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "external newspaper coverage; stakeholder disposition. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
-            "fr": "La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): external newspaper coverage; stakeholder disposition. A dedicated page represents the same person; this does not establish identical content. See related source. Funeral events and tributes require a separate stakeholder decision. French counterparts were not audited.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : La personne figure dans une page dédiée (source connexe); cela ne prouve pas que les textes sont identiques. Les événements funéraires et hommages nécessitent une décision distincte. Les équivalents français ne sont pas encore vérifiés."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -1372,7 +1748,7 @@
           "key": "wp-341209",
           "title": {
             "en": "DIEPPE RAID AUGUST 19, 1942 – ROLE OF THE RCCS",
-            "fr": "DIEPPE RAID AUGUST 19, 1942 – ROLE OF THE RCCS"
+            "fr": "RAID SUR DIEPPE 19 AOÛT 1942 – RÔLE DU CTRC"
           },
           "category": "unassigned",
           "sources": {
@@ -1395,7 +1771,8 @@
                 "Despite heavy casualties, 2 Div Sigs continued to improve their signalling capabilities and serve throughout the conflict. The efforts of the Corps and all other brave Canadians helped the Allies achieve victory through the many operations that required effective communications. The sacrifices and achievements of those who have given so much to restore peace and freedom in the world will never be forgotten."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 343331,
@@ -1416,15 +1793,24 @@
                 "Bien qu’ayant subi de lourdes pertes, les Sigs 2 Div ont continué à améliorer leurs capacités de signalisation et à servir tout au long du conflit. Les efforts du Corps et de tous les autres courageux Canadiens ont aidé les Alliés à remporter la victoire grâce aux nombreuses opérations qui nécessitaient des communications efficaces. Les sacrifices et les réalisations de ceux qui ont tant donné pour rétablir la paix et la liberté dans le monde ne seront jamais oubliés."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/raid-sur-dieppe-19-aout-1942-role-du-ctrc/",
+            "englishUrl": "https://cmcen-rcmce.ca/dieppe-raid-19-august-1942-rccs-role/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/raid-sur-dieppe-19-aout-1942-role-du-ctrc/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
           "key": "wp-340499",
           "title": {
             "en": "King George V’s Enduring Legacy: The Naming of the Royal Canadian Corps of Signals",
-            "fr": "King George V’s Enduring Legacy: The Naming of the Royal Canadian Corps of Signals"
+            "fr": "Le nom du Corps royal canadien des transmissions"
           },
           "category": "unassigned",
           "sources": {
@@ -1449,7 +1835,8 @@
                 "The RCCS continues to uphold the name with pride, ensuring effective communication remains at the heart of their mission."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 340502,
@@ -1472,15 +1859,24 @@
                 "Le RCCS continue de porter ce nom avec fierté, en veillant à ce qu’une communication efficace reste au cœur de sa mission."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/king-george-v-enduring-legacy-the-naming-of-the-royal-canadian-corps-of-signals/",
+            "englishUrl": "https://cmcen-rcmce.ca/king-george-v-enduring-legacy-the-naming-of-the-royal-canadian-corps-of-signals/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/le-nom-du-corps-royal-canadien-des-transmissions/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
           "key": "wp-340368",
           "title": {
             "en": "Majestic Monarch of the Military:  Princess Anne as Colonel-in-Chief of the C&E Branch",
-            "fr": "Majestic Monarch of the Military:  Princess Anne as Colonel-in-Chief of the C&E Branch"
+            "fr": "Le majestueux monarque de l’armée: La princesse Anne, colonel en chef de la branche C&E"
           },
           "category": "unassigned",
           "sources": {
@@ -1508,7 +1904,8 @@
               "images": [],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/2021/10/CE-Branch-Standing-Orders-2020-1.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 340370,
@@ -1534,8 +1931,17 @@
               "images": [],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/2021/10/CE-Branch-Standing-Orders-2020-1.pdf"
-              ]
+              ],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/princess-anne-as-colonel-in-chief-of-the-ce-branch/",
+            "englishUrl": "https://cmcen-rcmce.ca/princess-anne-as-colonel-in-chief-of-the-ce-branch/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/la-princesse-anne-colonel-en-chef-de-la-branche-ce-2/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -1562,7 +1968,8 @@
                 "To read more about Elsa Lessard visit: https://www.ctvnews.ca/canada/canadian-veteran-remembers-role-as-secret-listener-during-second-world-war-1.2653884"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": null
           }
@@ -1571,7 +1978,7 @@
           "key": "wp-315509",
           "title": {
             "en": "70th Anniversary of the Korean War Armistice",
-            "fr": "70th Anniversary of the Korean War Armistice"
+            "fr": "70e anniversaire de l’armistice de la guerre de Corée"
           },
           "category": "unassigned",
           "sources": {
@@ -1597,7 +2004,8 @@
                 "Please email me at: kevin.okeefe@cmcen.ca if you are aware of any of our Branch/Corps Korean War veterans."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 315520,
@@ -1621,15 +2029,24 @@
                 "Si vous connaissez un de nos anciens combattants de la guerre de Corée, veuillez m’envoyer un courriel à l’adresse suivante : kevin.okeefe@cmcen.ca."
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/70e-anniversaire-de-larmistice-de-la-guerre-de-coree/",
+            "englishUrl": "https://cmcen-rcmce.ca/70th-anniversary-of-the-korean-war-armistice/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/70e-anniversaire-de-larmistice-de-la-guerre-de-coree/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
           "key": "wp-305361",
           "title": {
             "en": "Loss of Canadian Rear Link Communications in Cyprus – July 1974",
-            "fr": "Loss of Canadian Rear Link Communications in Cyprus – July 1974"
+            "fr": "Perte des communications de la liaison arrière canadienne à Chypre – juillet 1974"
           },
           "category": "unassigned",
           "sources": {
@@ -1650,7 +2067,8 @@
               "images": [],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/73-Sigs-Assistance-to-CAB-July-1974.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 305364,
@@ -1669,15 +2087,24 @@
               "images": [],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/73-Sigs-Assistance-to-CAB-July-1974.pdf"
-              ]
+              ],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/loss-of-canadian-rear-link-communications-in-cyprus-july-1974/",
+            "englishUrl": "https://cmcen-rcmce.ca/loss-of-canadian-rear-link-communications-in-cyprus-july-1974/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/perte-des-communications-de-la-liaison-arriere-canadienne-a-chypre-juillet-1974/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
           "key": "wp-300762",
           "title": {
             "en": "Juno Beach Centre Remembrance Run/Walk – Fundraising",
-            "fr": "Juno Beach Centre Remembrance Run/Walk – Fundraising"
+            "fr": "Course/marche du souvenir au Centre Juno Beach – Collecte de fonds"
           },
           "category": "unassigned",
           "sources": {
@@ -1716,7 +2143,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/Remembrance-Day.jpg",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Juno-Beach-Centre-white.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 300765,
@@ -1753,8 +2181,17 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/Remembrance-Day.jpg",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Juno-Beach-Centre-white.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/juno-beach-centre-remembrance-run-walk-fundraising/",
+            "englishUrl": "https://cmcen-rcmce.ca/juno-beach-centre-remembrance-run-walk-fundraising/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/juno-beach-centre-remembrance-run-walk-fundraising/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -1780,7 +2217,8 @@
               ],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Carruthers-Heritage-Legend-Nomination.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 299069,
@@ -1794,8 +2232,17 @@
                 "[/et_pb_text][/et_pb_column][et_pb_column type=”1_5″ _builder_version=”4.4.6″][et_pb_image src=”https://cmcen-rcmce.ca/wp-content/uploads/icon-PDF-download-blue-transparent.png” title_text=”icon PDF download blue – transparent” url=”https://cmcen-rcmce.ca/wp-content/uploads/Carruthers-Heritage-Legend-Nomination.pdf” _builder_version=”4.4.7″][/et_pb_image][/et_pb_column][/et_pb_row][/et_pb_section]"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/major-bruce-carruthers-heritage-legend/",
+            "englishUrl": "https://cmcen-rcmce.ca/major-bruce-carruthers-heritage-legend/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/major-bruce-carruthers-heritage-legend/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -1821,7 +2268,8 @@
               ],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/RCCS-Corps-Standing-Orders.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 298629,
@@ -1833,8 +2281,17 @@
                 "[et_pb_section fb_built=”1″ admin_label=”Heritage Matters” _builder_version=”4.4.3″ custom_margin=”0px||0px||false|false” custom_padding=”0px||0px||false|false” saved_tabs=”all”][et_pb_row column_structure=”1_4,1_2,1_4″ admin_label=”Working Area” _builder_version=”4.4.3″ background_size=”initial” background_position=”top_left” background_repeat=”repeat” custom_margin=”0px||0px||false|false” custom_padding=”0px||0px||false|false”][et_pb_column type=”1_4″ _builder_version=”3.0.47″ custom_padding=”|||” custom_padding__hover=”|||”][et_pb_text admin_label=”Content” _builder_version=”4.6.6″ custom_margin=”0px||0px||false|false” custom_padding=”0px||0px||false|false” z_index_tablet=”500″ text_text_shadow_horizontal_length_tablet=”0px” text_text_shadow_vertical_length_tablet=”0px” text_text_shadow_blur_strength_tablet=”1px” link_text_shadow_horizontal_length_tablet=”0px” link_text_shadow_vertical_length_tablet=”0px” link_text_shadow_blur_strength_tablet=”1px” ul_text_shadow_horizontal_length_tablet=”0px” ul_text_shadow_vertical_length_tablet=”0px” ul_text_shadow_blur_strength_tablet=”1px” ol_text_shadow_horizontal_length_tablet=”0px” ol_text_shadow_vertical_length_tablet=”0px” ol_text_shadow_blur_strength_tablet=”1px” quote_text_shadow_horizontal_length_tablet=”0px” quote_text_shadow_vertical_length_tablet=”0px” quote_text_shadow_blur_strength_tablet=”1px” header_text_shadow_horizontal_length_tablet=”0px” header_text_shadow_vertical_length_tablet=”0px” header_text_shadow_blur_strength_tablet=”1px” header_2_text_shadow_horizontal_length_tablet=”0px” header_2_text_shadow_vertical_length_tablet=”0px” header_2_text_shadow_blur_strength_tablet=”1px” header_3_text_shadow_horizontal_length_tablet=”0px” header_3_text_shadow_vertical_length_tablet=”0px” header_3_text_shadow_blur_strength_tablet=”1px” header_4_text_shadow_horizontal_length_tablet=”0px” header_4_text_shadow_vertical_length_tablet=”0px” header_4_text_shadow_blur_strength_tablet=”1px” header_5_text_shadow_horizontal_length_tablet=”0px” header_5_text_shadow_vertical_length_tablet=”0px” header_5_text_shadow_blur_strength_tablet=”1px” header_6_text_shadow_horizontal_length_tablet=”0px” header_6_text_shadow_vertical_length_tablet=”0px” header_6_text_shadow_blur_strength_tablet=”1px” box_shadow_horizontal_tablet=”0px” box_shadow_vertical_tablet=”0px” box_shadow_blur_tablet=”40px” box_shadow_spread_tablet=”0px”]The Royal Canadian Corps of Signals Standing Orders (1966)[/et_pb_text][/et_pb_column][et_pb_column type=”1_2″ _builder_version=”3.0.47″ custom_padding=”|||” custom_padding__hover=”|||”][et_pb_text admin_label=”Description” _builder_version=”4.4.4″ custom_margin=”0px||0px||false|false” custom_padding=”0px||0px||false|false” z_index_tablet=”500″ text_text_shadow_horizontal_length_tablet=”0px” text_text_shadow_vertical_length_tablet=”0px” text_text_shadow_blur_strength_tablet=”1px” link_text_shadow_horizontal_length_tablet=”0px” link_text_shadow_vertical_length_tablet=”0px” link_text_shadow_blur_strength_tablet=”1px” ul_text_shadow_horizontal_length_tablet=”0px” ul_text_shadow_vertical_length_tablet=”0px” ul_text_shadow_blur_strength_tablet=”1px” ol_text_shadow_horizontal_length_tablet=”0px” ol_text_shadow_vertical_length_tablet=”0px” ol_text_shadow_blur_strength_tablet=”1px” quote_text_shadow_horizontal_length_tablet=”0px” quote_text_shadow_vertical_length_tablet=”0px” quote_text_shadow_blur_strength_tablet=”1px” header_text_shadow_horizontal_length_tablet=”0px” header_text_shadow_vertical_length_tablet=”0px” header_text_shadow_blur_strength_tablet=”1px” header_2_text_shadow_horizontal_length_tablet=”0px” header_2_text_shadow_vertical_length_tablet=”0px” header_2_text_shadow_blur_strength_tablet=”1px” header_3_text_shadow_horizontal_length_tablet=”0px” header_3_text_shadow_vertical_length_tablet=”0px” header_3_text_shadow_blur_strength_tablet=”1px” header_4_text_shadow_horizontal_length_tablet=”0px” header_4_text_shadow_vertical_length_tablet=”0px” header_4_text_shadow_blur_strength_tablet=”1px” header_5_text_shadow_horizontal_length_tablet=”0px” header_5_text_shadow_vertical_length_tablet=”0px” header_5_text_shadow_blur_strength_tablet=”1px” header_6_text_shadow_horizontal_length_tablet=”0px” header_6_text_shadow_vertical_length_tablet=”0px” header_6_text_shadow_blur_strength_tablet=”1px” box_shadow_horizontal_tablet=”0px” box_shadow_vertical_tablet=”0px” box_shadow_blur_tablet=”40px” box_shadow_spread_tablet=”0px”]RCCS Corps Standing Orders were published to provide authoritative information on the customs and traditions of the Corps, which previously had been passed down over the years by word of mouth. As best that can be determined, these orders represent the last formal publication of RCCS Corps Standing Orders.[/et_pb_text][/et_pb_column][et_pb_column type=”1_4″ _builder_version=”3.0.47″ custom_padding=”|||” custom_padding__hover=”|||”][et_pb_image src=”https://cmcen-rcmce.ca/wp-content/uploads/RCCS-Standing-Orders.png” url=”https://cmcen-rcmce.ca/wp-content/uploads/RCCS-Corps-Standing-Orders.pdf” align=”center” admin_label=”Link / Image” _builder_version=”4.6.6″ custom_margin=”0px||0px||false|false” custom_padding=”0px||35px||false|false” hover_enabled=”0″ z_index_tablet=”500″ box_shadow_horizontal_tablet=”0px” box_shadow_vertical_tablet=”0px” box_shadow_blur_tablet=”40px” box_shadow_spread_tablet=”0px” sticky_enabled=”0″][/et_pb_image][/et_pb_column][/et_pb_row][et_pb_row _builder_version=”4.4.3″ background_size=”initial” background_position=”top_left” background_repeat=”repeat” custom_margin=”0px||0px||false|false” custom_padding=”0px|0px|0px|0px|false|false”][et_pb_column type=”4_4″ _builder_version=”3.25″ custom_padding=”|||” custom_padding__hover=”|||”][et_pb_divider color=”#d59b27″ divider_weight=”4″ _builder_version=”4.4.3″ custom_margin=”10px||0px||false|false” custom_padding=”10px|0px|0px|0px|false|false”][/et_pb_divider][/et_pb_column][/et_pb_row][/et_pb_section]"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/the-royal-canadian-corps-of-signals-standing-orders-1966/",
+            "englishUrl": "https://cmcen-rcmce.ca/the-royal-canadian-corps-of-signals-standing-orders-1966/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/the-royal-canadian-corps-of-signals-standing-orders-1966/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -1857,7 +2314,8 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/220px-Communications_and_Electronics_Branch_Crest-2.png"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 298460,
@@ -1871,8 +2329,17 @@
                 "[/et_pb_text][/et_pb_column][/et_pb_row][et_pb_row _builder_version=”4.4.2″ custom_margin=”0px||0px||false|false” custom_padding=”0px||0px||false|false”][et_pb_column type=”4_4″ _builder_version=”4.4.2″][et_pb_divider color=”#d59b27″ divider_weight=”5px” _builder_version=”4.4.2″ custom_margin=”10px||0px||false|false” custom_padding=”10px||0px||false|false” global_module=”298046″ saved_tabs=”all”][/et_pb_divider][/et_pb_column][/et_pb_row][/et_pb_section]"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/cpl-john-doe-cd-rccs/",
+            "englishUrl": "https://cmcen-rcmce.ca/cpl-john-doe-cd-rccs/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/cpl-john-doe-cd-rccs/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -1896,7 +2363,8 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/640px-WWII_Lt_operating_a_19_set_in_Italy.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 298462,
@@ -1911,8 +2379,17 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/640px-WWII_Lt_operating_a_19_set_in_Italy.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/canadian-signalling-corps/",
+            "englishUrl": "https://cmcen-rcmce.ca/canadian-signalling-corps/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/canadian-signalling-corps/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -1940,7 +2417,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/Parade.5.jpg",
                 "https://cmcen-rcmce.ca/wp-content/uploads/HRHLahr014.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 298465,
@@ -1959,8 +2437,17 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/Parade.5.jpg",
                 "https://cmcen-rcmce.ca/wp-content/uploads/HRHLahr014.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/hrh-princess-anne-princess-royal-visits-4-signal-squadron-20-october-1978/",
+            "englishUrl": "https://cmcen-rcmce.ca/hrh-princess-anne-princess-royal-visits-4-signal-squadron-20-october-1978/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/hrh-princess-anne-princess-royal-visits-4-signal-squadron-20-october-1978/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -1990,7 +2477,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/1280px-Troops_from_51st_Highland_Division_unloading_stores_from_tank_landing_craft_on_the_opening_day_of_the_Allied_invasion_of_Sicily_10_.jpg",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Map_operation_husky_landing.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 297981,
@@ -2011,8 +2499,17 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/1280px-Troops_from_51st_Highland_Division_unloading_stores_from_tank_landing_craft_on_the_opening_day_of_the_Allied_invasion_of_Sicily_10_.jpg",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Map_operation_husky_landing.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/pachino-landing-10-july-1943/",
+            "englishUrl": "https://cmcen-rcmce.ca/pachino-landing-10-july-1943/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/pachino-landing-10-july-1943/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -2038,7 +2535,8 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Signals_in_Korea_1951.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 298469,
@@ -2055,8 +2553,17 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Signals_in_Korea_1951.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/korean-war-armistice/",
+            "englishUrl": "https://cmcen-rcmce.ca/korean-war-armistice/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/65th-anniversary-of-korean-war-armistice-27-july-2018/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -2082,7 +2589,8 @@
               ],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/RCCS-Corps-History-web-1.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 298471,
@@ -2095,8 +2603,17 @@
                 "[/et_pb_text][/et_pb_column][et_pb_column type=”1_2″ _builder_version=”3.0.47″ custom_padding=”|||” custom_padding__hover=”|||”][et_pb_text admin_label=”History of the Royal Canadian Corps of Signals 1903-1961″ _builder_version=”4.4.4″ custom_margin=”0px||0px||false|false” custom_padding=”0px||0px||false|false” z_index_tablet=”500″ text_text_shadow_horizontal_length_tablet=”0px” text_text_shadow_vertical_length_tablet=”0px” text_text_shadow_blur_strength_tablet=”1px” link_text_shadow_horizontal_length_tablet=”0px” link_text_shadow_vertical_length_tablet=”0px” link_text_shadow_blur_strength_tablet=”1px” ul_text_shadow_horizontal_length_tablet=”0px” ul_text_shadow_vertical_length_tablet=”0px” ul_text_shadow_blur_strength_tablet=”1px” ol_text_shadow_horizontal_length_tablet=”0px” ol_text_shadow_vertical_length_tablet=”0px” ol_text_shadow_blur_strength_tablet=”1px” quote_text_shadow_horizontal_length_tablet=”0px” quote_text_shadow_vertical_length_tablet=”0px” quote_text_shadow_blur_strength_tablet=”1px” header_text_shadow_horizontal_length_tablet=”0px” header_text_shadow_vertical_length_tablet=”0px” header_text_shadow_blur_strength_tablet=”1px” header_2_text_shadow_horizontal_length_tablet=”0px” header_2_text_shadow_vertical_length_tablet=”0px” header_2_text_shadow_blur_strength_tablet=”1px” header_3_text_shadow_horizontal_length_tablet=”0px” header_3_text_shadow_vertical_length_tablet=”0px” header_3_text_shadow_blur_strength_tablet=”1px” header_4_text_shadow_horizontal_length_tablet=”0px” header_4_text_shadow_vertical_length_tablet=”0px” header_4_text_shadow_blur_strength_tablet=”1px” header_5_text_shadow_horizontal_length_tablet=”0px” header_5_text_shadow_vertical_length_tablet=”0px” header_5_text_shadow_blur_strength_tablet=”1px” header_6_text_shadow_horizontal_length_tablet=”0px” header_6_text_shadow_vertical_length_tablet=”0px” header_6_text_shadow_blur_strength_tablet=”1px” box_shadow_horizontal_tablet=”0px” box_shadow_vertical_tablet=”0px” box_shadow_blur_tablet=”40px” box_shadow_spread_tablet=”0px”]​​Written by Officers of the Corps and edited by John S. Moir, M.A., PhD. Published by the Corps Committee, Royal Canadian Corps of Signals, Ottawa, 1962[/et_pb_text][/et_pb_column][et_pb_column type=”1_4″ _builder_version=”3.0.47″ custom_padding=”|||” custom_padding__hover=”|||”][et_pb_image src=”https://cmcen-rcmce.ca/wp-content/uploads/RCCS-History.png” url=”https://cmcen-rcmce.ca/wp-content/uploads/RCCS-Corps-History-web-1.pdf” align=”center” _builder_version=”4.4.4″ custom_margin=”0px||0px||false|false” custom_padding=”0px||0px||false|false” hover_enabled=”0″ z_index_tablet=”500″ box_shadow_horizontal_tablet=”0px” box_shadow_vertical_tablet=”0px” box_shadow_blur_tablet=”40px” box_shadow_spread_tablet=”0px”][/et_pb_image][/et_pb_column][/et_pb_row][et_pb_row _builder_version=”4.4.2″ custom_margin=”0px||0px||false|false” custom_padding=”0px||0px||false|false”][et_pb_column type=”4_4″ _builder_version=”4.4.2″][et_pb_divider color=”#d59b27″ divider_weight=”5px” _builder_version=”4.4.2″ custom_margin=”10px||0px||false|false” custom_padding=”10px||0px||false|false” hover_enabled=”0″ global_module=”298046″ saved_tabs=”all”][/et_pb_divider][/et_pb_column][/et_pb_row][/et_pb_section]"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/history-of-rccs-1903-1961/",
+            "englishUrl": "https://cmcen-rcmce.ca/history-of-rccs-1903-1961/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/history-of-the-royal-canadian-corps-of-signals-1903-1961/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -2125,7 +2642,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/Cable-Repair-1945-1.png",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Line-Crew-1945-1.png"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 298473,
@@ -2145,8 +2663,17 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/Cable-Repair-1945-1.png",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Line-Crew-1945-1.png"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/holland-ww2/",
+            "englishUrl": "https://cmcen-rcmce.ca/holland-ww2/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/holland-wwii/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -2172,7 +2699,8 @@
               ],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Holland-the-Canadians-2020-Digital-Edition.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 298475,
@@ -2185,15 +2713,24 @@
                 "[/et_pb_text][/et_pb_column][et_pb_column type=”1_2″ _builder_version=”3.0.47″ custom_padding=”|||” custom_padding__hover=”|||”][et_pb_text admin_label=”Not yet available in digital format” _builder_version=”4.4.4″ z_index_tablet=”500″ text_text_shadow_horizontal_length_tablet=”0px” text_text_shadow_vertical_length_tablet=”0px” text_text_shadow_blur_strength_tablet=”1px” link_text_shadow_horizontal_length_tablet=”0px” link_text_shadow_vertical_length_tablet=”0px” link_text_shadow_blur_strength_tablet=”1px” ul_text_shadow_horizontal_length_tablet=”0px” ul_text_shadow_vertical_length_tablet=”0px” ul_text_shadow_blur_strength_tablet=”1px” ol_text_shadow_horizontal_length_tablet=”0px” ol_text_shadow_vertical_length_tablet=”0px” ol_text_shadow_blur_strength_tablet=”1px” quote_text_shadow_horizontal_length_tablet=”0px” quote_text_shadow_vertical_length_tablet=”0px” quote_text_shadow_blur_strength_tablet=”1px” header_text_shadow_horizontal_length_tablet=”0px” header_text_shadow_vertical_length_tablet=”0px” header_text_shadow_blur_strength_tablet=”1px” header_2_text_shadow_horizontal_length_tablet=”0px” header_2_text_shadow_vertical_length_tablet=”0px” header_2_text_shadow_blur_strength_tablet=”1px” header_3_text_shadow_horizontal_length_tablet=”0px” header_3_text_shadow_vertical_length_tablet=”0px” header_3_text_shadow_blur_strength_tablet=”1px” header_4_text_shadow_horizontal_length_tablet=”0px” header_4_text_shadow_vertical_length_tablet=”0px” header_4_text_shadow_blur_strength_tablet=”1px” header_5_text_shadow_horizontal_length_tablet=”0px” header_5_text_shadow_vertical_length_tablet=”0px” header_5_text_shadow_blur_strength_tablet=”1px” header_6_text_shadow_horizontal_length_tablet=”0px” header_6_text_shadow_vertical_length_tablet=”0px” header_6_text_shadow_blur_strength_tablet=”1px” box_shadow_horizontal_tablet=”0px” box_shadow_vertical_tablet=”0px” box_shadow_blur_tablet=”40px” box_shadow_spread_tablet=”0px”]Published in 1946 by the Canadian-Netherlands Committee, this book was intended to be a commemorative gift to the Canadian Army which could be kept by each individual recipient as an expression of admiration and gratitude from the Dutch nation to its liberators.[/et_pb_text][/et_pb_column][et_pb_column type=”1_4″ _builder_version=”3.0.47″ custom_padding=”|||” custom_padding__hover=”|||”][et_pb_image src=”https://cmcen-rcmce.ca/wp-content/uploads/Holland-the-Canadians-cover-small-size-for-web.jpg” title_text=”Holland &amp; the Canadians (cover) – small size for web” url=”https://cmcen-rcmce.ca/wp-content/uploads/Holland-the-Canadians-2020-Digital-Edition.pdf” align=”center” _builder_version=”4.4.4″ hover_enabled=”0″][/et_pb_image][/et_pb_column][/et_pb_row][et_pb_row _builder_version=”4.4.2″ custom_margin=”0px||0px||false|false” custom_padding=”0px||0px||false|false”][et_pb_column type=”4_4″ _builder_version=”4.4.2″][et_pb_divider color=”#d59b27″ divider_weight=”5px” _builder_version=”4.4.2″ custom_margin=”10px||0px||false|false” custom_padding=”10px||0px||false|false” global_module=”298046″ saved_tabs=”all”][/et_pb_divider][/et_pb_column][/et_pb_row][/et_pb_section]"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/holland-canadians/",
+            "englishUrl": "https://cmcen-rcmce.ca/holland-canadians/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/holland-and-the-canadians/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
           "key": "wp-295498",
           "title": {
             "en": "C & E Association Heritage Awards",
-            "fr": "C & E Association Heritage Awards"
+            "fr": "Prix ​​du patrimoine d’Association des C et É"
           },
           "category": "unassigned",
           "sources": {
@@ -2247,7 +2784,8 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/Sig-Crouse.png",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Sig-Crouse-226x300.png"
               ],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 295508,
@@ -2296,8 +2834,17 @@
                 "https://cmcen-rcmce.ca/wp-content/uploads/Sig-Crouse.png",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Sig-Crouse-226x300.png"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/prix-%e2%80%8b%e2%80%8bdu-patrimoine-dassociation-des-c-et-e/",
+            "englishUrl": "https://cmcen-rcmce.ca/c-and-e-association-heritage-awards/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/prix-%e2%80%8b%e2%80%8bdu-patrimoine-dassociation-des-c-et-e/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -2323,7 +2870,8 @@
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Col-Cmdt-CMCEN-Post-Netherlands-Tour-30-Apr-09-May-20.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Enclosure-CE-Battlefield-Study-Tour-Itinerary.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 294673,
@@ -2342,15 +2890,24 @@
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Col-Cmdt-CMCEN-Post-Netherlands-Tour-30-Apr-09-May-20.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Enclosure-CE-Battlefield-Study-Tour-Itinerary.pdf"
-              ]
+              ],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/netherlands-2020-battlefield-study-tour/",
+            "englishUrl": "https://cmcen-rcmce.ca/netherlands-2020-battlefield-study-tour/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/netherlands-2020-battlefield-study-tour/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
           "key": "wp-294410",
           "title": {
             "en": "75TH ANNIVERSARY – LIBERATION OF THE NETHERLANDS – SEARCH FOR VETERANS",
-            "fr": "75TH ANNIVERSARY – LIBERATION OF THE NETHERLANDS – SEARCH FOR VETERANS"
+            "fr": "75éme ANNIVERSAIRE DE LIBÉRATION DE PAYS-BAS – RECHERCHE DES ANCIENS COMBATTANTS"
           },
           "category": "unassigned",
           "sources": {
@@ -2387,7 +2944,8 @@
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Commemorative-Event-Nomination-Form.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Formulaire-de-nomination-Activité-commémoratif.pdf"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 294421,
@@ -2422,8 +2980,17 @@
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Commemorative-Event-Nomination-Form.pdf",
                 "https://cmcen-rcmce.ca/wp-content/uploads/Formulaire-de-nomination-Activité-commémoratif.pdf"
-              ]
+              ],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/fr/75eme-anniversaire-de-liberation-de-pays-bas-recherche-des-anciens-combattants/",
+            "englishUrl": "https://cmcen-rcmce.ca/75th-anniversary-liberation-of-the-netherlands-search-for-veterans/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/75eme-anniversaire-de-liberation-de-pays-bas-recherche-des-anciens-combattants/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -2448,7 +3015,8 @@
               "images": [],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/VINTAGE-SIGNALS-TEAM-SUMMER-NEWSLETTER-2018.v2.docx"
-              ]
+              ],
+              "language": "en"
             },
             "fr": {
               "id": 292586,
@@ -2464,8 +3032,19 @@
               "images": [],
               "documents": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/VINTAGE-SIGNALS-TEAM-SUMMER-NEWSLETTER-2018.v2.docx"
-              ]
+              ],
+              "language": "fr"
             }
+          },
+          "languagePairConflict": {
+            "checkedAt": "2026-09-28",
+            "findings": [
+              {
+                "en": "https://cmcen-rcmce.ca/hamilton-vintage-signals-team-in-berlin/",
+                "fr": "https://cmcen-rcmce.ca/fr/the-vintage-signals-team-in-berlin/",
+                "reason": "Conflicts with an existing paired source"
+              }
+            ]
           }
         },
         {
@@ -2492,7 +3071,8 @@
                 "Source: The Royal Canadian Corps of Signals Standing Orders"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "en"
             },
             "fr": {
               "id": 221044,
@@ -2510,8 +3090,17 @@
                 "Source: The Royal Canadian Corps of Signals Standing Orders"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
+          },
+          "languagePairEvidence": {
+            "kind": "legacy-language-switcher",
+            "checkedAt": "2026-09-28",
+            "sourceUrl": "https://cmcen-rcmce.ca/some-more-branch-corps-trivia/",
+            "englishUrl": "https://cmcen-rcmce.ca/some-more-branch-corps-trivia/",
+            "frenchUrl": "https://cmcen-rcmce.ca/fr/some-more-branch-corps-trivia/",
+            "contentComparison": "pending; linking does not certify translation accuracy"
           }
         },
         {
@@ -2536,7 +3125,8 @@
                 "[/et_pb_text][/et_pb_column][et_pb_column type=”2_5″ _builder_version=”4.4.2″][et_pb_image src=”https://cmcen-rcmce.ca/wp-content/uploads/Carruthers-portrait-photo-as-Captain.jpg” title_text=”Carruthers portrait photo (as Captain)” _builder_version=”4.4.4″ hover_enabled=”0″][/et_pb_image][/et_pb_column][/et_pb_row][et_pb_row _builder_version=”4.4.2″ custom_margin=”0px||0px||false|false” custom_padding=”0px||0px||false|false”][et_pb_column type=”4_4″ _builder_version=”4.4.2″][et_pb_divider color=”#d59b27″ divider_weight=”5px” _builder_version=”4.4.2″ custom_margin=”10px||0px||false|false” custom_padding=”10px||0px||false|false”][/et_pb_divider][/et_pb_column][/et_pb_row][/et_pb_section]"
               ],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
           }
         },
@@ -2562,7 +3152,8 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Carruthers-portrait-photo-as-Captain.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
           }
         },
@@ -2588,7 +3179,8 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Carruthers-portrait-photo-as-Captain.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
           }
         },
@@ -2614,7 +3206,8 @@
               "images": [
                 "https://cmcen-rcmce.ca/wp-content/uploads/Carruthers-portrait-photo-as-Captain.jpg"
               ],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
           }
         },
@@ -2633,11 +3226,10 @@
               "title": "Learning To Post",
               "publishedAt": "2020-04-28T17:20:32",
               "modifiedAt": "2020-04-28T17:29:10",
-              "paragraphs": [
-                "[Image-only source; inspect linked media.]"
-              ],
+              "paragraphs": ["[Image-only source; inspect linked media.]"],
               "images": [],
-              "documents": []
+              "documents": [],
+              "language": "fr"
             }
           }
         }
@@ -2652,8 +3244,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2670,8 +3262,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2688,8 +3280,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2724,8 +3316,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2742,8 +3334,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2760,8 +3352,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2778,8 +3370,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2796,8 +3388,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2814,8 +3406,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies. John Doe contains lorem ipsum: show stakeholders this live-site placeholder; retain in review, do not import as real content.",
-            "fr": "Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes. John Doe contient du lorem ipsum : montrer cet exemple du site en ligne, le conserver dans la revue sans l’importer comme contenu réel."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies. John Doe contains lorem ipsum: show stakeholders this live-site placeholder; retain in review, do not import as real content.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes. John Doe contient du lorem ipsum : montrer cet exemple du site en ligne, le conserver dans la revue sans l’importer comme contenu réel."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2832,8 +3424,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2850,8 +3442,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2868,8 +3460,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2886,8 +3478,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2904,8 +3496,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2922,8 +3514,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2940,8 +3532,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Not in the news inventory; found through the category archive. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Absent de l’inventaire des actualités; découvert dans les archives de catégorie. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2958,8 +3550,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2976,8 +3568,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -2994,8 +3586,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -3012,8 +3604,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "Language-link conflict: Conflicts with an existing paired source. Resolve the source identities before accepting a pairing. Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Conflit de liens linguistiques : vérifier les identités des sources avant d’accepter une association. Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",
@@ -3030,8 +3622,8 @@
             "fr": "Que faire de ce contenu historique?"
           },
           "rationale": {
-            "en": "Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
-            "fr": "Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
+            "en": "The legacy site language switcher explicitly links these English/French pages. Review both source texts and any separate content issue; this link does not certify translation accuracy or approve an import. Earlier content finding (language-search conclusions superseded): Already in the news inventory. Legacy category membership does not decide new-site placement. French-archive source is a candidate counterpart, not a certified translation; inspect both bodies.",
+            "fr": "Le sélecteur de langue du site historique lie explicitement ces pages anglaise et française. Examiner les deux textes et toute question de contenu distincte; ce lien ne valide pas la traduction et n’autorise pas une importation. Constat de contenu antérieur (conclusions de recherche linguistique remplacées) : Déjà dans l’inventaire des actualités. La catégorie d’origine ne détermine pas la destination. La source des archives françaises est un équivalent possible, pas une traduction validée; examiner les deux textes."
           },
           "recommendation": {
             "en": "Record the intended destination, any relationship or merge, and required corrections in the notes. Defer if unresolved. Preserving does not approve publication.",

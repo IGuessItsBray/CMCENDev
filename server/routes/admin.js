@@ -2909,6 +2909,9 @@ router.delete(
         ]);
       }
 
+      await require('../services/legacy-account-data').removeLegacyAccountData(
+        userId,
+      );
       await user.deleteOne();
       await writeAuditLog({
         req,
@@ -3791,7 +3794,7 @@ router.get(
 
       const user = await User.findById(userId)
         .select(
-          'accountType username email accountName firstName lastName role invitation.sentAt invitation.expiresAt invitation.delivery emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
+          'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage biography websiteUrl socialLinks.facebook role invitation.sentAt invitation.expiresAt invitation.delivery emailVerification.required emailVerification.verified emailVerification.verifiedAt webauthn totp customRoles contentAreas createdAt updatedAt',
         )
         .populate('customRoles', 'name slug color permissions');
 
@@ -3808,8 +3811,47 @@ router.get(
               permissionCatalog: PERMISSION_CATALOG,
               contentAreas: CONTENT_AREAS,
             };
+      const legacy = await mongoose.connection.db
+        .collection('legacyaccountprofiles')
+        .findOne({ userId: user._id });
+      const profile = {};
+      for (const key of [
+        'firstName',
+        'lastName',
+        'address',
+        'rank',
+        'postNominals',
+        'company',
+        'status',
+        'affiliationElement',
+        'trade',
+        'tradeOther',
+        'currentUnit',
+        'phone',
+        'preferredLanguage',
+        'biography',
+        'websiteUrl',
+        'socialLinks',
+      ]) {
+        profile[key] = user.get(key);
+      }
+      const privateDetails = {
+        profile,
+        legacyAccount: legacy?.sourceData || null,
+      };
+      await writeAuditLog({
+        req,
+        action: 'user.profile_viewed',
+        actor: req.user,
+        targetType: 'user',
+        target: user._id,
+        metadata: { legacyDataIncluded: Boolean(legacy) },
+      });
       if (req.query.includePosts === 'false') {
-        return res.json({ ...options, user: toAdminUser(user) });
+        return res.json({
+          ...options,
+          user: { ...toAdminUser(user), ...privateDetails },
+        });
       }
 
       const [events, retirementMessages, retirementComments, lastPosts] =
@@ -3907,17 +3949,20 @@ router.get(
 
       res.json({
         ...options,
-        user: toAdminUser(user, {
-          events: events.length,
-          retirementMessages: retirementMessages.length,
-          retirementComments: retirementComments.length,
-          lastPosts: lastPosts.length,
-          total:
-            events.length +
-            retirementMessages.length +
-            retirementComments.length +
-            lastPosts.length,
-        }),
+        user: {
+          ...privateDetails,
+          ...toAdminUser(user, {
+            events: events.length,
+            retirementMessages: retirementMessages.length,
+            retirementComments: retirementComments.length,
+            lastPosts: lastPosts.length,
+            total:
+              events.length +
+              retirementMessages.length +
+              retirementComments.length +
+              lastPosts.length,
+          }),
+        },
         posts,
       });
     } catch (err) {

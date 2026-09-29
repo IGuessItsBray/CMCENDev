@@ -270,8 +270,14 @@
       label = language.toUpperCase(),
     ) {
       const column = node("section", undefined, "archive-source");
-      column.lang = language;
-      column.append(node("h3", label, "archive-language"));
+      column.lang = source?.language === "und" ? "und" : language;
+      column.append(
+        node(
+          "h3",
+          source?.language === "und" ? t("language_unknown") : label,
+          "archive-language",
+        ),
+      );
       if (!source) {
         column.append(node("p", t("unresolved")));
         return column;

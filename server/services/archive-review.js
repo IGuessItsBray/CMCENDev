@@ -2,9 +2,15 @@ const crypto = require('crypto');
 const pilot = require('../data/archive-review/pilot-2026-09-26.json');
 const discovery = require('../data/archive-review/discovery-2026-09-27.json');
 const comments = require('../data/archive-review/comments-2026-09-28.json');
+const remaining = require('../data/archive-review/remaining-2026-09-28.json');
 const catalogue = {
   version: 1,
-  batches: [...pilot.batches, ...discovery.batches, ...comments.batches],
+  batches: [
+    ...pilot.batches,
+    ...discovery.batches,
+    ...comments.batches,
+    ...remaining.batches,
+  ],
 };
 
 // Choices describe review decisions only. None execute article or media writes.

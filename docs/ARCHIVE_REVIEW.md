@@ -4,7 +4,7 @@ This is a temporary tool for migrating the legacy site's content, including stak
 
 The separate [news migration ledger](../server/scripts/migration/ledger/README.md) tracks source discovery and actual imports. Saving a decision here does not mark a ledger record imported or verified.
 
-Current priority is [French completion of the initial 16 imports](../server/scripts/migration/ledger/INITIAL16.md), before adding further news batches. The operator confirmed importing five French updates and manually publishing some after review. The ledger records that confirmation separately from the panel's review decisions; it does not infer individual publication states.
+The [29 September migration policy](../server/scripts/migration/ledger/POLICY.md) now governs preparation: import as drafts, preserve genuine language counterparts, allow English-only records, and attach supporting member material beneath its retirement or Last Post parent outside the feeds. Missing translations are staff follow-up work, not a prerequisite for preparing the archive. The operator previously confirmed importing five French updates and manually publishing some after review; those confirmations remain distinct from panel decisions.
 
 Developers can open **Archive Review** in the admin panel (`/dashboard-next?area=archives`). The first catalogue covers the 16 imported articles audited on 26 September 2026: eight confirmed French counterparts, eight unresolved translations, and five separate translation, source-URL or image-layout issues. The September 2025 CPO1/CWO newsletter's French PDF was already included in the imported article, so it has no attachment issue.
 
@@ -17,6 +17,28 @@ Select an issue, compare the English and French source snapshots, choose an acti
 Saving records a decision only. It does not import, modify, publish, schedule or delete any article or media. Approving a pairing does not approve the related translation or attachment issues. A later import must independently validate documents and reconcile current destination content; the panel flags existing French content in the current environment.
 
 ## Evidence and persistence
+
+The remaining editorial inventory is available in seven additional selector options:
+News, Newsletters, Heritage, Biographies, Institutional pages, Documents, and
+Scope decisions. `remaining-2026-09-28.json` contains 829 review items after
+language-switcher reconciliation. All 1,353 original inventory source IDs remain
+accounted for across the existing and remaining catalogues. The 59 preparation
+batches are not separate selector options. Existing batch/item IDs and decisions
+are unchanged. These entries contain inventory evidence, source links and, where
+available, excerpts from saved public snapshots, not complete source comparisons.
+SQL-only bodies are withheld and unverified languages are labelled explicitly.
+No source text is translated. Scope questions include functional pages, possible
+event reports and placeholders; confirmed separate-migration records are omitted.
+Search and the existing 50-item pagination apply within each category. A Keep
+decision still requires independent language, duplication, access, document and
+destination checks before any import. Account ownership remains outside review.
+
+The 28 September language-switcher audit checked 1,439 catalogue URLs and linked
+606 English/French pairs across the catalogues, removing 523 duplicate remaining
+inventory items. This verifies the site's language relationship, not translation
+accuracy. Three conflicting relationships remain flagged for review; 31 targets
+whose source identity is unresolved are retained as related links. A failed lookup
+or an unlinked language panel does not establish that a translation is unavailable.
 
 The **Comment migration exceptions** batch (`comments-2026-09-28.json`) adds seven decisions from the WordPress/Corebot identity audit: one email-only import, three unmapped source comments, one truncated comment, and two comments whose referenced account is absent from the export. Source IDs, links and redacted evidence are included; private email/account metadata is not. English evidence panels retain original comment language, with no invented French translation. Destination lookup still covers news articles only; use the supplied snapshot evidence for these comments. Preserving the truncated original requires separately addressing the comment length limit before import. These decisions do not establish account ownership, restore accounts, or apply content changes.
 

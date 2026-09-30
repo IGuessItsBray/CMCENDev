@@ -111,6 +111,13 @@
       title: "adminArchivesTitle",
       mount: (options) => window.ArchiveReview.mount(options),
     },
+    "archive-staff": {
+      permission: "canVerifyArchive",
+      link: document.getElementById("adminArchiveStaffLink"),
+      element: document.getElementById("adminArchiveStaff"),
+      title: "adminArchiveStaffTitle",
+      mount: () => ({ dispose() {} }),
+    },
   };
   const areaMessage = document.getElementById("adminAreaMessage");
   const signOut = document.getElementById("adminSignOut");
@@ -165,6 +172,7 @@
   }
   // Match administrative entry points, not role names or contribution rights.
   const adminPermissions = [
+    "canVerifyArchive",
     "canReviewAndPublish",
     "canManageNews",
     "canManageEventRsvps",

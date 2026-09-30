@@ -50,6 +50,8 @@ Decisions are stored in the MongoDB `archivereviewdecisions` collection with act
 
 The interface and all endpoints require the exact `developer` role. Existing editorial permissions and custom roles do not grant archive-review access. Stakeholders can review alongside the developer in a meeting; this feature does not create stakeholder accounts or public sharing.
 
+Imported draft verification is a separate workflow at `/archive-staff-review`, guarded by the custom-role permission `archive.verify`. Its staff checks and final publication apply only to eligible imported records and do not reinterpret the meeting decisions in this panel. See [Imported Archive Staff Review](API%20ROUTES.md#imported-archive-staff-review).
+
 ## Remove after migration
 
 After the migration decisions have been applied and the results verified, preserve the catalogue and a database backup containing `archivereviewdecisions` with the migration records. Then remove the archive-review route mount from `server/server.js`, its sidebar/section/script/style references from `dashboard-next.html`, and its area registration from `dashboard-next.js`. Remove the dedicated archive-review route, service, model, frontend files, catalogue, tests, translation keys and API documentation. Normal article editing does not depend on this tool. Retain the migration evidence and audit history; removing the interface does not require deleting database records.

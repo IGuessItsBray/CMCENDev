@@ -265,6 +265,8 @@ const PageSchema = new mongoose.Schema(
       enum: ['draft', 'published', 'archived'],
       default: 'draft',
     },
+    // Imported pages retain their original source identity for staff review.
+    legacy: { type: mongoose.Schema.Types.Mixed, default: undefined },
     featuredOnHome: {
       type: Boolean,
       default: false,

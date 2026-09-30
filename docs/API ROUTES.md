@@ -210,6 +210,21 @@ Missing-translation (`discovery`) items also offer `translate` to request a new 
 
 Unknown batches/items return 404, invalid inputs 400, missing authentication 401 and other roles 403. PUT returns 409 for changed evidence or concurrent saves. Successful saves atomically append actor/time/notes/history and write `archive_review.decision_saved` to the audit log. Evidence changes reopen items as pending while retaining saved history. The response includes the saved `decision` and derived `state` (`pending`, `approved`, `reviewed`, `deferred`); approval records intent for later work, not application or publication.
 
+## Imported Archive Staff Review
+
+The separate `/archive-staff-review` workspace and all `/api/admin/archive-staff-review` routes require the `archive.verify` permission. This permission can be assigned through a custom role without granting general news, submission, page, user, or media administration. Server-side access is limited to records with WordPress source identity and a published original source; preserved, originally unapproved comments also require an explicit `legacy.importReview.decision=preserve-as-draft`. Only unscheduled imported drafts can be corrected, verified, or published. The queue supports `newsArticle`, `retirementMessage`, `lastPost`, `event`, `comment`, `page`, and `archiveDocument`. Source URLs and any retained source snapshots are displayed for comparison. All responses use `Cache-Control: no-store`.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/admin/archive-staff-review/types` | Supported types and required check keys. |
+| `GET` | `/api/admin/archive-staff-review/:type` | Imported draft or published queue; `status=draft\|published\|all`, numeric `offset`, pages of 50. |
+| `GET` | `/api/admin/archive-staff-review/:type/:id` | Editable public fields, immutable source evidence, publication date options, and saved verification. |
+| `PATCH` | `/api/admin/archive-staff-review/:type/:id` | Correct whitelisted public fields with `{expectedUpdatedAt, changes}`. Source identity, submitter/consent, access rules, and status are not editable. Changes invalidate saved checks and are revisioned and audited. |
+| `PUT` | `/api/admin/archive-staff-review/:type/:id/verification` | Save `{expectedUpdatedAt, checks, note}`; checks are `source`, `translation`, `categorization`, `media`. A note may record absent French or follow-up. |
+| `POST` | `/api/admin/archive-staff-review/:type/:id/publish` | Publish only when all four checks refer to the current draft. Send `{expectedUpdatedAt, publicationDateChoice}` for applicable types; choice is `original` or `now`. Publishes immediately and audits the reviewer. |
+
+Missing authentication returns 401, missing permission 403, unknown or ineligible records 404, invalid input 400, and stale drafts or incomplete checks 409. Imported documents use the `ArchiveDocument` collection and appear in `/page-content/document-library.json` only after publication; the bundled document catalogue remains public and unchanged.
+
 ## Admin Users, Roles, Media, Moderation
 
 Mounted at `/api/admin`.
@@ -344,7 +359,7 @@ Defined in `routes/pages.js`, mounted at root.
 | `GET`    | `/api/navigation`                     | Public with optional auth             | Return visible dynamic navigation.                                                                                                                        |
 | `GET`    | `/api/sitemap`                        | Public with optional auth             | Return generated sitemap sections and links from public HTML files plus published custom pages. Excludes non-public utility/admin shells. |
 | `GET`    | `/api/pages/:slug`                    | Public with optional auth             | Return page content if access rules allow it.                                                                                                             |
-| `GET`    | `/api/admin/pages/:pageId/preview`    | Authenticated + `canManagePages`      | Preview page by ID regardless of publication status.                                                                                                      |
+| `GET`    | `/api/admin/pages/:pageId/preview`    | Authenticated + `canManagePages`, or `archive.verify` for an imported draft only | Preview page by ID. General page managers retain access regardless of publication status. |
 | `GET`    | `/api/admin/pages`                    | Authenticated + `canManagePages`      | List admin page summaries plus navigation/admin metadata.                                                                                                 |
 | `GET`    | `/api/admin/pages/media`              | Authenticated + `canManagePages`      | List media picker assets for page editor.                                                                                                                 |
 | `POST`   | `/api/admin/pages`                    | Authenticated + `canManagePages`      | Create page.                                                                                                                                              |
@@ -459,7 +474,7 @@ accepts `limit` (1–60, default 24), numeric offset `cursor`, and `search` (up 
 characters); returns `media` and `nextCursor`. It grants no media deletion or
 administrative media access. Uploads retain `canUploadMedia` via `/api/upload`.
 
-`GET /api/news/:articleId/preview` requires authentication and `canManageNews`,
+`GET /api/news/:articleId/preview` requires authentication and `canManageNews`, or `archive.verify` for an imported draft only,
 returns the same article shape including unpublished content, and sets
 `Cache-Control: no-store`. Public reads still return only published records.
 

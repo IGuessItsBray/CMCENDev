@@ -1,7 +1,9 @@
 const express = require('express');
 const fs = require('node:fs');
 const path = require('node:path');
+const mongoose = require('mongoose');
 const { buildPublicMediaUrl } = require('../services/media-library');
+const ArchiveDocument = require('../models/ArchiveDocument');
 
 const router = express.Router();
 
@@ -31,6 +33,42 @@ function resolveMedia(value) {
   }
   return resolved;
 }
+
+router.get('/page-content/document-library.json', async (_req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    res.set('Cache-Control', 'no-store');
+    return res.json(resolveMedia(pages.get('document-library.json')));
+  }
+  try {
+    const content = pages.get('document-library.json');
+    const published = await ArchiveDocument.find({ status: 'published' }).lean();
+    const documents = published.map((document) => ({
+      id: `archive-${document.sourceId}`,
+      organization: document.organization,
+      type: document.type,
+      fileKey: document.fileKey,
+      pageUrl: document.pageUrl,
+      en: {
+        title: document.title?.en || '',
+        description: document.description?.en || '',
+        dateLabel: document.dateLabel?.en || '',
+        languageLabel: document.languageLabel?.en || '',
+      },
+      fr: {
+        title: document.title?.fr || '',
+        description: document.description?.fr || '',
+        dateLabel: document.dateLabel?.fr || '',
+        languageLabel: document.languageLabel?.fr || '',
+      },
+    }));
+    res.set('Cache-Control', 'no-store');
+    res.json(resolveMedia({ ...content, documents: [...content.documents, ...documents] }));
+  } catch (error) {
+    console.error('Could not load document library:', error.name);
+    res.set('Cache-Control', 'no-store');
+    res.json(resolveMedia(pages.get('document-library.json')));
+  }
+});
 
 router.get('/page-content/:filename', (req, res) => {
   if (!pages.has(req.params.filename)) return res.sendStatus(404);

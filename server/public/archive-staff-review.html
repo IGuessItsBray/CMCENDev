@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Imported archive review | CMCEN / RCMCE</title>
+    <link rel="stylesheet" href="/theme-tokens.css" />
+    <link rel="stylesheet" href="/archive-staff-review.css" />
+    <script src="/app-utils.js" defer></script>
+    <script src="/translations.js" defer></script>
+    <script src="/archive-staff-review.js" defer></script>
+  </head>
+  <body>
+    <main class="archive-staff-shell">
+      <header class="archive-staff-header">
+        <div>
+          <p class="archive-staff-eyebrow">CMCEN / RCMCE</p>
+          <h1>
+            Imported archive review
+            <span lang="fr">· Révision des archives importées</span>
+          </h1>
+          <p>
+            Compare each imported draft with its original source, correct it,
+            record your checks, then publish it.
+          </p>
+          <p lang="fr">
+            Comparez chaque brouillon importé à sa source, corrigez-le,
+            consignez vos vérifications, puis publiez-le.
+          </p>
+        </div>
+        <a href="/dashboard-next">Administration</a>
+      </header>
+      <p id="archiveStaffMessage" role="status" aria-live="polite"></p>
+      <div id="archiveStaffApp" hidden>
+        <div class="archive-staff-controls">
+          <label
+            >Content type / Type de contenu
+            <select id="archiveStaffType"></select>
+          </label>
+          <label
+            >Status / Statut
+            <select id="archiveStaffStatus">
+              <option value="draft">Drafts / Brouillons</option>
+              <option value="published">Published / Publiés</option>
+            </select>
+          </label>
+        </div>
+        <div class="archive-staff-layout">
+          <aside class="archive-staff-queue">
+            <h2>Imported records / Contenu importé</h2>
+            <div id="archiveStaffQueue"></div>
+            <button id="archiveStaffMore" type="button" hidden>
+              Load more / Afficher davantage
+            </button>
+          </aside>
+          <section
+            id="archiveStaffDetail"
+            class="archive-staff-detail"
+            aria-label="Record review"
+          >
+            <p>
+              Select an imported draft. / Sélectionnez un brouillon importé.
+            </p>
+          </section>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

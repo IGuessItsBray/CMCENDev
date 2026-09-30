@@ -8,6 +8,7 @@ const router = express.Router();
 const PUBLIC_DIRECTORY = path.join(__dirname, '..', 'public');
 const NON_INDEXABLE_PATHS = [
   /^\/api(?:\/|$)/u,
+  /^\/archive-staff-review(?:\.html|\/|$)/u,
   /^\/admin-users(?:\/|$)/u,
   /^\/analytics(?:\/|$)/u,
   /^\/audit-log(?:\/|$)/u,
@@ -29,6 +30,7 @@ const SITEMAP_EXCLUDED_FILES = new Set([
   '404.html',
   '500.html',
   'admin-users.html',
+  'archive-staff-review.html',
   'analytics.html',
   'audit-log.html',
   'content-workspace.html',
@@ -238,7 +240,7 @@ function buildRobotsTxt(baseUrl) {
     (crawler) => `User-agent: ${crawler}\nDisallow: /`,
   ).join('\n\n');
 
-  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin-users\nDisallow: /analytics\nDisallow: /audit-log\nDisallow: /content-workspace\nDisallow: /dashboard\nDisallow: /login\nDisallow: /pages-admin\nDisallow: /register\nDisallow: /review-submissions\nDisallow: /timers-admin\nDisallow: /translations-admin\nDisallow: /submit-event\nDisallow: /submit-last-post\nDisallow: /submit-retirement\n\n# AI crawlers are not permitted to crawl or use CMCEN content.\n${blockedAiCrawlerRules}\n\nSitemap: ${baseUrl}/sitemap.xml\n`;
+  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin-users\nDisallow: /archive-staff-review\nDisallow: /analytics\nDisallow: /audit-log\nDisallow: /content-workspace\nDisallow: /dashboard\nDisallow: /login\nDisallow: /pages-admin\nDisallow: /register\nDisallow: /review-submissions\nDisallow: /timers-admin\nDisallow: /translations-admin\nDisallow: /submit-event\nDisallow: /submit-last-post\nDisallow: /submit-retirement\n\n# AI crawlers are not permitted to crawl or use CMCEN content.\n${blockedAiCrawlerRules}\n\nSitemap: ${baseUrl}/sitemap.xml\n`;
 }
 
 router.get('/robots.txt', (req, res) => {

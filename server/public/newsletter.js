@@ -216,11 +216,11 @@
         `${header.offsetHeight}px`,
       );
   }
-  function showStaffActions() {
+  function showStaffActions(editUrl) {
     const language = document.documentElement.lang === "fr" ? "fr" : "en";
     staffLabel.textContent = labels[language].staff;
     staffEdit.textContent = labels[language].edit;
-    staffEdit.href = `/dashboard-next?area=articles&id=${encodeURIComponent(issue._id)}`;
+    staffEdit.href = editUrl || `/dashboard-next?area=articles&id=${encodeURIComponent(issue._id)}`;
     staffActions.hidden = false;
   }
   let requestId = 0;
@@ -272,8 +272,17 @@
       issue._id = article._id;
       issue.preview = preview;
       render();
-      if (preview) showStaffActions();
-      else if (CMCENUtils.getStoredAuthToken()) {
+      if (preview) {
+        try {
+          const user = await CMCENUtils.apiJson('/api/me', {
+            token: CMCENUtils.getStoredAuthToken(),
+          });
+          if (currentRequest === requestId && user.permissions?.canManageNews)
+            showStaffActions();
+          else if (currentRequest === requestId && user.permissions?.canVerifyArchive)
+            showStaffActions(`/archive-staff-review?type=newsArticle&id=${encodeURIComponent(issue._id)}`);
+        } catch {}
+      } else if (CMCENUtils.getStoredAuthToken()) {
         try {
           const user = await CMCENUtils.apiJson("/api/me", {
             token: CMCENUtils.getStoredAuthToken(),

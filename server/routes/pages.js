@@ -12,6 +12,7 @@ const {
   getUserPermissions,
   normalizePermissionKeys,
 } = require('../config/permissions');
+const { isArchiveRecord } = require('../services/archive-staff-review');
 const {
   authMiddleware,
   optionalAuthMiddleware,
@@ -1034,13 +1035,20 @@ router.get('/api/pages/:slug', optionalAuthMiddleware, async (req, res) => {
 router.get(
   '/api/admin/pages/:pageId/preview',
   authMiddleware,
-  requirePermission('canManagePages'),
   async (req, res) => {
     try {
       const page = await Page.findById(req.params.pageId).lean();
 
       if (!page) {
         return res.status(404).json({ error: 'Page not found' });
+      }
+
+      const permissions = getUserPermissions(req.user);
+      if (permissions.canManagePages !== true) {
+        if (permissions.canVerifyArchive !== true)
+          return res.status(403).json({ error: 'Insufficient permissions' });
+        if (page.status !== 'draft' || !isArchiveRecord(page, 'page'))
+          return res.status(404).json({ error: 'Page not found' });
       }
 
       res.json({ page: toPageResponse(page) });
@@ -1509,3 +1517,4 @@ router.delete(
 
 module.exports = router;
 module.exports.isPublicSitemapFile = isPublicSitemapFile;
+module.exports.cleanBlocks = cleanBlocks;

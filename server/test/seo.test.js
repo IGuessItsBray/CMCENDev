@@ -38,6 +38,8 @@ test('marks account, admin, submission, and API paths as non-indexable', () => {
     '/api/me',
     '/dashboard',
     '/content-workspace',
+    '/archive-staff-review',
+    '/archive-staff-review.html',
     '/login',
     '/pages-admin',
     '/submit-event',
@@ -51,6 +53,7 @@ test('marks account, admin, submission, and API paths as non-indexable', () => {
 test('excludes protected workspace and member-only files from the public XML sitemap', () => {
   for (const fileName of [
     'content-workspace.html',
+    'archive-staff-review.html',
     'review-submissions.html',
     'contact.html',
     'submit-event.html',
@@ -145,6 +148,7 @@ test('blocks declared AI crawlers without blocking public search pages', () => {
   assert.match(robots, /User-agent: Google-Extended\nDisallow: \//u);
   assert.match(robots, /User-agent: ClaudeBot\nDisallow: \//u);
   assert.match(robots, /Disallow: \/content-workspace/u);
+  assert.match(robots, /Disallow: \/archive-staff-review/u);
   assert.match(robots, /Sitemap: https:\/\/cmcen\.example\.ca\/sitemap\.xml/u);
 });
 

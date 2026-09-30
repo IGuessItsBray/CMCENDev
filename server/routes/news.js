@@ -7,6 +7,8 @@ const NewsArticle = require('../models/NewsArticle');
 const LastPostMessage = require('../models/LastPostMessage');
 const Page = require('../models/Page');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
+const { getUserPermissions } = require('../config/permissions');
+const { isArchiveRecord } = require('../services/archive-staff-review');
 const { writeAuditLog } = require('../services/audit-log');
 const { recordContentRevision } = require('../services/content-revisions');
 const { getScheduledPublicationDate } = require('../services/editorial-review');
@@ -546,7 +548,6 @@ router.get(
 router.get(
   '/:articleId/preview',
   authMiddleware,
-  requirePermission('canManageNews'),
   async (req, res) => {
     try {
       if (!mongoose.Types.ObjectId.isValid(req.params.articleId))
@@ -554,6 +555,13 @@ router.get(
       const article = await NewsArticle.findById(req.params.articleId).lean();
       if (!article)
         return res.status(404).json({ error: 'News story not found' });
+      const permissions = getUserPermissions(req.user);
+      if (permissions.canManageNews !== true) {
+        if (permissions.canVerifyArchive !== true)
+          return res.status(403).json({ error: 'Insufficient permissions' });
+        if (article.status !== 'draft' || !isArchiveRecord(article, 'newsArticle'))
+          return res.status(404).json({ error: 'News story not found' });
+      }
       res.set('Cache-Control', 'no-store');
       return res.json({ article: serializeArticle(article) });
     } catch {

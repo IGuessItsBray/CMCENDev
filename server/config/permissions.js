@@ -2,6 +2,14 @@ const { ROLE_LEVELS } = require('./roles');
 
 const PERMISSION_CATALOG = Object.freeze([
   {
+    key: 'archive.verify',
+    label: 'Verify imported archive',
+    group: 'Archive',
+    action: 'publish',
+    description:
+      'Review, correct, and publish imported archival drafts only.',
+  },
+  {
     key: 'connections.read',
     label: 'Read connections',
     group: 'Connections',
@@ -241,6 +249,7 @@ const PERMISSION_CATALOG = Object.freeze([
 ]);
 
 const LEGACY_PERMISSION_KEYS = Object.freeze({
+  canVerifyArchive: 'archive.verify',
   canAccessConnections: 'connections.read',
   canCreateDrafts: 'content.create',
   canManageNews: 'news.manage',
@@ -297,6 +306,7 @@ function getBuiltInPermissionFlags(user) {
   const isGhost = role === 'ghost';
 
   return {
+    canVerifyArchive: false,
     canAccessConnections: hasMinimumRole(role, 'subscriber'),
 
     canCreateDrafts: isGhost || hasMinimumRole(role, 'contributor'),

@@ -28,6 +28,7 @@ tags:
   - name: Analytics
   - name: Audit Log
   - name: Admin
+  - name: Archive Staff Review
   - name: Uploads
   - name: Banners
   - name: Translations
@@ -86,7 +87,7 @@ paths:
           description: An absolute public media base URL is not configured.
   /page-content/{filename}:
     get:
-      summary: Bundled public page content with deployment-specific media URLs
+      summary: Public page content with deployment-specific media URLs
       security: []
       parameters:
         - in: path
@@ -97,7 +98,7 @@ paths:
           description: Existing bundled page-content JSON filename, including .json.
       responses:
         '200':
-          description: Nested imageKey and fileKey values resolved using the configured public media base URL; other content preserved.
+          description: Nested imageKey and fileKey values resolved using the configured public media base URL. The document library also includes published ArchiveDocument records.
           content:
             application/json:
               schema:
@@ -1810,6 +1811,122 @@ paths:
       responses:
         "200":
           description: Active banners.
+  /api/admin/archive-staff-review/types:
+    get:
+      tags: [Archive Staff Review]
+      summary: List imported archive review content types and checks.
+      x-permission: archive.verify
+      responses:
+        "200": { description: Supported content types and check keys. }
+        "401": { description: Authentication required. }
+        "403": { description: Archive verification permission required. }
+  /api/admin/archive-staff-review/{type}:
+    parameters:
+      - { name: type, in: path, required: true, schema: { type: string, enum: [newsArticle, retirementMessage, lastPost, event, comment, page, archiveDocument] } }
+    get:
+      tags: [Archive Staff Review]
+      summary: List imported drafts or published archive records.
+      x-permission: archive.verify
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [draft, published, all], default: draft } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, maximum: 100000, default: 0 } }
+      responses:
+        "200": { description: Imported records, paged by 50. }
+        "400": { description: Invalid filter. }
+        "401": { description: Authentication required. }
+        "403": { description: Archive verification permission required. }
+  /api/admin/archive-staff-review/{type}/{id}:
+    parameters:
+      - { name: type, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Archive Staff Review]
+      summary: Read one imported archive record with source evidence and verification.
+      x-permission: archive.verify
+      responses:
+        "200": { description: Editable public fields and original source evidence. }
+        "401": { description: Authentication required. }
+        "403": { description: Archive verification permission required. }
+        "404": { description: Imported record not found. }
+    patch:
+      tags: [Archive Staff Review]
+      summary: Correct whitelisted fields on an unscheduled imported draft.
+      x-permission: archive.verify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedUpdatedAt, changes]
+              properties:
+                expectedUpdatedAt: { type: string, format: date-time }
+                changes: { type: object, additionalProperties: true }
+      responses:
+        "200": { description: Corrected draft and invalidated prior checks. }
+        "400": { description: Invalid or disallowed field. }
+        "401": { description: Authentication required. }
+        "403": { description: Archive verification permission required. }
+        "404": { description: Imported record not found. }
+        "409": { description: Draft changed or is not editable. }
+  /api/admin/archive-staff-review/{type}/{id}/verification:
+    parameters:
+      - { name: type, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Archive Staff Review]
+      summary: Save four checks against the current imported draft.
+      x-permission: archive.verify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedUpdatedAt, checks, note]
+              properties:
+                expectedUpdatedAt: { type: string, format: date-time }
+                note: { type: string, maxLength: 4000 }
+                checks:
+                  type: object
+                  required: [source, translation, categorization, media]
+                  properties:
+                    source: { type: boolean }
+                    translation: { type: boolean }
+                    categorization: { type: boolean }
+                    media: { type: boolean }
+      responses:
+        "200": { description: Saved checks and reviewer. }
+        "400": { description: Invalid checks or note. }
+        "401": { description: Authentication required. }
+        "403": { description: Archive verification permission required. }
+        "404": { description: Imported record not found. }
+        "409": { description: Draft changed or is not editable. }
+  /api/admin/archive-staff-review/{type}/{id}/publish:
+    parameters:
+      - { name: type, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Archive Staff Review]
+      summary: Publish an imported draft after checks against its current version.
+      x-permission: archive.verify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedUpdatedAt]
+              properties:
+                expectedUpdatedAt: { type: string, format: date-time }
+                publicationDateChoice: { type: string, enum: [original, now] }
+      responses:
+        "200": { description: Published record and audit entry. }
+        "400": { description: Missing content or invalid publication date choice. }
+        "401": { description: Authentication required. }
+        "403": { description: Archive verification permission required. }
+        "404": { description: Imported record not found. }
+        "409": { description: Draft changed or verification incomplete. }
   /api/admin/archive-review:
     get:
       tags: [Admin]
@@ -2098,7 +2215,7 @@ paths:
     get:
       tags: [Pages]
       summary: Preview page.
-      x-permission: canManagePages
+      x-permission: canManagePages, or archive.verify for an imported draft only
       parameters:
         - $ref: "#/components/parameters/PageId"
       responses:
@@ -2552,7 +2669,7 @@ paths:
     get:
       tags: [News]
       summary: Preview a news story or newsletter, including drafts and hidden records.
-      x-permission: canManageNews
+      x-permission: canManageNews, or archive.verify for an imported draft only
       parameters:
         - $ref: "#/components/parameters/ArticleId"
       responses:

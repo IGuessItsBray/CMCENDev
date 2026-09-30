@@ -1,0 +1,222 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, sans-serif;
+  background: #f4f6f7;
+  color: #172b3b;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+select {
+  cursor: pointer;
+}
+button {
+  border: 1px solid #294a65;
+  border-radius: 0.4rem;
+  background: white;
+  color: #173c59;
+  padding: 0.55rem 0.8rem;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid #bc7f21;
+  outline-offset: 2px;
+}
+.archive-staff-shell {
+  max-width: 1600px;
+  margin: auto;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+.archive-staff-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  align-items: start;
+  border-bottom: 3px solid #b38b45;
+  padding-bottom: 1rem;
+}
+.archive-staff-header h1 {
+  margin: 0.2rem 0;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+.archive-staff-header h1 span {
+  font-size: 0.65em;
+  font-weight: 500;
+}
+.archive-staff-header p {
+  margin: 0.25rem 0;
+}
+.archive-staff-eyebrow {
+  color: #725617;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+#archiveStaffMessage {
+  min-height: 1.5rem;
+  color: #176238;
+  font-weight: 600;
+}
+#archiveStaffMessage.is-error {
+  color: #9b321f;
+}
+.archive-staff-preview-image {
+  max-width: min(100%, 500px);
+}
+.archive-staff-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+.archive-staff-controls label,
+.archive-staff-field,
+.archive-staff-check {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+.archive-staff-controls select,
+.archive-staff-field input,
+.archive-staff-field textarea,
+.archive-staff-field select,
+.archive-staff-note {
+  width: 100%;
+  border: 1px solid #9aa8b2;
+  border-radius: 0.35rem;
+  background: white;
+  padding: 0.55rem;
+  color: inherit;
+}
+.archive-staff-layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 320px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+.archive-staff-queue,
+.archive-staff-detail {
+  background: white;
+  border: 1px solid #cbd4db;
+  border-radius: 0.6rem;
+  padding: 1rem;
+}
+.archive-staff-queue {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+.archive-staff-queue h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+.archive-staff-queue button {
+  display: block;
+  width: 100%;
+  margin: 0.3rem 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.archive-staff-queue button[aria-current] {
+  background: #173c59;
+  color: white;
+}
+.archive-staff-queue small {
+  display: block;
+  opacity: 0.8;
+}
+.archive-staff-detail h2 {
+  margin-top: 0;
+  overflow-wrap: anywhere;
+}
+.archive-staff-source,
+.archive-staff-editor,
+.archive-staff-verification {
+  border-top: 1px solid #d5dce1;
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+.archive-staff-source a {
+  overflow-wrap: anywhere;
+}
+.archive-staff-source pre {
+  max-height: 18rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  background: #f1f4f6;
+  padding: 0.7rem;
+}
+.archive-staff-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.archive-staff-field[data-kind='long'],
+.archive-staff-field[data-kind='blocks'],
+.archive-staff-field[data-kind='json'] {
+  grid-column: 1 / -1;
+}
+.archive-staff-field textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+.archive-staff-field[data-kind='blocks'] textarea,
+.archive-staff-field[data-kind='json'] textarea {
+  min-height: 12rem;
+  font-family: ui-monospace, monospace;
+}
+.archive-staff-check {
+  display: flex;
+  align-items: start;
+  margin: 0.7rem 0;
+  font-weight: 500;
+}
+.archive-staff-check input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0.15rem 0.3rem 0 0;
+}
+.archive-staff-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+.archive-staff-actions .is-primary {
+  background: #173c59;
+  color: white;
+}
+.archive-staff-actions .is-publish {
+  background: #176238;
+  border-color: #176238;
+  color: white;
+}
+.archive-staff-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+@media (max-width: 800px) {
+  .archive-staff-layout {
+    grid-template-columns: 1fr;
+  }
+  .archive-staff-queue {
+    position: static;
+    max-height: 18rem;
+  }
+  .archive-staff-fields {
+    grid-template-columns: 1fr;
+  }
+}

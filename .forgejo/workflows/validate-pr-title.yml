@@ -32,6 +32,12 @@ jobs:
           echo "Validating PR title:"
           echo "$PR_TITLE"
 
+          # Forgejo uses this prefix for draft pull requests. Validate the
+          # underlying Conventional Commit title without changing draft state.
+          case "$PR_TITLE" in
+            'WIP: '*) PR_TITLE=${PR_TITLE#WIP: } ;;
+          esac
+
           if ! printf '%s\n' "$PR_TITLE" | grep -Eq "$pattern"; then
             echo
             echo "Invalid PR title."

@@ -7,7 +7,7 @@ analytics, audit logging, and an administrator work zone.
 
 The application itself is a single Express service. Browser assets are served
 directly from `server/public/`, application records are stored in MongoDB, and
-uploaded media is stored in MinIO or another S3-compatible object store.
+uploaded media is stored in Garage or another S3-compatible object store.
 
 Plausible Community Edition can optionally be self-hosted alongside CMCEN to
 provide privacy-focused web analytics.
@@ -29,7 +29,7 @@ At a high level, CMCEN uses the following services:
                      app data   │        │ uploaded media
                                 ▼        ▼
                          ┌───────────┐ ┌───────────┐
-                         │  MongoDB  │ │   MinIO   │
+                         │  MongoDB  │ │ Garage/S3 │
                          └───────────┘ └───────────┘
 
                   Optional browser analytics
@@ -57,7 +57,7 @@ Each service has a distinct responsibility:
 | --- | --- | --- |
 | CMCEN / Express | Application and API | Yes |
 | MongoDB | Application records, users, content, configuration, and related data | Yes |
-| MinIO / S3 | Uploaded media and object storage | Yes |
+| Garage / S3 | Uploaded media and object storage | Yes |
 | Plausible CE | Web analytics | No |
 | Plausible PostgreSQL | Plausible account and configuration data | Only with Plausible |
 | Plausible ClickHouse | Plausible analytics event data | Only with Plausible |
@@ -78,7 +78,7 @@ for authoring and archive behavior.
 - Node.js 24.x (`nvm install`, then `nvm use`, from the repository root)
 - npm 10 or newer
 - MongoDB 7 or newer, or a compatible managed MongoDB service
-- MinIO, or another S3-compatible object store with an existing writable bucket
+- Garage, or another S3-compatible object store with an existing writable bucket
 - Docker, when using the local infrastructure stack or container image
 - An SMTP relay, only when email verification and password-reset delivery are
   required
@@ -108,10 +108,10 @@ dependency of the CMCEN application.
 | `server/scripts/migration/` | Current-site WordPress migration tools |
 | `api/schema/openapi.yaml` | OpenAPI schema |
 | `docs/CONFIG.md` | Environment-variable and deployment configuration reference |
-| `compose.yml` | Complete CMCEN, MongoDB, MinIO, and Plausible deployment stack |
+| `compose.yml` | Legacy Corebot stack with CMCEN, MongoDB, MinIO, and Plausible |
 | `compose.env.example` | Safe template for the complete deployment stack's settings |
 | `docs/` | Developer and operational documentation |
-| `compose.dev.yml` | Local MongoDB and MinIO infrastructure |
+| `compose.dev.yml` | Legacy local MongoDB and MinIO infrastructure |
 
 The authoritative Node manifest and lockfile are in `server/`. Run npm commands
 from that directory.
@@ -124,7 +124,7 @@ For normal local development:
 nvm install
 nvm use
 
-docker compose -f compose.dev.yml up -d
+docker compose -f compose.dev.yml up -d mongo
 
 cd server
 npm ci
@@ -138,13 +138,35 @@ The application is available at:
 http://localhost:3000
 ```
 
-The local infrastructure stack provides MongoDB and MinIO. Plausible is
-optional and does not need to be running for CMCEN development.
+This starts only MongoDB. For media operations, configure a separate disposable
+Garage instance and bucket in `server/.env` using the existing `MINIO_*`
+variables; see [Object storage](docs/CONFIG.md#s3-compatible-object-storage).
+The full `compose.dev.yml` still starts MinIO for legacy development. Plausible
+is optional and does not need to be running for CMCEN development.
+
+For an isolated cloud test environment, `npm test` uses temporary MongoDB
+instances and synthetic fixtures. Its media tests mock S3. Do not connect a
+cloud test environment to the live Garage bucket or MongoDB database. Use a
+disposable Garage instance only when testing real object-storage behavior.
+
+### Garage VPS deployment
+
+The separately managed VPS runs a lightweight stack from `~/cmcen-vps`, outside
+this repository: `compose.garage.yml` runs MongoDB 7 and Garage v2.3.0,
+`compose.app.yml` runs the locally built CMCEN image, and `compose.web.yml`
+configures the storage web endpoint. The `setup-cmcen-garage.sh` and
+`setup-cmcen-app.sh` scripts created the stack. Run
+`~/cmcen-vps/deploy-cmcen.sh` on that VPS to pull `main`, build
+the app image, and recreate only the app container. Keep its environment files
+and credentials outside the repository. Do not run the repository's legacy
+`compose.yml` on that VPS; it starts MinIO.
 
 ## Complete Docker Compose Deployment
 
-`compose.yml` runs the complete single-host CMCEN stack from the published
-Forgejo package image:
+`compose.yml` is the retained MinIO-based Corebot deployment. The upstream
+[MinIO repository is archived](https://github.com/minio/minio), so Garage is
+preferred for new setups. This legacy stack runs the complete single-host CMCEN
+stack from the published Forgejo package image:
 
 ```text
 CMCEN, MongoDB, MinIO, Plausible, Plausible PostgreSQL, and ClickHouse
@@ -219,9 +241,10 @@ all CMCEN, MinIO, Plausible PostgreSQL, and ClickHouse data.
 
 CMCEN requires MongoDB and S3-compatible object storage.
 
-For development, these can run locally through Docker Compose.
+The following Docker Compose example documents the retained MinIO development
+stack. New isolated setups should use Garage and a separate bucket.
 
-Create `compose.dev.yml` in the repository root:
+The existing `compose.dev.yml` in the repository root contains:
 
 ```yaml
 services:
@@ -280,7 +303,7 @@ docker compose -f compose.dev.yml down -v
 
 unless you intentionally want to delete the local MongoDB and MinIO volumes.
 
-### Local MinIO
+### Local MinIO (legacy)
 
 The development MinIO endpoints are:
 
@@ -332,7 +355,7 @@ mongodb://127.0.0.1:27017/cmcen
 
 ### 4. Configure object storage
 
-Start MinIO or another compatible S3 service and create the bucket named by
+Start Garage or another compatible S3 service and create the bucket named by
 `MINIO_BUCKET_NAME`.
 
 The configured access key must be able to read, write, list, and delete objects
@@ -542,9 +565,9 @@ MongoDB contains CMCEN application data, including user and content records.
 Back up MongoDB using an appropriate MongoDB backup process and periodically
 test restoration.
 
-### MinIO
+### Object storage
 
-MinIO contains uploaded media.
+Garage or another S3-compatible store contains uploaded media.
 
 Back up or replicate the object-storage bucket separately from MongoDB.
 
@@ -555,14 +578,14 @@ A MongoDB backup alone does not preserve uploaded files.
 When Plausible is enabled, its PostgreSQL and ClickHouse data must also be
 protected.
 
-Plausible analytics backups are independent from CMCEN MongoDB and MinIO
+Plausible analytics backups are independent from CMCEN MongoDB and object-storage
 backups.
 
 A complete deployment therefore potentially requires protection of:
 
 ```text
 MongoDB
-MinIO / S3 objects
+Garage / S3 objects
 Plausible PostgreSQL
 Plausible ClickHouse
 ```
@@ -620,7 +643,8 @@ docker run --rm --name cmcen \
   cmcen:local
 ```
 
-MongoDB and MinIO must be reachable from inside the container.
+MongoDB and the configured S3-compatible store must be reachable from inside
+the container.
 
 When they run on the Docker host, do not configure their endpoints as
 `127.0.0.1` from inside the CMCEN container. Inside a container,
@@ -655,8 +679,9 @@ The production deployment should provide:
 - appropriate CPU, memory, and storage capacity;
 - controlled software and database upgrades.
 
-MongoDB databases, MinIO administration interfaces, Plausible PostgreSQL, and
-Plausible ClickHouse should not be exposed directly to the public internet.
+MongoDB databases, object-storage administration interfaces, Plausible
+PostgreSQL, and Plausible ClickHouse should not be exposed directly to the public
+internet.
 
 Only public application endpoints and intentionally public object-storage/CDN
 endpoints should be internet-accessible.

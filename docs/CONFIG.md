@@ -302,9 +302,14 @@ MFA_VERIFICATION_RATE_LIMIT_MAX=5
 Authentication rate limits should not be disabled merely to work around failed
 tests or user errors.
 
-## MinIO and S3-Compatible Object Storage
+## S3-Compatible Object Storage
 
-CMCEN stores uploaded media in MinIO or another S3-compatible service.
+CMCEN uses Garage for new deployments and can use any compatible S3 service.
+The `MINIO_*` variable names are retained for compatibility with the existing
+Corebot MinIO deployment; they also configure Garage. The repository's
+`compose.yml` and `compose.dev.yml` still start legacy MinIO. New isolated
+environments should use their own disposable Garage instance and bucket, never
+the live Garage credentials or media bucket.
 
 ### `MINIO_ACCESS_KEY`
 
@@ -348,10 +353,16 @@ Internal endpoint used by the CMCEN server to communicate with object storage.
 Local:
 
 ```dotenv
-MINIO_ENDPOINT=http://127.0.0.1:9000
+MINIO_ENDPOINT=http://127.0.0.1:3900
 ```
 
-Same Docker network:
+Garage on the same Docker network:
+
+```dotenv
+MINIO_ENDPOINT=http://garage:3900
+```
+
+Legacy MinIO on the same Docker network:
 
 ```dotenv
 MINIO_ENDPOINT=http://minio:9000
@@ -369,7 +380,7 @@ It does not necessarily need to be browser-accessible.
 
 ### `MINIO_PUBLIC_ENDPOINT`
 
-Browser-accessible MinIO or object-storage origin.
+Browser-accessible object-storage origin.
 
 Example:
 
@@ -393,7 +404,7 @@ CDN_PUBLIC_BASE_URL=https://cdn.example.ca/cmcen
 ```
 
 Use this when media is served through a reverse proxy or CDN instead of
-directly from MinIO.
+directly from object storage.
 
 This is the preferred CDN variable for new deployments.
 
@@ -778,7 +789,8 @@ CI or deployment infrastructure may provide them automatically.
 
 ## Local Development Example
 
-A typical local configuration using the repository development Compose stack
+A typical local configuration using only the MongoDB service from the
+repository development Compose stack and a separate disposable Garage instance
 may look like:
 
 ```dotenv
@@ -797,11 +809,11 @@ RP_ID=localhost
 RP_ORIGIN=http://localhost:3000
 TOTP_WINDOW=1
 
-MINIO_ACCESS_KEY=cmcen
-MINIO_SECRET_KEY=<local-development-password>
+MINIO_ACCESS_KEY=<garage-development-access-key>
+MINIO_SECRET_KEY=<garage-development-secret-key>
 MINIO_BUCKET_NAME=cmcen
-MINIO_ENDPOINT=http://127.0.0.1:9000
-MINIO_PUBLIC_ENDPOINT=http://127.0.0.1:9000
+MINIO_ENDPOINT=http://127.0.0.1:3900
+MINIO_PUBLIC_ENDPOINT=http://127.0.0.1:3900
 
 SMTP_HOST=smtp-relay.gmail.com
 SMTP_PORT=587
@@ -814,7 +826,7 @@ ENABLE_API_DOCS=true
 
 Do not copy development credentials into staging or production.
 
-## Docker Compose Deployment Example
+## Legacy MinIO Docker Compose Deployment Example
 
 When CMCEN, MongoDB, and MinIO share a Docker network, internal service names
 may be used:

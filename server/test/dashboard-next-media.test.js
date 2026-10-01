@@ -121,10 +121,148 @@ test('view-only access exposes neither upload nor delete actions; attached image
   const admin = setup();
   await admin.instance.ready;
   assert.equal(
-    admin.root.querySelector('.admin-media-grid').querySelectorAll('input')
-      .length,
+    admin.root
+      .querySelector('.admin-media-grid')
+      .querySelectorAll('input')
+      .filter((input) => input.type === 'checkbox').length,
     1,
   );
+});
+
+test('renames attached media without changing its key and hides editing from viewers', async () => {
+  const page = setup({
+    api: (url, options) =>
+      options.method === 'PATCH'
+        ? {
+            name: 'Shared transparent crest',
+            displayName: 'Shared transparent crest',
+          }
+        : undefined,
+  });
+  await page.instance.ready;
+  const forms = page.root.querySelectorAll('form');
+  const form = forms.at(-1);
+  assert.equal(form.hidden, true);
+  await page.root
+    .querySelectorAll('button')
+    .filter(
+      (button) =>
+        button.dataset.i18nAriaLabel === 'admin_media_library_name_rename',
+    )
+    .at(-1)
+    .fire('click');
+  form.querySelector('input').value = ' Shared transparent crest ';
+  await form.fire('submit');
+  const patch = page.calls.find((call) => call.method === 'PATCH');
+  assert.equal(patch.url, '/api/admin/media/used');
+  assert.deepEqual(JSON.parse(JSON.stringify(patch.body)), {
+    displayName: 'Shared transparent crest',
+  });
+  assert(
+    page.root
+      .querySelectorAll('h2')
+      .some((heading) => heading.textContent === 'Shared transparent crest'),
+  );
+  assert.equal(form.hidden, true);
+  const viewer = setup({ permissions: {} });
+  await viewer.instance.ready;
+  assert.equal(viewer.root.querySelectorAll('form').length, 0);
+});
+
+test('invalid names never issue a write and failed saves retain the old name', async () => {
+  const page = setup({
+    api: (url, options) => {
+      if (options.method === 'PATCH') throw new Error('unavailable');
+    },
+  });
+  await page.instance.ready;
+  const form = page.root.querySelectorAll('form')[0];
+  await page.root
+    .querySelectorAll('button')
+    .find(
+      (button) =>
+        button.dataset.i18nAriaLabel === 'admin_media_library_name_rename',
+    )
+    .fire('click');
+  for (const value of [' ', 'x'.repeat(121), 'line\nbreak']) {
+    form.querySelector('input').value = value;
+    await form.fire('submit');
+  }
+  assert.equal(page.calls.length, 1);
+  form.querySelector('input').value = 'New label';
+  await form.fire('submit');
+  assert(
+    page.root
+      .querySelectorAll('h2')
+      .some((heading) => heading.textContent === 'unused'),
+  );
+  assert.match(page.status(), /admin_media_library_name_error/);
+  assert.equal(form.hidden, false);
+  assert.equal(form.querySelector('input').value, 'New label');
+});
+
+test('pencil editing supports repeated open, Cancel, Escape and focus restoration', async () => {
+  const page = setup();
+  await page.instance.ready;
+  const form = page.root.querySelectorAll('form')[0];
+  const input = form.querySelector('input');
+  const rename = page.root
+    .querySelectorAll('button')
+    .find(
+      (button) =>
+        button.dataset.i18nAriaLabel === 'admin_media_library_name_rename',
+    );
+  let focused;
+  input.focus = () => {
+    focused = input;
+  };
+  rename.focus = () => {
+    focused = rename;
+  };
+  assert.equal(form.hidden, true);
+  for (const method of ['cancel', 'escape']) {
+    await rename.fire('click');
+    assert.equal(focused, input);
+    assert.equal(rename.getAttribute('aria-expanded'), 'true');
+    input.value = 'Unsaved name';
+    if (method === 'cancel')
+      await page.button('admin_media_library_name_cancel').fire('click');
+    else await form.fire('keydown', { key: 'Escape' });
+    assert.equal(focused, rename);
+    assert.equal(form.hidden, true);
+    assert.equal(input.value, 'unused');
+    assert.equal(rename.getAttribute('aria-expanded'), 'false');
+  }
+  assert.equal(page.calls.length, 1);
+});
+
+test('pending Save blocks duplicate saves and Cancel, then collapses with the new name', async () => {
+  const pending = deferred();
+  const page = setup({
+    api: (url, options) =>
+      options.method === 'PATCH' ? pending.promise : undefined,
+  });
+  await page.instance.ready;
+  const form = page.root.querySelectorAll('form')[0];
+  const rename = page.root
+    .querySelectorAll('button')
+    .find(
+      (button) =>
+        button.dataset.i18nAriaLabel === 'admin_media_library_name_rename',
+    );
+  await rename.fire('click');
+  form.querySelector('input').value = 'New name';
+  const saving = form.fire('submit');
+  await form.fire('submit');
+  await page.button('admin_media_library_name_cancel').fire('click');
+  assert.equal(form.hidden, false);
+  assert.equal(page.button('admin_media_library_name_save').disabled, true);
+  assert.equal(page.calls.filter((call) => call.method === 'PATCH').length, 1);
+  pending.resolve({ name: 'New name', displayName: 'New name' });
+  await saving;
+  assert.equal(form.hidden, true);
+  await rename.fire('click');
+  assert.equal(form.querySelector('input').value, 'New name');
 });
 
 test('new searches abort old requests and ignore their late responses', async () => {

@@ -3136,6 +3136,59 @@ router.get(
   },
 );
 
+// PATCH /api/admin/media/:key — internal library name only.
+router.patch(
+  '/media/:key',
+  authMiddleware,
+  requirePermission('canViewMediaLibrary'),
+  requirePermission('canUploadMedia'),
+  async (req, res) => {
+    const name = req.body?.displayName;
+    if (
+      typeof name !== 'string' ||
+      !name.trim() ||
+      name.trim().length > 120 ||
+      /[\u0000-\u001f\u007f]/u.test(name) ||
+      Object.keys(req.body).some((key) => key !== 'displayName')
+    )
+      return res
+        .status(400)
+        .json({ error: 'Enter a library name of 1–120 characters' });
+    try {
+      const asset = await MediaAsset.findOneAndUpdate(
+        { key: req.params.key },
+        { $set: { displayName: name.trim() } },
+        { returnDocument: 'before' },
+      ).lean();
+      if (!asset)
+        return res.status(404).json({ error: 'Media asset not found' });
+      await writeAuditLog({
+        req,
+        action: 'media.name_changed',
+        actor: req.user,
+        targetType: 'media',
+        target: asset._id,
+        targetSnapshot: { key: asset.key, name: name.trim() },
+        metadata: {
+          previousName: asset.displayName || asset.originalName || asset.key,
+          displayName: name.trim(),
+        },
+      });
+      return res.json({
+        key: asset.key,
+        displayName: name.trim(),
+        name: name.trim(),
+      });
+    } catch (error) {
+      console.error(
+        'Admin media name update failed:',
+        error?.name || 'unknown',
+      );
+      return res.status(500).json({ error: 'Could not update library name' });
+    }
+  },
+);
+
 // POST /api/admin/media/bulk-delete
 // Delete selected unattached object-storage images.
 router.post(

@@ -7071,6 +7071,135 @@ describe('MFA and audit behavior', () => {
 });
 
 describe('media lifecycle', () => {
+  test('renames only the media library label, preserves references and searches both pickers', async () => {
+    const admin = await login(await createUser({ role: 'administrator' }));
+    const asset = await MediaAsset.create({
+      key: 'images/random-uuid/original.webp',
+      originalKey: 'images/random-uuid/original.webp',
+      url: 'https://cdn.example.test/images/random-uuid/large.webp',
+      originalName: 'random-uuid.webp',
+      displayName: 'ASSOCIATION NEWSLETTER – SPRING 2022',
+      inferredName: 'ASSOCIATION NEWSLETTER – SPRING 2022',
+      mimeType: 'image/webp',
+      variants: {
+        thumb: {
+          key: 'images/random-uuid/thumb.webp',
+          url: 'https://cdn.example.test/images/random-uuid/thumb.webp',
+        },
+      },
+    });
+    const article = await NewsArticle.create({
+      title: { en: 'A story' },
+      createdBy: new mongoose.Types.ObjectId(),
+      content: { en: 'A story with an image' },
+      status: 'draft',
+      layout: 'newsletter',
+      newsletterBlocks: {
+        en: [
+          {
+            type: 'figure',
+            image: { url: asset.url, alt: 'Article alt' },
+            caption: 'Article caption',
+          },
+        ],
+        fr: [],
+      },
+      imageUrl: asset.url,
+    });
+    const before = await MediaAsset.findById(asset._id).lean();
+    const articleBefore = await NewsArticle.findById(article._id).lean();
+    const url = `/api/admin/media/${encodeURIComponent(asset.key)}`;
+    const response = await request(app)
+      .patch(url)
+      .set('Authorization', bearer(admin.body.token))
+      .send({ displayName: ' Shared transparent crest ' })
+      .expect(200);
+    assert.equal(response.body.name, 'Shared transparent crest');
+    const afterAsset = await MediaAsset.findById(asset._id).lean();
+    const {
+      displayName: ignoredBefore,
+      updatedAt: ignoredTimeBefore,
+      ...unchangedBefore
+    } = before;
+    const {
+      displayName: ignoredAfter,
+      updatedAt: ignoredTimeAfter,
+      ...unchangedAfter
+    } = afterAsset;
+    assert.deepEqual(unchangedAfter, unchangedBefore);
+    assert.deepEqual(
+      await NewsArticle.findById(article._id).lean(),
+      articleBefore,
+    );
+    for (const path of ['/api/admin/media', '/api/news/media']) {
+      const result = await request(app)
+        .get(`${path}?search=transparent`)
+        .set('Authorization', bearer(admin.body.token))
+        .expect(200);
+      assert.deepEqual(
+        result.body.media.map((item) => item.key),
+        [asset.key],
+      );
+    }
+    const log = await AuditLog.findOne({ action: 'media.name_changed' }).lean();
+    assert.equal(String(log.target), String(asset._id));
+    assert.equal(log.metadata.displayName, 'Shared transparent crest');
+  });
+
+  test('protects media names with permissions and rejects unsafe or unrelated fields', async () => {
+    const admin = await login(await createUser({ role: 'administrator' }));
+    const viewerRole = await Role.create({
+      name: 'Media viewer',
+      permissions: ['media.read'],
+    });
+    const viewer = await login(
+      await createUser({ customRoles: [viewerRole._id] }),
+    );
+    const contributor = await login(await createUser({ role: 'contributor' }));
+    const asset = await MediaAsset.create({
+      key: 'images/fallback.webp',
+      originalName: 'fallback.webp',
+      mimeType: 'image/webp',
+    });
+    const url = `/api/admin/media/${encodeURIComponent(asset.key)}`;
+    await request(app).patch(url).send({ displayName: 'Name' }).expect(401);
+    for (const session of [viewer, contributor])
+      await request(app)
+        .patch(url)
+        .set('Authorization', bearer(session.body.token))
+        .send({ displayName: 'Name' })
+        .expect(403);
+    for (const body of [
+      {},
+      { displayName: '' },
+      { displayName: ' ' },
+      { displayName: 'x'.repeat(121) },
+      { displayName: 1 },
+      { displayName: 'line\nbreak' },
+      { displayName: 'Name', key: 'moved' },
+    ])
+      await request(app)
+        .patch(url)
+        .set('Authorization', bearer(admin.body.token))
+        .send(body)
+        .expect(400);
+    const listed = await request(app)
+      .get('/api/admin/media')
+      .set('Authorization', bearer(admin.body.token))
+      .expect(200);
+    assert.equal(listed.body.media[0].name, 'fallback.webp');
+    assert.equal((await MediaAsset.findById(asset._id)).displayName, '');
+    assert.equal(
+      await AuditLog.countDocuments({ action: 'media.name_changed' }),
+      0,
+    );
+    await request(app)
+      .patch('/api/admin/media/missing')
+      .set('Authorization', bearer(admin.body.token))
+      .send({ displayName: 'Name' })
+      .expect(404);
+  });
+
   test('filters media by content type and searches file or image names', async () => {
     const admin = await createUser({ role: 'administrator' });
     const session = await login(admin);

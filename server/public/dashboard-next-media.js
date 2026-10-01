@@ -219,7 +219,122 @@
         ]
           .filter(Boolean)
           .join(" · ");
-        body.append(heading, key, metadata);
+        const nameRow = node("div", null, "admin-media-name-row");
+        nameRow.append(heading);
+        body.append(nameRow, key, metadata);
+        if (canUpload) {
+          let currentName = title;
+          const form = node("form", null, "admin-media-name-form");
+          form.hidden = true;
+          form.id = `media-name-${items.indexOf(item)}`;
+          const rename = node("button");
+          rename.type = "button";
+          rename.dataset.i18nAriaLabel = "admin_media_library_name_rename";
+          rename.setAttribute(
+            "aria-label",
+            t("admin_media_library_name_rename"),
+          );
+          rename.title = t("admin_media_library_name_rename");
+          const pencil = node("span");
+          pencil.textContent = "✎";
+          pencil.setAttribute("aria-hidden", "true");
+          rename.append(pencil);
+          rename.setAttribute("aria-expanded", "false");
+          rename.setAttribute("aria-controls", form.id);
+          nameRow.append(rename);
+          const label = node("label", "admin_media_library_name");
+          const input = node("input", null, "cmcen-control");
+          input.type = "text";
+          input.name = "displayName";
+          input.value = title;
+          input.required = true;
+          input.maxLength = 120;
+          label.append(input);
+          const save = node("button", "admin_media_library_name_save");
+          save.type = "submit";
+          const cancel = node("button", "admin_media_library_name_cancel");
+          cancel.type = "button";
+          const actions = node("div", null, "admin-media-name-actions");
+          actions.append(save, cancel);
+          form.append(
+            label,
+            actions,
+            node("p", "admin_media_library_name_help"),
+          );
+          const closeEditor = () => {
+            input.value = currentName;
+            form.hidden = true;
+            rename.setAttribute("aria-expanded", "false");
+            rename.focus();
+          };
+          rename.addEventListener("click", () => {
+            if (locked() || loading) return;
+            form.hidden = false;
+            rename.setAttribute("aria-expanded", "true");
+            input.focus();
+          });
+          cancel.addEventListener("click", () => {
+            if (locked()) return;
+            closeEditor();
+          });
+          form.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape" || locked()) return;
+            event.preventDefault();
+            closeEditor();
+          });
+          form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            if (
+              form.hidden ||
+              locked() ||
+              loading ||
+              permissions.canUploadMedia !== true
+            )
+              return;
+            const displayName = input.value.trim();
+            if (
+              !displayName ||
+              displayName.length > 120 ||
+              /[\u0000-\u001f\u007f]/u.test(displayName)
+            ) {
+              message("admin_media_library_name_invalid");
+              return;
+            }
+            busy = true;
+            let saved = false;
+            update();
+            try {
+              const result = await api(
+                `/api/admin/media/${encodeURIComponent(item.key)}`,
+                {
+                  method: "PATCH",
+                  body: { displayName },
+                },
+              );
+              if (disposed) return;
+              item.name = result.name;
+              item.displayName = result.displayName;
+              currentName = result.name;
+              heading.textContent = currentName;
+              const image = card.querySelector("img");
+              if (image) image.alt = currentName;
+              saved = true;
+              feedback = [["admin_media_library_name_saved"]];
+            } catch (error) {
+              if (disposed) return;
+              if (error.status === 403) canUpload = false;
+              feedback = [["admin_media_library_name_error"]];
+            } finally {
+              busy = false;
+              if (!canUpload) render();
+              else {
+                update();
+                if (saved) closeEditor();
+              }
+            }
+          });
+          body.append(form);
+        }
         if (inUse(item)) {
           const details = node("details");
           const summary = node("summary");

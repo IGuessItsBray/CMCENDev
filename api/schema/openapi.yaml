@@ -1142,6 +1142,38 @@ paths:
         "200":
           description: Bulk delete result.
   /api/admin/media/{key}:
+    patch:
+      tags: [Admin, Uploads]
+      summary: Update an internal media library name.
+      description: Requires both canViewMediaLibrary and canUploadMedia. Changes only displayName; storage keys, URLs and content references are preserved. Records media.name_changed in the audit log.
+      x-permission: canViewMediaLibrary
+      parameters:
+        - $ref: "#/components/parameters/ObjectKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [displayName]
+              properties:
+                displayName:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                  description: Trimmed nonblank internal name with no control characters.
+      responses:
+        "200":
+          description: Updated key, displayName and name.
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     delete:
       tags: [Admin, Uploads]
       summary: Delete unattached media asset.

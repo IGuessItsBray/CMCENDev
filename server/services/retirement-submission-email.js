@@ -101,6 +101,8 @@ async function sendRetirementSubmissionEmail(retirementMessage) {
   const { text, html } = formatRetirementSubmissionEmail(retirementMessage);
 
   const result = await sendMail({
+    category: 'operational',
+    workflow: 'retirement_submission',
     to,
     cc: cc || undefined,
     subject: getRetirementSubmissionSubject(retirementMessage),

@@ -1,18 +1,18 @@
 # Imported archive staff review
 
-This is the final human review of imported WordPress content. The import team
-prepares source-to-destination mappings, media, and **draft** records. A staff
-reviewer compares each draft with the original, corrects public copy and
-placement, records four checks, and publishes it. Archive Review meeting
-decisions are separate context and do not substitute for this verification.
+The import team prepares source-to-destination mappings, media, and **draft**
+records. Staff edit and publish ordinary imported articles and submissions in
+the regular Content Workspace using its imported-origin filter. The source
+details expand on demand. Staff can choose the original, current, or a custom
+publication date. The public view marks archived articles. Archive Review
+meeting decisions are separate context and do not publish content.
 
-Assign the `archive.verify` permission through a custom role to the specific
-reviewer accounts. It grants access to `/archive-staff-review` and its dedicated
-API only. It does not grant general news management, moderation, page editing,
-media administration, or user management. The workspace lists imported drafts
-and previously published imported records; only unscheduled drafts can be
-edited, checked, or published. Do not give reviewers the broad `news.manage`,
-`content.review`, or `pages.manage` permissions solely for this work.
+Existing editors use their normal content permissions. `archive.verify` remains
+available for the specialized verification API and its saved checks; it does
+not grant general news management, moderation, page editing, media
+administration, or user management. Imported Pages and ArchiveDocuments have
+their specialized review view linked from Pages administration. Editors with
+`pages.manage` can access only these two types there.
 
 The queue supports news articles (including newsletters), retirement messages,
 Last Posts, events, comments, pages, and imported document-library entries.
@@ -27,19 +27,28 @@ be saved. Originally unapproved comments need an explicit
 alone is not publication approval. A reviewer must record a publication note
 before marking checks complete for such a comment.
 
-News and page drafts have native preview links in the review workspace. Those
-preview endpoints grant `archive.verify` access only to eligible imported
-drafts; general editors retain their existing preview access.
+News and page drafts have native preview links. The archive preview endpoints
+grant `archive.verify` access only to eligible imported drafts; general editors
+retain their existing preview access.
 
-The four checks are source completeness, translation accuracy, categorization,
-and media/links/layout. An absent French version is visible and requires a note
-before the translation check can be marked complete. Do not invent text to fill
-it; the existing migration policy permits an English-only record when the
-source has no genuine French counterpart. Any draft correction makes earlier
-checks stale. Publishing requires all checks against the current draft version,
-an explicit publication date choice for applicable records, and writes an audit
-entry. Public-facing corrections also create content revisions for the content
-types already supported by that revision history.
+The specialized verification API records source completeness, translation
+accuracy, categorization, and media/links/layout. An absent French version
+requires a note before its translation check can be marked complete. Do not
+invent text to fill it; the migration policy permits an English-only record
+when the source has no genuine French counterpart. Any correction makes prior
+specialized checks stale. That API's publish action requires current checks and
+an explicit original, current, or custom date choice. The ordinary Content
+Workspace uses its existing editing and publication permissions. Both paths
+record audits and preserve supported content revisions. The original date is
+shown only when source provenance supports it; an absent date is never replaced
+by import time.
+
+The ordinary bilingual article editor shows one preview when the EN and FR
+figure image matches, keeps separate alt text and captions, and lets editors
+choose different images. The cover remains a separate article field. The
+specialized image chooser reads existing `MediaAsset` records with
+`archive.verify` and applies a selection only when that draft is saved. It
+does not scan storage, upload, delete, or replace images across records.
 
 Imported documents use `ArchiveDocument` records. An importer creates them as
 drafts with the legacy identity, a media `fileKey` under `documents/`, metadata,

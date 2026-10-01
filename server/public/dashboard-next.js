@@ -39,6 +39,13 @@
       title: "adminSubscriptionsTitle",
       mount: (options) => window.DashboardNextSubscriptions.mount(options),
     },
+    email: {
+      permission: "canManageEmail",
+      link: document.getElementById("adminEmailLink"),
+      element: document.getElementById("adminEmail"),
+      title: "adminEmailTitle",
+      mount: (options) => window.DashboardNextEmail.mount(options),
+    },
     pages: {
       permission: "canManagePages",
       link: document.getElementById("adminPagesLink"),
@@ -103,21 +110,6 @@
       title: "adminAwardsTitle",
       mount: (options) => window.DashboardNextAwards.mount(options),
     },
-    archives: {
-      permission: "canManageNews",
-      role: "developer",
-      link: document.getElementById("adminArchivesLink"),
-      element: document.getElementById("adminArchives"),
-      title: "adminArchivesTitle",
-      mount: (options) => window.ArchiveReview.mount(options),
-    },
-    "archive-staff": {
-      permission: "canVerifyArchive",
-      link: document.getElementById("adminArchiveStaffLink"),
-      element: document.getElementById("adminArchiveStaff"),
-      title: "adminArchiveStaffTitle",
-      mount: () => ({ dispose() {} }),
-    },
   };
   const areaMessage = document.getElementById("adminAreaMessage");
   const signOut = document.getElementById("adminSignOut");
@@ -179,6 +171,7 @@
     "canManageCertificateRequests",
     "canReadUsers",
     "canManageSubscriptions",
+    "canManageEmail",
     "canManageRoles",
     "canManagePages",
     "canManageTimers",

@@ -1,0 +1,54 @@
+.admin-email-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.admin-email-layout > p,
+.admin-email-history,
+.admin-email-layout > [role='status'] {
+  grid-column: 1 / -1;
+}
+
+.admin-email-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: var(--admin-surface);
+}
+
+.admin-email-card h2 {
+  margin-top: 0;
+}
+.admin-email-card label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-email-card form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+.admin-email-card input[type='email'] {
+  display: block;
+  max-width: 100%;
+  margin-top: 6px;
+}
+.admin-email-history ul {
+  max-height: 350px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.admin-email-history li {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 800px) {
+  .admin-email-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

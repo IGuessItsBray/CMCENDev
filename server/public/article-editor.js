@@ -196,6 +196,7 @@ window.ArticleEditor = (() => {
     api,
     getText,
     canUpload = false,
+    showPreview = true,
     busy = () => {},
   }) {
     const root = el("div", "article-media-control");
@@ -204,7 +205,7 @@ window.ArticleEditor = (() => {
     const status = el("p");
     status.setAttribute("role", "status");
     const setValue = (image) => {
-      preview.hidden = !image?.url;
+      preview.hidden = !showPreview || !image?.url;
       if (image?.url) preview.src = image.url;
       else preview.removeAttribute("src");
     };
@@ -345,7 +346,7 @@ window.ArticleEditor = (() => {
     return root;
   }
 
-  function create({ inputs, getText, api, canUpload, busy }) {
+  function create({ inputs, getText, api, canUpload, busy, sharedFigurePreview = false }) {
     const root = el("div", "article-block-editor");
     const blocks = window.NewsletterFormat.pairBlocks(
       JSON.parse(inputs.en.value || "[]"),
@@ -373,12 +374,15 @@ window.ArticleEditor = (() => {
       }[type],
     });
     const list = el("div", "article-block-list");
+    const editableTypes = new Set(["paragraph", "heading", "figure", "list", "document"]);
     const syncInputs = () => {
       for (const language of ["en", "fr"]) {
         inputs[language].value = JSON.stringify(
           blocks
             .filter((row) => row[language])
-            .map((row) => ({ ...row[language], pairId: row.id })),
+            .map((row) => editableTypes.has(row.type)
+              ? { ...row[language], pairId: row.id }
+              : row[language]),
         );
         inputs[language].dispatchEvent(new Event("input", { bubbles: true }));
       }
@@ -394,6 +398,12 @@ window.ArticleEditor = (() => {
         name.dataset.i18n = `article_block_${pair.type}`;
         name.textContent = getText(name.dataset.i18n, pair.type);
         toolbar.append(name);
+        if (!editableTypes.has(pair.type)) {
+          card.append(toolbar, el("p"));
+          card.lastChild.textContent = getText("article_advanced_block", "This imported rich block is preserved. Review it in the article preview.");
+          list.append(card);
+          return;
+        }
         for (const [key, delta] of [
           ["article_move_up", -1],
           ["article_move_down", 1],
@@ -436,6 +446,21 @@ window.ArticleEditor = (() => {
           ),
         );
         card.append(toolbar);
+        const sharedFigure = sharedFigurePreview && pair.type === "figure" &&
+          pair.en?.image?.url && pair.en.image.url === pair.fr?.image?.url;
+        if (sharedFigure) {
+          const image = el("img", "article-image-preview article-shared-image-preview");
+          image.src = pair.en.image.url;
+          image.alt = "";
+          card.append(image);
+          const separate = el("label", "article-separate-images");
+          const toggle = el("input");
+          toggle.type = "checkbox";
+          toggle.checked = pair.separateImages === true;
+          toggle.addEventListener("change", () => { pair.separateImages = toggle.checked; });
+          separate.append(toggle, document.createTextNode(getText("article_separate_language_images", "Use different images for English and French")));
+          card.append(separate);
+        }
         const columns = el("div", "article-bilingual-columns");
         for (const language of ["en", "fr"]) {
           const counterpart = language === "en" ? "fr" : "en";
@@ -521,7 +546,7 @@ window.ArticleEditor = (() => {
                 onChange: (image) => {
                   const previousUrl = block.image.url;
                   block.image = { ...image, alt: block.image.alt || image.alt };
-                  if (pair[counterpart]?.image?.url === previousUrl)
+                  if (!pair.separateImages && pair[counterpart]?.image?.url === previousUrl)
                     pair[counterpart].image = {
                       ...structuredClone(image),
                       alt: pair[counterpart].image.alt || "",
@@ -533,6 +558,7 @@ window.ArticleEditor = (() => {
                 getText,
                 canUpload,
                 busy,
+                showPreview: !sharedFigure,
               }),
               field(
                 "article_alt",

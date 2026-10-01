@@ -173,6 +173,8 @@ async function notifyEventPublished(event, req, options = {}) {
     const title = getEventTitle(event);
 
     await sendMail({
+      category: 'operational',
+      workflow: 'event_published',
       to,
       subject: `Event published: ${title}`,
       html: renderEventPublishedEmail({
@@ -1535,7 +1537,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 
     if (event.status === 'published') {
       event.publishedBy ||= req.user._id;
-      event.publishedAt ||= selectPublicationDate(event, req.body?.publicationDateChoice);
+      event.publishedAt ||= selectPublicationDate(event, req.body?.publicationDateChoice, new Date(), req.body?.customPublishedAt);
       event.reviewedBy = req.user._id;
       event.reviewedAt = new Date();
     } else {

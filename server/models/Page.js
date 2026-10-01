@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { publicationDateFields } = require('../services/publication-date');
 const { USER_ROLES } = require('../config/roles');
 const {
   PERMISSION_CATALOG,
@@ -298,6 +299,7 @@ const PageSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    ...publicationDateFields,
   },
   { timestamps: true },
 );

@@ -43,6 +43,7 @@ async function publish({
           ? 'now'
           : choice;
       },
+      form: async () => ({ customPublishedAt: '2007-06-05T12:00:00.000Z' }),
     },
   };
   vm.runInNewContext(
@@ -104,12 +105,21 @@ test('all workspace archive types send the selected original date mode', async (
     assert.equal(prompts.at(-1).choices[0].value, 'original');
   }
 });
-test('cancellation does not publish; missing originals only offer now; new content skips date dialog', async () => {
+test('cancellation does not publish; missing originals offer current or custom date; new content skips date dialog', async () => {
   assert.equal((await publish({ choice: null })).requests.length, 0);
   const missing = await publish({ original: null, choice: 'now' });
-  assert.equal(missing.prompts[0].choices.length, 1);
+  assert.deepEqual(
+    Array.from(missing.prompts[0].choices, (entry) => entry.value),
+    ['now', 'custom'],
+  );
   assert.equal(missing.requests[0].body.publicationDateChoice, 'now');
   const normal = await publish({ archived: false });
   assert.equal(normal.prompts.length, 0);
   assert.equal(normal.requests[0].body.publicationDateChoice, undefined);
+});
+test('custom archive date is sent with the publish decision', async () => {
+  const { requests } = await publish({ choice: 'custom' });
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].body.publicationDateChoice, 'custom');
+  assert.equal(requests[0].body.customPublishedAt, '2007-06-05T12:00:00.000Z');
 });

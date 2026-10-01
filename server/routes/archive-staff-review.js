@@ -1,7 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const documentLibrary = require('../public/page-content/document-library.json');
-const { authMiddleware, requirePermission } = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/auth');
+const { getUserPermissions } = require('../config/permissions');
 const { writeAuditLog } = require('../services/audit-log');
 const { recordContentRevision } = require('../services/content-revisions');
 const {
@@ -21,6 +22,8 @@ const {
   isArchiveRecord,
 } = require('../services/archive-staff-review');
 const Verification = require('../models/ArchiveVerification');
+const MediaAsset = require('../models/MediaAsset');
+const { buildPublicMediaUrl } = require('../services/media-library');
 
 const models = Object.freeze({
   newsArticle: require('../models/NewsArticle'),
@@ -32,7 +35,14 @@ const models = Object.freeze({
   archiveDocument: require('../models/ArchiveDocument'),
 });
 const router = express.Router();
-router.use(authMiddleware, requirePermission('canVerifyArchive'));
+router.use(authMiddleware, (req, res, next) => {
+  const permissions = getUserPermissions(req.user);
+  if (permissions.canVerifyArchive === true) return next();
+  if (permissions.canManagePages === true &&
+    (req.path === '/types' || /^\/(?:page|archiveDocument)(?:\/|$)/u.test(req.path)))
+    return next();
+  return res.status(403).json({ error: 'Insufficient permissions' });
+});
 router.use((_req, res, next) => {
   res.set('Cache-Control', 'no-store');
   next();
@@ -129,7 +139,10 @@ function serialize(record, type, verification) {
     path,
     label,
     kind,
-    value: record.get(path) ?? (['blocks', 'json'].includes(kind) ? [] : ''),
+    value: record.get(path) ?? (['blocks', 'json'].includes(kind) ? [] : kind === 'boolean' ? false : ''),
+    ...(kind === 'boolean' ? { options: [
+      { value: 'false', label: 'No' }, { value: 'true', label: 'Yes' },
+    ] } : {}),
     ...(kind === 'category'
       ? { options: categories.map((value) => ({ value, label: value })) }
       : {}),
@@ -159,6 +172,7 @@ function serialize(record, type, verification) {
   return {
     id: String(record._id),
     type,
+    ...(type === 'newsArticle' ? { layout: record.layout } : {}),
     title: findTitle(record, type),
     status: record.status,
     updatedAt: record.updatedAt,
@@ -239,7 +253,45 @@ function fail(res, error) {
 }
 
 router.get('/types', (_req, res) => {
-  res.json({ types: Object.keys(models), checks: CHECK_KEYS });
+  const permissions = getUserPermissions(_req.user);
+  res.json({ types: permissions.canVerifyArchive === true
+    ? Object.keys(models) : ['page', 'archiveDocument'], checks: CHECK_KEYS });
+});
+
+// Archive reviewers may select an existing image without media administration.
+// This query never scans storage or creates MediaAsset records.
+router.get('/media', async (req, res) => {
+  const search = String(req.query.search || '').trim();
+  const cursor = Number(req.query.cursor || 0);
+  if (search.length > 100 || !Number.isSafeInteger(cursor) || cursor < 0 || cursor > 100000)
+    return res.status(400).json({ error: 'Invalid media filter' });
+  try {
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+    // Older imported assets can have an empty MIME type; the news builder
+    // recognizes those by their registered image URL as well.
+    const image = { $or: [
+      { mimeType: /^image\//u },
+      { url: /\.(png|jpe?g|webp|gif|avif)(\?|$)/iu },
+    ] };
+    const filter = search
+      ? { $and: [image, { $or: [
+          { key: new RegExp(escaped, 'iu') },
+          { displayName: new RegExp(escaped, 'iu') },
+          { inferredName: new RegExp(escaped, 'iu') },
+          { originalName: new RegExp(escaped, 'iu') },
+        ] }] }
+      : image;
+    const found = await MediaAsset.find(filter)
+      .select('key url displayName inferredName originalName variants')
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(cursor).limit(25).lean();
+    res.json({ media: found.map((asset) => ({
+      key: asset.key,
+      url: asset.url || buildPublicMediaUrl(asset.key),
+      name: asset.displayName || asset.inferredName || asset.originalName || asset.key,
+      variants: asset.variants,
+    })), nextCursor: found.length === 25 ? cursor + 25 : null });
+  } catch (error) { return fail(res, error); }
 });
 
 router.get('/:type', async (req, res) => {
@@ -259,16 +311,38 @@ router.get('/:type', async (req, res) => {
       .sort({ updatedAt: -1, _id: -1 })
       .skip(offset)
       .limit(51);
-    const items = candidates
+    const eligible = candidates
       .slice(0, 50)
-      .filter((record) => isArchiveRecord(record, req.params.type))
-      .map((record) => ({
+      .filter((record) => isArchiveRecord(record, req.params.type));
+    const verifications = await Verification.find({
+      _id: {
+        $in: eligible.map((record) => reviewKey(req.params.type, record._id)),
+      },
+    }).lean();
+    const byId = new Map(
+      verifications.map((verification) => [verification._id, verification]),
+    );
+    const items = eligible.map((record) => {
+      const verification = byId.get(reviewKey(req.params.type, record._id));
+      const current =
+        record.status === 'published' && Boolean(verification?.publishedAt)
+          ? true
+          : verification &&
+            new Date(verification.contentUpdatedAt).getTime() ===
+              new Date(record.updatedAt).getTime();
+      return {
         id: String(record._id),
         type: req.params.type,
         title: findTitle(record, req.params.type),
+        ...(req.params.type === 'newsArticle' ? { layout: record.layout } : {}),
         status: record.status,
         updatedAt: record.updatedAt,
-      }));
+        checksCompleted: current
+          ? CHECK_KEYS.filter((key) => verification.checks?.[key] === true)
+              .length
+          : 0,
+      };
+    });
     return res.json({
       items,
       nextOffset: candidates.length > 50 ? offset + 50 : null,
@@ -303,11 +377,45 @@ router.patch('/:type/:id', async (req, res) => {
       return;
     let changes;
     try {
-      changes = cleanChanges(
-        req.params.type,
-        req.body?.changes,
-        documentLibrary,
-      );
+      const selections = req.body?.mediaSelections || [];
+      if (!Array.isArray(selections) || selections.length > 20)
+        throw new Error('Invalid media selection');
+      changes = req.body?.changes && Object.keys(req.body.changes).length
+        ? cleanChanges(req.params.type, req.body.changes, documentLibrary, record)
+        : {};
+      if (!Object.keys(changes).length && !selections.length)
+        throw new Error('Choose fields to update');
+      if (selections.length && (req.params.type !== 'newsArticle' || record.layout !== 'newsletter'))
+        throw new Error('Newsletter media selection is required');
+      for (const selection of selections) {
+        if (!['en', 'fr'].includes(selection?.language) ||
+          !Number.isSafeInteger(selection?.index) || selection.index < 0 ||
+          typeof selection.key !== 'string' || selection.key.length > 500)
+          throw new Error('Invalid media selection');
+        const path = `newsletterBlocks.${selection.language}`;
+        const asset = await MediaAsset.findOne({ key: selection.key, $or: [
+          { mimeType: /^image\//u },
+          { url: /\.(png|jpe?g|webp|gif|avif)(\?|$)/iu },
+        ] }).lean();
+        if (!asset) throw new Error('Selected image is not in the media library');
+        const blocks = changes[path] || JSON.parse(JSON.stringify(record.get(path) || []));
+        const block = blocks[selection.index];
+        if (block?.type !== 'figure' || !block.image)
+          throw new Error('Selected block is not an image');
+        block.image = {
+          ...block.image,
+          url: asset.url || buildPublicMediaUrl(asset.key),
+          key: asset.key,
+          variants: Object.fromEntries(
+            Object.entries(asset.variants || {})
+              .filter(([, variant]) => variant?.url)
+              .map(([name, variant]) => [name, {
+                url: variant.url, width: variant.width, height: variant.height,
+              }]),
+          ),
+        };
+        changes[path] = blocks;
+      }
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
@@ -542,9 +650,12 @@ router.post('/:type/:id/publish', async (req, res) => {
       return res.status(400).json({ error: 'A page title is required' });
     const now = new Date();
     await record.validate();
-    const publishedAt = ['page', 'archiveDocument'].includes(type)
-      ? now
-      : selectPublicationDate(record, req.body?.publicationDateChoice, now);
+    const publishedAt = selectPublicationDate(
+      record,
+      req.body?.publicationDateChoice,
+      now,
+      req.body?.customPublishedAt,
+    );
     const updates = {
       status: 'published',
       publishedAt,

@@ -140,6 +140,7 @@ window.ContentWorkspaceActions = {
           rejectionReason = "",
           scheduledPublishAt = "",
           publicationDateChoice,
+          customPublishedAt,
         } = {},
       ) {
         if (
@@ -185,6 +186,7 @@ window.ContentWorkspaceActions = {
             body: {
               action,
               publicationDateChoice,
+              customPublishedAt,
               rejectionReason:
                 action === "reject" ? rejectionReason.trim() : undefined,
               scheduledPublishAt: isScheduledPublication
@@ -384,7 +386,11 @@ window.ContentWorkspaceActions = {
                 "Use the date it goes public on this site.",
               ),
             });
-            return await CMCENModal.choose(
+            choices.push({
+              value: "custom",
+              label: getText("content_workspace_date_custom", "Choose a specific date"),
+            });
+            const choice = await CMCENModal.choose(
               getText(
                 original
                   ? "content_workspace_date_prompt"
@@ -403,6 +409,19 @@ window.ContentWorkspaceActions = {
                 choices,
               },
             );
+            if (choice !== "custom") return choice ? { publicationDateChoice: choice } : null;
+            const selected = await CMCENModal.form(
+              getText("content_workspace_date_custom_help", "Choose the date readers should see."),
+              {
+                title: getText("content_workspace_date_custom", "Choose a specific date"),
+                confirmText: getText("content_workspace_date_confirm", "Use this date"),
+                fields: [{ name: "customPublishedAt", type: "cmcen-date-time", label: getText("content_workspace_date_title", "Publication date"), required: true }],
+              },
+            );
+            if (!selected?.customPublishedAt) return null;
+            const date = new Date(selected.customPublishedAt);
+            if (Number.isNaN(date.getTime()) || date > new Date()) return null;
+            return { publicationDateChoice: "custom", customPublishedAt: date.toISOString() };
           }
 
           if (action === "publish" && decision === "schedule") {
@@ -469,29 +488,29 @@ window.ContentWorkspaceActions = {
               return;
             }
 
-            const publicationDateChoice = await choosePublicationDate();
-            if (item.publicationDate?.isArchive && !publicationDateChoice)
+            const dateSelection = await choosePublicationDate();
+            if (item.publicationDate?.isArchive && !dateSelection)
               return;
             await submitDecision(action, {
-              publicationDateChoice,
+              ...dateSelection,
               scheduledPublishAt: scheduledDate.toISOString(),
             });
             return;
           }
 
-          const publicationDateChoice =
+          const dateSelection =
             action === "publish" ? await choosePublicationDate() : undefined;
           if (
             action === "publish" &&
             item.publicationDate?.isArchive &&
-            !publicationDateChoice
+            !dateSelection
           )
             return;
           await submitDecision(
             action,
             action === "reject" && typeof decision === "object"
               ? { rejectionReason: decision.rejectionReason || "" }
-              : { publicationDateChoice },
+              : { ...dateSelection },
           );
         } finally {
           isConfirming = false;

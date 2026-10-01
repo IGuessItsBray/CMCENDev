@@ -240,6 +240,13 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Delete unattached media from storage.',
   },
   {
+    key: 'email.manage',
+    label: 'Manage email delivery',
+    group: 'Administration',
+    action: 'admin',
+    description: 'Manage email sending controls, tests, and delivery attempts.',
+  },
+  {
     key: 'review.bypass',
     label: 'Bypass review stages',
     group: 'Moderation',
@@ -274,6 +281,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canProvisionUsers: 'users.provision',
   canResetUserMfa: 'users.mfa_reset',
   canManageSubscriptions: 'subscriptions.manage',
+  canManageEmail: 'email.manage',
   canManageRoles: 'roles.manage',
   canViewAuditLog: 'audit.view',
   canViewAnalytics: 'analytics.view',
@@ -354,6 +362,7 @@ function getBuiltInPermissionFlags(user) {
     canResetUserMfa: hasMinimumRole(role, 'administrator'),
 
     canManageSubscriptions: hasMinimumRole(role, 'administrator'),
+    canManageEmail: hasMinimumRole(role, 'administrator'),
 
     canManageRoles: hasMinimumRole(role, 'administrator'),
 

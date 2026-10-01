@@ -854,7 +854,7 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       ? lastPost.publishedBy || req.user._id
       : null;
     lastPost.publishedAt = wantsImmediatePublication
-        ? lastPost.publishedAt || selectPublicationDate(lastPost, req.body?.publicationDateChoice, now)
+        ? lastPost.publishedAt || selectPublicationDate(lastPost, req.body?.publicationDateChoice, now, req.body?.customPublishedAt)
       : null;
 
     await lastPost.save();

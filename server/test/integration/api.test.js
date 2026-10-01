@@ -42,6 +42,10 @@ const RetirementMessage = require('../../models/RetirementMessage');
 const Role = require('../../models/Role');
 const User = require('../../models/User');
 const Timer = require('../../models/Timer');
+const EmailControl = require('../../models/EmailControl');
+const EmailDeliveryAttempt = require('../../models/EmailDeliveryAttempt');
+const { sendMail } = require('../../services/mailer');
+const { runWeeklyBrief } = require('../../services/weekly-brief');
 const s3Client = require('../../storage');
 const { RETIREMENT_TRADE_ROLES } = require('../../config/content');
 const { buildPublicMediaUrl } = require('../../services/media-library');
@@ -260,6 +264,296 @@ after(async () => {
   if (mongoServer) {
     await mongoServer.stop();
   }
+});
+
+describe('admin email controls', () => {
+  test('requires email permission and changes only the chosen switch', async () => {
+    const member = await login(await createUser());
+    const admin = await login(await createUser({ role: 'administrator' }));
+    const memberAuth = bearer(member.body.token);
+    const adminAuth = bearer(admin.body.token);
+    await request(app).get('/api/admin/email').expect(401);
+    await request(app)
+      .get('/api/admin/email')
+      .set('Authorization', memberAuth)
+      .expect(403);
+    const initial = await request(app)
+      .get('/api/admin/email')
+      .set('Authorization', adminAuth)
+      .expect(200);
+    assert.deepEqual(initial.body.controls, {
+      account: false,
+      operational: false,
+      weekly: false,
+      news: false,
+    });
+    await request(app)
+      .patch('/api/admin/email/controls')
+      .set('Authorization', memberAuth)
+      .send({ category: 'account', enabled: true })
+      .expect(403);
+    await request(app)
+      .patch('/api/admin/email/controls')
+      .set('Authorization', adminAuth)
+      .send({ category: 'weekly', enabled: 'true' })
+      .expect(400);
+    const changed = await request(app)
+      .patch('/api/admin/email/controls')
+      .set('Authorization', adminAuth)
+      .send({ category: 'account', enabled: true })
+      .expect(200);
+    assert.equal(changed.body.controls.account, true);
+    assert.equal(changed.body.controls.weekly, false);
+    assert.equal((await EmailControl.findById('site')).account, true);
+    assert.equal(
+      await AuditLog.countDocuments({ action: 'email.control_changed' }),
+      1,
+    );
+  });
+
+  test('restricts test recipients and rate limits without sending live mail', async () => {
+    const admin = await login(await createUser({ role: 'administrator' }));
+    const auth = bearer(admin.body.token);
+    await request(app)
+      .post('/api/admin/email/test')
+      .send({ recipient: 'dot@ecgw.dev' })
+      .expect(401);
+    const member = await login(await createUser());
+    await request(app)
+      .post('/api/admin/email/test')
+      .set('Authorization', bearer(member.body.token))
+      .send({ recipient: 'dot@ecgw.dev' })
+      .expect(403);
+    const oldAllowlist = process.env.EMAIL_TEST_RECIPIENTS;
+    const oldHost = process.env.SMTP_HOST;
+    const oldPort = process.env.SMTP_PORT;
+    const oldFrom = process.env.MAIL_FROM;
+    process.env.EMAIL_TEST_RECIPIENTS = 'dot@ecgw.dev,eric@ecgw.dev';
+    process.env.SMTP_HOST = 'smtp.example.test';
+    process.env.SMTP_PORT = '587';
+    process.env.MAIL_FROM = 'test@example.test';
+    try {
+      await request(app)
+        .post('/api/admin/email/test')
+        .set('Authorization', auth)
+        .send({ recipient: 'subscriber@example.test' })
+        .expect(400);
+      await request(app)
+        .post('/api/admin/email/test')
+        .set('Authorization', auth)
+        .send({ recipient: 'dot@ecgw.dev', subject: 'injected' })
+        .expect(400);
+      await request(app)
+        .post('/api/admin/email/test')
+        .set('Authorization', auth)
+        .send({ recipient: 'dot@ecgw.dev' })
+        .expect(200);
+      await request(app)
+        .post('/api/admin/email/test')
+        .set('Authorization', auth)
+        .send({ recipient: 'dot@ecgw.dev' })
+        .expect(429);
+    } finally {
+      for (const [key, value] of Object.entries({
+        EMAIL_TEST_RECIPIENTS: oldAllowlist,
+        SMTP_HOST: oldHost,
+        SMTP_PORT: oldPort,
+        MAIL_FROM: oldFrom,
+      })) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  });
+
+  test('global stop records only sanitized metadata, never the message or code', async () => {
+    const previous = process.env.NODE_ENV;
+    const previousStop = process.env.DISABLE_EMAIL_SENDING;
+    process.env.NODE_ENV = 'development';
+    process.env.DISABLE_EMAIL_SENDING = 'true';
+    try {
+      const result = await sendMail({
+        category: 'account',
+        workflow: 'email_verification',
+        to: 'person@example.test',
+        subject: 'Secret',
+        text: '123456',
+      });
+      assert.equal(result.skipped, true);
+      const attempts = await EmailDeliveryAttempt.find().lean();
+      assert.equal(attempts.length, 1);
+      assert.equal(attempts[0].status, 'skipped');
+      assert.equal(attempts[0].reason, 'global_disabled');
+      assert.equal(attempts[0].recipientMasked, 'p***@example.test');
+      assert.doesNotMatch(
+        JSON.stringify(attempts),
+        /123456|Secret|person@example/u,
+      );
+    } finally {
+      process.env.NODE_ENV = previous;
+      if (previousStop === undefined) delete process.env.DISABLE_EMAIL_SENDING;
+      else process.env.DISABLE_EMAIL_SENDING = previousStop;
+    }
+  });
+
+  test('category default and emergency stop block account, weekly, and news sends', async () => {
+    const admin = await login(await createUser({ role: 'administrator' }));
+    const auth = bearer(admin.body.token);
+    const previous = process.env.NODE_ENV;
+    const previousStop = process.env.DISABLE_EMAIL_SENDING;
+    process.env.NODE_ENV = 'development';
+    delete process.env.DISABLE_EMAIL_SENDING;
+    try {
+      const account = await sendMail({
+        category: 'account',
+        workflow: 'email_verification',
+        to: 'person@example.test',
+        text: 'not sent',
+      });
+      assert.equal(account.skipped, true);
+      const unknown = await sendMail({
+        to: 'person@example.test',
+        text: 'not sent',
+      });
+      assert.equal(unknown.skipped, true);
+      assert.equal(
+        (await EmailDeliveryAttempt.findOne({ workflow: 'email_verification' }))
+          .reason,
+        'category_disabled',
+      );
+      const weekly = await runWeeklyBrief(new Date('2026-10-02T16:00:00Z'));
+      assert.equal(weekly.skipped, true);
+      assert.equal(
+        await request(app)
+          .post('/api/admin/subscriptions/news-blasts')
+          .set('Authorization', auth)
+          .send({ subject: 'Test', body: 'Test' })
+          .then((response) => response.body.skipped),
+        true,
+      );
+      await EmailControl.updateOne(
+        { _id: 'site' },
+        { $set: { account: true } },
+        { upsert: true },
+      );
+      process.env.DISABLE_EMAIL_SENDING = 'true';
+      const stopped = await sendMail({
+        category: 'account',
+        workflow: 'email_verification',
+        to: 'person@example.test',
+        text: 'not sent',
+      });
+      assert.equal(stopped.skipped, true);
+      assert.equal(
+        (
+          await EmailDeliveryAttempt.findOne({
+            correlationId: stopped.correlationId,
+          })
+        ).reason,
+        'global_disabled',
+      );
+    } finally {
+      process.env.NODE_ENV = previous;
+      if (previousStop === undefined) delete process.env.DISABLE_EMAIL_SENDING;
+      else process.env.DISABLE_EMAIL_SENDING = previousStop;
+    }
+  });
+
+  test('SMTP failures and acceptance record only safe attempt metadata', async () => {
+    const previous = process.env.NODE_ENV;
+    const previousStop = process.env.DISABLE_EMAIL_SENDING;
+    process.env.NODE_ENV = 'development';
+    delete process.env.DISABLE_EMAIL_SENDING;
+    await EmailControl.updateOne(
+      { _id: 'site' },
+      { $set: { account: true } },
+      { upsert: true },
+    );
+    try {
+      await assert.rejects(
+        sendMail(
+          {
+            category: 'account',
+            workflow: 'password_reset',
+            to: 'person@example.test',
+            text: 'private reset token',
+          },
+          {
+            sendMail: async () => {
+              const error = new Error('private reset token');
+              error.code = 'EAUTH';
+              throw error;
+            },
+          },
+        ),
+        { message: 'SMTP delivery failed', code: 'EAUTH' },
+      );
+      const failed = await EmailDeliveryAttempt.findOne({
+        workflow: 'password_reset',
+      }).lean();
+      assert.equal(failed.status, 'failed');
+      assert.equal(failed.reason, 'EAUTH');
+      assert.doesNotMatch(
+        JSON.stringify(failed),
+        /private reset token|person@example/u,
+      );
+      const accepted = await sendMail(
+        {
+          category: 'account',
+          workflow: 'email_verification',
+          to: 'person@example.test',
+          text: 'private code',
+        },
+        {
+          sendMail: async () => ({
+            accepted: ['person@example.test'],
+            rejected: [],
+          }),
+        },
+      );
+      assert.equal(accepted.accepted.length, 1);
+      assert.equal(
+        (
+          await EmailDeliveryAttempt.findOne({
+            correlationId: accepted.correlationId,
+          })
+        ).status,
+        'accepted',
+      );
+    } finally {
+      process.env.NODE_ENV = previous;
+      if (previousStop === undefined) delete process.env.DISABLE_EMAIL_SENDING;
+      else process.env.DISABLE_EMAIL_SENDING = previousStop;
+    }
+  });
+
+  test('disabled reset mail preserves the same public answer for known and unknown accounts', async () => {
+    const user = await createUser();
+    const previous = process.env.NODE_ENV;
+    const previousStop = process.env.DISABLE_EMAIL_SENDING;
+    process.env.NODE_ENV = 'development';
+    process.env.DISABLE_EMAIL_SENDING = 'true';
+    try {
+      const known = await request(app)
+        .post('/api/password-reset/request')
+        .send({ email: user.email })
+        .expect(200);
+      const unknown = await request(app)
+        .post('/api/password-reset/request')
+        .send({ email: 'nobody@example.test' })
+        .expect(200);
+      assert.deepEqual(known.body, unknown.body);
+      assert.equal(
+        (await EmailDeliveryAttempt.findOne({ workflow: 'password_reset' }))
+          .reason,
+        'global_disabled',
+      );
+    } finally {
+      process.env.NODE_ENV = previous;
+      if (previousStop === undefined) delete process.env.DISABLE_EMAIL_SENDING;
+      else process.env.DISABLE_EMAIL_SENDING = previousStop;
+    }
+  });
 });
 
 describe('personal submissions', () => {
@@ -3169,6 +3463,61 @@ describe('archival draft lifecycle', () => {
       publishedEvent.publishedAt.toISOString(),
       original.toISOString(),
     );
+  });
+  test('normal article workspace filters imported drafts and publishes a custom archive date', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const token = bearer((await login(editor)).body.token);
+    const imported = await NewsArticle.create({
+      status: 'draft', createdBy: editor._id,
+      title: { en: 'Imported draft filter example', fr: 'Exemple de brouillon importé' },
+      content: { en: 'Original English', fr: 'Original French' },
+      legacy: { source: 'https://cmcen-rcmce.ca', sourcePostIds: [883311], originalStatus: 'publish',
+        sourceUrls: ['https://cmcen-rcmce.ca/imported-draft-filter-example/'] },
+    });
+    await request(app)
+      .get('/api/admin/content?scope=articles&status=draft&origin=unknown')
+      .set('Authorization', token).expect(400);
+    const queue = await request(app)
+      .get('/api/admin/content?scope=articles&status=draft&origin=imported')
+      .set('Authorization', token).expect(200);
+    const item = queue.body.items.find((entry) => entry._id === String(imported._id));
+    assert.ok(item);
+    assert.equal(item.publicationDate.isArchive, true);
+    assert.deepEqual(item.archiveSourceUrls, ['https://cmcen-rcmce.ca/imported-draft-filter-example/']);
+    const custom = '2007-06-05T12:00:00.000Z';
+    await request(app)
+      .patch(`/api/news/${imported._id}/publication`)
+      .set('Authorization', token)
+      .send({ action: 'publish', publicationDateChoice: 'custom', customPublishedAt: custom })
+      .expect(200);
+    const publicArticle = await request(app).get(`/api/news/${imported._id}`).expect(200);
+    assert.equal(publicArticle.body.article.archive, true);
+    assert.equal(publicArticle.body.article.publishedAt, custom);
+  });
+  test('ordinary article editor preserves unchanged imported rich blocks', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const token = bearer((await login(editor)).body.token);
+    const richBlock = { type: 'legacyEmbed', html: '<div>Original imported markup</div>' };
+    const blocks = [richBlock, { type: 'paragraph', children: ['Imported body'] }];
+    const article = await NewsArticle.create({
+      status: 'draft', createdBy: editor._id, layout: 'newsletter',
+      title: { en: 'Imported newsletter', fr: '' },
+      content: { en: 'Imported body', fr: '' },
+      newsletter: { language: 'en', date: '2007-06-05', archived: true },
+      newsletterBlocks: { en: blocks, fr: [] },
+      legacy: { source: 'https://cmcen-rcmce.ca' },
+    });
+    await request(app).patch(`/api/news/${article._id}`)
+      .set('Authorization', token)
+      .send({
+        status: 'draft', layout: 'newsletter', category: 'newsletter',
+        title: { en: 'Corrected newsletter', fr: '' },
+        content: { en: 'Imported body', fr: '' },
+        newsletterBlocks: { en: blocks, fr: [] },
+      }).expect(200);
+    const saved = await NewsArticle.findById(article._id).lean();
+    assert.deepEqual(saved.newsletterBlocks.en, blocks);
+    assert.equal(saved.title.en, 'Corrected newsletter');
   });
   test('archive unknowns remain editable without allowing public consent bypass', async () => {
     const editor = await createUser({ role: 'editor' });

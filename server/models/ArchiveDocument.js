@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { publicationDateFields } = require('../services/publication-date');
 const library = require('../public/page-content/document-library.json');
 const organizations = library.en.library.organizations.map(
   (item) => item.value,
@@ -32,6 +33,7 @@ const schema = new mongoose.Schema(
     languageLabel: localized(),
     status: { type: String, enum: ['draft', 'published'], default: 'draft' },
     publishedAt: { type: Date, default: null },
+    ...publicationDateFields,
     publishedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

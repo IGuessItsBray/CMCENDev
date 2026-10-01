@@ -89,7 +89,9 @@
     return el;
   }
   function image(data) {
-    if (!data || !safeUrl(data.url) || !data.url.startsWith("https://"))
+    const usableImageUrl = (value) =>
+      safeUrl(value) && (value.startsWith("https://") || /^\/assets\/images\/[a-zA-Z0-9/_-]+\.(?:png|jpe?g|webp|gif|svg)$/u.test(value));
+    if (!data || !usableImageUrl(data.url))
       return null;
     const img = element("img");
     img.src = data.url;
@@ -99,7 +101,7 @@
     img.loading = "lazy";
     img.decoding = "async";
     const variants = Object.values(data.variants || {}).filter(
-      (v) => safeUrl(v.url) && v.url.startsWith("https://") && v.width > 0,
+      (v) => usableImageUrl(v.url) && v.width > 0,
     );
     const unique = [...new Map(variants.map((v) => [v.width, v])).values()];
     img.srcset = unique.map((v) => `${v.url} ${v.width}w`).join(", ");
@@ -254,6 +256,7 @@
           : "fr";
       issue = {
         ...metadata,
+        archived: metadata.archived === true || article.archive === true,
         category: window.NewsletterFormat.categoryOf(article),
         blocks: blocks[language],
         title: article.title[language] || article.title.en || article.title.fr,

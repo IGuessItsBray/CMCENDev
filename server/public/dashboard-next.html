@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="/dashboard-next-users.css" />
     <link rel="stylesheet" href="/dashboard-next-roles.css" />
     <link rel="stylesheet" href="/dashboard-next-subscriptions.css" />
+    <link rel="stylesheet" href="/dashboard-next-email.css" />
     <link rel="stylesheet" href="/pages-editor.css" />
     <link rel="stylesheet" href="/dashboard-next-pages.css" />
     <link rel="stylesheet" href="/dashboard-next-translations.css" />
@@ -26,7 +27,6 @@
     <link rel="stylesheet" href="/dashboard-next-audit.css" />
     <link rel="stylesheet" href="/content-workspace.css" />
     <link rel="stylesheet" href="/dashboard-next-content.css" />
-    <link rel="stylesheet" href="/archive-review.css" />
     <script src="/app-utils.js" defer></script>
     <script src="/translations.js" defer></script>
     <script src="/date-time-picker.js" defer></script>
@@ -38,6 +38,7 @@
     <script src="/dashboard-next-users.js" defer></script>
     <script src="/dashboard-next-roles.js" defer></script>
     <script src="/dashboard-next-subscriptions.js" defer></script>
+    <script src="/dashboard-next-email.js" defer></script>
     <script src="/pages-editor.js" defer></script>
     <script src="/translations-editor.js" defer></script>
     <script src="/dashboard-next-media.js" defer></script>
@@ -52,7 +53,6 @@
     <script src="/content-workspace-rsvps.js" defer></script>
     <script src="/content-workspace-history.js" defer></script>
     <script src="/content-workspace-controller.js" defer></script>
-    <script src="/archive-review.js" defer></script>
     <script src="/dashboard-next.js" defer></script>
   </head>
   <body>
@@ -139,19 +139,6 @@
                 >Articles</a
               >
               <a
-                id="adminArchivesLink"
-                href="/dashboard-next?area=archives"
-                data-i18n="archive_review_title"
-                hidden
-                >Archive Review</a
-              >
-              <a
-                id="adminArchiveStaffLink"
-                href="/dashboard-next?area=archive-staff"
-                hidden
-                >Imported archive / Archives importées</a
-              >
-              <a
                 id="adminUsersLink"
                 href="/dashboard-next?area=users"
                 data-i18n="admin_tab_users"
@@ -178,6 +165,13 @@
                 data-i18n="admin_tab_subscriptions"
                 hidden
                 >Subscriptions</a
+              >
+              <a
+                id="adminEmailLink"
+                href="/dashboard-next?area=email"
+                data-i18n="admin_tab_email"
+                hidden
+                >Email</a
               >
               <a
                 id="adminPagesLink"
@@ -354,6 +348,23 @@
             </header>
             <div id="adminSubscriptionsBody"></div>
           </section>
+          <section id="adminEmail" aria-labelledby="adminEmailTitle" hidden>
+            <header class="admin-area-heading">
+              <div>
+                <h1
+                  id="adminEmailTitle"
+                  data-i18n="admin_tab_email"
+                  tabindex="-1"
+                >
+                  Email
+                </h1>
+                <p data-i18n="admin_email_intro">
+                  Manage sending, test the relay, and review recent attempts.
+                </p>
+              </div>
+            </header>
+            <div id="adminEmailBody"></div>
+          </section>
           <section id="adminBanners" aria-labelledby="adminBannersTitle" hidden>
             <header class="admin-area-heading">
               <div>
@@ -470,6 +481,11 @@
                 <p data-i18n="admin_next_pages_intro">
                   Build custom pages and manage their publication and
                   navigation.
+                </p>
+                <p>
+                  <a href="/archive-staff-review?type=page" data-i18n="archive_staff_pages_link">Review imported pages</a>
+                  ·
+                  <a href="/archive-staff-review?type=archiveDocument" data-i18n="archive_staff_documents_link">Review imported documents</a>
                 </p>
               </div>
             </header>
@@ -711,49 +727,6 @@
             <div id="adminArticlesBody"></div>
           </section>
           <section
-            id="adminArchives"
-            aria-labelledby="adminArchivesTitle"
-            hidden
-          >
-            <header class="admin-area-heading">
-              <div>
-                <p class="admin-eyebrow" data-i18n="archive_review_eyebrow">
-                  Developer · Temporary migration tool
-                </p>
-                <h1
-                  id="adminArchivesTitle"
-                  tabindex="-1"
-                  data-i18n="archive_review_title"
-                >
-                  Archive Review
-                </h1>
-                <p data-i18n="archive_review_intro">
-                  Decide what to preserve, pair, or revisit. Decisions never
-                  import or publish content.
-                </p>
-              </div>
-              <button
-                id="archiveMeetingToggle"
-                type="button"
-                aria-pressed="false"
-                data-i18n="archive_review_meeting"
-              >
-                Meeting view
-              </button>
-            </header>
-            <div id="archiveReviewRoot"></div>
-          </section>
-          <section id="adminArchiveStaff" aria-labelledby="adminArchiveStaffTitle" hidden>
-            <header class="admin-area-heading">
-              <div>
-                <p class="admin-eyebrow">Migration review / Révision de la migration</p>
-                <h1 id="adminArchiveStaffTitle" tabindex="-1">Imported archive / Archives importées</h1>
-                <p>Compare imported drafts with their original sources, correct them, verify completeness, and publish.</p>
-              </div>
-            </header>
-            <p><a class="admin-work-zone-button is-primary" href="/archive-staff-review">Open the review workspace / Ouvrir l’espace de révision</a></p>
-          </section>
-          <section
             id="adminContent"
             aria-labelledby="contentWorkspaceTitle"
             hidden
@@ -929,6 +902,14 @@
                             >
                               Draft
                             </option>
+                          </select>
+                        </label>
+
+                        <label>
+                          <span data-i18n="content_workspace_origin">Origin</span>
+                          <select id="contentWorkspaceOriginFilter" name="origin">
+                            <option value="all" data-i18n="content_workspace_all_origins">All content</option>
+                            <option value="imported" data-i18n="content_workspace_imported_origin">Imported archive</option>
                           </select>
                         </label>
 

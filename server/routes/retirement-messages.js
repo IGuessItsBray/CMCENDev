@@ -985,7 +985,7 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
         : null;
     retirementMessage.publishedAt =
       retirementMessage.status === 'published'
-        ? retirementMessage.publishedAt || selectPublicationDate(retirementMessage, req.body?.publicationDateChoice, now)
+        ? retirementMessage.publishedAt || selectPublicationDate(retirementMessage, req.body?.publicationDateChoice, now, req.body?.customPublishedAt)
         : null;
 
     await retirementMessage.save();

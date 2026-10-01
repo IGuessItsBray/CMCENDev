@@ -72,6 +72,7 @@ function createNewsCard(article) {
     (article.layout === "newsletter" ? "newsletter" : "news");
   date.textContent = [
     window.translate?.(`article_category_${category}`, category) || category,
+    article.archive ? (window.translate?.("news_archive_label", "From the archive") || "From the archive") : "",
     formatNewsDate(article.displayDate || article.publishedAt),
   ]
     .filter(Boolean)

@@ -8,6 +8,7 @@ const WeeklyBriefDelivery = require('../models/WeeklyBriefDelivery');
 const WeeklyBriefRun = require('../models/WeeklyBriefRun');
 const { writeAuditLog } = require('./audit-log');
 const { isEmailSendingDisabled, sendMail } = require('./mailer');
+const { isCategoryEnabled } = require('./email-controls');
 
 const EASTERN_TIME_ZONE = 'America/Toronto';
 const CASL_CONSENT_TEXT_VERSION = 'weekly-brief-v2-2026-08-17';
@@ -297,10 +298,10 @@ async function createUnsubscribeToken(user, subscriptionType = 'weeklyBrief') {
 }
 
 async function runWeeklyBrief(now = new Date()) {
-  if (isEmailSendingDisabled()) {
+  if (isEmailSendingDisabled() || !(await isCategoryEnabled('weekly'))) {
     return {
       skipped: true,
-      reason: 'DISABLE_EMAIL_SENDING is true',
+      reason: 'Weekly email delivery is disabled',
     };
   }
 
@@ -342,7 +343,9 @@ async function runWeeklyBrief(now = new Date()) {
           unsubscribeUrl,
           sender,
         });
-        await sendMail({
+        const mailResult = await sendMail({
+          category: 'weekly',
+          workflow: 'weekly_brief',
           to: user.email,
           subject:
             user.preferredLanguage === 'fr'
@@ -354,6 +357,8 @@ async function runWeeklyBrief(now = new Date()) {
             'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
           },
         });
+        if (mailResult.skipped)
+          throw new Error('Weekly email delivery is disabled');
         delivery.state = 'sent';
         delivery.sentAt = new Date();
         await delivery.save();

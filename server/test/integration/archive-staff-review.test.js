@@ -28,6 +28,7 @@ const Event = require('../../models/Event');
 const Comment = require('../../models/Comment');
 const Page = require('../../models/Page');
 const Verification = require('../../models/ArchiveVerification');
+const MediaAsset = require('../../models/MediaAsset');
 const AuditLog = require('../../models/AuditLog');
 const User = require('../../models/User');
 const Role = require('../../models/Role');
@@ -126,6 +127,27 @@ test('authentication and archive role are required', async () => {
   assert.equal(response.status, 200);
   assert.equal(response.body.items.length, 1);
   assert.equal(response.body.items[0].title, 'Imported article');
+  assert.equal(response.body.items[0].checksCompleted, 0);
+});
+
+test('page editors can review imported pages and documents only', async () => {
+  const editorId = new mongoose.Types.ObjectId();
+  await User.collection.insertOne({
+    _id: editorId, username: 'page-editor@example.test',
+    email: 'page-editor@example.test', role: 'editor',
+    customRoles: [], sessionVersion: 0,
+  });
+  const editorToken = jwt.sign(
+    { userId: String(editorId), sessionVersion: 0 },
+    process.env.JWT_SECRET,
+  );
+  const header = { Authorization: `Bearer ${editorToken}` };
+  const types = await request(app).get('/api/admin/archive-staff-review/types')
+    .set(header).expect(200);
+  assert.deepEqual(types.body.types, ['page', 'archiveDocument']);
+  await request(app).get('/api/admin/archive-staff-review/page').set(header).expect(200);
+  await request(app).get('/api/admin/archive-staff-review/archiveDocument').set(header).expect(200);
+  await request(app).get('/api/admin/archive-staff-review/newsArticle').set(header).expect(403);
 });
 
 test('draft preview access is scoped to imported records', async () => {
@@ -188,6 +210,10 @@ test('only imported drafts can be edited and checks become stale after a correct
     });
   assert.equal(verified.status, 200);
   assert.equal(verified.body.record.verification.current, true);
+  const checkedQueue = await request(app)
+    .get('/api/admin/archive-staff-review/newsArticle')
+    .set(auth());
+  assert.equal(checkedQueue.body.items[0].checksCompleted, 4);
   const invalid = await request(app)
     .patch(path)
     .set(auth())
@@ -201,6 +227,10 @@ test('only imported drafts can be edited and checks become stale after a correct
       changes: { 'content.en': 'Complete corrected article' },
     });
   assert.equal(edited.status, 200);
+  const staleQueue = await request(app)
+    .get('/api/admin/archive-staff-review/newsArticle')
+    .set(auth());
+  assert.equal(staleQueue.body.items[0].checksCompleted, 0);
   const publish = await request(app).post(`${path}/publish`).set(auth()).send({
     expectedUpdatedAt: edited.body.record.updatedAt,
     publicationDateChoice: 'now',
@@ -241,6 +271,175 @@ test('only imported drafts can be edited and checks become stale after a correct
     }),
     1,
   );
+});
+
+test('newsletter edits preserve block pairs and update the public text', async () => {
+  const newsletter = await NewsArticle.create({
+    category: 'newsletter',
+    layout: 'newsletter',
+    title: { en: 'Archive bulletin', fr: 'Bulletin des archives' },
+    content: { en: 'Original heading', fr: 'Titre original' },
+    newsletterBlocks: {
+      en: [{ type: 'heading', text: 'Original heading', pairId: 'heading-1' }],
+      fr: [{ type: 'heading', text: 'Titre original', pairId: 'heading-1' }],
+    },
+    status: 'draft',
+    createdBy: reviewer,
+    legacy: {
+      source,
+      sourcePostIds: [456],
+      originalStatus: 'publish',
+      sourceUrls: [`${source}/bulletin/`],
+    },
+  });
+  const path = `/api/admin/archive-staff-review/newsArticle/${newsletter._id}`;
+  const detail = await request(app).get(path).set(auth());
+  assert.equal(detail.status, 200);
+  assert.equal(detail.body.record.layout, 'newsletter');
+  const fields = Object.fromEntries(
+    detail.body.record.fields.map((field) => [field.path, field.value]),
+  );
+  assert.equal(fields['newsletterBlocks.fr'][0].pairId, 'heading-1');
+  const changed = await request(app)
+    .patch(path)
+    .set(auth())
+    .send({
+      expectedUpdatedAt: detail.body.record.updatedAt,
+      changes: {
+        'newsletterBlocks.en': [
+          { type: 'heading', text: 'Corrected heading', pairId: 'heading-1' },
+        ],
+      },
+    });
+  assert.equal(changed.status, 200, JSON.stringify(changed.body));
+  const saved = await NewsArticle.findById(newsletter._id);
+  assert.equal(saved.newsletterBlocks.en[0].pairId, 'heading-1');
+  assert.equal(saved.newsletterBlocks.fr[0].pairId, 'heading-1');
+  assert.equal(saved.content.en, 'Corrected heading');
+  assert.equal(saved.content.fr, 'Titre original');
+});
+
+test('archive reviewer can choose existing media without media administration or replacing rich blocks', async () => {
+  const asset = await MediaAsset.create({
+    key: 'images/synthetic-crest.webp',
+    url: 'https://cdn.example.test/images/synthetic-crest.webp',
+    mimeType: 'image/webp',
+    displayName: 'Synthetic crest',
+  });
+  const importedAsset = await MediaAsset.create({
+    key: 'images/imported-body/original.webp',
+    url: 'https://cdn.example.test/images/imported-body/large.webp',
+    mimeType: '',
+    inferredName: 'Imported body image',
+  });
+  const newsletter = await NewsArticle.create({
+    category: 'newsletter', layout: 'newsletter',
+    title: { en: 'Image choice', fr: 'Choix d’image' },
+    content: { en: 'Caption', fr: 'Légende' },
+    newsletterBlocks: {
+      en: [
+        { type: 'figure', image: { url: 'https://example.test/old.webp', alt: 'Original alt' }, caption: 'Original caption', pairId: 'figure-1', sourceRef: 'legacy-asset' },
+        { type: 'legacy-rich', html: '<strong>Preserve me</strong>', pairId: 'rich-2' },
+      ],
+      fr: [{ type: 'heading', text: 'Légende', pairId: 'heading-1' }],
+    },
+    status: 'draft', createdBy: reviewer,
+    legacy: { source, sourcePostIds: [9876], originalStatus: 'publish', sourceUrls: [`${source}/image-choice/`] },
+  });
+  const mediaPath = '/api/admin/archive-staff-review/media?search=crest';
+  assert.equal((await request(app).get(mediaPath)).status, 401);
+  const denied = jwt.sign({ userId: String(other), sessionVersion: 0 }, process.env.JWT_SECRET);
+  assert.equal((await request(app).get(mediaPath).set('Authorization', `Bearer ${denied}`)).status, 403);
+  const listed = await request(app).get(mediaPath).set(auth());
+  assert.equal(listed.status, 200);
+  assert.equal(listed.body.media.length, 1);
+  assert.equal(listed.body.media[0].key, asset.key);
+  assert.equal(listed.body.media[0].uploadedBy, undefined);
+  const importedList = await request(app).get('/api/admin/archive-staff-review/media?search=Imported%20body').set(auth());
+  assert.equal(importedList.status, 200);
+  assert.equal(importedList.body.media[0].key, importedAsset.key);
+  const path = `/api/admin/archive-staff-review/newsArticle/${newsletter._id}`;
+  const detail = await request(app).get(path).set(auth());
+  const stamp = detail.body.record.updatedAt;
+  const verified = await request(app).put(`${path}/verification`).set(auth()).send({
+    expectedUpdatedAt: stamp,
+    checks: { source: true, translation: true, categorization: true, media: true },
+    note: 'Synthetic source checked',
+  });
+  assert.equal(verified.status, 200);
+  const saved = await request(app).patch(path).set(auth()).send({
+    expectedUpdatedAt: stamp,
+    changes: {
+      'newsletter.headerCrest': true,
+      'newsletterBlocks.en': [
+        { type: 'figure', image: { url: 'https://example.test/old.webp', alt: 'Updated EN alt' }, caption: 'Updated EN caption', pairId: 'figure-1', sourceRef: 'legacy-asset' },
+        { type: 'legacy-rich', html: '<strong>Preserve me</strong>', pairId: 'rich-2' },
+      ],
+    },
+    mediaSelections: [{ language: 'en', index: 0, key: importedAsset.key }],
+  });
+  assert.equal(saved.status, 200, JSON.stringify(saved.body));
+  assert.equal(saved.body.record.verification, null);
+  const updated = await NewsArticle.findById(newsletter._id);
+  assert.equal(updated.newsletterBlocks.en[0].image.url, importedAsset.url);
+  assert.equal(updated.newsletterBlocks.en[0].image.alt, 'Updated EN alt');
+  assert.equal(updated.newsletterBlocks.en[0].caption, 'Updated EN caption');
+  assert.equal(updated.newsletter.headerCrest, true);
+  assert.equal(updated.newsletterBlocks.en[0].pairId, 'figure-1');
+  assert.equal(updated.newsletterBlocks.en[0].sourceRef, 'legacy-asset');
+  assert.deepEqual(updated.newsletterBlocks.en[1], { type: 'legacy-rich', html: '<strong>Preserve me</strong>', pairId: 'rich-2' });
+  assert.equal((await request(app).patch(path).set(auth()).send({ expectedUpdatedAt: stamp, mediaSelections: [{ language: 'en', index: 0, key: asset.key }] })).status, 409);
+  const nextBlocks = JSON.parse(JSON.stringify(updated.newsletterBlocks.en));
+  nextBlocks[0].caption = 'Edited caption';
+  nextBlocks.push({ type: 'heading', text: 'New heading', pairId: 'heading-3' });
+  const textEdit = await request(app).patch(path).set(auth()).send({
+    expectedUpdatedAt: saved.body.record.updatedAt,
+    changes: { 'newsletterBlocks.en': nextBlocks },
+  });
+  assert.equal(textEdit.status, 200, JSON.stringify(textEdit.body));
+  const afterText = await NewsArticle.findById(newsletter._id);
+  assert.deepEqual(afterText.newsletterBlocks.en[1], { type: 'legacy-rich', html: '<strong>Preserve me</strong>', pairId: 'rich-2' });
+  assert.equal(afterText.newsletterBlocks.en[0].sourceRef, 'legacy-asset');
+  assert.equal(afterText.newsletterBlocks.en[0].caption, 'Edited caption');
+  assert.equal(afterText.newsletterBlocks.en[2].text, 'New heading');
+});
+
+test('staff review exposes source dates and requires an intentional original or custom date', async () => {
+  for (const [id, choice, expected] of [
+    [9901, 'original', '2013-08-12T09:00:00.000Z'],
+    [9902, 'custom', '2011-04-05T10:00:00.000Z'],
+  ]) {
+    const item = await NewsArticle.create({
+      category: 'news', title: { en: `Dated ${id}`, fr: `Daté ${id}` },
+      content: { en: 'Source text', fr: 'Texte source' },
+      status: 'draft', createdBy: reviewer,
+      legacy: { source, sourcePostIds: [id], originalStatus: 'publish',
+        sourceUrls: [`${source}/dated-${id}/`],
+        sourceRecords: [{ language: 'en', sourceStatus: 'publish', createdGmt: '2013-08-12 09:00:00' }],
+      },
+    });
+    const path = `/api/admin/archive-staff-review/newsArticle/${item._id}`;
+    const detail = await request(app).get(path).set(auth());
+    assert.equal(new Date(detail.body.record.publicationDate.originalPublishedAt).toISOString(), '2013-08-12T09:00:00.000Z');
+    const stamp = detail.body.record.updatedAt;
+    const verified = await request(app).put(`${path}/verification`).set(auth()).send({
+      expectedUpdatedAt: stamp,
+      checks: { source: true, translation: true, categorization: true, media: true },
+      note: 'Source date checked',
+    });
+    assert.equal(verified.status, 200);
+    assert.equal((await request(app).post(`${path}/publish`).set(auth()).send({ expectedUpdatedAt: stamp })).status, 400);
+    const published = await request(app).post(`${path}/publish`).set(auth()).send({
+      expectedUpdatedAt: stamp,
+      publicationDateChoice: choice,
+      ...(choice === 'custom' ? { customPublishedAt: expected } : {}),
+    });
+    assert.equal(published.status, 200, JSON.stringify(published.body));
+    const stored = await NewsArticle.findById(item._id);
+    assert.equal(stored.publishedAt.toISOString(), expected);
+    assert.equal(stored.originalPublishedAt.toISOString(), '2013-08-12T09:00:00.000Z');
+    assert.equal(stored.publicationDateChoice, choice);
+  }
 });
 
 test('imported document stays outside the public library until publication', async () => {
@@ -285,7 +484,7 @@ test('imported document stays outside the public library until publication', asy
   const published = await request(app)
     .post(`${path}/publish`)
     .set(auth())
-    .send({ expectedUpdatedAt: stamp });
+    .send({ expectedUpdatedAt: stamp, publicationDateChoice: 'now' });
   assert.equal(published.status, 200);
   const afterLibrary = await request(app).get(libraryPath);
   assert.equal(afterLibrary.status, 200);
@@ -399,6 +598,26 @@ test('the restricted path publishes every other imported draft type', async () =
     messages: { en: 'An archival retirement notice', fr: '' },
     message: 'An archival retirement notice',
   });
+  const retirementDetail = await request(app)
+    .get(`/api/admin/archive-staff-review/retirementMessage/${retirement._id}`)
+    .set(auth());
+  assert.equal(retirementDetail.status, 200);
+  assert.equal(
+    retirementDetail.body.record.fields.find(
+      (field) => field.path === 'messages.en',
+    ).value,
+    'An archival retirement notice',
+  );
+  assert.equal(
+    retirementDetail.body.record.fields.find(
+      (field) => field.path === 'messages.fr',
+    ).value,
+    '',
+  );
+  assert.equal(
+    retirementDetail.body.record.source.urls[0],
+    `${source}/source-200/`,
+  );
   await reviewAndPublish('retirementMessage', retirement);
   const lastPost = await LastPostMessage.create({
     legacy: legacy(201),
@@ -406,6 +625,26 @@ test('the restricted path publishes every other imported draft type', async () =
     messageLanguage: 'en',
     messages: { en: 'An archival Last Post notice', fr: '' },
   });
+  const lastPostDetail = await request(app)
+    .get(`/api/admin/archive-staff-review/lastPost/${lastPost._id}`)
+    .set(auth());
+  assert.equal(lastPostDetail.status, 200);
+  assert.equal(
+    lastPostDetail.body.record.fields.find(
+      (field) => field.path === 'messages.en',
+    ).value,
+    'An archival Last Post notice',
+  );
+  assert.equal(
+    lastPostDetail.body.record.fields.find(
+      (field) => field.path === 'messages.fr',
+    ).value,
+    '',
+  );
+  assert.equal(
+    lastPostDetail.body.record.source.urls[0],
+    `${source}/source-201/`,
+  );
   await reviewAndPublish('lastPost', lastPost);
   const event = await Event.create({
     legacy: legacy(202),

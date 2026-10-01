@@ -619,6 +619,23 @@ For local testing:
 DISABLE_EMAIL_SENDING=true
 ```
 
+The Admin → Email panel has separate persisted switches for account access
+messages, operational notifications, automatic weekly briefs, and manual news
+announcements. New switches default to off. `DISABLE_EMAIL_SENDING=true` remains
+the server-level emergency stop and overrides every switch and test send.
+
+### `EMAIL_TEST_RECIPIENTS`
+
+Comma-separated addresses permitted for the Admin → Email test action. An empty
+value disables test sends. Keep this allowlist in server configuration rather
+than the browser or repository. The action requires `canManageEmail`, is limited
+to three requests per administrator per hour, and cannot bypass the emergency
+stop. Test messages contain only fixed plain text.
+
+```dotenv
+EMAIL_TEST_RECIPIENTS=
+```
+
 ## CASL Sender Configuration
 
 CMCEN subscription and bulk-email functionality uses sender-identification

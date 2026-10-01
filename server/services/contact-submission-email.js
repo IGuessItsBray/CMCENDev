@@ -75,6 +75,8 @@ async function sendContactSubmissionEmail({ user, subject, message }) {
   const email = getReplyToEmail(user?.email);
   const formatted = formatContactSubmissionEmail({ user, subject, message });
   const result = await sendMail({
+    category: 'operational',
+    workflow: 'contact_submission',
     to,
     subject: `Contact form: ${cleanString(subject)}`,
     text: formatted.text,

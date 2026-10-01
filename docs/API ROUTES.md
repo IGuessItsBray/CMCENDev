@@ -3,14 +3,15 @@
 ## Archive publication dates
 
 The event, retirement, Last Post and comment review endpoints, and the news
-publication endpoint, accept `publicationDateChoice: "original" | "now"` for
+publication endpoint, accept `publicationDateChoice: "original" | "now" | "custom"` for
 publish actions. Imported/archive records require an explicit choice; ordinary
-new content defaults to now. Existing-content update endpoints that transition a
+new content defaults to now. The custom choice requires `customPublishedAt`, a
+valid date no later than the current time. Existing-content update endpoints that transition a
 record to published apply the same date-choice validation.
-The original date is resolved from stored provenance,
-never a client-supplied timestamp. Missing/invalid choices or an unavailable
-original date return 400. Approved WordPress comments use their original comment
-date; originally unapproved comments have no original public date.
+The original date is resolved from stored source provenance, never the import
+timestamp or a client-supplied title/year. Missing/invalid choices or an
+unavailable original date return 400. An imported comment without an explicit
+source date has no original public date option.
 
 `GET /api/admin/content` includes `publicationDate: { isArchive,
 originalPublishedAt }` for the shared confirmation dialog. Missing dates are null.
@@ -212,16 +213,17 @@ Unknown batches/items return 404, invalid inputs 400, missing authentication 401
 
 ## Imported Archive Staff Review
 
-The separate `/archive-staff-review` workspace and all `/api/admin/archive-staff-review` routes require the `archive.verify` permission. This permission can be assigned through a custom role without granting general news, submission, page, user, or media administration. Server-side access is limited to records with WordPress source identity and a published original source; preserved, originally unapproved comments also require an explicit `legacy.importReview.decision=preserve-as-draft`. Only unscheduled imported drafts can be corrected, verified, or published. The queue supports `newsArticle`, `retirementMessage`, `lastPost`, `event`, `comment`, `page`, and `archiveDocument`. Source URLs and any retained source snapshots are displayed for comparison. All responses use `Cache-Control: no-store`.
+Regular editors handle imported articles and submissions in the Content Workspace with `origin=imported`; ordinary content permissions apply. The specialized `/archive-staff-review` workspace remains for imported Pages and ArchiveDocuments. Its API also preserves the existing verification checks and history for all imported types. `archive.verify` grants access to all its routes; `pages.manage` grants access only to the Page and ArchiveDocument routes and the type list. Neither permission grants other content management. Server-side archive access is limited to records with WordPress source identity and a published original source; preserved, originally unapproved comments also require an explicit `legacy.importReview.decision=preserve-as-draft`. Only unscheduled imported drafts can be corrected, verified, or published there. Source URLs and retained source snapshots are displayed for comparison. All responses use `Cache-Control: no-store`.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/admin/archive-staff-review/types` | Supported types and required check keys. |
-| `GET` | `/api/admin/archive-staff-review/:type` | Imported draft or published queue; `status=draft\|published\|all`, numeric `offset`, pages of 50. |
+| `GET` | `/api/admin/archive-staff-review/media` | Search existing `MediaAsset` images with `search` and numeric `cursor` (25 per page). Requires `archive.verify`; returns only selection metadata. Does not scan storage, upload, or grant media administration. |
+| `GET` | `/api/admin/archive-staff-review/:type` | Imported draft or published queue; `status=draft\|published\|all`, numeric `offset`, pages of 50. Each item includes current-revision `checksCompleted` (0–4) and news `layout`. |
 | `GET` | `/api/admin/archive-staff-review/:type/:id` | Editable public fields, immutable source evidence, publication date options, and saved verification. |
-| `PATCH` | `/api/admin/archive-staff-review/:type/:id` | Correct whitelisted public fields with `{expectedUpdatedAt, changes}`. Source identity, submitter/consent, access rules, and status are not editable. Changes invalidate saved checks and are revisioned and audited. |
+| `PATCH` | `/api/admin/archive-staff-review/:type/:id` | Correct whitelisted public fields with `{expectedUpdatedAt, changes}`. Newsletter figure selections may use `mediaSelections: [{language, index, key}]` referencing existing images; unaffected rich blocks, alt text, captions, provenance, and pair IDs are preserved. Source identity, submitter/consent, access rules, and status are not editable. Changes invalidate saved checks and are revisioned and audited. |
 | `PUT` | `/api/admin/archive-staff-review/:type/:id/verification` | Save `{expectedUpdatedAt, checks, note}`; checks are `source`, `translation`, `categorization`, `media`. A note may record absent French or follow-up. |
-| `POST` | `/api/admin/archive-staff-review/:type/:id/publish` | Publish only when all four checks refer to the current draft. Send `{expectedUpdatedAt, publicationDateChoice}` for applicable types; choice is `original` or `now`. Publishes immediately and audits the reviewer. |
+| `POST` | `/api/admin/archive-staff-review/:type/:id/publish` | Publish only when all four checks refer to the current draft. All types require `{expectedUpdatedAt, publicationDateChoice}`: `original`, `now`, or `custom` with `customPublishedAt` (valid date no later than now). The original option appears only when source provenance supplies a date. Publishes immediately and audits the reviewer. |
 
 Missing authentication returns 401, missing permission 403, unknown or ineligible records 404, invalid input 400, and stale drafts or incomplete checks 409. Imported documents use the `ArchiveDocument` collection and appear in `/page-content/document-library.json` only after publication; the bundled document catalogue remains public and unchanged.
 
@@ -232,6 +234,9 @@ Mounted at `/api/admin`.
 | `GET` | `/api/admin/subscriptions` | Authenticated + `canManageSubscriptions` | List weekly/news subscribers and sent newsletter history. |
 | `GET` | `/api/admin/subscriptions/export.csv` | Authenticated + `canManageSubscriptions` | Export subscribed members to CSV. |
 | `POST` | `/api/admin/subscriptions/news-blasts` | Authenticated + `canManageSubscriptions` | Send a news blast only to express news-announcement subscribers; action is audited. Returns `202` without creating a delivery when `DISABLE_EMAIL_SENDING=true`. |
+| `GET` | `/api/admin/email` | Authenticated + `canManageEmail` | Read effective emergency-stop/configuration status, category switches, and up to 100 recent metadata-only delivery attempts. |
+| `PATCH` | `/api/admin/email/controls` | Authenticated + `canManageEmail` | Set one of `account`, `operational`, `weekly`, or `news` with a boolean `enabled`; audited. Defaults are off. |
+| `POST` | `/api/admin/email/test` | Authenticated + `canManageEmail`; three per hour per administrator | Send fixed plain-text test mail only to an address in server-side `EMAIL_TEST_RECIPIENTS`. The global emergency stop still applies. |
 
 | Method   | Path                                         | Access                                                                        | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | -------- | -------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -467,6 +472,8 @@ existing permissions. `GET /api/admin/content` accepts
 `scope=all|submissions|articles` (default `all`), intersected with the selected type
 and caller permissions. Submissions excludes NewsArticle; Articles includes only
 NewsArticle.
+Use `origin=imported` to show imported archive records only. Returned items
+include source URLs and source IDs for the collapsed provenance view.
 
 `GET /api/news/media` requires `canManageNews` and lists registered images for
 article selection, exposing only key, URL, dimensions, variants and names. It
@@ -586,7 +593,7 @@ The review count `comments` includes all pending comments and excludes drafts.
   published, or rejected through `status`.
 - `PATCH /api/comments/:commentId/review`: publish drafts/pending comments or
   reject pending comments with a reason. Comments cannot be scheduled.
-  Imported comments require `publicationDateChoice: "original" | "now"`.
+  Imported comments require `publicationDateChoice: "original" | "now" | "custom"`.
   Originally unapproved WordPress comments have no original public date.
 - `GET /api/comments/:commentId/edit` and `PATCH /api/comments/:commentId`:
   owner/staff access to the existing personal correction workflow.

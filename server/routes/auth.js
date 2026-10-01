@@ -269,7 +269,9 @@ async function prepareEmailVerification(user) {
 }
 
 async function sendEmailVerificationCode(user, code) {
-  await sendMail({
+  const result = await sendMail({
+    category: 'account',
+    workflow: 'email_verification',
     to: user.email,
     subject: 'Verify your CMCEN / RCMCE account',
     html: renderEmailVerificationEmail({
@@ -277,6 +279,8 @@ async function sendEmailVerificationCode(user, code) {
       accountName: user.accountName || user.firstName,
     }),
   });
+  if (result.skipped)
+    throw new Error('Email verification delivery is disabled');
 }
 
 function userRequiresEmailVerification(user) {
@@ -1016,7 +1020,9 @@ router.post(
       };
       await user.save();
 
-      await sendMail({
+      const mailResult = await sendMail({
+        category: 'account',
+        workflow: 'password_reset',
         to: user.email,
         subject: 'Reset your CMCEN / RCMCE password',
         html: renderPasswordResetEmail({
@@ -1025,27 +1031,26 @@ router.post(
         }),
       });
 
-      await writeAuditLog({
-        req,
-        action: 'user.password_reset_requested',
-        actor: user,
-        targetType: 'user',
-        target: user._id,
-        targetSnapshot: {
-          username: user.username,
-          email: user.email,
-          accountName: user.accountName,
-          role: user.role,
-        },
-      });
+      if (!mailResult.skipped)
+        await writeAuditLog({
+          req,
+          action: 'user.password_reset_requested',
+          actor: user,
+          targetType: 'user',
+          target: user._id,
+          targetSnapshot: {
+            username: user.username,
+            email: user.email,
+            accountName: user.accountName,
+            role: user.role,
+          },
+        });
 
       res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
     } catch (error) {
       console.error('Password reset request failed:', error);
 
-      res.status(500).json({
-        error: 'Could not request password reset',
-      });
+      res.json({ message: PASSWORD_RESET_GENERIC_MESSAGE });
     }
   },
 );

@@ -48,6 +48,23 @@
   width: auto;
   object-fit: contain;
 }
+.article-shared-image-preview {
+  max-height: 360px;
+  justify-self: center;
+}
+.article-separate-images {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.content-workspace-archive-source {
+  margin: 0.8rem 0;
+  overflow-wrap: anywhere;
+}
+.content-workspace-archive-source a {
+  display: block;
+  margin: 0.35rem 0;
+}
 .article-cover {
   grid-column: 1 / -1;
 }

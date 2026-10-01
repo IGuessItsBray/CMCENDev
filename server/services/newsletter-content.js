@@ -11,6 +11,8 @@ function normalizeBlocks(value) {
   const url = (value, image = false) => {
     text(value, 2000);
     if (/[\\\u0000-\u0020]/u.test(value)) fail();
+    if (image && /^\/assets\/images\/[a-zA-Z0-9/_-]+\.(?:png|jpe?g|webp|gif|svg)$/u.test(value))
+      return value;
     if (!image && value.startsWith('/') && !value.startsWith('//'))
       return value;
     try {
@@ -103,6 +105,25 @@ function normalizeBlocks(value) {
   return blocks;
 }
 
+function preserveNewsletterBlocks(raw, original) {
+  if (!Array.isArray(raw) || raw.length > 200 || JSON.stringify(raw).length > 200000)
+    throw new Error('Invalid newsletter blocks');
+  const previous = Array.isArray(original) ? original : [];
+  const result = raw.map((block, index) => {
+    if (JSON.stringify(block) === JSON.stringify(previous[index])) return block;
+    const clean = normalizeBlocks([block])[0];
+    const old = previous[index];
+    if (old?.type !== clean.type || old?.pairId !== clean.pairId) return clean;
+    return {
+      ...old,
+      ...clean,
+      ...(clean.type === 'figure' ? { image: { ...old.image, ...clean.image } } : {}),
+    };
+  });
+  if (plainText(result).length > 20000) throw new Error('Invalid newsletter blocks');
+  return result;
+}
+
 const publicDateStages = [
   {
     $addFields: {
@@ -113,7 +134,7 @@ const publicDateStages = [
               { $eq: ['$newsletter.archived', true] },
               {
                 $not: [
-                  { $in: ['$publicationDateChoice', ['original', 'now']] },
+                  { $in: ['$publicationDateChoice', ['original', 'now', 'custom']] },
                 ],
               },
               { $ne: ['$newsletter.date', ''] },
@@ -134,4 +155,4 @@ const publicDateStages = [
   },
   { $sort: { displayDate: -1, _id: -1 } },
 ];
-module.exports = { normalizeBlocks, publicDateStages };
+module.exports = { normalizeBlocks, preserveNewsletterBlocks, publicDateStages };

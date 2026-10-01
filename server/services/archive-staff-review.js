@@ -1,5 +1,5 @@
-const { categories } = require('../public/newsletter-format');
-const { normalizeBlocks } = require('./newsletter-content');
+const { categories, plainText } = require('../public/newsletter-format');
+const { normalizeBlocks, preserveNewsletterBlocks } = require('./newsletter-content');
 const { EVENT_ORGANIZING_ENTITIES, EVENT_TYPES } = require('../config/content');
 
 const SOURCE = 'https://cmcen-rcmce.ca';
@@ -19,6 +19,7 @@ const EDIT_FIELDS = Object.freeze({
     ['newsletterBlocks.en', 'English newsletter blocks', 'blocks'],
     ['newsletterBlocks.fr', 'French newsletter blocks', 'blocks'],
     ['category', 'Category', 'category'],
+    ['newsletter.headerCrest', 'Show cover in article header', 'boolean'],
     ['imageUrl', 'Original image URL', 'url'],
     ['imageDisplayUrl', 'Display image URL', 'url'],
   ],
@@ -115,6 +116,10 @@ function isArchiveRecord(record, type) {
 }
 
 function validateField(kind, raw, maximum, documentLibrary) {
+  if (kind === 'boolean') {
+    if (typeof raw !== 'boolean') throw new Error('Expected a true or false value');
+    return raw;
+  }
   if (kind === 'blocks') return normalizeBlocks(raw);
   if (kind === 'json') {
     if (!Array.isArray(raw) || raw.length > 80)
@@ -177,7 +182,7 @@ function validateField(kind, raw, maximum, documentLibrary) {
   return value;
 }
 
-function cleanChanges(type, changes, documentLibrary) {
+function cleanChanges(type, changes, documentLibrary, originalRecord) {
   if (!changes || typeof changes !== 'object' || Array.isArray(changes))
     throw new Error('Changes must be an object');
   const fields = EDIT_FIELDS[type];
@@ -190,7 +195,10 @@ function cleanChanges(type, changes, documentLibrary) {
     entries.map(([path, raw]) => {
       const field = byPath.get(path);
       if (!field) throw new Error('Unsupported field');
-      return [path, validateField(field[2], raw, field[3], documentLibrary)];
+      return [path,
+        field[2] === 'blocks' && originalRecord?.layout === 'newsletter'
+          ? preserveNewsletterBlocks(raw, originalRecord.get(path))
+          : validateField(field[2], raw, field[3], documentLibrary)];
     }),
   );
 }

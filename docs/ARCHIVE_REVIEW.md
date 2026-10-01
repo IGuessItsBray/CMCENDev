@@ -6,7 +6,7 @@ The separate [news migration ledger](../server/scripts/migration/ledger/README.m
 
 The [29 September migration policy](../server/scripts/migration/ledger/POLICY.md) now governs preparation: import as drafts, preserve genuine language counterparts, allow English-only records, and attach supporting member material beneath its retirement or Last Post parent outside the feeds. Missing translations are staff follow-up work, not a prerequisite for preparing the archive. The operator previously confirmed importing five French updates and manually publishing some after review; those confirmations remain distinct from panel decisions.
 
-Developers can open **Archive Review** in the admin panel (`/dashboard-next?area=archives`). The first catalogue covers the 16 imported articles audited on 26 September 2026: eight confirmed French counterparts, eight unresolved translations, and five separate translation, source-URL or image-layout issues. The September 2025 CPO1/CWO newsletter's French PDF was already included in the imported article, so it has no attachment issue.
+The meeting-only Archive Review panel has been retired from the admin navigation. Its catalogue, developer-only API, saved decisions, and history remain available for reconciliation. The first catalogue covers the 16 imported articles audited on 26 September 2026: eight confirmed French counterparts, eight unresolved translations, and five separate translation, source-URL or image-layout issues. The September 2025 CPO1/CWO newsletter's French PDF was already included in the imported article, so it has no attachment issue.
 
 The batch selector also includes 27 September discovery: four retirement/DWD cases, 14 Last Post cases, and 27 Heritage review items representing 48 English/French source IDs. Heritage includes John Doe and all five Learning to Post entries. These remain visible even if a reviewer chooses exclusion. Sources found in French archives are shown in the FR column as provenance, not a claim that their bodies are translated. Related notices and obituaries appear in separate expandable source sections. Destination lookup covers news articles only; absence there is not proof a retirement or Last Post record is missing from the database.
 
@@ -50,7 +50,7 @@ Decisions are stored in the MongoDB `archivereviewdecisions` collection with act
 
 The interface and all endpoints require the exact `developer` role. Existing editorial permissions and custom roles do not grant archive-review access. Stakeholders can review alongside the developer in a meeting; this feature does not create stakeholder accounts or public sharing.
 
-Imported draft verification is a separate workflow at `/archive-staff-review`, guarded by the custom-role permission `archive.verify`. Its staff checks and final publication apply only to eligible imported records and do not reinterpret the meeting decisions in this panel. See [Imported Archive Staff Review](API%20ROUTES.md#imported-archive-staff-review).
+Imported draft editing now uses the regular Content Workspace, filtered to imported content. Specialized imported pages and documents remain reachable from Pages administration through `/archive-staff-review`. The archive verification API and saved checks remain available; they do not reinterpret meeting decisions. See [Imported Archive Staff Review](API%20ROUTES.md#imported-archive-staff-review).
 
 ## Remove after migration
 

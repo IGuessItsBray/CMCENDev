@@ -763,6 +763,40 @@ paths:
           description: News blast delivery result.
         "202":
           description: News blast delivery skipped because global email sending is disabled.
+  /api/admin/email:
+    get:
+      tags: [Admin]
+      summary: Read email controls, effective status, and recent delivery attempts.
+      x-permission: canManageEmail
+      responses:
+        "200":
+          description: Email status and metadata-only history.
+  /api/admin/email/controls:
+    patch:
+      tags: [Admin]
+      summary: Enable or disable one email category.
+      x-permission: canManageEmail
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated email controls.
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/admin/email/test:
+    post:
+      tags: [Admin]
+      summary: Send a fixed plain-text test to a server-allowlisted address.
+      x-permission: canManageEmail
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: SMTP accepted the test message; inbox delivery is not guaranteed.
+        "400":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
   /api/ghost/upgrade:
     post:
       tags: [Auth]
@@ -1479,6 +1513,11 @@ paths:
           description: Separate staff articles from member/contributor submissions within caller permissions.
           schema:
             { type: string, enum: [all, submissions, articles], default: all }
+        - name: origin
+          in: query
+          description: Show all permitted content or only records imported from the WordPress archive.
+          schema:
+            { type: string, enum: [all, imported], default: all }
         - name: type
           in: query
           schema:
@@ -1820,6 +1859,19 @@ paths:
         "200": { description: Supported content types and check keys. }
         "401": { description: Authentication required. }
         "403": { description: Archive verification permission required. }
+  /api/admin/archive-staff-review/media:
+    get:
+      tags: [Archive Staff Review]
+      summary: Search existing images for read-only archive selection.
+      x-permission: archive.verify
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: cursor, in: query, schema: { type: integer, minimum: 0, maximum: 100000 } }
+      responses:
+        "200": { description: Image keys, URLs, names, variants, and next cursor. }
+        "400": { description: Invalid media filter. }
+        "401": { description: Authentication required. }
+        "403": { description: Archive verification permission required. }
   /api/admin/archive-staff-review/{type}:
     parameters:
       - { name: type, in: path, required: true, schema: { type: string, enum: [newsArticle, retirementMessage, lastPost, event, comment, page, archiveDocument] } }
@@ -1831,7 +1883,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [draft, published, all], default: draft } }
         - { name: offset, in: query, schema: { type: integer, minimum: 0, maximum: 100000, default: 0 } }
       responses:
-        "200": { description: Imported records, paged by 50. }
+        "200": { description: Imported records, paged by 50, with current-revision checksCompleted (0–4) per item. }
         "400": { description: Invalid filter. }
         "401": { description: Authentication required. }
         "403": { description: Archive verification permission required. }
@@ -1858,10 +1910,20 @@ paths:
           application/json:
             schema:
               type: object
-              required: [expectedUpdatedAt, changes]
+              required: [expectedUpdatedAt]
               properties:
                 expectedUpdatedAt: { type: string, format: date-time }
                 changes: { type: object, additionalProperties: true }
+                mediaSelections:
+                  type: array
+                  maxItems: 20
+                  items:
+                    type: object
+                    required: [language, index, key]
+                    properties:
+                      language: { type: string, enum: [en, fr] }
+                      index: { type: integer, minimum: 0 }
+                      key: { type: string, maxLength: 500 }
       responses:
         "200": { description: Corrected draft and invalidated prior checks. }
         "400": { description: Invalid or disallowed field. }
@@ -1919,7 +1981,8 @@ paths:
               required: [expectedUpdatedAt]
               properties:
                 expectedUpdatedAt: { type: string, format: date-time }
-                publicationDateChoice: { type: string, enum: [original, now] }
+                publicationDateChoice: { type: string, enum: [original, now, custom] }
+                customPublishedAt: { type: string, format: date-time }
       responses:
         "200": { description: Published record and audit entry. }
         "400": { description: Missing content or invalid publication date choice. }
@@ -2748,8 +2811,12 @@ paths:
                   description: Future timestamp for a publish action; omit to publish now.
                 publicationDateChoice:
                   type: string
-                  enum: [original, now]
+                  enum: [original, now, custom]
                   description: Required for imported or archive content. Uses the server-stored original date or the actual publication time, including scheduled publication. An unavailable original date returns 400.
+                customPublishedAt:
+                  type: string
+                  format: date-time
+                  description: Required with custom publicationDateChoice; cannot be in the future.
       responses:
         "200":
           description: Updated article, including its nullable scheduledPublishAt.
@@ -3470,8 +3537,12 @@ components:
                 description: Optional future time to publish a reviewed item when `action` is `publish`.
               publicationDateChoice:
                 type: string
-                enum: [original, now]
+                enum: [original, now, custom]
                 description: Required when publishing imported or archive content. The original date is resolved from stored provenance; now uses the actual publication time. Scheduling preserves this choice. An unavailable original date returns 400.
+              customPublishedAt:
+                type: string
+                format: date-time
+                description: Required with custom publicationDateChoice; cannot be in the future.
               messages:
                 type: object
                 description: Optional bilingual publication copy supplied when publishing a retirement message.
@@ -3497,8 +3568,12 @@ components:
                 enum: [publish, reject]
               publicationDateChoice:
                 type: string
-                enum: [original, now]
+                enum: [original, now, custom]
                 description: Required for imported/archive comments. Original uses the stored original public date; originally unapproved comments cannot use original. Invalid or unavailable choices return 400.
+              customPublishedAt:
+                type: string
+                format: date-time
+                description: Required with custom publicationDateChoice; cannot be in the future.
               rejectionReason:
                 type: string
                 maxLength: 2000

@@ -23,6 +23,7 @@ function applyEditorialReviewTransition({
   rejectionReason,
   scheduledPublishAt = null,
   publicationDateChoice,
+  customPublishedAt,
   publishedRejectionReason = null,
   now = new Date(),
 }) {
@@ -60,6 +61,7 @@ function applyEditorialReviewTransition({
       content,
       publicationDateChoice,
       now,
+      customPublishedAt,
     );
     const isScheduled = Boolean(scheduledPublishAt);
     content.rejectionReason = publishedRejectionReason;
@@ -124,6 +126,7 @@ async function performEditorialReviewTransition({
     scheduledPublishAt,
     publishedRejectionReason,
     publicationDateChoice: req.body?.publicationDateChoice,
+    customPublishedAt: req.body?.customPublishedAt,
     now,
   });
 

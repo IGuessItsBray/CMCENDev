@@ -53,7 +53,7 @@ test('pilot originals come from the primary source, not the import timestamp', (
     null,
   );
 });
-test('approved WordPress comments retain their date; unapproved comments have no public date', () => {
+test('comment creation time is not treated as source publication provenance', () => {
   for (const approval of ['0', '1']) {
     const info = getPublicationDateInfo(
       {
@@ -66,10 +66,7 @@ test('approved WordPress comments retain their date; unapproved comments have no
       },
       now,
     );
-    assert.deepEqual(
-      info.originalPublishedAt,
-      approval === '1' ? original : null,
-    );
+    assert.equal(info.originalPublishedAt, null);
   }
 });
 test('archive choices are explicit, validated, and preserve the original even when choosing now', () => {
@@ -87,6 +84,11 @@ test('archive choices are explicit, validated, and preserve the original even wh
   assert.equal(selectPublicationDate(record, 'now', now), now);
   assert.deepEqual(record.originalPublishedAt, original);
   assert.deepEqual(selectPublicationDate(record, 'original', now), original);
+  const custom = '2008-04-05T09:30:00.000Z';
+  assert.deepEqual(selectPublicationDate(record, 'custom', now, custom), new Date(custom));
+  assert.equal(record.publicationDateChoice, 'custom');
+  assert.throws(() => selectPublicationDate(record, 'custom', now, '2099-01-01'), { status: 400 });
+  assert.throws(() => selectPublicationDate(record, 'now', now, custom), { status: 400 });
 });
 test('publication date choice leaves staff approval time current and survives scheduling', () => {
   for (const scheduledPublishAt of [null, new Date('2026-10-01T12:00:00Z')]) {

@@ -140,6 +140,10 @@ test('structured bodies retain caption, formatting, variants and safe links', ()
     plainText(blocks),
     'Text <script>alert(1)</script>Document\n\nCredit',
   );
+  assert.equal(
+    normalizeBlocks([{ type: 'figure', image: { url: '/assets/images/logo.png' } }])[0].image.url,
+    '/assets/images/logo.png',
+  );
   for (const invalid of [
     [
       {

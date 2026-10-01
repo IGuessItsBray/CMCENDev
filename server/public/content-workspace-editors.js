@@ -271,6 +271,7 @@ window.ContentWorkspaceEditors = {
         api: contentWorkspaceApiJson,
         canUpload: contentWorkspaceState.user?.permissions?.canUploadMedia,
         busy: setMediaBusy,
+        sharedFigurePreview: true,
       });
     }
 

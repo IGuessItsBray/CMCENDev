@@ -1,11 +1,23 @@
 :root {
-  color-scheme: light;
   font-family: system-ui, sans-serif;
-  background: #f4f6f7;
-  color: #172b3b;
+  --review-success: #176238;
+  --review-source: #f1f4f6;
+  --review-action: #173c59;
+  --review-action-text: #fff;
+  --review-highlight: #edf4f4;
+}
+html[data-theme='dark'] {
+  --review-success: var(--dark-success-text);
+  --review-source: var(--dark-bg-elevated);
+  --review-action: var(--dark-surface-3);
+  --review-action-text: var(--dark-text);
+  --review-highlight: var(--dark-surface-2);
 }
 * {
   box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
 }
 body {
   margin: 0;
@@ -21,10 +33,10 @@ select {
   cursor: pointer;
 }
 button {
-  border: 1px solid #294a65;
+  border: 1px solid var(--admin-control-border);
   border-radius: 0.4rem;
-  background: white;
-  color: #173c59;
+  background: var(--admin-surface);
+  color: var(--admin-text);
   padding: 0.55rem 0.8rem;
 }
 button:focus-visible,
@@ -60,21 +72,47 @@ a:focus-visible {
   margin: 0.25rem 0;
 }
 .archive-staff-eyebrow {
-  color: #725617;
+  color: var(--admin-accent);
   font-weight: 700;
   letter-spacing: 0.12em;
 }
 #archiveStaffMessage {
   min-height: 1.5rem;
-  color: #176238;
+  color: var(--review-success);
   font-weight: 600;
 }
 #archiveStaffMessage.is-error {
-  color: #9b321f;
+  color: var(--admin-danger);
 }
 .archive-staff-preview-image {
   max-width: min(100%, 500px);
+  max-height: 360px;
+  object-fit: contain;
 }
+.archive-staff-figure-gallery {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.archive-staff-figure-row {
+  border: 1px solid var(--admin-border);
+  border-radius: 0.4rem;
+  padding: 0.8rem;
+}
+.archive-staff-figure-languages {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 0.7rem;
+}
+.archive-staff-figure-language {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+  min-width: 0;
+}
+.archive-staff-figure-language h5 { margin: 0; }
+.archive-staff-figure-language textarea { min-height: 4rem; }
 .archive-staff-controls {
   display: flex;
   gap: 1rem;
@@ -94,9 +132,9 @@ a:focus-visible {
 .archive-staff-field select,
 .archive-staff-note {
   width: 100%;
-  border: 1px solid #9aa8b2;
+  border: 1px solid var(--admin-control-border);
   border-radius: 0.35rem;
-  background: white;
+  background: var(--admin-surface);
   padding: 0.55rem;
   color: inherit;
 }
@@ -108,8 +146,8 @@ a:focus-visible {
 }
 .archive-staff-queue,
 .archive-staff-detail {
-  background: white;
-  border: 1px solid #cbd4db;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
   border-radius: 0.6rem;
   padding: 1rem;
 }
@@ -131,12 +169,19 @@ a:focus-visible {
   overflow-wrap: anywhere;
 }
 .archive-staff-queue button[aria-current] {
-  background: #173c59;
-  color: white;
+  background: var(--review-action);
+  color: var(--review-action-text);
 }
 .archive-staff-queue small {
   display: block;
   opacity: 0.8;
+  white-space: normal;
+}
+#archiveStaffProgress {
+  padding: 0.6rem;
+  background: var(--review-highlight);
+  border-radius: 0.35rem;
+  font-weight: 600;
 }
 .archive-staff-detail h2 {
   margin-top: 0;
@@ -145,24 +190,63 @@ a:focus-visible {
 .archive-staff-source,
 .archive-staff-editor,
 .archive-staff-verification {
-  border-top: 1px solid #d5dce1;
+  border-top: 1px solid var(--admin-border);
   padding-top: 1rem;
   margin-top: 1rem;
 }
 .archive-staff-source a {
   overflow-wrap: anywhere;
 }
+.archive-staff-source summary,
+.archive-staff-advanced summary {
+  cursor: pointer;
+  font-weight: 600;
+}
 .archive-staff-source pre {
   max-height: 18rem;
   overflow: auto;
   white-space: pre-wrap;
-  background: #f1f4f6;
+  background: var(--review-source);
   padding: 0.7rem;
 }
 .archive-staff-fields {
   display: grid;
+  gap: 1rem;
+}
+.archive-staff-language-columns {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+.archive-staff-language-column,
+.archive-staff-shared-fields {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  min-width: 0;
+}
+.archive-staff-language-column h4,
+.archive-staff-shared-fields h4 {
+  margin: 0;
+}
+.archive-staff-block-field textarea,
+.archive-staff-block-item textarea {
+  width: 100%;
+  min-height: 6rem;
+  resize: vertical;
+}
+.archive-staff-block-item {
+  border: 1px solid var(--admin-border);
+  border-radius: 0.35rem;
+  padding: 0.6rem;
+  margin: 0.5rem 0;
+}
+.archive-staff-advanced {
+  margin-top: 0.7rem;
+}
+.archive-staff-advanced textarea {
+  min-height: 12rem;
+  font-family: ui-monospace, monospace;
 }
 .archive-staff-field[data-kind='long'],
 .archive-staff-field[data-kind='blocks'],
@@ -196,8 +280,8 @@ a:focus-visible {
   margin-top: 1rem;
 }
 .archive-staff-actions .is-primary {
-  background: #173c59;
-  color: white;
+  background: var(--review-action);
+  color: var(--review-action-text);
 }
 .archive-staff-actions .is-publish {
   background: #176238;
@@ -208,6 +292,50 @@ a:focus-visible {
   opacity: 0.55;
   cursor: not-allowed;
 }
+.archive-staff-media-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+}
+.archive-staff-media-dialog {
+  width: min(900px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 0.5rem;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+}
+.archive-staff-media-dialog input {
+  width: min(25rem, 100%);
+  padding: 0.6rem;
+  border: 1px solid var(--admin-control-border);
+  background: var(--admin-inset);
+  color: var(--admin-text);
+}
+.archive-staff-media-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.7rem;
+  margin: 1rem 0;
+}
+.archive-staff-media-item {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+.archive-staff-media-item img {
+  width: 100%;
+  height: 100px;
+  object-fit: contain;
+}
 @media (max-width: 800px) {
   .archive-staff-layout {
     grid-template-columns: 1fr;
@@ -216,7 +344,8 @@ a:focus-visible {
     position: static;
     max-height: 18rem;
   }
-  .archive-staff-fields {
+  .archive-staff-language-columns {
     grid-template-columns: 1fr;
   }
+  .archive-staff-figure-languages { grid-template-columns: 1fr; }
 }

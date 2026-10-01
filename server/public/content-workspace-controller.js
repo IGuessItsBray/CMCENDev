@@ -112,6 +112,7 @@ window.ContentWorkspace = {
     const filterNames = [
       "type",
       "status",
+      "origin",
       "translation",
       "search",
       "id",
@@ -134,6 +135,7 @@ window.ContentWorkspace = {
     const contentWorkspaceStatusFilter = getElement(
       "contentWorkspaceStatusFilter",
     );
+    const contentWorkspaceOriginFilter = getElement("contentWorkspaceOriginFilter");
     const contentWorkspaceSearch = getElement("contentWorkspaceSearch");
     const contentWorkspaceTranslationFilter = getElement(
       "contentWorkspaceTranslationFilter",
@@ -468,6 +470,7 @@ window.ContentWorkspace = {
           )
         : null;
       const status = searchParameters.get("status");
+      const origin = searchParameters.get("origin");
       const translation = searchParameters.get("translation");
       const search = String(searchParameters.get("search") || "").slice(0, 120);
       const contentId = String(searchParameters.get("id") || "").trim();
@@ -479,6 +482,7 @@ window.ContentWorkspace = {
       contentWorkspaceStatusFilter.value = contentWorkspaceStatuses.has(status)
         ? status
         : "all";
+      contentWorkspaceOriginFilter.value = origin === "imported" ? "imported" : "all";
 
       contentWorkspaceTranslationFilter.value =
         contentWorkspaceTranslationStatuses.has(translation)
@@ -499,6 +503,7 @@ window.ContentWorkspace = {
       const searchParameters = new URLSearchParams({ area });
       const type = contentWorkspaceType.value || "all";
       const status = contentWorkspaceStatusFilter.value || "all";
+      const origin = contentWorkspaceOriginFilter.value || "all";
       const translation = contentWorkspaceTranslationFilter.value || "all";
       const search = contentWorkspaceSearch.value.trim();
 
@@ -513,6 +518,7 @@ window.ContentWorkspace = {
       if (status !== "all") {
         searchParameters.set("status", status);
       }
+      if (origin !== "all") searchParameters.set("origin", origin);
       if (translation !== "all") {
         searchParameters.set("translation", translation);
       }
@@ -530,6 +536,7 @@ window.ContentWorkspace = {
       return Boolean(
         (!articleMode && contentWorkspaceType.value !== "all") ||
         contentWorkspaceStatusFilter.value !== "all" ||
+        contentWorkspaceOriginFilter.value !== "all" ||
         contentWorkspaceTranslationFilter.value !== "all" ||
         contentWorkspaceSearch.value.trim(),
       );
@@ -541,6 +548,7 @@ window.ContentWorkspace = {
       const activeCount = [
         ...(articleMode ? [] : [contentWorkspaceType]),
         contentWorkspaceStatusFilter,
+        contentWorkspaceOriginFilter,
         contentWorkspaceTranslationFilter,
       ].filter((control) => control.value !== "all").length;
       advancedFilters.querySelector("strong").textContent = activeCount
@@ -553,6 +561,7 @@ window.ContentWorkspace = {
       commentTypeFilters.hidden = true;
       contentWorkspaceType.value = "all";
       contentWorkspaceStatusFilter.value = "all";
+      contentWorkspaceOriginFilter.value = "all";
       contentWorkspaceTranslationFilter.value = "all";
       contentWorkspaceSearch.value = "";
       contentWorkspaceState.selectedId = "";
@@ -822,6 +831,9 @@ window.ContentWorkspace = {
 
     function setRecordMetadata(metadata, item) {
       metadata.replaceChildren();
+      if (item.publicationDate?.isArchive) {
+        metadata.append(document.createTextNode(getText("content_workspace_imported_origin", "Imported archive") + " · "));
+      }
       metadata.append(document.createTextNode(getPublicationLabel(item)));
       if (item.lastEditedAt) {
         metadata.append(
@@ -1027,6 +1039,35 @@ window.ContentWorkspace = {
       return info;
     }
 
+    function createArchiveSourceDetails(item) {
+      if (!item.publicationDate?.isArchive) return null;
+      const details = document.createElement("details");
+      details.className = "content-workspace-archive-source";
+      const summary = document.createElement("summary");
+      setWorkspaceTranslatedText(summary, "content_workspace_original_source", "Original source");
+      details.append(summary);
+      const original = item.publicationDate.originalPublishedAt;
+      if (original) {
+        const date = document.createElement("p");
+        date.textContent = `${getText("content_workspace_date_original", "Original publication date")}: ${formatWorkspaceDate(original)}`;
+        details.append(date);
+      }
+      if (item.archiveSourceIds?.length) {
+        const ids = document.createElement("p");
+        ids.textContent = `Source IDs: ${item.archiveSourceIds.join(", ")}`;
+        details.append(ids);
+      }
+      for (const url of item.archiveSourceUrls || []) {
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = url;
+        details.append(link);
+      }
+      return details;
+    }
+
     function renderContentWorkspaceDetail() {
       if (disposed) return;
       disposeEditors();
@@ -1077,6 +1118,8 @@ window.ContentWorkspace = {
       header.append(title, createDetailInfo(item), actions);
       if (publicContentLink) header.append(publicContentLink);
       contentWorkspaceDetail.append(header);
+      const archiveSource = createArchiveSourceDetails(item);
+      if (archiveSource) contentWorkspaceDetail.append(archiveSource);
 
       const canEditPublicCopy = canEditContentWorkspacePublicCopy(item);
 
@@ -1332,6 +1375,7 @@ window.ContentWorkspace = {
       });
       const type = contentWorkspaceType.value || "all";
       const status = contentWorkspaceStatusFilter.value || "all";
+      const origin = contentWorkspaceOriginFilter.value || "all";
       const translation = contentWorkspaceTranslationFilter.value || "all";
       const search = contentWorkspaceSearch.value.trim();
 
@@ -1343,6 +1387,7 @@ window.ContentWorkspace = {
       if (status !== "all") {
         query.set("status", status);
       }
+      if (origin !== "all") query.set("origin", origin);
       if (translation !== "all") {
         query.set("translation", translation);
       }
@@ -1376,6 +1421,7 @@ window.ContentWorkspace = {
             scope: articleMode ? "articles" : "submissions",
             id: requestedId,
           });
+          if (origin !== "all") selectedQuery.set("origin", origin);
           const selectedData = await contentWorkspaceApiJson(
             `/api/admin/content?${selectedQuery}`,
           );
@@ -1622,6 +1668,7 @@ window.ContentWorkspace = {
     for (const filter of [
       contentWorkspaceType,
       contentWorkspaceStatusFilter,
+      contentWorkspaceOriginFilter,
       contentWorkspaceTranslationFilter,
     ]) {
       filter.addEventListener("change", () => void changeFilters());

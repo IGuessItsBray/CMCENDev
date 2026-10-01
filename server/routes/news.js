@@ -1,5 +1,5 @@
 const express = require('express');
-const { selectPublicationDate } = require('../services/publication-date');
+const { getPublicationDateInfo, selectPublicationDate } = require('../services/publication-date');
 const { buildPublicMediaUrl } = require('../services/media-library');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const mongoose = require('mongoose');
@@ -34,7 +34,7 @@ const {
   blocksFor,
 } = require('../public/newsletter-format');
 const {
-  normalizeBlocks,
+  preserveNewsletterBlocks,
   publicDateStages,
 } = require('../services/newsletter-content');
 const MediaAsset = require('../models/MediaAsset');
@@ -156,6 +156,7 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
 
 function serializeArticle(article) {
   return {
+    archive: getPublicationDateInfo(article).isArchive,
     category: categoryOf(article),
     excerpt: Object.fromEntries(
       ['en', 'fr'].map((language) => [
@@ -242,7 +243,7 @@ function getPayload(
   };
 }
 
-function validatePayload(payload) {
+function validatePayload(payload, existingBlocks = {}) {
   if (!categories.includes(payload.category ?? categoryOf(payload)))
     return 'Choose a valid article category';
   if (!['standard', 'newsletter'].includes(payload.layout || 'standard'))
@@ -252,7 +253,10 @@ function validatePayload(payload) {
       payload.newsletterBlocks = Object.fromEntries(
         ['en', 'fr'].map((language) => [
           language,
-          normalizeBlocks(payload.newsletterBlocks?.[language] || []),
+          preserveNewsletterBlocks(
+            payload.newsletterBlocks?.[language] || [],
+            existingBlocks?.[language],
+          ),
         ]),
       );
       payload.content = Object.fromEntries(
@@ -677,7 +681,7 @@ router.patch(
           .json({ error: 'This news story is not scheduled' });
       }
       if (action === 'publish') {
-        const validationError = validatePayload(article);
+        const validationError = validatePayload(article, article.newsletterBlocks);
         if (validationError)
           return res.status(400).json({ error: validationError });
       }
@@ -685,7 +689,7 @@ router.patch(
       const publishNow = action === 'publish' && !schedule;
       const publicationDate =
         action === 'publish'
-          ? selectPublicationDate(article, req.body?.publicationDateChoice, now)
+          ? selectPublicationDate(article, req.body?.publicationDateChoice, now, req.body?.customPublishedAt)
           : null;
       article.status = publishNow ? 'published' : 'draft';
       article.publishedAt = publishNow ? publicationDate : null;
@@ -749,7 +753,7 @@ router.patch(
         preserveHiddenStatus: article.status === 'hidden',
         existing: article,
       });
-      const validationError = validatePayload(payload);
+      const validationError = validatePayload(payload, article.newsletterBlocks);
       if (validationError)
         return res.status(400).json({ error: validationError });
       Object.assign(article, payload);
@@ -758,6 +762,8 @@ router.patch(
         article.publishedAt = selectPublicationDate(
           article,
           req.body?.publicationDateChoice,
+          new Date(),
+          req.body?.customPublishedAt,
         );
         article.publishedBy = req.user._id;
       }

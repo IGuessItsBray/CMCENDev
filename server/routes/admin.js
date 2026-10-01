@@ -44,6 +44,7 @@ const {
   cleanString,
 } = require('../services/content-utils');
 const { isEmailSendingDisabled, sendMail } = require('../services/mailer');
+const { isCategoryEnabled } = require('../services/email-controls');
 const {
   createUnsubscribeToken,
   getCaslSenderInfo,
@@ -700,8 +701,23 @@ function getContentActorName(actor) {
 }
 
 function toContentWorkspaceItem(type, content) {
+  const archiveSource = 'https://cmcen-rcmce.ca';
+  const archiveSourceUrls = [
+    content.migrationSource,
+    content.legacy?.sourceUrl,
+    ...(Array.isArray(content.legacy?.sourceUrls) ? content.legacy.sourceUrls : []),
+    ...(Array.isArray(content.legacy?.sourceRecords)
+      ? content.legacy.sourceRecords.flatMap((record) => [record?.url, record?.sourceUrl])
+      : []),
+  ].filter((url) => typeof url === 'string' && url.startsWith(`${archiveSource}/`));
   const base = {
     publicationDate: getPublicationDateInfo(content),
+    archiveSourceUrls: [...new Set(archiveSourceUrls)],
+    archiveSourceIds: Array.isArray(content.legacy?.sourcePostIds)
+      ? content.legacy.sourcePostIds
+      : content.legacy?.wordpressCommentId
+        ? [content.legacy.wordpressCommentId]
+        : [],
     _id: content._id,
     type,
     status: content.status,
@@ -844,6 +860,7 @@ router.get(
       if (!['all', 'submissions', 'articles'].includes(scope))
         return res.status(400).json({ error: 'Unsupported workspace scope' });
       const status = String(req.query.status || 'all');
+      const origin = String(req.query.origin || 'all');
       const translation = String(req.query.translation || 'all');
       const search = cleanContentWorkspaceSearch(req.query.search);
       const contentId = String(req.query.id || '').trim();
@@ -861,6 +878,9 @@ router.get(
 
       if (status !== 'all' && !CONTENT_WORKSPACE_STATUSES.includes(status)) {
         return res.status(400).json({ error: 'Unsupported content status' });
+      }
+      if (!['all', 'imported'].includes(origin)) {
+        return res.status(400).json({ error: 'Unsupported content origin' });
       }
 
       if (!CONTENT_WORKSPACE_TRANSLATION_FILTERS.includes(translation)) {
@@ -893,6 +913,10 @@ router.get(
       }
       const contentFilter = {
         ...(contentId ? { _id: contentId } : {}),
+        ...(origin === 'imported' ? { $or: [
+          { 'legacy.source': 'https://cmcen-rcmce.ca' },
+          { migrationSource: /^https:\/\/cmcen-rcmce\.ca\// },
+        ] } : {}),
       };
       const searchPattern = search
         ? new RegExp(escapeRegex(search), 'i')
@@ -922,7 +946,7 @@ router.get(
         queries.push(
           Event.find(getWorkspaceFilter('event'))
             .select(
-              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
+              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourcePostIds legacy.sourceUrl legacy.sourceUrls legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
             )
             .select(
               'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay rsvpEnabled rsvpDeadline imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
@@ -954,7 +978,7 @@ router.get(
         queries.push(
           RetirementMessage.find(getWorkspaceFilter('retirementMessage'))
             .select(
-              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
+              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourcePostIds legacy.sourceUrl legacy.sourceUrls legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
             )
             .select(
               'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation legacy.source legacy.sourcePostIds legacy.originalStatus legacy.submissionMetadata createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
@@ -982,7 +1006,7 @@ router.get(
         queries.push(
           LastPostMessage.find(getWorkspaceFilter('lastPost'))
             .select(
-              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
+              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourcePostIds legacy.sourceUrl legacy.sourceUrls legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
             )
             .select(
               'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission legacy.source legacy.sourcePostIds legacy.originalStatus legacy.submissionMetadata createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
@@ -1019,7 +1043,7 @@ router.get(
             ...(parentTypes ? { parentType: { $in: parentTypes } } : {}),
           })
             .select(
-              'originalPublishedAt publicationDateChoice legacy.source legacy.originalPublishedAt legacy.wordpressCommentId',
+              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourceUrl legacy.sourceUrls legacy.sourceRecords legacy.originalPublishedAt legacy.wordpressCommentId',
             )
             .select(
               'parentType parentId author body legacy.authorName legacy.originalApproval status hiddenFromStatus rejectionReason publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
@@ -1050,7 +1074,7 @@ router.get(
         queries.push(
           NewsArticle.find(getWorkspaceFilter('newsArticle'))
             .select(
-              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
+              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourcePostIds legacy.sourceUrl legacy.sourceUrls legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
             )
             .select(
               'category layout newsletter newsletterBlocks title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
@@ -2157,6 +2181,8 @@ async function sendInvitationEmail(req, user, token) {
     : 'An admin has created a CMCEN account for you.';
 
   return sendMail({
+    category: 'account',
+    workflow: 'invitation',
     to: user.email,
     subject: 'Activate your CMCEN / RCMCE account',
     html: `
@@ -2246,7 +2272,12 @@ async function deliverInvitation({ req, user, token, actor, action }) {
       },
     });
 
-    return { delivery };
+    return {
+      delivery,
+      error: mailResult?.skipped
+        ? new Error('Email delivery is disabled')
+        : null,
+    };
   } catch (error) {
     const delivery = await recordInvitationDelivery(user, {
       ok: false,
@@ -3611,7 +3642,7 @@ router.post(
   async (req, res) => {
     const subject = String(req.body?.subject || '').trim();
     const body = String(req.body?.body || '').trim();
-    if (isEmailSendingDisabled()) {
+    if (isEmailSendingDisabled() || !(await isCategoryEnabled('news'))) {
       return res.status(202).json({
         message:
           'News blast delivery skipped because email sending is disabled',
@@ -3654,7 +3685,9 @@ router.post(
             'newsAnnouncements',
           );
           const unsubscribeUrl = `${baseUrl}/api/subscriptions/news-announcements/unsubscribe?token=${encodeURIComponent(token)}`;
-          await sendMail({
+          const mailResult = await sendMail({
+            category: 'news',
+            workflow: 'news_blast',
             to: recipient.email,
             subject,
             text: `${body}\n\n${sender.name}\n${sender.mailingAddress}\n${sender.contact}\n\nUnsubscribe: ${unsubscribeUrl}`,
@@ -3664,6 +3697,8 @@ router.post(
               'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
             },
           });
+          if (mailResult.skipped)
+            throw new Error('News email delivery is disabled');
           sentCount += 1;
         } catch (error) {
           failedCount += 1;

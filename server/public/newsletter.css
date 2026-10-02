@@ -117,21 +117,11 @@ html[data-theme='dark'] .newsletter-context-icon {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
-.newsletter-footer {
-  margin-top: 2.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-  font-size: 0.9rem;
-}
 .newsletter-status {
   padding: 2rem;
 }
 .newsletter-body > div,
-.newsletter-body > p,
-.newsletter-body > footer {
+.newsletter-body > p {
   max-width: none;
   margin-left: auto;
   margin-right: auto;

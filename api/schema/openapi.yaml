@@ -1335,6 +1335,38 @@ paths:
       responses:
         "200":
           description: Updated user.
+  /api/admin/users/{userId}/profile:
+    patch:
+      tags: [Admin]
+      summary: Update allowlisted member profile and address fields.
+      description: Requires canManageUsers. Validates profile fields and audits changed field names; email and permissions are excluded.
+      x-permission: canManageUsers
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Updated profile.
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/admin/users/{userId}/email:
+    patch:
+      tags: [Admin]
+      summary: Correct a member email after office verification.
+      description: Requires users.email.edit (canEditUserEmail) and body email plus officeVerified true; self-correction is denied. The Users panel also requires users.read. Administrators do not receive this permission by default; developers inherit it through the existing all-permissions rule. Updates an email-based username, invalidates reset and verification tokens and sessions, and audits the correction. Sends no email and adds no online verification gate.
+      x-permission: canEditUserEmail
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        $ref: "#/components/requestBodies/GenericJson"
+      responses:
+        "200":
+          description: Corrected email.
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/admin/users/{userId}/role:
     patch:
       tags: [Admin]
@@ -1603,7 +1635,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Editorial workspace content with `items`, `hasMore`, and an opaque `nextCursor` when another page is available. Each item includes `publicationDate` with `isArchive` and nullable `originalPublishedAt` for publication date selection. Retirement and Last Post content includes `historicalSubmissionUnknown` for recognized WordPress archive records whose original submitter and consent metadata is unavailable; this does not imply confirmed consent.
+          description: Editorial workspace content with `items`, `hasMore`, and an opaque `nextCursor` when another page is available. Each item includes `publicationDate` with `isArchive` and nullable `originalPublishedAt` for publication date selection. Archive items include `archiveSourceIds`, `archiveSourceUrls`, and `archiveSourceLinks` entries with a saved, safe legacy `url` and `language` (`en`, `fr`, or empty when unverified). Retirement and Last Post content includes `historicalSubmissionUnknown` for recognized WordPress archive records whose original submitter and consent metadata is unavailable; this does not imply confirmed consent.
         "400":
           $ref: "#/components/responses/Error"
         "403":

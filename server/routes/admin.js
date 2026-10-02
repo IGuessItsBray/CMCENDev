@@ -3,6 +3,7 @@ const {
 } = require('../public/newsletter-format');
 const express = require('express');
 const { getPublicationDateInfo } = require('../services/publication-date');
+const { getArchiveSourceLinks } = require('../services/archive-source-links');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const mongoose = require('mongoose');
 const speakeasy = require('speakeasy');
@@ -701,18 +702,11 @@ function getContentActorName(actor) {
 }
 
 function toContentWorkspaceItem(type, content) {
-  const archiveSource = 'https://cmcen-rcmce.ca';
-  const archiveSourceUrls = [
-    content.migrationSource,
-    content.legacy?.sourceUrl,
-    ...(Array.isArray(content.legacy?.sourceUrls) ? content.legacy.sourceUrls : []),
-    ...(Array.isArray(content.legacy?.sourceRecords)
-      ? content.legacy.sourceRecords.flatMap((record) => [record?.url, record?.sourceUrl])
-      : []),
-  ].filter((url) => typeof url === 'string' && url.startsWith(`${archiveSource}/`));
+  const archiveSourceLinks = getArchiveSourceLinks(content);
   const base = {
     publicationDate: getPublicationDateInfo(content),
-    archiveSourceUrls: [...new Set(archiveSourceUrls)],
+    archiveSourceUrls: archiveSourceLinks.map((link) => link.url),
+    archiveSourceLinks,
     archiveSourceIds: Array.isArray(content.legacy?.sourcePostIds)
       ? content.legacy.sourcePostIds
       : content.legacy?.wordpressCommentId
@@ -4111,6 +4105,232 @@ router.get(
     } catch (err) {
       console.error('Admin user detail failed:', err);
       res.status(500).json({ error: 'Failed to fetch user details' });
+    }
+  },
+);
+
+const ADMIN_PROFILE_FIELDS = [
+  'firstName',
+  'lastName',
+  'rank',
+  'postNominals',
+  'company',
+  'status',
+  'affiliationElement',
+  'trade',
+  'tradeOther',
+  'currentUnit',
+  'phone',
+  'preferredLanguage',
+  'biography',
+  'websiteUrl',
+];
+const ADMIN_ADDRESS_FIELDS = [
+  'line1',
+  'line2',
+  'city',
+  'country',
+  'stateProvince',
+  'postalCode',
+];
+
+// PATCH /api/admin/users/:userId/profile
+router.patch(
+  '/users/:userId/profile',
+  authMiddleware,
+  requirePermission('canManageUsers'),
+  async (req, res) => {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.userId))
+        return res.status(404).json({ error: 'User not found' });
+      const body = req.body || {};
+      const allowed = new Set([
+        ...ADMIN_PROFILE_FIELDS,
+        'address',
+        'socialLinks',
+      ]);
+      if (
+        !isPlainObject(body) ||
+        Object.keys(body).some((key) => !allowed.has(key))
+      )
+        return res.status(400).json({ error: 'Invalid profile fields' });
+      const updates = {};
+      for (const field of ADMIN_PROFILE_FIELDS) {
+        if (!Object.prototype.hasOwnProperty.call(body, field)) continue;
+        if (typeof body[field] !== 'string')
+          return res.status(400).json({ error: 'Invalid profile fields' });
+        updates[field] = body[field].trim();
+      }
+      if (Object.prototype.hasOwnProperty.call(body, 'address')) {
+        if (
+          !isPlainObject(body.address) ||
+          Object.keys(body.address).some(
+            (key) => !ADMIN_ADDRESS_FIELDS.includes(key),
+          )
+        )
+          return res.status(400).json({ error: 'Invalid address fields' });
+        for (const field of ADMIN_ADDRESS_FIELDS) {
+          if (!Object.prototype.hasOwnProperty.call(body.address, field))
+            continue;
+          if (typeof body.address[field] !== 'string')
+            return res.status(400).json({ error: 'Invalid address fields' });
+          updates[`address.${field}`] = body.address[field].trim();
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(body, 'socialLinks')) {
+        if (
+          !isPlainObject(body.socialLinks) ||
+          Object.keys(body.socialLinks).some((key) => key !== 'facebook') ||
+          typeof body.socialLinks.facebook !== 'string'
+        )
+          return res.status(400).json({ error: 'Invalid social link' });
+        updates['socialLinks.facebook'] = body.socialLinks.facebook.trim();
+      }
+      if (!Object.keys(updates).length)
+        return res.status(400).json({ error: 'No profile fields provided' });
+      const old = await User.findById(req.params.userId).select(
+        'accountType profileComplete firstName lastName',
+      );
+      if (!old) return res.status(404).json({ error: 'User not found' });
+      if ((!old.accountType || old.accountType === 'member') && old.profileComplete !== false) {
+        const required = [
+          'firstName', 'lastName', 'address.line1', 'address.city',
+          'address.country', 'address.stateProvince', 'address.postalCode',
+        ];
+        if (required.some((field) => field in updates && !updates[field]))
+          return res.status(400).json({ error: 'Required profile fields are missing' });
+      }
+      if ('firstName' in updates || 'lastName' in updates)
+        updates.accountName = [
+          updates.firstName ?? old.firstName,
+          updates.lastName ?? old.lastName,
+        ]
+          .filter(Boolean)
+          .join(' ');
+      const user = await User.findByIdAndUpdate(
+        req.params.userId,
+        { $set: updates },
+        { returnDocument: 'after', runValidators: true },
+      );
+      await writeAuditLog({
+        req,
+        action: 'user.profile_changed',
+        actor: req.user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: toAdminUser(user),
+        metadata: { changedFields: Object.keys(updates) },
+      });
+      return res.json({ message: 'Profile updated', user: toAdminUser(user) });
+    } catch (error) {
+      if (error.name === 'ValidationError' || error.name === 'CastError')
+        return res
+          .status(400)
+          .json({ error: 'Profile information is invalid' });
+      console.error('Admin profile update failed:', error.code || error.name);
+      return res.status(500).json({ error: 'Failed to update profile' });
+    }
+  },
+);
+
+// PATCH /api/admin/users/:userId/email
+router.patch(
+  '/users/:userId/email',
+  authMiddleware,
+  requirePermission('canEditUserEmail'),
+  async (req, res) => {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.userId))
+        return res.status(404).json({ error: 'User not found' });
+      if (isSelf(req.params.userId, req.user))
+        return res
+          .status(403)
+          .json({
+            error: 'Another administrator must confirm your email correction',
+          });
+      const body = req.body || {};
+      if (
+        !isPlainObject(body) ||
+        Object.keys(body).some(
+          (key) => !['email', 'officeVerified'].includes(key),
+        ) ||
+        body.officeVerified !== true
+      )
+        return res
+          .status(400)
+          .json({ error: 'Office confirmation is required' });
+      if (typeof body.email !== 'string')
+        return res.status(400).json({ error: 'Invalid email address' });
+      const email = body.email.trim().toLowerCase();
+      if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+        return res.status(400).json({ error: 'Invalid email address' });
+      const old = await User.findById(req.params.userId).select(
+        'email username accountType',
+      );
+      if (!old) return res.status(404).json({ error: 'User not found' });
+      if (old.accountType && old.accountType !== 'member')
+        return res
+          .status(400)
+          .json({ error: 'Only member email addresses can be corrected here' });
+      if (email === old.email)
+        return res.status(400).json({ error: 'Email address is unchanged' });
+      if (
+        await User.exists({
+          _id: { $ne: old._id },
+          $or: [{ email }, { username: email }],
+        })
+      )
+        return res
+          .status(409)
+          .json({ error: 'Email address is already in use' });
+      const updates = {
+        email,
+        'passwordReset.tokenHash': '',
+        'passwordReset.expiresAt': null,
+        'emailVerification.required': false,
+        'emailVerification.verified': false,
+        'emailVerification.verifiedAt': null,
+        'emailVerification.codeHash': '',
+        'emailVerification.codeExpiresAt': null,
+        'emailVerification.tempTokenHash': '',
+        'emailVerification.tempTokenExpiresAt': null,
+        'twoFactor.tempToken': '',
+        'twoFactor.tempExpires': null,
+      };
+      if (old.username === old.email) updates.username = email;
+      const user = await User.findOneAndUpdate(
+        { _id: old._id, email: old.email, username: old.username },
+        { $set: updates, $inc: { sessionVersion: 1 } },
+        { returnDocument: 'after', runValidators: true },
+      );
+      if (!user)
+        return res
+          .status(409)
+          .json({ error: 'Account changed; reload and try again' });
+      await writeAuditLog({
+        req,
+        action: 'user.email_corrected',
+        actor: req.user,
+        targetType: 'user',
+        target: user._id,
+        targetSnapshot: toAdminUser(user),
+        metadata: {
+          previousEmail: old.email,
+          newEmail: email,
+          usernameChanged: old.username === old.email,
+          verification: 'office_confirmed',
+        },
+      });
+      return res.json({ message: 'Email corrected', user: toAdminUser(user) });
+    } catch (error) {
+      if (error.code === 11000)
+        return res
+          .status(409)
+          .json({ error: 'Email address is already in use' });
+      if (error.name === 'ValidationError')
+        return res.status(400).json({ error: 'Invalid email address' });
+      console.error('Admin email correction failed:', error.code || error.name);
+      return res.status(500).json({ error: 'Failed to correct email' });
     }
   },
 );

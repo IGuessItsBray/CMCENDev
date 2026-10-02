@@ -63,7 +63,6 @@
         en: "This article is available in English.",
         fr: "This article is available in French.",
       },
-      source: "Original publication",
       error: "This article could not be loaded.",
       retry: "Try again",
     },
@@ -77,7 +76,6 @@
         en: "Cet article est disponible en anglais.",
         fr: "Cet article est disponible en français.",
       },
-      source: "Publication originale",
       error: "Cet article n’a pas pu être chargé.",
       retry: "Réessayer",
     },
@@ -199,14 +197,7 @@
       }
       if (el) content.append(el);
     }
-    const footer = element("footer", "", "newsletter-footer");
-    if (issue.sourceUrl) {
-      const source = element("a", ui.source);
-      source.href = safeUrl(issue.sourceUrl);
-      footer.append(source);
-    }
     body.append(content);
-    if (footer.hasChildNodes()) body.append(footer);
     root.append(header, body);
     root.setAttribute("aria-busy", "false");
   }

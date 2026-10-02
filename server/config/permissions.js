@@ -152,6 +152,13 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Edit member roles, content areas, and role assignments.',
   },
   {
+    key: 'users.email.edit',
+    label: 'Correct user email addresses',
+    group: 'Users',
+    action: 'edit',
+    description: 'Correct another member’s email after office verification.',
+  },
+  {
     key: 'users.delete_self',
     label: 'Delete own account',
     group: 'Users',
@@ -276,6 +283,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canManageNavigation: 'navigation.manage',
   canReadUsers: 'users.read',
   canManageUsers: 'users.manage',
+  canEditUserEmail: 'users.email.edit',
   canDeleteOwnAccount: 'users.delete_self',
   canDeleteAnyUser: 'users.delete_any',
   canProvisionUsers: 'users.provision',
@@ -352,6 +360,8 @@ function getBuiltInPermissionFlags(user) {
     canReadUsers: hasMinimumRole(role, 'administrator'),
 
     canManageUsers: hasMinimumRole(role, 'administrator'),
+
+    canEditUserEmail: false,
 
     canDeleteOwnAccount: hasMinimumRole(role, 'subscriber'),
 

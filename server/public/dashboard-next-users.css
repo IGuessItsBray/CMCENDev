@@ -67,6 +67,18 @@
   margin: 0;
   font-size: 1.2rem;
 }
+.admin-users-profile-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 14px 0 0;
+  border: 0;
+  min-width: 0;
+}
+.admin-users-profile-fields .admin-users-actions,
+.admin-users-profile-fields .cmcen-field:has(textarea) {
+  grid-column: 1 / -1;
+}
 .admin-users-fields > .cmcen-field-group {
   display: flex;
   flex-wrap: wrap;
@@ -140,5 +152,10 @@
   }
   .admin-users-list {
     max-height: 330px;
+  }
+}
+@media (max-width: 600px) {
+  .admin-users-profile-fields {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -52,3 +52,16 @@ test('staff and custom administrative permissions receive the Administration ent
     false,
   );
 });
+
+test('email correction is separately assigned except for the existing developer bypass', () => {
+  assert.equal(account('administrator').permissions.canEditUserEmail, false);
+  assert.equal(account('developer').permissions.canEditUserEmail, true);
+  assert.equal(
+    account('subscriber', [{ permissions: ['users.manage'] }]).permissions.canEditUserEmail,
+    false,
+  );
+  assert.equal(
+    account('subscriber', [{ permissions: ['users.email.edit'] }]).permissions.canEditUserEmail,
+    true,
+  );
+});

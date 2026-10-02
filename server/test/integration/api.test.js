@@ -6,6 +6,9 @@ process.env.JWT_SECRET = 'integration-test-jwt-secret';
 process.env.JWT_ACCESS_TOKEN_TTL = '15m';
 process.env.JWT_REFRESH_TOKEN_TTL_DAYS = '1';
 process.env.NODE_ENV = 'test';
+// The local .env may enable the production mail stop. Integration delivery is
+// simulated by the mailer; individual stop tests set this flag explicitly.
+process.env.DISABLE_EMAIL_SENDING = 'false';
 process.env.APP_BASE_URL = 'http://localhost:3000';
 process.env.CASL_SENDER_NAME = 'CMCEN / RCMCE';
 process.env.CASL_SENDER_MAILING_ADDRESS =
@@ -20,6 +23,15 @@ process.env.MINIO_BUCKET_NAME = 'integration-test';
 process.env.CDN_PUBLIC_BASE_URL = 'https://cdn.example.test/integration-test';
 process.env.PLAUSIBLE_DOMAIN = '';
 process.env.PLAUSIBLE_API_URL = '';
+
+// Guard against an accidental network send if a test temporarily leaves test
+// mode. Tests of the real send path pass an explicit stub transport to sendMail.
+const nodemailer = require('nodemailer');
+nodemailer.createTransport = () => ({
+  sendMail: async () => {
+    throw new Error('Unexpected SMTP send in integration tests');
+  },
+});
 
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
@@ -3323,7 +3335,9 @@ describe('archival draft lifecycle', () => {
           language: 'en',
           sourceStatus: 'publish',
           createdGmt: '2010-02-03 10:00:00',
+          url: 'https://cmcen-rcmce.ca/historical-notice/',
         },
+        { language: 'fr', url: 'https://cmcen-rcmce.ca/fr/avis-historique/' },
       ],
     };
     for (const [Model, type, base] of [
@@ -3357,6 +3371,10 @@ describe('archival draft lifecycle', () => {
         listing.body.items[0].publicationDate.originalPublishedAt,
         original.toISOString(),
       );
+      assert.deepEqual(listing.body.items[0].archiveSourceLinks, [
+        { url: 'https://cmcen-rcmce.ca/historical-notice/', language: 'en' },
+        { url: 'https://cmcen-rcmce.ca/fr/avis-historique/', language: 'fr' },
+      ]);
       await request(app)
         .patch(url)
         .set('Authorization', token)
@@ -3386,8 +3404,15 @@ describe('archival draft lifecycle', () => {
       body: 'Historical comment',
       status: 'draft',
       createdAt: original,
-      legacy: { source: 'wp', wordpressCommentId: 5, originalApproval: '0' },
+      legacy: { source: 'wp', wordpressCommentId: 5, originalApproval: '0',
+        sourceUrl: 'https://cmcen-rcmce.ca/historical-comment/' },
     });
+    const commentListing = await request(app)
+      .get(`/api/admin/content?type=comment&id=${comment._id}`)
+      .set('Authorization', token).expect(200);
+    assert.deepEqual(commentListing.body.items[0].archiveSourceLinks, [
+      { url: 'https://cmcen-rcmce.ca/historical-comment/', language: '' },
+    ]);
     const url = `/api/comments/${comment._id}/review`;
     await request(app)
       .patch(url)
@@ -3420,7 +3445,14 @@ describe('archival draft lifecycle', () => {
       ...eventPayload(),
       status: 'draft',
       originalPublishedAt: original,
+      legacy: { source: 'wp', sourceUrl: 'https://cmcen-rcmce.ca/historical-event/' },
     });
+    const eventListing = await request(app)
+      .get(`/api/admin/content?type=event&id=${event._id}`)
+      .set('Authorization', token).expect(200);
+    assert.deepEqual(eventListing.body.items[0].archiveSourceLinks, [
+      { url: 'https://cmcen-rcmce.ca/historical-event/', language: '' },
+    ]);
     const newsletter = await NewsArticle.create({
       status: 'draft',
       createdBy: editor._id,
@@ -3472,7 +3504,8 @@ describe('archival draft lifecycle', () => {
       title: { en: 'Imported draft filter example', fr: 'Exemple de brouillon importé' },
       content: { en: 'Original English', fr: 'Original French' },
       legacy: { source: 'https://cmcen-rcmce.ca', sourcePostIds: [883311], originalStatus: 'publish',
-        sourceUrls: ['https://cmcen-rcmce.ca/imported-draft-filter-example/'] },
+        sourceUrls: ['https://cmcen-rcmce.ca/imported-draft-filter-example/'],
+        sourceRecords: [{ language: 'en', url: 'https://cmcen-rcmce.ca/imported-draft-filter-example/' }] },
     });
     await request(app)
       .get('/api/admin/content?scope=articles&status=draft&origin=unknown')
@@ -3484,6 +3517,9 @@ describe('archival draft lifecycle', () => {
     assert.ok(item);
     assert.equal(item.publicationDate.isArchive, true);
     assert.deepEqual(item.archiveSourceUrls, ['https://cmcen-rcmce.ca/imported-draft-filter-example/']);
+    assert.deepEqual(item.archiveSourceLinks, [{
+      url: 'https://cmcen-rcmce.ca/imported-draft-filter-example/', language: 'en',
+    }]);
     const custom = '2007-06-05T12:00:00.000Z';
     await request(app)
       .patch(`/api/news/${imported._id}/publication`)
@@ -4808,6 +4844,149 @@ describe('user administration browsing', () => {
 });
 
 describe('authorization matrix and account integrity', () => {
+  test('admin corrects an office-verified migrated email without an online verification gate', async () => {
+    const admin = await createUser({ role: 'administrator' });
+    const adminToken = bearer((await login(admin)).body.token);
+    const member = await createUser({
+      email: 'legacy-old@example.test',
+      username: 'legacy-old@example.test',
+      profileComplete: false,
+      emailVerification: { required: false, verified: false },
+    });
+    const memberToken = bearer((await login(member)).body.token);
+    const path = `/api/admin/users/${member._id}/email`;
+    await request(app).patch(path).set('Authorization', adminToken)
+      .send({ email: 'legacy-new@example.test', officeVerified: true }).expect(403);
+    const emailEditorRole = await Role.create({
+      name: 'Email Correction', slug: 'email-correction',
+      permissions: ['users.email.edit'],
+    });
+    await User.updateOne({ _id: admin._id }, { $set: { customRoles: [emailEditorRole._id] } });
+    await request(app).patch(`/api/admin/users/${admin._id}/email`)
+      .set('Authorization', adminToken)
+      .send({ email: 'admin-new@example.test', officeVerified: true }).expect(403);
+    await User.updateOne({ _id: member._id }, {
+      $set: {
+        'passwordReset.tokenHash': 'old-reset-hash',
+        'passwordReset.expiresAt': new Date(Date.now() + 60000),
+        'emailVerification.codeHash': 'old-code',
+        'emailVerification.tempTokenHash': 'old-verification-token',
+      },
+    });
+    await request(app).patch(path).set('Authorization', memberToken)
+      .send({ email: 'legacy-new@example.test', officeVerified: true }).expect(403);
+    await request(app).patch(path).set('Authorization', adminToken)
+      .send({ email: 'legacy-new@example.test' }).expect(400);
+    await request(app).patch(path).set('Authorization', adminToken)
+      .send({ email: 'legacy-new@example.test', officeVerified: true }).expect(200);
+    const updated = await User.findById(member._id)
+      .select('+passwordReset.tokenHash +emailVerification.codeHash +emailVerification.tempTokenHash');
+    assert.equal(updated.email, 'legacy-new@example.test');
+    assert.equal(updated.username, updated.email);
+    assert.equal(updated.emailVerification.required, false);
+    assert.equal(updated.emailVerification.verified, false);
+    assert.equal(updated.passwordReset.tokenHash, '');
+    assert.equal(updated.emailVerification.codeHash, '');
+    assert.equal(updated.emailVerification.tempTokenHash, '');
+    assert.equal(await EmailDeliveryAttempt.countDocuments(), 0);
+    await request(app).get('/api/me').set('Authorization', memberToken).expect(401);
+    await request(app).post('/api/password-reset/request')
+      .send({ email: updated.email }).expect(200);
+    const withReset = await User.findById(member._id).select('+passwordReset.tokenHash');
+    assert.match(withReset.passwordReset.tokenHash, /^[a-f\d]{64}$/);
+    const knownToken = 'synthetic-email-correction-reset';
+    await User.updateOne({ _id: member._id }, { $set: {
+      'passwordReset.tokenHash': crypto.createHash('sha256').update(knownToken).digest('hex'),
+      'passwordReset.expiresAt': new Date(Date.now() + 60000),
+    } });
+    await request(app).post('/api/password-reset/confirm').send({
+      token: knownToken, password: 'New-Synthetic-Password-1!',
+      passwordConfirmation: 'New-Synthetic-Password-1!',
+    }).expect(200);
+    const signedIn = await request(app).post('/api/login').send({
+      username: updated.email, password: 'New-Synthetic-Password-1!',
+      sessionCookieConsent: true,
+    }).expect(200);
+    assert.ok(signedIn.body.token);
+    assert(await AuditLog.findOne({ action: 'user.email_corrected', target: member._id }));
+  });
+
+  test('admin profile edits are allowlisted; email conflicts and distinct usernames are preserved', async () => {
+    const admin = await createUser({ role: 'administrator' });
+    const auth = bearer((await login(admin)).body.token);
+    const member = await createUser({ username: 'member-handle', email: 'old-contact@example.test' });
+    const other = await createUser({ email: 'taken-contact@example.test' });
+    const path = `/api/admin/users/${member._id}`;
+    await request(app).patch(`${path}/profile`).set('Authorization', auth)
+      .send({ role: 'developer', email: 'wrong@example.test' }).expect(400);
+    await request(app).patch(`${path}/profile`).set('Authorization', auth)
+      .send({ socialLinks: { facebook: 'javascript:alert(1)' } }).expect(400);
+    await request(app).patch(`${path}/profile`).set('Authorization', auth)
+      .send({ firstName: 'Corrected', phone: '555-0100', socialLinks: { facebook: 'https://example.test/member' } }).expect(200);
+    const profiled = await User.findById(member._id).select('+socialLinks.facebook');
+    assert.equal(profiled.firstName, 'Corrected');
+    assert.equal(profiled.accountName, `Corrected ${profiled.lastName}`);
+    assert.equal(profiled.phone, '555-0100');
+    assert.equal(profiled.socialLinks.facebook, 'https://example.test/member');
+    assert.equal(profiled.role, 'subscriber');
+    await request(app).patch(`${path}/email`).set('Authorization', auth)
+      .send({ email: 'new-contact@example.test', officeVerified: true }).expect(403);
+    const emailEditorRole = await Role.create({
+      name: 'Email Correction', slug: 'email-correction',
+      permissions: ['users.email.edit'],
+    });
+    await User.updateOne({ _id: admin._id }, { $set: { customRoles: [emailEditorRole._id] } });
+    await request(app).patch(`${path}/email`).set('Authorization', auth)
+      .send({ email: other.email, officeVerified: true }).expect(409);
+    await User.updateOne({ _id: other._id }, { $set: { username: 'taken-username@example.test' } });
+    await request(app).patch(`${path}/email`).set('Authorization', auth)
+      .send({ email: 'taken-username@example.test', officeVerified: true }).expect(409);
+    await request(app).patch(`${path}/email`).set('Authorization', auth)
+      .send({ email: 'new-contact@example.test', officeVerified: true }).expect(200);
+    const corrected = await User.findById(member._id);
+    assert.equal(corrected.username, 'member-handle');
+    assert.equal(corrected.email, 'new-contact@example.test');
+    assert(await AuditLog.findOne({ action: 'user.profile_changed', target: member._id }));
+  });
+
+  test('admin profile edits preserve required fields for complete members', async () => {
+    const admin = await createUser({ role: 'administrator' });
+    const auth = bearer((await login(admin)).body.token);
+    const member = await createUser();
+    const path = `/api/admin/users/${member._id}/profile`;
+    await request(app).patch(path).set('Authorization', auth)
+      .send({ firstName: '  ' }).expect(400);
+    await request(app).patch(path).set('Authorization', auth)
+      .send({ address: { city: '' } }).expect(400);
+    const unchanged = await User.findById(member._id);
+    assert.ok(unchanged.firstName);
+    assert.ok(unchanged.address.city);
+    await User.updateOne({ _id: member._id }, { $set: { profileComplete: false } });
+    await request(app).patch(path).set('Authorization', auth)
+      .send({ firstName: '' }).expect(200);
+    await User.updateOne({ _id: member._id }, { $set: { accountType: 'ghost' } });
+    await request(app).patch(path).set('Authorization', auth)
+      .send({ address: { city: '' } }).expect(200);
+  });
+
+  test('email correction permission is independent of user management', async () => {
+    const emailEditorRole = await Role.create({
+      name: 'Office Email Editor', slug: 'office-email-editor',
+      permissions: ['users.read', 'users.email.edit'],
+    });
+    const editor = await createUser({
+      role: 'contributor', customRoles: [emailEditorRole._id],
+    });
+    const auth = bearer((await login(editor)).body.token);
+    const member = await createUser({ email: 'correction-target@example.test' });
+    const path = `/api/admin/users/${member._id}`;
+    await request(app).patch(`${path}/profile`).set('Authorization', auth)
+      .send({ phone: '555-0101' }).expect(403);
+    await request(app).patch(`${path}/email`).set('Authorization', auth)
+      .send({ email: 'corrected-target@example.test', officeVerified: true }).expect(200);
+    assert.equal((await User.findById(member._id)).email, 'corrected-target@example.test');
+  });
+
   test('prevents a custom user manager from escalating their own access', async () => {
     const userManagerRole = await Role.create({
       name: 'Member Manager',

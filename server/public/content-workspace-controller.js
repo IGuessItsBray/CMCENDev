@@ -1041,28 +1041,42 @@ window.ContentWorkspace = {
 
     function createArchiveSourceDetails(item) {
       if (!item.publicationDate?.isArchive) return null;
-      const details = document.createElement("details");
+      const details = document.createElement("section");
       details.className = "content-workspace-archive-source";
-      const summary = document.createElement("summary");
-      setWorkspaceTranslatedText(summary, "content_workspace_original_source", "Original source");
-      details.append(summary);
+      const heading = document.createElement("h3");
+      setWorkspaceTranslatedText(heading, "content_workspace_original_source", "Original source");
+      details.append(heading);
       const original = item.publicationDate.originalPublishedAt;
       if (original) {
         const date = document.createElement("p");
-        date.textContent = `${getText("content_workspace_date_original", "Original publication date")}: ${formatWorkspaceDate(original)}`;
+        date.textContent = `${getText("content_workspace_original_publication_date", "Original publication date")}: ${formatWorkspaceDate(original)}`;
         details.append(date);
       }
       if (item.archiveSourceIds?.length) {
         const ids = document.createElement("p");
-        ids.textContent = `Source IDs: ${item.archiveSourceIds.join(", ")}`;
+        ids.textContent = `${getText("content_workspace_source_ids", "Source IDs")}: ${item.archiveSourceIds.join(", ")}`;
         details.append(ids);
       }
-      for (const url of item.archiveSourceUrls || []) {
+      const links = item.archiveSourceLinks || [];
+      if (!links.length) {
+        const unavailable = document.createElement("p");
+        unavailable.textContent = getText("content_workspace_source_unavailable", "Legacy original link unavailable");
+        details.append(unavailable);
+      }
+      for (const { url, language } of links) {
         const link = document.createElement("a");
         link.href = url;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
-        link.textContent = url;
+        link.textContent = getText(
+          language === "en" ? "content_workspace_view_source_en" :
+          language === "fr" ? "content_workspace_view_source_fr" :
+          "content_workspace_view_source",
+          language === "en" ? "View legacy original (English)" :
+          language === "fr" ? "View legacy original (French)" :
+          "View legacy original",
+        );
+        link.title = url;
         details.append(link);
       }
       return details;

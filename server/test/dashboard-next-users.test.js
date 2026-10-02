@@ -163,6 +163,51 @@ test('selected user details show private profiles and legacy values as text', as
   );
 });
 
+test('role save stays disabled for profile-only edits while navigation remains guarded', async () => {
+  const page = await controller();
+  page.users[0].profile = { firstName: 'Before' };
+  await page.rows()[0].fire('click');
+  const roleSave = page.detail().querySelector('.admin-users-save');
+  const profileForm = page.detail().querySelector('.admin-users-profile-form');
+  const firstName = profileForm.querySelectorAll('input').find((input) => input.value === 'Before');
+  firstName.value = 'After';
+  await firstName.fire('input');
+  assert.equal(roleSave.disabled, true);
+  assert.equal(page.mounted.hasUnsavedChanges(), true);
+});
+
+test('account actions refresh complete detail and retain editors on repeated selection', async () => {
+  const full = {
+    _id: 'one', accountName: 'one', role: 'subscriber', accountType: 'member',
+    contentAreas: [], customRoleIds: [], mfa: { enabled: true, hasTotp: true },
+    profile: { firstName: 'Private' }, legacyAccount: { account: { user_login: 'old-login' } },
+  };
+  let detailReads = 0;
+  const page = await controller((url, options) => {
+    if (url === '/api/admin/users/one?includePosts=false&includeOptions=false') {
+      detailReads++;
+      return { user: full };
+    }
+    if (options.method === 'PATCH' && url.endsWith('/mfa-reset'))
+      return { user: { ...full, mfa: { enabled: false }, profile: undefined, legacyAccount: undefined } };
+  });
+  await page.rows()[0].fire('click');
+  await page.detail().querySelectorAll('button').find((item) => item.dataset.accountAction === 'resetMfa').fire('click');
+  assert.equal(detailReads, 2);
+  assert.ok(page.detail().querySelectorAll('dd').some((item) => item.textContent === 'Private'));
+  assert.ok(page.detail().querySelectorAll('p').some((item) => item.textContent === 'user_login: old-login'));
+  await page.rows()[0].fire('click');
+  assert.ok(page.detail().querySelector('.admin-users-profile-form'));
+});
+
+test('account status distinguishes waived online verification from verified email', async () => {
+  const page = await controller();
+  page.users[0].emailVerification = { required: false, verified: false };
+  await page.rows()[0].fire('click');
+  assert.ok(page.detail().querySelectorAll('p').some((item) => item.textContent?.includes('admin_users_email_not_required')));
+  assert.equal(page.detail().querySelectorAll('p').some((item) => item.textContent?.includes('admin_next_users_unverified')), false);
+});
+
 test('role changes preserve the user draft and remove deleted assignments from its baseline', async () => {
   const page = await controller();
   page.mounted.updateRoles([
@@ -453,4 +498,32 @@ test('read-only staff cannot submit access changes', async () => {
   await form.fire('submit');
   assert.equal(patches, 0);
   page.mounted.dispose();
+});
+
+test('email correction control requires its permission and another member', async () => {
+  const summaries = (page) => page.detail().querySelectorAll('summary').map((item) => item.dataset.i18n);
+  const managerPage = await controller();
+  managerPage.users[0].profile = { firstName: 'Fixture' };
+  await managerPage.rows()[0].fire('click');
+  assert(summaries(managerPage).includes('admin_users_profile_heading'));
+  assert(!summaries(managerPage).includes('admin_users_email_correction'));
+  managerPage.mounted.dispose();
+
+  const emailPage = await controller(undefined, {
+    canReadUsers: true, canEditUserEmail: true,
+  });
+  emailPage.users[0].profile = { firstName: 'Fixture' };
+  await emailPage.rows()[0].fire('click');
+  assert(!summaries(emailPage).includes('admin_users_profile_heading'));
+  assert(summaries(emailPage).includes('admin_users_email_correction'));
+  emailPage.mounted.dispose();
+
+  const selfPage = await controller(undefined, {
+    canReadUsers: true, canEditUserEmail: true,
+  });
+  selfPage.users[0]._id = 'actor';
+  selfPage.users[0].profile = { firstName: 'Fixture' };
+  await selfPage.rows()[0].fire('click');
+  assert(!summaries(selfPage).includes('admin_users_email_correction'));
+  selfPage.mounted.dispose();
 });

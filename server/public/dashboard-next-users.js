@@ -84,6 +84,7 @@
       baseline = "",
       save = null,
       feedback = null;
+    let profileDirty = () => false;
     let attempted = false,
       mode = "empty";
     let detailLabels = [],
@@ -116,7 +117,7 @@
       update();
     };
     const dirty = () =>
-      Boolean(form && JSON.stringify(getValues()) !== baseline);
+      Boolean((form && JSON.stringify(getValues()) !== baseline) || profileDirty());
     const listen = (element, type, fn) =>
       element.addEventListener(type, fn, { signal: events.signal });
     const toast = (key) => CMCENUtils.showToast(t(key), { color: "success" });
@@ -143,7 +144,10 @@
     function updateBusy() {
       invite.disabled = busy || !catalog;
       if (form) form.querySelector(".admin-users-fields").disabled = busy;
-      if (save) save.disabled = busy || !dirty();
+      detail.querySelectorAll("form[data-admin-extra] fieldset").forEach((group) => {
+        group.disabled = busy;
+      });
+      if (save) save.disabled = busy || JSON.stringify(getValues()) === baseline;
       detail
         .querySelectorAll("button[data-account-action]")
         .forEach((control) => {
@@ -308,6 +312,7 @@
       save = null;
       feedback = null;
       baseline = "";
+      profileDirty = () => false;
       attempted = false;
       detailLabels = [];
       customRoleChoices = null;
@@ -444,7 +449,7 @@
             { method: "PATCH", body },
           );
           if (disposed) return;
-          selected = data.user;
+          selected = { ...selected, ...data.user };
           baseline = JSON.stringify(getValues());
           replaceUser(data.user);
           feedback.textContent = t("admin_users_save_success");
@@ -456,10 +461,174 @@
           if (!disposed) updateBusy();
         }
       });
+      buildProfileEditor(user, allowed);
       buildAccountDetails(user);
       buildContent(user);
       updateBusy();
       markSelection();
+    }
+    function buildProfileEditor(user, allowed) {
+      const canEditEmail = permissions.canEditUserEmail === true;
+      if ((!allowed.edit && !canEditEmail) || !user.profile) return;
+      const currentEmail = String(user.email || "");
+      const section = node("details", null, "admin-users-section");
+      section.append(node("summary", "admin_users_profile_heading"));
+      const profileForm = node("form", null, "admin-users-profile-form");
+      profileForm.dataset.adminExtra = "profile";
+      profileForm.noValidate = true;
+      const fields = node("fieldset", null, "admin-users-profile-fields");
+      const controls = {};
+      const original = {};
+      const definitions = [
+        ["firstName", "first_name"], ["lastName", "last_name"],
+        ["phone", "phone"], ["company", "company"],
+        ["rank", "rank"], ["postNominals", "post_nominals"],
+        ["status", "status"], ["affiliationElement", "affiliation_element"],
+        ["trade", "trade"], ["tradeOther", "trade_other"],
+        ["currentUnit", "current_unit"], ["preferredLanguage", "preferred_language"],
+        ["websiteUrl", "profile_website"], ["biography", "profile_biography"],
+        ["address.line1", "address_line_1"], ["address.line2", "address_line_2"],
+        ["address.city", "city"], ["address.country", "country"],
+        ["address.stateProvince", "state_province"], ["address.postalCode", "postal_code"],
+        ["socialLinks.facebook", "profile_facebook"],
+      ];
+      const options = {
+        status: ["regular", "reserve", "honourary", "civilian", "retired", "released", "other"]
+          .map((value) => ({ value, labelKey: `status_${value}` })),
+        affiliationElement: ["army", "navy", "air_force", "other"]
+          .map((value) => ({ value, labelKey: `element_${value}` })),
+        preferredLanguage: ["en", "fr"]
+          .map((value) => ({ value, labelKey: `language_${value}` })),
+      };
+      for (const [name, label] of definitions) {
+        const [part, child] = name.split(".");
+        original[name] = String((child ? user.profile?.[part]?.[child] : user.profile?.[part]) || "");
+        controls[name] = field(fields, `profile-${name}`, label, {
+          value: original[name],
+          ...(options[name] ? { options: [{ value: "", label: "—" }, ...options[name]] } : {}),
+          type: name === "biography" ? "textarea" : name === "websiteUrl" || name === "socialLinks.facebook" ? "url" : "text",
+        });
+      }
+      const feedbackProfile = node("p", null, "admin-users-feedback");
+      feedbackProfile.setAttribute("role", "status");
+      const buttons = node("div", null, "admin-users-actions");
+      const saveProfile = button("admin_users_profile_save", () => profileForm.requestSubmit());
+      const cancelProfile = button("dashboard_cancel_profile", () => {
+        for (const [name, input] of Object.entries(controls)) input.value = original[name];
+        window.CMCENForms.clearErrors(profileForm);
+        feedbackProfile.textContent = "";
+        updateProfileState();
+      });
+      buttons.append(saveProfile, cancelProfile);
+      fields.append(buttons);
+      profileForm.append(fields, feedbackProfile);
+      section.append(profileForm);
+      if (allowed.edit) detail.append(section);
+
+      const emailSection = canEditEmail && user.accountType === "member" && String(user._id) !== String(actor._id || actor.id)
+        ? node("details", null, "admin-users-section") : null;
+      let emailInput, emailFeedback, emailSave;
+      if (emailSection) {
+        emailSection.append(node("summary", "admin_users_email_correction"));
+        const emailForm = node("form", null, "admin-users-form");
+        emailForm.dataset.adminExtra = "email";
+        emailForm.noValidate = true;
+        const emailFields = node("fieldset", null, "admin-users-fields");
+        emailFields.append(node("p", "admin_users_email_correction_help"));
+        emailInput = field(emailFields, "corrected-email", "email", {
+          type: "email", value: currentEmail, required: true, maxLength: 254,
+        });
+        emailSave = node("button", "admin_users_email_correction_action", "admin-users-save");
+        emailSave.type = "submit";
+        emailFields.append(emailSave);
+        emailFeedback = node("p", null, "admin-users-feedback");
+        emailFeedback.setAttribute("role", "status");
+        emailForm.append(emailFields, emailFeedback);
+        emailSection.append(emailForm);
+        detail.append(emailSection);
+        emailForm.addEventListener("input", updateProfileState);
+        emailForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          if (busy || !window.CMCENForms.validate(emailForm)) return;
+          if (form && JSON.stringify(getValues()) !== baseline) {
+            emailFeedback.textContent = t("admin_next_users_save_first");
+            return;
+          }
+          if (Object.entries(controls).some(([name, input]) => input.value !== original[name])) {
+            emailFeedback.textContent = t("admin_next_users_save_first");
+            return;
+          }
+          const nextEmail = emailInput.value.trim().toLowerCase();
+          if (nextEmail === currentEmail) return;
+          confirming = true;
+          let confirmed;
+          try {
+            confirmed = await window.CMCENModal.confirm(
+              t("admin_users_email_correction_confirm", { oldEmail: currentEmail, newEmail: nextEmail }),
+              { title: t("admin_users_email_correction_title"), confirmText: t("admin_users_email_correction_action") },
+            );
+          } finally { confirming = false; }
+          if (!confirmed || disposed) return;
+          busy = true;
+          updateBusy();
+          try {
+            const result = await api(`/api/admin/users/${encodeURIComponent(user._id)}/email`, {
+              method: "PATCH", body: { email: nextEmail, officeVerified: true },
+            });
+            if (disposed) return;
+            replaceUser(result.user);
+            const fresh = await api(`/api/admin/users/${encodeURIComponent(user._id)}?includePosts=false&includeOptions=false`);
+            if (disposed) return;
+            editUser(fresh.user);
+            toast("admin_users_email_corrected");
+          } catch (error) { fail(emailFeedback, error); }
+          finally { busy = false; if (!disposed) updateBusy(); }
+        });
+      }
+      profileDirty = () => Object.entries(controls).some(([name, input]) => input.value !== original[name]) ||
+        Boolean(emailInput && emailInput.value.trim().toLowerCase() !== currentEmail);
+      function updateProfileState() {
+        saveProfile.disabled = busy || !Object.entries(controls).some(([name, input]) => input.value !== original[name]);
+        cancelProfile.disabled = busy || saveProfile.disabled;
+        if (emailSave) emailSave.disabled = busy || emailInput.value.trim().toLowerCase() === currentEmail;
+      }
+      profileForm.addEventListener("input", updateProfileState);
+      profileForm.addEventListener("change", updateProfileState);
+      profileForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (busy || !window.CMCENForms.validate(profileForm)) return;
+        if (form && JSON.stringify(getValues()) !== baseline) {
+          feedbackProfile.textContent = t("admin_next_users_save_first");
+          return;
+        }
+        if (emailInput && emailInput.value.trim().toLowerCase() !== currentEmail) {
+          feedbackProfile.textContent = t("admin_next_users_save_first");
+          return;
+        }
+        const body = {};
+        for (const [name, input] of Object.entries(controls)) {
+          if (input.value === original[name]) continue;
+          const [part, child] = name.split(".");
+          if (child) (body[part] ||= {})[child] = input.value;
+          else body[part] = input.value;
+        }
+        if (!Object.keys(body).length) return;
+        busy = true;
+        updateBusy();
+        try {
+          const result = await api(`/api/admin/users/${encodeURIComponent(user._id)}/profile`, {
+            method: "PATCH", body,
+          });
+          if (disposed) return;
+          replaceUser(result.user);
+          const fresh = await api(`/api/admin/users/${encodeURIComponent(user._id)}?includePosts=false&includeOptions=false`);
+          if (disposed) return;
+          editUser(fresh.user);
+          toast("admin_users_profile_saved");
+        } catch (error) { fail(feedbackProfile, error); }
+        finally { busy = false; if (!disposed) updateBusy(); }
+      });
+      updateProfileState();
     }
     function buildAccountDetails(user) {
       const info = node("section", null, "admin-users-section");
@@ -468,7 +637,7 @@
       dynamicText(
         status,
         () =>
-          `${t(`admin_users_account_${user.accountType || "member"}`)} · ${t(user.emailVerification?.verified ? "admin_users_email_verified" : "admin_next_users_unverified")}`,
+          `${t(`admin_users_account_${user.accountType || "member"}`)} · ${t(user.emailVerification?.verified ? "admin_users_email_verified" : user.emailVerification?.required === false ? "admin_users_email_not_required" : "admin_next_users_unverified")}`,
       );
       info.append(status);
       if (user.profile) {
@@ -607,13 +776,22 @@
           renderList();
         } else if (result.user) {
           replaceUser(result.user);
-          editUser(result.user);
+          const fresh = await api(`/api/admin/users/${encodeURIComponent(result.user._id)}?includePosts=false&includeOptions=false`);
+          if (disposed) return;
+          editUser(fresh.user);
         }
         toast("admin_next_users_action_done");
       } catch (error) {
         if (!disposed && error.data?.user) {
           replaceUser(error.data.user);
-          editUser(error.data.user);
+          try {
+            const fresh = await api(`/api/admin/users/${encodeURIComponent(error.data.user._id)}?includePosts=false&includeOptions=false`);
+            if (disposed) return;
+            editUser(fresh.user);
+          } catch {
+            // Retain the last full detail if the post-action refresh fails.
+            editUser({ ...selected, ...error.data.user });
+          }
         }
         fail(feedback, error);
       } finally {

@@ -59,11 +59,20 @@
 }
 .content-workspace-archive-source {
   margin: 0.8rem 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 0.5rem;
   overflow-wrap: anywhere;
 }
+.content-workspace-archive-source h3 {
+  margin: 0 0 0.5rem;
+}
 .content-workspace-archive-source a {
-  display: block;
+  display: inline-block;
   margin: 0.35rem 0;
+  margin-right: 0.75rem;
+  font-weight: 700;
+  text-decoration: underline;
 }
 .article-cover {
   grid-column: 1 / -1;
@@ -1212,6 +1221,7 @@ html[data-theme='dark']
 }
 
 html[data-theme='dark'] .content-workspace-list-heading,
+html[data-theme='dark'] .content-workspace-archive-source,
 html[data-theme='dark'] .content-workspace-language-group,
 html[data-theme='dark'] .content-workspace-image-editor,
 html[data-theme='dark'] .content-workspace-submission-details,
@@ -1223,6 +1233,10 @@ html[data-theme='dark'] .content-workspace-rejection-reason,
 html[data-theme='dark'] .content-workspace-scheduled-publication {
   border-color: var(--dark-border);
   background: var(--dark-surface);
+}
+
+html[data-theme='dark'] .content-workspace-archive-source {
+  border-color: var(--dark-surface-3);
 }
 
 html[data-theme='dark'] .content-workspace-record-skeleton,

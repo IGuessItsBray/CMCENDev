@@ -1064,6 +1064,35 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
   }
 });
 
+// Staff preview uses the public detail shape without exposing draft records publicly.
+router.get(
+  '/:messageId/preview',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.messageId))
+        return res.status(404).json({ error: 'Retirement message not found' });
+      const retirementMessage = await RetirementMessage.findOne({
+        _id: req.params.messageId,
+        status: { $in: ['draft', 'pending'] },
+      })
+        .select('retiree message messageLanguage messages photoUrl photoDisplayUrl publishedAt')
+        .lean();
+      if (!retirementMessage)
+        return res.status(404).json({ error: 'Retirement message not found' });
+      return res.json({ retirementMessage: {
+        ...retirementMessage,
+        messages: getLocalizedMessages(retirementMessage),
+      } });
+    } catch (error) {
+      console.error('Could not load retirement preview:', error.code || error.name);
+      return res.status(500).json({ error: 'Could not load retirement preview' });
+    }
+  },
+);
+
 router.get('/:messageId', async (req, res) => {
   try {
     const retirementMessage = await RetirementMessage.findOne({

@@ -24,6 +24,7 @@ async function publish({
         append(...children) {
           this.children.push(...children);
         },
+        setAttribute() {},
         get childElementCount() {
           return this.children.length;
         },
@@ -39,11 +40,9 @@ async function publish({
       confirm: async () => true,
       choose: async (message, options) => {
         prompts.push(options);
-        return options.choices.some((c) => c.value === 'schedule')
-          ? 'now'
-          : choice;
+        return choice;
       },
-      form: async () => ({ customPublishedAt: '2007-06-05T12:00:00.000Z' }),
+      form: async () => ({ scheduledPublishAt: '2099-06-05T12:00:00.000Z' }),
     },
   };
   vm.runInNewContext(
@@ -87,9 +86,13 @@ async function publish({
     status: 'draft',
     publicationDate: { isArchive: archived, originalPublishedAt: original },
   });
+  const dropdown = buttons.find(
+    (node) => node.className === 'content-workspace-publication-choice',
+  );
+  if (dropdown) dropdown.value = choice;
   buttons.find((button) => button.key === 'content_workspace_publish').click();
   await new Promise((resolve) => setImmediate(resolve));
-  return { prompts, requests };
+  return { dropdown, prompts, requests };
 }
 test('all workspace archive types send the selected original date mode', async () => {
   for (const type of [
@@ -99,27 +102,28 @@ test('all workspace archive types send the selected original date mode', async (
     'lastPost',
     'newsArticle',
   ]) {
-    const { requests, prompts } = await publish({ type });
+    const { requests, dropdown } = await publish({ type });
     assert.equal(requests.length, 1);
     assert.equal(requests[0].body.publicationDateChoice, 'original');
-    assert.equal(prompts.at(-1).choices[0].value, 'original');
+    assert.equal(dropdown.children[1].value, 'original');
   }
 });
-test('cancellation does not publish; missing originals offer current or custom date; new content skips date dialog', async () => {
+test('cancellation does not publish; missing originals offer current or scheduled date; new content skips date dialog', async () => {
   assert.equal((await publish({ choice: null })).requests.length, 0);
-  const missing = await publish({ original: null, choice: 'now' });
+  const missing = await publish({ type: 'retirementMessage', original: null, choice: 'now' });
   assert.deepEqual(
-    Array.from(missing.prompts[0].choices, (entry) => entry.value),
-    ['now', 'custom'],
+    Array.from(missing.dropdown.children, (entry) => entry.value),
+    ['now', 'schedule'],
   );
   assert.equal(missing.requests[0].body.publicationDateChoice, 'now');
   const normal = await publish({ archived: false });
   assert.equal(normal.prompts.length, 0);
+  assert.equal(normal.dropdown, undefined);
   assert.equal(normal.requests[0].body.publicationDateChoice, undefined);
 });
-test('custom archive date is sent with the publish decision', async () => {
-  const { requests } = await publish({ choice: 'custom' });
+test('scheduled archive content sends its future go-live date with the current date choice', async () => {
+  const { requests } = await publish({ choice: 'schedule', type: 'retirementMessage' });
   assert.equal(requests.length, 1);
-  assert.equal(requests[0].body.publicationDateChoice, 'custom');
-  assert.equal(requests[0].body.customPublishedAt, '2007-06-05T12:00:00.000Z');
+  assert.equal(requests[0].body.publicationDateChoice, 'now');
+  assert.equal(requests[0].body.scheduledPublishAt, '2099-06-05T12:00:00.000Z');
 });

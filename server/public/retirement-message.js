@@ -15,6 +15,17 @@ const retirementDetailDate = document.getElementById("retirementDetailDate");
 const retirementDetailPhoto = document.getElementById("retirementDetailPhoto");
 
 const retirementDetailText = document.getElementById("retirementDetailText");
+const retirementPreviewNotice = document.getElementById(
+  "retirementPreviewNotice",
+);
+const retirementCommentsSection = document.getElementById(
+  "retirementCommentsSection",
+);
+const retirementStaffActions = document.getElementById(
+  "retirementStaffActions",
+);
+const retirementStaffLabel = document.getElementById("retirementStaffLabel");
+const retirementStaffEdit = document.getElementById("retirementStaffEdit");
 
 const retirementCommentMessage = document.getElementById(
   "retirementCommentMessage",
@@ -368,8 +379,7 @@ async function loadRetirementCommentEditor(token) {
       },
     );
     const comment = data.comment;
-    const messageId =
-      comment?.parentId?._id || comment?.parentId;
+    const messageId = comment?.parentId?._id || comment?.parentId;
 
     if (String(messageId || "") !== String(currentRetirementMessageId)) {
       throw new Error(translate("retirement_comment_edit_load_error"));
@@ -394,27 +404,20 @@ async function loadRetirementCommentEditor(token) {
 }
 
 function removeRetirementAdminActions() {
-  document
-    .querySelector("[data-content-workspace-shortcut='retirementMessage']")
-    ?.remove();
+  retirementStaffActions.hidden = true;
 }
 
 function renderRetirementAdminActions() {
-  removeRetirementAdminActions();
-
-  if (!canOpenRetirementWorkspace || !currentRetirementMessageId) {
-    return;
-  }
-
-  const shortcut = CMCENUtils.createContentWorkspaceShortcut({
-    contentType: "retirementMessage",
-    contentId: currentRetirementMessageId,
-    label: translate(
-      "content_workspace_open_record",
-      "Open in Content Workspace",
-    ),
-  });
-  if (shortcut) document.body.append(shortcut);
+  retirementStaffActions.hidden =
+    !canOpenRetirementWorkspace || !currentRetirementMessageId;
+  if (retirementStaffActions.hidden) return;
+  retirementStaffLabel.textContent =
+    CMCENUtils.getCurrentLanguage() === "fr"
+      ? "Actions administratives"
+      : "Admin actions";
+  retirementStaffEdit.textContent =
+    CMCENUtils.getCurrentLanguage() === "fr" ? "Modifier" : "Edit";
+  retirementStaffEdit.href = `/content-workspace?id=${encodeURIComponent(currentRetirementMessageId)}`;
 }
 
 async function deleteRetirementComment(comment) {
@@ -626,6 +629,11 @@ async function setupCommentAccess() {
 }
 
 async function loadRetirementMessage() {
+  removeRetirementAdminActions();
+  const preview =
+    new URLSearchParams(window.location.search).get("preview") === "1";
+  retirementPreviewNotice.hidden = !preview;
+  retirementCommentsSection.hidden = preview;
   const messageId = new URLSearchParams(window.location.search).get("id");
 
   if (!messageId) {
@@ -638,19 +646,30 @@ async function loadRetirementMessage() {
   showRetirementDetailMessageKey("retirement_detail_loading");
 
   try {
-    const response = await fetch(
-      `/api/retirement-messages/${encodeURIComponent(messageId)}`,
+    const data = await CMCENUtils.apiJson(
+      `/api/retirement-messages/${encodeURIComponent(messageId)}${preview ? "/preview" : ""}`,
+      {
+        errorMessage: translate("retirement_detail_load_error"),
+        ...(preview ? { token: getStoredToken() } : {}),
+      },
     );
 
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.error || translate("retirement_detail_load_error"));
-    }
-
     renderRetirementMessage(data.retirementMessage);
-    await setupCommentAccess();
-    await loadComments(messageId);
+    if (preview) {
+      try {
+        const user = await CMCENUtils.apiJson("/api/me", {
+          token: getStoredToken(),
+        });
+        canOpenRetirementWorkspace =
+          user.permissions?.canReviewAndPublish === true;
+        renderRetirementAdminActions();
+      } catch {
+        removeRetirementAdminActions();
+      }
+    } else {
+      await setupCommentAccess();
+      await loadComments(messageId);
+    }
   } catch (error) {
     showRetirementDetailMessage(
       error.message || translate("retirement_detail_load_error"),

@@ -2962,6 +2962,20 @@ paths:
       responses:
         "200":
           description: User Last Post notices.
+  /api/last-posts/{messageId}/preview:
+    get:
+      tags: [Last Posts]
+      summary: Preview a saved draft or pending Last Post notice.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Public detail shape for staff preview; not cached.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/last-posts/{messageId}:
     get:
       tags: [Last Posts]
@@ -3164,6 +3178,20 @@ paths:
       responses:
         "200":
           description: Message edit payload.
+  /api/retirement-messages/{messageId}/preview:
+    get:
+      tags: [Retirements]
+      summary: Preview a saved draft or pending retirement message.
+      x-permission: canReviewAndPublish
+      parameters:
+        - $ref: "#/components/parameters/MessageId"
+      responses:
+        "200":
+          description: Public detail shape for staff preview; not cached.
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/retirement-messages/{messageId}:
     get:
       tags: [Retirements]

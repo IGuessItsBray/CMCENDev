@@ -549,6 +549,7 @@ Mounted at `/api/last-posts`.
 | `PATCH` | `/api/last-posts/:messageId/review`         | Authenticated + `canReviewAndPublish` | Publish, schedule, cancel a scheduled publication, or reject a pending notice. Publication requires English and French messages; a future `scheduledPublishAt` keeps it pending until publication, and `cancel-schedule` leaves it pending. |
 | `GET`   | `/api/last-posts`                           | Public                                | List published notices. Query: `limit`, `cursor`.                                                                                                                                                                             |
 | `GET`   | `/api/last-posts/:messageId`                | Public                                | Get one published notice.                                                                                                                                                                                                     |
+| `GET`   | `/api/last-posts/:messageId/preview`        | Authenticated + `canReviewAndPublish` | Get the public detail shape for a saved draft or pending notice. Responses are not cached. |
 
 ## Retirement Messages and Comments
 
@@ -569,6 +570,7 @@ Mounted at `/api/retirement-messages`.
 | `GET` | `/api/comments/on/:parentType/:parentId` | Public | List published comments for a message. |
 | `POST` | `/api/comments/on/:parentType/:parentId` | Authenticated | Create comment. |
 | `GET` | `/api/retirement-messages/:messageId` | Public | Get one published retirement message. |
+| `GET` | `/api/retirement-messages/:messageId/preview` | Authenticated + `canReviewAndPublish` | Get the public detail shape for a saved draft or pending message. Responses are not cached. |
 | `PATCH` | `/api/retirement-messages/:messageId/review-content` | Authenticated reviewer, or owner of a pending/rejected message | Update one language of a retirement message. Text may be shortened or cleared entirely, with a maximum of 30,000 characters. Reviewers may update pending, published, or removed (hidden) messages; editing a removed message preserves its hidden status until it is explicitly restored. Owners, including owners who also have reviewer permissions, may update their pending or rejected messages. Updating a rejected message sends it back to the review queue and clears its rejection feedback. The saved public-field revision and audit entry record the before/after values. |
 | `PATCH` | `/api/retirement-messages/:messageId/review` | Authenticated + `canReviewAndPublish` | Publish, schedule, cancel a scheduled publication, or reject a retirement message. A publish action may include a future `scheduledPublishAt` timestamp to keep it pending until publication; `cancel-schedule` leaves it pending. |
 

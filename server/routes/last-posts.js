@@ -909,6 +909,30 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
   }
 });
 
+// Staff preview returns the same public fields while the notice remains unpublished.
+router.get(
+  '/:messageId/preview',
+  authMiddleware,
+  requirePermission('canReviewAndPublish'),
+  async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.messageId))
+        return res.status(404).json({ error: 'Last Post notice not found' });
+      const lastPost = await LastPostMessage.findOne({
+        _id: req.params.messageId,
+        status: { $in: ['draft', 'pending'] },
+      }).lean();
+      if (!lastPost)
+        return res.status(404).json({ error: 'Last Post notice not found' });
+      return res.json({ lastPost: serializeLastPost(lastPost) });
+    } catch (error) {
+      console.error('Could not load Last Post preview:', error.code || error.name);
+      return res.status(500).json({ error: 'Could not load Last Post preview' });
+    }
+  },
+);
+
 router.get('/:messageId', async (req, res) => {
   try {
     const { messageId } = req.params;

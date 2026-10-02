@@ -4,6 +4,10 @@ const lastPostDetailTitle = document.getElementById("lastPostDetailTitle");
 const lastPostDetailDate = document.getElementById("lastPostDetailDate");
 const lastPostDetailImage = document.getElementById("lastPostDetailImage");
 const lastPostDetailText = document.getElementById("lastPostDetailText");
+const lastPostPreviewNotice = document.getElementById("lastPostPreviewNotice");
+const lastPostStaffActions = document.getElementById("lastPostStaffActions");
+const lastPostStaffLabel = document.getElementById("lastPostStaffLabel");
+const lastPostStaffEdit = document.getElementById("lastPostStaffEdit");
 
 const LAST_POST_PLACEHOLDER_IMAGE_URL = "/assets/images/logo.png";
 
@@ -11,26 +15,16 @@ let currentLastPost = null;
 let currentLastPostId = "";
 let canOpenLastPostWorkspace = false;
 
-function removeLastPostAdminActions() {
-  document
-    .querySelector("[data-content-workspace-shortcut='lastPost']")
-    ?.remove();
-}
-
 function renderLastPostAdminActions() {
-  removeLastPostAdminActions();
-
-  if (!canOpenLastPostWorkspace || !currentLastPostId) return;
-
-  const shortcut = CMCENUtils.createContentWorkspaceShortcut({
-    contentType: "lastPost",
-    contentId: currentLastPostId,
-    label: translate(
-      "content_workspace_open_record",
-      "Open in Content Workspace",
-    ),
-  });
-  if (shortcut) document.body.append(shortcut);
+  lastPostStaffActions.hidden = !canOpenLastPostWorkspace || !currentLastPostId;
+  if (lastPostStaffActions.hidden) return;
+  lastPostStaffLabel.textContent =
+    CMCENUtils.getCurrentLanguage() === "fr"
+      ? "Actions administratives"
+      : "Admin actions";
+  lastPostStaffEdit.textContent =
+    CMCENUtils.getCurrentLanguage() === "fr" ? "Modifier" : "Edit";
+  lastPostStaffEdit.href = `/content-workspace?id=${encodeURIComponent(currentLastPostId)}`;
 }
 
 async function setupLastPostAdminAccess() {
@@ -38,7 +32,7 @@ async function setupLastPostAdminAccess() {
 
   if (!token) {
     canOpenLastPostWorkspace = false;
-    removeLastPostAdminActions();
+    lastPostStaffActions.hidden = true;
     return;
   }
 
@@ -53,7 +47,7 @@ async function setupLastPostAdminAccess() {
     renderLastPostAdminActions();
   } catch {
     canOpenLastPostWorkspace = false;
-    removeLastPostAdminActions();
+    lastPostStaffActions.hidden = true;
   }
 }
 
@@ -153,6 +147,10 @@ function renderLastPost(lastPost) {
 }
 
 async function loadLastPost() {
+  lastPostStaffActions.hidden = true;
+  const preview =
+    new URLSearchParams(window.location.search).get("preview") === "1";
+  lastPostPreviewNotice.hidden = !preview;
   const messageId = new URLSearchParams(window.location.search).get("id") || "";
   if (!messageId) {
     showDetailMessage(translate("last_post_detail_no_selection"), "error");
@@ -162,8 +160,11 @@ async function loadLastPost() {
   showDetailLoading();
   try {
     const data = await CMCENUtils.apiJson(
-      `/api/last-posts/${encodeURIComponent(messageId)}`,
-      { errorMessage: translate("last_post_detail_load_error") },
+      `/api/last-posts/${encodeURIComponent(messageId)}${preview ? "/preview" : ""}`,
+      {
+        errorMessage: translate("last_post_detail_load_error"),
+        ...(preview ? { token: CMCENUtils.getStoredAuthToken() } : {}),
+      },
     );
     if (!data.lastPost)
       throw new Error(translate("last_post_detail_load_error"));

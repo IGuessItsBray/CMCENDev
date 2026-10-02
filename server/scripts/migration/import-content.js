@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const mongoose = require('mongoose');
+const { retainWordPressSourceLinks } = require('./lib/wordpress-source-links');
 const { parseArgs } = require('./lib/args');
 const {
   digest,
@@ -38,6 +39,7 @@ async function main(argv) {
     'output',
     'prepare',
     'select-media',
+    'retain-source-links',
     'metadata-root',
     'apply',
     'authorization',
@@ -45,7 +47,12 @@ async function main(argv) {
     'expected-origin',
     'expected-database',
   ];
-  for (const name of ['prepare', 'apply', 'select-media'])
+  for (const name of [
+    'prepare',
+    'apply',
+    'select-media',
+    'retain-source-links',
+  ])
     assert(
       args[name] === undefined || args[name] === true,
       'Boolean flags take no value',
@@ -54,17 +61,52 @@ async function main(argv) {
     !args._.length &&
       !Object.keys(args).some((k) => !allowed.includes(k)) &&
       args.input &&
-      args['media-root'],
+      (args['media-root'] || args['retain-source-links']),
   );
   assert(!args.prepare || !args.apply);
   assert(!args['select-media'] || (!args.prepare && !args.apply));
+  assert(
+    !args['retain-source-links'] ||
+      (!args.prepare && !args.apply && !args['select-media']),
+  );
+  const input = JSON.parse(fs.readFileSync(args.input));
+  if (args['retain-source-links']) {
+    assert(args.output && args['metadata-root']);
+    const metadata = fs
+      .readdirSync(args['metadata-root'])
+      .filter((name) => /^post-\d+\.json$/.test(name))
+      .map((name) =>
+        JSON.parse(fs.readFileSync(path.join(args['metadata-root'], name))),
+      );
+    const batch = retainWordPressSourceLinks(input, metadata);
+    fs.writeFileSync(
+      args.output,
+      JSON.stringify(
+        {
+          ...batch,
+          preparationOnly: true,
+          identityPlanMustBeRegenerated: true,
+        },
+        null,
+        2,
+      ),
+      { flag: 'wx', mode: 0o600 },
+    );
+    console.log(
+      JSON.stringify({
+        preparationOnly: true,
+        groups: batch.items.length,
+        identityPlanMustBeRegenerated: true,
+      }),
+    );
+    return;
+  }
   const models = Object.fromEntries(
     ['RetirementMessage', 'LastPostMessage', 'Comment', 'MediaAsset'].map(
       (name) => [name, require(`../../models/${name}`)],
     ),
   );
   const { buildPublicMediaUrl } = require('../../services/media-library');
-  const input = JSON.parse(fs.readFileSync(args.input));
   const readMedia = mediaReader(args['media-root']);
   if (args['select-media']) {
     assert(args.output);

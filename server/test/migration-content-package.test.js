@@ -20,6 +20,9 @@ const {
   runContentImport,
 } = require('../scripts/migration/lib/content-import');
 const { main, journalWriter } = require('../scripts/migration/import-content');
+const {
+  retainWordPressSourceLinks,
+} = require('../scripts/migration/lib/wordpress-source-links');
 const models = Object.fromEntries(
   ['RetirementMessage', 'LastPostMessage', 'Comment', 'MediaAsset'].map(
     (name) => [name, require(`../models/${name}`)],
@@ -81,6 +84,12 @@ async function candidate() {
     legacy: {
       source: 'https://cmcen-rcmce.ca',
       sourcePostIds: [101, 102],
+      sourceRecords: sources.map((s) => ({
+        sourceId: s.id,
+        language: s.language,
+        slug: `synthetic-${s.language}`,
+        url: `https://cmcen-rcmce.ca/${s.language === 'fr' ? 'fr/' : ''}synthetic-${s.language}/`,
+      })),
       originalStatus: 'publish',
       submissionMetadata: 'historically-unknown',
       importBatch: 'synthetic-local-package',
@@ -145,6 +154,60 @@ async function candidate() {
   identity.manifestDigest = hash(identity);
   return { batch, identity, bytes };
 }
+
+test('verified EN/FR source permalinks survive identity pinning and frozen model serialization', async () => {
+  const f = await candidate();
+  f.batch.items[0].document.legacy.sourceRecords = f.batch.items[0].sources.map(
+    (s) => ({
+      sourceId: s.id,
+      language: s.language,
+      slug: `synthetic-${s.language}`,
+    }),
+  );
+  const metadata = f.batch.items[0].sources.map((s) => ({
+    id: s.id,
+    slug: `synthetic-${s.language}`,
+    status: 'publish',
+    link: `https://cmcen-rcmce.ca/${s.language === 'fr' ? 'fr/' : ''}synthetic-${s.language}/`,
+  }));
+  f.batch = retainWordPressSourceLinks(f.batch, metadata);
+  f.identity.groups[0].preparedPayloadDigest = hash(f.batch.items[0].document);
+  delete f.identity.manifestDigest;
+  f.identity.manifestDigest = hash(f.identity);
+  const manifest = await freezeContentPackage({
+    ...f,
+    models,
+    readMedia: async () => f.bytes,
+    buildPublicMediaUrl: (key) => `https://media.example.org/${key}`,
+  });
+  assert.deepEqual(
+    manifest.groups[0].document.legacy.sourceRecords.map((r) => r.url),
+    metadata.map((m) => m.link),
+  );
+  await validateFrozenModels(manifest, models);
+});
+
+test('freezer stops missing source URLs before media access instead of silently repeating the pilot omission', async () => {
+  const f = await candidate();
+  delete f.batch.items[0].document.legacy.sourceRecords[0].url;
+  f.identity.groups[0].preparedPayloadDigest = hash(f.batch.items[0].document);
+  delete f.identity.manifestDigest;
+  f.identity.manifestDigest = hash(f.identity);
+  let reads = 0;
+  await assert.rejects(
+    freezeContentPackage({
+      ...f,
+      models,
+      readMedia: async () => {
+        reads++;
+        return f.bytes;
+      },
+      buildPublicMediaUrl: (key) => `https://media.example.org/${key}`,
+    }),
+    /Verified source URLs/,
+  );
+  assert.equal(reads, 0);
+});
 
 test('freezer validates real archive models and binds source, pinned IDs and media without a DB', async () => {
   const f = await candidate();

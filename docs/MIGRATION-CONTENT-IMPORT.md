@@ -8,6 +8,16 @@ upload, registry initialization or deployment has been performed.
 
 ## Prepare once, then keep the frozen manifest
 
+### Retain verified original-source permalinks before identity pinning
+
+Use `import-content.js --retain-source-links --input BATCH --metadata-root DIR
+--output NEW_BATCH` to copy verified WordPress `link` values into matched
+`legacy.sourceRecords[].url`. Metadata files are `post-ID.json`; missing or
+conflicting ID/language/slug/URL evidence stops preparation. This mode is local
+only. Regenerate the reviewed identity plan after adding URLs, then freeze the
+package. See [Pilot original-source link repair](PILOT-SOURCE-LINK-REPAIR.md) for
+verification, the guarded existing-pilot repair and its separate apply boundary.
+
 ### Optional automatic source selection before identity pinning
 
 ```sh

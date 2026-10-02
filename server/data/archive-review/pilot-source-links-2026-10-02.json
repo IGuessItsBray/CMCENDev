@@ -1,0 +1,529 @@
+{
+  "version": 1,
+  "batchId": "wordpress-pilot-20260929",
+  "targetOrigin": "https://staging.cefamily.ca",
+  "sourceOrigin": "https://cmcen-rcmce.ca",
+  "verifiedAt": "2026-10-02T02:27:58.432055+00:00",
+  "groups": [
+    {
+      "key": "retirement:8102036",
+      "kind": "retirement",
+      "destinationId": "c95595e850acc0ac4f5125fc",
+      "sourceIds": [358219, 358245],
+      "sources": [
+        {
+          "sourceId": 358219,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/retirement-corporal-dwayne-peardon-cd-00383-sig-op/",
+          "slug": "retirement-corporal-dwayne-peardon-cd-00383-sig-op",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358219",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "10ce181c46247cdba1f876f134806a4a1d448280776d40c1ca3b87645b0db63f"
+        },
+        {
+          "sourceId": 358245,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/retraite-caporal-dwayne-peardon-cd-00383-op-trans/",
+          "slug": "retraite-caporal-dwayne-peardon-cd-00383-op-trans",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358245",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "fa3866a670941371e1ac4a63f04842ef7c0fa0053375e47756500fe6847932ad"
+        }
+      ]
+    },
+    {
+      "key": "retirement:8102038",
+      "kind": "retirement",
+      "destinationId": "b5327e1bad13362898e17e2b",
+      "sourceIds": [358244, 358250],
+      "sources": [
+        {
+          "sourceId": 358244,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/retirement-captain-sebastien-balleux-cd-00341-sigs/",
+          "slug": "retirement-captain-sebastien-balleux-cd-00341-sigs",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358244",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "4e360f7512ff1de77872aa056737bb279b54103d3481e0bdc2ea2972fd2b1b4a"
+        },
+        {
+          "sourceId": 358250,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/retraite-capitaine-sebastien-balleux-cd-00341-trans/",
+          "slug": "retraite-capitaine-sebastien-balleux-cd-00341-trans",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358250",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "08badb22aef6bf86102ab1297656d50136f816f1ba0e3c8ea947d9efda84c819"
+        }
+      ]
+    },
+    {
+      "key": "retirement:8102030",
+      "kind": "retirement",
+      "destinationId": "d460b7277355c3eb8991a20a",
+      "sourceIds": [358163, 358171],
+      "sources": [
+        {
+          "sourceId": 358163,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/retirement-sergeant-thibodeau-cd-00120-sigint-spec/",
+          "slug": "retirement-sergeant-thibodeau-cd-00120-sigint-spec",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358163",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "5e4824c2049e310bb87ed64f0ebc64b929febe85d5e370d9b40b1cf367bc671c"
+        },
+        {
+          "sourceId": 358171,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/retraite-sergente-thibodeau-cd-00120-spec-sigint/",
+          "slug": "retraite-sergente-thibodeau-cd-00120-spec-sigint",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358171",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "5232c2de75c8dcfe67c0606c1b1ce77c0f47b5abe2bdc501271c1e68fb859dba"
+        }
+      ]
+    },
+    {
+      "key": "retirement:8102015",
+      "kind": "retirement",
+      "destinationId": "e7e37fbdd174d4483b37c92e",
+      "sourceIds": [358092, 358096],
+      "sources": [
+        {
+          "sourceId": 358092,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/retirement-master-warrant-officer-georges-gaudet-cd-00384-line-tech/",
+          "slug": "retirement-master-warrant-officer-georges-gaudet-cd-00384-line-tech",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358092",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "e7b06a006757ae51520a22d6ea35fbe27b8b9ad81a87d6cea843a8a4e2e86443"
+        },
+        {
+          "sourceId": 358096,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/retraite-adjudant-maitre-georges-gaudet-cd-00384-tech-des-lignes/",
+          "slug": "retraite-adjudant-maitre-georges-gaudet-cd-00384-tech-des-lignes",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358096",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "07c116aa178ff6f3e1cb028c7d5cc746aafdc29809645ca78427a706845cbbb0"
+        }
+      ]
+    },
+    {
+      "key": "retirement:8102000",
+      "kind": "retirement",
+      "destinationId": "5b2710d394c36b59cc65b528",
+      "sourceIds": [358038, 358050],
+      "sources": [
+        {
+          "sourceId": 358038,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/retirement-master-corporal-bradley-macintyre-00384-line-tech/",
+          "slug": "retirement-master-corporal-bradley-macintyre-00384-line-tech",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358038",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "563f52cbbaad57bce2325c7e393a23d1282bee02d8061facf137ef14d5809825"
+        },
+        {
+          "sourceId": 358050,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/retraite-caporal-chef-bradley-macintyre-00384-tech-de-ligne/",
+          "slug": "retraite-caporal-chef-bradley-macintyre-00384-tech-de-ligne",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358050",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "1ef1024bb00fdeca132a5d048eb71cb0ff008cce0e6744054d82f76ba3597b5e"
+        }
+      ]
+    },
+    {
+      "key": "last-post:8102032",
+      "kind": "last-post",
+      "destinationId": "1b11aa29c36dd25049e49bb7",
+      "sourceIds": [358177, 358181],
+      "sources": [
+        {
+          "sourceId": 358177,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/lp/lieutenant-colonel-ret-wayne-buck/",
+          "slug": "lieutenant-colonel-ret-wayne-buck",
+          "verificationUrl": "https://cmcen-rcmce.ca/?post_type=lp&p=358177",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "b63cb495cdc3e4e26fa7d2e7c0aa14b0d37ca821696bf33e183922d054811d64"
+        },
+        {
+          "sourceId": 358181,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/lp/lieutenant-colonel-ret-wayne-buck/",
+          "slug": "lieutenant-colonel-ret-wayne-buck",
+          "verificationUrl": "https://cmcen-rcmce.ca/fr/lp/lieutenant-colonel-ret-wayne-buck/",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "d21cfada3b3bcf357500392e00cfa1cf3bb3f0186809f76b37f0f498ee520ad0"
+        }
+      ]
+    },
+    {
+      "key": "retirement:8101998",
+      "kind": "retirement",
+      "destinationId": "34b06af9972b92e6505fdcf8",
+      "sourceIds": [358026, 358028],
+      "sources": [
+        {
+          "sourceId": 358026,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/retirement-master-warrant-officer-todd-young-00384-01-line-tech/",
+          "slug": "retirement-master-warrant-officer-todd-young-00384-01-line-tech",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358026",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "d519904a569303e71d9b5a035f1cb6da37b41187a141e75c5646afceffd03416"
+        },
+        {
+          "sourceId": 358028,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/retraite-adjudant-maitre-todd-young-00384-01-tech-trans/",
+          "slug": "retraite-adjudant-maitre-todd-young-00384-01-tech-trans",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/358028",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "e785ff6547c60281e8e65201b680bf286478415d4e1e3d4edb907aadb85e5353"
+        }
+      ]
+    },
+    {
+      "key": "retirement:8101992",
+      "kind": "retirement",
+      "destinationId": "1bb7c1a23c95c7f531bef854",
+      "sourceIds": [357994, 357998],
+      "sources": [
+        {
+          "sourceId": 357994,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/retirement-master-corporal-terry-t-w-lee-cd-00385-sig-tech/",
+          "slug": "retirement-master-corporal-terry-t-w-lee-cd-00385-sig-tech",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/357994",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "a8af4d9e3b9c2acd79f7a01fca183a87586639147ecf6d498c2bc3ae4d9720dc"
+        },
+        {
+          "sourceId": 357998,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/retraite-caporal-chef-terry-t-w-lee-cd-00385-tech-trans/",
+          "slug": "retraite-caporal-chef-terry-t-w-lee-cd-00385-tech-trans",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/357998",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "6514965e05ad51b7dca26b928c077e0000e583a618205dc073ec33f6e7d9d354"
+        }
+      ]
+    },
+    {
+      "key": "retirement:8101990",
+      "kind": "retirement",
+      "destinationId": "3ba67b9f3ad9a6fe20ef5ed5",
+      "sourceIds": [357973, 357978],
+      "sources": [
+        {
+          "sourceId": 357973,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/retirement-chief-warrant-officer-kevin-a-mullins-00381-cwo/",
+          "slug": "retirement-chief-warrant-officer-kevin-a-mullins-00381-cwo",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/357973",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "fb4559ed57c9901d6cb15726d15cf8d4c5ad7310afb997843cb4c4bf623a29f6"
+        },
+        {
+          "sourceId": 357978,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/retraite-adjudant-chef-kevin-a-mullins-00381-adjuc/",
+          "slug": "retraite-adjudant-chef-kevin-a-mullins-00381-adjuc",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/357978",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "1b70fec9cf8f59dbec21e421595b1fd2c5c77ea67712950a4d9b9740b7ad81d4"
+        }
+      ]
+    },
+    {
+      "key": "retirement:8101987",
+      "kind": "retirement",
+      "destinationId": "a305b5c8f63045f3c8faf594",
+      "sourceIds": [357954, 357957],
+      "sources": [
+        {
+          "sourceId": 357954,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/retirement-captain-jianfeng-li-00340-cele/",
+          "slug": "retirement-captain-jianfeng-li-00340-cele",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/357954",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "08824394cd065295ccc3fc73fba909aef7548739cb37ecdb46042b987f8ee377"
+        },
+        {
+          "sourceId": 357957,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/retraite-capitaine-jianfeng-li-00340-cele/",
+          "slug": "retraite-capitaine-jianfeng-li-00340-cele",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/357957",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "3e6f6dda9f02151b1c11606ebf0f47d52bb87410391dcd198fa941d031b1bd21"
+        }
+      ]
+    },
+    {
+      "key": "last-post:7744040",
+      "kind": "last-post",
+      "destinationId": "79e410fc03beffe7f9223acb",
+      "sourceIds": [357941, 357949],
+      "sources": [
+        {
+          "sourceId": 357941,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/lp/captain-daniel-eduardo-leon-jimenez/",
+          "slug": "captain-daniel-eduardo-leon-jimenez",
+          "verificationUrl": "https://cmcen-rcmce.ca/?post_type=lp&p=357941",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "6b68933fcd22caf10ba64462e2680657e66e6337b409fe8a1a9a679dd7117ff6"
+        },
+        {
+          "sourceId": 357949,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/lp/capitaine-daniel-eduardo-leon-jimenez/",
+          "slug": "capitaine-daniel-eduardo-leon-jimenez",
+          "verificationUrl": "https://cmcen-rcmce.ca/fr/lp/capitaine-daniel-eduardo-leon-jimenez/",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "3a9d1c9ccdf8e1e93ee7a4cf47d3d5da04e68cc4763fee48042bb5095b2be155"
+        }
+      ]
+    },
+    {
+      "key": "retirement:7744037",
+      "kind": "retirement",
+      "destinationId": "798703d61b89d18666386fd3",
+      "sourceIds": [357915, 357921],
+      "sources": [
+        {
+          "sourceId": 357915,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/retirement-warrant-officer-jason-st-pierre-cd-00109-atis-tech/",
+          "slug": "retirement-warrant-officer-jason-st-pierre-cd-00109-atis-tech",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/357915",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "abfafeddf66dfb395d3171a9fc0d7a7e412617ae01e92c64df323449a4f9673e"
+        },
+        {
+          "sourceId": 357921,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/retraite-adjudant-jason-st-pierre-cd-00109-tech-atis/",
+          "slug": "retraite-adjudant-jason-st-pierre-cd-00109-tech-atis",
+          "verificationUrl": "https://cmcen-rcmce.ca/wp-json/wp/v2/posts/357921",
+          "verificationMethod": "WordPress REST post ID",
+          "metadataSha256": "f40d0ecac173609396e12cff78bdf57b3268209ad3aa2fda5da0ad604b7f4378"
+        }
+      ]
+    },
+    {
+      "key": "last-post:8101995",
+      "kind": "last-post",
+      "destinationId": "143908875709c606a547a243",
+      "sourceIds": [358000, 358006],
+      "sources": [
+        {
+          "sourceId": 358000,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/lp/brigadier-general-ret-william-s-richard-cd/",
+          "slug": "brigadier-general-ret-william-s-richard-cd",
+          "verificationUrl": "https://cmcen-rcmce.ca/fr/lp/brigadier-general-ret-william-s-richard-cd/",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "849af7d5e2be8355a55a576a0dc6ac82fc69eb1ccedd9d8e665fad9a9e94735f"
+        },
+        {
+          "sourceId": 358006,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/lp/brigadier-general-ret-william-s-richard-cd/",
+          "slug": "brigadier-general-ret-william-s-richard-cd",
+          "verificationUrl": "https://cmcen-rcmce.ca/?post_type=lp&p=358006",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "b37b8504c7cacc6726e3c8a26bd28fa63fcf36aa46b717b714855e14b31d2f3e"
+        }
+      ]
+    },
+    {
+      "key": "last-post:7743977",
+      "kind": "last-post",
+      "destinationId": "f3290d9250fa638f170e904f",
+      "sourceIds": [357718, 357722],
+      "sources": [
+        {
+          "sourceId": 357718,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/lp/brigadier-general-ret-daniel-harrison/",
+          "slug": "brigadier-general-ret-daniel-harrison",
+          "verificationUrl": "https://cmcen-rcmce.ca/?post_type=lp&p=357718",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "788dee19265a27614a173ee41a312c14ee7871ba21af041e6fb9e0044e33ae54"
+        },
+        {
+          "sourceId": 357722,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/lp/brigadier-general-ret-daniel-harrison/",
+          "slug": "brigadier-general-ret-daniel-harrison",
+          "verificationUrl": "https://cmcen-rcmce.ca/fr/lp/brigadier-general-ret-daniel-harrison/",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "f3469bf91720c2e2167948680460d5eb161a238d61a863b3cff1c3af981e8e90"
+        }
+      ]
+    },
+    {
+      "key": "last-post:7743973",
+      "kind": "last-post",
+      "destinationId": "6f5e64a7f9447b05205fb408",
+      "sourceIds": [357695, 357698],
+      "sources": [
+        {
+          "sourceId": 357695,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/lp/last-post-martin-lavigne/",
+          "slug": "last-post-martin-lavigne",
+          "verificationUrl": "https://cmcen-rcmce.ca/?post_type=lp&p=357695",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "00cfa865943d8e2464049ab6a60286652794e4bbc2fc84bfac171da18f7aff56"
+        },
+        {
+          "sourceId": 357698,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/lp/derniers-appels-martin-lavigne/",
+          "slug": "derniers-appels-martin-lavigne",
+          "verificationUrl": "https://cmcen-rcmce.ca/fr/lp/derniers-appels-martin-lavigne/",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "a3a5311a9bc3fec418bbd67cecbacb86b40bcd3ea9a4e300a23efd65b75fa2f3"
+        }
+      ]
+    },
+    {
+      "key": "last-post:7743935",
+      "kind": "last-post",
+      "destinationId": "25e7d8dad878005f0931e553",
+      "sourceIds": [357437, 357441],
+      "sources": [
+        {
+          "sourceId": 357437,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/lp/heather-liberty/",
+          "slug": "heather-liberty",
+          "verificationUrl": "https://cmcen-rcmce.ca/?post_type=lp&p=357437",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "c919fe17b0bad803da8b7e7e8c6137e40fdd09a1bca295de2bd8c1714c01f99d"
+        },
+        {
+          "sourceId": 357441,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/lp/heather-liberty/",
+          "slug": "heather-liberty",
+          "verificationUrl": "https://cmcen-rcmce.ca/fr/lp/heather-liberty/",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "f4bafbf8eb1c6357347f1d83ed1e3aee5184df57d56ee8a8320897d1acae6b5c"
+        }
+      ]
+    },
+    {
+      "key": "last-post:7743933",
+      "kind": "last-post",
+      "destinationId": "02808a7fd1a7e733144a9c38",
+      "sourceIds": [357424, 357428],
+      "sources": [
+        {
+          "sourceId": 357424,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/lp/warrant-officer-jeffery-peter-pasnak/",
+          "slug": "warrant-officer-jeffery-peter-pasnak",
+          "verificationUrl": "https://cmcen-rcmce.ca/?post_type=lp&p=357424",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "fa92a302cd4cc3f1d5d9efa51f109c7e3347d8e84944472aebdc651234b79b71"
+        },
+        {
+          "sourceId": 357428,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/lp/adjudant-jeffery-peter-pasnak/",
+          "slug": "adjudant-jeffery-peter-pasnak",
+          "verificationUrl": "https://cmcen-rcmce.ca/fr/lp/adjudant-jeffery-peter-pasnak/",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "28cc33cfaea66076ed0e95f62012b55ee731c9db7c722cba00667e7f13e97545"
+        }
+      ]
+    },
+    {
+      "key": "last-post:7743979",
+      "kind": "last-post",
+      "destinationId": "5143619fbb5e85acd3ce759a",
+      "sourceIds": [357724, 357728],
+      "sources": [
+        {
+          "sourceId": 357724,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/lp/lieutenant-colonel-ret-ted-campbell/",
+          "slug": "lieutenant-colonel-ret-ted-campbell",
+          "verificationUrl": "https://cmcen-rcmce.ca/?post_type=lp&p=357724",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "0666d95f8ae5b791eab3abecc6e02d699d782d1d1a349774527568b6b484ea5e"
+        },
+        {
+          "sourceId": 357728,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/lp/lieutenant-colonel-ret-ted-campbell/",
+          "slug": "lieutenant-colonel-ret-ted-campbell",
+          "verificationUrl": "https://cmcen-rcmce.ca/fr/lp/lieutenant-colonel-ret-ted-campbell/",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "9a72048bc37968a6814b1d76858f62cf282d9b7a6722c358c7c6318431220680"
+        }
+      ]
+    },
+    {
+      "key": "last-post:7743861",
+      "kind": "last-post",
+      "destinationId": "73f8bc878d832f6a2641e02f",
+      "sourceIds": [356915, 356919],
+      "sources": [
+        {
+          "sourceId": 356915,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/lp/major-ret-charles-daniel-spencer-cd/",
+          "slug": "major-ret-charles-daniel-spencer-cd",
+          "verificationUrl": "https://cmcen-rcmce.ca/?post_type=lp&p=356915",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "93771a72d70d764da67397d6a34713398ddbb0bbeab68e20909d765c132608b3"
+        },
+        {
+          "sourceId": 356919,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/lp/lieutenant-colonel-charles-daniel-spencer-cd/",
+          "slug": "lieutenant-colonel-charles-daniel-spencer-cd",
+          "verificationUrl": "https://cmcen-rcmce.ca/fr/lp/lieutenant-colonel-charles-daniel-spencer-cd/",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "b11ac5ad0ff852655b887ec615e6202cf65429496549971346b8bad93875933e"
+        }
+      ]
+    },
+    {
+      "key": "last-post:7743929",
+      "kind": "last-post",
+      "destinationId": "8a7abf00c566f7bbd9e5f0c6",
+      "sourceIds": [357401, 357403],
+      "sources": [
+        {
+          "sourceId": 357401,
+          "language": "en",
+          "url": "https://cmcen-rcmce.ca/lp/lieutenant-colonel-christine-mary-stanczyk/",
+          "slug": "lieutenant-colonel-christine-mary-stanczyk",
+          "verificationUrl": "https://cmcen-rcmce.ca/?post_type=lp&p=357401",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "552a1b12a2ce6e4fda0c9977296c4820f3a04829908e86e766ac4d353e572d44"
+        },
+        {
+          "sourceId": 357403,
+          "language": "fr",
+          "url": "https://cmcen-rcmce.ca/fr/lp/lieutenant-colonel-christine-mary-stanczyk/",
+          "slug": "lieutenant-colonel-christine-mary-stanczyk",
+          "verificationUrl": "https://cmcen-rcmce.ca/fr/lp/lieutenant-colonel-christine-mary-stanczyk/",
+          "verificationMethod": "Public page canonical + body post ID + HTML language",
+          "metadataSha256": "14d2a626b95362c6b025c3fc7b221f9890901253c0ae7d90d086b6bcd379a920"
+        }
+      ]
+    }
+  ]
+}

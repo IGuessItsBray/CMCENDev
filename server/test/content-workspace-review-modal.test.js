@@ -34,11 +34,15 @@ const reviewActions = workspaceScript.slice(
   workspaceScript.indexOf('function createRemovalActions'),
 );
 
-test('offers immediate or scheduled publication through the shared modal', () => {
+test('offers immediate, available original date, or scheduled publication before the button', () => {
   assert.match(
     reviewActions,
-    /await CMCENModal\.choose\([\s\S]*?content_workspace_publish_timing[\s\S]*?value: "now"[\s\S]*?content_workspace_publish_now[\s\S]*?value: "schedule"[\s\S]*?content_workspace_schedule_publish/u,
+    /document\.createElement\("select"\)[\s\S]*?\["now", "content_workspace_publish_now"[\s\S]*?\[\["original", "content_workspace_publish_original"[\s\S]*?\[\["schedule", "content_workspace_schedule_publish"[\s\S]*?publicationChoice\.append\(option\)/u,
   );
+  assert.doesNotMatch(reviewActions, /content_workspace_publish_timing[\s\S]*?CMCENModal\.choose/u);
+  assert.doesNotMatch(reviewActions, /value: "custom"/u);
+  assert.match(reviewActions, /publicationDateChoice: item\.publicationDate\?\.isArchive\s*\? "now"\s*: undefined,[\s\S]*?scheduledPublishAt: scheduledDate\.toISOString\(\)/u);
+  assert.match(reviewActions, /decision === "original"\s*\? "original"\s*: "now"/u);
   assert.match(
     reviewActions,
     /await CMCENModal\.form\([\s\S]*?content_workspace_schedule_publish_prompt[\s\S]*?name: "scheduledPublishAt",[\s\S]*?type: "cmcen-date-time",[\s\S]*?locale: getContentWorkspaceLocale\(\),[\s\S]*?required: true,/u,

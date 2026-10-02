@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const sharp = require('sharp');
 const { EJSON } = require('mongoose').mongo.BSON;
 const { inspectBatch } = require('./content-preflight');
+const { assertRetainedSourceLinks } = require('./wordpress-source-links');
 const {
   chooseWordPressImage,
   originalImageUrl,
@@ -96,6 +97,7 @@ async function freezeContentPackage({
   preparedAt = new Date(),
 }) {
   verifyPreparedIdentity(batch, identity);
+  assertRetainedSourceLinks(batch);
   for (const item of batch.items) {
     const declared = batch.media
       .filter((m) => item.mediaUrls.includes(m.sourceUrl))

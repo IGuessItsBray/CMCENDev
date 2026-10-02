@@ -30,6 +30,9 @@
         ></p>
 
         <div id="lastPostDetailContent" hidden>
+          <p id="lastPostPreviewNotice" data-i18n="article_preview_notice" hidden>
+            Staff preview — this is not the public article.
+          </p>
           <section class="last-post-detail-paper">
             <p
               class="last-post-detail-notice"
@@ -58,6 +61,15 @@
           </section>
         </div>
       </article>
+      <section
+        id="lastPostStaffActions"
+        class="article-staff-actions"
+        aria-labelledby="lastPostStaffLabel"
+        hidden
+      >
+        <h2 class="article-staff-actions-label" id="lastPostStaffLabel"></h2>
+        <a id="lastPostStaffEdit" class="article-staff-actions-link"></a>
+      </section>
     </main>
 
     <footer id="footer"></footer>

@@ -60,6 +60,39 @@ window.ContentWorkspaceActions = {
       const publish = document.createElement("button");
       publish.type = "button";
       publish.className = "admin-work-zone-button is-success";
+      const original = item.publicationDate?.originalPublishedAt;
+      const publicationChoice =
+        canSchedulePublication || item.publicationDate?.isArchive
+          ? document.createElement("select")
+          : null;
+      if (publicationChoice) {
+        publicationChoice.className = "content-workspace-publication-choice";
+        publicationChoice.setAttribute(
+          "aria-label",
+          getText("content_workspace_publish_choice_label", "Publication choice"),
+        );
+        publicationChoice.dataset.i18nAriaLabel =
+          "content_workspace_publish_choice_label";
+        for (const [value, key, fallback] of [
+          ["now", "content_workspace_publish_now", "Publish now"],
+          ...(original
+            ? [["original", "content_workspace_publish_original", "Publish now with original date"]]
+            : []),
+          ...(canSchedulePublication
+            ? [["schedule", "content_workspace_schedule_publish", "Schedule publication"]]
+            : []),
+        ]) {
+          const option = document.createElement("option");
+          option.value = value;
+          if (value === "original") {
+            option.dataset.contentWorkspaceOriginalDate = original;
+            option.textContent = `${getText(key, fallback)} (${new Date(original).toLocaleDateString(getContentWorkspaceLocale(), { timeZone: "UTC" })})`;
+          } else {
+            setWorkspaceTranslatedText(option, key, fallback);
+          }
+          publicationChoice.append(option);
+        }
+      }
       const cancelSchedule =
         canSchedulePublication && item.scheduledPublishAt
           ? document.createElement("button")
@@ -240,42 +273,8 @@ window.ContentWorkspaceActions = {
         try {
           const decision =
             action === "publish"
-              ? canSchedulePublication
-                ? await CMCENModal.choose(
-                    getText(
-                      "content_workspace_publish_timing",
-                      "Choose when this content should become visible on the public site.",
-                    ),
-                    {
-                      title: getText("content_workspace_publish", "Publish"),
-                      cancelText: getText("cancel", "Cancel"),
-                      tone: "success",
-                      choices: [
-                        {
-                          value: "now",
-                          label: getText(
-                            "content_workspace_publish_now",
-                            "Publish now",
-                          ),
-                          description: getText(
-                            "content_workspace_publish_now_help",
-                            "Make this content public immediately.",
-                          ),
-                        },
-                        {
-                          value: "schedule",
-                          label: getText(
-                            "content_workspace_schedule_publish",
-                            "Schedule publication",
-                          ),
-                          description: getText(
-                            "content_workspace_schedule_publish_help",
-                            "Choose a future date and time for it to go public.",
-                          ),
-                        },
-                      ],
-                    },
-                  )
+              ? publicationChoice
+                ? publicationChoice.value
                 : await CMCENModal.confirm(
                     getText(
                       "content_workspace_publish_confirmation",
@@ -360,70 +359,6 @@ window.ContentWorkspaceActions = {
 
           if (!decision) return;
 
-          async function choosePublicationDate() {
-            if (!item.publicationDate?.isArchive) return undefined;
-            const original = item.publicationDate.originalPublishedAt;
-            const choices = [];
-            if (original)
-              choices.push({
-                value: "original",
-                label: getText(
-                  "content_workspace_date_original",
-                  "Keep original publication date",
-                ),
-                description: new Date(original).toLocaleString(
-                  getContentWorkspaceLocale(),
-                ),
-              });
-            choices.push({
-              value: "now",
-              label: getText(
-                "content_workspace_date_current",
-                "Use the new publication date",
-              ),
-              description: getText(
-                "content_workspace_date_current_help",
-                "Use the date it goes public on this site.",
-              ),
-            });
-            choices.push({
-              value: "custom",
-              label: getText("content_workspace_date_custom", "Choose a specific date"),
-            });
-            const choice = await CMCENModal.choose(
-              getText(
-                original
-                  ? "content_workspace_date_prompt"
-                  : "content_workspace_date_missing",
-                original
-                  ? "Which date should readers see? This also controls its chronological position."
-                  : "This is archive content, but no original publication date is recorded. It can use the date it goes public on this site.",
-              ),
-              {
-                title: getText(
-                  "content_workspace_date_title",
-                  "Publication date",
-                ),
-                cancelText: getText("cancel", "Cancel"),
-                tone: "success",
-                choices,
-              },
-            );
-            if (choice !== "custom") return choice ? { publicationDateChoice: choice } : null;
-            const selected = await CMCENModal.form(
-              getText("content_workspace_date_custom_help", "Choose the date readers should see."),
-              {
-                title: getText("content_workspace_date_custom", "Choose a specific date"),
-                confirmText: getText("content_workspace_date_confirm", "Use this date"),
-                fields: [{ name: "customPublishedAt", type: "cmcen-date-time", label: getText("content_workspace_date_title", "Publication date"), required: true }],
-              },
-            );
-            if (!selected?.customPublishedAt) return null;
-            const date = new Date(selected.customPublishedAt);
-            if (Number.isNaN(date.getTime()) || date > new Date()) return null;
-            return { publicationDateChoice: "custom", customPublishedAt: date.toISOString() };
-          }
-
           if (action === "publish" && decision === "schedule") {
             const schedule = await CMCENModal.form(
               getText(
@@ -488,29 +423,27 @@ window.ContentWorkspaceActions = {
               return;
             }
 
-            const dateSelection = await choosePublicationDate();
-            if (item.publicationDate?.isArchive && !dateSelection)
-              return;
             await submitDecision(action, {
-              ...dateSelection,
+              publicationDateChoice: item.publicationDate?.isArchive
+                ? "now"
+                : undefined,
               scheduledPublishAt: scheduledDate.toISOString(),
             });
             return;
           }
 
-          const dateSelection =
-            action === "publish" ? await choosePublicationDate() : undefined;
-          if (
-            action === "publish" &&
-            item.publicationDate?.isArchive &&
-            !dateSelection
-          )
-            return;
           await submitDecision(
             action,
             action === "reject" && typeof decision === "object"
               ? { rejectionReason: decision.rejectionReason || "" }
-              : { ...dateSelection },
+              : {
+                  publicationDateChoice:
+                    action === "publish" && item.publicationDate?.isArchive
+                      ? decision === "original"
+                        ? "original"
+                        : "now"
+                      : undefined,
+                },
           );
         } finally {
           isConfirming = false;
@@ -528,6 +461,19 @@ window.ContentWorkspaceActions = {
       restoreActionLabels();
       if (reject) actions.append(reject);
       if (cancelSchedule) actions.append(cancelSchedule);
+      if (publicationChoice) {
+        const choice = document.createElement("div");
+        choice.className = "content-workspace-publication-choice-field";
+        choice.append(publicationChoice);
+        const help = document.createElement("small");
+        setWorkspaceTranslatedText(
+          help,
+          "content_workspace_publish_timing",
+          "Scheduled content displays its go-live date; the original date remains in its source record.",
+        );
+        choice.append(help);
+        actions.append(choice);
+      }
       actions.append(publish);
       return actions;
     }

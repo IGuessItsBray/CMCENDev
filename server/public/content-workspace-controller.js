@@ -768,25 +768,29 @@ window.ContentWorkspace = {
       if (!item?._id || item.isNew) return "";
       if (item.type === "newsArticle")
         return `/news-story?id=${encodeURIComponent(item._id)}${item.status === "published" ? "" : "&preview=1"}`;
-      if (item.status !== "published") return "";
+      const preview = item.status !== "published" ? "&preview=1" : "";
 
       if (item.type === "event") {
+        if (item.status !== "published") return "";
         return `/event?id=${encodeURIComponent(item._id)}`;
       }
 
       if (item.type === "retirementMessage") {
-        return `/retirement-message?id=${encodeURIComponent(item._id)}`;
+        if (preview && !["draft", "pending"].includes(item.status)) return "";
+        return `/retirement-message?id=${encodeURIComponent(item._id)}${preview}`;
       }
 
       if (item.type === "lastPost") {
-        return `/last-post-message?id=${encodeURIComponent(item._id)}`;
+        if (preview && !["draft", "pending"].includes(item.status)) return "";
+        return `/last-post-message?id=${encodeURIComponent(item._id)}${preview}`;
       }
 
       if (item.type === "newsArticle") {
         return `/news-story?id=${encodeURIComponent(item._id)}`;
       }
 
-      if (item.type === "comment") return item.content?.publicUrl || "";
+      if (item.type === "comment")
+        return item.status === "published" ? item.content?.publicUrl || "" : "";
 
       return "";
     }
@@ -800,8 +804,8 @@ window.ContentWorkspace = {
       link.href = href;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
-      if (item.type === "newsArticle" && item.status !== "published") {
-        setWorkspaceTranslatedText(link, "article_preview", "Preview article");
+      if (["newsArticle", "retirementMessage", "lastPost"].includes(item.type) && item.status !== "published") {
+        setWorkspaceTranslatedText(link, "content_workspace_preview_saved", "Preview saved version (save edits first)");
         return link;
       }
       setWorkspaceTranslatedText(
@@ -1553,6 +1557,12 @@ window.ContentWorkspace = {
     }
 
     function updateContentWorkspaceLanguage() {
+      contentWorkspaceDetail
+        .querySelectorAll("[data-content-workspace-original-date]")
+        .forEach((option) => {
+          const date = new Date(option.dataset.contentWorkspaceOriginalDate);
+          option.textContent = `${getText("content_workspace_publish_original", "Publish now with original date")} (${date.toLocaleDateString(getContentWorkspaceLocale(), { timeZone: "UTC" })})`;
+        });
       updateListToggle();
       renderReviewQueues();
       updateContentWorkspaceModePresentation();

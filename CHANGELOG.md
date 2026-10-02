@@ -4,6 +4,96 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.3.0] - 2026-10-02
+
+
+
+### Breaking Changes
+
+
+- archive: Prepare legacy content as drafts and unify Retirement and Last Post comment moderation. Existing databases with comments in the former collections need the [documented conversion](https://git.corebot.ca/Eric/CMCENDev/src/branch/main/docs/API%20ROUTES.md) before using the new comment routes; old comments remain stored but are otherwise not shown.
+
+
+
+### Bug Fixes
+
+
+- news: Clarify archive and staff article controls
+
+- archive-review: Clarify issues and review choices
+
+- archive: Preserve unknown historical submission metadata
+
+- frontend: Restore calendar month, view, and filters after event details; restore filters and anchors for already loaded Retirement and Last Post cards; release replaced header and picker listeners
+
+
+
+### Documentation
+
+
+- storage: Prefer Garage for new deployments
+
+
+
+### Features
+
+
+- frontend: Reorganize navigation and refine site styling
+
+- admin: Establish admin dashboard and migrate management tools
+
+- content: Unify the staff workspace and let contributors correct and resubmit their own submissions
+
+- association: Add directors page and newsletter archive
+
+- articles: Add database-backed newsletter editing
+
+- media: Refine uploads and reuse the shared crest
+
+- submissions: Show publication, content-edit, and hiding dates separately in staff views
+
+- media: Use deployment-specific image and document URLs as a foundation for portable storage
+
+- admin: Add permission-gated permanent content deletion with confirmation and related-record cleanup
+
+- articles: Unify article editing and categories
+
+- content: Streamline bilingual editing and workspace navigation
+
+- admin: Capture legacy source evidence and review decisions for archive curation
+
+- admin: Add archival discovery review batches
+
+- admin: Add comment migration review exceptions
+
+- migration: Expand archive review and preserve legacy account profiles
+
+- archive: Choose original or new publication dates
+
+- archive: Add restricted staff review workflow
+
+- editorial: Show imported drafts in the Content Workspace and add default-off email controls
+
+- media: Add editable library names with compact pencil controls
+
+- archive: Add content importer and admin controls
+
+- content: Preview saved Retirement and Last Post drafts and clarify publication timing choices
+
+
+
+### Maintenance
+
+
+- Streamline agent guidance
+
+- documents: Move library source files to CDN
+
+- newsletters: Retire temporary newsletter migration artifacts
+
+- ui: Polish public and account pages
+
+
 ## [0.2.0] - 2026-09-18
 
 

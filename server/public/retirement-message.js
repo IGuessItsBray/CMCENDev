@@ -18,6 +18,10 @@ const retirementDetailText = document.getElementById("retirementDetailText");
 const retirementPreviewNotice = document.getElementById(
   "retirementPreviewNotice",
 );
+CMCENUtils.setDetailReturnLink(
+  document.querySelector(".retirement-detail-back"),
+  "/retirements",
+);
 const retirementCommentsSection = document.getElementById(
   "retirementCommentsSection",
 );
@@ -632,7 +636,7 @@ async function loadRetirementMessage() {
   removeRetirementAdminActions();
   const preview =
     new URLSearchParams(window.location.search).get("preview") === "1";
-  retirementPreviewNotice.hidden = !preview;
+  retirementPreviewNotice.hidden = true;
   retirementCommentsSection.hidden = preview;
   const messageId = new URLSearchParams(window.location.search).get("id");
 
@@ -655,6 +659,7 @@ async function loadRetirementMessage() {
     );
 
     renderRetirementMessage(data.retirementMessage);
+    retirementPreviewNotice.hidden = !preview;
     if (preview) {
       try {
         const user = await CMCENUtils.apiJson("/api/me", {
@@ -671,6 +676,7 @@ async function loadRetirementMessage() {
       await loadComments(messageId);
     }
   } catch (error) {
+    retirementPreviewNotice.hidden = true;
     showRetirementDetailMessage(
       error.message || translate("retirement_detail_load_error"),
       "error",

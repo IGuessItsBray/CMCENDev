@@ -3,6 +3,7 @@ const timersAdminStatus = document.getElementById("timersAdminStatus");
 const timersAdminPage = document.getElementById("timersAdminPage");
 const timersAdminContent = document.getElementById("timersAdminContent");
 const t = translate;
+const timerEditorPickers = new Set();
 
 let timersState = {
   timers: [],
@@ -163,7 +164,7 @@ function createTextarea(name, value = "") {
 
 function createDateInput(name, value = "") {
   if (window.CMCENDateTimePicker?.create) {
-    return window.CMCENDateTimePicker.create({
+    const picker = window.CMCENDateTimePicker.create({
       name,
       date: CMCENUtils.toLocalDateInput(value),
       time: CMCENUtils.toLocalTimeInput(value),
@@ -177,6 +178,8 @@ function createDateInput(name, value = "") {
       doneLabel: t("timers_picker_done"),
       locale: CMCENUtils.getCurrentLocale(),
     });
+    timerEditorPickers.add(picker);
+    return picker;
   }
 
   const input = document.createElement("input");
@@ -187,7 +190,7 @@ function createDateInput(name, value = "") {
 }
 
 function createColorInput(name, value, fallback) {
-  return window.CMCENColorPicker.create({
+  const picker = window.CMCENColorPicker.create({
     name,
     value,
     fallback,
@@ -201,6 +204,8 @@ function createColorInput(name, value, fallback) {
       rgb: t("timers_picker_rgb"),
     },
   });
+  timerEditorPickers.add(picker);
+  return picker;
 }
 
 function createToggle(name, checked) {
@@ -425,6 +430,8 @@ function getTimerPayload(form) {
 }
 
 function renderTimersAdmin() {
+  timerEditorPickers.forEach((picker) => picker.destroy());
+  timerEditorPickers.clear();
   const shell = document.createElement("div");
   shell.className = "timers-admin-shell";
 

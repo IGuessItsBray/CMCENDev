@@ -1,6 +1,8 @@
 // the header'z dropdown menus are built from this
 const themeStorageKey = "theme";
 const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+let headerHeightObserver;
+let headerListeners;
 
 function setHeadElement(selector, attributes) {
   let element = document.head.querySelector(selector);
@@ -359,6 +361,9 @@ function renderStandaloneLink(link) {
 }
 
 function loadHeader() {
+  headerListeners?.abort();
+  headerListeners = new AbortController();
+  const { signal } = headerListeners;
   const dropdownsHtml = Object.values(navLinks)
     .map((dropdown, index) => renderDropdown(dropdown, index))
     .join("");
@@ -379,13 +384,20 @@ function loadHeader() {
     skipLink.href = `#${main.id}`;
     skipLink.dataset.i18n = "skip_to_main_content";
     skipLink.textContent = "Skip to main content";
-    skipLink.addEventListener("click", (event) => {
-      event.preventDefault();
-      window.history.pushState(null, "", `#${main.id}`);
-      main.scrollIntoView();
-      main.focus({ preventScroll: true });
-    });
     document.body.prepend(skipLink);
+  }
+
+  if (main) {
+    document.querySelector(".skip-link")?.addEventListener(
+      "click",
+      (event) => {
+        event.preventDefault();
+        window.history.pushState(null, "", `#${main.id}`);
+        main.scrollIntoView();
+        main.focus({ preventScroll: true });
+      },
+      { signal },
+    );
   }
 
   header.className = "site-header";
@@ -706,44 +718,71 @@ function loadHeader() {
     });
   });
 
-  document.addEventListener("pointerdown", (event) => {
-    if (isMobileNavigation() || primaryNavigation?.contains(event.target)) {
-      return;
-    }
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (isMobileNavigation() || primaryNavigation?.contains(event.target)) {
+        return;
+      }
 
-    primaryNavigation
-      ?.querySelectorAll(".dropdown")
-      .forEach((dropdown) => setDesktopDropdownOpen(dropdown, false));
-  });
+      primaryNavigation
+        ?.querySelectorAll(".dropdown")
+        .forEach((dropdown) => setDesktopDropdownOpen(dropdown, false));
+    },
+    { signal },
+  );
 
-  document.addEventListener("keydown", (event) => {
-    if (
-      !event.defaultPrevented &&
-      event.key === "Escape" &&
-      isMobileNavigation() &&
-      header.classList.contains("is-mobile-menu-open")
-    ) {
-      event.preventDefault();
-      setMobileMenuOpen(false);
-      mobileMenuToggle?.focus();
-    }
-  });
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (
+        !event.defaultPrevented &&
+        event.key === "Escape" &&
+        isMobileNavigation() &&
+        header.classList.contains("is-mobile-menu-open")
+      ) {
+        event.preventDefault();
+        setMobileMenuOpen(false);
+        mobileMenuToggle?.focus();
+      }
+    },
+    { signal },
+  );
 
-  window.addEventListener("resize", () => {
-    if (header.classList.contains("is-mobile-menu-open")) {
-      updateMobileMenuOffset();
-    }
+  window.addEventListener(
+    "resize",
+    () => {
+      if (header.classList.contains("is-mobile-menu-open")) {
+        updateMobileMenuOffset();
+      }
 
-    if (window.innerWidth > 700) {
-      setMobileMenuOpen(false);
-    }
-  });
+      if (window.innerWidth > 700) {
+        setMobileMenuOpen(false);
+      }
+    },
+    { signal },
+  );
 
-  window.visualViewport?.addEventListener("resize", () => {
-    if (header.classList.contains("is-mobile-menu-open")) {
-      updateMobileMenuOffset();
-    }
-  });
+  window.visualViewport?.addEventListener(
+    "resize",
+    () => {
+      if (header.classList.contains("is-mobile-menu-open")) {
+        updateMobileMenuOffset();
+      }
+    },
+    { signal },
+  );
+
+  const updateHeaderHeight = () => {
+    document.documentElement.style.setProperty(
+      "--site-header-height",
+      `${header.offsetHeight}px`,
+    );
+  };
+  updateHeaderHeight();
+  headerHeightObserver?.disconnect();
+  headerHeightObserver = new ResizeObserver(updateHeaderHeight);
+  headerHeightObserver.observe(header);
 
   document.dispatchEvent(new Event("cmcenheaderready"));
 }

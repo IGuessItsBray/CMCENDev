@@ -5,6 +5,10 @@ const lastPostDetailDate = document.getElementById("lastPostDetailDate");
 const lastPostDetailImage = document.getElementById("lastPostDetailImage");
 const lastPostDetailText = document.getElementById("lastPostDetailText");
 const lastPostPreviewNotice = document.getElementById("lastPostPreviewNotice");
+CMCENUtils.setDetailReturnLink(
+  document.getElementById("lastPostBack"),
+  "/last-post",
+);
 const lastPostStaffActions = document.getElementById("lastPostStaffActions");
 const lastPostStaffLabel = document.getElementById("lastPostStaffLabel");
 const lastPostStaffEdit = document.getElementById("lastPostStaffEdit");
@@ -150,7 +154,7 @@ async function loadLastPost() {
   lastPostStaffActions.hidden = true;
   const preview =
     new URLSearchParams(window.location.search).get("preview") === "1";
-  lastPostPreviewNotice.hidden = !preview;
+  lastPostPreviewNotice.hidden = true;
   const messageId = new URLSearchParams(window.location.search).get("id") || "";
   if (!messageId) {
     showDetailMessage(translate("last_post_detail_no_selection"), "error");
@@ -169,8 +173,10 @@ async function loadLastPost() {
     if (!data.lastPost)
       throw new Error(translate("last_post_detail_load_error"));
     renderLastPost(data.lastPost);
+    lastPostPreviewNotice.hidden = !preview;
     await setupLastPostAdminAccess();
   } catch (error) {
+    lastPostPreviewNotice.hidden = true;
     showDetailMessage(
       error.message || translate("last_post_detail_load_error"),
       "error",

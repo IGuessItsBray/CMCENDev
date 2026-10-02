@@ -2038,7 +2038,52 @@
     return shortcut;
   }
 
+  function detailHref(path, id, returnAnchor) {
+    const url = new URL(path, location.origin);
+    url.searchParams.set("id", id);
+    url.searchParams.set(
+      "returnTo",
+      location.pathname + location.search + "#" + returnAnchor,
+    );
+    return url.pathname + url.search;
+  }
+
+  function setDetailReturnLink(link, listPath) {
+    if (!link) return;
+    link.href = listPath;
+    try {
+      const value = new URLSearchParams(location.search).get("returnTo");
+      if (!value) return;
+      const url = new URL(value, location.origin);
+      if (
+        url.origin === location.origin &&
+        url.pathname === listPath &&
+        !url.username &&
+        !url.password
+      ) {
+        link.href = url.pathname + url.search + url.hash;
+      }
+    } catch {
+      // Invalid or unrelated return URLs retain the normal list fallback.
+    }
+  }
+
+  function restoreListAnchor(prefix) {
+    let id;
+    try {
+      id = decodeURIComponent(location.hash.slice(1));
+    } catch {
+      return;
+    }
+    if (!id.startsWith(prefix)) return;
+    const target = document.getElementById(id);
+    if (target) target.scrollIntoView({ block: "center" });
+  }
+
   window.CMCENUtils = {
+    detailHref,
+    setDetailReturnLink,
+    restoreListAnchor,
     activateTabs,
     apiFetch,
     apiJson,

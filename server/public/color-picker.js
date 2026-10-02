@@ -80,6 +80,8 @@
   }
 
   function createColorPicker(options = {}) {
+    const lifecycle = new AbortController();
+    const { signal } = lifecycle;
     const name = options.name || "color";
     const fallback = normalizeColor(options.fallback || "#202642");
     const value = normalizeColor(options.value, fallback);
@@ -176,11 +178,15 @@
       setPickerOpen(!picker.classList.contains("is-open"));
     });
 
-    window.addEventListener("resize", () => {
-      if (picker.classList.contains("is-open")) {
-        setPickerOpen(true);
-      }
-    });
+    window.addEventListener(
+      "resize",
+      () => {
+        if (picker.classList.contains("is-open")) {
+          setPickerOpen(true);
+        }
+      },
+      { signal },
+    );
 
     window.addEventListener(
       "scroll",
@@ -189,22 +195,30 @@
           setPickerOpen(true);
         }
       },
-      true,
+      { capture: true, signal },
     );
 
     picker.addEventListener("click", (event) => {
       event.stopPropagation();
     });
 
-    document.addEventListener("click", () => {
-      setPickerOpen(false);
-    });
-
-    window.addEventListener("cmcen:picker-open", (event) => {
-      if (event.detail?.picker !== picker) {
+    document.addEventListener(
+      "click",
+      () => {
         setPickerOpen(false);
-      }
-    });
+      },
+      { signal },
+    );
+
+    window.addEventListener(
+      "cmcen:picker-open",
+      (event) => {
+        if (event.detail?.picker !== picker) {
+          setPickerOpen(false);
+        }
+      },
+      { signal },
+    );
 
     picker.append(input, custom, popover);
 
@@ -212,6 +226,11 @@
       setColor(input.value);
     });
 
+    picker.destroy = () => {
+      lifecycle.abort();
+      setPickerOpen(false);
+      picker.remove();
+    };
     return picker;
   }
 

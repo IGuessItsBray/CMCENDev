@@ -3,6 +3,7 @@
     let shouldRestoreSearchFocus = false;
     let searchFocusSelection = null;
     let mediaSearchTimer = null;
+    let roleColorPicker = null;
     const USER_ROW_RENDER_LIMIT = 100;
 
     function formatContentArea(contentArea) {
@@ -1011,6 +1012,7 @@
           fallback: "#2c2f55",
           label: "Badge color",
         });
+        roleColorPicker = colorInput;
         colorField.append(colorLabel, colorInput);
 
         const descriptionField = document.createElement("label");
@@ -1729,6 +1731,8 @@
     }
 
     function render() {
+      roleColorPicker?.destroy();
+      roleColorPicker = null;
       const state = getState();
       const content = [createMessage()];
 

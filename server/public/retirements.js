@@ -45,6 +45,7 @@ function getRetirementFilters() {
 
 function updateRetirementFilterUrl() {
   const url = new URL(window.location.href);
+  url.hash = "";
   const { q, year } = getRetirementFilters();
 
   if (q) {
@@ -59,7 +60,7 @@ function updateRetirementFilterUrl() {
     url.searchParams.delete("year");
   }
 
-  window.history.replaceState({}, "", url);
+  window.history.replaceState(window.history.state, "", url);
 }
 
 function loadFiltersFromUrl() {
@@ -205,9 +206,12 @@ function createRetirementCard(retirementMessage) {
   const commentCount = getCommentCount(retirementMessage);
 
   card.className = "retirement-card";
-  card.href = `/retirement-message?id=${encodeURIComponent(
+  card.id = `retirement-${retirementMessage._id}`;
+  card.href = CMCENUtils.detailHref(
+    "/retirement-message",
     retirementMessage._id,
-  )}`;
+    card.id,
+  );
   card.setAttribute("aria-label", translate("retirement_card_aria", { name }));
 
   const header = document.createElement("header");
@@ -345,6 +349,7 @@ async function loadRetirements({ append = false } = {}) {
 
     loadedRetirementMessages = retirementMessages;
     renderRetirements(loadedRetirementMessages);
+    CMCENUtils.restoreListAnchor("retirement-");
   } catch (error) {
     if (append) {
       showRetirementsLoadMoreMessage(

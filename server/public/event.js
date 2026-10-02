@@ -1,4 +1,8 @@
 const eventDetailContent = document.getElementById("eventDetailContent");
+CMCENUtils.setDetailReturnLink(
+  document.querySelector(".event-detail-back-link"),
+  "/calendar",
+);
 
 const eventDetailMessage = document.getElementById("eventDetailMessage");
 

@@ -6,16 +6,28 @@
     <title data-i18n="last_post_detail_page_title">
       Last Post | CMCEN / RCMCE
     </title>
-    <link
-      rel="icon"
-      type="image/png"
-      href="/images/favicon_crest.png"
-    />
+    <link rel="icon" type="image/png" href="/images/favicon_crest.png" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
 
   <body>
     <header id="header"></header>
+    <div
+      id="lastPostPreviewNotice"
+      class="site-timers site-timers-below-header"
+      hidden
+    >
+      <aside class="site-timer" data-icon="info" role="status">
+        <div class="site-timer-track">
+          <span class="site-timer-accent" aria-hidden="true">i</span>
+          <span class="site-timer-text">
+            <span class="site-timer-message" data-i18n="article_preview_notice">
+              Staff preview — this is not the public article.
+            </span>
+          </span>
+        </div>
+      </aside>
+    </div>
 
     <main class="last-post-detail-main">
       <article
@@ -30,9 +42,14 @@
         ></p>
 
         <div id="lastPostDetailContent" hidden>
-          <p id="lastPostPreviewNotice" data-i18n="article_preview_notice" hidden>
-            Staff preview — this is not the public article.
-          </p>
+          <a
+            id="lastPostBack"
+            class="retirement-detail-back"
+            href="/last-post"
+            data-i18n="last_post_detail_back"
+          >
+            Back to Last Post
+          </a>
           <section class="last-post-detail-paper">
             <p
               class="last-post-detail-notice"

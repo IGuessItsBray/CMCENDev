@@ -19,12 +19,16 @@ function formatEventDateRange(event) {
   const context = {
     document: {
       addEventListener() {},
+      querySelector() {
+        return null;
+      },
       getElementById() {
         return element;
       },
     },
     URLSearchParams,
     CMCENUtils: {
+      setDetailReturnLink() {},
       getCurrentLanguage: () => 'en',
       getCurrentLocale: () => 'en-CA',
     },
@@ -87,11 +91,15 @@ test("loads a signed-in attendee's RSVP state with the event", () => {
   const context = {
     document: {
       addEventListener() {},
+      querySelector() {
+        return null;
+      },
       createElement,
       getElementById: getElement,
     },
     URLSearchParams,
     CMCENUtils: {
+      setDetailReturnLink() {},
       getCurrentLanguage: () => 'en',
       getCurrentLocale: () => 'en-CA',
       getStoredAuthToken: () => 'test-token',

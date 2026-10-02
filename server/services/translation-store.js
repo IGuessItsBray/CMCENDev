@@ -99,7 +99,6 @@ function createTranslationsRuntime(translations) {
   return `"use strict";
 
 const translations = ${serializedTranslations};
-const langToggle = document.getElementById("langToggle");
 let currentLang = localStorage.getItem("lang") || "en";
 
 if (!translations[currentLang]) {
@@ -136,6 +135,7 @@ function applyLanguage(lang) {
 
   document.documentElement.setAttribute("lang", nextLang);
 
+  const langToggle = document.getElementById("langToggle");
   if (langToggle) {
     langToggle.textContent = nextLang === "en" ? "FR" : "EN";
   }
@@ -160,11 +160,11 @@ function refreshTranslations(nextTranslations) {
   applyLanguage(currentLang);
 }
 
-if (langToggle) {
-  langToggle.addEventListener("click", () => {
+document.addEventListener("click", (event) => {
+  if (event.target instanceof Element && event.target.closest("#langToggle")) {
     applyLanguage(currentLang === "en" ? "fr" : "en");
-  });
-}
+  }
+});
 
 window.translations = translations;
 window.translate = translate;

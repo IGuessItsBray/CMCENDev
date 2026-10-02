@@ -65,7 +65,12 @@ function createLastPostCard(lastPost) {
   const name = getLastPostName(lastPost);
   const card = document.createElement("a");
   card.className = "last-post-card";
-  card.href = `/last-post-message?id=${encodeURIComponent(lastPost._id)}`;
+  card.id = `last-post-${lastPost._id}`;
+  card.href = CMCENUtils.detailHref(
+    "/last-post-message",
+    lastPost._id,
+    card.id,
+  );
   card.setAttribute("aria-label", translate("last_post_card_aria", { name }));
 
   const notice = document.createElement("p");
@@ -166,6 +171,7 @@ async function loadLastPosts({ append = false } = {}) {
     lastPostNextCursor =
       typeof data.nextCursor === "string" ? data.nextCursor : "";
     renderLastPosts(lastPosts, { append });
+    if (!append) CMCENUtils.restoreListAnchor("last-post-");
   } catch (error) {
     if (append) {
       lastPostLoadMoreMessage.textContent = translate(

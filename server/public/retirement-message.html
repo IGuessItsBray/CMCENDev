@@ -8,16 +8,28 @@
     <title data-i18n="retirement_detail_page_title">
       Retirement Message | CMCEN / RCMCE
     </title>
-    <link
-      rel="icon"
-      type="image/png"
-      href="/images/favicon_crest.png"
-    />
+    <link rel="icon" type="image/png" href="/images/favicon_crest.png" />
     <link rel="stylesheet" href="/styles.css?v=retirement-photo-raw-v1" />
   </head>
 
   <body>
     <header id="header"></header>
+    <div
+      id="retirementPreviewNotice"
+      class="site-timers site-timers-below-header"
+      hidden
+    >
+      <aside class="site-timer" data-icon="info" role="status">
+        <div class="site-timer-track">
+          <span class="site-timer-accent" aria-hidden="true">i</span>
+          <span class="site-timer-text">
+            <span class="site-timer-message" data-i18n="article_preview_notice">
+              Staff preview — this is not the public article.
+            </span>
+          </span>
+        </div>
+      </aside>
+    </div>
 
     <main class="retirement-detail-main">
       <article
@@ -36,9 +48,6 @@
         </p>
 
         <div id="retirementDetailContent" hidden>
-          <p id="retirementPreviewNotice" data-i18n="article_preview_notice" hidden>
-            Staff preview — this is not the public article.
-          </p>
           <header class="retirement-detail-heading">
             <a class="retirement-detail-back" href="/retirements">
               <span aria-hidden="true">←</span>

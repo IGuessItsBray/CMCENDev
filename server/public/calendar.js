@@ -43,6 +43,38 @@ let isLoadingEvents = false;
 let publicEvents = [];
 let requestSequence = 0;
 let selectedView = getInitialCalendarView();
+let restoreInitialAnchor = true;
+
+function readCalendarUrl() {
+  const params = new URLSearchParams(location.search);
+  const month = params.get("month") || "";
+  if (/^[1-9]\d{3}-(0[1-9]|1[0-2])$/.test(month)) {
+    const [year, monthNumber] = month.split("-").map(Number);
+    displayedMonth = new Date(year, monthNumber - 1, 1);
+  }
+  if (["month", "agenda"].includes(params.get("view"))) {
+    selectedView = params.get("view");
+  }
+  for (const [index, key] of [
+    "eventType",
+    "organizingEntity",
+    "provinceRegion",
+  ].entries()) {
+    calendarFilterElements[index].value = params.get(key) || "";
+  }
+}
+
+function updateCalendarUrl() {
+  const url = new URL(location.href);
+  url.searchParams.set("month", getDisplayedMonthKey());
+  url.searchParams.set("view", selectedView);
+  for (const [key, value] of Object.entries(getCalendarFilters())) {
+    if (value) url.searchParams.set(key, value);
+    else url.searchParams.delete(key);
+  }
+  if (!restoreInitialAnchor) url.hash = "";
+  history.replaceState(history.state, "", url);
+}
 
 function getCurrentLanguage() {
   return CMCENUtils.getCurrentLanguage();
@@ -539,7 +571,8 @@ function createAgendaEventCard(event, language, locale) {
   const article = document.createElement("a");
 
   article.className = "calendar-event";
-  article.href = `/event?id=${encodeURIComponent(event._id)}`;
+  article.id = `calendar-event-${event._id}`;
+  article.href = CMCENUtils.detailHref("/event", event._id, article.id);
 
   const dayColumn = document.createElement("div");
 
@@ -700,7 +733,11 @@ function createCalendarEventChip(event, date, language, locale) {
   const eventType = getEventTypeLabel(event.eventType);
 
   link.className = "calendar-event-chip";
-  link.href = `/event?id=${encodeURIComponent(event._id)}`;
+  link.href = CMCENUtils.detailHref(
+    "/event",
+    event._id,
+    `calendar-day-${getLocalDateKey(date)}`,
+  );
   link.setAttribute(
     "aria-label",
     [title, time, eventType].filter(Boolean).join(", "),
@@ -804,7 +841,7 @@ function setMultiDayEventHighlight(eventId, isHighlighted) {
   });
 }
 
-function createMultiDayEventBar(segment, language, locale) {
+function createMultiDayEventBar(segment, language, locale, returnAnchor) {
   const { event, startIndex, endIndex, lane, startsInWeek, endsInWeek } =
     segment;
   const link = document.createElement("a");
@@ -821,7 +858,7 @@ function createMultiDayEventBar(segment, language, locale) {
     : "";
 
   link.className = "calendar-multiday-event";
-  link.href = `/event?id=${encodeURIComponent(event._id)}`;
+  link.href = CMCENUtils.detailHref("/event", event._id, returnAnchor);
   link.dataset.eventId = event._id;
   link.style.gridColumn = `${startIndex + 1} / ${endIndex + 2}`;
   link.style.gridRow = String(lane + 1);
@@ -889,6 +926,7 @@ function createCalendarDayCell(date, language, locale) {
     date.getFullYear() === displayedMonth.getFullYear();
 
   day.className = "calendar-day";
+  day.id = `calendar-day-${dayKey}`;
   day.dataset.date = dayKey;
 
   if (!isCurrentMonth) {
@@ -1016,7 +1054,12 @@ function renderMonthCalendar(language, locale) {
 
       segments.forEach((segment) => {
         eventBars.appendChild(
-          createMultiDayEventBar(segment, language, locale),
+          createMultiDayEventBar(
+            segment,
+            language,
+            locale,
+            `calendar-day-${getLocalDateKey(weekDates[segment.startIndex])}`,
+          ),
         );
       });
 
@@ -1159,6 +1202,7 @@ function renderCalendar() {
 }
 
 async function loadEvents() {
+  updateCalendarUrl();
   const requestId = ++requestSequence;
   const { firstGridDay, lastGridDay } = getCalendarGridRange(displayedMonth);
   const query = new URLSearchParams({
@@ -1197,6 +1241,10 @@ async function loadEvents() {
     });
     isLoadingEvents = false;
     renderCalendar();
+    if (restoreInitialAnchor) {
+      CMCENUtils.restoreListAnchor("calendar-");
+      restoreInitialAnchor = false;
+    }
   } catch (error) {
     if (requestId !== requestSequence) {
       return;
@@ -1242,6 +1290,7 @@ calendarTodayButton.addEventListener("click", () => {
 [calendarMonthViewButton, calendarAgendaViewButton].forEach((button) => {
   button.addEventListener("click", () => {
     selectedView = button.dataset.calendarView;
+    updateCalendarUrl();
     renderCalendar();
   });
 });
@@ -1265,4 +1314,5 @@ calendarDownloadButton.addEventListener("click", downloadCalendarIcs);
 
 document.addEventListener("languagechange", renderCalendar);
 
+readCalendarUrl();
 loadEvents();

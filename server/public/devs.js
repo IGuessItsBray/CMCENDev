@@ -5,6 +5,50 @@
 
   if (!changelogContent) return;
 
+  function appendInlineMarkdown(container, value) {
+    const markdownLinkPattern = /\[([^\]]+)\]\(([^\s)]+)\)/gu;
+    const text = String(value || "");
+    let cursor = 0;
+
+    for (const match of text.matchAll(markdownLinkPattern)) {
+      const [source, label, destination] = match;
+      const matchIndex = match.index ?? 0;
+
+      if (matchIndex > cursor) {
+        container.append(document.createTextNode(text.slice(cursor, matchIndex)));
+      }
+
+      let url;
+      try {
+        url = new URL(destination, window.location.origin);
+      } catch {
+        container.append(document.createTextNode(source));
+        cursor = matchIndex + source.length;
+        continue;
+      }
+
+      if (!["http:", "https:"].includes(url.protocol)) {
+        container.append(document.createTextNode(source));
+        cursor = matchIndex + source.length;
+        continue;
+      }
+
+      const link = document.createElement("a");
+      link.href = url.href;
+      link.textContent = label;
+      if (url.origin !== window.location.origin) {
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+      }
+      container.append(link);
+      cursor = matchIndex + source.length;
+    }
+
+    if (cursor < text.length) {
+      container.append(document.createTextNode(text.slice(cursor)));
+    }
+  }
+
   function parseChangelog(markdown) {
     const releases = [];
     let release;
@@ -71,7 +115,7 @@
 
         releaseSection.notes.forEach((note) => {
           const paragraph = document.createElement("p");
-          paragraph.textContent = note;
+          appendInlineMarkdown(paragraph, note);
           sections.append(paragraph);
         });
 
@@ -79,7 +123,7 @@
           const changes = document.createElement("ul");
           releaseSection.changes.forEach((change) => {
             const item = document.createElement("li");
-            item.textContent = change;
+            appendInlineMarkdown(item, change);
             changes.append(item);
           });
           sections.append(changes);

@@ -4,6 +4,96 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.3.0] - 2026-10-02
+
+
+
+### Breaking Changes
+
+
+- archive: Prepare draft imports and unify comment moderation
+
+
+
+### Bug Fixes
+
+
+- news: Clarify archive and staff article controls
+
+- archive-review: Clarify issues and review choices
+
+- archive: Preserve unknown historical submission metadata
+
+- frontend: Preserve returns and release listeners
+
+
+
+### Documentation
+
+
+- storage: Prefer Garage for new deployments
+
+
+
+### Features
+
+
+- frontend: Reorganize navigation and refine site styling
+
+- admin: Establish admin dashboard and migrate management tools
+
+- content: Unify staff workspace and personal submission corrections
+
+- association: Add directors page and newsletter archive
+
+- articles: Add database-backed newsletter editing
+
+- media: Refine uploads and reuse the shared crest
+
+- submissions: Distinguish publication and admin activity dates
+
+- media: Establish portable media foundation
+
+- admin: Add permanent content deletion controls
+
+- articles: Unify article editing and categories
+
+- content: Streamline bilingual editing and workspace navigation
+
+- admin: Checkpoint temporary archive review tooling
+
+- admin: Add archival discovery review batches
+
+- admin: Add comment migration review exceptions
+
+- migration: Expand archive review and preserve legacy account profiles
+
+- archive: Choose original or new publication dates
+
+- archive: Add restricted staff review workflow
+
+- editorial: Combine archive workspace and email controls
+
+- media: Add editable library names with compact pencil controls
+
+- archive: Add content importer and admin controls
+
+- content: Simplify staff previews and publication choices
+
+
+
+### Maintenance
+
+
+- Streamline agent guidance
+
+- documents: Move library source files to CDN
+
+- newsletters: Finish migration and remove import artifacts
+
+- ui: Polish public and account pages
+
+
 ## [0.2.0] - 2026-09-18
 
 

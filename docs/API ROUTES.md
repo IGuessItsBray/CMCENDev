@@ -647,3 +647,32 @@ supports 30,000 characters per language. Retirement comment creation, owner
 editing and staff correction support 2–10,000 characters. Last Post comment
 storage also supports 10,000 characters. Importers must preserve complete text
 and reject overflow instead of truncating.
+
+## Adopt a Display catalogue
+
+- `GET /api/adopt-displays`: public `{ displays: [...] }`, published records only.
+- `GET /api/admin/adopt-displays`: all drafts and published records.
+- `POST /api/admin/adopt-displays`: create a draft by default; returns `201` and `{ display }`.
+- `PATCH /api/admin/adopt-displays/:displayId`: update supplied fields, including `published`.
+- `DELETE /api/admin/adopt-displays/:displayId`: delete the record; does not delete image assets.
+
+Every admin operation requires authentication and `adopt_displays.manage`
+(`canManageAdoptDisplays`). No existing staff role is granted this permission;
+developers retain their existing all-permissions access. Assign access through
+the role manager when staff ownership is agreed. Image uploads use `/api/upload`
+and separately require `media.upload`; draft and published image references are
+tracked by the media library and protect attached assets from deletion.
+
+Records use MongoDB document IDs; display numbers are optional and may repeat.
+`title`, `description`, `adoptionAmount`, `availability`, `recognition`, and
+`expiry` are `{ en, fr }` text fields. At least one title is required. Optional
+`displayNumber` and `imageUrl` are strings; `published` is a boolean. Amount,
+availability and expiry are staff-authored descriptions, without automatic
+expiry or adoption/payment rules. PATCH leaves omitted fields unchanged.
+Invalid payloads return `400`; invalid or missing IDs return `404`; denied
+operations return `401`/`403`. Creates, edits and deletes write audit records.
+Public responses exclude staff IDs. The bilingual public page is
+`/foundation-adopt`; the staff editor is `/dashboard-next?area=adopt`.
+
+The historical review JSON under `server/data/adopt-review/` remains ignored and
+excluded from Docker. No automatic import or publication occurs.

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Adopt a Display | CMCEN / RCMCE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header id="header"></header>
+    <main class="about-family-main" data-static-page="foundation-adopt">
+      <article class="about-family-shell">
+        <header class="about-family-hero leadership-hero">
+          <div class="about-family-hero-copy">
+            <p class="about-family-kicker" data-page-i18n="kicker">
+              Museum Foundation
+            </p>
+            <h1 data-page-i18n="heading">Adopt a Display</h1>
+            <p class="about-family-intro" data-page-i18n="intro">
+              Support the Military Communications and Electronics Museum through
+              the Foundation’s Adopt an Exhibit campaign.
+            </p>
+          </div>
+          <img
+            src="/assets/images/logo.png"
+            alt=""
+            class="about-family-emblem"
+            aria-hidden="true"
+          />
+        </header>
+        <div class="about-family-body">
+          <section class="about-family-section">
+            <h2 data-page-i18n="campaignHeading">Support an exhibit</h2>
+            <p data-page-i18n="campaignBody">
+              The Adopt an Exhibit campaign is offered by The Military
+              Communications and Electronics Museum Foundation. Visit the
+              campaign for adoption details and to make your contribution
+              through Zeffy.
+            </p>
+            <p data-page-i18n="programBody">
+              Adoption supports exhibit maintenance and cleaning for one year.
+              The program includes a wooden plaque and online recognition;
+              confirm recognition arrangements with the Foundation.
+            </p>
+            <p>
+              <a
+                id="adoptCampaignLink"
+                class="home-button home-button-primary"
+                href="https://www.zeffy.com/en-CA/donation-form/adopt-an-exhibit"
+                data-page-i18n="campaignLink"
+                >Open the Adopt an Exhibit campaign on Zeffy</a
+              >
+            </p>
+            <p data-page-i18n="campaignNote">
+              The campaign opens on Zeffy’s website, where you can review the
+              details before donating.
+            </p>
+          </section>
+          <section class="about-family-section">
+            <h2 data-page-i18n="exhibitsHeading">
+              Explore the museum’s displays
+            </h2>
+            <p data-page-i18n="exhibitsBody">
+              Browse the exhibit list on the Foundation’s original page.
+              Availability, amounts and recognition details may have changed;
+              confirm them with the Foundation before choosing an exhibit.
+            </p>
+            <p>
+              <a
+                href="https://cmcen-rcmce.ca/foundation-adopt/"
+                data-page-i18n="exhibitsLink"
+                >View the original exhibit list</a
+              >
+            </p>
+            <p>
+              <a
+                href="mailto:gpriems@cmcen-rcmce.ca"
+                data-page-i18n="contactLink"
+                >Contact the Foundation about an exhibit</a
+              >
+            </p>
+          </section>
+          <section id="adoptCatalogueSection" class="about-family-section">
+            <h2 data-page-i18n="catalogueHeading">Display catalogue</h2>
+            <p data-page-i18n="catalogueNote">
+              Contact the Foundation to confirm adoption details.
+            </p>
+            <p id="adoptCatalogueError" role="status" aria-live="polite"></p>
+            <button
+              id="adoptCatalogueRetry"
+              type="button"
+              data-page-i18n="catalogueRetry"
+              hidden
+            >
+              Try again
+            </button>
+            <div class="document-library-controls adopt-catalogue-controls">
+              <label
+                ><span data-page-i18n="catalogueSearchLabel"
+                  >Search displays</span
+                >
+                <input
+                  class="cmcen-control"
+                  id="adoptCatalogueSearch"
+                  type="search"
+                  data-page-i18n-placeholder="catalogueSearchPlaceholder"
+                  placeholder="Search number or description"
+                />
+              </label>
+            </div>
+            <p id="adoptCatalogueCount" aria-live="polite"></p>
+            <div id="adoptCatalogue" class="document-library-grid"></div>
+            <button
+              id="adoptCatalogueMore"
+              class="adopt-catalogue-more"
+              type="button"
+              hidden
+            >
+              Show more displays
+            </button>
+          </section>
+          <section class="about-family-section">
+            <h2 data-page-i18n="foundationHeading">About the Foundation</h2>
+            <p>
+              <a
+                href="/about_museum_foundation.html"
+                data-page-i18n="foundationLink"
+                >Learn about the Museum and Foundation</a
+              >
+            </p>
+          </section>
+        </div>
+      </article>
+    </main>
+    <footer id="footer"></footer>
+    <script src="/app-utils.js"></script>
+    <script src="/timers.js"></script>
+    <script src="/index.js"></script>
+    <script src="/translations.js"></script>
+    <script src="/static-page-content.js"></script>
+    <script src="/foundation-adopt.js"></script>
+  </body>
+</html>

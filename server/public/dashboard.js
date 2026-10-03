@@ -1024,6 +1024,7 @@ function canAccessAdministration(user) {
   return [
     "canVerifyArchive",
     "canReviewAndPublish",
+    "canManageAdoptDisplays",
     "canManageNews",
     "canManageEventRsvps",
     "canManageCertificateRequests",

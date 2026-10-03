@@ -281,6 +281,7 @@ app.use('/api/certificate-requests', certificateRequestRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api', professionalAwardRoutes);
+app.use('/api', require('./routes/adopt-displays'));
 app.use(pageRoutes);
 app.use(serveExtensionlessHtml);
 

@@ -31,6 +31,7 @@ test('staff and custom administrative permissions receive the Administration ent
   for (const role of ['editor', 'administrator', 'developer'])
     assert.equal(canAccess(account(role)), true, role);
   for (const permission of [
+    'adopt_displays.manage',
     'roles.manage',
     'users.read',
     'timers.manage',

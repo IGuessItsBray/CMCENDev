@@ -16,6 +16,12 @@ let staticPageCorpusPromise;
 
 const STATIC_PAGES = [
   {
+    path: '/foundation-adopt',
+    file: 'foundation-adopt.html',
+    type: 'page',
+    title: { en: 'Adopt a Display', fr: 'Adopter une exposition' },
+  },
+  {
     path: '/awards',
     file: 'awards.html',
     type: 'page',

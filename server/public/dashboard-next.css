@@ -402,6 +402,7 @@ body {
   overflow-wrap: anywhere;
   line-height: 1.5;
 }
+#adoptAdminForm,
 #awardDetail,
 .award-recipient-layout > div {
   min-width: 0;
@@ -421,12 +422,14 @@ body {
   flex-direction: column;
   gap: 18px;
 }
+#adoptAdminFields,
 #awardRecipientFields {
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
+#adoptAdminHeading,
 #awardRecipientHeading {
   margin-bottom: 18px;
   font-weight: 700;

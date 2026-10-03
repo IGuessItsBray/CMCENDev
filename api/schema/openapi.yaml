@@ -106,6 +106,94 @@ paths:
                 additionalProperties: true
         '404':
           description: No matching bundled public JSON file.
+  /api/adopt-displays:
+    get:
+      operationId: listPublishedAdoptDisplays
+      tags: [Pages]
+      summary: List published bilingual display records, excluding staff IDs.
+      security: []
+      responses:
+        '200':
+          description: Object containing a displays array; drafts are excluded.
+        '500':
+          description: Catalogue unavailable.
+  /api/admin/adopt-displays:
+    get:
+      operationId: listAdminAdoptDisplays
+      tags: [Admin]
+      summary: List all display records.
+      x-permission: canManageAdoptDisplays
+      responses:
+        '200':
+          description: Object containing a displays array.
+        '401':
+          description: Authentication required.
+        '403':
+          description: adopt_displays.manage required.
+    post:
+      operationId: createAdoptDisplay
+      tags: [Admin]
+      summary: Create a display; defaults to draft.
+      x-permission: canManageAdoptDisplays
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdoptDisplayInput'
+      responses:
+        '201':
+          description: Object containing the created display.
+        '400':
+          description: Invalid fields or missing title.
+        '401':
+          description: Authentication required.
+        '403':
+          description: adopt_displays.manage required.
+  /api/admin/adopt-displays/{displayId}:
+    parameters:
+      - in: path
+        name: displayId
+        required: true
+        schema:
+          type: string
+        description: MongoDB document ID, independent of display number.
+    patch:
+      operationId: updateAdoptDisplay
+      tags: [Admin]
+      summary: Update supplied fields; publish or unpublish explicitly.
+      x-permission: canManageAdoptDisplays
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdoptDisplayInput'
+      responses:
+        '200':
+          description: Object containing the saved display.
+        '400':
+          description: Invalid fields or missing title.
+        '401':
+          description: Authentication required.
+        '403':
+          description: adopt_displays.manage required.
+        '404':
+          description: Invalid ID or display not found.
+    delete:
+      operationId: deleteAdoptDisplay
+      tags: [Admin]
+      summary: Delete a display; preserve image assets.
+      x-permission: canManageAdoptDisplays
+      responses:
+        '200':
+          description: Display deleted.
+        '401':
+          description: Authentication required.
+        '403':
+          description: adopt_displays.manage required.
+        '404':
+          description: Invalid ID or display not found.
   /api/professional-awards:
     get:
       tags: [Pages]
@@ -3813,6 +3901,74 @@ components:
             properties:
               message: { type: string }
   schemas:
+    AdoptDisplayInput:
+      type: object
+      description: At least one title language is required on creation and after editing. Bilingual fields replace both language values when supplied. Availability, amount and expiry are descriptive text.
+      properties:
+        displayNumber:
+          type: string
+          maxLength: 80
+        imageUrl:
+          type: string
+          maxLength: 2000
+          description: Empty or HTTP(S) URL without credentials.
+        published:
+          type: boolean
+          default: false
+        title:
+          type: object
+          properties:
+            en:
+              type: string
+              maxLength: 240
+            fr:
+              type: string
+              maxLength: 240
+        description:
+          type: object
+          properties:
+            en:
+              type: string
+              maxLength: 8000
+            fr:
+              type: string
+              maxLength: 8000
+        adoptionAmount:
+          type: object
+          properties:
+            en:
+              type: string
+              maxLength: 240
+            fr:
+              type: string
+              maxLength: 240
+        availability:
+          type: object
+          properties:
+            en:
+              type: string
+              maxLength: 240
+            fr:
+              type: string
+              maxLength: 240
+        recognition:
+          type: object
+          properties:
+            en:
+              type: string
+              maxLength: 2000
+            fr:
+              type: string
+              maxLength: 2000
+        expiry:
+          type: object
+          properties:
+            en:
+              type: string
+              maxLength: 240
+            fr:
+              type: string
+              maxLength: 240
     PersonalSubmission:
       type: object
       required: [id, type, title, status, submittedAt, updatedAt]

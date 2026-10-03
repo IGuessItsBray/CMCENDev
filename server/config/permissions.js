@@ -1,6 +1,8 @@
 const { ROLE_LEVELS } = require('./roles');
 
 const PERMISSION_CATALOG = Object.freeze([
+  { key: 'adopt_displays.manage', label: 'Manage Adopt a Display', group: 'Museum Foundation',
+    action: 'edit', description: 'Create, edit, publish, unpublish, and delete display catalogue records.' },
   {
     key: 'archive.verify',
     label: 'Verify imported archive',
@@ -263,6 +265,7 @@ const PERMISSION_CATALOG = Object.freeze([
 ]);
 
 const LEGACY_PERMISSION_KEYS = Object.freeze({
+  canManageAdoptDisplays: 'adopt_displays.manage',
   canVerifyArchive: 'archive.verify',
   canAccessConnections: 'connections.read',
   canCreateDrafts: 'content.create',
@@ -322,6 +325,7 @@ function getBuiltInPermissionFlags(user) {
   const isGhost = role === 'ghost';
 
   return {
+    canManageAdoptDisplays: false,
     canVerifyArchive: false,
     canAccessConnections: hasMinimumRole(role, 'subscriber'),
 

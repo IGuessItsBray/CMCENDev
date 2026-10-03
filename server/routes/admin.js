@@ -20,6 +20,7 @@ const EventRsvp = require('../models/EventRsvp');
 const LastPostMessage = require('../models/LastPostMessage');
 const NewsArticle = require('../models/NewsArticle');
 const Page = require('../models/Page');
+const AdoptDisplay = require('../models/AdoptDisplay');
 const ContentRevision = require('../models/ContentRevision');
 const RetirementMessage = require('../models/RetirementMessage');
 const Comment = require('../models/Comment');
@@ -1570,6 +1571,7 @@ function getMediaAttachmentMap(
   lastPostMessages,
   newsArticles,
   pages,
+  displays,
 ) {
   const attachmentMap = new Map();
 
@@ -1655,6 +1657,13 @@ function getMediaAttachmentMap(
     });
   });
 
+  displays.forEach((item) => {
+    addAttachment(getMediaKeyFromValue(item.imageUrl), {
+      _id: item._id, type: 'adoptDisplay', title: item.title.en || item.title.fr,
+      status: item.published ? 'published' : 'draft', field: 'imageUrl',
+      href: `/dashboard-next?area=adopt`,
+    });
+  });
   pages.forEach((page) => {
     const attachment = {
       _id: page._id,
@@ -1720,7 +1729,7 @@ function getMediaAssetAttachmentKeys(asset) {
 }
 
 async function getMediaAttachments() {
-  const [events, retirementMessages, lastPostMessages, newsArticles, pages] =
+  const [events, retirementMessages, lastPostMessages, newsArticles, pages, displays] =
     await Promise.all([
       Event.find({
         imagePath: { $nin: [null, ''] },
@@ -1750,6 +1759,7 @@ async function getMediaAttachments() {
         .select('title status imageUrl imageDisplayUrl newsletterBlocks layout')
         .lean(),
       Page.find({}).select('title slug status blocks').lean(),
+      AdoptDisplay.find({ imageUrl: { $nin: [null, ''] } }).select('title published imageUrl').lean(),
     ]);
 
   return getMediaAttachmentMap(
@@ -1758,6 +1768,7 @@ async function getMediaAttachments() {
     lastPostMessages,
     newsArticles,
     pages,
+    displays,
   );
 }
 

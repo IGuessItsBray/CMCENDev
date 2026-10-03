@@ -103,6 +103,13 @@
       mount: (options) =>
         window.ContentWorkspace.mount({ ...options, articleMode: true }),
     },
+    adopt: {
+      permission: "canManageAdoptDisplays",
+      link: document.getElementById("adminAdoptLink"),
+      element: document.getElementById("adminAdopt"),
+      title: "adminAdoptTitle",
+      mount: (options) => window.DashboardNextAdopt.mount(options),
+    },
     awards: {
       permission: "canReviewAndPublish",
       link: document.getElementById("adminAwardsLink"),
@@ -166,6 +173,7 @@
   const adminPermissions = [
     "canVerifyArchive",
     "canReviewAndPublish",
+    "canManageAdoptDisplays",
     "canManageNews",
     "canManageEventRsvps",
     "canManageCertificateRequests",

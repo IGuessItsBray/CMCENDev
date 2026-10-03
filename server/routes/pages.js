@@ -82,6 +82,7 @@ const SITEMAP_ACCOUNT_HTML = new Set([
   'register.html',
 ]);
 const SITEMAP_STATIC_LABELS = Object.freeze({
+  'foundation-adopt.html': { en: 'Adopt a Display', fr: 'Adopter une exposition' },
   'awards.html': { en: 'Awards', fr: 'Prix' },
   'about-family.html': { en: 'About the C&E Family', fr: 'Famille des C et E' },
   'about_association.html': {

@@ -3,4 +3,5 @@ node_modules/
 .DS_Store
 server/package-lock.json
 server/scripts/migration/output/
+server/data/adopt-review/
 package-lock.json

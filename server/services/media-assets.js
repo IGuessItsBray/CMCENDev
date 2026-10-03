@@ -6,6 +6,7 @@ const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
 const NewsArticle = require('../models/NewsArticle');
 const Page = require('../models/Page');
+const AdoptDisplay = require('../models/AdoptDisplay');
 const RetirementMessage = require('../models/RetirementMessage');
 const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const {
@@ -15,6 +16,7 @@ const {
 const s3Client = require('../storage');
 
 const MEDIA_UPLOAD_SOURCE_TYPES = new Set([
+  'adoptDisplay',
   'retirementMessage',
   'lastPostMessage',
   'newsArticle',
@@ -283,7 +285,7 @@ function getPageMediaReferences(blocks = []) {
 }
 
 async function getContentMediaReferences(assetKeys) {
-  const [events, retirementMessages, lastPostMessages, newsArticles, pages] =
+  const [events, retirementMessages, lastPostMessages, newsArticles, pages, displays] =
     await Promise.all([
       Event.find({ imagePath: { $nin: [null, ''] } })
         .select('_id imagePath')
@@ -309,6 +311,7 @@ async function getContentMediaReferences(assetKeys) {
         .select('_id imageUrl imageDisplayUrl layout newsletterBlocks')
         .lean(),
       Page.find({}).select('_id blocks').lean(),
+      AdoptDisplay.find({ imageUrl: { $nin: [null, ''] } }).select('_id imageUrl').lean(),
     ]);
   const references = [];
   const addReference = (type, document, field, value) => {
@@ -342,6 +345,7 @@ async function getContentMediaReferences(assetKeys) {
       article.imageDisplayUrl,
     );
   });
+  displays.forEach((item) => addReference('adoptDisplay', item, 'imageUrl', item.imageUrl));
   pages.forEach((page) => {
     getPageMediaReferences(page.blocks).forEach(([value, field]) => {
       addReference('page', page, field, value);

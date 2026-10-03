@@ -34,6 +34,7 @@
     <script src="/timers.js" data-render-only defer></script>
     <script src="/dashboard-next-banners.js" defer></script>
     <script src="/dashboard-next-awards.js" defer></script>
+    <script src="/dashboard-next-adopt.js" defer></script>
     <script src="/dashboard-next-user-actions.js" defer></script>
     <script src="/dashboard-next-users.js" defer></script>
     <script src="/dashboard-next-roles.js" defer></script>
@@ -222,6 +223,7 @@
                 hidden
                 >Awards</a
               >
+              <a id="adminAdoptLink" href="/dashboard-next?area=adopt" data-i18n="admin_next_adopt" hidden>Adopt a Display</a>
             </nav>
             <nav
               class="admin-sidebar-account"
@@ -1117,6 +1119,28 @@
               </div>
             </header>
             <div id="adminAuditBody"></div>
+          </section>
+          <section id="adminAdopt" aria-labelledby="adminAdoptTitle" hidden>
+            <header class="admin-area-heading">
+              <h1 id="adminAdoptTitle" tabindex="-1">Adopt a Display</h1>
+              <a href="/foundation-adopt">View public catalogue</a>
+            </header>
+            <p id="adoptAdminStatus" role="status" aria-live="polite"></p>
+            <button id="adoptAdminRetry" type="button">Reload</button>
+            <button id="adoptAdminNew" type="button">New display</button>
+            <div class="awards-layout">
+              <div id="adoptAdminList" class="admin-record-list"></div>
+              <form id="adoptAdminForm" hidden>
+                <fieldset id="adoptAdminFields">
+                  <legend id="adoptAdminHeading">Display details</legend>
+                  <div id="adoptAdminInputs" class="award-inputs"></div>
+                  <label><input type="checkbox" name="published"> Published</label>
+                  <p>Drafts are private. Publish only reviewed details; availability and expiry are descriptive fields.</p>
+                  <button type="submit">Save display</button>
+                  <button id="adoptAdminDelete" type="button">Delete display</button>
+                </fieldset>
+              </form>
+            </div>
           </section>
           <section id="adminAwards" aria-labelledby="adminAwardsTitle" hidden>
             <header class="admin-area-heading">

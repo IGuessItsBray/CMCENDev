@@ -93,6 +93,7 @@ test('shared route serves existing public files unchanged and rejects unknown or
   }
   for (const filename of [
     'missing.json',
+    'foundation-adopt-catalogue.review.json',
     '.env',
     '..%2F..%2Fpackage.json',
     '%2Fetc%2Fpasswd',

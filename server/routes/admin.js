@@ -69,6 +69,7 @@ const {
   restoreContent,
 } = require('../services/content-lifecycle');
 const { recordContentRevision } = require('../services/content-revisions');
+const { getArticleReviews } = require('../services/article-review');
 const {
   linkMediaAssetToSource,
   deleteContentMediaAssets,
@@ -856,6 +857,9 @@ router.get(
         return res.status(400).json({ error: 'Unsupported workspace scope' });
       const status = String(req.query.status || 'all');
       const origin = String(req.query.origin || 'all');
+      const flagged = String(req.query.flagged || 'all');
+      if (!['all', 'true'].includes(flagged))
+        return res.status(400).json({ error: 'Unsupported review flag' });
       const translation = String(req.query.translation || 'all');
       const search = cleanContentWorkspaceSearch(req.query.search);
       const contentId = String(req.query.id || '').trim();
@@ -918,6 +922,7 @@ router.get(
         : null;
       const types = (type === 'all' ? permittedTypes : [type]).filter(
         (contentType) =>
+          (flagged !== 'true' || contentType === 'newsArticle') &&
           (translation === 'all' || !['comment'].includes(contentType)) &&
           (scope === 'all' ||
             (scope === 'articles'
@@ -936,6 +941,12 @@ router.get(
           translation,
         );
       const queries = [];
+      const flaggedIds =
+        flagged === 'true'
+          ? [...(await getArticleReviews())]
+              .filter(([, review]) => review.needsReview)
+              .map(([id]) => new mongoose.Types.ObjectId(id))
+          : null;
 
       if (types.includes('event')) {
         queries.push(
@@ -1067,7 +1078,16 @@ router.get(
 
       if (types.includes('newsArticle')) {
         queries.push(
-          NewsArticle.find(getWorkspaceFilter('newsArticle'))
+          NewsArticle.find(
+            flaggedIds
+              ? {
+                  $and: [
+                    getWorkspaceFilter('newsArticle'),
+                    { _id: { $in: flaggedIds } },
+                  ],
+                }
+              : getWorkspaceFilter('newsArticle'),
+          )
             .select(
               'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourcePostIds legacy.sourceUrl legacy.sourceUrls legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
             )
@@ -1108,6 +1128,19 @@ router.get(
         );
       const hasMore = !contentId && matchingItems.length > limit;
       const items = matchingItems.slice(0, limit);
+      const articleReviews = await getArticleReviews(
+        items
+          .filter((item) => item.type === 'newsArticle')
+          .map((item) => new mongoose.Types.ObjectId(item._id)),
+      );
+      for (const item of items) {
+        if (item.type === 'newsArticle')
+          item.articleReview = articleReviews.get(String(item._id)) || {
+            needsReview: false,
+            note: '',
+            legacyNotes: {},
+          };
+      }
       if (items.length) {
         const notes = await ContentRevision.aggregate([
           {
@@ -1157,6 +1190,59 @@ router.get(
       return res
         .status(500)
         .json({ error: 'Could not load content workspace' });
+    }
+  },
+);
+
+router.patch(
+  '/content/newsArticle/:contentId/review',
+  authMiddleware,
+  requireContentWorkspaceAccess,
+  async (req, res) => {
+    try {
+      if (req.permissions.canManageNews !== true)
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      const { contentId } = req.params;
+      const { needsReview, note } = req.body || {};
+      if (
+        !mongoose.isObjectIdOrHexString(contentId) ||
+        typeof needsReview !== 'boolean' ||
+        typeof note !== 'string' ||
+        note.length > 4100
+      )
+        return res.status(400).json({ error: 'Invalid article review' });
+      const content = await NewsArticle.findById(contentId)
+        .select('_id status')
+        .lean();
+      if (!content) return res.status(404).json({ error: 'Content not found' });
+      const previous = (await getArticleReviews([content._id])).get(
+        String(content._id),
+      ) || { needsReview: false, note: '', legacyNotes: {} };
+      const before = { needsReview: previous.needsReview, note: previous.note };
+      const after = { needsReview, note: note.trim() };
+      if (JSON.stringify(before) !== JSON.stringify(after)) {
+        await recordContentRevision({
+          contentType: 'newsArticle',
+          content,
+          actor: req.user,
+          status: content.status,
+          fields: ['articleReview'],
+          before: { articleReview: before },
+          after: { articleReview: after },
+        });
+        await writeAuditLog({
+          req,
+          action: 'content.article_review_updated',
+          actor: req.user,
+          targetType: 'newsArticle',
+          target: contentId,
+          metadata: { needsReview },
+        });
+      }
+      return res.json({ ...after, legacyNotes: previous.legacyNotes });
+    } catch (error) {
+      console.error('Could not save article review:', error);
+      return res.status(500).json({ error: 'Could not save article review' });
     }
   },
 );

@@ -1540,3 +1540,33 @@ html[data-theme='dark'] .content-workspace-revision-value {
 html[data-theme='dark'] .content-workspace-revision-note {
   background: rgba(213, 155, 39, 0.1);
 }
+
+.content-workspace-review-badge {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.3rem;
+  color: #713f12;
+  background: #fef3c7;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.content-workspace-review-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.content-workspace-title-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.content-workspace-review-form > label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.content-workspace-review-form pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -1555,6 +1555,38 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
+  /api/admin/content/newsArticle/{contentId}/review:
+    patch:
+      tags: [Admin, Content]
+      summary: Save the record-wide private article review flag and note.
+      description: Requires canManageNews. Retains revisions and audit history without changing publication. Clearing the flag retains the submitted note. Workspace articleReview includes legacy EN/FR notes; until shared state is saved, any remaining legacy note flags the article. No migration required.
+      x-permission: canManageNews
+      parameters:
+        - name: contentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [needsReview, note]
+              properties:
+                needsReview: { type: boolean }
+                note: { type: string, maxLength: 4100 }
+      responses:
+        "200":
+          description: Saved review state and retained legacy notes.
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/admin/content/{contentType}/{contentId}/editorial-note:
     patch:
       tags: [Admin, Content]
@@ -1670,6 +1702,10 @@ paths:
           description: Show all permitted content or only records imported from the WordPress archive.
           schema:
             { type: string, enum: [all, imported], default: all }
+        - name: flagged
+          in: query
+          description: Set true to return only Needs review articles, including nonempty legacy notes until shared review state is saved. Applied before pagination and combined with other filters. Articles expose private articleReview with needsReview, note and retained legacyNotes; clearing the flag leaves publication and review history intact.
+          schema: { type: string, enum: [all, "true"], default: all }
         - name: type
           in: query
           schema:

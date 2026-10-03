@@ -113,6 +113,7 @@ window.ContentWorkspace = {
       "type",
       "status",
       "origin",
+      "flagged",
       "translation",
       "search",
       "id",
@@ -135,7 +136,11 @@ window.ContentWorkspace = {
     const contentWorkspaceStatusFilter = getElement(
       "contentWorkspaceStatusFilter",
     );
-    const contentWorkspaceOriginFilter = getElement("contentWorkspaceOriginFilter");
+    const contentWorkspaceOriginFilter = getElement(
+      "contentWorkspaceOriginFilter",
+    );
+    const reviewFilter = getElement("contentWorkspaceReviewFilter");
+    reviewFilter.closest("label").hidden = !articleMode;
     const contentWorkspaceSearch = getElement("contentWorkspaceSearch");
     const contentWorkspaceTranslationFilter = getElement(
       "contentWorkspaceTranslationFilter",
@@ -482,7 +487,12 @@ window.ContentWorkspace = {
       contentWorkspaceStatusFilter.value = contentWorkspaceStatuses.has(status)
         ? status
         : "all";
-      contentWorkspaceOriginFilter.value = origin === "imported" ? "imported" : "all";
+      contentWorkspaceOriginFilter.value =
+        origin === "imported" ? "imported" : "all";
+      reviewFilter.value =
+        articleMode && searchParameters.get("flagged") === "true"
+          ? "true"
+          : "all";
 
       contentWorkspaceTranslationFilter.value =
         contentWorkspaceTranslationStatuses.has(translation)
@@ -519,6 +529,8 @@ window.ContentWorkspace = {
         searchParameters.set("status", status);
       }
       if (origin !== "all") searchParameters.set("origin", origin);
+      if (articleMode && reviewFilter.value === "true")
+        searchParameters.set("flagged", "true");
       if (translation !== "all") {
         searchParameters.set("translation", translation);
       }
@@ -537,6 +549,7 @@ window.ContentWorkspace = {
         (!articleMode && contentWorkspaceType.value !== "all") ||
         contentWorkspaceStatusFilter.value !== "all" ||
         contentWorkspaceOriginFilter.value !== "all" ||
+        (articleMode && reviewFilter.value !== "all") ||
         contentWorkspaceTranslationFilter.value !== "all" ||
         contentWorkspaceSearch.value.trim(),
       );
@@ -549,6 +562,7 @@ window.ContentWorkspace = {
         ...(articleMode ? [] : [contentWorkspaceType]),
         contentWorkspaceStatusFilter,
         contentWorkspaceOriginFilter,
+        ...(articleMode ? [reviewFilter] : []),
         contentWorkspaceTranslationFilter,
       ].filter((control) => control.value !== "all").length;
       advancedFilters.querySelector("strong").textContent = activeCount
@@ -562,6 +576,7 @@ window.ContentWorkspace = {
       contentWorkspaceType.value = "all";
       contentWorkspaceStatusFilter.value = "all";
       contentWorkspaceOriginFilter.value = "all";
+      reviewFilter.value = "all";
       contentWorkspaceTranslationFilter.value = "all";
       contentWorkspaceSearch.value = "";
       contentWorkspaceState.selectedId = "";
@@ -977,6 +992,19 @@ window.ContentWorkspace = {
         typeLabel.className = "content-workspace-record-type";
         setTypeLabel(typeLabel, item.type);
         titleGroup.append(title, typeLabel);
+        if (item.articleReview?.needsReview) {
+          const titleLine = document.createElement("span");
+          titleLine.className = "content-workspace-title-line";
+          const badge = document.createElement("span");
+          badge.className = "content-workspace-review-badge";
+          setWorkspaceTranslatedText(
+            badge,
+            "article_needs_review",
+            "Needs review",
+          );
+          title.replaceWith(titleLine);
+          titleLine.append(title, badge);
+        }
 
         const metadata = document.createElement("span");
         metadata.className = "content-workspace-record-meta";
@@ -1406,6 +1434,8 @@ window.ContentWorkspace = {
         query.set("status", status);
       }
       if (origin !== "all") query.set("origin", origin);
+      if (articleMode && reviewFilter.value === "true")
+        query.set("flagged", "true");
       if (translation !== "all") {
         query.set("translation", translation);
       }
@@ -1694,6 +1724,7 @@ window.ContentWorkspace = {
       contentWorkspaceStatusFilter,
       contentWorkspaceOriginFilter,
       contentWorkspaceTranslationFilter,
+      reviewFilter,
     ]) {
       filter.addEventListener("change", () => void changeFilters());
     }
@@ -1724,7 +1755,7 @@ window.ContentWorkspace = {
 
       if (
         !event.target.closest(
-          ".content-workspace-language-editor, .content-workspace-record-form",
+          ".content-workspace-language-editor, .content-workspace-record-form, .content-workspace-review-form",
         )
       ) {
         return;

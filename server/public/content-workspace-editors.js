@@ -240,7 +240,7 @@ window.ContentWorkspaceEditors = {
         noteField.querySelector("textarea").value.trim(),
       );
       noteField.classList.toggle("has-note", noteField.open);
-      group.append(noteField);
+      if (item.type !== "newsArticle") group.append(noteField);
       form.append(group);
 
       form.addEventListener("submit", (event) => {
@@ -287,14 +287,25 @@ window.ContentWorkspaceEditors = {
 
     function captureEditorDrafts(item) {
       contentWorkspaceDetail
-        .querySelectorAll(".content-workspace-language-editor")
+        .querySelectorAll(
+          ".content-workspace-language-editor, .content-workspace-review-form",
+        )
         .forEach((form) => {
           const language = form.dataset.language;
           if (!language) return;
 
           contentWorkspaceState.editorDrafts.set(
             getEditorDraftKey(item, language),
-            Object.fromEntries(new FormData(form).entries()),
+            {
+              ...Object.fromEntries(new FormData(form).entries()),
+              ...(language === "review"
+                ? {
+                    needsReview: form.elements.namedItem("needsReview").checked
+                      ? "on"
+                      : "",
+                  }
+                : {}),
+            },
           );
         });
     }
@@ -1149,6 +1160,71 @@ window.ContentWorkspaceEditors = {
       form.dataset.initialState = getContentWorkspaceFormState(form);
 
       section.append(heading, form);
+      if (item.type === "newsArticle") {
+        const review = item.articleReview || { needsReview: false, note: "" };
+        const reviewForm = document.createElement("form");
+        reviewForm.className = "content-workspace-review-form";
+        reviewForm.dataset.language = "review";
+        reviewForm.addEventListener("submit", (event) =>
+          event.preventDefault(),
+        );
+        const label = document.createElement("label");
+        const toggle = document.createElement("input");
+        toggle.type = "checkbox";
+        toggle.name = "needsReview";
+        toggle.checked = Boolean(
+          getEditorDraftValue(
+            item,
+            "review",
+            "needsReview",
+            review.needsReview ? "on" : "",
+          ),
+        );
+        const caption = document.createElement("span");
+        setWorkspaceTranslatedText(
+          caption,
+          "article_needs_review",
+          "Needs review",
+        );
+        label.append(toggle, caption);
+        const note = createEditableField({
+          label: getText("article_review_note", "Shared review note"),
+          labelKey: "article_review_note",
+          field: "reviewNote",
+          value: getEditorDraftValue(item, "review", "reviewNote", review.note),
+          multiline: true,
+          minimumRows: 3,
+        });
+        note.querySelector("textarea").maxLength = 4100;
+        reviewForm.append(label, note);
+        if (Object.values(review.legacyNotes || {}).some(Boolean)) {
+          const legacy = document.createElement("details");
+          const summary = document.createElement("summary");
+          setWorkspaceTranslatedText(
+            summary,
+            "article_legacy_notes",
+            "Previous language notes (retained in history)",
+          );
+          const text = document.createElement("pre");
+          text.textContent = ["en", "fr"]
+            .filter((language) => review.legacyNotes[language])
+            .map(
+              (language) =>
+                `${language.toUpperCase()}: ${review.legacyNotes[language]}`,
+            )
+            .join("\n\n");
+          legacy.append(summary, text);
+          reviewForm.append(legacy);
+        }
+        reviewForm.dataset.initialState =
+          getContentWorkspaceFormState(reviewForm);
+        reviewForm.dataset.hasUnsavedDraft = String(
+          contentWorkspaceState.editorDrafts.has(
+            getEditorDraftKey(item, "review"),
+          ),
+        );
+        section.append(reviewForm);
+      }
       return section;
     }
 
@@ -1971,7 +2047,7 @@ window.ContentWorkspaceEditors = {
     function getContentWorkspaceSaveForms() {
       return [
         ...contentWorkspaceDetail.querySelectorAll(
-          ".content-workspace-language-editor, .content-workspace-record-form",
+          ".content-workspace-language-editor, .content-workspace-record-form, .content-workspace-review-form",
         ),
       ];
     }

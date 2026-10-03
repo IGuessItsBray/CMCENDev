@@ -684,6 +684,9 @@ window.ContentWorkspaceActions = {
       );
       let savedRequests = 0;
       let savedContentId = item._id;
+      const reviewForm = forms.find((form) =>
+        form.classList.contains("content-workspace-review-form"),
+      );
       const noteChanges = forms
         .filter(
           (form) =>
@@ -698,6 +701,7 @@ window.ContentWorkspaceActions = {
             note !== (item.editorialNotes?.[language] || ""),
         );
       const contentForms = forms.filter((form) => {
+        if (form === reviewForm) return false;
         if (item.isNew || !form.elements.namedItem("editorialNote"))
           return true;
         const withoutNote = (entries) =>
@@ -719,7 +723,7 @@ window.ContentWorkspaceActions = {
       try {
         const saveRequests =
           item.type === "newsArticle"
-            ? contentForms.length
+            ? contentForms.length || item.isNew
               ? [getNewsArticleSaveRequest(item)]
               : []
             : [
@@ -740,7 +744,8 @@ window.ContentWorkspaceActions = {
                   .map((form) => getContentLanguageSaveRequest(item, form)),
               ].filter(Boolean);
 
-        if (!saveRequests.length && !noteChanges.length) return false;
+        if (!saveRequests.length && !noteChanges.length && !reviewForm)
+          return false;
 
         for (const request of saveRequests) {
           const result = await contentWorkspaceApiJson(request.path, {
@@ -749,7 +754,7 @@ window.ContentWorkspaceActions = {
           });
           if (item.isNew && result.article) {
             savedContentId = result.article._id;
-            for (const language of ["en", "fr"]) {
+            for (const language of ["en", "fr", "review"]) {
               const draft = contentWorkspaceState.editorDrafts.get(
                 getEditorDraftKey(item, language),
               );
@@ -761,6 +766,20 @@ window.ContentWorkspaceActions = {
             }
             onArticleCreated(result.article);
           }
+          savedRequests += 1;
+        }
+        if (reviewForm) {
+          await contentWorkspaceApiJson(
+            `/api/admin/content/newsArticle/${encodeURIComponent(savedContentId)}/review`,
+            {
+              method: "PATCH",
+              body: {
+                needsReview:
+                  reviewForm.elements.namedItem("needsReview").checked,
+                note: reviewForm.elements.namedItem("reviewNote").value,
+              },
+            },
+          );
           savedRequests += 1;
         }
         for (const note of noteChanges) {

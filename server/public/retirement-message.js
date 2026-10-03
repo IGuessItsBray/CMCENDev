@@ -236,15 +236,13 @@ function renderPhoto(retirementMessage, name) {
 
   if (retirementMessage.photoUrl) {
     const image = document.createElement("img");
-    const displayPhotoUrl =
-      retirementMessage.photoDisplayUrl || retirementMessage.photoUrl;
     const isPlaceholderPhoto = CMCENUtils.isSitePlaceholderImage(
       retirementMessage.photoUrl,
     );
 
     image.src = isPlaceholderPhoto
       ? RETIREMENT_PLACEHOLDER_PHOTO_URL
-      : displayPhotoUrl;
+      : retirementMessage.photoUrl;
     image.alt = isPlaceholderPhoto
       ? ""
       : translate("retirement_photo_alt", { name });

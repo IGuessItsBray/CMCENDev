@@ -12940,8 +12940,8 @@ html[data-theme='dark'] .news-message {
 
 .retirement-detail-photo {
   margin: 0 auto 28px;
-  width: min(100%, 720px);
-  aspect-ratio: 4 / 3;
+  width: fit-content;
+  max-width: min(100%, 720px);
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -12954,17 +12954,18 @@ html[data-theme='dark'] .news-message {
 
 .retirement-detail-photo > div {
   display: grid;
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
   place-items: center;
 }
 
 .retirement-detail-photo img {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 540px;
   margin: 0 auto;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .retirement-detail-photo img.retirement-detail-photo-logo {
@@ -12978,6 +12979,8 @@ html[data-theme='dark'] .news-message {
 }
 
 .retirement-detail-photo:has(.retirement-detail-photo-logo) {
+  width: min(100%, 720px);
+  aspect-ratio: 4 / 3;
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -13499,8 +13502,8 @@ html[data-theme='dark'] .news-message {
 
 .last-post-detail-image {
   margin: 0 auto 30px;
-  width: min(100%, 470px);
-  aspect-ratio: 4 / 3;
+  width: fit-content;
+  max-width: min(100%, 470px);
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -13511,8 +13514,10 @@ html[data-theme='dark'] .news-message {
 
 .last-post-detail-image img {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 352.5px;
   object-fit: contain;
 }
 
@@ -13526,6 +13531,8 @@ html[data-theme='dark'] .news-message {
 }
 
 .last-post-detail-image:has(.last-post-detail-image-logo) {
+  width: min(100%, 470px);
+  aspect-ratio: 4 / 3;
   background: transparent;
   border-color: transparent;
 }

@@ -129,6 +129,44 @@ test('view-only access exposes neither upload nor delete actions; attached image
   );
 });
 
+test('opens the stored original while retaining a small preview and stable media identity', async () => {
+  const page = setup({
+    api: () => ({
+      media: [
+        {
+          ...image('thumb.webp'),
+          url: '/thumb.webp',
+          originalUrl: '/full.jpg',
+        },
+      ],
+    }),
+  });
+  await page.instance.ready;
+  const preview = page.root.querySelector('.admin-media-preview');
+  assert.equal(preview.href, 'https://example.test/full.jpg');
+  assert.equal(
+    preview.querySelector('img').src,
+    'https://example.test/thumb.webp',
+  );
+  assert.equal(
+    page.root.querySelector('.admin-media-key').textContent,
+    'thumb.webp',
+  );
+});
+
+test('older media responses and unsafe original URLs fall back to the existing preview link', async () => {
+  for (const originalUrl of [undefined, 'javascript:alert(1)']) {
+    const page = setup({
+      api: () => ({ media: [{ ...image('legacy'), originalUrl }] }),
+    });
+    await page.instance.ready;
+    assert.equal(
+      page.root.querySelector('.admin-media-preview').href,
+      'https://example.test/image.png',
+    );
+  }
+});
+
 test('renames attached media without changing its key and hides editing from viewers', async () => {
   const page = setup({
     api: (url, options) =>

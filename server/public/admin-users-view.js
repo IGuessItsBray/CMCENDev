@@ -1312,7 +1312,7 @@
 
       const previewLink = document.createElement("a");
       previewLink.className = "admin-media-preview";
-      previewLink.href = mediaItem.url;
+      previewLink.href = mediaItem.originalUrl || mediaItem.url;
       previewLink.target = "_blank";
       previewLink.rel = "noopener";
 
@@ -1380,7 +1380,7 @@
 
       const open = document.createElement("a");
       open.className = "admin-work-zone-button is-secondary";
-      open.href = mediaItem.url;
+      open.href = mediaItem.originalUrl || mediaItem.url;
       open.target = "_blank";
       open.rel = "noopener";
       open.textContent = translate("admin_media_open");

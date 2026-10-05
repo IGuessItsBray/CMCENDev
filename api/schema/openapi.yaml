@@ -1182,7 +1182,7 @@ paths:
     get:
       tags: [Admin, Uploads]
       summary: List media assets.
-      description: Returns media assets with linked event, retirement, and Last Post usage metadata. Supports type filtering and filename/image-name search.
+      description: Returns media assets with linked event, retirement, and Last Post usage metadata. Supports type filtering and filename/image-name search. Each asset includes key and url for its library identity and preview, plus originalKey and originalUrl for opening the stored original; missing original fields fall back to the existing asset key/URL.
       x-permission: canViewMediaLibrary
       parameters:
         - name: limit

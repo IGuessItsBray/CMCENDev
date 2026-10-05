@@ -188,9 +188,10 @@
         const card = node("article", null, "admin-media-card");
         const title = item.name || item.originalName || item.key;
         const url = safeUrl(item.url);
+        const originalUrl = safeUrl(item.originalUrl) || url;
         if (url) {
           const preview = node("a", null, "admin-media-preview");
-          preview.href = url;
+          preview.href = originalUrl;
           preview.target = "_blank";
           preview.rel = "noopener noreferrer";
           const image = node("img");

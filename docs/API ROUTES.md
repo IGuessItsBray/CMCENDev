@@ -39,6 +39,11 @@ When `ENABLE_API_DOCS=true`, view the rendered Swagger UI at `/api-docs`. The ra
 
 ## Conventions
 
+`GET /api/admin/media` returns each asset's existing `key` and `url` for its
+library identity and preview, plus `originalKey` and `originalUrl` for opening
+the stored original. Missing original fields fall back to the existing asset
+key/URL. Opening an original does not change the catalogue's image reference.
+
 - JSON APIs generally return `{ error: string }` on failure.
 - Every request receives an `X-Request-ID` response header. Server failures (`5xx`), malformed requests (`400`/`413`), rate limits (`429`), and dropped client connections are logged to the server console with that ID, method, path, status, duration, and source IP. `5xx` API failures also create a `diagnostic.request_failed` audit entry; query strings and request bodies are never recorded by this diagnostic layer.
 - Every `/api` endpoint is rate limited by source IP (300 requests per minute by default). Responses include `RateLimit-*` headers; throttled requests return `429` with `Retry-After`. Sensitive password-reset and MFA verification routes have stricter limits listed below.

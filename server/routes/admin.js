@@ -1885,13 +1885,19 @@ function toAdminMediaItem(object, attachmentMap) {
 
 function toAdminMediaAssetItem(asset, attachmentMap) {
   const key = asset.key || asset.originalKey;
+  const originalKey = asset.originalKey || key;
+  const url = asset.url || buildPublicMediaUrl(key);
   const objectKeys = getMediaAssetAttachmentKeys(asset);
   addAttachmentAliases(attachmentMap, objectKeys);
   const attachments = attachmentMap.get(key) || [];
 
   return {
     key,
-    url: asset.url || buildPublicMediaUrl(key),
+    url,
+    originalKey,
+    originalUrl:
+      asset.originalUrl ||
+      (asset.originalKey ? buildPublicMediaUrl(originalKey) : url),
     variants: asset.variants || {},
     size: asset.size || 0,
     width: asset.width || 0,

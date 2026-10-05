@@ -126,13 +126,8 @@ const EventSchema = new mongoose.Schema(
       type: LocalizedTextSchema,
       required: true,
 
-      validate: {
-        validator(value) {
-          return Boolean(value?.en || value?.fr);
-        },
-
-        message: 'An English or French event title is required',
-      },
+      // Nonblank titles are enforced at submission/publication and ordinary
+      // editor boundaries. Stored developer-cleared titles remain saveable.
     },
 
     description: {

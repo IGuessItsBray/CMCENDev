@@ -43,7 +43,11 @@ async function setup(override) {
     window,
     document,
     AbortController,
-    CMCENUtils: { showToast() {} },
+    CMCENUtils: {
+      showToast() {},
+      requiresTextForSave: require('../services/save-validation')
+        .requiresTextForSave,
+    },
   };
   for (const file of ['shared-forms.js', 'dashboard-next-roles.js'])
     vm.runInNewContext(

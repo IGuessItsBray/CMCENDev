@@ -30,9 +30,8 @@ const commentSchema = new mongoose.Schema(
 
     body: {
       type: String,
-      required: true,
       trim: true,
-      minlength: 2,
+      validate: (value) => !value || value.length >= 2,
       maxlength: 10000,
     },
 

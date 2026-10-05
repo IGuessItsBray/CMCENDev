@@ -31,7 +31,7 @@
       .sort((a, b) => b.year - a.year || a.name.localeCompare(b.name));
   }
 
-  function mount({ api, permissions, onDenied, navigate }) {
+  function mount({ api, permissions, user: actor, onDenied, navigate }) {
     const el = (id) => document.getElementById(id);
     const root = el("adminAwards");
     const list = el("awardList");
@@ -169,7 +169,7 @@
         const button = document.createElement("button");
         button.type = "button";
         button.dataset.id = item._id;
-        button.textContent = item.title;
+        button.textContent = item.title || t("admin_content_untitled");
         button.disabled = busy;
         if (item._id === award?._id)
           button.setAttribute("aria-current", "true");
@@ -191,7 +191,7 @@
         const button = document.createElement("button");
         button.type = "button";
         button.dataset.id = item._id;
-        button.textContent = `${item.year} — ${item.name}`;
+        button.textContent = `${item.year} — ${item.name || t("unknown_user")}`;
         button.disabled = busy;
         if (item._id === recipient?._id)
           button.setAttribute("aria-current", "true");
@@ -326,8 +326,9 @@
       if (validationAttempted) validateRecipient(false);
     });
     function validateRecipient(focus = true) {
+      field("name").required = CMCENUtils.requiresTextForSave(actor, recipient?.name);
       field("name").setCustomValidity(
-        field("name").value.trim() ? "" : t("admin_next_required"),
+        field("name").value.trim() || !field("name").required ? "" : t("admin_next_required"),
       );
       const photoUrl = field("imageUrl").value.trim();
       field("imageUrl").setCustomValidity(

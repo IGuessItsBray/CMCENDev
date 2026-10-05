@@ -892,14 +892,14 @@ async function provisionAdminUser() {
         {
           name: "firstName",
           label: "First name",
-          required: true,
+          required: CMCENUtils.requiresTextForSave({ role: adminWorkZoneState.currentUserRole }),
           autocomplete: "given-name",
           maxLength: 80,
         },
         {
           name: "lastName",
           label: "Last name",
-          required: true,
+          required: CMCENUtils.requiresTextForSave({ role: adminWorkZoneState.currentUserRole }),
           autocomplete: "family-name",
           maxLength: 80,
         },
@@ -1352,7 +1352,7 @@ async function deleteAdminRole(role) {
 
   if (
     !(await CMCENModal.confirm(
-      `Delete role "${role.name}"? It will be removed from every assigned member.`,
+      `Delete role "${role.name || role.slug}"? It will be removed from every assigned member.`,
       {
         title: translate("mfa_delete"),
         confirmText: translate("mfa_delete"),

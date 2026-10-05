@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const speakeasy = require('speakeasy');
 const User = require('../models/User');
+const { requiresTextForSave } = require('../services/save-validation');
 const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
 const Comment = require('../models/Comment');
@@ -365,7 +366,8 @@ function getProfileUpdate(body, currentUser) {
   });
 
   REQUIRED_PROFILE_FIELDS.forEach((field) => {
-    if (hasOwnValue(updates, field) && !updates[field]) {
+    if (hasOwnValue(updates, field) && !updates[field] &&
+        requiresTextForSave(currentUser, currentUser[field])) {
       throw new Error('Required profile fields are missing');
     }
   });
@@ -373,17 +375,18 @@ function getProfileUpdate(body, currentUser) {
   REQUIRED_ADDRESS_FIELDS.forEach((field) => {
     const updateKey = `address.${field}`;
 
-    if (hasOwnValue(updates, updateKey) && !updates[updateKey]) {
+    if (hasOwnValue(updates, updateKey) && !updates[updateKey] &&
+        requiresTextForSave(currentUser, currentUser.address?.[field])) {
       throw new Error('Required address fields are missing');
     }
   });
 
-  if (hasOwnValue(updates, 'status') && !VALID_STATUSES.has(updates.status)) {
+  if (updates.status && !VALID_STATUSES.has(updates.status)) {
     throw new Error('Invalid status');
   }
 
   if (
-    hasOwnValue(updates, 'affiliationElement') &&
+    updates.affiliationElement &&
     !VALID_AFFILIATION_ELEMENTS.has(updates.affiliationElement)
   ) {
     throw new Error('Invalid affiliation element');

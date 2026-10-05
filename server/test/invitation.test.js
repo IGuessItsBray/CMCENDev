@@ -15,7 +15,7 @@ test('allows an invited account before the member profile is complete', async ()
   await assert.doesNotReject(user.validate());
 });
 
-test('continues to require a completed profile for member accounts', async () => {
+test('stores incomplete descriptive profiles while retaining credential invariants', async () => {
   const user = new User({
     accountType: 'member',
     username: 'member@example.test',
@@ -23,9 +23,12 @@ test('continues to require a completed profile for member accounts', async () =>
     password: 'member-password',
   });
 
+  await assert.doesNotReject(user.validate());
+  user.username = '';
+  user.email = '';
   await assert.rejects(user.validate(), (error) => {
-    assert.ok(error?.errors.firstName);
-    assert.ok(error?.errors['address.line1']);
+    assert.ok(error?.errors.username);
+    assert.ok(error?.errors.email);
     return true;
   });
 });

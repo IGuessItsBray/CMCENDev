@@ -91,6 +91,9 @@ router.patch(
           error: 'Drafts are not submissions awaiting approval',
         });
       }
+
+      if (action === 'publish' && (!comment.body || comment.body.trim().length < 2))
+        return res.status(400).json({ error: 'Comment must contain at least 2 characters' });
       if (!['draft', 'pending'].includes(comment.status)) {
         return res.status(409).json({
           error: 'Only draft or pending comments can be reviewed',

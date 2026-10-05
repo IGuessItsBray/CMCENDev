@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const ProfessionalAward = require('../models/ProfessionalAward');
+const { requiresTextForSave } = require('../services/save-validation');
 const NewsArticle = require('../models/NewsArticle');
 const { createAwardNewsDraft } = require('../services/award-news');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
@@ -26,7 +27,7 @@ function cleanUrl(value) {
   return /^https?:\/\//iu.test(url) ? url : '';
 }
 
-function cleanLinks(value) {
+function cleanLinks(value, actor, previous = []) {
   return (Array.isArray(value) ? value : [])
     .map((link) => ({
       label: cleanText(link?.label, 240),
@@ -37,11 +38,15 @@ function cleanLinks(value) {
         ? link.kind
         : 'other',
     }))
-    .filter((link) => link.label && link.url);
+    .filter((link) => link.url && (link.label ||
+      !requiresTextForSave(actor, previous.find((old) => old.url === link.url)?.label)));
 }
 
-function cleanRecipients(value) {
+function cleanRecipients(value, actor, previous = []) {
   return (Array.isArray(value) ? value : [])
+    .filter((recipient) => cleanText(recipient?.name, 300) ||
+      !requiresTextForSave(actor, previous.find((old) =>
+        recipient?._id && String(old._id) === String(recipient._id))?.name))
     .map((recipient) => ({
       year: Number.parseInt(recipient?.year, 10),
       medallionNumber: cleanText(recipient?.medallionNumber, 80),
@@ -53,7 +58,7 @@ function cleanRecipients(value) {
     }))
     .filter(
       (recipient) =>
-        recipient.name && recipient.year >= 1900 && recipient.year <= 3000,
+        recipient.year >= 1900 && recipient.year <= 3000,
     )
     .sort(
       (left, right) =>
@@ -61,8 +66,9 @@ function cleanRecipients(value) {
     );
 }
 
-function cleanRecipient(value = {}) {
-  return cleanRecipients([value])[0] || null;
+function cleanRecipient(value = {}, actor, previous) {
+  const source = previous ? { ...value, _id: previous._id } : value;
+  return cleanRecipients([source], actor, previous ? [previous] : [])[0] || null;
 }
 
 function isSpotlightAward(award) {
@@ -85,7 +91,7 @@ function getLatestRecipient(recipients = []) {
   );
 }
 
-function cleanPayload(body = {}) {
+function cleanPayload(body = {}, actor, previous) {
   return {
     slug: cleanSlug(body.slug || body.title),
     title: cleanText(body.title, 240),
@@ -93,8 +99,8 @@ function cleanPayload(body = {}) {
     eligibility: cleanText(body.eligibility),
     applicationDetails: cleanText(body.applicationDetails),
     deadline: cleanText(body.deadline, 2000),
-    links: cleanLinks(body.links),
-    recipients: cleanRecipients(body.recipients),
+    links: cleanLinks(body.links, actor, previous?.links),
+    recipients: cleanRecipients(body.recipients, actor, previous?.recipients),
     sortOrder: Math.max(0, Number.parseInt(body.sortOrder, 10) || 0),
     published: body.published !== false,
   };
@@ -119,8 +125,9 @@ function serialize(award) {
   };
 }
 
-function validate(payload) {
-  if (!payload.title) return 'Award title is required';
+function validate(payload, actor, previous) {
+  if (!payload.title && (payload.published && !previous?.published ||
+      requiresTextForSave(actor, previous?.title))) return 'Award title is required';
   if (!payload.slug) return 'Award slug is required';
   return '';
 }
@@ -170,7 +177,7 @@ router.post(
   requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
-      const recipient = cleanRecipient(req.body);
+      const recipient = cleanRecipient(req.body, req.user);
       if (!recipient)
         return res
           .status(400)
@@ -212,17 +219,15 @@ router.patch(
   requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
-      const updates = cleanRecipient(req.body);
-      if (!updates)
-        return res
-          .status(400)
-          .json({ error: 'A valid recipient name and year are required' });
       const award = await ProfessionalAward.findById(req.params.awardId);
       if (!award)
         return res.status(404).json({ error: 'Professional award not found' });
       const recipient = award.recipients.id(req.params.recipientId);
       if (!recipient)
         return res.status(404).json({ error: 'Recipient not found' });
+      const updates = cleanRecipient(req.body, req.user, recipient);
+      if (!updates)
+        return res.status(400).json({ error: 'A valid recipient name and year are required' });
       updates.featured = false;
       if (!isSpotlightAward(award)) updates.imageUrl = '';
       if (!isMedallionAward(award)) updates.medallionNumber = '';
@@ -303,8 +308,8 @@ router.post(
   requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
-      const payload = cleanPayload(req.body);
-      const error = validate(payload);
+      const payload = cleanPayload(req.body, req.user);
+      const error = validate(payload, req.user);
       if (error) return res.status(400).json({ error });
       const award = await ProfessionalAward.create({
         ...payload,
@@ -340,12 +345,12 @@ router.patch(
   requirePermission('canReviewAndPublish'),
   async (req, res) => {
     try {
-      const payload = cleanPayload(req.body);
-      const error = validate(payload);
-      if (error) return res.status(400).json({ error });
       const previous = await ProfessionalAward.findById(req.params.awardId);
       if (!previous)
         return res.status(404).json({ error: 'Professional award not found' });
+      const payload = cleanPayload(req.body, req.user, previous);
+      const error = validate(payload, req.user, previous);
+      if (error) return res.status(400).json({ error });
       const previousTitle = previous.title;
       previous.set({ ...payload, updatedBy: req.user._id });
       await previous.save();

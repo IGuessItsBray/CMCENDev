@@ -48,7 +48,7 @@
       button.type = "button";
       button.className = "content-workspace-record";
       button.classList.toggle("is-selected", String(award._id) === selectedId);
-      button.textContent = award.title;
+      button.textContent = award.title || CMCENUtils.formatTitleCaseValue(award.slug);
       button.setAttribute(
         "aria-pressed",
         String(String(award._id) === selectedId),
@@ -164,7 +164,7 @@
     detail.replaceChildren();
     if (!award) return;
     const heading = document.createElement("h2");
-    heading.textContent = award.title;
+    heading.textContent = award.title || CMCENUtils.formatTitleCaseValue(award.slug);
     const instructions = document.createElement("p");
     instructions.textContent =
       "Add a recipient below, or select a name from the archive to update it.";

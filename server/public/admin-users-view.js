@@ -531,7 +531,7 @@
         swatch.style.backgroundColor = role.color || "#2c2f55";
 
         const text = document.createElement("span");
-        text.textContent = role.name;
+        text.textContent = role.name || role.slug;
 
         label.append(input, swatch, text);
         wrapper.append(label);
@@ -901,7 +901,7 @@
       swatch.style.backgroundColor = role.color || "#2c2f55";
 
       const name = document.createElement("strong");
-      name.textContent = role.name;
+      name.textContent = role.name || role.slug;
 
       const meta = document.createElement("span");
       meta.textContent = `${role.permissions?.length || 0} permissions`;
@@ -986,7 +986,9 @@
         const nameInput = document.createElement("input");
         nameInput.name = "name";
         nameInput.type = "text";
-        nameInput.required = true;
+        nameInput.required = CMCENUtils.requiresTextForSave(
+          { role: state.currentUserRole }, selectedRole.name,
+        );
         nameInput.maxLength = 80;
         nameInput.value = selectedRole.name || "";
         nameField.append(nameLabel, nameInput);

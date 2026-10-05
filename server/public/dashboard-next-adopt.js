@@ -74,7 +74,7 @@
     "recognition",
     "expiry",
   ];
-  function mount({ api, permissions, onDenied }) {
+  function mount({ api, permissions, user: actor, onDenied }) {
     const el = (id) => document.getElementById(id);
     const root = el("adminAdopt"),
       form = el("adoptAdminForm"),
@@ -189,7 +189,7 @@
         button.type = "button";
         button.disabled = busy;
         button.dataset.id = item._id;
-        button.textContent = `${item.displayNumber ? item.displayNumber + " — " : ""}${item.title[lang()] || item.title.en || item.title.fr} (${t(item.published ? "published" : "draft")})`;
+        button.textContent = `${item.displayNumber ? item.displayNumber + " — " : ""}${item.title[lang()] || item.title.en || item.title.fr || t("title")} (${t(item.published ? "published" : "draft")})`;
         button.setAttribute("aria-pressed", String(selected?._id === item._id));
         list.append(button);
       }
@@ -267,7 +267,9 @@
       event.preventDefault();
       if (busy || disposed || !form.reportValidity()) return;
       const updates = payload();
-      if (!updates.title.en && !updates.title.fr) {
+      if (!updates.title.en && !updates.title.fr &&
+          ((updates.published && !selected?.published) ||
+           CMCENUtils.requiresTextForSave(actor, selected?.title))) {
         message("required");
         return;
       }

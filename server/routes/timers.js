@@ -1,5 +1,6 @@
 const express = require('express');
 const Timer = require('../models/Timer');
+const { requiresTextForSave } = require('../services/save-validation');
 const {
   authMiddleware,
   optionalAuthMiddleware,
@@ -48,7 +49,7 @@ function booleanOption(body, key, fallback) {
   return body[key];
 }
 
-function timerPayload(body = {}, previous = {}) {
+function timerPayload(body = {}, previous = {}, actor) {
   const icon = Object.prototype.hasOwnProperty.call(body, 'icon')
     ? body.icon
     : previous.icon || 'warning';
@@ -57,7 +58,7 @@ function timerPayload(body = {}, previous = {}) {
   return {
     title:
       cleanString(body.title, 'Untitled banner').slice(0, 120) ||
-      'Untitled banner',
+      (requiresTextForSave(actor, previous.title) ? 'Untitled banner' : ''),
     text: cleanLocalizedText(body.text || {}),
     color: cleanColor(body.color, '#1d4ed8'),
     textColor: cleanColor(body.textColor, '#ffffff'),
@@ -81,7 +82,7 @@ function timerPayload(body = {}, previous = {}) {
 function toTimerResponse(timer) {
   return {
     _id: String(timer._id),
-    title: timer.title || 'Untitled banner',
+    title: timer.title ?? 'Untitled banner',
     text: timer.text || { en: '', fr: '' },
     color: timer.color || '#1d4ed8',
     textColor: timer.textColor || '#ffffff',
@@ -170,7 +171,7 @@ router.post(
   async (req, res) => {
     try {
       const timer = await Timer.create({
-        ...timerPayload(req.body || {}),
+        ...timerPayload(req.body || {}, {}, req.user),
         createdBy: req.user?._id || null,
         updatedBy: req.user?._id || null,
       });
@@ -197,7 +198,7 @@ router.patch(
         return res.status(404).json({ error: 'Banner not found' });
       }
 
-      Object.assign(timer, timerPayload(req.body || {}, timer), {
+      Object.assign(timer, timerPayload(req.body || {}, timer, req.user), {
         updatedBy: req.user?._id || null,
       });
       await timer.save();

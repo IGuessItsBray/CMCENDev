@@ -44,6 +44,7 @@ async function controller(apiOverride, permissions = manager.permissions) {
   const timers = new Map();
   let timerId = 0;
   const utils = {
+    requiresTextForSave: require('../services/save-validation').requiresTextForSave,
     getUserDisplayName: (user) => user.accountName,
     formatTitleCaseValue: (value) => value,
     showToast() {},

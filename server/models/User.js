@@ -33,20 +33,8 @@ function formatAccountName(value) {
     .join(' ');
 }
 
-function requiresMemberProfileFields(context) {
-  const document =
-    typeof context?.ownerDocument === 'function'
-      ? context.ownerDocument()
-      : context;
-  const accountType =
-    document?.accountType ??
-    (typeof context?.get === 'function'
-      ? context.get('accountType')
-      : undefined);
-
-  return accountType === 'member' && document?.profileComplete !== false;
-}
-
+// Required descriptive profile fields are enforced by registration and edit
+// routes. Storage accepts developer-cleared blanks on later unrelated saves.
 const UserSchema = new mongoose.Schema(
   {
     accountType: {
@@ -83,9 +71,6 @@ const UserSchema = new mongoose.Schema(
 
     accountName: {
       type: String,
-      required() {
-        return requiresMemberProfileFields(this);
-      },
       trim: true,
       set: formatAccountName,
       get: formatAccountName,
@@ -93,9 +78,6 @@ const UserSchema = new mongoose.Schema(
 
     firstName: {
       type: String,
-      required() {
-        return requiresMemberProfileFields(this);
-      },
       trim: true,
       set: capitalizeFirstLetter,
       get: capitalizeFirstLetter,
@@ -104,9 +86,6 @@ const UserSchema = new mongoose.Schema(
 
     lastName: {
       type: String,
-      required() {
-        return requiresMemberProfileFields(this);
-      },
       trim: true,
       set: capitalizeFirstLetter,
       get: capitalizeFirstLetter,
@@ -116,9 +95,6 @@ const UserSchema = new mongoose.Schema(
     address: {
       line1: {
         type: String,
-        required() {
-          return requiresMemberProfileFields(this);
-        },
         trim: true,
         maxlength: 160,
       },
@@ -132,36 +108,24 @@ const UserSchema = new mongoose.Schema(
 
       city: {
         type: String,
-        required() {
-          return requiresMemberProfileFields(this);
-        },
         trim: true,
         maxlength: 100,
       },
 
       country: {
         type: String,
-        required() {
-          return requiresMemberProfileFields(this);
-        },
         trim: true,
         maxlength: 100,
       },
 
       stateProvince: {
         type: String,
-        required() {
-          return requiresMemberProfileFields(this);
-        },
         trim: true,
         maxlength: 100,
       },
 
       postalCode: {
         type: String,
-        required() {
-          return requiresMemberProfileFields(this);
-        },
         trim: true,
         maxlength: 40,
       },
@@ -191,6 +155,7 @@ const UserSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
+        '',
         'regular',
         'reserve',
         'honourary',
@@ -199,17 +164,11 @@ const UserSchema = new mongoose.Schema(
         'released',
         'other',
       ],
-      required() {
-        return requiresMemberProfileFields(this);
-      },
     },
 
     affiliationElement: {
       type: String,
-      enum: ['army', 'navy', 'air_force', 'other'],
-      required() {
-        return requiresMemberProfileFields(this);
-      },
+      enum: ['', 'army', 'navy', 'air_force', 'other'],
     },
 
     trade: {

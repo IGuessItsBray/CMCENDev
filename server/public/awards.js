@@ -65,7 +65,7 @@
     const header = document.createElement("header");
     header.className = "professional-awards-detail-heading";
     const title = document.createElement("h2");
-    title.textContent = award.title;
+    title.textContent = award.title || CMCENUtils.formatTitleCaseValue(award.slug);
     const archiveCount = document.createElement("p");
     const recipientCount = award.recipients?.length || 0;
     archiveCount.className = "professional-awards-archive-count";
@@ -92,7 +92,7 @@
         const row = document.createElement("li");
         const link = document.createElement("a");
         link.href = item.url;
-        link.textContent = item.label;
+        link.textContent = item.label || item.url;
         link.target = "_blank";
         link.rel = "noopener";
         row.append(link);
@@ -169,7 +169,7 @@
         const isSelected = award.slug === selectedAwardSlug;
         tab.type = "button";
         tab.className = "professional-awards-tab";
-        tab.textContent = award.title;
+        tab.textContent = award.title || CMCENUtils.formatTitleCaseValue(award.slug);
         tab.id = `professional-award-tab-${award.slug}`;
         tab.setAttribute("role", "tab");
         tab.setAttribute("aria-controls", "professionalAwardsPanel");
@@ -187,7 +187,7 @@
       ...awards.map((award) => {
         const option = document.createElement("option");
         option.value = award.slug;
-        option.textContent = award.title;
+        option.textContent = award.title || CMCENUtils.formatTitleCaseValue(award.slug);
         option.selected = award.slug === selectedAwardSlug;
         return option;
       }),

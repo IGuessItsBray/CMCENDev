@@ -22,6 +22,7 @@ const image = (key, used = false) => ({
 });
 function setup({
   api: override,
+  user,
   permissions = { canUploadMedia: true, canDeleteMedia: true },
   confirm = async () => true,
 } = {}) {
@@ -39,6 +40,8 @@ function setup({
     translate: (key, values) => key + (values ? JSON.stringify(values) : ''),
     CMCENModal: { confirm },
     CMCENUtils: {
+      requiresTextForSave: require('../services/save-validation')
+        .requiresTextForSave,
       createLoadingSpinner(label) {
         const spinner = new Element('div');
         spinner.className = 'loading-state';
@@ -69,6 +72,7 @@ function setup({
   );
   const instance = window.DashboardNextMedia.mount({
     permissions,
+    user,
     onDenied: () => {
       denied++;
       instance.dispose();
@@ -205,6 +209,41 @@ test('renames attached media without changing its key and hides editing from vie
   const viewer = setup({ permissions: {} });
   await viewer.instance.ready;
   assert.equal(viewer.root.querySelectorAll('form').length, 0);
+});
+
+test('developer blank media name remains blank when reopening with a readable fallback', async () => {
+  const page = setup({
+    user: { role: 'developer' },
+    api: (url, options) =>
+      options.method === 'PATCH'
+        ? { key: 'unused', displayName: '', name: 'original.png' }
+        : undefined,
+  });
+  await page.instance.ready;
+  const form = page.root.querySelectorAll('form')[0];
+  const rename = page.root
+    .querySelectorAll('button')
+    .find(
+      (button) =>
+        button.dataset.i18nAriaLabel === 'admin_media_library_name_rename',
+    );
+  await rename.fire('click');
+  const input = form.querySelector('input');
+  assert.equal(input.required, false);
+  input.value = ' ';
+  await form.fire('submit');
+  assert.equal(
+    page.calls.find((call) => call.method === 'PATCH').body.displayName,
+    '',
+  );
+  assert.equal(form.hidden, true);
+  await rename.fire('click');
+  assert.equal(input.value, '');
+  assert(
+    page.root
+      .querySelectorAll('h2')
+      .some((heading) => heading.textContent === 'original.png'),
+  );
 });
 
 test('invalid names never issue a write and failed saves retain the old name', async () => {

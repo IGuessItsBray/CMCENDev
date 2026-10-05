@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const AdoptDisplay = require('../models/AdoptDisplay');
+const { requiresTextForSave } = require('../services/save-validation');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
 const router = express.Router();
@@ -125,7 +126,7 @@ router.post('/admin/adopt-displays', async (req, res) => {
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
-  if (!validTitle(updates))
+  if (!validTitle(updates) && (updates.published || requiresTextForSave(req.user)))
     return res.status(400).json({ error: 'A display title is required' });
   try {
     const item = await AdoptDisplay.create({
@@ -149,8 +150,10 @@ router.patch('/admin/adopt-displays/:displayId', async (req, res) => {
   try {
     const item = await AdoptDisplay.findById(req.params.displayId);
     if (!item) return res.status(404).json({ error: 'Display not found' });
+    const previousTitle = item.title.toObject();
+    const publishing = updates.published === true && !item.published;
     item.set({ ...updates, updatedBy: req.user._id });
-    if (!validTitle(item))
+    if (!validTitle(item) && (publishing || requiresTextForSave(req.user, previousTitle)))
       return res.status(400).json({ error: 'A display title is required' });
     await item.save();
     await audit(req, 'updated', item);

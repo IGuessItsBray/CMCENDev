@@ -5,6 +5,7 @@
   function mount({
     api,
     permissions,
+    user: actor,
     onDenied,
     root = document.getElementById("adminPages"),
   }) {
@@ -2463,7 +2464,7 @@
         pagesState.customRoles.forEach((role) => {
           customRoleGroup.append(
             createCheckboxOption({
-              label: role.name,
+              label: role.name || role.slug,
               badgeColor: role.color,
               checked: (access.customRoles || []).some(
                 (roleId) => String(roleId) === String(role._id),
@@ -2868,10 +2869,9 @@
       const linkNameInput = document.createElement("input");
       linkNameInput.type = "text";
       linkNameInput.value =
-        localized(existingLink?.label) ||
-        localized(selectedPage.title) ||
-        selectedPage.slug;
-      linkNameInput.required = true;
+        existingLink ? localized(existingLink.label) :
+          localized(selectedPage.title) || selectedPage.slug;
+      linkNameInput.required = CMCENUtils.requiresTextForSave(actor, existingLink?.label);
       linkName.append(linkNameLabel, linkNameInput);
 
       const groupField = document.createElement("div");
@@ -3192,7 +3192,8 @@
       const label = String(linkName || "").trim();
       let groupKey = group;
 
-      if (!page?._id || !label) return;
+      if (!page?._id || (!label && CMCENUtils.requiresTextForSave(actor,
+        pagesState.navigationItems.find((item) => item._id === existingItemId)?.label))) return;
 
       try {
         if (group === "__new__") {

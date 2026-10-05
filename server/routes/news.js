@@ -4,6 +4,7 @@ const { buildPublicMediaUrl } = require('../services/media-library');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const mongoose = require('mongoose');
 const NewsArticle = require('../models/NewsArticle');
+const { requiresTextForSave } = require('../services/save-validation');
 const LastPostMessage = require('../models/LastPostMessage');
 const Page = require('../models/Page');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
@@ -243,7 +244,9 @@ function getPayload(
   };
 }
 
-function validatePayload(payload, existingBlocks = {}) {
+function validatePayload(payload, existingBlocks = {}, { actor, previous, publishing = true } = {}) {
+  const required = (field, language) => publishing ||
+    requiresTextForSave(actor, previous?.[field]?.[language]);
   if (!categories.includes(payload.category ?? categoryOf(payload)))
     return 'Choose a valid article category';
   if (!['standard', 'newsletter'].includes(payload.layout || 'standard'))
@@ -297,7 +300,8 @@ function validatePayload(payload, existingBlocks = {}) {
     return 'Invalid source URL';
   if (
     payload.layout === 'newsletter' &&
-    (!payload.title[metadata.language] || !payload.content[metadata.language])
+    ((!payload.title[metadata.language] && required('title', metadata.language)) ||
+     (!payload.content[metadata.language] && required('content', metadata.language)))
   )
     return 'Title and content are required in the original language';
   if (payload.layout !== 'newsletter') {
@@ -305,13 +309,15 @@ function validatePayload(payload, existingBlocks = {}) {
   }
   if (
     payload.layout !== 'newsletter' &&
-    (!payload.title.en || !payload.title.fr)
+    ((!payload.title.en && required('title', 'en')) ||
+     (!payload.title.fr && required('title', 'fr')))
   ) {
     return 'English and French titles are required';
   }
   if (
     payload.layout !== 'newsletter' &&
-    (!payload.content.en || !payload.content.fr)
+    ((!payload.content.en && required('content', 'en')) ||
+     (!payload.content.fr && required('content', 'fr')))
   ) {
     return 'English and French story content is required';
   }
@@ -601,7 +607,9 @@ router.post(
   async (req, res) => {
     try {
       const payload = getPayload(req.body);
-      const validationError = validatePayload(payload);
+      const validationError = validatePayload(payload, {}, {
+        actor: req.user, publishing: payload.status === 'published',
+      });
       if (validationError)
         return res.status(400).json({ error: validationError });
       const now = new Date();
@@ -753,7 +761,10 @@ router.patch(
         preserveHiddenStatus: article.status === 'hidden',
         existing: article,
       });
-      const validationError = validatePayload(payload, article.newsletterBlocks);
+      const validationError = validatePayload(payload, article.newsletterBlocks, {
+        actor: req.user, previous: article,
+        publishing: payload.status === 'published' && previousStatus !== 'published',
+      });
       if (validationError)
         return res.status(400).json({ error: validationError });
       Object.assign(article, payload);

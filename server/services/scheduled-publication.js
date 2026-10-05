@@ -18,6 +18,14 @@ const scheduledContentTypes = [
   {
     Model: NewsArticle,
     targetType: 'newsArticle',
+    publicationFilter: {
+      $or: [
+        { layout: { $ne: 'newsletter' }, 'title.en': /\S/u, 'title.fr': /\S/u,
+          'content.en': /\S/u, 'content.fr': /\S/u },
+        { layout: 'newsletter', 'newsletter.language': 'en', 'title.en': /\S/u, 'content.en': /\S/u },
+        { layout: 'newsletter', 'newsletter.language': 'fr', 'title.fr': /\S/u, 'content.fr': /\S/u },
+      ],
+    },
     unpublishedStatus: 'draft',
     getSnapshot: (article) => ({
       title: article.title?.en || article.title?.fr || 'Untitled news story',
@@ -28,18 +36,21 @@ const scheduledContentTypes = [
   {
     Model: Event,
     targetType: 'event',
+    publicationFilter: { $or: [{ 'title.en': /\S/u }, { 'title.fr': /\S/u }] },
     unpublishedStatus: { $in: ['draft', 'pending'] },
     getSnapshot: getEventSnapshot,
   },
   {
     Model: RetirementMessage,
     targetType: 'retirementMessage',
+    publicationFilter: { 'messages.en': /\S/u, 'messages.fr': /\S/u },
     unpublishedStatus: { $in: ['draft', 'pending'] },
     getSnapshot: getRetirementMessageSnapshot,
   },
   {
     Model: LastPostMessage,
     targetType: 'lastPost',
+    publicationFilter: { 'messages.en': /\S/u, 'messages.fr': /\S/u },
     unpublishedStatus: { $in: ['draft', 'pending'] },
     getSnapshot: getLastPostMessageSnapshot,
   },
@@ -50,9 +61,11 @@ async function publishOneScheduledContent({
   targetType,
   getSnapshot,
   unpublishedStatus = 'pending',
+  publicationFilter = {},
   now,
 }) {
   const scheduled = await Model.findOne({
+    ...publicationFilter,
     status: unpublishedStatus,
     scheduledPublishAt: { $ne: null, $lte: now },
   }).sort({ scheduledPublishAt: 1, _id: 1 });
@@ -70,6 +83,7 @@ async function publishOneScheduledContent({
     throw new Error('Scheduled content has no valid original publication date');
   const published = await Model.findOneAndUpdate(
     {
+      ...publicationFilter,
       _id: scheduled._id,
       status: scheduled.status,
       scheduledPublishAt,

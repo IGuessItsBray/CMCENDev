@@ -104,7 +104,7 @@
       previous.customRoleIds = retained(previous.customRoleIds);
       baseline = JSON.stringify(previous);
       customRoleChoices.update(
-        roles.map((role) => ({ value: role._id, label: role.name })),
+        roles.map((role) => ({ value: role._id, label: role.name || role.slug })),
         values,
       );
       updateBusy();
@@ -887,7 +887,8 @@
         controls[name] = field(fields, name, `admin_next_users_${name}`, {
           type,
           maxLength,
-          required: name !== "message",
+          required: name === "email" ||
+            name !== "message" && CMCENUtils.requiresTextForSave(actor),
         });
       }
       controls.role = field(fields, "invite-role", "admin_users_role_label", {

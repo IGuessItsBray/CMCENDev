@@ -82,7 +82,8 @@ function setup(api) {
       },
     },
   };
-  vm.runInNewContext(source, { document, window, AbortController });
+  vm.runInNewContext(source, { document, window, AbortController,
+    CMCENUtils: require('../services/save-validation') });
   const instance = window.DashboardNextAdopt.mount({
     api,
     permissions: {},

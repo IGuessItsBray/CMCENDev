@@ -1,4 +1,5 @@
 const express = require('express');
+const { hasText, requiresTextForSave } = require('../services/save-validation');
 const { getPublicationDateInfo, selectPublicationDate } = require('../services/publication-date');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
@@ -1362,6 +1363,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     const permissions = getUserPermissions(req.user);
 
     const previousStatus = event.status;
+    const previousTitle = event.title.toObject();
 
     const isOwner =
       event.createdBy && String(event.createdBy) === String(req.user._id);
@@ -1535,6 +1537,10 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 
     event.status = wantsImmediatePublication ? 'published' : 'pending';
 
+    if (!hasText(event.title) && (wantsImmediatePublication ||
+        requiresTextForSave(req.user, previousTitle)))
+      return res.status(400).json({ error: 'An English or French event title is required' });
+
     if (event.status === 'published') {
       event.publishedBy ||= req.user._id;
       event.publishedAt ||= selectPublicationDate(event, req.body?.publicationDateChoice, new Date(), req.body?.customPublishedAt);
@@ -1657,6 +1663,9 @@ router.patch('/:eventId/review-content', authMiddleware, async (req, res) => {
     editableFields.forEach((field) => {
       event.set(`${field}.${language}`, cleanString(content[field]));
     });
+    if (!hasText(event.title) && requiresTextForSave(req.user,
+      { ...event.title.toObject(), [language]: before.title }))
+      return res.status(400).json({ error: 'An English or French event title is required' });
     markContentEdited(event, req.user);
     event.updatedBy = req.user._id;
 
@@ -1816,6 +1825,9 @@ router.patch(
 
       const cleanRejectionReason =
         typeof rejectionReason === 'string' ? rejectionReason.trim() : '';
+
+      if (action === 'publish' && !hasText(event.title))
+        return res.status(400).json({ error: 'An English or French event title is required before publication' });
 
       if (action === 'reject' && !cleanRejectionReason) {
         return res.status(400).json({

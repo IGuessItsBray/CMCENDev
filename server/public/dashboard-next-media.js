@@ -20,7 +20,7 @@
       return "";
     }
   }
-  function mount({ api, permissions, onDenied }) {
+  function mount({ api, permissions, user: actor, onDenied }) {
     const root = document.getElementById("adminMediaBody");
     const lifecycle = new AbortController();
     let disposed = false,
@@ -247,8 +247,8 @@
           const input = node("input", null, "cmcen-control");
           input.type = "text";
           input.name = "displayName";
-          input.value = title;
-          input.required = true;
+          input.value = item.displayName ?? title;
+          input.required = window.CMCENUtils.requiresTextForSave(actor);
           input.maxLength = 120;
           label.append(input);
           const save = node("button", "admin_media_library_name_save");
@@ -263,7 +263,7 @@
             node("p", "admin_media_library_name_help"),
           );
           const closeEditor = () => {
-            input.value = currentName;
+            input.value = item.displayName ?? currentName;
             form.hidden = true;
             rename.setAttribute("aria-expanded", "false");
             rename.focus();
@@ -294,7 +294,7 @@
               return;
             const displayName = input.value.trim();
             if (
-              !displayName ||
+              (!displayName && input.required) ||
               displayName.length > 120 ||
               /[\u0000-\u001f\u007f]/u.test(displayName)
             ) {

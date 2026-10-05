@@ -66,6 +66,8 @@
     form,
     reportDateError = () => {},
     reportFields = () => form.reportValidity(),
+    actor,
+    previous,
   ) {
     let datesValid = true;
     // Reset empty picker values before validating the form and timing choices.
@@ -79,8 +81,13 @@
     }
     for (const name of requiredFields) {
       const input = form.elements.namedItem(name);
+      const oldValue =
+        name === "title"
+          ? previous?.title
+          : previous?.text?.[name === "textEn" ? "en" : "fr"];
+      input.required = CMCENUtils.requiresTextForSave(actor, oldValue);
       input.setCustomValidity(
-        input.value.trim() ? "" : t("admin_next_required"),
+        input.value.trim() || !input.required ? "" : t("admin_next_required"),
       );
     }
     const start = form.elements.namedItem("startsAt");
@@ -136,7 +143,7 @@
     return data;
   }
 
-  function mount({ api, onDenied }) {
+  function mount({ api, user: actor, onDenied }) {
     const el = (id) => document.getElementById(id);
     const root = el("adminBanners");
     const form = el("bannerForm");
@@ -201,7 +208,7 @@
 
     function updateEditorState() {
       editorTitle.textContent = selected?._id
-        ? selected.title
+        ? selected.title || t("admin_content_untitled_content")
         : t("timers_new");
       const state = dirty() ? "unsaved" : selected?._id ? "saved" : "new";
       editorState.dataset.state = state;
@@ -266,6 +273,8 @@
           });
         },
         () => window.CMCENForms.validate(form, { errors, focus }),
+        actor,
+        selected,
       );
     }
     function mountPicker(name, key) {

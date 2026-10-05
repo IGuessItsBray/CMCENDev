@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const Page = require('../models/Page');
+const { hasText, requiresTextForSave } = require('../services/save-validation');
 const NavigationItem = require('../models/NavigationItem');
 const Role = require('../models/Role');
 const MediaAsset = require('../models/MediaAsset');
@@ -714,14 +715,15 @@ function toSitemapPageItem(page) {
   });
 }
 
-function cleanPageUpdate(body, actor, { requireTitle = false } = {}) {
+function cleanPageUpdate(body, actor, { requireTitle = false, previous } = {}) {
   const source = body || {};
   const update = {};
 
   if (requireTitle || Object.prototype.hasOwnProperty.call(source, 'title')) {
     const title = cleanLocalizedText(source.title, 180);
 
-    if (!title.en && !title.fr) {
+    if (!hasText(title) && (source.status === 'published' && previous?.status !== 'published' ||
+        requiresTextForSave(actor, previous?.title))) {
       return { error: 'Page title is required' };
     }
 
@@ -860,7 +862,7 @@ function toNavigationItem(item) {
   };
 }
 
-function cleanNavigationUpdate(body, actor, { requireLabel = false } = {}) {
+function cleanNavigationUpdate(body, actor, { requireLabel = false, previous } = {}) {
   const source = body || {};
   const update = {};
 
@@ -881,7 +883,7 @@ function cleanNavigationUpdate(body, actor, { requireLabel = false } = {}) {
   if (requireLabel || Object.prototype.hasOwnProperty.call(source, 'label')) {
     const label = cleanLocalizedText(source.label, 120);
 
-    if (!label.en && !label.fr) {
+    if (!hasText(label) && requiresTextForSave(actor, previous?.label)) {
       return { error: 'Navigation label is required' };
     }
 
@@ -1194,17 +1196,14 @@ router.patch(
   requirePermission('canManagePages'),
   async (req, res) => {
     try {
-      const result = cleanPageUpdate(req.body, req.user);
-
-      if (result.error) {
-        return res.status(400).json({ error: result.error });
-      }
-
       const previousPage = await Page.findById(req.params.pageId);
 
       if (!previousPage) {
         return res.status(404).json({ error: 'Page not found' });
       }
+
+      const result = cleanPageUpdate(req.body, req.user, { previous: previousPage });
+      if (result.error) return res.status(400).json({ error: result.error });
 
       const page = await Page.findByIdAndUpdate(
         req.params.pageId,
@@ -1271,6 +1270,9 @@ router.patch(
       if (!existingPage) {
         return res.status(404).json({ error: 'Page not found' });
       }
+
+      if (status === 'published' && !hasText(existingPage.title))
+        return res.status(400).json({ error: 'Page title is required before publication' });
 
       if (
         status === 'published' &&
@@ -1416,17 +1418,14 @@ router.patch(
   requirePermission('canManageNavigation'),
   async (req, res) => {
     try {
-      const result = cleanNavigationUpdate(req.body, req.user);
-
-      if (result.error) {
-        return res.status(400).json({ error: result.error });
-      }
-
       const existingItem = await NavigationItem.findById(req.params.itemId);
 
       if (!existingItem) {
         return res.status(404).json({ error: 'Navigation item not found' });
       }
+
+      const result = cleanNavigationUpdate(req.body, req.user, { previous: existingItem });
+      if (result.error) return res.status(400).json({ error: result.error });
 
       const nextType = result.update.type || existingItem.type;
       const nextGroup = result.update.group || existingItem.group;

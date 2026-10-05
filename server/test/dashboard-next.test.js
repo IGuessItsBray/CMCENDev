@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
+const { requiresTextForSave } = require('../services/save-validation');
 
 const source = fs.readFileSync(
   path.join(__dirname, '../public/dashboard-next.js'),
@@ -17,7 +18,7 @@ test('banner statuses follow enabled state and inclusive public schedule boundar
       path.join(__dirname, '../public/dashboard-next-banners.js'),
       'utf8',
     ),
-    { window },
+    { window, CMCENUtils: { requiresTextForSave } },
   );
   const { getBannerStatus, nextStatusChange } = window.DashboardNextBanners;
   const now = Date.parse('2026-09-18T12:00:00Z');
@@ -79,7 +80,7 @@ test('banner name and both languages validate with no scheduling dates', async (
       path.join(__dirname, '../public/dashboard-next-banners.js'),
       'utf8',
     ),
-    { window },
+    { window, CMCENUtils: { requiresTextForSave } },
   );
   const values = {
     title: 'Notice',
@@ -143,6 +144,12 @@ test('banner name and both languages validate with no scheduling dates', async (
   for (const name of ['title', 'textEn', 'textFr']) {
     inputs[name].value = '   ';
     assert.equal(window.DashboardNextBanners.validate(form), false);
+    assert.equal(
+      window.DashboardNextBanners.validate(form, undefined, undefined, {
+        role: 'developer',
+      }),
+      true,
+    );
     inputs[name].value = values[name];
     assert.equal(window.DashboardNextBanners.validate(form), true);
   }
@@ -191,7 +198,7 @@ test('custom picker validation reports missing or past starts and missing countd
       path.join(__dirname, '../public/dashboard-next-banners.js'),
       'utf8',
     ),
-    { window },
+    { window, CMCENUtils: { requiresTextForSave } },
   );
   const inputs = Object.fromEntries(
     [
@@ -244,7 +251,7 @@ test('turning timing controls off clears payload dates without losing entered va
       path.join(__dirname, '../public/dashboard-next-banners.js'),
       'utf8',
     ),
-    { window },
+    { window, CMCENUtils: { requiresTextForSave } },
   );
   const values = Object.fromEntries(
     [
@@ -1340,7 +1347,7 @@ test('recipient payload uses award-specific fields and archive sorting does not 
       path.join(__dirname, '../public/dashboard-next-awards.js'),
       'utf8',
     ),
-    { window },
+    { window, CMCENUtils: { requiresTextForSave } },
   );
   const values = {
     year: '2026',
@@ -1381,7 +1388,7 @@ test('banner payload preserves bilingual fields, switches, colours, order, and l
       path.join(__dirname, '../public/dashboard-next-banners.js'),
       'utf8',
     ),
-    { window },
+    { window, CMCENUtils: { requiresTextForSave } },
   );
   const values = {
     title: 'Notice',

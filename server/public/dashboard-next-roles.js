@@ -19,7 +19,7 @@
     element.addEventListener("click", action);
     return element;
   }
-  function mount({ api, onDenied, onRolesChanged }) {
+  function mount({ api, user: actor, onDenied, onRolesChanged }) {
     const root = document.getElementById("adminRolesBody");
     const create = document.getElementById("adminRolesNew");
     const events = new AbortController();
@@ -78,7 +78,7 @@
           swatch.style.backgroundColor = role.color;
           swatch.setAttribute("aria-hidden", "true");
           const name = node("span");
-          name.textContent = role.name;
+          name.textContent = role.name || role.slug;
           title.append(swatch, name);
           const count = node("span", null, "admin-users-muted");
           count.textContent = t("admin_next_roles_count", {
@@ -160,12 +160,15 @@
       form.noValidate = true;
       fields = node("fieldset", null, "admin-users-fields");
       const heading = node("h2", role ? null : "admin_next_roles_new");
-      if (role) heading.textContent = role.name;
+      if (role) heading.textContent = role.name || role.slug;
       detail.replaceChildren(heading, form);
       form.append(fields, feedback);
       const controls = {};
       for (const [name, attributes] of Object.entries({
-        name: { required: true, maxLength: 80 },
+        name: {
+          required: CMCENUtils.requiresTextForSave(actor, role?.name),
+          maxLength: 80,
+        },
         slug: { maxLength: 100 },
         color: { type: "color" },
         description: { type: "textarea", maxLength: 240, rows: 3 },
@@ -255,14 +258,15 @@
       const validate = (focus = true) =>
         window.CMCENForms.validate(form, {
           focus,
-          errors: controls.name.value.trim()
-            ? []
-            : [
-                {
-                  control: controls.name,
-                  message: t("validation_field_required"),
-                },
-              ],
+          errors:
+            controls.name.value.trim() || !controls.name.required
+              ? []
+              : [
+                  {
+                    control: controls.name,
+                    message: t("validation_field_required"),
+                  },
+                ],
         });
       validateForm = validate;
       form.addEventListener("input", () => {
@@ -324,7 +328,9 @@
       let accepted;
       try {
         accepted = await window.CMCENModal.confirm(
-          t("admin_next_roles_delete_confirm", { name: role.name }),
+          t("admin_next_roles_delete_confirm", {
+            name: role.name || role.slug,
+          }),
           {
             title: t("admin_next_roles_delete"),
             confirmText: t("admin_next_roles_delete"),

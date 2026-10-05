@@ -5,6 +5,10 @@ info:
   description: >
     OpenAPI-style inventory for the Express routes mounted by server/server.js.
     Schemas are intentionally broad where handlers return Mongoose documents.
+    The existing developer actor may save blank descriptive profile/editorial
+    fields. Ordinary actors retain required checks but may retain authorized
+    blanks on later edits. Credentials, identifiers, references, valid nonblank
+    values, dates and publication requirements remain enforced; see API ROUTES.md.
     Every /api endpoint is rate limited by source IP and may return 429 with
     Retry-After and RateLimit-* headers. Sensitive endpoints have stricter limits.
     Every response includes X-Request-ID for support correlation. Server failures
@@ -203,6 +207,7 @@ paths:
         "200":
           description: Published awards, including source-document links and recipient records.
   /api/admin/professional-awards:
+    description: A developer may save blank draft title, recipient names and link labels. Publication requires a title; slugs, recipient years and link URLs remain required.
     get:
       tags: [Admin]
       summary: List professional awards for Content Management.
@@ -218,6 +223,7 @@ paths:
         "201":
           description: Professional award created.
   /api/admin/professional-awards/{awardId}:
+    description: Developer saves and retention of existing authorized blanks may omit descriptive copy; publication transitions, slugs, recipient years and link URLs remain checked.
     patch:
       tags: [Admin]
       summary: Update a professional award.
@@ -233,6 +239,7 @@ paths:
         "200":
           description: Professional award deleted.
   /api/admin/professional-awards/{awardId}/recipients:
+    description: Developer saves may use blank recipient names; recipient year remains required.
     post:
       tags: [Admin]
       summary: Add a professional-award recipient.
@@ -244,6 +251,7 @@ paths:
         "201":
           description: Recipient added; returns a message and the updated award.
   /api/admin/professional-awards/{awardId}/recipients/{recipientId}:
+    description: Developer saves may clear the recipient name; other actors may retain an existing blank. Recipient year remains required.
     patch:
       tags: [Admin]
       summary: Update a professional-award recipient, including an applicable medallion number or bursary amount.
@@ -895,6 +903,7 @@ paths:
         "200":
           description: Upgrade result.
   /api/profile:
+    description: A developer may save blank descriptive names, address, status and affiliation; other actors may retain existing blanks. Credentials and language validation remain enforced.
     delete:
       tags: [Auth]
       summary: Delete the current account after a current TOTP or passkey MFA confirmation.
@@ -1141,6 +1150,7 @@ paths:
         "200":
           description: Review counts.
   /api/admin/roles:
+    description: Developer saves may use a blank role name with an explicit valid slug. Permission restrictions remain enforced.
     get:
       tags: [Admin]
       summary: List custom roles.
@@ -1158,6 +1168,7 @@ paths:
         "201":
           description: Created role.
   /api/admin/roles/{roleId}:
+    description: A developer may clear the role name; other actors may retain an existing blank. Slug and permission constraints remain enforced.
     patch:
       tags: [Admin]
       summary: Update custom role.
@@ -1248,9 +1259,8 @@ paths:
               properties:
                 displayName:
                   type: string
-                  minLength: 1
                   maxLength: 120
-                  description: Trimmed nonblank internal name with no control characters.
+                  description: Trimmed internal name with no control characters. A developer may save blank; the returned name falls back to the original filename or key.
       responses:
         "200":
           description: Updated key, displayName and name.
@@ -1285,15 +1295,15 @@ paths:
           application/json:
             schema:
               type: object
-              required: [firstName, lastName, email, role]
+              required: [email, role]
               properties:
                 firstName:
                   type: string
-                  minLength: 1
+                  description: Required for ordinary actors; a developer may provision an invited account with a blank name.
                   maxLength: 80
                 lastName:
                   type: string
-                  minLength: 1
+                  description: Required for ordinary actors; a developer may provision an invited account with a blank name.
                   maxLength: 80
                 email:
                   type: string
@@ -1424,6 +1434,7 @@ paths:
         "200":
           description: Updated user.
   /api/admin/users/{userId}/profile:
+    description: Blank descriptive profile fields use the acting developer role, never the target role. Other actors may retain existing authorized blanks; identity and access checks remain enforced.
     patch:
       tags: [Admin]
       summary: Update allowlisted member profile and address fields.
@@ -2332,6 +2343,7 @@ paths:
         "409":
           description: Another decision was saved or the source evidence changed; reload before retrying.
   /api/admin/timers:
+    description: A developer may save blank title and banner text. Timing and delivery validation is unchanged.
     get:
       tags: [Banners]
       summary: List all banners.
@@ -2349,6 +2361,7 @@ paths:
         "201":
           description: Created banner.
   /api/admin/timers/{timerId}:
+    description: Developer blank title and text saves retain timing, boolean and delivery validation.
     patch:
       tags: [Banners]
       summary: Update banner.
@@ -2473,6 +2486,7 @@ paths:
         "200":
           description: Page preview.
   /api/admin/pages:
+    description: Developer saves may use blank titles. Page slug remains required and publication requires a title.
     get:
       tags: [Pages]
       summary: List pages for admin.
@@ -2498,6 +2512,7 @@ paths:
         "200":
           description: Media picker data.
   /api/admin/pages/{pageId}:
+    description: Developer saves may clear titles; other actors may retain existing blanks. Slug and access constraints remain enforced.
     get:
       tags: [Pages]
       summary: Get full admin page payload.
@@ -2838,6 +2853,7 @@ paths:
         "200":
           description: Review result.
   /api/news:
+    description: Developer draft saves may use blank titles and content. Publication and scheduled publication still require their normal copy.
     get:
       tags: [News]
       summary: List published news stories and newsletters.
@@ -2933,6 +2949,7 @@ paths:
         "404":
           $ref: "#/components/responses/Error"
   /api/news/{articleId}:
+    description: Developer saves may clear editorial copy; other actors may retain existing blanks. Transitions to publication require complete copy. Incomplete scheduled records remain pending.
     get:
       tags: [News]
       summary: Get one published news story or newsletter for its full article page.
@@ -3939,7 +3956,7 @@ components:
   schemas:
     AdoptDisplayInput:
       type: object
-      description: At least one title language is required on creation and after editing. Bilingual fields replace both language values when supplied. Availability, amount and expiry are descriptive text.
+      description: At least one title language is required for ordinary saves and publication. A developer may save blank draft copy; existing authorized blanks may be retained. Bilingual fields replace both language values when supplied. Availability, amount and expiry are descriptive text.
       properties:
         displayNumber:
           type: string

@@ -1,5 +1,14 @@
 # API Routes
 
+## Developer blank saves
+
+The existing `developer` actor role may save blank descriptive fields in profile editors (names, address, status and affiliation), invited-account names, staff event titles and comment bodies, news copy, Page titles, navigation labels, Adopt display titles, award titles/recipient names/link labels, custom-role names, media display names and banner copy. No new permission grants this behavior. Ordinary administrators and custom roles retain required-field checks; previously authorized blanks may remain blank during later edits. Public registration and membership completion still require their normal fields.
+
+This is a save policy: authentication, authorization, credentials, identifiers/slugs, foreign keys, valid nonblank enums/URLs/lengths, event dates and scheduling dates remain enforced. Publishing news, events, Pages, Adopt displays, awards or comments still requires their publication copy. Incomplete scheduled news/events remain pending until corrected; the scheduler checks eligibility again in its atomic publish update. Email delivery, consent and certificate checks are unchanged.
+
+Profile account names use the remaining names; when both are blank, existing display helpers fall back to username/email. Media, award and editor lists also retain readable fallback labels. There is no data migration.
+
+
 ## Archive publication dates
 
 The event, retirement, Last Post and comment review endpoints, and the news

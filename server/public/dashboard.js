@@ -452,7 +452,9 @@ function syncProfileTradeOtherVisibility(form) {
 
   if (tradeOther) {
     tradeOther.disabled = !showOther;
-    tradeOther.required = showOther;
+    tradeOther.required = showOther &&
+      (form.dataset.profileSave !== "true" ||
+       CMCENUtils.requiresTextForSave(currentDashboardUser, currentDashboardUser?.tradeOther));
 
     if (!showOther) {
       tradeOther.value = "";
@@ -601,6 +603,8 @@ function createGhostUpgradeForm(user) {
 
 function createProfileForm(user) {
   const form = document.createElement("form");
+  form.dataset.profileSave = "true";
+  const required = (value) => CMCENUtils.requiresTextForSave(user, value);
   form.className = "dashboard-profile-form dashboard-profile-form--account";
   form.noValidate = false;
 
@@ -613,21 +617,21 @@ function createProfileForm(user) {
       labelKey: "first_name",
       value: user.firstName,
       autocomplete: "given-name",
-      required: true,
+      required: required(user.firstName),
     }),
     createProfileField({
       name: "lastName",
       labelKey: "last_name",
       value: user.lastName,
       autocomplete: "family-name",
-      required: true,
+      required: required(user.lastName),
     }),
     createProfileField({
       name: "address.line1",
       labelKey: "address_line_1",
       value: user.address?.line1,
       autocomplete: "address-line1",
-      required: true,
+      required: required(user.address?.line1),
       wide: true,
       addressField: "line1",
     }),
@@ -644,7 +648,7 @@ function createProfileForm(user) {
       labelKey: "city",
       value: user.address?.city,
       autocomplete: "address-level2",
-      required: true,
+      required: required(user.address?.city),
       addressField: "city",
     }),
     createProfileField({
@@ -652,7 +656,7 @@ function createProfileForm(user) {
       labelKey: "country",
       value: user.address?.country,
       autocomplete: "country-name",
-      required: true,
+      required: required(user.address?.country),
       addressField: "country",
     }),
     createProfileField({
@@ -660,7 +664,7 @@ function createProfileForm(user) {
       labelKey: "state_province",
       value: user.address?.stateProvince,
       autocomplete: "address-level1",
-      required: true,
+      required: required(user.address?.stateProvince),
       addressField: "stateProvince",
     }),
     createProfileField({
@@ -668,7 +672,7 @@ function createProfileForm(user) {
       labelKey: "postal_code",
       value: user.address?.postalCode,
       autocomplete: "postal-code",
-      required: true,
+      required: required(user.address?.postalCode),
       addressField: "postalCode",
     }),
     createProfileField({
@@ -693,7 +697,7 @@ function createProfileForm(user) {
       value: user.status,
       options: profileSelectOptions.status,
       optionPrefix: "status",
-      required: true,
+      required: required(user.status),
     }),
     createProfileSelect({
       name: "affiliationElement",
@@ -701,7 +705,7 @@ function createProfileForm(user) {
       value: user.affiliationElement,
       options: profileSelectOptions.affiliationElement,
       optionPrefix: "element",
-      required: true,
+      required: required(user.affiliationElement),
     }),
     createProfileSelect({
       name: "trade",
@@ -1070,7 +1074,7 @@ function renderDashboard(user) {
   const customRoleNames = (
     Array.isArray(user.customRoles) ? user.customRoles : []
   )
-    .map((customRole) => String(customRole?.name || "").trim())
+    .map((customRole) => String(customRole?.name || customRole?.slug || "").trim())
     .filter(Boolean);
   dashboardCustomRoleSummary.hidden = customRoleNames.length === 0;
   dashboardCustomRoleSummary.textContent = customRoleNames.length

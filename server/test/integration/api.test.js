@@ -278,6 +278,520 @@ after(async () => {
   }
 });
 
+describe('developer blank saves', () => {
+  test('profile saves use actor role, retain invariants and survive later saves', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const auth = bearer((await login(developer)).body.token);
+    const member = await createUser({
+      firstName: 'Dot',
+      lastName: 'Assistant',
+    });
+    const path = `/api/admin/users/${member._id}/profile`;
+    await request(app).patch(path).send({ lastName: '' }).expect(401);
+    const custom = await Role.create({
+      name: 'User Manager',
+      slug: 'blank-user-manager',
+      permissions: ['users.manage'],
+    });
+    for (const actor of [
+      await createUser({ role: 'administrator' }),
+      await createUser({ customRoles: [custom._id] }),
+    ]) {
+      const actorAuth = bearer((await login(actor)).body.token);
+      for (const body of [
+        { firstName: '' },
+        { lastName: '' },
+        { address: { city: '' } },
+        { status: '' },
+      ])
+        await request(app)
+          .patch(path)
+          .set('Authorization', actorAuth)
+          .send(body)
+          .expect(400);
+      await request(app)
+        .patch(`/api/admin/users/${developer._id}/profile`)
+        .set('Authorization', actorAuth)
+        .send({ lastName: '' })
+        .expect(400);
+    }
+    const result = await request(app)
+      .patch(path)
+      .set('Authorization', auth)
+      .send({
+        lastName: '  ',
+        address: { city: '  ' },
+        status: '',
+        affiliationElement: '',
+      })
+      .expect(200);
+    assert.equal(result.body.user.accountName, 'Dot');
+    const stored = await User.findById(member._id);
+    assert.equal(stored.lastName, '');
+    assert.equal(stored.address.city, '');
+    assert.equal(stored.profileComplete, true);
+    stored.phone = '555-0123';
+    await stored.save();
+    const memberAuth = bearer((await login(stored)).body.token);
+    await request(app)
+      .patch('/api/profile')
+      .set('Authorization', memberAuth)
+      .send({
+        lastName: '',
+        status: '',
+        affiliationElement: '',
+        address: { city: '' },
+        phone: '555-0124',
+      })
+      .expect(200);
+    await request(app)
+      .patch(path)
+      .set('Authorization', auth)
+      .send({ firstName: '', status: 'bogus' })
+      .expect(400);
+    await request(app)
+      .patch(path)
+      .set('Authorization', auth)
+      .send({ firstName: 'x'.repeat(81) })
+      .expect(400);
+    await request(app)
+      .patch(path)
+      .set('Authorization', auth)
+      .send({ email: '' })
+      .expect(400);
+    await request(app)
+      .patch('/api/profile')
+      .set('Authorization', auth)
+      .send({
+        firstName: '',
+        lastName: '',
+        address: { country: '' },
+        status: '',
+      })
+      .expect(200);
+    assert.equal((await User.findById(developer._id)).accountName, '');
+    assert(
+      await AuditLog.exists({
+        action: 'user.profile_changed',
+        target: member._id,
+      }),
+    );
+  });
+
+  test('event and comment staff saves allow blank copy but preserve publication and references', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const admin = await createUser({ role: 'administrator' });
+    const auth = bearer((await login(developer)).body.token);
+    const adminAuth = bearer((await login(admin)).body.token);
+    const event = await Event.create({
+      ...eventPayload(),
+      createdBy: developer._id,
+      status: 'pending',
+    });
+    const eventPath = `/api/admin/events/${event._id}`;
+    await request(app)
+      .patch(eventPath)
+      .set('Authorization', adminAuth)
+      .send({ title: { en: '', fr: '' } })
+      .expect(400);
+    await request(app)
+      .patch(eventPath)
+      .set('Authorization', auth)
+      .send({ title: { en: '', fr: '' } })
+      .expect(200);
+    await request(app)
+      .patch(eventPath)
+      .set('Authorization', adminAuth)
+      .send({ city: 'Updated' })
+      .expect(200);
+    await request(app)
+      .patch(eventPath)
+      .set('Authorization', auth)
+      .send({ startDate: null })
+      .expect(400);
+    await request(app)
+      .patch(eventPath)
+      .set('Authorization', auth)
+      .send({ eventType: 'bogus' })
+      .expect(400);
+    await request(app)
+      .patch(`/api/events/${event._id}/review`)
+      .set('Authorization', auth)
+      .send({ action: 'publish' })
+      .expect(400);
+    const parent = await LastPostMessage.collection.insertOne({
+      createdBy: developer._id,
+      status: 'published',
+      deceased: { firstName: 'Parent' },
+    });
+    const comment = await Comment.create({
+      parentType: 'lastPost',
+      parentId: parent.insertedId,
+      author: developer._id,
+      body: 'Original',
+      status: 'pending',
+    });
+    const commentPath = `/api/admin/comments/${comment._id}`;
+    await request(app)
+      .patch(commentPath)
+      .set('Authorization', adminAuth)
+      .send({ body: '' })
+      .expect(400);
+    await request(app)
+      .patch(commentPath)
+      .set('Authorization', auth)
+      .send({ body: ' ' })
+      .expect(200);
+    await request(app)
+      .patch(commentPath)
+      .set('Authorization', auth)
+      .send({ body: 'x' })
+      .expect(400);
+    await request(app)
+      .patch(`/api/comments/${comment._id}/review`)
+      .set('Authorization', auth)
+      .send({ action: 'publish' })
+      .expect(400);
+    assert.equal((await Comment.findById(comment._id)).body, '');
+    await request(app)
+      .patch(commentPath)
+      .set('Authorization', auth)
+      .send({ parentId: '' })
+      .expect(400);
+  });
+
+  test('article drafts, Pages and Adopt permit incomplete saves but reject incomplete publication', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const admin = await createUser({ role: 'administrator' });
+    const auth = bearer((await login(developer)).body.token);
+    const adminAuth = bearer((await login(admin)).body.token);
+    const payload = {
+      title: { en: '', fr: '' },
+      content: { en: '', fr: '' },
+      status: 'draft',
+    };
+    await request(app)
+      .post('/api/news')
+      .set('Authorization', adminAuth)
+      .send(payload)
+      .expect(400);
+    const news = await request(app)
+      .post('/api/news')
+      .set('Authorization', auth)
+      .send(payload)
+      .expect(201);
+    const newsPath = `/api/news/${news.body.article._id}`;
+    await request(app)
+      .patch(newsPath)
+      .set('Authorization', adminAuth)
+      .send(payload)
+      .expect(200);
+    await request(app)
+      .patch(`${newsPath}/publication`)
+      .set('Authorization', auth)
+      .send({ action: 'publish' })
+      .expect(400);
+    await request(app)
+      .patch(newsPath)
+      .set('Authorization', auth)
+      .send({ ...payload, status: 'published' })
+      .expect(400);
+    const page = await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', auth)
+      .send({ title: { en: '', fr: '' }, slug: 'blank-page' })
+      .expect(201);
+    await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', adminAuth)
+      .send({ title: { en: '', fr: '' }, slug: 'other-blank-page' })
+      .expect(400);
+    await request(app)
+      .patch(`/api/admin/pages/${page.body.page._id}`)
+      .set('Authorization', adminAuth)
+      .send({ title: { en: '', fr: '' }, summary: { en: 'Edited' } })
+      .expect(200);
+    await request(app)
+      .patch(`/api/admin/pages/${page.body.page._id}/status`)
+      .set('Authorization', auth)
+      .send({ status: 'published' })
+      .expect(400);
+    await request(app)
+      .post('/api/admin/pages')
+      .set('Authorization', auth)
+      .send({ title: { en: '' }, slug: '' })
+      .expect(400);
+    const adopt = await request(app)
+      .post('/api/admin/adopt-displays')
+      .set('Authorization', auth)
+      .send({ title: { en: '', fr: '' }, published: false })
+      .expect(201);
+    await request(app)
+      .patch(`/api/admin/adopt-displays/${adopt.body.display._id}`)
+      .set('Authorization', auth)
+      .send({ published: true })
+      .expect(400);
+    await request(app).get('/api/adopt-displays').expect(200);
+  });
+
+  test('awards retain blank names on later saves and require operational year and slug', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const admin = await createUser({ role: 'administrator' });
+    const auth = bearer((await login(developer)).body.token);
+    const adminAuth = bearer((await login(admin)).body.token);
+    const award = await request(app)
+      .post('/api/admin/professional-awards')
+      .set('Authorization', auth)
+      .send({ slug: 'blank-award', title: '', published: false })
+      .expect(201);
+    const path = `/api/admin/professional-awards/${award.body.award._id}/recipients`;
+    await request(app)
+      .post(path)
+      .set('Authorization', adminAuth)
+      .send({ name: '', year: 2026 })
+      .expect(400);
+    const recipient = await request(app)
+      .post(path)
+      .set('Authorization', auth)
+      .send({ name: '', year: 2026 })
+      .expect(201);
+    const recipientId = recipient.body.award.recipients[0]._id;
+    await request(app)
+      .patch(`${path}/${recipientId}`)
+      .set('Authorization', adminAuth)
+      .send({ name: '', year: 2026, role: 'Edited' })
+      .expect(200);
+    await request(app)
+      .post(path)
+      .set('Authorization', auth)
+      .send({ name: '', year: '' })
+      .expect(400);
+    await request(app)
+      .post('/api/admin/professional-awards')
+      .set('Authorization', auth)
+      .send({ slug: '', title: '', published: false })
+      .expect(400);
+    await request(app)
+      .get('/api/admin/professional-awards')
+      .set('Authorization', auth)
+      .expect(200);
+  });
+
+  test('incomplete scheduled copy stays private without blocking complete scheduled records', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const auth = bearer((await login(developer)).body.token);
+    const now = new Date();
+    const scheduled = new Date(now.getTime() - 1000);
+    const incomplete = await Event.create({
+      ...eventPayload(),
+      createdBy: developer._id,
+      status: 'pending',
+      scheduledPublishAt: scheduled,
+      scheduledBy: developer._id,
+    });
+    const complete = await Event.create({
+      ...eventPayload(),
+      createdBy: developer._id,
+      status: 'pending',
+      scheduledPublishAt: scheduled,
+      scheduledBy: developer._id,
+    });
+    await request(app)
+      .patch(`/api/admin/events/${incomplete._id}`)
+      .set('Authorization', auth)
+      .send({ title: { en: '', fr: '' } })
+      .expect(200);
+    assert.equal(await publishDueContent(now), 1);
+    assert.equal((await Event.findById(incomplete._id)).status, 'pending');
+    assert.equal((await Event.findById(complete._id)).status, 'published');
+  });
+
+  test('invite names and navigation labels use developer actor policy', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const admin = await createUser({ role: 'administrator' });
+    const auth = bearer((await login(developer)).body.token);
+    const adminAuth = bearer((await login(admin)).body.token);
+    const invitation = {
+      firstName: '',
+      lastName: '',
+      email: 'blank-invite@example.test',
+      role: 'subscriber',
+    };
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', adminAuth)
+      .send(invitation)
+      .expect(400);
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', auth)
+      .send({ ...invitation, email: '' })
+      .expect(400);
+    await request(app)
+      .post('/api/admin/users')
+      .set('Authorization', auth)
+      .send(invitation)
+      .expect(201);
+    const invited = await User.findOne({ email: invitation.email });
+    assert.equal(invited.lastName, '');
+    assert.equal(invited.accountType, 'invited');
+    const navigation = {
+      group: 'about',
+      label: { en: '', fr: '' },
+      route: '/about-family',
+    };
+    await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', adminAuth)
+      .send(navigation)
+      .expect(400);
+    const created = await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', auth)
+      .send(navigation)
+      .expect(201);
+    await request(app)
+      .patch(`/api/admin/navigation-items/${created.body.item._id}`)
+      .set('Authorization', adminAuth)
+      .send({ label: { en: '', fr: '' }, order: 2 })
+      .expect(200);
+    await request(app)
+      .post('/api/admin/navigation-items')
+      .set('Authorization', auth)
+      .send({ ...navigation, group: '' })
+      .expect(400);
+    await request(app).get('/api/navigation').expect(200);
+  });
+
+  test('blank award link labels survive subsequent ordinary saves', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const admin = await createUser({ role: 'administrator' });
+    const auth = bearer((await login(developer)).body.token);
+    const adminAuth = bearer((await login(admin)).body.token);
+    const payload = {
+      slug: 'link-label-award',
+      title: 'Award',
+      published: false,
+      links: [
+        {
+          label: '',
+          url: 'https://example.test/instructions',
+          kind: 'instruction',
+        },
+      ],
+    };
+    const award = await request(app)
+      .post('/api/admin/professional-awards')
+      .set('Authorization', auth)
+      .send(payload)
+      .expect(201);
+    assert.equal(award.body.award.links.length, 1);
+    await request(app)
+      .patch(`/api/admin/professional-awards/${award.body.award._id}`)
+      .set('Authorization', adminAuth)
+      .send({ ...payload, summary: 'Edited' })
+      .expect(200);
+    const stored = await ProfessionalAward.findById(award.body.award._id);
+    assert.equal(stored.links[0].label, '');
+    assert.equal(stored.links[0].url, payload.links[0].url);
+  });
+
+  test('developer saves blank role/media/banner labels without weakening identifiers or types', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const admin = await createUser({ role: 'administrator' });
+    const auth = bearer((await login(developer)).body.token);
+    const adminAuth = bearer((await login(admin)).body.token);
+    await request(app)
+      .post('/api/admin/roles')
+      .set('Authorization', adminAuth)
+      .send({ name: '', slug: 'empty-label' })
+      .expect(400);
+    const role = await request(app)
+      .post('/api/admin/roles')
+      .set('Authorization', auth)
+      .send({ name: '', slug: 'empty-label' })
+      .expect(201);
+    await request(app)
+      .patch(`/api/admin/roles/${role.body.role._id}`)
+      .set('Authorization', adminAuth)
+      .send({ name: '', description: 'Keep authorized blank' })
+      .expect(200);
+    await request(app)
+      .post('/api/admin/roles')
+      .set('Authorization', auth)
+      .send({ name: '', slug: '' })
+      .expect(400);
+    const asset = await MediaAsset.create({
+      key: 'images/blank-label/original.png',
+      originalName: 'original.png',
+    });
+    const path = `/api/admin/media/${encodeURIComponent(asset.key)}`;
+    await request(app)
+      .patch(path)
+      .set('Authorization', adminAuth)
+      .send({ displayName: '' })
+      .expect(400);
+    const media = await request(app)
+      .patch(path)
+      .set('Authorization', auth)
+      .send({ displayName: '' })
+      .expect(200);
+    assert.equal(media.body.displayName, '');
+    assert.equal(media.body.name, 'original.png');
+    await request(app)
+      .patch(path)
+      .set('Authorization', auth)
+      .send({ displayName: 'x'.repeat(121) })
+      .expect(400);
+    const timer = await request(app)
+      .post('/api/admin/timers')
+      .set('Authorization', auth)
+      .send({ title: '', text: { en: '', fr: '' }, enabled: false })
+      .expect(201);
+    assert.equal(timer.body.timer.title, '');
+    await request(app)
+      .patch(`/api/admin/timers/${timer.body.timer._id}`)
+      .set('Authorization', auth)
+      .send({ title: '', dismissible: 'yes' })
+      .expect(400);
+  });
+
+  test('normal public registration retains every required descriptive field', async () => {
+    const member = createMemberData();
+    const payload = {
+      ...member,
+      passwordConfirmation: member.password,
+      addressLine1: member.address.line1,
+      city: member.address.city,
+      country: member.address.country,
+      stateProvince: member.address.stateProvince,
+      postalCode: member.address.postalCode,
+      sessionCookieConsent: true,
+    };
+    for (const field of [
+      'firstName',
+      'lastName',
+      'addressLine1',
+      'city',
+      'country',
+      'stateProvince',
+      'postalCode',
+      'status',
+      'affiliationElement',
+    ]) {
+      const response = await request(app)
+        .post('/api/register')
+        .send({ ...payload, [field]: ' ' })
+        .expect(400);
+      assert.equal(
+        response.body.error,
+        'Required registration fields are missing',
+      );
+    }
+    assert.equal(await User.countDocuments({ email: member.email }), 0);
+  });
+});
+
 describe('admin email controls', () => {
   test('requires email permission and changes only the chosen switch', async () => {
     const member = await login(await createUser());

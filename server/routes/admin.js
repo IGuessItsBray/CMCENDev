@@ -13,6 +13,7 @@ const {
   ListObjectsV2Command,
 } = require('@aws-sdk/client-s3');
 const User = require('../models/User');
+const { hasText, requiresTextForSave } = require('../services/save-validation');
 const Role = require('../models/Role');
 const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
@@ -206,12 +207,26 @@ async function saveAdminContentEdit({
     ? document.body
     : undefined;
   const changedFields = [];
+  const previousTitle = document.title?.toObject?.() || document.title;
   const validationError = applyUpdates(document, req.body, changedFields);
   if (validationError) return res.status(400).json({ error: validationError });
   if (!changedFields.length) {
     return res
       .status(400)
       .json({ error: 'Provide at least one editable field' });
+  }
+
+  if (targetType === 'event' && !hasText(document.title) &&
+      requiresTextForSave(req.user, previousTitle))
+    return res.status(400).json({ error: 'An English or French event title is required' });
+
+  // Model errors remain client errors; storage validation stays enabled.
+  try {
+    await document.validate();
+  } catch (error) {
+    if (error.name === 'ValidationError' || error.name === 'CastError')
+      return res.status(400).json({ error: 'Content information is invalid' });
+    throw error;
   }
 
   if (document.schema.path('updatedBy')) {
@@ -1455,7 +1470,7 @@ async function getAdminRoles() {
   return roles.map(toAdminRole);
 }
 
-async function createRoleUpdate(body, actor, { requireName = false } = {}) {
+async function createRoleUpdate(body, actor, { requireName = false, previous } = {}) {
   const source = body || {};
   const update = {};
   let hasEditableUpdate = false;
@@ -1463,7 +1478,7 @@ async function createRoleUpdate(body, actor, { requireName = false } = {}) {
   if (requireName || Object.prototype.hasOwnProperty.call(source, 'name')) {
     const name = cleanRoleName(source.name);
 
-    if (!name) {
+    if (!name && requiresTextForSave(actor, previous?.name)) {
       return { error: 'Role name is required' };
     }
 
@@ -2914,7 +2929,9 @@ router.patch(
   requirePermission('canManageRoles'),
   async (req, res) => {
     try {
-      const result = await createRoleUpdate(req.body, req.user);
+      const previousRole = await Role.findById(req.params.roleId);
+      if (!previousRole) return res.status(404).json({ error: 'Role not found' });
+      const result = await createRoleUpdate(req.body, req.user, { previous: previousRole });
 
       if (result.error) {
         return res.status(400).json({ error: result.error });
@@ -2922,12 +2939,6 @@ router.patch(
 
       if (!result.hasEditableUpdate) {
         return res.status(400).json({ error: 'No role updates provided' });
-      }
-
-      const previousRole = await Role.findById(req.params.roleId);
-
-      if (!previousRole) {
-        return res.status(404).json({ error: 'Role not found' });
       }
 
       const role = await Role.findByIdAndUpdate(
@@ -3243,7 +3254,7 @@ router.patch(
     const name = req.body?.displayName;
     if (
       typeof name !== 'string' ||
-      !name.trim() ||
+      (!name.trim() && requiresTextForSave(req.user)) ||
       name.trim().length > 120 ||
       /[\u0000-\u001f\u007f]/u.test(name) ||
       Object.keys(req.body).some((key) => key !== 'displayName')
@@ -3274,7 +3285,7 @@ router.patch(
       return res.json({
         key: asset.key,
         displayName: name.trim(),
-        name: name.trim(),
+        name: name.trim() || asset.originalName || asset.key,
       });
     } catch (error) {
       console.error(
@@ -3471,7 +3482,7 @@ router.post(
       const role = String(req.body?.role || 'subscriber').trim();
       const invitationMessage = String(req.body?.message || '').trim();
 
-      if (!firstName || !lastName || !email) {
+      if ((!firstName || !lastName) && requiresTextForSave(req.user) || !email) {
         return res
           .status(400)
           .json({ error: 'First name, last name, and email are required' });
@@ -3516,7 +3527,7 @@ router.post(
         accountType: 'invited',
         username: email,
         email,
-        accountName: `${firstName} ${lastName}`,
+        accountName: [firstName, lastName].filter(Boolean).join(' '),
         firstName,
         lastName,
         password: crypto.randomBytes(32).toString('hex'),
@@ -4292,15 +4303,19 @@ router.patch(
       if (!Object.keys(updates).length)
         return res.status(400).json({ error: 'No profile fields provided' });
       const old = await User.findById(req.params.userId).select(
-        'accountType profileComplete firstName lastName',
+        'accountType profileComplete firstName lastName address status affiliationElement',
       );
       if (!old) return res.status(404).json({ error: 'User not found' });
+      if (['status', 'affiliationElement'].some((field) => field in updates &&
+          !updates[field] && requiresTextForSave(req.user, old.get(field))))
+        return res.status(400).json({ error: 'Required profile fields are missing' });
       if ((!old.accountType || old.accountType === 'member') && old.profileComplete !== false) {
         const required = [
           'firstName', 'lastName', 'address.line1', 'address.city',
           'address.country', 'address.stateProvince', 'address.postalCode',
         ];
-        if (required.some((field) => field in updates && !updates[field]))
+        if (required.some((field) => field in updates && !updates[field] &&
+          requiresTextForSave(req.user, old.get(field))))
           return res.status(400).json({ error: 'Required profile fields are missing' });
       }
       if ('firstName' in updates || 'lastName' in updates)
@@ -4982,7 +4997,9 @@ router.patch(
           if (typeof body.body !== 'string') return 'body must be a string';
 
           const cleanBody = cleanString(body.body);
-          if (cleanBody.length < 2 || cleanBody.length > 10000) {
+          if ((cleanBody.length < 2 &&
+              (cleanBody || requiresTextForSave(req.user, comment.body))) ||
+              cleanBody.length > 10000) {
             return 'Comment text must contain between 2 and 10000 characters';
           }
 

@@ -828,6 +828,14 @@
     return user?.accountName || user?.username || user?.email || fallback;
   }
 
+  function requiresTextForSave(actor, previous) {
+    const hasText = (value) => typeof value === "string"
+      ? Boolean(value.trim())
+      : Boolean(value?.en?.trim() || value?.fr?.trim());
+    return actor?.role !== "developer" &&
+      (previous === undefined || hasText(previous));
+  }
+
   function createLoadingSpinner(label) {
     const loading = document.createElement("div");
     loading.className = "loading-state";
@@ -2112,6 +2120,7 @@
     hasSessionCookieConsent,
     getStoredAuthToken,
     getUserDisplayName,
+    requiresTextForSave,
     normalizeToken,
     preparePublicKeyCreationOptions,
     preparePublicKeyRequestOptions,

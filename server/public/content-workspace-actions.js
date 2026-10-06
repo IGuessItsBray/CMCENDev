@@ -26,6 +26,8 @@ window.ContentWorkspaceActions = {
     getContentLanguageSaveRequest,
     onArticleCreated,
   }) {
+    const publicationChoices = new Map();
+
     function createContentWorkspaceReviewActions(item) {
       if (item.isNew) return null;
       const isNewsArticle = item.type === "newsArticle";
@@ -60,7 +62,16 @@ window.ContentWorkspaceActions = {
       const publish = document.createElement("button");
       publish.type = "button";
       publish.className = "admin-work-zone-button is-success";
-      const original = item.publicationDate?.originalPublishedAt;
+      const originalValue = item.publicationDate?.originalPublishedAt;
+      const originalDate =
+        typeof originalValue === "string" ? new Date(originalValue) : null;
+      const original =
+        item.publicationDate?.isArchive &&
+        originalDate &&
+        Number.isFinite(originalDate.getTime()) &&
+        originalDate.getTime() <= Date.now()
+          ? originalValue
+          : null;
       const publicationChoice =
         canSchedulePublication || item.publicationDate?.isArchive
           ? document.createElement("select")
@@ -92,6 +103,19 @@ window.ContentWorkspaceActions = {
           }
           publicationChoice.append(option);
         }
+        const recordKey = JSON.stringify([item.type, String(item._id)]);
+        const savedChoice = publicationChoices.get(recordKey);
+        publicationChoice.value =
+          Array.from(publicationChoice.children).some(
+            (option) => option.value === savedChoice,
+          )
+            ? savedChoice
+            : original
+              ? "original"
+              : "now";
+        publicationChoice.addEventListener("change", () => {
+          publicationChoices.set(recordKey, publicationChoice.value);
+        });
       }
       const cancelSchedule =
         canSchedulePublication && item.scheduledPublishAt

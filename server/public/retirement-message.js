@@ -181,16 +181,34 @@ function updateRetirementMessageLanguage() {
   );
 }
 
-function formatCommentAuthor(author) {
-  if (!author || typeof author !== "object") {
-    return translate("unknown_user");
-  }
+function formatCommentAuthor(comment) {
+  const author = comment.author;
+  const displayName = (value) =>
+    typeof value === "string" && !value.includes("@") ? value.trim() : "";
+  const legacyName = displayName(comment.legacy?.authorName);
 
   return (
-    [author.firstName, author.lastName].filter(Boolean).join(" ") ||
-    author.accountName ||
-    author.username ||
+    (author && typeof author === "object"
+      ? displayName(
+          [author.firstName, author.lastName].filter(Boolean).join(" "),
+        ) ||
+        displayName(author.accountName) ||
+        displayName(author.username)
+      : "") ||
+    (legacyName && comment.legacy?.isGuest === true
+      ? translate("comment_guest_author", { name: legacyName })
+      : legacyName) ||
     translate("unknown_user")
+  );
+}
+
+function getCommentSentDate(comment) {
+  // Imports preserve the source comment's sent date in createdAt. Approval
+  // writes publishedAt separately and must not change the displayed sent date.
+  return (
+    [comment.createdAt, comment.publishedAt].find(
+      (value) => value && Number.isFinite(new Date(value).getTime()),
+    ) || ""
   );
 }
 
@@ -500,15 +518,16 @@ function createCommentElement(comment) {
   const header = document.createElement("header");
 
   const author = document.createElement("strong");
-  author.textContent = formatCommentAuthor(comment.author);
+  author.textContent = formatCommentAuthor(comment);
 
   const date = document.createElement("time");
-  const dateLabel = formatCommentDate(comment.publishedAt || comment.createdAt);
+  const sentAt = getCommentSentDate(comment);
+  const dateLabel = formatCommentDate(sentAt);
 
   date.textContent = dateLabel;
 
-  if (comment.publishedAt || comment.createdAt) {
-    date.dateTime = comment.publishedAt || comment.createdAt;
+  if (sentAt) {
+    date.dateTime = sentAt;
   }
 
   header.append(author, date);
@@ -526,7 +545,7 @@ function createCommentElement(comment) {
     deleteButton.textContent = "Remove";
     deleteButton.setAttribute(
       "aria-label",
-      `Remove comment by ${formatCommentAuthor(comment.author)}`,
+      `Remove comment by ${formatCommentAuthor(comment)}`,
     );
     deleteButton.addEventListener("click", () => {
       deleteRetirementComment(comment);

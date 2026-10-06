@@ -11647,9 +11647,20 @@ a.my-event-card-row:focus-visible {
 .home-latest-news-heading > div > p:last-child {
   max-width: 610px;
   margin: 12px 0 0;
-  color: var(--text-muted);
+  color: var(--white);
   font-size: 14px;
   line-height: 1.6;
+}
+
+.home-latest-news-heading .home-text-link,
+.home-latest-news-heading .home-text-link:hover,
+.home-latest-news-heading .home-text-link:focus-visible {
+  color: var(--white);
+}
+
+.home-latest-news-heading .home-text-link:hover,
+.home-latest-news-heading .home-text-link:focus-visible {
+  text-decoration: underline;
 }
 
 .home-news-rail {
@@ -17331,7 +17342,7 @@ html[data-theme='dark'] .error-page-secondary-action:focus-visible {
 
 html[data-theme='dark'] main :is(input, textarea, select) {
   border-color: var(--dark-border-strong);
-  background: #0d1422;
+  background-color: #0d1422;
   color: var(--dark-text);
 }
 
@@ -17341,8 +17352,14 @@ html[data-theme='dark'] main :is(input, textarea, select)::placeholder {
 
 html[data-theme='dark'] main :is(input, textarea, select):focus {
   border-color: var(--gold-500);
-  background: #0d1422;
+  background-color: #0d1422;
   box-shadow: 0 0 0 3px rgba(213, 155, 39, 0.18);
+}
+
+html[data-theme='dark'] .register-field select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--dark-text-soft) 50%),
+    linear-gradient(135deg, var(--dark-text-soft) 50%, transparent 50%);
 }
 
 html[data-theme='dark'] main :is(input, textarea, select):-webkit-autofill,

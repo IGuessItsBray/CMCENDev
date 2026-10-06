@@ -3364,6 +3364,7 @@ paths:
     get:
       tags: [Comments]
       summary: List published comments for message.
+      description: Legacy attribution exposes only authorName and computed isGuest, with names suppressed for missing registered source authors. Guest names remain available. createdAt preserves the sent date; publishedAt is separate publication metadata.
       security: []
       parameters:
         - name: parentType

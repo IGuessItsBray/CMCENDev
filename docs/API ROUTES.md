@@ -624,6 +624,14 @@ The review count `comments` includes all pending comments and excludes drafts.
   owner/staff access to the existing personal correction workflow.
 - `GET` / `POST /api/comments/on/:parentType/:parentId`: published comments or
   authenticated submission on a published parent. Unknown parent types are rejected.
+  Public listing returns only `legacy.authorName` and computed `legacy.isGuest` from legacy attribution, suppressing
+  it when a registered source author no longer has an attached account. Guest names
+  remain available. `createdAt` is the sent date; `publishedAt` is separate publication
+  metadata. The public page uses valid `createdAt`, falling back to `publishedAt`.
+  Verified source guests display a localized `(Guest)` suffix; account authors retain
+  their current public name. Account identity is never inferred from a name or email.
+  Staff comment context links resolve the stored parent and its legacy source records.
+  A link to this site's parent is available only when that parent is published.
 - `PATCH /api/admin/comments/:commentId`: staff body correction, preserving
   attribution, source IDs, and status, with revision and audit history.
 - `PATCH /api/admin/comments/:commentId/hide` and `/restore`, and

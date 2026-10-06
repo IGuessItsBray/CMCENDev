@@ -66,6 +66,7 @@
   let selected = null;
   let nextOffset = null;
   let pendingMediaSelections = [];
+  const publicationChoices = new Map();
 
   function notice(value, error = false) {
     message.textContent = value;
@@ -830,6 +831,15 @@
           (key) => record.verification.checks?.[key] === true,
         );
       const dateChoice = document.createElement("select");
+      const originalValue = record.publicationDate.originalPublishedAt;
+      const originalDate =
+        typeof originalValue === "string" ? new Date(originalValue) : null;
+      const hasOriginal =
+        originalDate &&
+        Number.isFinite(originalDate.getTime()) &&
+        originalDate.getTime() <= Date.now();
+      const recordKey = JSON.stringify([record.type, String(record.id)]);
+      const savedChoice = publicationChoices.get(recordKey);
       dateChoice.setAttribute(
         "aria-label",
         ui("Publication date", "Date de publication"),
@@ -841,7 +851,7 @@
       datePrompt.value = "";
       dateChoice.append(datePrompt);
       for (const [value, label] of [
-        ...(record.publicationDate.originalPublishedAt
+        ...(hasOriginal
           ? [
               [
                 "original",
@@ -856,14 +866,30 @@
         option.value = value;
         dateChoice.append(option);
       }
+      dateChoice.value = [
+        "now", "custom", ...(hasOriginal ? ["original"] : []),
+      ].includes(savedChoice?.value)
+        ? savedChoice.value
+        : hasOriginal
+          ? "original"
+          : "now";
       actions.append(dateChoice);
       const customDate = document.createElement("input");
       customDate.type = "datetime-local";
       customDate.setAttribute("aria-label", ui("Custom publication date", "Date de publication personnalisée"));
-      customDate.hidden = true;
+      customDate.value = savedChoice?.customDate || "";
+      customDate.hidden = dateChoice.value !== "custom";
+      function rememberPublicationChoice() {
+        publicationChoices.set(recordKey, {
+          value: dateChoice.value,
+          customDate: customDate.value,
+        });
+      }
       dateChoice.addEventListener("change", () => {
         customDate.hidden = dateChoice.value !== "custom";
+        rememberPublicationChoice();
       });
+      customDate.addEventListener("input", rememberPublicationChoice);
       actions.append(customDate);
       const publish = button(ui("Publish", "Publier"), "is-publish", async () => {
         if (!dateChoice.value || (dateChoice.value === "custom" && !customDate.value)) {

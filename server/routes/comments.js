@@ -393,7 +393,7 @@ router.get('/on/:parentType/:parentId', async (req, res) => {
       status: 'published',
     })
       .select(
-        'parentType parentId author body legacy.authorName createdAt publishedAt status',
+        'parentType parentId author body legacy.authorName legacy.authorUserId createdAt publishedAt status',
       )
       .populate('author', 'username accountName firstName lastName role')
       .sort({
@@ -401,6 +401,18 @@ router.get('/on/:parentType/:parentId', async (req, res) => {
         createdAt: 1,
       })
       .lean();
+
+    for (const comment of comments) {
+      if (!comment.legacy) continue;
+      // Keep legacy guest attribution, but do not undo the keep-content
+      // account-deletion flow's anonymization of registered authors.
+      const { authorName, authorUserId } = comment.legacy;
+      comment.legacy = {
+        authorName:
+          !comment.author && Number(authorUserId) > 0 ? '' : authorName,
+        isGuest: authorUserId === 0,
+      };
+    }
 
     res.json({
       comments,

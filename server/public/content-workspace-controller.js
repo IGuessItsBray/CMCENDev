@@ -1072,19 +1072,26 @@ window.ContentWorkspace = {
     }
 
     function createArchiveSourceDetails(item) {
-      if (!item.publicationDate?.isArchive) return null;
+      if (!item.publicationDate?.isArchive && item.type !== "comment") return null;
       const details = document.createElement("section");
       details.className = "content-workspace-archive-source";
       const heading = document.createElement("h3");
-      setWorkspaceTranslatedText(heading, "content_workspace_original_source", "Original source");
+      setWorkspaceTranslatedText(heading,
+        item.type === "comment" ? "content_workspace_comment_context" : "content_workspace_original_source",
+        item.type === "comment" ? "Comment context" : "Original source");
       details.append(heading);
-      const original = item.publicationDate.originalPublishedAt;
+      if (item.type === "comment" && item.content?.parentTitle) {
+        const parent = document.createElement("p");
+        parent.textContent = item.content.parentTitle;
+        details.append(parent);
+      }
+      const original = item.publicationDate?.originalPublishedAt;
       if (original) {
         const date = document.createElement("p");
         date.textContent = `${getText("content_workspace_original_publication_date", "Original publication date")}: ${formatWorkspaceDate(original)}`;
         details.append(date);
       }
-      if (item.archiveSourceIds?.length) {
+      if (item.type !== "comment" && item.archiveSourceIds?.length) {
         const ids = document.createElement("p");
         ids.textContent = `${getText("content_workspace_source_ids", "Source IDs")}: ${item.archiveSourceIds.join(", ")}`;
         details.append(ids);
@@ -1101,14 +1108,24 @@ window.ContentWorkspace = {
         link.target = "_blank";
         link.rel = "noopener noreferrer";
         link.textContent = getText(
+          item.type === "comment" ? "content_workspace_view_comment_source" :
           language === "en" ? "content_workspace_view_source_en" :
           language === "fr" ? "content_workspace_view_source_fr" :
           "content_workspace_view_source",
+          item.type === "comment" ? "View original legacy parent article" :
           language === "en" ? "View legacy original (English)" :
           language === "fr" ? "View legacy original (French)" :
           "View legacy original",
         );
         link.title = url;
+        details.append(link);
+      }
+      if (item.type === "comment" && item.content?.publicUrl) {
+        const link = document.createElement("a");
+        link.href = item.content.publicUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        setWorkspaceTranslatedText(link, "content_workspace_view_comment_parent", "View published parent on this site");
         details.append(link);
       }
       return details;

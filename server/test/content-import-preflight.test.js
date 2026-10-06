@@ -140,6 +140,48 @@ test('missing parents, provenance and guessed guest ownership are blocked', asyn
   ])
     assert.ok(report.results[0].issues.some((i) => i.code === code));
 });
+test('registered commenters require the exact source user-ID mapping', async () => {
+  const input = fixture();
+  input.items[0].comments = [
+    {
+      sourceCommentId: 1,
+      sourcePostId: 10,
+      sourceParentId: 0,
+      sourceUserId: 20,
+      sourceApproval: '1',
+      convertedText: 'Comment',
+      document: {
+        status: 'draft',
+        body: 'Comment',
+        author: 'a'.repeat(24),
+        parentType: 'retirement',
+        legacy: {
+          source: 'https://cmcen-rcmce.ca',
+          wordpressCommentId: 1,
+          postId: 10,
+          parentCommentId: 0,
+          authorUserId: 20,
+          originalApproval: '1',
+        },
+      },
+    },
+  ];
+  assert.equal((await inspectBatch(input, { models })).safeToApply, true);
+  input.items[0].comments[0].document.author = 'b'.repeat(24);
+  const wrong = await inspectBatch(input, { models });
+  assert.ok(
+    wrong.results[0].issues.some(
+      (issue) => issue.code === 'comment-author-not-mapped',
+    ),
+  );
+  input.items[0].comments[0].document.author = null;
+  const missing = await inspectBatch(input, { models });
+  assert.ok(
+    missing.results[0].issues.some(
+      (issue) => issue.code === 'comment-author-not-mapped',
+    ),
+  );
+});
 test('model errors are reported without exposing field values', async () => {
   class InvalidModel extends ValidModel {
     async validate() {

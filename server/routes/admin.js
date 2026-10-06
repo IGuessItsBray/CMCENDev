@@ -31,6 +31,7 @@ const {
   getCommentTarget,
   getCommentParentTitle,
   getCommentPublicUrl,
+  getCommentContextLinks,
 } = require('../config/comment-targets');
 const WeeklyBriefRun = require('../models/WeeklyBriefRun');
 const NewsBlast = require('../models/NewsBlast');
@@ -719,7 +720,8 @@ function getContentActorName(actor) {
 }
 
 function toContentWorkspaceItem(type, content) {
-  const archiveSourceLinks = getArchiveSourceLinks(content);
+  const commentContext = type === 'comment' ? getCommentContextLinks(content) : null;
+  const archiveSourceLinks = commentContext?.archiveSourceLinks || getArchiveSourceLinks(content);
   const base = {
     publicationDate: getPublicationDateInfo(content),
     archiveSourceUrls: archiveSourceLinks.map((link) => link.url),
@@ -850,7 +852,7 @@ function toContentWorkspaceItem(type, content) {
       parentType: content.parentType,
       parentId: content.parentId?._id || content.parentId,
       parentTitle: getCommentParentTitle(content),
-      publicUrl: getCommentPublicUrl(content),
+      publicUrl: commentContext.publicUrl,
     },
   };
 }
@@ -1064,7 +1066,7 @@ router.get(
             ...(parentTypes ? { parentType: { $in: parentTypes } } : {}),
           })
             .select(
-              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourceUrl legacy.sourceUrls legacy.sourceRecords legacy.originalPublishedAt legacy.wordpressCommentId',
+              'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourceUrl legacy.sourceUrls legacy.sourceRecords legacy.originalPublishedAt legacy.wordpressCommentId legacy.postId',
             )
             .select(
               'parentType parentId author body legacy.authorName legacy.originalApproval status hiddenFromStatus rejectionReason publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',

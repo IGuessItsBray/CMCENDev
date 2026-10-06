@@ -1,5 +1,6 @@
 const Comment = require('../models/Comment');
 const express = require('express');
+const { cleanRanks } = require('../services/person-ranks');
 const { selectPublicationDate } = require('../services/publication-date');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
@@ -273,6 +274,9 @@ function getCleanRetirementMessagePayload(body = {}, submitterDetails = {}) {
 
   const cleanRetiree = {
     rank: cleanString(retiree.rank),
+    ...(retiree.ranks !== undefined
+      ? { ranks: cleanRanks(retiree.ranks, 40) }
+      : {}),
     firstName: cleanString(retiree.firstName),
     lastName: cleanString(retiree.lastName),
     postNominals: cleanString(retiree.postNominals),
@@ -653,6 +657,8 @@ router.post(
           : null,
       });
     } catch (error) {
+      if (error.status === 400)
+        return res.status(400).json({ error: error.message });
       console.error('Could not submit retirement message:', error);
 
       return res.status(500).json({
@@ -951,7 +957,10 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     } = payload;
     const now = new Date();
 
-    retirementMessage.retiree = cleanRetiree;
+    retirementMessage.retiree = {
+      ...cleanRetiree,
+      ranks: cleanRetiree.ranks || cleanRanks(retirementMessage.retiree?.ranks, 40),
+    };
     retirementMessage.message = cleanMessage;
     retirementMessage.messageLanguage = messageLanguage;
     retirementMessage.messages = {
@@ -1055,7 +1064,8 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
-    if (error.status === 400) return res.status(400).json({ error: error.message });
+    if (error.status === 400)
+      return res.status(400).json({ error: error.message });
     console.error('Could not update retirement message:', error);
 
     res.status(500).json({

@@ -813,6 +813,10 @@ function buildRetirementMessageData(photoUrl = "", photoDisplayUrl = "") {
   return {
     retiree: {
       rank: getFieldValue("retireeRank"),
+      ranks: {
+        en: getFieldValue("retireeRankEn"),
+        fr: getFieldValue("retireeRankFr"),
+      },
       firstName: getFieldValue("retireeFirstName"),
       lastName: getFieldValue("retireeLastName"),
       postNominals: getFieldValue("retireePostNominals"),
@@ -998,6 +1002,8 @@ function populateRetirementForm(retirementMessage) {
   const submitter = retirementMessage.submitter || {};
 
   selectRetireeRank(retiree.rank);
+  document.getElementById("retireeRankEn").value = retiree.ranks?.en || "";
+  document.getElementById("retireeRankFr").value = retiree.ranks?.fr || "";
   setRetirementField("retireeFirstName", retiree.firstName);
   setRetirementField("retireeLastName", retiree.lastName);
   setRetirementField("retireePostNominals", retiree.postNominals);

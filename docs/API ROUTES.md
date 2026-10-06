@@ -124,6 +124,18 @@ Personal edit links include `personal=1`, keeping publishing controls out of the
 
 The personal dashboard uses `editUrl` as edit eligibility: rejected submissions open directly as correction forms inside the detail modal, loading the existing type-specific `/edit` endpoint and submitting to its existing PATCH route. Other statuses are read-only in this modal. Retirement and Last Post corrections edit the original-language message and preserve the other language for translation review. The standalone personal edit links remain available for existing entry points.
 
+Retirement `retiree` and Last Post `deceased` accept optional `ranks: { en, fr }`
+on submission and editing, including the audited admin editors and archive review.
+Values must be strings, limited to 40 characters for retirement and 80 for Last
+Post. An explicitly supplied object replaces both translations; an omitted object
+preserves saved translations on updates. Empty values clear an authored translation.
+Public person objects include these ranks when available. Public titles select the
+current-language rank, then the original `rank`/`fullRank`, then an available
+translation. Original rank fields retain their existing meaning and certificate
+behavior. Existing documents require no migration; translations are authored,
+never inferred or silently imported. Bodies remain plain text: HTTP(S), `www.`
+URLs and email addresses become safe links; HTML markup remains inert text.
+
 Event, retirement, and Last Post correction forms also send `submitForReview: true` to their existing PATCH routes. This optional boolean enforces ownership without a reviewer override (`404`), requires an editable, unscheduled state (`409`), and disallows `publishNow` except `false` (`400`). Existing validation, bilingual merging, and auditing still apply; omitting the flag retains existing behavior. Submission detail includes the attached image reference and retirement date/role where available.
 
 ## Public and System
@@ -208,6 +220,19 @@ Mounted at `/api/analytics`.
 ## Audit Log
 
 Mounted at `/api/audit-logs`.
+
+JSON entries include `targetPublicUrl`: the current published retirement or Last
+Post page, or a published comment's current published parent page. It is empty for
+missing, deleted, hidden, unpublished or unsupported targets. Resolution uses the
+shared comment target registry and current database state, not audit snapshots.
+The audit permission remains required; no comment anchors are invented.
+
+Authorized comment records in `/api/admin/content` also include nullable
+`content.staffParentLink` with `{ url, kind }`. Existing draft/pending parents use
+their authenticated `preview=1` detail route; hidden/rejected parents open their
+existing staff workspace record. Published parents retain `content.publicUrl`.
+Missing parents produce neither link. These staff links are distinct from public
+links, preserve legacy-source links, and do not change publication status.
 
 | Method | Path                         | Access                                           | Purpose                                                                                              |
 | ------ | ---------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |

@@ -1111,7 +1111,7 @@ paths:
           schema: { type: string, format: date }
       responses:
         "200":
-          description: Audit logs.
+          description: Audit logs. Entries include targetPublicUrl for current published retirement, Last Post and comment parent targets; empty for unsupported, missing or unpublished targets. Historical snapshots do not establish public visibility.
   /api/audit-logs/export.csv:
     get:
       tags: [Audit Log]
@@ -1770,7 +1770,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Editorial workspace content with `items`, `hasMore`, and an opaque `nextCursor` when another page is available. Each item includes `publicationDate` with `isArchive` and nullable `originalPublishedAt` for publication date selection. Archive items include `archiveSourceIds`, `archiveSourceUrls`, and `archiveSourceLinks` entries with a saved, safe legacy `url` and `language` (`en`, `fr`, or empty when unverified). Retirement and Last Post content includes `historicalSubmissionUnknown` for recognized WordPress archive records whose original submitter and consent metadata is unavailable; this does not imply confirmed consent.
+          description: Editorial workspace content with `items`, `hasMore`, and an opaque `nextCursor` when another page is available. Authorized comment items include nullable `content.staffParentLink` (`url` and `kind`), using authenticated previews for draft/pending parents or staff workspace links for hidden/rejected parents; missing parents have no staff link. Published parent links remain in `content.publicUrl`. Each item includes `publicationDate` with `isArchive` and nullable `originalPublishedAt` for publication date selection. Archive items include `archiveSourceIds`, `archiveSourceUrls`, and `archiveSourceLinks` entries with a saved, safe legacy `url` and `language` (`en`, `fr`, or empty when unverified). Retirement and Last Post content includes `historicalSubmissionUnknown` for recognized WordPress archive records whose original submitter and consent metadata is unavailable; this does not imply confirmed consent.
         "400":
           $ref: "#/components/responses/Error"
         "403":
@@ -3685,6 +3685,15 @@ components:
           schema:
             type: object
             properties:
+              retiree:
+                type: object
+                properties:
+                  ranks:
+                    type: object
+                    description: Optional authored translations. Omit to preserve on update; empty strings clear. Original rank remains the fallback.
+                    properties:
+                      en: { type: string, maxLength: 40 }
+                      fr: { type: string, maxLength: 40 }
               submitForReview:
                 type: boolean
                 description: On PATCH only, use the owner-only personal correction workflow without immediate publication.
@@ -3874,6 +3883,12 @@ components:
                 type: object
                 required: [fullRank, firstName, surname]
                 properties:
+                  ranks:
+                    type: object
+                    description: Optional authored translations. Omit to preserve on update; empty strings clear. Original fullRank remains the fallback.
+                    properties:
+                      en: { type: string, maxLength: 80 }
+                      fr: { type: string, maxLength: 80 }
                   fullRank:
                     type: string
                     maxLength: 80

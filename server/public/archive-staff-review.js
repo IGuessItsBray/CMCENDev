@@ -42,6 +42,8 @@
     messages: ["Message", "Message"], description: ["Description", "Description"],
     summary: ["Summary", "Résumé"], location: ["Location", "Lieu"],
     dateLabel: ["Date label", "Libellé de date"], languageLabel: ["Language label", "Libellé de langue"],
+    "retiree.ranks.en": ["English rank", "Grade anglais"], "retiree.ranks.fr": ["French rank", "Grade français"],
+    "deceased.ranks.en": ["English rank", "Grade anglais"], "deceased.ranks.fr": ["French rank", "Grade français"],
     "retiree.rank": ["Rank", "Grade"], "retiree.firstName": ["First name", "Prénom"],
     "retiree.lastName": ["Last name", "Nom"], "retiree.tradeRole": ["Trade or role", "Métier ou rôle"],
     "deceased.fullRank": ["Rank", "Grade"], "deceased.firstName": ["First name", "Prénom"],

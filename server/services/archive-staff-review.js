@@ -25,6 +25,8 @@ const EDIT_FIELDS = Object.freeze({
   ],
   retirementMessage: [
     ['retiree.rank', 'Rank', 'text', 40],
+    ['retiree.ranks.en', 'English rank', 'text', 40],
+    ['retiree.ranks.fr', 'French rank', 'text', 40],
     ['retiree.firstName', 'First name', 'text', 80],
     ['retiree.lastName', 'Last name', 'text', 80],
     ['retiree.tradeRole', 'Trade or role', 'text', 120],
@@ -36,6 +38,8 @@ const EDIT_FIELDS = Object.freeze({
   lastPost: [
     ['title', 'Internal title', 'text', 240],
     ['deceased.fullRank', 'Rank', 'text', 80],
+    ['deceased.ranks.en', 'English rank', 'text', 80],
+    ['deceased.ranks.fr', 'French rank', 'text', 80],
     ['deceased.firstName', 'First name', 'text', 80],
     ['deceased.surname', 'Surname', 'text', 80],
     ['messages.en', 'English notice', 'long', 30000],

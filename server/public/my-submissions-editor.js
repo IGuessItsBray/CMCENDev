@@ -450,28 +450,34 @@ window.MySubmissionEditor = (() => {
       if (item.type === "lastPost")
         return {
           ...body,
-          deceased: Object.fromEntries(
-            ["fullRank", "firstName", "surname", "postNominal"].map((k) => [
-              k,
-              val(k),
-            ]),
-          ),
+          deceased: {
+            ranks: record.deceased?.ranks,
+            ...Object.fromEntries(
+              ["fullRank", "firstName", "surname", "postNominal"].map((k) => [
+                k,
+                val(k),
+              ]),
+            ),
+          },
           publicationPermissionConfirmed: checked("permission"),
           imageUrl: imageRemoved ? "" : record.imageUrl || "",
           imageDisplayUrl: imageRemoved ? "" : record.imageDisplayUrl || "",
         };
       return {
         ...body,
-        retiree: Object.fromEntries(
-          [
-            "rank",
-            "firstName",
-            "lastName",
-            "postNominals",
-            "tradeRole",
-            "retirementDate",
-          ].map((k) => [k, val(k)]),
-        ),
+        retiree: {
+          ranks: record.retiree?.ranks,
+          ...Object.fromEntries(
+            [
+              "rank",
+              "firstName",
+              "lastName",
+              "postNominals",
+              "tradeRole",
+              "retirementDate",
+            ].map((k) => [k, val(k)]),
+          ),
+        },
         submitter: { relationship: val("relationship") },
         publicationConsentConfirmed: checked("permission"),
         memberReviewConfirmed: checked("memberReviewConfirmed"),

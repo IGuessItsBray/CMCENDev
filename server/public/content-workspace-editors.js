@@ -618,6 +618,18 @@ window.ContentWorkspaceEditors = {
           value: retiree.rank,
         }),
         createWorkspaceEditorField({
+          field: "retireeRankEn",
+          label: "Rank (EN, optional)",
+          labelKey: "person_rank_en",
+          value: retiree.ranks?.en,
+        }),
+        createWorkspaceEditorField({
+          field: "retireeRankFr",
+          label: "Rank (FR, optional)",
+          labelKey: "person_rank_fr",
+          value: retiree.ranks?.fr,
+        }),
+        createWorkspaceEditorField({
           field: "retireeFirstName",
           label: "First name",
           labelKey: "retirement_first_name",
@@ -671,6 +683,18 @@ window.ContentWorkspaceEditors = {
           label: "Full rank",
           labelKey: "last_post_full_rank",
           value: deceased.fullRank,
+        }),
+        createWorkspaceEditorField({
+          field: "deceasedRankEn",
+          label: "Rank (EN, optional)",
+          labelKey: "person_rank_en",
+          value: deceased.ranks?.en,
+        }),
+        createWorkspaceEditorField({
+          field: "deceasedRankFr",
+          label: "Rank (FR, optional)",
+          labelKey: "person_rank_fr",
+          value: deceased.ranks?.fr,
         }),
         createWorkspaceEditorField({
           field: "deceasedFirstName",
@@ -1783,6 +1807,10 @@ window.ContentWorkspaceEditors = {
         return {
           retiree: {
             rank: String(formData.get("retireeRank") || ""),
+            ranks: {
+              en: String(formData.get("retireeRankEn") || ""),
+              fr: String(formData.get("retireeRankFr") || ""),
+            },
             firstName: String(formData.get("retireeFirstName") || ""),
             lastName: String(formData.get("retireeLastName") || ""),
             postNominals: String(formData.get("retireePostNominals") || ""),
@@ -1800,6 +1828,10 @@ window.ContentWorkspaceEditors = {
           slug: String(formData.get("slug") || ""),
           deceased: {
             fullRank: String(formData.get("deceasedFullRank") || ""),
+            ranks: {
+              en: String(formData.get("deceasedRankEn") || ""),
+              fr: String(formData.get("deceasedRankFr") || ""),
+            },
             firstName: String(formData.get("deceasedFirstName") || ""),
             surname: String(formData.get("deceasedSurname") || ""),
             postNominal: String(formData.get("deceasedPostNominal") || ""),

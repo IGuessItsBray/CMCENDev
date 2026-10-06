@@ -89,7 +89,7 @@ function showDetailLoading() {
 }
 
 function getLastPostName(lastPost) {
-  return lastPost?.displayName || translate("last_post_default_name");
+  return CMCENUtils.getLastPostName(lastPost) || translate("last_post_default_name");
 }
 
 function formatPublishedDate(value) {

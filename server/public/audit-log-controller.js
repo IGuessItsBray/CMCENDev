@@ -593,7 +593,6 @@
       }
 
       const targetId = getTargetId(log.target);
-      const snapshot = log.targetSnapshot || {};
       if (log.targetType === "newsArticle" && targetId)
         return `/dashboard-next?area=articles&id=${encodeURIComponent(targetId)}`;
 
@@ -603,16 +602,9 @@
           : `/content-workspace?id=${encodeURIComponent(targetId)}`;
       }
 
-      if (log.targetType === "retirementMessage" && targetId) {
-        return `/retirement-message?id=${encodeURIComponent(targetId)}`;
-      }
-
-      if (log.targetType === "comment") {
-        const messageId = getTargetId(snapshot.retirementMessage);
-
-        if (messageId) {
-          return `/retirement-message?id=${encodeURIComponent(messageId)}`;
-        }
+      if (["retirementMessage", "lastPost", "comment"].includes(log.targetType)) {
+        return /^\/(?:retirement-message|last-post-message)\?id=[a-f\d]{24}$/i.test(log.targetPublicUrl || "")
+          ? log.targetPublicUrl : "";
       }
 
       return "";

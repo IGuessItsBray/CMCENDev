@@ -270,7 +270,7 @@
       area.link.removeAttribute("aria-current");
     });
     if (!url.searchParams.has("area") && available.length) {
-      url.searchParams.set("area", available[0]);
+      url.searchParams.set("area", available.includes("content") ? "content" : available[0]);
       window.history.replaceState(null, "", url);
     }
     currentUrl = url.href;

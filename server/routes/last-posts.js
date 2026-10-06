@@ -1,4 +1,5 @@
 const express = require('express');
+const { cleanRanks } = require('../services/person-ranks');
 const { selectPublicationDate } = require('../services/publication-date');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
@@ -145,6 +146,9 @@ function serializeLastPost(lastPost) {
     _id: lastPost._id,
     deceased: {
       fullRank: cleanString(deceased.fullRank),
+      ...(deceased.ranks !== undefined
+        ? { ranks: cleanRanks(deceased.ranks, 80) }
+        : {}),
       firstName: cleanString(deceased.firstName),
       surname: cleanString(deceased.surname),
       postNominal: cleanString(deceased.postNominal),
@@ -197,6 +201,9 @@ router.post(
       };
       const cleanDeceased = {
         fullRank: cleanString(deceased.fullRank),
+        ...(deceased.ranks !== undefined
+          ? { ranks: cleanRanks(deceased.ranks, 80) }
+          : {}),
         firstName: cleanString(deceased.firstName),
         surname: cleanString(deceased.surname),
         postNominal: cleanString(deceased.postNominal),
@@ -325,6 +332,8 @@ router.post(
             : 'Last Post notice submitted for review',
       });
     } catch (error) {
+      if (error.status === 400)
+        return res.status(400).json({ error: error.message });
       console.error('Could not submit Last Post notice:', error);
       return res
         .status(500)
@@ -776,6 +785,9 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     const wantsImmediatePublication = parseBoolean(req.body?.publishNow, false);
     const cleanDeceased = {
       fullRank: cleanString(deceased.fullRank),
+      ...(deceased.ranks !== undefined
+        ? { ranks: cleanRanks(deceased.ranks, 80) }
+        : {}),
       firstName: cleanString(deceased.firstName),
       surname: cleanString(deceased.surname),
       postNominal: cleanString(deceased.postNominal),
@@ -831,7 +843,10 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     const messages = getLocalizedMessages(lastPost);
     messages[messageLanguage] = message;
 
-    lastPost.deceased = cleanDeceased;
+    lastPost.deceased = {
+      ...cleanDeceased,
+      ranks: cleanDeceased.ranks || cleanRanks(lastPost.deceased?.ranks, 80),
+    };
     lastPost.messageLanguage = messageLanguage;
     lastPost.messages = messages;
     lastPost.imageUrl = imageUrl;
@@ -903,7 +918,8 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
       });
     }
 
-    if (error.status === 400) return res.status(400).json({ error: error.message });
+    if (error.status === 400)
+      return res.status(400).json({ error: error.message });
     console.error('Could not update Last Post notice:', error);
     return res.status(500).json({ error: 'Could not update Last Post notice' });
   }

@@ -21,12 +21,33 @@
   function setLinkifiedText(element, value) {
     const text = String(value || "");
     const fragment = document.createDocumentFragment();
-    const urlPattern = /https?:\/\/[^\s<>"']+/gi;
+    // Bodies are plain text. Leave HTML/anchor markup inert and do not link
+    // its attributes or descendants. Never assign submitted content to innerHTML.
+    const urlPattern =
+      /<a\b[^>]*>[\s\S]*?<\/a\s*>|<[^>]*>|\b(?:javascript|vbscript|data|file|ftp):[^\s<>"']*|(?:https?:\/\/|www\.)[^\s<>"']+|(?:mailto:)?[A-Z0-9.!#$%&*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9.-]*[A-Z0-9])?\.[A-Z]{2,}/gi;
     let lastIndex = 0;
     let match;
 
     while ((match = urlPattern.exec(text))) {
-      const urlText = match[0].replace(/[.,;:!?]+$/, "");
+      if (
+        match[0].startsWith("<") ||
+        /^(?:javascript|vbscript|data|file|ftp):/i.test(match[0]) ||
+        /[\w:/@]/.test(text[match.index - 1] || "")
+      )
+        continue;
+      let urlText = match[0].replace(/[.,;:!?]+$/, "");
+      for (const [open, close] of [
+        ["(", ")"],
+        ["[", "]"],
+        ["{", "}"],
+      ]) {
+        while (
+          urlText.endsWith(close) &&
+          urlText.split(close).length > urlText.split(open).length
+        ) {
+          urlText = urlText.slice(0, -1);
+        }
+      }
       const linkEnd = match.index + urlText.length;
 
       if (!urlText) continue;
@@ -36,15 +57,29 @@
       );
 
       try {
-        const url = new URL(urlText);
-        if (url.protocol !== "http:" && url.protocol !== "https:") {
+        const isEmail = !/^(?:https?:\/\/|www\.)/i.test(urlText);
+        const address = urlText.replace(/^mailto:/i, "");
+        const url = new URL(
+          isEmail
+            ? `mailto:${encodeURIComponent(address).replace(/%40/gi, "@")}`
+            : /^www\./i.test(urlText)
+              ? `https://${urlText}`
+              : urlText,
+        );
+        if (
+          (!isEmail && !["http:", "https:"].includes(url.protocol)) ||
+          url.username ||
+          url.password
+        ) {
           throw new Error("Unsupported URL protocol");
         }
 
         const link = document.createElement("a");
         link.href = url.href;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
+        if (!isEmail) {
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+        }
         link.textContent = urlText;
         fragment.append(link);
       } catch {
@@ -169,8 +204,36 @@
     );
   }
 
+  function getPersonRank(
+    person = {},
+    legacyField = "rank",
+    language = getCurrentLanguage(),
+  ) {
+    const ranks = person.ranks || {};
+    return String(
+      ranks[language] || person[legacyField] || ranks.en || ranks.fr || "",
+    ).trim();
+  }
+
+  function getLastPostName(lastPost = {}) {
+    const deceased = lastPost.deceased || {};
+    const name = [
+      getPersonRank(deceased, "fullRank"),
+      deceased.firstName,
+      deceased.surname,
+    ]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+      .join(" ");
+    return (
+      [name, deceased.postNominal].filter(Boolean).join(", ") ||
+      lastPost.displayName ||
+      ""
+    );
+  }
+
   function getRetireeNameParts(retiree = {}) {
-    let name = [retiree.rank, retiree.firstName, retiree.lastName]
+    let name = [getPersonRank(retiree), retiree.firstName, retiree.lastName]
       .map((value) => String(value || "").trim())
       .filter(Boolean)
       .join(" ");
@@ -2116,6 +2179,8 @@
     getCurrentLocale,
     getLocalizedText,
     getRetireeNameParts,
+    getPersonRank,
+    getLastPostName,
     isSitePlaceholderImage,
     hasSessionCookieConsent,
     getStoredAuthToken,

@@ -89,6 +89,10 @@ function getSubmissionPayload(imageUrl = "", imageDisplayUrl = "") {
   return {
     deceased: {
       fullRank: getFieldValue("lastPostDeceasedRank"),
+      ranks: {
+        en: getFieldValue("lastPostDeceasedRankEn"),
+        fr: getFieldValue("lastPostDeceasedRankFr"),
+      },
       firstName: getFieldValue("lastPostDeceasedFirstName"),
       surname: getFieldValue("lastPostDeceasedSurname"),
       postNominal: getFieldValue("lastPostDeceasedPostNominal"),
@@ -98,7 +102,9 @@ function getSubmissionPayload(imageUrl = "", imageDisplayUrl = "") {
     imageUrl: imageUrl || editingLastPost?.imageUrl || "",
     imageDisplayUrl: imageDisplayUrl || editingLastPost?.imageDisplayUrl || "",
     publicationPermissionConfirmed,
-    ...(personalSubmission && editingLastPostId ? { submitForReview: true } : {}),
+    ...(personalSubmission && editingLastPostId
+      ? { submitForReview: true }
+      : {}),
     publishNow:
       !lastPostPublishNowContainer.hidden && lastPostPublishNow.checked,
   };
@@ -133,6 +139,10 @@ function populateLastPostForm(lastPost) {
   document.getElementById("lastPostDeceasedPostNominal").value =
     deceased.postNominal || "";
   editingLastPostMessages = { ...(lastPost.messages || {}) };
+  document.getElementById("lastPostDeceasedRankEn").value =
+    deceased.ranks?.en || "";
+  document.getElementById("lastPostDeceasedRankFr").value =
+    deceased.ranks?.fr || "";
   activeLastPostMessageLanguage =
     lastPost.messageLanguage || CMCENUtils.getCurrentLanguage();
   lastPostMessageLanguage.value = activeLastPostMessageLanguage;

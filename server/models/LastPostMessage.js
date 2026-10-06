@@ -50,6 +50,10 @@ const LastPostMessageSchema = new mongoose.Schema(
     },
 
     deceased: {
+      ranks: {
+        en: { type: String, trim: true, maxlength: 80, default: '' },
+        fr: { type: String, trim: true, maxlength: 80, default: '' },
+      },
       fullRank: {
         type: String,
         trim: true,

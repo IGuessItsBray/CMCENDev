@@ -4,6 +4,21 @@ const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
 const { Element } = require('./helpers/dashboard-dom');
+test('public content links use verified server targets and never infer private or missing destinations', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../public/audit-log-controller.js'), 'utf8');
+  const fn = source.slice(source.indexOf('function getAuditTargetHref'), source.indexOf('function formatAuditAction'));
+  const href = vm.runInNewContext(`${fn}; getAuditTargetHref`, { getTargetId: (value) => value?._id || value || '' });
+  const id = '507f1f77bcf86cd799439011';
+  for (const [targetType, route] of [['retirementMessage', '/retirement-message'], ['lastPost', '/last-post-message'], ['comment', '/last-post-message']]) {
+    const log = { action: 'content.published', targetType, target: id, targetSnapshot: { retirementMessage: id } };
+    assert.equal(href(log), '');
+    assert.equal(href({ ...log, targetPublicUrl: `${route}?id=${id}` }), `${route}?id=${id}`);
+    for (const unsafe of ['javascript:alert(1)', `https://evil.test${route}?id=${id}`, `${route}?id=${id}#invented`, '/last-post-message?id='])
+      assert.equal(href({ ...log, targetPublicUrl: unsafe }), '');
+    for (const action of ['content.deleted', 'content.hidden'])
+      assert.equal(href({ ...log, action, targetPublicUrl: `${route}?id=${id}` }), '');
+  }
+});
 const flush = () => new Promise(setImmediate);
 const deferred = () => {
   let resolve;

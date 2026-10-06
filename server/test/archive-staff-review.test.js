@@ -83,6 +83,11 @@ test('archive permission remains separate from general publishing powers', () =>
 });
 
 test('staff changes are limited to public archive fields', () => {
+  for (const [type, person, maxLength] of [['retirementMessage', 'retiree', 40], ['lastPost', 'deceased', 80]]) {
+    const changes = { [`${person}.ranks.en`]: 'Captain', [`${person}.ranks.fr`]: 'Capitaine' };
+    assert.deepEqual(cleanChanges(type, changes, documentLibrary), changes);
+    assert.throws(() => cleanChanges(type, { [`${person}.ranks.fr`]: 'a'.repeat(maxLength + 1) }, documentLibrary));
+  }
   assert.deepEqual(
     cleanChanges(
       'newsArticle',

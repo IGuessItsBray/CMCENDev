@@ -8,6 +8,10 @@ const {
 const retirementMessageSchema = new mongoose.Schema(
   {
     retiree: {
+      ranks: {
+        en: { type: String, trim: true, maxlength: 40, default: '' },
+        fr: { type: String, trim: true, maxlength: 40, default: '' },
+      },
       rank: {
         type: String,
         trim: true,

@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const AuditLog = require('../models/AuditLog');
+const { addAuditTargetLinks } = require('../services/audit-target-links');
 const { writeAuditLog } = require('../services/audit-log');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 
@@ -211,7 +212,7 @@ router.get(
 
       const logs = await AuditLog.find(filter).sort({ createdAt: -1 }).lean();
 
-      res.json({ logs });
+      res.json({ logs: await addAuditTargetLinks(logs) });
     } catch (error) {
       console.error('Audit log list failed:', error);
       res.status(500).json({ error: 'Failed to fetch audit logs' });

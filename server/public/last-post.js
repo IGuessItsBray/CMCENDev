@@ -38,7 +38,7 @@ function showLastPostLoading() {
 }
 
 function getLastPostName(lastPost) {
-  return lastPost.displayName || translate("last_post_default_name");
+  return CMCENUtils.getLastPostName(lastPost) || translate("last_post_default_name");
 }
 
 function getExcerpt(value, maxLength = 180) {

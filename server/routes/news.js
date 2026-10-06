@@ -1,4 +1,5 @@
 const express = require('express');
+const { getPersonRank } = require('../services/person-ranks');
 const { getPublicationDateInfo, selectPublicationDate } = require('../services/publication-date');
 const { buildPublicMediaUrl } = require('../services/media-library');
 const { markContentEdited } = require('../services/content-edit-metadata');
@@ -441,7 +442,7 @@ router.get('/feed', async (req, res) => {
         title: {
           en:
             [
-              post.deceased?.fullRank,
+              getPersonRank(post.deceased, 'fullRank', 'en'),
               post.deceased?.firstName,
               post.deceased?.surname,
             ]
@@ -449,7 +450,7 @@ router.get('/feed', async (req, res) => {
               .join(' ') || 'In Memoriam',
           fr:
             [
-              post.deceased?.fullRank,
+              getPersonRank(post.deceased, 'fullRank', 'fr'),
               post.deceased?.firstName,
               post.deceased?.surname,
             ]

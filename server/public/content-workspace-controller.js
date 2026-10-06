@@ -1128,6 +1128,17 @@ window.ContentWorkspace = {
         setWorkspaceTranslatedText(link, "content_workspace_view_comment_parent", "View published parent on this site");
         details.append(link);
       }
+      const staffParentLink = item.content?.staffParentLink;
+      if (item.type === "comment" && canReviewContentWorkspace() && staffParentLink?.url) {
+        const link = document.createElement("a");
+        link.href = staffParentLink.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        setWorkspaceTranslatedText(link,
+          staffParentLink.kind === "preview" ? "content_workspace_preview_comment_parent" : "content_workspace_edit_comment_parent",
+          staffParentLink.kind === "preview" ? "Preview unpublished parent on this site" : "Open parent in staff workspace");
+        details.append(link);
+      }
       return details;
     }
 

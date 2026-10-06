@@ -2,6 +2,7 @@ const {
   imageUrls: newsletterImageUrls,
 } = require('../public/newsletter-format');
 const express = require('express');
+const { cleanRanks } = require('../services/person-ranks');
 const { getPublicationDateInfo } = require('../services/publication-date');
 const { getArchiveSourceLinks } = require('../services/archive-source-links');
 const { markContentEdited } = require('../services/content-edit-metadata');
@@ -32,6 +33,7 @@ const {
   getCommentParentTitle,
   getCommentPublicUrl,
   getCommentContextLinks,
+  getCommentStaffLink,
 } = require('../config/comment-targets');
 const WeeklyBriefRun = require('../models/WeeklyBriefRun');
 const NewsBlast = require('../models/NewsBlast');
@@ -853,6 +855,7 @@ function toContentWorkspaceItem(type, content) {
       parentId: content.parentId?._id || content.parentId,
       parentTitle: getCommentParentTitle(content),
       publicUrl: commentContext.publicUrl,
+      staffParentLink: getCommentStaffLink(content),
     },
   };
 }
@@ -4939,6 +4942,14 @@ router.patch(
         applyUpdates(lastPost, body, changedFields) {
           if (!isPlainObject(body)) return 'Request body must be an object';
           if (Object.prototype.hasOwnProperty.call(body, 'deceased')) {
+            if (body.deceased?.ranks !== undefined) {
+              try {
+                lastPost.deceased.ranks = cleanRanks(body.deceased.ranks, 80);
+              } catch (error) {
+                return error.message;
+              }
+              changedFields.push('ranks');
+            }
             if (!isPlainObject(body.deceased))
               return 'deceased must be an object';
             const error = applyAdminStringFields(
@@ -5037,6 +5048,14 @@ router.patch(
         applyUpdates(message, body, changedFields) {
           if (!isPlainObject(body)) return 'Request body must be an object';
           if (Object.prototype.hasOwnProperty.call(body, 'retiree')) {
+            if (body.retiree?.ranks !== undefined) {
+              try {
+                message.retiree.ranks = cleanRanks(body.retiree.ranks, 40);
+              } catch (error) {
+                return error.message;
+              }
+              changedFields.push('ranks');
+            }
             if (!isPlainObject(body.retiree))
               return 'retiree must be an object';
             const error = applyAdminStringFields(

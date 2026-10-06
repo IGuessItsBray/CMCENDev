@@ -13238,6 +13238,11 @@ html[data-theme='dark'] .news-message {
   white-space: pre-line;
 }
 
+#retirementDetailText,
+#lastPostDetailText {
+  overflow-wrap: anywhere;
+}
+
 .retirement-detail-comments > p:not(.retirement-comment-message) {
   margin: 0;
   color: var(--text-muted);

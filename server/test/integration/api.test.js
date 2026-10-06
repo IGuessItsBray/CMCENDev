@@ -278,6 +278,158 @@ after(async () => {
   }
 });
 
+describe('bilingual person ranks', () => {
+  test('submission, editor saves and public APIs round-trip ranks without rewriting originals', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const ownerAuth = bearer((await login(contributor)).body.token);
+    const editorAuth = bearer((await login(editor)).body.token);
+    const ranks = { en: 'Captain', fr: 'Capitaine' };
+    const retirement = retirementPayload();
+    retirement.retiree.ranks = ranks;
+    const lastPost = {
+      deceased: { fullRank: 'Capt', ranks, firstName: 'Jordan', surname: 'Example' },
+      messageLanguage: 'en', message: 'Contact staff@example.test or https://example.test.',
+      publicationPermissionConfirmed: true,
+    };
+    for (const [route, payload, Model, key, person, legacy] of [
+      ['/api/retirement-messages', retirement, RetirementMessage, 'retirementMessage', 'retiree', 'rank'],
+      ['/api/last-posts', lastPost, LastPostMessage, 'lastPost', 'deceased', 'fullRank'],
+    ]) {
+      await request(app).post(route).set('Authorization', ownerAuth).send(payload).expect(201);
+      const record = await Model.findOne();
+      assert.deepEqual(record[person].ranks.toObject(), ranks);
+      const edit = await request(app).get(`${route}/${record._id}/edit`).set('Authorization', ownerAuth).expect(200);
+      assert.deepEqual(edit.body[key][person].ranks, ranks);
+      // An older client's full-person save must not remove newer translations.
+      const oldPayload = structuredClone(payload);
+      delete oldPayload[person].ranks;
+      const oldSave = await request(app).patch(`${route}/${record._id}`).set('Authorization', ownerAuth).send(oldPayload);
+      assert.equal(oldSave.status, 200, JSON.stringify(oldSave.body));
+      assert.deepEqual((await Model.findById(record._id))[person].ranks.toObject(), ranks);
+      await request(app).patch(`/api/admin/${route.split('/').pop()}/${record._id}`).set('Authorization', ownerAuth).send({ [person]: { ranks: { en: 'Changed', fr: 'Modifié' } } }).expect(403);
+      await request(app).patch(`/api/admin/${route.split('/').pop()}/${record._id}`).set('Authorization', editorAuth).send({ [person]: { ranks } }).expect(200);
+      const invalid = structuredClone(payload);
+      invalid[person].ranks.fr = { unexpected: true };
+      await request(app).patch(`${route}/${record._id}`).set('Authorization', ownerAuth).send(invalid).expect(400);
+      await Model.updateOne({ _id: record._id }, { status: 'published' });
+      const detail = await request(app).get(`${route}/${record._id}`).expect(200);
+      assert.deepEqual(detail.body[key][person].ranks, ranks);
+      assert.equal(detail.body[key][person][legacy], payload[person][legacy]);
+      const listing = await request(app).get(route).expect(200);
+      const items = listing.body[person === 'retiree' ? 'retirementMessages' : 'lastPosts'];
+      assert.deepEqual(items[0][person].ranks, ranks);
+      // Clearing a translation retains the original source rank.
+      await request(app).patch(`/api/admin/${route.split('/').pop()}/${record._id}`).set('Authorization', editorAuth).send({ [person]: { ranks: { en: 'Captain', fr: '' } } }).expect(200);
+      assert.equal((await Model.findById(record._id))[person][legacy], payload[person][legacy]);
+    }
+  });
+});
+
+describe('audit public target links', () => {
+  test('resolves current published retirement, Last Post and comment targets only', async () => {
+    const developer = await createUser({ role: 'developer' });
+    const subscriber = await createUser({ role: 'subscriber' });
+    const auth = bearer((await login(developer)).body.token);
+    const forbidden = bearer((await login(subscriber)).body.token);
+    await request(app).get('/api/audit-logs').expect(401);
+    await request(app).get('/api/audit-logs').set('Authorization', forbidden).expect(403);
+    const expected = new Map();
+    for (const [Model, type, parentType, publicPath] of [
+      [RetirementMessage, 'retirementMessage', 'retirement', '/retirement-message'],
+      [LastPostMessage, 'lastPost', 'lastPost', '/last-post-message'],
+    ]) {
+      for (const status of ['published', 'draft', 'pending', 'hidden', 'rejected']) {
+        const id = new mongoose.Types.ObjectId();
+        await Model.collection.insertOne({ _id: id, status });
+        const url = status === 'published' ? `${publicPath}?id=${id}` : '';
+        await AuditLog.create({ action: 'content.created', targetType: type, target: id });
+        expected.set(String(id), url);
+        const comment = await Comment.create({ parentType, parentId: id, status: 'published', body: 'Published comment' });
+        await AuditLog.create({ action: 'content.created', targetType: 'comment', target: comment._id });
+        expected.set(String(comment._id), url);
+        if (status === 'published') {
+          for (const privateStatus of ['draft', 'pending', 'hidden', 'rejected']) {
+            const privateComment = await Comment.create({ parentType, parentId: id, status: privateStatus, body: 'Private comment' });
+            await AuditLog.create({ action: 'content.created', targetType: 'comment', target: privateComment._id });
+            expected.set(String(privateComment._id), '');
+          }
+        }
+      }
+      const absent = new mongoose.Types.ObjectId();
+      await AuditLog.create({ action: 'content.created', targetType: type, target: absent, targetSnapshot: { status: 'published' } });
+      expected.set(String(absent), '');
+      const orphan = await Comment.create({ parentType, parentId: absent, status: 'published', body: 'Orphan comment' });
+      await AuditLog.create({ action: 'content.created', targetType: 'comment', target: orphan._id });
+      expected.set(String(orphan._id), '');
+    }
+    const deletedComment = new mongoose.Types.ObjectId();
+    await AuditLog.create({ action: 'content.created', targetType: 'comment', target: deletedComment, targetSnapshot: { parentType: 'retirement', parentId: new mongoose.Types.ObjectId(), status: 'published' } });
+    expected.set(String(deletedComment), '');
+    const result = await request(app).get('/api/audit-logs?action=content.created').set('Authorization', auth).expect(200);
+    assert.equal(result.body.logs.length, expected.size);
+    for (const log of result.body.logs) assert.equal(log.targetPublicUrl, expected.get(log.target));
+    // The current parent becoming private invalidates links despite old audit snapshots.
+    await RetirementMessage.updateMany({}, { status: 'hidden' });
+    await LastPostMessage.updateMany({}, { status: 'hidden' });
+    const hidden = await request(app).get('/api/audit-logs?action=content.created').set('Authorization', auth).expect(200);
+    assert(hidden.body.logs.every((log) => log.targetPublicUrl === ''));
+  });
+});
+
+describe('workspace comment parent context', () => {
+  test('populated admin records expose current published parent links alongside legacy sources', async () => {
+    const editor = await createUser({ role: 'editor' });
+    const auth = bearer((await login(editor)).body.token);
+    const subscriber = await createUser({ role: 'subscriber' });
+    const denied = bearer((await login(subscriber)).body.token);
+    const sourceUrl = 'https://cmcen-rcmce.ca/original-parent/';
+    for (const [Model, parentType, route] of [
+      [RetirementMessage, 'retirement', '/retirement-message'],
+      [LastPostMessage, 'lastPost', '/last-post-message'],
+    ]) {
+      for (const status of ['published', 'draft', 'pending', 'hidden', 'rejected']) {
+        const parent = new mongoose.Types.ObjectId();
+        await Model.collection.insertOne({ _id: parent, status,
+          retiree: { firstName: 'Retiree', lastName: 'Example' },
+          deceased: { firstName: 'Deceased', surname: 'Example' },
+          legacy: { source: 'https://cmcen-rcmce.ca', sourceRecords: [{ sourceId: 12, language: 'en', url: sourceUrl }] },
+        });
+        const comment = await Comment.create({ parentType, parentId: parent, status: 'published', body: 'Published imported comment', legacy: { source: 'https://cmcen-rcmce.ca', wordpressCommentId: 31, postId: 12, sourceUrl } });
+        const result = await request(app).get(`/api/admin/content?scope=submissions&type=comment&id=${comment._id}`).set('Authorization', auth).expect(200);
+        const item = result.body.items[0];
+        assert(item, 'Comment must remain visible in the submission workspace');
+        assert.equal(item.content.parentId, String(parent));
+        assert.equal(item.content.parentType, parentType);
+        assert.equal(item.content.publicUrl, status === 'published' ? `${route}?id=${parent}` : '');
+        const isPreviewable = ['draft', 'pending'].includes(status);
+        assert.deepEqual(item.content.staffParentLink, isPreviewable
+          ? { url: `${route}?id=${parent}&preview=1`, kind: 'preview' }
+          : ['hidden', 'rejected'].includes(status)
+            ? { url: `/content-workspace?id=${parent}`, kind: 'workspace' } : null);
+        const apiRoute = parentType === 'retirement' ? '/api/retirement-messages' : '/api/last-posts';
+        if (isPreviewable) {
+          await request(app).get(`${apiRoute}/${parent}/preview`).expect(401);
+          await request(app).get(`${apiRoute}/${parent}/preview`).set('Authorization', denied).expect(403);
+          await request(app).get(`${apiRoute}/${parent}/preview`).set('Authorization', auth).expect(200);
+          await request(app).get(`${apiRoute}/${parent}`).expect(404);
+        } else if (status !== 'published') {
+          await request(app).get(`${apiRoute}/${parent}/preview`).set('Authorization', auth).expect(404);
+          const staffParent = await request(app).get(`/api/admin/content?type=${parentType === 'retirement' ? 'retirementMessage' : 'lastPost'}&id=${parent}`).set('Authorization', auth).expect(200);
+          assert.equal(staffParent.body.items[0]._id, String(parent));
+        }
+        assert(item.content.parentTitle.includes('Example'));
+        assert.deepEqual(item.archiveSourceLinks, [{ url: sourceUrl, language: 'en' }]);
+        await Model.deleteOne({ _id: parent });
+        const orphan = await request(app).get(`/api/admin/content?scope=submissions&type=comment&id=${comment._id}`).set('Authorization', auth).expect(200);
+        assert.equal(orphan.body.items[0].content.publicUrl, '');
+        assert.equal(orphan.body.items[0].content.staffParentLink, null);
+        assert.equal(orphan.body.items[0].archiveSourceLinks[0].url, sourceUrl);
+      }
+    }
+  });
+});
+
 describe('developer blank saves', () => {
   test('profile saves use actor role, retain invariants and survive later saves', async () => {
     const developer = await createUser({ role: 'developer' });

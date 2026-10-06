@@ -963,6 +963,34 @@ test('a direct Banners URL cannot mount for an administrator without banner perm
   );
 });
 
+test('default dashboard opens Submissions when allowed and preserves explicit areas and role fallback', async () => {
+  const permissions = { canReviewAndPublish: true, canReadUsers: true, canViewAuditLog: true };
+  const preferred = setup({ api: async () => ({ permissions }) });
+  await flush();
+  assert.equal(preferred.element('adminContent').hidden, false);
+  assert.equal(preferred.element('adminUsers').hidden, true);
+  assert.equal(new URL(preferred.window.location.href).searchParams.get('area'), 'content');
+  for (const area of ['users', 'audit']) {
+    const explicit = setup({ url: `http://localhost/dashboard-next?area=${area}&id=saved`, api: async () => ({ permissions }) });
+    await flush();
+    assert.equal(new URL(explicit.window.location.href).searchParams.get('area'), area);
+    assert.equal(new URL(explicit.window.location.href).searchParams.get('id'), 'saved');
+    assert.equal(explicit.element(area === 'users' ? 'adminUsers' : 'adminAudit').hidden, false);
+  }
+  const fallback = setup();
+  await flush();
+  assert.equal(fallback.element('adminContentLink').hidden, true);
+  assert.equal(fallback.element('adminUsers').hidden, false);
+  assert.equal(new URL(fallback.window.location.href).searchParams.get('area'), 'users');
+});
+
+test('Audit Log is the last admin destination while other sidebar order is preserved', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../public/dashboard-next.html'), 'utf8');
+  const nav = html.slice(html.indexOf('class="admin-sidebar-sections"'), html.indexOf('</nav>', html.indexOf('class="admin-sidebar-sections"')));
+  const links = [...nav.matchAll(/id="(admin\w+Link)"/g)].map((match) => match[1]);
+  assert.deepEqual(links, ['adminContentLink', 'adminArticlesLink', 'adminUsersLink', 'adminRolesLink', 'adminBannersLink', 'adminSubscriptionsLink', 'adminEmailLink', 'adminPagesLink', 'adminTranslationsLink', 'adminMediaLink', 'adminCertificatesLink', 'adminAnalyticsLink', 'adminAwardsLink', 'adminAdoptLink', 'adminAuditLink']);
+});
+
 test('Users admits read-only staff and combines caller cancellation with shell cancellation for exports', async () => {
   let signal;
   const actor = {
@@ -1297,6 +1325,7 @@ test('switching areas preserves mounted editors and hidden drafts still guard pa
 
 test('an area handoff respects unsaved changes in another mounted area', async () => {
   const page = setup({
+    url: 'http://localhost/dashboard-next?area=banners',
     api: async () => ({
       permissions: { canManageTimers: true, canReviewAndPublish: true },
     }),

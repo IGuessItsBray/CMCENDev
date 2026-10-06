@@ -43,6 +43,19 @@ function getCommentTarget(type) {
   return Object.hasOwn(COMMENT_TARGETS, type) ? COMMENT_TARGETS[type] : null;
 }
 
+// Exposed only in the authorized staff workspace. Preview routes support draft
+// and pending parents; hidden/rejected parents remain in the staff editor.
+function getCommentStaffLink(comment) {
+  const target = getCommentTarget(comment.parentType);
+  const parent = comment.parentId;
+  if (!target || !parent?._id) return null;
+  if (['draft', 'pending'].includes(parent.status))
+    return { url: `${getCommentPublicUrl(comment)}&preview=1`, kind: 'preview' };
+  if (['hidden', 'rejected'].includes(parent.status))
+    return { url: `/content-workspace?id=${encodeURIComponent(String(parent._id))}`, kind: 'workspace' };
+  return null;
+}
+
 function getCommentTypes() {
   return Object.entries(COMMENT_TARGETS).map(([value, { label }]) => ({
     value,
@@ -77,4 +90,5 @@ module.exports = {
   getCommentParentTitle,
   getCommentPublicUrl,
   getCommentContextLinks,
+  getCommentStaffLink,
 };

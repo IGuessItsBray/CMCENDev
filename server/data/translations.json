@@ -1,5 +1,7 @@
 {
   "en": {
+    "person_rank_en": "Rank in English (optional)",
+    "person_rank_fr": "Rank in French (optional)",
     "content_workspace_origin": "Origin",
     "content_workspace_all_origins": "All content",
     "content_workspace_imported_origin": "Imported archive",
@@ -7,6 +9,8 @@
     "content_workspace_comment_context": "Comment context",
     "content_workspace_view_comment_source": "View original legacy parent article",
     "content_workspace_view_comment_parent": "View published parent on this site",
+    "content_workspace_preview_comment_parent": "Preview unpublished parent on this site",
+    "content_workspace_edit_comment_parent": "Open parent in staff workspace",
     "comment_guest_author": "{name} (Guest)",
     "content_workspace_original_publication_date": "Original publication date",
     "content_workspace_source_ids": "Source IDs",
@@ -2301,6 +2305,8 @@
     "archive_review_related_source": "Related source (not a translation)"
   },
   "fr": {
+    "person_rank_en": "Grade en anglais (facultatif)",
+    "person_rank_fr": "Grade en français (facultatif)",
     "content_workspace_origin": "Origine",
     "content_workspace_all_origins": "Tout le contenu",
     "content_workspace_imported_origin": "Archives importées",
@@ -2308,6 +2314,8 @@
     "content_workspace_comment_context": "Contexte du commentaire",
     "content_workspace_view_comment_source": "Voir l’article parent original de l’ancien site",
     "content_workspace_view_comment_parent": "Voir la publication parente publiée sur ce site",
+    "content_workspace_preview_comment_parent": "Prévisualiser la publication parente non publiée sur ce site",
+    "content_workspace_edit_comment_parent": "Ouvrir la publication parente dans l’espace du personnel",
     "comment_guest_author": "{name} (Invité)",
     "content_workspace_original_publication_date": "Date de publication originale",
     "content_workspace_source_ids": "Identifiants des sources",

@@ -2817,7 +2817,7 @@ async function validateStandardRoleChange(userId, currentUser, role) {
   ) {
     return {
       status: 403,
-      error: 'Developer access is required to change the Internal Beta role',
+      error: 'Developer access is required to change the Internal software access role',
     };
   }
 
@@ -3510,7 +3510,7 @@ router.post(
       if (role === 'internal_beta' && req.user?.role !== 'developer') {
         return res.status(403).json({
           error:
-            'Developer access is required to assign the Internal Beta role',
+            'Developer access is required to assign the Internal software access role',
         });
       }
 
@@ -3607,7 +3607,7 @@ router.post(
       if (user.role === 'internal_beta' && req.user?.role !== 'developer') {
         return res.status(403).json({
           error:
-            'Developer access is required to resend an Internal Beta invitation',
+            'Developer access is required to resend an Internal software access invitation',
         });
       }
 

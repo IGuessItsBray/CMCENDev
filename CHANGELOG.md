@@ -11,87 +11,87 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### Breaking Changes
 
 
-- archive: Prepare legacy content as drafts and unify Retirement and Last Post comment moderation. Existing databases with comments in the former collections need the [documented conversion](https://git.corebot.ca/Eric/CMCENDev/src/branch/main/docs/API%20ROUTES.md) before using the new comment routes; old comments remain stored but are otherwise not shown.
+- archive: Prepare legacy content as drafts and unify Retirement and Last Post comment moderation. Existing databases with comments in the former collections need the [documented conversion](https://git.corebot.ca/Eric/CMCENDev/src/branch/main/docs/API%20ROUTES.md) before using the new comment routes; old comments remain stored but are otherwise not shown. — Eric
 
 
 
 ### Bug Fixes
 
 
-- news: Clarify archive and staff article controls
+- news: Clarify archive and staff article controls — Eric
 
-- archive-review: Clarify issues and review choices
+- archive-review: Clarify issues and review choices — Eric
 
-- archive: Preserve unknown historical submission metadata
+- archive: Preserve unknown historical submission metadata — Eric
 
-- frontend: Restore calendar month, view, and filters after event details; restore filters and anchors for already loaded Retirement and Last Post cards; release replaced header and picker listeners
+- frontend: Restore calendar month, view, and filters after event details; restore filters and anchors for already loaded Retirement and Last Post cards; release replaced header and picker listeners — Eric
 
 
 
 ### Documentation
 
 
-- storage: Prefer Garage for new deployments
+- storage: Prefer Garage for new deployments — Eric
 
 
 
 ### Features
 
 
-- frontend: Reorganize navigation and refine site styling
+- frontend: Reorganize navigation and refine site styling — Eric
 
-- admin: Establish admin dashboard and migrate management tools
+- admin: Establish admin dashboard and migrate management tools — Eric
 
-- content: Unify the staff workspace and let contributors correct and resubmit their own submissions
+- content: Unify the staff workspace and let contributors correct and resubmit their own submissions — Eric
 
-- association: Add directors page and newsletter archive
+- association: Add directors page and newsletter archive — Eric
 
-- articles: Add database-backed newsletter editing
+- articles: Add database-backed newsletter editing — Eric
 
-- media: Refine uploads and reuse the shared crest
+- media: Refine uploads and reuse the shared crest — Eric
 
-- submissions: Show publication, content-edit, and hiding dates separately in staff views
+- submissions: Show publication, content-edit, and hiding dates separately in staff views — Eric
 
-- media: Use deployment-specific image and document URLs as a foundation for portable storage
+- media: Use deployment-specific image and document URLs as a foundation for portable storage — Eric
 
-- admin: Add permission-gated permanent content deletion with confirmation and related-record cleanup
+- admin: Add permission-gated permanent content deletion with confirmation and related-record cleanup — Eric
 
-- articles: Unify article editing and categories
+- articles: Unify article editing and categories — Eric
 
-- content: Streamline bilingual editing and workspace navigation
+- content: Streamline bilingual editing and workspace navigation — Eric
 
-- admin: Capture legacy source evidence and review decisions for archive curation
+- admin: Capture legacy source evidence and review decisions for archive curation — Eric
 
-- admin: Add archival discovery review batches
+- admin: Add archival discovery review batches — Eric
 
-- admin: Add comment migration review exceptions
+- admin: Add comment migration review exceptions — Eric
 
-- migration: Expand archive review and preserve legacy account profiles
+- migration: Expand archive review and preserve legacy account profiles — Eric
 
-- archive: Choose original or new publication dates
+- archive: Choose original or new publication dates — Eric
 
-- archive: Add restricted staff review workflow
+- archive: Add restricted staff review workflow — Eric
 
-- editorial: Show imported drafts in the Content Workspace and add default-off email controls
+- editorial: Show imported drafts in the Content Workspace and add default-off email controls — Eric
 
-- media: Add editable library names with compact pencil controls
+- media: Add editable library names with compact pencil controls — Eric
 
-- archive: Add content importer and admin controls
+- archive: Add content importer and admin controls — Eric
 
-- content: Preview saved Retirement and Last Post drafts and clarify publication timing choices
+- content: Preview saved Retirement and Last Post drafts and clarify publication timing choices — Eric
 
 
 
 ### Maintenance
 
 
-- Streamline agent guidance
+- Streamline agent guidance — Eric
 
-- documents: Move library source files to CDN
+- documents: Move library source files to CDN — Eric
 
-- newsletters: Retire temporary newsletter migration artifacts
+- newsletters: Retire temporary newsletter migration artifacts — Eric
 
-- ui: Polish public and account pages
+- ui: Polish public and account pages — Eric
 
 
 ## [0.2.0] - 2026-09-18
@@ -101,46 +101,46 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### Bug Fixes
 
 
-- search: Improve performance and result ranking
+- search: Improve performance and result ranking — Eric
 
-- auth: Preserve session during totp verification
+- auth: Preserve session during totp verification — Eric
 
 
 
 ### Features
 
 
-- benefits: Secure TD Insurance member offer
+- benefits: Secure TD Insurance member offer — Eric
 
-- content: Add scheduled publication workflow
+- content: Add scheduled publication workflow — Eric
 
-- banners: Add dismissible site notices
+- banners: Add dismissible site notices — Eric
 
-- content: Add bilingual about pages and charter
+- content: Add bilingual about pages and charter — Eric
 
-- content: Migrate legacy governance content
+- content: Migrate legacy governance content — Eric
 
-- Migrate Foundation content and isolate calendar styles
+- Migrate Foundation content and isolate calendar styles — Eric
 
-- leadership: Add bilingual leadership page
+- leadership: Add bilingual leadership page — Eric
 
-- frontend: Unify public page presentation
+- frontend: Unify public page presentation — Eric
 
 
 
 ### Performance
 
 
-- assets: Cache versioned static assets
+- assets: Cache versioned static assets — Eric
 
 
 
 ### Refactoring
 
 
-- content: Centralize editorial review workflow
+- content: Centralize editorial review workflow — Eric
 
-- frontend: Simplify stylesheet structure
+- frontend: Simplify stylesheet structure — Eric
 
 
 ## [0.1.0-rc.3] - 2026-08-31
@@ -168,16 +168,16 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 
 - sitemap: Omit dashboard from public sitemap
 
-- last-post: Show crest without portrait
+- last-post: Show crest without portrait — Eric
 
-- notifications: Mark one-time alerts on panel close
+- notifications: Mark one-time alerts on panel close — Eric
 
 
 
 ### Features
 
 
-- frontend: Unify controls and reset workspace filters
+- frontend: Unify controls and reset workspace filters — Eric
 
 - retirements: Add public archive search
 
@@ -187,20 +187,20 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 
 - events: Add account-based RSVPs
 
-- awards: Refine awards presentation
+- awards: Refine awards presentation — Eric
 
-- events: Add RSVP management
+- events: Add RSVP management — Eric
 
-- legal: Add bilingual legal documents
+- legal: Add bilingual legal documents — Eric
 
 
 
 ### Maintenance
 
 
-- content-workspace: Consolidate placeholder images, confirmation/rejection modal
+- content-workspace: Consolidate placeholder images, confirmation/rejection modal — Eric
 
-- formatting: Apply Prettier baseline
+- formatting: Apply Prettier baseline — Eric
 
 
 ## [0.1.0-rc.2] - 2026-08-25
@@ -268,13 +268,13 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 
 - pages: Add branding reference
 
-- content: Improve workspace editing flow
+- content: Improve workspace editing flow — Eric
 
-- content-workspace: Manage news stories
+- content-workspace: Manage news stories — Eric
 
-- content: Add workspace skeleton loaders
+- content: Add workspace skeleton loaders — Eric
 
-- content: Add workspace image management
+- content: Add workspace image management — Eric
 
 
 ## [0.1.0-rc.1] - 2026-08-21
@@ -292,7 +292,7 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 
 - logging: Redact server output and silence client consoles
 
-- editor: Improve content and translation editing
+- editor: Improve content and translation editing — Eric
 
 - admin: Hide legacy attribution accounts
 
@@ -320,32 +320,32 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 
 - contact: Add member contact form
 
-- translations: Organize admin translation editor
+- translations: Organize admin translation editor — Eric
 
 - admin: Add protected content edit routes
 
 - frontend: Add developer changelog
 
-- content: Add editorial workspace
+- content: Add editorial workspace — Eric
 
-- content: Consolidate review submissions in workspace
+- content: Consolidate review submissions in workspace — Eric
 
 - dashboard: Embed permission-aware admin tools
 
-- content-workspace: Add content navigation shortcuts
+- content-workspace: Add content navigation shortcuts — Eric
 
 - pages: Add visual page builder
 
-- content-workspace: Move event submissions into workspace
+- content-workspace: Move event submissions into workspace — Eric
 
-- content: Add staff workspace and contributor resubmission
+- content: Add staff workspace and contributor resubmission — Eric
 
 
 
 ### Maintenance
 
 
-- Remove site config
+- Remove site config — Eric
 
 - Clean workbook import placeholders
 
@@ -369,7 +369,7 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 
 - ci: Make release PR assignment non-blocking
 
-- dashboard: Align loading skeleton with content
+- dashboard: Align loading skeleton with content — Eric
 
 
 
@@ -400,7 +400,7 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### Features
 
 
-- dashboard: Add animated account accordions
+- dashboard: Add animated account accordions — Eric
 
 
 ## [0.1.0-beta.3] - 2026-08-19
@@ -452,7 +452,7 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### Features
 
 
-- notifications: Add notification center
+- notifications: Add notification center — Eric
 
 
 ## [0.1.0-beta.1] - 2026-08-19

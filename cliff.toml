@@ -19,7 +19,7 @@ body = """
 ### {{ group }}
 
 {% for commit in commits %}
-- {% if commit.scope %}{{ commit.scope }}: {% endif %}{{ commit.message | upper_first | trim }}
+- {% if commit.scope %}{{ commit.scope }}: {% endif %}{{ commit.message | upper_first | trim }}{% if commit.author.email == "gow.eric@gmail.com" %} — Eric{% elif commit.author.email == "bray@corebot.ca" or commit.author.email == "Bray@Delaire.xyz" or commit.author.email == "braydendelaire5@gmail.com" %} — Bray Delaire{% endif %}
 {% endfor %}
 
 {% endfor %}
@@ -30,6 +30,10 @@ footer = """
 """
 
 trim = true
+
+# Attribute only Git identities verified as human maintainers. Agent-authored
+# commits need a separately verified human mapping; never invent one or show
+# an agent name as the person responsible for a change.
 
 [git]
 # Parse commit messages according to the Conventional Commits specification.
@@ -95,7 +99,7 @@ topo_order = false
 sort_commits = "oldest"
 
 [bump]
-# CMCEN / RCMCE is currently using zero-major SemVer during beta development.
+# CMCEN / RCMCE is currently using zero-major SemVer during development.
 #
 # Features increment the minor version when normal SemVer bump calculation is
 # used.

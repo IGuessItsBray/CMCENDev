@@ -809,7 +809,7 @@ function createProfileForm(user) {
 
   grid.append(...remainingProfileFields);
   profileFieldsPanel.append(profileFirstRow, grid);
-  form.append(profileFieldsPanel, controls, readonlyDetails);
+  form.append(profileFieldsPanel, readonlyDetails, controls);
 
   form
     .querySelector("[data-profile-field='trade']")

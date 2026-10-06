@@ -156,11 +156,17 @@ function getRetirementMessageText(retirementMessage) {
 }
 
 function formatRetirementMessageText(text) {
-  return text
-    .replace(/\r\n?/g, "\n")
-    .replace(/[ \t]+([1-9]\d?\.\s+)/g, (match, marker, offset) =>
-      offset === 0 ? marker : `\n\n${marker}`,
-    );
+  const normalized = text.replace(/\r\n?/g, "\n");
+  return normalized.replace(
+    /[^\S\n]+([1-9]\d?\.[^\S\n]+)(?=\p{L})/gu,
+    (match, marker, offset) => {
+      const before = normalized.slice(0, offset);
+      // Only unfold inline paragraphs after a sentence, leaving authored line
+      // breaks and numbers within prose (including French hour/minute times).
+      if (!/[.!?][^\S\n]*$/.test(before)) return match;
+      return `\n\n${marker}`;
+    },
+  );
 }
 
 function setRetirementMessageText(retirementMessage) {

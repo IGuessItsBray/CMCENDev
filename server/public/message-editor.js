@@ -86,8 +86,8 @@ window.MessageEditor = (() => {
     input.setAttribute("aria-multiline", "true");
     input.setAttribute("aria-label", getText("article_text", "Text"));
     window.BodyContent.inline(input, nodes);
-    input.querySelectorAll("a").forEach((anchor) => {
-      anchor.contentEditable = "false";
+    input.addEventListener("click", (event) => {
+      if (event.target.closest?.("a")) event.preventDefault();
     });
     const changed = () => {
       canonicalizeBodyInline(input);
@@ -156,7 +156,13 @@ window.MessageEditor = (() => {
             ],
           },
         );
-        if (!values || !input.isConnected) return;
+        if (!input.isConnected) return;
+        input.focus();
+        if (range) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        if (!values) return;
         const href = values.href.trim();
         if (!href) return;
         if (!window.BodyContent.safeUrl(href)) {
@@ -166,17 +172,11 @@ window.MessageEditor = (() => {
           );
           return;
         }
-        input.focus();
-        if (range) {
-          selection.removeAllRanges();
-          selection.addRange(range);
-        }
         const anchor = el("a");
         anchor.href = href;
         anchor.target = "_blank";
         anchor.rel = "noopener noreferrer";
         anchor.textContent = values.text.trim() || href;
-        anchor.contentEditable = "false";
         const insertion = range || document.createRange();
         if (!range) {
           insertion.selectNodeContents(input);
@@ -199,8 +199,14 @@ window.MessageEditor = (() => {
   }
 
   function canonicalizeBodyInline(root) {
-    for (const node of root.childNodes) {
+    const hasLabel = (node) => [...node.childNodes].some((child) =>
+      child.nodeType === Node.TEXT_NODE ? child.textContent.length > 0 : child.tagName === 'BR' || hasLabel(child));
+    for (const node of [...root.childNodes]) {
       if (node.nodeType !== Node.ELEMENT_NODE) continue;
+      if (node.tagName === 'A' && !hasLabel(node)) {
+        node.remove();
+        continue;
+      }
       node.removeAttribute("color");
       node.style.color = "";
       for (const name of window.BodyContent.colors) node.classList.remove(`body-color-${name}`);
@@ -229,7 +235,8 @@ window.MessageEditor = (() => {
     input = wrapper.children[1];
     const text = window.BodyContent.plainText(blocks);
     window.BodyContent.render(input, { formattedBody: { en: { version: 1, text, blocks } } }, 'en', text, () => {}, noticeType);
-    input.querySelectorAll('a').forEach((anchor) => { anchor.contentEditable = 'false'; });
+    input.style.textAlign = 'left';
+    for (const paragraph of input.children) paragraph.style.textAlign = 'left';
     return wrapper;
   }
   return { create, readMessage, readInline, canonicalizeBodyInline };

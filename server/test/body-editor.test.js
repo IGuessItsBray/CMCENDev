@@ -25,6 +25,10 @@ class Element extends Base {
   checkValidity() { return true; }
   set href(value) { this.setAttribute('href', value); }
   get href() { return this.getAttribute('href'); }
+  remove() {
+    this.parent.children = this.parent.children.filter((node) => node !== this);
+    this.isConnected = false;
+  }
 }
 
 function setup(permissions = {}) {
@@ -127,12 +131,15 @@ test('actual underline command becomes a dirty language-only save and re-renders
   for (const type of ['lastPost', 'retirementMessage']) for (const language of ['en', 'fr']) for (const rich of [false, true]) {
     const { editor, window, document } = setup({ canReviewAndPublish: true });
     const messages = { en: 'Mixed case service', fr: 'Détails du service' };
-    const blocks = [{ type: 'paragraph', children: [messages[language]] }];
+    const blocks = [{ type: 'paragraph', align: 'right', children: [messages[language]] }];
     const item = { _id: 'record', type, content: { messages, ...(rich ? { formattedBody: { [language]: { version: 1, text: messages[language], blocks } } } : {}) } };
+    const original = JSON.stringify(item);
     const forms = ['en', 'fr'].map((lang) => editor.createLanguageEditor(item, lang));
     const form = forms.find((f) => f.dataset.language === language);
     const input = form.querySelectorAll('div').find((el) => el.contentEditable === 'true');
-    assert.equal(input.style.textAlign, type === 'lastPost' ? 'center' : 'left');
+    assert.equal(input.style.textAlign, 'left');
+    assert.equal(input.children[0].style.textAlign, 'left');
+    assert.equal(JSON.stringify(item), original, 'editing layout cannot rewrite source data');
     const buttons = form.querySelectorAll('button');
     assert.equal(buttons.length, 4);
     assert.equal(buttons.some((button) => /body_align|body_color/.test(button.dataset.i18n || '')), false);
@@ -163,7 +170,7 @@ test('actual underline command becomes a dirty language-only save and re-renders
     assert.equal(saved.blocks[0].align, type === 'lastPost' ? 'center' : 'left');
     const preview = document.createElement('div');
     BodyContent.render(preview, { formattedBody: { [language]: { version: 1, text: saved.message, blocks: saved.blocks } } }, language, saved.message, () => assert.fail('unexpected fallback'), type);
-    assert.equal(preview.children[0].style.textAlign, input.style.textAlign);
+    assert.equal(preview.children[0].style.textAlign, type === 'lastPost' ? 'center' : 'left');
     assert.equal(preview.style.textTransform, input.style.textTransform);
     assert.equal(preview.children[0].children[0].tagName, 'U');
   }
@@ -282,7 +289,7 @@ test('actual workspace save action sends only dirty language and retains unsaved
 });
 
 
-test('canceling the real link modal leaves copy clean; insertion gives named safe anchor consistent navigation attributes', async () => {
+test('canceling the real link modal leaves copy clean; insertion gives editable named safe anchor consistent navigation attributes', async () => {
   const { editor, window, document, context } = setup({ canReviewAndPublish: true });
   const item = { _id: 'record', type: 'lastPost', content: { messages: { en: 'English', fr: 'French' } } };
   const forms = ['en', 'fr'].map((language) => editor.createLanguageEditor(item, language));
@@ -292,14 +299,77 @@ test('canceling the real link modal leaves copy clean; insertion gives named saf
   context.CMCENModal.form = async () => null;
   await linkButton.fire('click');
   assert.equal(editor.isContentWorkspaceFormDirty(forms[0]), false);
-  document.createRange = () => ({ selectNodeContents() {}, collapse() {}, deleteContents() {}, insertNode: (anchor) => input.append(anchor), setStartAfter() {} });
+  document.createRange = () => ({ selectNodeContents() {}, collapse() {}, deleteContents() {}, insertNode: (anchor) => {
+    // This DOM boundary stores textContent separately; browsers create a text node.
+    anchor.append(document.createTextNode(anchor.textContent));
+    input.append(anchor);
+  }, setStartAfter() {} });
   context.CMCENModal.form = async () => ({ href: 'https://example.test/donate', text: 'Donate' });
   await linkButton.fire('click');
   const anchor = input.querySelector('a');
   assert.equal(anchor.href, 'https://example.test/donate'); assert.equal(anchor.target, '_blank'); assert.equal(anchor.rel, 'noopener noreferrer');
-  // This DOM boundary stores textContent separately; browsers create a text node.
-  anchor.append(document.createTextNode(anchor.textContent)); await input.fire('input');
+  assert.notEqual(anchor.contentEditable, 'false');
+  await input.fire('input');
   const request = editor.getContentLanguageSaveRequest(item, forms[0]);
   assert.equal(request.body.blocks[1].children[0].children[0], 'Donate');
   assert.equal(editor.isContentWorkspaceFormDirty(forms[1]), false);
+});
+
+test('notice link labels inherit editing, suppress navigation and preserve target and inline formatting after text edits', async () => {
+  const { editor, document } = setup({ canReviewAndPublish: true });
+  const href = 'mailto:DND.Example@example.test';
+  const blocks = [{ type: 'paragraph', children: [{ type: 'link', href, children: [{ type: 'strong', children: ['DND contact'] }] }] }];
+  const item = { _id: 'record', type: 'lastPost', content: { messages: { en: 'DND contact' }, formattedBody: { en: { version: 1, text: 'DND contact', blocks } } } };
+  const form = editor.createLanguageEditor(item, 'en');
+  const input = form.querySelectorAll('div').find((node) => node.contentEditable === 'true');
+  const anchor = input.querySelector('a');
+  assert.notEqual(anchor.contentEditable, 'false');
+  let prevented = false;
+  await input.fire('click', { target: anchor.children[0], preventDefault: () => { prevented = true; } });
+  assert.equal(prevented, true, 'clicking nested link text must not navigate');
+  assert.equal(editor.isContentWorkspaceFormDirty(form), false);
+  const label = anchor.children[0];
+  label.replaceChildren(document.createTextNode('DND revised contact'));
+  await input.fire('input');
+  const saved = editor.getContentLanguageSaveRequest(item, form).body;
+  assert.equal(saved.message, 'DND revised contact');
+  assert.equal(saved.blocks[0].children[0].href, href);
+  assert.equal(saved.blocks[0].children[0].children[0].type, 'strong');
+  assert.equal(saved.blocks[0].children[0].children[0].children[0], 'DND revised contact');
+  label.replaceChildren(document.createTextNode('DND revised contac'));
+  await input.fire('input');
+  assert.equal(editor.getContentLanguageSaveRequest(item, form).body.blocks[0].children[0].href, href);
+  assert.equal(editor.getContentLanguageSaveRequest(item, form).body.message, 'DND revised contac');
+  label.replaceChildren(document.createTextNode(''));
+  await input.fire('input');
+  assert.equal(input.querySelector('a'), null, 'deleting all label text cleans up the empty link');
+});
+
+test('partial and full link selections survive toolbar mousedown and cancelled link dialog without dirtying copy', async () => {
+  for (const selected of ['contact', 'DND contact']) {
+    const { editor, window, context } = setup({ canReviewAndPublish: true });
+    const blocks = [{ type: 'paragraph', children: [{ type: 'link', href: 'mailto:dnd@example.test', children: ['DND contact'] }] }];
+    const item = { _id: 'record', type: 'lastPost', content: { messages: { en: 'DND contact' }, formattedBody: { en: { version: 1, text: 'DND contact', blocks } } } };
+    const form = editor.createLanguageEditor(item, 'en');
+    const input = form.querySelectorAll('div').find((node) => node.contentEditable === 'true');
+    const text = input.querySelector('a').children[0];
+    input.contains = (node) => node === text;
+    const range = { toString: () => selected };
+    const selection = { rangeCount: 1, anchorNode: text, getRangeAt: () => ({ cloneRange: () => range }), removeAllRanges() { this.restored = null; }, addRange(value) { this.restored = value; } };
+    window.getSelection = () => selection;
+    context.CMCENModal.form = async (title, options) => {
+      assert.equal(options.fields[1].defaultValue, selected);
+      selection.removeAllRanges(); // The modal moves focus/selection away from the field.
+      return null;
+    };
+    for (const control of form.querySelectorAll('button')) {
+      let prevented = false;
+      await control.fire('mousedown', { preventDefault: () => { prevented = true; } });
+      assert.equal(prevented, true);
+    }
+    await form.querySelectorAll('button').find((node) => node.dataset.i18nAriaLabel === 'article_link').fire('click');
+    assert.equal(selection.restored, range);
+    assert.equal(editor.isContentWorkspaceFormDirty(form), false);
+    assert.equal(editor.getContentLanguageSaveRequest(item, form).body.message, 'DND contact');
+  }
 });

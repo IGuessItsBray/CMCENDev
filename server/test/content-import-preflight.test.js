@@ -62,6 +62,15 @@ test('preflight preserves input and accepts complete evidence', async () => {
   assert.equal((await inspectBatch(input, { models })).safeToApply, true);
   assert.equal(JSON.stringify(input), before);
 });
+test('formatted source copy is bound to exact normalized blocks and plain text', async () => {
+  const input = fixture();
+  const source = input.items[0].sources[0];
+  source.convertedBlocks = [{ type: 'paragraph', children: [{ type: 'strong', children: ['Source text'] }] }];
+  input.items[0].document.formattedBody = { en: { version: 1, text: source.convertedText, blocks: structuredClone(source.convertedBlocks) } };
+  assert.equal((await inspectBatch(input, { models })).safeToApply, true);
+  input.items[0].document.formattedBody.en.blocks[0].children = ['Source text'];
+  assert.equal((await inspectBatch(input, { models })).safeToApply, false);
+});
 test('source drafts, private content, pending submission state and scheduled publication are blocked', async () => {
   for (const mutate of [
     (i) => {

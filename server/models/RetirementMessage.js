@@ -265,6 +265,8 @@ const retirementMessageSchema = new mongoose.Schema(
   },
 );
 
+require('../services/formatted-body').installFormattedBody(retirementMessageSchema, 'messages');
+
 retirementMessageSchema.index({
   status: 1,
   publishedAt: -1,

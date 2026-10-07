@@ -605,7 +605,9 @@ function renderEvent(event) {
       .filter(Boolean)
       .join(" / ") || getEventTranslation("event_details_eyebrow");
 
-  eventDetailDescription.textContent = description;
+  BodyContent.render(eventDetailDescription, event,
+    BodyContent.languageFor(event.description, getEventLanguage(), description),
+    description, CMCENUtils.setLinkifiedText);
   eventDetailDescriptionSection.hidden = !description;
 
   eventDetailBrief.replaceChildren();

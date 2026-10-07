@@ -6,8 +6,9 @@ const vm = require('node:vm');
 
 const context = {
   URLSearchParams,
+  BodyContent: require('../public/body-content'),
   document: {
-    getElementById: () => ({ addEventListener() {} }),
+    getElementById: () => ({ addEventListener() {}, classList: { remove() {} } }),
     querySelector: () => ({}),
     addEventListener() {},
   },

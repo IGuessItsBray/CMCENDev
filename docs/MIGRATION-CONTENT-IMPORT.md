@@ -256,3 +256,48 @@ node --test test/migration-content-package.test.js
 node --test test/integration/content-import.test.js
 npm test
 ```
+
+## Preserve notice and event body formatting
+
+Notice and event bodies can retain a bounded `formattedBody.en/fr` envelope:
+`{version: 1, text, blocks}`. The existing `messages` or `description` copy must
+exactly match the plain text derived from the blocks. Retirement's primary
+`message` also follows its selected language. Raw source HTML is provenance,
+never executable display content. Article/newsletter bodies keep their existing
+format and editor. Public submission forms keep their existing plain-text controls. Staff retirement/Last Post editing offers one formatted message field per language with basic text marks, named safe links and paragraph alignment. There are no insertion/reorder/delete controls for blocks, headings, lists, images or documents. Event authoring remains unchanged. Schema and rendering accept only paragraph/inline text; images/PDFs are descriptive safe links, never embedded. The converter retains verified original image targets and readable alt/caption/filename labels at their original position. No assets or links are automatically removed.
+
+`server/scripts/migration/convert-body.py` reads JSON from stdin and writes JSON
+to stdout. A single conversion accepts `html`, `sourceOrigin` and a `media` map
+from exact source image URL to verified retained HTTPS original. `--batch` makes
+a new preparation from a batch, optionally consuming `bodyMediaMap`, verifies
+each retained source body hash and adds `convertedBlocks` plus matching plain
+copy. It never connects to storage or a database. Missing image mappings,
+unsafe markup, unsupported styles/shortcodes and conflicting visible email
+labels/recipients produce review issues. Do not infer a corrected recipient.
+Keep the exact EN/FR originals and hashes, and review the new rendered result.
+
+Preflight binds converted blocks to each language's prepared envelope and plain
+copy. Rebuild source-bound review evidence, media dependencies, metadata and
+frozen manifest digests after an approved preparation changes. Never edit an
+already frozen payload, journal, runtime package or partially executed batch
+in place. The paused ten-draft preparation requires a replacement reviewed
+package; its existing artifacts are not authorizations to write new content.
+The separately retained Event import extension must be reconciled with this
+preflight and include `public/body-content.js` and `services/formatted-body.js`
+in its guarded runtime dependencies before producing a new Event package.
+This preservation change does not add Event execution support to the operator.
+
+`lib/formatted-body-repair.js` is a proposal builder only. Supply a fresh record,
+the exact original imported plain baseline (including resolved media URLs),
+and hash-bound conversions. It skips staff-edited languages, existing rich
+content, missing baselines and conversion conflicts. Proposed filters bind
+record ID, updatedAt, exact source records, plain baseline and absence of rich
+content. No repair is executed: require a fresh backup, reviewed exact diff,
+compare-and-swap, content revision and explicit apply authorization. Reviewed
+status, publication state, comments and unrelated staff fields are preserved.
+Check both languages independently, including records already reviewed.
+
+Public rendering builds DOM nodes from validated blocks and retains the existing
+safe plain-body fallback for older records. Plain edits invalidate formatting
+for that language, so stale imported content cannot override staff text. Inline
+image/PDF references participate in media attachment and deletion protection.

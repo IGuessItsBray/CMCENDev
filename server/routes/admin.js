@@ -2,6 +2,7 @@ const {
   imageUrls: newsletterImageUrls,
 } = require('../public/newsletter-format');
 const express = require('express');
+const { mediaReferences: bodyMediaReferences } = require('../public/body-content');
 const { cleanRanks } = require('../services/person-ranks');
 const { getPublicationDateInfo } = require('../services/publication-date');
 const { getArchiveSourceLinks } = require('../services/archive-source-links');
@@ -762,6 +763,7 @@ function toContentWorkspaceItem(type, content) {
         title: content.title || {},
         location: content.location || {},
         description: content.description || {},
+        formattedBody: content.formattedBody,
         registration: content.registration || {},
         city: content.city || '',
         provinceRegion: content.provinceRegion || '',
@@ -788,6 +790,7 @@ function toContentWorkspaceItem(type, content) {
       title: getRetirementMessageTitle(content),
       content: {
         messages: content.messages || {},
+        formattedBody: content.formattedBody,
         messageLanguage: content.messageLanguage || '',
         retiree: content.retiree || {},
         photoUrl: content.photoUrl || '',
@@ -807,6 +810,7 @@ function toContentWorkspaceItem(type, content) {
       title: getLastPostMessageTitle(content),
       content: {
         messages: content.messages || {},
+        formattedBody: content.formattedBody,
         messageLanguage: content.messageLanguage || '',
         deceased: content.deceased || {},
         title: content.title || '',
@@ -975,7 +979,7 @@ router.get(
               'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourcePostIds legacy.sourceUrl legacy.sourceUrls legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
             )
             .select(
-              'title location description registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay rsvpEnabled rsvpDeadline imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
+              'title location description formattedBody registration city provinceRegion organizingEntity eventType timezone startDate endDate allDay rsvpEnabled rsvpDeadline imagePath contentArea submitter publicationPermission createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
               {
@@ -1007,7 +1011,7 @@ router.get(
               'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourcePostIds legacy.sourceUrl legacy.sourceUrls legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
             )
             .select(
-              'retiree messages messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation legacy.source legacy.sourcePostIds legacy.originalStatus legacy.submissionMetadata createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
+              'retiree messages formattedBody messageLanguage photoUrl photoDisplayUrl submitter publicationConsent memberReviewConfirmation legacy.source legacy.sourcePostIds legacy.originalStatus legacy.submissionMetadata createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate({
               path: 'createdBy',
@@ -1035,7 +1039,7 @@ router.get(
               'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourcePostIds legacy.sourceUrl legacy.sourceUrls legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
             )
             .select(
-              'title slug deceased messages messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission legacy.source legacy.sourcePostIds legacy.originalStatus legacy.submissionMetadata createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
+              'title slug deceased messages formattedBody messageLanguage imageUrl imageDisplayUrl photoUrl submitter publicationPermission legacy.source legacy.sourcePostIds legacy.originalStatus legacy.submissionMetadata createdBy status hiddenFromStatus rejectionReason scheduledPublishAt publishedAt +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
               {
@@ -1701,6 +1705,10 @@ function getMediaAttachmentMap(
   }
 
   events.forEach((event) => {
+    for (const { url, field } of bodyMediaReferences(event)) addAttachment(getMediaKeyFromValue(url), {
+      _id: event._id, type: 'event', title: getEventTitle(event), status: event.status, field,
+      href: `/content-workspace?id=${encodeURIComponent(event._id)}`,
+    });
     addAttachment(getMediaKeyFromValue(event.imagePath), {
       _id: event._id,
       type: 'event',
@@ -1712,6 +1720,10 @@ function getMediaAttachmentMap(
   });
 
   retirementMessages.forEach((message) => {
+    for (const { url, field } of bodyMediaReferences(message)) addAttachment(getMediaKeyFromValue(url), {
+      _id: message._id, type: 'retirementMessage', title: getRetirementMessageTitle(message), status: message.status, field,
+      href: `/content-workspace?id=${encodeURIComponent(message._id)}`,
+    });
     addAttachment(getMediaKeyFromValue(message.photoUrl), {
       _id: message._id,
       type: 'retirementMessage',
@@ -1733,6 +1745,7 @@ function getMediaAttachmentMap(
     };
 
     addAttachment(getMediaKeyFromValue(message.imageUrl), attachment);
+    for (const { url, field } of bodyMediaReferences(message)) addAttachment(getMediaKeyFromValue(url), { ...attachment, field });
     addAttachment(getMediaKeyFromValue(message.photoUrl), {
       ...attachment,
       field: 'photoUrl',
@@ -1838,22 +1851,23 @@ async function getMediaAttachments() {
   const [events, retirementMessages, lastPostMessages, newsArticles, pages, displays] =
     await Promise.all([
       Event.find({
-        imagePath: { $nin: [null, ''] },
+        $or: [{ imagePath: { $nin: [null, ''] } }, { formattedBody: { $exists: true } }],
       })
-        .select('title status imagePath updatedAt createdAt')
+        .select('title status imagePath formattedBody updatedAt createdAt')
         .lean(),
       RetirementMessage.find({
-        photoUrl: { $nin: [null, ''] },
+        $or: [{ photoUrl: { $nin: [null, ''] } }, { formattedBody: { $exists: true } }],
       })
-        .select('retiree status photoUrl updatedAt createdAt')
+        .select('retiree status photoUrl formattedBody updatedAt createdAt')
         .lean(),
       LastPostMessage.find({
         $or: [
           { imageUrl: { $nin: [null, ''] } },
           { photoUrl: { $nin: [null, ''] } },
+          { formattedBody: { $exists: true } },
         ],
       })
-        .select('title deceased status imageUrl photoUrl updatedAt createdAt')
+        .select('title deceased status imageUrl photoUrl formattedBody updatedAt createdAt')
         .lean(),
       NewsArticle.find({
         $or: [

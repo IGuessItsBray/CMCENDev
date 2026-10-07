@@ -1,5 +1,6 @@
 {
   "en": {
+    "body_revision": "Message formatting",
     "person_rank_en": "Rank in English (optional)",
     "person_rank_fr": "Rank in French (optional)",
     "content_workspace_origin": "Origin",
@@ -2304,9 +2305,17 @@
     "archive_review_category_unassigned": "Undecided",
     "archive_review_choice_preserve": "Keep",
     "archive_review_choice_exclude": "Leave out",
-    "archive_review_related_source": "Related source (not a translation)"
+    "archive_review_related_source": "Related source (not a translation)",
+    "body_underline": "Underline",
+    "body_color_red": "Red",
+    "body_color_blue": "Blue",
+    "body_color_green": "Green",
+    "body_align_left": "Align left",
+    "body_align_center": "Center",
+    "body_align_right": "Align right"
   },
   "fr": {
+    "body_revision": "Mise en forme du message",
     "person_rank_en": "Grade en anglais (facultatif)",
     "person_rank_fr": "Grade en français (facultatif)",
     "content_workspace_origin": "Origine",
@@ -4611,6 +4620,13 @@
     "archive_review_category_unassigned": "À décider",
     "archive_review_choice_preserve": "Conserver",
     "archive_review_choice_exclude": "Laisser de côté",
-    "archive_review_related_source": "Source connexe (pas une traduction)"
+    "archive_review_related_source": "Source connexe (pas une traduction)",
+    "body_underline": "Souligner",
+    "body_color_red": "Rouge",
+    "body_color_blue": "Bleu",
+    "body_color_green": "Vert",
+    "body_align_left": "Aligner à gauche",
+    "body_align_center": "Centrer",
+    "body_align_right": "Aligner à droite"
   }
 }

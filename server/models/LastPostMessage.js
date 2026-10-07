@@ -240,6 +240,8 @@ const LastPostMessageSchema = new mongoose.Schema(
   },
 );
 
+require('../services/formatted-body').installFormattedBody(LastPostMessageSchema, 'messages');
+
 LastPostMessageSchema.index({
   status: 1,
   publishedAt: -1,

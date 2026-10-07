@@ -1,5 +1,6 @@
 const Comment = require('../models/Comment');
 const express = require('express');
+const { setFormattedBody } = require('../services/formatted-body');
 const { cleanRanks } = require('../services/person-ranks');
 const { selectPublicationDate } = require('../services/publication-date');
 const { markContentEdited } = require('../services/content-edit-metadata');
@@ -1088,7 +1089,7 @@ router.get(
         _id: req.params.messageId,
         status: { $in: ['draft', 'pending'] },
       })
-        .select('retiree message messageLanguage messages photoUrl photoDisplayUrl publishedAt')
+        .select('retiree message messageLanguage messages formattedBody photoUrl photoDisplayUrl publishedAt')
         .lean();
       if (!retirementMessage)
         return res.status(404).json({ error: 'Retirement message not found' });
@@ -1114,6 +1115,7 @@ router.get('/:messageId', async (req, res) => {
         message: 1,
         messageLanguage: 1,
         messages: 1,
+        formattedBody: 1,
         photoUrl: 1,
         photoDisplayUrl: 1,
         publishedAt: 1,
@@ -1209,9 +1211,16 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
       });
     }
 
+    if (req.body.formattedBody !== undefined || (req.body.blocks !== undefined && !canReview)) {
+      return res.status(400).json({ error: 'Only staff reviewers can format a message; embedded content is not supported' });
+    }
+
     const before = {
       message: retirementMessage.messages?.[language] || '',
+      formattedBody: retirementMessage.formattedBody?.[language] || null,
     };
+
+    setFormattedBody(retirementMessage, language, req.body.blocks, cleanMessage);
 
     retirementMessage.set(`messages.${language}`, cleanMessage);
     retirementMessage.markModified('messages');
@@ -1240,9 +1249,9 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
       actor: req.user,
       status: retirementMessage.status,
       language,
-      fields: ['message'],
+      fields: ['message', 'formattedBody'],
       before,
-      after: { message: retirementMessage.messages?.[language] || '' },
+      after: { message: retirementMessage.messages?.[language] || '', formattedBody: retirementMessage.formattedBody?.[language] || null },
       note: req.body.note,
     });
 
@@ -1274,6 +1283,7 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
       retirementMessage,
     });
   } catch (error) {
+    if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('Could not update retirement review content:', error);
 
     if (error.name === 'CastError') {

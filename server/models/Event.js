@@ -341,6 +341,8 @@ const EventSchema = new mongoose.Schema(
   },
 );
 
+require('../services/formatted-body').installFormattedBody(EventSchema, 'description', 10000);
+
 EventSchema.pre('validate', function () {
   if (this.startDate && this.endDate && this.endDate < this.startDate) {
     this.invalidate('endDate', 'End date cannot be earlier than start date');

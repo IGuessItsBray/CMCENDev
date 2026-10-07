@@ -3856,6 +3856,27 @@ components:
             type: object
             required: [language, message]
             properties:
+              blocks:
+                type: array
+                maxItems: 200
+                description: Staff-only formatting for one message field. Paragraphs and safe inline text marks/links only; figures, document blocks, headings and lists are rejected. Derived plain text must match message.
+                items:
+                  type: object
+                  required: [type, children]
+                  properties:
+                    type:
+                      type: string
+                      enum: [paragraph]
+                    align:
+                      type: string
+                      enum: [left, center, right]
+                    children:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: string
+                          - type: object
+                            description: Bounded strong/em/underline/color/link/br inline node; server validates safe URLs and palette.
               language:
                 type: string
                 enum: [en, fr]
@@ -3929,6 +3950,27 @@ components:
             type: object
             required: [language, message]
             properties:
+              blocks:
+                type: array
+                maxItems: 200
+                description: Staff-only formatting for one message field. Paragraphs and safe inline text marks/links only; figures, document blocks, headings and lists are rejected. Derived plain text must match message.
+                items:
+                  type: object
+                  required: [type, children]
+                  properties:
+                    type:
+                      type: string
+                      enum: [paragraph]
+                    align:
+                      type: string
+                      enum: [left, center, right]
+                    children:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: string
+                          - type: object
+                            description: Bounded strong/em/underline/color/link/br inline node; server validates safe URLs and palette.
               language:
                 type: string
                 enum: [en, fr]

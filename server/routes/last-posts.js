@@ -1,4 +1,5 @@
 const express = require('express');
+const { setFormattedBody } = require('../services/formatted-body');
 const { cleanRanks } = require('../services/person-ranks');
 const { selectPublicationDate } = require('../services/publication-date');
 const { markContentEdited } = require('../services/content-edit-metadata');
@@ -155,6 +156,7 @@ function serializeLastPost(lastPost) {
     },
     displayName: getDeceasedName(lastPost),
     messages: getLocalizedMessages(lastPost),
+    formattedBody: lastPost.formattedBody,
     imageUrl: cleanString(lastPost.imageUrl),
     imageDisplayUrl: cleanString(lastPost.imageDisplayUrl),
     publishedAt: lastPost.publishedAt || null,
@@ -453,7 +455,13 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
       });
     }
 
-    const before = { message: lastPost.messages?.[language] || '' };
+    if (req.body.formattedBody !== undefined || (req.body.blocks !== undefined && !canReview)) {
+      return res.status(400).json({ error: 'Only staff reviewers can format a message; embedded content is not supported' });
+    }
+
+    const before = { message: lastPost.messages?.[language] || '', formattedBody: lastPost.formattedBody?.[language] || null };
+
+    setFormattedBody(lastPost, language, req.body.blocks, cleanString(message));
 
     lastPost.set(`messages.${language}`, cleanString(message));
     lastPost.markModified('messages');
@@ -476,9 +484,9 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
       actor: req.user,
       status: lastPost.status,
       language,
-      fields: ['message'],
+      fields: ['message', 'formattedBody'],
       before,
-      after: { message: lastPost.messages?.[language] || '' },
+      after: { message: lastPost.messages?.[language] || '', formattedBody: lastPost.formattedBody?.[language] || null },
       note: req.body.note,
     });
 
@@ -510,6 +518,7 @@ router.patch('/:messageId/review-content', authMiddleware, async (req, res) => {
       lastPost,
     });
   } catch (error) {
+    if (error.status === 400) return res.status(400).json({ error: error.message });
     console.error('Could not update Last Post review content:', error);
 
     if (error.name === 'ValidationError') {

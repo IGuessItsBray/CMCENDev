@@ -26,6 +26,7 @@ window.ContentWorkspaceHistory = {
           "Registration details",
         ],
         message: ["content_workspace_field_message", "Message"],
+        formattedBody: ["body_revision", "Formatting and attachments"],
         content: ["content_workspace_field_content", "Story"],
         editorialNote: ["content_workspace_revision_note", "Editorial note"],
         articleReview: ["article_review_filter", "Review"],

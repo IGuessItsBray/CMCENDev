@@ -1,4 +1,5 @@
 const crypto = require('node:crypto');
+const { normalizeBlocks, plainText } = require('../../../public/body-content');
 
 const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const SOURCE = 'https://cmcen-rcmce.ca';
@@ -87,6 +88,17 @@ async function inspectBatch(input, { models, mediaEvidence = [] } = {}) {
     for (const source of sources) {
       if (document.messages?.[source.language] !== source.convertedText)
         flag('converted-copy-changed', { sourceId: source.id });
+      if (source.convertedBlocks !== undefined) {
+        try {
+          const blocks = normalizeBlocks(source.convertedBlocks);
+          const body = document.formattedBody?.[source.language];
+          if (plainText(blocks) !== source.convertedText || body?.version !== 1 ||
+              body.text !== source.convertedText || JSON.stringify(body.blocks) !== JSON.stringify(blocks))
+            flag('converted-formatting-changed', { sourceId: source.id });
+        } catch { flag('invalid-converted-formatting', { sourceId: source.id }); }
+      } else if (document.formattedBody?.[source.language]) {
+        flag('missing-converted-formatting-source', { sourceId: source.id });
+      }
     }
     if (
       item.kind === 'retirement' &&

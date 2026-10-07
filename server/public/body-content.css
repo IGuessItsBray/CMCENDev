@@ -1,0 +1,12 @@
+.formatted-body > p { margin: 0 0 1em; white-space: normal; }
+.formatted-body > .body-align-left { text-align: left; }
+.formatted-body > .body-align-center { text-align: center; }
+.formatted-body > .body-align-right { text-align: right; }
+.formatted-body a { overflow-wrap: anywhere; }
+.body-color-default { color: inherit; }
+.body-color-red { color: #a52323; }
+.body-color-blue { color: #174b9b; }
+.body-color-green { color: #21663b; }
+html[data-theme='dark'] .body-color-red { color: #ff9c9c; }
+html[data-theme='dark'] .body-color-blue { color: #9cbfff; }
+html[data-theme='dark'] .body-color-green { color: #9cd8af; }

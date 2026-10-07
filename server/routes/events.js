@@ -441,6 +441,7 @@ function buildRsvpCsv(rsvps) {
 const PUBLIC_EVENT_FIELDS = [
   'title',
   'description',
+  'formattedBody',
   'location',
   'registration',
   'city',
@@ -1660,6 +1661,12 @@ router.patch('/:eventId/review-content', authMiddleware, async (req, res) => {
       ]),
     );
 
+    if (req.body.blocks !== undefined || req.body.formattedBody !== undefined) {
+      return res.status(400).json({ error: 'Body formatting is retained from legacy imports and cannot be authored here' });
+    }
+
+    before.formattedBody = event.formattedBody?.[language] || null;
+
     editableFields.forEach((field) => {
       event.set(`${field}.${language}`, cleanString(content[field]));
     });
@@ -1687,13 +1694,14 @@ router.patch('/:eventId/review-content', authMiddleware, async (req, res) => {
         event.get(`${field}.${language}`) || '',
       ]),
     );
+    after.formattedBody = event.formattedBody?.[language] || null;
     await recordContentRevision({
       contentType: 'event',
       content: event,
       actor: req.user,
       status: event.status,
       language,
-      fields: editableFields,
+      fields: [...editableFields, 'formattedBody'],
       before,
       after,
       note: req.body.note,

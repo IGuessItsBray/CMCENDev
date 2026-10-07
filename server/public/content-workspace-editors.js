@@ -229,6 +229,20 @@ window.ContentWorkspaceEditors = {
         );
       }
 
+      if (['lastPost', 'retirementMessage'].includes(item.type) && contentWorkspaceState.user?.permissions?.canReviewAndPublish) {
+        const plain = group.querySelector('textarea');
+        plain.hidden = true;
+        const blocks = document.createElement('input'); blocks.type = 'hidden'; blocks.name = 'bodyBlocks';
+        blocks.value = getEditorDraftValue(item, language, 'bodyBlocks', JSON.stringify(window.BodyContent.blocksFor(item.content, language, plain.value)));
+        group.append(blocks, window.MessageEditor.create({
+          blocks: JSON.parse(blocks.value), getText,
+          onChange: (value) => {
+            blocks.value = JSON.stringify(value); plain.value = window.BodyContent.plainText(value);
+            blocks.dispatchEvent(new Event('input', { bubbles: true }));
+          },
+        }));
+      }
+
       const noteField = createEditNoteField();
       noteField.querySelector("textarea").value = getEditorDraftValue(
         item,
@@ -2054,6 +2068,8 @@ window.ContentWorkspaceEditors = {
       const note = String(formData.get("revisionNote") || "");
       let path = "";
       let body = { language, note };
+      const blocks = formData.get('bodyBlocks');
+      if (blocks !== null && ['lastPost', 'retirementMessage'].includes(item.type)) body.blocks = JSON.parse(blocks);
 
       if (item.type === "event") {
         path = `/api/events/${encodeURIComponent(item._id)}/review-content`;

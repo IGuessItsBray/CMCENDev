@@ -170,9 +170,13 @@ function formatRetirementMessageText(text) {
 }
 
 function setRetirementMessageText(retirementMessage) {
-  CMCENUtils.setLinkifiedText(
+  const text = getRetirementMessageText(retirementMessage);
+  BodyContent.render(
     retirementDetailText,
-    formatRetirementMessageText(getRetirementMessageText(retirementMessage)),
+    retirementMessage,
+    BodyContent.languageFor(retirementMessage.messages, window.currentLang || 'en', text),
+    text,
+    (element, value) => CMCENUtils.setLinkifiedText(element, formatRetirementMessageText(value)),
   );
 }
 

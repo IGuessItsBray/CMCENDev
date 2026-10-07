@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const assert = require('node:assert/strict');
 const { EJSON, ObjectId } = require('mongoose').mongo.BSON;
+const { normalizeBlocks, plainText } = require('../../../public/body-content');
 
 const collections = {
   retirement: 'retirementmessages',
@@ -129,6 +130,16 @@ function validateManifest(manifest) {
     assert(d._id instanceof ObjectId && !targetIds.has(String(d._id)));
     targetIds.add(String(d._id));
     assert.equal(d.status, 'draft');
+    for (const language of ['en', 'fr']) {
+      const body = d.formattedBody?.[language];
+      if (!body) continue;
+      const max = g.kind === 'event' ? 10000 : 30000;
+      const blocks = normalizeBlocks(body.blocks, max);
+      assert.equal(body.version, 1, 'Unsupported formatted body');
+      assert.equal(canonical(blocks), canonical(body.blocks), 'Unnormalized formatted body');
+      assert.equal(plainText(blocks), body.text, 'Formatted text changed');
+      assert.equal(body.text, (g.kind === 'event' ? d.description : d.messages)?.[language], 'Formatted body differs from current text');
+    }
     assert(
       !d.publishedAt &&
         !d.publishedBy &&

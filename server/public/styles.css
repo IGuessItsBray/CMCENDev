@@ -3208,7 +3208,8 @@ html[data-theme='dark'] main .article-staff-actions-link:focus-visible {
   font-size: 26px;
 }
 
-.event-detail-description p {
+.event-detail-description p,
+#eventDetailDescription:not(.formatted-body) {
   margin: 0;
   color: var(--ink);
   font-size: 16px;
@@ -13026,7 +13027,8 @@ html[data-theme='dark'] .news-message {
   line-height: 1.2;
 }
 
-.retirement-detail-message-section p {
+.retirement-detail-message-section p,
+#retirementDetailText:not(.formatted-body) {
   margin: 0;
   color: var(--ink);
   font-size: 15px;
@@ -13354,7 +13356,8 @@ html[data-theme='dark'] .news-message {
   margin: 0 auto;
 }
 
-.last-post-detail-message p {
+.last-post-detail-message p,
+.last-post-detail-message > div:not(.formatted-body) {
   margin: 0;
   color: #282b2e;
   font-family: var(--font-heading);
@@ -13467,7 +13470,8 @@ html[data-theme='dark'] .last-post-card-excerpt {
   color: var(--dark-text-soft);
 }
 
-html[data-theme='dark'] .last-post-detail-message p {
+html[data-theme='dark'] .last-post-detail-message p,
+html[data-theme='dark'] .last-post-detail-message > div:not(.formatted-body) {
   color: var(--dark-text-soft);
 }
 
@@ -13521,7 +13525,8 @@ html[data-theme='dark'] .last-post-detail-footer {
     padding-top: 30px;
   }
 
-  .last-post-detail-message p {
+  .last-post-detail-message p,
+  .last-post-detail-message > div:not(.formatted-body) {
     font-size: 16px;
     line-height: 1.76;
   }
@@ -13591,7 +13596,8 @@ html[data-theme='dark'] .last-post-detail-footer {
     padding: 18px;
   }
 
-  .retirement-detail-message-section p {
+  .retirement-detail-message-section p,
+  #retirementDetailText:not(.formatted-body) {
     font-size: 14px;
   }
 
@@ -13771,6 +13777,7 @@ html[data-theme='dark'] .last-post-detail-footer {
   }
 
   .event-detail-description p,
+  #eventDetailDescription:not(.formatted-body),
   .event-detail-registration p {
     font-size: 15px;
   }
@@ -17503,6 +17510,7 @@ html[data-theme='dark'] .event-detail-registration h3 {
 }
 
 html[data-theme='dark'] .event-detail-description p,
+html[data-theme='dark'] #eventDetailDescription:not(.formatted-body),
 html[data-theme='dark'] .event-detail-list dd,
 html[data-theme='dark'] .event-detail-registration p {
   color: var(--dark-text-soft);
@@ -18855,7 +18863,8 @@ html[data-theme='dark'] .retirement-comment-cancel:focus-visible {
 
 html[data-theme='dark'] .retirement-comment-form-note,
 html[data-theme='dark'] .retirement-comment p,
-html[data-theme='dark'] .retirement-detail-message-section p {
+html[data-theme='dark'] .retirement-detail-message-section p,
+html[data-theme='dark'] #retirementDetailText:not(.formatted-body) {
   color: var(--dark-text-soft);
 }
 

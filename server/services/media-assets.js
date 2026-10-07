@@ -2,6 +2,7 @@ const {
   imageUrls: newsletterImageUrls,
 } = require('../public/newsletter-format');
 const MediaAsset = require('../models/MediaAsset');
+const { mediaReferences: bodyMediaReferences } = require('../public/body-content');
 const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
 const NewsArticle = require('../models/NewsArticle');
@@ -287,19 +288,20 @@ function getPageMediaReferences(blocks = []) {
 async function getContentMediaReferences(assetKeys) {
   const [events, retirementMessages, lastPostMessages, newsArticles, pages, displays] =
     await Promise.all([
-      Event.find({ imagePath: { $nin: [null, ''] } })
-        .select('_id imagePath')
+      Event.find({ $or: [{ imagePath: { $nin: [null, ''] } }, { formattedBody: { $exists: true } }] })
+        .select('_id imagePath formattedBody')
         .lean(),
-      RetirementMessage.find({ photoUrl: { $nin: [null, ''] } })
-        .select('_id photoUrl')
+      RetirementMessage.find({ $or: [{ photoUrl: { $nin: [null, ''] } }, { formattedBody: { $exists: true } }] })
+        .select('_id photoUrl formattedBody')
         .lean(),
       LastPostMessage.find({
         $or: [
           { imageUrl: { $nin: [null, ''] } },
           { photoUrl: { $nin: [null, ''] } },
+          { formattedBody: { $exists: true } },
         ],
       })
-        .select('_id imageUrl photoUrl')
+        .select('_id imageUrl photoUrl formattedBody')
         .lean(),
       NewsArticle.find({
         $or: [
@@ -326,13 +328,16 @@ async function getContentMediaReferences(assetKeys) {
 
   events.forEach((event) => {
     addReference('event', event, 'imagePath', event.imagePath);
+    for (const { url, field } of bodyMediaReferences(event)) addReference('event', event, field, url);
   });
   retirementMessages.forEach((message) => {
     addReference('retirementMessage', message, 'photoUrl', message.photoUrl);
+    for (const { url, field } of bodyMediaReferences(message)) addReference('retirementMessage', message, field, url);
   });
   lastPostMessages.forEach((message) => {
     addReference('lastPostMessage', message, 'imageUrl', message.imageUrl);
     addReference('lastPostMessage', message, 'photoUrl', message.photoUrl);
+    for (const { url, field } of bodyMediaReferences(message)) addReference('lastPostMessage', message, field, url);
   });
   newsArticles.forEach((article) => {
     for (const url of newsletterImageUrls(article))
@@ -436,5 +441,6 @@ module.exports = {
   deleteContentMediaAsset,
   deleteContentMediaAssets,
   linkMediaAssetToSource,
+  getContentMediaReferences,
   sanitizeImageMetadata,
 };

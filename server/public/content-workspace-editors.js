@@ -235,7 +235,7 @@ window.ContentWorkspaceEditors = {
         const blocks = document.createElement('input'); blocks.type = 'hidden'; blocks.name = 'bodyBlocks';
         blocks.value = getEditorDraftValue(item, language, 'bodyBlocks', JSON.stringify(window.BodyContent.blocksFor(item.content, language, plain.value)));
         group.append(blocks, window.MessageEditor.create({
-          blocks: JSON.parse(blocks.value), getText,
+          blocks: JSON.parse(blocks.value), getText, noticeType: item.type,
           onChange: (value) => {
             blocks.value = JSON.stringify(value); plain.value = window.BodyContent.plainText(value);
             blocks.dispatchEvent(new Event('input', { bubbles: true }));

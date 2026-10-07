@@ -8,7 +8,7 @@ const context = {
   URLSearchParams,
   BodyContent: require('../public/body-content'),
   document: {
-    getElementById: () => ({ addEventListener() {}, classList: { remove() {} } }),
+    getElementById: () => ({ style: {}, addEventListener() {}, classList: { remove() {} } }),
     querySelector: () => ({}),
     addEventListener() {},
   },
@@ -81,6 +81,8 @@ test('retirement renderer passes localized formatted text to the shared linkifie
     context.CMCENUtils.getLocalizedText = (value) => value[language];
     context.CMCENUtils.setLinkifiedText = (element, text) => {
       assert.equal(text, format(messages[language]));
+      assert.equal(element.style.textAlign, 'left');
+      assert.equal(element.style.textTransform, 'uppercase');
     };
     context.setRetirementMessageText({ messages });
     assert.deepEqual(messages, {

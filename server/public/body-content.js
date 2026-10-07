@@ -86,24 +86,42 @@
     }
     return fromText(text);
   }
-  function inline(parent, nodes, doc = document) {
+  function withoutColors(nodes) {
+    return nodes.flatMap((node) => {
+      if (typeof node === 'string') return [node];
+      if (node.type === 'color') return withoutColors(node.children);
+      return [{ ...node, ...(node.children ? { children: withoutColors(node.children) } : {}) }];
+    });
+  }
+  function inline(parent, nodes, doc = document, ignoreColors = false) {
     for (const node of nodes || []) {
       if (typeof node === 'string') { parent.append(doc.createTextNode(node)); continue; }
+      if (ignoreColors && node.type === 'color') { inline(parent, node.children, doc, true); continue; }
       const tag = { br: 'br', strong: 'strong', em: 'em', underline: 'u', color: 'span', link: 'a' }[node.type];
       if (!tag) continue;
       const el = doc.createElement(tag);
       if (node.type === 'link') {
         const href = safeUrl(node.href);
-        if (!href) { inline(parent, node.children, doc); continue; }
+        if (!href) { inline(parent, node.children, doc, ignoreColors); continue; }
         el.href = href;
         if (!href.startsWith('mailto:')) { el.target = '_blank'; el.rel = 'noopener noreferrer'; }
       }
       if (node.type === 'color' && colors.includes(node.color)) el.className = `body-color-${node.color}`;
-      inline(el, node.children, doc);
+      inline(el, node.children, doc, ignoreColors);
       parent.append(el);
     }
   }
-  function render(element, content, language, text, fallback) {
+  function noticeStyle(type) {
+    if (type === 'lastPost') return { align: 'center', transform: 'none' };
+    if (type === 'retirementMessage') return { align: 'left', transform: 'uppercase' };
+    return null;
+  }
+  function render(element, content, language, text, fallback, noticeType) {
+    const style = noticeStyle(noticeType);
+    if (style) {
+      element.style.textAlign = style.align;
+      element.style.textTransform = style.transform;
+    }
     element.classList.remove('formatted-body');
     const body = content?.formattedBody?.[language];
     if (body?.version !== 1 || body.text !== String(text || '')) { fallback(element, text); return false; }
@@ -114,8 +132,9 @@
     element.classList.add('formatted-body');
     for (const block of blocks) {
       const el = doc.createElement('p');
-      el.className = `body-align-${block.align || 'left'}`;
-      inline(el, block.children, doc);
+      el.className = `body-align-${style?.align || block.align || 'left'}`;
+      if (style) el.style.textAlign = style.align;
+      inline(el, block.children, doc, Boolean(style));
       element.append(el);
     }
     return true;
@@ -134,7 +153,7 @@
     for (const language of ['en', 'fr']) visit(content.formattedBody?.[language], `formattedBody.${language}`);
     return refs;
   }
-  const api = { colors, safeUrl, normalizeBlocks, plainText, fromText, blocksFor, inline, render, languageFor, mediaReferences };
+  const api = { colors, safeUrl, normalizeBlocks, plainText, fromText, blocksFor, inline, withoutColors, render, noticeStyle, languageFor, mediaReferences };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BodyContent = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1,9 +1,9 @@
-const { normalizeBlocks, plainText } = require('../public/body-content');
+const { normalizeBlocks, plainText, withoutColors } = require('../public/body-content');
 
 function setFormattedBody(document, language, blocks, text) {
   if (blocks === undefined) return;
   let clean;
-  try { clean = normalizeBlocks(blocks); }
+  try { clean = normalizeBlocks(blocks).map((block) => ({ ...block, children: withoutColors(block.children) })); }
   catch (error) { error.status = 400; throw error; }
   if (plainText(clean) !== text) {
     const error = new Error('Formatted message must match the submitted text');

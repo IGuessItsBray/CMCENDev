@@ -148,6 +148,7 @@ function renderLastPost(lastPost) {
     BodyContent.languageFor(lastPost.messages, window.currentLang || 'en', text),
     text,
     CMCENUtils.setLinkifiedText,
+    'lastPost',
   );
   renderImage(lastPost, name);
   lastPostDetailMessage.hidden = true;

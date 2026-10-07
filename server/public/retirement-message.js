@@ -177,6 +177,7 @@ function setRetirementMessageText(retirementMessage) {
     BodyContent.languageFor(retirementMessage.messages, window.currentLang || 'en', text),
     text,
     (element, value) => CMCENUtils.setLinkifiedText(element, formatRetirementMessageText(value)),
+    'retirementMessage',
   );
 }
 

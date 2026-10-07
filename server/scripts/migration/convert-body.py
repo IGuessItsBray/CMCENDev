@@ -31,6 +31,18 @@ def inline_text(nodes):
     return ''.join(n if isinstance(n, str) else '\n' if n['type'] == 'br' else inline_text(n.get('children', [])) for n in nodes)
 
 
+def without_colors(nodes):
+    result = []
+    for node in nodes:
+        if isinstance(node, str):
+            result.append(node)
+        elif node['type'] == 'color':
+            result.extend(without_colors(node['children']))
+        else:
+            result.append(dict(node, **({'children': without_colors(node['children'])} if 'children' in node else {})))
+    return result
+
+
 def plain_text(blocks):
     return '\n\n'.join(inline_text(b['children']) if b['type'] == 'paragraph' else b['label'] if b['type'] == 'document' else b['text'] if b['type'] == 'heading' else b.get('caption') or b['image'].get('alt') or b['image']['url'] for b in blocks).strip()
 
@@ -208,7 +220,10 @@ def convert(value):
     parser.flush()
     if re.search(r'\[/?[a-zA-Z][^\]]*\]', html):
         parser.issue('unsupported-shortcode')
-    return dict(version=1, blocks=parser.blocks, text=plain_text(parser.blocks), issues=parser.issues)
+    blocks = parser.blocks
+    if value.get('kind') != 'event':
+        blocks = [dict(block, children=without_colors(block['children'])) for block in blocks]
+    return dict(version=1, blocks=blocks, text=plain_text(blocks), issues=parser.issues)
 
 
 def convert_batch(batch):
@@ -223,7 +238,7 @@ def convert_batch(batch):
         for source in item['sources']:
             if hashlib.sha256(source['originalBody'].encode()).hexdigest() != source['bodySha256']:
                 raise ValueError('Retained source hash mismatch')
-            converted = convert(dict(html=source['originalBody'], media=media, sourceOrigin=result.get('sourceOrigin', 'https://cmcen-rcmce.ca')))
+            converted = convert(dict(html=source['originalBody'], kind=item['kind'], media=media, sourceOrigin=result.get('sourceOrigin', 'https://cmcen-rcmce.ca')))
             language = source['language']
             source['convertedBlocks'] = converted['blocks']
             source['convertedText'] = converted['text']

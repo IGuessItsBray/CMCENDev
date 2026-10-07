@@ -14,9 +14,7 @@ window.MessageEditor = (() => {
       article_bold: "B",
       article_italic: "I",
       article_link: "🔗",
-      article_move_up: "↑",
-      article_move_down: "↓",
-      article_remove_block: "−",
+      body_underline: "U",
     };
     if (symbols[key]) {
       delete node.dataset.i18n;
@@ -28,7 +26,7 @@ window.MessageEditor = (() => {
           ? "strong"
           : key === "article_italic"
             ? "em"
-            : "span",
+            : key === "body_underline" ? "u" : "span",
       );
       icon.textContent = symbols[key];
       icon.setAttribute("aria-hidden", "true");
@@ -51,9 +49,6 @@ window.MessageEditor = (() => {
         A: "link",
       }[node.tagName];
       const underlined = (node.tagName === "U" || node.style.textDecoration?.includes("underline"));
-      const colorMap = { "#a52323": "red", "rgb(165, 35, 35)": "red", "#174b9b": "blue", "rgb(23, 75, 155)": "blue", "#21663b": "green", "rgb(33, 102, 59)": "green" };
-      const color = (colorMap[node.getAttribute("color")] || colorMap[node.style.color] || window.BodyContent.colors.find((value) => value !== "default" && node.classList.contains(`body-color-${value}`)));
-      if (color) children = [{ type: "color", color, children }];
       if (underlined) children = [{ type: "underline", children }];
       if (
         type === "link" &&
@@ -80,6 +75,12 @@ window.MessageEditor = (() => {
     const wrapper = el("div", "article-rich-text");
     const tools = el("div", "article-block-tools");
     const input = el("div", "cmcen-control article-rich-input");
+    const toggles = [];
+    const updatePressed = () => {
+      for (const { control, command } of toggles) {
+        if (typeof document.queryCommandState === 'function') control.setAttribute('aria-pressed', String(Boolean(document.queryCommandState(command))));
+      }
+    };
     input.contentEditable = "true";
     input.setAttribute("role", "textbox");
     input.setAttribute("aria-multiline", "true");
@@ -91,6 +92,7 @@ window.MessageEditor = (() => {
     const changed = () => {
       canonicalizeBodyInline(input);
       onChange(readInline(input));
+      updatePressed();
     };
     input.addEventListener("input", changed);
     input.addEventListener("paste", (event) => {
@@ -103,13 +105,14 @@ window.MessageEditor = (() => {
       changed();
     });
     input.addEventListener("drop", (event) => event.preventDefault());
+    for (const event of ['keyup', 'mouseup', 'focus']) input.addEventListener(event, updatePressed);
+    input.addEventListener('blur', () => {
+      for (const { control } of toggles) control.setAttribute('aria-pressed', 'false');
+    });
     for (const [key, command] of [
       ["article_bold", "bold"],
       ["article_italic", "italic"],
       ["body_underline", "underline"],
-      ["body_align_left", "justifyLeft"],
-      ["body_align_center", "justifyCenter"],
-      ["body_align_right", "justifyRight"],
     ]) {
       const control = button(
         key,
@@ -117,20 +120,14 @@ window.MessageEditor = (() => {
           input.focus();
           document.execCommand(command);
           changed();
+          if (typeof document.queryCommandState !== 'function') control.setAttribute('aria-pressed', String(control.getAttribute('aria-pressed') !== 'true'));
         },
         getText,
       );
       control.addEventListener("mousedown", (event) => event.preventDefault());
+      control.setAttribute('aria-pressed', 'false');
+      toggles.push({ control, command });
       tools.append(control);
-    }
-    {
-      for (const [color, value] of [["red", "#a52323"], ["blue", "#174b9b"], ["green", "#21663b"]]) {
-        const control = button(`body_color_${color}`, () => {
-          input.focus(); document.execCommand("foreColor", false, value); changed();
-        }, getText);
-        control.addEventListener("mousedown", (event) => event.preventDefault());
-        tools.append(control);
-      }
     }
     const link = button(
       "article_link",
@@ -202,16 +199,11 @@ window.MessageEditor = (() => {
   }
 
   function canonicalizeBodyInline(root) {
-    const colors = { "#a52323": "red", "rgb(165, 35, 35)": "red", "#174b9b": "blue", "rgb(23, 75, 155)": "blue", "#21663b": "green", "rgb(33, 102, 59)": "green" };
     for (const node of root.childNodes) {
       if (node.nodeType !== Node.ELEMENT_NODE) continue;
-      const color = colors[node.getAttribute("color")] || colors[node.style.color];
-      if (color) {
-        node.removeAttribute("color");
-        node.style.color = "";
-        for (const name of window.BodyContent.colors) node.classList.remove(`body-color-${name}`);
-        node.classList.add(`body-color-${color}`);
-      }
+      node.removeAttribute("color");
+      node.style.color = "";
+      for (const name of window.BodyContent.colors) node.classList.remove(`body-color-${name}`);
       if (node.tagName === "A" && window.BodyContent.safeUrl(node.getAttribute("href"))) {
         node.target = "_blank";
         node.rel = "noopener noreferrer";
@@ -219,23 +211,24 @@ window.MessageEditor = (() => {
       canonicalizeBodyInline(node);
     }
   }
-  function readMessage(input) {
+  function readMessage(input, noticeType) {
+    const fixedAlign = window.BodyContent.noticeStyle(noticeType)?.align;
     const paragraphs = []; let loose = [];
-    const flush = () => { if (loose.length) paragraphs.push({ type: 'paragraph', children: loose }); loose = []; };
+    const flush = () => { if (loose.length) paragraphs.push({ type: 'paragraph', children: loose, ...(fixedAlign ? { align: fixedAlign } : {}) }); loose = []; };
     for (const node of input.childNodes) {
       if (node.nodeType === Node.ELEMENT_NODE && ['P', 'DIV'].includes(node.tagName)) {
-        flush(); const align = node.style.textAlign || ['left', 'center', 'right'].find((v) => node.classList.contains(`body-align-${v}`));
+        flush(); const align = fixedAlign || node.style.textAlign || ['left', 'center', 'right'].find((v) => node.classList.contains(`body-align-${v}`));
         paragraphs.push({ type: 'paragraph', children: readInline(node), ...(align ? { align } : {}) });
       } else loose.push(...readInline({ childNodes: [node] }));
     }
     flush(); return window.BodyContent.normalizeBlocks(paragraphs);
   }
-  function create({ blocks, onChange, getText }) {
+  function create({ blocks, onChange, getText, noticeType }) {
     let input;
-    const wrapper = richText([], () => onChange(readMessage(input)), getText);
+    const wrapper = richText([], () => onChange(readMessage(input, noticeType)), getText);
     input = wrapper.children[1];
     const text = window.BodyContent.plainText(blocks);
-    window.BodyContent.render(input, { formattedBody: { en: { version: 1, text, blocks } } }, 'en', text, () => {});
+    window.BodyContent.render(input, { formattedBody: { en: { version: 1, text, blocks } } }, 'en', text, () => {}, noticeType);
     input.querySelectorAll('a').forEach((anchor) => { anchor.contentEditable = 'false'; });
     return wrapper;
   }

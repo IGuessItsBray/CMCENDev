@@ -5,8 +5,8 @@ const path = require('node:path');
 const body = require('../public/body-content');
 const { planFormattedBodyRepair } = require('../scripts/migration/lib/formatted-body-repair');
 
-function convert(html, media = {}) {
-  const result = spawnSync('python3', [path.join(__dirname, '../scripts/migration/convert-body.py')], { input: JSON.stringify({ html, media }), encoding: 'utf8' });
+function convert(html, media = {}, kind) {
+  const result = spawnSync('python3', [path.join(__dirname, '../scripts/migration/convert-body.py')], { input: JSON.stringify({ html, media, kind }), encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   return JSON.parse(result.stdout);
 }
@@ -21,6 +21,18 @@ test('Heather EN/FR underline variants and per-paragraph alignment survive conve
     assert.equal(blocks[1].children[0].type, 'underline');
     assert.equal(body.plainText(blocks), result.text);
   }
+});
+
+test('notice import drops display color only, retaining source semantics; explicit Event conversion retains color', () => {
+  const html = '<span style="color:red"><strong><u><a href="https://example.test/CasePath">Détails</a></u></strong></span>';
+  for (const kind of [undefined, 'last-post', 'retirement']) {
+    const result = convert(html, {}, kind);
+    assert.deepEqual(result.issues, []); assert.equal(result.text, 'Détails');
+    const node = result.blocks[0].children[0];
+    assert.equal(node.type, 'strong'); assert.equal(node.children[0].type, 'underline');
+    assert.equal(node.children[0].children[0].href, 'https://example.test/CasePath');
+  }
+  assert.equal(convert(html, {}, 'event').blocks[0].children[0].type, 'color');
 });
 
 test('Pasnak named links, case-distinct Buck URLs and email targets remain single anchors', () => {

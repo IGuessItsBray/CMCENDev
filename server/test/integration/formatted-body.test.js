@@ -77,4 +77,18 @@ for (const [name, route, field, responseKey] of [
     const refs = await getContentMediaReferences(new Set([url]));
     assert(refs.some((ref) => ref.id === String(doc._id) && ref.field === 'formattedBody.en.blocks.0.children.0.href'));
   });
+  if (name !== 'Event') test(`${name} colored legacy nodes save without color while EN/FR underline, links and source text survive`, async () => {
+    const Model = require(`../../models/${name}`);
+    const doc = await Model.create({ title: 'Title', status: 'pending', messageLanguage: 'en', message: 'Mixed Case', messages: { en: 'Mixed Case', fr: 'Détails' }, legacy: { source: 'https://cmcen-rcmce.ca', sourcePostIds: [1], originalStatus: 'publish', submissionMetadata: 'historically-unknown' } });
+    for (const language of ['en', 'fr']) {
+      const text = language === 'en' ? 'Mixed Case' : 'Détails';
+      const blocks = [{ type: 'paragraph', children: [{ type: 'color', color: 'blue', children: [{ type: 'underline', children: [{ type: 'link', href: 'https://example.test/CasePath', children: [text] }] }] }] }];
+      await request(app).patch(`/api/${route}/${doc._id}/review-content`).set('Authorization', `Bearer ${editorToken}`).send({ language, message: text, blocks }).expect(200);
+      const saved = await Model.findById(doc._id).lean(), node = saved.formattedBody[language].blocks[0].children[0];
+      assert.equal(saved.messages[language], text); assert.equal(node.type, 'underline');
+      assert.equal(node.children[0].href, 'https://example.test/CasePath'); assert.equal(node.children[0].children[0], text);
+      assert.equal(saved.status, 'pending');
+      if (language === 'fr') assert.equal(saved.formattedBody.en.blocks[0].children[0].type, 'underline');
+    }
+  });
 }

@@ -3876,7 +3876,7 @@ components:
                         oneOf:
                           - type: string
                           - type: object
-                            description: Bounded strong/em/underline/color/link/br inline node; server validates safe URLs and palette.
+                            description: Bounded strong/em/underline/link/br inline node with validated safe URLs. Old color nodes are safely unwrapped on notice saves and ignored for notice display; original source data is preserved.
               language:
                 type: string
                 enum: [en, fr]
@@ -3970,7 +3970,7 @@ components:
                         oneOf:
                           - type: string
                           - type: object
-                            description: Bounded strong/em/underline/color/link/br inline node; server validates safe URLs and palette.
+                            description: Bounded strong/em/underline/link/br inline node with validated safe URLs. Old color nodes are safely unwrapped on notice saves and ignored for notice display; original source data is preserved.
               language:
                 type: string
                 enum: [en, fr]

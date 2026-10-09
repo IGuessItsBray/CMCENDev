@@ -299,10 +299,21 @@ Missing authentication returns 401, missing permission 403, unknown or ineligibl
 
 Mounted at `/api/admin`.
 
+Backup operations require the built-in `developer` role; administrator access
+or a custom `backups.manage` grant is insufficient. The schedule is persisted
+in backup storage, while encryption and database connections come from
+`server/.env`. See [configuration and recovery](CONFIG.md#developer-only-database-backups).
+
+| Method | Path | Access | Purpose |
+| --- | --- | --- | --- |
 | `GET` | `/api/admin/subscriptions` | Authenticated + `canManageSubscriptions` | List weekly/news subscribers and sent newsletter history. |
 | `GET` | `/api/admin/subscriptions/export.csv` | Authenticated + `canManageSubscriptions` | Export subscribed members to CSV. |
 | `POST` | `/api/admin/subscriptions/news-blasts` | Authenticated + `canManageSubscriptions` | Send a news blast only to express news-announcement subscribers; action is audited. Returns `202` without creating a delivery when `DISABLE_EMAIL_SENDING=true`. |
 | `GET` | `/api/admin/email` | Authenticated + `canManageEmail` | Read effective emergency-stop/configuration status, category switches, and up to 100 recent metadata-only delivery attempts. |
+| `GET` | `/api/admin/backups` | Authenticated + exact `developer` role + `backups.manage` | Read schedule, readiness booleans, lock/last-result status, and up to 100 completed backups; no passwords or connection URIs. |
+| `PATCH` | `/api/admin/backups/schedule` | Authenticated + exact `developer` role + `backups.manage` | Set only boolean `enabled` and integer `intervalMinutes` (60–525600); persists schedule and audits change. Enabling requires encryption and MongoDB configuration. |
+| `POST` | `/api/admin/backups/run` | Authenticated + exact `developer` role + `backups.manage` | Empty body. Run encrypted MongoDB plus configured PostgreSQL/ClickHouse exports; returns 201 with completed manifest. Audits start/success/failure; 409 if locked, 503 if unavailable/failed. |
+| `GET` | `/api/admin/backups/:id/:file` | Authenticated + exact `developer` role + `backups.manage` | Download a completed encrypted dump; audited, no-store. Accepts `mongo.enc`, `postgres.enc`, `clickhouse-schema.enc`, and `clickhouse-NNNNNN.enc`; invalid/missing file returns 404. |
 | `PATCH` | `/api/admin/email/controls` | Authenticated + `canManageEmail` | Set one of `account`, `operational`, `weekly`, or `news` with a boolean `enabled`; audited. Defaults are off. |
 | `POST` | `/api/admin/email/test` | Authenticated + `canManageEmail`; three per hour per administrator | Send fixed plain-text test mail only to an address in server-side `EMAIL_TEST_RECIPIENTS`. The global emergency stop still applies. |
 

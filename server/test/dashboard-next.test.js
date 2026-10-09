@@ -1011,7 +1011,21 @@ test('Audit Log is the last admin destination while other sidebar order is prese
   const html = fs.readFileSync(path.join(__dirname, '../public/dashboard-next.html'), 'utf8');
   const nav = html.slice(html.indexOf('class="admin-sidebar-sections"'), html.indexOf('</nav>', html.indexOf('class="admin-sidebar-sections"')));
   const links = [...nav.matchAll(/id="(admin\w+Link)"/g)].map((match) => match[1]);
-  assert.deepEqual(links, ['adminContentLink', 'adminArticlesLink', 'adminUsersLink', 'adminRolesLink', 'adminBannersLink', 'adminSubscriptionsLink', 'adminEmailLink', 'adminPagesLink', 'adminTranslationsLink', 'adminMediaLink', 'adminCertificatesLink', 'adminAnalyticsLink', 'adminAwardsLink', 'adminAdoptLink', 'adminAuditLink']);
+  assert.deepEqual(links, ['adminContentLink', 'adminArticlesLink', 'adminUsersLink', 'adminRolesLink', 'adminBannersLink', 'adminSubscriptionsLink', 'adminEmailLink', 'adminBackupsLink', 'adminPagesLink', 'adminTranslationsLink', 'adminMediaLink', 'adminCertificatesLink', 'adminAnalyticsLink', 'adminAwardsLink', 'adminAdoptLink', 'adminAuditLink']);
+});
+
+test('Backups requires the exact developer role even if the client permission is granted', async () => {
+  for (const role of ['subscriber', 'administrator', 'developer']) {
+    let mounted = 0;
+    const page = setup({
+      url: 'http://localhost/dashboard-next?area=backups',
+      api: async () => ({ role, permissions: { canReadUsers: true, canManageBackups: true } }),
+    });
+    page.window.DashboardNextBackups = { mount() { mounted += 1; return { dispose() {} }; } };
+    await flush();
+    assert.equal(mounted, role === 'developer' ? 1 : 0);
+    assert.equal(page.element('adminBackupsLink').hidden, role !== 'developer');
+  }
 });
 
 test('Users admits read-only staff and combines caller cancellation with shell cancellation for exports', async () => {

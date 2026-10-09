@@ -106,6 +106,132 @@ including links sent through email.
 
 The URL should not normally include a trailing slash.
 
+## Developer-only database backups
+
+Set these in `server/.env` (the application does not load `config/.env`):
+
+```dotenv
+BACKUP_ENCRYPTION_PASSWORD=
+BACKUP_DIRECTORY=
+BACKUP_POSTGRES_URI=
+BACKUP_CLICKHOUSE_URL=
+BACKUP_CLICKHOUSE_DATABASE=plausible_events_db
+```
+
+### Setup and use
+
+1. Generate a strong password (for example, `openssl rand -base64 48`) and set
+   `BACKUP_ENCRYPTION_PASSWORD` in `server/.env`. Save a secure recovery copy.
+2. Leave `BACKUP_DIRECTORY` blank for the default private directory, or choose
+   a private persistent path writable by the application. If overriding the
+   path in Docker, mount persistent storage at that path as well.
+3. Set the optional PostgreSQL and ClickHouse connections below when those
+   analytics services are installed. URL-encode special characters in URI
+   usernames/passwords. Use credentials authorized to read/export the selected
+   databases; configuring browser analytics URLs alone does not include them.
+4. Restart the application after changing environment values. Sign in with the
+   built-in `developer` role and open **Administration → Backups**. Administrators
+   and accounts with custom roles cannot access this tool, even if a custom role
+   contains `backups.manage`.
+5. Check the readiness summary, choose **Back up now**, and download all files
+   from the completed backup. Verify a recovery using the instructions below.
+6. Enable automatic backups, enter an interval in minutes, and choose **Save
+   schedule**. Frequency is stored by the tool, not in an environment variable.
+
+| Frequency | Interval in minutes |
+| --- | ---: |
+| Hourly | 60 |
+| Every six hours | 360 |
+| Daily (default interval, disabled until enabled) | 1440 |
+| Weekly | 10080 |
+
+Connection patterns (replace the uppercase placeholders before use):
+
+| Database | Native/local host | Supplied Compose network |
+| --- | --- | --- |
+| PostgreSQL | `postgresql://BACKUP_USER:URL_ENCODED_PASSWORD@127.0.0.1:5432/ANALYTICS_DATABASE` | `postgresql://BACKUP_USER:URL_ENCODED_PASSWORD@plausible-db:5432/ANALYTICS_DATABASE` |
+| ClickHouse HTTP | `http://BACKUP_USER:URL_ENCODED_PASSWORD@127.0.0.1:8123` | `http://BACKUP_USER:URL_ENCODED_PASSWORD@plausible-events-db:8123` |
+
+Native/local examples assume the databases are reachable on those host ports;
+the supplied Compose stack does not publish database ports. Use HTTPS for
+ClickHouse connections across untrusted networks. ClickHouse exports use HTTP
+and do not require a CLI on the application host.
+
+### Encryption, storage, and scope
+
+`BACKUP_ENCRYPTION_PASSWORD` must contain at least 16 characters. Use a strong,
+unique password and keep a separate secure recovery copy. It is never returned
+by the API. Changing it affects new backups only; retain old passwords for old
+backups. Files use AES-256-GCM with a fresh salt and IV and a scrypt-derived key.
+`BACKUP_DIRECTORY` defaults to `server/data/backups`, must be outside
+`server/public`, and must be writable by the application. The Compose stack
+persists the default directory in `cmcen-backups`. Do not point it at media
+storage or expose it through a web server. No automatic retention deletion runs;
+monitor disk space and copy completed backups to secure off-host storage.
+
+MongoDB is always included using `MONGO_URI`. Optionally set
+`BACKUP_POSTGRES_URI` to a PostgreSQL connection URI for the analytics database
+and `BACKUP_CLICKHOUSE_URL` to its HTTP endpoint (credentials may be in the URL).
+For the supplied Compose stack these endpoints are `plausible-db:5432` and
+`http://plausible-events-db:8123`; use your actual analytics database name and
+credentials, not the application MongoDB name. `BACKUP_CLICKHOUSE_DATABASE`
+defaults to `plausible_events_db`. Empty optional connection values skip that
+database; configured connections must all succeed before a backup is published.
+Plausible's browser tracking/share URLs do not provide database credentials.
+ClickHouse uses HTTP schema queries and per-table Native exports, including
+internal storage tables; view definitions are saved without exporting view
+results. This covers the selected database's definitions/data, not server users,
+configuration, external storage, or uploaded media.
+
+### Scheduling and operation
+
+Open Administration → Backups as a **developer** to run a backup, download
+encrypted files, or enable an interval from 60 to 525600 minutes. The schedule
+defaults to disabled and is persisted alongside backups. Saving a schedule
+starts its interval from that time; manual and scheduled attempts restart the
+interval even on failure, avoiding rapid retries. The server checks once per
+minute and runs an overdue backup after restarting, without replaying every
+missed interval. The application must stay running. A shared directory lock
+prevents concurrent runs and schedule changes. Use one scheduler deployment or
+share the same directory between replicas. After a process crash, first confirm
+all backup processes have stopped, then remove only `.lock` and abandoned hidden
+`.backup-*.partial` directories; the lock deliberately does not expire during a
+long backup. Also remove abandoned `cmcen-backup-*` credential directories from
+the host's temporary directory after confirming no backup is using them.
+
+Native host installations need MongoDB Database Tools (`mongodump`) and, for
+PostgreSQL, `pg_dump` at least as new as the database server. Docker includes both.
+Each dump/query has a 30-minute timeout. Credentials are not placed in process
+arguments or logs, and plaintext dump files are not written to backup storage.
+Database exports run sequentially and do not form one consistent snapshot across
+databases or MongoDB/ClickHouse tables. Pause writes for coordinated recovery
+points. Schedule changes, starts, completions, failures, and downloads are audited.
+
+### Recovery
+
+To recover, download all files from one completed backup and run from `server/`
+with the corresponding password in `server/.env`:
+
+```sh
+node scripts/decrypt-backup.js /secure/mongo.enc /secure/mongo.archive.gz
+node scripts/decrypt-backup.js /secure/postgres.enc /secure/postgres.dump
+node scripts/decrypt-backup.js /secure/clickhouse-schema.enc /secure/clickhouse-schema.json
+node scripts/decrypt-backup.js /secure/clickhouse-000000.enc /secure/clickhouse-000000.native
+```
+
+Decryption verifies authentication before publishing a mode-0600 output and
+never overwrites an existing output. Treat decrypted files as sensitive. Restore
+MongoDB with `mongorestore --archive=/secure/mongo.archive.gz --gzip` and PostgreSQL
+with `pg_restore --dbname=RECOVERY_DATABASE /secure/postgres.dump`, targeting
+isolated recovery databases first. For ClickHouse, inspect the decrypted schema
+JSON, recreate the database and storage tables using `databaseSchema` and each
+`create_table_query`, then insert each mapped Native file with
+`clickhouse-client --query 'INSERT INTO recovery_db.table FORMAT Native' < table.native`.
+Recreate dependent views last and account for UUIDs, materialized-view targets,
+replication paths, and dependencies in the saved definitions; this is an operator
+recovery workflow, not an automatic restore endpoint. Verify a recovery before
+using it to replace live data.
+
 ## MongoDB
 
 ### `MONGO_URI`

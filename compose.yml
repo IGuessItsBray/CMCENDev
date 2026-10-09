@@ -4,6 +4,8 @@ services:
     restart: unless-stopped
     env_file:
       - ./server/.env
+    volumes:
+      - cmcen-backups:/usr/src/app/server/data/backups
     environment:
       NODE_ENV: production
       MONGO_URI: mongodb://mongo:27017/cmcen
@@ -127,6 +129,7 @@ services:
         hard: 65535
 
 volumes:
+  cmcen-backups:
   mongo-data:
   garage-meta:
   garage-data:

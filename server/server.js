@@ -49,6 +49,7 @@ const {
 } = require('./services/scheduled-publication');
 const { startWeeklyBriefScheduler } = require('./services/weekly-brief');
 const adminEmailRoutes = require('./routes/admin-email');
+const { router: adminBackupRoutes, backups } = require('./routes/admin-backups');
 const { ensureProfessionalAwards } = require('./services/professional-awards');
 
 logger.installConsole();
@@ -269,6 +270,7 @@ app.use('/api', timerRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/email', adminEmailRoutes);
+app.use('/api/admin/backups', adminBackupRoutes);
 app.use('/api/admin/archive-review', require('./routes/archive-review'));
 app.use('/api/admin/archive-staff-review', require('./routes/archive-staff-review'));
 app.use('/api/audit-logs', auditLogRoutes);
@@ -344,6 +346,7 @@ async function startServer() {
 
     startScheduledPublicationScheduler();
     startWeeklyBriefScheduler();
+    backups.start();
 
     return app.listen(process.env.PORT || 3000, () => {
       console.log(`Server running on port ${process.env.PORT || 3000}`);

@@ -768,3 +768,20 @@ changelog and release tooling.
 
 See [`CONTRIBUTING.md`](docs/CONTRIBUTING.md) for the contribution workflow and
 [`AGENTS.md`](AGENTS.md) for focused repository-specific agent guidance.
+
+## Database backups
+
+Developers can use **Administration → Backups** for encrypted MongoDB and optional
+PostgreSQL/ClickHouse exports, downloads, and interval scheduling. Configure a
+strong `BACKUP_ENCRYPTION_PASSWORD` in `server/.env` and the optional analytics
+database connections before enabling scheduling. Compose persists backups in
+`cmcen-backups`; native installations require `mongodump` and `pg_dump` for
+PostgreSQL. See [backup configuration and recovery](docs/CONFIG.md#developer-only-database-backups)
+for connection settings, recovery commands, storage, and consistency limits.
+
+Only the built-in developer role can access this tool; administrator accounts
+and custom roles cannot. Scheduling starts disabled, with a default daily
+interval, and frequency is saved in the panel rather than an environment
+variable. Include both PostgreSQL and ClickHouse connections to back up both
+Plausible databases. Keep the encryption password separately for recovery;
+uploaded media is outside the scope of these database backups.

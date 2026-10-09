@@ -32,7 +32,7 @@ async function setup(override) {
     description: '',
     permissions: ['users.read'],
   }));
-  const catalog = ['users.read', 'users.manage', 'review.bypass'].map(
+  const catalog = ['users.read', 'users.manage', 'review.bypass', 'backups.manage'].map(
     (key) => ({ key, label: key, description: key, group: 'Users' }),
   );
   const window = {
@@ -96,6 +96,7 @@ test('new roles stay local until submit and send only editable fields', async ()
   await page.create.fire('click');
   assert.equal(page.calls.length, 1);
   assert.equal(page.checkbox('review.bypass').disabled, true);
+  assert.equal(page.checkbox('backups.manage').disabled, true);
   page.input('name').value = 'Editors';
   page.checkbox('users.read').checked = true;
   assert.equal(page.mounted.hasUnsavedChanges(), true);

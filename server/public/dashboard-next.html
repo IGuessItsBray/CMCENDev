@@ -41,6 +41,7 @@
     <script src="/dashboard-next-roles.js" defer></script>
     <script src="/dashboard-next-subscriptions.js" defer></script>
     <script src="/dashboard-next-email.js" defer></script>
+    <script src="/dashboard-next-backups.js" defer></script>
     <script src="/pages-editor.js" defer></script>
     <script src="/translations-editor.js" defer></script>
     <script src="/dashboard-next-media.js" defer></script>
@@ -197,6 +198,12 @@
                 data-i18n="admin_tab_email"
                 hidden
                 >Email</a
+              >
+              <a
+                id="adminBackupsLink"
+                href="/dashboard-next?area=backups"
+                hidden
+                >Backups</a
               >
               <a
                 id="adminPagesLink"
@@ -390,6 +397,15 @@
               </div>
             </header>
             <div id="adminEmailBody"></div>
+          </section>
+          <section id="adminBackups" aria-labelledby="adminBackupsTitle" hidden>
+            <header class="admin-area-heading">
+              <div>
+                <h1 id="adminBackupsTitle" tabindex="-1">Database backups</h1>
+                <p>Developer-only encrypted MongoDB, PostgreSQL, and ClickHouse database backups. Uploaded media is excluded.</p>
+              </div>
+            </header>
+            <div id="adminBackupsBody"></div>
           </section>
           <section id="adminBanners" aria-labelledby="adminBannersTitle" hidden>
             <header class="admin-area-heading">

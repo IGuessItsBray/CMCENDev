@@ -869,6 +869,103 @@ paths:
           description: News blast delivery result.
         "202":
           description: News blast delivery skipped because global email sending is disabled.
+  /api/admin/backups:
+    get:
+      tags: [Admin]
+      summary: Read backup schedule, readiness, and completed manifests (developers only).
+      description: Requires exact developer role and backups.manage. Never returns secrets or database URIs.
+      responses:
+        '200':
+          description: Schedule, lastResult, nextRunAt, running, readiness booleans, and up to 100 manifests.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Developer access required; custom roles cannot grant access.
+        '503':
+          description: Backup storage unavailable.
+  /api/admin/backups/schedule:
+    patch:
+      tags: [Admin]
+      summary: Save the developer-only backup interval schedule.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [enabled, intervalMinutes]
+              properties:
+                enabled:
+                  type: boolean
+                intervalMinutes:
+                  type: integer
+                  minimum: 60
+                  maximum: 525600
+      responses:
+        '200':
+          description: Updated status; change is audited.
+        '400':
+          description: Invalid schedule.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Developer access required.
+        '409':
+          description: Backup operation or recovery lock present.
+        '503':
+          description: Storage or required encryption/database configuration unavailable.
+  /api/admin/backups/run:
+    post:
+      tags: [Admin]
+      summary: Run an encrypted database backup (developers only).
+      description: Empty body. Includes MongoDB and configured PostgreSQL/ClickHouse. Returns after all exports complete; may take longer than normal request/proxy timeouts. Failed or partial exports are not published.
+      responses:
+        '201':
+          description: Completed manifest with id, createdAt, completedAt, files, scheduled, and format.
+        '400':
+          description: Body parameters are not accepted.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Developer access required.
+        '409':
+          description: Another backup operation or recovery lock present.
+        '503':
+          description: Missing configuration, dump tool, storage, or database failure.
+  /api/admin/backups/{id}/{file}:
+    get:
+      tags: [Admin]
+      summary: Download a completed encrypted backup file (developers only).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^backup-[0-9]+-[a-f0-9]{16}$'
+        - in: path
+          name: file
+          required: true
+          schema:
+            type: string
+            pattern: '^(mongo|postgres|clickhouse-schema|clickhouse-[0-9]{6})\.enc$'
+      responses:
+        '200':
+          description: Audited encrypted file download with Cache-Control no-store.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Authentication required.
+        '403':
+          description: Developer access required.
+        '404':
+          description: Invalid or missing backup file.
+        '503':
+          description: Backup storage unavailable.
   /api/admin/email:
     get:
       tags: [Admin]

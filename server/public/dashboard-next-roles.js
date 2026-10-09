@@ -82,7 +82,7 @@
           title.append(swatch, name);
           const count = node("span", null, "admin-users-muted");
           count.textContent = t("admin_next_roles_count", {
-            count: role.permissions.filter((key) => key !== "review.bypass")
+            count: role.permissions.filter((key) => !["review.bypass", "backups.manage"].includes(key))
               .length,
           });
           item.append(title, count);
@@ -215,7 +215,7 @@
         input.value = permission.key;
         input.checked = role?.permissions.includes(permission.key) || false;
         // The permission resolver never grants this through custom roles.
-        input.disabled = permission.key === "review.bypass";
+        input.disabled = ["review.bypass", "backups.manage"].includes(permission.key);
         checkboxes.push(input);
         const text = node("span");
         const title = node("span");

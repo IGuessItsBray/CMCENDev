@@ -46,6 +46,14 @@
       title: "adminEmailTitle",
       mount: (options) => window.DashboardNextEmail.mount(options),
     },
+    backups: {
+      role: "developer",
+      permission: "canManageBackups",
+      link: document.getElementById("adminBackupsLink"),
+      element: document.getElementById("adminBackups"),
+      title: "adminBackupsTitle",
+      mount: (options) => window.DashboardNextBackups.mount(options),
+    },
     pages: {
       permission: "canManagePages",
       link: document.getElementById("adminPagesLink"),

@@ -4,4 +4,5 @@ node_modules/
 server/package-lock.json
 server/scripts/migration/output/
 server/data/adopt-review/
+server/data/backups/
 package-lock.json

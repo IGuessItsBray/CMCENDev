@@ -19,7 +19,7 @@ body = """
 ### {{ group }}
 
 {% for commit in commits %}
-- {% if commit.scope %}{{ commit.scope }}: {% endif %}{{ commit.message | upper_first | trim }}{% if commit.author.email == "gow.eric@gmail.com" %} — Eric{% elif commit.author.email == "bray@corebot.ca" or commit.author.email == "Bray@Delaire.xyz" or commit.author.email == "braydendelaire5@gmail.com" %} — Bray Delaire{% endif %}
+- {% if commit.scope %}{{ commit.scope }}: {% endif %}{{ commit.message | upper_first | trim }}{% if commit.author.email == "gow.eric@gmail.com" %} — Eric{% elif commit.author.email == "bray@corebot.ca" or commit.author.email == "Bray@Delaire.xyz" or commit.author.email == "braydendelaire5@gmail.com" %} — Bray Delaire{% elif commit.committer.email == "gow.eric@gmail.com" %} — Eric{% elif commit.committer.email == "bray@corebot.ca" or commit.committer.email == "Bray@Delaire.xyz" or commit.committer.email == "braydendelaire5@gmail.com" %} — Bray Delaire{% elif commit.id == "625aa284a594974a67406b7ca37c89936d6ed726" or commit.id == "bc48c7acb22f9441125652135067ffbb5c97daec" or commit.id == "68c72709ad8d8aaceedb42073777d61ea4008115" or commit.id == "02a02b3959ab0a8cac393bb6f3da19732cbe1c76" or commit.id == "1a5aa7a0e51e2e42f1fdbb7da75b61811c907b33" %} — Bray Delaire{% elif commit.id == "172769ce8c812f2c8d735f1929ec604a55350d0f" or commit.id == "96b17c9824241491fb464a4a9e43dcac8a1fbbff" or commit.id == "33f5c2a4d38a84dd5c4070f3cc32aa4eaef5995a" or commit.id == "893c26bd55f0f63dd1739e6d22ccb971cf01b741" or commit.id == "0319f452a187513ff4a0d81f75899fee87ef5be0" or commit.id == "8f8fe35acd278b98cc55ec30ef0cf449ace9a929" or commit.id == "19f0e961fae77ba8d443de7aa7b5e3539b360dcf" or commit.id == "c94e4f8608d52521b50f5947a10e44396c2acf99" or commit.id == "7fdf713f79cc44c4a0f7af33dd76d4936d4725d4" or commit.id == "7dc920faf042b7052d044bb62946461e9b59833a" or commit.id == "305a7c8b2e2a5defd7ca5bc554fbe81351da529c" or commit.id == "55cc54af3b0b16d74a6e06c89ef868483b46efe1" %} — Eric{% elif commit.author.email != "agent@corebot.ca" and commit.author.email != "release-automation@users.noreply.local" and commit.author.email != "root@vmi3339877.contaboserver.net" and commit.author.name != "Codex" and commit.author.name != "ChatGPT" %} — {{ commit.author.name }}{% elif commit.committer.email != "agent@corebot.ca" and commit.committer.email != "release-automation@users.noreply.local" and commit.committer.email != "root@vmi3339877.contaboserver.net" and commit.committer.name != "Codex" and commit.committer.name != "ChatGPT" %} — {{ commit.committer.name }}{% endif %}
 {% endfor %}
 
 {% endfor %}
@@ -31,9 +31,11 @@ footer = """
 
 trim = true
 
-# Attribute only Git identities verified as human maintainers. Agent-authored
-# commits need a separately verified human mapping; never invent one or show
-# an agent name as the person responsible for a change.
+# Attribute known Bray and Eric identities by their preferred display names.
+# For future work, use any other human Git author, then a human committer when
+# the author is an agent. Historical agent-only commits use explicit
+# maintainer-approved commit-ID mappings; known agent and automation identities
+# are never shown as the person responsible for a change.
 
 [git]
 # Parse commit messages according to the Conventional Commits specification.

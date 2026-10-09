@@ -121,8 +121,13 @@
   const areaMessage = document.getElementById("adminAreaMessage");
   const signOut = document.getElementById("adminSignOut");
   const sidebarToggle = document.getElementById("adminSidebarToggle");
+  const mobileSidebarToggle = document.getElementById(
+    "adminSidebarMobileToggle",
+  );
+  const sidebarScrim = document.getElementById("adminSidebarScrim");
   const sidebarContents = document.getElementById("adminSidebarContents");
-  let sidebarCollapsed = false;
+  const mobileSidebar = window.matchMedia?.("(max-width: 700px)");
+  let sidebarCollapsed = Boolean(mobileSidebar?.matches);
 
   // Text fields can match :focus-visible after a click. Keep the stronger ring
   // for keyboard navigation while preserving a quiet pointer-focus treatment.
@@ -136,23 +141,44 @@
       )
     )
       shell.dataset.inputModality = "keyboard";
+    if (event.key === "Escape" && mobileSidebar?.matches && !sidebarCollapsed) {
+      sidebarCollapsed = true;
+      updateSidebar();
+      mobileSidebarToggle.focus();
+    }
   });
 
   function updateSidebar() {
     content.dataset.sidebarCollapsed = String(sidebarCollapsed);
     sidebarContents.inert = sidebarCollapsed;
     sidebarContents.setAttribute("aria-hidden", String(sidebarCollapsed));
-    sidebarToggle.setAttribute("aria-expanded", String(!sidebarCollapsed));
     const label = window.translate(
       sidebarCollapsed
         ? "admin_next_expand_sidebar"
         : "admin_next_collapse_sidebar",
     );
-    sidebarToggle.setAttribute("aria-label", label);
-    sidebarToggle.setAttribute("title", label);
+    [sidebarToggle, mobileSidebarToggle].forEach((toggle) => {
+      toggle.setAttribute("aria-expanded", String(!sidebarCollapsed));
+      toggle.setAttribute("aria-label", label);
+      toggle.setAttribute("title", label);
+    });
+    sidebarScrim.hidden = sidebarCollapsed || !mobileSidebar?.matches;
   }
-  sidebarToggle.addEventListener("click", () => {
+  function toggleSidebar() {
     sidebarCollapsed = !sidebarCollapsed;
+    updateSidebar();
+  }
+  sidebarToggle.addEventListener("click", toggleSidebar);
+  mobileSidebarToggle.addEventListener("click", toggleSidebar);
+  sidebarScrim.addEventListener("click", () => {
+    if (mobileSidebar?.matches && !sidebarCollapsed) {
+      sidebarCollapsed = true;
+      updateSidebar();
+      mobileSidebarToggle.focus();
+    }
+  });
+  mobileSidebar?.addEventListener("change", (event) => {
+    sidebarCollapsed = event.matches;
     updateSidebar();
   });
   updateSidebar();
@@ -456,6 +482,10 @@
         // Keyboard/assistive activation moves focus into the new section.
         // Pointer navigation keeps focus on the chosen sidebar link.
         route(event.detail === 0);
+        if (mobileSidebar?.matches && !sidebarCollapsed) {
+          sidebarCollapsed = true;
+          updateSidebar();
+        }
       } finally {
         navigationPending = false;
       }

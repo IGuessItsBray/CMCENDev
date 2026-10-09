@@ -312,6 +312,7 @@ function setup({
   api = async () => ({ permissions: { canReadUsers: true } }),
   url = 'http://localhost/dashboard-next',
   signals = AbortSignal,
+  mobile = false,
 } = {}) {
   const events = {};
   const elements = new Map();
@@ -387,6 +388,10 @@ function setup({
   let navigationBusy = false;
   let canLeave = true;
   const documentEvents = {};
+  const mobileSidebar = {
+    matches: mobile,
+    addEventListener() {},
+  };
   let confirmation = async () => canLeave && !awardsDirty;
   let mountOptions;
   let signedOut = false;
@@ -425,6 +430,7 @@ function setup({
     },
     translate: (key) => key,
     CMCENModal: { confirm: (...args) => confirmation(...args) },
+    matchMedia: () => mobileSidebar,
     DashboardNextUsers: {
       mount: (options) => {
         usersOptions = options;
@@ -930,6 +936,23 @@ test('sidebar toggles accessible navigation without reloading the active editor'
   );
   assert.equal(page.calls(), 1);
   assert.equal(page.mounted(), 1);
+});
+
+test('mobile navigation starts closed and can be opened from the workspace', async () => {
+  const page = setup({
+    mobile: true,
+    api: async () => ({ permissions: { canManageTimers: true } }),
+  });
+  await flush();
+  const menu = page.element('adminSidebarMobileToggle');
+  assert.equal(menu.attributes['aria-expanded'], 'false');
+  assert.equal(page.element('adminSidebarContents').inert, true);
+  menu.listeners.click();
+  assert.equal(menu.attributes['aria-expanded'], 'true');
+  assert.equal(page.element('adminSidebarContents').inert, false);
+  page.element('adminSidebarScrim').listeners.click();
+  assert.equal(menu.attributes['aria-expanded'], 'false');
+  assert.equal(page.element('adminSidebarContents').inert, true);
 });
 
 test('Banners is the default URL destination only with its permission', async () => {

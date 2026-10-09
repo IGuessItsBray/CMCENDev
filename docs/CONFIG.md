@@ -305,11 +305,10 @@ tests or user errors.
 ## S3-Compatible Object Storage
 
 CMCEN uses Garage for new deployments and can use any compatible S3 service.
-The `MINIO_*` variable names are retained for compatibility with the existing
-Corebot MinIO deployment; they also configure Garage. The repository's
-`compose.yml` and `compose.dev.yml` still start legacy MinIO. New isolated
-environments should use their own disposable Garage instance and bucket, never
-the live Garage credentials or media bucket.
+The `MINIO_*` variable names are retained for compatibility with existing
+deployments; they also configure Garage. The repository's `compose.yml` starts
+Garage. New isolated environments should use their own disposable Garage
+instance and bucket, never the live Garage credentials or media bucket.
 
 ### `MINIO_ACCESS_KEY`
 
@@ -843,23 +842,23 @@ ENABLE_API_DOCS=true
 
 Do not copy development credentials into staging or production.
 
-## Legacy MinIO Docker Compose Deployment Example
+## Garage Docker Compose Deployment Example
 
-When CMCEN, MongoDB, and MinIO share a Docker network, internal service names
+When CMCEN, MongoDB, and Garage share a Docker network, internal service names
 may be used:
 
 ```dotenv
 MONGO_URI=mongodb://mongo:27017/cmcen
-MINIO_ENDPOINT=http://minio:9000
+MINIO_ENDPOINT=http://garage:3900
 ```
 
 The repository's complete `compose.yml` supplies these internal values to the
 CMCEN container automatically. Keep the remaining CMCEN configuration in
-`server/.env`, and keep Compose-stack settings such as `CMCEN_IMAGE`, MinIO root
+`server/.env`, and keep Compose-stack settings such as `CMCEN_IMAGE`, Garage
 credentials, and Plausible's `BASE_URL` and secret in the ignored root `.env`
 created from `compose.env.example`.
 
-The Compose stack creates the configured MinIO bucket and uses the same MinIO
+The Compose stack creates the configured Garage bucket and uses the same Garage
 credentials for CMCEN. `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`,
 `MINIO_BUCKET_NAME`, `MONGO_URI`, and `MINIO_ENDPOINT` in `server/.env` are
 therefore overridden while that stack is running.

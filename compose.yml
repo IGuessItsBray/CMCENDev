@@ -7,14 +7,14 @@ services:
     environment:
       NODE_ENV: production
       MONGO_URI: mongodb://mongo:27017/cmcen
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env.}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.}
-      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-cmcen}
-      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${GARAGE_DEFAULT_ACCESS_KEY:?Set GARAGE_DEFAULT_ACCESS_KEY in .env.}
+      MINIO_SECRET_KEY: ${GARAGE_DEFAULT_SECRET_KEY:?Set GARAGE_DEFAULT_SECRET_KEY in .env.}
+      MINIO_BUCKET_NAME: ${GARAGE_DEFAULT_BUCKET:-cmcen}
+      MINIO_ENDPOINT: http://garage:3900
     depends_on:
       mongo:
         condition: service_healthy
-      minio-init:
+      garage-init:
         condition: service_completed_successfully
     ports:
       - "${CMCEN_BIND_ADDRESS:-127.0.0.1}:${CMCEN_PORT:-3000}:3000"
@@ -31,37 +31,40 @@ services:
       retries: 12
       start_period: 20s
 
-  minio:
-    image: minio/minio
+  garage:
+    image: dxflrs/garage:v2.4.1
     restart: unless-stopped
-    command: server /data --console-address ":9001"
+    command: ["/garage", "server", "--single-node", "--default-bucket", "--default-access-key"]
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env.}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.}
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:?Set GARAGE_RPC_SECRET in .env.}
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_DEFAULT_ACCESS_KEY:?Set GARAGE_DEFAULT_ACCESS_KEY in .env.}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_DEFAULT_SECRET_KEY:?Set GARAGE_DEFAULT_SECRET_KEY in .env.}
+      GARAGE_DEFAULT_BUCKET: ${GARAGE_DEFAULT_BUCKET:-cmcen}
     ports:
-      - "${MINIO_BIND_ADDRESS:-127.0.0.1}:${MINIO_PORT:-9000}:9000"
-      - "${MINIO_BIND_ADDRESS:-127.0.0.1}:${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "${GARAGE_BIND_ADDRESS:-127.0.0.1}:${GARAGE_S3_PORT:-3900}:3900"
     volumes:
-      - minio-data:/data
+      - ./garage.toml:/etc/garage.toml:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
-  minio-init:
-    image: minio/mc
+  garage-init:
+    image: dxflrs/garage:v2.4.1
     restart: "no"
     depends_on:
-      - minio
+      garage:
+        condition: service_healthy
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env.}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.}
-      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-cmcen}
-    entrypoint: /bin/sh
-    command:
-      - -c
-      - |
-        until mc alias set cmcen http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"; do
-          sleep 2
-        done
-        mc mb --ignore-existing "cmcen/$${MINIO_BUCKET_NAME}"
-        mc anonymous set download "cmcen/$${MINIO_BUCKET_NAME}"
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:?Set GARAGE_RPC_SECRET in .env.}
+    volumes:
+      - ./garage.toml:/etc/garage.toml:ro
+    entrypoint: ["/garage"]
+    command: ["bucket", "allow", "--read", "--key", "anonymous", "${GARAGE_DEFAULT_BUCKET:-cmcen}"]
 
   plausible-db:
     image: postgres:16-alpine
@@ -125,7 +128,8 @@ services:
 
 volumes:
   mongo-data:
-  minio-data:
+  garage-meta:
+  garage-data:
   plausible-db-data:
   plausible-event-data:
   plausible-event-logs:

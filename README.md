@@ -108,10 +108,9 @@ dependency of the CMCEN application.
 | `server/scripts/migration/` | Current-site WordPress migration tools |
 | `api/schema/openapi.yaml` | OpenAPI schema |
 | `docs/CONFIG.md` | Environment-variable and deployment configuration reference |
-| `compose.yml` | Legacy Corebot stack with CMCEN, MongoDB, MinIO, and Plausible |
+| `compose.yml` | Complete CMCEN, MongoDB, Garage, and Plausible deployment stack |
 | `compose.env.example` | Safe template for the complete deployment stack's settings |
 | `docs/` | Developer and operational documentation |
-| `compose.dev.yml` | Legacy local MongoDB and MinIO infrastructure |
 
 The authoritative Node manifest and lockfile are in `server/`. Run npm commands
 from that directory.
@@ -124,7 +123,8 @@ For normal local development:
 nvm install
 nvm use
 
-docker compose -f compose.dev.yml up -d mongo
+cp compose.env.example .env
+docker compose up -d mongo garage garage-init
 
 cd server
 npm ci
@@ -141,8 +141,7 @@ http://localhost:3000
 This starts only MongoDB. For media operations, configure a separate disposable
 Garage instance and bucket in `server/.env` using the existing `MINIO_*`
 variables; see [Object storage](docs/CONFIG.md#s3-compatible-object-storage).
-The full `compose.dev.yml` still starts MinIO for legacy development. Plausible
-is optional and does not need to be running for CMCEN development.
+Plausible is optional and does not need to be running for CMCEN development.
 
 For an isolated cloud test environment, `npm test` uses temporary MongoDB
 instances and synthetic fixtures. Its media tests mock S3. Do not connect a
@@ -158,23 +157,20 @@ configures the storage web endpoint. The `setup-cmcen-garage.sh` and
 `setup-cmcen-app.sh` scripts created the stack. Run
 `~/cmcen-vps/deploy-cmcen.sh` on that VPS to pull `main`, build
 the app image, and recreate only the app container. Keep its environment files
-and credentials outside the repository. Do not run the repository's legacy
-`compose.yml` on that VPS; it starts MinIO.
+and credentials outside the repository.
 
 ## Complete Docker Compose Deployment
 
-`compose.yml` is the retained MinIO-based Corebot deployment. The upstream
-[MinIO repository is archived](https://github.com/minio/minio), so Garage is
-preferred for new setups. This legacy stack runs the complete single-host CMCEN
-stack from the published Forgejo package image:
+`compose.yml` runs the complete single-host CMCEN stack from the published
+Forgejo package image:
 
 ```text
-CMCEN, MongoDB, MinIO, Plausible, Plausible PostgreSQL, and ClickHouse
+CMCEN, MongoDB, Garage, Plausible, Plausible PostgreSQL, and ClickHouse
 ```
 
 It is the supported container run method for an evaluation or a single-host
 deployment. It creates persistent Docker volumes for every data-bearing service
-and creates the CMCEN MinIO bucket automatically on first start.
+and creates the CMCEN Garage bucket automatically on first start.
 
 The CMCEN image is version-pinned in `compose.env.example`. Choose the intended
 published release tag before starting a new deployment; do not use an unpinned
@@ -189,7 +185,7 @@ cp compose.env.example .env
 cp .env.example server/.env
 ```
 
-Edit `.env` and replace every MinIO and Plausible placeholder. Generate the
+Edit `.env` and replace every Garage and Plausible placeholder. Generate the
 Plausible secret with:
 
 ```sh
@@ -205,7 +201,7 @@ PLAUSIBLE_DOMAIN=cmcen.example.ca
 PLAUSIBLE_API_URL=https://analytics.example.ca/api/event
 ```
 
-The complete Compose stack overrides CMCEN's internal MongoDB and MinIO
+The complete Compose stack overrides CMCEN's internal MongoDB and Garage
 connection settings. Do not set those internal endpoints to host loopback
 addresses in `server/.env`; the Compose service names are used automatically.
 
@@ -218,13 +214,13 @@ docker compose ps
 ```
 
 CMCEN is available at `http://127.0.0.1:3000` by default. Plausible is
-available at `http://127.0.0.1:8000`, MinIO's S3 endpoint at
-`http://127.0.0.1:9000`, and the MinIO console at `http://127.0.0.1:9001`.
+available at `http://127.0.0.1:8000`, and Garage's S3 endpoint at
+`http://127.0.0.1:3900`.
 
 The default loopback bindings are deliberate. In a public deployment, configure
 an HTTPS reverse proxy for the CMCEN public URL, the Plausible `BASE_URL`, and
-the `MINIO_PUBLIC_ENDPOINT`. Do not expose MongoDB, the MinIO console,
-PostgreSQL, or ClickHouse to the public internet. Directly exposing the MinIO
+the `MINIO_PUBLIC_ENDPOINT`. Do not expose MongoDB, Garage administration,
+PostgreSQL, or ClickHouse to the public internet. Directly exposing the Garage
 S3 endpoint requires careful access-policy review; this stack makes only the
 CMCEN media bucket anonymously readable so browsers can load published media.
 
@@ -235,87 +231,22 @@ docker compose down
 ```
 
 Do not use `docker compose down -v` unless you intentionally want to delete
-all CMCEN, MinIO, Plausible PostgreSQL, and ClickHouse data.
+all CMCEN, Garage, Plausible PostgreSQL, and ClickHouse data.
 
 ## Local Infrastructure
 
-CMCEN requires MongoDB and S3-compatible object storage.
-
-The following Docker Compose example documents the retained MinIO development
-stack. New isolated setups should use Garage and a separate bucket.
-
-The existing `compose.dev.yml` in the repository root contains:
-
-```yaml
-services:
-  mongo:
-    image: mongo:7
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
-  minio:
-    image: minio/minio
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-cmcen}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-cmcen-development-only}
-    ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
-    volumes:
-      - minio-data:/data
-
-volumes:
-  mongo-data:
-  minio-data:
-```
-
-Start the infrastructure:
+CMCEN requires MongoDB and S3-compatible object storage. The complete
+`compose.yml` can also supply only the local dependencies:
 
 ```sh
-docker compose -f compose.dev.yml up -d
+cp compose.env.example .env
+docker compose up -d mongo garage garage-init
+docker compose ps mongo garage garage-init
 ```
 
-Check its status:
-
-```sh
-docker compose -f compose.dev.yml ps
-```
-
-Stop the containers without deleting their data:
-
-```sh
-docker compose -f compose.dev.yml down
-```
-
-The named Docker volumes preserve MongoDB and MinIO data across container
-restarts.
-
-Do not use:
-
-```sh
-docker compose -f compose.dev.yml down -v
-```
-
-unless you intentionally want to delete the local MongoDB and MinIO volumes.
-
-### Local MinIO (legacy)
-
-The development MinIO endpoints are:
-
-```text
-S3 API:        http://localhost:9000
-MinIO Console: http://localhost:9001
-```
-
-Create the bucket configured by `MINIO_BUCKET_NAME` before uploading media.
-
-The development credentials in the Compose example are intentionally local-only
-defaults. Do not reuse them in staging or production.
+Garage's S3 API is available at `http://127.0.0.1:3900`. The named Docker
+volumes preserve MongoDB and Garage data across container restarts. Do not use
+`docker compose down -v` unless you intentionally want to delete that data.
 
 ## Local Setup
 
@@ -663,8 +594,7 @@ every 30 seconds.
 
 ## Production Deployment
 
-`compose.dev.yml` is intended only for local development. The complete
-`compose.yml` stack is suitable for evaluation or a single-host deployment, but
+The complete `compose.yml` stack is suitable for evaluation or a single-host deployment, but
 it still requires production operations around it.
 
 The production deployment should provide:

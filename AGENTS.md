@@ -9,7 +9,7 @@ work should be delivered through Git or a pull request.
 - Application root: repository root.
 - Express application: `server/`; entry point: `server/server.js`.
 - Static frontend: `server/public/`.
-- Local infrastructure: `compose.dev.yml`; Docker image: `Dockerfile`.
+- Local infrastructure: `compose.yml`; Docker image: `Dockerfile`.
 - Local secrets: `server/.env` (never commit or print its contents).
 - Environment inventory: `.env.example`; detailed configuration:
   `docs/CONFIG.md`.

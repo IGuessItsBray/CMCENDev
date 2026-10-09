@@ -1185,18 +1185,14 @@ function loadFooter() {
         </p>
 
         <p class="footer-credit">
+          <span id="footerVersion" hidden></span>
+          <span id="footerVersionSeparator" aria-hidden="true" hidden> • </span>
           <a
             class="footer-credit-link"
             href="/devs"
             data-i18n="footer_credit"
           >Made with ♥ by Bray &amp; Eric</a>
         </p>
-
-        <p
-          class="footer-version"
-          id="footerVersion"
-          hidden
-        ></p>
       </div>
     </div>
   `;
@@ -1219,22 +1215,22 @@ async function updateFooterVersion() {
 
   if (!versionElement) return;
 
-  const hostname = window.location.hostname;
-  const isLocal =
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname === "[::1]";
-  const showsCommit =
-    hostname === "cmcen-staging.corebot.ca" ||
-    hostname === "beta.cmcen-rcmce.ca";
+  const hostname = window.location.hostname.toLowerCase();
+  const isProduction = [
+    "cmcen-rcmce.ca",
+    "www.cmcen-rcmce.ca",
+    "cefamily.ca",
+    "www.cefamily.ca",
+  ].includes(hostname);
 
-  if (isLocal) {
-    versionElement.textContent = "Running version: Local development";
+  function showVersion(label) {
+    versionElement.textContent = label;
     versionElement.hidden = false;
-    return;
+    const separator = document.getElementById("footerVersionSeparator");
+    if (separator) separator.hidden = false;
   }
 
-  if (!showsCommit) return;
+  showVersion(isProduction ? "CMCEN version unavailable" : "CMCEN Dev unknown");
 
   try {
     const response = await fetch("/api/version", {
@@ -1244,11 +1240,11 @@ async function updateFooterVersion() {
     if (!response.ok) return;
 
     const data = await response.json();
-    const hash = data.shortCommit || data.commit;
-
-    if (hash) {
-      versionElement.textContent = `Running version: ${hash}`;
-      versionElement.hidden = false;
+    if (isProduction) {
+      if (data.releaseVersion) showVersion(`CMCEN ${data.releaseVersion}`);
+    } else {
+      const hash = data.shortCommit || data.commit?.slice(0, 7);
+      if (hash) showVersion(`CMCEN Dev ${hash}`);
     }
   } catch (error) {}
 }

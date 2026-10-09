@@ -3,7 +3,6 @@ require('dotenv').config({
   path: path.join(__dirname, '.env'),
 });
 const nodeCrypto = require('crypto');
-const childProcess = require('child_process');
 
 if (!globalThis.crypto) {
   globalThis.crypto = nodeCrypto.webcrypto;
@@ -44,6 +43,7 @@ const { getTrustProxy } = require('./config/trust-proxy');
 const { requestDiagnostics } = require('./middleware/request-diagnostics');
 const { getPlausibleConfig } = require('./services/plausible');
 const logger = require('./services/logger');
+const { getBuildVersion } = require('./services/build-version');
 const {
   startScheduledPublicationScheduler,
 } = require('./services/scheduled-publication');
@@ -75,37 +75,10 @@ app.use(brandingRoutes);
 app.use(pageContentRoutes);
 app.use(publicMediaRoutes);
 
-function getBuildCommit() {
-  const envCommit =
-    process.env.COMMIT_SHA ||
-    process.env.GIT_COMMIT ||
-    process.env.RENDER_GIT_COMMIT ||
-    process.env.VERCEL_GIT_COMMIT_SHA;
-
-  if (envCommit) {
-    return String(envCommit).trim();
-  }
-
-  try {
-    return childProcess
-      .execFileSync('git', ['rev-parse', 'HEAD'], {
-        cwd: path.join(__dirname, '..'),
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      })
-      .trim();
-  } catch (error) {
-    return '';
-  }
-}
-
-const buildCommit = getBuildCommit();
+const buildVersion = getBuildVersion();
 
 app.get('/api/version', (req, res) => {
-  res.json({
-    commit: buildCommit,
-    shortCommit: buildCommit ? buildCommit.slice(0, 7) : '',
-  });
+  res.json(buildVersion);
 });
 
 app.get('/api/client-config/plausible', (req, res) => {

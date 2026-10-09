@@ -685,15 +685,6 @@ svg {
   text-decoration-color: currentColor;
 }
 
-.footer-version {
-  flex-basis: 100%;
-  margin-top: -16px;
-  color: var(--branch-grey-500);
-  font-size: 10px;
-  font-weight: 700;
-  text-align: right;
-}
-
 .site-header {
   position: sticky;
   top: 0;
@@ -14194,12 +14185,6 @@ html[data-theme='dark'] .last-post-detail-footer {
 
   .footer-credit {
     margin-left: 0;
-    text-align: left;
-  }
-
-  .footer-version {
-    flex-basis: auto;
-    margin-top: 0;
     text-align: left;
   }
 }

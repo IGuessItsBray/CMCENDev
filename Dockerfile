@@ -25,6 +25,11 @@ RUN mkdir -p /usr/src/app/server/data/backups && chown nodeuser:nodeuser /usr/sr
 # after a later image deployment.
 RUN node scripts/quality/build-static-assets.js --rewrite-html
 
+# Git history is excluded from images; CI supplies the running build identity.
+ARG COMMIT_SHA=""
+ARG RELEASE_VERSION=""
+ENV COMMIT_SHA=${COMMIT_SHA} RELEASE_VERSION=${RELEASE_VERSION}
+
 USER nodeuser
 
 EXPOSE 3000

@@ -971,6 +971,7 @@ COMMIT_SHA
 GIT_COMMIT
 RENDER_GIT_COMMIT
 VERCEL_GIT_COMMIT_SHA
+RELEASE_VERSION
 ```
 
 These are deployment metadata rather than normal operator configuration.
@@ -978,6 +979,18 @@ These are deployment metadata rather than normal operator configuration.
 They generally should not be manually defined in `server/.env`.
 
 CI or deployment infrastructure may provide them automatically.
+
+`GET /api/version` returns `commit`, `shortCommit`, and `releaseVersion`.
+`RELEASE_VERSION` identifies the running release tag (for example `v0.3.0`);
+the server normalizes a missing `v` prefix. Without deployment metadata, the
+server reads the current Git commit and an exact release tag on that commit.
+Missing metadata returns empty strings rather than the unrelated package version.
+
+Release image builds embed `COMMIT_SHA` and `RELEASE_VERSION` using Docker build
+arguments. Other image builds can supply `COMMIT_SHA` for development footers;
+images exclude Git history, so it cannot be inferred at runtime there.
+The footer shows the release on `cmcen-rcmce.ca` and `cefamily.ca` (including
+their `www` aliases), and a seven-character commit on all other hosts.
 
 ## Local Development Example
 

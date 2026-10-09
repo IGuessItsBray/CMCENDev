@@ -568,6 +568,11 @@ stable development URLs.
 docker build -t cmcen:local .
 ```
 
+To show the commit in a development container's footer, build with
+`--build-arg COMMIT_SHA="$(git rev-parse HEAD)"`. Release automation also supplies
+`--build-arg RELEASE_VERSION=<release-tag>` so production footers show the
+running release. See [deployment metadata](docs/CONFIG.md#deployment-metadata).
+
 Run it with:
 
 ```sh

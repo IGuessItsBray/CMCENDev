@@ -166,7 +166,7 @@ Event, retirement, and Last Post correction forms also send `submitForReview: tr
 
 | Method | Path                   | Access        | Purpose                                                          |
 | ------ | ---------------------- | ------------- | ---------------------------------------------------------------- |
-| `GET`  | `/api/version`         | Public        | Return running build commit metadata: `{ commit, shortCommit }`. |
+| `GET`  | `/api/version`         | Public        | Return running build metadata: `{ commit, shortCommit, releaseVersion }`. `releaseVersion` is a release tag with a `v` prefix, or an empty string when unavailable. |
 | `GET`  | `/changelog.md`        | Public        | Return the repository changelog in Markdown for the developer page. |
 | `GET`  | `/api/data`            | Public        | Smoke-test response.                                             |
 | `GET`  | `/api/protected_data`  | Authenticated | Authenticated smoke-test response.                               |

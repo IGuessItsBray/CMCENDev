@@ -4233,6 +4233,9 @@ components:
       properties:
         commit: { type: string }
         shortCommit: { type: string }
+        releaseVersion:
+          type: string
+          description: Running release tag with a v prefix, or an empty string when unavailable.
     BrandingResponse:
       type: object
       required: [version, fonts, colors, theming]

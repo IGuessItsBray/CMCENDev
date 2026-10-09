@@ -111,8 +111,7 @@ language switching, and a WebKit pass for Safari-sensitive behavior.
 Forgejo Actions runs `.forgejo/workflows/tests.yml` whenever a pull request is
 opened, updated, reopened, or marked ready for review against `main`. The job
 requires a Forgejo runner with the `ubuntu-latest` label and runs from `server/`
-with Node 24. A separate job verifies that the production Docker image builds;
-the runner must provide access to a Docker daemon.
+with Node 24. Regular commits and pull requests do not build Docker images.
 
 ```sh
 npm ci
@@ -124,20 +123,10 @@ The workflow restores npm's download cache using a key derived from
 the authoritative clean install step. A runner without cache support continues
 the job without a cache.
 
-The Docker job uses Buildx and restores a persistent layer cache. Its cache key
-is derived from the Dockerfile and `server/package-lock.json`, so application
-source changes can reuse the production dependency-install layer. A cache miss
-or a runner without cache support still performs a full build. The job runs
-from the repository root:
-
-```sh
-docker buildx build \
-  --cache-from type=local,src=/tmp/.buildx-cache \
-  --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
-  --load \
-  --tag cmcen-pr-test \
-  .
-```
+Docker images are built and pushed only by
+`.forgejo/workflows/publish-release.yml` when a `v*` release tag is pushed. That
+workflow requires access to a Docker daemon. Dockerfile build failures are
+therefore detected during release publication rather than PR validation.
 
 Do not inject production credentials. The suite supplies its own JWT and
 object-storage placeholders, suppresses outbound email, and does not connect to

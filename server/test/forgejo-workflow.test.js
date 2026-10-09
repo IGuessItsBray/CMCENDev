@@ -14,9 +14,10 @@ const workflowPath = path.resolve(
 );
 const workflow = YAML.parse(fs.readFileSync(workflowPath, 'utf8'));
 
-test('runs only for pull requests to main with Node 24 and cached Docker builds', () => {
+test('runs only the Node 24 test suite for pull requests to main', () => {
   assert.equal(workflow.on.push, undefined);
   assert.deepEqual(workflow.on.pull_request.branches, ['main']);
+  assert.deepEqual(Object.keys(workflow.jobs), ['test']);
 
   const setupNode = workflow.jobs.test.steps.find(
     (step) => step.uses === 'actions/setup-node@v4',
@@ -30,28 +31,32 @@ test('runs only for pull requests to main with Node 24 and cached Docker builds'
   assert.match(runtimeCheck.run, /process\.versions\.node/u);
   assert.match(runtimeCheck.run, /!== '24'/u);
 
-  const buildxSetup = workflow.jobs['docker-build'].steps.find(
-    (step) => step.uses === 'docker/setup-buildx-action@v3',
+  const runTests = workflow.jobs.test.steps.find(
+    (step) => step.name === 'Run tests',
   );
-  const dockerCache = workflow.jobs['docker-build'].steps.find(
-    (step) => step.name === 'Restore Docker build cache',
-  );
-  const dockerBuild = workflow.jobs['docker-build'].steps.find(
-    (step) => step.name === 'Build production image',
+  assert.equal(runTests.run, 'npm test');
+  assert.doesNotMatch(JSON.stringify(workflow.jobs), /docker/iu);
+});
+
+test('builds and pushes the container image only for release tags', () => {
+  const releaseWorkflow = YAML.parse(
+    fs.readFileSync(
+      path.join(path.dirname(workflowPath), 'publish-release.yml'),
+      'utf8',
+    ),
   );
 
-  assert.ok(buildxSetup);
-  assert.equal(dockerCache.uses, 'actions/cache@v4');
-  assert.equal(dockerCache.with.path, '/tmp/.buildx-cache');
-  assert.match(dockerCache.with.key, /server\/package-lock\.json/u);
-  assert.match(dockerBuild.run, /docker buildx build/u);
-  assert.match(dockerBuild.run, /--cache-from type=local/u);
-  assert.match(dockerBuild.run, /--cache-to type=local/u);
+  assert.deepEqual(releaseWorkflow.on, { push: { tags: ['v*'] } });
 
-  const cacheRefresh = workflow.jobs['docker-build'].steps.find(
-    (step) => step.name === 'Refresh Docker build cache',
+  const steps = releaseWorkflow.jobs['publish-release'].steps;
+  const build = steps.find(
+    (step) => step.name === 'Build release container image',
+  );
+  const push = steps.find(
+    (step) => step.name === 'Push release container image',
   );
 
-  assert.equal(cacheRefresh.if, 'success()');
-  assert.match(cacheRefresh.run, /\.buildx-cache-new/u);
+  assert.match(build.run, /docker build/u);
+  assert.match(push.run, /docker push/u);
+  assert.ok(steps.indexOf(build) < steps.indexOf(push));
 });

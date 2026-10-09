@@ -1056,7 +1056,7 @@ function loadFooter() {
 
           <ul>
             <li>
-              <a href="/about.html" data-i18n="menu_about">
+              <a href="/about-family" data-i18n="menu_about">
                 About
               </a>
             </li>
@@ -1150,12 +1150,6 @@ function loadFooter() {
             <li>
               <a href="mailto:security@cmcen.ca" data-i18n="security_contact">
                 Security concerns
-              </a>
-            </li>
-
-            <li>
-              <a href="/casl" data-i18n="casl_disclosure">
-                CASL Disclosure
               </a>
             </li>
 

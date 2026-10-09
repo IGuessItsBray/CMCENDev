@@ -154,17 +154,17 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 
 - auth: Prevent credential form GET fallbacks
 
-- calendar: Keep event times consistent between list and detail
+- calendar: Keep event times consistent between list and detail — Bray Delaire
 
-- search: Return localized static page results
+- search: Return localized static page results — Bray Delaire
 
-- calendar: Handle missing all-day event end dates
+- calendar: Handle missing all-day event end dates — Bray Delaire
 
-- sitemap: Exclude member-only forms
+- sitemap: Exclude member-only forms — Bray Delaire
 
-- security: Hide Express framework header
+- security: Hide Express framework header — Bray Delaire
 
-- i18n: Localize news listing page
+- i18n: Localize news listing page — Bray Delaire
 
 - sitemap: Omit dashboard from public sitemap
 
@@ -179,13 +179,13 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 
 - frontend: Unify controls and reset workspace filters — Eric
 
-- retirements: Add public archive search
+- retirements: Add public archive search — Bray Delaire
 
-- events: Add public calendar export
+- events: Add public calendar export — Bray Delaire
 
-- awards: Add professional awards management
+- awards: Add professional awards management — Bray Delaire
 
-- events: Add account-based RSVPs
+- events: Add account-based RSVPs — Bray Delaire
 
 - awards: Refine awards presentation — Eric
 
@@ -210,17 +210,17 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### Bug Fixes
 
 
-- auth: Improve invitation activation diagnostics
+- auth: Improve invitation activation diagnostics — Bray Delaire
 
-- diagnostics: Expand failure logging
+- diagnostics: Expand failure logging — Bray Delaire
 
-- frontend: Align retirement card titles
+- frontend: Align retirement card titles — Bray Delaire
 
-- frontend: Align user header actions
+- frontend: Align user header actions — Bray Delaire
 
-- frontend: Restore dark builder icon colors
+- frontend: Restore dark builder icon colors — Bray Delaire
 
-- frontend: Scroll long mobile banners
+- frontend: Scroll long mobile banners — Bray Delaire
 
 - events: Show missing event title validation
 
@@ -257,7 +257,7 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### CI
 
 
-- Prevent duplicate tests after merge
+- Prevent duplicate tests after merge — Bray Delaire
 
 
 
@@ -266,7 +266,7 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 
 - pages: Refine visual page builder
 
-- pages: Add branding reference
+- pages: Add branding reference — Bray Delaire
 
 - content: Improve workspace editing flow — Eric
 
@@ -284,57 +284,57 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### Bug Fixes
 
 
-- frontend: Improve mobile layouts
+- frontend: Improve mobile layouts — Bray Delaire
 
-- header: Align desktop notification bell
+- header: Align desktop notification bell — Bray Delaire
 
-- content: Linkify retirement and last post messages
+- content: Linkify retirement and last post messages — Bray Delaire
 
-- logging: Redact server output and silence client consoles
+- logging: Redact server output and silence client consoles — Bray Delaire
 
 - editor: Improve content and translation editing — Eric
 
-- admin: Hide legacy attribution accounts
+- admin: Hide legacy attribution accounts — Bray Delaire
 
-- admin: Enlarge users list
+- admin: Enlarge users list — Bray Delaire
 
-- docker: Include changelog in production image
+- docker: Include changelog in production image — Bray Delaire
 
 
 
 ### Documentation
 
 
-- accessibility: Add public accessibility guidance
+- accessibility: Add public accessibility guidance — Bray Delaire
 
 
 
 ### Features
 
 
-- docker: Add full-stack compose deployment
+- docker: Add full-stack compose deployment — Bray Delaire
 
-- footer: Add member partnership links
+- footer: Add member partnership links — Bray Delaire
 
-- analytics: Embed plausible dashboard
+- analytics: Embed plausible dashboard — Bray Delaire
 
-- contact: Add member contact form
+- contact: Add member contact form — Bray Delaire
 
 - translations: Organize admin translation editor — Eric
 
-- admin: Add protected content edit routes
+- admin: Add protected content edit routes — Bray Delaire
 
-- frontend: Add developer changelog
+- frontend: Add developer changelog — Bray Delaire
 
 - content: Add editorial workspace — Eric
 
 - content: Consolidate review submissions in workspace — Eric
 
-- dashboard: Embed permission-aware admin tools
+- dashboard: Embed permission-aware admin tools — Bray Delaire
 
 - content-workspace: Add content navigation shortcuts — Eric
 
-- pages: Add visual page builder
+- pages: Add visual page builder — Bray Delaire
 
 - content-workspace: Move event submissions into workspace — Eric
 
@@ -347,7 +347,7 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 
 - Remove site config — Eric
 
-- Clean workbook import placeholders
+- Clean workbook import placeholders — Bray Delaire
 
 
 ## [0.1.0-beta.6] - 2026-08-19
@@ -357,7 +357,7 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### Bug Fixes
 
 
-- ci: Use release token for tag publishing
+- ci: Use release token for tag publishing — Bray Delaire
 
 
 ## [0.1.0-beta.5] - 2026-08-19
@@ -367,7 +367,7 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### Bug Fixes
 
 
-- ci: Make release PR assignment non-blocking
+- ci: Make release PR assignment non-blocking — Bray Delaire
 
 - dashboard: Align loading skeleton with content — Eric
 
@@ -376,14 +376,14 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### CI
 
 
-- release: Tag prepared releases automatically
+- release: Tag prepared releases automatically — Bray Delaire
 
 
 
 ### Documentation
 
 
-- agents: Document automatic release tagging
+- agents: Document automatic release tagging — Bray Delaire
 
 
 ## [0.1.0-beta.4] - 2026-08-19
@@ -393,7 +393,7 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### CI
 
 
-- release: Publish Docker images to Forgejo Packages
+- release: Publish Docker images to Forgejo Packages — Bray Delaire
 
 
 
@@ -410,21 +410,21 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### Bug Fixes
 
 
-- ci: Repair release workflow yaml
+- ci: Repair release workflow yaml — Bray Delaire
 
 
 
 ### CI
 
 
-- release: Add release publishing workflow
+- release: Add release publishing workflow — Bray Delaire
 
 
 
 ### Documentation
 
 
-- contributing: Add contributor guidelines
+- contributing: Add contributor guidelines — Bray Delaire
 
 
 ## [0.1.0-beta.2] - 2026-08-19
@@ -434,18 +434,18 @@ This project uses Conventional Commits and git-cliff for changelog generation.
 ### Bug Fixes
 
 
-- ci: Use explicit git-cliff action source
+- ci: Use explicit git-cliff action source — Bray Delaire
 
-- release: Correct changelog release generation
+- release: Correct changelog release generation — Bray Delaire
 
-- ci: Harden release preparation workflow
+- ci: Harden release preparation workflow — Bray Delaire
 
 
 
 ### CI
 
 
-- release: Add release preparation workflow
+- release: Add release preparation workflow — Bray Delaire
 
 
 

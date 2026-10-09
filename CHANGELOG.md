@@ -4,6 +4,75 @@ All notable changes to CMCEN / RCMCE are documented in this file.
 
 This project uses Conventional Commits and git-cliff for changelog generation.
 
+## [0.4.0] - 2026-10-09
+
+
+
+### Breaking Changes
+
+
+- security: Address security audit findings — Bray Delaire
+
+
+
+### Bug Fixes
+
+
+- devs: Render changelog hyperlinks — Bray Delaire
+
+- media: Preserve full-size detail portraits — Eric
+
+- media: Open stored originals from the media library — Eric
+
+- admin: Allow developer blank descriptive saves — Eric
+
+- ui: Preserve archive comments and improve review readability — Eric
+
+- content: Improve bilingual notices and staff navigation — Eric
+
+- content: Preserve numbers within retirement notice prose — Eric
+
+- ui: Retire beta branding and improve account setup (#376) — Eric
+
+- content: Preserve notice formatting and legacy attachment links — Eric
+
+- content: Simplify notice controls and preserve fixed layout — Eric
+
+- content: Make notice link labels editable — Eric
+
+- release: Credit changelog contributors — Bray Delaire
+
+- footer: Repair public links — Bray Delaire
+
+- admin: Use a mobile navigation drawer — Bray Delaire
+
+- footer: Embed checkout commit in container builds — Bray Delaire
+
+
+
+### Features
+
+
+- foundation: Add managed Adopt a Display catalogue (#362) — Eric
+
+- articles: Add shared review flags and notes — Eric
+
+- backups: Add developer-only encrypted database backups — Bray Delaire
+
+- footer: Show running release or development commit — Bray Delaire
+
+- backups: Add calendar schedules and shared analytics connections — Bray Delaire
+
+
+
+### Maintenance
+
+
+- docker: Replace minio compose stack with garage — Bray Delaire
+
+- ci: Build Docker images only for releases — Bray Delaire
+
+
 ## [0.3.0] - 2026-10-02
 
 

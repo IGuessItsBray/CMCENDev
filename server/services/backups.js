@@ -8,6 +8,13 @@ const { spawn } = require('node:child_process');
 const { pipeline } = require('node:stream/promises');
 const { Readable, PassThrough } = require('node:stream');
 const { writeAuditLog } = require('./audit-log');
+const {
+  DEFAULT_SCHEDULE,
+  validateSchedule,
+  nextCalendarRun,
+  nextRunAt,
+} = require('./backup-schedule');
+const { getBackupAnalyticsConfig } = require('./backup-analytics');
 const scrypt = promisify(crypto.scrypt);
 const MAGIC = Buffer.from('CMCENBK1');
 const ID = /^backup-[0-9]+-[a-f0-9]{16}$/u;
@@ -198,6 +205,7 @@ function createBackupService({
   dumpDatabase = dump,
   audit = writeAuditLog,
   clickHouseRequest = fetch,
+  now = Date.now,
 } = {}) {
   const directory = path.resolve(
     env.BACKUP_DIRECTORY || path.join(__dirname, '../data/backups'),
@@ -213,8 +221,9 @@ function createBackupService({
   const statePath = path.join(directory, 'schedule.json');
   const lockPath = path.join(directory, '.lock');
   const defaults = {
+    ...DEFAULT_SCHEDULE,
     enabled: false,
-    intervalMinutes: 1440,
+    nextRunAt: null,
     lastAttemptAt: null,
     lastResult: null,
   };
@@ -226,9 +235,12 @@ function createBackupService({
   }
   async function readState() {
     try {
+      const saved = JSON.parse(await fs.readFile(statePath, 'utf8'));
       return {
         ...defaults,
-        ...JSON.parse(await fs.readFile(statePath, 'utf8')),
+        ...saved,
+        mode:
+          saved.mode || (saved.intervalMinutes ? 'interval' : defaults.mode),
       };
     } catch (error) {
       if (error.code === 'ENOENT') return { ...defaults };
@@ -265,13 +277,15 @@ function createBackupService({
     await fs.unlink(lockPath);
   }
   function readiness() {
+    const analytics = getBackupAnalyticsConfig(env);
     return {
       encryptionConfigured: Boolean(
         env.BACKUP_ENCRYPTION_PASSWORD?.length >= 16,
       ),
       mongoConfigured: Boolean(env.MONGO_URI),
-      postgresConfigured: Boolean(env.BACKUP_POSTGRES_URI),
-      clickhouseConfigured: Boolean(env.BACKUP_CLICKHOUSE_URL),
+      postgresConfigured: Boolean(analytics.postgresUri),
+      clickhouseConfigured: Boolean(analytics.clickhouseUrl),
+      analyticsReportingConfigured: analytics.reportingConfigured,
     };
   }
   async function status() {
@@ -302,32 +316,11 @@ function createBackupService({
       readiness: readiness(),
       running,
       backups,
-      nextRunAt: state.enabled
-        ? new Date(
-            (state.lastAttemptAt
-              ? Date.parse(state.lastAttemptAt)
-              : Date.now()) +
-              state.intervalMinutes * 60000,
-          ).toISOString()
-        : null,
+      nextRunAt: nextRunAt(state, now()),
     };
   }
   async function configure(input, req) {
-    if (
-      !input ||
-      typeof input.enabled !== 'boolean' ||
-      !Number.isInteger(input.intervalMinutes) ||
-      input.intervalMinutes < 60 ||
-      input.intervalMinutes > 525600 ||
-      Object.keys(input).some(
-        (key) => !['enabled', 'intervalMinutes'].includes(key),
-      )
-    ) {
-      throw backupError(
-        'Use enabled and an integer intervalMinutes between 60 and 525600',
-        400,
-      );
-    }
+    const schedule = validateSchedule(input);
     if (
       input.enabled &&
       (!readiness().encryptionConfigured || !readiness().mongoConfigured)
@@ -339,17 +332,27 @@ function createBackupService({
     const handle = await lock();
     try {
       const state = await readState();
+      const configuredAt = now();
       await saveState({
         ...state,
-        ...input,
-        lastAttemptAt: new Date().toISOString(),
+        ...schedule,
+        intervalMinutes:
+          schedule.mode === 'interval' ? schedule.intervalMinutes : undefined,
+        lastAttemptAt:
+          schedule.mode === 'interval'
+            ? new Date(configuredAt).toISOString()
+            : state.lastAttemptAt,
+        nextRunAt:
+          schedule.enabled && schedule.mode !== 'interval'
+            ? nextCalendarRun(schedule, configuredAt)
+            : null,
       });
       await audit({
         req,
         actor: req?.user,
         action: 'backup.schedule_changed',
         targetType: 'backup',
-        metadata: input,
+        metadata: schedule,
       });
     } finally {
       await unlock(handle);
@@ -367,21 +370,22 @@ function createBackupService({
     let id;
     try {
       const state = await readState();
-      const now = Date.now();
-      if (
-        scheduled &&
-        (!state.enabled ||
-          now <
-            Date.parse(state.lastAttemptAt || 0) +
-              state.intervalMinutes * 60000)
-      )
-        return;
-      id = `backup-${now}-${crypto.randomBytes(8).toString('hex')}`;
-      await saveState({
+      const startedAt = now();
+      const dueAt = nextRunAt(state, startedAt);
+      if (scheduled && (!dueAt || startedAt < Date.parse(dueAt))) return;
+      id = `backup-${startedAt}-${crypto.randomBytes(8).toString('hex')}`;
+      const attemptedState = {
         ...state,
-        lastAttemptAt: new Date(now).toISOString(),
+        lastAttemptAt: new Date(startedAt).toISOString(),
         lastResult: 'running',
-      });
+        nextRunAt:
+          state.enabled &&
+          state.mode !== 'interval' &&
+          (!dueAt || startedAt >= Date.parse(dueAt))
+            ? nextCalendarRun(state, startedAt)
+            : state.nextRunAt,
+      };
+      await saveState(attemptedState);
       await audit({
         req,
         actor: req?.user,
@@ -414,8 +418,9 @@ function createBackupService({
         env.BACKUP_ENCRYPTION_PASSWORD,
       );
       const files = ['mongo.enc'];
-      if (env.BACKUP_POSTGRES_URI) {
-        const uri = new URL(env.BACKUP_POSTGRES_URI);
+      const analytics = getBackupAnalyticsConfig(env);
+      if (analytics.postgresUri) {
+        const uri = new URL(analytics.postgresUri);
         if (!['postgres:', 'postgresql:'].includes(uri.protocol))
           throw backupError('Invalid PostgreSQL backup configuration');
         const password = decodeURIComponent(uri.password);
@@ -434,13 +439,21 @@ function createBackupService({
         );
         files.push('postgres.enc');
       }
-      if (env.BACKUP_CLICKHOUSE_URL)
+      if (analytics.clickhouseUrl)
         files.push(
-          ...(await backupClickHouse(env, temporary, clickHouseRequest)),
+          ...(await backupClickHouse(
+            {
+              ...env,
+              BACKUP_CLICKHOUSE_URL: analytics.clickhouseUrl,
+              BACKUP_CLICKHOUSE_DATABASE: analytics.clickhouseDatabase,
+            },
+            temporary,
+            clickHouseRequest,
+          )),
         );
       const manifest = {
         id,
-        createdAt: new Date(now).toISOString(),
+        createdAt: new Date(startedAt).toISOString(),
         completedAt: new Date().toISOString(),
         files,
         scheduled,
@@ -454,8 +467,7 @@ function createBackupService({
       await fs.rename(temporary, path.join(directory, id));
       temporary = null;
       await saveState({
-        ...state,
-        lastAttemptAt: new Date(now).toISOString(),
+        ...attemptedState,
         lastResult: 'succeeded',
       });
       await audit({

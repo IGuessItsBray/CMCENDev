@@ -115,7 +115,9 @@ BACKUP_ENCRYPTION_PASSWORD=
 BACKUP_DIRECTORY=
 BACKUP_POSTGRES_URI=
 BACKUP_CLICKHOUSE_URL=
-BACKUP_CLICKHOUSE_DATABASE=plausible_events_db
+BACKUP_CLICKHOUSE_DATABASE=
+PLAUSIBLE_DATABASE_URL=
+PLAUSIBLE_CLICKHOUSE_DATABASE_URL=
 ```
 
 ### Setup and use
@@ -135,15 +137,19 @@ BACKUP_CLICKHOUSE_DATABASE=plausible_events_db
    contains `backups.manage`.
 5. Check the readiness summary, choose **Back up now**, and download all files
    from the completed backup. Verify a recovery using the instructions below.
-6. Enable automatic backups, enter an interval in minutes, and choose **Save
-   schedule**. Frequency is stored by the tool, not in an environment variable.
+6. Enable automatic backups, choose **Daily**, **Weekly**, or **Custom**, set a
+   local backup time and time zone, and choose **Save schedule**. Weekly selects
+   one weekday; Custom selects any combination of weekdays. Frequency is saved
+   by the tool, not in an environment variable.
 
-| Frequency | Interval in minutes |
-| --- | ---: |
-| Hourly | 60 |
-| Every six hours | 360 |
-| Daily (default interval, disabled until enabled) | 1440 |
-| Weekly | 10080 |
+| Frequency | Days |
+| --- | --- |
+| Daily | Every day at the chosen time |
+| Weekly | One chosen weekday at the chosen time |
+| Custom | One or more chosen weekdays at the chosen time |
+
+The default is disabled, with Daily at 02:00 in `America/Toronto` offered when
+setting up a schedule. The next scheduled run is displayed with its time zone.
 
 Connection patterns (replace the uppercase placeholders before use):
 
@@ -172,11 +178,25 @@ monitor disk space and copy completed backups to secure off-host storage.
 MongoDB is always included using `MONGO_URI`. Optionally set
 `BACKUP_POSTGRES_URI` to a PostgreSQL connection URI for the analytics database
 and `BACKUP_CLICKHOUSE_URL` to its HTTP endpoint (credentials may be in the URL).
+For separately hosted services, use their reachable private database endpoints;
+do not substitute the public Plausible dashboard URL. Alternatively, share the
+analytics service's `DATABASE_URL` as `PLAUSIBLE_DATABASE_URL` and its
+`CLICKHOUSE_DATABASE_URL` as `PLAUSIBLE_CLICKHOUSE_DATABASE_URL` in this app's
+`server/.env`. The backup-specific settings take precedence. These values must
+be provided to the CMCEN process; it cannot read another service's environment.
+The panel separately identifies configured reporting and database backup
+connections, so a working analytics dashboard is not reported as unavailable
+merely because backup credentials are absent. Readiness indicates configured
+connections; an actual export verifies database access.
+
 For the supplied Compose stack these endpoints are `plausible-db:5432` and
 `http://plausible-events-db:8123`; use your actual analytics database name and
 credentials, not the application MongoDB name. `BACKUP_CLICKHOUSE_DATABASE`
-defaults to `plausible_events_db`. Empty optional connection values skip that
-database; configured connections must all succeed before a backup is published.
+uses an explicit value first, then the database name in the ClickHouse URI path,
+and finally `plausible_events_db`. Shared ClickHouse database URIs use their path
+as the database name and send HTTP queries to the root endpoint. Empty optional
+backup and shared connection values skip that database; configured connections
+must all succeed before a backup is published.
 Plausible's browser tracking/share URLs do not provide database credentials.
 ClickHouse uses HTTP schema queries and per-table Native exports, including
 internal storage tables; view definitions are saved without exporting view
@@ -186,12 +206,17 @@ configuration, external storage, or uploaded media.
 ### Scheduling and operation
 
 Open Administration → Backups as a **developer** to run a backup, download
-encrypted files, or enable an interval from 60 to 525600 minutes. The schedule
-defaults to disabled and is persisted alongside backups. Saving a schedule
-starts its interval from that time; manual and scheduled attempts restart the
-interval even on failure, avoiding rapid retries. The server checks once per
-minute and runs an overdue backup after restarting, without replaying every
-missed interval. The application must stay running. A shared directory lock
+encrypted files, or configure a calendar schedule. It is persisted alongside
+backups. Saving selects the next future occurrence. A manual backup before the
+next scheduled run does not shift its time; a manual backup after a missed run
+also covers that overdue occurrence. Failed scheduled attempts advance to the
+next occurrence rather than retrying every minute. The server checks once per
+minute and attempts one overdue backup after restarting without replaying all
+missed dates. Nonexistent local times during spring-forward are skipped for that
+day; repeated fall-back times run only at the first occurrence. A weekly time
+skipped by daylight saving resumes the following week. The application must
+stay running. Existing interval schedules and API requests (60–525600 minutes)
+remain supported until resaved through the calendar UI. A shared directory lock
 prevents concurrent runs and schedule changes. Use one scheduler deployment or
 share the same directory between replicas. After a process crash, first confirm
 all backup processes have stopped, then remove only `.lock` and abandoned hidden

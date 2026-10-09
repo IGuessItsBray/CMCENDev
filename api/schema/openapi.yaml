@@ -876,7 +876,7 @@ paths:
       description: Requires exact developer role and backups.manage. Never returns secrets or database URIs.
       responses:
         '200':
-          description: Schedule, lastResult, nextRunAt, running, readiness booleans, and up to 100 manifests.
+          description: Schedule (enabled, mode, time, timeZone, days), lastResult, nextRunAt, running, readiness booleans including analyticsReportingConfigured separately from backup connections, and up to 100 manifests. Existing interval schedules return mode interval and intervalMinutes until resaved.
         '401':
           description: Authentication required.
         '403':
@@ -886,22 +886,50 @@ paths:
   /api/admin/backups/schedule:
     patch:
       tags: [Admin]
-      summary: Save the developer-only backup interval schedule.
+      summary: Save the developer-only backup calendar schedule.
+      description: Daily, weekly (one weekday), or custom (one or more weekdays) at a local time in a valid time zone. Sunday is 0. Legacy interval requests remain accepted. Nonexistent daylight-saving times are skipped; repeated times run once. Manual backups preserve calendar schedules.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: false
-              required: [enabled, intervalMinutes]
-              properties:
-                enabled:
-                  type: boolean
-                intervalMinutes:
-                  type: integer
-                  minimum: 60
-                  maximum: 525600
+              oneOf:
+                - type: object
+                  additionalProperties: false
+                  required: [enabled, mode, time, timeZone, days]
+                  properties:
+                    enabled:
+                      type: boolean
+                    mode:
+                      type: string
+                      enum: [daily, weekly, custom]
+                    time:
+                      type: string
+                      pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+                      example: '02:00'
+                    timeZone:
+                      type: string
+                      example: America/Toronto
+                    days:
+                      type: array
+                      uniqueItems: true
+                      maxItems: 7
+                      description: Ignored for daily; exactly one for weekly; one or more for custom.
+                      items:
+                        type: integer
+                        minimum: 0
+                        maximum: 6
+                - type: object
+                  deprecated: true
+                  additionalProperties: false
+                  required: [enabled, intervalMinutes]
+                  properties:
+                    enabled:
+                      type: boolean
+                    intervalMinutes:
+                      type: integer
+                      minimum: 60
+                      maximum: 525600
       responses:
         '200':
           description: Updated status; change is audited.

@@ -34,7 +34,10 @@ test('backup schedule submits typed values, manual run uses extended timeout, an
       calls.push({ url, ...options });
       return {
         enabled: false,
-        intervalMinutes: 1440,
+        mode: 'daily',
+        time: '02:00',
+        timeZone: 'America/Toronto',
+        days: [0, 1, 2, 3, 4, 5, 6],
         nextRunAt: null,
         lastResult: null,
         running: false,
@@ -48,13 +51,35 @@ test('backup schedule submits typed values, manual run uses extended timeout, an
   const form = root.querySelector('form');
   form.reportValidity = () => true;
   const inputs = form.querySelectorAll('input');
-  inputs[0].checked = true;
-  inputs[1].value = '120';
+  inputs.find((input) => input.name === 'enabled').checked = true;
+  const mode = form
+    .querySelectorAll('select')
+    .find((input) => input.name === 'mode');
+  mode.value = 'custom';
+  await mode.fire('change');
+  inputs.find((input) => input.name === 'time').value = '03:30';
+  inputs.find((input) => input.name === 'timeZone').value = 'UTC';
+  const days = inputs.filter((input) => input.name === 'days');
+  days.forEach((input) => {
+    input.checked = false;
+  });
+  await form.fire('submit');
+  await flush();
+  assert.equal(
+    calls.some((call) => call.method === 'PATCH'),
+    false,
+  );
+  days.forEach((input) => {
+    input.checked = [1, 3, 5].includes(Number(input.value));
+  });
   await form.fire('submit');
   await flush();
   const submitted = calls.find((call) => call.method === 'PATCH');
   assert.equal(submitted.body.enabled, true);
-  assert.equal(submitted.body.intervalMinutes, 120);
+  assert.equal(submitted.body.mode, 'custom');
+  assert.equal(submitted.body.time, '03:30');
+  assert.equal(submitted.body.timeZone, 'UTC');
+  assert.deepEqual(Array.from(submitted.body.days), [1, 3, 5]);
   const run = root
     .querySelectorAll('button')
     .find((button) => button.type === 'button');

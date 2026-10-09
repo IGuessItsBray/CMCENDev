@@ -1,0 +1,93 @@
+.admin-backups-layout {
+  display: grid;
+  gap: 20px;
+}
+.admin-backups-readiness {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.admin-backups-readiness-card,
+.admin-backups-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: var(--admin-surface);
+}
+.admin-backups-readiness-card p {
+  margin-bottom: 0;
+  color: var(--admin-muted);
+}
+.admin-backups-card h2 {
+  margin-top: 0;
+}
+.admin-backups-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 760px;
+}
+.admin-backups-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-backups-form label:has(input[type='checkbox']) {
+  flex-direction: row;
+  align-items: center;
+}
+.admin-backups-form > label:first-child,
+.admin-backups-days {
+  grid-column: 1 / -1;
+}
+.admin-backups-form input:not([type='checkbox']),
+.admin-backups-form select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  background: var(--admin-surface);
+  color: inherit;
+  font: inherit;
+}
+.admin-backups-form [hidden] {
+  display: none;
+}
+.admin-backups-form button {
+  justify-self: start;
+}
+.admin-backups-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+}
+.admin-backups-card > button {
+  margin-top: 12px;
+}
+.admin-backups-history ul {
+  max-height: 350px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.admin-backups-history li {
+  margin-bottom: 12px;
+}
+.admin-backups-history button {
+  margin: 6px;
+}
+@media (max-width: 900px) {
+  .admin-backups-readiness {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .admin-backups-readiness,
+  .admin-backups-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

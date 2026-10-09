@@ -148,6 +148,74 @@ test('missing password fails closed and path traversal is rejected', async (t) =
   );
 });
 
+test('calendar schedules persist, preserve manual backup times, and run overdue slots only once', async (t) => {
+  let clock = Date.parse('2026-10-09T16:00:00Z');
+  const { service, env } = await fixture(t, { now: () => clock });
+  const schedule = {
+    enabled: true,
+    mode: 'custom',
+    time: '13:00',
+    timeZone: 'America/Toronto',
+    days: [1, 3, 5],
+  };
+  await service.configure(schedule);
+  const restored = createBackupService({
+    env,
+    now: () => clock,
+    audit: async () => {},
+  });
+  assert.equal((await restored.status()).nextRunAt, '2026-10-09T17:00:00.000Z');
+  clock = Date.parse('2026-10-09T16:30:00Z');
+  await service.run();
+  assert.equal((await service.status()).nextRunAt, '2026-10-09T17:00:00.000Z');
+  await service.run(null, true);
+  assert.equal((await service.status()).backups.length, 1);
+  clock = Date.parse('2026-10-10T20:00:00Z');
+  await service.run(null, true);
+  await service.run(null, true);
+  assert.equal((await service.status()).backups.length, 2);
+  assert.equal((await service.status()).nextRunAt, '2026-10-12T17:00:00.000Z');
+});
+
+test('failed calendar runs consume their scheduled slot without immediate retry', async (t) => {
+  let clock = Date.parse('2026-10-09T16:00:00Z');
+  const { service } = await fixture(t, {
+    now: () => clock,
+    dumpDatabase: async () => {
+      throw new Error('Unavailable');
+    },
+  });
+  await service.configure({
+    enabled: true,
+    mode: 'daily',
+    time: '13:00',
+    timeZone: 'America/Toronto',
+    days: [],
+  });
+  clock = Date.parse('2026-10-09T18:00:00Z');
+  await assert.rejects(service.run(null, true), { status: 503 });
+  assert.equal((await service.status()).nextRunAt, '2026-10-10T17:00:00.000Z');
+  await service.run(null, true);
+  assert.equal((await service.status()).lastResult, 'failed');
+});
+
+test('shared analytics connection readiness never returns connection secrets', async (t) => {
+  const { service } = await fixture(t, {
+    env: {
+      PLAUSIBLE_SHARE_URL: 'https://analytics.example.ca/share/test',
+      PLAUSIBLE_DATABASE_URL:
+        'postgresql://reader:private-password@db/analytics',
+      PLAUSIBLE_CLICKHOUSE_DATABASE_URL:
+        'http://reader:private-password@events:8123/plausible_events_db',
+    },
+  });
+  const status = await service.status();
+  assert.equal(status.readiness.analyticsReportingConfigured, true);
+  assert.equal(status.readiness.postgresConfigured, true);
+  assert.equal(status.readiness.clickhouseConfigured, true);
+  assert.equal(JSON.stringify(status).includes('private-password'), false);
+});
+
 test('MongoDB and optional PostgreSQL exports publish only after success, with sanitized audits', async (t) => {
   const { service, events } = await fixture(t, {
     env: {
@@ -213,15 +281,20 @@ test('shared storage prevents overlapping operations and schedule changes', asyn
 test('ClickHouse includes encrypted schema and native data, credentials stay in headers', async (t) => {
   const queries = [];
   const { service, directory } = await fixture(t, {
-    env: { BACKUP_CLICKHOUSE_URL: 'http://reader:secret@localhost:8123' },
+    env: {
+      PLAUSIBLE_CLICKHOUSE_DATABASE_URL:
+        'http://reader:secret@localhost:8123/custom_events',
+      PLAUSIBLE_DATABASE_URL: 'postgresql://reader:secret@localhost/analytics',
+    },
     clickHouseRequest: async (url, options) => {
       assert.equal(url.password, '');
+      assert.equal(url.pathname, '/');
       assert.equal(options.headers['X-ClickHouse-Key'], 'secret');
       assert.equal(url.searchParams.get('wait_end_of_query'), '1');
       queries.push(options.body);
       if (options.body.startsWith('SHOW'))
         return Response.json({
-          data: [{ statement: 'CREATE DATABASE plausible_events_db' }],
+          data: [{ statement: 'CREATE DATABASE custom_events' }],
         });
       if (options.body.includes('system.tables'))
         return Response.json({
@@ -244,6 +317,7 @@ test('ClickHouse includes encrypted schema and native data, credentials stay in 
   const manifest = await service.run();
   assert.deepEqual(manifest.files, [
     'mongo.enc',
+    'postgres.enc',
     'clickhouse-schema.enc',
     'clickhouse-000000.enc',
   ]);
@@ -256,6 +330,7 @@ test('ClickHouse includes encrypted schema and native data, credentials stay in 
     await fs.readFile(path.join(directory, 'schema.json'), 'utf8'),
   );
   assert.equal(schema.tables[0].file, 'clickhouse-000000.enc');
+  assert.equal(schema.database, 'custom_events');
   assert.equal(schema.tables[1].file, undefined);
   assert.equal(queries.length, 3);
 });

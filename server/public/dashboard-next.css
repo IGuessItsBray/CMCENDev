@@ -457,7 +457,8 @@ body {
   }
 }
 @media (max-width: 700px) {
-  #dashboardNextContent {
+  #dashboardNextContent,
+  #dashboardNextContent[data-sidebar-collapsed='true'] {
     grid-template-columns: minmax(0, 1fr);
   }
   .admin-sidebar {

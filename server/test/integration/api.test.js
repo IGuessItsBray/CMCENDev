@@ -6,6 +6,10 @@ process.env.JWT_SECRET = 'integration-test-jwt-secret';
 process.env.JWT_ACCESS_TOKEN_TTL = '15m';
 process.env.JWT_REFRESH_TOKEN_TTL_DAYS = '1';
 process.env.NODE_ENV = 'test';
+// This suite tests many unrelated logins from one loopback client. Dedicated
+// abuse tests use low production-style limits in their own isolated process.
+process.env.LOGIN_RATE_LIMIT_MAX = '10000';
+process.env.TRUST_PROXY = '127.0.0.1,::1';
 // The local .env may enable the production mail stop. Integration delivery is
 // simulated by the mailer; individual stop tests set this flag explicitly.
 process.env.DISABLE_EMAIL_SENDING = 'false';

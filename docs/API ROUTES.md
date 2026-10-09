@@ -55,13 +55,37 @@ key/URL. Opening an original does not change the catalogue's image reference.
 
 - JSON APIs generally return `{ error: string }` on failure.
 - Every request receives an `X-Request-ID` response header. Server failures (`5xx`), malformed requests (`400`/`413`), rate limits (`429`), and dropped client connections are logged to the server console with that ID, method, path, status, duration, and source IP. `5xx` API failures also create a `diagnostic.request_failed` audit entry; query strings and request bodies are never recorded by this diagnostic layer.
-- Every `/api` endpoint is rate limited by source IP (300 requests per minute by default). Responses include `RateLimit-*` headers; throttled requests return `429` with `Retry-After`. Sensitive password-reset and MFA verification routes have stricter limits listed below.
+- Every `/api` endpoint is rate limited by source IP (300 requests per minute by default). Responses include `RateLimit-*` headers; throttled requests return `429` with `Retry-After`. Login, guest access, password-reset and MFA verification routes have stricter limits. Forwarded headers are accepted only from explicitly configured `TRUST_PROXY` peers.
 - Authenticated routes expect `Authorization: Bearer <jwt>`.
 - MFA temp-flow routes may also accept a temp token through `x-temp-token`, `tempToken` in the JSON body, or `tempToken` in the query string.
 - Permission names below use the legacy flag used in middleware, with the catalog key in parentheses where helpful.
 - Public routes may still use optional auth to personalize access or analytics.
 
 ## Mounts
+
+`POST /api/login` applies independent source-IP (20/15 minutes) and normalized
+username (5/15 minutes) limits before password comparison. Failed credentials
+return the same 401 response; invalid identifier/password types are rejected
+before lookup. Throttled requests return 429 without password hashing or audit
+writes. These limits are configurable in `docs/CONFIG.md`.
+
+`POST /api/ghost/request` requires a valid email, applies source-IP (5/15 minutes)
+and normalized-email (3/hour) limits, and returns 200 with the same generic
+message, email and random-looking 64-character `verificationToken` for existing
+members, guests and unknown addresses. Member accounts are unchanged and their
+returned token cannot be confirmed. Guest email delivery occurs after the
+response; delivery failure does not reveal account presence. Invalid email is
+400 and throttling is 429.
+
+`POST /api/upload` retains authentication and `canUploadMedia`. Multipart limits
+are one file up to 10 MiB, 16 fields of at most 4096 bytes, 17 parts and
+100-byte field names. Only supported single-frame raster images are accepted;
+decoded dimensions must be at most 10000 pixels each and 24 megapixels total.
+Two uploads may buffer/process concurrently per process, with sequential
+variant generation. Multipart/byte excess returns 413, unsuitable types,
+frames or dimensions return 422, malformed image bytes return 400, and upload
+capacity returns 429 with `Retry-After`. No object is written before image
+validation passes.
 
 `GET /page-content/{filename}` is public and serves the bundled JSON files in
 `server/public/page-content/`. The shared handler recursively resolves `imageKey`

@@ -1,5 +1,16 @@
 # Portable media references
 
+The migration source-image downloader accepts only HTTPS URLs on
+`cmcen-rcmce.ca`, `www.cmcen-rcmce.ca`, and the configured public crest/CDN origin.
+Library callers may provide an explicit `allowedOrigins` list for another
+reviewed source. Redirects and environment HTTP proxies are disabled, DNS
+answers must all be public addresses and are reused for the connection, and
+downloads have a 30-second timeout and 10 MiB response limit. Imports use the
+same single-frame, 24-megapixel and 10000-pixel image limits as uploads.
+Use a public HTTPS media base for crest fallback during imports. Rejected
+origins, private-network answers and non-404 download errors do not silently
+fall back to another image.
+
 Use `imageKey` (resolved to `image`) or `fileKey` (resolved to `fileUrl`) in
 `server/public/page-content/*.json`. The shared page-content route resolves these
 recursively. Existing absolute URLs and bundled local files remain supported.

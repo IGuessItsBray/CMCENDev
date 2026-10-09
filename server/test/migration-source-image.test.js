@@ -1,11 +1,98 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const sharp = require('sharp');
+process.env.CDN_PUBLIC_BASE_URL = 'https://cdn.example.test/cmcen';
 const {
   DEFAULT_IMAGE_NAME,
   DEFAULT_IMAGE_URL,
   downloadSourceImage,
+  publicImageLookup,
 } = require('../scripts/migration/lib/source-image');
+
+test('restricts image origins and applies bounded HTTP request controls', async () => {
+  let calls = 0;
+  const httpClient = {
+    get: async (url, options) => {
+      calls += 1;
+      assert.equal(options.adapter, 'http');
+      assert.equal(options.proxy, false);
+      assert.equal(options.maxRedirects, 0);
+      assert.equal(options.maxContentLength, 10 * 1024 * 1024);
+      assert.equal(options.lookup, publicImageLookup);
+      return { data: Buffer.from('image'), headers: {} };
+    },
+  };
+  for (const url of [
+    'http://cmcen-rcmce.ca/image.jpg',
+    'https://127.0.0.1/image',
+    'https://other.example/image',
+    'https://user:pass@cmcen-rcmce.ca/image',
+  ]) {
+    await assert.rejects(
+      downloadSourceImage(url, { httpClient }),
+      /allowed HTTPS origin/u,
+    );
+  }
+  assert.equal(calls, 0);
+  await assert.rejects(
+    downloadSourceImage('https://[::1]/image', {
+      httpClient,
+      allowedOrigins: ['https://[::1]'],
+    }),
+    /allowed HTTPS origin/u,
+  );
+  await downloadSourceImage('https://cmcen-rcmce.ca/image.jpg', { httpClient });
+  assert.equal(calls, 1);
+});
+
+test('rejects private DNS answers, including mixed public/private answers, without a second resolution', async (t) => {
+  const dns = require('node:dns');
+  for (const address of [
+    '127.0.0.1',
+    '10.0.0.1',
+    '169.254.169.254',
+    '::1',
+    '::ffff:127.0.0.1',
+    'fc00::1',
+    '2002:7f00:1::',
+  ]) {
+    t.mock.method(dns, 'lookup', (hostname, options, callback) =>
+      callback(null, [
+        { address: '8.8.8.8', family: 4 },
+        { address, family: address.includes(':') ? 6 : 4 },
+      ]),
+    );
+    await assert.rejects(
+      new Promise((resolve, reject) =>
+        publicImageLookup('cmcen-rcmce.ca', { all: true }, (error, result) =>
+          error ? reject(error) : resolve(result),
+        ),
+      ),
+      /public addresses/u,
+    );
+    t.mock.restoreAll();
+  }
+  t.mock.method(dns, 'lookup', (hostname, options, callback) =>
+    callback(null, [{ address: '8.8.8.8', family: 4 }]),
+  );
+  const result = await new Promise((resolve, reject) =>
+    publicImageLookup('cmcen-rcmce.ca', { all: true }, (error, addresses) =>
+      error ? reject(error) : resolve(addresses),
+    ),
+  );
+  assert.deepEqual(result, [{ address: '8.8.8.8', family: 4 }]);
+});
+
+test('the patched Axios HTTP adapter enforces private-network lookup rejection', async (t) => {
+  const dns = require('node:dns');
+  t.mock.method(dns, 'lookup', (hostname, options, callback) =>
+    callback(null, [{ address: '127.0.0.1', family: 4 }]),
+  );
+  await assert.rejects(
+    downloadSourceImage('https://cmcen-rcmce.ca/image.jpg'),
+    /public addresses/u,
+  );
+});
 
 test('uses the canonical CMCEN crest when a legacy source image returns 404', async () => {
   const sourceUrl = 'https://cmcen-rcmce.ca/wp-content/uploads/missing.jpeg';
@@ -62,7 +149,7 @@ test('does not hide non-404 source download failures', async () => {
   failure.response = { status: 503 };
 
   await assert.rejects(
-    downloadSourceImage('https://example.test/image.jpg', {
+    downloadSourceImage('https://cmcen-rcmce.ca/image.jpg', {
       httpClient: {
         get: async () => {
           throw failure;

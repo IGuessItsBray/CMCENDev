@@ -1,3 +1,4 @@
+const { createHash } = require('node:crypto');
 const MAX_RATE_LIMIT_ENTRIES = 10000;
 
 function readPositiveInteger(name, fallback) {
@@ -9,21 +10,57 @@ function getClientIp(req) {
   return String(req.ip || req.socket?.remoteAddress || 'unknown').trim();
 }
 
-function createRateLimit({ name, windowMs, max, keyGenerator = getClientIp }) {
+function createRateLimit({
+  name,
+  windowMs,
+  max,
+  keyGenerator = getClientIp,
+  maxEntries = MAX_RATE_LIMIT_ENTRIES,
+}) {
+  if (
+    ![windowMs, max, maxEntries].every(
+      (value) => Number.isSafeInteger(value) && value > 0,
+    )
+  ) {
+    throw new Error('Rate limit settings must be positive integers');
+  }
   const entries = new Map();
+  const cleanupInterval = Math.min(windowMs, 60000);
+  const expireEntries = () => {
+    const now = Date.now();
+    for (const [key, entry] of entries) {
+      if (entry.resetAt <= now) entries.delete(key);
+    }
+  };
+  // Idle limiters release expired identities too; the timer never keeps Node alive.
+  setInterval(expireEntries, cleanupInterval).unref();
 
   return (req, res, next) => {
     const now = Date.now();
     const key = String(keyGenerator(req) || 'unknown');
-    const entryKey = `${name}:${key}`;
+    // Bound retained key size even for caller-supplied account identifiers.
+    const entryKey = createHash('sha256')
+      .update(`${name}:${key}`)
+      .digest('hex');
     let entry = entries.get(entryKey);
+
+    if (!entry && entries.size >= maxEntries) {
+      // Fail closed rather than evicting active counters and allowing a bypass.
+      const retryAfterSeconds = Math.max(1, Math.ceil(cleanupInterval / 1000));
+      res.locals.diagnosticReason = 'rate_limit_capacity';
+      res.set('Retry-After', String(retryAfterSeconds));
+      return res.status(429).json({
+        error: 'Too many requests. Please try again later.',
+        retryAfterSeconds,
+      });
+    }
 
     if (!entry || entry.resetAt <= now) {
       entry = { count: 0, resetAt: now + windowMs };
       entries.set(entryKey, entry);
     }
 
-    entry.count += 1;
+    entry.count = Math.min(max + 1, entry.count + 1);
     const retryAfterSeconds = Math.max(
       1,
       Math.ceil((entry.resetAt - now) / 1000),
@@ -33,12 +70,6 @@ function createRateLimit({ name, windowMs, max, keyGenerator = getClientIp }) {
       'RateLimit-Remaining': String(Math.max(0, max - entry.count)),
       'RateLimit-Reset': String(Math.ceil(entry.resetAt / 1000)),
     });
-
-    if (entries.size > MAX_RATE_LIMIT_ENTRIES) {
-      for (const [storedKey, storedEntry] of entries) {
-        if (storedEntry.resetAt <= now) entries.delete(storedKey);
-      }
-    }
 
     if (entry.count > max) {
       res.locals.diagnosticReason = 'rate_limited';

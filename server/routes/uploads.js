@@ -16,12 +16,90 @@ const {
   createMediaAssetRecord,
   sanitizeImageMetadata,
 } = require('../services/media-assets');
-const { sanitizeImageBuffer } = require('../services/media-sanitization');
+const {
+  sanitizeImageBuffer,
+  MAX_IMAGE_BYTES,
+} = require('../services/media-sanitization');
 const { writeAuditLog } = require('../services/audit-log');
 const s3Client = require('../storage');
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: MAX_IMAGE_BYTES,
+    files: 1,
+    fields: 16,
+    parts: 17,
+    fieldSize: 4096,
+    fieldNameSize: 100,
+    headerPairs: 100,
+  },
+  fileFilter: (req, file, callback) => {
+    if (
+      !new Set([
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'image/gif',
+        'image/tiff',
+        'image/heic',
+        'image/heif',
+        'image/avif',
+      ]).has(file.mimetype)
+    ) {
+      const error = new Error(
+        'The uploaded file is not a supported raster image',
+      );
+      error.status = 422;
+      return callback(error);
+    }
+    return callback(null, true);
+  },
+});
+const MAX_ACTIVE_UPLOADS = 2;
+let activeUploads = 0;
+
+function reserveUploadSlot(req, res, next) {
+  if (activeUploads >= MAX_ACTIVE_UPLOADS) {
+    res.set('Retry-After', '5');
+    return res
+      .status(429)
+      .json({ error: 'Uploads are busy. Please try again later.' });
+  }
+  activeUploads += 1;
+  let released = false;
+  req.releaseUploadSlot = () => {
+    if (released) return;
+    released = true;
+    activeUploads -= 1;
+  };
+  res.once('close', () => {
+    if (!req.processingUpload) req.releaseUploadSlot();
+  });
+  next();
+}
+
+function readUpload(req, res, next) {
+  upload.single('image')(req, res, (error) => {
+    if (req.aborted || res.destroyed) {
+      req.releaseUploadSlot();
+      return;
+    }
+    if (!error) return next();
+    req.releaseUploadSlot();
+    const status =
+      error instanceof multer.MulterError ? 413 : error.status || 400;
+    return res
+      .status(status)
+      .json({
+        error:
+          error instanceof multer.MulterError
+            ? 'Upload exceeds multipart limits'
+            : error.message,
+      });
+  });
+}
 const IMAGE_VARIANTS = Object.freeze([
   { name: 'thumb', width: 400 },
   { name: 'medium', width: 900 },
@@ -214,36 +292,35 @@ async function processImageUpload(file, cdnSlug = '', options = {}) {
     contentType: sanitizedImage.mimeType,
   });
 
-  await Promise.all(
-    IMAGE_VARIANTS.map(async (variant) => {
-      const width = sourceWidth
-        ? Math.min(sourceWidth, variant.width)
-        : variant.width;
-      const buffer = await sharp(sanitizedImage.buffer)
-        .rotate()
-        .resize({
-          width,
-          withoutEnlargement: true,
-        })
-        .webp({ quality: 82 })
-        .toBuffer({ resolveWithObject: true });
-      const key = `${baseKey}/${variant.name}.webp`;
+  // Process variants sequentially to bound native decoding memory per upload.
+  for (const variant of IMAGE_VARIANTS) {
+    const width = sourceWidth
+      ? Math.min(sourceWidth, variant.width)
+      : variant.width;
+    const buffer = await sharp(sanitizedImage.buffer)
+      .rotate()
+      .resize({
+        width,
+        withoutEnlargement: true,
+      })
+      .webp({ quality: 82 })
+      .toBuffer({ resolveWithObject: true });
+    const key = `${baseKey}/${variant.name}.webp`;
 
-      await putObject({
-        key,
-        body: buffer.data,
-        contentType: 'image/webp',
-      });
+    await putObject({
+      key,
+      body: buffer.data,
+      contentType: 'image/webp',
+    });
 
-      variants[variant.name] = {
-        key,
-        width: buffer.info.width,
-        height: buffer.info.height,
-        size: buffer.info.size,
-        mimeType: 'image/webp',
-      };
-    }),
-  );
+    variants[variant.name] = {
+      key,
+      width: buffer.info.width,
+      height: buffer.info.height,
+      size: buffer.info.size,
+      mimeType: 'image/webp',
+    };
+  }
 
   const displayConfig = getDisplayVariantConfig(options);
   const display = displayConfig
@@ -281,8 +358,10 @@ router.post(
   '/upload',
   authMiddleware,
   requirePermission('canUploadMedia'),
-  upload.single('image'),
+  reserveUploadSlot,
+  readUpload,
   async (req, res) => {
+    req.processingUpload = true;
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
@@ -334,6 +413,8 @@ router.post(
       res.status(err.status || 500).json({
         error: err.status ? err.message : 'Could not upload file',
       });
+    } finally {
+      req.releaseUploadSlot();
     }
   },
 );

@@ -257,6 +257,56 @@ Use the smallest value appropriate for the deployment.
 CMCEN provides configurable limits for general API traffic and
 security-sensitive authentication operations.
 
+### Trusted Reverse Proxies
+
+`TRUST_PROXY` is a comma-separated list of explicit proxy IP addresses or CIDRs.
+It defaults to empty: forwarded client-IP and protocol headers are ignored.
+For a proxy on the same host, an example is `TRUST_PROXY=127.0.0.1,::1`.
+Use only the actual proxy peers for each deployment; boolean values, hop counts,
+named subnet aliases, and catch-all `/0` networks are rejected at startup.
+The proxy must overwrite forwarded headers supplied by clients. Keep direct
+application access restricted to that proxy; the Compose port already binds
+to loopback by default. Production refresh cookies remain Secure independently
+of forwarded protocol headers.
+
+### Limiter Storage
+
+Each limiter keeps at most 10,000 hashed identity keys, expires idle state on
+an unreferenced timer at least once per minute, and rejects new identities with
+429 when full. Active counters are never evicted to admit another identity.
+These are per-process controls and reset on restart. Multiple replicas need a
+shared limiter at ingress to enforce deployment-wide budgets in addition to
+these local protections.
+
+### Login Attempts
+
+```dotenv
+LOGIN_RATE_LIMIT_WINDOW_SECONDS=900
+LOGIN_RATE_LIMIT_MAX=20
+LOGIN_ACCOUNT_RATE_LIMIT_WINDOW_SECONDS=900
+LOGIN_ACCOUNT_RATE_LIMIT_MAX=5
+```
+
+Source-IP and trimmed, lowercase username limits run before database lookup,
+password hashing, or rejected-login audit writes. The account limit is shared
+across source IPs; successful requests also consume the budget.
+
+### Guest Access Requests
+
+```dotenv
+GHOST_REQUEST_RATE_LIMIT_WINDOW_SECONDS=900
+GHOST_REQUEST_RATE_LIMIT_MAX=5
+GHOST_REQUEST_EMAIL_RATE_LIMIT_WINDOW_SECONDS=3600
+GHOST_REQUEST_EMAIL_RATE_LIMIT_MAX=3
+```
+
+Both limits run before guest creation or email delivery. Requests for members,
+existing guests, and unknown valid addresses return the same response shape.
+Member accounts receive an unusable random verification token and are unchanged.
+Email delivery happens after the response, so SMTP timing/failures cannot expose
+account presence. Database work has a common minimum response time of 250 ms;
+this is a practical timing mitigation, not a constant-time database guarantee.
+
 ### General API
 
 ```dotenv

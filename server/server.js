@@ -40,6 +40,7 @@ const {
   setStandardResponseHeaders,
 } = require('./routes/seo');
 const { rateLimitByIp } = require('./middleware/rate-limit');
+const { getTrustProxy } = require('./config/trust-proxy');
 const { requestDiagnostics } = require('./middleware/request-diagnostics');
 const { getPlausibleConfig } = require('./services/plausible');
 const logger = require('./services/logger');
@@ -61,7 +62,7 @@ const apiRateLimit = rateLimitByIp(
   'API_RATE_LIMIT_MAX',
   { windowSeconds: 60, max: 300 },
 );
-app.set('trust proxy', true);
+app.set('trust proxy', getTrustProxy());
 app.use(requestDiagnostics);
 app.use(express.json());
 app.use(setStandardResponseHeaders);

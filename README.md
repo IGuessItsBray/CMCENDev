@@ -219,7 +219,9 @@ available at `http://127.0.0.1:8000`, and Garage's S3 endpoint at
 
 The default loopback bindings are deliberate. In a public deployment, configure
 an HTTPS reverse proxy for the CMCEN public URL, the Plausible `BASE_URL`, and
-the `MINIO_PUBLIC_ENDPOINT`. Do not expose MongoDB, Garage administration,
+the `MINIO_PUBLIC_ENDPOINT`. Set CMCEN's `TRUST_PROXY` to the actual reverse-proxy
+peer addresses as described in [Trusted reverse proxies](#trusted-reverse-proxies).
+Do not expose MongoDB, Garage administration,
 PostgreSQL, or ClickHouse to the public internet. Directly exposing the Garage
 S3 endpoint requires careful access-policy review; this stack makes only the
 CMCEN media bucket anonymously readable so browsers can load published media.
@@ -338,6 +340,7 @@ Important settings include:
 | `JWT_SECRET` | Yes | Signs access, refresh, and temporary authentication tokens |
 | `PORT` | No | HTTP port; defaults to `3000` |
 | `APP_BASE_URL` | Recommended | Absolute application URL used in generated links |
+| `TRUST_PROXY` | Reverse proxy | Explicit proxy peer IPs/CIDRs; empty ignores forwarding headers. See [Trusted reverse proxies](#trusted-reverse-proxies). |
 | `PLAUSIBLE_DOMAIN` | No | Website domain configured in the self-hosted Plausible instance; both Plausible settings are required to enable tracking |
 | `PLAUSIBLE_API_URL` | No | Self-hosted Plausible event endpoint, normally `https://<plausible-host>/api/event` |
 | `PLAUSIBLE_SHARE_URL` | No | Shared Plausible dashboard URL used in the administrator Analytics workspace; treat its authorization value as a secret |
@@ -625,6 +628,32 @@ than by manually modifying the running deployment.
 Production environment configuration should follow
 [docs/CONFIG.md](docs/CONFIG.md). Secrets and environment-specific values must
 remain outside the repository.
+
+### Trusted Reverse Proxies
+
+Set `TRUST_PROXY` in `server/.env` or the deployment environment to a
+comma-separated list of the reverse proxy's IP addresses or CIDRs. Empty is
+the safe default: Express ignores forwarded client-IP and protocol headers.
+Existing proxied deployments must set this explicitly before deploying the
+security update so rate limits distinguish clients instead of grouping them
+under the proxy's address.
+
+For a same-host proxy whose connection reaches Express over loopback:
+
+```dotenv
+TRUST_PROXY=127.0.0.1,::1
+```
+
+Use the peer address Express actually sees. A host proxy connecting to a Docker
+container may appear as the Docker bridge gateway rather than loopback; a
+container proxy may use its own private address. Trust only those actual peers
+or the smallest dedicated proxy subnet. Do not use `true`, a hop count, named
+subnet aliases, or a catch-all `/0` network; these are rejected at startup.
+The trusted proxy must overwrite client-supplied forwarding headers, and
+network access to CMCEN should remain restricted to that proxy.
+
+See [.env.example](.env.example) and the
+[configuration reference](docs/CONFIG.md#trusted-reverse-proxies) for details.
 
 ## Migration Tools
 

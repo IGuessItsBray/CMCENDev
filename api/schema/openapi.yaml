@@ -548,12 +548,17 @@ paths:
     post:
       tags: [Auth]
       summary: Request ghost-account claim.
+      description: Source-IP and normalized-email throttles apply before guest creation. Existing members, guests and unknown valid addresses receive the same generic message, email and 64-character verificationToken shape. Member tokens cannot be confirmed. Guest-code email delivery occurs after the response.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
       responses:
         "200":
-          description: Claim request result.
+          description: Generic claim request result, independent of account presence.
+        "400":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
   /api/ghost/confirm:
     post:
       tags: [Auth]
@@ -595,12 +600,17 @@ paths:
     post:
       tags: [Auth]
       summary: Login with username and password after confirming the required session cookie; rejected credentials are audited without retaining the password.
+      description: Source-IP and normalized-username throttles apply before lookup, password hashing and audit writes. Invalid credentials return the same 401 response for existing and unknown users.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/Login"
       responses:
         "200":
           description: Login result; may require MFA.
+        "401":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
   /api/session/refresh:
     post:
       tags: [Auth]
@@ -1942,7 +1952,7 @@ paths:
     post:
       tags: [Uploads]
       summary: Upload and sanitize image through server.
-      description: Every stored image is validated and re-encoded as metadata-free WebP before it is written to object storage. Direct-to-storage uploads are not supported. Retirement and Last Post uploads may request a 4:3 display derivative while preserving the original image.
+      description: Accepts one supported single-frame raster image up to 10 MiB, 24 megapixels and 10000 pixels per dimension, plus at most 16 fields of 4096 bytes and 17 total parts with 100-byte field names. At most two uploads buffer/process concurrently per process. Every stored image is validated and re-encoded as metadata-free WebP before storage. Direct uploads are not supported. Retirement and Last Post uploads may request a 4:3 display derivative while preserving the original image.
       x-permission: canUploadMedia
       requestBody:
         required: true
@@ -2015,6 +2025,18 @@ paths:
       responses:
         "201":
           description: Upload result with variants.
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "413":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
   /api/upload-url:
     post:
       tags: [Uploads]

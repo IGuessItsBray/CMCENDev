@@ -108,6 +108,12 @@ const PASSWORD_RESET_GENERIC_MESSAGE =
 const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
 const EMAIL_VERIFICATION_TEMP_TOKEN_TTL_MS = 30 * 60 * 1000;
 const GHOST_PASSWORD_BYTES = 32;
+const INVALID_LOGIN_PASSWORD_HASH = bcrypt.hashSync(
+  crypto.randomBytes(32).toString('hex'),
+  10,
+);
+const GHOST_REQUEST_MESSAGE =
+  'If guest access is available for that email, a verification code will be sent.';
 const TD_INSURANCE_MEMBER_BENEFIT_URL =
   'https://www.tdinsurance.com/affinity/cmcen?campaignid=PONMEBAN179135';
 
@@ -162,6 +168,40 @@ const passwordResetConfirmLimit = rateLimitByIp(
   'PASSWORD_RESET_CONFIRM_RATE_LIMIT_MAX',
   { windowSeconds: 15 * 60, max: 5 },
 );
+
+const loginIpLimit = rateLimitByIp(
+  'login-ip',
+  'LOGIN_RATE_LIMIT_WINDOW_SECONDS',
+  'LOGIN_RATE_LIMIT_MAX',
+  { windowSeconds: 900, max: 20 },
+);
+const loginUsernameLimit = createRateLimit({
+  name: 'login-username',
+  windowMs:
+    readPositiveInteger('LOGIN_ACCOUNT_RATE_LIMIT_WINDOW_SECONDS', 900) * 1000,
+  max: readPositiveInteger('LOGIN_ACCOUNT_RATE_LIMIT_MAX', 5),
+  keyGenerator: (req) =>
+    typeof req.body?.username === 'string'
+      ? req.body.username.trim().toLowerCase()
+      : getClientIp(req),
+});
+const ghostRequestIpLimit = rateLimitByIp(
+  'ghost-request-ip',
+  'GHOST_REQUEST_RATE_LIMIT_WINDOW_SECONDS',
+  'GHOST_REQUEST_RATE_LIMIT_MAX',
+  { windowSeconds: 900, max: 5 },
+);
+const ghostRequestEmailLimit = createRateLimit({
+  name: 'ghost-request-email',
+  windowMs:
+    readPositiveInteger('GHOST_REQUEST_EMAIL_RATE_LIMIT_WINDOW_SECONDS', 3600) *
+    1000,
+  max: readPositiveInteger('GHOST_REQUEST_EMAIL_RATE_LIMIT_MAX', 3),
+  keyGenerator: (req) =>
+    typeof req.body?.email === 'string'
+      ? req.body.email.trim().toLowerCase()
+      : getClientIp(req),
+});
 
 function verifyDestructiveTotp(user, code) {
   if (!user?.totp?.secret || user.totp.enabled !== true) return false;
@@ -366,8 +406,11 @@ function getProfileUpdate(body, currentUser) {
   });
 
   REQUIRED_PROFILE_FIELDS.forEach((field) => {
-    if (hasOwnValue(updates, field) && !updates[field] &&
-        requiresTextForSave(currentUser, currentUser[field])) {
+    if (
+      hasOwnValue(updates, field) &&
+      !updates[field] &&
+      requiresTextForSave(currentUser, currentUser[field])
+    ) {
       throw new Error('Required profile fields are missing');
     }
   });
@@ -375,8 +418,11 @@ function getProfileUpdate(body, currentUser) {
   REQUIRED_ADDRESS_FIELDS.forEach((field) => {
     const updateKey = `address.${field}`;
 
-    if (hasOwnValue(updates, updateKey) && !updates[updateKey] &&
-        requiresTextForSave(currentUser, currentUser.address?.[field])) {
+    if (
+      hasOwnValue(updates, updateKey) &&
+      !updates[updateKey] &&
+      requiresTextForSave(currentUser, currentUser.address?.[field])
+    ) {
       throw new Error('Required address fields are missing');
     }
   });
@@ -415,58 +461,88 @@ function getProfileUpdate(body, currentUser) {
 
 // POST /api/ghost/request
 // Start a strict guest account session by emailing a one-time code.
-router.post('/ghost/request', async (req, res) => {
-  const cleanEmail = String(req.body?.email || '')
-    .trim()
-    .toLowerCase();
+router.post(
+  '/ghost/request',
+  ghostRequestIpLimit,
+  ghostRequestEmailLimit,
+  async (req, res) => {
+    const startedAt = Date.now();
+    const cleanEmail = (
+      typeof req.body?.email === 'string' ? req.body.email : ''
+    )
+      .trim()
+      .toLowerCase();
 
-  if (!cleanEmail) {
-    return res.status(400).json({
-      error: 'Email is required',
-    });
-  }
-
-  try {
-    let user = await User.findOne({ email: cleanEmail }).select(
-      '+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
-    );
-
-    if (user && user.accountType !== 'ghost') {
-      return res.status(409).json({
-        error: 'An account already exists for this email. Please sign in.',
+    if (
+      !cleanEmail ||
+      cleanEmail.length > 320 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(cleanEmail)
+    ) {
+      return res.status(400).json({
+        error: 'A valid email is required',
       });
     }
 
-    if (!user) {
-      user = new User({
-        accountType: 'ghost',
-        username: cleanEmail,
+    try {
+      let user = await User.findOne({ email: cleanEmail }).select(
+        '+emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
+      );
+
+      let canRequestGuestAccess = !user || user.accountType === 'ghost';
+      const isNewGuest = !user;
+      if (!user) {
+        user = new User({
+          accountType: 'ghost',
+          username: cleanEmail,
+          email: cleanEmail,
+          accountName: '',
+          firstName: '',
+          lastName: '',
+          password: createGhostPassword(),
+          role: 'ghost',
+        });
+      }
+
+      const verification = canRequestGuestAccess
+        ? await prepareEmailVerification(user)
+        : { tempToken: crypto.randomBytes(32).toString('hex') };
+      if (!isNewGuest) {
+        // Match the password hashing work performed when creating an unknown guest.
+        await bcrypt.compare('guest-request', INVALID_LOGIN_PASSWORD_HASH);
+      }
+      if (canRequestGuestAccess) {
+        try {
+          await user.save();
+        } catch (error) {
+          if (error.code !== 11000) throw error;
+          // Concurrent requests or an existing username must not become an oracle.
+          canRequestGuestAccess = false;
+        }
+      }
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.max(0, 250 - (Date.now() - startedAt))),
+      );
+
+      res.json({
+        message: GHOST_REQUEST_MESSAGE,
+        verificationToken: verification.tempToken,
         email: cleanEmail,
-        accountName: '',
-        firstName: '',
-        lastName: '',
-        password: createGhostPassword(),
-        role: 'ghost',
+      });
+      if (canRequestGuestAccess) {
+        // SMTP latency and failures must not reveal account presence in the response.
+        void sendEmailVerificationCode(user, verification.code).catch(() => {
+          console.error('Guest verification email delivery failed');
+        });
+      }
+    } catch (error) {
+      console.error('Ghost account request failed:', error);
+
+      res.status(500).json({
+        error: 'Could not request guest access',
       });
     }
-
-    const verification = await prepareEmailVerification(user);
-    await user.save();
-    await sendEmailVerificationCode(user, verification.code);
-
-    res.json({
-      message: 'Check your email for a guest access code.',
-      verificationToken: verification.tempToken,
-      email: user.email,
-    });
-  } catch (error) {
-    console.error('Ghost account request failed:', error);
-
-    res.status(500).json({
-      error: 'Could not request guest access',
-    });
-  }
-});
+  },
+);
 
 // POST /api/ghost/confirm
 // Verify a guest access code and return a ghost session token.
@@ -821,15 +897,28 @@ router.post('/register', async (req, res) => {
 
 // POST /api/login
 // Authenticate a user and return a short-lived JWT.
-router.post('/login', async (req, res) => {
+router.post('/login', loginIpLimit, loginUsernameLimit, async (req, res) => {
   const { username, password, sessionCookieConsent } = req.body || {};
 
   try {
-    const user = await User.findOne({ username }).select(
+    if (
+      typeof username !== 'string' ||
+      !username.trim() ||
+      username.length > 320 ||
+      typeof password !== 'string' ||
+      password.length > 1024
+    ) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    const user = await User.findOne({ username: username.trim() }).select(
       '+password +emailVerification.codeHash +emailVerification.codeExpiresAt +emailVerification.tempTokenHash +emailVerification.tempTokenExpiresAt',
     );
 
-    if (!user || !(await bcrypt.compare(password || '', user.password))) {
+    const passwordMatches = await bcrypt.compare(
+      password,
+      user?.password || INVALID_LOGIN_PASSWORD_HASH,
+    );
+    if (!user || !passwordMatches) {
       await recordLoginRejected(req, username, 'invalid_credentials');
       return res.status(401).json({ error: 'Invalid credentials' });
     }

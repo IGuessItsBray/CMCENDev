@@ -1012,8 +1012,12 @@ server reads the current Git commit and an exact release tag on that commit.
 Missing metadata returns empty strings rather than the unrelated package version.
 
 Release image builds embed `COMMIT_SHA` and `RELEASE_VERSION` using Docker build
-arguments. Other image builds can supply `COMMIT_SHA` for development footers;
-images exclude Git history, so it cannot be inferred at runtime there.
+arguments. Ordinary Docker builds automatically read the checkout's HEAD and
+branch refs into a small `build-commit.json` file. Git configuration, history,
+logs, and hooks remain excluded. Runtime metadata takes precedence over the
+embedded commit, which takes precedence over runtime Git detection.
+Worktrees and source archives must supply `--build-arg COMMIT_SHA=<full commit SHA>`;
+image builds fail if neither the checkout nor an argument identifies the commit.
 The footer shows the release on `cmcen-rcmce.ca` and `cefamily.ca` (including
 their `www` aliases), and a seven-character commit on all other hosts.
 

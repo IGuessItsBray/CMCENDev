@@ -1,4 +1,12 @@
-.git
+# Only the revision refs needed to embed the build commit; exclude Git config,
+# history, logs, and hooks from the build context and image.
+.git/*
+!.git/HEAD
+!.git/packed-refs
+!.git/refs
+.git/refs/*
+!.git/refs/heads
+server/build-commit.json
 .codex
 .env
 server/.env

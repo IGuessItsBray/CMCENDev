@@ -6,3 +6,4 @@ server/scripts/migration/output/
 server/data/adopt-review/
 server/data/backups/
 package-lock.json
+server/build-commit.json

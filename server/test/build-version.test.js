@@ -2,6 +2,28 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { getBuildVersion } = require('../services/build-version');
 
+test('uses the embedded container commit when no runtime metadata is supplied', () => {
+  const metadata = getBuildVersion(
+    {},
+    (_command, args) => {
+      assert.equal(args[0], 'describe');
+      throw new Error('Git unavailable in image');
+    },
+    () => JSON.stringify({ commit: 'abcdef1234567890' }),
+  );
+  assert.equal(metadata.commit, 'abcdef1234567890');
+  assert.equal(metadata.shortCommit, 'abcdef1');
+});
+
+test('runtime commit metadata overrides the embedded image commit', () => {
+  const metadata = getBuildVersion(
+    { COMMIT_SHA: '1234567890', RELEASE_VERSION: 'v0.3.0' },
+    () => assert.fail('Git should not be needed'),
+    () => assert.fail('Embedded commit should not be needed'),
+  );
+  assert.equal(metadata.shortCommit, '1234567');
+});
+
 test('uses deployment metadata without requiring Git in release images', () => {
   const metadata = getBuildVersion(
     {

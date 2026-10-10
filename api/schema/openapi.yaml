@@ -3841,6 +3841,15 @@ components:
                     properties:
                       en: { type: string, maxLength: 40 }
                       fr: { type: string, maxLength: 40 }
+                      catalogueId:
+                        type: string
+                        description: Optional staff rank selection token. EN/FR must exactly match the shared catalogue pair. Validated on input only; not stored.
+                  tradeRoles:
+                    type: object
+                    description: Optional authored specialty text. Omit to preserve on update; omitted languages preserve saved values and empty strings clear. Shared tradeRole remains the fallback.
+                    properties:
+                      en: { type: string, maxLength: 120 }
+                      fr: { type: string, maxLength: 120 }
               submitForReview:
                 type: boolean
                 description: On PATCH only, use the owner-only personal correction workflow without immediate publication.
@@ -4057,6 +4066,9 @@ components:
                     properties:
                       en: { type: string, maxLength: 80 }
                       fr: { type: string, maxLength: 80 }
+                      catalogueId:
+                        type: string
+                        description: Optional staff rank selection token. EN/FR must exactly match the shared catalogue pair. Validated on input only; not stored.
                   fullRank:
                     type: string
                     maxLength: 80

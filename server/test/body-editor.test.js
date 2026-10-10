@@ -43,7 +43,7 @@ function setup(permissions = {}) {
     entries() { return this.values.values(); }
     get(name) { return this.values.find(([key]) => key === name)?.[1] ?? null; }
   }, Event: class { constructor(type) { this.type = type; } }, Option: function (text, value) { return Object.assign(new Element('option'), { textContent: text, value }); }, crypto: require('node:crypto').webcrypto, structuredClone, URL, URLSearchParams, CMCENModal: { confirm: async () => true } };
-  for (const name of ['message-editor', 'content-workspace-editors', 'content-workspace-actions']) vm.runInNewContext(fs.readFileSync(path.join(__dirname, `../public/${name}.js`), 'utf8'), context);
+  for (const name of ['person-rank-options', 'message-editor', 'content-workspace-editors', 'content-workspace-actions']) vm.runInNewContext(fs.readFileSync(path.join(__dirname, `../public/${name}.js`), 'utf8'), context);
   const editor = window.ContentWorkspaceEditors.create({
     setWorkspaceTranslatedText: (el, key, fallback) => { el.textContent = fallback; },
     getText: (key, fallback) => fallback || key,
@@ -231,7 +231,7 @@ test('actual public notice page renderers select their fixed styles for EN/FR pl
     document.querySelector = () => document.createElement('div'); document.addEventListener = () => {};
     context.window.location = { search: '' }; context.window.currentLang = language;
     context.translate = (key) => key;
-    context.CMCENUtils = { setDetailReturnLink() {}, getLastPostName: () => 'Name', getLocalizedText: (messages) => messages[language], setLinkifiedText: (el, value) => el.append(document.createTextNode(value)) };
+    context.CMCENUtils = { setDetailReturnLink() {}, getCurrentLanguage: () => language, getLastPostName: () => 'Name', getLocalizedText: (messages) => messages[language], setLinkifiedText: (el, value) => el.append(document.createTextNode(value)) };
     context.BodyContent = BodyContent;
     const name = type === 'lastPost' ? 'last-post-message' : 'retirement-message';
     const code = fs.readFileSync(path.join(__dirname, `../public/${name}.js`), 'utf8').replace(/\nload(?:LastPost|RetirementMessage)\(\);\s*$/, '');

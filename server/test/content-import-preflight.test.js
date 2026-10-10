@@ -62,6 +62,29 @@ test('preflight preserves input and accepts complete evidence', async () => {
   assert.equal((await inspectBatch(input, { models })).safeToApply, true);
   assert.equal(JSON.stringify(input), before);
 });
+test('new packages cannot place a MOSID in nominals or discard different authored specialties', async () => {
+  const input = fixture(), document = input.items[0].document;
+  document.retiree = { postNominals: '- 00341, SIGS', tradeRole: '' };
+  assert.equal((await inspectBatch(input, { models })).safeToApply, false);
+  document.retiree = { postNominals: '', tradeRole: '00385, SIG TECH' };
+  const french = { ...input.items[0].sources[0], id: 11, language: 'fr',
+    originalBody: 'Texte source', convertedText: 'Texte source', bodySha256: hash('Texte source') };
+  input.items[0].sources.push(french);
+  document.messages.fr = french.convertedText;
+  document.legacy.sourcePostIds.push(11);
+  input.items[0].languageReview.sourceFingerprint = hash(JSON.stringify(
+    input.items[0].sources.map(s => [s.id, s.bodySha256]),
+  ));
+  document.legacy.sourceRecords = [
+    { sourceId: 10, language: 'en', title: 'RETIREMENT - CAPTAIN ALEX EXAMPLE - 00385, SIG TECH' },
+    { sourceId: 11, language: 'fr', title: 'RETRAITE - CAPITAINE ALEX EXAMPLE - 00385, TECH SIG' },
+  ];
+  assert.equal((await inspectBatch(input, { models })).safeToApply, false);
+  document.retiree.tradeRoles = { en: '00385, SIG TECH', fr: '00385, TECH SIG' };
+  assert.equal((await inspectBatch(input, { models })).safeToApply, true);
+  document.retiree.tradeRoles.fr = 'Guessed translation';
+  assert.equal((await inspectBatch(input, { models })).safeToApply, false);
+});
 test('formatted source copy is bound to exact normalized blocks and plain text', async () => {
   const input = fixture();
   const source = input.items[0].sources[0];

@@ -133,7 +133,7 @@ function formatRetireeName(retirementMessage) {
 
 function getMosid(retirementMessage) {
   return (
-    retirementMessage.retiree?.tradeRole ||
+    CMCENUtils.getRetireeTradeRole(retirementMessage.retiree) ||
     translate("retirement_mosid_pending")
   );
 }

@@ -6,8 +6,29 @@ const {
   DEFAULT_IMAGE_NAME,
   DEFAULT_IMAGE_URL,
   downloadSourceImage,
+  requestSourceImage,
   publicImageLookup,
 } = require('../scripts/migration/lib/source-image');
+
+test('strict original transport preserves bytes and rejects failures without crest substitution', async () => {
+  const calls = [], bytes = Buffer.from('exact original');
+  const httpClient = { get: async (url, options) => {
+    calls.push(url);
+    assert.equal(options.lookup, publicImageLookup);
+    assert.equal(options.maxContentLength, 10 * 1024 * 1024);
+    assert.equal(options.maxRedirects, 0);
+    assert.equal(options.proxy, false);
+    return { data: bytes };
+  } };
+  const source = 'https://cmcen-rcmce.ca/original.jpg';
+  assert.equal((await requestSourceImage(source, { httpClient })).data, bytes);
+  await assert.rejects(requestSourceImage('https://private.example/image', { httpClient }), /allowed HTTPS origin/u);
+  const failure = Object.assign(new Error('missing original'), { response: { status: 404 } });
+  await assert.rejects(requestSourceImage(source, { httpClient: { get: async url => {
+    calls.push(url); throw failure;
+  } } }), failure);
+  assert.deepEqual(calls, [source, source]);
+});
 
 test('restricts image origins and applies bounded HTTP request controls', async () => {
   let calls = 0;

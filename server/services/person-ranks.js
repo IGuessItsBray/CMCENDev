@@ -1,4 +1,6 @@
-// Optional authored translations; never infer a translation from a legacy rank.
+const { validateSelection } = require('../public/person-rank-options');
+
+// Custom/historical authored values remain valid; catalogue selections must match.
 function cleanRanks(value = {}, maxLength = 80) {
   if (
     !value ||
@@ -15,6 +17,12 @@ function cleanRanks(value = {}, maxLength = 80) {
       new Error('ranks must be an English/French text object'),
       { status: 400 },
     );
+  }
+  try {
+    validateSelection(value);
+  } catch (error) {
+    error.status = 400;
+    throw error;
   }
   return {
     en: String(value.en || '').trim(),

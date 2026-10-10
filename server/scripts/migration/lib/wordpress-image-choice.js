@@ -2,20 +2,32 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const sharp = require('sharp');
 const { bytesDigest } = require('./content-import');
+const {
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_PIXELS,
+  MAX_IMAGE_DIMENSION,
+} = require('../../../services/media-sanitization');
 
 async function inspectImage(buffer) {
   assert(
     Buffer.isBuffer(buffer) &&
       buffer.length &&
-      buffer.length <= 25 * 1024 * 1024,
+      buffer.length <= MAX_IMAGE_BYTES,
+    'Source image exceeds the 10 MiB limit',
   );
   const image = sharp(buffer, {
-    limitInputPixels: 100000000,
+    limitInputPixels: MAX_IMAGE_PIXELS,
     failOn: 'warning',
   });
   const info = await image.metadata();
   assert(['jpeg', 'png', 'webp', 'avif', 'heif', 'tiff'].includes(info.format));
   assert(info.width && info.height && (info.pages || 1) === 1);
+  assert(
+    info.width <= MAX_IMAGE_DIMENSION &&
+      info.height <= MAX_IMAGE_DIMENSION &&
+      info.width * info.height <= MAX_IMAGE_PIXELS,
+    'Source image exceeds the current pixel/dimension limits',
+  );
   const signature = await image
     .rotate()
     .resize(32, 32, { fit: 'fill' })

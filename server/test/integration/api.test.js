@@ -312,6 +312,33 @@ describe('bilingual person ranks', () => {
       assert.equal(oldSave.status, 200, JSON.stringify(oldSave.body));
       assert.deepEqual((await Model.findById(record._id))[person].ranks.toObject(), ranks);
       await request(app).patch(`/api/admin/${route.split('/').pop()}/${record._id}`).set('Authorization', ownerAuth).send({ [person]: { ranks: { en: 'Changed', fr: 'Modifié' } } }).expect(403);
+      const adminRankRoute = `/api/admin/${route.split('/').pop()}/${record._id}`;
+      for (const selected of [
+        { en: 'Warrant Officer', fr: 'Adjudant', catalogueId: 'warrant_officer' },
+        { en: 'Master Warrant Officer', fr: 'Adjudant-maître', catalogueId: 'master_warrant_officer' },
+      ]) {
+        await request(app).patch(adminRankRoute).set('Authorization', editorAuth)
+          .send({ [person]: { [legacy]: selected.en, ranks: selected } }).expect(200);
+        const selectedRecord = await Model.findById(record._id);
+        assert.deepEqual(selectedRecord[person].ranks.toObject(), { en: selected.en, fr: selected.fr });
+        assert.equal(selectedRecord[person][legacy], selected.en);
+      }
+      for (const selected of [
+        { en: 'Captain', fr: 'Adjudant', catalogueId: 'captain' },
+        { en: 'Captain', fr: 'Capitaine', catalogueId: 'unknown' },
+      ]) {
+        await request(app).patch(adminRankRoute).set('Authorization', editorAuth)
+          .send({ [person]: { ranks: selected } }).expect(400);
+        const invalidSelection = structuredClone(payload);
+        invalidSelection[person].ranks = selected;
+        await request(app).post(route).set('Authorization', ownerAuth).send(invalidSelection).expect(400);
+      }
+      const historicalRanks = { en: 'MWO (RET)', fr: 'ADJUDANT-CHEF (RET)' };
+      await request(app).patch(adminRankRoute).set('Authorization', editorAuth)
+        .send({ [person]: { ranks: historicalRanks } }).expect(200);
+      assert.deepEqual((await Model.findById(record._id))[person].ranks.toObject(), historicalRanks);
+      await request(app).patch(adminRankRoute).set('Authorization', editorAuth)
+        .send({ [person]: { [legacy]: payload[person][legacy], ranks } }).expect(200);
       await request(app).patch(`/api/admin/${route.split('/').pop()}/${record._id}`).set('Authorization', editorAuth).send({ [person]: { ranks } }).expect(200);
       const invalid = structuredClone(payload);
       invalid[person].ranks.fr = { unexpected: true };
@@ -327,6 +354,48 @@ describe('bilingual person ranks', () => {
       await request(app).patch(`/api/admin/${route.split('/').pop()}/${record._id}`).set('Authorization', editorAuth).send({ [person]: { ranks: { en: 'Captain', fr: '' } } }).expect(200);
       assert.equal((await Model.findById(record._id))[person][legacy], payload[person][legacy]);
     }
+  });
+});
+
+describe('bilingual retirement specialties', () => {
+  test('authored specialties survive old-client saves, partial staff edits and public preview serialization', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const editor = await createUser({ role: 'editor' });
+    const ownerAuth = bearer((await login(contributor)).body.token);
+    const editorAuth = bearer((await login(editor)).body.token);
+    const payload = retirementPayload();
+    payload.retiree.tradeRoles = { en: '00385, SIG TECH', fr: '00385, TECH SIG' };
+    await request(app).post('/api/retirement-messages').set('Authorization', ownerAuth).send(payload).expect(201);
+    const record = await RetirementMessage.findOne();
+    const route = `/api/retirement-messages/${record._id}`;
+    const adminRoute = `/api/admin/retirement-messages/${record._id}`;
+    await request(app).patch(adminRoute).set('Authorization', ownerAuth)
+      .send({ retiree: { tradeRoles: { fr: 'Unauthorized' } } }).expect(403);
+    await request(app).patch(adminRoute).set('Authorization', editorAuth)
+      .send({ retiree: { tradeRoles: { fr: 'French staff edit' } } }).expect(200);
+    const oldPayload = structuredClone(payload);
+    delete oldPayload.retiree.tradeRoles;
+    await request(app).patch(route).set('Authorization', ownerAuth).send(oldPayload).expect(200);
+    const saved = await RetirementMessage.findById(record._id);
+    assert.deepEqual(saved.retiree.tradeRoles.toObject(), { en: '00385, SIG TECH', fr: 'French staff edit' });
+    assert.equal(saved.retiree.tradeRole, payload.retiree.tradeRole);
+    const preview = await request(app).get(route + '/preview').set('Authorization', editorAuth).expect(200);
+    assert.deepEqual(preview.body.retirementMessage.retiree.tradeRoles, saved.retiree.tradeRoles.toObject());
+    await request(app).patch(adminRoute).set('Authorization', editorAuth)
+      .send({ retiree: { tradeRoles: { fr: '' } } }).expect(200);
+    assert.deepEqual((await RetirementMessage.findById(record._id)).retiree.tradeRoles.toObject(), { en: '00385, SIG TECH', fr: '' });
+    for (const value of [null, 'role', { fr: {} }, { fr: 'x'.repeat(121) }]) {
+      await request(app).patch(adminRoute).set('Authorization', editorAuth)
+        .send({ retiree: { tradeRoles: value } }).expect(400);
+    }
+    const invalid = structuredClone(payload); invalid.retiree.tradeRoles.fr = {};
+    await request(app).post('/api/retirement-messages').set('Authorization', ownerAuth).send(invalid).expect(400);
+    const published = await RetirementMessage.findById(record._id);
+    published.status = 'published'; published.publishedAt = new Date(); await published.save();
+    const detail = await request(app).get(route).expect(200);
+    assert.deepEqual(detail.body.retirementMessage.retiree.tradeRoles, published.retiree.tradeRoles.toObject());
+    const listing = await request(app).get('/api/retirement-messages').expect(200);
+    assert.deepEqual(listing.body.retirementMessages[0].retiree.tradeRoles, published.retiree.tradeRoles.toObject());
   });
 });
 

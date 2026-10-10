@@ -2,6 +2,7 @@ const Comment = require('../models/Comment');
 const express = require('express');
 const { setFormattedBody } = require('../services/formatted-body');
 const { cleanRanks } = require('../services/person-ranks');
+const { cleanTradeRoles } = require('../services/person-specialties');
 const { selectPublicationDate } = require('../services/publication-date');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
@@ -282,6 +283,9 @@ function getCleanRetirementMessagePayload(body = {}, submitterDetails = {}) {
     lastName: cleanString(retiree.lastName),
     postNominals: cleanString(retiree.postNominals),
     tradeRole: cleanString(retiree.tradeRole),
+    ...(retiree.tradeRoles !== undefined
+      ? { tradeRoles: cleanTradeRoles(retiree.tradeRoles) }
+      : {}),
     retirementDate: parseDateOnly(retiree.retirementDate),
   };
 
@@ -961,6 +965,12 @@ router.patch('/:messageId', authMiddleware, async (req, res) => {
     retirementMessage.retiree = {
       ...cleanRetiree,
       ranks: cleanRetiree.ranks || cleanRanks(retirementMessage.retiree?.ranks, 40),
+      ...(cleanRetiree.tradeRoles !== undefined || retirementMessage.retiree?.tradeRoles
+        ? { tradeRoles: {
+          ...cleanTradeRoles(retirementMessage.retiree?.tradeRoles || {}),
+          ...cleanRetiree.tradeRoles,
+        } }
+        : {}),
     };
     retirementMessage.message = cleanMessage;
     retirementMessage.messageLanguage = messageLanguage;

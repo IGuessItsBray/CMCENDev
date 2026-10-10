@@ -4,6 +4,7 @@ const {
 const express = require('express');
 const { mediaReferences: bodyMediaReferences } = require('../public/body-content');
 const { cleanRanks } = require('../services/person-ranks');
+const { cleanTradeRoles } = require('../services/person-specialties');
 const { getPublicationDateInfo } = require('../services/publication-date');
 const { getArchiveSourceLinks } = require('../services/archive-source-links');
 const { markContentEdited } = require('../services/content-edit-metadata');
@@ -5072,6 +5073,17 @@ router.patch(
             }
             if (!isPlainObject(body.retiree))
               return 'retiree must be an object';
+            if (body.retiree.tradeRoles !== undefined) {
+              try {
+                message.retiree.tradeRoles = {
+                  ...cleanTradeRoles(message.retiree.tradeRoles || {}),
+                  ...cleanTradeRoles(body.retiree.tradeRoles),
+                };
+              } catch (error) {
+                return error.message;
+              }
+              changedFields.push('tradeRoles');
+            }
             const error = applyAdminStringFields(
               message.retiree,
               body.retiree,

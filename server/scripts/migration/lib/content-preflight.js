@@ -1,5 +1,6 @@
 const crypto = require('node:crypto');
 const { normalizeBlocks, plainText } = require('../../../public/body-content');
+const { titleTradeRole } = require('./notice-identity');
 
 const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const SOURCE = 'https://cmcen-rcmce.ca';
@@ -69,6 +70,23 @@ async function inspectBatch(input, { models, mediaEvidence = [] } = {}) {
     )
       flag('language-review-required');
     const document = item.document || {};
+    if (item.kind === 'retirement') {
+      const retiree = document.retiree || {};
+      if (/\d{5}/u.test(retiree.postNominals || ''))
+        flag('specialty-in-post-nominals');
+      const roles = {};
+      for (const record of document.legacy?.sourceRecords || []) {
+        if (typeof record.title !== 'string' || !['en', 'fr'].includes(record.language)) continue;
+        try { roles[record.language] = titleTradeRole(record.title); }
+        catch { flag('source-specialty-review-required', { sourceId: record.sourceId }); }
+      }
+      if (roles.en && roles.fr && roles.en !== roles.fr && !retiree.tradeRoles)
+        flag('bilingual-specialty-required');
+      for (const language of ['en', 'fr']) {
+        if (roles[language] && retiree.tradeRoles && retiree.tradeRoles[language] !== roles[language])
+          flag('source-specialty-changed', { language });
+      }
+    }
     if (
       document.status !== 'draft' ||
       document.publishedAt ||

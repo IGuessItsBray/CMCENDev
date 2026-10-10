@@ -142,7 +142,7 @@ function formatRetireeName(retirementMessage) {
 
 function getMosid(retirementMessage) {
   return (
-    retirementMessage.retiree?.tradeRole ||
+    CMCENUtils.getRetireeTradeRole(retirementMessage.retiree) ||
     translate("retirement_mosid_pending")
   );
 }
@@ -174,7 +174,7 @@ function setRetirementMessageText(retirementMessage) {
   BodyContent.render(
     retirementDetailText,
     retirementMessage,
-    BodyContent.languageFor(retirementMessage.messages, window.currentLang || 'en', text),
+    BodyContent.languageFor(retirementMessage.messages, CMCENUtils.getCurrentLanguage(), text),
     text,
     (element, value) => CMCENUtils.setLinkifiedText(element, formatRetirementMessageText(value)),
     'retirementMessage',
@@ -847,6 +847,8 @@ document.addEventListener("languagechange", () => {
     retirementDetailTitle.textContent = translate("retirement_detail_title", {
       name,
     });
+    retirementDetailMosid.textContent = getMosid(currentRetirementMessage);
+    renderPhoto(currentRetirementMessage, name);
     renderRetirementAdminActions();
   } else if (visibleDetailMessageKey) {
     showRetirementDetailMessageKey(

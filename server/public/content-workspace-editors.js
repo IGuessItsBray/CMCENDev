@@ -622,27 +622,42 @@ window.ContentWorkspaceEditors = {
       ];
     }
 
+    function createPersonRankFields(person, legacyField, prefix) {
+      const initial = window.CMCENRanks.initialValues(person, legacyField);
+      const fields = ["en", "fr"].map((language) =>
+        createWorkspaceEditorField({
+          field: prefix + (language === "en" ? "En" : "Fr"),
+          label: language === "en" ? "Rank in English" : "Rank in French",
+          labelKey: language === "en" ? "person_rank_select_en" : "person_rank_select_fr",
+          value: initial[language],
+          options: [
+            getWorkspaceOption("", "select_option", "Select an option"),
+            ...window.CMCENRanks.catalogue.map((rank) => ({
+              value: rank[language],
+              label: rank[language],
+            })),
+          ],
+        }),
+      );
+      const controls = fields.map((field) => field.querySelector("select"));
+      window.CMCENRanks.bind(controls[0], controls[1], initial, () =>
+        controls[0].dispatchEvent(new Event("input", { bubbles: true })),
+      );
+      for (const [index, language] of ["en", "fr"].entries()) {
+        if (initial[language] && !window.CMCENRanks.resolve(initial[language], language)) {
+          const note = document.createElement("small");
+          setWorkspaceTranslatedText(note, "person_rank_retained",
+            "Existing rank retained. Choose a listed rank to set both languages.");
+          fields[index].append(note);
+        }
+      }
+      return fields;
+    }
+
     function getRetirementDetailsFields(item) {
       const retiree = item.content?.retiree || {};
       return [
-        createWorkspaceEditorField({
-          field: "retireeRank",
-          label: "Rank at retirement",
-          labelKey: "retirement_rank",
-          value: retiree.rank,
-        }),
-        createWorkspaceEditorField({
-          field: "retireeRankEn",
-          label: "Rank (EN, optional)",
-          labelKey: "person_rank_en",
-          value: retiree.ranks?.en,
-        }),
-        createWorkspaceEditorField({
-          field: "retireeRankFr",
-          label: "Rank (FR, optional)",
-          labelKey: "person_rank_fr",
-          value: retiree.ranks?.fr,
-        }),
+        ...createPersonRankFields(retiree, "rank", "retireeRank"),
         createWorkspaceEditorField({
           field: "retireeFirstName",
           label: "First name",
@@ -674,6 +689,18 @@ window.ContentWorkspaceEditors = {
           labelKey: "retirement_trade_role",
           value: retiree.tradeRole,
         }),
+        createWorkspaceEditorField({
+          field: "retireeTradeRoleEn",
+          label: "MOSID / role in English (optional)",
+          labelKey: "person_trade_role_en",
+          value: retiree.tradeRoles?.en,
+        }),
+        createWorkspaceEditorField({
+          field: "retireeTradeRoleFr",
+          label: "MOSID / role in French (optional)",
+          labelKey: "person_trade_role_fr",
+          value: retiree.tradeRoles?.fr,
+        }),
       ];
     }
 
@@ -692,24 +719,7 @@ window.ContentWorkspaceEditors = {
           labelKey: "content_workspace_slug",
           value: item.content?.slug,
         }),
-        createWorkspaceEditorField({
-          field: "deceasedFullRank",
-          label: "Full rank",
-          labelKey: "last_post_full_rank",
-          value: deceased.fullRank,
-        }),
-        createWorkspaceEditorField({
-          field: "deceasedRankEn",
-          label: "Rank (EN, optional)",
-          labelKey: "person_rank_en",
-          value: deceased.ranks?.en,
-        }),
-        createWorkspaceEditorField({
-          field: "deceasedRankFr",
-          label: "Rank (FR, optional)",
-          labelKey: "person_rank_fr",
-          value: deceased.ranks?.fr,
-        }),
+        ...createPersonRankFields(deceased, "fullRank", "deceasedRank"),
         createWorkspaceEditorField({
           field: "deceasedFirstName",
           label: "First name",
@@ -938,7 +948,7 @@ window.ContentWorkspaceEditors = {
       if (item.type === "retirementMessage") {
         return (
           [
-            getValue("retireeRank"),
+            getValue("retireeRankEn"),
             getValue("retireeFirstName"),
             getValue("retireeLastName"),
           ]
@@ -950,7 +960,7 @@ window.ContentWorkspaceEditors = {
       if (item.type === "lastPost") {
         return (
           [
-            getValue("deceasedFullRank"),
+            getValue("deceasedRankEn"),
             getValue("deceasedFirstName"),
             getValue("deceasedSurname"),
           ]
@@ -1820,16 +1830,19 @@ window.ContentWorkspaceEditors = {
       if (item.type === "retirementMessage") {
         return {
           retiree: {
-            rank: String(formData.get("retireeRank") || ""),
-            ranks: {
+            ...window.CMCENRanks.editPayload(item.content?.retiree || {}, "rank", {
               en: String(formData.get("retireeRankEn") || ""),
               fr: String(formData.get("retireeRankFr") || ""),
-            },
+            }),
             firstName: String(formData.get("retireeFirstName") || ""),
             lastName: String(formData.get("retireeLastName") || ""),
             postNominals: String(formData.get("retireePostNominals") || ""),
             retirementDate: getWorkspaceIsoDate(formData.get("retirementDate")),
             tradeRole: String(formData.get("retireeTradeRole") || ""),
+            tradeRoles: {
+              en: String(formData.get("retireeTradeRoleEn") || ""),
+              fr: String(formData.get("retireeTradeRoleFr") || ""),
+            },
           },
           photoUrl: String(formData.get("photoUrl") || ""),
           photoDisplayUrl: String(formData.get("photoDisplayUrl") || ""),
@@ -1841,11 +1854,10 @@ window.ContentWorkspaceEditors = {
           title: String(formData.get("title") || ""),
           slug: String(formData.get("slug") || ""),
           deceased: {
-            fullRank: String(formData.get("deceasedFullRank") || ""),
-            ranks: {
+            ...window.CMCENRanks.editPayload(item.content?.deceased || {}, "fullRank", {
               en: String(formData.get("deceasedRankEn") || ""),
               fr: String(formData.get("deceasedRankFr") || ""),
-            },
+            }),
             firstName: String(formData.get("deceasedFirstName") || ""),
             surname: String(formData.get("deceasedSurname") || ""),
             postNominal: String(formData.get("deceasedPostNominal") || ""),

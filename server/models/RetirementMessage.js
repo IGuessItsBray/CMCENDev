@@ -5,6 +5,14 @@ const {
   requiresSubmissionMetadata,
 } = require('../services/archive-provenance');
 
+const tradeRolesSchema = new mongoose.Schema(
+  {
+    en: { type: String, trim: true, maxlength: 120, default: '' },
+    fr: { type: String, trim: true, maxlength: 120, default: '' },
+  },
+  { _id: false },
+);
+
 const retirementMessageSchema = new mongoose.Schema(
   {
     retiree: {
@@ -43,6 +51,9 @@ const retirementMessageSchema = new mongoose.Schema(
         maxlength: 120,
         default: '',
       },
+
+      // Missing on older records/packages; the shared tradeRole remains valid.
+      tradeRoles: { type: tradeRolesSchema, default: undefined },
 
       retirementDate: {
         type: Date,

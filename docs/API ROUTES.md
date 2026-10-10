@@ -148,6 +148,14 @@ Personal edit links include `personal=1`, keeping publishing controls out of the
 
 The personal dashboard uses `editUrl` as edit eligibility: rejected submissions open directly as correction forms inside the detail modal, loading the existing type-specific `/edit` endpoint and submitting to its existing PATCH route. Other statuses are read-only in this modal. Retirement and Last Post corrections edit the original-language message and preserve the other language for translation review. The standalone personal edit links remain available for existing entry points.
 
+Retirement `retiree` also accepts optional `tradeRoles: { en, fr }` on submission,
+personal saves and audited admin edits. Each supplied language is authored text
+of at most 120 characters. Omitted objects/languages preserve saved values;
+empty strings clear a translation. Public person objects and staff previews
+retain this field. Displays choose the active-language specialty, then the
+shared `tradeRole`, then an available authored value. Existing records/packages
+require no migration, and certificate requests continue using shared `tradeRole`.
+
 Retirement `retiree` and Last Post `deceased` accept optional `ranks: { en, fr }`
 on submission and editing, including the audited admin editors and archive review.
 Values must be strings, limited to 40 characters for retirement and 80 for Last
@@ -156,8 +164,18 @@ preserves saved translations on updates. Empty values clear an authored translat
 Public person objects include these ranks when available. Public titles select the
 current-language rank, then the original `rank`/`fullRank`, then an available
 translation. Original rank fields retain their existing meaning and certificate
-behavior. Existing documents require no migration; translations are authored,
-never inferred or silently imported. Bodies remain plain text: HTTP(S), `www.`
+behavior. The staff detail editor shows two linked rank dropdowns backed by the
+shared catalogue in `server/public/person-rank-options.js`. Selecting either
+sets both verified values and sends optional `ranks.catalogueId`; input validation
+requires that exact EN/FR pair and strips the token before storage. Without that
+token, historical/custom authored text remains accepted under the existing length
+limits, and older-client omission preserves ranks. Existing custom or conflicting
+bilingual ranks are retained until an explicit catalogue selection. Recognized
+EN-only ranks can gain their verified French counterpart on a staff save; opening
+the editor performs no write. No third legacy rank control is shown. The original
+legacy field is preserved on an unchanged save and updated to the English value
+when a rank is changed. Public submission controls and certificate workflows are
+unchanged. Existing documents require no migration. Bodies remain plain text: HTTP(S), `www.`
 URLs and email addresses become safe links; HTML markup remains inert text.
 
 Event, retirement, and Last Post correction forms also send `submitForReview: true` to their existing PATCH routes. This optional boolean enforces ownership without a reviewer override (`404`), requires an editable, unscheduled state (`409`), and disallows `publishNow` except `false` (`400`). Existing validation, bilingual merging, and auditing still apply; omitting the flag retains existing behavior. Submission detail includes the attached image reference and retirement date/role where available.

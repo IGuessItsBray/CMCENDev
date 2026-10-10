@@ -3,12 +3,27 @@ const assert = require('node:assert/strict');
 const sharp = require('sharp');
 const {
   chooseWordPressImage,
+  inspectImage,
 } = require('../scripts/migration/lib/wordpress-image-choice');
 const {
   prepareBestMedia,
 } = require('../scripts/migration/lib/content-import-package');
 const { bytesDigest } = require('../scripts/migration/lib/content-import');
 const origin = 'https://cmcen-rcmce.ca/wp-content/uploads/';
+test('cached originals enforce current image limits without rewriting compliant bytes', async () => {
+  await assert.rejects(inspectImage(Buffer.alloc(10 * 1024 * 1024 + 1)), /10 MiB/u);
+  for (const [width, height, reason] of [
+    [10001, 1, /pixel\/dimension/u],
+    [5001, 5000, /pixel limit/iu],
+  ]) {
+    const bytes = await sharp({ create: { width, height, channels: 3, background: '#123456' } }).png().toBuffer();
+    await assert.rejects(inspectImage(bytes), reason);
+  }
+  const f = await fixture(), original = Buffer.from(f.original);
+  const info = await inspectImage(f.original);
+  assert.equal(info.sha256, bytesDigest(original));
+  assert.deepEqual(f.original, original);
+});
 async function fixture() {
   const original = await sharp({
     create: {

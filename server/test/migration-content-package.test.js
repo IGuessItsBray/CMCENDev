@@ -155,6 +155,51 @@ async function candidate() {
   return { batch, identity, bytes };
 }
 
+test('new original-byte packages reject oversized image dimensions before freezing', async () => {
+  const f = await candidate();
+  const bytes = await sharp({ create: { width: 10001, height: 1, channels: 3, background: '#123456' } }).png().toBuffer();
+  const sha = bytesDigest(bytes), key = `images/archive/wordpress/${sha}.png`;
+  Object.assign(f.batch.media[0], { key, filename: `${sha}.png`, sha256: sha, bytes: bytes.length });
+  Object.assign(f.identity.media[0], { key, sourceSha256: sha, bytes: bytes.length });
+  delete f.identity.manifestDigest;
+  f.identity.manifestDigest = hash(f.identity);
+  await assert.rejects(freezeContentPackage({
+    ...f, models, readMedia: async () => bytes,
+    buildPublicMediaUrl: value => `https://media.example.org/${value}`,
+  }), /pixel\/dimension/u);
+});
+
+test('select-media CLI uses strict bounded transport for metadata and original bytes', async t => {
+  const f = await candidate(), original = await sharp(f.bytes).resize(4, 4).png().toBuffer();
+  const source = 'https://cmcen-rcmce.ca/wp-content/uploads/original.png';
+  f.batch.media[0].wordpressMediaId = 321;
+  const calls = [];
+  t.mock.method(require('axios'), 'get', async (url, options) => {
+    calls.push(url);
+    assert.equal(options.lookup, require('../scripts/migration/lib/source-image').publicImageLookup);
+    assert.equal(options.maxContentLength, 10 * 1024 * 1024);
+    assert.equal(options.maxRedirects, 0);
+    assert.equal(options.proxy, false);
+    return { data: url.includes('/wp-json/') ? Buffer.from(JSON.stringify({
+      id: 321, source_url: source,
+      media_details: { width: 4, height: 4, sizes: { thumbnail: { source_url: f.batch.media[0].sourceUrl, width: 1, height: 1 } } },
+    })) : original };
+  });
+  const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'strict-original-'));
+  try {
+    const input = path.join(temp, 'batch.json'), output = path.join(temp, 'selected.json');
+    await fs.writeFile(input, JSON.stringify(f.batch));
+    await fs.writeFile(path.join(temp, f.batch.media[0].filename), f.bytes);
+    await main(['--select-media', '--input', input, '--media-root', temp, '--output', output]);
+    const result = JSON.parse(await fs.readFile(output, 'utf8'));
+    assert.deepEqual(calls, ['https://cmcen-rcmce.ca/wp-json/wp/v2/media/321', source]);
+    assert.equal(result.media[0].sha256, bytesDigest(original));
+    assert.deepEqual(await fs.readFile(path.join(temp, result.media[0].filename)), original);
+  } finally {
+    await fs.rm(temp, { recursive: true, force: true });
+  }
+});
+
 test('verified EN/FR source permalinks survive identity pinning and frozen model serialization', async () => {
   const f = await candidate();
   f.batch.items[0].document.legacy.sourceRecords = f.batch.items[0].sources.map(

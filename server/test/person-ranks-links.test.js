@@ -143,6 +143,10 @@ test('staff detail editors round-trip both authored rank languages', () => {
       createWorkspaceEditorField: (value) => value,
       createWorkspaceDateTimeField: (value) => value,
       getWorkspaceIsoDate: (value) => value || '',
+      window: { CMCENRanks: require('../public/person-rank-options') },
+      createPersonRankFields: (person, legacy, prefix) =>
+        Object.entries(require('../public/person-rank-options').initialValues(person, legacy))
+          .map(([language, value]) => ({ field: prefix + (language === 'en' ? 'En' : 'Fr'), value })),
     },
   );
   for (const [type, person, fieldsFunction] of [
@@ -156,11 +160,17 @@ test('staff detail editors round-trip both authored rank languages', () => {
         [person]: { rank: 'Capt', fullRank: 'Capt', ranks, firstName: 'Alex' },
       },
     };
+    if (person === 'retiree') item.content.retiree.tradeRoles = { en: '00385, SIG TECH', fr: '00385, TECH SIG' };
     const values = new Map(
       api[fieldsFunction](item).map(({ field, value }) => [field, value]),
     );
     const saved = api.getContentWorkspaceRecordPayload(item, values);
     assert.deepEqual(JSON.parse(JSON.stringify(saved[person].ranks)), ranks);
+    if (person === 'retiree') {
+      assert.deepEqual(JSON.parse(JSON.stringify(saved.retiree.tradeRoles)), item.content.retiree.tradeRoles);
+      values.set('retireeTradeRoleFr', 'Staff specialty');
+      assert.equal(api.getContentWorkspaceRecordPayload(item, values).retiree.tradeRoles.fr, 'Staff specialty');
+    }
     values.set(`${person}RankFr`, 'Grade vérifié');
     assert.equal(
       api.getContentWorkspaceRecordPayload(item, values)[person].ranks.fr,

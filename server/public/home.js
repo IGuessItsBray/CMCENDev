@@ -100,8 +100,9 @@ function formatRetirementMeta(retirementMessage, language) {
   const retiree = retirementMessage.retiree || {};
   const details = [];
 
-  if (retiree.tradeRole) {
-    details.push(retiree.tradeRole);
+  const tradeRole = CMCENUtils.getRetireeTradeRole(retiree, language);
+  if (tradeRole) {
+    details.push(tradeRole);
   }
 
   if (retiree.retirementDate) {

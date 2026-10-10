@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const mongoose = require('mongoose');
 const { retainWordPressSourceLinks } = require('./lib/wordpress-source-links');
 const { parseArgs } = require('./lib/args');
+const { requestSourceImage } = require('./lib/source-image');
 const {
   digest,
   bytesDigest,
@@ -129,11 +130,10 @@ async function main(argv) {
       try {
         const source = new URL(m.sourceUrl);
         assert(source.origin === 'https://cmcen-rcmce.ca');
-        const response = await fetch(
+        const response = await requestSourceImage(
           `${source.origin}/wp-json/wp/v2/media/${m.wordpressMediaId}`,
-          { signal: AbortSignal.timeout(15000), redirect: 'error' },
         );
-        if (response.ok) m.wordpressMetadata = await response.json();
+        m.wordpressMetadata = JSON.parse(Buffer.from(response.data).toString('utf8'));
       } catch {
         /* Missing metadata preserves the known source and flags it. */
       }
@@ -143,15 +143,8 @@ async function main(argv) {
       readMedia,
       metadata,
       fetchImage: async (url) => {
-        const response = await fetch(url, {
-          redirect: 'error',
-          signal: AbortSignal.timeout(30000),
-        });
-        assert(response.ok);
-        return require('./lib/content-import-storage').bounded(
-          response.body,
-          32 * 1024 * 1024,
-        );
+        const response = await requestSourceImage(url);
+        return Buffer.from(response.data);
       },
       writeMedia: async (m, bytes) => {
         const file = path.join(fs.realpathSync(args['media-root']), m.filename);

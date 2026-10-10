@@ -232,6 +232,13 @@
     );
   }
 
+  function getRetireeTradeRole(retiree = {}, language = getCurrentLanguage()) {
+    const values = retiree.tradeRoles || {};
+    return [values[language], retiree.tradeRole, values.en, values.fr]
+      .map((value) => String(value || '').trim())
+      .find(Boolean) || '';
+  }
+
   function getRetireeNameParts(retiree = {}) {
     let name = [getPersonRank(retiree), retiree.firstName, retiree.lastName]
       .map((value) => String(value || "").trim())
@@ -2179,6 +2186,7 @@
     getCurrentLocale,
     getLocalizedText,
     getRetireeNameParts,
+    getRetireeTradeRole,
     getPersonRank,
     getLastPostName,
     isSitePlaceholderImage,

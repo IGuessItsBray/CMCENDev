@@ -1,12 +1,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
-const sharp = require('sharp');
+const { MAX_IMAGE_BYTES } = require('../../../services/media-sanitization');
 const { EJSON } = require('mongoose').mongo.BSON;
 const { inspectBatch } = require('./content-preflight');
 const { assertRetainedSourceLinks } = require('./wordpress-source-links');
 const {
   chooseWordPressImage,
+  inspectImage,
   originalImageUrl,
 } = require('./wordpress-image-choice');
 const {
@@ -84,6 +85,8 @@ function mediaReader(root) {
     assert(file.startsWith(base + path.sep), 'Media escaped package root');
     assert.equal(fs.statSync(file).size, m.bytes);
     assert(m.bytes <= 25 * 1024 * 1024);
+    if ((m.contentType || m.mimeType || '').startsWith('image/'))
+      assert(m.bytes <= MAX_IMAGE_BYTES, 'Source image exceeds the 10 MiB limit');
     return fs.readFileSync(file);
   };
 }
@@ -180,9 +183,9 @@ async function freezeContentPackage({
       if (m.kind === 'pdf')
         assert.equal(bytes.subarray(0, 5).toString(), '%PDF-');
       else {
-        const metadata = await sharp(bytes).metadata();
-        assert(metadata.width && metadata.height);
-        dimensions = { width: metadata.width, height: metadata.height };
+        const metadata = await inspectImage(bytes);
+        // Retain raw dimensions in the immutable original-byte asset record.
+        dimensions = { width: metadata.rawWidth, height: metadata.rawHeight };
       }
       const name = decodeURIComponent(
         new URL(m.sourceUrl).pathname.split('/').pop(),
@@ -371,6 +374,7 @@ async function prepareBestMedia({
 }
 
 module.exports = {
+  prepareRetirementIdentity: require('./notice-identity').prepareRetirementIdentity,
   prepareBestMedia,
   verifyPreparedIdentity,
   mediaReader,

@@ -12,7 +12,7 @@ const context = {
     querySelector: () => ({}),
     addEventListener() {},
   },
-  CMCENUtils: { setDetailReturnLink() {} },
+  CMCENUtils: { setDetailReturnLink() {}, getCurrentLanguage: () => 'en' },
   window: { location: { search: '' } },
 };
 vm.runInNewContext(
@@ -78,6 +78,7 @@ test('retirement renderer passes localized formatted text to the shared linkifie
     fr: '1. À 13 H 30. Venez. 2. Voir https://example.org/30.',
   };
   for (const language of ['en', 'fr']) {
+    context.CMCENUtils.getCurrentLanguage = () => language;
     context.CMCENUtils.getLocalizedText = (value) => value[language];
     context.CMCENUtils.setLinkifiedText = (element, text) => {
       assert.equal(text, format(messages[language]));

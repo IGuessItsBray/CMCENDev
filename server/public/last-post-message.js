@@ -145,7 +145,7 @@ function renderLastPost(lastPost) {
   BodyContent.render(
     lastPostDetailText,
     lastPost,
-    BodyContent.languageFor(lastPost.messages, window.currentLang || 'en', text),
+    BodyContent.languageFor(lastPost.messages, CMCENUtils.getCurrentLanguage(), text),
     text,
     CMCENUtils.setLinkifiedText,
     'lastPost',

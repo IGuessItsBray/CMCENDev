@@ -13,7 +13,7 @@ const testFile = path.join(
 const groups = [
   'system and authentication|MFA and audit behavior|database integrity|admin email controls',
   'public search|permissions and audit logs|news stories|news publication scheduling|professional award recipient records|user administration browsing|authorization matrix and account integrity',
-  'retirement message lifecycle|Last Post lifecycle',
+  'retirement message lifecycle|Last Post lifecycle|bilingual person ranks|bilingual retirement specialties',
   'unified comments|Last Post comment moderation|archival draft lifecycle',
   'event, page, and comment workflows|media lifecycle',
 ];

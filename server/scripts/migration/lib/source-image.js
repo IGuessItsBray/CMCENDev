@@ -90,6 +90,27 @@ async function requestImage(httpClient, sourceUrl, userAgent, allowedOrigins) {
   });
 }
 
+function defaultAllowedOrigins() {
+  return [
+    'https://cmcen-rcmce.ca',
+    'https://www.cmcen-rcmce.ca',
+    ...(DEFAULT_IMAGE_URL.startsWith('https://')
+      ? [new URL(DEFAULT_IMAGE_URL).origin]
+      : []),
+  ];
+}
+
+// Strict transport only: original-selection callers must never substitute a
+// crest for a failed candidate. No validation, conversion or fallback here.
+async function requestSourceImage(sourceUrl, options = {}) {
+  return requestImage(
+    options.httpClient || axios,
+    sourceUrl,
+    options.userAgent || 'CMCEN migration script',
+    options.allowedOrigins || defaultAllowedOrigins(),
+  );
+}
+
 async function validateImage(image, validate) {
   if (validate) {
     await validate(image.buffer);
@@ -131,13 +152,7 @@ async function downloadSourceImage(sourceUrl, options = {}) {
   const httpClient = options.httpClient || axios;
   const userAgent = options.userAgent || 'CMCEN migration script';
   const validate = options.validateImage;
-  const allowedOrigins = options.allowedOrigins || [
-    'https://cmcen-rcmce.ca',
-    'https://www.cmcen-rcmce.ca',
-    ...(DEFAULT_IMAGE_URL.startsWith('https://')
-      ? [new URL(DEFAULT_IMAGE_URL).origin]
-      : []),
-  ];
+  const allowedOrigins = options.allowedOrigins || defaultAllowedOrigins();
 
   if (!sourceUrl) {
     return loadDefaultImage({
@@ -200,5 +215,6 @@ module.exports = {
   DEFAULT_IMAGE_NAME,
   DEFAULT_IMAGE_URL,
   downloadSourceImage,
+  requestSourceImage,
   publicImageLookup,
 };

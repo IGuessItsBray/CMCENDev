@@ -80,7 +80,7 @@ test('shared route serves existing public files unchanged and rejects unknown or
   const directory = path.join(__dirname, '../public/page-content');
   for (const filename of fs
     .readdirSync(directory)
-    .filter((name) => name.endsWith('.json') && name !== 'leadership.json')) {
+    .filter((name) => name.endsWith('.json') && !['leadership.json', 'document-library.json'].includes(name))) {
     const response = await request(app)
       .get(`/page-content/${filename}`)
       .expect(200);
@@ -91,6 +91,7 @@ test('shared route serves existing public files unchanged and rejects unknown or
       ),
     );
   }
+  await request(app).get('/page-content/document-library.json').expect(503);
   for (const filename of [
     'missing.json',
     'foundation-adopt-catalogue.review.json',

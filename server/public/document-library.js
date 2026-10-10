@@ -46,6 +46,10 @@
 
   function createDocumentCard(item, labels) {
     const article = document.createElement("article");
+    article.id = item.id;
+    for (const alias of item.aliases || []) {
+      const anchor = document.createElement('span'); anchor.id = alias; article.append(anchor);
+    }
     article.className = "document-library-card";
 
     const metadata = document.createElement("p");
@@ -136,6 +140,9 @@
 
       library.replaceChildren();
       items.forEach((item) => library.append(createDocumentCard(item, labels)));
+      if (location.hash) {
+        try { document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView(); } catch { /* Ignore malformed fragments. */ }
+      }
 
       if (!items.length) {
         const empty = document.createElement("p");

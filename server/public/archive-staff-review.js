@@ -628,9 +628,26 @@
   function render(record) {
     selected = record;
     pendingMediaSelections = [];
-    const readonly = record.status !== "draft";
+    const readonly = record.status !== "draft" || record.canEditArchive === false;
+    const catalogueOnly = record.type === 'archiveDocument' && record.canEditArchive === false;
     detail.replaceChildren();
     detail.append(node("h2", record.title));
+    if (record.type === 'archiveDocument') {
+      const usage = node('section'); detail.append(usage);
+      usage.textContent = ui('Loading document usage…', 'Chargement des références…');
+      api(`/archiveDocument/${record.id}/usage`).then(result => {
+        if (selected?.id !== record.id) return;
+        usage.replaceChildren();
+        const references = node('details');
+        references.append(node('summary', ui(`Used on ${result.count} pages`, `Utilisé dans ${result.count} pages`)));
+        const list = node('ul');
+        for (const reference of result.references) {
+          const item = node('li'); const link = node('a', `${reference.title} · ${reference.status}`);
+          link.href = reference.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; item.append(link); list.append(item);
+        }
+        references.append(list); usage.append(references);
+      }).catch(() => { if (selected?.id === record.id) usage.textContent = ui('Could not load usage.', 'Impossible de charger les références.'); });
+    }
     detail.append(node("p", `${typeLabels[record.type]} · ${record.status === "published" ? ui("Published", "Publié") : ui("Draft", "Brouillon")}`));
     if (record.previewUrl && record.status === "draft") {
       const preview = node(
@@ -645,9 +662,9 @@
 
     const source = node("details", undefined, "archive-staff-source");
     source.append(
-      node("summary", ui("Open original source", "Ouvrir la source originale")),
+      node("summary", catalogueOnly ? ui('Catalogue source links', 'Liens sources du catalogue') : ui("Open original source", "Ouvrir la source originale")),
     );
-    source.append(
+    if (!catalogueOnly) source.append(
       node(
         "p",
         ui(`Source IDs: ${record.source.sourceIds.join(", ") || "—"}`, `Identifiants source : ${record.source.sourceIds.join(", ") || "—"}`),
@@ -661,7 +678,7 @@
         ),
       );
     const originalDate = record.publicationDate?.originalPublishedAt;
-    source.append(node("p", originalDate
+    if (!catalogueOnly) source.append(node("p", originalDate
       ? ui(`Original publication date: ${dateText(originalDate)}`, `Date de publication d’origine : ${dateText(originalDate)}`)
       : ui("Original publication date unavailable in source evidence.", "Date de publication d’origine absente de la source.")));
     if (record.type === "comment" && record.source.originalStatus === "0")
@@ -688,7 +705,7 @@
       if (link) source.append(link);
       if (snapshot.body) source.append(node("pre", snapshot.body));
     }
-    if (!record.source.urls.length && !record.source.sourceRecords.length)
+    if (!catalogueOnly && !record.source.urls.length && !record.source.sourceRecords.length)
       source.append(
         node(
           "p",
@@ -697,7 +714,7 @@
       );
     const editor = node("section", undefined, "archive-staff-editor");
     editor.append(
-      node("h3", ui("Review and correct content", "Réviser et corriger le contenu")),
+      node("h3", catalogueOnly ? ui('Document metadata', 'Métadonnées du document') : ui("Review and correct content", "Réviser et corriger le contenu")),
     );
     const fields = node("div", undefined, "archive-staff-fields");
     const editableFields = record.fields.filter((field) => {
@@ -760,6 +777,7 @@
     const simplePreview = renderSimplePreview(record);
     if (simplePreview) detail.append(simplePreview);
     detail.append(source);
+    if (catalogueOnly) return;
 
     const review = node("section", undefined, "archive-staff-verification");
     review.append(node("h3", ui("Verification", "Vérification")));
@@ -994,6 +1012,7 @@
       app.hidden = false;
       if (response.types.includes(params.get("type")))
         typeSelect.value = params.get("type");
+      if (typeSelect.value === 'archiveDocument') statusSelect.value = 'all';
       await loadQueue();
       if (params.get("id") && /^[a-f0-9]{24}$/iu.test(params.get("id")))
         await loadDetail(typeSelect.value, params.get("id"));
@@ -1001,7 +1020,10 @@
       displayError(error);
     }
   }
-  typeSelect.addEventListener("change", () => void loadQueue());
+  typeSelect.addEventListener("change", () => {
+    statusSelect.value = typeSelect.value === 'archiveDocument' ? 'all' : 'draft';
+    void loadQueue();
+  });
   statusSelect.addEventListener("change", () => void loadQueue());
   more.addEventListener("click", () => void loadQueue(true));
   void init();

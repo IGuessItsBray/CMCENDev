@@ -1518,3 +1518,4 @@ router.delete(
 module.exports = router;
 module.exports.isPublicSitemapFile = isPublicSitemapFile;
 module.exports.cleanBlocks = cleanBlocks;
+module.exports.canViewPage = canViewPage;

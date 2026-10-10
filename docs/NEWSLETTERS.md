@@ -37,8 +37,8 @@ remain compatible with existing data and import tooling; they do not define the
 public category. Legacy API clients can still submit `layout: "standard"` with
 bilingual plain text.
 
-Images and documents live in CDN/object storage. The document catalog remains in
-`server/public/page-content/document-library.json`. Restoring the site requires
+Images and documents live in CDN/object storage. Document catalogue records live in
+MongoDB after the explicit catalogue migration; the existing JSON endpoint retains its format for the article picker. The version-controlled JSON is seed evidence and interface labels. Restoring the site requires
 the database and access to its media storage.
 
 See [API ROUTES.md](API%20ROUTES.md#news-stories) for article payloads and endpoints.

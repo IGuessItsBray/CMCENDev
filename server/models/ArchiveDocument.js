@@ -11,17 +11,21 @@ const localized = () => ({
   fr: { type: String, trim: true, maxlength: 4000, default: '' },
 });
 
-// Documents imported after the bundled library was written stay out of the
-// public catalogue until publication. The bundled catalogue is untouched.
+// Published records form the public catalogue after the explicit seed migration.
+// Imported drafts retain their existing staff publication workflow.
 const schema = new mongoose.Schema(
   {
-    sourceId: { type: Number, required: true, min: 1, unique: true },
-    legacy: { type: mongoose.Schema.Types.Mixed, required: true },
+    catalogueId: { type: String, trim: true, maxlength: 120, match: /^[a-z0-9-]+$/u },
+    catalogueAliases: { type: [String], default: undefined },
+    catalogueOrder: { type: Number, min: 0, validate: Number.isSafeInteger },
+    sourceId: { type: Number, min: 1, required: function () { return !this.catalogueId; }, validate: { validator: value => value === undefined || Number.isSafeInteger(value), message: 'Source ID must be a positive integer' } },
+    legacy: { type: mongoose.Schema.Types.Mixed, required: function () { return !this.catalogueId; } },
+    availability: { type: String, enum: ['available', 'unavailable'], default: 'available' },
     organization: { type: String, required: true, enum: organizations },
     type: { type: String, required: true, enum: types },
     fileKey: {
       type: String,
-      required: true,
+      required: function () { return this.availability !== 'unavailable'; },
       trim: true,
       maxlength: 500,
       match: /^documents\/[a-zA-Z0-9/_-]+\.(pdf|docx)$/u,
@@ -44,4 +48,6 @@ const schema = new mongoose.Schema(
 );
 
 schema.index({ status: 1, updatedAt: -1 });
+schema.index({ sourceId: 1 }, { unique: true, partialFilterExpression: { sourceId: { $type: 'number' } } });
+schema.index({ catalogueId: 1 }, { unique: true, partialFilterExpression: { catalogueId: { $type: 'string' } } });
 module.exports = mongoose.model('ArchiveDocument', schema);

@@ -21,6 +21,7 @@ function getTypeLabel(type) {
     "last-post-message": translate("search_type_last_post_message"),
     "news-story": translate("search_type_news_story"),
     page: translate("search_type_page"),
+    document: translate("search_type_document"),
   };
 
   return labels[type] || type;

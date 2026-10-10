@@ -6,6 +6,7 @@ const Event = require('../models/Event');
 const LastPostMessage = require('../models/LastPostMessage');
 const NewsArticle = require('../models/NewsArticle');
 const RetirementMessage = require('../models/RetirementMessage');
+const ArchiveDocument = require('../models/ArchiveDocument');
 const searchRouter = require('../routes/search');
 
 const publicSearchScript = fs.readFileSync(
@@ -35,7 +36,7 @@ function createQuery(results = []) {
 }
 
 async function runSearch(query, language = 'en', modelResults = new Map()) {
-  const models = [Event, LastPostMessage, RetirementMessage];
+  const models = [Event, LastPostMessage, RetirementMessage, ArchiveDocument];
   const originalFindMethods = models.map((model) => model.find);
   const originalNewsAggregate = NewsArticle.aggregate;
   const routeHandler = searchRouter.stack.find(

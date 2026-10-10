@@ -1,0 +1,151 @@
+[
+  {
+    "id": "heritage-awards-instruction",
+    "organization": "association",
+    "type": "policy",
+    "fileKey": "documents/library/heritage-awards-instruction-86941cd2699a.pdf",
+    "pageUrl": "/awards",
+    "en": {
+      "title": "Heritage Awards Instruction",
+      "description": "Instructions, award categories and annual nomination process for the C&E Heritage Awards. The two legacy instruction URLs contain this same English document.",
+      "dateLabel": "Undated",
+      "languageLabel": "English"
+    },
+    "fr": {
+      "title": "Instructions des Prix du patrimoine",
+      "description": "Instructions, catégories et processus annuel de mise en candidature aux Prix du patrimoine des C et E. Les deux liens historiques contiennent ce même document en anglais.",
+      "dateLabel": "Sans date",
+      "languageLabel": "Anglais"
+    }
+  },
+  {
+    "id": "heritage-awards-application",
+    "organization": "association",
+    "type": "policy",
+    "fileKey": "documents/library/heritage-awards-application-9c5fd89a4781.docx",
+    "pageUrl": "/awards",
+    "en": {
+      "title": "Heritage Awards Application",
+      "description": "Blank English application template for the C&E Heritage Awards.",
+      "dateLabel": "Undated",
+      "languageLabel": "English"
+    },
+    "fr": {
+      "title": "Formulaire de candidature aux Prix du patrimoine",
+      "description": "Modèle vierge en anglais pour présenter une candidature aux Prix du patrimoine des C et E.",
+      "dateLabel": "Sans date",
+      "languageLabel": "Anglais"
+    }
+  },
+  {
+    "id": "foundation-p070-donation-form",
+    "organization": "foundation",
+    "type": "governance",
+    "fileKey": "documents/library/foundation-p070-donation-form-d186ab9a8e40.pdf",
+    "pageUrl": "/about_museum_foundation",
+    "en": {
+      "title": "P070 Pay Allotment Form",
+      "description": "Bilingual P070 pay allotment form for donations to the Military C&E Museum Foundation.",
+      "dateLabel": "Undated",
+      "languageLabel": "English and French"
+    },
+    "fr": {
+      "title": "Formulaire de délégation de solde P070",
+      "description": "Formulaire bilingue de délégation de solde P070 pour les dons à la Fondation du Musée des C et E militaires.",
+      "dateLabel": "Sans date",
+      "languageLabel": "Anglais et français"
+    }
+  },
+  {
+    "id": "foundation-membership-application",
+    "organization": "foundation",
+    "type": "governance",
+    "fileKey": "documents/library/foundation-membership-application-df9a63130435.pdf",
+    "pageUrl": "/about_museum_foundation",
+    "en": {
+      "title": "Foundation Membership Application",
+      "description": "Bilingual application for membership in the Military C&E Museum Foundation.",
+      "dateLabel": "Undated",
+      "languageLabel": "English and French"
+    },
+    "fr": {
+      "title": "Demande d’adhésion à la Fondation",
+      "description": "Demande bilingue d’adhésion à la Fondation du Musée des C et E militaires.",
+      "dateLabel": "Sans date",
+      "languageLabel": "Anglais et français"
+    }
+  },
+  {
+    "id": "foundation-director-agreement",
+    "organization": "foundation",
+    "type": "governance",
+    "fileKey": "documents/library/foundation-director-agreement-28a26de26d52.pdf",
+    "pageUrl": "/about_museum_foundation",
+    "en": {
+      "title": "Foundation Director Agreement",
+      "description": "English agreement to serve as a Foundation director, including liability insurance information.",
+      "dateLabel": "Undated",
+      "languageLabel": "English"
+    },
+    "fr": {
+      "title": "Consentement à agir comme administrateur de la Fondation",
+      "description": "Consentement en anglais à agir comme administrateur de la Fondation, comprenant des renseignements sur l’assurance responsabilité.",
+      "dateLabel": "Sans date",
+      "languageLabel": "Anglais"
+    }
+  },
+  {
+    "id": "association-agm-proxy-2026",
+    "organization": "association",
+    "type": "meeting-record",
+    "fileKey": "documents/library/association-agm-proxy-2026-e0a84098e49b.docx",
+    "en": {
+      "title": "Association AGM Proxy — 2026",
+      "description": "Proxy for the Association AGM on 19 October 2026 at 1500. Proxies must be received by 16 October 2026.",
+      "dateLabel": "19 October 2026",
+      "languageLabel": "English"
+    },
+    "fr": {
+      "title": "Procuration pour l’AGA de l’Association — 2026",
+      "description": "Procuration pour l’AGA de l’Association du 19 octobre 2026 à 15 h. Les procurations doivent être reçues au plus tard le 16 octobre 2026.",
+      "dateLabel": "19 octobre 2026",
+      "languageLabel": "Anglais"
+    }
+  },
+  {
+    "id": "association-agm-agenda-2026",
+    "organization": "association",
+    "type": "meeting-record",
+    "fileKey": "documents/library/association-agm-agenda-2026-644015fac619.docx",
+    "en": {
+      "title": "Association AGM Agenda — 2026",
+      "description": "Agenda for the Association AGM on 19 October 2026 at 1500 Eastern daylight time.",
+      "dateLabel": "19 October 2026",
+      "languageLabel": "English"
+    },
+    "fr": {
+      "title": "Ordre du jour de l’AGA de l’Association — 2026",
+      "description": "Ordre du jour de l’AGA de l’Association du 19 octobre 2026 à 15 h, heure avancée de l’Est.",
+      "dateLabel": "19 octobre 2026",
+      "languageLabel": "Anglais"
+    }
+  },
+  {
+    "id": "association-agm-notice-2026",
+    "organization": "association",
+    "type": "meeting-record",
+    "fileKey": "documents/library/association-agm-notice-2026-2baeed94072b.docx",
+    "en": {
+      "title": "Association AGM Notice — 2026",
+      "description": "Original bilingual notice for the Association AGM on 19 October 2026 at 1500.",
+      "dateLabel": "19 October 2026",
+      "languageLabel": "English and French"
+    },
+    "fr": {
+      "title": "Avis de l’AGA de l’Association — 2026",
+      "description": "Avis bilingue original pour l’AGA de l’Association du 19 octobre 2026 à 15 h.",
+      "dateLabel": "19 octobre 2026",
+      "languageLabel": "Anglais et français"
+    }
+  }
+]

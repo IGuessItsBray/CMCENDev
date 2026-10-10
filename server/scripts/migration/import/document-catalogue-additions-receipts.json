@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "scope": "Eight owner-authorized original uploads to existing CMCEN storage; no catalogue publication",
+  "documents": [
+    {
+      "documentId": "heritage-awards-instruction",
+      "sourceName": "01-Heritage-Awards-Instruction.pdf",
+      "sourceUrls": [
+        "https://cmcen-rcmce.ca/wp-content/uploads/2023/05/01-Heritage-Awards-Instruction.pdf",
+        "https://cmcen-rcmce.ca/wp-content/uploads/2023/05/01-Heritage-Awards-Instruction-1.pdf"
+      ],
+      "storageKey": "documents/library/heritage-awards-instruction-86941cd2699a.pdf",
+      "fileUrl": "https://media.cefamily.ca/documents/library/heritage-awards-instruction-86941cd2699a.pdf",
+      "sha256": "86941cd2699a698069afd0fa0907062c61efaa63295e9e4001da4dba5cd6766e",
+      "bytes": 631090,
+      "mimeType": "application/pdf",
+      "storedVerified": true,
+      "cdnVerifiedAt": "2026-10-08T16:21:40.601Z"
+    },
+    {
+      "documentId": "heritage-awards-application",
+      "sourceName": "02-Heritage-Awards-Application.docx",
+      "sourceUrls": [
+        "https://cmcen-rcmce.ca/wp-content/uploads/2023/05/02-Heritage-Awards-Application.docx"
+      ],
+      "storageKey": "documents/library/heritage-awards-application-9c5fd89a4781.docx",
+      "fileUrl": "https://media.cefamily.ca/documents/library/heritage-awards-application-9c5fd89a4781.docx",
+      "sha256": "9c5fd89a4781087b1c9112ba12f4257eba0d08c9805e254a4e4d615345d351a3",
+      "bytes": 34702,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storedVerified": true,
+      "cdnVerifiedAt": "2026-10-08T16:21:40.651Z"
+    },
+    {
+      "documentId": "foundation-p070-donation-form",
+      "sourceName": "P070-FORMS.pdf",
+      "sourceUrls": [
+        "https://cmcen-rcmce.ca/wp-content/uploads/P070-FORMS.pdf"
+      ],
+      "storageKey": "documents/library/foundation-p070-donation-form-d186ab9a8e40.pdf",
+      "fileUrl": "https://media.cefamily.ca/documents/library/foundation-p070-donation-form-d186ab9a8e40.pdf",
+      "sha256": "d186ab9a8e40ef9f63c04e38a8be99b2d3a7e2b2426c99f9b5140b3edc117c1d",
+      "bytes": 238363,
+      "mimeType": "application/pdf",
+      "storedVerified": true,
+      "cdnVerifiedAt": "2026-10-08T16:21:40.723Z"
+    },
+    {
+      "documentId": "foundation-membership-application",
+      "sourceName": "Foundation-Membership-Application.pdf",
+      "sourceUrls": [
+        "https://cmcen-rcmce.ca/wp-content/uploads/Foundation-Membership-Application.pdf"
+      ],
+      "storageKey": "documents/library/foundation-membership-application-df9a63130435.pdf",
+      "fileUrl": "https://media.cefamily.ca/documents/library/foundation-membership-application-df9a63130435.pdf",
+      "sha256": "df9a63130435d5079b77faea0d1be439ce68279f2cd9e4daa5084c2a51d96f5b",
+      "bytes": 195314,
+      "mimeType": "application/pdf",
+      "storedVerified": true,
+      "cdnVerifiedAt": "2026-10-08T16:21:40.782Z"
+    },
+    {
+      "documentId": "foundation-director-agreement",
+      "sourceName": "Director-Agreement-to-serve.pdf",
+      "sourceUrls": [
+        "https://cmcen-rcmce.ca/wp-content/uploads/Director-Agreement-to-serve.pdf"
+      ],
+      "storageKey": "documents/library/foundation-director-agreement-28a26de26d52.pdf",
+      "fileUrl": "https://media.cefamily.ca/documents/library/foundation-director-agreement-28a26de26d52.pdf",
+      "sha256": "28a26de26d5252c9b7d9621faafb2eed6149956e39e7600012967d72745681ad",
+      "bytes": 126433,
+      "mimeType": "application/pdf",
+      "storedVerified": true,
+      "cdnVerifiedAt": "2026-10-08T16:21:40.838Z"
+    },
+    {
+      "documentId": "association-agm-proxy-2026",
+      "sourceName": "AGM-C-and-E-Association-Proxy.-1-1-1.docx",
+      "sourceUrls": [
+        "https://cmcen-rcmce.ca/wp-content/uploads/AGM-C-and-E-Association-Proxy.-1-1-1.docx"
+      ],
+      "storageKey": "documents/library/association-agm-proxy-2026-e0a84098e49b.docx",
+      "fileUrl": "https://media.cefamily.ca/documents/library/association-agm-proxy-2026-e0a84098e49b.docx",
+      "sha256": "e0a84098e49b541ac0bcd43a73f27f921c5606a970cfb70c5abd696cf045f562",
+      "bytes": 18615,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storedVerified": true,
+      "cdnVerifiedAt": "2026-10-08T16:21:40.890Z"
+    },
+    {
+      "documentId": "association-agm-agenda-2026",
+      "sourceName": "CE-Assn-Agenda-for-AGM-19Oct-2026-1.docx",
+      "sourceUrls": [
+        "https://cmcen-rcmce.ca/wp-content/uploads/CE-Assn-Agenda-for-AGM-19Oct-2026-1.docx"
+      ],
+      "storageKey": "documents/library/association-agm-agenda-2026-644015fac619.docx",
+      "fileUrl": "https://media.cefamily.ca/documents/library/association-agm-agenda-2026-644015fac619.docx",
+      "sha256": "644015fac6191ce84e85d870c9242aead9ef653a1dffad3f03f2d32e3eb6be60",
+      "bytes": 16187,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storedVerified": true,
+      "cdnVerifiedAt": "2026-10-08T16:21:40.938Z"
+    },
+    {
+      "documentId": "association-agm-notice-2026",
+      "sourceName": "Notice-of-CE-Assn-AGM-2026-1.docx",
+      "sourceUrls": [
+        "https://cmcen-rcmce.ca/wp-content/uploads/Notice-of-CE-Assn-AGM-2026-1.docx"
+      ],
+      "storageKey": "documents/library/association-agm-notice-2026-2baeed94072b.docx",
+      "fileUrl": "https://media.cefamily.ca/documents/library/association-agm-notice-2026-2baeed94072b.docx",
+      "sha256": "2baeed94072b0530379841f18370ee818490ef372a0e7448c40b5cc353c3872d",
+      "bytes": 15420,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storedVerified": true,
+      "cdnVerifiedAt": "2026-10-08T16:21:40.982Z"
+    }
+  ]
+}

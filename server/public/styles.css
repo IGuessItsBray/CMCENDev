@@ -116,6 +116,7 @@
 
 .document-library-card,
 .governance-document-card {
+  scroll-margin-top: 6rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;

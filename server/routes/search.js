@@ -6,6 +6,8 @@ const LastPostMessage = require('../models/LastPostMessage');
 const NewsArticle = require('../models/NewsArticle');
 const { publicDateStages } = require('../services/newsletter-content');
 const RetirementMessage = require('../models/RetirementMessage');
+const ArchiveDocument = require('../models/ArchiveDocument');
+const { catalogueId, toPublicDocument } = require('../services/document-catalogue');
 
 const router = express.Router();
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -626,6 +628,24 @@ async function searchRetirementMessages(query, queryTerms, language) {
   });
 }
 
+async function searchDocuments(query, queryTerms, language) {
+  const fields = ['title.en', 'title.fr', 'description.en', 'description.fr', 'dateLabel.en', 'dateLabel.fr', 'languageLabel.en', 'languageLabel.fr'];
+  const records = await ArchiveDocument.find({ status: 'published', $and: queryTerms.map(term => ({
+    $or: fields.map(field => ({ [field]: new RegExp(escapeRegex(term), 'i') })),
+  })) }).select('catalogueId sourceId title description dateLabel languageLabel fileKey availability pageUrl publishedAt').lean();
+  return records.map(record => {
+    const card = toPublicDocument(record);
+    const title = getLocalizedText(record.title, language);
+    return { type: 'document', sourceId: catalogueId(record), title,
+      summary: truncate(getLocalizedText(record.description, language)),
+      url: `/document-library#${encodeURIComponent(card.id)}`, date: record.publishedAt || null,
+      score: scoreSearchResult(query, queryTerms, { title, type: 'document', fields: fields.map(field => {
+        const [name, lang] = field.split('.'); return record[name]?.[lang];
+      }) }),
+    };
+  }).sort((a, b) => b.score - a.score).slice(0, MAX_RESULTS_PER_SOURCE);
+}
+
 function getStaticPageCorpus() {
   if (staticPageCorpusPromise) {
     return staticPageCorpusPromise;
@@ -705,13 +725,14 @@ router.get('/', async (req, res) => {
     }
 
     const queryTerms = getQueryTerms(query);
-    const [events, retirementMessages, lastPostMessages, newsStories, pages] =
+    const [events, retirementMessages, lastPostMessages, newsStories, pages, documents] =
       await Promise.all([
         searchEvents(query, queryTerms, language),
         searchRetirementMessages(query, queryTerms, language),
         searchLastPostMessages(query, queryTerms, language),
         searchNewsStories(query, queryTerms, language),
         searchStaticPages(query, queryTerms, language),
+        searchDocuments(query, queryTerms, language),
       ]);
 
     const results = sortResults([
@@ -720,6 +741,7 @@ router.get('/', async (req, res) => {
       ...lastPostMessages,
       ...newsStories,
       ...pages,
+      ...documents,
     ]);
 
     res.json({
@@ -737,3 +759,4 @@ router.get('/', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.staticPages = STATIC_PAGES;

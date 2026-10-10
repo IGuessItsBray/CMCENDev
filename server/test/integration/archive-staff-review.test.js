@@ -443,6 +443,9 @@ test('staff review exposes source dates and requires an intentional original or 
 });
 
 test('imported document stays outside the public library until publication', async () => {
+  // This workflow runs against a deployment with its catalogue migration complete.
+  const { cards, seedRecord } = require('../../services/document-migration');
+  await ArchiveDocument.collection.insertMany(cards.map(seedRecord));
   const document = await ArchiveDocument.create({
     sourceId: 987,
     legacy: {

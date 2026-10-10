@@ -2223,7 +2223,7 @@ paths:
       - { name: type, in: path, required: true, schema: { type: string, enum: [newsArticle, retirementMessage, lastPost, event, comment, page, archiveDocument] } }
     get:
       tags: [Archive Staff Review]
-      summary: List imported drafts or published archive records.
+      summary: List imported records, including database catalogue entries for archiveDocument.
       x-permission: archive.verify
       parameters:
         - { name: status, in: query, schema: { type: string, enum: [draft, published, all], default: draft } }
@@ -2239,10 +2239,10 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string } }
     get:
       tags: [Archive Staff Review]
-      summary: Read one imported archive record with source evidence and verification.
+      summary: Read an imported record or read-only database document catalogue entry.
       x-permission: archive.verify
       responses:
-        "200": { description: Editable public fields and original source evidence. }
+        "200": { description: Public fields and source evidence; canEditArchive is false for ordinary catalogue entries. }
         "401": { description: Authentication required. }
         "403": { description: Archive verification permission required. }
         "404": { description: Imported record not found. }
@@ -2277,6 +2277,38 @@ paths:
         "403": { description: Archive verification permission required. }
         "404": { description: Imported record not found. }
         "409": { description: Draft changed or is not editable. }
+  /api/admin/archive-staff-review/archiveDocument/{id}/usage:
+    get:
+      tags: [Archive Staff Review]
+      summary: Read unique permitted pages linking to a document.
+      description: Requires archive.verify or pages.manage. References and count are filtered by parent access before serialization. No uploads, document creation, or new publication workflow.
+      x-permission: archive.verify
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Unique parent count and permission-safe references.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count, references]
+                properties:
+                  count: { type: integer, minimum: 0 }
+                  references:
+                    type: array
+                    items:
+                      type: object
+                      required: [type, id, title, status, href]
+                      properties:
+                        type: { type: string }
+                        id: { type: string }
+                        title: { type: string }
+                        status: { type: string }
+                        href: { type: string, description: Relative public page, authorized editor, or preview destination. }
+        "401": { description: Authentication required. }
+        "403": { description: Archive verification or page management permission required. }
+        "404": { description: Document not found. }
   /api/admin/archive-staff-review/{type}/{id}/verification:
     parameters:
       - { name: type, in: path, required: true, schema: { type: string } }
@@ -2529,11 +2561,20 @@ paths:
       responses:
         "200":
           description: Delete result.
+  /page-content/document-library.json:
+    get:
+      tags: [Pages]
+      summary: Read published database document cards with bilingual interface labels.
+      description: Compatible library/picker response. Uses no-store; no static card fallback. Unavailable entries have no file URL; private legacy evidence is omitted.
+      security: []
+      responses:
+        "200": { description: Bilingual en/fr interface labels and a documents array. }
+        "503": { description: Document database unavailable or catalogue migration incomplete. }
   /api/search:
     get:
       tags: [Search]
       summary: Search published news stories and non-Home public content with singular/plural-aware title ranking.
-      description: Every query term must match somewhere in a result. Static public-page text is indexed once per server process and reused across searches.
+      description: Every query term must match somewhere in a result. Published bilingual document metadata is queried from the database on each search; PDF and DOCX bodies are not indexed. Static public-page text is indexed once per server process and reused across searches.
       security: []
       parameters:
         - name: q
@@ -2572,6 +2613,7 @@ paths:
                               retirement-message,
                               last-post-message,
                               news-story,
+                              document,
                               page,
                             ]
                         sourceId:

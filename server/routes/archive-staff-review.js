@@ -56,7 +56,7 @@ function getModel(req, res) {
 
 function eligibleQuery(type, status) {
   return {
-    'legacy.source': SOURCE,
+    ...(type === 'archiveDocument' ? {} : { 'legacy.source': SOURCE }),
     status: status === 'all' ? { $in: ['draft', 'published'] } : status,
   };
 }
@@ -88,6 +88,7 @@ function sourceEvidence(record) {
     record.migrationSource,
     legacy.sourceUrl,
     ...(Array.isArray(legacy.sourceUrls) ? legacy.sourceUrls : []),
+    ...(legacy.catalogueSeed?.receipts || []).flatMap(receipt => receipt.sourceUrls || []),
   ].filter(isSourceUrl);
   const sourceRecords = Array.isArray(legacy.sourceRecords)
     ? legacy.sourceRecords
@@ -175,6 +176,8 @@ function serialize(record, type, verification) {
     ...(type === 'newsArticle' ? { layout: record.layout } : {}),
     title: findTitle(record, type),
     status: record.status,
+    canEditArchive: isArchiveRecord(record, type),
+    ...(record.catalogueId ? { catalogueId: record.catalogueId } : {}),
     updatedAt: record.updatedAt,
     previewUrl:
       type === 'newsArticle'
@@ -202,7 +205,7 @@ function serialize(record, type, verification) {
   };
 }
 
-async function loadRecord(req, res) {
+async function loadRecord(req, res, { catalogue = false } = {}) {
   const Model = getModel(req, res);
   if (!Model) return null;
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -210,7 +213,7 @@ async function loadRecord(req, res) {
     return null;
   }
   const record = await Model.findById(req.params.id);
-  if (!record || !isArchiveRecord(record, req.params.type)) {
+  if (!record || !(isArchiveRecord(record, req.params.type) || catalogue && req.params.type === 'archiveDocument' && record.catalogueId)) {
     res.status(404).json({ error: 'Imported record not found' });
     return null;
   }
@@ -313,7 +316,7 @@ router.get('/:type', async (req, res) => {
       .limit(51);
     const eligible = candidates
       .slice(0, 50)
-      .filter((record) => isArchiveRecord(record, req.params.type));
+      .filter((record) => isArchiveRecord(record, req.params.type) || req.params.type === 'archiveDocument' && record.catalogueId);
     const verifications = await Verification.find({
       _id: {
         $in: eligible.map((record) => reviewKey(req.params.type, record._id)),
@@ -354,7 +357,7 @@ router.get('/:type', async (req, res) => {
 
 router.get('/:type/:id', async (req, res) => {
   try {
-    const record = await loadRecord(req, res);
+    const record = await loadRecord(req, res, { catalogue: true });
     if (!record) return;
     const verification = await Verification.findById(
       reviewKey(req.params.type, record._id),
@@ -365,6 +368,16 @@ router.get('/:type/:id', async (req, res) => {
   } catch (error) {
     return fail(res, error);
   }
+});
+
+router.get('/archiveDocument/:id/usage', async (req, res) => {
+  try {
+    req.params.type = 'archiveDocument';
+    const record = await loadRecord(req, res, { catalogue: true });
+    if (!record) return;
+    const { documentUsage } = require('../services/document-usage');
+    return res.json(await documentUsage(record, req.user));
+  } catch (error) { return fail(res, error); }
 });
 
 router.patch('/:type/:id', async (req, res) => {

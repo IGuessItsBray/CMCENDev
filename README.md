@@ -67,9 +67,10 @@ data.
 
 Staff news stories and newsletters are MongoDB `NewsArticle` records, managed
 through **Admin → Articles**. Images and documents use object storage;
-the document-library catalog and unrelated static editorial pages retain their
-existing JSON files. See [Staff articles and newsletters](docs/NEWSLETTERS.md)
-for authoring and archive behavior.
+the document-library catalogue uses published MongoDB `ArchiveDocument` records
+after the explicit [catalogue migration](docs/DOCUMENT-CATALOGUE.md). Unrelated
+static editorial pages retain their JSON files. See
+[Staff articles and newsletters](docs/NEWSLETTERS.md) for authoring and archive behavior.
 
 ## Requirements
 

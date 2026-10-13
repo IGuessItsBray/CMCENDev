@@ -37,8 +37,36 @@
     }
   }
 
+  const validDimension = (value) =>
+    Number.isInteger(value) && value > 0 && value <= 50000;
+
+  function groupSmallFigures(blocks) {
+    const result = [];
+    let run = [];
+    const flush = () => {
+      if (run.length > 1) result.push(run);
+      else if (run.length) result.push(run[0]);
+      run = [];
+    };
+    for (const block of blocks) {
+      const data = block.image;
+      if (
+        block.type === "figure" &&
+        validDimension(data?.width) && validDimension(data?.height) &&
+        data.width <= 400 && data.height <= 400
+      ) {
+        run.push(block);
+      } else {
+        flush();
+        result.push(block);
+      }
+    }
+    flush();
+    return result;
+  }
+
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { safeUrl, inline };
+    module.exports = { safeUrl, inline, groupSmallFigures };
     return;
   }
   window.NewsletterRenderer = { safeUrl, inline };
@@ -94,16 +122,21 @@
     const img = element("img");
     img.src = data.url;
     img.alt = data.alt || "";
-    if (data.width) img.width = data.width;
-    if (data.height) img.height = data.height;
+    if (validDimension(data.width)) img.width = data.width;
+    if (validDimension(data.height)) img.height = data.height;
     img.loading = "lazy";
     img.decoding = "async";
     const variants = Object.values(data.variants || {}).filter(
-      (v) => usableImageUrl(v.url) && v.width > 0,
+      (v) => v && usableImageUrl(v.url) && validDimension(v.width),
     );
     const unique = [...new Map(variants.map((v) => [v.width, v])).values()];
     img.srcset = unique.map((v) => `${v.url} ${v.width}w`).join(", ");
-    img.sizes = "(max-width: 780px) 90vw, 700px";
+    // Width descriptors also affect intrinsic size. A fixed 700px slot would
+    // enlarge small originals even when CSS uses width: auto.
+    const availableWidth = validDimension(data.width)
+      ? data.width : Math.max(0, ...unique.map((v) => v.width));
+    const displayWidth = Math.min(availableWidth || 700, 700);
+    img.sizes = `(max-width: 780px) min(90vw, ${displayWidth}px), ${displayWidth}px`;
     return img;
   }
   function render() {
@@ -171,31 +204,42 @@
         content.append(figure);
       }
     }
-    for (const block of issue.blocks) {
-      let el;
-      if (block.type === "heading") el = element("h2", block.text);
-      else if (block.type === "paragraph") {
-        el = element("p");
-        inline(el, block.children);
-      } else if (block.type === "list") {
-        el = element("ul");
-        for (const item of block.items) {
-          const li = element("li");
-          inline(li, item);
-          el.append(li);
+    for (const entry of groupSmallFigures(issue.blocks)) {
+      const grouped = Array.isArray(entry);
+      const target = grouped
+        ? element("div", "", "newsletter-figure-group") : content;
+      if (grouped) content.append(target);
+      for (const block of grouped ? entry : [entry]) {
+        let el;
+        if (block.type === "heading") el = element("h2", block.text);
+        else if (block.type === "paragraph") {
+          el = element("p");
+          inline(el, block.children);
+        } else if (block.type === "list") {
+          el = element("ul");
+          for (const item of block.items) {
+            const li = element("li");
+            inline(li, item);
+            el.append(li);
+          }
+        } else if (block.type === "figure") {
+          el = element("figure");
+          const img = image(block.image);
+          if (img) el.append(img);
+          if (block.caption) el.append(element("figcaption", block.caption));
+          if (grouped) {
+            // Give captions a readable measure without enlarging their image.
+            const width = Math.max(block.image.width, block.caption ? 200 : 0);
+            el.style.width = `${width}px`;
+          }
+        } else if (block.type === "document") {
+          el = element("p");
+          inline(el, [
+            { type: "link", href: block.href, children: [block.label] },
+          ]);
         }
-      } else if (block.type === "figure") {
-        el = element("figure");
-        const img = image(block.image);
-        if (img) el.append(img);
-        if (block.caption) el.append(element("figcaption", block.caption));
-      } else if (block.type === "document") {
-        el = element("p");
-        inline(el, [
-          { type: "link", href: block.href, children: [block.label] },
-        ]);
+        if (el) target.append(el);
       }
-      if (el) content.append(el);
     }
     body.append(content);
     root.append(header, body);

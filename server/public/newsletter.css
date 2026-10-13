@@ -98,13 +98,29 @@ html[data-theme='dark'] .newsletter-context-icon {
   margin-top: 0.65rem;
 }
 .newsletter-body figure {
-  max-width: 700px;
+  width: fit-content;
+  max-width: min(100%, 700px);
   margin: 2rem auto;
 }
 .newsletter-body figure img {
   display: block;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   height: auto;
+  margin-inline: auto;
+}
+.newsletter-figure-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+.newsletter-figure-group figure {
+  flex: 0 1 auto;
+  max-width: 100%;
+  margin: 0;
 }
 .newsletter-body figcaption {
   margin-top: 0.75rem;

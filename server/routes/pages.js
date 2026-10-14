@@ -336,6 +336,8 @@ function cleanBlock(block, index = 0) {
     text: cleanLocalizedText(source.text, 500),
     body: cleanLocalizedText(source.body, 10000),
     url: cleanUrl(source.url),
+    imageFit: source.imageFit === 'natural' ? 'natural' : 'cover',
+    underline: source.underline === true,
     mediaKey: cleanText(source.mediaKey, 500),
     mediaUrl: cleanUrl(source.mediaUrl),
     mediaVariants: cleanImageVariants(source.mediaVariants),

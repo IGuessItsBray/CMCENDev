@@ -297,6 +297,7 @@
         alt: getEmptyLocalized(),
         caption: getEmptyLocalized(),
         crop: getDefaultCrop(),
+        imageFit: "cover",
         variant: "standard",
         layout: { column: 1, row: 1, span: 4, rowSpan: 1 },
         columns: [],
@@ -1512,7 +1513,7 @@
       image.style.transform = `scale(${crop.zoom}) rotate(${crop.rotate}deg)`;
     }
 
-    function createCroppedPreview({ src, alt = "", crop }) {
+    function createCroppedPreview({ src, alt = "", crop, fit = "cover" }) {
       const frame = document.createElement("div");
       frame.className = "pages-image-preview-frame";
 
@@ -1520,7 +1521,8 @@
       image.className = "pages-image-preview";
       image.src = src;
       image.alt = alt;
-      applyCropStyles(image, crop);
+      if (fit === "natural") frame.classList.add("is-natural");
+      else applyCropStyles(image, crop);
 
       frame.append(image);
       return frame;
@@ -1545,7 +1547,8 @@
       image.src = getPreviewMediaUrl(media);
       image.alt = alt || "";
       image.loading = "eager";
-      applyCropStyles(image, crop);
+      if (media.imageFit === "natural") frame.classList.add("is-natural");
+      else applyCropStyles(image, crop);
       frame.append(image);
       return frame;
     }
@@ -1562,6 +1565,8 @@
       if (block.type === "heading") {
         const heading = document.createElement(block.level === 3 ? "h3" : "h2");
         heading.textContent = localized(block.text);
+        if (block.underline === true)
+          heading.style.textDecoration = "underline";
         section.append(heading);
       } else if (block.type === "image") {
         section.append(
@@ -1726,7 +1731,7 @@
 
       actions.append(choose);
 
-      if (hasMedia) {
+      if (hasMedia && typeof onCrop === "function") {
         const crop = document.createElement("button");
         crop.type = "button";
         crop.className = "admin-work-zone-button is-secondary";
@@ -1938,13 +1943,39 @@
       if (block.type === "heading") {
         content.append(
           createBlockLocalizedInput(index, "Heading text", "text", "input"),
+          createCheckboxOption({
+            label: "Underline heading",
+            checked: block.underline === true,
+            onChange: (underline) => updateBlock(index, { underline }),
+          }),
         );
       } else if (block.type === "image") {
+        const fitField = document.createElement("label");
+        fitField.className = "admin-editor-field admin-editor-field--compact";
+        const fitLabel = document.createElement("span");
+        fitLabel.textContent = "Image display";
+        const fit = document.createElement("select");
+        for (const [label, value] of [
+          ["Crop to frame", "cover"],
+          ["Show full original image", "natural"],
+        ]) {
+          const option = document.createElement("option");
+          option.textContent = label;
+          option.value = value;
+          fit.append(option);
+        }
+        fit.value = block.imageFit || "cover";
+        fit.addEventListener("change", () =>
+          updateBlock(index, { imageFit: fit.value }),
+        );
+        fitField.append(fitLabel, fit);
+        content.append(fitField);
         if (block.mediaUrl) {
           content.append(
             createCroppedPreview({
               src: getPreviewMediaUrl(block),
               crop: block.crop,
+              fit: block.imageFit,
             }),
           );
         }
@@ -1953,11 +1984,14 @@
             hasMedia: Boolean(block.mediaUrl),
             progressKey: `block:${index}`,
             onUpload: (file) => uploadBlockImage(index, file),
-            onCrop: () =>
-              openCropEditor({
-                type: "block",
-                blockIndex: index,
-              }),
+            onCrop:
+              block.imageFit === "natural"
+                ? undefined
+                : () =>
+                    openCropEditor({
+                      type: "block",
+                      blockIndex: index,
+                    }),
             onChoose: () =>
               openMediaPicker({
                 type: "block",

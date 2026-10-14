@@ -59,6 +59,11 @@ async function setup({
   const document = new Element('document');
   document.body = new Element('body');
   document.createElement = (tag) => new Element(tag);
+  document.createTextNode = (text) => {
+    const node = new Element('#text');
+    node.textContent = text;
+    return node;
+  };
   document.createElementNS = (namespace, tag) => new Element(tag);
   const timers = new Map();
   let nextTimer = 0;
@@ -304,6 +309,37 @@ test('block layout and bilingual content remain intact in save payloads', async 
     layout: { column: 2, row: 3, span: 7, rowSpan: 2 },
   });
   page.editor.dispose();
+});
+
+test('image fitting and heading underline changes survive editor autosave', async () => {
+  const page = await setup();
+  const crop = { x: 20, y: 40, zoom: 2, rotate: 90 };
+  page.stored.blocks = [{ type: 'image', mediaUrl: '/original.jpg', crop, imageFit: 'cover' }];
+  await page.open();
+  let tile = page.content.querySelector('.pages-block-editor');
+  await tile.fire('click', { target: tile });
+  const fit = page.content.querySelectorAll('select').find((node) => node.children.some((option) => option.value === 'natural'));
+  assert.ok(fit);
+  fit.value = 'natural';
+  await fit.fire('change', { target: fit });
+  await page.autosave();
+  assert.equal(page.stored.blocks[0].imageFit, 'natural');
+  assert.deepEqual(page.stored.blocks[0].crop, crop);
+  assert.equal(page.content.querySelector('.pages-image-preview').style.transform, undefined);
+  page.editor.dispose();
+
+  const heading = await setup();
+  heading.stored.blocks = [{ type: 'heading', text: { en: 'Heading', fr: 'Titre' } }];
+  await heading.open();
+  tile = heading.content.querySelector('.pages-block-editor');
+  await tile.fire('click', { target: tile });
+  const check = heading.content.querySelectorAll('input').find((node) => node.type === 'checkbox');
+  assert.ok(check);
+  await check.fire('change', { target: { checked: true } });
+  await heading.autosave();
+  assert.equal(heading.stored.blocks[0].underline, true);
+  assert.deepEqual(heading.stored.blocks[0].text, { en: 'Heading', fr: 'Titre' });
+  heading.editor.dispose();
 });
 
 test('failed content save prevents publishing', async () => {

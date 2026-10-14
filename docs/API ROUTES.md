@@ -481,6 +481,14 @@ Defined in `routes/pages.js`, mounted at root.
 | `PATCH`  | `/api/admin/navigation-items/:itemId` | Authenticated + `canManageNavigation` | Update navigation item/group, including moving a page link to another header. Rejects duplicate links to the same page within one header.                  |
 | `DELETE` | `/api/admin/navigation-items/:itemId` | Authenticated + `canManageNavigation` | Delete navigation item/group.                                                                                                                             |
 
+Page create/update blocks accept `imageFit: "cover" | "natural"` for images
+(default `cover`; unknown values normalize to `cover`). Natural images retain
+their original proportions and ignore crop transforms without deleting the
+stored crop, allowing a return to cropped display. Heading blocks accept
+`underline: true` (default `false`; only literal `true` enables it). These fields
+round-trip through admin saves and public/preview payloads. Public mobile pages
+flow blocks in document order, ignoring desktop grid row positions.
+
 ## Certificate Requests
 
 Mounted at `/api/certificate-requests`.

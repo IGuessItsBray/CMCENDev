@@ -3820,6 +3820,24 @@ components:
               Page content. Blocks may include free-grid `layout` coordinates:
               `column`, `row`, `span` (1–12), and `rowSpan`; divider blocks
               always use a rowSpan of 1.
+              Image blocks accept imageFit (cover, the default, or natural
+              for uncropped original proportions). Heading blocks accept
+              underline (boolean, default false). Mobile public pages flow
+              blocks in document order rather than their desktop grid rows.
+            properties:
+              blocks:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    imageFit:
+                      type: string
+                      enum: [cover, natural]
+                      default: cover
+                    underline:
+                      type: boolean
+                      default: false
+                  additionalProperties: true
             additionalProperties: true
     PageStatus:
       required: true

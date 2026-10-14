@@ -93,6 +93,8 @@ const PageBlockSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    imageFit: { type: String, enum: ['cover', 'natural'], default: 'cover' },
+    underline: { type: Boolean, default: false },
     mediaKey: {
       type: String,
       trim: true,

@@ -109,6 +109,24 @@
   object-fit: cover;
 }
 
+/* Opt-in original-ratio image display; existing blocks default to cover. */
+.cms-block-image .cms-image-frame.is-natural,
+.pages-image-preview-frame.is-natural {
+  aspect-ratio: auto;
+  max-height: none;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+.cms-block-image .cms-image-frame.is-natural img,
+.pages-image-preview-frame.is-natural img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: none;
+  object-fit: contain;
+}
+
 .cms-image-caption {
   margin: 8px 0 0;
   color: var(--branch-grey-700);
@@ -1284,6 +1302,11 @@
 
   .cms-block {
     grid-column: 1;
+  }
+
+  .cms-page-body > .cms-block {
+    grid-column: 1 / -1;
+    grid-row: auto / span 1;
   }
 }
 

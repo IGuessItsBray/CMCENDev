@@ -66,6 +66,7 @@
     media,
     alt,
     crop,
+    fit = "cover",
     sizes = "(max-width: 720px) 100vw, 900px",
   }) {
     const frame = document.createElement("span");
@@ -79,7 +80,8 @@
     }
     image.alt = alt || "";
     image.loading = "lazy";
-    applyCrop(image, crop);
+    if (fit === "natural") frame.classList.add("is-natural");
+    else applyCrop(image, crop);
     frame.append(image);
     return frame;
   }
@@ -109,6 +111,7 @@
     if (block.type === "heading") {
       const heading = document.createElement(block.level === 3 ? "h3" : "h2");
       heading.textContent = localized(block.text);
+      if (block.underline === true) heading.style.textDecoration = "underline";
       section.append(heading);
       return section;
     }
@@ -119,6 +122,7 @@
           media: block,
           alt: localized(block.alt),
           crop: block.crop,
+          fit: block.imageFit,
           sizes: "(max-width: 920px) 100vw, 1100px",
         }),
       );

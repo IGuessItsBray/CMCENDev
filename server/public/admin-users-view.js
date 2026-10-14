@@ -121,6 +121,8 @@
 
       return Boolean(
         state.currentUserPermissions?.canResetUserMfa === true &&
+        (state.currentUserRole === "developer" ||
+          !["administrator", "developer"].includes(user?.role)) &&
         user?._id &&
         !isSelectedSelf(user),
       );

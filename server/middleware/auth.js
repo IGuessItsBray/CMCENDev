@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const { verifyAccessToken } = require('../services/auth-session');
 const User = require('../models/User');
 const { ROLE_LEVELS } = require('../config/roles');
 const { getUserPermissions } = require('../config/permissions');
@@ -17,7 +17,7 @@ async function authMiddleware(req, res, next) {
   let decoded;
 
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = verifyAccessToken(token);
   } catch {
     return res.status(401).json({
       error: 'Invalid or expired token',
@@ -66,7 +66,7 @@ async function optionalAuthMiddleware(req, res, next) {
   const token = authHeader.slice(7);
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyAccessToken(token);
     const user = await User.findById(decoded.userId)
       .select(
         'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit phone preferredLanguage role customRoles contentAreas emailSubscriptions createdAt updatedAt sessionVersion',
@@ -158,7 +158,7 @@ async function authOrTempMiddleware(req, res, next) {
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = verifyAccessToken(token);
       const user = await User.findById(decoded.userId)
         .select(
           'accountType username email accountName firstName lastName address rank postNominals company status affiliationElement trade tradeOther currentUnit preferredLanguage role customRoles contentAreas createdAt updatedAt sessionVersion',

@@ -4,6 +4,8 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const speakeasy = require('speakeasy');
 const User = require('../models/User');
+const { cancelUpcomingAccountRsvps } = require('../services/event-rsvp-cancellation');
+const { getPasswordValidationError } = require('../services/password-policy');
 const { requiresTextForSave } = require('../services/save-validation');
 const Event = require('../models/Event');
 const RetirementMessage = require('../models/RetirementMessage');
@@ -349,6 +351,37 @@ function createGhostPassword() {
 
 async function getProfileResponse(user) {
   const profile = user.toObject ? user.toObject() : user;
+  // Responses may receive a document selected with +password during activation.
+  // Keep this allowlist independent of what a query happened to select.
+  const safeProfile = {};
+  for (const field of [
+    '_id', 'id', 'accountType', 'profileComplete', 'username', 'email',
+    'accountName', 'firstName', 'lastName', 'rank', 'postNominals', 'company',
+    'status', 'affiliationElement', 'trade', 'tradeOther', 'currentUnit',
+    'phone', 'preferredLanguage', 'biography', 'websiteUrl', 'role',
+    'contentAreas', 'createdAt', 'updatedAt',
+  ]) {
+    if (profile[field] !== undefined) safeProfile[field] = profile[field];
+  }
+  safeProfile.address = Object.fromEntries(
+    EDITABLE_ADDRESS_FIELDS.map((field) => [field, profile.address?.[field] || '']),
+  );
+  safeProfile.socialLinks = { facebook: profile.socialLinks?.facebook || '' };
+  safeProfile.emailSubscriptions = Object.fromEntries(
+    ['weeklyBrief', 'newsAnnouncements'].map((category) => [
+      category,
+      Object.fromEntries(
+        ['subscribed', 'consentedAt', 'consentSource', 'consentTextVersion', 'unsubscribedAt']
+          .map((field) => [field, profile.emailSubscriptions?.[category]?.[field]]),
+      ),
+    ]),
+  );
+  safeProfile.customRoles = (profile.customRoles || []).map((role) => {
+    if (typeof role.slug !== 'string') return role._id || role;
+    return Object.fromEntries(
+      ['_id', 'name', 'slug', 'color', 'permissions'].map((field) => [field, role[field]]),
+    );
+  });
   const mfa = {
     hasTotp: profile.totp?.enabled === true && Boolean(profile.totp?.secret),
     hasPasskey:
@@ -357,13 +390,9 @@ async function getProfileResponse(user) {
         (credential) => credential?.credentialID && credential?.publicKey,
       ),
   };
-  delete profile.totp;
-  delete profile.webauthn;
-  delete profile.twoFactor;
-  delete profile.notificationState;
   const permissions = getUserPermissions(profile);
   return {
-    ...profile,
+    ...safeProfile,
     weeklyBrief: getWeeklyBriefSubscription(profile),
     newsAnnouncements: getNewsAnnouncementsSubscription(profile),
     mfa,
@@ -686,6 +715,9 @@ router.post('/register', async (req, res) => {
         error: 'Passwords do not match',
       });
     }
+
+    const passwordError = getPasswordValidationError(password);
+    if (passwordError) return res.status(400).json({ error: passwordError });
 
     const cleanEmail = String(email || '')
       .trim()
@@ -1154,8 +1186,8 @@ router.post(
   passwordResetConfirmLimit,
   async (req, res) => {
     const resetToken = String(req.body?.token || '').trim();
-    const password = String(req.body?.password || '');
-    const passwordConfirmation = String(req.body?.passwordConfirmation || '');
+    const password = req.body?.password;
+    const passwordConfirmation = req.body?.passwordConfirmation;
 
     if (!resetToken || !password || !passwordConfirmation) {
       return res.status(400).json({
@@ -1168,6 +1200,9 @@ router.post(
         error: 'Passwords do not match',
       });
     }
+
+    const passwordError = getPasswordValidationError(password);
+    if (passwordError) return res.status(400).json({ error: passwordError });
 
     try {
       const user = await User.findOne({
@@ -1565,6 +1600,9 @@ router.post('/ghost/upgrade', authMiddleware, async (req, res) => {
     });
   }
 
+  const passwordError = getPasswordValidationError(password);
+  if (passwordError) return res.status(400).json({ error: passwordError });
+
   const cleanFirstName = String(firstName || '').trim();
   const cleanLastName = String(lastName || '').trim();
   const incomingPreferredLanguage = String(preferredLanguage || '').trim();
@@ -1684,6 +1722,8 @@ router.delete(
       const userId = req.user._id;
       const snapshot = getUserSnapshot(req.user);
 
+      const rsvpCancellation = await cancelUpcomingAccountRsvps({ req, userId });
+
       await Promise.all([
         Event.updateMany({ createdBy: userId }, { $set: { createdBy: null } }),
         RetirementMessage.updateMany(
@@ -1703,6 +1743,10 @@ router.delete(
         userId,
       );
       await User.deleteOne({ _id: userId });
+      const remainingRsvps = await cancelUpcomingAccountRsvps({
+        req, userId, includeEventIds: rsvpCancellation.eventIds,
+      });
+      const cancelledRsvps = rsvpCancellation.cancelled + remainingRsvps.cancelled;
       await writeAuditLog({
         req,
         action: 'user.self_deleted',
@@ -1710,7 +1754,7 @@ router.delete(
         targetType: 'user',
         target: userId,
         targetSnapshot: snapshot,
-        metadata: { contentDisposition: 'keep_and_anonymize', mfaMethod },
+        metadata: { contentDisposition: 'keep_and_anonymize', mfaMethod, cancelledRsvps },
       });
 
       clearRefreshTokenCookie(req, res);

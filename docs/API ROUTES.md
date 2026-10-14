@@ -1,5 +1,64 @@
 # API Routes
 
+## Authentication and export boundaries
+
+Bearer authentication accepts only JWTs with `tokenType: "access"`, including
+optional-auth and MFA routes. Refresh JWTs are accepted only by the refresh-cookie
+endpoint. Previously issued untyped access tokens require refresh or sign-in;
+existing refresh cookies and `sessionVersion` revocation continue to work.
+
+Registration, invitation activation, password-reset confirmation and guest upgrade
+require string passwords of at least 12 Unicode characters and at most 72 UTF-8
+bytes (bcrypt's limit). Passwords are not trimmed or silently truncated. Existing
+passwords continue to work at sign-in. Current-user responses use a fixed profile
+allowlist and exclude password hashes, recovery/invitation state, verification
+secrets, session versions, MFA seeds and WebAuthn challenges/credentials.
+
+Anonymous comment author objects contain only `_id`, `accountName`, `firstName`
+and `lastName`; usernames, emails and roles are excluded. Existing legacy guest
+attribution and deleted-author anonymization rules still apply.
+
+Password creation, invitation activation, guest upgrade and reset forms share the
+server's Unicode/UTF-8 policy, with English/French guidance. The advisory strength
+meter cannot mark a policy-invalid password strong. Sign-in remains compatible
+with existing passwords.
+
+`PATCH /api/admin/users/:userId/mfa-reset` retains `canResetUserMfa` and blocks
+self-reset. Only an actor with the built-in `developer` role may reset an
+administrator or developer target, regardless of custom permission grants.
+Permitted support actors retain access to editor-and-lower targets. The protected
+target-role boundary is also checked atomically at the write. Fresh step-up and
+target-session revocation are separate follow-ups, not implemented by this rule.
+
+TOTP setup stores a separate pending seed. An authenticated access session can
+confirm enrollment via `/api/mfa/totp/verify`; temporary login can verify only an
+already enabled factor. Legacy disabled seeds remain confirmable only with an
+access session. Setup cannot replace an enabled factor; cancellation clears the
+pending seed. QR retrieval requires an access session and is setup-only.
+
+User/subscriber, event RSVP and audit CSV exports prefix formula-leading text
+with an apostrophe before CSV quoting, including whitespace/control-prefixed
+formulas. Audit client IP metadata uses validated Express `req.ip` under the
+configured proxy trust policy, rather than raw forwarding headers or a preferred
+IPv4 address from the chain.
+
+Self-service and administrator account deletion cancel the deleted account's
+current/future event RSVPs before deleting the account or its owned events.
+The window matches the public calendar: `endDate` on or after today's UTC
+midnight, or no `endDate` and `startDate` on or after that cutoff. Ongoing and
+today's all-day events are included, regardless of publication status, RSVP
+toggle or passed response deadline. Historical snapshots remain available only
+through authorized staff RSVP views/CSV; public event JSON, lists and calendar
+exports exclude attendee contact details. This does not scrub authored public
+text or public-bucket uploads; see the accepted public-media policy in CONFIG.md.
+Cancellation deletes the response and audits it once, like ordinary RSVP
+cancellation. Existing cancellation has no waitlist, capacity counters or email
+notifications. Repeated cleanup does not duplicate cancellation records.
+Deletion sweeps again after removing the account, and in-flight RSVP writes
+recheck account existence and cancel late writes. Account/content deletion
+remains a multi-step operation rather than a database transaction; a storage
+failure after account removal can still require operator recovery.
+
 ## Developer blank saves
 
 The existing `developer` actor role may save blank descriptive fields in profile editors (names, address, status and affiliation), invited-account names, staff event titles and comment bodies, news copy, Page titles, navigation labels, Adopt display titles, award titles/recipient names/link labels, custom-role names, media display names and banner copy. No new permission grants this behavior. Ordinary administrators and custom roles retain required-field checks; previously authorized blanks may remain blank during later edits. Public registration and membership completion still require their normal fields.

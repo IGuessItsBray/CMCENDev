@@ -1311,7 +1311,7 @@ describe('personal submissions', () => {
   function tokenFor(user) {
     return bearer(
       jwt.sign(
-        { userId: String(user._id), sessionVersion: user.sessionVersion || 0 },
+        { userId: String(user._id), sessionVersion: user.sessionVersion || 0, tokenType: 'access' },
         process.env.JWT_SECRET,
       ),
     );
@@ -5848,7 +5848,7 @@ describe('authorization matrix and account integrity', () => {
       permissions: ['audit.view'],
     });
     const token = jwt.sign(
-      { userId: administrator._id },
+      { userId: administrator._id, tokenType: 'access' },
       process.env.JWT_SECRET,
     );
 
@@ -7961,7 +7961,7 @@ describe('MFA and audit behavior', () => {
     assert.equal(auditText.includes(secret), false);
   });
 
-  test('normalizes forwarded IPv4 and composes audit date filters', async () => {
+  test('records the Express-resolved client IP and composes audit date filters', async () => {
     const admin = await createUser({ role: 'administrator' });
     const session = await login(admin);
     const oldDate = new Date('2026-01-01T12:00:00.000Z');
@@ -7988,11 +7988,8 @@ describe('MFA and audit behavior', () => {
     const exportAudit = await AuditLog.findOne({
       action: 'audit.exported',
     }).lean();
-    assert.equal(exportAudit.metadata.ipAddress, '203.0.113.8');
-    assert.equal(
-      exportAudit.metadata.ipAddresses.includes('2001:db8::1'),
-      true,
-    );
+    assert.equal(exportAudit.metadata.ipAddress, '2001:db8::1');
+    assert.deepEqual(exportAudit.metadata.ipAddresses, ['2001:db8::1']);
   });
 });
 

@@ -56,11 +56,11 @@ before(async () => {
     },
   ]);
   editorToken = jwt.sign(
-    { userId: String(editor), sessionVersion: 0 },
+    { userId: String(editor), sessionVersion: 0, tokenType: 'access' },
     process.env.JWT_SECRET,
   );
   subscriberToken = jwt.sign(
-    { userId: String(subscriber), sessionVersion: 0 },
+    { userId: String(subscriber), sessionVersion: 0, tokenType: 'access' },
     process.env.JWT_SECRET,
   );
 });

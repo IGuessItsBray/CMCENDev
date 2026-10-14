@@ -547,6 +547,14 @@ function createGhostUpgradeForm(user) {
     const input = field.querySelector("input");
     input.type = "password";
     input.autocomplete = "new-password";
+    if (name === "password") {
+      const help = document.createElement("small");
+      help.id = "upgradePasswordHelp";
+      help.dataset.i18n = "password_policy_guidance";
+      help.textContent = translate("password_policy_guidance");
+      input.setAttribute("aria-describedby", help.id);
+      field.append(help);
+    }
     grid.append(field);
   });
 
@@ -574,6 +582,14 @@ function createGhostUpgradeForm(user) {
     form.querySelectorAll("[data-profile-field]").forEach((field) => {
       payload[field.dataset.profileField] = field.value;
     });
+
+    const passwordError = CMCENUtils.getNewPasswordError(payload.password);
+    if (passwordError || payload.password !== payload.passwordConfirmation) {
+      CMCENUtils.showToast(passwordError || translate("passwords_do_not_match"),
+        { color: "error", position: "bottom-right", animation: "slide" });
+      form.querySelector('[data-profile-field="password"]').focus();
+      return;
+    }
 
     submit.disabled = true;
     submit.setAttribute("aria-busy", "true");

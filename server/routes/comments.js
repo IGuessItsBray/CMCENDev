@@ -395,7 +395,7 @@ router.get('/on/:parentType/:parentId', async (req, res) => {
       .select(
         'parentType parentId author body legacy.authorName legacy.authorUserId createdAt publishedAt status',
       )
-      .populate('author', 'username accountName firstName lastName role')
+      .populate('author', 'accountName firstName lastName')
       .sort({
         publishedAt: 1,
         createdAt: 1,

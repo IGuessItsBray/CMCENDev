@@ -23,7 +23,8 @@
         target?.accountType === "invited" &&
         (developer || target?.role !== "internal_beta"),
       resetMfa:
-        p.canResetUserMfa === true && !self && target?.mfa?.enabled === true,
+        p.canResetUserMfa === true && !self && target?.mfa?.enabled === true &&
+        (developer || !["administrator", "developer"].includes(target?.role)),
       remove: p.canDeleteAnyUser === true && !self,
       promote:
         p.canManageUsers === true &&

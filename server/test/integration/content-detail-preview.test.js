@@ -57,11 +57,11 @@ before(async () => {
     },
   ]);
   editorToken = jwt.sign(
-    { userId: String(editorId), sessionVersion: 0 },
+    { userId: String(editorId), sessionVersion: 0, tokenType: 'access' },
     process.env.JWT_SECRET,
   );
   readerToken = jwt.sign(
-    { userId: String(readerId), sessionVersion: 0 },
+    { userId: String(readerId), sessionVersion: 0, tokenType: 'access' },
     process.env.JWT_SECRET,
   );
   retirementId = new mongoose.Types.ObjectId();

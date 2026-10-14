@@ -80,7 +80,7 @@ before(async () => {
     },
   ]);
   token = jwt.sign(
-    { userId: String(reviewer), sessionVersion: 0 },
+    { userId: String(reviewer), sessionVersion: 0, tokenType: 'access' },
     process.env.JWT_SECRET,
   );
   article = await NewsArticle.create({
@@ -115,7 +115,7 @@ test('authentication and archive role are required', async () => {
   const path = '/api/admin/archive-staff-review/newsArticle';
   assert.equal((await request(app).get(path)).status, 401);
   const otherToken = jwt.sign(
-    { userId: String(other), sessionVersion: 0 },
+    { userId: String(other), sessionVersion: 0, tokenType: 'access' },
     process.env.JWT_SECRET,
   );
   assert.equal(
@@ -138,7 +138,7 @@ test('page editors can review imported pages and documents only', async () => {
     customRoles: [], sessionVersion: 0,
   });
   const editorToken = jwt.sign(
-    { userId: String(editorId), sessionVersion: 0 },
+    { userId: String(editorId), sessionVersion: 0, tokenType: 'access' },
     process.env.JWT_SECRET,
   );
   const header = { Authorization: `Bearer ${editorToken}` };
@@ -348,7 +348,7 @@ test('archive reviewer can choose existing media without media administration or
   });
   const mediaPath = '/api/admin/archive-staff-review/media?search=crest';
   assert.equal((await request(app).get(mediaPath)).status, 401);
-  const denied = jwt.sign({ userId: String(other), sessionVersion: 0 }, process.env.JWT_SECRET);
+  const denied = jwt.sign({ userId: String(other), sessionVersion: 0, tokenType: 'access' }, process.env.JWT_SECRET);
   assert.equal((await request(app).get(mediaPath).set('Authorization', `Bearer ${denied}`)).status, 403);
   const listed = await request(app).get(mediaPath).set(auth());
   assert.equal(listed.status, 200);

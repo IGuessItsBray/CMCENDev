@@ -21,6 +21,7 @@ const Role = require('../models/Role');
 const MediaAsset = require('../models/MediaAsset');
 const Event = require('../models/Event');
 const EventRsvp = require('../models/EventRsvp');
+const { cancelUpcomingAccountRsvps } = require('../services/event-rsvp-cancellation');
 const LastPostMessage = require('../models/LastPostMessage');
 const NewsArticle = require('../models/NewsArticle');
 const Page = require('../models/Page');
@@ -2630,15 +2631,7 @@ function toUserExportRow(user) {
   };
 }
 
-function escapeCsvValue(value) {
-  const text = String(value ?? '');
-
-  if (/[",\n\r]/u.test(text)) {
-    return `"${text.replace(/"/gu, '""')}"`;
-  }
-
-  return text;
-}
+const { encodeCsvText: escapeCsvValue } = require('../services/csv');
 
 function buildUsersCsv(rows) {
   const header = USER_EXPORT_FIELDS.map(([, label]) => label);
@@ -3069,6 +3062,7 @@ router.delete(
 
       const targetSnapshot = snapshotUser(user);
       const userId = user._id;
+      const rsvpCancellation = await cancelUpcomingAccountRsvps({ req, userId });
       let deleted = {
         events: 0,
         retirementMessages: 0,
@@ -3129,6 +3123,10 @@ router.delete(
         userId,
       );
       await user.deleteOne();
+      const remainingRsvps = await cancelUpcomingAccountRsvps({
+        req, userId, includeEventIds: rsvpCancellation.eventIds,
+      });
+      const cancelledRsvps = rsvpCancellation.cancelled + remainingRsvps.cancelled;
       await writeAuditLog({
         req,
         action: 'user.deleted',
@@ -3136,7 +3134,7 @@ router.delete(
         targetType: 'user',
         target: userId,
         targetSnapshot,
-        metadata: { contentDisposition: disposition, mfaMethod, deleted },
+        metadata: { contentDisposition: disposition, mfaMethod, deleted, cancelledRsvps },
       });
 
       return res.json({
@@ -4737,8 +4735,22 @@ router.patch(
 
       const previousMfa = getMfaAuditSnapshot(previousUser);
 
-      const user = await User.findByIdAndUpdate(
-        userId,
+      if (
+        ['administrator', 'developer'].includes(previousUser.role) &&
+        req.user.role !== 'developer'
+      ) {
+        return res.status(403).json({
+          error: 'Only developers can reset administrator or developer MFA',
+        });
+      }
+
+      const user = await User.findOneAndUpdate(
+        {
+          _id: userId,
+          ...(req.user.role === 'developer' ? {} : {
+            role: { $nin: ['administrator', 'developer'] },
+          }),
+        },
         {
           $set: {
             webauthn: [],

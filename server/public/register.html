@@ -315,6 +315,7 @@
                 <input
                   type="password"
                   id="regPassword"
+                  aria-describedby="registerPasswordHelp"
                   name="password"
                   autocomplete="new-password"
                   data-i18n-placeholder="password_create_placeholder"
@@ -348,6 +349,10 @@
                 >
                   <span></span>
                 </div>
+                <p id="registerPasswordHelp" data-i18n="password_policy_guidance">
+                  Use at least 12 characters and no more than 72 UTF-8 bytes.
+                  Accented characters and emoji may use multiple bytes.
+                </p>
               </div>
             </div>
 
@@ -503,6 +508,7 @@
 
     <footer id="footer"></footer>
 
+    <script src="/password-policy.js"></script>
     <script src="/app-utils.js"></script>
     <script src="/timers.js"></script>
     <script src="/index.js"></script>

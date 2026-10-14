@@ -5,6 +5,8 @@ const { markContentEdited } = require('../services/content-edit-metadata');
 const { getPersonalSubmissionError } = require('../services/personal-submissions');
 const Event = require('../models/Event');
 const EventRsvp = require('../models/EventRsvp');
+const User = require('../models/User');
+const { cancelEventRsvp } = require('../services/event-rsvp-cancellation');
 const {
   EVENT_ORGANIZING_ENTITIES,
   EVENT_TYPES,
@@ -405,12 +407,7 @@ function canManageEventRsvps(user) {
   return getUserPermissions(user).canManageEventRsvps === true;
 }
 
-function escapeCsv(value) {
-  const normalizedValue = String(value || '');
-  return /[",\r\n]/u.test(normalizedValue)
-    ? `"${normalizedValue.replace(/"/gu, '""')}"`
-    : normalizedValue;
-}
+const { encodeCsvText: escapeCsv } = require('../services/csv');
 
 function buildRsvpCsv(rsvps) {
   const headers = [
@@ -1097,6 +1094,11 @@ router.post('/:id/rsvp', authMiddleware, async (req, res) => {
         setDefaultsOnInsert: true,
       },
     );
+    // Authentication may have completed before concurrent account deletion.
+    if (!(await User.exists({ _id: req.user._id }))) {
+      await cancelEventRsvp({ req, userId: req.user._id, eventId: event._id, reason: 'account_deleted' });
+      return res.status(401).json({ error: 'User no longer exists' });
+    }
     await writeAuditLog({
       req,
       action: 'event.rsvp_submitted',
@@ -1133,20 +1135,7 @@ router.delete('/:id/rsvp', authMiddleware, async (req, res) => {
         .json({ error: 'You cannot cancel an RSVP to your own event' });
     }
 
-    const result = await EventRsvp.deleteOne({
-      event: event._id,
-      user: req.user._id,
-    });
-    const cancelled = result.deletedCount > 0;
-    if (cancelled) {
-      await writeAuditLog({
-        req,
-        action: 'event.rsvp_cancelled',
-        actor: req.user,
-        targetType: 'event',
-        target: event._id,
-      });
-    }
+    const cancelled = await cancelEventRsvp({ req, eventId: event._id, userId: req.user._id });
     return res.json({ cancelled });
   } catch (error) {
     if (error.name === 'CastError')

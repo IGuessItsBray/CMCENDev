@@ -578,13 +578,20 @@ router.post('/totp/setup', authMiddleware, async (req, res) => {
       name: `${rpName} (${user.email})`,
     });
 
-    await User.findByIdAndUpdate(user._id, {
-      $set: {
-        'totp.secret': secret.base32,
-        'totp.enabled': false,
-        'totp.appName': defaultTotpAppName,
+    const pendingSetup = await User.findOneAndUpdate(
+      { _id: user._id, 'totp.enabled': { $ne: true } },
+      {
+        $set: {
+          'totp.secret': '',
+          'totp.pendingSecret': secret.base32,
+          'totp.enabled': false,
+          'totp.appName': defaultTotpAppName,
+        },
       },
-    });
+    );
+    if (!pendingSetup) {
+      return res.status(409).json({ error: 'TOTP setup changed; try again' });
+    }
 
     // Generate QR data URL and return both
     const otpauth = secret.otpauth_url;
@@ -613,7 +620,9 @@ router.get('/totp/status', authMiddleware, async (req, res) => {
 
     res.json({
       enabled: user.totp?.enabled === true,
-      pending: Boolean(user.totp?.secret) && user.totp?.enabled !== true,
+      pending:
+        Boolean(user.totp?.pendingSecret || user.totp?.secret) &&
+        user.totp?.enabled !== true,
     });
   } catch (err) {
     console.error('totp/status error', err);
@@ -626,7 +635,8 @@ router.get('/totp/qrcode', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
-    if (!user.totp?.secret)
+    const pendingSecret = user.totp?.pendingSecret || user.totp?.secret;
+    if (!pendingSecret)
       return res.status(400).json({ error: 'No TOTP secret set' });
     if (user.totp?.enabled === true) {
       return res.status(403).json({
@@ -635,7 +645,7 @@ router.get('/totp/qrcode', authMiddleware, async (req, res) => {
     }
 
     const otpauth = speakeasy.otpauthURL({
-      secret: user.totp.secret,
+      secret: pendingSecret,
       label: `${rpName} (${user.email})`,
       encoding: 'base32',
     });
@@ -658,7 +668,17 @@ router.post(
       const user = await User.findById(req.user._id);
       const token = normalizeTotpToken(req.body?.token);
 
-      if (!user.totp?.secret) {
+      // Only a full access session may confirm enrollment. Legacy disabled
+      // seeds can still be confirmed, but can never complete temporary login.
+      const isSetup = !hasActiveTotp(user);
+      if (req.isTemp && isSetup) {
+        await recordMfaRejected(req, user, 'totp', 'factor_not_enabled');
+        return res.status(400).json({ error: 'Authenticator app MFA is not enabled' });
+      }
+      const secret = isSetup
+        ? user.totp?.pendingSecret || user.totp?.secret
+        : user.totp?.secret;
+      if (!secret) {
         await recordMfaRejected(req, user, 'totp', 'not_configured');
         return res.status(400).json({ error: 'No TOTP secret set' });
       }
@@ -670,7 +690,7 @@ router.post(
       }
 
       const verification = speakeasy.totp.verifyDelta({
-        secret: user.totp.secret,
+        secret,
         encoding: 'base32',
         token,
         window: getTotpWindow(),
@@ -690,12 +710,26 @@ router.post(
         );
       }
 
-      await User.findByIdAndUpdate(user._id, {
-        $set: {
-          'totp.enabled': true,
-          'twoFactor.destructiveVerifiedAt': new Date(),
+      const factorFilter = isSetup
+        ? {
+            'totp.enabled': { $ne: true },
+            [user.totp?.pendingSecret ? 'totp.pendingSecret' : 'totp.secret']: secret,
+          }
+        : { 'totp.enabled': true, 'totp.secret': secret };
+      const verifiedFactor = await User.findOneAndUpdate(
+        { _id: user._id, ...factorFilter },
+        {
+          $set: {
+            'totp.enabled': true,
+            'totp.secret': secret,
+            'totp.pendingSecret': '',
+            'twoFactor.destructiveVerifiedAt': new Date(),
+          },
         },
-      });
+      );
+      if (!verifiedFactor) {
+        return res.status(409).json({ error: 'TOTP configuration changed; try again' });
+      }
       await updateAccountCreationMfaMethod(user, 'totp');
 
       const responsePayload = { verified: true };
@@ -753,6 +787,7 @@ router.delete('/totp', authMiddleware, async (req, res) => {
     await User.findByIdAndUpdate(user._id, {
       $set: {
         'totp.secret': '',
+        'totp.pendingSecret': '',
         'totp.enabled': false,
         'totp.appName': '',
       },

@@ -5,7 +5,7 @@ process.env.NODE_ENV = 'test';
 process.env.CDN_PUBLIC_BASE_URL = 'https://cdn.example.test';
 const express = require('express');
 const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
+const { createSessionToken } = require('../../services/auth-session');
 const request = require('supertest');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const Page = require('../../models/Page');
@@ -27,10 +27,7 @@ before(async () => {
       role,
       sessionVersion: 0,
     });
-    const token = jwt.sign(
-      { userId: String(_id), sessionVersion: 0 },
-      process.env.JWT_SECRET,
-    );
+    const token = createSessionToken({ _id, sessionVersion: 0 });
     if (role === 'editor') editorToken = token;
     else subscriberToken = token;
   }

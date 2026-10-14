@@ -298,6 +298,7 @@ const UserSchema = new mongoose.Schema(
 
     totp: {
       secret: { type: String, default: '' },
+      pendingSecret: { type: String, default: '' },
       enabled: { type: Boolean, default: false },
       appName: { type: String, default: '' },
     },

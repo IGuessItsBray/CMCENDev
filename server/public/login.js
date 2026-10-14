@@ -456,7 +456,14 @@ resetPasswordForm.addEventListener("submit", async (event) => {
   ).value;
 
   if (password !== passwordConfirmation) {
-    setResetPasswordMessage("Passwords do not match.");
+    setResetPasswordMessage(CMCENUtils.translateText("passwords_do_not_match", "Passwords do not match."));
+    return;
+  }
+
+  const passwordError = CMCENUtils.getNewPasswordError(password);
+  if (passwordError) {
+    setResetPasswordMessage(passwordError);
+    document.getElementById("newPassword").focus();
     return;
   }
 

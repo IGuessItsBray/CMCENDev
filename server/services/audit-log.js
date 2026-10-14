@@ -1,4 +1,5 @@
 const AuditLog = require('../models/AuditLog');
+const { isIP } = require('node:net');
 
 function cleanString(value) {
   return String(value || '').trim();
@@ -17,21 +18,6 @@ function snapshotUser(user) {
   };
 }
 
-function splitIpCandidates(value) {
-  if (!value) {
-    return [];
-  }
-
-  if (Array.isArray(value)) {
-    return value.flatMap(splitIpCandidates);
-  }
-
-  return String(value)
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
 function normalizeIpAddress(value) {
   const rawIp = String(value || '').trim();
 
@@ -46,40 +32,14 @@ function normalizeIpAddress(value) {
   return rawIp;
 }
 
-function isIpv4Address(value) {
-  return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(String(value || ''));
-}
-
 function getRequestIpDetails(req) {
-  const candidates = [
-    req?.headers?.['cf-connecting-ip'],
-    req?.headers?.['x-real-ip'],
-    req?.headers?.['x-forwarded-for'],
-    req?.ips,
-    req?.ip,
-    req?.socket?.remoteAddress,
-  ].flatMap(splitIpCandidates);
-
-  const addresses = [];
-
-  candidates.forEach((candidate) => {
-    const normalized = normalizeIpAddress(candidate);
-
-    if (normalized && !addresses.includes(normalized)) {
-      addresses.push(normalized);
-    }
-
-    if (
-      String(candidate || '').trim() === '::1' &&
-      !addresses.includes('::1')
-    ) {
-      addresses.push('::1');
-    }
-  });
-
+  // Express resolves req.ip using the configured trusted proxy boundary.
+  // Never independently trust forwarding headers or choose an IPv4 from them.
+  const normalized = normalizeIpAddress(req?.ip);
+  const ipAddress = isIP(normalized) ? normalized : '';
   return {
-    ipAddress: addresses.find(isIpv4Address) || addresses[0] || '',
-    ipAddresses: addresses,
+    ipAddress,
+    ipAddresses: ipAddress ? [ipAddress] : [],
   };
 }
 

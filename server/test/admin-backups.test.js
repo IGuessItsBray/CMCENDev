@@ -34,7 +34,7 @@ test('all backup operations require authentication and exact developer role', as
   app.use(express.json());
   app.use('/api/admin/backups', router);
   const token = jwt.sign(
-    { userId: 'test', sessionVersion: 0 },
+    { userId: 'test', sessionVersion: 0, tokenType: 'access' },
     process.env.JWT_SECRET,
   );
   const endpoints = [

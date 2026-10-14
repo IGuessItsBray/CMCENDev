@@ -14,6 +14,15 @@
     return translated && translated !== key ? translated : fallback;
   }
 
+  function getNewPasswordError(password) {
+    return window.CMCENPasswordPolicy.getPasswordValidationError(password)
+      ? translateText(
+          "password_policy_guidance",
+          "Use at least 12 characters and no more than 72 UTF-8 bytes. Accented characters and emoji may use multiple bytes.",
+        )
+      : "";
+  }
+
   function escapeRegExp(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
@@ -2215,6 +2224,7 @@
     toLocalTimeInput,
     trackPageVisit,
     translateText,
+    getNewPasswordError,
   };
 
   window.addEventListener("load", trackPageVisit, { once: true });

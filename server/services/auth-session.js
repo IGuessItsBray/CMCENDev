@@ -16,10 +16,19 @@ function createSessionToken(user) {
     {
       userId: user._id,
       sessionVersion: Number(user.sessionVersion || 0),
+      tokenType: 'access',
     },
     process.env.JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_TTL },
   );
+}
+
+function verifyAccessToken(token) {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  if (decoded.tokenType !== 'access' || !decoded.userId) {
+    throw new Error('Invalid access token purpose');
+  }
+  return decoded;
 }
 
 function createRefreshToken(user) {
@@ -86,6 +95,7 @@ module.exports = {
   REFRESH_COOKIE_NAME,
   clearRefreshTokenCookie,
   createSessionToken,
+  verifyAccessToken,
   readCookie,
   setRefreshTokenCookie,
 };

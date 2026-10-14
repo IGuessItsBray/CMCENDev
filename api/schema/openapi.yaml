@@ -5,6 +5,9 @@ info:
   description: >
     OpenAPI-style inventory for the Express routes mounted by server/server.js.
     Schemas are intentionally broad where handlers return Mongoose documents.
+    CSV exports neutralize formula-leading user text with an apostrophe before
+    CSV quoting. Audit IP metadata uses validated Express req.ip under the
+    configured proxy trust boundary.
     The existing developer actor may save blank descriptive profile/editorial
     fields. Ordinary actors retain required checks but may retain authorized
     blanks on later edits. Credentials, identifiers, references, valid nonblank
@@ -45,6 +48,23 @@ tags:
   - name: Certificates
   - name: Contact
 paths:
+  /api/admin/users/{userId}/mfa-reset:
+    patch:
+      tags: [Admin]
+      summary: Reset another user's MFA methods.
+      description: Requires canResetUserMfa and forbids self-reset. Only a built-in developer actor can reset administrator or developer targets; custom permissions do not bypass the target-role boundary. Step-up and session revocation are not provided by this endpoint.
+      x-permission: canResetUserMfa
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: MFA methods cleared. }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
   /images/{key}:
     get:
       summary: Redirect an image path to this deployment's media service
@@ -573,6 +593,7 @@ paths:
     post:
       tags: [Auth]
       summary: Register a user account; invitation activation issues a session only after cookie consent and records a token-free audit event for each activation attempt.
+      description: Registration and invitation activation require a string password of at least 12 Unicode characters and at most 72 UTF-8 bytes. Returned profiles exclude credentials and internal recovery/MFA state.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/AuthRegister"
@@ -655,6 +676,7 @@ paths:
     post:
       tags: [Auth]
       summary: Confirm password reset.
+      description: Requires matching string passwords of at least 12 Unicode characters and at most 72 UTF-8 bytes. Invalid passwords do not consume the reset token.
       security: []
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
@@ -766,6 +788,7 @@ paths:
   /api/me:
     get:
       tags: [Auth]
+      description: Returns an allowlisted profile, computed permissions, MFA presence and subscription preferences. Credentials, recovery state, verification secrets, session versions and MFA seeds/credentials are excluded.
       summary: Get current user.
       responses:
         "200":
@@ -1032,6 +1055,7 @@ paths:
     post:
       tags: [Auth]
       summary: Upgrade or merge ghost account.
+      description: Requires matching string passwords of at least 12 Unicode characters and at most 72 UTF-8 bytes. Returned profiles exclude credentials and internal recovery/MFA state.
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
       responses:
@@ -1042,7 +1066,7 @@ paths:
     delete:
       tags: [Auth]
       summary: Delete the current account after a current TOTP or passkey MFA confirmation.
-      description: Also removes private legacy profile data and retains a source-ID tombstone without email hash or Mongo user ID to prevent reimport.
+      description: Cancels current/future RSVPs using the calendar's UTC-day window before account deletion; historical RSVP contacts remain staff-only. Also removes private legacy profile data and retains a source-ID tombstone without email hash or Mongo user ID to prevent reimport.
       x-permission: canDeleteOwnAccount
       requestBody:
         $ref: "#/components/requestBodies/GenericJson"
@@ -1119,6 +1143,7 @@ paths:
     post:
       tags: [MFA]
       summary: Initialize TOTP setup with a server-assigned authenticator name.
+      description: Requires an access session. Stores a pending seed separately from the enabled factor; refuses replacement of an enabled factor.
       responses:
         "200":
           description: TOTP secret, otpauth URL, and QR data.
@@ -1140,6 +1165,7 @@ paths:
     post:
       tags: [MFA]
       summary: Verify TOTP code and audit rejected verification attempts without retaining the code.
+      description: An access session can confirm pending enrollment. A temporary login token can verify only an already enabled factor; pending and legacy disabled seeds cannot complete login.
       parameters:
         - $ref: "#/components/parameters/TempTokenQuery"
       requestBody:
@@ -1525,7 +1551,7 @@ paths:
     delete:
       tags: [Admin]
       summary: Delete a user account after a current TOTP or passkey MFA confirmation.
-      description: Also removes private legacy profile data and retains a source-ID tombstone without email hash or Mongo user ID to prevent reimport.
+      description: Cancels current/future RSVPs using the calendar's UTC-day window before account and owned-event deletion; historical RSVP contacts remain staff-only. Also removes private legacy profile data and retains a source-ID tombstone without email hash or Mongo user ID to prevent reimport.
       x-permission: canDeleteAnyUser
       parameters:
         - $ref: "#/components/parameters/UserId"
@@ -3554,7 +3580,7 @@ paths:
     get:
       tags: [Comments]
       summary: List published comments for message.
-      description: Legacy attribution exposes only authorName and computed isGuest, with names suppressed for missing registered source authors. Guest names remain available. createdAt preserves the sent date; publishedAt is separate publication metadata.
+      description: Registered author objects expose only _id, accountName, firstName and lastName; usernames, emails and roles are excluded. Legacy attribution exposes only authorName and computed isGuest, with names suppressed for missing registered source authors. Guest names remain available. createdAt preserves the sent date; publishedAt is separate publication metadata.
       security: []
       parameters:
         - name: parentType
@@ -3625,6 +3651,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Requires tokenType access. Refresh or untyped JWTs cannot authenticate bearer routes. Existing refresh cookies can obtain typed access tokens; sessionVersion revocation remains enforced.
   parameters:
     Id:
       name: id

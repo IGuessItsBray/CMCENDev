@@ -505,6 +505,16 @@ tests or user errors.
 
 ## S3-Compatible Object Storage
 
+### Current public-media policy
+
+Uploads to the public media bucket are intentionally public, including assets
+attached to drafts or unpublished submissions when their direct URL is known.
+Random object paths reduce casual discovery but are not access control. Staff
+remove unsuitable personal-information uploads; removal does not recall copies
+already downloaded or cached. Do not use this bucket for confidential material.
+Private uploads and authenticated delivery are a future, separately planned
+change. This policy does not change bucket access, object URLs or stored data.
+
 CMCEN uses Garage for new deployments and can use any compatible S3 service.
 The `MINIO_*` variable names are retained for compatibility with existing
 deployments; they also configure Garage. The repository's `compose.yml` starts

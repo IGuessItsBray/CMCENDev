@@ -67,7 +67,7 @@ beforeEach(async () => {
       sessionVersion: 0,
     },
   ]);
-  auth = `Bearer ${jwt.sign({ userId: String(manager), sessionVersion: 0 }, process.env.JWT_SECRET)}`;
+  auth = `Bearer ${jwt.sign({ userId: String(manager), sessionVersion: 0, tokenType: 'access' }, process.env.JWT_SECRET)}`;
 });
 const payload = () => ({
   title: { en: 'Radio display', fr: 'Exposition radio' },
@@ -75,7 +75,7 @@ const payload = () => ({
   description: { en: 'Reviewed description', fr: 'Description vérifiée' },
 });
 test('all administrative operations require the dedicated permission', async () => {
-  const token = `Bearer ${jwt.sign({ userId: String(denied) }, process.env.JWT_SECRET)}`;
+  const token = `Bearer ${jwt.sign({ userId: String(denied), tokenType: 'access' }, process.env.JWT_SECRET)}`;
   const id = new mongoose.Types.ObjectId();
   for (const [method, path] of [
     ['get', ''],
@@ -215,7 +215,7 @@ test('media referenced by a draft display cannot be deleted as an orphan', async
     username: 'developer@example.test',
     role: 'developer',
   });
-  const token = `Bearer ${jwt.sign({ userId: String(developer) }, process.env.JWT_SECRET)}`;
+  const token = `Bearer ${jwt.sign({ userId: String(developer), tokenType: 'access' }, process.env.JWT_SECRET)}`;
   await request(app)
     .post('/api/admin/media/bulk-delete')
     .set('Authorization', token)

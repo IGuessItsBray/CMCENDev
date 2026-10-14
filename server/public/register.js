@@ -305,15 +305,7 @@ async function verifyTotp() {
 }
 
 function getPasswordStrength(password) {
-  let score = 0;
-
-  if (password.length >= 10) score += 1;
-  if (/[a-z]/.test(password)) score += 1;
-  if (/[A-Z]/.test(password)) score += 1;
-  if (/\d/.test(password)) score += 1;
-  if (/[^A-Za-z0-9]/.test(password)) score += 1;
-
-  return score;
+  return window.CMCENPasswordPolicy.getPasswordStrength(password);
 }
 
 function updatePasswordStrength() {
@@ -428,6 +420,15 @@ async function submitRegistration(event) {
 
   if (password !== passwordConfirmation) {
     setRegisterError(translate("passwords_do_not_match"));
+    registerButton.disabled = false;
+    registerButton.removeAttribute("aria-busy");
+    return;
+  }
+
+  const passwordError = CMCENUtils.getNewPasswordError(password);
+  if (passwordError) {
+    setRegisterError(passwordError);
+    passwordInput.focus();
     registerButton.disabled = false;
     registerButton.removeAttribute("aria-busy");
     return;

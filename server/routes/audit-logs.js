@@ -126,14 +126,10 @@ function formatCsvValue(value) {
   return String(value);
 }
 
+const { encodeCsvText } = require('../services/csv');
+
 function escapeCsv(value) {
-  const text = formatCsvValue(value);
-
-  if (/[",\n\r]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-
-  return text;
+  return encodeCsvText(formatCsvValue(value));
 }
 
 function getSnapshotLabel(snapshot = {}) {

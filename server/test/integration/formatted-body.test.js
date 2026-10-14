@@ -27,7 +27,7 @@ before(async () => {
   await mongoose.connect(mongo.getUri());
   const users = ['editor', 'subscriber'].map((role) => ({ _id: new mongoose.Types.ObjectId(), role, sessionVersion: 0, email: `${role}@example.test`, username: `${role}@example.test` }));
   await User.collection.insertMany(users);
-  [editorToken, readerToken] = users.map((u) => jwt.sign({ userId: String(u._id), sessionVersion: 0 }, process.env.JWT_SECRET));
+  [editorToken, readerToken] = users.map((u) => jwt.sign({ userId: String(u._id), sessionVersion: 0, tokenType: 'access' }, process.env.JWT_SECRET));
 });
 after(async () => { await mongoose.disconnect(); await mongo?.stop(); });
 

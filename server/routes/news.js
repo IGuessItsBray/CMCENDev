@@ -5,6 +5,7 @@ const { buildPublicMediaUrl } = require('../services/media-library');
 const { markContentEdited } = require('../services/content-edit-metadata');
 const mongoose = require('mongoose');
 const NewsArticle = require('../models/NewsArticle');
+const { withOriginalImages } = require('../services/article-media');
 const { requiresTextForSave } = require('../services/save-validation');
 const LastPostMessage = require('../models/LastPostMessage');
 const Page = require('../models/Page');
@@ -574,7 +575,7 @@ router.get(
           return res.status(404).json({ error: 'News story not found' });
       }
       res.set('Cache-Control', 'no-store');
-      return res.json({ article: serializeArticle(article) });
+      return res.json({ article: await withOriginalImages(serializeArticle(article)) });
     } catch {
       return res.status(500).json({ error: 'Could not load news preview' });
     }
@@ -594,7 +595,7 @@ router.get('/:articleId', async (req, res) => {
     if (!article)
       return res.status(404).json({ error: 'News story not found' });
 
-    return res.json({ article: serializeArticle(article) });
+    return res.json({ article: await withOriginalImages(serializeArticle(article)) });
   } catch (error) {
     console.error('Could not load news story:', error);
     return res.status(500).json({ error: 'Could not load news story' });

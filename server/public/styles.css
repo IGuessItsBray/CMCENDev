@@ -382,6 +382,17 @@ svg {
   max-width: 100%;
 }
 
+.article-image-link {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+.article-image-link:focus-visible {
+  outline: 3px solid var(--heading-color);
+  outline-offset: 4px;
+}
+
 .site-footer {
   flex: 0 0 auto;
   height: auto;
@@ -11789,6 +11800,9 @@ html[data-theme='dark'] .home-news-card {
   display: block;
   object-fit: contain;
   object-position: center;
+}
+.news-detail-image > .article-image-link {
+  width: 100%;
 }
 
 .news-detail-content {

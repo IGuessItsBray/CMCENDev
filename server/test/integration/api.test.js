@@ -3263,6 +3263,10 @@ describe('news stories', () => {
     );
     assert.equal(preview.body.article.newsletterBlocks.en[1].image.width, 400);
     assert.equal(
+      preview.body.article.newsletterBlocks.en[1].image.originalUrl,
+      buildPublicMediaUrl(key),
+    );
+    assert.equal(
       preview.body.article.content.en,
       'Update\n\nPhoto credit\n\nDocument',
     );
@@ -3294,7 +3298,11 @@ describe('news stories', () => {
     assert.equal(updated.body.article.newsletter.author, 'Editor');
     assert.deepEqual(
       updated.body.article.newsletterBlocks,
-      preview.body.article.newsletterBlocks,
+      created.body.article.newsletterBlocks,
+    );
+    assert.deepEqual(
+      (await NewsArticle.findById(id).lean()).newsletterBlocks,
+      created.body.article.newsletterBlocks,
     );
     await request(app)
       .patch(`/api/news/${id}`)

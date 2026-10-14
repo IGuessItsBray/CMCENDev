@@ -45,6 +45,12 @@ function renderNewsStory(article) {
   newsDetailTitle.textContent = title;
   newsDetailImage.src = article.imageUrl;
   newsDetailImage.alt = title;
+  const existingLink = newsDetailImage.closest("a.article-image-link");
+  if (existingLink) existingLink.replaceWith(newsDetailImage);
+  window.ArticleImages.link(newsDetailImage, {
+    url: article.imageUrl,
+    originalUrl: article.imageOriginalUrl,
+  }, CMCENUtils.getCurrentLanguage());
   newsDetailText.textContent = getNewsDetailText(article.content);
   newsDetailMessage.hidden = true;
   newsDetailContent.hidden = false;

@@ -29,6 +29,7 @@ const { app } = require('../../server');
 const User = require('../../models/User');
 const Role = require('../../models/Role');
 const NewsArticle = require('../../models/NewsArticle');
+const MediaAsset = require('../../models/MediaAsset');
 const ContentRevision = require('../../models/ContentRevision');
 const AuditLog = require('../../models/AuditLog');
 let mongoServer;
@@ -98,6 +99,44 @@ after(async () => {
   if (mongoServer) {
     await mongoServer.stop();
   }
+});
+
+test('public and authenticated article details resolve originals without changing display data or exposing unrelated media', async () => {
+  const staff = await createUser({ role: 'editor' });
+  const token = bearer(require('../../services/auth-session').createSessionToken(staff));
+  const base = process.env.CDN_PUBLIC_BASE_URL;
+  const figure = { type: 'figure', caption: 'Caption', image: { url: `${base}/images/photo/large.webp`, width: 300, height: 225, alt: 'Photo', variants: { thumb: { url: `${base}/images/photo/thumb.webp`, width: 400, height: 300 } } } };
+  await MediaAsset.create({ key: 'images/photo/original.jpg', url: figure.image.url, originalUrl: `${base}/images/photo/original.jpg`, uploadedBy: staff._id, fileMetadata: { private: 'Not part of the article response' }, variants: { thumb: { url: figure.image.variants.thumb.url } } });
+  await MediaAsset.create({ key: 'images/unrelated/original.jpg', url: `${base}/images/unrelated/large.webp`, originalUrl: `${base}/images/unrelated/original.jpg` });
+  const article = await NewsArticle.create({ title: { en: 'Image detail', fr: 'Image' }, content: { en: 'Copy', fr: 'Texte' }, layout: 'newsletter', newsletterBlocks: { en: [figure], fr: [figure] }, imageUrl: figure.image.variants.thumb.url, status: 'published', createdBy: staff._id });
+  const publicResponse = (await request(app).get(`/api/news/${article._id}`).expect(200)).body.article;
+  const previewResponse = (await request(app).get(`/api/news/${article._id}/preview`).set('Authorization', token).expect(200)).body.article;
+  for (const response of [publicResponse, previewResponse]) {
+    assert.equal(response.imageOriginalUrl, `${base}/images/photo/original.jpg`);
+    for (const language of ['en', 'fr']) assert.deepEqual(response.newsletterBlocks[language][0], { ...figure, image: { ...figure.image, originalUrl: `${base}/images/photo/original.jpg` } });
+    assert(!JSON.stringify(response).includes('Not part of the article response'));
+    assert(!JSON.stringify(response).includes('images/unrelated'));
+  }
+  assert.deepEqual((await NewsArticle.findById(article._id).lean()).newsletterBlocks.en, [figure]);
+  await request(app).get(`/api/news/${article._id}/preview`).expect(401);
+  await NewsArticle.updateOne({ _id: article._id }, { $set: { status: 'draft' } });
+  await request(app).get(`/api/news/${article._id}`).expect(404);
+  await request(app).get(`/api/news/${article._id}/preview`).set('Authorization', token).expect(200);
+});
+
+test('ambiguous, unsafe and unregistered original metadata cannot become an article original link', async () => {
+  const staff = await createUser({ role: 'editor' });
+  const base = process.env.CDN_PUBLIC_BASE_URL;
+  const url = `${base}/images/shared.webp`;
+  for (const name of ['one', 'two']) await MediaAsset.create({ key: `images/${name}.jpg`, url, originalUrl: `${base}/images/${name}.jpg` });
+  const figure = { type: 'figure', image: { url, alt: '' } };
+  const article = await NewsArticle.create({ title: { en: 'Fallback', fr: 'Image' }, content: { en: 'Copy', fr: 'Texte' }, layout: 'newsletter', newsletterBlocks: { en: [figure, { type: 'figure', image: { url: 'https://other.example/unregistered.jpg', alt: '' } }], fr: [] }, status: 'published', createdBy: staff._id });
+  let response = (await request(app).get(`/api/news/${article._id}`).expect(200)).body.article;
+  assert(response.newsletterBlocks.en.every((block) => block.image.originalUrl === ''));
+  await MediaAsset.deleteMany({});
+  await MediaAsset.create({ key: 'images/bad.jpg', url, originalUrl: 'javascript:alert(1)' });
+  response = (await request(app).get(`/api/news/${article._id}`).expect(200)).body.article;
+  assert.equal(response.newsletterBlocks.en[0].image.originalUrl, '');
 });
 
 test('article review flags preserve bilingual legacy notes, permissions and publication independently', async () => {

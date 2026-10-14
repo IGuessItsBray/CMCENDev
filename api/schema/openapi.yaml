@@ -3130,7 +3130,7 @@ paths:
         - $ref: "#/components/parameters/ArticleId"
       responses:
         "200":
-          description: Article including layout and newsletter metadata. Cache-Control is no-store.
+          description: Article including layout and newsletter metadata. Detail reads add imageOriginalUrl and figure image.originalUrl from uniquely matched registered media; missing or ambiguous originals are empty. Display URLs and dimensions remain unchanged. Cache-Control is no-store.
         "401":
           $ref: "#/components/responses/Error"
         "403":
@@ -3142,6 +3142,7 @@ paths:
     get:
       tags: [News]
       summary: Get one published news story or newsletter for its full article page.
+      description: Adds imageOriginalUrl and figure image.originalUrl from uniquely matched registered media; missing or ambiguous originals are empty. No media ownership or library metadata is exposed. Display URLs and dimensions remain unchanged.
       security: []
       parameters:
         - $ref: "#/components/parameters/ArticleId"

@@ -200,7 +200,7 @@
       const cover = image(issue.cover);
       if (cover) {
         const figure = element("figure");
-        figure.append(cover);
+        figure.append(window.ArticleImages.link(cover, issue.cover, language));
         content.append(figure);
       }
     }
@@ -225,7 +225,7 @@
         } else if (block.type === "figure") {
           el = element("figure");
           const img = image(block.image);
-          if (img) el.append(img);
+          if (img) el.append(window.ArticleImages.link(img, block.image, language));
           if (block.caption) el.append(element("figcaption", block.caption));
           if (grouped) {
             // Give captions a readable measure without enlarging their image.
@@ -306,7 +306,7 @@
         issue.category !== "newsletter" &&
         !window.NewsletterFormat.imageUrls(article).includes(article.imageUrl)
       )
-        issue.cover = { url: article.imageUrl, alt: issue.title };
+        issue.cover = { url: article.imageUrl, originalUrl: article.imageOriginalUrl, alt: issue.title };
       issue._id = article._id;
       issue.preview = preview;
       render();

@@ -591,6 +591,10 @@ administrative media access. Uploads retain `canUploadMedia` via `/api/upload`.
 `GET /api/news/:articleId/preview` requires authentication and `canManageNews`, or `archive.verify` for an imported draft only,
 returns the same article shape including unpublished content, and sets
 `Cache-Control: no-store`. Public reads still return only published records.
+Both detail reads add `imageOriginalUrl` and figure `image.originalUrl` from
+uniquely matched registered media metadata. Missing or ambiguous originals are
+empty strings. Display URLs, variants, dimensions and stored article content
+are unchanged; media identity, ownership and other library metadata are not exposed.
 
 Standard news stories require English and French titles and body content;
 newsletters require their original language. Articles have an optional uploaded

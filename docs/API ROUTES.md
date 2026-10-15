@@ -376,6 +376,8 @@ Missing authentication returns 401, missing permission 403, unknown or ineligibl
 
 `GET /page-content/document-library.json` remains public and returns the existing bilingual filter/interface labels with published database document cards only. It uses `Cache-Control: no-store` and returns 503 if the database is unavailable or any of the 84 seed identities is missing, rather than serving a partial migration or restoring stale static entries. Original catalogue order is retained. Catalogue IDs preserve library anchors; files resolve through configured storage URLs. The one-time seed migration must precede the reader cutover; see `DOCUMENT-CATALOGUE.md`.
 
+Each `/page-content/document-library.json` card includes `referenceCount` and `references: [{href, title: {en, fr}}]`, deduplicated by referring page. References include published articles, public pages, events/notices, bundled public static pages and published Awards resources. Drafts and authenticated/restricted pages are excluded even with staff authentication. Stored `pageUrl` and provenance are not exposed in cards. Optional `htmlVersionUrl` identifies a reviewed HTML rendition, currently only the original Senate Charter. The endpoint returns the complete catalogue; the browser shows 24 cards per Load more batch after searching/filtering all records, and reveals document/alias anchors beyond the first batch.
+
 ## Admin Users, Roles, Media, Moderation
 
 Mounted at `/api/admin`.

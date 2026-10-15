@@ -160,6 +160,31 @@
   text-align: center;
 }
 
+.document-library-more {
+  display: block;
+  margin: 2rem auto;
+  padding: 0.7rem 1.4rem;
+  border: 1px solid var(--gold-500);
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.document-library-more[hidden] {
+  display: none;
+}
+
+.document-library-references summary {
+  cursor: pointer;
+}
+
+.document-library-references ul {
+  margin: 0.6rem 0 0;
+  padding-left: 1.2rem;
+}
+
 .adopt-catalogue-controls {
   grid-template-columns: minmax(0, 1fr);
   grid-template-columns: minmax(0, 1fr);

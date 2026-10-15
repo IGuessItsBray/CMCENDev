@@ -166,34 +166,34 @@ function visibleReference(type, record, user) {
   return null;
 }
 
+function referenceValues(type, record) {
+  return type === 'page'
+    ? linkValues(record.blocks)
+    : type === 'newsArticle'
+      ? [...linkValues(record.newsletterBlocks), ...linkValues(record.content)]
+      : [
+          ...mediaReferences(record).map((item) => item.url),
+          ...linkValues(
+            record.messages || record.description || record.message,
+          ),
+        ];
+}
+
 function referencesFor(document, groups, user) {
   const references = new Map();
   for (const [type, records] of Object.entries(groups))
     for (const record of records) {
       const reference = visibleReference(type, record, user);
       if (!reference) continue;
-      const values =
-        type === 'page'
-          ? linkValues(record.blocks)
-          : type === 'newsArticle'
-            ? [
-                ...linkValues(record.newsletterBlocks),
-                ...linkValues(record.content),
-              ]
-            : [
-                ...mediaReferences(record).map((item) => item.url),
-                ...linkValues(
-                  record.messages || record.description || record.message,
-                ),
-              ];
+      const values = referenceValues(type, record);
       if (values.some((value) => documentKey(value, document)))
         references.set(`${type}:${record._id}`, reference);
     }
   return [...references.values()];
 }
 
-async function staticReferences(document) {
-  const references = [];
+async function staticReferenceCorpus() {
+  const corpus = [];
   const directory = path.join(__dirname, '../public');
   for (const page of require('../routes/search').staticPages) {
     if (page.path === '/document-library') continue;
@@ -217,16 +217,27 @@ async function staticReferences(document) {
       };
       walk(content);
     }
-    if (values.some((value) => documentKey(value, document)))
-      references.push({
+    corpus.push({
+      values,
+      reference: {
         type: 'static',
         id: page.path,
-        title: page.title.en || page.title.fr,
+        title: page.title,
         status: 'published',
         href: page.path,
-      });
+      },
+    });
   }
-  return references;
+  return corpus;
+}
+
+async function staticReferences(document) {
+  return (await staticReferenceCorpus())
+    .filter((item) => item.values.some((value) => documentKey(value, document)))
+    .map(({ reference }) => ({
+      ...reference,
+      title: reference.title.en || reference.title.fr,
+    }));
 }
 
 async function documentUsage(document, user) {
@@ -274,4 +285,7 @@ module.exports = {
   referencesFor,
   documentUsage,
   visibleReference,
+  referenceValues,
+  staticReferenceCorpus,
+  receipts: [...oldReceipts, ...newsletterReceipts, ...newReceipts],
 };

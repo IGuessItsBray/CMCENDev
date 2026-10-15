@@ -31,4 +31,16 @@ Do not roll back to the old reader against the seeded collection without a separ
 
 ## Usage boundaries
 
+Public cards show referring-page counts and localized titles instead of generic “Read accessible page” links. The public reference map reads six published-content collections (including Awards resources) and the static page corpus once per request, then indexes links by canonical file key. It always applies visitor access rules; staff authentication never adds draft or restricted references to this public response. The authorized staff usage view retains its existing permission-aware draft references. A separate HTML-version link is explicitly limited to the reviewed Senate Charter file identity. Stored related-page URLs, provenance, receipt aliases and migration seed fingerprints are unchanged.
+
+The browser initially reveals 24 cards and adds 24 with Load more. Search and filters apply to the full response, and document/alias anchors reveal their target even beyond the first batch. This does not reduce response size or introduce server pagination. Public references are computed afresh rather than sharing a cache that could retain withdrawn content.
+
+### Remaining legacy dependencies (15 October 2026 assessment)
+
+- Identify C&E Week's intended public destination and confirm Vimy's draft/publication disposition before mapping their old page paths to new routes. The three later catalogue records still retain those legacy URLs as data; this UI change does not publish or reimport content.
+- Obtain the unavailable Foundation annual report and settle the legacy Foundation report, donation-information and privacy-policy destinations.
+- Reconcile the distinct unavailable French-source Vimy testimony document; the English file is not a replacement.
+- Awards currently publishes ten legacy-hosted resource links: two Heritage Awards links have verified catalogue receipt matches, and eight lack such matches. Public reference tracking recognizes the verified aliases but does not rewrite the Awards records or migrate missing assets.
+- Prepare explicit path redirects at domain cutover after targets are settled. Keep historical source URLs as provenance. Seed reruns preserve existing records and cannot serve as a generic URL repair.
+
 Usage is computed on demand from current structured articles/pages, formatted event/notice bodies, and explicitly public static landing pages. Relative storage paths and current configured storage URLs normalize to a file key; historical URLs/names normalize only through retained verified receipts. Repeated links and bilingual mentions on one parent count once. Historical `legacy.originalBody` is not a current reference. Restricted pages are filtered by the existing page access rule, and draft titles/counts appear only where the requester may inspect the corresponding editor/review surface. The catalogue card itself does not count as a use. These counts do not grant access to confidential files; existing document storage is public.

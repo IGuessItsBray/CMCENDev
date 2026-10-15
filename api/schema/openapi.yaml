@@ -140,12 +140,41 @@ paths:
           description: Existing bundled page-content JSON filename, including .json.
       responses:
         '200':
-          description: Nested imageKey and fileKey values resolved using the configured public media base URL. The document library also includes published ArchiveDocument records.
+          description: Nested imageKey and fileKey values resolved using the configured public media base URL. The document library includes published ArchiveDocument records with public referring pages and reviewed HTML renditions; stored pageUrl values are not exposed.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        referenceCount:
+                          type: integer
+                          minimum: 0
+                        references:
+                          type: array
+                          items:
+                            type: object
+                            required: [href, title]
+                            properties:
+                              href:
+                                type: string
+                              title:
+                                type: object
+                                required: [en, fr]
+                                properties:
+                                  en:
+                                    type: string
+                                  fr:
+                                    type: string
+                        htmlVersionUrl:
+                          type: string
+                          description: Optional reviewed HTML rendition, bound to the document's file identity.
         '404':
           description: No matching bundled public JSON file.
   /api/adopt-displays:

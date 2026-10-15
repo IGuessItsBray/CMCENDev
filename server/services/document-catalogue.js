@@ -57,7 +57,29 @@ async function publicDocuments() {
       (left.catalogueOrder ?? Infinity) - (right.catalogueOrder ?? Infinity) ||
       String(left._id).localeCompare(String(right._id)),
   );
-  return documents.map(toPublicDocument);
+  const references =
+    await require('./public-document-references').publicDocumentReferences(
+      documents,
+    );
+  return documents.map((record) => {
+    const card = toPublicDocument(record);
+    // Keep historical/related links in storage and staff views, never public navigation.
+    delete card.pageUrl;
+    card.references =
+      record.availability === 'unavailable'
+        ? []
+        : references.get(record.fileKey) || [];
+    card.referenceCount = card.references.length;
+    // Explicitly reviewed HTML rendition, bound to the original file identity.
+    if (
+      card.id === 'ce-senate-charter-2020' &&
+      record.availability !== 'unavailable' &&
+      record.fileKey ===
+        'documents/library/ce-senate-charter-2020-f589195882e2.pdf'
+    )
+      card.htmlVersionUrl = '/about-family#charterContent';
+    return card;
+  });
 }
 
 module.exports = {

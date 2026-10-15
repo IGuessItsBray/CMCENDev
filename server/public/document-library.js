@@ -4,10 +4,14 @@
   const organization = document.getElementById("documentOrganization");
   const type = document.getElementById("documentType");
   const resultCount = document.getElementById("documentResultCount");
+  const more = document.getElementById("documentLibraryMore");
 
-  if (!library || !search || !organization || !type || !resultCount) return;
+  if (!library || !search || !organization || !type || !resultCount || !more)
+    return;
 
   let contentPromise;
+  const batchSize = 24;
+  let visibleCount = batchSize;
 
   function getLanguage() {
     return document.documentElement.lang === "fr" ? "fr" : "en";
@@ -48,7 +52,9 @@
     const article = document.createElement("article");
     article.id = item.id;
     for (const alias of item.aliases || []) {
-      const anchor = document.createElement('span'); anchor.id = alias; article.append(anchor);
+      const anchor = document.createElement("span");
+      anchor.id = alias;
+      article.append(anchor);
     }
     article.className = "document-library-card";
 
@@ -69,10 +75,10 @@
     const actions = document.createElement("div");
     actions.className = "document-library-actions";
 
-    if (item.pageUrl) {
+    if (item.htmlVersionUrl) {
       const pageLink = document.createElement("a");
-      pageLink.href = item.pageUrl;
-      pageLink.textContent = labels.readPage;
+      pageLink.href = item.htmlVersionUrl;
+      pageLink.textContent = labels.readHtml;
       actions.append(pageLink);
     }
 
@@ -90,11 +96,34 @@
       actions.append(unavailable);
     }
 
-    article.append(metadata, heading, description, language, actions);
+    const references = item.references || [];
+    const usage = document.createElement(references.length ? "details" : "p");
+    usage.className = "document-library-references";
+    const countLabel = (
+      references.length === 1 ? labels.referenceCountOne : labels.referenceCount
+    ).replace("{count}", String(references.length));
+    if (references.length) {
+      const summary = document.createElement("summary");
+      summary.textContent = countLabel;
+      const list = document.createElement("ul");
+      for (const reference of references) {
+        const row = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = reference.href;
+        link.textContent =
+          reference.title[getLanguage()] ||
+          reference.title.en ||
+          reference.title.fr;
+        row.append(link);
+        list.append(row);
+      }
+      usage.append(summary, list);
+    } else usage.textContent = countLabel;
+    article.append(metadata, heading, description, language, usage, actions);
     return article;
   }
 
-  async function renderLibrary() {
+  async function renderLibrary({ revealHash = false } = {}) {
     try {
       const content = await loadContent();
       const language = getLanguage();
@@ -138,11 +167,28 @@
             .includes(query);
         });
 
-      library.replaceChildren();
-      items.forEach((item) => library.append(createDocumentCard(item, labels)));
-      if (location.hash) {
-        try { document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView(); } catch { /* Ignore malformed fragments. */ }
+      let anchor = "";
+      if (revealHash && location.hash) {
+        try {
+          anchor = decodeURIComponent(location.hash.slice(1));
+        } catch {
+          /* Ignore malformed fragments. */
+        }
+        const index = items.findIndex(
+          (item) => item.id === anchor || item.aliases?.includes(anchor),
+        );
+        if (index >= 0)
+          visibleCount = Math.max(
+            visibleCount,
+            Math.ceil((index + 1) / batchSize) * batchSize,
+          );
       }
+      const shown = items.slice(0, visibleCount);
+      library.replaceChildren();
+      shown.forEach((item) => library.append(createDocumentCard(item, labels)));
+      more.textContent = labels.loadMore;
+      more.hidden = shown.length >= items.length;
+      if (anchor) document.getElementById(anchor)?.scrollIntoView();
 
       if (!items.length) {
         const empty = document.createElement("p");
@@ -151,11 +197,11 @@
         library.append(empty);
       }
 
-      resultCount.textContent = labels.resultCount.replace(
-        "{count}",
-        String(items.length),
-      );
+      resultCount.textContent = labels.resultCount
+        .replace("{count}", String(items.length))
+        .replace("{shown}", String(shown.length));
     } catch (error) {
+      more.hidden = true;
       console.error(error);
       library.textContent =
         getLanguage() === "fr"
@@ -165,11 +211,22 @@
   }
 
   [search, organization, type].forEach((control) => {
-    control.addEventListener(
-      control === search ? "input" : "change",
-      renderLibrary,
-    );
+    control.addEventListener(control === search ? "input" : "change", () => {
+      visibleCount = batchSize;
+      renderLibrary();
+    });
   });
-  document.addEventListener("languagechange", renderLibrary);
-  renderLibrary();
+  more.addEventListener("click", () => {
+    visibleCount += batchSize;
+    renderLibrary();
+  });
+  document.addEventListener("languagechange", () => renderLibrary());
+  window.addEventListener("hashchange", () => {
+    search.value = "";
+    organization.value = "all";
+    type.value = "all";
+    visibleCount = batchSize;
+    renderLibrary({ revealHash: true });
+  });
+  renderLibrary({ revealHash: true });
 })();

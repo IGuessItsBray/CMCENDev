@@ -69,6 +69,78 @@ after(async () => {
   await mongo?.stop();
 });
 
+test('public catalogue batches localized references, includes Awards and never leaks staff-only links even with a staff token', async () => {
+  await Document.collection.deleteMany({});
+  await Document.collection.insertMany(cards.map(seedRecord));
+  const card = cards[0];
+  const block = { type: 'document', href: `/${card.fileKey}` };
+  const parents = ['public', 'authenticated', 'restricted', 'draft'].map(
+    (kind) => ({
+      _id: new mongoose.Types.ObjectId(),
+      slug: `reference-${kind}`,
+      title: { en: `Reference ${kind}`, fr: `Référence ${kind}` },
+      status: kind === 'draft' ? 'draft' : 'published',
+      access: { audience: kind === 'draft' ? 'public' : kind },
+      blocks: [block, block],
+    }),
+  );
+  await Page.collection.insertMany(parents);
+  const Award = require('../../models/ProfessionalAward');
+  const awards = [true, false].map((published) => ({
+    _id: new mongoose.Types.ObjectId(),
+    published,
+    slug: `reference-award-${published}`,
+    title: 'Resource award',
+    links: [{ url: `/${card.fileKey}` }],
+  }));
+  await Award.collection.insertMany(awards);
+  try {
+    const response = await request(app)
+      .get('/page-content/document-library.json')
+      .set('Authorization', `Bearer ${editorToken}`)
+      .expect(200);
+    const actual = response.body.documents.find((d) => d.id === card.id);
+    assert.ok(
+      actual.references.some(
+        (r) => r.href === '/awards' && r.title.fr === 'Prix',
+      ),
+    );
+    assert.ok(
+      actual.references.some(
+        (r) =>
+          r.href === '/pages/reference-public' &&
+          r.title.fr === 'Référence public',
+      ),
+    );
+    assert.equal(
+      actual.references.filter((r) => r.href === '/pages/reference-public')
+        .length,
+      1,
+    );
+    assert.doesNotMatch(
+      JSON.stringify(response.body),
+      /reference-(?:draft|restricted|authenticated)/,
+    );
+    assert.equal(actual.referenceCount, actual.references.length);
+    assert.equal(actual.pageUrl, undefined);
+    assert.equal(actual.htmlVersionUrl, '/about-family#charterContent');
+    const missing = response.body.documents.find(
+      (d) => d.id === 'foundation-annual-report-2024-2025',
+    );
+    assert.deepEqual(missing.references, []);
+    assert.equal(missing.referenceCount, 0);
+    assert.equal(missing.htmlVersionUrl, undefined);
+  } finally {
+    await Page.collection.deleteMany({
+      _id: { $in: parents.map((p) => p._id) },
+    });
+    await Award.collection.deleteMany({
+      _id: { $in: awards.map((a) => a._id) },
+    });
+    await Document.collection.deleteMany({});
+  }
+});
+
 test('absent collection preview is read-only and apply creates the complete catalogue', async () => {
   const fresh = mongoose.connection.db.collection('absent_catalogue_test');
   assert.deepEqual(await listIndexes(fresh), []);
@@ -259,7 +331,9 @@ test('disposable migration preserves dynamic records, is idempotent, and serves 
     const actual = complete.body.documents[order];
     for (const field of ['id', 'organization', 'type', 'en', 'fr'])
       assert.deepEqual(actual[field], card[field]);
-    assert.equal(actual.pageUrl, card.pageUrl || '');
+    assert.equal(actual.pageUrl, undefined);
+    assert.ok(Array.isArray(actual.references));
+    assert.equal(actual.referenceCount, actual.references.length);
     assert.equal(actual.fileKey, card.fileKey);
     assert.equal(
       actual.fileUrl,

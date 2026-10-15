@@ -345,8 +345,10 @@ window.ContentWorkspaceEditors = {
       return offsetDate.toISOString().slice(0, 16);
     }
 
-    function getWorkspaceDateTimeParts(value) {
-      const formattedValue = formatWorkspaceDateTimeInput(value);
+    function getWorkspaceDateTimeParts(value, eventTime) {
+      const formattedValue = eventTime
+        ? window.CMCENEventTime.toInput(value, eventTime)
+        : formatWorkspaceDateTimeInput(value);
       const [date = "", time = ""] = formattedValue.split("T");
       return { date, time };
     }
@@ -358,6 +360,7 @@ window.ContentWorkspaceEditors = {
       value,
       required = false,
       includeTime = true,
+      eventTime,
     }) {
       const labelElement = document.createElement("label");
       labelElement.className =
@@ -369,7 +372,7 @@ window.ContentWorkspaceEditors = {
       labelElement.append(labelText);
 
       const dateTime = includeTime
-        ? getWorkspaceDateTimeParts(value)
+        ? getWorkspaceDateTimeParts(value, eventTime)
         : { date: formatWorkspaceDateInput(value), time: "" };
       if (!window.CMCENDateTimePicker?.create) {
         const nativeInput = document.createElement("input");
@@ -377,7 +380,7 @@ window.ContentWorkspaceEditors = {
         nativeInput.type = includeTime ? "datetime-local" : "date";
         nativeInput.name = field;
         nativeInput.value = includeTime
-          ? formatWorkspaceDateTimeInput(value)
+          ? dateTime.date + (dateTime.date ? "T" + (dateTime.time || "00:00") : "")
           : dateTime.date;
         nativeInput.required = required;
         labelElement.append(nativeInput);
@@ -493,7 +496,11 @@ window.ContentWorkspaceEditors = {
     }
 
     function getEventDetailsFields(item) {
+      const timeHint = document.createElement("p");
+      timeHint.style.gridColumn = "1 / -1";
+      setWorkspaceTranslatedText(timeHint, "event_time_zone_hint", "Enter dates and times in the selected event timezone. All-day events keep their calendar dates.");
       return [
+        timeHint,
         createWorkspaceEditorField({
           field: "city",
           label: "City",
@@ -567,6 +574,7 @@ window.ContentWorkspaceEditors = {
           label: "Start date and time",
           labelKey: "content_workspace_start_date_time",
           value: item.content?.startDate,
+          eventTime: { timeZone: item.content?.timezone || "UTC", allDay: item.content?.allDay },
           required: true,
         }),
         createWorkspaceDateTimeField({
@@ -574,12 +582,14 @@ window.ContentWorkspaceEditors = {
           label: "End date and time",
           labelKey: "content_workspace_end_date_time",
           value: item.content?.endDate,
+          eventTime: { timeZone: item.content?.timezone || "UTC", allDay: item.content?.allDay },
         }),
         createWorkspaceEditorField({
           field: "timezone",
           label: "Event timezone",
           labelKey: "event_timezone",
           value: item.content?.timezone,
+          required: true,
           options: [
             getWorkspaceOption("", "event_select_option", "Select an option"),
             ...[
@@ -1807,18 +1817,26 @@ window.ContentWorkspaceEditors = {
     function getContentWorkspaceRecordPayload(item, formData) {
       if (item.type === "event") {
         const allDay = formData.get("allDay") === "true";
+        const eventDate = (field) => {
+          try {
+            return window.CMCENEventTime.toInstant(formData.get(field), {
+              timeZone: String(formData.get("timezone") || ""),
+              allDay,
+              originalValue: item.content?.[field],
+            });
+          } catch (error) {
+            error.message = getText(error.code, error.message);
+            throw error;
+          }
+        };
 
         return {
           city: String(formData.get("city") || ""),
           provinceRegion: String(formData.get("provinceRegion") || ""),
           organizingEntity: String(formData.get("organizingEntity") || ""),
           eventType: String(formData.get("eventType") || ""),
-          startDate: getWorkspaceIsoDate(formData.get("startDate"), {
-            includeTime: !allDay,
-          }),
-          endDate: getWorkspaceIsoDate(formData.get("endDate"), {
-            includeTime: !allDay,
-          }),
+          startDate: eventDate("startDate"),
+          endDate: eventDate("endDate"),
           timezone: String(formData.get("timezone") || ""),
           allDay,
           rsvpEnabled: formData.get("rsvpEnabled") === "true",

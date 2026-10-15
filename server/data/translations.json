@@ -1,5 +1,10 @@
 {
   "en": {
+    "event_time_zone_hint": "Enter dates and times in the selected event timezone. All-day events keep their calendar dates.",
+    "event_time_zone_required": "Select a valid event timezone.",
+    "event_time_invalid": "Enter a valid event date and time.",
+    "event_time_gap": "This local time does not exist because the clocks change. Choose another time.",
+    "event_time_fold": "This local time occurs twice because the clocks change. Keep the original time or choose an unambiguous time.",
     "body_revision": "Message formatting",
     "person_rank_en": "Rank in English (optional)",
     "person_rank_fr": "Rank in French (optional)",
@@ -2324,6 +2329,11 @@
     "menu_branch_title": "C&E Branch"
   },
   "fr": {
+    "event_time_zone_hint": "Saisissez les dates et heures dans le fuseau horaire sélectionné pour l’événement. Les événements d’une journée entière conservent leurs dates civiles.",
+    "event_time_zone_required": "Sélectionnez un fuseau horaire valide pour l’événement.",
+    "event_time_invalid": "Saisissez une date et une heure valides pour l’événement.",
+    "event_time_gap": "Cette heure locale n’existe pas en raison du changement d’heure. Choisissez une autre heure.",
+    "event_time_fold": "Cette heure locale se produit deux fois en raison du changement d’heure. Conservez l’heure originale ou choisissez une heure sans ambiguïté.",
     "body_revision": "Mise en forme du message",
     "person_rank_en": "Grade en anglais (facultatif)",
     "person_rank_fr": "Grade en français (facultatif)",

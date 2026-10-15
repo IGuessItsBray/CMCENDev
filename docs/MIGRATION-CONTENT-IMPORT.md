@@ -76,6 +76,30 @@ the operator-approved plan. No prepared record is marked imported.
 
 ## Read-only destination check
 
+### Public event references and event-zone editing
+
+The pure `event-source-mapping` helper maps reviewed MEC venue terms and public
+addresses into localized `location`, and organizer names into historical
+`registration` details. It leaves native RSVPs disabled. Organizer contact
+values require an explicit reviewed term-ID allowlist; knowing a retained term
+has an email is not sufficient to publish it. Unresolved venue IDs are reported
+instead of being mapped from unrelated taxonomies. The helper does not read
+attendees, bookings or invoices, and it does not update existing Events.
+
+The content workspace displays and parses timed Events in their selected IANA
+timezone, independently of the browser timezone. Unchanged instants are retained,
+including seconds and either occurrence of a repeated DST hour. A newly entered
+ambiguous or nonexistent DST wall time is rejected rather than guessed. All-day
+dates remain UTC-midnight date containers. Changing the timezone intentionally
+interprets the entered wall time in the new selected zone. The API payload still
+contains ISO UTC instants; correct stored instants need no migration or rewrite.
+
+Historical RSVP preparation is separate from public Event metadata. Do not put
+private attendees, booking/invoice payloads, credentials, IP data or private
+registration answers into source evidence stored on public content records.
+Assess relationships with aggregate counts; any staff-only historical migration
+requires its own reviewed access model, retention scope and authorization.
+
 Run inside the intended application's existing environment, using the explicit
 origin and database name. Never source or print a secrets file.
 

@@ -182,6 +182,13 @@ const navLinks = {
       { route: "/history.html", i18n: "menu_news_option_8" },
     ],
   },
+  branch: {
+    titleKey: "menu_branch_title",
+    items: [{
+      route: "/history-heritage",
+      label: { en: "History & Heritage", fr: "Histoire et patrimoine" },
+    }],
+  },
   doctrine: {
     titleKey: "menu_doctrine_title",
     items: [

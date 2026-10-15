@@ -2630,6 +2630,32 @@
       });
       slugField.append(slugLabel, slug);
 
+      const categoryField = document.createElement("label");
+      categoryField.className = "admin-editor-field admin-editor-field--compact";
+      const categoryLabel = document.createElement("span");
+      const french = CMCENUtils.getCurrentLanguage?.() === "fr";
+      categoryLabel.textContent = french ? "Catégorie" : "Category";
+      const category = document.createElement("select");
+      category.className = "cmcen-control";
+      category.name = "category";
+      for (const value of ["", ...(window.NewsletterFormat?.categories || [])]) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value
+          ? window.translate?.(`article_category_${value}`, value) || value
+          : french ? "Aucune catégorie" : "No category";
+        category.append(option);
+      }
+      category.value = pagesState.selectedPage.category || "";
+      category.addEventListener("change", (event) => {
+        updateSelectedPage({ category: event.target.value }, { render: false });
+      });
+      const categoryHint = document.createElement("small");
+      categoryHint.textContent = french
+        ? "Les pages publiées dans Histoire et patrimoine apparaissent automatiquement dans ce fil. Les brouillons restent masqués."
+        : "Published History & Heritage pages appear automatically in the heritage feed. Drafts stay hidden.";
+      categoryField.append(categoryLabel, category, categoryHint);
+
       const blocks = document.createElement("div");
       blocks.className = "pages-block-list";
       blocks.append(createBuilderCanvas());
@@ -2669,6 +2695,7 @@
         createLocalizedInput("Title", "title", "input"),
         slugField,
         createLocalizedInput("Summary", "summary", "textarea"),
+        categoryField,
         createPageAccessEditor(),
       );
 
@@ -3879,6 +3906,7 @@
         title: pagesState.selectedPage.title,
         slug: pagesState.selectedPage.slug,
         summary: pagesState.selectedPage.summary,
+        category: pagesState.selectedPage.category || "",
         access: getSelectedPageAccess(),
         blocks: pagesState.selectedPage.blocks || [],
       });

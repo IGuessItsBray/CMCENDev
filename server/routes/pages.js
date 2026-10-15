@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const Page = require('../models/Page');
+const { categories } = require('../public/newsletter-format');
 const { hasText, requiresTextForSave } = require('../services/save-validation');
 const NavigationItem = require('../models/NavigationItem');
 const Role = require('../models/Role');
@@ -27,9 +28,10 @@ const router = express.Router();
 const PAGE_SHELL_PATH = path.join(__dirname, '..', 'public', 'page.html');
 const PUBLIC_DIRECTORY = path.join(__dirname, '..', 'public');
 const CHANGELOG_PATH = path.join(__dirname, '..', '..', 'CHANGELOG.md');
-const NAV_GROUPS = Object.freeze(['about', 'doctrine', 'news', 'benefits']);
+const NAV_GROUPS = Object.freeze(['about', 'branch', 'doctrine', 'news', 'benefits']);
 const NAV_GROUP_LABELS = Object.freeze({
   about: { en: 'About', fr: 'À propos' },
+  branch: { en: 'C&E Branch', fr: 'Branche des C et E' },
   doctrine: { en: 'Doctrine', fr: 'Doctrine' },
   news: { en: 'News', fr: 'Nouvelles' },
   benefits: { en: 'Benefits', fr: 'Avantages' },
@@ -608,6 +610,7 @@ function getPageSnapshot(page) {
     title: page.title || {},
     slug: page.slug,
     status: page.status,
+    category: page.category || '',
     featuredOnHome: Boolean(page.featuredOnHome),
     access: getPageAccess(page),
     updatedAt: page.updatedAt,
@@ -625,6 +628,7 @@ function toPageResponse(page, { includeBlocks = true } = {}) {
     route: `/pages/${plainPage.slug}`,
     summary: plainPage.summary || {},
     status: plainPage.status,
+    category: plainPage.category || '',
     featuredOnHome: Boolean(plainPage.featuredOnHome),
     access: getPageAccess(plainPage),
     blocks: includeBlocks ? plainPage.blocks || [] : undefined,
@@ -742,6 +746,14 @@ function cleanPageUpdate(body, actor, { requireTitle = false, previous } = {}) {
     }
 
     update.slug = slug;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(source, 'category')) {
+    if (typeof source.category !== 'string' ||
+        !['', ...categories].includes(source.category)) {
+      return { error: 'Invalid page category' };
+    }
+    update.category = source.category;
   }
 
   if (Object.prototype.hasOwnProperty.call(source, 'summary')) {

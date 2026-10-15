@@ -2320,7 +2320,8 @@
     "body_color_green": "Green",
     "body_align_left": "Align left",
     "body_align_center": "Center",
-    "body_align_right": "Align right"
+    "body_align_right": "Align right",
+    "menu_branch_title": "C&E Branch"
   },
   "fr": {
     "body_revision": "Mise en forme du message",
@@ -4643,6 +4644,7 @@
     "body_color_green": "Vert",
     "body_align_left": "Aligner à gauche",
     "body_align_center": "Centrer",
-    "body_align_right": "Aligner à droite"
+    "body_align_right": "Aligner à droite",
+    "menu_branch_title": "Branche des C et E"
   }
 }

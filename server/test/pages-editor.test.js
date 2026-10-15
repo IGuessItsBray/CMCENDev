@@ -76,6 +76,7 @@ async function setup({
     addEventListener() {},
     removeEventListener() {},
     scrollTo() {},
+    NewsletterFormat: require('../public/newsletter-format'),
   };
   window.parent = window.top = window;
   const toasts = [],
@@ -412,4 +413,25 @@ test('image uploads use the cancellable API and preserve source metadata and cro
   assert.equal(page.editor.canNavigate(), true);
   page.editor.dispose();
   assert.equal(request.options.signal.aborted, true);
+});
+
+test('page category selection and clearing survive autosave without changing draft status', async () => {
+  const page = await setup();
+  await page.open();
+  await page.content.querySelector(".pages-page-details-heading").fire("click");
+  const field = page.content.querySelectorAll('select').find((item) => item.name === 'category');
+  assert.ok(field, 'category selector available in existing Page details');
+  assert.equal(field.value, '');
+  assert.ok(field.children.some((option) => option.value === 'history-heritage'));
+  field.value = 'history-heritage';
+  await field.fire('change', { target: field });
+  await page.autosave();
+  assert.equal(page.stored.category, 'history-heritage');
+  assert.equal(page.stored.status, 'draft');
+  field.value = '';
+  await field.fire('change', { target: field });
+  await page.autosave();
+  assert.equal(page.stored.category, '');
+  assert.equal(page.stored.status, 'draft');
+  page.editor.dispose();
 });

@@ -854,3 +854,7 @@ Public responses exclude staff IDs. The bilingual public page is
 
 The historical review JSON under `server/data/adopt-review/` remains ignored and
 excluded from Docker. No automatic import or publication occurs.
+
+### History & Heritage
+
+`GET /api/history-heritage?limit=24&offset=0` returns `{ items, hasMore }`. Limit is 1–48; offset is a nonnegative integer. Invalid pagination returns 400. Published `history-heritage` articles and published pages in the same `history-heritage` category share localized card metadata and keep their existing detail URLs. Page access is filtered using the same optional authentication and permissions as page details, before pagination. Drafts never appear. Archive years use original publication provenance; an unknown archival year is null. Staff can select or clear the optional Page category in Page details. Page create/update accepts the existing article category vocabulary or an empty string to clear membership; invalid values return 400. Existing page-management permissions and audit snapshots cover category edits. Saving preserves publication status. The static C&E Branch menu links once to this feed; no database navigation records are written.

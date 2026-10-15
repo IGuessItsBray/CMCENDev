@@ -259,6 +259,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api', professionalAwardRoutes);
 app.use('/api', require('./routes/adopt-displays'));
 app.use(pageRoutes);
+app.use('/api/history-heritage', require('./routes/history-heritage'));
 app.use(serveExtensionlessHtml);
 
 const publicDirectory = path.join(__dirname, 'public');

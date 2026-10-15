@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { categories } = require('../public/newsletter-format');
 const { publicationDateFields } = require('../services/publication-date');
 const { USER_ROLES } = require('../config/roles');
 const {
@@ -268,6 +269,8 @@ const PageSchema = new mongoose.Schema(
       enum: ['draft', 'published', 'archived'],
       default: 'draft',
     },
+    // Reuse article categories for staff-managed feed membership; older pages remain unselected.
+    category: { type: String, enum: ['', ...categories], default: '' },
     // Imported pages retain their original source identity for staff review.
     legacy: { type: mongoose.Schema.Types.Mixed, default: undefined },
     featuredOnHome: {

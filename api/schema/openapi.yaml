@@ -48,6 +48,24 @@ tags:
   - name: Certificates
   - name: Contact
 paths:
+  /api/history-heritage:
+    get:
+      operationId: listHistoryHeritage
+      summary: List published heritage articles and categorized accessible pages
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 48, default: 24 }
+        - in: query
+          name: offset
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        '200':
+          description: Localized card items and hasMore; drafts excluded and page access enforced before pagination
+        '400':
+          description: Invalid pagination
+        '500':
+          description: Could not load heritage content
   /api/admin/users/{userId}/mfa-reset:
     patch:
       tags: [Admin]
@@ -3852,6 +3870,10 @@ components:
               underline (boolean, default false). Mobile public pages flow
               blocks in document order rather than their desktop grid rows.
             properties:
+              category:
+                type: string
+                enum: ['', news, newsletter, unit-updates, history-heritage, museum-foundation]
+                description: Optional shared article category; empty string clears membership. Published history-heritage pages appear in the heritage feed subject to access permissions.
               blocks:
                 type: array
                 items:

@@ -1594,6 +1594,7 @@ window.ContentWorkspace = {
             title: getText("article_new", "New article"),
             content: {
               layout: "newsletter",
+              coverPlacement: "body",
               category: "news",
               title: { en: "", fr: "" },
               content: { en: "", fr: "" },

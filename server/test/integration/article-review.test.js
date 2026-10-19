@@ -101,6 +101,64 @@ after(async () => {
   }
 });
 
+test('cover placement API defaults new articles, preserves legacy saves, validates choices and records revisions', async () => {
+  const staff = await createUser({ role: 'editor' });
+  const token = bearer(require('../../services/auth-session').createSessionToken(staff));
+  const imageUrl = `${process.env.CDN_PUBLIC_BASE_URL}/images/shared-cover.jpg`;
+  const body = { layout: 'newsletter', category: 'history-heritage', status: 'draft',
+    title: { en: 'Cover article', fr: 'Couverture' }, imageUrl, imageDisplayUrl: imageUrl,
+    newsletterBlocks: { en: [{ type: 'paragraph', children: ['English body'] }], fr: [{ type: 'paragraph', children: ['Texte français'] }] },
+    newsletter: { language: 'en', archived: false } };
+  const created = (await request(app).post('/api/news').set('Authorization', token).send(body).expect(201)).body.article;
+  assert.equal(created.coverPlacement, 'body');
+  await request(app).get(`/api/news/${created._id}`).expect(404);
+  const old = await NewsArticle.create({ ...body, content: { en: 'English body', fr: 'Texte français' }, coverPlacement: undefined, createdBy: staff._id });
+  for (const layout of ['standard', 'newsletter']) {
+    await NewsArticle.updateOne({ _id: old._id }, { $set: { layout } });
+    const saved = (await request(app).patch(`/api/news/${old._id}`).set('Authorization', token).send({ ...body, layout, content: { en: 'English body', fr: 'Texte français' }, title: { en: 'Unrelated title edit', fr: 'Titre' } }).expect(200)).body.article;
+    assert(!Object.hasOwn(saved, 'coverPlacement'));
+    assert(!Object.hasOwn(await NewsArticle.findById(old._id).lean(), 'coverPlacement'));
+    assert.equal(saved.layout, layout);assert.equal(saved.imageUrl, imageUrl);
+  }
+  for (const coverPlacement of ['header', 'body', 'cards']) {
+    const response = (await request(app).patch(`/api/news/${old._id}`).set('Authorization', token).send({ ...body, coverPlacement }).expect(200)).body.article;
+    assert.equal(response.coverPlacement, coverPlacement);
+    const preview = (await request(app).get(`/api/news/${old._id}/preview`).set('Authorization', token).expect(200)).body.article;
+    assert.equal(preview.coverPlacement, coverPlacement);
+    const row = (await request(app).get(`/api/admin/content?scope=articles&id=${old._id}`).set('Authorization', token).expect(200)).body.items.find(i => i._id === String(old._id));
+    assert.equal(row.content.coverPlacement, coverPlacement);
+  }
+  assert.equal(await ContentRevision.countDocuments({ contentId: old._id, fields: 'coverPlacement' }), 3);
+  for (const coverPlacement of ['invalid', '', null, false])
+    await request(app).patch(`/api/news/${old._id}`).set('Authorization', token).send({ ...body, coverPlacement }).expect(400);
+  await request(app).patch(`/api/news/${old._id}`).send({ ...body, coverPlacement: 'body' }).expect(401);
+});
+
+test('empty/removed covers stay absent in details while listing cards retain their fallback', async () => {
+  const staff = await createUser({ role: 'editor' });
+  const token = bearer(require('../../services/auth-session').createSessionToken(staff));
+  const base = { layout: 'standard', title: { en: 'English', fr: 'Français' }, content: { en: 'English body', fr: 'Texte français' }, createdBy: staff._id, status: 'published' };
+  const photo = `${process.env.CDN_PUBLIC_BASE_URL}/images/cover.jpg`;
+  const old = await NewsArticle.create({ ...base, imageUrl: photo, imageDisplayUrl: photo });
+  const removed = (await request(app).patch(`/api/news/${old._id}`).set('Authorization', token).send({ ...base, imageUrl: '', imageDisplayUrl: '' }).expect(200)).body.article;
+  assert.equal(removed.coverPlacement, 'header');assert.equal(removed.imageUrl, '');assert.equal(removed.imageDisplayUrl, '');
+  const detail = (await request(app).get(`/api/news/${old._id}`).expect(200)).body.article;
+  assert.equal(detail.imageUrl, '');
+  const cards = (await request(app).get('/api/news').expect(200)).body.articles;
+  assert.match(cards.find(a => a._id === String(old._id)).imageUrl, /branch-crest/);
+  const empty = await NewsArticle.create({ ...base, imageUrl: '', imageDisplayUrl: '' });
+  await request(app).patch(`/api/news/${empty._id}`).set('Authorization', token).send({ ...base, imageUrl: '', imageDisplayUrl: '' }).expect(200);
+  assert(!Object.hasOwn(await NewsArticle.findById(empty._id).lean(), 'coverPlacement'));
+  assert.match((await request(app).get(`/api/news/${empty._id}`).expect(200)).body.article.imageUrl, /branch-crest/);
+  for (const coverPlacement of ['header', 'body', 'cards']) {
+    const record = await NewsArticle.create({ ...base, coverPlacement, imageUrl: '', imageDisplayUrl: '' });
+    const response = (await request(app).get(`/api/news/${record._id}`).expect(200)).body.article;
+    assert.equal(response.imageUrl, '');assert.equal(response.imageDisplayUrl, '');
+    const unchanged = (await request(app).patch(`/api/news/${record._id}`).set('Authorization', token).send({ ...base, title: { en: 'Changed title', fr: 'Titre modifié' } }).expect(200)).body.article;
+    assert.equal(unchanged.coverPlacement, coverPlacement);assert.equal(unchanged.imageUrl, '');
+  }
+});
+
 test('public and authenticated article details resolve originals without changing display data or exposing unrelated media', async () => {
   const staff = await createUser({ role: 'editor' });
   const token = bearer(require('../../services/auth-session').createSessionToken(staff));

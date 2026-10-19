@@ -837,6 +837,7 @@ function toContentWorkspaceItem(type, content) {
         category: content.category,
         newsletter: content.newsletter || {},
         newsletterBlocks: content.newsletterBlocks || { en: [], fr: [] },
+        ...(content.coverPlacement !== undefined ? { coverPlacement: content.coverPlacement } : {}),
         title: content.title || {},
         content: content.content || {},
         imageUrl: content.imageUrl || '',
@@ -1118,7 +1119,7 @@ router.get(
               'originalPublishedAt publicationDateChoice migrationSource legacy.source legacy.sourcePostIds legacy.sourceUrl legacy.sourceUrls legacy.originalPublishedAt legacy.originalStatus legacy.sourceRecords legacy.wordpressCommentId legacy.originalApproval',
             )
             .select(
-              'category layout newsletter newsletterBlocks title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
+              'category layout coverPlacement newsletter newsletterBlocks title content imageUrl imageDisplayUrl createdBy publishedBy publishedAt scheduledPublishAt status hiddenFromStatus +lastEditedAt +lastEditedBy publishedBy hiddenAt hiddenBy updatedAt createdAt',
             )
             .populate([
               {

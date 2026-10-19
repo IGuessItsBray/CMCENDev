@@ -83,6 +83,19 @@
       ),
     ].filter(Boolean);
   }
+  const coverPlacements = ["header", "body", "cards"];
+  function resolveCoverPlacement(article) {
+    if (coverPlacements.includes(article.coverPlacement))
+      return article.coverPlacement;
+    // Preserve old records, including newsletter suppression and duplicate checks
+    // across both languages. Explicit placement never removes authored figures.
+    if (article.layout !== "newsletter" || article.newsletter?.headerCrest)
+      return "header";
+    return categoryOf(article) !== "newsletter" &&
+      !imageUrls(article).includes(article.imageUrl)
+      ? "body"
+      : "cards";
+  }
   function plainText(blocks) {
     return (blocks || [])
       .map((block) => {
@@ -104,6 +117,8 @@
       : article.publishedAt || article.createdAt || null;
   }
   const api = {
+    coverPlacements,
+    resolveCoverPlacement,
     imageUrls,
     plainText,
     inlineText,

@@ -3481,23 +3481,28 @@ describe('news stories', () => {
       .send(payload)
       .expect(201);
     const articleId = created.body.article._id;
-    assert.equal(
-      created.body.article.imageUrl,
-      'https://cdn.example.test/integration-test/images/branch-crest/large.webp',
-    );
-    assert.equal(
-      created.body.article.imageDisplayUrl,
-      'https://cdn.example.test/integration-test/images/branch-crest/large.webp',
-    );
+    assert.equal(created.body.article.coverPlacement, 'body');
+    assert.equal(created.body.article.imageUrl, '');
+    assert.equal(created.body.article.imageDisplayUrl, '');
 
     const publicNews = await request(app).get('/api/news').expect(200);
     assert.equal(publicNews.body.articles.length, 1);
     assert.equal(publicNews.body.articles[0].title.fr, payload.title.fr);
+    assert.equal(
+      publicNews.body.articles[0].imageUrl,
+      'https://cdn.example.test/integration-test/images/branch-crest/large.webp',
+    );
+    assert.equal(
+      publicNews.body.articles[0].imageDisplayUrl,
+      'https://cdn.example.test/integration-test/images/branch-crest/large.webp',
+    );
 
     const publicArticle = await request(app)
       .get(`/api/news/${articleId}`)
       .expect(200);
     assert.equal(publicArticle.body.article.content.en, payload.content.en);
+    assert.equal(publicArticle.body.article.imageUrl, '');
+    assert.equal(publicArticle.body.article.imageDisplayUrl, '');
 
     const feed = await request(app).get('/api/news/feed').expect(200);
     assert.equal(feed.body.items[0].type, 'news');

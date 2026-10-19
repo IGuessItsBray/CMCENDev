@@ -300,12 +300,10 @@
           article.displayDate || window.NewsletterFormat.displayDate(article)
         ).slice(0, 10),
       };
-      if (metadata.headerCrest)
+      const coverPlacement = window.NewsletterFormat.resolveCoverPlacement(article);
+      if (coverPlacement === "header")
         issue.crest = { url: article.imageUrl, alt: issue.title };
-      else if (
-        issue.category !== "newsletter" &&
-        !window.NewsletterFormat.imageUrls(article).includes(article.imageUrl)
-      )
+      else if (coverPlacement === "body")
         issue.cover = { url: article.imageUrl, originalUrl: article.imageOriginalUrl, alt: issue.title };
       issue._id = article._id;
       issue.preview = preview;

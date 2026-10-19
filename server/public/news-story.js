@@ -43,7 +43,14 @@ function renderNewsStory(article) {
     article.displayDate || article.publishedAt,
   );
   newsDetailTitle.textContent = title;
-  newsDetailImage.src = article.imageUrl;
+  const imageFigure = newsDetailImage.closest("figure");
+  const placement = window.NewsletterFormat.resolveCoverPlacement(article);
+  imageFigure.hidden = placement === "cards" || !article.imageUrl;
+  if (placement === "body")
+    newsDetailText.parentElement.prepend(imageFigure);
+  else newsDetailTitle.closest("section").append(imageFigure);
+  if (article.imageUrl) newsDetailImage.src = article.imageUrl;
+  else newsDetailImage.removeAttribute("src");
   newsDetailImage.alt = title;
   const existingLink = newsDetailImage.closest("a.article-image-link");
   if (existingLink) existingLink.replaceWith(newsDetailImage);

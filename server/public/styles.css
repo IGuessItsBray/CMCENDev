@@ -11846,6 +11846,11 @@ html[data-theme='dark'] .home-news-card {
   white-space: pre-line;
 }
 
+.news-detail-content > .news-detail-image {
+  margin-bottom: 1.5rem;
+  background: transparent;
+}
+
 .news-editor-heading {
   display: flex;
   justify-content: space-between;

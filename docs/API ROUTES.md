@@ -609,6 +609,20 @@ download the CSV. Administrators have that permission by default.
 ## News Stories
 
 Mounted at `/api/news`. Articles are persisted as MongoDB `NewsArticle` records.
+
+`coverPlacement` is optional on existing records and accepts `header`, `body`, or
+`cards`. It applies to standard and rich article details: title/header area,
+below the title before the body, or listing cards/previews only. Explicit body
+placement remains visible when the asset is also an authored inline figure;
+inline figures are never removed or moved by this setting. Newly authored
+API/editor articles default to `body`. Existing records without a placement keep
+their legacy headerCrest/category/duplicate behavior; unrelated saves do not set
+the field. The editor offers a keep-existing option for those records. Placement
+changes are validated and revision-tracked. Empty selected covers on explicit
+records stay empty in detail responses, while listing cards retain the Branch
+crest fallback. Remove Image intentionally opts an old cover into explicit
+placement so that removal cannot turn into an automatic article crest. Omitted
+PATCH image fields preserve their stored values. No migration is required.
 See [NEWSLETTERS.md](NEWSLETTERS.md) for the staff workflow.
 
 News records support `layout: "standard" | "newsletter"` (default `standard`).

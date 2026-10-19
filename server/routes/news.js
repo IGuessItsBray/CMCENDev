@@ -35,6 +35,8 @@ const {
   categories,
   categoryOf,
   blocksFor,
+  coverPlacements,
+  resolveCoverPlacement,
 } = require('../public/newsletter-format');
 const {
   preserveNewsletterBlocks,
@@ -75,6 +77,7 @@ function getNewsRevisionSnapshot(article) {
   return {
     category: categoryOf(article),
     layout: article.layout || 'standard',
+    coverPlacement: article.coverPlacement,
     newsletter: article.newsletter?.toObject?.() || article.newsletter || {},
     title: cleanLocalizedText(article.title),
     content: cleanLocalizedText(article.content),
@@ -124,6 +127,7 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
   const detailsBefore = {
     category: before.category,
     layout: before.layout,
+    coverPlacement: before.coverPlacement,
     newsletter: before.newsletter,
     imageUrl: before.imageUrl,
     imageDisplayUrl: before.imageDisplayUrl,
@@ -132,6 +136,7 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
   const detailsAfter = {
     category: after.category,
     layout: after.layout,
+    coverPlacement: after.coverPlacement,
     newsletter: after.newsletter,
     imageUrl: after.imageUrl,
     imageDisplayUrl: after.imageDisplayUrl,
@@ -157,7 +162,8 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
   }
 }
 
-function serializeArticle(article) {
+function serializeArticle(article, { listing = false } = {}) {
+  const explicitCover = article.coverPlacement !== undefined;
   return {
     archive: getPublicationDateInfo(article).isArchive,
     category: categoryOf(article),
@@ -174,14 +180,15 @@ function serializeArticle(article) {
     displayDate: displayDate(article),
     newsletterBlocks: article.newsletterBlocks || { en: [], fr: [] },
     layout: article.layout || 'standard',
+    ...(explicitCover ? { coverPlacement: article.coverPlacement } : {}),
     newsletter: article.newsletter?.toObject?.() || article.newsletter || {},
     title: cleanLocalizedText(article.title),
     content: cleanLocalizedText(article.content),
-    imageUrl: cleanString(article.imageUrl) || DEFAULT_NEWS_IMAGE_URL,
+    imageUrl: cleanString(article.imageUrl) || (explicitCover && !listing ? '' : DEFAULT_NEWS_IMAGE_URL),
     imageDisplayUrl:
       cleanString(article.imageDisplayUrl) ||
       cleanString(article.imageUrl) ||
-      DEFAULT_NEWS_IMAGE_URL,
+      (explicitCover && !listing ? '' : DEFAULT_NEWS_IMAGE_URL),
     status: article.status,
     publishedAt: article.publishedAt || null,
     scheduledPublishAt: article.scheduledPublishAt || null,
@@ -194,7 +201,25 @@ function getPayload(
   body = {},
   { preserveHiddenStatus = false, existing = {} } = {},
 ) {
+  const owns = (key) => Object.prototype.hasOwnProperty.call(body, key);
+  let placement = owns('coverPlacement')
+    ? body.coverPlacement
+    : existing.coverPlacement;
+  if (placement === undefined && !existing._id) placement = 'body';
+  const imageUrl = owns('imageUrl')
+    ? cleanString(body.imageUrl)
+    : cleanString(existing.imageUrl);
+  const imageDisplayUrl = owns('imageDisplayUrl')
+    ? cleanString(body.imageDisplayUrl)
+    : owns('imageUrl') ? imageUrl : cleanString(existing.imageDisplayUrl);
+  // A deliberate Remove Image opts into explicit placement so legacy API
+  // fallback cannot turn the removed cover into a Branch crest. Merely saving
+  // an already-empty legacy cover does not change its placement or appearance.
+  if (placement === undefined && owns('imageUrl') && !imageUrl &&
+    (cleanString(existing.imageUrl) || cleanString(existing.imageDisplayUrl)))
+    placement = resolveCoverPlacement(existing);
   return {
+    ...(placement !== undefined ? { coverPlacement: placement } : {}),
     category: body.category ?? categoryOf(existing.layout ? existing : body),
     layout: body.layout ?? existing.layout ?? 'standard',
     newsletterBlocks:
@@ -233,11 +258,9 @@ function getPayload(
     ),
     title: cleanLocalizedText(body.title),
     content: cleanLocalizedText(body.content),
-    imageUrl: cleanString(body.imageUrl) || DEFAULT_NEWS_IMAGE_URL,
+    imageUrl,
     imageDisplayUrl:
-      cleanString(body.imageDisplayUrl) ||
-      cleanString(body.imageUrl) ||
-      DEFAULT_NEWS_IMAGE_URL,
+      imageDisplayUrl || imageUrl,
     status: preserveHiddenStatus
       ? 'hidden'
       : cleanString(body.status) === 'draft'
@@ -253,6 +276,9 @@ function validatePayload(payload, existingBlocks = {}, { actor, previous, publis
     return 'Choose a valid article category';
   if (!['standard', 'newsletter'].includes(payload.layout || 'standard'))
     return 'Invalid article layout';
+  if (payload.coverPlacement !== undefined &&
+    !coverPlacements.includes(payload.coverPlacement))
+    return 'Choose a valid cover placement';
   if (payload.layout === 'newsletter') {
     try {
       payload.newsletterBlocks = Object.fromEntries(
@@ -376,7 +402,7 @@ router.get('/', async (req, res) => {
       ...publicDateStages,
       { $limit: limit },
     ]);
-    return res.json({ articles: articles.map(serializeArticle) });
+    return res.json({ articles: articles.map((article) => serializeArticle(article, { listing: true })) });
   } catch (error) {
     console.error('Could not load news stories:', error);
     return res.status(500).json({ error: 'Could not load news stories' });

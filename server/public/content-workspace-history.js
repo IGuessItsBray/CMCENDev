@@ -33,6 +33,7 @@ window.ContentWorkspaceHistory = {
         blocks: ["article_blocks", "Article blocks"],
         newsletterBlocks: ["article_blocks", "Article blocks"],
         newsletter: ["article_details", "Article details"],
+        coverPlacement: ["article_cover_placement", "Cover image placement"],
         category: ["article_category", "Category"],
         layout: ["article_template", "Article template"],
         imagePath: ["content_workspace_event_image_url", "Event image URL"],

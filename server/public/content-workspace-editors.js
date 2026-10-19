@@ -804,13 +804,17 @@ window.ContentWorkspaceEditors = {
             ],
           }),
           createWorkspaceEditorField({
-            field: "newsletter_headerCrest",
-            label: "Show cover image in article header",
-            labelKey: "article_headerCrest",
-            value: String(Boolean(item.content?.newsletter?.headerCrest)),
+            field: "coverPlacement",
+            label: "Cover image placement",
+            labelKey: "article_cover_placement",
+            value: item.content?.coverPlacement || (item.isNew ? "body" : ""),
             options: [
-              { value: "false", label: "No", labelKey: "article_no" },
-              { value: "true", label: "Yes", labelKey: "article_yes" },
+              ...(!item.isNew && !item.content?.coverPlacement ? [{
+                value: "", label: "Keep existing behavior", labelKey: "article_cover_legacy",
+              }] : []),
+              { value: "header", label: "In the title/header", labelKey: "article_cover_header" },
+              { value: "body", label: "Below the title, before the body", labelKey: "article_cover_body" },
+              { value: "cards", label: "Cards and previews only", labelKey: "article_cover_cards" },
             ],
           }),
           createWorkspaceEditorField({
@@ -1204,6 +1208,9 @@ window.ContentWorkspaceEditors = {
         remove.addEventListener("click", () => {
           full.value = "";
           display.value = "";
+          const placement = form.elements.namedItem("coverPlacement");
+          if (placement && !placement.value)
+            placement.value = window.NewsletterFormat.resolveCoverPlacement(item.content);
           cover.querySelector("img").hidden = true;
           full.dispatchEvent(new Event("input", { bubbles: true }));
         });
@@ -2024,6 +2031,16 @@ window.ContentWorkspaceEditors = {
         .map((value) => String(value || "").trim())
         .filter(Boolean)
         .join("\n");
+      const articleBlocks = Object.fromEntries(["en", "fr"].map((language) => [
+        language,
+        JSON.parse(getLanguageFormData(language)?.get("newsletterBlocks") ||
+          JSON.stringify(window.NewsletterFormat.blocksFor(item.content, language))),
+      ]));
+      const bodyValue = (blocks) => JSON.stringify(blocks, (key, value) =>
+        key === "pairId" ? undefined : value);
+      const bodyChanged = ["en", "fr"].some((language) =>
+        bodyValue(articleBlocks[language]) !==
+        bodyValue(window.NewsletterFormat.blocksFor(item.content, language)));
 
       return {
         path: item.isNew
@@ -2032,7 +2049,10 @@ window.ContentWorkspaceEditors = {
         method: item.isNew ? "POST" : "PATCH",
         newsArticle: true,
         body: {
-          layout: "newsletter",
+          layout: item.isNew || bodyChanged ? "newsletter" : item.content?.layout || "standard",
+          ...(getRecordValue("coverPlacement", item.content?.coverPlacement || (item.isNew ? "body" : ""))
+            ? { coverPlacement: getRecordValue("coverPlacement", item.content?.coverPlacement || "body") }
+            : {}),
           category: getRecordValue(
             "category",
             window.NewsletterFormat.categoryOf(item.content),
@@ -2069,17 +2089,7 @@ window.ContentWorkspaceEditors = {
             en: getLanguageValue("en", "content"),
             fr: getLanguageValue("fr", "content"),
           },
-          newsletterBlocks: Object.fromEntries(
-            ["en", "fr"].map((language) => [
-              language,
-              JSON.parse(
-                getLanguageFormData(language)?.get("newsletterBlocks") ||
-                  JSON.stringify(
-                    window.NewsletterFormat.blocksFor(item.content, language),
-                  ),
-              ),
-            ]),
-          ),
+          newsletterBlocks: articleBlocks,
           imageUrl: getRecordValue("imageUrl", item.content?.imageUrl),
           imageDisplayUrl: getRecordValue(
             "imageDisplayUrl",

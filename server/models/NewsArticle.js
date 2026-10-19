@@ -24,6 +24,12 @@ const NewsArticleSchema = new mongoose.Schema(
       enum: ['standard', 'newsletter'],
       default: 'standard',
     },
+    // Missing placement retains the legacy layout/category/headerCrest rules.
+    coverPlacement: {
+      type: String,
+      enum: ['header', 'body', 'cards'],
+      default: undefined,
+    },
     newsletter: {
       author: { type: String, maxlength: 240, default: '' },
       issue: { type: String, maxlength: 240, default: '' },

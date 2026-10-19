@@ -4586,6 +4586,10 @@ components:
           $ref: "#/components/schemas/NewsletterMetadata"
         newsletterBlocks:
           $ref: "#/components/schemas/NewsletterBlocks"
+        coverPlacement:
+          type: string
+          enum: [header, body, cards]
+          description: Cover location in both standard and rich articles. Header places it in the title area; body places it below the title before authored blocks, even if reused inline; cards keeps it on listing cards only. New API/editor articles default to body. Missing values on existing records retain legacy headerCrest/category/duplicate rules and remain missing on unrelated saves. Empty explicit covers stay empty in detail responses; listings retain their crest fallback. Placement changes are revision-tracked.
         title:
           $ref: "#/components/schemas/LocalizedText"
           description: Each title is at most 240 characters. Both languages are required for standard news; newsletters require their original language.
@@ -4595,7 +4599,7 @@ components:
         imageUrl:
           type: string
           format: uri
-          description: Optional uploaded image URL. When omitted, the canonical CMCEN crest is used.
+          description: Selected cover image URL. Omitted PATCH values preserve the stored value. An empty value removes the selected image; a deliberate removal from an existing legacy cover adopts its resolved placement to prevent crest fallback inside the article. Listing cards retain the canonical CMCEN crest fallback. Legacy detail responses with no explicit placement retain their prior fallback behavior.
         imageDisplayUrl:
           type: string
           format: uri

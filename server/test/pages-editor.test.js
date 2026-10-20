@@ -42,6 +42,8 @@ class Element extends BaseElement {
 async function setup({
   api: override,
   permissions = { canManagePages: true },
+  navigationItems = [],
+  language = 'en',
 } = {}) {
   const root = new Element('section'),
     status = new Element('div'),
@@ -96,12 +98,12 @@ async function setup({
     if (url === '/api/admin/pages')
       return {
         pages: [structuredClone(stored)],
-        navigationItems: [],
+        navigationItems: structuredClone(navigationItems),
         roles: [],
         customRoles: [],
         permissionCatalog: [],
       };
-    if (options.method === 'PATCH')
+    if (options.method === 'PATCH' && url.startsWith('/api/admin/pages/'))
       Object.assign(stored, structuredClone(options.body));
     return { page: structuredClone(stored) };
   };
@@ -125,7 +127,9 @@ async function setup({
       queueMicrotask,
       CMCENModal: { confirm: async () => true },
       CMCENUtils: {
-        getLocalizedText: (value) => value?.en || '',
+        getLocalizedText: (value) => value?.[language] || value?.en || value?.fr || '',
+        getCurrentLanguage: () => language,
+        requiresTextForSave: require('../services/save-validation').requiresTextForSave,
         formatTitleCaseValue: (value) => value || '',
         setStatusMessage: (node, text) => {
           node.textContent = text;
@@ -433,5 +437,115 @@ test('page category selection and clearing survive autosave without changing dra
   await page.autosave();
   assert.equal(page.stored.category, '');
   assert.equal(page.stored.status, 'draft');
+  page.editor.dispose();
+});
+
+async function openNavigation(options = {}) {
+  const page = await setup({
+    ...options,
+    permissions: { canManagePages: true, canManageNavigation: true },
+  });
+  await page.open();
+  await page.button('Save and continue').fire('click');
+  const form = page.content.querySelector('.pages-navigation-flow-form');
+  assert.ok(form, page.toasts.join('; '));
+  const field = (name) => form.querySelectorAll('input').find((input) => input.name === name);
+  const group = form.querySelector('.pages-navigation-header-search');
+  const submit = async () => {
+    await form.fire('submit');
+    await flush();
+    return page.calls.filter((call) => call.url.includes('/navigation-items'));
+  };
+  return { ...page, form, field, group, submit };
+}
+
+for (const language of ['en', 'fr']) {
+  test(`navigation updates preserve both stored labels in ${language} UI`, async () => {
+    const page = await openNavigation({
+      language,
+      navigationItems: [{
+        _id: 'link-one', type: 'link', group: 'about', page: 'one',
+        label: { en: 'Heritage', fr: 'Patrimoine' }, order: 4,
+      }],
+    });
+    assert.equal(page.field('navigationLabel_en').value, 'Heritage');
+    assert.equal(page.field('navigationLabel_fr').value, 'Patrimoine');
+    page.group.value = 'news';
+    const calls = await page.submit();
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, '/api/admin/navigation-items/link-one');
+    assert.equal(calls[0].options.method, 'PATCH');
+    assert.deepEqual({ ...calls[0].options.body.label }, { en: 'Heritage', fr: 'Patrimoine' });
+    assert.equal(calls[0].options.body.group, 'news');
+    page.editor.dispose();
+  });
+}
+
+test('old English-only navigation stays untranslated until staff supplies a French label', async () => {
+  const page = await openNavigation({ navigationItems: [{
+    _id: 'old', type: 'link', group: 'about', page: 'one', label: { en: 'Old label' },
+  }] });
+  assert.equal(page.field('navigationLabel_fr').value, '');
+  page.field('navigationLabel_en').value = 'Updated English';
+  let calls = await page.submit();
+  assert.deepEqual({ ...calls[0].options.body.label }, { en: 'Updated English', fr: '' });
+  page.editor.dispose();
+  const translated = await openNavigation({ navigationItems: [{
+    _id: 'old', type: 'link', group: 'about', page: 'one', label: { en: 'Old label' },
+  }] });
+  translated.field('navigationLabel_fr').value = 'Nouveau libellé';
+  calls = await translated.submit();
+  assert.deepEqual({ ...calls[0].options.body.label }, { en: 'Old label', fr: 'Nouveau libellé' });
+  translated.editor.dispose();
+});
+
+test('new link and custom header retain independently authored English and French labels', async () => {
+  const page = await openNavigation({ language: 'fr' });
+  page.field('navigationLabel_en').value = '  Tours  ';
+  page.field('navigationLabel_fr').value = '  Voyages  ';
+  page.group.value = 'Heritage';
+  await page.group.fire('input');
+  assert.equal(page.field('navigationHeader_fr').parent.hidden, false);
+  page.field('navigationHeader_fr').value = '  Patrimoine  ';
+  const calls = await page.submit();
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].options.body.type, 'group');
+  assert.deepEqual({ ...calls[0].options.body.label }, { en: 'Heritage', fr: 'Patrimoine' });
+  assert.deepEqual({ ...calls[1].options.body.label }, { en: 'Tours', fr: 'Voyages' });
+  assert.equal(calls[1].options.body.group, 'heritage');
+  page.editor.dispose();
+});
+
+test('French-only navigation and deliberate French removal remain supported', async () => {
+  const page = await openNavigation({ navigationItems: [{
+    _id: 'fr-only', type: 'link', group: 'about', page: 'one', label: { fr: 'Patrimoine' },
+  }] });
+  assert.equal(page.field('navigationLabel_en').value, '');
+  assert.equal(page.field('navigationLabel_fr').value, 'Patrimoine');
+  assert.equal(page.field('navigationLabel_en').required, false);
+  const calls = await page.submit();
+  assert.deepEqual({ ...calls[0].options.body.label }, { en: '', fr: 'Patrimoine' });
+  page.editor.dispose();
+  const removal = await openNavigation({ navigationItems: [{
+    _id: 'both', type: 'link', group: 'about', page: 'one',
+    label: { en: 'Heritage', fr: 'Patrimoine' },
+  }] });
+  removal.field('navigationLabel_fr').value = '';
+  const writes = await removal.submit();
+  assert.deepEqual({ ...writes[0].options.body.label }, { en: 'Heritage', fr: '' });
+  removal.editor.dispose();
+});
+
+test('unrelated page autosaves do not rewrite navigation labels', async () => {
+  const page = await setup({
+    permissions: { canManagePages: true, canManageNavigation: true },
+    navigationItems: [{
+      _id: 'both', group: 'about', page: 'one', label: { en: 'Heritage', fr: 'Patrimoine' },
+    }],
+  });
+  await page.open();
+  await page.editTitle('New page title');
+  await page.autosave();
+  assert.equal(page.calls.some((call) => call.url.includes('/navigation-items')), false);
   page.editor.dispose();
 });

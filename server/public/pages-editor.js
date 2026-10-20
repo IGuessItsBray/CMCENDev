@@ -2923,17 +2923,34 @@
       const form = document.createElement("form");
       form.className = "pages-navigation-flow-form";
 
-      const linkName = document.createElement("label");
-      linkName.className = "pages-navigation-flow-field";
-      const linkNameLabel = document.createElement("span");
-      linkNameLabel.textContent = "Navigation link name";
-      const linkNameInput = document.createElement("input");
-      linkNameInput.type = "text";
-      linkNameInput.value =
-        existingLink ? localized(existingLink.label) :
-          localized(selectedPage.title) || selectedPage.slug;
-      linkNameInput.required = CMCENUtils.requiresTextForSave(actor, existingLink?.label);
-      linkName.append(linkNameLabel, linkNameInput);
+      const labelInputs = {};
+      const labelFields = ["en", "fr"].map((language) => {
+        const field = document.createElement("label");
+        field.className = "pages-navigation-flow-field";
+        const label = document.createElement("span");
+        label.textContent = language === "en"
+          ? "Navigation link name (English)"
+          : "Nom du lien (français)";
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = `navigationLabel_${language}`;
+        input.lang = language;
+        input.maxLength = 120;
+        input.value = existingLink
+          ? existingLink.label?.[language] || ""
+          : selectedPage.title?.[language] || (language === "en" ? selectedPage.slug : "");
+        labelInputs[language] = input;
+        field.append(label, input);
+        return field;
+      });
+      const updateLabelValidity = () => {
+        const required = CMCENUtils.requiresTextForSave(actor, existingLink?.label);
+        labelInputs.en.required = required && !labelInputs.fr.value.trim();
+        labelInputs.fr.required = required && !labelInputs.en.value.trim();
+      };
+      Object.values(labelInputs).forEach((input) =>
+        input.addEventListener("input", updateLabelValidity));
+      updateLabelValidity();
 
       const groupField = document.createElement("div");
       groupField.className = "pages-navigation-flow-field";
@@ -2955,6 +2972,17 @@
       groupMenu.setAttribute("role", "listbox");
       groupMenu.hidden = true;
       groupPicker.append(groupSearch, groupMenu);
+      const headerFrenchField = document.createElement("label");
+      headerFrenchField.className = "pages-navigation-flow-field";
+      headerFrenchField.hidden = true;
+      const headerFrenchLabel = document.createElement("span");
+      headerFrenchLabel.textContent = "Nom du nouvel en-tête (français)";
+      const headerFrenchInput = document.createElement("input");
+      headerFrenchInput.type = "text";
+      headerFrenchInput.name = "navigationHeader_fr";
+      headerFrenchInput.lang = "fr";
+      headerFrenchInput.maxLength = 120;
+      headerFrenchField.append(headerFrenchLabel, headerFrenchInput);
 
       // Navigation groups normally arrive in navigationGroups, but include the
       // group records themselves as well. That keeps newly created custom headers
@@ -2988,6 +3016,7 @@
       const selectGroup = (group) => {
         selectedGroup = group.key;
         groupSearch.value = group.label;
+        headerFrenchField.hidden = group.key !== "__new__";
         setGroupMenuOpen(false);
         groupPicker.classList.remove("is-open", "opens-upward");
       };
@@ -3032,6 +3061,7 @@
             group.label.toLocaleLowerCase() === query ||
             group.key.toLocaleLowerCase() === query,
         );
+        headerFrenchField.hidden = !query || exactMatch;
         if (query && !exactMatch) {
           const create = document.createElement("button");
           create.type = "button";
@@ -3074,7 +3104,7 @@
       continueButton.className = "admin-work-zone-button is-primary";
       continueButton.textContent = existingLink ? "Update link" : "Continue";
 
-      form.append(linkName, groupField, continueButton);
+      form.append(...labelFields, groupField, headerFrenchField, continueButton);
       form.addEventListener("submit", (event) => {
         event.preventDefault();
         const headerName = groupSearch.value.trim();
@@ -3086,9 +3116,11 @@
         );
         runAction(() =>
           continueNavigationSetup({
-            linkName: linkNameInput.value,
+            linkName: Object.fromEntries(["en", "fr"].map((language) =>
+              [language, labelInputs[language].value])),
             group: matchingGroup?.key || selectedGroup || "__new__",
             newGroupName: headerName,
+            newGroupFrenchName: headerFrenchInput.value,
             existingItemId: existingLink?._id || "",
           }),
         );
@@ -3247,13 +3279,15 @@
       linkName,
       group,
       newGroupName,
+      newGroupFrenchName,
       existingItemId = "",
     }) {
       const page = pagesState.selectedPage;
-      const label = String(linkName || "").trim();
+      const label = Object.fromEntries(["en", "fr"].map((language) =>
+        [language, String(linkName?.[language] || "").trim()]));
       let groupKey = group;
 
-      if (!page?._id || (!label && CMCENUtils.requiresTextForSave(actor,
+      if (!page?._id || (!Object.values(label).some(Boolean) && CMCENUtils.requiresTextForSave(actor,
         pagesState.navigationItems.find((item) => item._id === existingItemId)?.label))) return;
 
       try {
@@ -3273,7 +3307,7 @@
             body: {
               type: "group",
               group: groupKey,
-              label: { en: headerName, fr: "" },
+              label: { en: headerName, fr: String(newGroupFrenchName || "").trim() },
               route: "",
               visible: true,
               order: pagesState.navigationGroups.length + 1,
@@ -3293,7 +3327,7 @@
           group: groupKey,
           page: page._id,
           route: page.route,
-          label: { en: label, fr: "" },
+          label,
           visible: true,
           order: matchingLink?.order || pagesState.navigationItems.length + 1,
         };

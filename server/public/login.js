@@ -1,5 +1,6 @@
 const loginForm = document.getElementById("loginForm");
 const loginButton = document.getElementById("loginBtn");
+const passkeyLoginButton = document.getElementById("passkeyLoginBtn");
 const errorElement = document.getElementById("loginError");
 const forgotPasswordLink = document.getElementById("forgotPasswordLink");
 const guestAccessLink = document.getElementById("guestAccessLink");
@@ -612,6 +613,67 @@ guestAccessForm.addEventListener("submit", async (event) => {
   }
 });
 
+passkeyLoginButton.addEventListener("click", async () => {
+  passkeyLoginButton.disabled = true;
+  loginButton.disabled = true;
+  passkeyLoginButton.setAttribute("aria-busy", "true");
+  setLoginMessage("");
+  try {
+    ensureWebAuthnAvailable();
+    const consented =
+      CMCENUtils.hasSessionCookieConsent() ||
+      (await CMCENUtils.requestSessionCookieConsent());
+    if (!consented) {
+      setLoginMessage(
+        getLoginTranslation(
+          "session_cookie_consent_declined",
+          "You were not signed in. CMCEN needs the secure session cookie to protect your account.",
+        ),
+        "info",
+      );
+      return;
+    }
+    const { options, loginToken } = await CMCENUtils.apiJson(
+      "/api/mfa/webauthn/login/options",
+      { method: "POST" },
+    );
+    let assertion;
+    try {
+      assertion = await navigator.credentials.get({
+        publicKey: CMCENUtils.preparePublicKeyRequestOptions(options),
+      });
+    } catch (error) {
+      if (error.name !== "NotAllowedError" && error.name !== "AbortError")
+        throw error;
+      setLoginMessage(
+        getLoginTranslation(
+          "login_passkey_cancelled",
+          "Passkey sign-in was cancelled or no matching passkey was available. Try again or sign in with your password.",
+        ),
+        "info",
+      );
+      return;
+    }
+    if (!assertion) return;
+    const data = await CMCENUtils.apiJson("/api/mfa/webauthn/login/verify", {
+      method: "POST",
+      body: {
+        loginToken,
+        credential: CMCENUtils.serializeAssertionCredential(assertion),
+        sessionCookieConsent: true,
+      },
+      errorMessage: "Passkey sign-in failed",
+    });
+    await completeLogin(data.token);
+  } catch (error) {
+    setLoginMessage(error.message);
+  } finally {
+    passkeyLoginButton.disabled = false;
+    loginButton.disabled = false;
+    passkeyLoginButton.removeAttribute("aria-busy");
+  }
+});
+
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -620,6 +682,7 @@ loginForm.addEventListener("submit", async (event) => {
 
   setLoginMessage("");
   loginButton.disabled = true;
+  passkeyLoginButton.disabled = true;
   loginButton.setAttribute("aria-busy", "true");
 
   try {
@@ -672,6 +735,7 @@ loginForm.addEventListener("submit", async (event) => {
     setLoginMessage(error.message);
   } finally {
     loginButton.disabled = false;
+    passkeyLoginButton.disabled = false;
     loginButton.removeAttribute("aria-busy");
   }
 });

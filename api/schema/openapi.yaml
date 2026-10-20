@@ -1146,6 +1146,61 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/Message"
+  /api/mfa/webauthn/login/options:
+    post:
+      tags: [Auth]
+      summary: Start passwordless sign-in with a discoverable passkey.
+      security: []
+      description: Public; 20 requests per source IP per five minutes. Uses existing RP settings. Requires biometric or PIN user verification. The opaque login token expires in five minutes and is single-use.
+      responses:
+        "200":
+          description: Authentication options with an empty allowlist, plus loginToken. Cache-Control is no-store.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [options, loginToken]
+                properties:
+                  options:
+                    type: object
+                    additionalProperties: true
+                  loginToken:
+                    type: string
+                    pattern: '^[a-f0-9]{64}$'
+        "429":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+  /api/mfa/webauthn/login/verify:
+    post:
+      tags: [Auth]
+      summary: Verify a passkey and issue a session without a password or TOTP.
+      security: []
+      description: Public; 20 requests per source IP per five minutes. Consumes the unexpired challenge atomically. Verifies credential ownership, user handle, signature, origin, RP, counter and user verification. Required email verification must be complete. Success and rejection are audited without credential material or tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loginToken, credential, sessionCookieConsent]
+              properties:
+                loginToken:
+                  type: string
+                  pattern: '^[a-f0-9]{64}$'
+                sessionCookieConsent:
+                  type: boolean
+                credential:
+                  type: object
+                  description: Serialized WebAuthn assertion including response.userHandle.
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Session JWT and HttpOnly refresh cookie (Cache-Control no-store), or sessionCookieConsentRequired true without a session if consent is absent.
+        "401":
+          description: Generic rejection for invalid, expired or replayed authentication.
+        "429":
+          $ref: "#/components/responses/Error"
   /api/mfa/webauthn/register/options:
     post:
       tags: [MFA]

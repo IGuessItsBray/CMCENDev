@@ -66,6 +66,8 @@ describe('OpenAPI contract', () => {
     const schema = await loadSchema();
     const requiredOperations = [
       ['post', '/api/login'],
+      ['post', '/api/mfa/webauthn/login/options'],
+      ['post', '/api/mfa/webauthn/login/verify'],
       ['post', '/api/contact'],
       ['post', '/api/session/refresh'],
       ['put', '/api/subscriptions/weekly-brief'],

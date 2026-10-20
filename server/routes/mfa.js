@@ -10,6 +10,7 @@ const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const crypto = require('crypto');
 const User = require('../models/User');
+const PasskeyLoginChallenge = require('../models/PasskeyLoginChallenge');
 const { authMiddleware, authOrTempMiddleware } = require('../middleware/auth');
 const {
   createSessionToken,
@@ -25,6 +26,20 @@ const {
 } = require('../middleware/rate-limit');
 
 const router = express.Router();
+const passkeyLoginLimit = createRateLimit({
+  name: 'passkey-login',
+  windowMs: 5 * 60 * 1000,
+  max: 20,
+});
+const passkeyLoginVerificationLimit = createRateLimit({
+  name: 'passkey-login-verification',
+  windowMs: 5 * 60 * 1000,
+  max: 20,
+});
+
+function hashLoginToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 const rpName = process.env.RP_NAME || 'CMCEN';
 const configuredRPID = process.env.RP_ID || '';
@@ -244,6 +259,138 @@ async function recordMfaRejected(req, user, method, reason) {
     ip: req.ip,
   });
 }
+
+// Passwordless login requires local user verification (biometric or device PIN).
+router.post('/webauthn/login/options', passkeyLoginLimit, async (req, res) => {
+  try {
+    const rpID = getRpID(req);
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials: [],
+      userVerification: 'required',
+    });
+    const loginToken = crypto.randomBytes(32).toString('hex');
+    await PasskeyLoginChallenge.create({
+      _id: hashLoginToken(loginToken),
+      challenge: options.challenge,
+      rpID,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    });
+    res.set('Cache-Control', 'no-store');
+    res.json({ options: normalizeAuthenticationOptions(options), loginToken });
+  } catch {
+    res.status(500).json({ error: 'Could not start passkey sign-in' });
+  }
+});
+
+router.post(
+  '/webauthn/login/verify',
+  passkeyLoginVerificationLimit,
+  async (req, res) => {
+    const reject = async () => {
+      await writeAuditLog({
+        req,
+        action: 'user.login_rejected',
+        targetType: 'user',
+        metadata: { method: 'passkey', reason: 'verification_failed' },
+      });
+      return res.status(401).json({
+        error:
+          'Passkey sign-in failed. Try again or sign in with your password.',
+      });
+    };
+    try {
+      const { loginToken, credential, sessionCookieConsent } = req.body || {};
+      if (sessionCookieConsent !== true) {
+        return res.json({ sessionCookieConsentRequired: true });
+      }
+      if (
+        typeof loginToken !== 'string' ||
+        !/^[a-f0-9]{64}$/u.test(loginToken)
+      ) {
+        return await reject();
+      }
+      const challenge = await PasskeyLoginChallenge.findOneAndDelete({
+        _id: hashLoginToken(loginToken),
+        rpID: getRpID(req),
+        expiresAt: { $gt: new Date() },
+      });
+      if (
+        !challenge ||
+        typeof credential?.id !== 'string' ||
+        typeof credential?.response?.userHandle !== 'string'
+      ) {
+        return await reject();
+      }
+      const user = await User.findOne({
+        'webauthn.credentialID': credential.id,
+      });
+      if (
+        !user ||
+        (user.emailVerification?.required && !user.emailVerification?.verified)
+      ) {
+        return await reject();
+      }
+      const dbCred = user.webauthn.find(
+        (entry) => entry.credentialID === credential.id,
+      );
+      if (
+        !dbCred?.publicKey ||
+        (dbCred.rpID && dbCred.rpID !== challenge.rpID) ||
+        credential.response.userHandle !==
+          Buffer.from(String(user._id)).toString('base64url')
+      ) {
+        return await reject();
+      }
+      const verification = await verifyAuthenticationResponse({
+        response: credential,
+        expectedChallenge: challenge.challenge,
+        expectedOrigin: getExpectedOrigin(req),
+        expectedRPID: challenge.rpID,
+        credential: {
+          id: dbCred.credentialID,
+          publicKey: Buffer.from(dbCred.publicKey, 'base64'),
+          counter: dbCred.counter || 0,
+          transports: dbCred.transports || [],
+        },
+        requireUserVerification: true,
+      });
+      if (!verification.verified) return await reject();
+      const updated = await User.updateOne(
+        {
+          _id: user._id,
+          sessionVersion: user.sessionVersion,
+          webauthn: {
+            $elemMatch: {
+              credentialID: dbCred.credentialID,
+              publicKey: dbCred.publicKey,
+              counter: dbCred.counter,
+            },
+          },
+        },
+        {
+          $set: {
+            'webauthn.$.counter': verification.authenticationInfo.newCounter,
+          },
+        },
+      );
+      if (!updated.matchedCount) return await reject();
+      await writeAuditLog({
+        req,
+        action: 'user.login',
+        actor: user,
+        targetType: 'user',
+        target: user._id,
+        metadata: { method: 'passkey' },
+      });
+      setRefreshTokenCookie(req, res, user);
+      res.set('Cache-Control', 'no-store');
+      return res.json({ token: createSessionToken(user) });
+    } catch {
+      return await reject();
+    }
+  },
+);
 
 // WebAuthn registration options
 router.post('/webauthn/register/options', authMiddleware, async (req, res) => {

@@ -7886,6 +7886,121 @@ describe('event, page, and comment workflows', () => {
 });
 
 describe('MFA and audit behavior', () => {
+  async function passkeyFixture() {
+    const { isoCBOR } = require('@simplewebauthn/server/helpers');
+    const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    const jwk = publicKey.export({ format: 'jwk' });
+    const cose = isoCBOR.encode(new Map([
+      [1, 2], [3, -7], [-1, 1],
+      [-2, Buffer.from(jwk.x, 'base64url')], [-3, Buffer.from(jwk.y, 'base64url')],
+    ]));
+    const credentialID = crypto.randomBytes(32).toString('base64url');
+    const user = await createUser({
+      sessionVersion: 3,
+      // A registered passkey replaces the password and TOTP for this ceremony.
+      totp: { enabled: true, secret: speakeasy.generateSecret().base32 },
+      webauthn: [{ credentialID, publicKey: Buffer.from(cose).toString('base64'), rpID: 'localhost' }],
+    });
+    const start = async () => {
+      const response = await request(app).post('/api/mfa/webauthn/login/options').set('Host', 'localhost').send({}).expect(200);
+      assert.equal(response.body.options.userVerification, 'required');
+      assert.deepEqual(response.body.options.allowCredentials || [], []);
+      assert.equal(response.headers['cache-control'], 'no-store');
+      return response.body;
+    };
+    const assertion = (challenge, overrides = {}) => {
+      const clientDataJSON = Buffer.from(JSON.stringify({
+        type: 'webauthn.get', challenge, origin: 'http://localhost', ...overrides.clientData,
+      }));
+      const authenticatorData = Buffer.alloc(37);
+      crypto.createHash('sha256').update(overrides.rpID || 'localhost').digest().copy(authenticatorData);
+      authenticatorData[32] = overrides.flags ?? 5;
+      authenticatorData.writeUInt32BE(1, 33);
+      const signature = crypto.sign('sha256', Buffer.concat([
+        authenticatorData, crypto.createHash('sha256').update(clientDataJSON).digest(),
+      ]), privateKey);
+      return {
+        id: credentialID, rawId: credentialID, type: 'public-key',
+        response: {
+          clientDataJSON: clientDataJSON.toString('base64url'),
+          authenticatorData: authenticatorData.toString('base64url'),
+          signature: signature.toString('base64url'),
+          userHandle: Buffer.from(String(user._id)).toString('base64url'),
+        },
+      };
+    };
+    return { user, start, assertion };
+  }
+
+  test('signs in directly with a verified passkey, sets the session and rejects replay', async () => {
+    const { user, start, assertion } = await passkeyFixture();
+    const { options, loginToken } = await start();
+    const body = { loginToken, credential: assertion(options.challenge), sessionCookieConsent: true };
+    const response = await request(app).post('/api/mfa/webauthn/login/verify').set('Host', 'localhost').send(body).expect(200);
+    const decoded = jwt.verify(response.body.token, process.env.JWT_SECRET);
+    assert.equal(decoded.userId, String(user._id));
+    assert.equal(decoded.sessionVersion, 3);
+    assert.match(response.headers['set-cookie'][0], /cmcen_refresh=.*HttpOnly/u);
+    await request(app).get('/api/me').set('Authorization', bearer(response.body.token)).expect(200);
+    assert.equal((await User.findById(user._id)).webauthn[0].counter, 1);
+    await request(app).post('/api/mfa/webauthn/login/verify').set('Host', 'localhost').send(body).expect(401);
+    const audit = await AuditLog.findOne({ action: 'user.login', target: user._id }).lean();
+    assert.equal(audit.metadata.method, 'passkey');
+    const auditText = JSON.stringify(await AuditLog.find({}).lean());
+    assert.equal(auditText.includes(loginToken), false);
+    assert.equal(auditText.includes(body.credential.response.signature), false);
+  });
+
+  test('rejects invalid passkey proofs and consumes each failed challenge', async () => {
+    const { user, start, assertion } = await passkeyFixture();
+    const cases = [
+      (c) => assertion(c, { flags: 1 }),
+      (c) => assertion(c, { clientData: { origin: 'https://wrong.example' } }),
+      (c) => assertion(c, { rpID: 'wrong.example' }),
+      () => assertion('wrong-challenge'),
+      (c) => { const a = assertion(c); a.response.signature = crypto.randomBytes(70).toString('base64url'); return a; },
+      (c) => { const a = assertion(c); a.response.userHandle = Buffer.from('wrong-user').toString('base64url'); return a; },
+      (c) => ({ ...assertion(c), id: 'unknown-credential' }),
+    ];
+    for (const makeAssertion of cases) {
+      const { options, loginToken } = await start();
+      const response = await request(app).post('/api/mfa/webauthn/login/verify')
+        .set('Host', 'localhost')
+        .send({ loginToken, credential: makeAssertion(options.challenge), sessionCookieConsent: true }).expect(401);
+      assert.equal(response.headers['set-cookie'], undefined);
+      const Challenge = require('../../models/PasskeyLoginChallenge');
+      assert.equal(await Challenge.countDocuments({}), 0);
+    }
+    assert.equal((await User.findById(user._id)).webauthn[0].counter, 0);
+  });
+
+  test('requires consent, rejects expired challenges and unverified accounts', async () => {
+    const { user, start, assertion } = await passkeyFixture();
+    const { options, loginToken } = await start();
+    const body = { loginToken, credential: assertion(options.challenge) };
+    const consent = await request(app).post('/api/mfa/webauthn/login/verify').set('Host', 'localhost').send(body).expect(200);
+    assert.equal(consent.body.sessionCookieConsentRequired, true);
+    assert.equal(consent.body.token, undefined);
+    assert.equal(consent.headers['set-cookie'], undefined);
+    const Challenge = require('../../models/PasskeyLoginChallenge');
+    await Challenge.updateMany({}, { $set: { expiresAt: new Date(Date.now() - 1000) } });
+    await request(app).post('/api/mfa/webauthn/login/verify').set('Host', 'localhost').send({ ...body, sessionCookieConsent: true }).expect(401);
+    const fresh = await start();
+    await User.updateOne({ _id: user._id }, { $set: { 'emailVerification.required': true, 'emailVerification.verified': false } });
+    await request(app).post('/api/mfa/webauthn/login/verify').set('Host', 'localhost').send({ loginToken: fresh.loginToken,
+      credential: assertion(fresh.options.challenge), sessionCookieConsent: true }).expect(401);
+  });
+
+  test('rate limits public passkey ceremonies', async () => {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      await request(app).post('/api/mfa/webauthn/login/options')
+        .set('X-Forwarded-For', '198.51.100.145').send({});
+    }
+    const limited = await request(app).post('/api/mfa/webauthn/login/options')
+      .set('X-Forwarded-For', '198.51.100.145').send({}).expect(429);
+    assert.match(limited.headers['retry-after'], /^\d+$/u);
+  });
+
   test('rate limits repeated password reset requests for the same email', async () => {
     const email = `reset-limit-${Date.now()}@example.test`;
 

@@ -59,6 +59,36 @@ recheck account existence and cancel late writes. Account/content deletion
 remains a multi-step operation rather than a database transaction; a storage
 failure after account removal can still require operator recovery.
 
+## Passwordless passkey sign-in
+
+`POST /api/mfa/webauthn/login/options` is public and returns `{ options,
+loginToken }`. It does not accept or require an email or password. The browser
+chooses an existing discoverable passkey for the current RP. Options require
+local user verification (biometric or device PIN), with no credential allowlist.
+
+`POST /api/mfa/webauthn/login/verify` accepts `{ loginToken, credential,
+sessionCookieConsent: true }`, where `credential` is the serialized WebAuthn
+assertion including `response.userHandle`. Successful verification issues the
+normal session JWT and HttpOnly refresh cookie, without a password or TOTP
+step. Without consent it returns `{ sessionCookieConsentRequired: true }`
+without a session. Invalid assertions, unknown credentials, expired/replayed
+tokens, incorrect user handles, and accounts awaiting required email
+verification receive a generic `401`. The API verifies the signature, RP,
+origin, challenge, counter, and user-verification flag. Login success and
+rejection are audited without retaining assertions or login tokens.
+
+Each endpoint is limited to 20 requests per source IP per five minutes (`429`
+with `Retry-After`). Responses containing challenge/session data use
+`Cache-Control: no-store`. Challenges expire after five minutes and are consumed
+atomically on a consented verification attempt. MongoDB TTL cleanup removes
+expired challenge records; no existing user data migration or new environment
+variables are required. Existing `RP_ID` and `RP_ORIGIN` settings apply.
+
+The login page offers **Sign in with passkey** separately from password login.
+Members must already have a discoverable passkey registered on this site;
+older non-discoverable security keys can still use password plus passkey MFA.
+An unavailable or cancelled passkey prompt leaves password sign-in available.
+
 ## Developer blank saves
 
 The existing `developer` actor role may save blank descriptive fields in profile editors (names, address, status and affiliation), invited-account names, staff event titles and comment bodies, news copy, Page titles, navigation labels, Adopt display titles, award titles/recipient names/link labels, custom-role names, media display names and banner copy. No new permission grants this behavior. Ordinary administrators and custom roles retain required-field checks; previously authorized blanks may remain blank during later edits. Public registration and membership completion still require their normal fields.

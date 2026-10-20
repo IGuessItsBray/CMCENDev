@@ -36,7 +36,7 @@
             <h2 id="loginTitle" data-i18n="login_title">Sign in</h2>
 
             <p data-i18n="login_instruction">
-              Enter your registered email and password.
+              Use your passkey, or enter your registered email and password.
             </p>
           </div>
 
@@ -48,6 +48,20 @@
               aria-live="polite"
               hidden
             ></p>
+
+            <button
+              type="button"
+              class="login-submit"
+              id="passkeyLoginBtn"
+              data-i18n="login_passkey"
+              aria-describedby="passkeyLoginHelp"
+            >
+              Sign in with passkey
+            </button>
+            <p id="passkeyLoginHelp" data-i18n="login_passkey_help">
+              Use a passkey already registered for this site. No password
+              needed.
+            </p>
 
             <div class="login-field">
               <label for="loginUsername" data-i18n="email"> Email </label>

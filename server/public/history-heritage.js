@@ -60,6 +60,9 @@
       if (item.imageUrl) {
         const media = document.createElement("span");
         media.className = "news-card-media";
+        if (CMCENUtils.isSitePlaceholderImage(item.imageUrl)) {
+          media.classList.add("news-card-media--crest");
+        }
         const image = document.createElement("img");
         image.src = item.imageUrl;
         image.alt = "";

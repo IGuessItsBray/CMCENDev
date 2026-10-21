@@ -33,6 +33,12 @@
   height: 100%;
   object-fit: cover;
 }
+.heritage-main .news-card-media--crest img {
+  padding: 28px;
+  background: linear-gradient(135deg, #f4f1e9, var(--branch-grey-200));
+  object-fit: contain;
+  object-position: center;
+}
 .heritage-main .news-card-content {
   padding: 24px;
 }

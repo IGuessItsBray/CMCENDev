@@ -182,13 +182,6 @@ const navLinks = {
       { route: "/history.html", i18n: "menu_news_option_8" },
     ],
   },
-  branch: {
-    titleKey: "menu_branch_title",
-    items: [{
-      route: "/history-heritage",
-      label: { en: "History & Heritage", fr: "Histoire et patrimoine" },
-    }],
-  },
   doctrine: {
     titleKey: "menu_doctrine_title",
     items: [
@@ -206,6 +199,10 @@ const navLinks = {
     items: [
       { route: "/calendar", i18n: "menu_news_option_1" },
       { route: "/news_stories.html", i18n: "menu_news_option_3" },
+      {
+        route: "/history-heritage",
+        label: { en: "History & Heritage", fr: "Histoire et patrimoine" },
+      },
       { route: "/last-post", i18n: "menu_news_option_4" },
       { route: "/retirements", i18n: "menu_news_option_5" },
       { route: "/promotions.html", i18n: "menu_news_option_7" },

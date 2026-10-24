@@ -3,6 +3,7 @@
   if (!campaignLink) return;
   const search = document.getElementById("adoptCatalogueSearch");
   const list = document.getElementById("adoptCatalogue");
+  const head = document.getElementById("adoptCatalogueHead");
   const count = document.getElementById("adoptCatalogueCount");
   const more = document.getElementById("adoptCatalogueMore");
   const status = document.getElementById("adoptCatalogueError");
@@ -19,9 +20,15 @@
       (_, name) => values[name] ?? "",
     );
   }
-  function card(item) {
-    const article = document.createElement("article");
-    article.className = "document-library-card adopt-catalogue-card";
+  function cell(tag, text) {
+    const node = document.createElement(tag);
+    node.textContent = text;
+    return node;
+  }
+  function row(item) {
+    const tr = document.createElement("tr");
+    tr.append(cell("td", item.displayNumber || ""));
+    const picture = document.createElement("td");
     if (item.imageUrl && /^https?:\/\//i.test(item.imageUrl)) {
       const image = document.createElement("img");
       image.className = "adopt-catalogue-image";
@@ -29,34 +36,30 @@
       image.loading = "lazy";
       image.decoding = "async";
       image.src = item.imageUrl;
-      article.append(image);
+      picture.append(image);
     }
-    const title = document.createElement("h3");
-    title.textContent = value(item.title);
-    article.append(title);
-    if (value(item.description)) {
+    tr.append(picture);
+    const description = document.createElement("th");
+    description.scope = "row";
+    description.append(cell("span", value(item.title)));
+    if (
+      value(item.description) &&
+      value(item.description) !== value(item.title)
+    ) {
       const p = document.createElement("p");
       p.textContent = value(item.description);
-      article.append(p);
+      description.append(p);
     }
-    const details = document.createElement("dl");
-    details.className = "adopt-catalogue-details";
-    for (const [key, field] of [
-      ["catalogueNumber", item.displayNumber],
-      ["catalogueStatus", value(item.availability)],
-      ["catalogueAmount", value(item.adoptionAmount)],
-      ["catalogueCredit", value(item.recognition)],
-      ["catalogueExpiry", value(item.expiry)],
+    tr.append(description);
+    for (const field of [
+      value(item.availability),
+      value(item.adoptionAmount),
+      value(item.recognition),
+      value(item.expiry),
     ]) {
-      if (!field) continue;
-      const dt = document.createElement("dt"),
-        dd = document.createElement("dd");
-      dt.textContent = label(key);
-      dd.textContent = field;
-      details.append(dt, dd);
+      tr.append(cell("td", field));
     }
-    article.append(details);
-    return article;
+    return tr;
   }
   function render() {
     const locale = language() === "fr" ? "fr-CA" : "en-CA";
@@ -91,13 +94,33 @@
           .includes(query),
       ),
     );
-    list.replaceChildren(...matches.slice(0, visible).map(card));
+    if (head) {
+      const headings = document.createElement("tr");
+      for (const key of [
+        "catalogueNumber",
+        "cataloguePicture",
+        "catalogueDescription",
+        "catalogueStatus",
+        "catalogueAmount",
+        "catalogueCredit",
+        "catalogueExpiry",
+      ]) {
+        const heading = cell("th", label(key));
+        heading.scope = "col";
+        headings.append(heading);
+      }
+      head.replaceChildren(headings);
+    }
+    list.replaceChildren(...matches.slice(0, visible).map(row));
     if (!state && !matches.length) {
-      const p = document.createElement("p");
+      const message = document.createElement("tr");
+      const p = document.createElement("td");
+      p.colSpan = 7;
       p.textContent = label(
         items.length ? "catalogueNoResults" : "catalogueEmpty",
       );
-      list.append(p);
+      message.append(p);
+      list.append(message);
     }
     count.textContent = state
       ? ""

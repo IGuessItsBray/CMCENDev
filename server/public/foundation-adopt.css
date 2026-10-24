@@ -1,0 +1,73 @@
+.adopt-catalogue-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+}
+
+.adopt-catalogue-scroll:focus-visible {
+  outline: 2px solid var(--body-text);
+  outline-offset: 3px;
+}
+
+.adopt-catalogue-table {
+  width: 100%;
+  min-width: 70rem;
+  border-collapse: collapse;
+  background: var(--surface-color);
+  color: var(--body-text);
+  text-align: left;
+}
+
+.adopt-catalogue-table th,
+.adopt-catalogue-table td {
+  padding: 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.adopt-catalogue-table thead th {
+  background: var(--button-secondary-hover-bg);
+  font-weight: 700;
+}
+
+.adopt-catalogue-table tbody tr:nth-child(even) {
+  background: var(--button-secondary-hover-bg);
+}
+
+.adopt-catalogue-table tbody th {
+  min-width: 14rem;
+  font-weight: 600;
+}
+
+.adopt-catalogue-table tbody th p {
+  margin: 0.5rem 0 0;
+  font-weight: 400;
+  white-space: pre-line;
+}
+
+.adopt-catalogue-table td {
+  white-space: pre-line;
+}
+
+.adopt-catalogue-table :is(th, td):nth-child(4),
+.adopt-catalogue-table :is(th, td):nth-child(5),
+.adopt-catalogue-table :is(th, td):nth-child(7) {
+  min-width: 7rem;
+}
+
+.adopt-catalogue-table :is(th, td):nth-child(6) {
+  min-width: 10rem;
+}
+
+.adopt-catalogue-table .adopt-catalogue-image {
+  display: block;
+  width: 7.5rem;
+  height: 7.5rem;
+  aspect-ratio: auto;
+  object-fit: contain;
+  background: var(--surface-color);
+}
+.adopt-page-shell {
+  width: min(100%, 1440px);
+}

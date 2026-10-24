@@ -67,6 +67,7 @@ test('public catalogue fetches published API records and supports search, batche
       'adoptCampaignLink',
       'adoptCatalogueSearch',
       'adoptCatalogue',
+      'adoptCatalogueHead',
       'adoptCatalogueCount',
       'adoptCatalogueMore',
       'adoptCatalogueError',
@@ -79,7 +80,7 @@ test('public catalogue fetches published API records and supports search, batche
   const document = {
     documentElement: { lang: 'en' },
     getElementById: (id) => ids[id],
-    createElement: () => element(),
+    createElement: (tag) => ({ ...element(), tag }),
     addEventListener: (event, handler) => {
       listeners[event] = handler;
     },
@@ -107,6 +108,17 @@ test('public catalogue fetches published API records and supports search, batche
     '/api/adopt-displays',
   ]);
   assert.equal(ids.adoptCatalogue.children.length, 24);
+  const firstRow = ids.adoptCatalogue.children[0];
+  assert.equal(firstRow.tag, 'tr');
+  assert.equal(firstRow.children.length, 7);
+  assert.equal(firstRow.children[0].textContent, '0');
+  assert.equal(firstRow.children[2].scope, 'row');
+  assert.equal(firstRow.children[2].children[0].textContent, 'Display 0');
+  assert.equal(firstRow.children[2].children[1].textContent, 'Radio');
+  assert.equal(ids.adoptCatalogueHead.children[0].children.length, 7);
+  assert.ok(
+    ids.adoptCatalogueHead.children[0].children.every((h) => h.scope === 'col'),
+  );
   ids.adoptCatalogueMore.handlers.click();
   assert.equal(ids.adoptCatalogue.children.length, 30);
   ids.adoptCatalogueSearch.value = 'Display 29';
@@ -117,10 +129,14 @@ test('public catalogue fetches published API records and supports search, batche
   listeners.languagechange();
   assert.equal(ids.adoptCatalogue.children.length, 1);
   assert.equal(
-    ids.adoptCatalogue.children[0].children[0].textContent,
+    ids.adoptCatalogue.children[0].children[2].children[0].textContent,
     'Exposition 29',
   );
   assert.match(ids.adoptCampaignLink.href, /fr-CA/);
+  assert.equal(
+    ids.adoptCatalogueHead.children[0].children[2].textContent,
+    pageContent.fr.catalogueDescription,
+  );
 });
 test('public catalogue distinguishes an API failure from an empty published catalogue and retries', async () => {
   const ids = Object.fromEntries(
@@ -128,6 +144,7 @@ test('public catalogue distinguishes an API failure from an empty published cata
       'adoptCampaignLink',
       'adoptCatalogueSearch',
       'adoptCatalogue',
+      'adoptCatalogueHead',
       'adoptCatalogueCount',
       'adoptCatalogueMore',
       'adoptCatalogueError',
@@ -140,7 +157,7 @@ test('public catalogue distinguishes an API failure from an empty published cata
     document: {
       documentElement: { lang: 'en' },
       getElementById: (id) => ids[id],
-      createElement: () => element(),
+      createElement: (tag) => ({ ...element(), tag }),
       addEventListener() {},
     },
     fetch: async (url) => ({
@@ -156,7 +173,7 @@ test('public catalogue distinguishes an API failure from an empty published cata
   await ids.adoptCatalogueRetry.handlers.click();
   assert.equal(ids.adoptCatalogueRetry.hidden, true);
   assert.equal(
-    ids.adoptCatalogue.children[0].textContent,
+    ids.adoptCatalogue.children[0].children[0].textContent,
     pageContent.en.catalogueEmpty,
   );
 });
@@ -167,6 +184,7 @@ test('translation request failure offers retry and recovers', async () => {
       'adoptCampaignLink',
       'adoptCatalogueSearch',
       'adoptCatalogue',
+      'adoptCatalogueHead',
       'adoptCatalogueCount',
       'adoptCatalogueMore',
       'adoptCatalogueError',
@@ -180,7 +198,7 @@ test('translation request failure offers retry and recovers', async () => {
     document: {
       documentElement: { lang: 'fr' },
       getElementById: (id) => ids[id],
-      createElement: () => element(),
+      createElement: (tag) => ({ ...element(), tag }),
       addEventListener() {},
     },
     fetch: async (url) => ({
@@ -196,7 +214,7 @@ test('translation request failure offers retry and recovers', async () => {
   await ids.adoptCatalogueRetry.handlers.click();
   assert.equal(ids.adoptCatalogueRetry.hidden, true);
   assert.equal(
-    ids.adoptCatalogue.children[0].textContent,
+    ids.adoptCatalogue.children[0].children[0].textContent,
     pageContent.fr.catalogueEmpty,
   );
 });

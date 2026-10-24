@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Adopt a Display | CMCEN / RCMCE</title>
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/foundation-adopt.css" />
   </head>
   <body>
     <header id="header"></header>
     <main class="about-family-main" data-static-page="foundation-adopt">
-      <article class="about-family-shell">
+      <article class="about-family-shell adopt-page-shell">
         <header class="about-family-hero leadership-hero">
           <div class="about-family-hero-copy">
             <p class="about-family-kicker" data-page-i18n="kicker">
@@ -81,7 +82,9 @@
             </p>
           </section>
           <section id="adoptCatalogueSection" class="about-family-section">
-            <h2 data-page-i18n="catalogueHeading">Display catalogue</h2>
+            <h2 id="adoptCatalogueHeading" data-page-i18n="catalogueHeading">
+              Display catalogue
+            </h2>
             <p data-page-i18n="catalogueNote">
               Contact the Foundation to confirm adoption details.
             </p>
@@ -109,7 +112,17 @@
               </label>
             </div>
             <p id="adoptCatalogueCount" aria-live="polite"></p>
-            <div id="adoptCatalogue" class="document-library-grid"></div>
+            <div
+              class="adopt-catalogue-scroll"
+              role="region"
+              aria-labelledby="adoptCatalogueHeading"
+              tabindex="0"
+            >
+              <table class="adopt-catalogue-table">
+                <thead id="adoptCatalogueHead"></thead>
+                <tbody id="adoptCatalogue"></tbody>
+              </table>
+            </div>
             <button
               id="adoptCatalogueMore"
               class="adopt-catalogue-more"

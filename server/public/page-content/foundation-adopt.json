@@ -30,7 +30,9 @@
     "catalogueCredit": "Recognition",
     "catalogueNoResults": "No displays match this search.",
     "catalogueEmpty": "No displays are published yet. Contact the Foundation to explore adoption options.",
-    "catalogueMore": "Show more displays"
+    "catalogueMore": "Show more displays",
+    "cataloguePicture": "Picture",
+    "catalogueDescription": "Display description"
   },
   "fr": {
     "pageTitle": "Adopter une exposition | CMCEN / RCMCE",
@@ -63,6 +65,8 @@
     "catalogueCredit": "Reconnaissance",
     "catalogueNoResults": "Aucune exposition ne correspond à cette recherche.",
     "catalogueEmpty": "Aucune exposition n’est publiée pour le moment. Contactez la Fondation pour connaître les possibilités d’adoption.",
-    "catalogueMore": "Afficher d’autres expositions"
+    "catalogueMore": "Afficher d’autres expositions",
+    "cataloguePicture": "Photo",
+    "catalogueDescription": "Description de l’exposition"
   }
 }

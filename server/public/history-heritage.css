@@ -56,6 +56,19 @@
 .heritage-more[hidden] {
   display: none;
 }
+html[data-theme='dark'] .heritage-main .news-card {
+  background: var(--dark-surface-2);
+  border-color: var(--dark-border);
+  border-bottom-color: #b49753;
+  color: var(--dark-text);
+}
+html[data-theme='dark'] .heritage-main .news-card-media--crest img {
+  background: linear-gradient(
+    135deg,
+    var(--dark-surface-3),
+    var(--dark-surface)
+  );
+}
 html[data-theme='dark'] .heritage-main .news-eyebrow,
 html[data-theme='dark'] .heritage-main .news-card-date {
   color: #d3b873;

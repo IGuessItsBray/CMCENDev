@@ -41,6 +41,100 @@ secrets.
 
 ## Application Configuration
 
+### Bundled certificate fonts
+
+The application bundles the four supplied full fonts privately in
+`server/private/certificates/fonts`: `ScriptMTBold.ttf`, `bellmtbold.ttf`,
+`bellmtitalic.ttf` and `bellmt.ttf`. The existing Dockerfile copies these server
+assets into the image. Ordinary deployment needs no extra font upload, Compose
+mount, font environment entries or system-wide installation. Deploy the image
+through the existing deployment process; the templates and fonts travel with it.
+No Office, Adobe or LibreOffice runtime is required.
+
+The four `CERTIFICATE_*_PATH` variables in `.env.example` are optional absolute
+path overrides. Unset or blank uses the corresponding bundled font. A nonempty
+invalid override fails with HTTP 503 rather than silently falling back. Both
+bundled and overridden files must have the expected PostScript identity:
+`ScriptMTBold`, `BellMTBold`, `BellMTItalic` or `BellMT`. Unreadable, wrong-font,
+restricted-embedding, no-subsetting, bitmap-only or public-directory files fail
+safely. Public-path checks include symlink targets; no fonts are served by HTTP.
+
+For OS/2 table versions 0–2, conflicting embedding permissions follow the
+specification's least restrictive bit rule; version 3+ conflicts are rejected.
+See the [OpenType OS/2 specification](https://learn.microsoft.com/en-us/typography/opentype/spec/os2#fstype).
+The supplied files and embedded copyright metadata are unchanged; notices are
+preserved in `server/private/certificates/fonts/NOTICE.md`. No separate licence
+was supplied, and redistribution/server-use entitlement has not been independently
+verified. Embedding flags alone are not a licence grant.
+
+The original member template is preserved byte-for-byte at
+`server/private/certificates/retirement-member.pdf`, outside static routes.
+Its SHA-256 is
+`ab29b73b51a4342631e84c123472f60f8b80901139007a6aa1e6a7923d1268b1`.
+The generator checks that hash, removes the three nonprinting helper fields,
+replaces all three printed fields, flattens their explicit font appearances,
+and copies only the resulting printed page into a fresh PDF to discard stale
+values, orphaned appearances and document JavaScript. No generated files are
+stored on the server.
+
+The feature supports the original bilingual member and family certificates,
+including a member-first combined packet, plus a separate minimal staff tool for
+Trusted to Serve. Existing print/mail confirmations still
+cover every requested member/family certificate. Custom/historical ranks not
+recognized by the existing EN/FR catalogue require review rather than guessed
+translation. A request snapshot is used; later retirement-message edits are
+not automatically merged into it. Validate the name and dates in preview.
+
+Tests generate real member/family/award PDFs with the bundled fonts and all
+font overrides cleared, including ordinary/long accented names. Base-14 fixtures
+remain explicitly identified as mechanics-only tests. The bundled assets are
+hash-checked by tests; retain their metadata and notices when updating them.
+Review rendered and printed output against the original templates when changing
+assets or layout.
+
+For a local proof, run from `server/` (no font configuration needed):
+
+```sh
+node scripts/preview-member-certificate.js /tmp/cmcen-member-proofs
+node --test test/certificate-documents.test.js
+```
+
+The preview script creates synthetic-recipient PDFs without a database, server
+or email delivery. Real-font tests run in CI rather than being skipped.
+
+Family certificates use bundled Bell MT Italic for relationship wording and
+Bell MT Regular for the single date line. The corresponding optional overrides
+are `CERTIFICATE_BELL_MT_ITALIC_PATH` and `CERTIFICATE_BELL_MT_PATH`.
+The original family template is preserved
+at `server/private/certificates/retirement-family.pdf`, SHA-256
+`5fffafa476db9c4e69c6d9988459c9d184499fedd850b87e507f49b8b78d9864`.
+Its printed fields are `name_field`, `adj_en`, `adj_fr`, and `date`; helpers
+`cb_en` and `tb1` are removed before flattening. The generator preserves the
+template's black Bell MT Italic wording, blue Script MT name and lighter-blue
+Bell MT date. The single date retains the template's English month format;
+the date defaults to releaseDate and can be explicitly corrected by staff.
+No Acrobat JavaScript is executed and no fonts are substituted.
+
+Every new family request saves the requester's explicit
+`memberRelationshipToRecipient` answer, separately from the recipient-to-member
+relationship. Generation uses this saved answer automatically, preserving the
+original PDF script wording and punctuation. There is no neutral variant, staff
+wording selector, gender inference or per-download relationship override.
+Existing retirement edits retain their existing behavior
+of creating a new certificate request snapshot when a certificate payload is
+submitted, rather than updating an old request in place. Unsupported relationships
+require Branch staff clarification before submission. Successful generation
+audits the saved variants/date. Packets contain the member followed by family
+pages in request order, and downloads do not change printing/mailing state.
+
+```sh
+node scripts/preview-family-certificates.js /tmp/cmcen-family-proofs
+node --test test/family-certificate-documents.test.js
+```
+
+These proofs use synthetic recipients with saved fixture relationship answers
+and the original template's relationship-specific wording.
+
 ### `NODE_ENV`
 
 Controls the application runtime environment.

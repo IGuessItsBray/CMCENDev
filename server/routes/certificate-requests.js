@@ -1,4 +1,17 @@
 const express = require('express');
+const { FAMILY_WORDING_OPTIONS } = require('../config/certificate-wording');
+const {
+  generateTrustedToServe,
+  getTrustedToServeData,
+} = require('../services/trusted-to-serve-documents');
+const {
+  CertificateDocumentError,
+  generateMemberCertificate,
+  generateFamilyCertificate,
+  generateCertificatePacket,
+  getFamilyCertificateData,
+  validatePacketOptions,
+} = require('../services/certificate-documents');
 const CertificateRequest = require('../models/CertificateRequest');
 const { authMiddleware, requirePermission } = require('../middleware/auth');
 const { writeAuditLog } = require('../services/audit-log');
@@ -12,6 +25,199 @@ const {
 } = require('../services/content-snapshots');
 
 const router = express.Router();
+
+router.post(
+  '/trusted-to-serve.pdf',
+  (req, res, next) => {
+    res.set('Cache-Control', 'private, no-store');
+    res.set('X-Content-Type-Options', 'nosniff');
+    next();
+  },
+  authMiddleware,
+  requirePermission('canManageCertificateRequests'),
+  async (req, res) => {
+    if (req.query.download !== undefined && req.query.download !== '1')
+      return res
+        .status(400)
+        .json({ error: 'Invalid certificate download option' });
+    try {
+      const data = getTrustedToServeData(req.body);
+      if (req.query.download === '1' && req.body.reviewed !== true)
+        return res.status(422).json({
+          error:
+            'Review the award recipient, bilingual wording and presentation date before downloading.',
+          code: 'award_review_required',
+        });
+      const bytes = await generateTrustedToServe(req.body);
+      await writeAuditLog({
+        req,
+        action: 'content.trusted_to_serve_generated',
+        actor: req.user,
+        targetType: 'certificateDocument',
+        targetSnapshot: {
+          certificateType: 'trusted_to_serve',
+          title: 'Trusted to Serve and Fighting Spirit Award',
+        },
+        metadata: {
+          presentationDate: data.isoDate,
+          frPronoun: data.frPronoun,
+          frRankGrammar: data.frRankGrammar,
+          reviewed: req.body.reviewed === true,
+          disposition: req.query.download === '1' ? 'attachment' : 'inline',
+        },
+      });
+      res.set(
+        'Content-Disposition',
+        `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="trusted-to-serve-${data.isoDate}.pdf"`,
+      );
+      return res.type('pdf').send(bytes);
+    } catch (error) {
+      if (error instanceof CertificateDocumentError)
+        return res
+          .status(error.status)
+          .json({ error: error.message, code: error.code });
+      console.error('Could not generate Trusted to Serve certificate');
+      return res
+        .status(500)
+        .json({ error: 'Could not generate Trusted to Serve certificate' });
+    }
+  },
+);
+
+router.get(
+  '/:certificateRequestId/member.pdf',
+  (req, res, next) => {
+    res.set('Cache-Control', 'private, no-store');
+    res.set('X-Content-Type-Options', 'nosniff');
+    next();
+  },
+  authMiddleware,
+  requirePermission('canManageCertificateRequests'),
+  async (req, res) => {
+    if (!/^[a-f0-9]{24}$/iu.test(req.params.certificateRequestId)) {
+      return res.status(404).json({ error: 'Certificate request not found' });
+    }
+    if (req.query.download !== undefined && req.query.download !== '1') {
+      return res
+        .status(400)
+        .json({ error: 'Invalid certificate download option' });
+    }
+    try {
+      const certificateRequest = await CertificateRequest.findById(
+        req.params.certificateRequestId,
+      ).lean();
+      if (!certificateRequest)
+        return res.status(404).json({ error: 'Certificate request not found' });
+      const pdf = await generateMemberCertificate(certificateRequest);
+      await writeAuditLog({
+        req,
+        action: 'content.certificate_request_member_generated',
+        actor: req.user,
+        targetType: 'certificateRequest',
+        target: certificateRequest._id,
+        targetSnapshot: getCertificateRequestSnapshot(certificateRequest),
+        metadata: {
+          certificateKey: 'member',
+          disposition: req.query.download === '1' ? 'attachment' : 'inline',
+        },
+      });
+      res.set(
+        'Content-Disposition',
+        `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="retirement-member-${certificateRequest._id}.pdf"`,
+      );
+      return res.type('pdf').send(pdf);
+    } catch (error) {
+      if (error instanceof CertificateDocumentError) {
+        return res
+          .status(error.status)
+          .json({ error: error.message, code: error.code });
+      }
+      // Keep request names, private paths and font data out of server errors.
+      console.error('Could not generate member retirement certificate');
+      return res
+        .status(500)
+        .json({ error: 'Could not generate member retirement certificate' });
+    }
+  },
+);
+
+router.post(
+  [
+    '/:certificateRequestId/family/:familyIndex.pdf',
+    '/:certificateRequestId/packet.pdf',
+  ],
+  (req, res, next) => {
+    res.set('Cache-Control', 'private, no-store');
+    res.set('X-Content-Type-Options', 'nosniff');
+    next();
+  },
+  authMiddleware,
+  requirePermission('canManageCertificateRequests'),
+  async (req, res) => {
+    const isFamily = req.params.familyIndex !== undefined;
+    const index = Number(req.params.familyIndex);
+    if (
+      !/^[a-f0-9]{24}$/iu.test(req.params.certificateRequestId) ||
+      (isFamily &&
+        (!/^(0|[1-9]\d*)$/u.test(req.params.familyIndex) ||
+          !Number.isSafeInteger(index)))
+    ) {
+      return res
+        .status(404)
+        .json({ error: 'Certificate request or family recipient not found' });
+    }
+    if (req.query.download !== undefined && req.query.download !== '1')
+      return res
+        .status(400)
+        .json({ error: 'Invalid certificate download option' });
+    try {
+      const certificateRequest = await CertificateRequest.findById(
+        req.params.certificateRequestId,
+      ).lean();
+      if (!certificateRequest)
+        return res.status(404).json({ error: 'Certificate request not found' });
+      const reviewed = isFamily
+        ? [getFamilyCertificateData(certificateRequest, index, req.body)]
+        : validatePacketOptions(certificateRequest, req.body);
+      const bytes = isFamily
+        ? await generateFamilyCertificate(certificateRequest, index, req.body)
+        : await generateCertificatePacket(certificateRequest, req.body);
+      await writeAuditLog({
+        req,
+        action: isFamily
+          ? 'content.certificate_request_family_generated'
+          : 'content.certificate_request_packet_generated',
+        actor: req.user,
+        targetType: 'certificateRequest',
+        target: certificateRequest._id,
+        targetSnapshot: getCertificateRequestSnapshot(certificateRequest),
+        metadata: {
+          certificateKeys: isFamily
+            ? [`family:${index}`]
+            : ['member', ...reviewed.map((_, i) => `family:${i}`)],
+          wordings: reviewed.map((data) => data.wording),
+          certificateDate: reviewed[0]?.isoDate,
+          disposition: req.query.download === '1' ? 'attachment' : 'inline',
+        },
+      });
+      const kind = isFamily ? `family-${index}` : 'packet';
+      res.set(
+        'Content-Disposition',
+        `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="retirement-${kind}-${certificateRequest._id}.pdf"`,
+      );
+      return res.type('pdf').send(bytes);
+    } catch (error) {
+      if (error instanceof CertificateDocumentError)
+        return res
+          .status(error.status)
+          .json({ error: error.message, code: error.code });
+      console.error('Could not generate retirement certificate document');
+      return res
+        .status(500)
+        .json({ error: 'Could not generate retirement certificate document' });
+    }
+  },
+);
 
 function getCertificatePrintItems(certificateRequest) {
   const member = certificateRequest.member || {};
@@ -127,7 +333,10 @@ router.get(
         })
         .lean();
 
-      return res.json({ certificateRequests });
+      return res.json({
+        certificateRequests,
+        familyWordingOptions: FAMILY_WORDING_OPTIONS,
+      });
     } catch (error) {
       console.error('Could not load certificate requests:', error);
       return res.status(500).json({

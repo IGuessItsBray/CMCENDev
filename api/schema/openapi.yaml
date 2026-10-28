@@ -406,6 +406,209 @@ paths:
       responses:
         "200":
           description: Returns `pending`, `readyToMail`, and total `actionable` counts.
+  /api/certificate-requests/trusted-to-serve.pdf:
+    post:
+      tags: [Certificates]
+      operationId: generateTrustedToServeCertificate
+      summary: Preview or download a reviewed Trusted to Serve award.
+      description: Generates a bilingual award from fixed approved artwork and complete variable text regions using private exact fonts. All ten recipient occurrences and the presentation date are rebuilt. Requires explicit French pronoun/article choices; neither is inferred from the name. Attachment downloads additionally require reviewed=true. No nomination, request record or fulfillment-state mutation is created. Successful generation is audited and every response is private/no-store.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - in: query
+          name: download
+          schema:
+            type: string
+            enum: ["1"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [fullName, rankEn, rankFr, presentationDate, frPronoun, frRankGrammar]
+              properties:
+                fullName:
+                  type: string
+                  minLength: 1
+                  maxLength: 160
+                rankEn:
+                  type: string
+                  minLength: 1
+                  maxLength: 40
+                rankFr:
+                  type: string
+                  minLength: 1
+                  maxLength: 40
+                presentationDate:
+                  type: string
+                  format: date
+                  description: Explicit award presentation date, separate from retirement dates.
+                frPronoun:
+                  type: string
+                  enum: [il, elle]
+                frRankGrammar:
+                  type: string
+                  enum: [masculine, feminine, elided, no_article]
+                  description: Reviewed au/du, à la/de la, à l’/de l’, or à/de rank phrasing.
+                reviewed:
+                  type: boolean
+                  description: Must be true for attachment download after staff review.
+      responses:
+        "200":
+          description: Bilingual award PDF for staff review and printing.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          description: Invalid input, missing explicit French wording, missing review confirmation, unsupported glyph or text overflow.
+        "503":
+          description: Approved master or required exact private fonts unavailable.
+        "500":
+          $ref: "#/components/responses/Error"
+  /api/certificate-requests/{certificateRequestId}/member.pdf:
+    get:
+      tags: [Certificates]
+      operationId: generateMemberRetirementCertificate
+      summary: Preview or download the member retirement certificate.
+      description: Generates one bilingual member PDF from the approved template and existing request data. Family certificates are excluded. Requires configured exact licensed fonts; no font fallback is used. Generation is audited and never changes fulfillment status. Every response is private and no-store.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - $ref: "#/components/parameters/CertificateRequestId"
+        - in: query
+          name: download
+          description: Supply 1 for attachment disposition; omit for inline preview.
+          schema:
+            type: string
+            enum: ["1"]
+      responses:
+        "200":
+          description: Flattened, printable member certificate PDF.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          description: Member data, text fit, rank translation or glyph coverage requires review.
+        "503":
+          description: Approved template or exact private fonts unavailable. JSON includes a safe error and code.
+        "500":
+          $ref: "#/components/responses/Error"
+  /api/certificate-requests/{certificateRequestId}/family/{familyIndex}.pdf:
+    post:
+      tags: [Certificates]
+      operationId: generateFamilyRetirementCertificate
+      summary: Preview or download one reviewed family retirement certificate.
+      description: Generates one bilingual family PDF using the saved requester memberRelationshipToRecipient answer and the original template wording. Missing or unsupported answers fail validation; there is no inference or relationship override. The date defaults to the member release date. No fulfillment state is changed; generation is audited. All responses are private and no-store.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - $ref: "#/components/parameters/CertificateRequestId"
+        - in: path
+          name: familyIndex
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: download
+          schema:
+            type: string
+            enum: ["1"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                certificateDate:
+                  type: string
+                  format: date
+                  description: Explicit staff date correction for this output only; defaults to releaseDate.
+      responses:
+        "200":
+          description: Flattened family certificate PDF.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Request or family index not found.
+        "422":
+          description: Wording missing/unknown, invalid data, unsupported glyph or text too long to fit.
+        "503":
+          description: Approved private fonts or original template unavailable.
+  /api/certificate-requests/{certificateRequestId}/packet.pdf:
+    post:
+      tags: [Certificates]
+      operationId: generateRetirementCertificatePacket
+      summary: Preview or download the member and every family certificate.
+      description: Atomically generates a packet with the member first, then each family recipient in stored request order. Every family entry requires a supported saved memberRelationshipToRecipient answer from the requester. No per-download relationship overrides or neutral fallback. No printing/mailing state is changed. Successful generation records wording keys and certificate date in the audit log. All responses are private and no-store.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - $ref: "#/components/parameters/CertificateRequestId"
+        - in: query
+          name: download
+          schema:
+            type: string
+            enum: ["1"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                certificateDate:
+                  type: string
+                  format: date
+                  description: Reviewed date for family pages only; member service dates are unchanged.
+      responses:
+        "200":
+          description: Flattened member-plus-family PDF packet.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          description: Incomplete wording choices or invalid certificate data/text fit.
+        "503":
+          description: Approved private fonts or original templates unavailable.
   /api/certificate-requests/{certificateRequestId}/status:
     patch:
       tags: [Certificates]
@@ -4037,11 +4240,13 @@ components:
                     type: array
                     items:
                       type: object
-                      required: [relationship, fullName]
+                      required: [relationship, fullName, memberRelationshipToRecipient]
                       properties:
                         relationship: { type: string }
                         relationshipOther: { type: string }
                         fullName: { type: string }
+                        memberRelationshipToRecipient:
+                          $ref: "#/components/schemas/FamilyCertificateWording"
                   mailingAddress:
                     type: object
                     required:
@@ -4310,6 +4515,10 @@ components:
             properties:
               message: { type: string }
   schemas:
+    FamilyCertificateWording:
+      type: string
+      description: Requester's explicit retiring-member-to-recipient answer, selecting unchanged original PDF wording. Never inferred from names or the recipient-to-member relationship. Required for every family recipient and family generation.
+      enum: [husband, wife, common-law, partner, girlfriend, boyfriend, father, mother, step-father, step-mother, child, son, daughter, guardian, cousin, brother, sister, uncle, aunt]
     AdoptDisplayInput:
       type: object
       description: At least one title language is required for ordinary saves and publication. A developer may save blank draft copy; existing authorized blanks may be retained. Bilingual fields replace both language values when supplied. Availability, amount and expiry are descriptive text.

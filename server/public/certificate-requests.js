@@ -6,12 +6,15 @@
   const controller = window.CertificateRequests.mount({
     root,
     api: (path, options) =>
-      CMCENUtils.apiJson(path, {
-        ...options,
-        token,
-        cache: "no-store",
-        redirectOnUnauthorized: true,
-      }),
+      (options.parseJson === false ? CMCENUtils.apiFetch : CMCENUtils.apiJson)(
+        path,
+        {
+          ...options,
+          token,
+          cache: "no-store",
+          redirectOnUnauthorized: true,
+        },
+      ),
     onDenied() {
       controller.dispose();
       root.textContent = window.translate("certificate_requests_access_denied");

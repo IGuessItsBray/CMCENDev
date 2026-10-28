@@ -16,6 +16,10 @@
     let requests = [],
       loadFailed = false,
       messageKey = "";
+    let preview = null;
+    const documentUrls = new Set();
+    const familyReviews = new Map();
+    let familyWordingOptions = [];
     const toolbar = document.createElement("div");
     toolbar.className = "certificate-requests-toolbar";
     const status = document.createElement("p");
@@ -32,7 +36,13 @@
     toolbar.append(status, refresh);
     const list = document.createElement("div");
     list.className = "certificate-requests-list";
-    root.replaceChildren(toolbar, list);
+    const awardRoot = document.createElement("section");
+    root.replaceChildren(toolbar, awardRoot, list);
+    const awardController = window.TrustedToServe?.mount({
+      root: awardRoot,
+      api,
+      onDenied,
+    });
     function getCertificateRequestsLocale() {
       return CMCENUtils.getCurrentLocale();
     }
@@ -181,6 +191,249 @@
       action.addEventListener("click", () => advance(request));
       return action;
     }
+    function createMemberDocumentAction(request, download) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = download
+        ? "certificate-member-download"
+        : "certificate-member-preview-button";
+      button.textContent = translate(
+        download ? "certificate_member_download" : "certificate_member_preview",
+      );
+      button.dataset.actionable = String(
+        request.certificateType === "retirement",
+      );
+      button.addEventListener("click", () => memberDocument(request, download));
+      return button;
+    }
+    function familyReview(request) {
+      const signature = JSON.stringify([
+        request.member?.fullName,
+        request.member?.releaseDate,
+        request.familyMembers,
+      ]);
+      let review = familyReviews.get(request._id);
+      if (!review || review.signature !== signature) {
+        if (review) invalidatePreview(request);
+        review = {
+          signature,
+          certificateDate: String(request.member?.releaseDate || "").slice(
+            0,
+            10,
+          ),
+        };
+        familyReviews.set(request._id, review);
+      }
+      return review;
+    }
+    function invalidatePreview(request) {
+      if (preview?.requestId === request._id) {
+        if (documentUrls.delete(preview.url)) URL.revokeObjectURL(preview.url);
+        preview = null;
+      }
+    }
+    function familyDocumentAction(request, download, index) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className =
+        index === undefined
+          ? download
+            ? "certificate-packet-download"
+            : "certificate-packet-preview"
+          : download
+            ? "certificate-family-download"
+            : "certificate-family-preview";
+      button.textContent = translate(
+        index === undefined
+          ? download
+            ? "certificate_packet_download"
+            : "certificate_packet_preview"
+          : download
+            ? "certificate_family_download"
+            : "certificate_family_preview",
+      );
+      button.dataset.actionable = String(
+        request.certificateType === "retirement",
+      );
+      button.addEventListener("click", () =>
+        memberDocument(
+          request,
+          download,
+          index === undefined ? "packet" : "family",
+          index,
+        ),
+      );
+      return button;
+    }
+    function createFamilyDocumentControls(request) {
+      const container = document.createElement("fieldset");
+      container.className = "certificate-family-documents";
+      const legend = document.createElement("legend");
+      legend.textContent = translate("certificate_family_documents");
+      const hint = document.createElement("p");
+      hint.textContent = translate("certificate_family_wording_hint");
+      container.append(legend, hint);
+      const review = familyReview(request);
+      const dateLabel = document.createElement("label");
+      dateLabel.textContent = translate("certificate_family_date");
+      const date = document.createElement("input");
+      date.type = "date";
+      date.className = "certificate-family-date";
+      date.value = review.certificateDate;
+      date.addEventListener("change", () => {
+        review.certificateDate = date.value;
+        invalidatePreview(request);
+        render();
+      });
+      dateLabel.append(date);
+      container.append(dateLabel);
+      (request.familyMembers || []).forEach((family, index) => {
+        const row = document.createElement("div");
+        row.className = "certificate-family-document-row";
+        const recipient = document.createElement("strong");
+        recipient.textContent = `${family.fullName || "—"} — ${family.relationship === "other" ? family.relationshipOther || "—" : getCertificateRelationshipLabel(family.relationship)}`;
+        const label = document.createElement("p");
+        label.className = "certificate-family-saved-wording";
+        const language = getCertificateRequestsLocale().startsWith("fr")
+          ? "fr"
+          : "en";
+        const variant = familyWordingOptions.find(
+          (item) => item.key === family.memberRelationshipToRecipient,
+        );
+        label.textContent = variant
+          ? translate("certificate_family_saved_wording", {
+              wording: variant[language],
+            })
+          : translate("certificate_family_wording_required");
+        row.append(
+          recipient,
+          label,
+          familyDocumentAction(request, false, index),
+          familyDocumentAction(request, true, index),
+        );
+        container.append(row);
+      });
+      container.append(
+        familyDocumentAction(request, false),
+        familyDocumentAction(request, true),
+      );
+      return container;
+    }
+    async function memberDocument(
+      request,
+      download,
+      kind = "member",
+      familyIndex,
+    ) {
+      if (
+        disposed ||
+        busy ||
+        confirming ||
+        loading ||
+        loadFailed ||
+        !requests.includes(request) ||
+        request.certificateType !== "retirement"
+      )
+        return;
+      const review = familyReview(request);
+      if (
+        kind !== "member" &&
+        (kind === "family"
+          ? !familyWordingOptions.some(
+              (item) =>
+                item.key ===
+                request.familyMembers[familyIndex]
+                  ?.memberRelationshipToRecipient,
+            )
+          : request.familyMembers.some(
+              (family) =>
+                !familyWordingOptions.some(
+                  (item) => item.key === family.memberRelationshipToRecipient,
+                ),
+            ))
+      ) {
+        messageKey = "certificate_family_wording_required";
+        update();
+        return;
+      }
+      busy = true;
+      messageKey =
+        kind === "member"
+          ? "certificate_member_generating"
+          : "certificate_document_generating";
+      update();
+      try {
+        const suffix =
+          kind === "family" ? `family/${familyIndex}.pdf` : `${kind}.pdf`;
+        const response = await api(
+          `/api/certificate-requests/${encodeURIComponent(request._id)}/${suffix}${download ? "?download=1" : ""}`,
+          {
+            parseJson: false,
+            ...(kind === "member"
+              ? {}
+              : {
+                  method: "POST",
+                  json: true,
+                  body: {
+                    certificateDate: review.certificateDate,
+                  },
+                }),
+            timeoutMs: null,
+            signal: lifecycle.signal,
+          },
+        );
+        const blob = await response.blob();
+        if (disposed) return;
+        if (blob.type !== "application/pdf")
+          throw new Error("Invalid certificate response");
+        const url = URL.createObjectURL(blob);
+        documentUrls.add(url);
+        if (download) {
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `retirement-${kind}${kind === "family" ? `-${familyIndex}` : ""}-${request._id.replace(/[^a-f0-9]/gi, "")}.pdf`;
+          document.body.append(link);
+          link.click();
+          link.remove();
+          setTimeout(() => {
+            if (documentUrls.delete(url)) URL.revokeObjectURL(url);
+          }, 1000);
+        } else {
+          if (preview && documentUrls.delete(preview.url))
+            URL.revokeObjectURL(preview.url);
+          preview = { requestId: request._id, url, kind };
+        }
+        messageKey =
+          kind === "member"
+            ? "certificate_member_generated"
+            : "certificate_document_generated";
+      } catch (error) {
+        if (disposed) return;
+        if (error.status === 403) {
+          onDenied();
+          return;
+        }
+        let code;
+        try {
+          code = (await error.data?.json())?.code;
+        } catch {
+          /* Use the generic recoverable error. */
+        }
+        messageKey =
+          code === "certificate_fonts_unavailable"
+            ? "certificate_member_fonts_unavailable"
+            : code === "certificate_wording_required"
+              ? "certificate_family_wording_required"
+              : code === "certificate_data_invalid"
+                ? "certificate_member_data_invalid"
+                : "certificate_member_document_error";
+      } finally {
+        if (!disposed) {
+          busy = false;
+          render();
+        }
+      }
+    }
     function update() {
       status.textContent = translate(
         loading
@@ -201,6 +454,11 @@
           confirming ||
           loadFailed ||
           button.dataset.actionable !== "true";
+      for (const input of [
+        ...list.querySelectorAll("input"),
+        ...list.querySelectorAll("select"),
+      ])
+        input.disabled = loading || busy || confirming || loadFailed;
     }
     function render() {
       if (disposed) return;
@@ -230,6 +488,21 @@
         if (!Array.isArray(data.certificateRequests))
           throw new Error("Invalid worklist");
         requests = data.certificateRequests;
+        for (const request of requests) familyReview(request);
+        familyWordingOptions = Array.isArray(data.familyWordingOptions)
+          ? data.familyWordingOptions
+          : [];
+        for (const id of familyReviews.keys())
+          if (!requests.some((request) => request._id === id))
+            familyReviews.delete(id);
+        if (
+          preview &&
+          !requests.some((request) => request._id === preview.requestId)
+        ) {
+          if (documentUrls.delete(preview.url))
+            URL.revokeObjectURL(preview.url);
+          preview = null;
+        }
       } catch (error) {
         if (disposed) return;
         requests = [];
@@ -364,6 +637,32 @@
         titleGroup,
         createCertificateRequestAction(certificateRequest),
       );
+      const documentActions = document.createElement("div");
+      documentActions.className = "certificate-member-actions";
+      documentActions.append(
+        createMemberDocumentAction(certificateRequest, false),
+        createMemberDocumentAction(certificateRequest, true),
+      );
+      const scope = document.createElement("p");
+      scope.textContent = translate("certificate_member_document_scope");
+      documentActions.append(scope);
+      if (certificateRequest.familyMembers?.length)
+        documentActions.append(
+          createFamilyDocumentControls(certificateRequest),
+        );
+      if (preview?.requestId === certificateRequest._id) {
+        const frame = document.createElement("iframe");
+        frame.className = "certificate-member-preview";
+        frame.title = translate(
+          preview.kind === "family"
+            ? "certificate_family_preview"
+            : preview.kind === "packet"
+              ? "certificate_packet_preview"
+              : "certificate_member_preview",
+        );
+        frame.src = preview.url;
+        documentActions.append(frame);
+      }
 
       const requestDetails = document.createElement("div");
       requestDetails.className = "certificate-request-details-grid";
@@ -476,7 +775,7 @@
         ),
       );
 
-      card.append(header, sections);
+      card.append(header, documentActions, sections);
       return card;
     }
 
@@ -486,11 +785,18 @@
     const ready = load();
     return {
       ready,
-      canNavigate: () => !busy && !confirming,
-      hasUnsavedChanges: () => busy || confirming,
+      canNavigate: () =>
+        !busy && !confirming && awardController?.canNavigate() !== false,
+      hasUnsavedChanges: () =>
+        busy || confirming || awardController?.hasUnsavedChanges() === true,
       dispose() {
         disposed = true;
         lifecycle.abort();
+        awardController?.dispose();
+        for (const url of documentUrls) URL.revokeObjectURL(url);
+        documentUrls.clear();
+        preview = null;
+        familyReviews.clear();
         requests = [];
         root.replaceChildren();
       },

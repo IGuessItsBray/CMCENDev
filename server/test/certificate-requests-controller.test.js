@@ -15,6 +15,7 @@ const deferred = () => {
 };
 const request = (status = 'pending') => ({
   _id: 'request/1',
+  certificateType: 'retirement',
   status,
   member: { fullName: 'Sample member' },
   familyMembers: [
@@ -22,6 +23,7 @@ const request = (status = 'pending') => ({
       fullName: 'Sample family',
       relationship: 'other',
       relationshipOther: 'Step-parent',
+      memberRelationshipToRecipient: 'husband',
     },
   ],
 });
@@ -38,6 +40,17 @@ function setup({
   const calls = [],
     checklists = [];
   let denied = 0;
+  const urls = [],
+    revoked = [],
+    downloads = [];
+  document.body = new Element('body');
+  document.createElement = (tag) => {
+    const element = new Element(tag);
+    element.click = () =>
+      downloads.push({ href: element.href, download: element.download });
+    element.remove = () => {};
+    return element;
+  };
   const window = {
     translate: (key, values) => key + (values ? JSON.stringify(values) : ''),
     CMCENUtils: {
@@ -62,7 +75,20 @@ function setup({
       path.join(__dirname, '../public/certificate-requests-controller.js'),
       'utf8',
     ),
-    { window, document, AbortController },
+    {
+      window,
+      document,
+      AbortController,
+      setTimeout: (fn) => fn(),
+      URL: {
+        createObjectURL: () => {
+          const url = `blob:certificate-${urls.length}`;
+          urls.push(url);
+          return url;
+        },
+        revokeObjectURL: (url) => revoked.push(url),
+      },
+    },
   );
   const controller = window.CertificateRequests.mount({
     api: async (url, options) => {
@@ -74,6 +100,9 @@ function setup({
         return { certificateRequest: { status: options.body.status } };
       }
       return {
+        familyWordingOptions: [
+          { key: 'husband', en: "your husband's", fr: 'de votre mari' },
+        ],
         certificateRequests: requests.filter(
           (record) => record.status !== 'mailed',
         ),
@@ -100,8 +129,174 @@ function setup({
     refresh,
     status,
     denied: () => denied,
+    urls,
+    revoked,
+    downloads,
+    preview: () => root.querySelector('.certificate-member-preview-button'),
+    download: () => root.querySelector('.certificate-member-download'),
   };
 }
+
+test('family and packet actions use saved answers immediately and isolate previews per request', async () => {
+  const page = setup({
+    requests: [request(), { ...request(), _id: 'request/2' }],
+    api: (url) =>
+      /family\/|packet\.pdf/.test(url)
+        ? Promise.resolve({ blob: async () => ({ type: 'application/pdf' }) })
+        : undefined,
+  });
+  await page.controller.ready;
+  assert.equal(page.root.querySelector('.certificate-family-wording'), null);
+  await page.document.fire('languagechange');
+  const date = page.root.querySelector('.certificate-family-date');
+  date.value = '2026-08-01';
+  await date.fire('change');
+  await page.root.querySelector('.certificate-family-preview').fire('click');
+  assert.equal(page.calls.at(-1).method, 'POST');
+  assert.equal(page.calls.at(-1).body.wording, undefined);
+  assert.equal(page.calls.at(-1).body.certificateDate, '2026-08-01');
+  assert.match(page.calls.at(-1).url, /request%2F1\/family\/0\.pdf$/);
+  assert.ok(page.root.querySelector('iframe'));
+  const changed = page.root.querySelector('.certificate-family-date');
+  changed.value = '2026-08-02';
+  await changed.fire('change');
+  assert.equal(page.root.querySelector('iframe'), null);
+  assert.equal(page.revoked.length, 1);
+  await page.root.querySelector('.certificate-packet-download').fire('click');
+  assert.equal(page.calls.at(-1).body.familyWordings, undefined);
+  assert.match(page.calls.at(-1).url, /packet\.pdf\?download=1$/);
+  assert.equal(
+    page.calls.some((call) => call.method === 'PATCH'),
+    false,
+  );
+});
+
+test('family duplicate clicks, denied requests and recoverable errors clean up correctly', async () => {
+  const pending = deferred();
+  let fail = true;
+  const page = setup({
+    api: (url) =>
+      url.includes('/family/')
+        ? fail
+          ? pending.promise
+          : Promise.resolve({ blob: async () => ({ type: 'application/pdf' }) })
+        : undefined,
+  });
+  await page.controller.ready;
+  const active = page.root
+    .querySelector('.certificate-family-preview')
+    .fire('click');
+  await page.root.querySelector('.certificate-family-preview').fire('click');
+  await page.root.querySelector('.certificate-packet-download').fire('click');
+  assert.equal(page.calls.length, 2);
+  assert.equal(
+    page.root.querySelector('.certificate-family-date').disabled,
+    true,
+  );
+  pending.reject(
+    Object.assign(new Error('Needs review'), {
+      status: 422,
+      data: { json: async () => ({ code: 'certificate_wording_required' }) },
+    }),
+  );
+  await active;
+  assert.equal(page.status(), 'certificate_family_wording_required');
+  assert.equal(
+    page.root.querySelector('.certificate-family-date').disabled,
+    false,
+  );
+  fail = false;
+  await page.root.querySelector('.certificate-family-preview').fire('click');
+  assert.equal(page.status(), 'certificate_document_generated');
+  page.controller.dispose();
+  assert.deepEqual(page.revoked, page.urls);
+});
+
+test('member preview/download uses authenticated binary API, guards repeated clicks and never advances fulfillment', async () => {
+  const pending = deferred();
+  const page = setup({
+    api: (url) => (url.includes('member.pdf') ? pending.promise : undefined),
+  });
+  await page.controller.ready;
+  const first = page.preview().fire('click');
+  await page.preview().fire('click');
+  await page.download().fire('click');
+  await page.document.fire('languagechange');
+  assert.equal(page.calls.length, 2);
+  assert.equal(
+    page.calls[1].url,
+    '/api/certificate-requests/request%2F1/member.pdf',
+  );
+  assert.equal(page.calls[1].parseJson, false);
+  assert.equal(page.preview().disabled, true);
+  assert.equal(page.controller.canNavigate(), false);
+  pending.resolve({ blob: async () => ({ type: 'application/pdf' }) });
+  await first;
+  assert.equal(page.root.querySelector('iframe').src, 'blob:certificate-0');
+  assert.equal(page.controller.canNavigate(), true);
+  await page.download().fire('click');
+  assert.match(page.calls.at(-1).url, /member\.pdf\?download=1$/);
+  assert.equal(page.downloads.length, 1);
+  assert.equal(
+    page.calls.some((call) => call.method === 'PATCH'),
+    false,
+  );
+  assert.equal(page.checklists.length, 0);
+  page.controller.dispose();
+  assert.deepEqual(page.revoked.sort(), page.urls.sort());
+});
+
+test('member generation errors recover and missing-font errors have an actionable message', async () => {
+  let failed = true;
+  const page = setup({
+    api: (url) => {
+      if (!url.includes('member.pdf')) return undefined;
+      return failed
+        ? Promise.reject(
+            Object.assign(new Error('Missing fonts'), {
+              status: 503,
+              data: {
+                json: async () => ({ code: 'certificate_fonts_unavailable' }),
+              },
+            }),
+          )
+        : Promise.resolve({ blob: async () => ({ type: 'application/pdf' }) });
+    },
+  });
+  await page.controller.ready;
+  await page.preview().fire('click');
+  assert.equal(page.status(), 'certificate_member_fonts_unavailable');
+  assert.equal(page.preview().disabled, false);
+  failed = false;
+  await page.preview().fire('click');
+  assert.equal(page.status(), 'certificate_member_generated');
+  assert.ok(page.root.querySelector('iframe'));
+});
+
+test('denied and disposed document requests cannot retain private previews or late results', async () => {
+  const denied = setup({
+    api: (url) =>
+      url.includes('member.pdf')
+        ? Promise.reject(Object.assign(new Error('Denied'), { status: 403 }))
+        : undefined,
+  });
+  await denied.controller.ready;
+  await denied.preview().fire('click');
+  assert.equal(denied.denied(), 1);
+  assert.equal(denied.root.children.length, 0);
+  const pending = deferred();
+  const page = setup({
+    api: (url) => (url.includes('member.pdf') ? pending.promise : undefined),
+  });
+  await page.controller.ready;
+  const request = page.preview().fire('click');
+  page.controller.dispose();
+  assert.equal(page.calls.at(-1).signal.aborted, true);
+  pending.resolve({ blob: async () => ({ type: 'application/pdf' }) });
+  await request;
+  assert.equal(page.urls.length, 0);
+  assert.equal(page.root.children.length, 0);
+});
 
 test('printing confirms every recipient, then mailing completes and removes the request', async () => {
   const page = setup();

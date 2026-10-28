@@ -173,10 +173,12 @@ function certificateRequestPayload() {
     familyMembers: [
       {
         relationship: 'son',
+        memberRelationshipToRecipient: 'mother',
         fullName: 'Jordan Example',
       },
       {
         relationship: 'daughter',
+        memberRelationshipToRecipient: 'mother',
         fullName: 'Taylor Example',
       },
     ],
@@ -4687,6 +4689,7 @@ describe('retirement message lifecycle', () => {
       certificateRequest.familyMembers.map((member) => member.relationship),
       ['son', 'daughter'],
     );
+    assert.deepEqual(certificateRequest.familyMembers.map(member => member.memberRelationshipToRecipient), ['mother','mother']);
 
     const auditLog = await AuditLog.findOne({
       action: 'content.certificate_request_created',
@@ -4714,6 +4717,55 @@ describe('retirement message lifecycle', () => {
     assert.match(rejected.body.error, /mailing address field is required/);
     assert.equal(await RetirementMessage.countDocuments(), 0);
     assert.equal(await CertificateRequest.countDocuments(), 0);
+  });
+
+  test('certificate requester relationship answers roundtrip through create and existing edit snapshot behavior', async () => {
+    const contributor = await createUser({ role: 'contributor' });
+    const loggedIn = await login(contributor);
+    const auth = bearer(loggedIn.body.token);
+    for (const missingOrUnsupported of [undefined, 'member_name', 'other']) {
+      const certificate = certificateRequestPayload();
+      certificate.familyMembers[0].memberRelationshipToRecipient =
+        missingOrUnsupported;
+      await request(app)
+        .post('/api/retirement-messages')
+        .set('Authorization', auth)
+        .send({ ...retirementPayload(), certificateRequest: certificate })
+        .expect(400);
+    }
+    assert.equal(await CertificateRequest.countDocuments(), 0);
+    assert.equal(await RetirementMessage.countDocuments(), 0);
+    const submitted = await request(app)
+      .post('/api/retirement-messages')
+      .set('Authorization', auth)
+      .send({
+        ...retirementPayload(),
+        certificateRequest: certificateRequestPayload(),
+      })
+      .expect(201);
+    const first = await CertificateRequest.findById(
+      submitted.body.certificateRequest.id,
+    ).lean();
+    const certificate = certificateRequestPayload();
+    certificate.familyMembers[0].memberRelationshipToRecipient = 'father';
+    const edited = await request(app)
+      .patch(`/api/retirement-messages/${first.source.id}`)
+      .set('Authorization', auth)
+      .send({ ...retirementPayload(), certificateRequest: certificate })
+      .expect(200);
+    const second = await CertificateRequest.findById(
+      edited.body.certificateRequest.id,
+    ).lean();
+    assert.equal(
+      second.familyMembers[0].memberRelationshipToRecipient,
+      'father',
+    );
+    assert.equal(second.familyMembers[0].relationship, 'son');
+    assert.notEqual(String(second._id), String(first._id));
+    assert.deepEqual(
+      await CertificateRequest.findById(first._id).lean(),
+      first,
+    );
   });
 
   test('requires every certificate confirmation before mailing and audits fulfillment', async () => {

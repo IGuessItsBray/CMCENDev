@@ -119,6 +119,30 @@ const CERTIFICATE_FAMILY_RELATIONSHIPS = Object.freeze([
   ["other", "certificate_relationship_other"],
 ]);
 
+// The original PDF's supported member-to-recipient choices. This is a separate
+// answer from the recipient-to-member relationship above; never invert names.
+const CERTIFICATE_MEMBER_RELATIONSHIPS = Object.freeze([
+  "husband",
+  "wife",
+  "common-law",
+  "partner",
+  "girlfriend",
+  "boyfriend",
+  "father",
+  "mother",
+  "step-father",
+  "step-mother",
+  "child",
+  "son",
+  "daughter",
+  "guardian",
+  "cousin",
+  "brother",
+  "sister",
+  "uncle",
+  "aunt",
+]);
+
 function renderRetirementDeleteAction() {
   retirementSubmitForm
     .querySelector("[data-action='delete-retirement-submission']")
@@ -433,6 +457,20 @@ function getCertificateRetireeName() {
 }
 
 function updateCertificateFamilyCardContext(card) {
+  const memberLabel = card.querySelector(
+    "[data-certificate-member-relationship-label]",
+  );
+  if (memberLabel)
+    memberLabel.textContent = translate(
+      "certificate_member_relationship_question",
+      {
+        member: getCertificateRetireeName(),
+        recipient:
+          card
+            .querySelector("[data-certificate-family-full-name]")
+            ?.value.trim() || translate("certificate_family_member_generic"),
+      },
+    );
   const context = card.querySelector("[data-certificate-family-context]");
   const relationship = card.querySelector(
     "[data-certificate-family-relationship]",
@@ -559,6 +597,24 @@ function updateCertificateFamilyCardLanguage(card, index) {
     .forEach((option) => {
       option.textContent = translate(option.dataset.certificateRelationshipKey);
     });
+  const memberRelationship = card.querySelector(
+    "[data-certificate-member-relationship]",
+  );
+  if (memberRelationship) {
+    memberRelationship.options[0].textContent = translate("select_option");
+    Array.from(memberRelationship.options)
+      .slice(1)
+      .forEach((option) => {
+        option.textContent = translate(
+          `certificate_member_relationship_${option.value.replace(/-/g, "_")}`,
+        );
+      });
+  }
+  const help = card.querySelector(
+    "[data-certificate-member-relationship-help]",
+  );
+  if (help)
+    help.textContent = translate("certificate_member_relationship_help");
 
   updateCertificateFamilyCardContext(card);
 }
@@ -649,6 +705,9 @@ function createCertificateFamilyMemberCard() {
   fullName.autocomplete = "name";
   fullName.required = true;
   fullName.dataset.certificateFamilyFullName = "true";
+  fullName.addEventListener("input", () =>
+    updateCertificateFamilyCardContext(card),
+  );
   fullNameField.append(fullNameLabel, fullName);
 
   const otherField = document.createElement("div");
@@ -669,7 +728,27 @@ function createCertificateFamilyMemberCard() {
   other.dataset.certificateFamilyOther = "true";
   otherField.append(otherLabel, other);
 
-  grid.append(relationshipField, fullNameField, otherField);
+  const memberField = document.createElement("div");
+  memberField.className = "event-field event-field-wide";
+  const memberLabel = document.createElement("label");
+  memberLabel.htmlFor = `certificateMemberRelationship${sequence}`;
+  memberLabel.dataset.certificateMemberRelationshipLabel = "true";
+  const memberRelationship = document.createElement("select");
+  memberRelationship.id = memberLabel.htmlFor;
+  memberRelationship.name = `certificateFamilyMembers[${sequence}][memberRelationshipToRecipient]`;
+  memberRelationship.dataset.certificateMemberRelationship = "true";
+  memberRelationship.required = true;
+  for (const value of ["", ...CERTIFICATE_MEMBER_RELATIONSHIPS]) {
+    const option = document.createElement("option");
+    option.value = value;
+    memberRelationship.append(option);
+  }
+  const memberHelp = document.createElement("p");
+  memberHelp.id = `certificateMemberRelationshipHelp${sequence}`;
+  memberHelp.dataset.certificateMemberRelationshipHelp = "true";
+  memberRelationship.setAttribute("aria-describedby", memberHelp.id);
+  memberField.append(memberLabel, memberRelationship, memberHelp);
+  grid.append(relationshipField, fullNameField, otherField, memberField);
   card.append(header, context, grid);
   updateCertificateFamilyCardLanguage(
     card,
@@ -868,6 +947,9 @@ function buildCertificateRequestData() {
     relationshipOther: card.querySelector("[data-certificate-family-other]")
       ?.value,
     fullName: card.querySelector("[data-certificate-family-full-name]")?.value,
+    memberRelationshipToRecipient: card.querySelector(
+      "[data-certificate-member-relationship]",
+    )?.value,
   }));
 
   return {

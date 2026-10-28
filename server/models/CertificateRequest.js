@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { FAMILY_WORDING_OPTIONS } = require('../config/certificate-wording');
 const {
   CERTIFICATE_FAMILY_RELATIONSHIPS,
   CERTIFICATE_REQUEST_STATUSES,
@@ -6,6 +7,11 @@ const {
 
 const certificateFamilyMemberSchema = new mongoose.Schema(
   {
+    memberRelationshipToRecipient: {
+      type: String,
+      enum: FAMILY_WORDING_OPTIONS.map((item) => item.key),
+      required: true,
+    },
     relationship: {
       type: String,
       enum: CERTIFICATE_FAMILY_RELATIONSHIPS,

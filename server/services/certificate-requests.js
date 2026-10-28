@@ -5,6 +5,7 @@ const {
 const { cleanString, parseBoolean, parseDateOnly } = require('./content-utils');
 
 const ALLOWED_RANK_LANGUAGES = ['en', 'fr'];
+const { FAMILY_WORDING_OPTIONS } = require('../config/certificate-wording');
 
 function isRecord(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -20,6 +21,9 @@ function getCleanCertificateRequestPayload(value) {
     ? request.familyMembers.filter(isRecord).map((familyMember) => ({
         relationship: cleanString(familyMember.relationship),
         relationshipOther: cleanString(familyMember.relationshipOther),
+        memberRelationshipToRecipient: cleanString(
+          familyMember.memberRelationshipToRecipient,
+        ),
         fullName: cleanString(familyMember.fullName),
       }))
     : [];
@@ -98,6 +102,13 @@ function validateCertificateRequestPayload(payload) {
   }
 
   for (const familyMember of familyMembers) {
+    if (
+      !FAMILY_WORDING_OPTIONS.some(
+        (item) => item.key === familyMember.memberRelationshipToRecipient,
+      )
+    ) {
+      return 'Specify how the retiring member is related to each family certificate recipient using a supported certificate relationship';
+    }
     if (!CERTIFICATE_FAMILY_RELATIONSHIPS.includes(familyMember.relationship)) {
       return 'A certificate family relationship is invalid';
     }

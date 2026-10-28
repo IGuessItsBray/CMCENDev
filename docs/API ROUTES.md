@@ -554,6 +554,77 @@ flow blocks in document order, ignoring desktop grid row positions.
 
 Mounted at `/api/certificate-requests`.
 
+`POST /api/certificate-requests/trusted-to-serve.pdf` requires
+`canManageCertificateRequests` and accepts `fullName` (160 chars maximum),
+`rankEn`/`rankFr` (40 chars each), `presentationDate` (`YYYY-MM-DD`),
+`frPronoun` (`il|elle`) and `frRankGrammar`
+(`masculine|feminine|elided|no_article`). French choices have no inferred defaults.
+The date is the award presentation date, independent of retirement data. Omit
+the query for inline preview; `?download=1` additionally requires
+`reviewed: true` after staff review. Output is private/no-store, and successful
+generation records `content.trusted_to_serve_generated` with date/wording/review
+metadata. It creates no nomination/request record and changes no fulfillment
+status. This is a minimal staff certificate tool, not a nomination workflow.
+Invalid/ambiguous input, unsupported glyphs and text overflow return 422; missing
+master/fonts return 503. It rebuilds both paragraphs, both dedication lines,
+central recipient and date using exact configured fonts. No old recipient is
+covered or retained underneath. See `docs/TRUSTED TO SERVE GENERATION.md` for the
+one-time source preparation and review evidence.
+
+`GET /api/certificate-requests/:certificateRequestId/member.pdf` requires
+`canManageCertificateRequests` and generates the member retirement certificate
+from the private approved bilingual template. Omit the query for inline preview,
+or supply `?download=1` for an attachment. It excludes family certificates and
+does not change printing/mailing state. Successful generation is audited as
+`content.certificate_request_member_generated`; all responses use
+`Cache-Control: private, no-store`. Missing/wrong fonts or an unavailable/changed
+template return 503; invalid data, unsupported custom rank, missing glyphs or
+illegible text fit return 422. IDs must be 24 hexadecimal characters; invalid or
+missing IDs return 404. Unknown download values return 400.
+
+Recipient text combines the catalogue rank in `member.rankLanguage`,
+`member.fullName`, and selected decorations in the existing configured order.
+Both printed service-date fields use `member.cafEnrollmentDate` through
+`member.releaseDate`, formatted with explicit English/French months and UTC
+calendar dates. The C&E enrollment date, needed-by date, trade, mailing address
+and DWD preference are not printed in the member template. Generation does not
+run Acrobat JavaScript. See `docs/CONFIG.md` for font configuration and the
+current fidelity limitation.
+
+Family generation uses the same permission and private/no-store response policy:
+
+- `POST /api/certificate-requests/:certificateRequestId/family/:familyIndex.pdf`
+  accepts `{ "certificateDate": "2026-08-01" }` or `{}`.
+  The zero-based family index refers only to this request;
+  `certificateDate` is optional and defaults to `member.releaseDate`.
+- `POST /api/certificate-requests/:certificateRequestId/packet.pdf` accepts
+  `{ "certificateDate": "2026-08-01" }` or `{}`.
+  Each saved family recipient must have a supported `memberRelationshipToRecipient`
+  answer. The output is member first, then all family pages. Family
+  date corrections do not alter member service dates or any stored data.
+
+Both support `?download=1`; otherwise disposition is inline. Unknown/ambiguous
+wording returns 422 with `code: certificate_wording_required`, invalid family
+indices return 404, and unavailable exact fonts/templates return 503. Successful
+generation is audited as `content.certificate_request_family_generated` or
+`content.certificate_request_packet_generated`, including selected wording keys
+and output date. Downloads never advance fulfillment.
+
+The worklist includes `familyWordingOptions` (the 19 original PDF keys and EN/FR
+phrases) to display the saved selection, with no staff wording selector. The
+requester answers `familyMembers[].memberRelationshipToRecipient` separately
+from the existing recipient-to-member `relationship`; neither is inferred from
+names or the other relationship. New POST/PATCH retirement submissions containing
+a certificate request require this answer for every recipient. The existing
+retirement edit lifecycle still creates a new certificate request snapshot when
+a certificate payload is submitted; this does not amend older requests in place.
+Missing or unsupported answers fail validation; there is no neutral fallback. Generation bodies
+cannot override saved relationships with `wording` or `familyWordings`.
+All relationship phrases reproduce the original PDF script exactly, including
+its existing `you son's` typo and punctuation. Unsupported relations need
+clarification with Branch staff; approximate mappings are never substituted.
+Long wording that cannot fit legibly is rejected.
+
 Certificate request fulfillment is separate from editorial review because the
 records include private mailing and family information. Access requires
 `canManageCertificateRequests` (`certificates.manage`), granted by default to

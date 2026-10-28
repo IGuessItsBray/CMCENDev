@@ -20023,3 +20023,78 @@ html[data-theme='dark'] .analytics-meter::before {
 :is(.admin-work-zone-tab, .event-management-tab).is-active::after {
   display: none;
 }
+.certificate-member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+}
+.certificate-member-actions p {
+  width: 100%;
+  margin: 0;
+}
+.certificate-member-preview {
+  width: 100%;
+  height: 520px;
+  border: 1px solid currentColor;
+}
+.certificate-family-documents {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.certificate-family-documents > label,
+.certificate-family-document-row {
+  width: 100%;
+}
+.certificate-family-document-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid currentColor;
+}
+.certificate-family-document-row strong {
+  width: 100%;
+}
+.certificate-family-documents label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.trusted-award-panel {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid currentColor;
+  border-radius: 12px;
+}
+.trusted-award-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+.trusted-award-form > p,
+.trusted-award-preview-root,
+.trusted-award-review-label {
+  width: 100%;
+}
+.trusted-award-form > label:not(.trusted-award-review-label) {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.trusted-award-form input,
+.trusted-award-form select {
+  max-width: 100%;
+}
+.trusted-award-review-label {
+  display: flex;
+  gap: 8px;
+  align-items: start;
+}

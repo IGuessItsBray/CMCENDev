@@ -164,9 +164,8 @@ function certificateRequestPayload() {
       rankLanguage: 'en',
       decorations: ['CD'],
       lastUnit: 'CMBG HQ & Sigs',
-      cafEnrollmentDate: '2001-09-01',
       releaseDate: '2026-08-01',
-      ceBranchEnrollmentDate: '',
+      ceBranchEnrollmentDate: '2001-09-01',
       neededByDate: '2026-07-15',
       dwdParadeRequested: false,
     },
@@ -4683,7 +4682,7 @@ describe('retirement message lifecycle', () => {
       certificateRequest.member.tradeRole,
       RETIREMENT_TRADE_ROLES[0],
     );
-    assert.equal(certificateRequest.member.ceBranchEnrollmentDate, null);
+    assert.equal(certificateRequest.member.ceBranchEnrollmentDate.toISOString(), '2001-09-01T00:00:00.000Z');
     assert.equal(certificateRequest.member.dwdParadeRequested, false);
     assert.deepEqual(
       certificateRequest.familyMembers.map((member) => member.relationship),
@@ -4699,11 +4698,11 @@ describe('retirement message lifecycle', () => {
     assert.equal(auditLog.metadata.status, 'pending');
   });
 
-  test('requires every certificate field other than the C&E enrollment date', async () => {
+  test('requires a complete certificate mailing address apart from optional line 2', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const contributorLogin = await login(contributor);
     const invalidCertificateRequest = certificateRequestPayload();
-    invalidCertificateRequest.mailingAddress.line2 = '';
+    invalidCertificateRequest.mailingAddress.line1 = '';
 
     const rejected = await request(app)
       .post('/api/retirement-messages')
@@ -4714,9 +4713,42 @@ describe('retirement message lifecycle', () => {
       })
       .expect(400);
 
-    assert.match(rejected.body.error, /mailing address field is required/);
+    assert.match(rejected.body.error, /mailing address fields are missing/);
     assert.equal(await RetirementMessage.countDocuments(), 0);
     assert.equal(await CertificateRequest.countDocuments(), 0);
+  });
+
+  test('retirement submission persists blank optional fields and family requests and generates a C&E-only packet', async () => {
+    const contributor = await createUser({role:'contributor'});
+    const editor = await createUser({role:'editor'});
+    const loginResult = await login(contributor);
+    const certificate = certificateRequestPayload();
+    certificate.member.fullName = 'Alex Example';
+    certificate.member.decorations = [];
+    certificate.member.ceBranchEnrollmentDate = '2005-06-01';
+    certificate.mailingAddress.line2 = '';
+    const submitted = await request(app).post('/api/retirement-messages')
+      .set('Authorization',bearer(loginResult.body.token))
+      .send({...retirementPayload(),retiree:{...retirementPayload().retiree,postNominals:''},certificateRequest:certificate}).expect(201);
+    const saved = await CertificateRequest.findById(submitted.body.certificateRequest.id).lean();
+    assert.deepEqual(saved.member.decorations,[]);
+    assert.equal(saved.mailingAddress.line2,'');
+    assert.equal(saved.member.cafEnrollmentDate,undefined);
+    assert.equal(saved.member.ceBranchEnrollmentDate.toISOString(),'2005-06-01T00:00:00.000Z');
+    assert.equal(saved.familyMembers.length,2);
+    const retirement = await RetirementMessage.findById(saved.source.id).lean();
+    assert.equal(retirement.retiree.postNominals,'');
+    const editorLogin = await login(editor);
+    const packet = await request(app).post(`/api/certificate-requests/${saved._id}/packet.pdf`)
+      .set('Authorization',bearer(editorLogin.body.token)).send({}).expect(200);
+    const pdf = await require('pdf-lib').PDFDocument.load(packet.body);
+    assert.equal(pdf.getPageCount(),3);
+    assert.equal((await CertificateRequest.findById(saved._id)).status,'pending');
+    for (const member of [{...certificate.member,ceBranchEnrollmentDate:'',cafEnrollmentDate:'1980-01-01'}, {...certificate.member,ceBranchEnrollmentDate:'2027-01-01'}]) {
+      await request(app).post('/api/retirement-messages').set('Authorization',bearer(loginResult.body.token))
+        .send({...retirementPayload(),certificateRequest:{...certificate,member}}).expect(400);
+    }
+    assert.equal(await CertificateRequest.countDocuments(),1);
   });
 
   test('certificate requester relationship answers roundtrip through create and existing edit snapshot behavior', async () => {

@@ -172,6 +172,9 @@
         viewportPadding,
         Math.min(triggerRect.left, window.innerWidth - width - viewportPadding),
       );
+      popover.style.setProperty("--date-popover-left", `${left}px`);
+      popover.style.setProperty("--date-popover-width", `${width}px`);
+      popover.style.setProperty("--date-popover-max-height", "none");
       const spaceAbove = triggerRect.top - viewportPadding;
       const spaceBelow =
         window.innerHeight - triggerRect.bottom - viewportPadding;
@@ -214,6 +217,11 @@
         );
       }
       picker.classList.toggle("is-open", isOpen);
+      popover.classList.toggle("is-open", isOpen);
+      // A transformed/overflowing form ancestor must not become the containing
+      // block for viewport coordinates or clip the calendar at the right edge.
+      if (isOpen) document.body.append(popover);
+      else if (popover.parentElement === document.body) picker.append(popover);
       trigger.setAttribute("aria-expanded", String(isOpen));
       if (!isOpen) return;
 
@@ -376,6 +384,12 @@
 
     const stopPickerPropagation = (event) => event.stopPropagation();
     const closeOnDocumentClick = () => setOpen(false);
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape" && picker.classList.contains("is-open")) {
+        setOpen(false);
+        trigger.focus();
+      }
+    };
     const closeWhenAnotherPickerOpens = (event) => {
       if (event.detail?.picker !== picker) {
         setOpen(false);
@@ -389,7 +403,9 @@
     };
 
     picker.addEventListener("click", stopPickerPropagation);
+    popover.addEventListener("click", stopPickerPropagation);
     document.addEventListener("click", closeOnDocumentClick);
+    document.addEventListener("keydown", closeOnEscape);
     window.addEventListener("cmcen:picker-open", closeWhenAnotherPickerOpens);
     window.addEventListener("resize", positionOnResize);
     window.addEventListener("scroll", positionOnScroll, true);
@@ -408,13 +424,16 @@
     });
     picker.destroy = () => {
       document.removeEventListener("click", closeOnDocumentClick);
+      document.removeEventListener("keydown", closeOnEscape);
       window.removeEventListener(
         "cmcen:picker-open",
         closeWhenAnotherPickerOpens,
       );
       window.removeEventListener("resize", positionOnResize);
-      window.removeEventListener("scroll", positionOnScroll, true);
+      window.removeEventListener("scroll", positionOnScroll, { capture: true });
       picker.removeEventListener("click", stopPickerPropagation);
+      popover.removeEventListener("click", stopPickerPropagation);
+      popover.remove();
       picker.remove();
     };
 

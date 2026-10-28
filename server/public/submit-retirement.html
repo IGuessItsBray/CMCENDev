@@ -8,11 +8,7 @@
     <title data-i18n="retirement_submit_page_title">
       Submit Retirement Message | CMCEN / RCMCE
     </title>
-    <link
-      rel="icon"
-      type="image/png"
-      href="/images/favicon_crest.png"
-    />
+    <link rel="icon" type="image/png" href="/images/favicon_crest.png" />
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/submission-pages.css" />
   </head>
@@ -757,7 +753,7 @@
                         class="certificate-decorations-field event-field-wide"
                       >
                         <legend data-i18n="certificate_decorations">
-                          Decorations and post-nominals
+                          Decorations and post-nominals (optional)
                         </legend>
                         <p data-i18n="certificate_decorations_hint">
                           Select every decoration and post-nominal that should
@@ -1067,22 +1063,6 @@
                     <div class="event-details-grid certificate-dates-grid">
                       <div class="event-field">
                         <label
-                          for="certificateCafEnrollmentDate"
-                          data-i18n="certificate_caf_enrollment_date"
-                        >
-                          CAF enrollment date
-                        </label>
-                        <input
-                          id="certificateCafEnrollmentDate"
-                          name="certificateCafEnrollmentDate"
-                          type="date"
-                          required
-                          disabled
-                        />
-                      </div>
-
-                      <div class="event-field">
-                        <label
                           for="certificateReleaseDate"
                           data-i18n="certificate_release_date"
                         >
@@ -1109,9 +1089,11 @@
                           name="certificateCeEnrollmentDate"
                           type="date"
                           disabled
+                          required
                         />
                         <small data-i18n="certificate_ce_enrollment_hint">
-                          Required only if the member remustered.
+                          The certificate service period starts when the member
+                          joined the C&amp;E Branch.
                         </small>
                       </div>
 
@@ -1224,7 +1206,7 @@
                           for="certificateAddressLine2"
                           data-i18n="certificate_address_line_2"
                         >
-                          Address line 2
+                          Address line 2 (optional)
                         </label>
                         <input
                           id="certificateAddressLine2"
@@ -1232,7 +1214,6 @@
                           type="text"
                           maxlength="160"
                           autocomplete="address-line2"
-                          required
                           disabled
                         />
                       </div>

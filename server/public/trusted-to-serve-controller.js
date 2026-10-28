@@ -2,13 +2,17 @@
 (() => {
   function mount({ root, api, onDenied }) {
     const lifecycle = new AbortController(),
-      urls = new Set();
+      urls = new Set(),
+      datePickers = new Set();
     let disposed = false,
       busy = false,
       previewUrl = null,
       message = "";
     let draft = {
-      fullName: "",
+      firstName: "",
+      lastName: "",
+      postNominals: "",
+      fullRankEn: "",
       rankEn: "",
       rankFr: "",
       presentationDate: "",
@@ -34,6 +38,8 @@
     }
     function render() {
       if (disposed) return;
+      for (const picker of datePickers) picker.destroy();
+      datePickers.clear();
       controls = [];
       const panel = document.createElement("details");
       panel.className = "trusted-award-panel";
@@ -49,6 +55,18 @@
       status = document.createElement("p");
       status.setAttribute("role", "status");
       form.append(status);
+      const groups = {};
+      for (const key of ["recipient", "ranks", "presentation"]) {
+        const fieldset = document.createElement("fieldset");
+        fieldset.className = "trusted-award-group";
+        const legend = document.createElement("legend");
+        legend.textContent = t(`trusted_award_group_${key}`);
+        const fields = document.createElement("div");
+        fields.className = "trusted-award-fields";
+        fieldset.append(legend, fields);
+        form.append(fieldset);
+        groups[key] = fields;
+      }
       let review;
       const changed = () => {
         draft.reviewed = false;
@@ -58,16 +76,39 @@
         update();
       };
       for (const [key, type, maxLength] of [
-        ["fullName", "text", 160],
+        ["firstName", "text", 100],
+        ["lastName", "text", 100],
+        ["postNominals", "text", 120],
         ["rankEn", "text", 40],
         ["rankFr", "text", 40],
         ["presentationDate", "date"],
       ]) {
         const label = document.createElement("label");
+        label.className = `trusted-award-field trusted-award-field-${key}`;
         label.textContent = t(`trusted_award_${key}`);
+        if (type === "date" && window.CMCENDateTimePicker?.create) {
+          const picker = window.CMCENDateTimePicker.create({
+            name: key,
+            date: draft[key],
+            includeTime: false,
+            label: t(`trusted_award_${key}`),
+            placeholder: t(`trusted_award_${key}`),
+            clearLabel: t("timers_picker_clear"),
+            doneLabel: t("timers_picker_done"),
+            onInput: ({ date }) => {
+              draft[key] = date;
+              changed();
+            },
+          });
+          label.append(picker);
+          groups.presentation.append(label);
+          datePickers.add(picker);
+          controls.push(picker.querySelector(".cmcen-date-time-trigger"));
+          continue;
+        }
         const input = document.createElement("input");
         input.type = type;
-        input.required = true;
+        input.required = key !== "postNominals";
         input.className = `trusted-award-${key}`;
         input.value = draft[key];
         if (maxLength) input.maxLength = maxLength;
@@ -76,14 +117,46 @@
           changed();
         });
         label.append(input);
-        form.append(label);
+        groups[
+          ["firstName", "lastName", "postNominals"].includes(key)
+            ? "recipient"
+            : key === "presentationDate"
+              ? "presentation"
+              : "ranks"
+        ].append(label);
         controls.push(input);
       }
+      const rankLabel = document.createElement("label");
+      rankLabel.className =
+        "trusted-award-field trusted-award-field-fullRankEn";
+      rankLabel.textContent = t("trusted_award_fullRankEn");
+      const fullRank = document.createElement("select");
+      fullRank.className = "trusted-award-fullRankEn";
+      fullRank.required = true;
+      const noRank = document.createElement("option");
+      noRank.value = "";
+      noRank.textContent = t("select_option");
+      fullRank.append(noRank);
+      for (const rank of window.CMCENRanks.catalogue) {
+        const option = document.createElement("option");
+        option.value = rank.en;
+        option.textContent = rank.en;
+        fullRank.append(option);
+      }
+      fullRank.value = draft.fullRankEn;
+      fullRank.addEventListener("change", () => {
+        draft.fullRankEn = fullRank.value;
+        changed();
+      });
+      rankLabel.append(fullRank);
+      groups.ranks.append(rankLabel);
+      controls.push(fullRank);
       for (const [key, values] of [
         ["frPronoun", ["il", "elle"]],
         ["frRankGrammar", ["masculine", "feminine", "elided", "no_article"]],
       ]) {
         const label = document.createElement("label");
+        label.className = "trusted-award-field";
         label.textContent = t(`trusted_award_${key}`);
         const select = document.createElement("select");
         select.required = true;
@@ -102,7 +175,7 @@
           changed();
         });
         label.append(select);
-        form.append(label);
+        groups.presentation.append(label);
         controls.push(select);
       }
       const reviewLabel = document.createElement("label");
@@ -119,6 +192,8 @@
       reviewLabel.append(review, reviewText);
       form.append(reviewLabel);
       controls.push(review);
+      const actions = document.createElement("div");
+      actions.className = "certificate-document-actions";
       for (const download of [false, true]) {
         const button = document.createElement("button");
         button.type = "button";
@@ -129,9 +204,12 @@
           download ? "trusted_award_download" : "trusted_award_preview",
         );
         button.addEventListener("click", () => generate(download));
-        form.append(button);
+        button.className +=
+          " admin-work-zone-button" + (download ? "" : " is-secondary");
+        actions.append(button);
         controls.push(button);
       }
+      form.append(actions);
       previewRoot = document.createElement("div");
       previewRoot.className = "trusted-award-preview-root";
       if (previewUrl) showPreview();
@@ -234,6 +312,8 @@
       dispose() {
         disposed = true;
         lifecycle.abort();
+        for (const picker of datePickers) picker.destroy();
+        datePickers.clear();
         for (const url of urls) URL.revokeObjectURL(url);
         urls.clear();
         previewUrl = null;

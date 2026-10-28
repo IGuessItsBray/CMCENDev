@@ -25,7 +25,7 @@ async function main() {
       rank: 'Warrant Officer',
       rankLanguage: 'fr',
       decorations: ['MMM', 'CD'],
-      cafEnrollmentDate: '2000-02-29',
+      ceBranchEnrollmentDate: '2000-02-29',
       releaseDate: '2026-08-01',
     },
     familyMembers: [

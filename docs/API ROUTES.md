@@ -584,9 +584,10 @@ missing IDs return 404. Unknown download values return 400.
 
 Recipient text combines the catalogue rank in `member.rankLanguage`,
 `member.fullName`, and selected decorations in the existing configured order.
-Both printed service-date fields use `member.cafEnrollmentDate` through
+Decorations/post-nominals and mailing address line 2 are optional. CAF enrollment
+is not collected or used as a fallback. Both printed service-date fields use `member.ceBranchEnrollmentDate` through
 `member.releaseDate`, formatted with explicit English/French months and UTC
-calendar dates. The C&E enrollment date, needed-by date, trade, mailing address
+calendar dates. The needed-by date, trade, mailing address
 and DWD preference are not printed in the member template. Generation does not
 run Acrobat JavaScript. See `docs/CONFIG.md` for font configuration and the
 current fidelity limitation.

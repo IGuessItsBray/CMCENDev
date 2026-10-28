@@ -83,7 +83,10 @@ Trusted to Serve. Existing print/mail confirmations still
 cover every requested member/family certificate. Custom/historical ranks not
 recognized by the existing EN/FR catalogue require review rather than guessed
 translation. A request snapshot is used; later retirement-message edits are
-not automatically merged into it. Validate the name and dates in preview.
+not automatically merged into it. Validate the name and dates in preview. Member service dates start only at the
+required C&E Branch entry date and end at the release date; CAF entry is not
+collected or used as a fallback. Post-nominals/decorations and mailing address
+line 2 are optional.
 
 Tests generate real member/family/award PDFs with the bundled fonts and all
 font overrides cleared, including ordinary/long accented names. Base-14 fixtures

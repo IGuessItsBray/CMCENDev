@@ -42,9 +42,8 @@ test('missing, ambiguous, invalid or unsupported data cannot silently generate a
     { rank: '' },
     { rank: 'Unverified Historical Rank' },
     { rankLanguage: '' },
-    { decorations: [] },
     { decorations: ['FAKE'] },
-    { cafEnrollmentDate: null },
+    { ceBranchEnrollmentDate: null },
     { releaseDate: '2026-02-30' },
     { releaseDate: '2026-08-01T23:00:00.000Z' },
     { releaseDate: '1990-01-01' },
@@ -61,6 +60,22 @@ test('missing, ambiguous, invalid or unsupported data cannot silently generate a
       }),
     { status: 422 },
   );
+});
+
+test('member service dates use only C&E entry, with optional post-nominals and no trailing separator', () => {
+  const request = memberRequest({
+    decorations: [],
+    ceBranchEnrollmentDate: '2005-06-01',
+    cafEnrollmentDate: '1980-01-01',
+  });
+  const data = getMemberCertificateData(request);
+  assert.equal(data.recipient, 'Adjudant Émilie Anne-Marie D’Amour');
+  assert.equal(data.datesEn, '01 June 2005 — 01 August 2026');
+  assert.equal(data.datesFr, '01 juin 2005 — 01 août 2026');
+  delete request.member.ceBranchEnrollmentDate;
+  assert.throws(() => getMemberCertificateData(request), {
+    code: 'certificate_data_invalid',
+  });
 });
 
 test('missing or wrong fonts fail safely without any production fallback', async () => {

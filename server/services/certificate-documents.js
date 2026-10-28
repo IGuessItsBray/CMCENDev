@@ -109,19 +109,18 @@ function getMemberCertificateData(request) {
     invalid('The certificate rank needs staff review before generation.');
   if (
     !Array.isArray(member.decorations) ||
-    !member.decorations.length ||
     member.decorations.some((value) => !CERTIFICATE_DECORATIONS.includes(value))
   )
     invalid('Valid certificate decorations are required.');
   const decorations = CERTIFICATE_DECORATIONS.filter((value) =>
     member.decorations.includes(value),
   );
-  const start = dateOnly(member.cafEnrollmentDate);
+  const start = dateOnly(member.ceBranchEnrollmentDate);
   const end = dateOnly(member.releaseDate);
   if (end < start)
-    invalid('The release date must follow the CAF enrollment date.');
+    invalid('The release date must follow the C&E Branch enrollment date.');
   return {
-    recipient: `${catalogueRank[member.rankLanguage]} ${name}, ${decorations.join(', ')}`,
+    recipient: `${catalogueRank[member.rankLanguage]} ${name}${decorations.length ? `, ${decorations.join(', ')}` : ''}`,
     datesEn: `${formatDate(start, 'en')} — ${formatDate(end, 'en')}`,
     datesFr: `${formatDate(start, 'fr')} — ${formatDate(end, 'fr')}`,
   };

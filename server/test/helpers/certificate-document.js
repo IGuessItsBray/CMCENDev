@@ -17,7 +17,7 @@ function memberRequest(overrides = {}) {
       rank: 'Warrant Officer',
       rankLanguage: 'fr',
       decorations: ['CD', 'MMM'],
-      cafEnrollmentDate: '2000-02-29',
+      ceBranchEnrollmentDate: '2000-02-29',
       releaseDate: new Date('2026-08-01T00:00:00.000Z'),
       ...overrides,
     },

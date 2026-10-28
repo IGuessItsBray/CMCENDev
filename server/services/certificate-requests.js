@@ -11,6 +11,12 @@ function isRecord(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
+function parseCertificateDate(value) {
+  const date = parseDateOnly(value);
+  if (date) date.setUTCHours(0, 0, 0, 0);
+  return date;
+}
+
 function getCleanCertificateRequestPayload(value) {
   const request = isRecord(value) ? value : {};
   const member = isRecord(request.member) ? request.member : {};
@@ -39,10 +45,11 @@ function getCleanCertificateRequestPayload(value) {
         ? [...new Set(member.decorations.map(cleanString).filter(Boolean))]
         : [],
       lastUnit: cleanString(member.lastUnit),
-      cafEnrollmentDate: parseDateOnly(member.cafEnrollmentDate),
-      releaseDate: parseDateOnly(member.releaseDate),
-      ceBranchEnrollmentDate: parseDateOnly(member.ceBranchEnrollmentDate),
-      neededByDate: parseDateOnly(member.neededByDate),
+      releaseDate: parseCertificateDate(member.releaseDate),
+      ceBranchEnrollmentDate: parseCertificateDate(
+        member.ceBranchEnrollmentDate,
+      ),
+      neededByDate: parseCertificateDate(member.neededByDate),
       dwdParadeRequested: parseBoolean(member.dwdParadeRequested),
     },
     familyMembers,
@@ -73,12 +80,11 @@ function validateCertificateRequestPayload(payload) {
   }
 
   if (
-    !member.decorations.length ||
     member.decorations.some(
       (decoration) => !CERTIFICATE_DECORATIONS.includes(decoration),
     )
   ) {
-    return 'Select at least one valid decoration or post-nominal';
+    return 'A certificate decoration or post-nominal is invalid';
   }
 
   if (!member.lastUnit) {
@@ -86,11 +92,14 @@ function validateCertificateRequestPayload(payload) {
   }
 
   if (
-    !member.cafEnrollmentDate ||
+    !member.ceBranchEnrollmentDate ||
     !member.releaseDate ||
     !member.neededByDate
   ) {
     return 'All required certificate dates must be provided';
+  }
+  if (member.ceBranchEnrollmentDate > member.releaseDate) {
+    return 'The release date must follow the C&E Branch enrollment date';
   }
 
   if (!payload.hasDwdParadeRequested) {
@@ -127,13 +136,12 @@ function validateCertificateRequestPayload(payload) {
 
   if (
     !mailingAddress.line1 ||
-    !mailingAddress.line2 ||
     !mailingAddress.city ||
     !mailingAddress.province ||
     !mailingAddress.postalCode ||
     !mailingAddress.country
   ) {
-    return 'Every certificate mailing address field is required';
+    return 'Required certificate mailing address fields are missing';
   }
 
   return '';

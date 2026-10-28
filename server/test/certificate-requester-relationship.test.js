@@ -151,7 +151,7 @@ function payload(answer) {
       rankLanguage: 'en',
       decorations: ['CD'],
       lastUnit: 'Unit',
-      cafEnrollmentDate: '2000-01-01',
+      ceBranchEnrollmentDate: '2000-01-01',
       releaseDate: '2026-08-01',
       neededByDate: '2026-07-01',
       dwdParadeRequested: false,

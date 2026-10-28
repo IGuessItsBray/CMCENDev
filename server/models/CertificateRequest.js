@@ -109,13 +109,7 @@ const certificateRequestSchema = new mongoose.Schema(
 
       decorations: {
         type: [String],
-        required: true,
-        validate: {
-          validator(value) {
-            return Array.isArray(value) && value.length > 0;
-          },
-          message: 'At least one decoration or post-nominal is required',
-        },
+        default: [],
       },
 
       lastUnit: {
@@ -125,11 +119,6 @@ const certificateRequestSchema = new mongoose.Schema(
         maxlength: 200,
       },
 
-      cafEnrollmentDate: {
-        type: Date,
-        required: true,
-      },
-
       releaseDate: {
         type: Date,
         required: true,
@@ -137,7 +126,7 @@ const certificateRequestSchema = new mongoose.Schema(
 
       ceBranchEnrollmentDate: {
         type: Date,
-        default: null,
+        required: true,
       },
 
       neededByDate: {
@@ -166,7 +155,7 @@ const certificateRequestSchema = new mongoose.Schema(
 
       line2: {
         type: String,
-        required: true,
+        default: '',
         trim: true,
         maxlength: 160,
       },

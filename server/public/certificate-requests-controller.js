@@ -19,6 +19,7 @@
     let preview = null;
     const documentUrls = new Set();
     const familyReviews = new Map();
+    const datePickers = new Set();
     let familyWordingOptions = [];
     const toolbar = document.createElement("div");
     toolbar.className = "certificate-requests-toolbar";
@@ -285,7 +286,26 @@
         invalidatePreview(request);
         render();
       });
-      dateLabel.append(date);
+      if (window.CMCENDateTimePicker?.create) {
+        const picker = window.CMCENDateTimePicker.create({
+          name: `certificateDate-${request._id}`,
+          date: review.certificateDate,
+          includeTime: false,
+          label: translate("certificate_family_date"),
+          clearLabel: translate("timers_picker_clear"),
+          doneLabel: translate("timers_picker_done"),
+          onInput: ({ date: value }) => {
+            review.certificateDate = value;
+            invalidatePreview(request);
+            render();
+          },
+        });
+        picker.querySelectorAll("button").forEach((button) => {
+          button.dataset.actionable = "true";
+        });
+        datePickers.add(picker);
+        dateLabel.append(picker);
+      } else dateLabel.append(date);
       container.append(dateLabel);
       (request.familyMembers || []).forEach((family, index) => {
         const row = document.createElement("div");
@@ -313,10 +333,13 @@
         );
         container.append(row);
       });
-      container.append(
+      const actions = document.createElement("div");
+      actions.className = "certificate-document-actions";
+      actions.append(
         familyDocumentAction(request, false),
         familyDocumentAction(request, true),
       );
+      container.append(actions);
       return container;
     }
     async function memberDocument(
@@ -462,6 +485,8 @@
     }
     function render() {
       if (disposed) return;
+      for (const picker of datePickers) picker.destroy();
+      datePickers.clear();
       list.replaceChildren();
       if (!loading && !loadFailed) {
         for (const request of requests)
@@ -700,10 +725,6 @@
       dates.className = "certificate-request-details-grid";
       dates.append(
         createCertificateRequestDetail(
-          "certificate_caf_enrollment_date",
-          formatCertificateRequestDate(member.cafEnrollmentDate),
-        ),
-        createCertificateRequestDetail(
           "certificate_release_date",
           formatCertificateRequestDate(member.releaseDate),
         ),
@@ -793,6 +814,8 @@
         disposed = true;
         lifecycle.abort();
         awardController?.dispose();
+        for (const picker of datePickers) picker.destroy();
+        datePickers.clear();
         for (const url of documentUrls) URL.revokeObjectURL(url);
         documentUrls.clear();
         preview = null;

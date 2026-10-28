@@ -1,0 +1,186 @@
+.certificate-member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+}
+.certificate-member-actions p {
+  width: 100%;
+  margin: 0;
+}
+.certificate-member-preview {
+  width: 100%;
+  height: 520px;
+  border: 1px solid currentColor;
+}
+.certificate-family-documents {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.certificate-family-documents > label,
+.certificate-family-document-row {
+  width: 100%;
+}
+.certificate-family-document-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid currentColor;
+}
+.certificate-family-document-row strong {
+  width: 100%;
+}
+.certificate-family-documents label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.trusted-award-panel {
+  margin-bottom: 28px;
+  padding: clamp(16px, 3vw, 28px);
+  border: 1px solid var(--admin-border, var(--branch-grey-200, #d5dae0));
+  border-radius: 12px;
+  background: var(--admin-surface, var(--white, #fff));
+  color: var(--admin-text, var(--ink, #1d2838));
+}
+.trusted-award-panel > summary {
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+.trusted-award-form {
+  display: grid;
+  gap: 24px;
+  margin-top: 20px;
+}
+.trusted-award-form > p {
+  margin: 0;
+  max-width: 82ch;
+  line-height: 1.65;
+  color: var(--admin-muted, #526072);
+}
+.trusted-award-group {
+  margin: 0;
+  padding: 20px;
+  min-width: 0;
+  border: 1px solid var(--admin-border, var(--branch-grey-200, #d5dae0));
+  border-radius: 8px;
+}
+.trusted-award-group legend {
+  padding: 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+.trusted-award-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.trusted-award-panel .trusted-award-field {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  min-width: 0;
+}
+.trusted-award-field-fullRankEn,
+.trusted-award-field-postNominals,
+.trusted-award-field-presentationDate {
+  grid-column: 1 / -1;
+}
+.trusted-award-panel input:not([type='checkbox']),
+.trusted-award-panel select,
+.certificate-family-documents input[type='date'] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--branch-grey-300, #bac2cc);
+  border-radius: 6px;
+  background: var(--admin-surface, var(--white, #fff));
+  color: var(--admin-text, var(--ink, #1d2838));
+  font: inherit;
+  font-weight: 500;
+}
+.trusted-award-panel input:focus-visible,
+.trusted-award-panel select:focus-visible {
+  outline: 3px solid rgba(197, 141, 35, 0.25);
+  outline-offset: 2px;
+  border-color: var(--gold-600);
+}
+.trusted-award-review-label {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+  margin: 0;
+  padding: 16px;
+  background: color-mix(in srgb, var(--gold-500) 10%, transparent);
+  border-radius: 8px;
+  line-height: 1.6;
+}
+.trusted-award-review-label input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 3px 0 0;
+}
+.certificate-document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.certificate-document-actions button {
+  min-height: 44px;
+}
+.certificate-family-documents {
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+  border-color: var(--admin-border, var(--branch-grey-200, #d5dae0));
+  border-radius: 8px;
+}
+.certificate-family-documents > p,
+.certificate-family-document-row p {
+  margin: 0;
+  line-height: 1.6;
+}
+.certificate-family-documents > label {
+  max-width: 24rem;
+  gap: 8px;
+}
+.certificate-family-document-row {
+  padding-top: 20px;
+  gap: 12px;
+  border-color: var(--admin-border, var(--branch-grey-200, #d5dae0));
+}
+@media (max-width: 640px) {
+  .trusted-award-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .trusted-award-group,
+  .certificate-family-documents {
+    padding: 16px;
+  }
+  .certificate-document-actions button {
+    width: 100%;
+  }
+}
+html[data-theme='dark'] .trusted-award-panel,
+html[data-theme='dark'] .trusted-award-panel input:not([type='checkbox']),
+html[data-theme='dark'] .trusted-award-panel select {
+  background: var(--surface, #162334);
+  color: var(--text, #f2f4f7);
+  border-color: var(--border, #425066);
+}

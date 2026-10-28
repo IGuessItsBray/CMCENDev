@@ -225,6 +225,29 @@
       Object.entries(aliases[language]).some(([alias, id]) => id === rank.id && normalize(alias) === normalize(value)));
     return matches.length === 1 ? matches[0] : null;
   }
+  // Official CAF rank tables; sources are recorded in the certificate generation guide.
+  // Unqualified Private/Aviator do not imply a trained/basic qualification.
+  const abbreviations = Object.freeze({
+    private: ['Pte', 'Sdt'], aviator: ['Avr', 'Avr'],
+    sailor_third_class: ['S3', 'Mat 3'], sailor_second_class: ['S2', 'Mat 2'],
+    sailor_first_class: ['S1', 'Mat 1'], master_sailor: ['MS', 'Matc'],
+    corporal: ['Cpl', 'Cpl'], master_corporal: ['MCpl', 'Cplc'], sergeant: ['Sgt', 'Sgt'],
+    petty_officer_second_class: ['PO 2', 'M 2'], petty_officer_first_class: ['PO 1', 'M 1'],
+    chief_petty_officer_second_class: ['CPO 2', 'PM 2'], chief_petty_officer_first_class: ['CPO 1', 'PM 1'],
+    warrant_officer: ['WO', 'Adj'], master_warrant_officer: ['MWO', 'Adjum'], chief_warrant_officer: ['CWO', 'Adjuc'],
+    officer_cadet: ['OCdt', 'Élof'], naval_cadet: ['NCdt', 'Aspm'], second_lieutenant: ['2Lt', 'Slt'],
+    acting_sub_lieutenant: ['A/SLt', 'Ens 2'], lieutenant: ['Lt', 'Lt'], sub_lieutenant: ['SLt', 'Ens 1'],
+    captain: ['Capt', 'Capt'], lieutenant_navy: ['Lt(N)', 'Ltv'], major: ['Maj', 'Maj'],
+    lieutenant_commander: ['LCdr', 'Capc'], lieutenant_colonel: ['LCol', 'Lcol'], commander: ['Cdr', 'Capf'],
+    colonel: ['Col', 'Col'], captain_navy: ['Capt(N)', 'Capv'], brigadier_general: ['BGen', 'Bgén'],
+    commodore: ['Cmdre', 'Cmdre'], major_general: ['MGen', 'Mgén'], rear_admiral: ['RAdm', 'Cam'],
+    lieutenant_general: ['LGen', 'Lgén'], vice_admiral: ['VAdm', 'Vam'], general: ['Gen', 'Gén'], admiral: ['Adm', 'Am'],
+  });
+  function abbreviation(value, language) {
+    const rank = resolve(value, language);
+    if (!rank) return null;
+    return abbreviations[rank.id]?.[language === 'en' ? 0 : 1] || rank[language];
+  }
   function initialValues(person = {}, legacyField = 'rank') {
     const en = String(person.ranks?.en || person[legacyField] || '');
     const fr = String(person.ranks?.fr || '');
@@ -264,5 +287,5 @@
       });
     }
   }
-  return Object.freeze({ catalogue, resolve, initialValues, validateSelection, editPayload, bind });
+  return Object.freeze({ catalogue, resolve, abbreviation, initialValues, validateSelection, editPayload, bind });
 }));

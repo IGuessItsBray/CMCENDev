@@ -370,7 +370,10 @@ test('missing family fonts fail safely and the configured route uses exact famil
 test('award generation enforces permissions, explicit wording, input validation and review before download', async () => {
   const target = '/api/certificate-requests/trusted-to-serve.pdf';
   const input = {
-    fullName: 'Alex Tremblay',
+    firstName: 'Alex',
+    lastName: 'Tremblay',
+    fullRankEn: 'Aviator',
+    postNominals: '',
     rankEn: 'Aviator',
     rankFr: 'Aviateur',
     presentationDate: '2026-11-13',
@@ -431,7 +434,10 @@ test('repeated award previews/downloads audit safe details without creating requ
         .post('/api/certificate-requests/trusted-to-serve.pdf' + query)
         .set('Authorization', `Bearer ${editorToken}`)
         .send({
-          fullName: 'Émilie D’Amour',
+          firstName: 'Émilie',
+          lastName: 'D’Amour',
+          fullRankEn: 'Corporal',
+          postNominals: 'CD',
           rankEn: 'Corporal',
           rankFr: 'Caporale',
           presentationDate: '2028-02-29',
@@ -470,7 +476,10 @@ test('repeated award previews/downloads audit safe details without creating requ
 
 test('award missing-font errors are private and recover with configured exact fonts', async () => {
   const body = {
-    fullName: 'Alex Tremblay',
+    firstName: 'Alex',
+    lastName: 'Tremblay',
+    fullRankEn: 'Aviator',
+    postNominals: '',
     rankEn: 'Aviator',
     rankFr: 'Aviateur',
     presentationDate: '2026-11-13',

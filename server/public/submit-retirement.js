@@ -935,10 +935,6 @@ function buildCertificateRequestData() {
     ),
   ).map((input) => input.value);
 
-  if (!decorations.length) {
-    throw new Error(translate("certificate_decorations_required"));
-  }
-
   const familyMembers = Array.from(
     certificateFamilyList.querySelectorAll("[data-certificate-family-card]"),
   ).map((card) => ({
@@ -958,7 +954,6 @@ function buildCertificateRequestData() {
       rankLanguage: getFieldValue("certificateRankLanguage"),
       decorations,
       lastUnit: getFieldValue("certificateLastUnit"),
-      cafEnrollmentDate: getFieldValue("certificateCafEnrollmentDate"),
       releaseDate: getFieldValue("certificateReleaseDate"),
       ceBranchEnrollmentDate: getFieldValue("certificateCeEnrollmentDate"),
       neededByDate: getFieldValue("certificateNeededByDate"),

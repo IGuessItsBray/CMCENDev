@@ -39,8 +39,8 @@ async function main() {
         fullName,
         rank: 'Warrant Officer',
         rankLanguage: 'fr',
-        decorations: ['MMM', 'CD'],
-        cafEnrollmentDate: '2000-02-29',
+        decorations: filename.includes('ordinary') ? [] : ['MMM', 'CD'],
+        ceBranchEnrollmentDate: '2005-06-01',
         releaseDate: '2026-08-01',
       },
     });

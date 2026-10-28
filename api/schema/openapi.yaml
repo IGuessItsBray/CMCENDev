@@ -426,12 +426,24 @@ paths:
             schema:
               type: object
               additionalProperties: false
-              required: [fullName, rankEn, rankFr, presentationDate, frPronoun, frRankGrammar]
+              required: [firstName, lastName, fullRankEn, rankEn, rankFr, presentationDate, frPronoun, frRankGrammar]
               properties:
-                fullName:
+                firstName:
                   type: string
                   minLength: 1
-                  maxLength: 160
+                  maxLength: 100
+                lastName:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  description: Explicit complete surname; never split from a full-name string.
+                postNominals:
+                  type: string
+                  maxLength: 120
+                  description: Optional; appears only after the large heading name.
+                fullRankEn:
+                  type: string
+                  description: Full English rank from the shared rank catalogue, used in the large heading.
                 rankEn:
                   type: string
                   minLength: 1
@@ -4167,7 +4179,7 @@ components:
             additionalProperties: true
     RetirementMessage:
       description: >-
-        The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates. Message text is limited to 10,000 characters. A complete optional `certificateRequest` creates a separate pending certificate-request record. The retirement member's rank and MOSID/role are copied from `retiree`, and every certificate field is required except `member.ceBranchEnrollmentDate`. The message enters the review queue by default. Set `publishNow: true` only when the authenticated user has `canBypassReviewStages`.
+        The `submitter` object accepts `relationship`; submitter contact details are derived from the authenticated profile on creation and preserved on updates. Message text is limited to 10,000 characters. A complete optional `certificateRequest` creates a separate pending certificate-request record. The retirement member's rank and MOSID/role are copied from `retiree`, and C&E Branch entry date is required and is the only certificate service start date; CAF entry is not collected. Decorations/post-nominals and mailing address line 2 are optional. The message enters the review queue by default. Set `publishNow: true` only when the authenticated user has `canBypassReviewStages`.
       required: true
       content:
         application/json:
@@ -4216,9 +4228,8 @@ components:
                       [
                         fullName,
                         rankLanguage,
-                        decorations,
                         lastUnit,
-                        cafEnrollmentDate,
+                        ceBranchEnrollmentDate,
                         releaseDate,
                         neededByDate,
                         dwdParadeRequested,
@@ -4228,10 +4239,8 @@ components:
                       rankLanguage: { type: string, enum: [en, fr] }
                       decorations:
                         type: array
-                        minItems: 1
                         items: { type: string }
                       lastUnit: { type: string }
-                      cafEnrollmentDate: { type: string, format: date }
                       releaseDate: { type: string, format: date }
                       ceBranchEnrollmentDate: { type: string, format: date }
                       neededByDate: { type: string, format: date }
@@ -4250,7 +4259,7 @@ components:
                   mailingAddress:
                     type: object
                     required:
-                      [line1, line2, city, province, postalCode, country]
+                      [line1, city, province, postalCode, country]
                     properties:
                       line1: { type: string }
                       line2: { type: string }

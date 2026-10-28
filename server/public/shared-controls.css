@@ -790,10 +790,11 @@ html[data-theme='dark'] .cmcen-date-time-time-row {
 }
 
 .cmcen-date-time-popover {
+  box-sizing: border-box;
   position: fixed;
   top: var(--date-popover-top, 0);
   left: var(--date-popover-left, 0);
-  z-index: 90;
+  z-index: 6000;
   display: none;
   width: var(--date-popover-width, min(360px, calc(100vw - 24px)));
   max-height: var(--date-popover-max-height, calc(100vh - 24px));
@@ -805,7 +806,8 @@ html[data-theme='dark'] .cmcen-date-time-time-row {
   box-shadow: 0 24px 60px rgba(15, 18, 31, 0.22);
 }
 
-.cmcen-date-time-picker.is-open .cmcen-date-time-popover {
+.cmcen-date-time-picker.is-open .cmcen-date-time-popover,
+.cmcen-date-time-popover.is-open {
   display: grid;
   gap: 0.75rem;
 }

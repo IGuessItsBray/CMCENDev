@@ -20,9 +20,12 @@ async function main() {
     [
       'trusted-to-serve-short.pdf',
       {
-        fullName: 'Alex Tremblay',
-        rankEn: 'Aviator',
-        rankFr: 'Aviateur',
+        firstName: 'Alex',
+        lastName: 'Tremblay',
+        fullRankEn: 'Aviator',
+        postNominals: '',
+        rankEn: 'Avr',
+        rankFr: 'Avr',
         frPronoun: 'il',
         frRankGrammar: 'elided',
       },
@@ -30,9 +33,12 @@ async function main() {
     [
       'trusted-to-serve-long-accented.pdf',
       {
-        fullName: 'Émilie Anne-Marie D’Amour-Lévesque',
-        rankEn: 'Corporal',
-        rankFr: 'Caporale',
+        firstName: 'Émilie Anne-Marie Catherine Alexandra',
+        lastName: 'D’Amour-Lévesque',
+        fullRankEn: 'Corporal',
+        postNominals: 'MMM, CD',
+        rankEn: 'Cpl',
+        rankFr: 'Cpl',
         frPronoun: 'elle',
         frRankGrammar: 'feminine',
       },

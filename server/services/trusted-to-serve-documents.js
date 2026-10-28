@@ -10,6 +10,10 @@ const {
 } = require('./certificate-documents');
 const { BODY_EN, BODY_FR, FR_GRAMMAR } = require('../config/trusted-to-serve');
 const { certificateFontPath } = require('../config/certificate-fonts');
+const {
+  catalogue: ranks,
+  abbreviation: abbreviateRank,
+} = require('../public/person-rank-options');
 const MASTER_PATH = path.join(
   __dirname,
   '../private/certificates/trusted-to-serve-master.pdf',
@@ -49,7 +53,10 @@ function getTrustedToServeData(input) {
     Object.keys(input).some(
       (key) =>
         ![
-          'fullName',
+          'firstName',
+          'lastName',
+          'postNominals',
+          'fullRankEn',
           'rankEn',
           'rankFr',
           'presentationDate',
@@ -60,7 +67,15 @@ function getTrustedToServeData(input) {
     )
   )
     invalid('The award certificate input is invalid.');
-  const fullName = text(input.fullName, 160, 'Recipient name');
+  const firstName = text(input.firstName, 100, 'First name');
+  const lastName = text(input.lastName, 100, 'Last name');
+  const postNominals =
+    input.postNominals === undefined ||
+    (typeof input.postNominals === 'string' && !input.postNominals.trim())
+      ? ''
+      : text(input.postNominals, 120, 'Post-nominals');
+  const fullRankEn = ranks.find((rank) => rank.en === input.fullRankEn)?.en;
+  if (!fullRankEn) invalid('Choose the full rank for the large name display.');
   const rankEn = text(input.rankEn, 40, 'English rank');
   const rankFr = text(input.rankFr, 40, 'French rank');
   if (
@@ -82,8 +97,8 @@ function getTrustedToServeData(input) {
     invalid('The presentation date is invalid.');
   if (input.reviewed !== undefined && typeof input.reviewed !== 'boolean')
     invalid('The award review confirmation is invalid.');
-  const recipientEn = `${rankEn} ${fullName}`,
-    recipientFr = `${rankFr} ${fullName}`;
+  const recipientEn = `${rankEn} ${lastName}`,
+    recipientFr = `${rankFr} ${lastName}`;
   const grammar = FR_GRAMMAR[input.frRankGrammar];
   const variables = {
     recipientEn,
@@ -96,7 +111,10 @@ function getTrustedToServeData(input) {
   const render = (source) =>
     source.replace(/\{(\w+)\}/gu, (_, key) => variables[key]);
   return {
-    fullName,
+    firstName,
+    lastName,
+    postNominals,
+    fullRankEn,
     rankEn,
     rankFr,
     isoDate: iso,
@@ -104,7 +122,8 @@ function getTrustedToServeData(input) {
     frRankGrammar: input.frRankGrammar,
     bodyEn: render(BODY_EN),
     bodyFr: render(BODY_FR),
-    headline: recipientEn,
+    abbreviatedHeadline: `${abbreviateRank(fullRankEn, 'en')} ${firstName} ${lastName}${postNominals ? `, ${postNominals}` : ''}`,
+    headline: `${fullRankEn} ${firstName} ${lastName}${postNominals ? `, ${postNominals}` : ''}`,
     dedicationEn: recipientEn,
     dedicationFr: `Décerné ${grammar.dedication}${recipientFr}`,
     date: `${MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`,
@@ -222,12 +241,14 @@ function planAwardText(data, fonts) {
     });
   };
   single(
-    data.headline,
+    fonts.script.widthOfTextAtSize(data.headline, 32.04) <= 672
+      ? data.headline
+      : data.abbreviatedHeadline,
     fonts.script,
     32.04,
     18,
-    128.917,
-    533.79,
+    60.12,
+    672,
     191.69,
     rgb(0, 0, 0.4),
     true,

@@ -3,7 +3,8 @@
 The staff-only Administration → Certificate Requests view
 (`/dashboard-next?area=certificates`) includes its own clearly labelled Trusted
 to Serve section for student awards to members on course, with a small form for
-recipient name, English/French printed ranks, presentation date, and explicit
+separate first/surname fields, optional post-nominals, a full English heading
+rank, English/French body ranks, presentation date, and explicit
 French pronoun/article wording. It generates previews and reviewed downloads;
 it does not add a nomination/approval system or public duplicate request form.
 All API calls require `certificates.manage`. Generated PDFs are private/no-store,
@@ -65,7 +66,10 @@ dependencies. It uses the bundled private Script MT Bold and Bell MT Italic
 fonts by default; no font mount or environment setup is needed. Optional path
 overrides retain exact-family and embedding checks. The embedded Imprint MT Shadow title subset stays fixed,
 so the full title font is not required at runtime. All ten recipient occurrences
-are rebuilt: four in English body text, three in French, the central headline,
+are rebuilt. The large heading tries full rank + first name(s) + surname at the original font size first. If measured font width exceeds the printable band, it uses the shared catalogue’s recognized rank abbreviation before reducing the font size (minimum 18 pt); the complete names and post-nominals remain intact. Ranks without a known abbreviation retain their full spelling. The heading includes
+optional post-nominals after a comma. The nine body/dedication mentions use only
+the corresponding EN/FR body rank + explicitly entered surname. No name is split
+or guessed. These occurrences comprise: four in English body text, three in French, the central headline,
 and one in each dedication. Both complete paragraphs are laid out again, with
 centered measured word wrapping, shared bilingual body font sizing, explicit
 minimum sizes and bounds that keep text above the recipient/signature regions.
@@ -117,3 +121,5 @@ The private preview link is present and unit-tested, but its opening behavior
 still needs an ordinary-browser/manual check. The generated sample PDFs themselves
 were rendered through PDFKit: each contained ten new recipient mentions, no old
 recipient, and unchanged fixed artwork outside the variable regions.
+
+Heading rank abbreviations use the shared catalogue IDs and the official [English CAF rank table](https://www.canada.ca/en/services/defence/caf/military-identity-system/rank-appointment-insignia.html) and [French CAF rank table](https://www.canada.ca/fr/services/defense/fac/systeme-identite-militaire/insignes-grade-fonction.html). S1/S2/S3 follow the current sailor terminology confirmed in [CAF Personnel Instruction 01/23](https://www.canada.ca/en/department-national-defence/corporate/policies-standards/canadian-forces-military-personnel-instructions/performance-and-competency-evaluation-pace.html). Civilian and Recruit retain their full labels. Body rank inputs remain explicitly reviewed EN/FR text.

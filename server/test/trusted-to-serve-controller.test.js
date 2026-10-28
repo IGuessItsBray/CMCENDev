@@ -20,7 +20,10 @@ function setup(
     element.remove = () => {};
     return element;
   };
-  const window = { translate: (key) => key };
+  const window = {
+    translate: (key) => key,
+    CMCENRanks: require('../public/person-rank-options'),
+  };
   let denied = 0,
     controller;
   vm.runInNewContext(
@@ -57,7 +60,10 @@ function setup(
   const control = (key) => root.querySelector(`.trusted-award-${key}`);
   const fill = async () => {
     for (const [key, value] of Object.entries({
-      fullName: 'Émilie D’Amour',
+      firstName: 'Émilie',
+      lastName: 'D’Amour',
+      fullRankEn: 'Corporal',
+      postNominals: '',
       rankEn: 'Corporal',
       rankFr: 'Caporale',
       presentationDate: '2026-11-13',
@@ -66,7 +72,9 @@ function setup(
     })) {
       const element = control(key);
       element.value = value;
-      await element.fire(key.startsWith('fr') ? 'change' : 'input');
+      await element.fire(
+        key.startsWith('fr') || key === 'fullRankEn' ? 'change' : 'input',
+      );
     }
   };
   return {
@@ -98,7 +106,7 @@ test('award previews use a private binary POST, preserve explicit choices on lan
   assert.equal(page.root.querySelector('a').target, '_blank');
   assert.equal(page.root.querySelector('a').rel, 'noopener');
   await page.document.fire('languagechange');
-  assert.equal(page.control('fullName').value, 'Émilie D’Amour');
+  assert.equal(page.control('firstName').value, 'Émilie');
   assert.equal(page.control('frRankGrammar').value, 'feminine');
   page.control('reviewed').checked = true;
   await page.control('reviewed').fire('change');

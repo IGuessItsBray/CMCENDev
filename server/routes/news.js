@@ -69,6 +69,7 @@ function getNewsSnapshot(article) {
     title: cleanString(title),
     status: article.status,
     publishedAt: article.publishedAt || null,
+    originalPublishedAt: article.originalPublishedAt || null,
     scheduledPublishAt: article.scheduledPublishAt || null,
   };
 }
@@ -79,6 +80,7 @@ function getNewsRevisionSnapshot(article) {
     layout: article.layout || 'standard',
     coverPlacement: article.coverPlacement,
     newsletter: article.newsletter?.toObject?.() || article.newsletter || {},
+    originalPublishedAt: article.originalPublishedAt || null,
     title: cleanLocalizedText(article.title),
     content: cleanLocalizedText(article.content),
     newsletterBlocks: article.newsletterBlocks?.toObject?.() ||
@@ -129,6 +131,7 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
     layout: before.layout,
     coverPlacement: before.coverPlacement,
     newsletter: before.newsletter,
+    originalPublishedAt: before.originalPublishedAt,
     imageUrl: before.imageUrl,
     imageDisplayUrl: before.imageDisplayUrl,
     status: before.status,
@@ -138,6 +141,7 @@ async function recordNewsArticleRevisions({ article, before, actor, note }) {
     layout: after.layout,
     coverPlacement: after.coverPlacement,
     newsletter: after.newsletter,
+    originalPublishedAt: after.originalPublishedAt,
     imageUrl: after.imageUrl,
     imageDisplayUrl: after.imageDisplayUrl,
     status: after.status,
@@ -219,6 +223,7 @@ function getPayload(
     (cleanString(existing.imageUrl) || cleanString(existing.imageDisplayUrl)))
     placement = resolveCoverPlacement(existing);
   return {
+    ...(owns('originalPublishedAt') ? { originalPublishedAt: body.originalPublishedAt } : {}),
     ...(placement !== undefined ? { coverPlacement: placement } : {}),
     category: body.category ?? categoryOf(existing.layout ? existing : body),
     layout: body.layout ?? existing.layout ?? 'standard',
@@ -270,6 +275,17 @@ function getPayload(
 }
 
 function validatePayload(payload, existingBlocks = {}, { actor, previous, publishing = true } = {}) {
+  if (Object.hasOwn(payload, 'originalPublishedAt')) {
+    const value = payload.originalPublishedAt;
+    if (typeof value !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/u.test(value) ||
+      !Number.isFinite(Date.parse(value)) ||
+      new Date(`${value.slice(0, 10)}T12:00:00Z`).toISOString().slice(0, 10) !== value.slice(0, 10) ||
+      new Date(value) > new Date())
+      return 'Original publication timestamp must include a timezone and be no later than now';
+    payload.originalPublishedAt = new Date(value);
+    payload.newsletter.date = payload.originalPublishedAt.toISOString().slice(0, 10);
+  }
   const required = (field, language) => publishing ||
     requiresTextForSave(actor, previous?.[field]?.[language]);
   if (!categories.includes(payload.category ?? categoryOf(payload)))
@@ -641,11 +657,14 @@ router.post(
       if (validationError)
         return res.status(400).json({ error: validationError });
       const now = new Date();
+      const publishedAt = payload.status === 'published'
+        ? selectPublicationDate(payload, req.body?.publicationDateChoice, now, req.body?.customPublishedAt)
+        : null;
       const article = await NewsArticle.create({
         ...payload,
         createdBy: req.user._id,
         publishedBy: payload.status === 'published' ? req.user._id : null,
-        publishedAt: payload.status === 'published' ? now : null,
+        publishedAt,
       });
       await linkArticleImage(article);
       await writeAuditLog({
@@ -670,6 +689,8 @@ router.post(
       }
       return res.status(201).json({ article: serializeArticle(article) });
     } catch (error) {
+      if (error.status === 400)
+        return res.status(400).json({ error: error.message });
       console.error('Could not create news story:', error);
       return res.status(500).json({ error: 'Could not create news story' });
     }
@@ -797,6 +818,10 @@ router.patch(
         return res.status(400).json({ error: validationError });
       Object.assign(article, payload);
       markContentEdited(article, req.user);
+      if (payload.status === 'published' && previousStatus === 'published' &&
+        (Object.hasOwn(payload, 'originalPublishedAt') || payload.newsletter.date !== before.newsletter.date) &&
+        article.publicationDateChoice === 'original')
+        article.publishedAt = getPublicationDateInfo(article).originalPublishedAt;
       if (payload.status === 'published' && previousStatus !== 'published') {
         article.publishedAt = selectPublicationDate(
           article,

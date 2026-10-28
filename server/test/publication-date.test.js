@@ -70,9 +70,7 @@ test('comment creation time is not treated as source publication provenance', ()
   }
 });
 test('archive choices are explicit, validated, and preserve the original even when choosing now', () => {
-  assert.throws(() => selectPublicationDate(archive(), undefined, now), {
-    status: 400,
-  });
+  assert.deepEqual(selectPublicationDate(archive(), undefined, now), original);
   assert.throws(() => selectPublicationDate(archive(), 'yesterday', now), {
     status: 400,
   });
@@ -89,6 +87,31 @@ test('archive choices are explicit, validated, and preserve the original even wh
   assert.equal(record.publicationDateChoice, 'custom');
   assert.throws(() => selectPublicationDate(record, 'custom', now, '2099-01-01'), { status: 400 });
   assert.throws(() => selectPublicationDate(record, 'now', now, custom), { status: 400 });
+});
+test('exact source records outrank a newsletter calendar date in the source language', () => {
+  const content = archive();
+  content.newsletter = { archived: true, date: '2010-02-01', language: 'fr' };
+  delete content.messageLanguage;
+  const info = getPublicationDateInfo(content, now);
+  assert.equal(info.source, 'sourceRecord');
+  assert.equal(info.precision, 'time');
+  assert.equal(info.originalPublishedAt.toISOString(), '2010-02-04T10:00:00.000Z');
+  content.originalPublishedAt = 'invalid';
+  assert.equal(getPublicationDateInfo(content, now).originalPublishedAt.toISOString(), '2010-02-04T10:00:00.000Z');
+});
+test('date-only archives publish without inventing exact provenance or needing another choice', () => {
+  const content = { newsletter: { archived: true, date: '2010-02-03' } };
+  assert.equal(getPublicationDateInfo(content, now).precision, 'date');
+  assert.equal(selectPublicationDate(content, undefined, now).toISOString(), '2010-02-03T12:00:00.000Z');
+  assert.equal(content.originalPublishedAt, undefined);
+  assert.equal(content.publicationDateChoice, 'original');
+  content.newsletter.date = '2010-02-04';
+  assert.equal(getPublicationDateInfo(content, now).originalPublishedAt.toISOString(), '2010-02-04T12:00:00.000Z');
+  assert.equal(selectPublicationDate({ legacy: { source: 'wp' } }, undefined, now), now);
+  const morning = new Date('2026-09-29T01:00:00Z');
+  assert.equal(getPublicationDateInfo({ newsletter: { archived: true, date: '2026-09-29' } }, morning).precision, 'date');
+  assert.equal(getPublicationDateInfo({ newsletter: { archived: true, date: '2026-09-30' } }, morning).originalPublishedAt, null);
+  assert.equal(getPublicationDateInfo({ newsletter: { archived: true, date: '2026-02-30' } }, morning).originalPublishedAt, null);
 });
 test('publication date choice leaves staff approval time current and survives scheduling', () => {
   for (const scheduledPublishAt of [null, new Date('2026-10-01T12:00:00Z')]) {

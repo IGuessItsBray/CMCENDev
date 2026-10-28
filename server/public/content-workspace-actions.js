@@ -69,7 +69,9 @@ window.ContentWorkspaceActions = {
         item.publicationDate?.isArchive &&
         originalDate &&
         Number.isFinite(originalDate.getTime()) &&
-        originalDate.getTime() <= Date.now()
+        (item.publicationDate.precision === "date"
+          ? originalValue.slice(0, 10) <= new Date().toISOString().slice(0, 10)
+          : originalDate.getTime() <= Date.now())
           ? originalValue
           : null;
       const publicationChoice =

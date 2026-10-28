@@ -101,6 +101,51 @@ after(async () => {
   }
 });
 
+test('archive timestamps can be corrected in UTC without losing seconds on unrelated saves', async () => {
+  const staff = await createUser({ role: 'editor' });
+  const token = bearer(require('../../services/auth-session').createSessionToken(staff));
+  const body = { layout: 'newsletter', status: 'draft', title: { en: 'Archive' },
+    newsletter: { archived: true, date: '2022-08-12', language: 'en' },
+    newsletterBlocks: { en: [{ type: 'paragraph', children: ['Original copy'] }] } };
+  const article = (await request(app).post('/api/news').set('Authorization', token).send(body).expect(201)).body.article;
+  await request(app).patch(`/api/news/${article._id}`).send({ ...body, originalPublishedAt: '2022-08-12T02:26:14Z' }).expect(401);
+  const subscriber = await createUser();
+  await request(app).patch(`/api/news/${article._id}`).set('Authorization', bearer(require('../../services/auth-session').createSessionToken(subscriber))).send({ ...body, originalPublishedAt: '2022-08-12T02:26:14Z' }).expect(403);
+  for (const originalPublishedAt of ['2022-08-12', '2022-08-12T02:26:14', '2022-02-30T02:00:00Z', '2099-01-01T00:00:00Z', 123])
+    await request(app).patch(`/api/news/${article._id}`).set('Authorization', token).send({ ...body, originalPublishedAt }).expect(400);
+  await request(app).patch(`/api/news/${article._id}`).set('Authorization', token).send({ ...body, originalPublishedAt: '2022-08-11T22:26:14.123-04:00' }).expect(200);
+  await request(app).patch(`/api/news/${article._id}`).set('Authorization', token).send({ ...body, status: 'published' }).expect(200);
+  let saved = await NewsArticle.findById(article._id).lean();
+  assert.equal(saved.originalPublishedAt.toISOString(), '2022-08-12T02:26:14.123Z');
+  assert.equal(saved.publishedAt.toISOString(), '2022-08-12T02:26:14.123Z');
+  await request(app).patch(`/api/news/${article._id}`).set('Authorization', token).send({ ...body, status: 'published', originalPublishedAt: '2022-08-13T03:39:59Z' }).expect(200);
+  saved = await NewsArticle.findById(article._id).lean();
+  assert.equal(saved.newsletter.date, '2022-08-13');
+  assert.equal(saved.publishedAt.toISOString(), '2022-08-13T03:39:59.000Z');
+  assert.equal(await ContentRevision.countDocuments({ contentId: article._id, fields: 'originalPublishedAt' }), 2);
+  const item = (await request(app).get(`/api/admin/content?type=newsArticle&id=${article._id}`).set('Authorization', token).expect(200)).body.items[0];
+  assert.equal(item.publicationDate.precision, 'time');
+  assert.equal(item.publicationDate.originalPublishedAt, '2022-08-13T03:39:59.000Z');
+});
+
+test('date-only archive creation and publication need no time or additional date choice', async () => {
+  const staff = await createUser({ role: 'editor' });
+  const token = bearer(require('../../services/auth-session').createSessionToken(staff));
+  const body = { layout: 'newsletter', title: { en: 'Date-only archive' },
+    newsletter: { archived: true, date: '2022-08-12', language: 'en' },
+    newsletterBlocks: { en: [{ type: 'paragraph', children: ['Original copy'] }] } };
+  const article = (await request(app).post('/api/news').set('Authorization', token).send(body).expect(201)).body.article;
+  const saved = await NewsArticle.findById(article._id).lean();
+  assert.equal(saved.publishedAt.toISOString(), '2022-08-12T12:00:00.000Z');
+  assert.equal(saved.originalPublishedAt, undefined);
+  assert.equal(saved.publicationDateChoice, 'original');
+  const item = (await request(app).get(`/api/admin/content?type=newsArticle&id=${article._id}`).set('Authorization', token).expect(200)).body.items[0];
+  assert.equal(item.publicationDate.precision, 'date');
+  await request(app).patch(`/api/news/${article._id}`).set('Authorization', token)
+    .send({ ...body, newsletter: { ...body.newsletter, date: '2022-08-13' } }).expect(200);
+  assert.equal((await NewsArticle.findById(article._id)).publishedAt.toISOString(), '2022-08-13T12:00:00.000Z');
+});
+
 test('cover placement API defaults new articles, preserves legacy saves, validates choices and records revisions', async () => {
   const staff = await createUser({ role: 'editor' });
   const token = bearer(require('../../services/auth-session').createSessionToken(staff));

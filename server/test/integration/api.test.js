@@ -3166,13 +3166,13 @@ describe('news stories', () => {
     await request(app)
       .patch(`${url}/publication`)
       .set('Authorization', authorization)
-      .send({ action: 'publish' })
+      .send({ action: 'publish', publicationDateChoice: 'invalid' })
       .expect(400);
     assert.equal((await NewsArticle.findById(legacy._id)).status, 'draft');
     const published = await request(app)
       .patch(`${url}/publication`)
       .set('Authorization', authorization)
-      .send({ action: 'publish', publicationDateChoice: 'original' })
+      .send({ action: 'publish' })
       .expect(200);
     assert.equal(published.body.article.publishedAt, '2001-02-03T12:00:00.000Z');
     const updated = await request(app)
@@ -4072,7 +4072,7 @@ describe('Last Post comment moderation', () => {
 });
 
 describe('archival draft lifecycle', () => {
-  test('archive publication dates require a staff choice across content types', async () => {
+  test('archive publication dates default sensibly and validate explicit choices across content types', async () => {
     const editor = await createUser({ role: 'editor' });
     const token = bearer((await login(editor)).body.token);
     const contributor = await createUser({ role: 'contributor' });
@@ -4131,11 +4131,6 @@ describe('archival draft lifecycle', () => {
       await request(app)
         .patch(url)
         .set('Authorization', token)
-        .send({ action: 'publish' })
-        .expect(400);
-      await request(app)
-        .patch(url)
-        .set('Authorization', token)
         .send({ action: 'publish', publicationDateChoice: 'invalid' })
         .expect(400);
       await request(app)
@@ -4143,7 +4138,6 @@ describe('archival draft lifecycle', () => {
         .set('Authorization', token)
         .send({
           action: 'publish',
-          publicationDateChoice: 'original',
           originalPublishedAt: '1900-01-01',
         })
         .expect(200);
@@ -4224,12 +4218,7 @@ describe('archival draft lifecycle', () => {
       feed.body.articles[0].displayDate,
       feed.body.articles[0].publishedAt,
     );
-    assert.equal(
-      (
-        await NewsArticle.findById(newsletter._id)
-      ).originalPublishedAt.toISOString(),
-      '1985-09-01T12:00:00.000Z',
-    );
+    assert.equal((await NewsArticle.findById(newsletter._id)).originalPublishedAt, undefined);
     const scheduledPublishAt = new Date(Date.now() + 3600000);
     await request(app)
       .patch(`/api/events/${event._id}/review`)

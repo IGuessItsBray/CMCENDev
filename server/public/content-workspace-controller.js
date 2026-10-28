@@ -1088,7 +1088,10 @@ window.ContentWorkspace = {
       const original = item.publicationDate?.originalPublishedAt;
       if (original) {
         const date = document.createElement("p");
-        date.textContent = `${getText("content_workspace_original_publication_date", "Original publication date")}: ${formatWorkspaceDate(original)}`;
+        const originalLabel = item.publicationDate.precision === "date"
+          ? original.slice(0, 10)
+          : `${new Date(original).toISOString()} (UTC)`;
+        date.textContent = `${getText("content_workspace_original_publication_date", "Original publication date")}: ${originalLabel}`;
         details.append(date);
       }
       if (item.type !== "comment" && item.archiveSourceIds?.length) {

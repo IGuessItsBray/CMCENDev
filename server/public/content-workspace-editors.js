@@ -361,6 +361,8 @@ window.ContentWorkspaceEditors = {
       required = false,
       includeTime = true,
       eventTime,
+      utc = false,
+      hintKey,
     }) {
       const labelElement = document.createElement("label");
       labelElement.className =
@@ -370,9 +372,16 @@ window.ContentWorkspaceEditors = {
       if (labelKey) setWorkspaceTranslatedText(labelText, labelKey, label);
       else labelText.textContent = label;
       labelElement.append(labelText);
+      if (hintKey) {
+        const hint = document.createElement("small");
+        setWorkspaceTranslatedText(hint, hintKey);
+        labelElement.append(hint);
+      }
 
       const dateTime = includeTime
-        ? getWorkspaceDateTimeParts(value, eventTime)
+        ? utc && value
+          ? { date: new Date(value).toISOString().slice(0, 10), time: new Date(value).toISOString().slice(11, 16) }
+          : getWorkspaceDateTimeParts(value, eventTime)
         : { date: formatWorkspaceDateInput(value), time: "" };
       if (!window.CMCENDateTimePicker?.create) {
         const nativeInput = document.createElement("input");
@@ -383,6 +392,17 @@ window.ContentWorkspaceEditors = {
           ? dateTime.date + (dateTime.date ? "T" + (dateTime.time || "00:00") : "")
           : dateTime.date;
         nativeInput.required = required;
+        if (utc) {
+          const exactInput = document.createElement("input");
+          exactInput.type = "hidden";
+          exactInput.name = field;
+          exactInput.value = value || "";
+          nativeInput.name = field + "Picker";
+          nativeInput.addEventListener("input", () => {
+            exactInput.value = nativeInput.value ? nativeInput.value + ":00.000Z" : "";
+          });
+          labelElement.append(exactInput);
+        }
         labelElement.append(nativeInput);
         return labelElement;
       }
@@ -395,6 +415,7 @@ window.ContentWorkspaceEditors = {
           ? dateTime.date + "T" + (dateTime.time || "00:00")
           : dateTime.date
         : "";
+      if (utc) valueInput.value = value || "";
 
       const picker = window.CMCENDateTimePicker.create({
         name: field,
@@ -414,7 +435,7 @@ window.ContentWorkspaceEditors = {
         onInput: ({ date, time }) => {
           valueInput.value = date
             ? includeTime
-              ? date + "T" + (time || "00:00")
+              ? date + "T" + (time || "00:00") + (utc ? ":00.000Z" : "")
               : date
             : "";
         },
@@ -802,6 +823,15 @@ window.ContentWorkspaceEditors = {
               { value: "en", label: "English", labelKey: "language_en" },
               { value: "fr", label: "French", labelKey: "language_fr" },
             ],
+          }),
+          createWorkspaceDateTimeField({
+            field: "originalPublishedAt",
+            label: "Exact original publication date and time (UTC, optional)",
+            labelKey: "article_original_timestamp",
+            hintKey: "article_original_timestamp_hint",
+            value: item.publicationDate?.precision === "time"
+              ? item.publicationDate.originalPublishedAt : "",
+            utc: true,
           }),
           createWorkspaceEditorField({
             field: "coverPlacement",
@@ -2057,6 +2087,11 @@ window.ContentWorkspaceEditors = {
             "category",
             window.NewsletterFormat.categoryOf(item.content),
           ),
+          ...(getRecordValue("originalPublishedAt", "") &&
+            getRecordValue("originalPublishedAt", "") !==
+              (item.publicationDate?.precision === "time" ? item.publicationDate.originalPublishedAt : "")
+            ? { originalPublishedAt: getRecordValue("originalPublishedAt", "") }
+            : {}),
           newsletter: Object.fromEntries(
             [
               "author",

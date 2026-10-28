@@ -3320,7 +3320,7 @@ paths:
     patch:
       tags: [Events]
       summary: Review event publication.
-      description: A publish action may include a future `scheduledPublishAt` timestamp. Imported archive event drafts may be published by reviewers. Scheduling and cancellation preserve the draft or pending status. Imported/archive content requires an explicit publicationDateChoice; the server keeps that choice when the scheduled publication runs.
+      description: A publish action may include a future `scheduledPublishAt` timestamp. Imported archive event drafts may be published by reviewers. Scheduling and cancellation preserve the draft or pending status. Imported/archive content defaults publicationDateChoice to the available original date or now; the server keeps that choice when the scheduled publication runs.
       x-permission: canReviewAndPublish
       parameters:
         - $ref: "#/components/parameters/EventId"
@@ -3495,7 +3495,7 @@ paths:
                 publicationDateChoice:
                   type: string
                   enum: [original, now, custom]
-                  description: Required for imported or archive content. Uses the server-stored original date or the actual publication time, including scheduled publication. An unavailable original date returns 400.
+                  description: Optional; archive content defaults to the available original date or now. Uses source provenance or the actual publication time, including scheduled publication. Explicitly choosing an unavailable original date returns 400. Date-only sources need no time; their noon UTC fallback is not stored as exact provenance.
                 customPublishedAt:
                   type: string
                   format: date-time
@@ -4290,7 +4290,7 @@ components:
               publicationDateChoice:
                 type: string
                 enum: [original, now, custom]
-                description: Required when publishing imported or archive content. The original date is resolved from stored provenance; now uses the actual publication time. Scheduling preserves this choice. An unavailable original date returns 400.
+                description: Optional; imported or archive content defaults to the available original date or now. The original date is resolved from stored provenance; now uses the actual publication time. Scheduling preserves this choice. Explicitly choosing an unavailable original date returns 400.
               customPublishedAt:
                 type: string
                 format: date-time
@@ -4321,7 +4321,7 @@ components:
               publicationDateChoice:
                 type: string
                 enum: [original, now, custom]
-                description: Required for imported/archive comments. Original uses the stored original public date; originally unapproved comments cannot use original. Invalid or unavailable choices return 400.
+                description: Optional; imported/archive comments default to the available original date or now. Original uses the stored original public date; originally unapproved comments cannot use original. Invalid explicit choices or explicitly choosing an unavailable original return 400.
               customPublishedAt:
                 type: string
                 format: date-time
@@ -4784,6 +4784,10 @@ components:
       type: object
       required: [title]
       properties:
+        originalPublishedAt:
+          type: string
+          format: date-time
+          description: Optional exact source timestamp with Z or an explicit UTC offset, no later than now. Omission preserves existing precision including seconds. A correction also sets newsletter.date to the UTC calendar date and is revision/audit tracked. The staff picker edits UTC. Date-only sources use newsletter.date and need no timestamp; their noon-UTC sorting fallback is not stored as exact originalPublishedAt. Archive publication defaults to original when available, otherwise now.
         category:
           type: string
           enum:

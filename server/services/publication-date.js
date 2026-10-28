@@ -24,31 +24,43 @@ function getPublicationDateInfo(content, now = new Date()) {
     content.migrationSource ||
     content.newsletter?.archived,
   );
-  let original = content.originalPublishedAt || legacy.originalPublishedAt;
+  let original = validDate(content.originalPublishedAt, now) ||
+    validDate(legacy.originalPublishedAt, now);
   let source = original ? 'importer' : null;
-  if (!original && content.newsletter?.archived && content.newsletter.date) {
-    original = `${content.newsletter.date}T12:00:00.000Z`;
-    source = 'newsletter';
-  }
   if (!original && legacy.originalStatus === 'publish') {
     const records = Array.isArray(legacy.sourceRecords)
       ? legacy.sourceRecords
       : [];
     const record =
-      records.find((r) => r.language === (content.messageLanguage || 'en')) ||
+      records.find((r) => r.language === (content.messageLanguage || content.newsletter?.language || 'en')) ||
       records[0];
     if (record?.sourceStatus === 'publish') {
-      original =
-        record.publishedAt ||
-        (record.createdGmt && `${record.createdGmt.replace(' ', 'T')}Z`);
+      original = validDate(record.publishedAt, now) ||
+        validDate(record.createdGmt && `${record.createdGmt.replace(' ', 'T')}Z`, now);
       if (original) source = 'sourceRecord';
     }
   }
-  const originalPublishedAt = validDate(original, now);
+  // A source timestamp is more precise than the issue's calendar date. Noon
+  // UTC is only a stable storage/sort key for a date-only source, not evidence
+  // that the article was originally published at noon.
+  if (!original && content.newsletter?.archived && content.newsletter.date) {
+    original = `${content.newsletter.date}T12:00:00.000Z`;
+    source = 'newsletter';
+  }
+  const dateOnly = source === 'newsletter';
+  const calendarDate = content.newsletter?.date;
+  const fallback = dateOnly ? new Date(original) : null;
+  const originalPublishedAt = dateOnly
+    ? /^\d{4}-\d{2}-\d{2}$/u.test(calendarDate) &&
+      Number.isFinite(fallback.getTime()) &&
+      fallback.toISOString().slice(0, 10) === calendarDate &&
+      calendarDate <= now.toISOString().slice(0, 10) ? fallback : null
+    : validDate(original, now);
   return {
     isArchive,
     originalPublishedAt,
     source: originalPublishedAt ? source : null,
+    precision: originalPublishedAt ? (source === 'newsletter' ? 'date' : 'time') : null,
   };
 }
 
@@ -62,14 +74,14 @@ function selectPublicationDate(content, choice, now = new Date(), customDate) {
   if (choice !== undefined && !['original', 'now', 'custom'].includes(choice))
     fail('Publication date choice must be original, now, or custom');
   if (info.isArchive && choice === undefined)
-    fail('Choose an original, current, or custom publication date');
+    choice = info.originalPublishedAt ? 'original' : 'now';
   if (choice === 'original' && !info.originalPublishedAt)
     fail('No original publication date is available');
   if (choice === 'custom' && !validDate(customDate, now))
     fail('Choose a valid custom publication date no later than now');
   if (choice !== 'custom' && customDate !== undefined)
     fail('Custom publication date requires the custom choice');
-  if (info.originalPublishedAt)
+  if (info.originalPublishedAt && info.precision === 'time')
     content.originalPublishedAt = info.originalPublishedAt;
   if (info.isArchive || choice !== undefined)
     content.publicationDateChoice = choice;

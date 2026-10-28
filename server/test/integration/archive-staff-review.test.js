@@ -404,7 +404,7 @@ test('archive reviewer can choose existing media without media administration or
   assert.equal(afterText.newsletterBlocks.en[2].text, 'New heading');
 });
 
-test('staff review exposes source dates and requires an intentional original or custom date', async () => {
+test('staff review defaults to source dates and supports an intentional custom date', async () => {
   for (const [id, choice, expected] of [
     [9901, 'original', '2013-08-12T09:00:00.000Z'],
     [9902, 'custom', '2011-04-05T10:00:00.000Z'],
@@ -428,10 +428,10 @@ test('staff review exposes source dates and requires an intentional original or 
       note: 'Source date checked',
     });
     assert.equal(verified.status, 200);
-    assert.equal((await request(app).post(`${path}/publish`).set(auth()).send({ expectedUpdatedAt: stamp })).status, 400);
+    assert.equal((await request(app).post(`${path}/publish`).set(auth()).send({ expectedUpdatedAt: stamp, publicationDateChoice: 'invalid' })).status, 400);
     const published = await request(app).post(`${path}/publish`).set(auth()).send({
       expectedUpdatedAt: stamp,
-      publicationDateChoice: choice,
+      ...(choice === 'original' ? {} : { publicationDateChoice: choice }),
       ...(choice === 'custom' ? { customPublishedAt: expected } : {}),
     });
     assert.equal(published.status, 200, JSON.stringify(published.body));

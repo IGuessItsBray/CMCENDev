@@ -72,17 +72,18 @@ Profile account names use the remaining names; when both are blank, existing dis
 
 The event, retirement, Last Post and comment review endpoints, and the news
 publication endpoint, accept `publicationDateChoice: "original" | "now" | "custom"` for
-publish actions. Imported/archive records require an explicit choice; ordinary
-new content defaults to now. The custom choice requires `customPublishedAt`, a
+publish actions. Imported/archive records default to their available original date,
+or now when unavailable; ordinary new content defaults to now. The custom choice requires `customPublishedAt`, a
 valid date no later than the current time. Existing-content update endpoints that transition a
 record to published apply the same date-choice validation.
 The original date is resolved from stored source provenance, never the import
-timestamp or a client-supplied title/year. Missing/invalid choices or an
-unavailable original date return 400. An imported comment without an explicit
+timestamp or a client-supplied title/year. Invalid explicit choices or an
+explicit choice of an unavailable original date return 400. An imported comment without an explicit
 source date has no original public date option.
 
 `GET /api/admin/content` includes `publicationDate: { isArchive,
-originalPublishedAt }` for the shared confirmation dialog. Missing dates are null.
+originalPublishedAt, precision }` for the shared confirmation dialog. Precision is
+`time`, `date` (calendar date only), or null. Missing dates are null.
 Archive items also include `archiveSourceIds`, `archiveSourceUrls`, and
 `archiveSourceLinks: [{ url, language }]` for reviewer comparison. Links use
 saved URLs on the legacy domain; `language` is `en` or `fr` only when an
@@ -368,7 +369,7 @@ Regular editors handle imported articles and submissions in the Content Workspac
 | `GET` | `/api/admin/archive-staff-review/:type/:id` | Editable public fields, immutable source evidence, publication date options, and saved verification. |
 | `PATCH` | `/api/admin/archive-staff-review/:type/:id` | Correct whitelisted public fields with `{expectedUpdatedAt, changes}`. Newsletter figure selections may use `mediaSelections: [{language, index, key}]` referencing existing images; unaffected rich blocks, alt text, captions, provenance, and pair IDs are preserved. Source identity, submitter/consent, access rules, and status are not editable. Changes invalidate saved checks and are revisioned and audited. |
 | `PUT` | `/api/admin/archive-staff-review/:type/:id/verification` | Save `{expectedUpdatedAt, checks, note}`; checks are `source`, `translation`, `categorization`, `media`. A note may record absent French or follow-up. |
-| `POST` | `/api/admin/archive-staff-review/:type/:id/publish` | Publish only when all four checks refer to the current draft. All types require `{expectedUpdatedAt, publicationDateChoice}`: `original`, `now`, or `custom` with `customPublishedAt` (valid date no later than now). The original option appears only when source provenance supplies a date. Publishes immediately and audits the reviewer. |
+| `POST` | `/api/admin/archive-staff-review/:type/:id/publish` | Publish only when all four checks refer to the current draft. All types require `expectedUpdatedAt`; optional `publicationDateChoice` defaults to the available original date or now. Choices are `original`, `now`, or `custom` with `customPublishedAt` (valid date no later than now). The original option appears only when source provenance supplies a date. Publishes immediately and audits the reviewer. |
 
 Missing authentication returns 401, missing permission 403, unknown or ineligible records 404, invalid input 400, and stale drafts or incomplete checks 409. The document queue and detail GET also expose ordinary database catalogue entries read-only (`canEditArchive=false`). These entries do not require archive verification or a document draft workflow; existing imported drafts retain their previous review rules.
 
@@ -724,6 +725,17 @@ publication timestamp; public `displayDate`, listing order and search dates use
 the original date for historical issues. Historical issues remain searchable and
 listed, but are excluded from `/api/news/feed`. New newsletters do not receive an
 archive notice by default.
+`POST` and `PATCH` also accept optional `originalPublishedAt`, an exact ISO timestamp
+with `Z` or an explicit UTC offset, no later than now. The staff picker edits UTC;
+supplying a correction also sets `newsletter.date` to its UTC calendar date. Omission
+preserves the existing timestamp, including seconds. Changes are revision/audit
+tracked; a correction updates `publishedAt` on an already published article only
+when its publication choice is `original`.
+Archive publication defaults to the available original date, or now if unavailable.
+An exact source timestamp takes precedence over a newsletter date. Date-only
+sources need no time: noon UTC is the sorting/storage fallback, returned with
+`publicationDate.precision: "date"`; it is never saved as exact `originalPublishedAt`
+provenance. Exact sources return precision `time`.
 Article responses include `category`, `layout`, `newsletter`, `newsletterBlocks`, `displayDate`
 and a localized plain-text `excerpt`. Newsletter `content` is derived plain text
 for search and summaries; edit `newsletterBlocks` instead.
@@ -861,7 +873,8 @@ The review count `comments` includes all pending comments and excludes drafts.
   published, or rejected through `status`.
 - `PATCH /api/comments/:commentId/review`: publish drafts/pending comments or
   reject pending comments with a reason. Comments cannot be scheduled.
-  Imported comments require `publicationDateChoice: "original" | "now" | "custom"`.
+  Imported comments accept optional `publicationDateChoice: "original" | "now" | "custom"`,
+  defaulting to their available original date or now.
   Originally unapproved WordPress comments have no original public date.
 - `GET /api/comments/:commentId/edit` and `PATCH /api/comments/:commentId`:
   owner/staff access to the existing personal correction workflow.

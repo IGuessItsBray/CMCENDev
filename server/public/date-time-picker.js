@@ -100,7 +100,6 @@
     const locale = options.locale || document.documentElement.lang || undefined;
     const monthFormatter = new Intl.DateTimeFormat(locale, {
       month: "long",
-      year: "numeric",
     });
     const weekdayFormatter = new Intl.DateTimeFormat(locale, {
       weekday: "short",
@@ -224,7 +223,15 @@
       else if (popover.parentElement === document.body) picker.append(popover);
       trigger.setAttribute("aria-expanded", String(isOpen));
       if (!isOpen) return;
-
+      const openingDate = selectedDate
+        ? new Date(`${selectedDate}T00:00:00`)
+        : new Date();
+      visibleMonth = openingDate.getMonth();
+      visibleYear = openingDate.getFullYear();
+      editingYear = false;
+      year.hidden = true;
+      yearToggle.hidden = false;
+      renderCalendar();
       positionPopover();
     }
 
@@ -271,36 +278,122 @@
       }
     }
 
+    const calendarBody = document.createElement("div");
+    calendarBody.className = "cmcen-date-time-calendar-body";
+    const header = document.createElement("div");
+    header.className = "cmcen-date-time-header";
+
+    const previous = createButton("cmcen-date-time-nav", "<", () => {
+      visibleMonth -= 1;
+      if (visibleMonth < 0) {
+        visibleMonth = 11;
+        visibleYear -= 1;
+      }
+      renderCalendar();
+    });
+
+    const month = document.createElement("select");
+    month.className = "cmcen-date-time-month";
+    month.setAttribute(
+      "aria-label",
+      options.monthLabel ||
+        (String(locale).startsWith("fr") ? "Mois" : "Month"),
+    );
+    for (let index = 0; index < 12; index++) {
+      const option = document.createElement("option");
+      option.value = String(index);
+      option.textContent = monthFormatter.format(new Date(2000, index, 1));
+      month.append(option);
+    }
+    month.addEventListener("change", () => {
+      visibleMonth = Number(month.value);
+      renderCalendar();
+    });
+    const year = document.createElement("input");
+    let editingYear = false,
+      originalYear = visibleYear;
+    const yearLabel =
+      options.yearLabel || (String(locale).startsWith("fr") ? "Année" : "Year");
+    const editYearLabel =
+      options.editYearLabel ||
+      (String(locale).startsWith("fr") ? "Modifier l’année" : "Change year");
+    const yearToggle = createButton(
+      "cmcen-date-time-year-toggle",
+      String(visibleYear),
+      () => {
+        originalYear = visibleYear;
+        editingYear = true;
+        year.value = String(visibleYear);
+        yearToggle.hidden = true;
+        year.hidden = false;
+        year.focus();
+        year.select?.();
+      },
+    );
+    const finishYearEdit = (cancel = false) => {
+      if (cancel) {
+        visibleYear = originalYear;
+        renderCalendar();
+      }
+      editingYear = false;
+      year.value = String(visibleYear);
+      year.hidden = true;
+      yearToggle.hidden = false;
+    };
+    year.type = "number";
+    year.hidden = true;
+    year.inputMode = "numeric";
+    year.min = "100";
+    year.max = "9999";
+    year.step = "1";
+    year.className = "cmcen-date-time-year";
+    year.setAttribute("aria-label", yearLabel);
+    year.addEventListener("input", () => {
+      if (!editingYear) return;
+      const nextYear =
+        /^\d{3,4}$/u.test(year.value) && Number(year.value) >= 100
+          ? Number(year.value)
+          : originalYear;
+      if (nextYear !== visibleYear) {
+        visibleYear = nextYear;
+        renderCalendar();
+      }
+    });
+    year.addEventListener("blur", () => {
+      // The grid already reflects input, so blur must not replace the day
+      // under the pointer and swallow the user's next day click.
+      finishYearEdit();
+    });
+    year.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        finishYearEdit(event.key === "Escape");
+        yearToggle.focus();
+      }
+    });
+
+    const next = createButton("cmcen-date-time-nav", ">", () => {
+      visibleMonth += 1;
+      if (visibleMonth > 11) {
+        visibleMonth = 0;
+        visibleYear += 1;
+      }
+      renderCalendar();
+    });
+
+    header.append(previous, month, yearToggle, year, next);
+    popover.append(header, calendarBody);
+
     function renderCalendar() {
-      popover.replaceChildren();
-
-      const header = document.createElement("div");
-      header.className = "cmcen-date-time-header";
-
-      const previous = createButton("cmcen-date-time-nav", "<", () => {
-        visibleMonth -= 1;
-        if (visibleMonth < 0) {
-          visibleMonth = 11;
-          visibleYear -= 1;
-        }
-        renderCalendar();
-      });
-
-      const title = document.createElement("strong");
-      title.textContent = monthFormatter.format(
-        new Date(visibleYear, visibleMonth, 1),
+      calendarBody.replaceChildren();
+      month.value = String(visibleMonth);
+      if (!editingYear) year.value = String(visibleYear);
+      yearToggle.textContent = String(visibleYear);
+      yearToggle.setAttribute(
+        "aria-label",
+        `${editYearLabel} (${visibleYear})`,
       );
-
-      const next = createButton("cmcen-date-time-nav", ">", () => {
-        visibleMonth += 1;
-        if (visibleMonth > 11) {
-          visibleMonth = 0;
-          visibleYear += 1;
-        }
-        renderCalendar();
-      });
-
-      header.append(previous, title, next);
 
       const grid = document.createElement("div");
       grid.className = "cmcen-date-time-grid";
@@ -345,7 +438,7 @@
         nativeTime.addEventListener("input", () => setTime(nativeTime.value));
 
         timeRow.append(timeLabel, nativeTime);
-        popover.append(timeRow);
+        calendarBody.append(timeRow);
       }
 
       const actions = document.createElement("div");
@@ -371,8 +464,8 @@
         ),
       );
 
-      popover.prepend(header, grid);
-      popover.append(actions);
+      calendarBody.prepend(grid);
+      calendarBody.append(actions);
 
       if (picker.classList.contains("is-open")) positionPopover();
     }

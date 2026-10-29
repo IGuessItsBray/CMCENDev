@@ -1,56 +1,78 @@
 "use strict";
 (() => {
-  function mount({ root, api, onDenied }) {
+  function mount({ root, api, onDenied, memberRetirement = false }) {
     const lifecycle = new AbortController(),
       urls = new Set(),
       datePickers = new Set();
     let disposed = false,
       busy = false,
-      previewUrl = null,
       message = "";
-    let draft = {
-      firstName: "",
-      lastName: "",
-      postNominals: "",
-      fullRankEn: "",
-      rankEn: "",
-      rankFr: "",
-      presentationDate: "",
-      frPronoun: "",
-      frRankGrammar: "",
-      reviewed: false,
-    };
-    const t = (key) => window.translate(key);
+    let draft = memberRetirement
+      ? {
+          firstName: "",
+          lastName: "",
+          postNominals: "",
+          fullRankEn: "",
+          rankLanguage: "",
+          ceBranchEnrollmentDate: "",
+          releaseDate: "",
+          familyMembers: [],
+          reviewed: false,
+        }
+      : {
+          firstName: "",
+          lastName: "",
+          postNominals: "",
+          fullRankEn: "",
+          rankEn: "",
+          rankFr: "",
+          presentationDate: "",
+          frPronoun: "",
+          frRankGrammar: "",
+          reviewed: false,
+        };
+    const t = (key, values) =>
+      window.translate(
+        memberRetirement && key.startsWith("trusted_award_")
+          ? key.replace("trusted_award_", "manual_retirement_")
+          : key,
+        values,
+      );
     let controls = [],
-      status,
-      previewRoot;
-    function revokePreview() {
-      if (previewUrl && urls.delete(previewUrl))
-        URL.revokeObjectURL(previewUrl);
-      previewUrl = null;
-      previewRoot?.replaceChildren();
-    }
+      status;
+    let expanded = !memberRetirement;
+    let familyOptions = { relationships: [], wordings: [] };
+    let refreshFamilyQuestions = [];
     function update() {
       if (disposed) return;
       status.textContent = t(message || "trusted_award_intro");
       status.setAttribute("aria-busy", String(busy));
-      for (const control of controls) control.disabled = busy;
+      for (const control of controls)
+        control.disabled =
+          busy ||
+          (control.dataset.requiresFamilyOptions === "true" &&
+            (!familyOptions.relationships.length ||
+              draft.familyMembers.length >= 20));
     }
     function render() {
       if (disposed) return;
       for (const picker of datePickers) picker.destroy();
       datePickers.clear();
       controls = [];
+      refreshFamilyQuestions = [];
       const panel = document.createElement("details");
       panel.className = "trusted-award-panel";
-      panel.open = true;
+      panel.open = expanded;
+      panel.addEventListener("toggle", () => {
+        expanded = panel.open;
+      });
       const summary = document.createElement("summary");
       summary.textContent = t("trusted_award_title");
       const form = document.createElement("form");
       form.className = "trusted-award-form";
       form.addEventListener("submit", (event) => {
         event.preventDefault();
-        return generate(false);
+        return generate();
       });
       status = document.createElement("p");
       status.setAttribute("role", "status");
@@ -71,17 +93,24 @@
       const changed = () => {
         draft.reviewed = false;
         if (review) review.checked = false;
-        revokePreview();
         message = "";
+        for (const refresh of refreshFamilyQuestions) refresh();
         update();
       };
       for (const [key, type, maxLength] of [
         ["firstName", "text", 100],
         ["lastName", "text", 100],
         ["postNominals", "text", 120],
-        ["rankEn", "text", 40],
-        ["rankFr", "text", 40],
-        ["presentationDate", "date"],
+        ...(memberRetirement
+          ? [
+              ["ceBranchEnrollmentDate", "date"],
+              ["releaseDate", "date"],
+            ]
+          : [
+              ["rankEn", "text", 40],
+              ["rankFr", "text", 40],
+              ["presentationDate", "date"],
+            ]),
       ]) {
         const label = document.createElement("label");
         label.className = `trusted-award-field trusted-award-field-${key}`;
@@ -120,7 +149,7 @@
         groups[
           ["firstName", "lastName", "postNominals"].includes(key)
             ? "recipient"
-            : key === "presentationDate"
+            : type === "date"
               ? "presentation"
               : "ranks"
         ].append(label);
@@ -140,7 +169,9 @@
       for (const rank of window.CMCENRanks.catalogue) {
         const option = document.createElement("option");
         option.value = rank.en;
-        option.textContent = rank.en;
+        option.textContent = memberRetirement
+          ? `${rank.en} / ${rank.fr}`
+          : rank.en;
         fullRank.append(option);
       }
       fullRank.value = draft.fullRankEn;
@@ -151,10 +182,15 @@
       rankLabel.append(fullRank);
       groups.ranks.append(rankLabel);
       controls.push(fullRank);
-      for (const [key, values] of [
-        ["frPronoun", ["il", "elle"]],
-        ["frRankGrammar", ["masculine", "feminine", "elided", "no_article"]],
-      ]) {
+      for (const [key, values] of memberRetirement
+        ? [["rankLanguage", ["en", "fr"]]]
+        : [
+            ["frPronoun", ["il", "elle"]],
+            [
+              "frRankGrammar",
+              ["masculine", "feminine", "elided", "no_article"],
+            ],
+          ]) {
         const label = document.createElement("label");
         label.className = "trusted-award-field";
         label.textContent = t(`trusted_award_${key}`);
@@ -178,6 +214,129 @@
         groups.presentation.append(label);
         controls.push(select);
       }
+      if (memberRetirement) {
+        const families = document.createElement("fieldset");
+        families.className = "trusted-award-group";
+        const legend = document.createElement("legend");
+        legend.textContent = t("certificate_family_heading");
+        families.append(legend);
+        draft.familyMembers.forEach((family, index) => {
+          const row = document.createElement("div");
+          row.className = "trusted-award-fields certificate-manual-family";
+          const question = document.createElement("span");
+          const updateQuestion = () => {
+            question.textContent = t(
+              "certificate_member_relationship_question",
+              {
+                member:
+                  `${draft.firstName} ${draft.lastName}`.trim() ||
+                  t("certificate_retiring_member"),
+                recipient:
+                  family.fullName || t("certificate_family_member_generic"),
+              },
+            );
+          };
+          refreshFamilyQuestions.push(updateQuestion);
+          const field = (key, labelKey, values) => {
+            const label = document.createElement("label");
+            label.className = "trusted-award-field";
+            if (key === "memberRelationshipToRecipient")
+              label.className += " trusted-award-field-fullRankEn";
+            if (key === "memberRelationshipToRecipient") {
+              updateQuestion();
+              label.append(question);
+            } else {
+              const text = document.createElement("span");
+              text.textContent = t(labelKey);
+              label.append(text);
+            }
+            const input = document.createElement(values ? "select" : "input");
+            input.className = `manual-family-${key}`;
+            input.required = true;
+            if (values) {
+              for (const value of ["", ...values]) {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = value
+                  ? t(
+                      `${key === "memberRelationshipToRecipient" ? "certificate_member_relationship_" : "certificate_relationship_"}${value.replaceAll("-", "_")}`,
+                    )
+                  : t("select_option");
+                input.append(option);
+              }
+            } else {
+              input.type = "text";
+              input.maxLength = key === "fullName" ? 160 : 80;
+            }
+            input.value = family[key] || "";
+            input.addEventListener(values ? "change" : "input", () => {
+              family[key] = input.value;
+              changed();
+              updateQuestion();
+              if (key === "relationship") render();
+            });
+            label.append(input);
+            row.append(label);
+            controls.push(input);
+          };
+          field("fullName", "certificate_family_full_name");
+          field(
+            "relationship",
+            "certificate_relationship_label",
+            familyOptions.relationships,
+          );
+          if (family.relationship === "other")
+            field("relationshipOther", "certificate_relationship_other_label");
+          field(
+            "memberRelationshipToRecipient",
+            null,
+            familyOptions.wordings.map((option) => option.key),
+          );
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "manual-family-remove";
+          remove.textContent = t("certificate_remove_family_member");
+          remove.addEventListener("click", () => {
+            draft.familyMembers.splice(index, 1);
+            changed();
+            render();
+          });
+          controls.push(remove);
+          const download = document.createElement("button");
+          download.type = "button";
+          download.className = "manual-family-download admin-work-zone-button";
+          download.textContent = t("certificate_family_download");
+          download.addEventListener("click", () =>
+            generate(true, "family", index),
+          );
+          const actions = document.createElement("div");
+          actions.className = "certificate-document-actions";
+          actions.style.gridColumn = "1 / -1";
+          actions.append(remove, download);
+          row.append(actions);
+          controls.push(download);
+          families.append(row);
+        });
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "manual-family-add";
+        add.textContent = t("certificate_add_family_member");
+        add.dataset.requiresFamilyOptions = "true";
+        add.addEventListener("click", () => {
+          expanded = true;
+          draft.familyMembers.push({
+            fullName: "",
+            relationship: "",
+            relationshipOther: "",
+            memberRelationshipToRecipient: "",
+          });
+          changed();
+          render();
+        });
+        families.append(add);
+        controls.push(add);
+        form.append(families);
+      }
       const reviewLabel = document.createElement("label");
       reviewLabel.className = "trusted-award-review-label";
       review = document.createElement("input");
@@ -194,43 +353,34 @@
       controls.push(review);
       const actions = document.createElement("div");
       actions.className = "certificate-document-actions";
-      for (const download of [false, true]) {
+      for (const documentKind of memberRetirement && draft.familyMembers.length
+        ? ["member", "packet"]
+        : ["member"]) {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = download
-          ? "trusted-award-download"
-          : "trusted-award-preview";
-        button.textContent = t(
-          download ? "trusted_award_download" : "trusted_award_preview",
-        );
-        button.addEventListener("click", () => generate(download));
-        button.className +=
-          " admin-work-zone-button" + (download ? "" : " is-secondary");
+        button.className =
+          documentKind === "packet"
+            ? "manual-packet-download"
+            : "trusted-award-download";
+        button.textContent =
+          documentKind === "packet"
+            ? t("certificate_packet_download")
+            : t("trusted_award_download");
+        button.addEventListener("click", () => generate(true, documentKind));
+        button.className += " admin-work-zone-button";
         actions.append(button);
         controls.push(button);
       }
       form.append(actions);
-      previewRoot = document.createElement("div");
-      previewRoot.className = "trusted-award-preview-root";
-      if (previewUrl) showPreview();
-      form.append(previewRoot);
       panel.append(summary, form);
       root.replaceChildren(panel);
       update();
     }
-    function showPreview() {
-      const open = document.createElement("a");
-      open.href = previewUrl;
-      open.target = "_blank";
-      open.rel = "noopener";
-      open.textContent = t("trusted_award_open_preview");
-      const frame = document.createElement("iframe");
-      frame.className = "certificate-member-preview";
-      frame.title = t("trusted_award_preview");
-      frame.src = previewUrl;
-      previewRoot.replaceChildren(open, frame);
-    }
-    async function generate(download) {
+    async function generate(
+      download = true,
+      documentKind = "member",
+      familyIndex,
+    ) {
       if (disposed || busy) return;
       if (download && !draft.reviewed) {
         message = "trusted_award_review_required";
@@ -242,12 +392,20 @@
       update();
       try {
         const response = await api(
-          `/api/certificate-requests/trusted-to-serve.pdf${download ? "?download=1" : ""}`,
+          `/api/certificate-requests/${memberRetirement ? "retirement" : "trusted-to-serve"}.pdf${download ? "?download=1" : ""}`,
           {
             method: "POST",
             json: true,
             parseJson: false,
-            body: { ...draft },
+            body: {
+              ...draft,
+              ...(memberRetirement
+                ? {
+                    documentKind,
+                    ...(familyIndex === undefined ? {} : { familyIndex }),
+                  }
+                : {}),
+            },
             timeoutMs: null,
             signal: lifecycle.signal,
           },
@@ -261,17 +419,15 @@
         if (download) {
           const link = document.createElement("a");
           link.href = url;
-          link.download = `trusted-to-serve-${draft.presentationDate}.pdf`;
+          link.download = memberRetirement
+            ? `retirement-${documentKind}-${draft.releaseDate}.pdf`
+            : `trusted-to-serve-${draft.presentationDate}.pdf`;
           document.body.append(link);
           link.click();
           link.remove();
           setTimeout(() => {
             if (urls.delete(url)) URL.revokeObjectURL(url);
           }, 1000);
-        } else {
-          revokePreview();
-          previewUrl = url;
-          showPreview();
         }
         message = "trusted_award_ready";
       } catch (error) {
@@ -294,6 +450,10 @@
             award_review_required: "trusted_award_review_required",
             award_text_overflow: "trusted_award_overflow",
             award_data_invalid: "trusted_award_data_invalid",
+            certificate_wording_required: "trusted_award_data_invalid",
+            certificate_data_invalid: "trusted_award_data_invalid",
+            certificate_review_required: "trusted_award_review_required",
+            certificate_text_overflow: "trusted_award_overflow",
           }[code] || "trusted_award_error";
       } finally {
         if (!disposed) {
@@ -309,6 +469,10 @@
     return {
       canNavigate: () => !busy,
       hasUnsavedChanges: () => busy,
+      setFamilyOptions(value) {
+        familyOptions = value;
+        if (memberRetirement) render();
+      },
       dispose() {
         disposed = true;
         lifecycle.abort();
@@ -316,13 +480,14 @@
         datePickers.clear();
         for (const url of urls) URL.revokeObjectURL(url);
         urls.clear();
-        previewUrl = null;
         draft = {};
         controls = [];
-        previewRoot = null;
         root.replaceChildren();
       },
     };
   }
   window.TrustedToServe = { mount };
+  window.ManualRetirementCertificate = {
+    mount: (options) => mount({ ...options, memberRetirement: true }),
+  };
 })();

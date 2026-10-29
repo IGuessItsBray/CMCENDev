@@ -16,7 +16,6 @@
     let requests = [],
       loadFailed = false,
       messageKey = "";
-    let preview = null;
     const documentUrls = new Set();
     const familyReviews = new Map();
     const datePickers = new Set();
@@ -38,7 +37,13 @@
     const list = document.createElement("div");
     list.className = "certificate-requests-list";
     const awardRoot = document.createElement("section");
-    root.replaceChildren(toolbar, awardRoot, list);
+    const manualRoot = document.createElement("section");
+    root.replaceChildren(toolbar, manualRoot, awardRoot, list);
+    const manualController = window.ManualRetirementCertificate?.mount({
+      root: manualRoot,
+      api,
+      onDenied,
+    });
     const awardController = window.TrustedToServe?.mount({
       root: awardRoot,
       api,
@@ -192,19 +197,15 @@
       action.addEventListener("click", () => advance(request));
       return action;
     }
-    function createMemberDocumentAction(request, download) {
+    function createMemberDocumentAction(request) {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = download
-        ? "certificate-member-download"
-        : "certificate-member-preview-button";
-      button.textContent = translate(
-        download ? "certificate_member_download" : "certificate_member_preview",
-      );
+      button.className = "certificate-member-download";
+      button.textContent = translate("certificate_member_download");
       button.dataset.actionable = String(
         request.certificateType === "retirement",
       );
-      button.addEventListener("click", () => memberDocument(request, download));
+      button.addEventListener("click", () => memberDocument(request));
       return button;
     }
     function familyReview(request) {
@@ -215,7 +216,6 @@
       ]);
       let review = familyReviews.get(request._id);
       if (!review || review.signature !== signature) {
-        if (review) invalidatePreview(request);
         review = {
           signature,
           certificateDate: String(request.member?.releaseDate || "").slice(
@@ -227,31 +227,17 @@
       }
       return review;
     }
-    function invalidatePreview(request) {
-      if (preview?.requestId === request._id) {
-        if (documentUrls.delete(preview.url)) URL.revokeObjectURL(preview.url);
-        preview = null;
-      }
-    }
-    function familyDocumentAction(request, download, index) {
+    function familyDocumentAction(request, index) {
       const button = document.createElement("button");
       button.type = "button";
       button.className =
         index === undefined
-          ? download
-            ? "certificate-packet-download"
-            : "certificate-packet-preview"
-          : download
-            ? "certificate-family-download"
-            : "certificate-family-preview";
+          ? "certificate-packet-download"
+          : "certificate-family-download";
       button.textContent = translate(
         index === undefined
-          ? download
-            ? "certificate_packet_download"
-            : "certificate_packet_preview"
-          : download
-            ? "certificate_family_download"
-            : "certificate_family_preview",
+          ? "certificate_packet_download"
+          : "certificate_family_download",
       );
       button.dataset.actionable = String(
         request.certificateType === "retirement",
@@ -259,7 +245,6 @@
       button.addEventListener("click", () =>
         memberDocument(
           request,
-          download,
           index === undefined ? "packet" : "family",
           index,
         ),
@@ -283,7 +268,6 @@
       date.value = review.certificateDate;
       date.addEventListener("change", () => {
         review.certificateDate = date.value;
-        invalidatePreview(request);
         render();
       });
       if (window.CMCENDateTimePicker?.create) {
@@ -296,7 +280,6 @@
           doneLabel: translate("timers_picker_done"),
           onInput: ({ date: value }) => {
             review.certificateDate = value;
-            invalidatePreview(request);
             render();
           },
         });
@@ -325,29 +308,16 @@
               wording: variant[language],
             })
           : translate("certificate_family_wording_required");
-        row.append(
-          recipient,
-          label,
-          familyDocumentAction(request, false, index),
-          familyDocumentAction(request, true, index),
-        );
+        row.append(recipient, label, familyDocumentAction(request, index));
         container.append(row);
       });
       const actions = document.createElement("div");
       actions.className = "certificate-document-actions";
-      actions.append(
-        familyDocumentAction(request, false),
-        familyDocumentAction(request, true),
-      );
+      actions.append(familyDocumentAction(request));
       container.append(actions);
       return container;
     }
-    async function memberDocument(
-      request,
-      download,
-      kind = "member",
-      familyIndex,
-    ) {
+    async function memberDocument(request, kind = "member", familyIndex) {
       if (
         disposed ||
         busy ||
@@ -389,7 +359,7 @@
         const suffix =
           kind === "family" ? `family/${familyIndex}.pdf` : `${kind}.pdf`;
         const response = await api(
-          `/api/certificate-requests/${encodeURIComponent(request._id)}/${suffix}${download ? "?download=1" : ""}`,
+          `/api/certificate-requests/${encodeURIComponent(request._id)}/${suffix}?download=1`,
           {
             parseJson: false,
             ...(kind === "member"
@@ -411,7 +381,7 @@
           throw new Error("Invalid certificate response");
         const url = URL.createObjectURL(blob);
         documentUrls.add(url);
-        if (download) {
+        {
           const link = document.createElement("a");
           link.href = url;
           link.download = `retirement-${kind}${kind === "family" ? `-${familyIndex}` : ""}-${request._id.replace(/[^a-f0-9]/gi, "")}.pdf`;
@@ -421,10 +391,6 @@
           setTimeout(() => {
             if (documentUrls.delete(url)) URL.revokeObjectURL(url);
           }, 1000);
-        } else {
-          if (preview && documentUrls.delete(preview.url))
-            URL.revokeObjectURL(preview.url);
-          preview = { requestId: request._id, url, kind };
         }
         messageKey =
           kind === "member"
@@ -517,17 +483,13 @@
         familyWordingOptions = Array.isArray(data.familyWordingOptions)
           ? data.familyWordingOptions
           : [];
+        manualController?.setFamilyOptions({
+          relationships: data.familyRelationshipOptions || [],
+          wordings: familyWordingOptions,
+        });
         for (const id of familyReviews.keys())
           if (!requests.some((request) => request._id === id))
             familyReviews.delete(id);
-        if (
-          preview &&
-          !requests.some((request) => request._id === preview.requestId)
-        ) {
-          if (documentUrls.delete(preview.url))
-            URL.revokeObjectURL(preview.url);
-          preview = null;
-        }
       } catch (error) {
         if (disposed) return;
         requests = [];
@@ -664,10 +626,7 @@
       );
       const documentActions = document.createElement("div");
       documentActions.className = "certificate-member-actions";
-      documentActions.append(
-        createMemberDocumentAction(certificateRequest, false),
-        createMemberDocumentAction(certificateRequest, true),
-      );
+      documentActions.append(createMemberDocumentAction(certificateRequest));
       const scope = document.createElement("p");
       scope.textContent = translate("certificate_member_document_scope");
       documentActions.append(scope);
@@ -675,20 +634,6 @@
         documentActions.append(
           createFamilyDocumentControls(certificateRequest),
         );
-      if (preview?.requestId === certificateRequest._id) {
-        const frame = document.createElement("iframe");
-        frame.className = "certificate-member-preview";
-        frame.title = translate(
-          preview.kind === "family"
-            ? "certificate_family_preview"
-            : preview.kind === "packet"
-              ? "certificate_packet_preview"
-              : "certificate_member_preview",
-        );
-        frame.src = preview.url;
-        documentActions.append(frame);
-      }
-
       const requestDetails = document.createElement("div");
       requestDetails.className = "certificate-request-details-grid";
       requestDetails.append(
@@ -807,18 +752,24 @@
     return {
       ready,
       canNavigate: () =>
-        !busy && !confirming && awardController?.canNavigate() !== false,
+        !busy &&
+        !confirming &&
+        awardController?.canNavigate() !== false &&
+        manualController?.canNavigate() !== false,
       hasUnsavedChanges: () =>
-        busy || confirming || awardController?.hasUnsavedChanges() === true,
+        busy ||
+        confirming ||
+        awardController?.hasUnsavedChanges() === true ||
+        manualController?.hasUnsavedChanges() === true,
       dispose() {
         disposed = true;
         lifecycle.abort();
         awardController?.dispose();
+        manualController?.dispose();
         for (const picker of datePickers) picker.destroy();
         datePickers.clear();
         for (const url of documentUrls) URL.revokeObjectURL(url);
         documentUrls.clear();
-        preview = null;
         familyReviews.clear();
         requests = [];
         root.replaceChildren();

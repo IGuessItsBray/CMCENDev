@@ -5,20 +5,20 @@ The staff-only Administration → Certificate Requests view
 to Serve section for student awards to members on course, with a small form for
 separate first/surname fields, optional post-nominals, a full English heading
 rank, English/French body ranks, presentation date, and explicit
-French pronoun/article wording. It generates previews and reviewed downloads;
+French pronoun/article wording. It generates reviewed downloads;
 it does not add a nomination/approval system or public duplicate request form.
 All API calls require `certificates.manage`. Generated PDFs are private/no-store,
 held in memory, and never change retirement fulfillment state. Download requires
-staff review acknowledgement. Editing any input clears that acknowledgement and
-revokes the previous preview URL.
+acknowledgement that staff checked the entered details. Editing any input clears
+that acknowledgement. Staff open the downloaded PDF to check and print it.
 Branch staff enter approved student details received by instructor email.
 The authenticated standalone Certificate Requests page uses the same staff
 controller. No award controls appear on the public retirement listing or public
 retirement-message page, and no public instructor submission or nomination
 workflow is added. The existing `certificates.manage` permission protects the
 staff worklist and award generation endpoint.
-An explicit open-preview link supports browsers/webviews without embedded PDF
-display; it uses the same private in-memory PDF and opens no external service.
+The dashboard has no embedded PDF viewer or preview-only buttons. Existing
+inline API responses remain available, but the staff workflow is download-only.
 
 ## Original sources and one-time master preparation
 
@@ -113,13 +113,11 @@ configuration, including in CI, exercising actual subsets and rebuilt shadows. R
 authorization, review acknowledgement, private responses, repeated generation,
 audits and unchanged request/fulfillment data.
 
-Local browser QA exercised the rendered input form, explicit wording selections,
-busy controls and successful binary generation. The in-app browser did not render
-the embedded blob PDF and its automation security policy blocked the open-preview
-blob navigation. That action was stopped without retrying through another surface.
-The private preview link is present and unit-tested, but its opening behavior
-still needs an ordinary-browser/manual check. The generated sample PDFs themselves
-were rendered through PDFKit: each contained ten new recipient mentions, no old
-recipient, and unchanged fixed artwork outside the variable regions.
+Local browser QA exercised the rendered input form and explicit wording selections.
+Controller tests cover download actions, busy controls, repeated clicks, error
+recovery and private URL cleanup. Generated sample PDFs were rendered through
+PDFKit with rebuilt recipient mentions and unchanged fixed artwork outside the
+variable regions. Staff should check downloaded files in their normal PDF reader
+before printing.
 
 Heading rank abbreviations use the shared catalogue IDs and the official [English CAF rank table](https://www.canada.ca/en/services/defence/caf/military-identity-system/rank-appointment-insignia.html) and [French CAF rank table](https://www.canada.ca/fr/services/defense/fac/systeme-identite-militaire/insignes-grade-fonction.html). S1/S2/S3 follow the current sailor terminology confirmed in [CAF Personnel Instruction 01/23](https://www.canada.ca/en/department-national-defence/corporate/policies-standards/canadian-forces-military-personnel-instructions/performance-and-competency-evaluation-pace.html). Civilian and Recruit retain their full labels. Body rank inputs remain explicitly reviewed EN/FR text.

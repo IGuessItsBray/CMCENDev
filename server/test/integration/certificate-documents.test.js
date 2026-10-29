@@ -523,3 +523,170 @@ test('approved template and private font paths are unavailable through static ro
     await request(app).get(target).expect(404);
   }
 });
+
+test('manual member retirement generation validates and audits document-only previews/downloads with no public or fulfillment mutations', async () => {
+  const target = '/api/certificate-requests/retirement.pdf';
+  const input = {
+    firstName: 'Émilie',
+    lastName: 'D’Amour',
+    fullRankEn: 'Warrant Officer',
+    rankLanguage: 'fr',
+    postNominals: '',
+    ceBranchEnrollmentDate: '1984-02-29',
+    releaseDate: '2026-08-01',
+  };
+  const before = await CertificateRequest.find({}).lean();
+  const RetirementMessage = require('../../models/RetirementMessage');
+  const posts = await RetirementMessage.countDocuments();
+  const statusAudits = await AuditLog.countDocuments({
+    action: /printed|mailed/,
+  });
+  const count = generate.mock.callCount();
+  for (const [token, status] of [
+    [null, 401],
+    [readerToken, 403],
+  ]) {
+    const call = request(app).post(target).send(input);
+    if (token) call.set('Authorization', `Bearer ${token}`);
+    const response = await call.expect(status);
+    assert.equal(response.headers['cache-control'], 'private, no-store');
+  }
+  assert.equal(generate.mock.callCount(), count);
+  const auth = { Authorization: `Bearer ${editorToken}` };
+  for (const change of [
+    { firstName: '' },
+    { fullRankEn: 'invented' },
+    { rankLanguage: 'xx' },
+    { ceBranchEnrollmentDate: '1985-02-29' },
+    { ceBranchEnrollmentDate: '2027-01-01' },
+    { releaseDate: '' },
+    { postNominals: 'not a decoration' },
+    { reviewed: 'true' },
+    { cafEnrollmentDate: '1970-01-01' },
+    { ceBranchEnrollmentDate: ['1984-02-29'] },
+  ])
+    await request(app)
+      .post(target)
+      .set(auth)
+      .send({ ...input, ...change })
+      .expect(422);
+  await request(app)
+    .post(target + '?download=2')
+    .set(auth)
+    .send(input)
+    .expect(400);
+  const review = await request(app)
+    .post(target + '?download=1')
+    .set(auth)
+    .send(input)
+    .expect(422);
+  assert.equal(review.body.code, 'certificate_review_required');
+  await withBundledCertificateFonts(async () => {
+    for (const [query, extra] of [
+      ['', {}],
+      ['?download=1', { reviewed: true, postNominals: 'MMM, CD' }],
+      ['', {}],
+    ]) {
+      const response = await request(app)
+        .post(target + query)
+        .set(auth)
+        .send({ ...input, ...extra })
+        .expect(200);
+      assert.equal(response.headers['content-type'], 'application/pdf');
+      assert.equal(response.headers['cache-control'], 'private, no-store');
+      assert.match(
+        response.headers['content-disposition'],
+        query ? /attachment/u : /inline/u,
+      );
+      assert.equal(
+        (
+          await require('pdf-lib').PDFDocument.load(response.body)
+        ).getPageCount(),
+        1,
+      );
+    }
+  });
+  const familyMembers = [
+    {
+      fullName: 'Camille Bélanger',
+      relationship: 'wife',
+      memberRelationshipToRecipient: 'husband',
+    },
+    {
+      fullName: 'Alexandra D’Amour-Lévesque',
+      relationship: 'mother',
+      memberRelationshipToRecipient: 'daughter',
+    },
+  ];
+  const {
+    getManualRetirementRequest,
+  } = require('../../services/manual-retirement-certificate');
+  const manual = getManualRetirementRequest({ ...input, familyMembers });
+  assert.equal(
+    documents.getFamilyCertificateData(manual, 0).isoDate,
+    '2026-08-01',
+  );
+  for (const bad of [
+    { familyMembers: [{ ...familyMembers[0], relationship: 'invented' }] },
+    {
+      familyMembers: [
+        { ...familyMembers[0], memberRelationshipToRecipient: '' },
+      ],
+    },
+    { familyMembers: [{ ...familyMembers[0], relationship: 'other' }] },
+    { documentKind: 'invented' },
+    { documentKind: 'packet', familyIndex: 0 },
+  ])
+    await request(app)
+      .post(target + '?download=1')
+      .set(auth)
+      .send({ ...input, reviewed: true, ...bad })
+      .expect(422);
+  for (const familyIndex of [-1, 2])
+    await request(app)
+      .post(target + '?download=1')
+      .set(auth)
+      .send({
+        ...input,
+        familyMembers,
+        documentKind: 'family',
+        familyIndex,
+        reviewed: true,
+      })
+      .expect(404);
+  for (const [documentKind, extra, pages] of [
+    ['family', { familyIndex: 1 }, 1],
+    ['packet', {}, 3],
+    ['member', {}, 1],
+  ]) {
+    const response = await request(app)
+      .post(target + '?download=1')
+      .set(auth)
+      .send({ ...input, familyMembers, documentKind, reviewed: true, ...extra })
+      .expect(200);
+    assert.equal(
+      (await require('pdf-lib').PDFDocument.load(response.body)).getPageCount(),
+      pages,
+    );
+  }
+  const packetCall = packetGenerate.mock.calls.at(-1).arguments[0];
+  assert.equal(packetCall.member.fullName, 'Émilie D’Amour');
+  assert.deepEqual(
+    packetCall.familyMembers.map((family) => family.fullName),
+    familyMembers.map((family) => family.fullName),
+  );
+  assert.deepEqual(await CertificateRequest.find({}).lean(), before);
+  assert.equal(await RetirementMessage.countDocuments(), posts);
+  assert.equal(
+    await AuditLog.countDocuments({ action: /printed|mailed/ }),
+    statusAudits,
+  );
+  const audits = await AuditLog.find({
+    action: 'content.manual_retirement_generated',
+  }).lean();
+  assert.equal(audits.length, 6);
+  assert.doesNotMatch(
+    JSON.stringify(audits.map((value) => value.metadata)),
+    /Émilie|D’Amour/u,
+  );
+});

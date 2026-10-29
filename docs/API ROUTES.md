@@ -555,14 +555,36 @@ flow blocks in document order, ignoring desktop grid row positions.
 
 Mounted at `/api/certificate-requests`.
 
+`POST /api/certificate-requests/retirement.pdf` requires
+`canManageCertificateRequests` and creates retirement PDFs directly from
+staff-entered `firstName`, `lastName`, `fullRankEn` (shared catalogue),
+`rankLanguage` (`en`/`fr`), `ceBranchEnrollmentDate` and `releaseDate` (ISO dates).
+`postNominals` is optional comma-separated approved decoration abbreviations.
+The combined member name is limited to 160 characters by the existing generator.
+The dashboard downloads PDFs without an embedded viewer. `?download=1` requires
+`reviewed: true` after checking entered details. The original templates,
+fonts and generation validations are reused. Every response is private/no-store;
+successful generation writes `content.manual_retirement_generated` audit events.
+No public post, certificate-request record, printed or mailed status is created.
+Optional `familyMembers` (up to 20) use the same `fullName`, recipient
+`relationship`, conditional `relationshipOther`, and explicit
+`memberRelationshipToRecipient` as retirement submission. The worklist response
+includes `familyRelationshipOptions` alongside `familyWordingOptions` so the
+staff form reuses the server's choices. No relationship or gender is inferred.
+`documentKind` is `member` (default), `family` (requires zero-based `familyIndex`),
+or `packet`. Family dates use `releaseDate`; packet order is member first,
+then families in supplied order. An empty family list is valid.
+
 `POST /api/certificate-requests/trusted-to-serve.pdf` requires
-`canManageCertificateRequests` and accepts `fullName` (160 chars maximum),
+`canManageCertificateRequests` and accepts explicit `firstName` and `lastName`
+(100 chars each), `fullRankEn` (shared catalogue), optional `postNominals`,
 `rankEn`/`rankFr` (40 chars each), `presentationDate` (`YYYY-MM-DD`),
 `frPronoun` (`il|elle`) and `frRankGrammar`
 (`masculine|feminine|elided|no_article`). French choices have no inferred defaults.
 The date is the award presentation date, independent of retirement data. Omit
-the query for inline preview; `?download=1` additionally requires
-`reviewed: true` after staff review. Output is private/no-store, and successful
+the query for an inline API response; the dashboard uses download-only controls.
+`?download=1` additionally requires `reviewed: true` after checking entered
+details. Output is private/no-store, and successful
 generation records `content.trusted_to_serve_generated` with date/wording/review
 metadata. It creates no nomination/request record and changes no fulfillment
 status. This is a minimal staff certificate tool, not a nomination workflow.

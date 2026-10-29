@@ -826,6 +826,46 @@ html[data-theme='dark'] .cmcen-date-time-time-row {
   font-size: 0.95rem;
 }
 
+.cmcen-date-time-calendar-body {
+  display: grid;
+  gap: 0.75rem;
+}
+.cmcen-date-time-header {
+  gap: 0.35rem;
+}
+.cmcen-date-time-header select,
+.cmcen-date-time-header input,
+.cmcen-date-time-year-toggle {
+  min-width: 0;
+  min-height: 36px;
+  padding: 0.35rem;
+  border: 1px solid var(--branch-grey-300);
+  border-radius: var(--surface-radius);
+  background: var(--white);
+  color: var(--navy-900);
+  font: inherit;
+}
+.cmcen-date-time-header select {
+  flex: 1;
+  width: 0;
+}
+.cmcen-date-time-header input,
+.cmcen-date-time-year-toggle {
+  width: 5.2rem;
+  flex: 0 0 5.2rem;
+}
+html[data-theme='dark'] .cmcen-date-time-header select,
+html[data-theme='dark'] .cmcen-date-time-header input,
+html[data-theme='dark'] .cmcen-date-time-year-toggle {
+  background: var(--surface, #162334);
+  color: var(--text, #f2f4f7);
+}
+.cmcen-date-time-year-toggle {
+  cursor: pointer;
+  border-color: transparent;
+  font-weight: 700;
+}
+
 .cmcen-date-time-nav,
 .cmcen-date-time-action {
   min-height: 34px;

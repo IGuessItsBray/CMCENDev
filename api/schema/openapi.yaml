@@ -406,6 +406,58 @@ paths:
       responses:
         "200":
           description: Returns `pending`, `readyToMail`, and total `actionable` counts.
+  /api/certificate-requests/retirement.pdf:
+    post:
+      tags: [Certificates]
+      operationId: generateManualRetirementCertificate
+      summary: Generate staff-entered member, family or packet PDFs independently of a retirement post.
+      description: Uses the existing approved templates and private fonts. No retirement post, certificate request or fulfillment state is created. Successful generation is audited; all responses are private/no-store. Downloads require reviewed=true after checking entered details. Family dates default to releaseDate; packets contain the member first, then family recipients in input order.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - in: query
+          name: download
+          schema: { type: string, enum: ["1"] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [firstName, lastName, fullRankEn, rankLanguage, ceBranchEnrollmentDate, releaseDate]
+              properties:
+                firstName: { type: string, minLength: 1, maxLength: 100 }
+                lastName: { type: string, minLength: 1, maxLength: 100 }
+                fullRankEn: { type: string, description: Full English rank from the shared catalogue. }
+                rankLanguage: { type: string, enum: [en, fr] }
+                postNominals: { type: string, maxLength: 120, description: Optional comma-separated approved decoration abbreviations. }
+                ceBranchEnrollmentDate: { type: string, format: date }
+                releaseDate: { type: string, format: date }
+                reviewed: { type: boolean }
+                documentKind: { type: string, enum: [member, family, packet], default: member }
+                familyIndex: { type: integer, minimum: 0, description: Required only for documentKind=family. }
+                familyMembers:
+                  type: array
+                  maxItems: 20
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required: [fullName, relationship, memberRelationshipToRecipient]
+                    properties:
+                      fullName: { type: string, minLength: 1, maxLength: 160 }
+                      relationship: { type: string, description: Recipient relative to member; same supported choices as retirement submission. }
+                      relationshipOther: { type: string, maxLength: 80, description: Required when relationship=other. }
+                      memberRelationshipToRecipient: { type: string, description: Explicit original-PDF wording choice; never inferred from the recipient relationship. }
+      responses:
+        "200":
+          description: Flattened original retirement certificate PDF or member-first packet.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { description: Authentication required. }
+        "403": { description: Certificate management permission required. }
+        "422": { description: Invalid details, missing review or text that cannot fit. }
+        "503": { description: Required certificate fonts unavailable. }
   /api/certificate-requests/trusted-to-serve.pdf:
     post:
       tags: [Certificates]

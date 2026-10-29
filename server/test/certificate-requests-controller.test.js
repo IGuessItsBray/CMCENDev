@@ -132,12 +132,12 @@ function setup({
     urls,
     revoked,
     downloads,
-    preview: () => root.querySelector('.certificate-member-preview-button'),
+
     download: () => root.querySelector('.certificate-member-download'),
   };
 }
 
-test('family and packet actions use saved answers immediately and isolate previews per request', async () => {
+test('family and packet actions use saved answers immediately and isolate downloads per request', async () => {
   const page = setup({
     requests: [request(), { ...request(), _id: 'request/2' }],
     api: (url) =>
@@ -151,12 +151,15 @@ test('family and packet actions use saved answers immediately and isolate previe
   const date = page.root.querySelector('.certificate-family-date');
   date.value = '2026-08-01';
   await date.fire('change');
-  await page.root.querySelector('.certificate-family-preview').fire('click');
+  await page.root.querySelector('.certificate-family-download').fire('click');
   assert.equal(page.calls.at(-1).method, 'POST');
   assert.equal(page.calls.at(-1).body.wording, undefined);
   assert.equal(page.calls.at(-1).body.certificateDate, '2026-08-01');
-  assert.match(page.calls.at(-1).url, /request%2F1\/family\/0\.pdf$/);
-  assert.ok(page.root.querySelector('iframe'));
+  assert.match(
+    page.calls.at(-1).url,
+    /request%2F1\/family\/0\.pdf\?download=1$/,
+  );
+  assert.equal(page.root.querySelector('iframe'), null);
   const changed = page.root.querySelector('.certificate-family-date');
   changed.value = '2026-08-02';
   await changed.fire('change');
@@ -184,9 +187,9 @@ test('family duplicate clicks, denied requests and recoverable errors clean up c
   });
   await page.controller.ready;
   const active = page.root
-    .querySelector('.certificate-family-preview')
+    .querySelector('.certificate-family-download')
     .fire('click');
-  await page.root.querySelector('.certificate-family-preview').fire('click');
+  await page.root.querySelector('.certificate-family-download').fire('click');
   await page.root.querySelector('.certificate-packet-download').fire('click');
   assert.equal(page.calls.length, 2);
   assert.equal(
@@ -206,37 +209,37 @@ test('family duplicate clicks, denied requests and recoverable errors clean up c
     false,
   );
   fail = false;
-  await page.root.querySelector('.certificate-family-preview').fire('click');
+  await page.root.querySelector('.certificate-family-download').fire('click');
   assert.equal(page.status(), 'certificate_document_generated');
   page.controller.dispose();
   assert.deepEqual(page.revoked, page.urls);
 });
 
-test('member preview/download uses authenticated binary API, guards repeated clicks and never advances fulfillment', async () => {
+test('member download uses authenticated binary API, guards repeated clicks and never advances fulfillment', async () => {
   const pending = deferred();
   const page = setup({
     api: (url) => (url.includes('member.pdf') ? pending.promise : undefined),
   });
   await page.controller.ready;
-  const first = page.preview().fire('click');
-  await page.preview().fire('click');
+  const first = page.download().fire('click');
+  await page.download().fire('click');
   await page.download().fire('click');
   await page.document.fire('languagechange');
   assert.equal(page.calls.length, 2);
   assert.equal(
     page.calls[1].url,
-    '/api/certificate-requests/request%2F1/member.pdf',
+    '/api/certificate-requests/request%2F1/member.pdf?download=1',
   );
   assert.equal(page.calls[1].parseJson, false);
-  assert.equal(page.preview().disabled, true);
+  assert.equal(page.download().disabled, true);
   assert.equal(page.controller.canNavigate(), false);
   pending.resolve({ blob: async () => ({ type: 'application/pdf' }) });
   await first;
-  assert.equal(page.root.querySelector('iframe').src, 'blob:certificate-0');
+  assert.equal(page.root.querySelector('iframe'), null);
   assert.equal(page.controller.canNavigate(), true);
   await page.download().fire('click');
   assert.match(page.calls.at(-1).url, /member\.pdf\?download=1$/);
-  assert.equal(page.downloads.length, 1);
+  assert.equal(page.downloads.length, 2);
   assert.equal(
     page.calls.some((call) => call.method === 'PATCH'),
     false,
@@ -264,16 +267,16 @@ test('member generation errors recover and missing-font errors have an actionabl
     },
   });
   await page.controller.ready;
-  await page.preview().fire('click');
+  await page.download().fire('click');
   assert.equal(page.status(), 'certificate_member_fonts_unavailable');
-  assert.equal(page.preview().disabled, false);
+  assert.equal(page.download().disabled, false);
   failed = false;
-  await page.preview().fire('click');
+  await page.download().fire('click');
   assert.equal(page.status(), 'certificate_member_generated');
-  assert.ok(page.root.querySelector('iframe'));
+  assert.equal(page.root.querySelector('iframe'), null);
 });
 
-test('denied and disposed document requests cannot retain private previews or late results', async () => {
+test('denied and disposed document requests cannot retain private downloads or late results', async () => {
   const denied = setup({
     api: (url) =>
       url.includes('member.pdf')
@@ -281,7 +284,7 @@ test('denied and disposed document requests cannot retain private previews or la
         : undefined,
   });
   await denied.controller.ready;
-  await denied.preview().fire('click');
+  await denied.download().fire('click');
   assert.equal(denied.denied(), 1);
   assert.equal(denied.root.children.length, 0);
   const pending = deferred();
@@ -289,7 +292,7 @@ test('denied and disposed document requests cannot retain private previews or la
     api: (url) => (url.includes('member.pdf') ? pending.promise : undefined),
   });
   await page.controller.ready;
-  const request = page.preview().fire('click');
+  const request = page.download().fire('click');
   page.controller.dispose();
   assert.equal(page.calls.at(-1).signal.aborted, true);
   pending.resolve({ blob: async () => ({ type: 'application/pdf' }) });

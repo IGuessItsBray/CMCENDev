@@ -25,6 +25,73 @@ const {
 } = require('../services/content-snapshots');
 
 const router = express.Router();
+const {
+  getManualRetirementRequest,
+} = require('../services/manual-retirement-certificate');
+
+router.post(
+  '/retirement.pdf',
+  (req, res, next) => {
+    res.set('Cache-Control', 'private, no-store');
+    res.set('X-Content-Type-Options', 'nosniff');
+    next();
+  },
+  authMiddleware,
+  requirePermission('canManageCertificateRequests'),
+  async (req, res) => {
+    if (req.query.download !== undefined && req.query.download !== '1')
+      return res
+        .status(400)
+        .json({ error: 'Invalid certificate download option' });
+    try {
+      const request = getManualRetirementRequest(req.body);
+      if (req.query.download === '1' && req.body.reviewed !== true)
+        throw new CertificateDocumentError(
+          'certificate_review_required',
+          'Review the entered member and family details and service dates before downloading.',
+        );
+      const kind = req.body.documentKind ?? 'member';
+      const bytes =
+        kind === 'family'
+          ? await generateFamilyCertificate(request, req.body.familyIndex)
+          : kind === 'packet'
+            ? await generateCertificatePacket(request)
+            : await generateMemberCertificate(request);
+      await writeAuditLog({
+        req,
+        actor: req.user,
+        action: 'content.manual_retirement_generated',
+        targetType: 'certificateDocument',
+        targetSnapshot: {
+          certificateType: 'retirement',
+          title: 'Member retirement certificate',
+        },
+        metadata: {
+          ceBranchEnrollmentDate: request.member.ceBranchEnrollmentDate,
+          releaseDate: request.member.releaseDate,
+          reviewed: req.body.reviewed === true,
+          documentKind: kind,
+          familyCount: request.familyMembers.length,
+          disposition: req.query.download === '1' ? 'attachment' : 'inline',
+        },
+      });
+      res.set(
+        'Content-Disposition',
+        `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="retirement-${kind}-${request.member.releaseDate}.pdf"`,
+      );
+      return res.type('pdf').send(bytes);
+    } catch (error) {
+      if (error instanceof CertificateDocumentError)
+        return res
+          .status(error.status)
+          .json({ error: error.message, code: error.code });
+      console.error('Could not generate manual member retirement certificate');
+      return res
+        .status(500)
+        .json({ error: 'Could not generate member retirement certificate' });
+    }
+  },
+);
 
 router.post(
   '/trusted-to-serve.pdf',
@@ -336,6 +403,8 @@ router.get(
       return res.json({
         certificateRequests,
         familyWordingOptions: FAMILY_WORDING_OPTIONS,
+        familyRelationshipOptions: require('../config/certificate-requests')
+          .CERTIFICATE_FAMILY_RELATIONSHIPS,
       });
     } catch (error) {
       console.error('Could not load certificate requests:', error);

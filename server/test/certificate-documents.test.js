@@ -14,6 +14,7 @@ const {
   MEMBER_TEMPLATE_SHA256,
   getMemberCertificateData,
   generateMemberCertificate,
+  fillMemberCertificate,
   loadCertificateFont,
   permitsFontEmbedding,
 } = require('../services/certificate-documents');
@@ -76,6 +77,63 @@ test('member service dates use only C&E entry, with optional post-nominals and n
   assert.throws(() => getMemberCertificateData(request), {
     code: 'certificate_data_invalid',
   });
+});
+
+test('English service ranges of different lengths center on the body column without moving the French field', async () => {
+  for (const [start, end] of [
+    ['2000-05-01', '2026-05-01'],
+    ['2000-09-30', '2026-12-31'],
+    ['2000-02-29', '2026-08-01'],
+  ]) {
+    const document = await PDFDocument.load(
+      await fs.readFile(MEMBER_TEMPLATE_PATH),
+    );
+    const form = document.getForm();
+    const englishWidget = form
+      .getTextField('date-en')
+      .acroField.getWidgets()[0];
+    const frenchWidget = form.getTextField('date-fr').acroField.getWidgets()[0];
+    const frenchBefore = frenchWidget.getRectangle();
+    const frenchAlignment = form.getTextField('date-fr').getAlignment();
+    const fonts = {
+      name: await document.embedFont(StandardFonts.Helvetica),
+      dates: await document.embedFont(StandardFonts.TimesRomanBold),
+    };
+    const data = getMemberCertificateData(
+      memberRequest({ ceBranchEnrollmentDate: start, releaseDate: end }),
+    );
+    const output = await PDFDocument.load(
+      await fillMemberCertificate(document, data, fonts),
+    );
+    const appearances = output
+      .getPage(0)
+      .node.Resources()
+      .lookup(PDFName.of('XObject'));
+    const encoded = fonts.dates.encodeText(data.datesEn).toString();
+    const content = appearances
+      .entries()
+      .filter(([key]) => key.toString().startsWith('/FlatWidget'))
+      .map(([, ref]) =>
+        Buffer.from(
+          decodePDFRawStream(output.context.lookup(ref)).decode(),
+        ).toString(),
+      )
+      .find((stream) => stream.includes(encoded));
+    assert.ok(content);
+    const match = content.match(
+      /\/Times-Bold ([\d.]+) Tf\s+1 0 0 1 ([\d.]+) ([\d.]+) Tm/u,
+    );
+    assert.ok(match);
+    const size = Number(match[1]),
+      x = Number(match[2]);
+    const textCenter =
+      englishWidget.getRectangle().x +
+      x +
+      fonts.dates.widthOfTextAtSize(data.datesEn, size) / 2;
+    assert.ok(Math.abs(textCenter - 205.118) < 0.001);
+    assert.deepEqual(frenchWidget.getRectangle(), frenchBefore);
+    assert.equal(frenchAlignment, 1);
+  }
 });
 
 test('missing or wrong fonts fail safely without any production fallback', async () => {

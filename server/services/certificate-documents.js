@@ -1,7 +1,7 @@
 const { readFile, realpath } = require('node:fs/promises');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
-const { PDFDocument, PDFName } = require('pdf-lib');
+const { PDFDocument, PDFName, TextAlignment } = require('pdf-lib');
 const fontkit = require('@pdf-lib/fontkit');
 const { resolve: resolveRank } = require('../public/person-rank-options');
 const { CERTIFICATE_DECORATIONS } = require('../config/certificate-requests');
@@ -13,7 +13,7 @@ const MEMBER_TEMPLATE_PATH = path.join(
   '../private/certificates/retirement-member.pdf',
 );
 const MEMBER_TEMPLATE_SHA256 =
-  'ab29b73b51a4342631e84c123472f60f8b80901139007a6aa1e6a7923d1268b1';
+  '24caebf1593e9f3b8d7c9f861317973dab4dc6f2b588df6bdaa414c25f2c2f97';
 const PRINT_FIELDS = ['name_field', 'date-en', 'date-fr'];
 const HELPERS = ['dt1_en', 'dt2_en', 'Text Field0'];
 const FAMILY_TEMPLATE_PATH = path.join(
@@ -21,7 +21,7 @@ const FAMILY_TEMPLATE_PATH = path.join(
   '../private/certificates/retirement-family.pdf',
 );
 const FAMILY_TEMPLATE_SHA256 =
-  '5fffafa476db9c4e69c6d9988459c9d184499fedd850b87e507f49b8b78d9864';
+  'dbecba8d4b06277dcbd94a40d7b5f02b46e4a2a37f195c6295447932a85d7bb9';
 const MONTHS = {
   en: [
     'January',
@@ -243,6 +243,15 @@ async function fillMemberCertificate(document, data, fonts) {
     );
   }
   for (const name of HELPERS) form.removeField(form.getField(name));
+  // The approved English body column is centered at 205.118 pt. Its original
+  // date widget is slightly displaced and left-aligned; center each new date
+  // range using its measured font width instead of an example-specific offset.
+  const englishDates = form.getTextField('date-en');
+  for (const widget of englishDates.acroField.getWidgets()) {
+    const rectangle = widget.getRectangle();
+    widget.setRectangle({ ...rectangle, x: 205.118 - rectangle.width / 2 });
+  }
+  englishDates.setAlignment(TextAlignment.Center);
   setPrintedText(
     form.getTextField('name_field'),
     data.recipient,
@@ -250,13 +259,7 @@ async function fillMemberCertificate(document, data, fonts) {
     30,
     12,
   );
-  setPrintedText(
-    form.getTextField('date-en'),
-    data.datesEn,
-    fonts.dates,
-    12,
-    8,
-  );
+  setPrintedText(englishDates, data.datesEn, fonts.dates, 12, 8);
   setPrintedText(
     form.getTextField('date-fr'),
     data.datesFr,

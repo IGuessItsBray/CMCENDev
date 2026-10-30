@@ -511,6 +511,7 @@ test('award missing-font errors are private and recover with configured exact fo
 test('approved template and private font paths are unavailable through static routes', async () => {
   for (const target of [
     '/private/certificates/retirement-member.pdf',
+    '/private/certificates/branch-leader-signature.png',
     '/private/certificates/retirement-family.pdf',
     '/private/certificates/trusted-to-serve-master.pdf',
     '/private/certificates/fonts/ScriptMTBold.ttf',

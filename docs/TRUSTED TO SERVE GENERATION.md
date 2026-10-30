@@ -41,9 +41,9 @@ only reachable page content into a fresh PDF, discarding orphaned source objects
 and document metadata. No opaque cover rectangles are drawn. A different source
 hash/layout is rejected rather than edited approximately.
 
-The resulting master is `server/private/certificates/trusted-to-serve-master.pdf`,
-SHA-256 `93e03bd0fcb7e702defddb36c96d16c68011e5c8d70e0115206fdff68c569a36`.
-It retains the original title, crest, fixed shadows and signatures, with the
+That initial preparation produced SHA-256
+`93e03bd0fcb7e702defddb36c96d16c68011e5c8d70e0115206fdff68c569a36`.
+It retained the original title, crest, fixed shadows and signatures, with the
 original 792.24 × 612 pt page geometry. A 2× raster comparison of source/master
 found **zero differing pixels among 1,394,440 pixels outside the complete variable
 text/shadow regions**. PDFKit extraction of the master contained only the fixed
@@ -55,6 +55,39 @@ To reproduce preparation from the approved original (new destination only):
 cd server
 node scripts/prepare-trusted-to-serve-master.js /private/original-export.pdf /private/new-master.pdf
 ```
+
+## Branch-leader update
+
+The current master at `server/private/certificates/trusted-to-serve-master.pdf`
+has SHA-256 `5c2e17d8997c2f54c76db75c9a139859a54a82e192d17941d3040e64a9370a6e`.
+It replaces the previous branch leader with **Major-General Justin P. Thibert,
+CD** and the owner-supplied blue PNG signature. Existing Branch Leader / Chef de
+la Branche titles, Renay Groves, artwork and variable certificate regions remain
+unchanged. The same update is included in both retirement masters. The supplied
+signature is scaled 5% larger than the first review version and lowered to
+overlap the signature line naturally, while clearing the printed text.
+
+`scripts/update-certificate-branch-leader.js` is a one-time recipe for the exact
+previous masters, with source hashes and signature hash guards. It removes old
+name/signature drawing operations and inactive objects, embeds the supplied
+signature pixels with only surrounding near-transparent padding cropped, and
+sets the new name in the existing Bell MT style. It preserves the original PNG
+as a private source asset. It does not generate or reconstruct signature strokes.
+No covering rectangles or runtime PDF-editing service are used. In the retirement
+sources, Groves's footer used unembedded Bell MT fragments (`FXF2` in the member
+name, and `FXF6` in the family name/English title), causing reader-dependent font
+substitution and mixed typography. Those three footer lines are now rebuilt in
+embedded Bell MT with unchanged wording. Groves's signature image is unchanged.
+
+```sh
+node scripts/update-certificate-branch-leader.js /private/previous-masters /private/new-masters
+```
+
+Use a new output directory; the script refuses unknown or already-updated
+masters and never overwrites its source files. At 2× resolution, before/after
+comparisons of all three masters showed zero changed pixels outside the
+approved signatory regions (including Groves's retirement footer text). Short and long accented synthetic outputs
+were also rendered to verify that signatures clear names and variable wording.
 
 This is a one-time verified-source preparation recipe, not a general-purpose PDF
 text editor. Replacing the source requires a new reviewed recipe/hash/master.

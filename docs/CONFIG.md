@@ -67,10 +67,19 @@ preserved in `server/private/certificates/fonts/NOTICE.md`. No separate licence
 was supplied, and redistribution/server-use entitlement has not been independently
 verified. Embedding flags alone are not a licence grant.
 
-The original member template is preserved byte-for-byte at
+The approved member master is kept at
 `server/private/certificates/retirement-member.pdf`, outside static routes.
 Its SHA-256 is
-`ab29b73b51a4342631e84c123472f60f8b80901139007a6aa1e6a7923d1268b1`.
+`24caebf1593e9f3b8d7c9f861317973dab4dc6f2b588df6bdaa414c25f2c2f97`.
+The branch-leader name/signature was updated to Major-General Justin P. Thibert,
+CD using the supplied PNG; other artwork and signatory wording remain unchanged.
+The retirement masters also embed Bell MT for Groves's footer text, replacing
+the original unembedded font fragments that caused viewer substitution.
+The original PNG is kept privately at
+`server/private/certificates/branch-leader-signature.png` and is not served by
+static routes. It is already embedded in the masters, so no deployment setting
+or runtime image processing is required. See the signatory preparation section
+in `docs/TRUSTED TO SERVE GENERATION.md` for the bounded source-update recipe.
 The generator checks that hash, removes the three nonprinting helper fields,
 replaces all three printed fields, flattens their explicit font appearances,
 and copies only the resulting printed page into a fresh PDF to discard stale
@@ -108,9 +117,10 @@ or email delivery. Real-font tests run in CI rather than being skipped.
 Family certificates use bundled Bell MT Italic for relationship wording and
 Bell MT Regular for the single date line. The corresponding optional overrides
 are `CERTIFICATE_BELL_MT_ITALIC_PATH` and `CERTIFICATE_BELL_MT_PATH`.
-The original family template is preserved
+The approved family master is kept
 at `server/private/certificates/retirement-family.pdf`, SHA-256
-`5fffafa476db9c4e69c6d9988459c9d184499fedd850b87e507f49b8b78d9864`.
+`dbecba8d4b06277dcbd94a40d7b5f02b46e4a2a37f195c6295447932a85d7bb9`.
+It includes the same approved branch-leader update.
 Its printed fields are `name_field`, `adj_en`, `adj_fr`, and `date`; helpers
 `cb_en` and `tb1` are removed before flattening. The generator preserves the
 template's black Bell MT Italic wording, blue Script MT name and lighter-blue

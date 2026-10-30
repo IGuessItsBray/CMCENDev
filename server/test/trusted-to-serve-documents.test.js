@@ -124,7 +124,7 @@ test('fixed master is hash-locked, keeps fixed title/signature resources and con
   const content = Buffer.from(
     decodePDFRawStream(page.node.Contents()).decode(),
   ).toString('latin1');
-  assert.equal((content.match(/\bBT\b/gu) || []).length, 16);
+  assert.equal((content.match(/\bBT\b/gu) || []).length, 12);
   assert.doesNotMatch(
     content,
     /\/F[234] |Nyami|Nov|\/Image(?:33|37|39|43) Do/u,
@@ -135,10 +135,10 @@ test('fixed master is hash-locked, keeps fixed title/signature resources and con
       .lookup(PDFName.of('Font'))
       .keys()
       .map((k) => k.toString()),
-    ['/F1', '/F5'],
+    ['/F1', '/F5', '/BranchLeaderName'],
   );
   const images = page.node.Resources().lookup(PDFName.of('XObject'));
-  for (const name of ['Image33', 'Image37', 'Image39', 'Image43'])
+  for (const name of ['Image33', 'Image37', 'Image39', 'Image43', 'Image45'])
     assert.equal(images.has(PDFName.of(name)), false);
   for (const name of [
     'Image7',
@@ -149,7 +149,7 @@ test('fixed master is hash-locked, keeps fixed title/signature resources and con
     'Image20',
     'Image22',
     'Image24',
-    'Image45',
+    'BranchLeaderSignature',
     'Image47',
   ])
     assert.equal(images.has(PDFName.of(name)), true);

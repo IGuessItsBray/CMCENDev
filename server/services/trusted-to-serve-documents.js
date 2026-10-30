@@ -19,7 +19,7 @@ const MASTER_PATH = path.join(
   '../private/certificates/trusted-to-serve-master.pdf',
 );
 const MASTER_SHA256 =
-  '93e03bd0fcb7e702defddb36c96d16c68011e5c8d70e0115206fdff68c569a36';
+  '5c2e17d8997c2f54c76db75c9a139859a54a82e192d17941d3040e64a9370a6e';
 const MONTHS = [
   'Jan',
   'Feb',

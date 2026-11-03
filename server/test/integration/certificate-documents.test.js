@@ -274,7 +274,7 @@ test('family/packet routes enforce authorization, indices and complete explicit 
     .get('/api/certificate-requests')
     .set(auth)
     .expect(200);
-  assert.equal(list.body.familyWordingOptions.length, 19);
+  assert.equal(list.body.familyWordingOptions.length, 25);
   assert.equal(
     list.body.familyWordingOptions.some((item) => item.key === 'member_name'),
     false,
@@ -395,6 +395,18 @@ test('award generation enforces permissions, explicit wording, input validation 
     .set(auth)
     .send({ ...input, frPronoun: '' })
     .expect(422);
+  for (const changes of [
+    { rankFr: 'Caporale' },
+    { rankEn: 'Custom' },
+    { frRankGrammar: 'no_article' },
+    { frRankGrammar: 'masculine' },
+    { fullRankEn: 'Recruit' },
+  ])
+    await request(app)
+      .post(target)
+      .set(auth)
+      .send({ ...input, ...changes })
+      .expect(422);
   await request(app)
     .post(target)
     .set(auth)
@@ -438,11 +450,8 @@ test('repeated award previews/downloads audit safe details without creating requ
           lastName: 'D’Amour',
           fullRankEn: 'Corporal',
           postNominals: 'CD',
-          rankEn: 'Corporal',
-          rankFr: 'Caporale',
           presentationDate: '2028-02-29',
           frPronoun: 'elle',
-          frRankGrammar: 'feminine',
           reviewed: query !== '',
         })
         .expect(200);
@@ -623,11 +632,25 @@ test('manual member retirement generation validates and audits document-only pre
     getManualRetirementRequest,
   } = require('../../services/manual-retirement-certificate');
   const manual = getManualRetirementRequest({ ...input, familyMembers });
+  const ceremony = getManualRetirementRequest({
+    ...input,
+    dwdDate: '2028-02-29',
+    familyMembers: [
+      { fullName: 'Camille', memberRelationshipToRecipient: 'grandfather' },
+    ],
+  });
+  assert.equal(
+    documents.getFamilyCertificateData(ceremony, 0).isoDate,
+    '2028-02-29',
+  );
+  assert.equal(ceremony.familyMembers[0].relationship, undefined);
   assert.equal(
     documents.getFamilyCertificateData(manual, 0).isoDate,
     '2026-08-01',
   );
   for (const bad of [
+    { dwdDate: '2028-02-30' },
+    { dwdDate: '2028-02-29T23:00:00Z' },
     { familyMembers: [{ ...familyMembers[0], relationship: 'invented' }] },
     {
       familyMembers: [

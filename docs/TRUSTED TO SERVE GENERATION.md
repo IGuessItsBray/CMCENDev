@@ -110,11 +110,21 @@ Text that cannot fit legibly or contains unsupported glyphs returns 422.
 
 The body/dedication text comes from the supplied PPTX. The English possessive
 before “outstanding contributions” is corrected; award claims are otherwise
-unchanged. French grammar is explicitly reviewed: Il/Elle (including un futur /
-une future leader), and au/du, à la/de la, à l’/de l’, or à/de before the printed
-rank. Names never determine grammar. The staff member must select a valid form
-for the entered French rank; for example Aviateur uses à l’/de l’, avoiding the
-source's “du Avr” wording. No other free-text award claims are accepted.
+unchanged. Staff select one bilingual military rank and explicit masculine (il)
+or feminine (elle) French wording, including un futur / une future leader.
+`public/trusted-to-serve-ranks.js` reuses the shared catalogue and abbreviations,
+with award-only French form/article metadata based on the
+[CAF inclusive French rank reference](https://www.canada.ca/fr/ministere-defense-nationale/feuille-derable/defense/2022/02/fac-modernisent-grades-militaires-francais.html).
+Both au/du or à la/de la, and elided à l’/de l’, are derived automatically; there
+is no separate grammar selector or free-text body rank in the dashboard.
+For example, caporal/caporale use au/du or à la/de la; aviateur/aviatrice both
+use à l’/de l’. Names never determine grammar. Civilian and generic Recruit are
+not specific military ranks with verified bilingual abbreviations and are not
+offered in this award flow. Custom ranks require a reviewed catalogue extension,
+not a guessed service/rank conversion. Other rank consumers are unchanged.
+Older API clients can send matching full rank/form labels or abbreviations and
+a matching article assertion; mismatched/arbitrary labels or article overrides
+are rejected. No other free-text award claims are accepted.
 
 The central name/date retain Script MT Bold and matching colors. Their old raster
 shadows are replaced with newly rendered transparent glyph-outline shadows using

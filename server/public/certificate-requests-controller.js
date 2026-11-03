@@ -111,7 +111,18 @@
       return section;
     }
 
-    function createFamilyMemberList(familyMembers = []) {
+    function familyRelationshipLabel(family, memberName) {
+      if (family.memberRelationshipToRecipient)
+        return `${translate("certificate_member_relationship_question", {
+          member: memberName || translate("certificate_retiring_member"),
+          recipient:
+            family.fullName || translate("certificate_family_member_generic"),
+        })} ${translate(`certificate_member_relationship_${family.memberRelationshipToRecipient.replaceAll("-", "_")}`)}`;
+      return family.relationship === "other"
+        ? family.relationshipOther || "—"
+        : getCertificateRelationshipLabel(family.relationship);
+    }
+    function createFamilyMemberList(familyMembers = [], memberName) {
       if (!familyMembers.length) {
         const empty = document.createElement("p");
         empty.className = "certificate-request-empty-value";
@@ -124,11 +135,7 @@
 
       familyMembers.forEach((familyMember) => {
         const item = document.createElement("li");
-        const relationship =
-          familyMember.relationship === "other" &&
-          familyMember.relationshipOther
-            ? familyMember.relationshipOther
-            : getCertificateRelationshipLabel(familyMember.relationship);
+        const relationship = familyRelationshipLabel(familyMember, memberName);
 
         item.textContent = `${familyMember.fullName || "—"} — ${relationship}`;
         list.append(item);
@@ -163,11 +170,10 @@
           }),
         },
         ...familyMembers.map((familyMember, index) => {
-          const relationship =
-            familyMember.relationship === "other" &&
-            familyMember.relationshipOther
-              ? familyMember.relationshipOther
-              : getCertificateRelationshipLabel(familyMember.relationship);
+          const relationship = familyRelationshipLabel(
+            familyMember,
+            member.fullName,
+          );
 
           return {
             value: `family:${index}`,
@@ -212,16 +218,16 @@
       const signature = JSON.stringify([
         request.member?.fullName,
         request.member?.releaseDate,
+        request.member?.dwdDate,
         request.familyMembers,
       ]);
       let review = familyReviews.get(request._id);
       if (!review || review.signature !== signature) {
         review = {
           signature,
-          certificateDate: String(request.member?.releaseDate || "").slice(
-            0,
-            10,
-          ),
+          certificateDate: String(
+            request.member?.dwdDate ?? request.member?.releaseDate ?? "",
+          ).slice(0, 10),
         };
         familyReviews.set(request._id, review);
       }
@@ -294,7 +300,7 @@
         const row = document.createElement("div");
         row.className = "certificate-family-document-row";
         const recipient = document.createElement("strong");
-        recipient.textContent = `${family.fullName || "—"} — ${family.relationship === "other" ? family.relationshipOther || "—" : getCertificateRelationshipLabel(family.relationship)}`;
+        recipient.textContent = `${family.fullName || "—"} — ${familyRelationshipLabel(family, request.member?.fullName)}`;
         const label = document.createElement("p");
         label.className = "certificate-family-saved-wording";
         const language = getCertificateRequestsLocale().startsWith("fr")
@@ -674,6 +680,10 @@
           formatCertificateRequestDate(member.releaseDate),
         ),
         createCertificateRequestDetail(
+          "certificate_dwd_date",
+          formatCertificateRequestDate(member.dwdDate),
+        ),
+        createCertificateRequestDetail(
           "certificate_ce_enrollment_date",
           formatCertificateRequestDate(member.ceBranchEnrollmentDate),
         ),
@@ -732,7 +742,10 @@
         createCertificateRequestSection("certificate_dates_heading", dates),
         createCertificateRequestSection(
           "certificate_family_heading",
-          createFamilyMemberList(certificateRequest.familyMembers),
+          createFamilyMemberList(
+            certificateRequest.familyMembers,
+            member.fullName,
+          ),
         ),
         createCertificateRequestSection("certificate_address_heading", address),
         createCertificateRequestSection(

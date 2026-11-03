@@ -13,6 +13,7 @@ function isRecord(value) {
 
 function parseCertificateDate(value) {
   const date = parseDateOnly(value);
+  if (date && date.toISOString().slice(0, 10) !== value) return null;
   if (date) date.setUTCHours(0, 0, 0, 0);
   return date;
 }
@@ -25,7 +26,9 @@ function getCleanCertificateRequestPayload(value) {
     : {};
   const familyMembers = Array.isArray(request.familyMembers)
     ? request.familyMembers.filter(isRecord).map((familyMember) => ({
-        relationship: cleanString(familyMember.relationship),
+        ...(Object.hasOwn(familyMember, 'relationship')
+          ? { relationship: cleanString(familyMember.relationship) }
+          : {}),
         relationshipOther: cleanString(familyMember.relationshipOther),
         memberRelationshipToRecipient: cleanString(
           familyMember.memberRelationshipToRecipient,
@@ -38,6 +41,10 @@ function getCleanCertificateRequestPayload(value) {
     isValidObject: isRecord(value),
     hasDwdParadeRequested: Object.hasOwn(member, 'dwdParadeRequested'),
     hasFamilyMembersArray: Array.isArray(request.familyMembers),
+    hasInvalidDwdDate:
+      member.dwdDate != null &&
+      member.dwdDate !== '' &&
+      !parseCertificateDate(member.dwdDate),
     member: {
       fullName: cleanString(member.fullName),
       rankLanguage: cleanString(member.rankLanguage),
@@ -46,6 +53,7 @@ function getCleanCertificateRequestPayload(value) {
         : [],
       lastUnit: cleanString(member.lastUnit),
       releaseDate: parseCertificateDate(member.releaseDate),
+      dwdDate: parseCertificateDate(member.dwdDate),
       ceBranchEnrollmentDate: parseCertificateDate(
         member.ceBranchEnrollmentDate,
       ),
@@ -70,6 +78,7 @@ function validateCertificateRequestPayload(payload) {
   }
 
   const { member, familyMembers, mailingAddress } = payload;
+  if (payload.hasInvalidDwdDate) return 'The DWD ceremony date is invalid';
 
   if (!member.fullName) {
     return 'The certificate member full name is required';
@@ -118,7 +127,10 @@ function validateCertificateRequestPayload(payload) {
     ) {
       return 'Specify how the retiring member is related to each family certificate recipient using a supported certificate relationship';
     }
-    if (!CERTIFICATE_FAMILY_RELATIONSHIPS.includes(familyMember.relationship)) {
+    if (
+      familyMember.relationship !== undefined &&
+      !CERTIFICATE_FAMILY_RELATIONSHIPS.includes(familyMember.relationship)
+    ) {
       return 'A certificate family relationship is invalid';
     }
 
@@ -148,6 +160,7 @@ function validateCertificateRequestPayload(payload) {
 }
 
 module.exports = {
+  parseCertificateDate,
   getCleanCertificateRequestPayload,
   validateCertificateRequestPayload,
 };

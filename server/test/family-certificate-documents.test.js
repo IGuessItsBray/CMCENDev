@@ -43,9 +43,12 @@ test('all supported relationship mappings reproduce original PDF script text exa
   const en = JSON.parse(script.match(/var adjs_en = (\[[\s\S]*?\]);/u)[1]);
   const fr = JSON.parse(script.match(/var adjs_fr = (\[[\s\S]*?\]);/u)[1]);
   const { FAMILY_WORDING_OPTIONS } = require('../config/certificate-wording');
-  assert.equal(FAMILY_WORDING_OPTIONS.length, 19);
+  assert.equal(FAMILY_WORDING_OPTIONS.length, 25);
   const request = familyRequest();
-  for (const [index, variant] of FAMILY_WORDING_OPTIONS.entries()) {
+  for (const [index, variant] of FAMILY_WORDING_OPTIONS.slice(
+    0,
+    19,
+  ).entries()) {
     request.familyMembers[0].memberRelationshipToRecipient = variant.key;
     const data = getFamilyCertificateData(request, 0);
     assert.equal(data.adjEn, `${en[index]} successful military career.`);
@@ -101,6 +104,45 @@ test('family date defaults to UTC release date and supports an explicitly review
     request.member.releaseDate.toISOString(),
     '2026-08-01T00:00:00.000Z',
   );
+});
+
+test('grand relationships retain member-to-recipient direction and DWD date overrides only family dates', () => {
+  const {
+    getMemberCertificateData,
+  } = require('../services/certificate-documents');
+  const request = familyRequest();
+  const memberBefore = getMemberCertificateData(request);
+  for (const [key, en, fr] of [
+    ['grandfather', "your grandfather's", 'de votre grand-père.'],
+    ['grandmother', "your grandmother's", 'de votre grand-mère.'],
+    ['grandparent', "your grandparent's", 'de votre grand-parent.'],
+    ['grandson', "your grandson's", 'de votre petit-fils.'],
+    ['granddaughter', "your granddaughter's", 'de votre petite-fille.'],
+    ['grandchild', "your grandchild's", 'de votre petit-enfant.'],
+  ]) {
+    request.familyMembers[0].memberRelationshipToRecipient = key;
+    const data = getFamilyCertificateData(request, 0);
+    assert.equal(data.adjEn, `${en} successful military career.`);
+    assert.equal(data.adjFr, `carrière militaire ${fr}`);
+  }
+  request.member.dwdDate = new Date('2028-02-29T00:00:00.000Z');
+  assert.equal(getFamilyCertificateData(request, 0).date, '29 February 2028');
+  assert.equal(
+    getFamilyCertificateData(request, 0, { certificateDate: '2028-03-01' })
+      .isoDate,
+    '2028-03-01',
+  );
+  assert.deepEqual(getMemberCertificateData(request), memberBefore);
+  for (const dwdDate of [
+    '2028-02-30',
+    'not-a-date',
+    '2028-02-29T23:00:00.000Z',
+  ]) {
+    request.member.dwdDate = dwdDate;
+    assert.throws(() => getFamilyCertificateData(request, 0), {
+      code: 'certificate_data_invalid',
+    });
+  }
 });
 
 test('invalid indices, missing names and unexpected options cannot produce family output', () => {

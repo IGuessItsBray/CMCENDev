@@ -24,6 +24,7 @@ function setup(
   const window = {
     translate: (key) => key,
     CMCENRanks: require('../public/person-rank-options'),
+    CMCENAwardRanks: require('../public/trusted-to-serve-ranks'),
   };
   let denied = 0,
     controller;
@@ -66,11 +67,8 @@ function setup(
       lastName: 'D’Amour',
       fullRankEn: 'Corporal',
       postNominals: '',
-      rankEn: 'Corporal',
-      rankFr: 'Caporale',
       presentationDate: '2026-11-13',
       frPronoun: 'elle',
-      frRankGrammar: 'feminine',
     })) {
       const element = control(key);
       element.value = value;
@@ -99,6 +97,45 @@ async function reviewed(page) {
   await page.control('reviewed').fire('change');
 }
 
+test('award rank is a bilingual dropdown with explicit French forms and no article/text-rank controls', async () => {
+  const page = setup();
+  const rank = page.control('fullRankEn');
+  assert.equal(rank.tagName, 'SELECT');
+  assert.equal(rank.required, true);
+  assert.equal(
+    rank.getAttribute('aria-describedby'),
+    'trusted-award-rank-hint',
+  );
+  const corporal = rank.children.find((option) => option.value === 'Corporal');
+  assert.match(corporal.textContent, /Corporal \(Cpl\) \/ Caporal \(Cpl\)/u);
+  rank.value = 'Corporal';
+  await rank.fire('change');
+  const form = page.control('frPronoun');
+  assert.equal(form.value, ''); // No gender default or inference from name.
+  assert.match(
+    form.children.find((option) => option.value === 'elle').textContent,
+    /Caporale/u,
+  );
+  rank.value = 'Aviator';
+  await rank.fire('change');
+  assert.match(
+    form.children.find((option) => option.value === 'elle').textContent,
+    /Aviatrice/u,
+  );
+  assert.equal(page.control('rankEn'), null);
+  assert.equal(page.control('rankFr'), null);
+  assert.equal(page.control('frRankGrammar'), null);
+  await page.fill();
+  await reviewed(page);
+  await page.control('download').fire('click');
+  const result =
+    require('../services/trusted-to-serve-documents').getTrustedToServeData(
+      page.calls[0].body,
+    );
+  assert.equal(result.dedicationFr, 'Décerné à la Cpl D’Amour');
+  page.controller.dispose();
+});
+
 test('manual families reuse explicit relationship options and download individual documents or a packet without preview', async () => {
   const page = setup(undefined, true);
   page.controller.setFamilyOptions({
@@ -106,9 +143,9 @@ test('manual families reuse explicit relationship options and download individua
       .CERTIFICATE_FAMILY_RELATIONSHIPS,
     wordings: require('../config/certificate-wording').FAMILY_WORDING_OPTIONS,
   });
-  for (const [index, name, relation, inverse] of [
-    [0, 'Camille Bélanger', 'wife', 'husband'],
-    [1, 'Jo Tremblay', 'father', 'daughter'],
+  for (const [index, name, inverse] of [
+    [0, 'Camille Bélanger', 'husband'],
+    [1, 'Jo Tremblay', 'granddaughter'],
   ]) {
     await page.root.querySelector('.manual-family-add').fire('click');
     const field = (key) =>
@@ -117,8 +154,7 @@ test('manual families reuse explicit relationship options and download individua
         [index].querySelector('.manual-family-' + key);
     field('fullName').value = name;
     await field('fullName').fire('input');
-    field('relationship').value = relation;
-    await field('relationship').fire('change');
+    assert.equal(field('relationship'), null);
     field('memberRelationshipToRecipient').value = inverse;
     await field('memberRelationshipToRecipient').fire('change');
   }
@@ -133,7 +169,7 @@ test('manual families reuse explicit relationship options and download individua
     ]),
     [
       ['Camille Bélanger', 'husband'],
-      ['Jo Tremblay', 'daughter'],
+      ['Jo Tremblay', 'granddaughter'],
     ],
   );
   await page.root.querySelector('.manual-packet-download').fire('click');
@@ -197,9 +233,13 @@ test('award downloads preserve explicit choices across language changes without 
   assert.equal(page.root.querySelector('iframe'), null);
   await page.document.fire('languagechange');
   assert.equal(page.control('firstName').value, 'Émilie');
-  assert.equal(page.control('frRankGrammar').value, 'feminine');
-  page.control('rankFr').value = 'Sergente';
-  await page.control('rankFr').fire('input');
+  assert.equal(page.control('frPronoun').value, 'elle');
+  assert.equal(page.control('rankFr'), null);
+  assert.equal(page.control('rankEn'), null);
+  assert.equal(page.control('frRankGrammar'), null);
+  assert.equal(page.calls[0].body.rankFr, undefined);
+  page.control('fullRankEn').value = 'Sergeant';
+  await page.control('fullRankEn').fire('change');
   assert.equal(page.control('reviewed').checked, false);
   page.controller.dispose();
   assert.deepEqual(page.revoked.sort(), page.urls.sort());

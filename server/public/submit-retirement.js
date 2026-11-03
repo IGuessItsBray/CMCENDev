@@ -119,8 +119,7 @@ const CERTIFICATE_FAMILY_RELATIONSHIPS = Object.freeze([
   ["other", "certificate_relationship_other"],
 ]);
 
-// The original PDF's supported member-to-recipient choices. This is a separate
-// answer from the recipient-to-member relationship above; never invert names.
+// The retiring member relative to the named recipient; never invert this answer.
 const CERTIFICATE_MEMBER_RELATIONSHIPS = Object.freeze([
   "husband",
   "wife",
@@ -141,6 +140,12 @@ const CERTIFICATE_MEMBER_RELATIONSHIPS = Object.freeze([
   "sister",
   "uncle",
   "aunt",
+  "grandfather",
+  "grandmother",
+  "grandparent",
+  "grandson",
+  "granddaughter",
+  "grandchild",
 ]);
 
 function renderRetirementDeleteAction() {
@@ -659,37 +664,6 @@ function createCertificateFamilyMemberCard() {
   const grid = document.createElement("div");
   grid.className = "event-details-grid";
 
-  const relationshipField = document.createElement("div");
-  relationshipField.className = "event-field";
-
-  const relationshipLabel = document.createElement("label");
-  relationshipLabel.htmlFor = `certificateFamilyRelationship${sequence}`;
-  relationshipLabel.dataset.certificateFamilyRelationshipLabel = "true";
-
-  const relationship = document.createElement("select");
-  relationship.id = `certificateFamilyRelationship${sequence}`;
-  relationship.name = `certificateFamilyMembers[${sequence}][relationship]`;
-  relationship.required = true;
-  relationship.dataset.certificateFamilyRelationship = "true";
-
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  relationship.append(placeholder);
-
-  CERTIFICATE_FAMILY_RELATIONSHIPS.forEach(([value, key]) => {
-    const option = document.createElement("option");
-    option.value = value;
-    option.dataset.certificateRelationshipKey = key;
-    relationship.append(option);
-  });
-
-  relationship.addEventListener("change", () => {
-    updateCertificateFamilyOtherField(card);
-    updateCertificateFamilyCardContext(card);
-  });
-
-  relationshipField.append(relationshipLabel, relationship);
-
   const fullNameField = document.createElement("div");
   fullNameField.className = "event-field";
 
@@ -709,24 +683,6 @@ function createCertificateFamilyMemberCard() {
     updateCertificateFamilyCardContext(card),
   );
   fullNameField.append(fullNameLabel, fullName);
-
-  const otherField = document.createElement("div");
-  otherField.className = "event-field event-field-wide";
-  otherField.hidden = true;
-  otherField.dataset.certificateFamilyOtherField = "true";
-
-  const otherLabel = document.createElement("label");
-  otherLabel.htmlFor = `certificateFamilyRelationshipOther${sequence}`;
-  otherLabel.dataset.certificateFamilyOtherLabel = "true";
-
-  const other = document.createElement("input");
-  other.id = `certificateFamilyRelationshipOther${sequence}`;
-  other.name = `certificateFamilyMembers[${sequence}][relationshipOther]`;
-  other.type = "text";
-  other.maxLength = 80;
-  other.disabled = true;
-  other.dataset.certificateFamilyOther = "true";
-  otherField.append(otherLabel, other);
 
   const memberField = document.createElement("div");
   memberField.className = "event-field event-field-wide";
@@ -748,8 +704,8 @@ function createCertificateFamilyMemberCard() {
   memberHelp.dataset.certificateMemberRelationshipHelp = "true";
   memberRelationship.setAttribute("aria-describedby", memberHelp.id);
   memberField.append(memberLabel, memberRelationship, memberHelp);
-  grid.append(relationshipField, fullNameField, otherField, memberField);
-  card.append(header, context, grid);
+  grid.append(fullNameField, memberField);
+  card.append(header, grid);
   updateCertificateFamilyCardLanguage(
     card,
     certificateFamilyList.children.length,
@@ -938,10 +894,6 @@ function buildCertificateRequestData() {
   const familyMembers = Array.from(
     certificateFamilyList.querySelectorAll("[data-certificate-family-card]"),
   ).map((card) => ({
-    relationship: card.querySelector("[data-certificate-family-relationship]")
-      ?.value,
-    relationshipOther: card.querySelector("[data-certificate-family-other]")
-      ?.value,
     fullName: card.querySelector("[data-certificate-family-full-name]")?.value,
     memberRelationshipToRecipient: card.querySelector(
       "[data-certificate-member-relationship]",
@@ -955,6 +907,7 @@ function buildCertificateRequestData() {
       decorations,
       lastUnit: getFieldValue("certificateLastUnit"),
       releaseDate: getFieldValue("certificateReleaseDate"),
+      dwdDate: getFieldValue("certificateDwdDate"),
       ceBranchEnrollmentDate: getFieldValue("certificateCeEnrollmentDate"),
       neededByDate: getFieldValue("certificateNeededByDate"),
       dwdParadeRequested: document.getElementById(

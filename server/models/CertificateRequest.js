@@ -15,7 +15,6 @@ const certificateFamilyMemberSchema = new mongoose.Schema(
     relationship: {
       type: String,
       enum: CERTIFICATE_FAMILY_RELATIONSHIPS,
-      required: true,
     },
 
     relationshipOther: {
@@ -123,6 +122,8 @@ const certificateRequestSchema = new mongoose.Schema(
         type: Date,
         required: true,
       },
+
+      dwdDate: { type: Date, default: null },
 
       ceBranchEnrollmentDate: {
         type: Date,

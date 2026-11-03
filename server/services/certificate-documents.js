@@ -21,7 +21,7 @@ const FAMILY_TEMPLATE_PATH = path.join(
   '../private/certificates/retirement-family.pdf',
 );
 const FAMILY_TEMPLATE_SHA256 =
-  'dbecba8d4b06277dcbd94a40d7b5f02b46e4a2a37f195c6295447932a85d7bb9';
+  '151356b3233b3b14da766cf4d89bcd5794b1d96014166bb90679ae41c2197881';
 const MONTHS = {
   en: [
     'January',
@@ -360,7 +360,7 @@ function getFamilyCertificateData(request, index, options = {}) {
   const adjFr = `carrière militaire ${variant.fr}`;
   const isoDate = dateOnly(
     options.certificateDate === undefined
-      ? request.member?.releaseDate
+      ? (request.member?.dwdDate ?? request.member?.releaseDate)
       : options.certificateDate,
   );
   return {

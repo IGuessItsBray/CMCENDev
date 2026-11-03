@@ -9,6 +9,5 @@ const FR_GRAMMAR = Object.freeze({
   masculine: { dedication: 'au ', contribution: 'du ' },
   feminine: { dedication: 'à la ', contribution: 'de la ' },
   elided: { dedication: 'à l’', contribution: 'de l’' },
-  no_article: { dedication: 'à ', contribution: 'de ' },
 });
 module.exports = { BODY_EN, BODY_FR, FR_GRAMMAR };

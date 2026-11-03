@@ -572,15 +572,21 @@ Optional `familyMembers` (up to 20) use the same `fullName`, recipient
 includes `familyRelationshipOptions` alongside `familyWordingOptions` so the
 staff form reuses the server's choices. No relationship or gender is inferred.
 `documentKind` is `member` (default), `family` (requires zero-based `familyIndex`),
-or `packet`. Family dates use `releaseDate`; packet order is member first,
+or `packet`. Optional `dwdDate` supplies the ceremony date for family pages;
+otherwise they use `releaseDate`. Packet order is member first,
 then families in supplied order. An empty family list is valid.
 
 `POST /api/certificate-requests/trusted-to-serve.pdf` requires
 `canManageCertificateRequests` and accepts explicit `firstName` and `lastName`
 (100 chars each), `fullRankEn` (shared catalogue), optional `postNominals`,
-`rankEn`/`rankFr` (40 chars each), `presentationDate` (`YYYY-MM-DD`),
-`frPronoun` (`il|elle`) and `frRankGrammar`
-(`masculine|feminine|elided|no_article`). French choices have no inferred defaults.
+`presentationDate` (`YYYY-MM-DD`) and `frPronoun` (`il|elle`, the explicit
+masculine/feminine French wording choice). The selected rank supplies the
+bilingual body abbreviations and both French article forms automatically.
+Optional older-client `rankEn`/`rankFr` labels must match the selected rank and
+French form; optional `frRankGrammar` must agree with the derived articles.
+Arbitrary labels/article overrides are rejected. The award catalogue excludes
+Civilian and generic Recruit, which do not identify a specific military rank
+with verified bilingual abbreviations; no custom-rank authoring is offered.
 The date is the award presentation date, independent of retirement data. Omit
 the query for an inline API response; the dashboard uses download-only controls.
 `?download=1` additionally requires `reviewed: true` after checking entered
@@ -620,7 +626,8 @@ Family generation uses the same permission and private/no-store response policy:
 - `POST /api/certificate-requests/:certificateRequestId/family/:familyIndex.pdf`
   accepts `{ "certificateDate": "2026-08-01" }` or `{}`.
   The zero-based family index refers only to this request;
-  `certificateDate` is optional and defaults to `member.releaseDate`.
+  `certificateDate` is optional and defaults to `member.dwdDate`, falling back
+  to `member.releaseDate`. Invalid supplied dates fail rather than falling back.
 - `POST /api/certificate-requests/:certificateRequestId/packet.pdf` accepts
   `{ "certificateDate": "2026-08-01" }` or `{}`.
   Each saved family recipient must have a supported `memberRelationshipToRecipient`
@@ -634,17 +641,20 @@ generation is audited as `content.certificate_request_family_generated` or
 `content.certificate_request_packet_generated`, including selected wording keys
 and output date. Downloads never advance fulfillment.
 
-The worklist includes `familyWordingOptions` (the 19 original PDF keys and EN/FR
-phrases) to display the saved selection, with no staff wording selector. The
-requester answers `familyMembers[].memberRelationshipToRecipient` separately
-from the existing recipient-to-member `relationship`; neither is inferred from
-names or the other relationship. New POST/PATCH retirement submissions containing
+The worklist includes `familyWordingOptions` (the 19 original PDF keys and six
+grandparent/grandchild options with EN/FR phrases) to display the saved selection,
+with no staff wording selector. The requester answers only
+`familyMembers[].memberRelationshipToRecipient`: the retiring member relative
+to the certificate recipient. Existing optional recipient-to-member
+`relationship` values are validated when supplied and retained without inversion;
+new forms do not collect them. Names never determine the answer.
+New POST/PATCH retirement submissions containing
 a certificate request require this answer for every recipient. The existing
 retirement edit lifecycle still creates a new certificate request snapshot when
 a certificate payload is submitted; this does not amend older requests in place.
 Missing or unsupported answers fail validation; there is no neutral fallback. Generation bodies
 cannot override saved relationships with `wording` or `familyWordings`.
-All relationship phrases reproduce the original PDF script exactly, including
+The original 19 relationship phrases reproduce the PDF script exactly, including
 its existing `you son's` typo and punctuation. Unsupported relations need
 clarification with Branch staff; approximate mappings are never substituted.
 Long wording that cannot fit legibly is rejected.

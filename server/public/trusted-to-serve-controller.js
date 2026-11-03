@@ -16,6 +16,7 @@
           rankLanguage: "",
           ceBranchEnrollmentDate: "",
           releaseDate: "",
+          dwdDate: "",
           familyMembers: [],
           reviewed: false,
         }
@@ -24,11 +25,8 @@
           lastName: "",
           postNominals: "",
           fullRankEn: "",
-          rankEn: "",
-          rankFr: "",
           presentationDate: "",
           frPronoun: "",
-          frRankGrammar: "",
           reviewed: false,
         };
     const t = (key, values) =>
@@ -51,7 +49,7 @@
         control.disabled =
           busy ||
           (control.dataset.requiresFamilyOptions === "true" &&
-            (!familyOptions.relationships.length ||
+            (!familyOptions.wordings.length ||
               draft.familyMembers.length >= 20));
     }
     function render() {
@@ -105,12 +103,9 @@
           ? [
               ["ceBranchEnrollmentDate", "date"],
               ["releaseDate", "date"],
+              ["dwdDate", "date"],
             ]
-          : [
-              ["rankEn", "text", 40],
-              ["rankFr", "text", 40],
-              ["presentationDate", "date"],
-            ]),
+          : [["presentationDate", "date"]]),
       ]) {
         const label = document.createElement("label");
         label.className = `trusted-award-field trusted-award-field-${key}`;
@@ -137,7 +132,7 @@
         }
         const input = document.createElement("input");
         input.type = type;
-        input.required = key !== "postNominals";
+        input.required = !["postNominals", "dwdDate"].includes(key);
         input.className = `trusted-award-${key}`;
         input.value = draft[key];
         if (maxLength) input.maxLength = maxLength;
@@ -166,31 +161,37 @@
       noRank.value = "";
       noRank.textContent = t("select_option");
       fullRank.append(noRank);
-      for (const rank of window.CMCENRanks.catalogue) {
+      for (const rank of memberRetirement
+        ? window.CMCENRanks.catalogue
+        : window.CMCENAwardRanks.catalogue) {
         const option = document.createElement("option");
         option.value = rank.en;
         option.textContent = memberRetirement
           ? `${rank.en} / ${rank.fr}`
-          : rank.en;
+          : `${rank.en} (${rank.abbreviationEn}) / ${rank.fr} (${rank.abbreviationFr})`;
         fullRank.append(option);
       }
       fullRank.value = draft.fullRankEn;
+      let refreshFrenchForm = () => {};
       fullRank.addEventListener("change", () => {
         draft.fullRankEn = fullRank.value;
+        refreshFrenchForm();
         changed();
       });
       rankLabel.append(fullRank);
       groups.ranks.append(rankLabel);
+      if (!memberRetirement) {
+        const hint = document.createElement("p");
+        hint.className = "trusted-award-rank-hint";
+        hint.id = "trusted-award-rank-hint";
+        hint.textContent = t("trusted_award_rank_hint");
+        fullRank.setAttribute("aria-describedby", hint.id);
+        groups.ranks.append(hint);
+      }
       controls.push(fullRank);
       for (const [key, values] of memberRetirement
         ? [["rankLanguage", ["en", "fr"]]]
-        : [
-            ["frPronoun", ["il", "elle"]],
-            [
-              "frRankGrammar",
-              ["masculine", "feminine", "elided", "no_article"],
-            ],
-          ]) {
+        : [["frPronoun", ["il", "elle"]]]) {
         const label = document.createElement("label");
         label.className = "trusted-award-field";
         label.textContent = t(`trusted_award_${key}`);
@@ -204,6 +205,21 @@
             value ? `trusted_award_${value}` : "select_option",
           );
           select.append(option);
+        }
+        if (key === "frPronoun") {
+          refreshFrenchForm = () => {
+            for (const option of select.children) {
+              if (!option.value) continue;
+              const selection = window.CMCENAwardRanks.resolve(
+                draft.fullRankEn,
+                option.value,
+              );
+              option.textContent =
+                t(`trusted_award_${option.value}`) +
+                (selection ? ` — ${selection.frenchForm}` : "");
+            }
+          };
+          refreshFrenchForm();
         }
         select.value = draft[key];
         select.addEventListener("change", () => {
@@ -281,13 +297,6 @@
           };
           field("fullName", "certificate_family_full_name");
           field(
-            "relationship",
-            "certificate_relationship_label",
-            familyOptions.relationships,
-          );
-          if (family.relationship === "other")
-            field("relationshipOther", "certificate_relationship_other_label");
-          field(
             "memberRelationshipToRecipient",
             null,
             familyOptions.wordings.map((option) => option.key),
@@ -326,8 +335,6 @@
           expanded = true;
           draft.familyMembers.push({
             fullName: "",
-            relationship: "",
-            relationshipOther: "",
             memberRelationshipToRecipient: "",
           });
           changed();

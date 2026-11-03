@@ -4,6 +4,7 @@ const {
   getFamilyCertificateData,
 } = require('./certificate-documents');
 const { catalogue } = require('../public/person-rank-options');
+const { parseCertificateDate } = require('./certificate-requests');
 const {
   CERTIFICATE_FAMILY_RELATIONSHIPS,
 } = require('../config/certificate-requests');
@@ -24,6 +25,7 @@ function getManualRetirementRequest(input) {
     'rankLanguage',
     'ceBranchEnrollmentDate',
     'releaseDate',
+    'dwdDate',
     'reviewed',
     'familyMembers',
     'documentKind',
@@ -53,6 +55,12 @@ function getManualRetirementRequest(input) {
     invalid();
   const postNominals = input.postNominals ?? '';
   if (
+    input.dwdDate != null &&
+    input.dwdDate !== '' &&
+    !parseCertificateDate(input.dwdDate)
+  )
+    invalid();
+  if (
     typeof postNominals !== 'string' ||
     postNominals.length > 120 ||
     /[\p{Cc}\p{Cf}]/u.test(postNominals)
@@ -70,6 +78,7 @@ function getManualRetirementRequest(input) {
         : [],
       ceBranchEnrollmentDate: input.ceBranchEnrollmentDate,
       releaseDate: input.releaseDate,
+      dwdDate: input.dwdDate ? input.dwdDate : undefined,
     },
   };
   getMemberCertificateData(request);
@@ -92,7 +101,8 @@ function getManualRetirementRequest(input) {
     )
       invalid();
     if (
-      !CERTIFICATE_FAMILY_RELATIONSHIPS.includes(family.relationship) ||
+      (family.relationship !== undefined &&
+        !CERTIFICATE_FAMILY_RELATIONSHIPS.includes(family.relationship)) ||
       typeof family.fullName !== 'string' ||
       typeof family.memberRelationshipToRecipient !== 'string'
     )
@@ -107,7 +117,9 @@ function getManualRetirementRequest(input) {
       invalid();
     request.familyMembers.push({
       fullName: family.fullName.trim().normalize('NFC'),
-      relationship: family.relationship,
+      ...(family.relationship === undefined
+        ? {}
+        : { relationship: family.relationship }),
       relationshipOther: other.trim(),
       memberRelationshipToRecipient: family.memberRelationshipToRecipient,
     });

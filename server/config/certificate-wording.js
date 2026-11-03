@@ -22,6 +22,12 @@ const FAMILY_WORDING_OPTIONS = Object.freeze(
     ['sister', "your sister's", 'de votre sœur'],
     ['uncle', "your uncle's", 'de votre oncle'],
     ['aunt', "your aunt's", 'de votre tante'],
+    ['grandfather', "your grandfather's", 'de votre grand-père'],
+    ['grandmother', "your grandmother's", 'de votre grand-mère'],
+    ['grandparent', "your grandparent's", 'de votre grand-parent'],
+    ['grandson', "your grandson's", 'de votre petit-fils'],
+    ['granddaughter', "your granddaughter's", 'de votre petite-fille'],
+    ['grandchild', "your grandchild's", 'de votre petit-enfant'],
   ].map(([key, en, fr]) =>
     Object.freeze({
       key,

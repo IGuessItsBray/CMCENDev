@@ -22,12 +22,9 @@ async function main() {
       {
         firstName: 'Alex',
         lastName: 'Tremblay',
-        fullRankEn: 'Aviator',
+        fullRankEn: 'Corporal',
         postNominals: '',
-        rankEn: 'Avr',
-        rankFr: 'Avr',
         frPronoun: 'il',
-        frRankGrammar: 'elided',
       },
     ],
     [
@@ -37,10 +34,7 @@ async function main() {
         lastName: 'D’Amour-Lévesque',
         fullRankEn: 'Corporal',
         postNominals: 'MMM, CD',
-        rankEn: 'Cpl',
-        rankFr: 'Cpl',
         frPronoun: 'elle',
-        frRankGrammar: 'feminine',
       },
     ],
   ]) {

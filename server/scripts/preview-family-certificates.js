@@ -27,27 +27,26 @@ async function main() {
       decorations: ['MMM', 'CD'],
       ceBranchEnrollmentDate: '2000-02-29',
       releaseDate: '2026-08-01',
+      dwdDate: '2026-09-12',
     },
     familyMembers: [
       {
         fullName: 'Camille Bélanger',
-        relationship: 'wife',
-        memberRelationshipToRecipient: 'husband',
+        memberRelationshipToRecipient: 'grandfather',
       },
       {
         fullName: 'Émilie Anne-Marie Catherine Alexandra D’Amour-Lévesque',
-        relationship: 'guardian',
-        memberRelationshipToRecipient: 'daughter',
+        memberRelationshipToRecipient: 'granddaughter',
       },
     ],
   };
   for (const [filename, bytes] of [
     [
-      'family-explicit-husband.pdf',
+      'family-grandfather-dwd.pdf',
       await generateFamilyCertificate(request, 0),
     ],
     [
-      'family-original-wording-long-name.pdf',
+      'family-granddaughter-long-name-dwd.pdf',
       await generateFamilyCertificate(request, 1),
     ],
     [

@@ -4638,6 +4638,25 @@ describe('retirement message lifecycle', () => {
     );
   });
 
+  test('persists one relationship answer and DWD ceremony date with a complete retirement submission', async () => {
+    const contributor=await createUser({role:'contributor'});
+    const auth=bearer((await login(contributor)).body.token);
+    const certificates=certificateRequestPayload();
+    certificates.member.dwdDate='2028-02-29';
+    certificates.familyMembers=[{fullName:'Camille Bélanger',memberRelationshipToRecipient:'granddaughter'}];
+    const submitted=await request(app).post('/api/retirement-messages').set('Authorization',auth).send({...retirementPayload(),certificateRequest:certificates}).expect(201);
+    const saved=await CertificateRequest.findById(submitted.body.certificateRequest.id).lean();
+    assert.equal(saved.member.dwdDate.toISOString(),'2028-02-29T00:00:00.000Z');
+    assert.equal(saved.familyMembers[0].memberRelationshipToRecipient,'granddaughter');
+    assert.equal(saved.familyMembers[0].relationship,undefined);
+    assert.equal(saved.status,'pending');
+    for(const dwdDate of ['2028-02-30','2028-02-29T23:00:00Z']) {
+      const invalid = await request(app).post('/api/retirement-messages').set('Authorization',auth).send({...retirementPayload(),certificateRequest:{...certificates,member:{...certificates.member,dwdDate}}}).expect(400);
+      assert.match(invalid.body.error, /DWD ceremony date/);
+    }
+    assert.equal(await CertificateRequest.countDocuments(),1);
+  });
+
   test('creates a pending certificate request alongside a retirement submission', async () => {
     const contributor = await createUser({ role: 'contributor' });
     const contributorLogin = await login(contributor);

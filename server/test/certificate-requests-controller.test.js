@@ -27,6 +27,33 @@ const request = (status = 'pending') => ({
     },
   ],
 });
+
+test('family controls default to the saved DWD ceremony date without changing member dates or status', async () => {
+  const item = request();
+  item.member.releaseDate = '2026-08-01T00:00:00.000Z';
+  item.member.dwdDate = '2026-09-12T00:00:00.000Z';
+  const page = setup({
+    requests: [item],
+    api: (url) =>
+      url.includes('/family/')
+        ? Promise.resolve({ blob: async () => ({ type: 'application/pdf' }) })
+        : undefined,
+  });
+  await page.controller.ready;
+  assert.equal(
+    page.root.querySelector('.certificate-family-date').value,
+    '2026-09-12',
+  );
+  await page.root.querySelector('.certificate-family-download').fire('click');
+  assert.equal(page.calls.at(-1).body.certificateDate, '2026-09-12');
+  assert.equal(item.member.releaseDate, '2026-08-01T00:00:00.000Z');
+  assert.equal(item.status, 'pending');
+  assert.equal(
+    page.calls.some((call) => call.method === 'PATCH'),
+    false,
+  );
+  page.controller.dispose();
+});
 function setup({
   requests = [request()],
   api: override,
@@ -316,7 +343,10 @@ test('printing confirms every recipient, then mailing completes and removes the 
     Array.from(page.checklists[0].checklist, (item) => item.value),
     ['member', 'family:0'],
   );
-  assert.match(page.checklists[0].checklist[1].label, /Step-parent/);
+  assert.match(
+    page.checklists[0].checklist[1].label,
+    /certificate_member_relationship_husband/,
+  );
   assert.equal(page.action().textContent, 'certificate_requests_mark_mailed');
   await page.action().fire('click');
   const mailed = page.calls.filter((call) => call.method === 'PATCH').at(-1);

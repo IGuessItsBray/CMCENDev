@@ -53,6 +53,7 @@ test('award mapping replaces ten recipient occurrences and applies only explicit
       rankFr: 'Cpl',
       fullRankEn: 'Corporal',
       postNominals: 'MMM, CD',
+      frRankGrammar: 'masculine',
     }),
   );
   assert.equal(
@@ -77,6 +78,8 @@ test('award mapping replaces ten recipient occurrences and applies only explicit
     input({
       firstName: 'Émilie',
       lastName: 'D’Amour',
+      fullRankEn: 'Corporal',
+      rankEn: 'Corporal',
       rankFr: 'Caporale',
       frPronoun: 'elle',
       frRankGrammar: 'feminine',
@@ -87,6 +90,67 @@ test('award mapping replaces ten recipient occurrences and applies only explicit
   assert.match(feminine.dedicationFr, /à la Caporale/u);
   const differentName = getTrustedToServeData(input({ firstName: 'Émilie' }));
   assert.match(differentName.bodyFr, /Il démontre/u); // Name never determines pronoun.
+});
+
+test('catalogue ranks derive abbreviations and both French articles without grammar input or gender inference', () => {
+  const { catalogue } = require('../public/trusted-to-serve-ranks');
+  for (const rank of catalogue) {
+    for (const frPronoun of ['il', 'elle']) {
+      const data = getTrustedToServeData({
+        firstName: 'Alex',
+        lastName: 'Tremblay',
+        fullRankEn: rank.en,
+        presentationDate: '2028-02-29',
+        frPronoun,
+      });
+      const key = rank.elided
+        ? 'elided'
+        : frPronoun === 'elle'
+          ? 'feminine'
+          : 'masculine';
+      const grammar = require('../config/trusted-to-serve').FR_GRAMMAR[key];
+      assert.equal(data.frRankGrammar, key);
+      assert.equal(data.dedicationEn, `${rank.abbreviationEn} Tremblay`);
+      assert.equal(
+        data.dedicationFr,
+        `Décerné ${grammar.dedication}${rank.abbreviationFr} Tremblay`,
+      );
+      assert.ok(
+        data.bodyFr.includes(
+          `contributions remarquables ${grammar.contribution}${rank.abbreviationFr} Tremblay`,
+        ),
+      );
+    }
+  }
+  const corporal = {
+    firstName: 'Émilie',
+    lastName: 'D’Amour',
+    fullRankEn: 'Corporal',
+    presentationDate: '2026-11-13',
+    frPronoun: 'il',
+  };
+  assert.equal(
+    getTrustedToServeData(corporal).dedicationFr,
+    'Décerné au Cpl D’Amour',
+  );
+  assert.equal(
+    getTrustedToServeData({ ...corporal, frPronoun: 'elle' }).dedicationFr,
+    'Décerné à la Cpl D’Amour',
+  );
+  for (const changes of [
+    { rankEn: 'General' },
+    { rankFr: 'Caporale' },
+    { rankFr: '<script>' },
+    { frRankGrammar: 'feminine' },
+    { frRankGrammar: 'no_article' },
+    { frRankGrammar: '__proto__' },
+    { fullRankEn: 'Civilian' },
+    { fullRankEn: 'Recruit' },
+    { fullRankEn: 'Custom' },
+  ])
+    assert.throws(() => getTrustedToServeData({ ...corporal, ...changes }), {
+      status: 422,
+    });
 });
 
 test('award dates and inputs are validated independently of retirement data; grammatical choices have no defaults', () => {
@@ -261,7 +325,11 @@ test('heading fits full rank first, abbreviates before shrinking, and preserves 
   const heading = (data) =>
     planAwardText(data, fonts).find((plan) => plan.shadow);
   const short = getTrustedToServeData(
-    input({ fullRankEn: 'Chief Warrant Officer' }),
+    input({
+      fullRankEn: 'Chief Warrant Officer',
+      rankEn: 'CWO',
+      rankFr: 'Adjuc',
+    }),
   );
   assert.deepEqual(heading(short).lines, [short.headline]);
   assert.equal(heading(short).size, 32.04);
@@ -270,6 +338,8 @@ test('heading fits full rank first, abbreviates before shrinking, and preserves 
     const data = getTrustedToServeData(
       input({
         fullRankEn: 'Chief Warrant Officer',
+        rankEn: 'CWO',
+        rankFr: 'Adjuc',
         firstName: 'A'.repeat(n),
         postNominals: 'CD',
       }),

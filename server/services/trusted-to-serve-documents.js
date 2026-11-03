@@ -10,6 +10,7 @@ const {
 } = require('./certificate-documents');
 const { BODY_EN, BODY_FR, FR_GRAMMAR } = require('../config/trusted-to-serve');
 const { certificateFontPath } = require('../config/certificate-fonts');
+const awardRanks = require('../public/trusted-to-serve-ranks');
 const {
   catalogue: ranks,
   abbreviation: abbreviateRank,
@@ -76,15 +77,30 @@ function getTrustedToServeData(input) {
       : text(input.postNominals, 120, 'Post-nominals');
   const fullRankEn = ranks.find((rank) => rank.en === input.fullRankEn)?.en;
   if (!fullRankEn) invalid('Choose the full rank for the large name display.');
-  const rankEn = text(input.rankEn, 40, 'English rank');
-  const rankFr = text(input.rankFr, 40, 'French rank');
+  const selection = awardRanks.resolve(fullRankEn, input.frPronoun);
+  if (!selection)
+    invalid(
+      'Choose a supported military rank and the masculine or feminine French wording.',
+      'award_wording_required',
+    );
+  const { rank, frenchForm, grammar: grammarKey } = selection;
+  // Older clients may supply authored rank labels, but only labels matching the
+  // selected catalogue rank/form are accepted. Articles can never override it.
+  const rankEn =
+    input.rankEn === undefined
+      ? rank.abbreviationEn
+      : text(input.rankEn, 40, 'English rank');
+  const rankFr =
+    input.rankFr === undefined
+      ? rank.abbreviationFr
+      : text(input.rankFr, 40, 'French rank');
   if (
-    !['il', 'elle'].includes(input.frPronoun) ||
-    !Object.hasOwn(FR_GRAMMAR, input.frRankGrammar || '')
+    ![rank.en, rank.abbreviationEn].includes(rankEn) ||
+    ![frenchForm, rank.abbreviationFr].includes(rankFr) ||
+    (input.frRankGrammar !== undefined && input.frRankGrammar !== grammarKey)
   )
     invalid(
-      'Choose and review the French pronoun and rank grammar.',
-      'award_wording_required',
+      'The rank labels or French wording do not match the selected rank and form.',
     );
   const iso = input.presentationDate;
   if (typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}$/u.test(iso))
@@ -99,7 +115,7 @@ function getTrustedToServeData(input) {
     invalid('The award review confirmation is invalid.');
   const recipientEn = `${rankEn} ${lastName}`,
     recipientFr = `${rankFr} ${lastName}`;
-  const grammar = FR_GRAMMAR[input.frRankGrammar];
+  const grammar = FR_GRAMMAR[grammarKey];
   const variables = {
     recipientEn,
     recipientFr,
@@ -119,7 +135,7 @@ function getTrustedToServeData(input) {
     rankFr,
     isoDate: iso,
     frPronoun: input.frPronoun,
-    frRankGrammar: input.frRankGrammar,
+    frRankGrammar: grammarKey,
     bodyEn: render(BODY_EN),
     bodyFr: render(BODY_FR),
     abbreviatedHeadline: `${abbreviateRank(fullRankEn, 'en')} ${firstName} ${lastName}${postNominals ? `, ${postNominals}` : ''}`,

@@ -119,19 +119,33 @@ Bell MT Regular for the single date line. The corresponding optional overrides
 are `CERTIFICATE_BELL_MT_ITALIC_PATH` and `CERTIFICATE_BELL_MT_PATH`.
 The approved family master is kept
 at `server/private/certificates/retirement-family.pdf`, SHA-256
-`dbecba8d4b06277dcbd94a40d7b5f02b46e4a2a37f195c6295447932a85d7bb9`.
+`151356b3233b3b14da766cf4d89bcd5794b1d96014166bb90679ae41c2197881`.
 It includes the same approved branch-leader update.
+The two opening French lines are centered on their body column; the source
+glyphs, font and baselines are unchanged. The bounded one-time recipe is
+`scripts/align-family-certificate-opening.js`, applied after the signatory update.
+Then `scripts/embed-family-certificate-fonts.js` embeds the supplied matching
+Bell MT Regular/Italic fonts for the original unembedded `FXF` resources. These
+include visible fragments such as English “he” in “the” and French “b” in
+“branche”, not only accents. The original text encoding, widths and drawing
+operations are preserved; the PDF no longer depends on a viewer substituting
+those Bell fonts. Standard PDF Helvetica spacing remains unchanged.
 Its printed fields are `name_field`, `adj_en`, `adj_fr`, and `date`; helpers
 `cb_en` and `tb1` are removed before flattening. The generator preserves the
 template's black Bell MT Italic wording, blue Script MT name and lighter-blue
 Bell MT date. The single date retains the template's English month format;
-the date defaults to releaseDate and can be explicitly corrected by staff.
+the date defaults to `member.dwdDate` (optional DWD ceremony date), then
+`member.releaseDate`, and can be explicitly corrected by staff for the output.
+Member service dates always use C&E Branch entry through release date.
 No Acrobat JavaScript is executed and no fonts are substituted.
 
 Every new family request saves the requester's explicit
-`memberRelationshipToRecipient` answer, separately from the recipient-to-member
-relationship. Generation uses this saved answer automatically, preserving the
-original PDF script wording and punctuation. There is no neutral variant, staff
+`memberRelationshipToRecipient` answer using one named question. New forms do
+not ask the redundant recipient-to-member relationship. Existing stored values
+in that old optional field are retained without inversion; generation only uses
+the explicit member-to-recipient answer. The original 19 PDF phrases and their
+punctuation are preserved, with six additional grandparent/grandchild phrases.
+There is no neutral variant, staff
 wording selector, gender inference or per-download relationship override.
 Existing retirement edits retain their existing behavior
 of creating a new certificate request snapshot when a certificate payload is

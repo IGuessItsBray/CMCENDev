@@ -94,7 +94,7 @@ function form() {
   };
 }
 
-test('requester cards keep relationship directions separate, update named bilingual questions and serialize answers', async () => {
+test('requester cards use one member-to-recipient choice, update named bilingual questions and serialize answers', async () => {
   const page = form();
   const card = page.context.createCertificateFamilyMemberCard();
   page.list.append(card);
@@ -112,12 +112,12 @@ test('requester cards keep relationship directions separate, update named biling
   assert.match(
     card.querySelector('[data-certificate-member-relationship-label]')
       .textContent,
-    /Camille Bélanger.*Alex Tremblay.*Camille Bélanger/u,
+    /Alex Tremblay.*Camille Bélanger/u,
   );
-  relation.value = 'mother';
+  assert.equal(relation, null);
   answer.value = 'daughter';
   const payload = page.context.buildCertificateRequestData();
-  assert.equal(payload.familyMembers[0].relationship, 'mother');
+  assert.equal(payload.familyMembers[0].relationship, undefined);
   assert.equal(
     payload.familyMembers[0].memberRelationshipToRecipient,
     'daughter',
@@ -128,14 +128,13 @@ test('requester cards keep relationship directions separate, update named biling
   assert.match(
     card.querySelector('[data-certificate-member-relationship-label]')
       .textContent,
-    /Camille Bélanger.*Émilie D’Amour/u,
+    /Émilie D’Amour.*Camille Bélanger/u,
   );
   assert.equal(answer.value, 'daughter');
   assert.equal(
     answer.options.find((option) => option.value === 'daughter').textContent,
     'Sa fille',
   );
-  assert.equal(relation.value, 'mother');
   const second = page.context.createCertificateFamilyMemberCard();
   page.list.append(second);
   assert.equal(
@@ -192,4 +191,54 @@ test('new request validation requires a supported explicit answer and never deri
       ),
       /retiring member.*related/u,
     );
+});
+
+test('single-answer requests persist without a redundant relationship; valid older direction remains unchanged', async () => {
+  const CertificateRequest = require('../models/CertificateRequest');
+  for (const answer of [
+    'father',
+    'mother',
+    'son',
+    'daughter',
+    'grandfather',
+    'granddaughter',
+    'grandparent',
+    'grandchild',
+  ]) {
+    const data = payload(answer);
+    delete data.familyMembers[0].relationship;
+    data.member.dwdDate = '2028-02-29';
+    const clean = getCleanCertificateRequestPayload(data);
+    assert.equal(validateCertificateRequestPayload(clean), '');
+    assert.equal(
+      clean.member.dwdDate.toISOString(),
+      '2028-02-29T00:00:00.000Z',
+    );
+    assert.equal(clean.familyMembers[0].relationship, undefined);
+    const familySchema = CertificateRequest.schema.path('familyMembers').schema;
+    const parentSchema = require('mongoose').model(
+      'CertificateSingleFamilyFixture',
+      new (require('mongoose').Schema)({ family: familySchema }),
+    );
+    const doc = new parentSchema({ family: clean.familyMembers[0] });
+    await doc.validate();
+    assert.equal(doc.toObject().family.memberRelationshipToRecipient, answer);
+    require('mongoose').deleteModel('CertificateSingleFamilyFixture');
+  }
+  for (const dwdDate of ['2028-02-30', 'bad', '2028-02-29T23:00:00Z']) {
+    const data = payload('daughter');
+    data.member.dwdDate = dwdDate;
+    assert.match(
+      validateCertificateRequestPayload(
+        getCleanCertificateRequestPayload(data),
+      ),
+      /DWD/,
+    );
+  }
+  const retained = getCleanCertificateRequestPayload(payload('daughter'));
+  assert.equal(retained.familyMembers[0].relationship, 'mother');
+  assert.equal(
+    retained.familyMembers[0].memberRelationshipToRecipient,
+    'daughter',
+  );
 });

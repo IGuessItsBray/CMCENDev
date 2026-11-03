@@ -411,7 +411,7 @@ paths:
       tags: [Certificates]
       operationId: generateManualRetirementCertificate
       summary: Generate staff-entered member, family or packet PDFs independently of a retirement post.
-      description: Uses the existing approved templates and private fonts. No retirement post, certificate request or fulfillment state is created. Successful generation is audited; all responses are private/no-store. Downloads require reviewed=true after checking entered details. Family dates default to releaseDate; packets contain the member first, then family recipients in input order.
+      description: Uses the existing approved templates and private fonts. No retirement post, certificate request or fulfillment state is created. Successful generation is audited; all responses are private/no-store. Downloads require reviewed=true after checking entered details. Family dates use optional dwdDate, otherwise releaseDate; packets contain the member first, then family recipients in input order.
       x-permission: canManageCertificateRequests
       parameters:
         - in: query
@@ -433,6 +433,7 @@ paths:
                 postNominals: { type: string, maxLength: 120, description: Optional comma-separated approved decoration abbreviations. }
                 ceBranchEnrollmentDate: { type: string, format: date }
                 releaseDate: { type: string, format: date }
+                dwdDate: { type: string, format: date, description: Optional DWD ceremony date for family certificates; otherwise releaseDate is used. }
                 reviewed: { type: boolean }
                 documentKind: { type: string, enum: [member, family, packet], default: member }
                 familyIndex: { type: integer, minimum: 0, description: Required only for documentKind=family. }
@@ -442,10 +443,10 @@ paths:
                   items:
                     type: object
                     additionalProperties: false
-                    required: [fullName, relationship, memberRelationshipToRecipient]
+                    required: [fullName, memberRelationshipToRecipient]
                     properties:
                       fullName: { type: string, minLength: 1, maxLength: 160 }
-                      relationship: { type: string, description: Recipient relative to member; same supported choices as retirement submission. }
+                      relationship: { type: string, deprecated: true, description: Optional retained recipient-to-member relationship; never inverted or used for PDF wording. }
                       relationshipOther: { type: string, maxLength: 80, description: Required when relationship=other. }
                       memberRelationshipToRecipient: { type: string, description: Explicit original-PDF wording choice; never inferred from the recipient relationship. }
       responses:
@@ -478,7 +479,7 @@ paths:
             schema:
               type: object
               additionalProperties: false
-              required: [firstName, lastName, fullRankEn, rankEn, rankFr, presentationDate, frPronoun, frRankGrammar]
+              required: [firstName, lastName, fullRankEn, presentationDate, frPronoun]
               properties:
                 firstName:
                   type: string
@@ -495,12 +496,16 @@ paths:
                   description: Optional; appears only after the large heading name.
                 fullRankEn:
                   type: string
-                  description: Full English rank from the shared rank catalogue, used in the large heading.
+                  description: Military rank from the award subset of the shared catalogue. Civilian, generic Recruit and custom ranks are not supported. Derives bilingual body abbreviations and French articles.
                 rankEn:
+                  deprecated: true
+                  description: Optional older-client label; must match the selected rank's full English name or verified abbreviation.
                   type: string
                   minLength: 1
                   maxLength: 40
                 rankFr:
+                  deprecated: true
+                  description: Optional older-client label; must match the selected French rank form or verified abbreviation.
                   type: string
                   minLength: 1
                   maxLength: 40
@@ -511,10 +516,12 @@ paths:
                 frPronoun:
                   type: string
                   enum: [il, elle]
+                  description: Explicit masculine or feminine French wording choice; never inferred from the recipient name.
                 frRankGrammar:
                   type: string
-                  enum: [masculine, feminine, elided, no_article]
-                  description: Reviewed au/du, à la/de la, à l’/de l’, or à/de rank phrasing.
+                  enum: [masculine, feminine, elided]
+                  deprecated: true
+                  description: Optional older-client assertion; must match articles derived from the selected rank and French wording. Cannot override them.
                 reviewed:
                   type: boolean
                   description: Must be true for attachment download after staff review.
@@ -580,7 +587,7 @@ paths:
       tags: [Certificates]
       operationId: generateFamilyRetirementCertificate
       summary: Preview or download one reviewed family retirement certificate.
-      description: Generates one bilingual family PDF using the saved requester memberRelationshipToRecipient answer and the original template wording. Missing or unsupported answers fail validation; there is no inference or relationship override. The date defaults to the member release date. No fulfillment state is changed; generation is audited. All responses are private and no-store.
+      description: Generates one bilingual family PDF using the saved requester memberRelationshipToRecipient answer. The original 19 phrases are preserved with six additional grandparent/grandchild options. Missing or unsupported answers fail validation; there is no inference or relationship override. The date defaults to the saved DWD ceremony date, otherwise the member release date. No fulfillment state is changed; generation is audited. All responses are private and no-store.
       x-permission: canManageCertificateRequests
       parameters:
         - $ref: "#/components/parameters/CertificateRequestId"
@@ -606,7 +613,7 @@ paths:
                 certificateDate:
                   type: string
                   format: date
-                  description: Explicit staff date correction for this output only; defaults to releaseDate.
+                  description: Explicit staff date correction for this output only; defaults to member.dwdDate, otherwise member.releaseDate.
       responses:
         "200":
           description: Flattened family certificate PDF.
@@ -4294,6 +4301,7 @@ components:
                         items: { type: string }
                       lastUnit: { type: string }
                       releaseDate: { type: string, format: date }
+                      dwdDate: { type: string, format: date, description: Optional DWD ceremony date; takes precedence for family certificates only. }
                       ceBranchEnrollmentDate: { type: string, format: date }
                       neededByDate: { type: string, format: date }
                       dwdParadeRequested: { type: boolean }
@@ -4301,7 +4309,7 @@ components:
                     type: array
                     items:
                       type: object
-                      required: [relationship, fullName, memberRelationshipToRecipient]
+                      required: [fullName, memberRelationshipToRecipient]
                       properties:
                         relationship: { type: string }
                         relationshipOther: { type: string }
@@ -4579,7 +4587,7 @@ components:
     FamilyCertificateWording:
       type: string
       description: Requester's explicit retiring-member-to-recipient answer, selecting unchanged original PDF wording. Never inferred from names or the recipient-to-member relationship. Required for every family recipient and family generation.
-      enum: [husband, wife, common-law, partner, girlfriend, boyfriend, father, mother, step-father, step-mother, child, son, daughter, guardian, cousin, brother, sister, uncle, aunt]
+      enum: [husband, wife, common-law, partner, girlfriend, boyfriend, father, mother, step-father, step-mother, child, son, daughter, guardian, cousin, brother, sister, uncle, aunt, grandfather, grandmother, grandparent, grandson, granddaughter, grandchild]
     AdoptDisplayInput:
       type: object
       description: At least one title language is required for ordinary saves and publication. A developer may save blank draft copy; existing authorized blanks may be retained. Bilingual fields replace both language values when supplied. Availability, amount and expiry are descriptive text.

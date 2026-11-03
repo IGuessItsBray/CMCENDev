@@ -33,6 +33,7 @@ async function syntheticMemberPdf(request = memberRequest()) {
   return fillMemberCertificate(document, getMemberCertificateData(request), {
     name: await document.embedFont(StandardFonts.Helvetica),
     dates: await document.embedFont(StandardFonts.TimesRomanBold),
+    signatories: await document.embedFont(StandardFonts.TimesRoman),
   });
 }
 
@@ -69,6 +70,7 @@ async function syntheticFamilyPdf(
       name: await document.embedFont(StandardFonts.Helvetica),
       wording: await document.embedFont(StandardFonts.TimesRomanItalic),
       date: await document.embedFont(StandardFonts.TimesRoman),
+      signatories: await document.embedFont(StandardFonts.TimesRoman),
     },
   );
 }

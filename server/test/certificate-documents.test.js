@@ -25,6 +25,7 @@ const {
 
 test('member mapping uses requested rank language, ordered decorations and deterministic bilingual calendar dates', () => {
   assert.deepEqual(getMemberCertificateData(memberRequest()), {
+    rankLanguage: 'fr',
     recipient: 'Adjudant Émilie Anne-Marie D’Amour, MMM, CD',
     datesEn: '29 February 2000 — 01 August 2026',
     datesFr: '29 février 2000 — 01 août 2026',
@@ -100,7 +101,11 @@ test('English service ranges of different lengths center on the body column with
       dates: await document.embedFont(StandardFonts.TimesRomanBold),
     };
     const data = getMemberCertificateData(
-      memberRequest({ ceBranchEnrollmentDate: start, releaseDate: end }),
+      memberRequest({
+        rankLanguage: 'en',
+        ceBranchEnrollmentDate: start,
+        releaseDate: end,
+      }),
     );
     const output = await PDFDocument.load(
       await fillMemberCertificate(document, data, fonts),

@@ -559,6 +559,12 @@ Mounted at `/api/certificate-requests`.
 `canManageCertificateRequests` and creates retirement PDFs directly from
 staff-entered `firstName`, `lastName`, `fullRankEn` (shared catalogue),
 `rankLanguage` (`en`/`fr`), `ceBranchEnrollmentDate` and `releaseDate` (ISO dates).
+The rank language also selects the first printed language column on retirement
+member and family pages: French-left for `fr`, original English-left for `en`.
+Names, crest, signatures and the central family date retain their positions.
+French-first retirement pages also use French signatory rank prefixes, while
+English-first name-line ranks remain English. Both bilingual role-title blocks
+put the selected language first on matching rows, preserving their wording.
 `postNominals` is optional comma-separated approved decoration abbreviations.
 The combined member name is limited to 160 characters by the existing generator.
 The dashboard downloads PDFs without an embedded viewer. `?download=1` requires

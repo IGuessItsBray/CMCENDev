@@ -81,6 +81,25 @@ static routes. It is already embedded in the masters, so no deployment setting
 or runtime image processing is required. See the signatory preparation section
 in `docs/TRUSTED TO SERVE GENERATION.md` for the bounded source-update recipe.
 The generator checks that hash, removes the three nonprinting helper fields,
+and uses `member.rankLanguage` for both the printed rank and the first bilingual
+column. French selects French-left/English-right on the retirement member and
+family pages; English retains the original English-left layout. The bounded
+column transformation preserves fonts, encoded text, within-column geometry and
+fixed crest/name/signature areas. French-first also prints the name-line ranks
+as **Major-général Justin P. Thibert, CD** and **Adjudante-chef Renay Groves, MSM, CD**,
+using embedded regular Bell MT at the same size, line centers and baselines.
+Names, post-nominals and bilingual role-title wording are unchanged. Both
+signature blocks put the selected language in the upper title row and the other
+language below it, with corresponding baselines aligned. The existing horizontal
+positions, fonts, names and signatures stay fixed.
+Thibert's form is confirmed by
+[CANFORGEN 170/26](https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/canforgen/2026/170-transfert-des-responsabilites-du-j6-des-forces-armees-canadiennes.html);
+Groves's published form appears in the
+[2024 Kingston Garrison News French profile](https://kingstongarrisonnews.ca/index.php/fr/celebration-du-mois-de-lhistoire-des-femmes-au-canada/2024/10/10/),
+consistent with the CAF French rank table. No form is inferred from a name.
+For both retirement types,
+member date ranges move with their language and the central family date stays
+fixed. Trusted to Serve has no such setting and is unchanged. Generation then
 replaces all three printed fields, flattens their explicit font appearances,
 and copies only the resulting printed page into a fresh PDF to discard stale
 values, orphaned appearances and document JavaScript. No generated files are

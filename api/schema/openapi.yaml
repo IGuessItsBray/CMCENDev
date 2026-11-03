@@ -429,7 +429,7 @@ paths:
                 firstName: { type: string, minLength: 1, maxLength: 100 }
                 lastName: { type: string, minLength: 1, maxLength: 100 }
                 fullRankEn: { type: string, description: Full English rank from the shared catalogue. }
-                rankLanguage: { type: string, enum: [en, fr] }
+                rankLanguage: { type: string, enum: [en, fr], description: Printed rank language, first bilingual column and signatory rank language for retirement member/family pages. }
                 postNominals: { type: string, maxLength: 120, description: Optional comma-separated approved decoration abbreviations. }
                 ceBranchEnrollmentDate: { type: string, format: date }
                 releaseDate: { type: string, format: date }
@@ -4295,7 +4295,7 @@ components:
                       ]
                     properties:
                       fullName: { type: string }
-                      rankLanguage: { type: string, enum: [en, fr] }
+                      rankLanguage: { type: string, enum: [en, fr], description: Printed rank language, first bilingual column and signatory rank language for retirement member/family pages. }
                       decorations:
                         type: array
                         items: { type: string }

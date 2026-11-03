@@ -3,6 +3,9 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { PDFDocument, PDFName, TextAlignment } = require('pdf-lib');
 const fontkit = require('@pdf-lib/fontkit');
+const {
+  applyRetirementLanguageLayout,
+} = require('./certificate-language-columns');
 const { resolve: resolveRank } = require('../public/person-rank-options');
 const { CERTIFICATE_DECORATIONS } = require('../config/certificate-requests');
 const { FAMILY_WORDING_OPTIONS } = require('../config/certificate-wording');
@@ -65,6 +68,18 @@ function invalid(message) {
   throw new CertificateDocumentError('certificate_data_invalid', message);
 }
 
+function setCertificateLanguage(document, kind, language, signatoryFont) {
+  try {
+    applyRetirementLanguageLayout(document, kind, language, signatoryFont);
+  } catch {
+    throw new CertificateDocumentError(
+      'certificate_template_invalid',
+      'The approved bilingual certificate layout could not be applied.',
+      503,
+    );
+  }
+}
+
 function dateOnly(value) {
   // Stored dates are UTC midnight. Reject ambiguous timestamps rather than
   // silently changing the calendar day in the server's local timezone.
@@ -120,6 +135,7 @@ function getMemberCertificateData(request) {
   if (end < start)
     invalid('The release date must follow the C&E Branch enrollment date.');
   return {
+    rankLanguage: member.rankLanguage,
     recipient: `${catalogueRank[member.rankLanguage]} ${name}${decorations.length ? `, ${decorations.join(', ')}` : ''}`,
     datesEn: `${formatDate(start, 'en')} — ${formatDate(end, 'en')}`,
     datesFr: `${formatDate(start, 'fr')} — ${formatDate(end, 'fr')}`,
@@ -252,6 +268,12 @@ async function fillMemberCertificate(document, data, fonts) {
     widget.setRectangle({ ...rectangle, x: 205.118 - rectangle.width / 2 });
   }
   englishDates.setAlignment(TextAlignment.Center);
+  setCertificateLanguage(
+    document,
+    'member',
+    data.rankLanguage ?? 'en',
+    fonts.signatories,
+  );
   setPrintedText(
     form.getTextField('name_field'),
     data.recipient,
@@ -286,7 +308,7 @@ async function fillMemberCertificate(document, data, fonts) {
 
 async function generateMemberCertificate(request) {
   const data = getMemberCertificateData(request);
-  const [nameBytes, dateBytes] = await Promise.all([
+  const [nameBytes, dateBytes, signatoryBytes] = await Promise.all([
     loadCertificateFont(
       certificateFontPath('CERTIFICATE_SCRIPT_MT_BOLD_PATH'),
       'ScriptMTBold',
@@ -295,6 +317,12 @@ async function generateMemberCertificate(request) {
       certificateFontPath('CERTIFICATE_BELL_MT_BOLD_PATH'),
       'BellMTBold',
     ),
+    data.rankLanguage === 'fr'
+      ? loadCertificateFont(
+          certificateFontPath('CERTIFICATE_BELL_MT_PATH'),
+          'BellMT',
+        )
+      : null,
   ]);
   let template;
   try {
@@ -317,6 +345,10 @@ async function generateMemberCertificate(request) {
     name: await document.embedFont(nameBytes, { subset: true }),
     dates: await document.embedFont(dateBytes, { subset: true }),
   };
+  if (signatoryBytes)
+    fonts.signatories = await document.embedFont(signatoryBytes, {
+      subset: true,
+    });
   return fillMemberCertificate(document, data, fonts);
 }
 
@@ -357,6 +389,9 @@ function getFamilyCertificateData(request, index, options = {}) {
   if (!recipient || recipient.length > 160 || /[\p{Cc}\p{Cf}]/u.test(recipient))
     invalid('A valid family recipient name is required.');
   const adjEn = `${variant.en} successful military career.`;
+  const rankLanguage = request.member?.rankLanguage ?? 'en';
+  if (!['en', 'fr'].includes(rankLanguage))
+    invalid('The certificate rank language is invalid.');
   const adjFr = `carrière militaire ${variant.fr}`;
   const isoDate = dateOnly(
     options.certificateDate === undefined
@@ -364,6 +399,7 @@ function getFamilyCertificateData(request, index, options = {}) {
       : options.certificateDate,
   );
   return {
+    rankLanguage,
     recipient,
     adjEn,
     adjFr,
@@ -390,6 +426,12 @@ async function fillFamilyCertificate(document, data, fonts) {
     );
   }
   for (const name of ['cb_en', 'tb1']) form.removeField(form.getField(name));
+  setCertificateLanguage(
+    document,
+    'family',
+    data.rankLanguage ?? 'en',
+    fonts.signatories,
+  );
   setPrintedText(
     form.getTextField('name_field'),
     data.recipient,
@@ -466,10 +508,12 @@ async function generateFamilyCertificate(request, index, options) {
   }
   const document = await PDFDocument.load(template);
   document.registerFontkit(fontkit);
+  const regular = await document.embedFont(dateBytes, { subset: true });
   return fillFamilyCertificate(document, data, {
     name: await document.embedFont(nameBytes, { subset: true }),
     wording: await document.embedFont(wordingBytes, { subset: true }),
-    date: await document.embedFont(dateBytes, { subset: true }),
+    date: regular,
+    signatories: regular,
   });
 }
 

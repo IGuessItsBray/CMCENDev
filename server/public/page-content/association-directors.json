@@ -130,19 +130,6 @@
         "bio": []
       },
       {
-        "id": "gerry-umbach",
-        "name": "CWO Gerry Umbach, CD",
-        "role": "Director",
-        "email": "gerryumbach@gmail.com",
-        "imageKey": "images/association/portraits/gerry-umbach-b5ae5bbf187c.webp",
-        "imageWidth": 880,
-        "imageHeight": 1100,
-        "placeholder": false,
-        "bio": [
-          "Gerry Umbach joined the Primary Reserve with (then) 763 Comm Regt as a Radio Teletype Operator in June 1992. He worked full time for DLCSPM for 16 years both in uniform and as a civilian, and now with NAV Canada as a Cyber Security Analyst. He was appointed as the Deputy RCCS Corps Sergeant Major (ARes) in spring 2025 after finishing his term as the RSM of 33 Signal Regiment."
-        ]
-      },
-      {
         "id": "mike-denoble",
         "name": "Mike DeNoble",
         "role": "Director",
@@ -165,19 +152,6 @@
         "imageHeight": 805,
         "placeholder": true,
         "bio": []
-      },
-      {
-        "id": "david-tran",
-        "name": "Cpl David Tran",
-        "role": "Acting Director",
-        "email": "dtran541@mtroyal.ca",
-        "image": "/assets/images/logo.png",
-        "imageWidth": 600,
-        "imageHeight": 805,
-        "placeholder": true,
-        "bio": [
-          "David Tran has five years’ experience and hold the rank of Corporal in the Canadian Armed Forces Primary Reserve as an Army Communication and Information System Specialist."
-        ]
       }
     ],
     "advisors": [
@@ -344,19 +318,6 @@
         "bio": []
       },
       {
-        "id": "gerry-umbach",
-        "name": "Adjuc Gerry Umbach, CD",
-        "role": "Administrateur",
-        "email": "gerryumbach@gmail.com",
-        "imageKey": "images/association/portraits/gerry-umbach-b5ae5bbf187c.webp",
-        "imageWidth": 880,
-        "imageHeight": 1100,
-        "placeholder": false,
-        "bio": [
-          "Gerry Umbach a rejoint la Réserve primaire au sein du 763e Régiment des transmissions (à l'époque) en tant qu'opérateur radio-télétype en juin 1992. Il a travaillé à temps plein pour le DAPSCT pendant 16 ans, tant en uniforme qu'en tant que civil, et occupe aujourd'hui le poste d'analyste en cybersécurité chez NAV Canada. Il a été nommé sergent-major adjoint du Corps du CTRC (Rés AC) au printemps 2025 après avoir terminé son mandat de sergent-major du 33e Régiment des transmissions."
-        ]
-      },
-      {
         "id": "mike-denoble",
         "name": "Mike DeNoble",
         "role": "Administrateur",
@@ -379,19 +340,6 @@
         "imageHeight": 805,
         "placeholder": true,
         "bio": []
-      },
-      {
-        "id": "david-tran",
-        "name": "Cpl David Tran",
-        "role": "Administrateur intérimaire",
-        "email": "dtran541@mtroyal.ca",
-        "image": "/assets/images/logo.png",
-        "imageWidth": 600,
-        "imageHeight": 805,
-        "placeholder": true,
-        "bio": [
-          "David Tran compte cinq ans d'expérience et occupe le grade de caporal au sein de la Réserve primaire des Forces armées canadiennes, où il exerce les fonctions de spécialiste des systèmes de communication et d'information de l'armée."
-        ]
       }
     ],
     "advisors": [

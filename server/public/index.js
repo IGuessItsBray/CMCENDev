@@ -171,13 +171,6 @@ const navLinks = {
           fr: "Musée et Fondation des C et E",
         },
       },
-      {
-        route: "/governance",
-        label: {
-          en: "Association Governance",
-          fr: "Gouvernance de l’Association",
-        },
-      },
       { route: "/leadership", label: { en: "Leadership", fr: "Leadership" } },
       { route: "/history.html", i18n: "menu_news_option_8" },
     ],

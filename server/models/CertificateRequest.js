@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+function retirementRequired() {
+  return this.certificateType !== 'trusted_to_serve';
+}
 const { FAMILY_WORDING_OPTIONS } = require('../config/certificate-wording');
 const {
   CERTIFICATE_FAMILY_RELATIONSHIPS,
@@ -47,7 +50,7 @@ const certificatePrintConfirmationSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 160,
+      maxlength: 201,
     },
   },
   { _id: false },
@@ -83,7 +86,12 @@ const certificateRequestSchema = new mongoose.Schema(
         type: String,
         required: true,
         trim: true,
-        maxlength: 160,
+        maxlength: 201,
+        validate: function (value) {
+          return (
+            this.certificateType === 'trusted_to_serve' || value.length <= 160
+          );
+        },
       },
 
       rank: {
@@ -95,7 +103,7 @@ const certificateRequestSchema = new mongoose.Schema(
 
       tradeRole: {
         type: String,
-        required: true,
+        required: retirementRequired,
         trim: true,
         maxlength: 120,
       },
@@ -103,7 +111,7 @@ const certificateRequestSchema = new mongoose.Schema(
       rankLanguage: {
         type: String,
         enum: ['en', 'fr'],
-        required: true,
+        required: retirementRequired,
       },
 
       decorations: {
@@ -113,21 +121,21 @@ const certificateRequestSchema = new mongoose.Schema(
 
       lastUnit: {
         type: String,
-        required: true,
+        required: retirementRequired,
         trim: true,
         maxlength: 200,
       },
 
       releaseDate: {
         type: Date,
-        required: true,
+        required: retirementRequired,
       },
 
       dwdDate: { type: Date, default: null },
 
       ceBranchEnrollmentDate: {
         type: Date,
-        required: true,
+        required: retirementRequired,
       },
 
       neededByDate: {
@@ -137,7 +145,7 @@ const certificateRequestSchema = new mongoose.Schema(
 
       dwdParadeRequested: {
         type: Boolean,
-        required: true,
+        required: retirementRequired,
       },
     },
 
@@ -145,6 +153,25 @@ const certificateRequestSchema = new mongoose.Schema(
       type: [certificateFamilyMemberSchema],
       default: [],
     },
+
+    trustedToServe: {
+      type: new mongoose.Schema(
+        {
+          firstName: { type: String, required: true, maxlength: 100 },
+          lastName: { type: String, required: true, maxlength: 100 },
+          postNominals: { type: String, default: '', maxlength: 120 },
+          fullRankEn: { type: String, required: true, maxlength: 100 },
+          presentationDate: { type: String, required: true },
+          frPronoun: { type: String, required: true, enum: ['il', 'elle'] },
+        },
+        { _id: false },
+      ),
+      required: function () {
+        return this.certificateType === 'trusted_to_serve';
+      },
+    },
+    submissionKey: { type: String, select: false },
+    submissionFingerprint: { type: String, select: false },
 
     mailingAddress: {
       line1: {
@@ -285,6 +312,14 @@ certificateRequestSchema.index({
   status: 1,
   createdAt: -1,
 });
+
+certificateRequestSchema.index(
+  { createdBy: 1, submissionKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { submissionKey: { $type: 'string' } },
+  },
+);
 
 certificateRequestSchema.index({
   'source.type': 1,

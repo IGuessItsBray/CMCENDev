@@ -459,6 +459,173 @@ paths:
         "403": { description: Certificate management permission required. }
         "422": { description: Invalid details, missing review or text that cannot fit. }
         "503": { description: Required certificate fonts unavailable. }
+  /api/certificate-requests/options:
+    get:
+      tags: [Certificates]
+      operationId: getCertificateSubmissionOptions
+      summary: Read family relationship and wording options without queue access.
+      x-permission: canSubmitCertificateRequests
+      responses:
+        "200":
+          description: Object containing relationships (relationship keys) and wordings (supported wording records).
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/certificate-requests/retirement:
+    post:
+      tags: [Certificates]
+      operationId: submitStandaloneRetirementCertificateRequest
+      summary: Submit retirement certificates for printing and mailing without a retirement message.
+      description: Requires certificates.submit. Stores authenticated profile contact, member service details and family recipients in a pending request. Per-user UUID idempotency spans both certificate types. No publication or email. Uses existing retirement rank, decorations, date and family wording validation. Combined member full name is limited to 160 characters.
+      x-permission: canSubmitCertificateRequests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [retirement, lastUnit, tradeRole, dwdParadeRequested, neededByDate, mailingAddress, requesterRelationship, requestId]
+              properties:
+                requestId: { type: string, format: uuid }
+                neededByDate: { type: string, format: date }
+                requesterRelationship: { type: string, minLength: 1, maxLength: 80 }
+                lastUnit: { type: string, minLength: 1, maxLength: 200 }
+                tradeRole: { type: string, minLength: 1, maxLength: 120 }
+                dwdParadeRequested: { type: boolean }
+                mailingAddress:
+                  $ref: "#/paths/~1api~1certificate-requests~1trusted-to-serve/post/requestBody/content/application~1json/schema/properties/mailingAddress"
+                retirement:
+                  type: object
+                  additionalProperties: false
+                  required: [firstName, lastName, fullRankEn, rankLanguage, ceBranchEnrollmentDate, releaseDate, reviewed]
+                  properties:
+                    firstName: { type: string, minLength: 1, maxLength: 100 }
+                    lastName: { type: string, minLength: 1, maxLength: 100 }
+                    postNominals: { type: string, maxLength: 120, description: Comma-separated supported certificate decorations. }
+                    fullRankEn: { type: string, description: Full rank from the shared rank catalogue. }
+                    rankLanguage: { type: string, enum: [en, fr] }
+                    ceBranchEnrollmentDate: { type: string, format: date }
+                    releaseDate: { type: string, format: date }
+                    dwdDate: { type: string, format: date }
+                    reviewed: { type: boolean, enum: [true] }
+                    familyMembers:
+                      type: array
+                      maxItems: 20
+                      items:
+                        type: object
+                        additionalProperties: false
+                        required: [fullName, memberRelationshipToRecipient]
+                        properties:
+                          fullName: { type: string, minLength: 1, maxLength: 160 }
+                          memberRelationshipToRecipient: { type: string, description: Supported wording key returned by the options endpoint. }
+                          relationship: { type: string, description: Optional relationship key returned by the options endpoint. }
+                          relationshipOther: { type: string, maxLength: 80 }
+      responses:
+        "201": { description: Created pending request; returns certificateRequest with id and status. }
+        "200": { description: Identical retry; returns certificateRequest with original id and current status. }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { description: certificate_request_idempotency_conflict; UUID used for different details or certificate type. }
+        "422": { description: Invalid retirement or delivery details, missing review or incomplete authenticated profile. }
+        "500": { $ref: "#/components/responses/Error" }
+  /api/certificate-requests/trusted-to-serve:
+    post:
+      tags: [Certificates]
+      operationId: submitTrustedToServeRequest
+      summary: Submit a Trusted to Serve print and mail request.
+      description: Requires certificates.submit (ghost or contributor and above by default; custom grants supported). Contact details come only from the authenticated profile. Creates a pending request, not an award approval or email. Per-user requestId retries with the same normalized payload return the original record; different content returns 409. Profile name, email and unit/company are required. No mailing or printing happens on submission.
+      x-permission: canSubmitCertificateRequests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [award, neededByDate, mailingAddress, requesterRelationship, requestId]
+              properties:
+                requestId: { type: string, format: uuid }
+                neededByDate: { type: string, format: date }
+                requesterRelationship: { type: string, minLength: 1, maxLength: 80 }
+                award:
+                  type: object
+                  additionalProperties: false
+                  required: [firstName, lastName, fullRankEn, presentationDate, frPronoun, reviewed]
+                  properties:
+                    firstName: { type: string, minLength: 1, maxLength: 100 }
+                    lastName: { type: string, minLength: 1, maxLength: 100 }
+                    postNominals: { type: string, maxLength: 120 }
+                    fullRankEn: { type: string, description: Supported full military rank from the Trusted to Serve catalogue. }
+                    presentationDate: { type: string, format: date }
+                    frPronoun: { type: string, enum: [il, elle] }
+                    reviewed: { type: boolean, enum: [true] }
+                mailingAddress:
+                  type: object
+                  additionalProperties: false
+                  required: [line1, city, province, postalCode, country]
+                  properties:
+                    line1: { type: string, minLength: 1, maxLength: 160 }
+                    line2: { type: string, maxLength: 160 }
+                    city: { type: string, minLength: 1, maxLength: 100 }
+                    province: { type: string, minLength: 1, maxLength: 100 }
+                    postalCode: { type: string, minLength: 1, maxLength: 24 }
+                    country: { type: string, minLength: 1, maxLength: 100 }
+      responses:
+        "201":
+          description: Created pending request.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [certificateRequest]
+                properties:
+                  certificateRequest:
+                    type: object
+                    required: [id, status]
+                    properties:
+                      id: { type: string }
+                      status: { type: string, enum: [pending, ready_to_mail, printed, mailed] }
+        "200": { description: Identical retry; certificateRequest contains original id and current status. }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { description: certificate_request_idempotency_conflict; requestId was used for different details. }
+        "422": { description: Invalid award or delivery details, missing review, or certificate_request_profile_incomplete with missingFields. }
+        "500": { $ref: "#/components/responses/Error" }
+  /api/certificate-requests/{certificateRequestId}/trusted-to-serve.pdf:
+    post:
+      tags: [Certificates]
+      operationId: generateRequestedTrustedToServeCertificate
+      summary: Generate a reviewed award from saved request details.
+      description: Requires certificates.manage. Uses saved award fields only. Reviewed confirmation is mandatory for preview and download. Private/no-store on every response; successful generation is audited and does not change fulfillment status. Confirm printing separately using certificateKey member.
+      x-permission: canManageCertificateRequests
+      parameters:
+        - $ref: "#/components/parameters/CertificateRequestId"
+        - in: query
+          name: download
+          schema: { type: string, enum: ["1"] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reviewed]
+              properties:
+                reviewed: { type: boolean, enum: [true] }
+      responses:
+        "200":
+          description: Bilingual Trusted to Serve PDF.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { description: Missing review, unsupported request type, invalid saved award or unrenderable text. }
+        "503": { description: Required master or fonts unavailable. }
+        "500": { $ref: "#/components/responses/Error" }
   /api/certificate-requests/trusted-to-serve.pdf:
     post:
       tags: [Certificates]

@@ -3,6 +3,8 @@
   function mount({
     api,
     onDenied,
+    permissions = {},
+    showRequestForm = true,
     root = document.getElementById("adminCertificatesBody"),
   }) {
     const translate = (key, values) => window.translate(key, values);
@@ -38,7 +40,22 @@
     list.className = "certificate-requests-list";
     const awardRoot = document.createElement("section");
     const manualRoot = document.createElement("section");
-    root.replaceChildren(toolbar, manualRoot, awardRoot, list);
+    const requestRoot = document.createElement("section");
+    root.replaceChildren(requestRoot, toolbar, manualRoot, awardRoot, list);
+    const requestController =
+      showRequestForm && permissions.canSubmitCertificateRequests === true
+        ? window.TrustedToServeRequest?.mount({
+            root: requestRoot,
+            api,
+            onDenied: () => {
+              requestController?.dispose();
+              requestRoot.textContent = translate(
+                "trusted_request_access_denied",
+              );
+            },
+            onSubmitted: () => load(),
+          })
+        : null;
     const manualController = window.ManualRetirementCertificate?.mount({
       root: manualRoot,
       api,
@@ -207,9 +224,13 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "certificate-member-download";
-      button.textContent = translate("certificate_member_download");
+      button.textContent = translate(
+        request.certificateType === "trusted_to_serve"
+          ? "trusted_request_download"
+          : "certificate_member_download",
+      );
       button.dataset.actionable = String(
-        request.certificateType === "retirement",
+        ["retirement", "trusted_to_serve"].includes(request.certificateType),
       );
       button.addEventListener("click", () => memberDocument(request));
       return button;
@@ -331,10 +352,29 @@
         loading ||
         loadFailed ||
         !requests.includes(request) ||
-        request.certificateType !== "retirement"
+        !["retirement", "trusted_to_serve"].includes(request.certificateType)
       )
         return;
-      const review = familyReview(request);
+      const trusted = request.certificateType === "trusted_to_serve";
+      if (trusted) {
+        if (kind !== "member") return;
+        confirming = true;
+        update();
+        let reviewed;
+        try {
+          reviewed = await CMCENModal.confirm(
+            translate("trusted_request_review_confirm", {
+              name: request.member?.fullName || "—",
+            }),
+            { title: translate("trusted_request_download") },
+          );
+        } finally {
+          confirming = false;
+          if (!disposed) update();
+        }
+        if (!reviewed || disposed) return;
+      }
+      const review = trusted ? null : familyReview(request);
       if (
         kind !== "member" &&
         (kind === "family"
@@ -362,21 +402,26 @@
           : "certificate_document_generating";
       update();
       try {
-        const suffix =
-          kind === "family" ? `family/${familyIndex}.pdf` : `${kind}.pdf`;
+        const suffix = trusted
+          ? "trusted-to-serve.pdf"
+          : kind === "family"
+            ? `family/${familyIndex}.pdf`
+            : `${kind}.pdf`;
         const response = await api(
           `/api/certificate-requests/${encodeURIComponent(request._id)}/${suffix}?download=1`,
           {
             parseJson: false,
-            ...(kind === "member"
-              ? {}
-              : {
-                  method: "POST",
-                  json: true,
-                  body: {
-                    certificateDate: review.certificateDate,
-                  },
-                }),
+            ...(trusted
+              ? { method: "POST", json: true, body: { reviewed: true } }
+              : kind === "member"
+                ? {}
+                : {
+                    method: "POST",
+                    json: true,
+                    body: {
+                      certificateDate: review.certificateDate,
+                    },
+                  }),
             timeoutMs: null,
             signal: lifecycle.signal,
           },
@@ -390,7 +435,7 @@
         {
           const link = document.createElement("a");
           link.href = url;
-          link.download = `retirement-${kind}${kind === "family" ? `-${familyIndex}` : ""}-${request._id.replace(/[^a-f0-9]/gi, "")}.pdf`;
+          link.download = `${trusted ? "trusted-to-serve" : `retirement-${kind}${kind === "family" ? `-${familyIndex}` : ""}`}-${request._id.replace(/[^a-f0-9]/gi, "")}.pdf`;
           document.body.append(link);
           link.click();
           link.remove();
@@ -398,8 +443,9 @@
             if (documentUrls.delete(url)) URL.revokeObjectURL(url);
           }, 1000);
         }
-        messageKey =
-          kind === "member"
+        messageKey = trusted
+          ? "trusted_request_generated"
+          : kind === "member"
             ? "certificate_member_generated"
             : "certificate_document_generated";
       } catch (error) {
@@ -600,6 +646,7 @@
       }
     }
     function createCertificateRequestCard(certificateRequest) {
+      const trusted = certificateRequest.certificateType === "trusted_to_serve";
       const member = certificateRequest.member || {};
       const mailingAddress = certificateRequest.mailingAddress || {};
       const requester = certificateRequest.requester || {};
@@ -636,7 +683,7 @@
       const scope = document.createElement("p");
       scope.textContent = translate("certificate_member_document_scope");
       documentActions.append(scope);
-      if (certificateRequest.familyMembers?.length)
+      if (!trusted && certificateRequest.familyMembers?.length)
         documentActions.append(
           createFamilyDocumentControls(certificateRequest),
         );
@@ -693,6 +740,36 @@
         ),
       );
 
+      if (trusted) {
+        const award = certificateRequest.trustedToServe || {};
+        requestDetails.replaceChildren(
+          createCertificateRequestDetail(
+            "certificate_request_rank",
+            award.fullRankEn,
+          ),
+          createCertificateRequestDetail(
+            "trusted_award_postNominals",
+            award.postNominals,
+          ),
+          createCertificateRequestDetail(
+            "trusted_award_frPronoun",
+            ["il", "elle"].includes(award.frPronoun)
+              ? translate(`trusted_award_${award.frPronoun}`)
+              : "—",
+          ),
+        );
+        dates.replaceChildren(
+          createCertificateRequestDetail(
+            "trusted_award_presentationDate",
+            formatCertificateRequestDate(award.presentationDate),
+          ),
+          createCertificateRequestDetail(
+            "certificate_needed_by_date",
+            formatCertificateRequestDate(member.neededByDate),
+          ),
+        );
+      }
+
       const address = document.createElement("address");
       address.className = "certificate-request-address";
       [
@@ -740,13 +817,17 @@
           requestDetails,
         ),
         createCertificateRequestSection("certificate_dates_heading", dates),
-        createCertificateRequestSection(
-          "certificate_family_heading",
-          createFamilyMemberList(
-            certificateRequest.familyMembers,
-            member.fullName,
-          ),
-        ),
+        ...(trusted
+          ? []
+          : [
+              createCertificateRequestSection(
+                "certificate_family_heading",
+                createFamilyMemberList(
+                  certificateRequest.familyMembers,
+                  member.fullName,
+                ),
+              ),
+            ]),
         createCertificateRequestSection("certificate_address_heading", address),
         createCertificateRequestSection(
           "certificate_request_requester_details",
@@ -764,19 +845,23 @@
     const ready = load();
     return {
       ready,
+      reload: load,
       canNavigate: () =>
         !busy &&
         !confirming &&
+        requestController?.canNavigate() !== false &&
         awardController?.canNavigate() !== false &&
         manualController?.canNavigate() !== false,
       hasUnsavedChanges: () =>
         busy ||
         confirming ||
+        requestController?.hasUnsavedChanges() === true ||
         awardController?.hasUnsavedChanges() === true ||
         manualController?.hasUnsavedChanges() === true,
       dispose() {
         disposed = true;
         lifecycle.abort();
+        requestController?.dispose();
         awardController?.dispose();
         manualController?.dispose();
         for (const picker of datePickers) picker.destroy();

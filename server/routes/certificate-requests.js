@@ -26,6 +26,209 @@ const {
 
 const router = express.Router();
 const {
+  getTrustedToServeRequest,
+  getRetirementRequest,
+  getRequester,
+} = require('../services/trusted-to-serve-requests');
+
+router.get(
+  '/options',
+  authMiddleware,
+  requirePermission('canSubmitCertificateRequests'),
+  (req, res) => {
+    res.set('Cache-Control', 'private, no-store');
+    return res.json({
+      relationships: require('../config/certificate-requests')
+        .CERTIFICATE_FAMILY_RELATIONSHIPS,
+      wordings: FAMILY_WORDING_OPTIONS,
+    });
+  },
+);
+
+router.post(
+  ['/trusted-to-serve', '/retirement'],
+  (req, res, next) => {
+    res.set('Cache-Control', 'private, no-store');
+    next();
+  },
+  authMiddleware,
+  requirePermission('canSubmitCertificateRequests'),
+  async (req, res) => {
+    try {
+      const isRetirement = req.path === '/retirement';
+      const certificateType = isRetirement ? 'retirement' : 'trusted_to_serve';
+      const input = isRetirement
+        ? getRetirementRequest(req.body)
+        : getTrustedToServeRequest(req.body);
+      const filter = {
+        createdBy: req.user._id,
+        submissionKey: input.submissionKey,
+      };
+      const replay = (existing) => {
+        if (existing.submissionFingerprint !== input.fingerprint)
+          return res.status(409).json({
+            error:
+              'This request ID has already been used for different details.',
+            code: 'certificate_request_idempotency_conflict',
+          });
+        return res
+          .status(200)
+          .json({
+            certificateRequest: { id: existing._id, status: existing.status },
+          });
+      };
+      const existing = await CertificateRequest.findOne(filter).select(
+        '+submissionFingerprint',
+      );
+      if (existing) return replay(existing);
+      const requester = getRequester(req.user, input.relationship);
+      const certificateRequest = new CertificateRequest({
+        certificateType,
+        trustedToServe: input.trustedToServe,
+        familyMembers: input.familyMembers || [],
+        member: input.member,
+        mailingAddress: input.mailingAddress,
+        requester,
+        createdBy: req.user._id,
+        updatedBy: req.user._id,
+        status: 'pending',
+        submissionKey: input.submissionKey,
+        submissionFingerprint: input.fingerprint,
+      });
+      certificateRequest.source = {
+        type: isRetirement ? 'retirementCertificate' : 'trustedToServe',
+        id: certificateRequest._id,
+      };
+      try {
+        await certificateRequest.save();
+      } catch (error) {
+        if (error.code !== 11000) throw error;
+        const duplicate = await CertificateRequest.findOne(filter).select(
+          '+submissionFingerprint',
+        );
+        if (!duplicate) throw error;
+        return replay(duplicate);
+      }
+      await writeAuditLog({
+        req,
+        actor: req.user,
+        action: 'content.certificate_request_submitted',
+        targetType: 'certificateRequest',
+        target: certificateRequest._id,
+        targetSnapshot: getCertificateRequestSnapshot(certificateRequest),
+        metadata: { certificateType },
+      });
+      return res
+        .status(201)
+        .json({
+          certificateRequest: {
+            id: certificateRequest._id,
+            status: certificateRequest.status,
+          },
+        });
+    } catch (error) {
+      if (error instanceof CertificateDocumentError)
+        return res
+          .status(error.status)
+          .json({
+            error: error.message,
+            code: error.code,
+            ...(error.missingFields
+              ? { missingFields: error.missingFields }
+              : {}),
+          });
+      if (error.name === 'ValidationError')
+        return res
+          .status(422)
+          .json({
+            error: 'The certificate request details are invalid.',
+            code: 'certificate_request_invalid',
+          });
+      console.error('Could not submit certificate request');
+      return res
+        .status(500)
+        .json({ error: 'Could not submit certificate request' });
+    }
+  },
+);
+
+router.post(
+  '/:certificateRequestId/trusted-to-serve.pdf',
+  (req, res, next) => {
+    res.set('Cache-Control', 'private, no-store');
+    res.set('X-Content-Type-Options', 'nosniff');
+    next();
+  },
+  authMiddleware,
+  requirePermission('canManageCertificateRequests'),
+  async (req, res) => {
+    if (!/^[a-f0-9]{24}$/iu.test(req.params.certificateRequestId))
+      return res.status(404).json({ error: 'Certificate request not found' });
+    if (req.query.download !== undefined && req.query.download !== '1')
+      return res
+        .status(400)
+        .json({ error: 'Invalid certificate download option' });
+    if (
+      !req.body ||
+      req.body.reviewed !== true ||
+      Object.keys(req.body).some((key) => key !== 'reviewed')
+    )
+      return res
+        .status(422)
+        .json({
+          error:
+            'Review the saved award details before generating the certificate.',
+          code: 'award_review_required',
+        });
+    try {
+      const certificateRequest = await CertificateRequest.findById(
+        req.params.certificateRequestId,
+      ).lean();
+      if (!certificateRequest)
+        return res.status(404).json({ error: 'Certificate request not found' });
+      if (certificateRequest.certificateType !== 'trusted_to_serve')
+        return res
+          .status(422)
+          .json({
+            error: 'This is not a Trusted to Serve request.',
+            code: 'award_data_invalid',
+          });
+      const bytes = await generateTrustedToServe(
+        certificateRequest.trustedToServe,
+      );
+      await writeAuditLog({
+        req,
+        actor: req.user,
+        action: 'content.certificate_request_trusted_to_serve_generated',
+        targetType: 'certificateRequest',
+        target: certificateRequest._id,
+        targetSnapshot: getCertificateRequestSnapshot(certificateRequest),
+        metadata: {
+          certificateKey: 'member',
+          reviewed: true,
+          disposition: req.query.download === '1' ? 'attachment' : 'inline',
+        },
+      });
+      res.set(
+        'Content-Disposition',
+        `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="trusted-to-serve-${certificateRequest._id}.pdf"`,
+      );
+      return res.type('pdf').send(bytes);
+    } catch (error) {
+      if (error instanceof CertificateDocumentError)
+        return res
+          .status(error.status)
+          .json({ error: error.message, code: error.code });
+      console.error(
+        'Could not generate requested Trusted to Serve certificate',
+      );
+      return res
+        .status(500)
+        .json({ error: 'Could not generate Trusted to Serve certificate' });
+    }
+  },
+);
+const {
   getManualRetirementRequest,
 } = require('../services/manual-retirement-certificate');
 

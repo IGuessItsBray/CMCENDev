@@ -555,6 +555,47 @@ flow blocks in document order, ignoring desktop grid row positions.
 
 Mounted at `/api/certificate-requests`.
 
+### Standalone print and mail submissions
+
+`POST /api/certificate-requests/trusted-to-serve` and
+`POST /api/certificate-requests/retirement` require authentication and
+`canSubmitCertificateRequests` (`certificates.submit`). Ghost and contributor
+or higher roles receive it by default; custom roles can grant it independently
+of queue management. The `/certificates` page offers both request types.
+
+Both accept `neededByDate` (strict YYYY-MM-DD), `mailingAddress` (line1, optional
+line2, city, province, postalCode, country), `requesterRelationship`, and a UUID
+`requestId`. Trusted to Serve additionally accepts `award` with firstName,
+lastName, optional postNominals, fullRankEn, presentationDate, frPronoun and
+`reviewed: true`. Retirement instead accepts `retirement` with firstName,
+lastName, optional postNominals, fullRankEn, rankLanguage, ceBranchEnrollmentDate,
+releaseDate, optional dwdDate, familyMembers and `reviewed: true`, plus top-level
+lastUnit, tradeRole and boolean dwdParadeRequested. Existing retirement date,
+rank, decoration and family-wording validation applies. Full retirement names
+must fit 160 characters.
+
+Requester name, email and unit/company come only from the signed-in profile;
+client-supplied contact fields are rejected. Incomplete profiles receive 422
+`certificate_request_profile_incomplete` with `missingFields`. New submissions
+return 201 `{certificateRequest:{id,status}}`, initially pending. Identical
+normalized per-user UUID retries return 200 and the current status. Different
+content, including another certificate type, with the same UUID returns 409
+`certificate_request_idempotency_conflict`. The unique partial index protects
+concurrent retries while leaving legacy records without keys valid. Keys and
+fingerprints are excluded from queue responses. Submissions are audited and
+create no retirement message, award approval, email or fulfillment transition.
+
+`GET /api/certificate-requests/options` requires the submit permission and returns
+`{relationships,wordings}` for family request controls without exposing the queue.
+
+`POST /api/certificate-requests/:certificateRequestId/trusted-to-serve.pdf`
+requires management permission and exactly `{reviewed:true}`. It generates from
+saved award details only. Optional `?download=1` returns an attachment. Every
+response is private/no-store, successful generation is audited, and status does
+not change. Trusted to Serve uses the existing `member` print confirmation key;
+retirement requests retain member/family/packet generation and all-family print
+confirmation before mailing.
+
 `POST /api/certificate-requests/retirement.pdf` requires
 `canManageCertificateRequests` and creates retirement PDFs directly from
 staff-entered `firstName`, `lastName`, `fullRankEn` (shared catalogue),

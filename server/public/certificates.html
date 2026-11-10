@@ -2,39 +2,60 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Certificates | CMCEN / RCMCE</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title data-i18n="certificate_requests_page_title">
+      Certificate Requests | CMCEN / RCMCE
+    </title>
+    <link rel="icon" type="image/png" href="/images/favicon_crest.png" />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/certificate-documents.css" />
   </head>
+
   <body>
     <header id="header"></header>
-    <main class="about-family-main">
-      <article class="about-family-shell">
-        <header class="about-family-hero leadership-hero">
-          <div class="about-family-hero-copy">
-            <p class="about-family-kicker">News &amp; events</p>
-            <h1>Certificates</h1>
-            <p class="about-family-intro">
-              Certificates and recognition material for the C&amp;E community.
-            </p>
-          </div>
-          <img src="/assets/images/logo.png" alt="" class="about-family-emblem" />
+
+    <main class="certificate-requests-main">
+      <section
+        class="certificate-requests-shell"
+        aria-labelledby="certificateRequestsTitle"
+      >
+        <header class="certificate-requests-heading">
+          <p
+            class="certificate-requests-eyebrow"
+            data-i18n="certificate_requests_eyebrow"
+          >
+            Certificate operations
+          </p>
+
+          <h1
+            id="certificateRequestsTitle"
+            data-i18n="certificate_requests_title"
+          >
+            Certificate Requests
+          </h1>
+
+          <p data-i18n="certificate_requests_intro">
+            Request certificates and manage branch certificate preparation.
+          </p>
         </header>
-        <div class="about-family-body">
-          <section class="about-family-section">
-            <h2>Coming soon</h2>
-            <p>
-              Certificate templates and supporting information are being
-              migrated to CMCEN. Check back for new resources.
-            </p>
-          </section>
-        </div>
-      </article>
+
+        <div id="certificateRequestsBody" data-public-requests="true"></div>
+      </section>
     </main>
+
     <footer id="footer"></footer>
+
     <script src="/app-utils.js"></script>
     <script src="/timers.js"></script>
     <script src="/index.js"></script>
     <script src="/translations.js"></script>
+    <script src="/person-rank-options.js"></script>
+    <script src="/trusted-to-serve-ranks.js"></script>
+    <script src="/date-time-picker.js"></script>
+    <script src="/trusted-to-serve-controller.js"></script>
+    <script src="/certificate-requests-controller.js"></script>
+    <script src="/certificate-requests.js"></script>
   </body>
 </html>

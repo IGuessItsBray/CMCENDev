@@ -48,6 +48,14 @@ const PERMISSION_CATALOG = Object.freeze([
     description: 'Submit retirement messages for review.',
   },
   {
+    key: 'certificates.submit',
+    label: 'Submit certificate requests',
+    group: 'Certificates',
+    action: 'write',
+    description:
+      'Submit retirement and Trusted to Serve certificate requests for printing and mailing.',
+  },
+  {
     key: 'certificates.manage',
     label: 'Manage certificate requests',
     group: 'Certificates',
@@ -279,6 +287,7 @@ const LEGACY_PERMISSION_KEYS = Object.freeze({
   canCreateDrafts: 'content.create',
   canManageNews: 'news.manage',
   canSubmitRetirementMessages: 'retirements.submit',
+  canSubmitCertificateRequests: 'certificates.submit',
   canManageCertificateRequests: 'certificates.manage',
   canPublishOwnContent: 'content.publish_own',
   canReviewAndPublish: 'content.review',
@@ -343,6 +352,8 @@ function getBuiltInPermissionFlags(user) {
     canManageNews: hasMinimumRole(role, 'editor'),
 
     canSubmitRetirementMessages: isGhost || hasMinimumRole(role, 'contributor'),
+    canSubmitCertificateRequests:
+      isGhost || hasMinimumRole(role, 'contributor'),
 
     canManageCertificateRequests: hasMinimumRole(role, 'editor'),
 

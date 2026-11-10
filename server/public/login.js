@@ -204,7 +204,14 @@ async function completeLogin(token) {
     window.refreshAuthUI();
   }
 
-  window.location.href = "/dashboard";
+  // Certificate requests may begin on a public landing page. Keep the return
+  // destination explicit rather than accepting an arbitrary redirect URL.
+  const returnTo = new URLSearchParams(window.location.search).get("returnTo");
+  window.location.href = ["/certificates", "/certificate-requests"].includes(
+    returnTo,
+  )
+    ? returnTo
+    : "/dashboard";
 }
 
 function ensureWebAuthnAvailable() {

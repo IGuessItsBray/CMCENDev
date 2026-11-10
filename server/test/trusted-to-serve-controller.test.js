@@ -4,9 +4,118 @@ const assert = require('node:assert/strict'),
   vm = require('node:vm'),
   { test } = require('node:test');
 const { Element } = require('./helpers/dashboard-dom');
+test('expired submission sessions retain the same request for retry after new-tab sign-in', async () => {
+  let expired = true;
+  const page = setup(
+    async () => {
+      if (expired) throw Object.assign(new Error('Expired'), { status: 401 });
+      return { certificateRequest: { id: 'r1', status: 'pending' } };
+    },
+    false,
+    true,
+  );
+  await page.fill();
+  await reviewed(page);
+  await page.control('download').fire('click');
+  assert.equal(page.status(), 'trusted_request_session_expired');
+  assert.equal(page.root.querySelector('a').target, '_blank');
+  expired = false;
+  await page.control('download').fire('click');
+  assert.equal(page.calls[0].body.requestId, page.calls[1].body.requestId);
+  page.controller.dispose();
+});
+test('requests retain idempotent snapshots through retries and language changes', async () => {
+  let attempt = 0;
+  const page = setup(
+    async () => {
+      if (++attempt === 1) throw new Error('Network');
+      return { certificateRequest: { id: 'r1', status: 'pending' } };
+    },
+    false,
+    true,
+  );
+  await page.fill();
+  await reviewed(page);
+  assert.equal(page.controller.canNavigate(), true);
+  assert.equal(page.controller.hasUnsavedChanges(), true);
+  await page.control('download').fire('click');
+  assert.equal(page.calls[0].url, '/api/certificate-requests/trusted-to-serve');
+  assert.equal(page.calls[0].body.award.firstName, 'Émilie');
+  assert.equal(page.calls[0].body.award.reviewed, true);
+  assert.equal(page.calls[0].body.mailingAddress.country, '');
+  await page.document.fire('languagechange');
+  assert.equal(page.control('firstName').disabled, true);
+  await page.control('download').fire('click');
+  assert.equal(page.calls[0].body.requestId, page.calls[1].body.requestId);
+  assert.equal(page.controller.hasUnsavedChanges(), false);
+  await page.control('download').fire('click');
+  assert.equal(page.calls.length, 2);
+  page.control('firstName').value = 'Alex';
+  await page.control('firstName').fire('input');
+  assert.equal(page.control('reviewed').checked, false);
+  await reviewed(page);
+  await page.control('download').fire('click');
+  assert.notEqual(page.calls[0].body.requestId, page.calls[2].body.requestId);
+  page.controller.dispose();
+  assert.equal(page.controller.hasUnsavedChanges(), false);
+});
+test('request validation allows corrections; pending requests guard double clicks and abort', async () => {
+  let fail = true,
+    resolve;
+  const page = setup(
+    () =>
+      fail
+        ? Promise.reject(
+            Object.assign(new Error('Invalid'), {
+              status: 422,
+              data: { code: 'certificate_request_invalid' },
+            }),
+          )
+        : new Promise((yes) => {
+            resolve = yes;
+          }),
+    false,
+    true,
+  );
+  await page.fill();
+  await reviewed(page);
+  await page.control('download').fire('click');
+  assert.equal(page.status(), 'trusted_request_invalid');
+  assert.equal(page.control('firstName').disabled, false);
+  fail = false;
+  const pending = page.control('download').fire('click');
+  await page.control('download').fire('click');
+  assert.equal(page.calls.length, 2);
+  page.controller.dispose();
+  assert.equal(page.calls[1].signal.aborted, true);
+  resolve({ certificateRequest: { id: 'r1', status: 'pending' } });
+  await pending;
+  assert.equal(page.root.children.length, 0);
+});
+test('retirement request submits structured member data without PDF actions', async () => {
+  const page = setup(
+    async () => ({ certificateRequest: { id: 'r1', status: 'pending' } }),
+    true,
+    true,
+  );
+  page.controller.setFamilyOptions({
+    relationships: [],
+    wordings: require('../config/certificate-wording').FAMILY_WORDING_OPTIONS,
+  });
+  await page.root.querySelector('.manual-family-add').fire('click');
+  assert.equal(page.root.querySelector('.manual-family-download'), null);
+  await reviewed(page);
+  await page.control('download').fire('click');
+  assert.equal(page.calls[0].url, '/api/certificate-requests/retirement');
+  assert.equal(page.calls[0].body.retirement.familyMembers.length, 1);
+  assert.equal(page.calls[0].body.dwdParadeRequested, false);
+  assert.equal(page.calls[0].body.award, undefined);
+  page.controller.dispose();
+});
 function setup(
   api = async () => ({ blob: async () => ({ type: 'application/pdf' }) }),
   memberRetirement = false,
+  requestMode = false,
 ) {
   const root = new Element('div'),
     document = new Element('document'),
@@ -22,6 +131,7 @@ function setup(
     return element;
   };
   const window = {
+    crypto: require('node:crypto'),
     translate: (key) => key,
     CMCENRanks: require('../public/person-rank-options'),
     CMCENAwardRanks: require('../public/trusted-to-serve-ranks'),
@@ -50,6 +160,7 @@ function setup(
   );
   controller = window.TrustedToServe.mount({
     memberRetirement,
+    requestMode,
     root,
     api: async (url, options) => {
       calls.push({ url, ...options });

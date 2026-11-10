@@ -6,17 +6,27 @@ to Serve section for student awards to members on course, with a small form for
 separate first/surname fields, optional post-nominals, a full English heading
 rank, English/French body ranks, presentation date, and explicit
 French pronoun/article wording. It generates reviewed downloads;
-it does not add a nomination/approval system or public duplicate request form.
-All API calls require `certificates.manage`. Generated PDFs are private/no-store,
+it does not add a nomination/approval system.
+Document-generation API calls require `certificates.manage`. Generated PDFs are private/no-store,
 held in memory, and never change retirement fulfillment state. Download requires
 acknowledgement that staff checked the entered details. Editing any input clears
 that acknowledgement. Staff open the downloaded PDF to check and print it.
 Branch staff enter approved student details received by instructor email.
-The authenticated standalone Certificate Requests page uses the same staff
-controller. No award controls appear on the public retirement listing or public
-retirement-message page, and no public instructor submission or nomination
-workflow is added. The existing `certificates.manage` permission protects the
-staff worklist and award generation endpoint.
+The `/certificates` page lets signed-in users with `certificates.submit` submit
+either retirement or Trusted to Serve print/mail requests. The permission is
+granted to ghost and contributor-or-higher roles and can be granted by custom
+roles. It does not grant queue access. The existing `certificates.manage`
+permission still protects private delivery details, staff generation and
+fulfillment. No award controls appear on public retirement listings or messages.
+
+Trusted to Serve requests preserve normalized recipient, rank, post-nominal,
+presentation date and explicit French pronoun fields. Requester contact comes
+only from the authenticated profile. A per-user UUID and payload fingerprint
+make retries safe, including simultaneous submissions. New requests are pending;
+they do not approve awards, send email, or create retirement posts. Staff review
+the saved details and generate through the request-specific PDF endpoint before
+confirming the `member` certificate printed and then mailed. Generation alone
+never changes status. See `API ROUTES.md` for payload and error contracts.
 The dashboard has no embedded PDF viewer or preview-only buttons. Existing
 inline API responses remain available, but the staff workflow is download-only.
 

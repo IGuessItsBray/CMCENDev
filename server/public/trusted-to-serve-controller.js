@@ -1,12 +1,42 @@
 "use strict";
 (() => {
-  function mount({ root, api, onDenied, memberRetirement = false }) {
+  function mount({
+    root,
+    api,
+    onDenied,
+    memberRetirement = false,
+    requestMode = false,
+    onSubmitted,
+    initiallyExpanded,
+  }) {
     const lifecycle = new AbortController(),
       urls = new Set(),
       datePickers = new Set();
     let disposed = false,
       busy = false,
       message = "";
+    let dirty = false,
+      submitted = false,
+      requestId,
+      requestSnapshot;
+    const delivery = {
+      neededByDate: "",
+      requesterRelationship: "",
+      mailingAddress: {
+        line1: "",
+        line2: "",
+        city: "",
+        province: "",
+        postalCode: "",
+        country: "",
+      },
+    };
+    if (requestMode && memberRetirement)
+      Object.assign(delivery, {
+        lastUnit: "",
+        tradeRole: "",
+        dwdParadeRequested: false,
+      });
     let draft = memberRetirement
       ? {
           firstName: "",
@@ -31,23 +61,48 @@
         };
     const t = (key, values) =>
       window.translate(
-        memberRetirement && key.startsWith("trusted_award_")
-          ? key.replace("trusted_award_", "manual_retirement_")
-          : key,
+        requestMode && key === "trusted_award_review_required"
+          ? "trusted_request_review_required"
+          : requestMode &&
+              [
+                "trusted_award_title",
+                "trusted_award_intro",
+                "trusted_award_download",
+                "trusted_award_generating",
+                "trusted_award_review",
+              ].includes(key)
+            ? key.replace(
+                "trusted_award_",
+                memberRetirement ? "retirement_request_" : "trusted_request_",
+              )
+            : memberRetirement && key.startsWith("trusted_award_")
+              ? key.replace("trusted_award_", "manual_retirement_")
+              : key,
         values,
       );
     let controls = [],
       status;
-    let expanded = !memberRetirement;
+    let expanded = initiallyExpanded ?? !memberRetirement;
     let familyOptions = { relationships: [], wordings: [] };
     let refreshFamilyQuestions = [];
     function update() {
       if (disposed) return;
       status.textContent = t(message || "trusted_award_intro");
+      if (requestMode && message === "trusted_request_session_expired") {
+        const link = document.createElement("a");
+        link.href = "/login?returnTo=%2Fcertificates";
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = " " + t("trusted_request_sign_in_link");
+        status.append(link);
+      }
       status.setAttribute("aria-busy", String(busy));
       for (const control of controls)
         control.disabled =
           busy ||
+          (requestMode &&
+            ((requestSnapshot && control.dataset.requestSubmit !== "true") ||
+              (submitted && control.dataset.requestSubmit === "true"))) ||
           (control.dataset.requiresFamilyOptions === "true" &&
             (!familyOptions.wordings.length ||
               draft.familyMembers.length >= 20));
@@ -89,6 +144,14 @@
       }
       let review;
       const changed = () => {
+        if (requestMode) {
+          dirty = true;
+          if (submitted) {
+            requestId = undefined;
+            requestSnapshot = undefined;
+            submitted = false;
+          }
+        }
         draft.reviewed = false;
         if (review) review.checked = false;
         message = "";
@@ -303,7 +366,7 @@
           );
           const remove = document.createElement("button");
           remove.type = "button";
-          remove.className = "manual-family-remove";
+          remove.className = "manual-family-remove admin-work-zone-button";
           remove.textContent = t("certificate_remove_family_member");
           remove.addEventListener("click", () => {
             draft.familyMembers.splice(index, 1);
@@ -321,14 +384,15 @@
           const actions = document.createElement("div");
           actions.className = "certificate-document-actions";
           actions.style.gridColumn = "1 / -1";
-          actions.append(remove, download);
+          actions.append(remove);
+          if (!requestMode) actions.append(download);
           row.append(actions);
           controls.push(download);
           families.append(row);
         });
         const add = document.createElement("button");
         add.type = "button";
-        add.className = "manual-family-add";
+        add.className = "manual-family-add admin-work-zone-button";
         add.textContent = t("certificate_add_family_member");
         add.dataset.requiresFamilyOptions = "true";
         add.addEventListener("click", () => {
@@ -344,6 +408,77 @@
         controls.push(add);
         form.append(families);
       }
+      if (requestMode) {
+        const fieldset = document.createElement("fieldset");
+        fieldset.className = "trusted-award-group";
+        const legend = document.createElement("legend");
+        legend.textContent = t("trusted_request_delivery");
+        const fields = document.createElement("div");
+        fields.className = "trusted-award-fields";
+        for (const key of [
+          "neededByDate",
+          "requesterRelationship",
+          "line1",
+          "line2",
+          "city",
+          "province",
+          "postalCode",
+          "country",
+          ...(memberRetirement ? ["lastUnit", "tradeRole"] : []),
+        ]) {
+          const target = key in delivery ? delivery : delivery.mailingAddress;
+          const label = document.createElement("label");
+          label.className = "trusted-award-field";
+          label.textContent = t(`trusted_request_${key}`);
+          const input = document.createElement("input");
+          input.className = `trusted-request-${key}`;
+          input.name = key;
+          input.type = key === "neededByDate" ? "date" : "text";
+          input.required = key !== "line2";
+          input.maxLength =
+            {
+              postalCode: 24,
+              requesterRelationship: 80,
+              line1: 160,
+              line2: 160,
+              lastUnit: 200,
+              tradeRole: 120,
+            }[key] || 100;
+          input.value = target[key];
+          input.addEventListener("input", () => {
+            target[key] = input.value;
+            changed();
+          });
+          controls.push(input);
+          label.append(input);
+          fields.append(label);
+        }
+        if (memberRetirement) {
+          const label = document.createElement("label");
+          label.className = "trusted-award-field";
+          label.textContent = t("trusted_request_dwdParadeRequested");
+          const select = document.createElement("select");
+          select.className = "trusted-request-dwdParadeRequested";
+          for (const value of ["false", "true"]) {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = t(
+              value === "true" ? "trusted_request_yes" : "trusted_request_no",
+            );
+            select.append(option);
+          }
+          select.value = String(delivery.dwdParadeRequested);
+          select.addEventListener("change", () => {
+            delivery.dwdParadeRequested = select.value === "true";
+            changed();
+          });
+          controls.push(select);
+          label.append(select);
+          fields.append(label);
+        }
+        fieldset.append(legend, fields);
+        form.append(fieldset);
+      }
       const reviewLabel = document.createElement("label");
       reviewLabel.className = "trusted-award-review-label";
       review = document.createElement("input");
@@ -352,6 +487,7 @@
       review.checked = draft.reviewed;
       review.addEventListener("change", () => {
         draft.reviewed = review.checked;
+        if (requestMode && !submitted) dirty = true;
       });
       const reviewText = document.createElement("span");
       reviewText.textContent = t("trusted_award_review");
@@ -360,11 +496,14 @@
       controls.push(review);
       const actions = document.createElement("div");
       actions.className = "certificate-document-actions";
-      for (const documentKind of memberRetirement && draft.familyMembers.length
+      for (const documentKind of !requestMode &&
+      memberRetirement &&
+      draft.familyMembers.length
         ? ["member", "packet"]
         : ["member"]) {
         const button = document.createElement("button");
         button.type = "button";
+        if (requestMode) button.dataset.requestSubmit = "true";
         button.className =
           documentKind === "packet"
             ? "manual-packet-download"
@@ -372,7 +511,11 @@
         button.textContent =
           documentKind === "packet"
             ? t("certificate_packet_download")
-            : t("trusted_award_download");
+            : t(
+                requestMode
+                  ? "trusted_request_submit"
+                  : "trusted_award_download",
+              );
         button.addEventListener("click", () => generate(true, documentKind));
         button.className += " admin-work-zone-button";
         actions.append(button);
@@ -389,6 +532,7 @@
       familyIndex,
     ) {
       if (disposed || busy) return;
+      if (requestMode) return submitRequest();
       if (download && !draft.reviewed) {
         message = "trusted_award_review_required";
         update();
@@ -469,19 +613,110 @@
         }
       }
     }
+    async function submitRequest() {
+      if (submitted) return;
+      if (!draft.reviewed) {
+        message = "trusted_award_review_required";
+        update();
+        return;
+      }
+      const form = root.querySelector("form");
+      if (!requestSnapshot && form.reportValidity && !form.reportValidity())
+        return;
+      if (!requestSnapshot) {
+        requestId ||= window.crypto.randomUUID();
+        requestSnapshot = JSON.parse(
+          JSON.stringify({
+            [memberRetirement ? "retirement" : "award"]: draft,
+            ...delivery,
+            requestId,
+          }),
+        );
+      }
+      busy = true;
+      message = "trusted_request_generating";
+      update();
+      try {
+        const result = await api(
+          `/api/certificate-requests/${memberRetirement ? "retirement" : "trusted-to-serve"}`,
+          {
+            method: "POST",
+            json: true,
+            body: requestSnapshot,
+            timeoutMs: null,
+            signal: lifecycle.signal,
+          },
+        );
+        if (disposed) return;
+        if (
+          !result?.certificateRequest?.id ||
+          !result.certificateRequest.status
+        )
+          throw new Error("Invalid request response");
+        submitted = true;
+        dirty = false;
+        requestSnapshot = undefined;
+        message = "trusted_request_success";
+        // Queue refresh failures must not turn a confirmed submission into a retry.
+        Promise.resolve()
+          .then(() => onSubmitted?.(result.certificateRequest))
+          .catch(() => {});
+      } catch (error) {
+        if (disposed) return;
+        if (error.status === 403) {
+          onDenied?.();
+          return;
+        }
+        if (error.status === 401) {
+          message = "trusted_request_session_expired";
+          return;
+        }
+        let code = error.data?.code;
+        try {
+          if (error.data?.json) code = (await error.data.json())?.code;
+        } catch {
+          /* Keep the retry snapshot on uncertain outcomes. */
+        }
+        if ([400, 422].includes(error.status)) requestSnapshot = undefined;
+        message =
+          {
+            award_data_invalid: "trusted_award_data_invalid",
+            award_wording_required: "trusted_award_wording_required",
+            award_review_required: "trusted_award_review_required",
+            certificate_request_invalid: "trusted_request_invalid",
+            certificate_data_invalid: "trusted_request_invalid",
+            certificate_review_required: "trusted_award_review_required",
+            certificate_request_profile_required:
+              "trusted_request_profile_required",
+            certificate_request_profile_incomplete:
+              "trusted_request_profile_required",
+            certificate_request_conflict: "trusted_request_conflict",
+            certificate_request_idempotency_conflict:
+              "trusted_request_conflict",
+          }[code] || "trusted_request_error";
+      } finally {
+        if (!disposed) {
+          busy = false;
+          update();
+        }
+      }
+    }
     document.addEventListener("languagechange", render, {
       signal: lifecycle.signal,
     });
     render();
     return {
       canNavigate: () => !busy,
-      hasUnsavedChanges: () => busy,
+      hasUnsavedChanges: () => busy || (requestMode && dirty),
       setFamilyOptions(value) {
         familyOptions = value;
         if (memberRetirement) render();
       },
       dispose() {
         disposed = true;
+        dirty = false;
+        busy = false;
+        requestSnapshot = undefined;
         lifecycle.abort();
         for (const picker of datePickers) picker.destroy();
         datePickers.clear();
@@ -494,6 +729,14 @@
     };
   }
   window.TrustedToServe = { mount };
+  window.TrustedToServeRequest = {
+    mount: (options) =>
+      mount({ ...options, requestMode: true, memberRetirement: false }),
+  };
+  window.RetirementCertificateRequest = {
+    mount: (options) =>
+      mount({ ...options, requestMode: true, memberRetirement: true }),
+  };
   window.ManualRetirementCertificate = {
     mount: (options) => mount({ ...options, memberRetirement: true }),
   };

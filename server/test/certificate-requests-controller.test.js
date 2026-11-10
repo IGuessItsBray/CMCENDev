@@ -28,6 +28,103 @@ const request = (status = 'pending') => ({
   ],
 });
 
+const trustedRequest = () => ({
+  ...request(),
+  certificateType: 'trusted_to_serve',
+  familyMembers: [],
+  trustedToServe: {
+    firstName: 'Sample',
+    lastName: 'Member',
+    fullRankEn: 'Corporal',
+    postNominals: '',
+    presentationDate: '2026-12-01',
+    frPronoun: 'elle',
+  },
+});
+
+test('Trusted to Serve queue downloads the saved award after staff review without advancing status', async () => {
+  const item = trustedRequest();
+  const page = setup({
+    requests: [item],
+    api: (url) =>
+      url.includes('trusted-to-serve.pdf')
+        ? Promise.resolve({ blob: async () => ({ type: 'application/pdf' }) })
+        : undefined,
+  });
+  await page.controller.ready;
+  assert.equal(page.download().textContent, 'trusted_request_download');
+  const labels = page.root
+    .querySelectorAll('span')
+    .map((element) => element.textContent);
+  assert.ok(labels.includes('trusted_award_frPronoun'));
+  assert.ok(!labels.includes('certificate_request_trade_role'));
+  assert.ok(!labels.includes('certificate_release_date'));
+  assert.equal(page.root.querySelector('.certificate-family-documents'), null);
+  await page.download().fire('click');
+  const call = page.calls.at(-1);
+  assert.equal(
+    call.url,
+    '/api/certificate-requests/request%2F1/trusted-to-serve.pdf?download=1',
+  );
+  assert.equal(call.method, 'POST');
+  assert.equal(call.body.reviewed, true);
+  assert.equal(Object.keys(call.body).length, 1);
+  assert.equal(item.status, 'pending');
+  assert.match(page.downloads[0].download, /^trusted-to-serve-/);
+  assert.equal(page.urls.length, page.revoked.length);
+  page.controller.dispose();
+});
+
+test('Trusted to Serve review cancellation, duplicate clicks and disposal do not generate certificates', async () => {
+  const cancelled = setup({
+    requests: [trustedRequest()],
+    confirm: async () => false,
+  });
+  await cancelled.controller.ready;
+  await cancelled.download().fire('click');
+  assert.equal(cancelled.calls.length, 1);
+  const pending = deferred();
+  let confirms = 0;
+  const page = setup({
+    requests: [trustedRequest()],
+    confirm: () => {
+      confirms++;
+      return pending.promise;
+    },
+  });
+  await page.controller.ready;
+  const action = page.download().fire('click');
+  await page.download().fire('click');
+  await page.document.fire('languagechange');
+  assert.equal(confirms, 1);
+  assert.equal(page.download().disabled, true);
+  assert.equal(page.controller.canNavigate(), false);
+  page.controller.dispose();
+  pending.resolve(true);
+  await action;
+  assert.equal(page.calls.length, 1);
+  assert.equal(page.downloads.length, 0);
+});
+
+test('Trusted to Serve uses the existing single-recipient print and mail lifecycle', async () => {
+  const page = setup({
+    requests: [trustedRequest()],
+    checklist: async () => ['member'],
+  });
+  await page.controller.ready;
+  await page.action().fire('click');
+  assert.deepEqual(
+    Array.from(
+      page.calls.find((call) => call.method === 'PATCH').body
+        .printedCertificateKeys,
+    ),
+    ['member'],
+  );
+  await page.action().fire('click');
+  assert.equal(page.action(), null);
+  assert.equal(page.status(), 'certificate_requests_mail_success');
+});
+
 test('family controls default to the saved DWD ceremony date without changing member dates or status', async () => {
   const item = request();
   item.member.releaseDate = '2026-08-01T00:00:00.000Z';
@@ -59,6 +156,9 @@ function setup({
   api: override,
   confirm = async () => true,
   checklist = async () => ['member', 'family:0'],
+  permissions = {},
+  requestForm,
+  showRequestForm = true,
 } = {}) {
   const root = new Element('div'),
     document = new Element('document');
@@ -79,6 +179,7 @@ function setup({
     return element;
   };
   const window = {
+    TrustedToServeRequest: requestForm,
     translate: (key, values) => key + (values ? JSON.stringify(values) : ''),
     CMCENUtils: {
       getCurrentLocale: () => 'en',
@@ -118,6 +219,8 @@ function setup({
     },
   );
   const controller = window.CertificateRequests.mount({
+    permissions,
+    showRequestForm,
     api: async (url, options) => {
       calls.push({ url, ...options });
       const result = override?.(url, options);
@@ -163,6 +266,51 @@ function setup({
     download: () => root.querySelector('.certificate-member-download'),
   };
 }
+
+test('staff request entry respects submit permission, refreshes the queue and isolates revoked submission access', async () => {
+  let mounted = 0,
+    disposed = 0,
+    options;
+  const requestForm = {
+    mount(value) {
+      mounted++;
+      options = value;
+      return {
+        canNavigate: () => true,
+        hasUnsavedChanges: () => true,
+        dispose: () => {
+          disposed++;
+        },
+      };
+    },
+  };
+  const denied = setup({ requestForm });
+  await denied.controller.ready;
+  assert.equal(mounted, 0);
+  const hidden = setup({
+    requestForm,
+    permissions: { canSubmitCertificateRequests: true },
+    showRequestForm: false,
+  });
+  await hidden.controller.ready;
+  assert.equal(mounted, 0);
+  const page = setup({
+    requestForm,
+    permissions: { canSubmitCertificateRequests: true },
+  });
+  await page.controller.ready;
+  assert.equal(mounted, 1);
+  assert.equal(page.controller.hasUnsavedChanges(), true);
+  assert.equal(page.controller.canNavigate(), true);
+  await options.onSubmitted();
+  assert.equal(page.calls.length, 2);
+  options.onDenied();
+  assert.equal(disposed, 1);
+  assert.equal(page.denied(), 0);
+  assert.ok(page.action());
+  page.controller.dispose();
+  assert.equal(disposed, 2);
+});
 
 test('family and packet actions use saved answers immediately and isolate downloads per request', async () => {
   const page = setup({

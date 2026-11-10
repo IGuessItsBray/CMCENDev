@@ -826,6 +826,22 @@ function setupContributeLauncher(closeMobileMenu = () => {}) {
       });
     }
 
+    if (contributePermissions.canSubmitCertificateRequests === true) {
+      choices.push({
+        value: "/certificates",
+        label: getInterfaceTranslation(
+          "contribute_submit_trusted_request",
+          "Request certificates",
+        ),
+        description: getInterfaceTranslation(
+          "contribute_submit_trusted_request_description",
+          "Send recipient and delivery details to the branch certificate team.",
+        ),
+        className: "is-contribute-retirement",
+        icon: getContributeChoiceIcon("retirement"),
+      });
+    }
+
     if (contributePermissions.canCreateDrafts === true) {
       choices.push({
         value: "/submit-last-post",
@@ -1590,7 +1606,8 @@ async function updateAuthRestrictedItems() {
     contributePermissions = user.permissions || {};
     document.getElementById("contributeNavigation").hidden =
       contributePermissions.canCreateDrafts !== true &&
-      contributePermissions.canSubmitRetirementMessages !== true;
+      contributePermissions.canSubmitRetirementMessages !== true &&
+      contributePermissions.canSubmitCertificateRequests !== true;
 
     authRequiredItems.forEach((element) => {
       element.hidden = false;
